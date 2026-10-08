@@ -350,6 +350,7 @@ let private trustedContext () : Compiler.IrLoweringContext =
     { Words = words
       Records = Map.empty
       Scalars = Map.empty
+      Enums = Map.empty
       WordIds = wordIds }
 
 let private noOpHost effectCounter =

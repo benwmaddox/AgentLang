@@ -184,8 +184,10 @@ A guarded case cannot establish exhaustiveness merely because its tests passed;
 require statically sufficient pattern coverage or an unconditional fallback.
 Diagnostics should identify missing cases and their source spans. Library tests
 must still exercise their own branches and assert behavior: a statically handled
-case is not proof that its implementation is correct. This requirement does not
-claim that a new general enum/match frontend has already been implemented.
+case is not proof that its implementation is correct. The current Flow/2
+[closed-enum slice](CLOSED-ENUMS.md) supports payload-free enums and exhaustive
+matching for project functions. Enum library qualification remains blocked until
+finite input/output coverage is enforced; native enum execution is not yet supported.
 
 Tests must support injected deterministic effect providers for IO and other
 declared effects. Injection must preserve the function's effect contract and

@@ -104,6 +104,7 @@ let private contextWithDefinitions
     { Words = words
       Records = records
       Scalars = scalarMap
+      Enums = Map.empty
       WordIds = wordIds }
 
 let private contextWithScalarDefinitions extraWords scalarDefinitions =
@@ -128,6 +129,35 @@ let private contextWithRecords (extraWords: WordEntry list) (records: RecordDefi
 
 let private contextWith (extraWords: WordEntry list) : Compiler.IrLoweringContext =
     contextWithScalarDefinitions extraWords []
+
+let private contextWithEnums (extraWords: WordEntry list) (definitions: EnumDefinition list) : Compiler.IrLoweringContext =
+    let enumEntries =
+        definitions
+        |> List.collect (fun definition ->
+            definition.Cases
+            |> List.map (fun caseName ->
+                let name = definition.Name + "." + caseName
+                let constructor = wordEntry name [] [ TNamed definition.Name ] Set.empty []
+                { constructor with Builtin = Some(EnumCaseConstructor(definition.Name, caseName)) }))
+    let words =
+        extraWords @ enumEntries
+        |> List.fold (fun found entry -> Map.add entry.Definition.Name entry found) Compiler.primitives
+    let wordIds =
+        words
+        |> Map.toList
+        |> List.map (fun (name, entry) ->
+            let prefix =
+                match entry.Builtin with
+                | Some(BuiltinOp _) -> "primitive-"
+                | Some _ -> "generated-"
+                | None -> "user-"
+            name, WordId(prefix + name))
+        |> Map.ofList
+    { Words = words
+      Records = Map.empty
+      Scalars = Map.empty
+      Enums = definitions |> List.map (fun definition -> definition.Name, definition) |> Map.ofList
+      WordIds = wordIds }
 
 let private compileBody context name expressions =
     let verifiedProgram = Compiler.compileIrProgram context
@@ -1952,6 +1982,25 @@ let private testRejectsEffectsAndUnsupportedUntakenBranches () =
         (ratioError.Code = "IR_LLVM_UNSUPPORTED_TYPE"
          && ratioError.Span = Some ratioSpan
          && ratioError.Actual = [ "Result<Int, String>" ])
+
+    let enumSpan = span "unsupported-enum.agent" 1
+    let enumDefinition =
+        { Name = "NativeState"
+          Cases = [ "active"; "cancelled" ]
+          SourceText = "enum NativeState"
+          Span = enumSpan }
+    let enumContext = contextWithEnums [] [ enumDefinition ]
+    let enumBody =
+        compileBody enumContext "unsupported-enum"
+            [ Call("NativeState.active", enumSpan)
+              MatchEnum(
+                  [ "active", [ Push(LInt 1L, enumSpan) ]
+                    "cancelled", [ Push(LInt 0L, enumSpan) ] ],
+                  enumSpan) ]
+    let enumError = errorOf (fun () -> LlvmAot.emit enumBody |> ignore)
+    check "LLVM refuses enum values and matches with its explicit unsupported diagnostic"
+        (enumError.Code = "IR_LLVM_ENUM_UNSUPPORTED"
+         && enumError.Actual = [ "NativeState" ])
 
     let unsupported =
         compileBody (contextWith []) "unsupported-branch"

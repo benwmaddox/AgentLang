@@ -633,7 +633,7 @@ module Parser =
                     | ExpectedExpression _ -> fail file lines[cursor].Number 1 "PARSE_VALUE_EXPECTATION_NOT_ALLOWED" "Examples use literal expectations; typed value-expression expectations are available only in tests."
                     cursor <- finish + 1
                 else fail file lines[cursor].Number 1 "PARSE_UNKNOWN_DECLARATION" $"Unknown declaration '{content}'."
-            Ok { Records = List.ofSeq records; Scalars = List.ofSeq scalars; Words = List.ofSeq words; Tests = List.ofSeq tests; Examples = List.ofSeq examples }
+            Ok ({ Records = List.ofSeq records; Scalars = List.ofSeq scalars; Enums = []; Words = List.ofSeq words; Tests = List.ofSeq tests; Examples = List.ofSeq examples }: ParsedSource)
         with
         | LanguageException diagnostic -> Error diagnostic
         | ex ->

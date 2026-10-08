@@ -384,7 +384,13 @@ module LlvmAot =
         match program.NominalTypesByKey.TryFind key with
         | Some(IrRecordDefinition record) -> record.TypeName
         | Some(IrScalarDefinition scalar) -> scalar.TypeName
+        | Some(IrEnumDefinition enumDefinition) -> enumDefinition.TypeName
         | None -> IrTypes.format (IrNominal key)
+
+    let private rejectEnum (program: IrProgram) (owner: string) (span: SourceSpan option) (key: ProgramTypeKey) =
+        callDiagnostic "IR_LLVM_ENUM_UNSUPPORTED"
+            "The LLVM backend does not support payload-free enum values or exhaustive enum matches."
+            owner span [ "native enum support" ] [ nominalTypeName program key ]
 
     let private validateRecordTypeGraph (program: IrProgram) =
         let state = Dictionary<ProgramTypeKey, int>()
@@ -453,6 +459,7 @@ module LlvmAot =
                     | Some(IrRecordDefinition record) ->
                         for field in record.RecordFields |> List.sortByDescending (fun item -> item.FieldIndex) do
                             pending.Push(true, record.TypeName, None, field.FieldType)
+                    | Some(IrEnumDefinition _) -> rejectEnum program currentOwner currentSpan key
                     | None ->
                         callDiagnostic "IR_LLVM_UNSUPPORTED_TYPE" "The LLVM native-value backend cannot resolve an unknown nominal type."
                             currentOwner currentSpan [ "known nominal scalar or record" ] [ IrTypes.format currentType ]
@@ -503,6 +510,9 @@ module LlvmAot =
                 | IrOperation.MatchResult(_, _, okBlock, errorBlock) ->
                     visitBlock okBlock
                     visitBlock errorBlock
+                | IrOperation.MatchEnum(_, cases) ->
+                    cases |> List.iter (snd >> visitBlock)
+                | IrOperation.MakeEnumCase(call, _, _) -> add call
                 | IrOperation.Constant _
                 | IrOperation.ListEmpty _
                 | IrOperation.ListSingleton _
@@ -576,6 +586,7 @@ module LlvmAot =
                     | UnwrapScalarOperation key
                     | MakeRecordOperation key -> ensureNativeType program owner span (IrNominal key)
                     | GetRecordFieldOperation(key, _) -> ensureNativeType program owner span (IrNominal key)
+                    | MakeEnumCaseOperation(key, _) -> rejectEnum program owner span key
 
         for call, site in callsInBlock program body.BodyBlock do inspectCall body.BodyName site call
         while pending.Count > 0 do
@@ -645,6 +656,7 @@ module LlvmAot =
                 | _ ->
                     callDiagnostic "IR_LLVM_TARGET_SIGNATURE" "Generated record accessor refers to an absent record field."
                         owner span [ "record -> declared field" ] (call.OutputTypes |> List.map IrTypes.format)
+            | MakeEnumCaseOperation(key, _) -> rejectEnum program owner span key
         | PrimitiveTarget(PrimitiveId operation) ->
             if not (supportedPrimitiveOperations.Contains operation) then
                 callDiagnostic "IR_LLVM_UNSUPPORTED_PRIMITIVE"
@@ -748,6 +760,8 @@ module LlvmAot =
                 | _ ->
                     callDiagnostic "IR_LLVM_TARGET_OPERATION" "Scalar unwrap instruction requires a generated accessor target."
                         owner span [ "generated scalar accessor" ] [ call.ResolvedName ]
+            | IrOperation.MatchEnum(key, _) -> rejectEnum program owner span key
+            | IrOperation.MakeEnumCase(_, key, _) -> rejectEnum program owner span key
             | IrOperation.StoreLocal _
             | IrOperation.LoadLocal _ -> ()
             | IrOperation.Scope inner -> validateBlock program owner sourceMap inner
@@ -793,6 +807,7 @@ module LlvmAot =
             match definition with
             | IrRecordDefinition record -> ensureNativeType program record.TypeName None (IrNominal key)
             | IrScalarDefinition scalar -> ensureNativeType program scalar.TypeName None (IrNominal key)
+            | IrEnumDefinition _ -> rejectEnum program (nominalTypeName program key) None key
         let reachable = reachableFunctions verifiedBody sourceMap
         body.BodyInputTypes @ body.BodyOutputTypes |> List.iter (ensureNativeType program body.BodyName None)
         validateBlock program body.BodyName sourceMap body.BodyBlock

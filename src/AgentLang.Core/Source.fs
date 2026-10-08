@@ -79,6 +79,14 @@ module Source =
             renderBodyAt (depth + 1) errorBranch |> List.iter lines.Add
             lines.Add(prefix + "end")
             String.concat "\n" lines
+        | MatchEnum(cases, _) ->
+            let lines = ResizeArray<string>()
+            lines.Add(prefix + "match-enum")
+            for caseName, body in cases do
+                lines.Add(prefix + caseName)
+                renderBodyAt (depth + 1) body |> List.iter lines.Add
+            lines.Add(prefix + "end")
+            String.concat "\n" lines
 
     and private renderBodyAt depth body =
         body |> List.map (renderExpressionAt depth)
@@ -101,6 +109,9 @@ module Source =
             |> Option.map (fun validator -> [ indent 1 + "validate " + validator ])
             |> Option.defaultValue []
         String.concat "\n" ([ "type " + definition.Name + " : " + Types.format definition.BaseType ] @ body @ [ "end" ])
+
+    let renderEnum (definition: EnumDefinition) =
+        String.concat "\n" ([ "enum " + definition.Name + " {" ] @ (definition.Cases |> List.map (fun caseName -> indent 1 + "case " + caseName + ";")) @ [ "}" ])
 
     let renderWord includeHostMetadata (definition: WordDefinition) =
         let inputs = definition.Inputs |> List.map Types.format |> String.concat " "
@@ -146,6 +157,7 @@ module Source =
             | Scope(body, span) -> Scope(rewrite body, span)
             | MatchOption(name, someBranch, noneBranch, span) -> MatchOption(name, rewrite someBranch, rewrite noneBranch, span)
             | MatchResult(okName, errorName, okBranch, errorBranch, span) -> MatchResult(okName, errorName, rewrite okBranch, rewrite errorBranch, span)
+            | MatchEnum(cases, span) -> MatchEnum(cases |> List.map (fun (caseName, body) -> caseName, rewrite body), span)
             | expression -> expression)
 
     /// Rename a definition header without implicitly changing any body references.

@@ -74,6 +74,16 @@ neither replaces independent domain acceptance. A full language-native property
 framework is not a prerequisite for exercising these checks in the host test
 runners. Report which properties were checked and their tested domain.
 
+Report 111 demonstrates why state/effect assertions are a separate requirement:
+an extra-write mutation passed return-value tests and full own coverage, but
+failed an independent provider-count check. Add optional authored assertions for
+exact effect-category counts scoped to actual invocations of the test's target,
+including nested callees and excluding setup and expectation evaluation. Counts
+must include attempted provider calls that fault; repeated target invocations
+aggregate, and the target must actually run. Preserve pure expectations and
+existing tests without the optional assertion. The extra-write control must fail
+under the stronger tests. This assertion facility is pending implementation.
+
 ## Delivery and evidence
 
 Implement in bounded slices with explicit status for each requirement. Keep the

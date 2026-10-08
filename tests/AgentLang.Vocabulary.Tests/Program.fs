@@ -77,7 +77,7 @@ module Program =
         let words = entries |> List.map (fun entry -> entry.Definition.Name, entry) |> Map.ofList
         let recordMap = records |> List.map (fun entry -> entry.Definition.Name, entry) |> Map.ofList
         let scalarMap = scalars |> List.map (fun entry -> entry.Definition.Name, entry) |> Map.ofList
-        VocabularyAnalysis.build words recordMap scalarMap wordIds
+        VocabularyAnalysis.build words recordMap scalarMap Map.empty wordIds
 
     let private expectDiagnostic expectedCode action =
         try

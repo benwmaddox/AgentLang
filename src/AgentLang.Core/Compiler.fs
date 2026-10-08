@@ -257,7 +257,7 @@ module Compiler =
           Dependencies: Set<string>
           Effects: Set<string> }
 
-    let private inferBody (knownTypes: Set<string>) (words: Map<string, WordEntry>) (wordName: string) (wordSpan: SourceSpan option) (initialStack: LangType list) (initialLocals: Map<string, LangType>) (body: Expr list) =
+    let private inferBody (knownTypes: Set<string>) (knownEnums: Map<string, EnumDefinition>) (words: Map<string, WordEntry>) (wordName: string) (wordSpan: SourceSpan option) (initialStack: LangType list) (initialLocals: Map<string, LangType>) (body: Expr list) =
         let mutable dependencies = Set.empty
         let mutable effects = Set.empty
         let rec visit (entryStack: LangType list) (entryLocals: Map<string, LangType>) (expressions: Expr list) =
@@ -412,6 +412,36 @@ module Compiler =
                             Diagnostics.raiseError "TYPE_MATCH_LOCAL_MISMATCH" "Both result match cases must leave the same outer locals with the same types." (Some wordName) (Some expressionSpan) (okLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}")) (errorLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}"))
                         childBodies <- [ okBody; errorBody ]
                         okBody.ExitStack, okLocals
+                    | MatchEnum(cases, expressionSpan) ->
+                        if List.isEmpty stack then
+                            Diagnostics.raiseError "TYPE_MATCH_REQUIRES_ENUM" "Enum match consumes a declared enum value from the top of the stack." (Some wordName) (Some expressionSpan) [ "enum value" ] []
+                        let enumName =
+                            match List.last stack with
+                            | TNamed name when knownEnums.ContainsKey name -> name
+                            | TNamed name -> Diagnostics.raiseError "TYPE_MATCH_REQUIRES_ENUM" "Enum match scrutinee must have a declared enum type." (Some wordName) (Some expressionSpan) [ "declared enum" ] [ name ]
+                            | actual -> Diagnostics.raiseError "TYPE_MATCH_REQUIRES_ENUM" "Enum match scrutinee must have a declared enum type." (Some wordName) (Some expressionSpan) [ "declared enum" ] [ Types.format actual ]
+                        let declaredCases = knownEnums[enumName].Cases
+                        let authoredCases = cases |> List.map fst
+                        let duplicateCases = authoredCases |> List.groupBy id |> List.choose (fun (name, values) -> if values.Length > 1 then Some name else None)
+                        let unknownCases = authoredCases |> List.filter (fun name -> not (List.contains name declaredCases)) |> List.distinct
+                        let missingCases = declaredCases |> List.filter (fun name -> not (List.contains name authoredCases))
+                        if not duplicateCases.IsEmpty || not unknownCases.IsEmpty || not missingCases.IsEmpty then
+                            Diagnostics.raiseError "TYPE_MATCH_ENUM_CASE_SET" "Enum match must contain every declared case exactly once and no other labels." (Some wordName) (Some expressionSpan)
+                                declaredCases ((authoredCases |> List.distinct) @ (duplicateCases |> List.map (fun name -> "duplicate:" + name)) @ (unknownCases |> List.map (fun name -> "extra:" + name)) @ (missingCases |> List.map (fun name -> "missing:" + name)))
+                        let before = stack |> List.take (stack.Length - 1)
+                        let branchBodies = cases |> List.map (fun (_, branch) -> visit before locals branch)
+                        match branchBodies with
+                        | [] -> Diagnostics.raiseError "TYPE_MATCH_ENUM_CASE_SET" "Enum match must contain at least one case." (Some wordName) (Some expressionSpan) declaredCases []
+                        | firstBranch :: remainingBranches ->
+                            for branch in remainingBranches do
+                                if branch.ExitStack <> firstBranch.ExitStack then
+                                    Diagnostics.raiseError "TYPE_MATCH_STACK_MISMATCH" "Every enum match case must leave the same output stack types." (Some wordName) (Some expressionSpan) (firstBranch.ExitStack |> List.map Types.format) (branch.ExitStack |> List.map Types.format)
+                                if branch.ExitLocals <> firstBranch.ExitLocals then
+                                    Diagnostics.raiseError "TYPE_MATCH_LOCAL_MISMATCH" "Every enum match case must leave the same outer locals with the same types." (Some wordName) (Some expressionSpan)
+                                        (firstBranch.ExitLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}"))
+                                        (branch.ExitLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}"))
+                            childBodies <- branchBodies
+                            firstBranch.ExitStack, firstBranch.ExitLocals
                 nodes.Add
                     { SourceExpression = expression
                       InputStack = inputStack
@@ -437,11 +467,14 @@ module Compiler =
           Effects = inferred.Effects }
 
     let checkExpression knownTypes words body =
-        inferBody knownTypes words "<eval>" None [] Map.empty body |> checkedExpression
+        inferBody knownTypes Map.empty words "<eval>" None [] Map.empty body |> checkedExpression
 
-    let private checkDefinitionDetailed knownTypes words definition =
+    let checkExpressionWithEnums knownTypes enums words body =
+        inferBody knownTypes enums words "<eval>" None [] Map.empty body |> checkedExpression
+
+    let private checkDefinitionDetailed knownTypes knownEnums words definition =
         for typeValue in definition.Inputs @ definition.Outputs do validateType false knownTypes (Some definition.Span) definition.Name typeValue
-        let inferred = inferBody knownTypes words definition.Name (Some definition.Span) definition.Inputs Map.empty definition.Body
+        let inferred = inferBody knownTypes knownEnums words definition.Name (Some definition.Span) definition.Inputs Map.empty definition.Body
         if inferred.InferredBody.ExitStack <> definition.Outputs then
             Diagnostics.raiseError "TYPE_WORD_OUTPUT_MISMATCH" $"Word '{definition.Name}' does not leave its declared output stack." (Some definition.Name) (Some definition.Span) (definition.Outputs |> List.map Types.format) (inferred.InferredBody.ExitStack |> List.map Types.format)
         let undeclared = Set.difference inferred.Effects definition.Effects
@@ -451,9 +484,12 @@ module Compiler =
         { Definition = definition; Dependencies = inferred.Dependencies; InferredEffects = inferred.Effects }, inferred.InferredBody
 
     let checkDefinition knownTypes words definition =
-        checkDefinitionDetailed knownTypes words definition |> fst
+        checkDefinitionDetailed knownTypes Map.empty words definition |> fst
 
-    let private checkTestDetailed knownTypes words (test: TestDefinition) =
+    let checkDefinitionWithEnums knownTypes enums words definition =
+        checkDefinitionDetailed knownTypes enums words definition |> fst
+
+    let private checkTestDetailed knownTypes knownEnums words (test: TestDefinition) =
         match test.Expected with
         | ExpectedRuntimeError _ when List.isEmpty test.Body ->
             Diagnostics.raiseError "TEST_EXPECTED_ERROR_BODY_EMPTY" $"Runtime-error test '{test.Name}' must contain an expression to execute." (Some test.Word) (Some test.Span) [ "nonempty test body" ] []
@@ -462,14 +498,14 @@ module Compiler =
         | ExpectedExpression _ when List.isEmpty test.Body ->
             Diagnostics.raiseError "TEST_EXPECTED_VALUE_BODY_EMPTY" $"Value-expectation test '{test.Name}' must contain an expression to test." (Some test.Word) (Some test.Span) [ "nonempty test body" ] []
         | _ -> ()
-        let inferred = inferBody knownTypes words (test.Word + "/" + test.Name) (Some test.Span) [] Map.empty test.Body
+        let inferred = inferBody knownTypes knownEnums words (test.Word + "/" + test.Name) (Some test.Span) [] Map.empty test.Body
         let checkedExpression = checkedExpression inferred
         let expectedInference =
             match test.Expected with
             | ExpectedExpression expressions ->
                 if List.isEmpty expressions then
                     Diagnostics.raiseError "TEST_EXPECTED_VALUE_EMPTY" $"Value expectation in test '{test.Name}' must contain an expression." (Some test.Word) (Some test.Span) [ "nonempty expected expression" ] []
-                let expected = inferBody knownTypes words (test.Word + "/" + test.Name + "/expected") (Some test.Span) [] Map.empty expressions
+                let expected = inferBody knownTypes knownEnums words (test.Word + "/" + test.Name + "/expected") (Some test.Span) [] Map.empty expressions
                 match expected.InferredBody.ExitStack with
                 | [ expectedType ] ->
                     validateType false knownTypes (Some test.Span) (test.Word + "/" + test.Name + "/expected") expectedType
@@ -490,17 +526,21 @@ module Compiler =
         | ExpectedExpression _ -> ()
         checkedExpression, inferred.InferredBody, expectedInference
 
-    let checkTest knownTypes words test = checkTestDetailed knownTypes words test |> fun (checkedExpression, _, _) -> checkedExpression
+    let checkTest knownTypes words test = checkTestDetailed knownTypes Map.empty words test |> fun (checkedExpression, _, _) -> checkedExpression
 
-    let private checkExampleDetailed knownTypes words (example: ExampleDefinition) =
-        let inferred = inferBody knownTypes words (example.Word + "/" + example.Name) (Some example.Span) [] Map.empty example.Body
+    let checkTestWithEnums knownTypes enums words test = checkTestDetailed knownTypes enums words test |> fun (checkedExpression, _, _) -> checkedExpression
+
+    let private checkExampleDetailed knownTypes knownEnums words (example: ExampleDefinition) =
+        let inferred = inferBody knownTypes knownEnums words (example.Word + "/" + example.Name) (Some example.Span) [] Map.empty example.Body
         let checkedExpression = checkedExpression inferred
         let expectedType = example.Expected |> Types.literalValue |> Types.ofValue
         if checkedExpression.Stack <> [ expectedType ] then
             Diagnostics.raiseError "EXAMPLE_EXPECTED_STACK" $"Example '{example.Name}' must leave exactly one value matching its expected literal." (Some example.Word) (Some example.Span) [ Types.format expectedType ] (checkedExpression.Stack |> List.map Types.format)
         checkedExpression, inferred.InferredBody
 
-    let checkExample knownTypes words example = checkExampleDetailed knownTypes words example |> fst
+    let checkExample knownTypes words example = checkExampleDetailed knownTypes Map.empty words example |> fst
+
+    let checkExampleWithEnums knownTypes enums words example = checkExampleDetailed knownTypes enums words example |> fst
 
     let dependencies (body: Expr list) =
         let rec collect expressions =
@@ -512,7 +552,8 @@ module Compiler =
                 | If(thenBranch, elseBranch, _) | MatchOption(_, thenBranch, elseBranch, _) ->
                     Set.union found (Set.union (collect thenBranch) (collect elseBranch))
                 | Scope(innerBody, _) -> Set.union found (collect innerBody)
-                | MatchResult(_, _, thenBranch, elseBranch, _) -> Set.union found (Set.union (collect thenBranch) (collect elseBranch))
+                    | MatchResult(_, _, thenBranch, elseBranch, _) -> Set.union found (Set.union (collect thenBranch) (collect elseBranch))
+                    | MatchEnum(cases, _) -> cases |> List.fold (fun found (_, branch) -> Set.union found (collect branch)) found
                 | _ -> found) Set.empty
         collect body
 
@@ -568,6 +609,8 @@ module Compiler =
                     "match-option\nsome " + name + "\n" + sourceExpressions someBranch + "\nnone\n" + sourceExpressions noneBranch + "\nend"
                 | MatchResult(okName, errorName, okBranch, errorBranch, _) ->
                     "match-result\nok " + okName + "\n" + sourceExpressions okBranch + "\nerror " + errorName + "\n" + sourceExpressions errorBranch + "\nend"
+                | MatchEnum(cases, _) ->
+                    "match-enum\n" + (cases |> List.map (fun (caseName, body) -> caseName + "\n" + sourceExpressions body) |> String.concat "\n") + "\nend"
             String.concat "\n" [ current; sourceExpressions rest ] |> fun text -> text.Trim('\n')
 
     /// Complete source snapshot used by compiler lowering. Every effective
@@ -576,6 +619,7 @@ module Compiler =
         { Words: Map<string, WordEntry>
           Records: Map<string, RecordDefinition>
           Scalars: Map<string, ScalarTypeDefinition>
+          Enums: Map<string, EnumDefinition>
           WordIds: Map<string, WordId> }
 
     let private irFailure code message word span expected actual =
@@ -695,19 +739,29 @@ module Compiler =
             | TNamed name ->
                 match typeKeys.TryFind name with
                 | Some key -> IrNominal key
-                | None -> irFailure "TYPE_UNKNOWN_NAMED_TYPE" $"Type '{name}' has not been declared." (Some word) span [ "declared record or scalar" ] [ name ]
+                | None -> irFailure "TYPE_UNKNOWN_NAMED_TYPE" $"Type '{name}' has not been declared." (Some word) span [ "declared record, scalar, or enum" ] [ name ]
             | TVar name -> irFailure "TYPE_UNSUPPORTED_GENERIC" $"Generic type variable '{name}' cannot appear in closed executable IR." (Some word) span [] [ name ]
         convert typeValue
 
     let private contextTypes (context: IrLoweringContext) =
-        let duplicateNames = Set.intersect (context.Records |> Map.toSeq |> Seq.map fst |> Set.ofSeq) (context.Scalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+        let recordNames = context.Records |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let scalarNames = context.Scalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let enumNames = context.Enums |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let duplicateNames =
+            [ recordNames; scalarNames; enumNames ]
+            |> List.collect Set.toList
+            |> List.groupBy id
+            |> List.choose (fun (name, values) -> if values.Length > 1 then Some name else None)
+            |> Set.ofList
         if not (Set.isEmpty duplicateNames) then
-            irFailure "IR_TYPE_NAME_COLLISION" "A source snapshot cannot declare a record and scalar with the same nominal name." None None [] (duplicateNames |> Set.toList)
+            irFailure "IR_TYPE_NAME_COLLISION" "A source snapshot cannot declare nominal types with the same name." None None [] (duplicateNames |> Set.toList)
         for KeyValue(name, record) in context.Records do
             if record.Name <> name then irFailure "IR_TYPE_NAME_MISMATCH" "Record map key differs from its definition name." (Some name) (Some record.Span) [ name ] [ record.Name ]
         for KeyValue(name, scalar) in context.Scalars do
             if scalar.Name <> name then irFailure "IR_TYPE_NAME_MISMATCH" "Scalar map key differs from its definition name." (Some name) (Some scalar.Span) [ name ] [ scalar.Name ]
-        Set.union (context.Records |> Map.toSeq |> Seq.map fst |> Set.ofSeq) (context.Scalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+        for KeyValue(name, enumDefinition) in context.Enums do
+            if enumDefinition.Name <> name then irFailure "IR_TYPE_NAME_MISMATCH" "Enum map key differs from its definition name." (Some name) (Some enumDefinition.Span) [ name ] [ enumDefinition.Name ]
+        Set.unionMany [ recordNames; scalarNames; enumNames ]
 
     let private validateLoweringContext (context: IrLoweringContext) =
         let names = context.Words |> Map.toSeq |> Seq.map fst |> Set.ofSeq
@@ -801,6 +855,13 @@ module Compiler =
                     appendExpressions okBranch
                     appendExpressions errorBranch
                     appendSpan span
+                | MatchEnum(cases, span) ->
+                    appendText "match-enum"
+                    appendInt cases.Length
+                    for caseName, branch in cases do
+                        appendText caseName
+                        appendExpressions branch
+                    appendSpan span
         let appendBuiltin = function
             | None -> appendText "user-word"
             | Some(BuiltinOp operation) -> appendText "primitive"; appendText operation
@@ -808,9 +869,10 @@ module Compiler =
             | Some(RecordAccessor(name, field)) -> appendText "record-accessor"; appendText name; appendText field
             | Some(ScalarConstructor name) -> appendText "scalar-constructor"; appendText name
             | Some(ScalarAccessor name) -> appendText "scalar-accessor"; appendText name
+            | Some(EnumCaseConstructor(typeName, caseName)) -> appendText "enum-case-constructor"; appendText typeName; appendText caseName
         let appendMaturity = function | ProjectWord -> appendText "project" | LibraryWord -> appendText "library"
         let appendStatus = function | Primitive -> appendText "primitive" | Candidate -> appendText "candidate" | Temporary -> appendText "temporary" | Persistent -> appendText "persistent"
-        appendText "agentlang-ir-snapshot-v2"
+        appendText "agentlang-ir-snapshot-v3"
         for KeyValue(name, entry) in context.Words do
             appendText "word"
             appendText name
@@ -850,6 +912,14 @@ module Compiler =
             match scalar.Validator with
             | None -> appendText "no-validator"
             | Some validator -> appendText "validator"; appendText validator
+        for KeyValue(name, enumDefinition) in context.Enums do
+            appendText "enum"
+            appendText name
+            appendText enumDefinition.Name
+            appendText enumDefinition.SourceText
+            appendSpan enumDefinition.Span
+            appendInt enumDefinition.Cases.Length
+            enumDefinition.Cases |> List.iter appendText
         appendText "source-origin-map"
         appendInt sourceOrigins.Count
         for KeyValue(marker, origin) in sourceOrigins do
@@ -860,7 +930,10 @@ module Compiler =
 
     let private typeKeysForContext (context: IrLoweringContext) =
         let names =
-            Seq.append (context.Records |> Map.toSeq |> Seq.map fst) (context.Scalars |> Map.toSeq |> Seq.map fst)
+            [ context.Records |> Map.toSeq |> Seq.map fst
+              context.Scalars |> Map.toSeq |> Seq.map fst
+              context.Enums |> Map.toSeq |> Seq.map fst ]
+            |> Seq.concat
             |> Seq.sort
             |> Seq.toList
         names |> List.mapi (fun index name -> name, ProgramTypeKey index) |> Map.ofList
@@ -916,6 +989,13 @@ module Compiler =
                         let baseType = closedIrType typeKeys name (Some scalar.Span) scalar.BaseType
                         makeTarget (UnwrapScalarOperation key) [ IrNominal key ] [ baseType ] scalar.Span "scalar-declaration"
                     | _ -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Generated scalar accessor '{name}' has no matching scalar type." (Some name) (Some definition.Span) [] [ typeName ]
+                | Some(EnumCaseConstructor(typeName, caseName)) ->
+                    match context.Enums.TryFind typeName, typeKeys.TryFind typeName with
+                    | Some enumDefinition, Some key ->
+                        match enumDefinition.Cases |> List.tryFindIndex ((=) caseName) with
+                        | Some caseIndex -> makeTarget (MakeEnumCaseOperation(key, caseIndex)) [] [ IrNominal key ] enumDefinition.Span "enum-case-declaration"
+                        | None -> irFailure "IR_GENERATED_CASE_UNKNOWN" $"Generated enum constructor '{name}' refers to unknown case '{caseName}'." (Some name) (Some definition.Span) enumDefinition.Cases [ caseName ]
+                    | _ -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Generated enum constructor '{name}' has no matching enum type." (Some name) (Some definition.Span) [] [ typeName ]
                 | _ -> None)
         let duplicateIds = targets |> List.groupBy (fun (_, target) -> target.TargetId) |> List.choose (fun (id, values) -> if values.Length > 1 then Some(sprintf "%A" id) else None)
         if not (List.isEmpty duplicateIds) then irFailure "IR_WORD_ID_COLLISION" "Generated executable targets must have unique stable word IDs." None None [] duplicateIds
@@ -946,7 +1026,7 @@ module Compiler =
                   OutputTypes = outputTypes |> List.map (closedIrType typeKeys name span)
                   ResolvedDeclaredEffects = effects
                   ResolvedEffects = effects }
-            | Some(RecordConstructor _ | RecordAccessor _ | ScalarConstructor _ | ScalarAccessor _) ->
+            | Some(RecordConstructor _ | RecordAccessor _ | ScalarConstructor _ | ScalarAccessor _ | EnumCaseConstructor _) ->
                 match generatedByName.TryFind name with
                 | None -> irFailure "IR_GENERATED_TARGET_MISSING" $"Generated word '{name}' has no compiled operation target." (Some name) span [] []
                 | Some target ->
@@ -981,13 +1061,19 @@ module Compiler =
                     |> Option.map (fun validatorName ->
                         resolveIrCall context typeKeys generatedByName validatorName (Some scalar.Span) [ scalar.BaseType ] [ TBool ])
                 key, IrScalarDefinition { TypeKey = key; TypeName = name; BaseType = baseType; ValidatorCall = validator })
-        Map.ofList (recordTypes @ scalarTypes)
+        let enumTypes =
+            context.Enums
+            |> Map.toList
+            |> List.map (fun (name, enumDefinition) ->
+                let key = typeKeys[name]
+                key, IrEnumDefinition { TypeKey = key; TypeName = name; Cases = enumDefinition.Cases })
+        Map.ofList (recordTypes @ scalarTypes @ enumTypes)
 
     let private expressionSpan = function
         | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
         | MapList(_, span) | FilterList(_, span) | EachList(_, span) | FoldList(_, span)
         | Let(_, span) | Load(_, span) | If(_, _, span) | Scope(_, span)
-        | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) -> span
+        | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) | MatchEnum(_, span) -> span
 
     let private expressionKind = function
         | Push _ -> "constant"
@@ -1008,6 +1094,7 @@ module Compiler =
         | Scope _ -> "scope"
         | MatchOption _ -> "match-option"
         | MatchResult _ -> "match-result"
+        | MatchEnum _ -> "match-enum"
 
     let private zeroWidthMarkers (expressions: Expr list) =
         let rec collect (body: Expr list) =
@@ -1020,6 +1107,7 @@ module Compiler =
                 | Scope(innerBody, _) -> Set.union found (collect innerBody)
                 | MatchOption(_, someBranch, noneBranch, _) -> Set.union found (Set.union (collect someBranch) (collect noneBranch))
                 | MatchResult(_, _, okBranch, errorBranch, _) -> Set.union found (Set.union (collect okBranch) (collect errorBranch))
+                | MatchEnum(cases, _) -> cases |> List.fold (fun found (_, branch) -> Set.union found (collect branch)) found
                 | _ -> found) Set.empty
         collect expressions
 
@@ -1149,6 +1237,13 @@ module Compiler =
                                 match typeKeys.TryFind typeName with
                                 | Some key -> IrOperation.UnwrapScalar(call, key)
                                 | None -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Scalar accessor '{name}' has no nominal type key." (Some name) (Some span) [] [ typeName ]
+                            | Some(EnumCaseConstructor(typeName, caseName)) ->
+                                match context.Enums.TryFind typeName, typeKeys.TryFind typeName with
+                                | Some enumDefinition, Some key ->
+                                    match enumDefinition.Cases |> List.tryFindIndex ((=) caseName) with
+                                    | Some caseIndex -> IrOperation.MakeEnumCase(call, key, caseIndex)
+                                    | None -> irFailure "IR_GENERATED_CASE_UNKNOWN" $"Enum constructor '{name}' refers to unknown case '{caseName}'." (Some name) (Some span) enumDefinition.Cases [ caseName ]
+                                | _ -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Enum constructor '{name}' has no nominal type key." (Some name) (Some span) [] [ typeName ]
                             | Some(BuiltinOp _) -> IrOperation.Call call
                             | None -> IrOperation.Call call
                         | ConstructContainer(kind, arguments, _) ->
@@ -1218,6 +1313,20 @@ module Compiler =
                                 let errorSlot = freshSlot errorName
                                 IrOperation.MatchResult(okSlot, errorSlot, lowerBlock (Map.add okName okSlot env) okBody, lowerBlock (Map.add errorName errorSlot env) errorBody)
                             | _ -> irFailure "IR_MATCH_ANNOTATION_INVALID" "Result match lowering requires a checked Result<T, E> and both case bodies." (Some ownerName) (Some span) [ "Result<T, E> with Ok and Error cases" ] []
+                        | MatchEnum(cases, _) ->
+                            match node.ChildBodies, node.InputStack |> List.tryLast with
+                            | childBodies, Some(TNamed typeName) when childBodies.Length = cases.Length ->
+                                match context.Enums.TryFind typeName, typeKeys.TryFind typeName with
+                                | Some enumDefinition, Some key ->
+                                    let caseBlocks =
+                                        List.zip cases childBodies
+                                        |> List.map (fun ((caseName, _), childBody) ->
+                                            match enumDefinition.Cases |> List.tryFindIndex ((=) caseName) with
+                                            | Some caseIndex -> caseIndex, lowerBlock env childBody
+                                            | None -> irFailure "IR_ENUM_MATCH_CASE_UNKNOWN" $"Enum match refers to unknown case '{caseName}'." (Some ownerName) (Some span) enumDefinition.Cases [ caseName ])
+                                    IrOperation.MatchEnum(key, caseBlocks)
+                                | _ -> irFailure "IR_ENUM_MATCH_TYPE_UNKNOWN" $"Enum match type '{typeName}' is absent from the frozen enum table." (Some ownerName) (Some span) [] [ typeName ]
+                            | _ -> irFailure "IR_MATCH_ANNOTATION_INVALID" "Enum match lowering requires a declared enum and one checked block for every authored case." (Some ownerName) (Some span) [ string cases.Length + " enum case blocks" ] [ string node.ChildBodies.Length ]
                     { Site = site; Operation = operation })
             let exitShape = shape ownerName env typed.ExitStack typed.ExitLocals
             { EntryShape = entryShape; ExitShape = exitShape; Code = instructions }
@@ -1232,7 +1341,8 @@ module Compiler =
         |> List.map (fun (key, definition) ->
             match definition with
             | IrRecordDefinition record -> record.TypeName, key
-            | IrScalarDefinition scalar -> scalar.TypeName, key)
+            | IrScalarDefinition scalar -> scalar.TypeName, key
+            | IrEnumDefinition enumDefinition -> enumDefinition.TypeName, key)
         |> Map.ofList
 
     let private generatedByNameFromProgram (program: IrProgram) =
@@ -1275,7 +1385,7 @@ module Compiler =
         generatedSourceMap |> Map.iter (fun site value -> sourceMap.Add(site, value))
         for KeyValue(name, entry) in context.Words do
             if entry.Builtin.IsNone then
-                let checkedWord, typed = checkDefinitionDetailed knownTypes context.Words entry.Definition
+                let checkedWord, typed = checkDefinitionDetailed knownTypes context.Enums context.Words entry.Definition
                 let ownerId = context.WordIds[name]
                 let block, localNames, wordSources, inferredEffects =
                     lowerTypedBody context sourceOrigins typeKeys nominalTypes generatedByName name (Some ownerId) entry.Definition.Inputs checkedWord.InferredEffects typed
@@ -1294,7 +1404,7 @@ module Compiler =
                       LocalNames = localNames
                       FunctionBody = block }
                 functions.Add(ownerId, functionValue)
-                coverage.Add(ownerId, IrVerifier.coverageObligationsWithSourceMap wordSources block)
+                coverage.Add(ownerId, IrVerifier.coverageObligationsWithTypes nominalTypes wordSources block)
         let program =
             { NominalTypesByKey = nominalTypes
               FunctionsById = Map.ofSeq functions
@@ -1337,7 +1447,7 @@ module Compiler =
               BodyLocalNames = localNames
               BodyBlock = block
               BodySourceMap = sourceMap
-              BodyCoverage = IrVerifier.coverageObligationsWithSourceMap sourceMap block }
+              BodyCoverage = IrVerifier.coverageObligationsWithTypes program.NominalTypesByKey sourceMap block }
         IrVerifier.verifyBody verifiedProgram body
 
     let compileIrBodyAgainstProgramWithSourceOrigins context verifiedProgram name initialStack expressions sourceOrigins =
@@ -1356,7 +1466,7 @@ module Compiler =
         | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "Detached body context does not match the exact program snapshot it will call." (Some name) None [ "same compiler snapshot fingerprint" ] []
         let knownTypes = contextTypes context
         for typeValue in initialStack do validateType false knownTypes None name typeValue
-        let inferred = inferBody knownTypes context.Words name None initialStack Map.empty expressions
+        let inferred = inferBody knownTypes context.Enums context.Words name None initialStack Map.empty expressions
         bodyFromInference context sourceOrigins verifiedProgram name initialStack inferred.Effects inferred.InferredBody
 
     let compileIrBodyAgainstProgram context verifiedProgram name initialStack expressions =
@@ -1388,7 +1498,7 @@ module Compiler =
 
         remapSourceOriginDiagnostic sourceOrigins (fun () ->
             let knownTypes = contextTypes context
-            let checkedTest, typed, expected = checkTestDetailed knownTypes context.Words test
+            let checkedTest, typed, expected = checkTestDetailed knownTypes context.Enums context.Words test
             let actualBody = bodyFromInference context sourceOrigins verifiedProgram (test.Word + "/" + test.Name) [] checkedTest.Effects typed
             let expectedBody =
                 expected
@@ -1424,7 +1534,7 @@ module Compiler =
 
         remapSourceOriginDiagnostic sourceOrigins (fun () ->
             let knownTypes = contextTypes context
-            let checkedExample, typed = checkExampleDetailed knownTypes context.Words example
+            let checkedExample, typed = checkExampleDetailed knownTypes context.Enums context.Words example
             bodyFromInference context sourceOrigins verifiedProgram (example.Word + "/" + example.Name) [] checkedExample.Effects typed)
 
     let compileIrExampleAgainstProgram context verifiedProgram example =

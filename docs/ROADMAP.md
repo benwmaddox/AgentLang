@@ -155,11 +155,12 @@ framework and general proof system are not prerequisites. Preserve frozen
 comparison fixtures and resume efficacy evaluation after the implementation
 checkpoint. Track delivered and pending requirements explicitly in its report.
 
-Report 110 delivers the first arithmetic slice: exact checked ratios and an
-authored total Money scaler using validated unit basis points. The next type
-slice is payload-free closed enums with verified exhaustive matching, durable
-source and explicit finite-coverage qualification. Use new fixtures. Enums must
-not be advertised as library-ready before their required coverage is enforced.
+Report 110 delivers the arithmetic slice: exact checked ratios and an authored
+total Money scaler using validated unit basis points. [Report 112](../reports/112-closed-domain-states.md)
+delivers payload-free Flow/2 enums with verified exhaustive matching and durable
+source for project functions. Enum-bearing library qualification is explicitly
+blocked until finite input/output coverage is enforced; native enum support is
+also pending. Use new fixtures and preserve historical research inputs.
 Cross-field record construction and decision/executor stateful properties follow.
 Report 111's extra-write control passed full library coverage but violated the
 IO contract. Make provider-state and effect-count assertions straightforward in

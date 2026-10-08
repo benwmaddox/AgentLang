@@ -482,16 +482,43 @@ module Program =
                   FlowAstPathSegment.EqualityLeft
                   FlowAstPathSegment.PropertyReceiver ]
                 (StoredCallForm.PropertyAccess "email") "Customer::email" (StoredCallTarget.GeneratedWord "generated:record:Customer.email")
+        let enumScrutineeBinding =
+            callBinding baseRevision.Definition None StoredCallBodyRole.Definition
+                [ FlowAstPathSegment.BlockStatement 1
+                  FlowAstPathSegment.EvaluateExpression
+                  FlowAstPathSegment.EnumScrutinee ]
+                StoredCallForm.Direct "Phase.pending" (StoredCallTarget.GeneratedWord "generated:enum:Phase.pending")
+        let enumCaseStatementBinding =
+            callBinding baseRevision.Definition None StoredCallBodyRole.Definition
+                [ FlowAstPathSegment.BlockStatement 2
+                  FlowAstPathSegment.EvaluateExpression
+                  FlowAstPathSegment.EnumCaseStatement(3, 7) ]
+                StoredCallForm.Direct "Phase.cancelled" (StoredCallTarget.GeneratedWord "generated:enum:Phase.cancelled")
         let invalidFlow1Manifest =
             { baseManifest with
                 Revisions = [ { baseRevision with SourceFormat = flowFormat; CallBindings = [ propertyBinding ] } ] }
         Storage.commit (Storage.create (Path.Combine(root, "flow1-property-binding-refused"))) 0L invalidFlow1Manifest sources projectText
         |> error "STORAGE_INVALID_MANIFEST"
         |> ignore
+        for bindingName, binding in
+            [ "enum-scrutinee", enumScrutineeBinding
+              "enum-case-statement", enumCaseStatementBinding ] do
+            let invalidFlow1EnumManifest =
+                { baseManifest with
+                    Revisions = [ { baseRevision with SourceFormat = flowFormat; CallBindings = [ binding ] } ] }
+            let flow1Project = Path.Combine(root, "flow1-" + bindingName + "-refused")
+            let flow1Store = Storage.create flow1Project
+            Storage.commit flow1Store 0L invalidFlow1EnumManifest sources projectText
+            |> error "STORAGE_INVALID_MANIFEST"
+            |> ignore
+            let unchanged = Storage.load flow1Store |> ok "load after refusing Flow/1 enum path"
+            equal EmptyAuthority unchanged.Authority $"Flow/1 {bindingName} rejection leaves authority empty"
+            equal 0L unchanged.Generation $"Flow/1 {bindingName} rejection leaves generation unchanged"
+            check (not (File.Exists(Path.Combine(storageRoot flow1Project, "CURRENT")))) $"Flow/1 {bindingName} rejection does not create CURRENT"
         let revision =
             { baseRevision with
                 SourceFormat = flow2Format
-                CallBindings = baseRevision.CallBindings @ [ propertyBinding ] }
+                CallBindings = baseRevision.CallBindings @ [ propertyBinding; enumScrutineeBinding; enumCaseStatementBinding ] }
         let flow2Type = source StorageObjectKind.TypeDefinition "record Flow2Type { field value: String; }"
         let manifest =
             { baseManifest with
@@ -506,6 +533,8 @@ module Program =
         equal flow2Format loaded.Manifest.Value.Revisions.Head.SourceFormat "Flow/2 word source metadata round trips"
         equal flow2Format loaded.Manifest.Value.Types.Head.SourceFormat "Flow/2 type source metadata round trips in schema v3"
         check (loaded.Manifest.Value.Revisions.Head.CallBindings |> List.contains propertyBinding) "property binding form and Flow/2 AST path round trip"
+        check (loaded.Manifest.Value.Revisions.Head.CallBindings |> List.contains enumScrutineeBinding) "enum scrutinee binding round trips exactly"
+        check (loaded.Manifest.Value.Revisions.Head.CallBindings |> List.contains enumCaseStatementBinding) "enum case statement binding round trips with both indexes"
         let rawManifest = JsonNode.Parse(File.ReadAllText(Path.Combine(storageRoot project, "manifests", loaded.ManifestHash.Value + ".json"))).AsObject()
         let rawRevision = rawManifest["revisions"].AsArray().[0].AsObject()
         let rawPropertyBinding =
@@ -516,6 +545,44 @@ module Program =
         let path = rawPropertyBinding["path"].AsArray()
         equal "equalityLeft" ((path[2]["segment"]).GetValue<string>()) "equality-left binding path has explicit durable encoding"
         equal "propertyReceiver" ((path[3]["segment"]).GetValue<string>()) "property receiver binding path has explicit durable encoding"
+        let rawBinding requestedName =
+            rawRevision["callBindings"].AsArray()
+            |> Seq.map (fun item -> item.AsObject())
+            |> Seq.find (fun item -> item["requestedName"].GetValue<string>() = requestedName)
+        let rawEnumScrutineeBinding = rawBinding "Phase.pending"
+        let rawEnumScrutineePath = rawEnumScrutineeBinding["path"].AsArray()
+        let rawEnumScrutinee = rawEnumScrutineePath[2].AsObject()
+        equal "enumScrutinee" (rawEnumScrutinee["segment"].GetValue<string>()) "enum scrutinee has an explicit stable wire tag"
+        equal 1 rawEnumScrutinee.Count "enum scrutinee wire tag has no fabricated index field"
+        let rawEnumCaseBinding = rawBinding "Phase.cancelled"
+        let rawEnumCasePath = rawEnumCaseBinding["path"].AsArray()
+        let rawEnumCase = rawEnumCasePath[2].AsObject()
+        equal "enumCaseStatement" (rawEnumCase["segment"].GetValue<string>()) "enum case statement has an explicit stable wire tag"
+        equal 3 (rawEnumCase["caseIndex"].GetValue<int>()) "enum case statement persists the case index"
+        equal 7 (rawEnumCase["statementIndex"].GetValue<int>()) "enum case statement persists the nested statement index"
+        equal 3 rawEnumCase.Count "enum case statement wire tag has only its two named indexes"
+
+        let invalidEnumCaseBinding name expectedCode invalidPath =
+            let invalidBinding = { enumCaseStatementBinding with Path = FlowAstPath.FlowAstPath invalidPath }
+            let invalidManifest = { manifest with Revisions = [ { revision with CallBindings = revision.CallBindings @ [ invalidBinding ] } ] }
+            let invalidProject = Path.Combine(root, "invalid-enum-path-" + name)
+            let invalidStore = Storage.create invalidProject
+            Storage.commit invalidStore 0L invalidManifest (flow2Type :: sources) projectText
+            |> error expectedCode
+            |> ignore
+            let after = Storage.load invalidStore |> ok "load after refusing invalid enum path"
+            equal EmptyAuthority after.Authority $"invalid enum path {name} leaves authority empty"
+            equal 0L after.Generation $"invalid enum path {name} leaves generation unchanged"
+            check (not (File.Exists(Path.Combine(storageRoot invalidProject, "CURRENT")))) $"invalid enum path {name} does not create CURRENT"
+        let enumCasePath prefix caseIndex statementIndex =
+            prefix @ [ FlowAstPathSegment.EnumCaseStatement(caseIndex, statementIndex) ]
+        let validPrefix = [ FlowAstPathSegment.BlockStatement 4; FlowAstPathSegment.EvaluateExpression ]
+        for name, expectedCode, caseIndex, statementIndex in
+            [ "negative-case-index", "STORAGE_INVALID_MANIFEST", -1, 7
+              "negative-statement-index", "STORAGE_INVALID_MANIFEST", 3, -1
+              "over-limit-case-index", "STORAGE_LIMIT_EXCEEDED", StorageLimits.MaxCallBindingPathIndex + 1, 7
+              "over-limit-statement-index", "STORAGE_LIMIT_EXCEEDED", 3, StorageLimits.MaxCallBindingPathIndex + 1 ] do
+            invalidEnumCaseBinding name expectedCode (enumCasePath validPrefix caseIndex statementIndex)
         let invalid =
             { manifest with
                 Revisions = [ { revision with CallBindings = [ { propertyBinding with Form = StoredCallForm.PropertyAccess "" } ] } ] }
@@ -864,6 +931,31 @@ module Program =
             let path = binding["path"].AsArray()
             let firstSegment = (path.[0]).AsObject()
             firstSegment["index"] <- JsonValue.Create(100001))
+        let firstPathSegmentAsEnumCase raw =
+            let binding = firstCallBindingObject raw
+            let path = binding["path"].AsArray()
+            let segment = path.[0].AsObject()
+            segment["segment"] <- JsonValue.Create("enumCaseStatement")
+            segment.Remove("index") |> ignore
+            segment
+        expectRawFailure "enum-case-missing-case-index" "STORAGE_INVALID_JSON" (fun raw ->
+            let segment = firstPathSegmentAsEnumCase raw
+            segment["statementIndex"] <- JsonValue.Create(2))
+        expectRawFailure "enum-case-missing-statement-index" "STORAGE_INVALID_JSON" (fun raw ->
+            let segment = firstPathSegmentAsEnumCase raw
+            segment["caseIndex"] <- JsonValue.Create(1))
+        expectRawFailure "enum-case-malformed-index" "STORAGE_INVALID_JSON" (fun raw ->
+            let segment = firstPathSegmentAsEnumCase raw
+            segment["caseIndex"] <- JsonValue.Create("one")
+            segment["statementIndex"] <- JsonValue.Create(2))
+        expectRawFailure "enum-case-negative-statement-index" "STORAGE_INVALID_MANIFEST" (fun raw ->
+            let segment = firstPathSegmentAsEnumCase raw
+            segment["caseIndex"] <- JsonValue.Create(1)
+            segment["statementIndex"] <- JsonValue.Create(-1))
+        expectRawFailure "enum-case-oversized-case-index" "STORAGE_LIMIT_EXCEEDED" (fun raw ->
+            let segment = firstPathSegmentAsEnumCase raw
+            segment["caseIndex"] <- JsonValue.Create(StorageLimits.MaxCallBindingPathIndex + 1)
+            segment["statementIndex"] <- JsonValue.Create(2))
         expectRawFailure "excessive-path-depth" "STORAGE_LIMIT_EXCEEDED" (fun raw ->
             let path = JsonArray()
             for _ in 1 .. 129 do

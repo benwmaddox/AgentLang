@@ -38,7 +38,8 @@ module FlowParser =
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Container(_, _, _, span)
         | FlowExpression.MatchOption(_, _, _, span)
-        | FlowExpression.MatchResult(_, _, _, span) -> span
+        | FlowExpression.MatchResult(_, _, _, span)
+        | FlowExpression.MatchEnum(_, _, span) -> span
 
     let private maxSourceLength = 1_000_000
     let private maxTokens = 100_000
@@ -486,7 +487,7 @@ module FlowParser =
                 fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_CONSTRUCTOR_ARITY" $"Container constructor expects {expected}; received {arguments.Length} argument(s)."
         FlowExpression.Container(kind, List.ofSeq typeArguments, payload, sourceSpan state.File startToken (previous state))
 
-    and private parsePayloadCase state labelToken =
+    and private parsePayloadCase state labelToken : FlowPayloadCase =
         let name = expectIdentifier state
         expect state "=>" |> ignore
         let statements = parseBlock state
@@ -495,7 +496,7 @@ module FlowParser =
           Statements = statements
           Span = sourceSpan state.File labelToken (previous state) }
 
-    and private parseBlockCase state labelToken =
+    and private parseBlockCase state labelToken : FlowCaseBlock =
         expect state "=>" |> ignore
         let statements = parseBlock state
         { Statements = statements
@@ -509,11 +510,12 @@ module FlowParser =
         let mutable noneCase: FlowCaseBlock option = None
         let mutable okCase: FlowPayloadCase option = None
         let mutable errorCase: FlowPayloadCase option = None
+        let enumCases = ResizeArray<FlowEnumCase>()
         let setCaseKind kind labelToken =
             match caseKind with
             | None -> caseKind <- Some kind
             | Some existing when existing = kind -> ()
-            | Some _ -> fail state.File labelToken.Line labelToken.Column labelToken.Text.Length "FLOW_MATCH_CASE_KIND" "Option and Result case labels cannot be mixed in one match."
+            | Some _ -> fail state.File labelToken.Line labelToken.Column labelToken.Text.Length "FLOW_MATCH_CASE_KIND" "Option, Result, and enum case labels cannot be mixed in one match."
         while peek state <> Some "}" && not (atEnd state) do
             let label = expectIdentifier state
             match label.Text with
@@ -533,13 +535,31 @@ module FlowParser =
                 setCaseKind "result" label
                 if errorCase.IsSome then fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" "Result match contains the 'error' case more than once."
                 errorCase <- Some(parsePayloadCase state label)
-            | _ -> fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_UNKNOWN" $"Unknown match case '{label.Text}'."
+            | _ ->
+                setCaseKind "enum" label
+                if enumCases |> Seq.exists (fun caseValue -> caseValue.Name = label.Text) then
+                    fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" $"Enum match contains case '{label.Text}' more than once."
+                let block = parseBlockCase state label
+                enumCases.Add
+                    { Name = label.Text
+                      NameSpan = sourceSpan state.File label (Some label)
+                      Statements = block.Statements
+                      Span = block.Span }
             accept state ";" |> ignore
         expect state "}" |> ignore
         let matchSpan = sourceSpan state.File matchToken (previous state)
         match someCase, noneCase, okCase, errorCase with
         | Some someValue, Some noneValue, None, None -> FlowExpression.MatchOption(scrutinee, someValue, noneValue, matchSpan)
         | None, None, Some okValue, Some errorValue -> FlowExpression.MatchResult(scrutinee, okValue, errorValue, matchSpan)
+        | None, None, None, None when enumCases.Count > 0 ->
+            let cases = List.ofSeq enumCases
+            let first = cases.Head
+            match scrutinee with
+            | FlowExpression.Container((FlowContainerConstructor.OptionNone | FlowContainerConstructor.OptionSome), _, _, _) ->
+                fail state.File first.NameSpan.Line first.NameSpan.Column first.NameSpan.Length "FLOW_MATCH_CASE_UNKNOWN" "Option match contains an unknown case label."
+            | FlowExpression.Container((FlowContainerConstructor.ResultOk | FlowContainerConstructor.ResultError), _, _, _) ->
+                fail state.File first.NameSpan.Line first.NameSpan.Column first.NameSpan.Length "FLOW_MATCH_CASE_UNKNOWN" "Result match contains an unknown case label."
+            | _ -> FlowExpression.MatchEnum(scrutinee, cases, matchSpan)
         | Some _, None, None, None | None, Some _, None, None ->
             fail state.File matchSpan.Line matchSpan.Column matchSpan.Length "FLOW_MATCH_CASE_MISSING" "Option matches require exactly one 'some' and one 'none' case."
         | None, None, Some _, None | None, None, None, Some _ ->
@@ -968,6 +988,35 @@ module FlowParser =
           SourceText = sourceSlice state startToken endToken
           Span = sourceSpan state.File startToken (Some endToken) }
 
+    let private reservedEnumCases = set [ "some"; "none"; "ok"; "error" ]
+
+    let private parseEnumState (state: State) =
+        let startToken = expect state "enum"
+        if state.SyntaxVersion <> 2 then
+            fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_SYNTAX_VERSION" "Enum declarations require Flow/2 syntax."
+        let nameToken = expectIdentifier state
+        if not (validTypeName nameToken.Text) then
+            fail state.File nameToken.Line nameToken.Column nameToken.Text.Length "FLOW_TYPE_NAME_INVALID" "Enum names must be identifiers and cannot shadow built-in types or reserved type variables."
+        expect state "{" |> ignore
+        let caseNames = ResizeArray<string>()
+        let seen = HashSet<string>(StringComparer.Ordinal)
+        while not (atEnd state) && peek state <> Some "}" do
+            expect state "case" |> ignore
+            let caseToken = expectIdentifier state
+            if reservedEnumCases.Contains caseToken.Text then
+                fail state.File caseToken.Line caseToken.Column caseToken.Text.Length "FLOW_ENUM_RESERVED_CASE" "Enum case names cannot use the reserved Option and Result labels."
+            if not (seen.Add caseToken.Text) then
+                fail state.File caseToken.Line caseToken.Column caseToken.Text.Length "FLOW_ENUM_DUPLICATE_CASE" $"Enum case '{caseToken.Text}' is repeated."
+            expect state ";" |> ignore
+            caseNames.Add caseToken.Text
+        let endToken = expect state "}"
+        if caseNames.Count = 0 then
+            fail state.File startToken.Line startToken.Column (endToken.Offset + endToken.Text.Length - startToken.Offset) "FLOW_ENUM_EMPTY" "A Flow enum must declare at least one case."
+        { Name = nameToken.Text
+          Cases = List.ofSeq caseNames
+          SourceText = sourceSlice state startToken endToken
+          Span = sourceSpan state.File startToken (Some endToken) }
+
     let private createState syntaxVersion file source =
         if syntaxVersion <> 1 && syntaxVersion <> 2 then
             fail file 1 1 1 "FLOW_VERSION_UNSUPPORTED" "Only Flow syntax versions 1 and 2 are supported by this parser."
@@ -1044,6 +1093,7 @@ module FlowParser =
             let state = createState syntaxVersion file source
             let records = ResizeArray<RecordDefinition>()
             let scalars = ResizeArray<ScalarTypeDefinition>()
+            let enums = ResizeArray<EnumDefinition>()
             let words = ResizeArray<FlowWordDefinition>()
             let tests = ResizeArray<FlowTestDefinition>()
             let examples = ResizeArray<FlowExampleDefinition>()
@@ -1061,6 +1111,10 @@ module FlowParser =
                     let definition = parseScalarState state
                     addType definition.Name definition.Span
                     scalars.Add definition
+                | Some "enum" ->
+                    let definition = parseEnumState state
+                    addType definition.Name definition.Span
+                    enums.Add definition
                 | Some "word" when state.SyntaxVersion = 1 -> words.Add(parseWordState state)
                 | Some "word" -> tokenError state "FLOW_SYNTAX_VERSION" "The 'word' declaration requires Flow/1 syntax; use 'fn' in Flow/2."
                 | Some "fn" when state.SyntaxVersion = 2 -> words.Add(parseWordState state)
@@ -1074,6 +1128,7 @@ module FlowParser =
                   SourceText = source
                   Records = List.ofSeq records
                   Scalars = List.ofSeq scalars
+                  Enums = List.ofSeq enums
                   Words = List.ofSeq words
                   Tests = List.ofSeq tests
                   Examples = List.ofSeq examples }

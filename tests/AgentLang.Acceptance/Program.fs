@@ -1365,6 +1365,7 @@ end
             { Words = words
               Records = Map.empty
               Scalars = Map.empty
+              Enums = Map.empty
               WordIds = wordIds }
         let sourceOrigins = Map.ofList [ syntheticSpan, authoredSpan ]
         let verifiedProgram = Compiler.compileIrProgramWithSourceOrigins context sourceOrigins

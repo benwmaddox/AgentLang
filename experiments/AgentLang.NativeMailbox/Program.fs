@@ -116,6 +116,7 @@ let private compileHandlers (source: string) =
         { Words = words
           Records = records
           Scalars = Map.empty
+          Enums = Map.empty
           WordIds = wordIds }
     let context: FlowLowering.Context =
         { CompilerContext = compilerContext

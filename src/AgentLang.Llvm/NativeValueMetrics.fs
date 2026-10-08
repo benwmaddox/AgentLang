@@ -255,6 +255,8 @@ module internal NativeProgramMetadata =
                       ValueType = valueType
                       Children = declaredFields |> List.map (fun field -> field.FieldType)
                       Definition = Some(NativeRecordMetadata(record.TypeName, fields)) }
+            | IrEnumDefinition enumDefinition ->
+                invalidOp $"Native enum metadata is unsupported for '{enumDefinition.TypeName}'."
         { TypeIdsByIrType = typeIdsByIrType
           Types = types.ToArray() }
 

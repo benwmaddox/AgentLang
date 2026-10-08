@@ -173,11 +173,13 @@ module ValueInspection =
         | OptionValue _ -> "Option"
         | ResultValue _ -> "Result"
         | RecordValue(name, _) -> if isNull name then "record with null name" else $"record {name}"
+        | EnumValue(typeName, caseName) -> if isNull typeName || isNull caseName then "enum with null identity" else $"enum {typeName}.{caseName}"
         | NamedValue(name, _) -> if isNull name then "scalar with null name" else $"scalar {name}"
 
     let private typeNameAndKind = function
         | IrRecordDefinition record -> record.TypeName, "record"
         | IrScalarDefinition scalar -> scalar.TypeName, "scalar"
+        | IrEnumDefinition enumDefinition -> enumDefinition.TypeName, "enum"
 
     /// Return one deterministic JSON object for a batch of already-produced values.
     /// The caller must pair these values with the exact verified program snapshot
@@ -270,6 +272,16 @@ module ValueInspection =
                 addString budget path node "nominalKind" (jsonDepth + 1) nominalKind
                 let (ProgramTypeKey index) = key
                 addInt budget path node "typeKey" (jsonDepth + 1) index
+                match definition with
+                | IrEnumDefinition enumDefinition ->
+                    let cases = arrayNode budget (path + ".cases") (jsonDepth + 1)
+                    enumDefinition.Cases
+                    |> List.iteri (fun caseIndex caseName ->
+                        let casePath = path + ".cases[" + string caseIndex + "]"
+                        let caseNode = JsonValue.Create(caseName) :> JsonNode
+                        addArrayItem budget casePath cases caseNode)
+                    addChild budget path node "cases" cases
+                | _ -> ()
             | TVar name ->
                 fail "VALUE_TYPE_UNRESOLVED" "Runtime value contains an unresolved type variable." path [ "closed language type" ] [ if isNull name then "<null>" else name ]
             node :> JsonNode
@@ -409,6 +421,8 @@ module ValueInspection =
                     node :> JsonNode
                 | IrScalarDefinition _ ->
                     fail "VALUE_NOMINAL_KIND_MISMATCH" "Record value name resolves to a scalar type in the verified snapshot." path [ "record nominal type" ] [ "scalar nominal type" ]
+                | IrEnumDefinition _ ->
+                    fail "VALUE_NOMINAL_KIND_MISMATCH" "Record value name resolves to an enum type in the verified snapshot." path [ "record nominal type" ] [ "enum nominal type" ]
                 | IrRecordDefinition _ ->
                     fail "VALUE_TYPE_MISMATCH" "Record value name does not match its declared snapshot type." path [ expectedName ] [ if isNull actualName then "<null>" else actualName ]
             | TNamed expectedName, NamedValue(actualName, payload) ->
@@ -426,12 +440,36 @@ module ValueInspection =
                     node :> JsonNode
                 | IrRecordDefinition _ ->
                     fail "VALUE_NOMINAL_KIND_MISMATCH" "Scalar value name resolves to a record type in the verified snapshot." path [ "scalar nominal type" ] [ "record nominal type" ]
+                | IrEnumDefinition _ ->
+                    fail "VALUE_NOMINAL_KIND_MISMATCH" "Scalar value name resolves to an enum type in the verified snapshot." path [ "scalar nominal type" ] [ "enum nominal type" ]
                 | IrScalarDefinition _ ->
                     fail "VALUE_TYPE_MISMATCH" "Scalar value name does not match its declared snapshot type." path [ expectedName ] [ if isNull actualName then "<null>" else actualName ]
+            | TNamed expectedName, EnumValue(actualName, caseName) ->
+                let key, definition = nominalInfo path expectedName
+                match definition with
+                | IrEnumDefinition enumDefinition when actualName = expectedName ->
+                    if isNull caseName then
+                        fail "VALUE_ENUM_CASE_INVALID" "Enum values require a non-null declared case name." path enumDefinition.Cases [ "null" ]
+                    if not (List.contains caseName enumDefinition.Cases) then
+                        fail "VALUE_ENUM_CASE_INVALID" "Enum value case is absent from the verified snapshot's closed case table." path enumDefinition.Cases [ caseName ]
+                    let node = objectNode budget path jsonDepth
+                    addString budget path node "kind" (jsonDepth + 1) "enum"
+                    addString budget path node "name" (jsonDepth + 1) enumDefinition.TypeName
+                    addString budget path node "case" (jsonDepth + 1) caseName
+                    let (ProgramTypeKey typeKey) = key
+                    addInt budget path node "typeKey" (jsonDepth + 1) typeKey
+                    node :> JsonNode
+                | IrRecordDefinition _ ->
+                    fail "VALUE_NOMINAL_KIND_MISMATCH" "Enum value name resolves to a record type in the verified snapshot." path [ "enum nominal type" ] [ "record nominal type" ]
+                | IrScalarDefinition _ ->
+                    fail "VALUE_NOMINAL_KIND_MISMATCH" "Enum value name resolves to a scalar type in the verified snapshot." path [ "enum nominal type" ] [ "scalar nominal type" ]
+                | IrEnumDefinition _ ->
+                    fail "VALUE_TYPE_MISMATCH" "Enum value name does not match its declared snapshot type." path [ expectedName ] [ if isNull actualName then "<null>" else actualName ]
             | TNamed expectedName, _ ->
                 match nominalInfo path expectedName |> snd with
                 | IrRecordDefinition _ -> typeMismatch path expected value
                 | IrScalarDefinition _ -> typeMismatch path expected value
+                | IrEnumDefinition _ -> typeMismatch path expected value
             | _ -> typeMismatch path expected value
 
         if isNull (box values) then

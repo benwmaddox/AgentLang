@@ -231,6 +231,7 @@ let private loweringContextWith (records: Map<string, RecordDefinition>) (scalar
         { Words = allWords
           Records = records
           Scalars = scalars
+          Enums = Map.empty
           WordIds = ids }
       ParameterNames = parameters
       SourceOrigins = Map.empty }
@@ -688,6 +689,127 @@ fn customer.has-email(value: Customer) -> Bool {
     | Ok warnings -> failwithf "Flow/2 property/equality linter reported unexpected warnings: %A" warnings
     | Error problem -> failwith $"{problem.Code}: {problem.Message}"
 
+let private testFlow2PayloadFreeEnums () =
+    let enumSource =
+        """enum RenewalState {
+    case pending;
+    case renewed;
+    case cancelled;
+}"""
+    let definition =
+        match FlowParser.parseDocumentWithVersion 2 "<flow2-enum>" enumSource with
+        | Ok document -> document.Enums |> List.exactlyOne
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    equal "Flow/2 enum retains its declared ordered closed case table" [ "pending"; "renewed"; "cancelled" ] definition.Cases
+    equal "Flow/2 enum source round-trips exactly" (FlowSource.renderEnum definition)
+        (FlowSource.renderEnum definition |> fun source ->
+            FlowParser.parseDocumentWithVersion 2 "<flow2-enum>" source
+            |> Result.map (fun document -> FlowSource.renderEnum document.Enums.Head)
+            |> Result.defaultWith (Diagnostics.render >> failwith))
+    expectError "Flow/1 rejects enum declarations" "FLOW_SYNTAX_VERSION"
+        (FlowParser.parseDocumentWithVersion 1 "<flow1-enum>" enumSource) |> ignore
+    expectError "Flow/2 rejects empty enums" "FLOW_ENUM_EMPTY"
+        (FlowParser.parseDocumentWithVersion 2 "<flow2-empty-enum>" "enum Empty { }") |> ignore
+    expectError "Flow/2 rejects duplicate enum cases" "FLOW_ENUM_DUPLICATE_CASE"
+        (FlowParser.parseDocumentWithVersion 2 "<flow2-duplicate-enum>" "enum Duplicate { case same; case same; }") |> ignore
+    expectError "Flow/2 rejects reserved Option labels as enum cases" "FLOW_ENUM_RESERVED_CASE"
+        (FlowParser.parseDocumentWithVersion 2 "<flow2-reserved-enum>" "enum Reserved { case some; }") |> ignore
+
+    let enumContext =
+        let generated =
+            definition.Cases
+            |> List.map (fun caseName ->
+                generatedEntry (definition.Name + "." + caseName) (EnumCaseConstructor(definition.Name, caseName)) [] [ TNamed definition.Name ] Set.empty)
+        let echo = wordEntry "renewal.echo" [ TNamed definition.Name ] [ TNamed definition.Name ] Set.empty []
+        let baseContext = loweringContextWith Map.empty Map.empty (echo :: generated) Map.empty
+        { baseContext with
+            CompilerContext =
+                { baseContext.CompilerContext with
+                    Enums = Map.ofList [ definition.Name, definition ] } }
+
+    let validWordSource =
+        """fn renewal.describe(state: RenewalState) -> String {
+    match state {
+        pending => {
+            renewal::echo(RenewalState::pending());
+            "pending"
+        }
+        renewed => {
+            renewal::echo(RenewalState::renewed());
+            "renewed"
+        }
+        cancelled => {
+            renewal::echo(RenewalState::cancelled());
+            "cancelled"
+        }
+    }
+}"""
+    let parseWord source =
+        FlowParser.parseWordWithVersion 2 "<flow2-enum-word>" source
+        |> Result.defaultWith (Diagnostics.render >> failwith)
+    let validWord = parseWord validWordSource
+    equal "enum match word source round-trips in authored case order" validWordSource
+        (FlowSource.renderWord validWord |> fun source -> source |> parseWord |> FlowSource.renderWord)
+
+    let compiled = FlowLowering.compileWordWithCallBindings enumContext (WordId "flow2-renewal-describe") validWord
+    let enumCall = compiled.CallSites |> List.find (fun site -> site.RequestedName = "RenewalState.pending")
+    let helperCall = compiled.CallSites |> List.find (fun site -> site.RequestedName = "renewal.echo")
+    let hasFirstEnumCasePath = function
+        | FlowAstPath.FlowAstPath segments -> List.contains (FlowAstPathSegment.EnumCaseStatement(0, 0)) segments
+    check "generated constructor binding is anchored to its authored enum arm" (hasFirstEnumCasePath enumCall.Path)
+    check "ordinary helper binding is anchored to the same authored enum arm" (hasFirstEnumCasePath helperCall.Path)
+    check "generated constructor nested argument path remains precise" (match enumCall.Path with FlowAstPath.FlowAstPath segments -> List.contains (FlowAstPathSegment.CallArgument 0) segments)
+    let program = VerifiedIrProgram.inspect compiled.Program
+    let obligations = program.CoverageByWord[WordId "flow2-renewal-describe"]
+    equal "verified IR coverage records exact authored enum labels" [ "pending"; "renewed"; "cancelled" ]
+        (obligations.BranchOutcomes |> Map.toList |> List.collect snd)
+
+    let invocation =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins compiled.Context.CompilerContext compiled.Program "renewal-invoke" []
+            [ Call("RenewalState.pending", sourceSpan); Call("renewal.describe", sourceSpan) ]
+            compiled.Context.SourceOrigins
+    equal "enum case constructors produce nominal values consumed by exhaustive matching" [ StringValue "pending" ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "renewal-invoke" invocation)
+    let sameCase =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins compiled.Context.CompilerContext compiled.Program "same-enum-case" []
+            [ Call("RenewalState.renewed", sourceSpan); Call("RenewalState.renewed", sourceSpan); Call("equals", sourceSpan) ]
+            compiled.Context.SourceOrigins
+    let distinctCases =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins compiled.Context.CompilerContext compiled.Program "different-enum-cases" []
+            [ Call("RenewalState.renewed", sourceSpan); Call("RenewalState.cancelled", sourceSpan); Call("equals", sourceSpan) ]
+            compiled.Context.SourceOrigins
+    equal "enum equality recognizes the same nominal type and case" [ BoolValue true ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "same-enum-case" sameCase)
+    equal "enum equality distinguishes different cases" [ BoolValue false ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "different-enum-cases" distinctCases)
+
+    let compileBad source = FlowLowering.compileWord enumContext (WordId "flow2-invalid-enum-word") (parseWord source) |> ignore
+    expectLanguageError "enum match rejects a missing label" "FLOW_MATCH_CASE_MISSING" (fun () ->
+        compileBad "fn invalid.missing(state: RenewalState) -> Int { match state { pending => { 1 } renewed => { 2 } } }")
+    expectLanguageError "enum match rejects an extra label" "FLOW_MATCH_CASE_UNKNOWN" (fun () ->
+        compileBad "fn invalid.extra(state: RenewalState) -> Int { match state { pending => { 1 } renewed => { 2 } cancelled => { 3 } extra => { 4 } } }")
+    expectError "enum match rejects duplicate labels" "FLOW_MATCH_CASE_DUPLICATE"
+        (FlowParser.parseWordWithVersion 2 "<flow2-duplicate-match>" "fn invalid.duplicate(state: RenewalState) -> Int { match state { pending => { 1 } pending => { 2 } } }") |> ignore
+    expectLanguageError "enum match requires an enum scrutinee" "FLOW_MATCH_REQUIRES_ENUM" (fun () ->
+        compileBad "fn invalid.scrutinee(state: Int) -> Int { match state { pending => { 1 } renewed => { 2 } cancelled => { 3 } } }")
+    expectLanguageError "enum arm output vectors must join exactly" "FLOW_MATCH_BRANCH_TYPE" (fun () ->
+        compileBad "fn invalid.join(state: RenewalState) -> Int { match state { pending => { 1 } renewed => { \"text\" } cancelled => { 3 } } }")
+
+    let effectfulSource =
+        """fn renewal.effectful(state: RenewalState) -> String {
+    effects console.write
+
+    match state {
+        pending => { console::write("observed"); "pending" }
+        renewed => { "renewed" }
+        cancelled => { "cancelled" }
+    }
+}"""
+    let effectful = FlowLowering.compileWord enumContext (WordId "flow2-renewal-effectful") (parseWord effectfulSource)
+    check "effects join across all enum arms without hiding the selected branch effect"
+        (effectful.Lowered.Definition.Effects = Set.singleton "console.write")
+
+
 let private testFlow2CheckedRatioPrimitive () =
     let parseExpression source =
         match FlowParser.parseExpressionWithVersion 2 "<flow2-ratio>" source with
@@ -773,6 +895,7 @@ let private testSparseFlowSourceMarkerAllocation () =
         | Scope(body, source) -> Scope(List.map shiftExpression body, shiftMarker source)
         | MatchOption(name, someBody, noneBody, source) -> MatchOption(name, List.map shiftExpression someBody, List.map shiftExpression noneBody, shiftMarker source)
         | MatchResult(okName, errorName, okBody, errorBody, source) -> MatchResult(okName, errorName, List.map shiftExpression okBody, List.map shiftExpression errorBody, shiftMarker source)
+        | MatchEnum(cases, source) -> MatchEnum(cases |> List.map (fun (name, body) -> name, List.map shiftExpression body), shiftMarker source)
     let shiftedWords =
         first.Context.CompilerContext.Words
         |> Map.map (fun _ entry ->
@@ -1629,7 +1752,8 @@ let private testFlowOutputVectors () =
                     | FlowExpression.Call(_, _, source) | FlowExpression.RootCall(_, _, source) | FlowExpression.DotCall(_, _, _, source)
                     | FlowExpression.Property(_, _, source) | FlowExpression.Equality(_, _, source)
                     | FlowExpression.If(_, _, _, source) | FlowExpression.Container(_, _, _, source)
-                    | FlowExpression.MatchOption(_, _, _, source) | FlowExpression.MatchResult(_, _, _, source) -> source)
+                    | FlowExpression.MatchOption(_, _, _, source) | FlowExpression.MatchResult(_, _, _, source)
+                    | FlowExpression.MatchEnum(_, _, source) -> source)
                 |> Some
             | _ -> None)
     for memberSpan in returnSpans do
@@ -2173,6 +2297,7 @@ let private testFlowAuthoredCases () =
         | Scope(body, source) -> Scope(List.map shiftExpression body, shiftMarker source)
         | MatchOption(name, someBody, noneBody, source) -> MatchOption(name, List.map shiftExpression someBody, List.map shiftExpression noneBody, shiftMarker source)
         | MatchResult(okName, errorName, okBody, errorBody, source) -> MatchResult(okName, errorName, List.map shiftExpression okBody, List.map shiftExpression errorBody, shiftMarker source)
+        | MatchEnum(cases, source) -> MatchEnum(cases |> List.map (fun (name, body) -> name, List.map shiftExpression body), shiftMarker source)
     let shiftedWords =
         compiledEmailLabel.Context.CompilerContext.Words
         |> Map.map (fun _ entry ->
@@ -3821,6 +3946,8 @@ let private testFlowAttachmentCallBindings () =
             MatchOption(name, normalizeExpressions origins someBranch, normalizeExpressions origins noneBranch, resolveOrigin origins sourceSpan)
         | MatchResult(okName, errorName, okBranch, errorBranch, sourceSpan) ->
             MatchResult(okName, errorName, normalizeExpressions origins okBranch, normalizeExpressions origins errorBranch, resolveOrigin origins sourceSpan)
+        | MatchEnum(cases, sourceSpan) ->
+            MatchEnum(cases |> List.map (fun (name, body) -> name, normalizeExpressions origins body), resolveOrigin origins sourceSpan)
     and normalizeExpressions origins expressions = expressions |> List.map (normalizeExpression origins)
     let normalizeSpanMap origins sourceSpans = sourceSpans |> Map.map (fun _ sourceSpan -> resolveOrigin origins sourceSpan)
     let normalizeProgram program origins =
@@ -4746,6 +4873,7 @@ let main _ =
     testParserLocationsAndQualification ()
     testIterativeAstDepthLimit ()
     testFlow2Frontend ()
+    testFlow2PayloadFreeEnums ()
     testFlow2CheckedRatioPrimitive ()
     testSparseFlowSourceMarkerAllocation ()
     testFlowSourceCanonicalRoundTrip ()

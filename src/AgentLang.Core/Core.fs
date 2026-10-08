@@ -33,6 +33,7 @@ type Value =
     | OptionValue of LangType * Value option
     | ResultValue of LangType * LangType * Result<Value, Value>
     | RecordValue of string * Map<string, Value>
+    | EnumValue of string * string
     | NamedValue of string * Value
 
 type Literal =
@@ -66,6 +67,7 @@ type Expr =
     | Scope of Expr list * SourceSpan
     | MatchOption of string * Expr list * Expr list * SourceSpan
     | MatchResult of string * string * Expr list * Expr list * SourceSpan
+    | MatchEnum of (string * Expr list) list * SourceSpan
 
 type TestExpectation =
     | ExpectedValue of Literal
@@ -101,6 +103,12 @@ type ScalarTypeDefinition =
       SourceText: string
       Span: SourceSpan }
 
+type EnumDefinition =
+    { Name: string
+      Cases: string list
+      SourceText: string
+      Span: SourceSpan }
+
 type WordDefinition =
     { Name: string
       Inputs: LangType list
@@ -132,6 +140,7 @@ type ExampleDefinition =
 type ParsedSource =
     { Records: RecordDefinition list
       Scalars: ScalarTypeDefinition list
+      Enums: EnumDefinition list
       Words: WordDefinition list
       Tests: TestDefinition list
       Examples: ExampleDefinition list }
@@ -144,6 +153,7 @@ type Builtin =
     | RecordAccessor of string * string
     | ScalarConstructor of string
     | ScalarAccessor of string
+    | EnumCaseConstructor of string * string
 
 type WordEntry =
     { Definition: WordDefinition
@@ -158,6 +168,10 @@ type RecordEntry =
 
 type ScalarEntry =
     { Definition: ScalarTypeDefinition
+      Status: WordStatus }
+
+type EnumEntry =
+    { Definition: EnumDefinition
       Status: WordStatus }
 
 type Diagnostic =
@@ -200,6 +214,7 @@ module Types =
             |> List.map (fun (field, value) -> $"{field} = {formatValue value}")
             |> String.concat ", "
             |> sprintf "%s { %s }" name
+        | EnumValue(typeName, caseName) -> $"{typeName}::{caseName}"
         | NamedValue(name, value) -> $"{name}({formatValue value})"
 
     let rec literalValue = function
@@ -219,6 +234,7 @@ module Types =
         | OptionValue(itemType, _) -> TOption itemType
         | ResultValue(okType, errorType, _) -> TResult(okType, errorType)
         | RecordValue(name, _) -> TNamed name
+        | EnumValue(name, _) -> TNamed name
         | NamedValue(name, _) -> TNamed name
 
 module Diagnostics =

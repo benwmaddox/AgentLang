@@ -183,7 +183,16 @@ module FlowLint =
                               errorCase.Span, [ errorCase.Name, errorCase.NameSpan ], errorCase.Statements ]
                             |> List.sortBy (fun (sourceSpan, _, _) -> sourceSpan.File, sourceSpan.Line, sourceSpan.Column)
                             |> List.iter (fun (_, caseBindings, caseStatements) ->
-                                analyzeBlock (parentFrame :: outerFrames) caseBindings caseStatements))
+                                analyzeBlock (parentFrame :: outerFrames) caseBindings caseStatements)
+                        | FlowExpression.MatchEnum(scrutinee, cases, _) ->
+                            analyzeExpression outerFrames localBindings statementIndex scrutinee
+                            let parentFrame =
+                                { Bindings = localBindings
+                                  ParameterNames = Set.empty
+                                  UseStatement = Some statementIndex }
+                            cases
+                            |> List.sortBy (fun caseValue -> caseValue.Span.File, caseValue.Span.Line, caseValue.Span.Column)
+                            |> List.iter (fun caseValue -> analyzeBlock (parentFrame :: outerFrames) [] caseValue.Statements))
 
                 and analyzeArgument outerFrames localBindings statementIndex argument =
                     match argument with

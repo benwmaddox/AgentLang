@@ -124,6 +124,7 @@ let private contextAndProgram () =
         { Words = allWords
           Records = Map.ofList [ "Customer", record ]
           Scalars = Map.ofList [ "Email", scalar ]
+          Enums = Map.empty
           WordIds = wordIds }
     context, Compiler.compileIrProgram context
 

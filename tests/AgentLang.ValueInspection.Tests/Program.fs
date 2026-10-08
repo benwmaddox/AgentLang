@@ -57,6 +57,11 @@ let private snapshot () =
               { Name = "result"; Type = TResult(TInt, TString) } ]
           SourceText = "record ContainerBox"
           Span = span "values.agent" 4 }
+    let renewalState =
+        { Name = "RenewalState"
+          Cases = [ "pending"; "renewed"; "cancelled" ]
+          SourceText = "enum RenewalState"
+          Span = span "values.agent" 5 }
     let words = Compiler.primitives
     let wordIds =
         words
@@ -67,6 +72,7 @@ let private snapshot () =
         { Words = words
           Records = Map.ofList [ "Telemetry", record; "ContainerBox", containers ]
           Scalars = Map.ofList [ "Email", email; "MetersPerSecond", speed ]
+          Enums = Map.ofList [ "RenewalState", renewalState ]
           WordIds = wordIds }
     Compiler.compileIrProgram context
 
@@ -100,7 +106,7 @@ let private testNestedValuesAndSchema () =
                   "speed", NamedValue("MetersPerSecond", FloatValue 2.5)
                   "alpha", NamedValue("Email", StringValue "a@example.test") ]
         )
-    let document = ValueInspection.toData verified [ nested; telemetry ]
+    let document = ValueInspection.toData verified [ nested; telemetry; EnumValue("RenewalState", "renewed") ]
     check "output has a stable explicit format version" (intField "formatVersion" document = ValueInspection.FormatVersion)
 
     let values = prop "values" document
@@ -135,8 +141,19 @@ let private testNestedValuesAndSchema () =
          && stringField "kind" (prop "baseType" speedValue) = "float"
          && stringField "value" (prop "value" speedValue) = "2.5")
 
-    let serializedOnce = ValueInspection.toJson verified [ nested; telemetry ]
-    let serializedAgain = ValueInspection.toJson verified [ nested; telemetry ]
+    let enumNode = at 2 values
+    let enumType = ValueInspection.toData verified [ EnumValue("RenewalState", "pending") ] |> prop "values" |> at 0 |> prop "type"
+    check "enum values preserve nominal identity, selected case, and frozen case order"
+        (stringField "kind" enumNode = "enum"
+         && stringField "name" enumNode = "RenewalState"
+         && stringField "case" enumNode = "renewed"
+         && intField "typeKey" enumNode = intField "typeKey" enumType
+         && stringField "kind" enumType = "nominal"
+         && stringField "nominalKind" enumType = "enum"
+         && (prop "cases" enumType |> fun node -> node.AsArray() |> Seq.map stringValue |> Seq.toList) = [ "pending"; "renewed"; "cancelled" ])
+
+    let serializedOnce = ValueInspection.toJson verified [ nested; telemetry; EnumValue("RenewalState", "renewed") ]
+    let serializedAgain = ValueInspection.toJson verified [ nested; telemetry; EnumValue("RenewalState", "renewed") ]
     check "same snapshot and values produce deterministic JSON" (serializedOnce = serializedAgain)
     use parsed = JsonDocument.Parse(serializedOnce)
     check "convenience JSON contains the versioned object" (parsed.RootElement.GetProperty("formatVersion").GetInt32() = 1)
@@ -154,6 +171,8 @@ let private testNominalDistinctionAndOrdering () =
          && stringField "name" emailNode = "Email"
          && stringField "name" speedNode = "MetersPerSecond")
     check "Float payload is separate from scalar nominal identity" (stringField "kind" (prop "value" speedNode) = "float")
+    let enumNode = ValueInspection.toData verified [ EnumValue("RenewalState", "cancelled") ] |> prop "values" |> at 0
+    check "enum values have a closed tag distinct from matching strings" (stringField "kind" enumNode = "enum" && stringField "case" enumNode = "cancelled")
 
 let private testLosslessIntegerAndFloatEncoding () =
     let verified = snapshot ()
@@ -225,6 +244,10 @@ let private testInvalidHostValuesAndSnapshots () =
     expectDiagnostic "model-only verifier handles cannot inspect backend values" "IR_BACKEND_UNTRUSTED_PROGRAM" (fun () -> ValueInspection.toData modelOnly [ IntValue 1L ] |> ignore)
     expectDiagnostic "null outer collection is a structured failure" "VALUE_INVALID" (fun () ->
         ValueInspection.toData verified (Unchecked.defaultof<Value list>) |> ignore)
+    expectDiagnostic "enum values cannot forge a case outside the verified table" "VALUE_ENUM_CASE_INVALID" (fun () ->
+        ValueInspection.toData verified [ EnumValue("RenewalState", "unknown") ] |> ignore)
+    expectDiagnostic "enum values cannot forge another nominal type name" "VALUE_TYPE_MISMATCH" (fun () ->
+        ValueInspection.toData verified [ EnumValue("OtherState", "pending") ] |> ignore)
 
 let private testDeterministicLimits () =
     let verified = snapshot ()

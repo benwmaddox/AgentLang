@@ -24,6 +24,10 @@ Select `syntaxVersion: 2` in JSON requests or `--syntax-version 2` in the human
 CLI. Omitted version selectors retain Flow/1 for compatibility with existing
 clients. Stored source always retains its declared frontend version.
 
+Flow/2 also supports [closed nominal enums](docs/CLOSED-ENUMS.md) and exhaustive
+matching in project functions. Enum-bearing library qualification and native enum
+execution remain unavailable until their respective checks and backend are implemented.
+
 [Authoring through the runtime](docs/AUTHORING.md) explains inline documentation,
 attached tests/examples, library coverage and revision-checked replacements.
 Use JSONL `help` or REPL `:help TOPIC` for the corresponding inspectable contracts.

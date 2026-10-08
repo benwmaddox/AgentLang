@@ -98,7 +98,7 @@ module Program =
             |> List.map (fun entry -> entry.Definition.Name, entry)
             |> Map.ofList
 
-        Discovery.build words records scalars
+        Discovery.build words records scalars Map.empty
 
     let private expectDiagnostic expectedCode action =
         try
@@ -178,16 +178,16 @@ module Program =
                 ""
                 None
         let badWords = Map.ofList [ "bad", badDefinition ]
-        expectDiagnostic "DISCOVERY_UNKNOWN_TYPE" (fun () -> Discovery.build badWords Map.empty Map.empty)
+        expectDiagnostic "DISCOVERY_UNKNOWN_TYPE" (fun () -> Discovery.build badWords Map.empty Map.empty Map.empty)
 
         let badCall = word "bad.call" [] [ TUnit ] Set.empty [ call "missing.word" ] "" None
-        expectDiagnostic "DISCOVERY_UNKNOWN_WORD" (fun () -> Discovery.build (Map.ofList [ "bad.call", badCall ]) Map.empty Map.empty)
+        expectDiagnostic "DISCOVERY_UNKNOWN_WORD" (fun () -> Discovery.build (Map.ofList [ "bad.call", badCall ]) Map.empty Map.empty Map.empty)
 
         let missingValidator = scalar "Validated" TString (Some "missing.validator")
-        expectDiagnostic "DISCOVERY_UNKNOWN_VALIDATOR" (fun () -> Discovery.build Map.empty Map.empty (Map.ofList [ "Validated", missingValidator ]))
+        expectDiagnostic "DISCOVERY_UNKNOWN_VALIDATOR" (fun () -> Discovery.build Map.empty Map.empty (Map.ofList [ "Validated", missingValidator ]) Map.empty)
 
         let missingConstructor = word "bad.constructor" [ TString ] [ TNamed "MissingScalar" ] Set.empty [] "" (Some(ScalarConstructor "MissingScalar"))
-        expectDiagnostic "DISCOVERY_UNKNOWN_SCALAR" (fun () -> Discovery.build (Map.ofList [ "bad.constructor", missingConstructor ]) Map.empty Map.empty)
+        expectDiagnostic "DISCOVERY_UNKNOWN_SCALAR" (fun () -> Discovery.build (Map.ofList [ "bad.constructor", missingConstructor ]) Map.empty Map.empty Map.empty)
 
         expectDiagnostic "DISCOVERY_INVALID_BUDGET" (fun () -> Discovery.graphText index "root" 1 0)
 
@@ -266,6 +266,7 @@ module Program =
                 referenceWords
                 Map.empty
                 (Map.ofList [ "Email", scalar "Email" TString None ])
+                Map.empty
 
         let contextWord name =
             let context = Discovery.context referenceIndex name 0 1 100000

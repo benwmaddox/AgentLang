@@ -54,6 +54,7 @@ type internal IrInterpreterRuntimeValue =
     | RuntimeResult of IrType * IrType * Result<IrInterpreterRuntimeValue, IrInterpreterRuntimeValue>
     | RuntimeRecord of ProgramTypeKey * IrInterpreterRuntimeValue list
     | RuntimeScalar of ProgramTypeKey * IrInterpreterRuntimeValue
+    | RuntimeEnum of ProgramTypeKey * int
 
 /// Opaque interpreter-owned state that can be passed to a later body compiled
 /// against the same verified-program object. Runtime values remain private; the
@@ -146,12 +147,13 @@ module IrInterpreter =
         | RuntimeList(itemType, _) -> IrList itemType
         | RuntimeOption(itemType, _) -> IrOption itemType
         | RuntimeResult(okType, errorType, _) -> IrResult(okType, errorType)
-        | RuntimeRecord(key, _) | RuntimeScalar(key, _) -> IrNominal key
+        | RuntimeRecord(key, _) | RuntimeScalar(key, _) | RuntimeEnum(key, _) -> IrNominal key
 
     let private typeName (program: IrProgram) key =
         match program.NominalTypesByKey.TryFind key with
         | Some(IrRecordDefinition record) -> record.TypeName
         | Some(IrScalarDefinition scalar) -> scalar.TypeName
+        | Some(IrEnumDefinition enumDefinition) -> enumDefinition.TypeName
         | None -> fail "IR_BACKEND_NOMINAL_UNKNOWN" "Executable value refers to a nominal type absent from its verified program." None None [] [ sprintf "%A" key ]
 
     let private formatTypeOutputLimit = 8000000L
@@ -311,7 +313,7 @@ module IrInterpreter =
             | RuntimeResult(_, _, Ok value) | RuntimeResult(_, _, Error value) -> [ value ]
             | RuntimeScalar(_, value) -> [ value ]
             | RuntimeInt _ | RuntimeFloat _ | RuntimeBool _ | RuntimeString _ | RuntimeUnit
-            | RuntimeOption(_, None) -> []
+            | RuntimeOption(_, None) | RuntimeEnum _ -> []
 
         let runtimeValueOwnOutputBytes currentWord site value =
             let typeDepth, typeBytes = typeFootprint currentWord site (runtimeValueType value)
@@ -328,6 +330,11 @@ module IrInterpreter =
                     match program.NominalTypesByKey.TryFind key with
                     | Some(IrScalarDefinition scalar) -> 64L + int64 scalar.TypeName.Length * 6L
                     | _ -> fail "IR_BACKEND_SCALAR_LAYOUT" "Scalar value refers to a non-scalar nominal type." None None [ "scalar" ] [ typeName program key ]
+                | RuntimeEnum(key, caseIndex) ->
+                    match program.NominalTypesByKey.TryFind key with
+                    | Some(IrEnumDefinition enumDefinition) when caseIndex >= 0 && caseIndex < enumDefinition.Cases.Length ->
+                        64L + int64 (enumDefinition.TypeName.Length + enumDefinition.Cases[caseIndex].Length) * 6L
+                    | _ -> fail "IR_BACKEND_ENUM_LAYOUT" "Enum value refers to a missing type or case in its frozen nominal table." None None [ "valid enum type and case" ] [ typeName program key; string caseIndex ]
                 | RuntimeInt _ | RuntimeFloat _ | RuntimeBool _ | RuntimeUnit
                 | RuntimeOption _ | RuntimeResult _ -> 64L
             max typeDepth 1, saturatingAdd maxRuntimeValueOutputBytes valueBytes typeBytes
@@ -479,6 +486,12 @@ module IrInterpreter =
             | UnwrapScalarOperation key, [ RuntimeScalar(actualKey, value) ] when actualKey = key -> [ value ]
             | UnwrapScalarOperation key, _ ->
                 fail "RUNTIME_INTERNAL_TYPE" "Scalar unwrapping received an invalid nominal value." (Some resolvedName) None [ typeName program key ] (runtimeTypeNames program arguments)
+            | MakeEnumCaseOperation(key, caseIndex), [] ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrEnumDefinition enumDefinition) when caseIndex >= 0 && caseIndex < enumDefinition.Cases.Length -> [ RuntimeEnum(key, caseIndex) ]
+                | _ -> fail "IR_BACKEND_ENUM_LAYOUT" "Generated enum constructor refers to a missing type or case in its frozen nominal table." (Some resolvedName) (host.WordDefinitionSpan resolvedName) [ "valid enum type and case" ] [ typeName program key; string caseIndex ]
+            | MakeEnumCaseOperation(key, _), _ ->
+                fail "RUNTIME_INTERNAL_TYPE" "Enum case constructor received an invalid argument count." (Some resolvedName) (host.WordDefinitionSpan resolvedName) [ "0" ] [ string arguments.Length ]
 
         and executePrimitive (operation: string) (call: IrResolvedCall) (arguments: RuntimeValue list) (site: SourceSiteId option) =
             let currentWord = call.ResolvedName
@@ -805,7 +818,23 @@ module IrInterpreter =
                         stack <- branchStack
                         locals <- Map.remove errorLocal branchLocals
                     | actual -> fail "RUNTIME_INTERNAL_TYPE" "match-result received a non-result after type checking." (Some currentWord) instructionSpan [ "Result<T, E>" ] [ formatType program (runtimeValueType actual) ]
-                | IrOperation.MakeRecord(call, _) | IrOperation.GetRecordField(call, _, _) | IrOperation.WrapScalar(call, _, _) | IrOperation.UnwrapScalar(call, _) ->
+                | IrOperation.MatchEnum(typeKey, cases) ->
+                    let prefix, input = popOne "match-enum requires a declared enum value." currentWord instruction.Site []
+                    match input with
+                    | RuntimeEnum(actualKey, caseIndex) when actualKey = typeKey ->
+                        match program.NominalTypesByKey.TryFind typeKey with
+                        | Some(IrEnumDefinition enumDefinition) when caseIndex >= 0 && caseIndex < enumDefinition.Cases.Length ->
+                            match cases |> List.tryPick (fun (index, branch) -> if index = caseIndex then Some branch else None) with
+                            | Some branch ->
+                                host.RecordBranchOutcome currentWord instruction.Site enumDefinition.Cases[caseIndex]
+                                let branchStack, branchLocals = executeBlock depth currentWord localNames branch prefix locals
+                                stack <- branchStack
+                                locals <- branchLocals
+                            | None -> fail "IR_ENUM_MATCH_CASE_SET" "Verified enum match has no arm for the selected case." (Some currentWord) instructionSpan enumDefinition.Cases [ string caseIndex ]
+                        | _ -> fail "IR_BACKEND_ENUM_LAYOUT" "Enum value refers to a missing type or case in its frozen nominal table." (Some currentWord) instructionSpan [ "valid enum type and case" ] [ typeName program actualKey; string caseIndex ]
+                    | RuntimeEnum(actualKey, _) -> fail "RUNTIME_INTERNAL_TYPE" "Enum match received a value of another enum type." (Some currentWord) instructionSpan [ typeName program typeKey ] [ typeName program actualKey ]
+                    | actual -> fail "RUNTIME_INTERNAL_TYPE" "Enum match received a non-enum value after type checking." (Some currentWord) instructionSpan [ typeName program typeKey ] [ formatType program (runtimeValueType actual) ]
+                | IrOperation.MakeRecord(call, _) | IrOperation.GetRecordField(call, _, _) | IrOperation.WrapScalar(call, _, _) | IrOperation.UnwrapScalar(call, _) | IrOperation.MakeEnumCase(call, _, _) ->
                     let prefix, arguments = popArguments call.ResolvedName call.InputTypes
                     let result = invokeResolved depth call arguments (Some instruction.Site)
                     stack <- prefix @ result
@@ -838,6 +867,10 @@ module IrInterpreter =
                 match program.NominalTypesByKey.TryFind key with
                 | Some(IrScalarDefinition definition) -> NamedValue(definition.TypeName, fromRuntimeValue value)
                 | _ -> fail "IR_BACKEND_SCALAR_LAYOUT" "Scalar value refers to a non-scalar nominal type." None None [ "scalar" ] [ typeName program key ]
+            | RuntimeEnum(key, caseIndex) ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrEnumDefinition definition) when caseIndex >= 0 && caseIndex < definition.Cases.Length -> EnumValue(definition.TypeName, definition.Cases[caseIndex])
+                | _ -> fail "IR_BACKEND_ENUM_LAYOUT" "Enum value refers to a non-enum nominal type or case index." None None [ "valid enum type and case" ] [ typeName program key; string caseIndex ]
         and toLangType = function
             | IrInt -> TInt
             | IrFloat -> TFloat

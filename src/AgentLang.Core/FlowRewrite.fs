@@ -101,6 +101,10 @@ module FlowRewrite =
                 visitExpression role (pathChild path FlowAstPathSegment.ResultScrutinee) scrutinee
                 visitStatements role (pathChild path (FlowAstPathSegment.ResultOkStatement 0)) okCase.Statements
                 visitStatements role (pathChild path (FlowAstPathSegment.ResultErrorStatement 0)) errorCase.Statements
+            | FlowExpression.MatchEnum(scrutinee, cases, _) ->
+                visitExpression role (pathChild path FlowAstPathSegment.EnumScrutinee) scrutinee
+                cases |> List.iteri (fun caseIndex caseValue ->
+                    visitStatementsWithPath role path (fun statementIndex -> FlowAstPathSegment.EnumCaseStatement(caseIndex, statementIndex)) caseValue.Statements)
 
         and visitArguments role path form arguments =
             arguments
@@ -118,6 +122,22 @@ module FlowRewrite =
             statements
             |> List.iteri (fun index statement ->
                 let statementPath = pathChild path (FlowAstPathSegment.BlockStatement index)
+                match statement with
+                | FlowStatement.Let(_, value, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.LetInitializer) value
+                | FlowStatement.LetMany(_, value, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.DestructureInitializer) value
+                | FlowStatement.Evaluate value ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.EvaluateExpression) value
+                | FlowStatement.Return(values, _) ->
+                    values
+                    |> List.iteri (fun outputIndex value ->
+                        visitExpression role (pathChild statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
+
+        and visitStatementsWithPath role path statementPathSegment statements =
+            statements
+            |> List.iteri (fun index statement ->
+                let statementPath = pathChild path (statementPathSegment index)
                 match statement with
                 | FlowStatement.Let(_, value, _) ->
                     visitExpression role (pathChild statementPath FlowAstPathSegment.LetInitializer) value
@@ -230,6 +250,7 @@ module FlowRewrite =
         (bindings: StoredCallBinding list)
         (rewriteAst: FlowAstPath
             -> (StoredCallBodyRole -> FlowAstPath -> FlowAstPath -> FlowStatement list -> FlowStatement list)
+            -> (StoredCallBodyRole -> FlowAstPath -> FlowAstPath -> (int -> FlowAstPathSegment) -> FlowStatement list -> FlowStatement list)
             -> (StoredCallBodyRole -> FlowAstPath -> FlowAstPath -> FlowExpression -> FlowExpression)
             -> 'Definition)
         (rootsOfDefinition: 'Definition -> (StoredCallBodyRole * FlowExpression list * FlowStatement list) list)
@@ -461,6 +482,17 @@ module FlowRewrite =
                                 (pathChild oldPath (FlowAstPathSegment.ResultErrorStatement 0))
                                 (pathChild newPath (FlowAstPathSegment.ResultErrorStatement 0)) errorCase.Statements },
                         span)
+                | FlowExpression.MatchEnum(scrutinee, cases, span) ->
+                    FlowExpression.MatchEnum(
+                        rewriteExpression role
+                            (pathChild oldPath FlowAstPathSegment.EnumScrutinee)
+                            (pathChild newPath FlowAstPathSegment.EnumScrutinee) scrutinee,
+                        cases
+                        |> List.mapi (fun caseIndex caseValue ->
+                            { caseValue with
+                                Statements = rewriteStatementsWithPath role oldPath newPath
+                                    (fun statementIndex -> FlowAstPathSegment.EnumCaseStatement(caseIndex, statementIndex)) caseValue.Statements }),
+                        span)
 
             and rewriteArgument role oldPath newPath argument =
                 match argument with
@@ -474,10 +506,13 @@ module FlowRewrite =
                         (Some owner) (Some reference.Span) [ "static callback reference" ] [ reference.Name ]
 
             and rewriteStatements role oldPath newPath statements =
+                rewriteStatementsWithPath role oldPath newPath FlowAstPathSegment.BlockStatement statements
+
+            and rewriteStatementsWithPath role oldPath newPath statementPathSegment statements =
                 statements
                 |> List.mapi (fun index statement ->
-                    let oldStatementPath = pathChild oldPath (FlowAstPathSegment.BlockStatement index)
-                    let newStatementPath = pathChild newPath (FlowAstPathSegment.BlockStatement index)
+                    let oldStatementPath = pathChild oldPath (statementPathSegment index)
+                    let newStatementPath = pathChild newPath (statementPathSegment index)
                     match statement with
                     | FlowStatement.Let(name, value, span) ->
                         FlowStatement.Let(name,
@@ -505,7 +540,7 @@ module FlowRewrite =
                             span))
 
             let rootPath = FlowAstPath.FlowAstPath []
-            let rewritten = rewriteAst rootPath rewriteStatements rewriteExpression
+            let rewritten = rewriteAst rootPath rewriteStatements rewriteStatementsWithPath rewriteExpression
             if mapped.Count <> bindings.Length then
                 Diagnostics.raiseError "FLOW_REWRITE_BINDING_UNMAPPED"
                     "Not every persisted call binding was consumed exactly once during Flow rewriting."
@@ -539,7 +574,7 @@ module FlowRewrite =
         withLanguageErrors (fun () ->
             FlowStructure.validateWordNesting definition
             let roots = [ StoredCallBodyRole.Definition, [], definition.Body ]
-            let rewrite rootPath rewriteStatements rewriteExpression =
+            let rewrite rootPath rewriteStatements _ rewriteExpression =
                 { definition with
                     Name = if definition.Name = oldName then newName else definition.Name
                     Body = rewriteStatements StoredCallBodyRole.Definition rootPath rootPath definition.Body }
@@ -559,7 +594,7 @@ module FlowRewrite =
                     | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ -> []
                 [ StoredCallBodyRole.Actual, [], definition.Body
                   StoredCallBodyRole.ExpectedExpression, expected, [] ]
-            let rewrite rootPath rewriteStatements rewriteExpression =
+            let rewrite rootPath rewriteStatements _ rewriteExpression =
                 { definition with
                     Word = if definition.Word = oldName then newName else definition.Word
                     Body = rewriteStatements StoredCallBodyRole.Actual rootPath rootPath definition.Body
@@ -584,7 +619,7 @@ module FlowRewrite =
         withLanguageErrors (fun () ->
             FlowStructure.validateExampleNesting definition
             let roots = [ StoredCallBodyRole.Actual, [], definition.Body ]
-            let rewrite rootPath rewriteStatements _ =
+            let rewrite rootPath rewriteStatements _ _ =
                 { definition with
                     Word = if definition.Word = oldName then newName else definition.Word
                     Body = rewriteStatements StoredCallBodyRole.Actual rootPath rootPath definition.Body }

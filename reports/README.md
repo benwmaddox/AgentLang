@@ -24,11 +24,14 @@ mutation passes the language's own tests and full coverage gate but fails the
 independent effect checks, supporting explicit state/effect assertions alongside
 coverage. This does not establish comparative superiority.
 
-The current structural correctness checkpoint is
-[110 — Explicit arithmetic and domain contracts](110-structural-correctness.md):
-checked rational scaling and a validated bounded-rate library, with independent
-arithmetic properties. Closed enums and cross-field construction remain pending;
-this checkpoint is not another agent-efficacy result.
+The structural correctness checkpoints are
+[110 — Explicit arithmetic and domain contracts](110-structural-correctness.md)
+and [112 — Closed domain states](112-closed-domain-states.md): checked ratios,
+a validated bounded-rate library, and payload-free Flow/2 enums with exhaustive
+matching and durable project definitions. Enum library qualification remains
+blocked pending finite-value coverage. Cross-field construction and authored
+effect assertions remain pending. These are implementation checks, not new
+agent-efficacy results.
 
 The latest ownership demonstration is [108 — Native handler mailbox suspension](108-native-mailbox-suspension.md):
 120 checks across Core/O0/O2, with readable Flow/2 handlers and opaque retained

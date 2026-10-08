@@ -8,7 +8,7 @@ open System.Security.Cryptography
 open System.Text
 
 /// Immutable analysis inputs and precomputed strict structural fingerprints.
-type VocabularyAnalysisIndex = private { Words: Map<string, WordEntry>; Records: Map<string, RecordEntry>; Scalars: Map<string, ScalarEntry>; WordIds: Map<string, string>; Fingerprints: Map<string, string> }
+type VocabularyAnalysisIndex = private { Words: Map<string, WordEntry>; Records: Map<string, RecordEntry>; Scalars: Map<string, ScalarEntry>; Enums: Map<string, EnumEntry>; WordIds: Map<string, string>; Fingerprints: Map<string, string> }
 
 type DuplicateCandidate =
     { FirstWord: string
@@ -54,9 +54,9 @@ module VocabularyAnalysis =
             |> Option.bind (fun scalar -> scalar.Definition.Validator)
             |> Option.map Set.singleton
             |> Option.defaultValue Set.empty
-        | Some(BuiltinOp _ | RecordConstructor _ | RecordAccessor _ | ScalarAccessor _) -> Set.empty
+        | Some(BuiltinOp _ | RecordConstructor _ | RecordAccessor _ | ScalarAccessor _ | EnumCaseConstructor _) -> Set.empty
 
-    let private validateGeneratedReference (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) wordName builtin =
+    let private validateGeneratedReference (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (enums: Map<string, EnumEntry>) wordName builtin =
         match builtin with
         | None | Some(BuiltinOp _) -> ()
         | Some(RecordConstructor recordName) ->
@@ -71,10 +71,19 @@ module VocabularyAnalysis =
             if not (scalars.ContainsKey scalarName) then
                 raiseVocabulary "VOCABULARY_UNKNOWN_SCALAR" $"Generated word '{wordName}' references missing scalar '{scalarName}'." (Some wordName) [ "known scalar" ] [ scalarName ]
 
-    let private validateNamedReferences (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) owner typeValue =
+        | Some(EnumCaseConstructor(enumName, caseName)) ->
+            match enums.TryFind enumName with
+            | None -> raiseVocabulary "VOCABULARY_UNKNOWN_ENUM" $"Generated word '{wordName}' references missing enum '{enumName}'." (Some wordName) [ "known enum" ] [ enumName ]
+            | Some enumEntry when enumEntry.Definition.Cases |> List.contains caseName ->
+                let expectedName = $"{enumName}.{caseName}"
+                if wordName <> expectedName then
+                    raiseVocabulary "VOCABULARY_ENUM_CONSTRUCTOR_KEY" $"Generated enum constructor '{wordName}' does not match its enum and case identity." (Some wordName) [ expectedName ] [ wordName ]
+            | Some _ -> raiseVocabulary "VOCABULARY_UNKNOWN_ENUM_CASE" $"Generated word '{wordName}' references missing case '{enumName}.{caseName}'." (Some wordName) [ "known enum case" ] [ caseName ]
+
+    let private validateNamedReferences (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (enums: Map<string, EnumEntry>) owner typeValue =
         for typeName in typeNamesIn typeValue do
-            if not (records.ContainsKey typeName || scalars.ContainsKey typeName) then
-                raiseVocabulary "VOCABULARY_UNKNOWN_TYPE" $"'{owner}' refers to undeclared nominal type '{typeName}'." (Some owner) [ "known record or scalar type" ] [ typeName ]
+            if not (records.ContainsKey typeName || scalars.ContainsKey typeName || enums.ContainsKey typeName) then
+                raiseVocabulary "VOCABULARY_UNKNOWN_TYPE" $"'{owner}' refers to undeclared nominal type '{typeName}'." (Some owner) [ "known record, scalar, or enum type" ] [ typeName ]
 
     let private writeInt (writer: BinaryWriter) (value: int) = writer.Write value
 
@@ -130,6 +139,10 @@ module VocabularyAnalysis =
         | Some(ScalarAccessor scalarName) ->
             writer.Write 6uy
             writeString writer scalarName
+        | Some(EnumCaseConstructor(enumName, caseName)) ->
+            writer.Write 7uy
+            writeString writer enumName
+            writeString writer caseName
 
     let private writeExpressions (index: VocabularyAnalysisIndex) (writer: BinaryWriter) (expressions: Expr list) =
         let rec writeList (values: Expr list) : unit =
@@ -189,6 +202,12 @@ module VocabularyAnalysis =
                 writeString writer errorName
                 writeList okBranch
                 writeList errorBranch
+            | MatchEnum(cases, _) ->
+                writer.Write 14uy
+                writeInt writer cases.Length
+                for caseName, body in cases do
+                    writeString writer caseName
+                    writeList body
         writeList expressions
 
     let private fingerprintDefinition (index: VocabularyAnalysisIndex) (definition: WordDefinition) =
@@ -211,34 +230,46 @@ module VocabularyAnalysis =
         (words: Map<string, WordEntry>)
         (records: Map<string, RecordEntry>)
         (scalars: Map<string, ScalarEntry>)
+        (enums: Map<string, EnumEntry>)
         (wordIds: Map<string, string>)
         : VocabularyAnalysisIndex =
         for KeyValue(key, entry) in words do
             if key <> entry.Definition.Name then
                 raiseVocabulary "VOCABULARY_WORD_KEY_MISMATCH" $"Word map key '{key}' does not match definition name '{entry.Definition.Name}'." (Some key) [ key ] [ entry.Definition.Name ]
-            validateGeneratedReference records scalars key entry.Builtin
+            validateGeneratedReference records scalars enums key entry.Builtin
             for typeValue in entry.Definition.Inputs @ entry.Definition.Outputs do
-                validateNamedReferences records scalars key typeValue
+                validateNamedReferences records scalars enums key typeValue
 
         for KeyValue(key, entry) in records do
             if key <> entry.Definition.Name then
                 raiseVocabulary "VOCABULARY_RECORD_KEY_MISMATCH" $"Record map key '{key}' does not match definition name '{entry.Definition.Name}'." (Some key) [ key ] [ entry.Definition.Name ]
-            for field in entry.Definition.Fields do validateNamedReferences records scalars key field.Type
+            for field in entry.Definition.Fields do validateNamedReferences records scalars enums key field.Type
 
         for KeyValue(key, entry) in scalars do
             if key <> entry.Definition.Name then
                 raiseVocabulary "VOCABULARY_SCALAR_KEY_MISMATCH" $"Scalar map key '{key}' does not match definition name '{entry.Definition.Name}'." (Some key) [ key ] [ entry.Definition.Name ]
-            validateNamedReferences records scalars key entry.Definition.BaseType
+            validateNamedReferences records scalars enums key entry.Definition.BaseType
             match entry.Definition.Validator with
             | Some validator when not (words.ContainsKey validator) ->
                 raiseVocabulary "VOCABULARY_UNKNOWN_VALIDATOR" $"Scalar '{key}' names missing validator word '{validator}'." (Some key) [ "known validator word" ] [ validator ]
             | None | Some _ -> ()
 
+        for KeyValue(key, entry) in enums do
+            if key <> entry.Definition.Name then
+                raiseVocabulary "VOCABULARY_ENUM_KEY_MISMATCH" $"Enum map key '{key}' does not match definition name '{entry.Definition.Name}'." (Some key) [ key ] [ entry.Definition.Name ]
+            let duplicateCase = entry.Definition.Cases |> List.groupBy id |> List.tryFind (fun (_, cases) -> cases.Length > 1)
+            match duplicateCase with
+            | Some(caseName, _) -> raiseVocabulary "VOCABULARY_DUPLICATE_ENUM_CASE" $"Enum '{key}' declares case '{caseName}' more than once." (Some key) [ "unique enum case names" ] [ caseName ]
+            | None -> ()
+
+        let recordNames = records |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let scalarNames = scalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let enumNames = enums |> Map.toSeq |> Seq.map fst |> Set.ofSeq
         let duplicatedTypeNames =
-            records |> Map.toSeq |> Seq.map fst |> Set.ofSeq
-            |> Set.intersect (scalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+            Set.unionMany [ recordNames; scalarNames; enumNames ]
+            |> Set.filter (fun name -> [ recordNames.Contains name; scalarNames.Contains name; enumNames.Contains name ] |> List.filter id |> List.length > 1)
         match duplicatedTypeNames |> Set.toList with
-        | name :: _ -> raiseVocabulary "VOCABULARY_DUPLICATE_TYPE" $"'{name}' is both a record and scalar type." (Some name) [ "unique nominal type name" ] [ "record"; "scalar" ]
+        | name :: _ -> raiseVocabulary "VOCABULARY_DUPLICATE_TYPE" $"'{name}' is declared by more than one nominal type definition." (Some name) [ "unique nominal type name" ] [ "record"; "scalar"; "enum" ]
         | [] -> ()
 
         let authoredNames =
@@ -272,6 +303,7 @@ module VocabularyAnalysis =
             { Words = words
               Records = records
               Scalars = scalars
+              Enums = enums
               WordIds = wordIds
               Fingerprints = Map.empty }
         let fingerprints =
@@ -359,7 +391,7 @@ module VocabularyAnalysis =
                 let computed =
                     match entry.Builtin with
                     | Some(BuiltinOp _) -> { emptyExpansion with PrimitiveCallSites = BigInteger.One }
-                    | Some(RecordConstructor _ | RecordAccessor _ | ScalarAccessor _) -> addGeneratedInvocation emptyExpansion
+                    | Some(RecordConstructor _ | RecordAccessor _ | ScalarAccessor _ | EnumCaseConstructor _) -> addGeneratedInvocation emptyExpansion
                     | Some(ScalarConstructor scalarName) ->
                         let constructor = addGeneratedInvocation emptyExpansion
                         match index.Scalars[scalarName].Definition.Validator with
@@ -389,6 +421,8 @@ module VocabularyAnalysis =
                                 addExpansion (expandExpressions someBranch) (expandExpressions noneBranch)
                             | MatchResult(_, _, okBranch, errorBranch, _) ->
                                 addExpansion (expandExpressions okBranch) (expandExpressions errorBranch)
+                            | MatchEnum(cases, _) ->
+                                cases |> List.map snd |> List.map expandExpressions |> List.fold addExpansion emptyExpansion
                         expandExpressions entry.Definition.Body
                 cache[name] <- computed
                 computed

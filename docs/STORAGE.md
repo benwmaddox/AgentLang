@@ -69,3 +69,18 @@ and returned by type source inspection; aggregate project export is a separate,
 deterministic frontend-marked rendering. Runtime reparses with the declared
 frontend, validates the complete typed graph and frozen validator target, and
 checks canonical export before activation. Parser fallback is forbidden.
+
+## Flow/2 closed enum extension
+
+Payload-free enums use the existing v3 type-source envelope with `flow`, version
+2 and a null validator target. The exact enum source is the authority for its
+ordered case table. Runtime checks the nominal declaration and generated
+constructors when loading the complete graph; no new native ABI layout is implied.
+
+Retained Flow/2 call paths add `enumScrutinee` and `enumCaseStatement`. The latter
+stores nonnegative `caseIndex` and `statementIndex`, both subject to the existing
+call-path index limit. The index identifies the authored arm position, not a
+string lookup after editing. Normal recompilation regenerates and reconciles
+bindings; rename rewrites preserve resolved identities. Flow/1 revisions reject
+these path tags. Existing manifest/source versions remain readable, but an older
+runtime is not promised to load a project using the new Flow/2 enum extension.

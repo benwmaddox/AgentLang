@@ -62,7 +62,14 @@ let private contextWith (records: Map<string, RecordDefinition>) (extraWords: Wo
     { Words = words
       Records = records
       Scalars = Map.empty
+      Enums = Map.empty
       WordIds = wordIds }
+
+let private contextWithEnums
+    (records: Map<string, RecordDefinition>)
+    (enums: Map<string, EnumDefinition>)
+    (extraWords: WordEntry list) =
+    { contextWith records extraWords with Enums = enums }
 
 let private defaultContext () = contextWith Map.empty []
 
@@ -561,6 +568,79 @@ let private testBoundedRuntimeValues () =
         check "oversized string diagnostic names the output-size bound" (diagnostic.Expected |> List.exists (fun value -> value.Contains("output bytes", StringComparison.Ordinal)))
     | None -> failwith "oversized string output should be rejected before public conversion"
 
+let private testClosedEnumExecution () =
+    let sourceSpan = span "closed-enum.agent"
+    let phaseCases = [ "pending"; "renewed"; "cancelled" ]
+    let otherCases = [ "pending"; "archived" ]
+    let phase =
+        { Name = "Phase"
+          Cases = phaseCases
+          SourceText = "enum Phase"
+          Span = sourceSpan }
+    let otherPhase =
+        { Name = "OtherPhase"
+          Cases = otherCases
+          SourceText = "enum OtherPhase"
+          Span = sourceSpan }
+    let point =
+        { Name = "Point"
+          Fields = [ { Name = "x"; Type = TInt } ]
+          SourceText = "record Point"
+          Span = sourceSpan }
+    let constructors enumName cases =
+        cases
+        |> List.map (fun caseName ->
+            wordEntry (enumName + "." + caseName) [] [ TNamed enumName ] Set.empty []
+                (Some(EnumCaseConstructor(enumName, caseName))))
+    let context =
+        contextWithEnums
+            (Map.ofList [ point.Name, point ])
+            (Map.ofList [ phase.Name, phase; otherPhase.Name, otherPhase ])
+            (constructors phase.Name phaseCases @ constructors otherPhase.Name otherCases)
+    let verified = Compiler.compileIrProgram context
+    let compile name expressions = Compiler.compileIrBodyAgainstProgram context verified name [] expressions
+    let matchArms = phaseCases |> List.map (fun caseName -> caseName, [ Push(LString caseName, sourceSpan) ])
+
+    for caseName in phaseCases do
+        let body =
+            compile ("match-phase-" + caseName)
+                [ Call("Phase." + caseName, sourceSpan)
+                  Call("dup", sourceSpan)
+                  MatchEnum(matchArms, sourceSpan) ]
+        check $"enum constructor and MatchEnum execute the {caseName} case" (
+            IrInterpreter.executeBody (noOpHost ()) ("match-phase-" + caseName) body =
+                [ EnumValue("Phase", caseName); StringValue caseName ])
+
+    let sameCase =
+        compile "same-phase-case"
+            [ Call("Phase.pending", sourceSpan)
+              Call("Phase.pending", sourceSpan)
+              Call("equals", sourceSpan) ]
+    check "enum equality recognizes equal cases of the same nominal type" (
+        IrInterpreter.executeBody (noOpHost ()) "same-phase-case" sameCase = [ BoolValue true ])
+
+    let differentCase =
+        compile "different-phase-cases"
+            [ Call("Phase.pending", sourceSpan)
+              Call("Phase.cancelled", sourceSpan)
+              Call("equals", sourceSpan) ]
+    check "enum equality distinguishes cases of the same nominal type" (
+        IrInterpreter.executeBody (noOpHost ()) "different-phase-cases" differentCase = [ BoolValue false ])
+
+    expectDiagnostic "polymorphic equality rejects different enum nominal types during compilation" "TYPE_STACK_MISMATCH" (fun () ->
+        compile "different-enum-types"
+            [ Call("Phase.pending", sourceSpan)
+              Call("OtherPhase.pending", sourceSpan)
+              Call("equals", sourceSpan) ]
+        |> ignore)
+
+    expectDiagnostic "structured inspection rejects an enum case outside its closed table" "VALUE_ENUM_CASE_INVALID" (fun () ->
+        ValueInspection.toData verified [ EnumValue("Phase", "unknown") ] |> ignore)
+    expectDiagnostic "structured inspection rejects a null enum case" "VALUE_ENUM_CASE_INVALID" (fun () ->
+        ValueInspection.toData verified [ EnumValue("Phase", null) ] |> ignore)
+    expectDiagnostic "structured inspection rejects an enum value naming a record type" "VALUE_NOMINAL_KIND_MISMATCH" (fun () ->
+        ValueInspection.toData verified [ EnumValue("Point", "pending") ] |> ignore)
+
 [<EntryPoint>]
 let main _ =
     testProgramTrustAndSnapshotBinding ()
@@ -572,5 +652,6 @@ let main _ =
     testListFoldExecutionAndPreflight ()
     testListFoldFuelLimit ()
     testBoundedRuntimeValues ()
+    testClosedEnumExecution ()
     printfn "IR Interpreter tests passed (%d assertions)." assertions
     0

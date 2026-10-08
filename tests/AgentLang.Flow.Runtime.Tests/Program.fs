@@ -750,6 +750,221 @@ module Program =
         let reloadedStack = (reloadedValue["data"]["stack"]).AsArray()
         equal "true" (stringValue reloadedStack.[0]) "fresh reload compiles and executes Flow/2 property access"
 
+    let private testFlow2EnumsPersistReloadAndBindings root =
+        let fixturePath = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "examples", "closed-renewal-state.agent"))
+        let source = File.ReadAllText fixturePath
+        let parsed =
+            FlowParser.parseDocumentWithVersion 2 fixturePath source
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+        let canonical = FlowSource.renderDocument parsed
+        equal (source.TrimEnd([| '\r'; '\n' |])) canonical "new enum fixture is already in canonical Flow/2 format"
+        let enumDefinition = parsed.Enums |> List.exactlyOne
+        equal [ "pending"; "renewed"; "cancelled" ] enumDefinition.Cases "fixture keeps a frozen declaration-order case table"
+
+        let project = Path.Combine(root, "flow2-enum-durable")
+        let engine = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z")
+        let staged = defineFlowProject engine canonical [ "syntaxVersion", jint 2 ] |> expectOk "stage the payload-free Flow/2 enum project"
+        equal [ "RenewalState" ] (jsonArrayStrings staged.["data"].["types"]) "project introspection exposes the enum type"
+        assertAllPassed 4 (dispatch engine "test-all" [] |> expectOk "run enum project cases before commit")
+
+        commit engine "commit" "RenewalState" [] |> expectOk "commit the closed enum type" |> ignore
+        commit engine "commit" "renewal.echo" [] |> expectOk "commit the enum identity helper" |> ignore
+        commit engine "commit" "renewal.describe" [] |> expectOk "commit the exhaustive enum matcher" |> ignore
+
+        let store = Storage.create project
+        let persisted = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let manifest = persisted.Manifest |> Option.defaultWith (fun () -> failwith "enum project did not publish a manifest")
+        equal 3 manifest.FormatVersion "enum project uses the existing manifest schema v3"
+        let typeMetadata = manifest.Types |> List.find (fun item -> item.Name = "RenewalState")
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } typeMetadata.SourceFormat "enum type source persists as Flow/2"
+        equal (FlowSource.renderEnum enumDefinition)
+            (Storage.readSource store typeMetadata.Definition |> Result.defaultWith (fun problem -> failwith problem.Message))
+            "enum declaration bytes survive durable commit"
+
+        let originalHead = manifest.Words |> List.find (fun item -> item.CurrentName = "renewal.describe")
+        let originalRevision = manifest.Revisions |> List.find (fun item -> item.WordId = originalHead.WordId && item.Revision = originalHead.CurrentRevision)
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } originalRevision.SourceFormat "enum match word source persists as Flow/2"
+        let definitionBindings = originalRevision.CallBindings |> List.filter (fun binding -> binding.BodyRole = StoredCallBodyRole.Definition)
+        let scrutineeCall = definitionBindings |> List.find (fun binding -> binding.RequestedName = "renewal.echo" && (match binding.Path with FlowAstPath.FlowAstPath path -> List.contains FlowAstPathSegment.EnumScrutinee path))
+        check (match scrutineeCall.Path with FlowAstPath.FlowAstPath path -> List.contains FlowAstPathSegment.EnumScrutinee path) "call in the enum scrutinee keeps its structural binding path"
+        let armHelperCall = definitionBindings |> List.find (fun binding -> binding.RequestedName = "renewal.echo" && (match binding.Path with FlowAstPath.FlowAstPath path -> List.exists (function | FlowAstPathSegment.EnumCaseStatement _ -> true | _ -> false) path))
+        check (match armHelperCall.Path with FlowAstPath.FlowAstPath path -> List.contains (FlowAstPathSegment.EnumCaseStatement(0, 0)) path) "ordinary call inside an enum arm keeps its authored case index"
+        let armConstructor = definitionBindings |> List.find (fun binding -> binding.RequestedName = "RenewalState.pending" && (match binding.Path with FlowAstPath.FlowAstPath path -> List.exists (function | FlowAstPathSegment.EnumCaseStatement _ -> true | _ -> false) path))
+        check (armConstructor.Target |> function | StoredCallTarget.GeneratedWord _ -> true | _ -> false) "enum constructor binding retains its generated target identity"
+        check (match armConstructor.Path with FlowAstPath.FlowAstPath path -> List.contains (FlowAstPathSegment.EnumCaseStatement(0, 0)) path && List.contains (FlowAstPathSegment.CallArgument 0) path) "nested constructor argument keeps both enum-arm and argument path segments"
+
+        let evalEnum target code structured =
+            dispatch target "eval"
+                [ "frontend", jstr "flow"
+                  "syntaxVersion", jint 2
+                  "structured", jbool structured
+                  "code", jstr code ]
+        let enumValue = evalEnum engine "RenewalState::pending()" true |> expectOk "evaluate a generated enum constructor with structured values"
+        let structuredValue = enumValue.["data"].["structuredStack"].["values"] |> fun node -> node.AsArray() |> Seq.head
+        equal "enum" (stringValue structuredValue.["kind"]) "structured runtime value has a dedicated enum tag"
+        equal "RenewalState" (stringValue structuredValue.["name"]) "structured runtime value retains nominal enum identity"
+        equal "pending" (stringValue structuredValue.["case"]) "structured runtime value retains the selected case"
+
+        let sourceType target name = dispatch target "source" [ "type", jstr name ]
+        equal (FlowSource.renderEnum enumDefinition)
+            (sourceType engine "RenewalState" |> expectOk "read committed enum source" |> fun response -> stringValue response["data"])
+            "source(type) exposes the committed enum declaration"
+        equal "\"Pending\""
+            (evalEnum engine "renewal::describe(RenewalState::pending())" false
+             |> expectOk "execute exhaustive enum match before rename"
+             |> fun response -> response.["data"].["stack"] |> fun node -> node.AsArray() |> Seq.head |> stringValue)
+            "interpreter executes the matching authored enum arm"
+
+        dispatch engine "rename" [ "word", jstr "renewal.echo"; "to", jstr "renewal.echo-state" ]
+        |> expectOk "rename a helper referenced by an enum scrutinee and match arms"
+        |> ignore
+        let afterRename = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let renamedManifest = afterRename.Manifest |> Option.defaultWith (fun () -> failwith "renamed enum project lost its manifest")
+        let renamedHead = renamedManifest.Words |> List.find (fun item -> item.CurrentName = "renewal.describe")
+        let renamedRevision = renamedManifest.Revisions |> List.find (fun item -> item.WordId = renamedHead.WordId && item.Revision = renamedHead.CurrentRevision)
+        let renamedHelperBindings = renamedRevision.CallBindings |> List.filter (fun binding -> binding.BodyRole = StoredCallBodyRole.Definition && binding.RequestedName = "renewal.echo-state")
+        check (renamedHelperBindings |> List.exists (fun binding -> match binding.Path with FlowAstPath.FlowAstPath path -> List.contains FlowAstPathSegment.EnumScrutinee path)) "rename rewrites the enum scrutinee binding without flattening its path"
+        check (renamedHelperBindings |> List.exists (fun binding -> match binding.Path with FlowAstPath.FlowAstPath path -> List.exists (function | FlowAstPathSegment.EnumCaseStatement _ -> true | _ -> false) path)) "rename rewrites helper calls nested in enum arms"
+
+        let reloaded = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z")
+        assertAllPassed 4 (dispatch reloaded "test-all" [] |> expectOk "run enum tests after fresh Engine reload and rename")
+        equal "\"Renewed\""
+            (evalEnum reloaded "renewal::describe(RenewalState::renewed())" false
+             |> expectOk "execute reloaded enum match"
+             |> fun response -> response.["data"].["stack"] |> fun node -> node.AsArray() |> Seq.head |> stringValue)
+            "fresh reload compiles and executes the renamed enum helper binding"
+        equal (FlowSource.renderEnum enumDefinition)
+            (sourceType reloaded "RenewalState" |> expectOk "read enum source after fresh reload" |> fun response -> stringValue response["data"])
+            "fresh reload retains exact enum source bytes"
+
+        let sourceReferences =
+            [ renamedManifest.ProjectSource ]
+            @ (renamedManifest.Types |> List.map _.Definition)
+            @ (renamedManifest.Revisions |> List.collect (fun revision -> revision.Definition :: revision.Tests @ revision.Examples))
+            |> List.distinct
+        let sourceObjects =
+            sourceReferences
+            |> List.map (fun reference ->
+                let content = Storage.readSource store reference |> Result.defaultWith (fun problem -> failwith problem.Message)
+                { Reference = reference; Content = content })
+        let exportText = File.ReadAllText(Path.Combine(project, "dictionary.agent"))
+        let expectTamperRejected label mutateBinding =
+            let candidateProject = Path.Combine(root, "enum-binding-tamper-" + label)
+            let candidateStore = Storage.create candidateProject
+            let targetHead = renamedManifest.Words |> List.find (fun item -> item.CurrentName = "renewal.describe")
+            let targetRevision = renamedManifest.Revisions |> List.find (fun item -> item.WordId = targetHead.WordId && item.Revision = targetHead.CurrentRevision)
+            let targetBinding = targetRevision.CallBindings |> List.find (fun binding -> binding.BodyRole = StoredCallBodyRole.Definition && binding.RequestedName = "RenewalState.pending")
+            let forgedRevision =
+                { targetRevision with
+                    CallBindings = targetRevision.CallBindings |> List.map (fun binding -> if binding = targetBinding then mutateBinding binding else binding) }
+            let forgedManifest =
+                { renamedManifest with
+                    Revisions = renamedManifest.Revisions |> List.map (fun revision -> if revision.WordId = targetHead.WordId && revision.Revision = targetRevision.Revision then forgedRevision else revision) }
+            Storage.commit candidateStore 0L forgedManifest sourceObjects exportText
+            |> Result.defaultWith (fun problem -> failwith $"well-shaped enum binding tamper should store for runtime attestation: {problem.Code}: {problem.Message}")
+            |> ignore
+            try
+                Runtime.Engine(candidateProject, Set.empty) |> ignore
+                failwith $"fresh Engine trusted a forged enum binding {label}"
+            with
+            | LanguageException diagnostic -> equal "FLOW_RUNTIME_BINDING_MISMATCH" diagnostic.Code $"fresh Engine rejects enum binding {label} tamper"
+        expectTamperRejected "target" (fun binding -> { binding with Target = StoredCallTarget.GeneratedWord "generated-forged-enum-target" })
+        expectTamperRejected "path" (fun binding ->
+            match binding.Path with
+            | FlowAstPath.FlowAstPath path ->
+                { binding with Path = FlowAstPath.FlowAstPath(path |> List.map (function | FlowAstPathSegment.EnumCaseStatement(0, statement) -> FlowAstPathSegment.EnumCaseStatement(0, statement + 1) | segment -> segment)) })
+
+    let private testEnumLibraryQualificationGuard root =
+        let enumAndHelpers =
+            "enum RenewalState { case pending; case renewed; case cancelled; }\n\n"
+            + "record StateEnvelope { field maybe: Option<List<RenewalState>>; }\n\n"
+            + "fn internal.match-state(value: Int) -> Int {\n"
+            + "    match RenewalState::pending() { pending => { value } renewed => { value } cancelled => { value } }\n"
+            + "}\n\n"
+            + "fn internal.record-state(value: StateEnvelope) -> Int {\n"
+            + "    0\n"
+            + "}\n\n"
+            + "fn public.delegate(value: Int) -> Int {\n"
+            + "    internal::match-state(value)\n"
+            + "}\n\n"
+            + "fn public.container-use(value: Int) -> Int {\n"
+            + "    option::some<List<RenewalState>>(list::empty<RenewalState>());\n"
+            + "    value\n"
+            + "}\n\n"
+            + "fn public.record-use(value: Int) -> Int {\n"
+            + "    internal::record-state(stateEnvelope::new(option::some<List<RenewalState>>(list::empty<RenewalState>())));\n"
+            + "    value\n"
+            + "}\n\n"
+            + "fn public.construct-use(value: Int) -> Int {\n"
+            + "    RenewalState::pending();\n"
+            + "    value\n"
+            + "}\n\n"
+            + "fn public.pure(value: Int) -> Int {\n"
+            + "    value\n"
+            + "}\n\n"
+            + "test public.pure/basic {\n"
+            + "    public::pure(7)\n"
+            + "    => 7\n"
+            + "}"
+        let project = Path.Combine(root, "enum-library-qualification")
+        let engine = Runtime.Engine(project, Set.empty)
+        defineFlowProject engine enumAndHelpers [ "syntaxVersion", jint 2 ] |> expectOk "stage enum-bearing helper and primitive-signature library candidates" |> ignore
+        for name in [ "public.delegate"; "public.container-use"; "public.record-use"; "public.construct-use" ] do
+            commit engine "commit" name [ "library", jbool true ]
+            |> expectError "LIBRARY_FINITE_COVERAGE_UNSUPPORTED"
+            |> ignore
+
+        commit engine "commit" "public.pure" [ "library", jbool true ]
+        |> expectOk "qualify an enum-free word beside an unrelated enum declaration"
+        |> ignore
+        equal "7" (evalFlow engine "public::pure(7)" |> expectOk "evaluate the independently qualified enum-free word" |> fun response -> stringValue response.["data"].["stack"].[0]) "unrelated enum declarations do not block an enum-free library word"
+
+        let store = Storage.load (Storage.create project) |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeReplacement = store.Manifest |> Option.defaultWith (fun () -> failwith "enum-free qualification should publish a manifest")
+        let beforeReplacementHash = store.ManifestHash
+        equal [ "public.pure" ] (beforeReplacement.Words |> List.map (fun item -> item.CurrentName)) "rejected enum-bearing words do not enter the library manifest"
+        for name in [ "public.delegate"; "public.container-use"; "public.record-use"; "public.construct-use" ] do
+            check ((findWord (dispatch engine "words" [] |> expectOk "inspect candidates after enum library rejection") name).["status"].GetValue<string>() = "candidate") $"rejected library candidate {name} remains staged atomically"
+
+        let currentRevision =
+            dispatch engine "describe" [ "word", jstr "public.pure" ]
+            |> expectOk "inspect qualified enum-free word before replacement"
+            |> fun response -> response.["data"].["revision"].GetValue<int>()
+        let enumReplacement =
+            "fn public.pure(value: Int) -> Int {\n"
+            + "    match RenewalState::pending() { pending => { value } renewed => { value } cancelled => { value } }\n"
+            + "}"
+        let enumReplacementTest = "test public.pure/basic { public::pure(7) => 7 }"
+        defineFlow engine enumReplacement [ enumReplacementTest ] [] [ "replace", jbool true; "expectedRevision", jint currentRevision; "syntaxVersion", jint 2 ]
+        |> expectError "LIBRARY_FINITE_COVERAGE_UNSUPPORTED"
+        |> ignore
+        equal beforeReplacementHash (Storage.load (Storage.create project) |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "enum-bearing replacement refusal leaves the committed library manifest unchanged"
+        equal currentRevision (dispatch engine "describe" [ "word", jstr "public.pure" ] |> expectOk "inspect library after rejected replacement" |> fun response -> response.["data"].["revision"].GetValue<int>()) "enum-bearing replacement refusal leaves the prior library revision staged"
+        equal "7" (evalFlow engine "public::pure(7)" |> expectOk "evaluate the original library word after rejected replacement" |> fun response -> stringValue response.["data"].["stack"].[0]) "rejected enum-bearing replacement leaves the prior library body executable"
+
+        let discardProject = Path.Combine(root, "enum-discard-dependency")
+        let discardEngine = Runtime.Engine(discardProject, Set.empty)
+        let dependentSource =
+            """enum RenewalState {
+    case pending;
+    case renewed;
+    case cancelled;
+}
+
+fn renewal.dependent(state: RenewalState) -> String {
+    match state {
+        pending => { "Pending" }
+        renewed => { "Renewed" }
+        cancelled => { "Cancelled" }
+    }
+}"""
+        defineFlowProject discardEngine dependentSource [ "syntaxVersion", jint 2 ] |> expectOk "stage a candidate enum and dependent match" |> ignore
+        let rejectedDiscard = dispatch discardEngine "discard" [ "word", jstr "RenewalState" ]
+        check (not (succeeded rejectedDiscard)) "discarding an enum with a live candidate dependency is rejected"
+        check (succeeded (dispatch discardEngine "source" [ "type", jstr "RenewalState" ])) "failed enum discard leaves the authored type available"
+        dispatch discardEngine "discard" [ "word", jstr "renewal.dependent" ] |> expectOk "discard the dependent word first" |> ignore
+        dispatch discardEngine "discard" [ "word", jstr "RenewalState" ] |> expectOk "discard the enum after its dependent word" |> ignore
+
     let private testDescribeFlowReferences root =
         let engine = Runtime.Engine(Path.Combine(root, "describe-flow-references"), Set.empty)
         let stackSource =
@@ -3018,6 +3233,8 @@ module Program =
             testExplicitFrontendAndDurableReload root
             testExplicitFrontendCannotFallBack root
             testFlow2FormatDefinePersistReloadAndRewrite root
+            testFlow2EnumsPersistReloadAndBindings root
+            testEnumLibraryQualificationGuard root
             testDescribeFlowReferences root
             testGeneratedRecordCasesPersistBesideFlow root
             testStackGeneratedCasesSurviveV1Manifest root
@@ -3036,7 +3253,7 @@ module Program =
             testFlowStaticListFold root
             testFlowValidatorCannotBeRenamedAfterTypeCommit root
             testFlowProjectDocumentTypesCommitAndReload root
-            printfn $"Flow Runtime tests passed: 25 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 27 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

@@ -96,6 +96,7 @@ type IrGeneratedOperation =
     | GetRecordFieldOperation of ProgramTypeKey * int
     | WrapScalarOperation of ProgramTypeKey
     | UnwrapScalarOperation of ProgramTypeKey
+    | MakeEnumCaseOperation of ProgramTypeKey * int
 
 type IrRecordField =
     { FieldIndex: int
@@ -113,9 +114,15 @@ type IrScalarDefinitionData =
       BaseType: IrType
       ValidatorCall: IrResolvedCall option }
 
+type IrEnumDefinitionData =
+    { TypeKey: ProgramTypeKey
+      TypeName: string
+      Cases: string list }
+
 type IrNominalDefinition =
     | IrRecordDefinition of IrRecordDefinitionData
     | IrScalarDefinition of IrScalarDefinitionData
+    | IrEnumDefinition of IrEnumDefinitionData
 
 type IrGeneratedTarget =
     { TargetId: WordId
@@ -154,10 +161,12 @@ type IrOperation =
     | If of IrBlock * IrBlock
     | MatchOption of SomeLocal: LocalSlot * SomeBlock: IrBlock * NoneBlock: IrBlock
     | MatchResult of OkLocal: LocalSlot * ErrorLocal: LocalSlot * OkBlock: IrBlock * ErrorBlock: IrBlock
+    | MatchEnum of TypeKey: ProgramTypeKey * Cases: (int * IrBlock) list
     | MakeRecord of IrResolvedCall * ProgramTypeKey
     | GetRecordField of IrResolvedCall * ProgramTypeKey * int
     | WrapScalar of IrResolvedCall * ProgramTypeKey * IrResolvedCall option
     | UnwrapScalar of IrResolvedCall * ProgramTypeKey
+    | MakeEnumCase of IrResolvedCall * ProgramTypeKey * int
 
 and IrInstruction =
     { Site: SourceSiteId
@@ -422,8 +431,23 @@ module IrVerifier =
                         failure "IR_SCALAR_VALIDATOR_EFFECT" $"Scalar '{scalar.TypeName}' validator must be pure." [] (IrEffects.names validator.ResolvedEffects)
                     verifyCall program catalog scalar.TypeName (SourceSiteId(None, 0)) validator
                 | None -> ()
+            | IrEnumDefinition enumDefinition ->
+                if enumDefinition.TypeKey <> key then failure "IR_TYPE_KEY_MISMATCH" "Enum type table key does not match its definition." [] []
+                if key < ProgramTypeKey 0 then failure "IR_TYPE_KEY_INVALID" "ProgramTypeKey must be nonnegative." [ "nonnegative key" ] [ sprintf "%A" key ]
+                if String.IsNullOrWhiteSpace enumDefinition.TypeName then failure "IR_TYPE_NAME_MISSING" "Enum type name must be nonempty." [ "nonempty type name" ] [ enumDefinition.TypeName ]
+                names.Add enumDefinition.TypeName
+                if List.isEmpty enumDefinition.Cases then failure "IR_ENUM_EMPTY" $"Enum '{enumDefinition.TypeName}' must contain at least one case." [ "one or more cases" ] []
+                let validCaseName (name: string) =
+                    not (String.IsNullOrWhiteSpace name)
+                    && (Char.IsLetter name[0] || name[0] = '_')
+                    && (name |> Seq.skip 1 |> Seq.forall (fun value -> Char.IsLetterOrDigit value || value = '_' || value = '-' || value = '?' || value = '!'))
+                let invalid = enumDefinition.Cases |> List.filter (validCaseName >> not)
+                let duplicates = enumDefinition.Cases |> List.groupBy id |> List.choose (fun (name, values) -> if values.Length > 1 then Some name else None)
+                let reserved = enumDefinition.Cases |> List.filter (fun name -> name = "some" || name = "none" || name = "ok" || name = "error")
+                if not invalid.IsEmpty || not duplicates.IsEmpty || not reserved.IsEmpty then
+                    failure "IR_ENUM_CASE_LAYOUT" $"Enum '{enumDefinition.TypeName}' has invalid, duplicate, or reserved case names." [ "unique valid non-reserved case names" ] (invalid @ duplicates @ reserved)
         if (Set.ofSeq names).Count <> names.Count then
-            failure "IR_TYPE_NAME_COLLISION" "Nominal type names must be unique within one executable snapshot." [ "unique record and scalar names" ] (List.ofSeq names)
+            failure "IR_TYPE_NAME_COLLISION" "Nominal type names must be unique within one executable snapshot." [ "unique record, scalar, and enum names" ] (List.ofSeq names)
 
     let private verifyGeneratedTarget (program: IrProgram) (catalog: IrPrimitiveCatalog) (id: WordId) (target: IrGeneratedTarget) =
         if target.TargetId <> id then failure "IR_GENERATED_ID_MISMATCH" "Generated target map key differs from its identity." [ sprintf "%A" target.TargetId ] [ sprintf "%A" id ]
@@ -459,6 +483,13 @@ module IrVerifier =
             match program.NominalTypesByKey.TryFind key with
             | Some(IrScalarDefinition scalar) when target.InputTypes = [ IrNominal key ] && target.OutputTypes = [ scalar.BaseType ] -> ()
             | _ -> failure "IR_GENERATED_SIGNATURE_MISMATCH" $"Generated scalar accessor '{target.TargetName}' disagrees with its base type." [ "nominal type -> base type" ] (target.OutputTypes |> List.map IrTypes.format)
+        | MakeEnumCaseOperation(key, caseIndex) ->
+            match program.NominalTypesByKey.TryFind key with
+            | Some(IrEnumDefinition enumDefinition) when caseIndex >= 0 && caseIndex < enumDefinition.Cases.Length ->
+                let expectedName = enumDefinition.TypeName + "." + enumDefinition.Cases[caseIndex]
+                if target.TargetName <> expectedName || target.InputTypes <> [] || target.OutputTypes <> [ IrNominal key ] then
+                    failure "IR_GENERATED_SIGNATURE_MISMATCH" $"Generated enum constructor '{target.TargetName}' disagrees with its frozen case table." [ expectedName + ": () -> enum" ] [ target.TargetName; target.InputTypes |> List.map IrTypes.format |> String.concat " "; target.OutputTypes |> List.map IrTypes.format |> String.concat " " ]
+            | _ -> failure "IR_GENERATED_SIGNATURE_MISMATCH" $"Generated enum constructor '{target.TargetName}' refers to a missing enum case." [ "known enum case index" ] [ string caseIndex ]
         let call =
             { ResolvedTarget = GeneratedWordTarget(id, target.TargetRevision)
               ResolvedName = target.TargetName
@@ -637,6 +668,39 @@ module IrVerifier =
                         let errorJoin = { errorShape with LocalTypes = Map.remove errorLocal errorShape.LocalTypes }
                         if okJoin <> errorJoin then operationError "IR_BRANCH_JOIN_MISMATCH" "Result match arms do not have the same output stack and outer-local shape." (okJoin.StackTypes |> List.map IrTypes.format) (errorJoin.StackTypes |> List.map IrTypes.format)
                         okJoin, Set.union okEffects errorEffects
+                    | IrOperation.MatchEnum(typeKey, caseBlocks) ->
+                        let prefix, input = pop 1
+                        let enumDefinition =
+                            match program.NominalTypesByKey.TryFind typeKey with
+                            | Some(IrEnumDefinition definition) -> definition
+                            | Some _ -> operationError "IR_ENUM_MATCH_TYPE" "Enum match type key refers to a non-enum nominal definition." [ "enum definition" ] [ sprintf "%A" typeKey ]
+                            | None -> operationError "IR_ENUM_MATCH_TYPE" "Enum match type key is absent from the frozen nominal table." [ "known enum key" ] [ sprintf "%A" typeKey ]
+                        if input <> [ IrNominal typeKey ] then operationError "IR_ENUM_MATCH_TYPE" "Enum match scrutinee must have the exact nominal type named by the match operation." [ IrTypes.format (IrNominal typeKey) ] (input |> List.map IrTypes.format)
+                        let indexes = caseBlocks |> List.map fst
+                        let expectedIndexes = [ 0 .. enumDefinition.Cases.Length - 1 ]
+                        if indexes.Length <> expectedIndexes.Length || (indexes |> List.sort) <> expectedIndexes then
+                            operationError "IR_ENUM_MATCH_CASE_SET" "Enum match must contain every frozen case exactly once and no other case index." (expectedIndexes |> List.map string) (indexes |> List.map string)
+                        let expectedEntry = { shape with StackTypes = prefix }
+                        let mutable joinShape = None
+                        let mutable branchEffects = Set.empty
+                        for caseIndex, caseBlock in caseBlocks do
+                            if caseIndex < 0 || caseIndex >= enumDefinition.Cases.Length then
+                                operationError "IR_ENUM_MATCH_CASE_SET" "Enum match contains a case index outside its frozen case table." (expectedIndexes |> List.map string) [ string caseIndex ]
+                            let caseShape, caseEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site expectedEntry caseBlock
+                            match joinShape with
+                            | None -> joinShape <- Some caseShape
+                            | Some previous when previous <> caseShape ->
+                                operationError "IR_BRANCH_JOIN_MISMATCH" "Enum match arms do not have the same output stack and outer-local shape." (previous.StackTypes |> List.map IrTypes.format) (caseShape.StackTypes |> List.map IrTypes.format)
+                            | Some _ -> ()
+                            branchEffects <- Set.union branchEffects caseEffects
+                        joinShape |> Option.defaultWith (fun () -> operationError "IR_ENUM_MATCH_CASE_SET" "Enum match has no case blocks." (expectedIndexes |> List.map string) []) |> fun result -> result, branchEffects
+                    | IrOperation.MakeEnumCase(call, key, caseIndex) ->
+                        verifyCall program catalog owner.FunctionName instruction.Site call
+                        requireGeneratedOperation (MakeEnumCaseOperation(key, caseIndex)) call
+                        match program.NominalTypesByKey.TryFind key with
+                        | Some(IrEnumDefinition enumDefinition) when caseIndex >= 0 && caseIndex < enumDefinition.Cases.Length && call.InputTypes = [] && call.OutputTypes = [ IrNominal key ] -> ()
+                        | _ -> operationError "IR_ENUM_CONSTRUCTION_TYPE" "Enum case construction must target a valid frozen case with a zero-input signature." [ "() -> enum case" ] [ call.ResolvedName ]
+                        { shape with StackTypes = shape.StackTypes @ call.OutputTypes }, call.ResolvedEffects
                     | IrOperation.MakeRecord(call, key) ->
                         verifyCall program catalog owner.FunctionName instruction.Site call
                         requireGeneratedOperation (MakeRecordOperation key) call
@@ -698,7 +762,7 @@ module IrVerifier =
         if not (Set.isSubset effects owner.FunctionDeclaredEffects) then
             Diagnostics.raiseError "IR_UNDECLARED_EFFECT" $"Function '{owner.FunctionName}' uses effects absent from its declaration." (Some owner.FunctionName) None (IrEffects.names owner.FunctionDeclaredEffects) (IrEffects.names effects)
 
-    let private expectedCoverage (sourceMap: Map<SourceSiteId, IrSourceSite>) (block: IrBlock) =
+    let private expectedCoverage (nominalTypes: Map<ProgramTypeKey, IrNominalDefinition>) (sourceMap: Map<SourceSiteId, IrSourceSite>) (block: IrBlock) =
         let isAuthoredSite site =
             match sourceMap.TryFind site with
             | Some source ->
@@ -725,6 +789,13 @@ module IrVerifier =
                     let branches = Map.add instruction.Site [ "ok"; "error" ] branches
                     let leftSites, leftBranches = collectBlock okBlock.Code sites branches
                     collectBlock errorBlock.Code leftSites leftBranches
+                | IrOperation.MatchEnum(typeKey, caseBlocks) ->
+                    let labels =
+                        match nominalTypes.TryFind typeKey with
+                        | Some(IrEnumDefinition enumDefinition) -> enumDefinition.Cases
+                        | _ -> caseBlocks |> List.map (fun (caseIndex, _) -> "case" + string caseIndex)
+                    let branches = Map.add instruction.Site labels branches
+                    caseBlocks |> List.fold (fun (nestedSites, nestedBranches) (_, caseBlock) -> collectBlock caseBlock.Code nestedSites nestedBranches) (sites, branches)
                 | IrOperation.ListMap _ | IrOperation.ListEach _ -> Map.add instruction.Site [ "empty"; "nonempty" ] branches |> fun branches -> sites, branches
                 | IrOperation.ListFilter _ -> Map.add instruction.Site [ "empty"; "nonempty"; "keep"; "drop" ] branches |> fun branches -> sites, branches
                 | IrOperation.ListFold _ -> Map.add instruction.Site [ "empty"; "nonempty" ] branches |> fun branches -> sites, branches
@@ -741,6 +812,7 @@ module IrVerifier =
                     | IrOperation.Scope innerBlock -> collect innerBlock.Code
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock.Code @ collect noneBlock.Code
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock.Code @ collect errorBlock.Code
+                    | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.collect (snd >> fun caseBlock -> collect caseBlock.Code)
                     | _ -> []
                 instruction :: nested)
         collect block.Code
@@ -753,7 +825,8 @@ module IrVerifier =
                     match instruction.Operation with
                     | IrOperation.Call call -> [ call.ResolvedTarget ]
                     | IrOperation.ListMap(call, _, _) | IrOperation.ListFilter(call, _) | IrOperation.ListEach(call, _) | IrOperation.ListFold(call, _, _) -> [ call.ResolvedTarget ]
-                    | IrOperation.MakeRecord(call, _) | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _) -> [ call.ResolvedTarget ]
+                    | IrOperation.MakeRecord(call, _) | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _)
+                    | IrOperation.MakeEnumCase(call, _, _) -> [ call.ResolvedTarget ]
                     | IrOperation.WrapScalar(call, _, validator) -> call.ResolvedTarget :: (validator |> Option.map (fun value -> value.ResolvedTarget) |> Option.toList)
                     | _ -> []
                 let nested =
@@ -762,6 +835,7 @@ module IrVerifier =
                     | IrOperation.Scope innerBlock -> collect innerBlock.Code
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock.Code @ collect noneBlock.Code
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock.Code @ collect errorBlock.Code
+                    | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.collect (snd >> fun caseBlock -> collect caseBlock.Code)
                     | _ -> []
                 direct @ nested)
         collect block.Code
@@ -825,7 +899,7 @@ module IrVerifier =
             failure "IR_FUNCTION_ENTRY_LOCALS" $"Function '{fn.FunctionName}' must begin with no initialized locals." [] (fn.FunctionBody.EntryShape.LocalTypes |> Map.toList |> List.map (fun (slot, _) -> sprintf "%A" slot))
         if fn.FunctionBody.EntryShape.StackTypes <> fn.InputTypes || fn.FunctionBody.ExitShape.StackTypes <> fn.OutputTypes then
             failure "IR_FUNCTION_SIGNATURE_MISMATCH" $"Function '{fn.FunctionName}' body stack shape differs from its signature." (fn.InputTypes |> List.map IrTypes.format) (fn.FunctionBody.ExitShape.StackTypes |> List.map IrTypes.format)
-        let sites, branches = expectedCoverage program.SourceMap fn.FunctionBody
+        let sites, branches = expectedCoverage program.NominalTypesByKey program.SourceMap fn.FunctionBody
         let coverage = program.CoverageByWord.TryFind id |> Option.defaultValue { CoveredSites = Set.empty; BranchOutcomes = Map.empty }
         if coverage.CoveredSites <> sites || coverage.BranchOutcomes <> branches then
             failure "IR_COVERAGE_MAP_MISMATCH" $"Function '{fn.FunctionName}' coverage obligations do not match its source operations." [ string sites.Count; string branches.Count ] [ string coverage.CoveredSites.Count; string coverage.BranchOutcomes.Count ]
@@ -880,11 +954,15 @@ module IrVerifier =
         VerifiedIrProgram(program, catalog, true, Some snapshotFingerprint)
 
     let coverageObligations (block: IrBlock) =
-        let coveredSites, branchOutcomes = expectedCoverage Map.empty block
+        let coveredSites, branchOutcomes = expectedCoverage Map.empty Map.empty block
         { CoveredSites = coveredSites; BranchOutcomes = branchOutcomes }
 
     let coverageObligationsWithSourceMap sourceMap (block: IrBlock) =
-        let coveredSites, branchOutcomes = expectedCoverage sourceMap block
+        let coveredSites, branchOutcomes = expectedCoverage Map.empty sourceMap block
+        { CoveredSites = coveredSites; BranchOutcomes = branchOutcomes }
+
+    let coverageObligationsWithTypes nominalTypes sourceMap (block: IrBlock) =
+        let coveredSites, branchOutcomes = expectedCoverage nominalTypes sourceMap block
         { CoveredSites = coveredSites; BranchOutcomes = branchOutcomes }
 
     let verifyBody (verifiedProgram: VerifiedIrProgram) (body: IrExecutableBody) =
@@ -898,7 +976,7 @@ module IrVerifier =
         if body.BodySourceMap |> Map.toList |> List.exists (fun (_, source) -> source.SiteOwner.IsSome) then
             failure "IR_BODY_SOURCE_OWNER" "Detached body source sites must use the standalone owner." [ "SiteOwner=None" ] (body.BodySourceMap |> Map.toList |> List.map (fun (site, source) -> sprintf "%A=%A" site source.SiteOwner))
         let program = { verifiedProgram.Program with SourceMap = sourceMap }
-        let sites, branches = expectedCoverage sourceMap body.BodyBlock
+        let sites, branches = expectedCoverage verifiedProgram.Program.NominalTypesByKey sourceMap body.BodyBlock
         let obligations = { CoveredSites = sites; BranchOutcomes = branches }
         if body.BodyCoverage <> obligations then
             failure "IR_BODY_COVERAGE_MISMATCH" "Detached body coverage metadata does not match its executable structure." [ string obligations.CoveredSites.Count; string obligations.BranchOutcomes.Count ] [ string body.BodyCoverage.CoveredSites.Count; string body.BodyCoverage.BranchOutcomes.Count ]

@@ -1,0 +1,6 @@
+Focused enum test verification commands (run from D:\code\AgentLang)
+
+git diff --check
+dotnet run --project tests/AgentLang.IR.Tests/AgentLang.IR.Tests.fsproj -c Debug --artifacts-path .agentlang/closed-enum-001/ir-test-artifacts
+dotnet run --project tests/AgentLang.IR.Interpreter.Tests/AgentLang.IR.Interpreter.Tests.fsproj -c Debug --artifacts-path .agentlang/closed-enum-001/ir-test-artifacts
+dotnet run --project tests/AgentLang.Storage.Tests/AgentLang.Storage.Tests.fsproj -c Debug --artifacts-path .agentlang/closed-enum-001/ir-test-artifacts

@@ -55,6 +55,8 @@ type FlowAstPathSegment =
     | ResultScrutinee
     | ResultOkStatement of int
     | ResultErrorStatement of int
+    | EnumScrutinee
+    | EnumCaseStatement of int * int
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type FlowAstPath = FlowAstPath of FlowAstPathSegment list
@@ -77,6 +79,7 @@ type FlowExpression =
     | Container of FlowContainerConstructor * FlowTypeArgument list * FlowExpression option * SourceSpan
     | MatchOption of FlowExpression * FlowPayloadCase * FlowCaseBlock * SourceSpan
     | MatchResult of FlowExpression * FlowPayloadCase * FlowPayloadCase * SourceSpan
+    | MatchEnum of FlowExpression * FlowEnumCase list * SourceSpan
 
 and [<RequireQualifiedAccess>] FlowArgument =
     | Positional of FlowExpression
@@ -94,6 +97,12 @@ and FlowCaseBlock =
       Span: SourceSpan }
 
 and FlowPayloadCase =
+    { Name: string
+      NameSpan: SourceSpan
+      Statements: FlowStatement list
+      Span: SourceSpan }
+
+and FlowEnumCase =
     { Name: string
       NameSpan: SourceSpan
       Statements: FlowStatement list
@@ -152,6 +161,7 @@ type FlowProjectDocument =
       SourceText: string
       Records: RecordDefinition list
       Scalars: ScalarTypeDefinition list
+      Enums: EnumDefinition list
       Words: FlowWordDefinition list
       Tests: FlowTestDefinition list
       Examples: FlowExampleDefinition list }
@@ -211,7 +221,8 @@ module FlowStructure =
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Container(_, _, _, span)
         | FlowExpression.MatchOption(_, _, _, span)
-        | FlowExpression.MatchResult(_, _, _, span) -> span
+        | FlowExpression.MatchResult(_, _, _, span)
+        | FlowExpression.MatchEnum(_, _, span) -> span
 
     let private isIdentifierName (value: string) =
         not (System.String.IsNullOrEmpty value)
@@ -370,6 +381,21 @@ module FlowStructure =
                     schedule (ExpressionNode(scrutinee, depth + 1)) (expressionSpan scrutinee)
                     scheduleStatements (depth + 1) okCase.Statements
                     scheduleStatements (depth + 1) errorCase.Statements
+                | FlowExpression.MatchEnum(scrutinee, cases, matchSpan) ->
+                    if syntaxVersion <> 2 then
+                        Diagnostics.raiseError "FLOW_SYNTAX_VERSION" "Enum matching requires Flow/2 syntax." owner (Some matchSpan) [ "Flow/2" ] [ $"Flow/{syntaxVersion}" ]
+                    if List.isEmpty cases then
+                        Diagnostics.raiseError "FLOW_MATCH_CASE_MISSING" "An enum match must contain every declared case exactly once." owner (Some matchSpan) [ "one or more enum cases" ] []
+                    let names = HashSet<string>(System.StringComparer.Ordinal)
+                    for caseValue in cases do
+                        if not (isIdentifierName caseValue.Name) then
+                            Diagnostics.raiseError "FLOW_MATCH_CASE_NAME_INVALID" "Enum match labels must be identifiers." owner (Some caseValue.NameSpan) [ "case-name" ] [ caseValue.Name ]
+                        elif caseValue.Name = "some" || caseValue.Name = "none" || caseValue.Name = "ok" || caseValue.Name = "error" then
+                            Diagnostics.raiseError "FLOW_ENUM_RESERVED_CASE" "Enum match labels cannot use the reserved Option and Result case names." owner (Some caseValue.NameSpan) [] [ caseValue.Name ]
+                        elif not (names.Add caseValue.Name) then
+                            Diagnostics.raiseError "FLOW_MATCH_CASE_DUPLICATE" $"Enum match contains case '{caseValue.Name}' more than once." owner (Some caseValue.NameSpan) [] [ caseValue.Name ]
+                    schedule (ExpressionNode(scrutinee, depth + 1)) (expressionSpan scrutinee)
+                    for caseValue in cases do scheduleStatements (depth + 1) caseValue.Statements
 
     let validateExpressionNestingWithVersion syntaxVersion (roots: FlowExpression list) =
         validateStructure syntaxVersion None None roots Seq.empty []
@@ -474,6 +500,10 @@ module FlowSource =
             renderMatchBlock syntaxVersion depth scrutinee
                 (renderMatchCase syntaxVersion (depth + 1) ("ok " + okCase.Name) okCase.Statements
                  @ renderMatchCase syntaxVersion (depth + 1) ("error " + errorCase.Name) errorCase.Statements)
+        | FlowExpression.MatchEnum(scrutinee, cases, span) ->
+            requireFlow2 syntaxVersion None (Some span) "Enum matching"
+            renderMatchBlock syntaxVersion depth scrutinee
+                (cases |> List.collect (fun caseValue -> renderMatchCase syntaxVersion (depth + 1) caseValue.Name caseValue.Statements))
     and private renderInlineExpression syntaxVersion expression =
         match expression with
         | FlowExpression.Literal(value, _) -> renderLiteral value
@@ -492,7 +522,7 @@ module FlowSource =
         | FlowExpression.Equality(left, right, span) ->
             requireFlow2 syntaxVersion None (Some span) "Equality operator"
             renderEqualityOperand syntaxVersion left + " == " + renderEqualityOperand syntaxVersion right
-        | FlowExpression.If _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ -> renderExpressionAt syntaxVersion 0 expression
+        | FlowExpression.If _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ | FlowExpression.MatchEnum _ -> renderExpressionAt syntaxVersion 0 expression
     and private renderEqualityOperand syntaxVersion expression =
         match expression with
         | FlowExpression.Equality _ -> "(" + renderInlineExpression syntaxVersion expression + ")"
@@ -503,7 +533,8 @@ module FlowSource =
             | FlowExpression.Equality _
             | FlowExpression.If _
             | FlowExpression.MatchOption _
-            | FlowExpression.MatchResult _ -> "(" + renderInlineExpression syntaxVersion expression + ")"
+            | FlowExpression.MatchResult _
+            | FlowExpression.MatchEnum _ -> "(" + renderInlineExpression syntaxVersion expression + ")"
             | _ -> renderInlineExpression syntaxVersion expression
         else renderInlineExpression syntaxVersion expression
     and private renderArgument syntaxVersion = function
@@ -700,8 +731,27 @@ module FlowSource =
                 [ "    validate " + qualified + ";" ]
         String.concat "\n" ([ "type " + definition.Name + " : " + Types.format definition.BaseType + " {" ] @ validatorLine @ [ "}" ])
 
+    let renderEnum (definition: EnumDefinition) =
+        if not (validTypeName definition.Name) then
+            Diagnostics.raiseError "FLOW_TYPE_NAME_INVALID" "Enum names must be identifiers and cannot shadow built-in types or reserved type variables." (Some definition.Name) (Some definition.Span) [ "non-reserved type identifier" ] [ definition.Name ]
+        if List.isEmpty definition.Cases then
+            Diagnostics.raiseError "FLOW_ENUM_EMPTY" "A Flow enum must declare at least one case." (Some definition.Name) (Some definition.Span) [ "one or more cases" ] []
+        let seen = System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal)
+        for caseName in definition.Cases do
+            if not (System.String.IsNullOrEmpty caseName)
+               && (System.Char.IsLetter caseName[0] || caseName[0] = '_')
+               && (caseName |> Seq.skip 1 |> Seq.forall (fun value -> System.Char.IsLetterOrDigit value || value = '_' || value = '-' || value = '?' || value = '!')) then
+                if caseName = "some" || caseName = "none" || caseName = "ok" || caseName = "error" then
+                    Diagnostics.raiseError "FLOW_ENUM_RESERVED_CASE" "Enum case names cannot use the reserved Option and Result labels." (Some definition.Name) (Some definition.Span) [] [ caseName ]
+                elif not (seen.Add caseName) then
+                    Diagnostics.raiseError "FLOW_ENUM_DUPLICATE_CASE" $"Enum case '{caseName}' is repeated." (Some definition.Name) (Some definition.Span) [] [ caseName ]
+            else
+                Diagnostics.raiseError "FLOW_ENUM_CASE_NAME_INVALID" "Enum cases must use non-reserved identifiers." (Some definition.Name) (Some definition.Span) [ "case-name" ] [ caseName ]
+        String.concat "\n" ([ "enum " + definition.Name + " {" ] @ (definition.Cases |> List.map (fun caseName -> "    case " + caseName + ";")) @ [ "}" ])
+
     let renderDocument (document: FlowProjectDocument) =
         requireSupportedVersion document.SyntaxVersion None None
+        if not document.Enums.IsEmpty then requireFlow2 document.SyntaxVersion None None "Enum declarations"
         for definition in document.Words do
             if definition.SyntaxVersion <> document.SyntaxVersion then
                 Diagnostics.raiseError "FLOW_VERSION_MISMATCH" "A Flow project document and its word declarations must use the same syntax version." (Some definition.Name) (Some definition.Span)
@@ -717,12 +767,14 @@ module FlowSource =
         let typeNames =
             (document.Records |> List.map (fun definition -> definition.Name))
             @ (document.Scalars |> List.map (fun definition -> definition.Name))
+            @ (document.Enums |> List.map (fun definition -> definition.Name))
         let duplicateType = typeNames |> List.groupBy id |> List.tryFind (fun (_, values) -> values.Length > 1)
         match duplicateType with
         | Some(name, _) -> Diagnostics.raiseError "FLOW_PROJECT_DUPLICATE_TYPE" $"Type name '{name}' is declared more than once in the Flow project." (Some name) None [] [ name ]
         | None -> ()
         [ yield! document.Records |> List.map renderRecord
           yield! document.Scalars |> List.map renderScalar
+          yield! document.Enums |> List.map renderEnum
           yield! document.Words |> List.map renderWord
           yield! document.Tests |> List.map renderTest
           yield! document.Examples |> List.map renderExample ]

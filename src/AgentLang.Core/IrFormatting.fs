@@ -103,6 +103,7 @@ module IrFormatting =
           Name: string
           TypeKey: int
           Fields: RecordFieldDto list
+          Cases: string list
           BaseType: TypeDto
           HasBaseType: bool
           Validator: ResolvedCallDto
@@ -216,6 +217,7 @@ module IrFormatting =
         match program.NominalTypesByKey.TryFind key with
         | Some(IrRecordDefinition record) -> record.TypeName
         | Some(IrScalarDefinition scalar) -> scalar.TypeName
+        | Some(IrEnumDefinition enumDefinition) -> enumDefinition.TypeName
         | None -> fail "IR_FORMAT_TYPE_MISSING" "Verified IR nominal key is absent from its type table." (string (wrapTypeKey key)) [ "known nominal type key" ] []
 
     let rec private typeDto program = function
@@ -398,6 +400,19 @@ module IrFormatting =
             addLocal "errorLocal" errorLocal
             addNode node "ok" (toNode (blockDto program names okBlock))
             addNode node "error" (toNode (blockDto program names errorBlock))
+        | IrOperation.MatchEnum(typeKey, cases) ->
+            addString node "kind" "match-enum"
+            addKey "typeKey" typeKey
+            let caseNodes = JsonArray()
+            for caseIndex, caseBlock in cases do
+                let caseNode = JsonObject()
+                addInt caseNode "caseIndex" caseIndex
+                match program.NominalTypesByKey.TryFind typeKey with
+                | Some(IrEnumDefinition enumDefinition) when caseIndex >= 0 && caseIndex < enumDefinition.Cases.Length -> addString caseNode "case" enumDefinition.Cases[caseIndex]
+                | _ -> ()
+                addNode caseNode "block" (toNode (blockDto program names caseBlock))
+                caseNodes.Add caseNode
+            node["cases"] <- caseNodes
         | IrOperation.MakeRecord(call, key) ->
             addString node "kind" "make-record"
             addCall "call" call
@@ -418,6 +433,11 @@ module IrFormatting =
             addString node "kind" "unwrap-scalar"
             addCall "call" call
             addKey "typeKey" key
+        | IrOperation.MakeEnumCase(call, key, caseIndex) ->
+            addString node "kind" "make-enum-case"
+            addCall "call" call
+            addKey "typeKey" key
+            addInt node "caseIndex" caseIndex
         node
 
     and private instructionDto program names (instruction: IrInstruction) =
@@ -439,6 +459,7 @@ module IrFormatting =
                     | IrOperation.Scope innerBlock -> gather innerBlock.Code
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> gather someBlock.Code @ gather noneBlock.Code
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> gather okBlock.Code @ gather errorBlock.Code
+                    | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (snd >> fun caseBlock -> gather caseBlock.Code)
                     | _ -> []
                 instruction.Site :: nested)
         gather block.Code
@@ -478,10 +499,11 @@ module IrFormatting =
         | IrOperation.ListMap(call, item, output) -> call.InputTypes @ call.OutputTypes @ [ item; output ]
         | IrOperation.ListFilter(call, item) | IrOperation.ListEach(call, item) -> call.InputTypes @ call.OutputTypes @ [ item ]
         | IrOperation.ListFold(call, item, accumulator) -> call.InputTypes @ call.OutputTypes @ [ item; accumulator ]
-        | IrOperation.MakeRecord(call, _) | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _) -> call.InputTypes @ call.OutputTypes
+        | IrOperation.MakeRecord(call, _) | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _)
+        | IrOperation.MakeEnumCase(call, _, _) -> call.InputTypes @ call.OutputTypes
         | IrOperation.WrapScalar(call, _, validator) ->
             call.InputTypes @ call.OutputTypes @ (validator |> Option.map (fun item -> item.InputTypes @ item.OutputTypes) |> Option.defaultValue [])
-        | IrOperation.If _ | IrOperation.MatchOption _ | IrOperation.MatchResult _
+        | IrOperation.If _ | IrOperation.MatchOption _ | IrOperation.MatchResult _ | IrOperation.MatchEnum _
         | IrOperation.StoreLocal _ | IrOperation.LoadLocal _ | IrOperation.Scope _ -> []
 
     let rec private collectBlockTypes (block: IrBlock) =
@@ -491,6 +513,7 @@ module IrFormatting =
             | IrOperation.Scope innerBlock -> collectBlockTypes innerBlock
             | IrOperation.MatchOption(_, someBlock, noneBlock) -> collectBlockTypes someBlock @ collectBlockTypes noneBlock
             | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collectBlockTypes okBlock @ collectBlockTypes errorBlock
+            | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (snd >> collectBlockTypes)
             | _ -> []
         collectShapeTypes block.EntryShape
         @ collectShapeTypes block.ExitShape
@@ -503,7 +526,8 @@ module IrFormatting =
             match program.NominalTypesByKey[key] with
             | IrRecordDefinition record -> record.RecordFields |> List.map (fun field -> field.FieldType)
             | IrScalarDefinition scalar ->
-                scalar.BaseType :: (scalar.ValidatorCall |> Option.map (fun call -> call.InputTypes @ call.OutputTypes) |> Option.defaultValue []))
+                scalar.BaseType :: (scalar.ValidatorCall |> Option.map (fun call -> call.InputTypes @ call.OutputTypes) |> Option.defaultValue [])
+            | IrEnumDefinition _ -> [])
 
     let rec private irTypeDepth = function
         | IrInt | IrFloat | IrBool | IrString | IrUnit | IrNominal _ -> 1
@@ -518,6 +542,7 @@ module IrFormatting =
             | IrOperation.Scope innerBlock -> 1 + blockBranchDepth innerBlock
             | IrOperation.MatchOption(_, someBlock, noneBlock) -> 1 + max (blockBranchDepth someBlock) (blockBranchDepth noneBlock)
             | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> 1 + max (blockBranchDepth okBlock) (blockBranchDepth errorBlock)
+            | IrOperation.MatchEnum(_, cases) -> 1 + (cases |> List.map (snd >> blockBranchDepth) |> List.fold max 0)
             | _ -> 0)
         |> List.fold max 0
 
@@ -557,6 +582,8 @@ module IrFormatting =
                     let withCall = collectCallTypeKeys (Set.add key found) call
                     validator |> Option.map (collectCallTypeKeys withCall) |> Option.defaultValue withCall
                 | IrOperation.UnwrapScalar(call, key) -> collectCallTypeKeys (Set.add key found) call
+                | IrOperation.MakeEnumCase(call, key, _) -> collectCallTypeKeys (Set.add key found) call
+                | IrOperation.MatchEnum(key, _) -> Set.add key found
                 | IrOperation.If _ | IrOperation.MatchOption _ | IrOperation.MatchResult _
                 | IrOperation.StoreLocal _ | IrOperation.LoadLocal _ | IrOperation.Scope _ -> found
             match instruction.Operation with
@@ -564,6 +591,7 @@ module IrFormatting =
             | IrOperation.Scope innerBlock -> collectBlockTypeKeys found innerBlock
             | IrOperation.MatchOption(_, someBlock, noneBlock) -> collectBlockTypeKeys (collectBlockTypeKeys found someBlock) noneBlock
             | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collectBlockTypeKeys (collectBlockTypeKeys found okBlock) errorBlock
+            | IrOperation.MatchEnum(_, cases) -> cases |> List.fold (fun found (_, caseBlock) -> collectBlockTypeKeys found caseBlock) found
             | _ -> found) initial
 
     let private targetTypeKeys (target: IrGeneratedTarget) =
@@ -571,6 +599,7 @@ module IrFormatting =
         match target.Operation with
         | MakeRecordOperation key | WrapScalarOperation key | UnwrapScalarOperation key -> Set.add key withSignature
         | GetRecordFieldOperation(key, _) -> Set.add key withSignature
+        | MakeEnumCaseOperation(key, _) -> Set.add key withSignature
 
     let private nominalClosure (program: IrProgram) (seed: Set<ProgramTypeKey>) =
         let rec expand (pending: Set<ProgramTypeKey>) (included: Set<ProgramTypeKey>) =
@@ -590,6 +619,7 @@ module IrFormatting =
                         | IrScalarDefinition scalar ->
                             let withBase = collectTypeKeys Set.empty scalar.BaseType
                             scalar.ValidatorCall |> Option.map (collectCallTypeKeys withBase) |> Option.defaultValue withBase
+                        | IrEnumDefinition _ -> Set.empty
                     expand (Set.union rest dependencies) (Set.add key included)
         expand seed Set.empty
 
@@ -613,6 +643,7 @@ module IrFormatting =
                   Name = record.TypeName
                   TypeKey = wrapTypeKey key
                   Fields = record.RecordFields |> List.map (fun field -> { Index = field.FieldIndex; Name = field.FieldName; Type = typeDto program field.FieldType })
+                  Cases = []
                   BaseType = typeDto program IrUnit
                   HasBaseType = false
                   Validator = Unchecked.defaultof<ResolvedCallDto>
@@ -623,10 +654,22 @@ module IrFormatting =
                   Name = scalar.TypeName
                   TypeKey = wrapTypeKey key
                   Fields = []
+                  Cases = []
                   BaseType = typeDto program scalar.BaseType
                   HasBaseType = true
                   Validator = scalar.ValidatorCall |> Option.map (callDto program) |> Option.defaultValue Unchecked.defaultof<ResolvedCallDto>
                   HasValidator = scalar.ValidatorCall.IsSome
+                  GeneratedSources = generatedSources }
+            | IrEnumDefinition enumDefinition ->
+                { Kind = "enum"
+                  Name = enumDefinition.TypeName
+                  TypeKey = wrapTypeKey key
+                  Fields = []
+                  Cases = enumDefinition.Cases
+                  BaseType = typeDto program IrUnit
+                  HasBaseType = false
+                  Validator = Unchecked.defaultof<ResolvedCallDto>
+                  HasValidator = false
                   GeneratedSources = generatedSources })
 
     let private nominalTypeKeysForFunction program (fn: IrFunction) =
@@ -656,6 +699,7 @@ module IrFormatting =
         | GetRecordFieldOperation(key, index) -> { Kind = "get-record-field"; TypeKey = wrapTypeKey key; HasTypeKey = true; FieldIndex = index; HasFieldIndex = true }
         | WrapScalarOperation key -> { Kind = "wrap-scalar"; TypeKey = wrapTypeKey key; HasTypeKey = true; FieldIndex = 0; HasFieldIndex = false }
         | UnwrapScalarOperation key -> { Kind = "unwrap-scalar"; TypeKey = wrapTypeKey key; HasTypeKey = true; FieldIndex = 0; HasFieldIndex = false }
+        | MakeEnumCaseOperation(key, caseIndex) -> { Kind = "make-enum-case"; TypeKey = wrapTypeKey key; HasTypeKey = true; FieldIndex = caseIndex; HasFieldIndex = true }
 
     let private generatedDocument program (target: IrGeneratedTarget) =
         let sourceSite = target.SourceSite |> Option.defaultWith (fun () -> fail "IR_FORMAT_SOURCE_MISSING" "Verified generated target has no declaration source site." target.TargetName [ "generated source site" ] [])
@@ -830,10 +874,12 @@ module IrFormatting =
         | "if" -> "if"
         | "match-option" -> "match option some=" + getLocal "someLocal"
         | "match-result" -> "match result ok=" + getLocal "okLocal" + " error=" + getLocal "errorLocal"
+        | "match-enum" -> "match enum key=" + getString "typeKey"
         | "make-record" -> "record.make " + callText "call" + " key=" + getString "typeKey"
         | "get-record-field" -> "record.get " + callText "call" + " key=" + getString "typeKey" + " field=" + getString "fieldIndex"
         | "wrap-scalar" -> "scalar.wrap " + callText "call" + " key=" + getString "typeKey"
         | "unwrap-scalar" -> "scalar.unwrap " + callText "call" + " key=" + getString "typeKey"
+        | "make-enum-case" -> "enum.case " + callText "call" + " key=" + getString "typeKey" + " case=" + getString "caseIndex"
         | other -> "operation " + other
 
     let private shapeText (shape: ShapeDto) =
@@ -863,6 +909,22 @@ module IrFormatting =
                     lines.Add($"{pad}  {caseName}:")
                     lines.AddRange(renderBlock (indent + 4) (JsonSerializer.Deserialize<BlockDto>(caseNode.ToJsonString(), jsonOptions)))
                 | _ -> ()
+            match instruction.Operation["cases"] with
+            | :? JsonArray as cases ->
+                for caseValue in cases do
+                    match caseValue with
+                    | :? JsonObject as enumCase ->
+                        let caseName =
+                            match enumCase["case"] with
+                            | null -> enumCase["caseIndex"].ToString()
+                            | value -> value.GetValue<string>()
+                        match enumCase["block"] with
+                        | :? JsonObject as caseNode ->
+                            lines.Add($"{pad}  {caseName}:")
+                            lines.AddRange(renderBlock (indent + 4) (JsonSerializer.Deserialize<BlockDto>(caseNode.ToJsonString(), jsonOptions)))
+                        | _ -> ()
+                    | _ -> ()
+            | _ -> ()
         lines.Add($"{pad}exit  {shapeText block.Exit}")
         List.ofSeq lines
 
@@ -871,6 +933,9 @@ module IrFormatting =
         | "record" ->
             let fields = nominal.Fields |> List.map (fun field -> $"{field.Name}:{field.Type.Display}") |> String.concat ", "
             $"record {nominal.Name} @type{nominal.TypeKey} {{ {fields} }}"
+        | "enum" ->
+            let cases = String.concat ", " nominal.Cases
+            $"enum {nominal.Name} @type{nominal.TypeKey} {{ {cases} }}"
         | _ ->
             let validator = if nominal.HasValidator then "; validator=" + formatCall nominal.Validator else ""
             $"scalar {nominal.Name} @type{nominal.TypeKey} = {nominal.BaseType.Display}{validator}"

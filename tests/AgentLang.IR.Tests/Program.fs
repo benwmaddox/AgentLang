@@ -167,6 +167,7 @@ let private loweringContext
     { Words = allWords
       Records = records
       Scalars = scalars
+      Enums = Map.empty
       WordIds = ids }
 
 let private resolved target name inputs outputs effects =
@@ -506,6 +507,255 @@ let private testOptionAndResultCaseLocals () =
               shadowNoneSite, shadowNoneSource ]
             [ shadowWord, coverage shadowWord [ 0; 1 ] [ 1, [ "some"; "none" ] ] ]
     expectDiagnostic "case payload cannot shadow an initialized outer local" "IR_CASE_LOCAL_SHADOW" (fun () -> verify Map.empty shadowProgram)
+
+let private testClosedEnumVerification () =
+    let enumKey = ProgramTypeKey 0
+    let otherEnumKey = ProgramTypeKey 1
+    let recordKey = ProgramTypeKey 2
+    let enumType = IrNominal enumKey
+    let enumDefinition =
+        IrEnumDefinition
+            { TypeKey = enumKey
+              TypeName = "Color"
+              Cases = [ "red"; "green"; "blue" ] }
+    let otherEnumDefinition =
+        IrEnumDefinition
+            { TypeKey = otherEnumKey
+              TypeName = "Shade"
+              Cases = [ "light"; "dark" ] }
+    let recordDefinition =
+        IrRecordDefinition
+            { TypeKey = recordKey
+              TypeName = "Point"
+              RecordFields = [] }
+    let nominalTypes =
+        [ enumKey, enumDefinition
+          otherEnumKey, otherEnumDefinition
+          recordKey, recordDefinition ]
+    let caseNames = [ "red"; "green"; "blue" ]
+    let caseIndexes = [ 0 .. caseNames.Length - 1 ]
+    let targetRows =
+        caseNames
+        |> List.mapi (fun caseIndex caseName ->
+            let targetId = WordId("generated-color-" + caseName)
+            let targetSite, targetSource = source targetId 0 "enum-case-declaration"
+            let target =
+                { TargetId = targetId
+                  TargetRevision = 1
+                  TargetName = "Color." + caseName
+                  Operation = MakeEnumCaseOperation(enumKey, caseIndex)
+                  InputTypes = []
+                  OutputTypes = [ enumType ]
+                  TargetDeclaredEffects = noEffects
+                  TargetEffects = noEffects
+                  SourceSite = Some targetSite }
+            caseIndex, target, targetSource)
+    let constructorRows =
+        targetRows
+        |> List.map (fun (caseIndex, target, targetSource) ->
+            let owner = WordId("construct-color-" + caseNames[caseIndex])
+            let callSite, callSource = source owner 0 "enum-case-constructor"
+            let call =
+                resolved
+                    (GeneratedWordTarget(target.TargetId, target.TargetRevision))
+                    target.TargetName [] [ enumType ] noEffects
+            let fn =
+                functionWithCode owner 1 [] [ enumType ] noEffects noEffects Map.empty
+                    [ { Site = callSite
+                        Operation = IrOperation.MakeEnumCase(call, enumKey, caseIndex) } ]
+            owner, fn, callSource, targetSource)
+
+    let matchWord = WordId "match-color"
+    let matchSite, matchSource = source matchWord 0 "match-enum"
+    let matchLocal = LocalSlot 0
+    let otherLocal = LocalSlot 1
+    let matchLocalTypes = Map.ofList [ matchLocal, IrInt ]
+    let matchBranches =
+        caseIndexes
+        |> List.map (fun caseIndex ->
+            let baseOrdinal = 1 + caseIndex * 3
+            let constantSite, constantSource = source matchWord baseOrdinal "enum-case-value"
+            let storeSite, storeSource = source matchWord (baseOrdinal + 1) "store-local"
+            let outputSite, outputSource = source matchWord (baseOrdinal + 2) "enum-case-value"
+            let branch =
+                block [] Map.empty
+                    [ { Site = constantSite; Operation = IrOperation.Constant(LInt(int64 (caseIndex + 1)), IrInt) }
+                      { Site = storeSite; Operation = IrOperation.StoreLocal matchLocal }
+                      { Site = outputSite; Operation = IrOperation.Constant(LInt(int64 ((caseIndex + 1) * 10)), IrInt) } ]
+                    [ IrInt ] matchLocalTypes
+            caseIndex, branch, [ constantSource; storeSource; outputSource ])
+    let matchBody =
+        block [ enumType ] Map.empty
+            [ { Site = matchSite
+                Operation = IrOperation.MatchEnum(enumKey, matchBranches |> List.map (fun (index, branch, _) -> index, branch)) } ]
+            [ IrInt ] matchLocalTypes
+    let matchFunction =
+        functionDefinition matchWord 1 [ enumType ] [ IrInt ] noEffects noEffects
+            (Map.ofList [ matchLocal, "seen"; otherLocal, "other" ]) matchBody
+    let constructorFunctions = constructorRows |> List.map (fun (owner, fn, _, _) -> owner, fn)
+    let sourceEntries =
+        [ yield matchSite, matchSource
+          for owner, _, callSource, _ in constructorRows do
+              yield site owner 0, callSource
+          for _, target, targetSource in targetRows do
+              yield target.SourceSite.Value, targetSource
+          for caseIndex, _, branchSources in matchBranches do
+              for offset, branchSource in List.indexed branchSources do
+                  yield site matchWord (1 + caseIndex * 3 + offset), branchSource ]
+    let branchCasePairs = matchBranches |> List.map (fun (index, branch, _) -> index, branch)
+    let matchCoverage = coverage matchWord [ 0 .. 9 ] [ 0, caseNames ]
+    let constructorCoverages =
+        constructorRows |> List.map (fun (owner, _, _, _) -> owner, coverage owner [ 0 ] [])
+    let executable =
+        program
+            (constructorFunctions @ [ matchWord, matchFunction ])
+            (targetRows |> List.map (fun (_, target, _) -> target.TargetId, target))
+            nominalTypes sourceEntries
+            (constructorCoverages @ [ matchWord, matchCoverage ])
+
+    verify Map.empty executable
+    check "each generated enum constructor is bound to its frozen case index" (
+        targetRows
+        |> List.forall (fun (caseIndex, target, _) ->
+            target.Operation = MakeEnumCaseOperation(enumKey, caseIndex)
+            && target.TargetName = "Color." + caseNames[caseIndex]
+            && target.InputTypes = []
+            && target.OutputTypes = [ enumType ]))
+
+    let targetAt caseIndex = targetRows |> List.find (fun (index, _, _) -> index = caseIndex) |> fun (_, target, _) -> target
+    let replaceTarget caseIndex mutate =
+        let target = targetAt caseIndex
+        { executable with GeneratedTargetsById = Map.add target.TargetId (mutate target) executable.GeneratedTargetsById }
+    expectDiagnostic "generated enum constructor rejects a different frozen case identity" "IR_GENERATED_SIGNATURE_MISMATCH" (fun () ->
+        verify Map.empty (replaceTarget 0 (fun target -> { target with Operation = MakeEnumCaseOperation(enumKey, 1) })))
+    expectDiagnostic "generated enum constructor requires zero inputs" "IR_GENERATED_SIGNATURE_MISMATCH" (fun () ->
+        verify Map.empty (replaceTarget 0 (fun target -> { target with InputTypes = [ IrInt ] })))
+    expectDiagnostic "generated enum constructor rejects an out-of-range case index" "IR_GENERATED_SIGNATURE_MISMATCH" (fun () ->
+        verify Map.empty (replaceTarget 0 (fun target -> { target with Operation = MakeEnumCaseOperation(enumKey, caseNames.Length) })))
+    expectDiagnostic "generated enum constructor rejects a different nominal enum key" "IR_GENERATED_SIGNATURE_MISMATCH" (fun () ->
+        verify Map.empty (replaceTarget 0 (fun target -> { target with Operation = MakeEnumCaseOperation(otherEnumKey, 0) })))
+    expectDiagnostic "generated enum constructor rejects a non-enum nominal key" "IR_GENERATED_SIGNATURE_MISMATCH" (fun () ->
+        verify Map.empty (replaceTarget 0 (fun target -> { target with Operation = MakeEnumCaseOperation(recordKey, 0) })))
+    expectDiagnostic "generated enum constructor output must retain its exact nominal key" "IR_GENERATED_SIGNATURE_MISMATCH" (fun () ->
+        verify Map.empty (replaceTarget 0 (fun target -> { target with OutputTypes = [ IrNominal otherEnumKey ] })))
+    expectDiagnostic "generated enum constructor name must match its frozen case" "IR_GENERATED_SIGNATURE_MISMATCH" (fun () ->
+        verify Map.empty (replaceTarget 0 (fun target -> { target with TargetName = "Color.green" })))
+
+    let redOwner, redFunction = constructorFunctions[0]
+    let blueTarget = targetAt 2
+    let blueCall = resolved (GeneratedWordTarget(blueTarget.TargetId, blueTarget.TargetRevision)) blueTarget.TargetName [] [ enumType ] noEffects
+    let redInstruction = redFunction.FunctionBody.Code.Head
+    let wrongConstructorIdentity =
+        { redFunction with
+            FunctionBody =
+                { redFunction.FunctionBody with
+                    Code = [ { redInstruction with Operation = IrOperation.MakeEnumCase(blueCall, enumKey, 0) } ] } }
+    expectDiagnostic "enum construction operation must use the target for the exact case" "IR_GENERATED_OPERATION_MISMATCH" (fun () ->
+        verify Map.empty { executable with FunctionsById = Map.add redOwner wrongConstructorIdentity executable.FunctionsById })
+
+    let withMatchCases cases =
+        let changedBody =
+            { matchFunction.FunctionBody with
+                Code = [ { Site = matchSite; Operation = IrOperation.MatchEnum(enumKey, cases) } ] }
+        let changedSites =
+            seq {
+                yield matchSite
+                for _, branch in cases do
+                    yield! branch.Code |> Seq.map (fun instruction -> instruction.Site)
+            }
+            |> Set.ofSeq
+        let changedCoverage =
+            { CoveredSites = changedSites
+              BranchOutcomes = Map.ofList [ matchSite, caseNames ] }
+        { executable with
+            FunctionsById = Map.add matchWord { matchFunction with FunctionBody = changedBody } executable.FunctionsById
+            CoverageByWord = Map.add matchWord changedCoverage executable.CoverageByWord }
+    let branchAt index = branchCasePairs |> List.find (fun (caseIndex, _) -> caseIndex = index) |> snd
+    expectDiagnostic "enum match rejects a missing case index" "IR_ENUM_MATCH_CASE_SET" (fun () ->
+        verify Map.empty (withMatchCases [ 0, branchAt 0; 1, branchAt 1 ]))
+    expectDiagnostic "enum match rejects a duplicate case index" "IR_ENUM_MATCH_CASE_SET" (fun () ->
+        verify Map.empty (withMatchCases [ 0, branchAt 0; 1, branchAt 1; 1, branchAt 1 ]))
+    expectDiagnostic "enum match rejects an extra case index" "IR_ENUM_MATCH_CASE_SET" (fun () ->
+        verify Map.empty (withMatchCases [ 0, branchAt 0; 1, branchAt 1; 2, branchAt 2; 3, branchAt 2 ]))
+    expectDiagnostic "enum match rejects a negative case index" "IR_ENUM_MATCH_CASE_SET" (fun () ->
+        verify Map.empty (withMatchCases [ -1, branchAt 0; 1, branchAt 1; 2, branchAt 2 ]))
+
+    let wrongScrutineeFunction =
+        { matchFunction with
+            InputTypes = [ IrNominal otherEnumKey ]
+            FunctionBody = { matchFunction.FunctionBody with EntryShape = shape [ IrNominal otherEnumKey ] Map.empty } }
+    expectDiagnostic "enum match requires the exact nominal scrutinee key" "IR_ENUM_MATCH_TYPE" (fun () ->
+        verify Map.empty { executable with FunctionsById = Map.add matchWord wrongScrutineeFunction executable.FunctionsById })
+
+    let stackMismatchBlock =
+        let branch = branchAt 1
+        { branch with
+            Code =
+                branch.Code
+                |> List.mapi (fun index instruction ->
+                    if index = 2 then { instruction with Operation = IrOperation.Constant(LString "wrong", IrString) }
+                    else instruction)
+            ExitShape = shape [ IrString ] matchLocalTypes }
+    expectDiagnostic "enum match arms must join with one exact output stack" "IR_BRANCH_JOIN_MISMATCH" (fun () ->
+        verify Map.empty (withMatchCases [ 0, branchAt 0; 1, stackMismatchBlock; 2, branchAt 2 ]))
+
+    let localMismatchBlock =
+        let branch = branchAt 1
+        { branch with
+            Code =
+                branch.Code
+                |> List.mapi (fun index instruction ->
+                    if index = 1 then { instruction with Operation = IrOperation.StoreLocal otherLocal }
+                    else instruction)
+            ExitShape = shape [ IrInt ] (Map.ofList [ otherLocal, IrInt ]) }
+    expectDiagnostic "enum match arms must join with the same outer locals" "IR_BRANCH_JOIN_MISMATCH" (fun () ->
+        verify Map.empty (withMatchCases [ 0, branchAt 0; 1, localMismatchBlock; 2, branchAt 2 ]))
+
+    let effectId, effectContract = primitiveContract "enum.effect" [] [] (Set.singleton IrEffect.ConsoleWrite)
+    let effectWord = WordId "enum-effect-join"
+    let effectMatchSite, effectMatchSource = source effectWord 0 "match-enum"
+    let effectCallSite, effectCallSource = source effectWord 1 "call"
+    let effectValueSite, effectValueSource = source effectWord 2 "enum-case-value"
+    let otherValueSites = [ 3 .. 4 ] |> List.map (fun ordinal -> let siteId, sourceEntry = source effectWord ordinal "enum-case-value" in ordinal, siteId, sourceEntry)
+    let effectCall = resolved (PrimitiveTarget effectId) "enum.effect" [] [] (Set.singleton IrEffect.ConsoleWrite)
+    let effectBranches =
+        [ 0,
+          block [] Map.empty
+            [ { Site = effectCallSite; Operation = IrOperation.Call effectCall }
+              { Site = effectValueSite; Operation = IrOperation.Constant(LInt 10L, IrInt) } ]
+            [ IrInt ] Map.empty
+          1,
+          block [] Map.empty
+            [ { Site = (otherValueSites[0] |> fun (_, siteId, _) -> siteId); Operation = IrOperation.Constant(LInt 20L, IrInt) } ]
+            [ IrInt ] Map.empty
+          2,
+          block [] Map.empty
+            [ { Site = (otherValueSites[1] |> fun (_, siteId, _) -> siteId); Operation = IrOperation.Constant(LInt 30L, IrInt) } ]
+            [ IrInt ] Map.empty ]
+    let effectFunction =
+        functionDefinition effectWord 1 [ enumType ] [ IrInt ] (Set.singleton IrEffect.ConsoleWrite) (Set.singleton IrEffect.ConsoleWrite) Map.empty
+            (block [ enumType ] Map.empty
+                [ { Site = effectMatchSite; Operation = IrOperation.MatchEnum(enumKey, effectBranches) } ]
+                [ IrInt ] Map.empty)
+    let effectSources =
+        [ yield effectMatchSite, effectMatchSource
+          yield effectCallSite, effectCallSource
+          yield effectValueSite, effectValueSource
+          for _, siteId, sourceEntry in otherValueSites do yield siteId, sourceEntry ]
+    let effectCoverage = coverage effectWord [ 0 .. 4 ] [ 0, caseNames ]
+    let effectProgram =
+        { executable with
+            FunctionsById = Map.add effectWord effectFunction executable.FunctionsById
+            SourceMap = Map.fold (fun found siteId sourceEntry -> Map.add siteId sourceEntry found) executable.SourceMap (Map.ofList effectSources)
+            CoverageByWord = Map.add effectWord effectCoverage executable.CoverageByWord }
+    let effectCatalog = Map.ofList [ effectId, effectContract ]
+    verify effectCatalog effectProgram
+    let undercountedEffect = { effectFunction with FunctionInferredEffects = noEffects }
+    expectDiagnostic "enum-match arm effects contribute to inferred function effects" "IR_FUNCTION_EFFECT_MISMATCH" (fun () ->
+        verify effectCatalog { effectProgram with FunctionsById = Map.add effectWord undercountedEffect effectProgram.FunctionsById })
+    let underdeclaredEffect = { effectFunction with FunctionDeclaredEffects = noEffects }
+    expectDiagnostic "enum-match arm effects must be declared by the function" "IR_UNDECLARED_EFFECT" (fun () ->
+        verify effectCatalog { effectProgram with FunctionsById = Map.add effectWord underdeclaredEffect effectProgram.FunctionsById })
 
 let private testGeneratedRecordAndScalarOperations () =
     let customerKey = ProgramTypeKey 0
@@ -1275,6 +1525,7 @@ let private tests =
       "structured branches and coverage", testStructuredBranchesAndCoverage
       "closed synthetic source classifications", testClosedSyntheticSourceKinds
       "Option and Result payload scope", testOptionAndResultCaseLocals
+      "closed enum verifier invariants", testClosedEnumVerification
       "generated record and scalar operations", testGeneratedRecordAndScalarOperations
       "static callbacks and effects", testStaticCallbacksAndEffects
       "typed list fold verification", testListFoldVerification

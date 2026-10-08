@@ -8,7 +8,7 @@ open System.Text.Json.Nodes
 
 /// An immutable structural index over the runtime's effective type and word maps.
 /// Its representation is private so callers cannot mutate its precomputed graph.
-type DiscoveryIndex = private { Words: Map<string, WordEntry>; Records: Map<string, RecordEntry>; Scalars: Map<string, ScalarEntry>; Dependencies: Map<string, Set<string>>; Callers: Map<string, Set<string>> }
+type DiscoveryIndex = private { Words: Map<string, WordEntry>; Records: Map<string, RecordEntry>; Scalars: Map<string, ScalarEntry>; Enums: Map<string, EnumEntry>; Dependencies: Map<string, Set<string>>; Callers: Map<string, Set<string>> }
 
 type DiscoveryGraphResult =
     { Text: string
@@ -57,7 +57,7 @@ module Discovery =
                 | TInt | TFloat | TBool | TString | TUnit | TNamed _ | TVar _ -> false)
         contains candidate
 
-    let private namedTypeClosure (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (initial: Set<string>) =
+    let private namedTypeClosure (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (enums: Map<string, EnumEntry>) (initial: Set<string>) =
         let rec visit (pending: string list) (found: Set<string>) =
             match pending with
             | [] -> found
@@ -69,6 +69,7 @@ module Discovery =
                         record.Definition.Fields
                         |> List.collect (fun field -> typeNamesIn field.Type |> Set.toList)
                     | None, Some scalar -> typeNamesIn scalar.Definition.BaseType |> Set.toList
+                    | None, None when enums.ContainsKey name -> []
                     | None, None -> []
                 visit (rest @ List.sort nested) (Set.add name found)
         visit (initial |> Set.toList) Set.empty
@@ -81,9 +82,9 @@ module Discovery =
             |> Option.bind (fun scalar -> scalar.Definition.Validator)
             |> Option.map Set.singleton
             |> Option.defaultValue Set.empty
-        | Some(BuiltinOp _ | RecordConstructor _ | RecordAccessor _ | ScalarAccessor _) -> Set.empty
+        | Some(BuiltinOp _ | RecordConstructor _ | RecordAccessor _ | ScalarAccessor _ | EnumCaseConstructor _) -> Set.empty
 
-    let private validateBuiltinReference (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) name builtin =
+    let private validateBuiltinReference (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (enums: Map<string, EnumEntry>) name builtin =
         match builtin with
         | None | Some(BuiltinOp _) -> ()
         | Some(RecordConstructor recordName) ->
@@ -98,10 +99,19 @@ module Discovery =
             if not (scalars.ContainsKey scalarName) then
                 raiseDiscovery "DISCOVERY_UNKNOWN_SCALAR" $"Generated word '{name}' references missing scalar '{scalarName}'." (Some name) [ "known scalar" ] [ scalarName ]
 
-    let private validateNamedReferences (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (owner: string) (typeValue: LangType) =
+        | Some(EnumCaseConstructor(enumName, caseName)) ->
+            match enums.TryFind enumName with
+            | None -> raiseDiscovery "DISCOVERY_UNKNOWN_ENUM" $"Generated word '{name}' references missing enum '{enumName}'." (Some name) [ "known enum" ] [ enumName ]
+            | Some enumEntry when enumEntry.Definition.Cases |> List.contains caseName ->
+                let expectedName = $"{enumName}.{caseName}"
+                if name <> expectedName then
+                    raiseDiscovery "DISCOVERY_ENUM_CONSTRUCTOR_KEY" $"Generated enum constructor '{name}' does not match its enum and case identity." (Some name) [ expectedName ] [ name ]
+            | Some _ -> raiseDiscovery "DISCOVERY_UNKNOWN_ENUM_CASE" $"Generated word '{name}' references missing case '{enumName}.{caseName}'." (Some name) [ "known enum case" ] [ caseName ]
+
+    let private validateNamedReferences (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (enums: Map<string, EnumEntry>) (owner: string) (typeValue: LangType) =
         for name in typeNamesIn typeValue do
-            if not (records.ContainsKey name || scalars.ContainsKey name) then
-                raiseDiscovery "DISCOVERY_UNKNOWN_TYPE" $"'{owner}' refers to undeclared nominal type '{name}'." (Some owner) [ "known record or scalar type" ] [ name ]
+            if not (records.ContainsKey name || scalars.ContainsKey name || enums.ContainsKey name) then
+                raiseDiscovery "DISCOVERY_UNKNOWN_TYPE" $"'{owner}' refers to undeclared nominal type '{name}'." (Some owner) [ "known record, scalar, or enum type" ] [ name ]
 
     /// Build a deterministic graph from immutable runtime snapshots. User-word
     /// edges include calls and static list callbacks. A generated scalar
@@ -110,13 +120,14 @@ module Discovery =
         (words: Map<string, WordEntry>)
         (records: Map<string, RecordEntry>)
         (scalars: Map<string, ScalarEntry>)
+        (enums: Map<string, EnumEntry>)
         : DiscoveryIndex =
         for KeyValue(key, entry) in words do
             if key <> entry.Definition.Name then
                 raiseDiscovery "DISCOVERY_WORD_KEY_MISMATCH" $"Word map key '{key}' does not match definition name '{entry.Definition.Name}'." (Some key) [ key ] [ entry.Definition.Name ]
-            validateBuiltinReference records scalars key entry.Builtin
+            validateBuiltinReference records scalars enums key entry.Builtin
             for typeValue in entry.Definition.Inputs @ entry.Definition.Outputs do
-                validateNamedReferences records scalars key typeValue
+                validateNamedReferences records scalars enums key typeValue
 
         for KeyValue(key, entry) in records do
             if key <> entry.Definition.Name then
@@ -125,28 +136,39 @@ module Discovery =
             match duplicateField with
             | Some(name, _) -> raiseDiscovery "DISCOVERY_DUPLICATE_FIELD" $"Record '{key}' declares field '{name}' more than once." (Some key) [ "unique field names" ] [ name ]
             | None -> ()
-            for field in entry.Definition.Fields do validateNamedReferences records scalars key field.Type
+            for field in entry.Definition.Fields do validateNamedReferences records scalars enums key field.Type
 
         for KeyValue(key, entry) in scalars do
             if key <> entry.Definition.Name then
                 raiseDiscovery "DISCOVERY_SCALAR_KEY_MISMATCH" $"Scalar map key '{key}' does not match definition name '{entry.Definition.Name}'." (Some key) [ key ] [ entry.Definition.Name ]
-            validateNamedReferences records scalars key entry.Definition.BaseType
+            validateNamedReferences records scalars enums key entry.Definition.BaseType
             match entry.Definition.Validator with
             | None -> ()
             | Some validator when not (words.ContainsKey validator) ->
                 raiseDiscovery "DISCOVERY_UNKNOWN_VALIDATOR" $"Scalar '{key}' names missing validator word '{validator}'." (Some key) [ "known validator word" ] [ validator ]
             | Some _ -> ()
 
+        for KeyValue(key, entry) in enums do
+            if key <> entry.Definition.Name then
+                raiseDiscovery "DISCOVERY_ENUM_KEY_MISMATCH" $"Enum map key '{key}' does not match definition name '{entry.Definition.Name}'." (Some key) [ key ] [ entry.Definition.Name ]
+            let duplicateCase = entry.Definition.Cases |> List.groupBy id |> List.tryFind (fun (_, cases) -> cases.Length > 1)
+            match duplicateCase with
+            | Some(caseName, _) -> raiseDiscovery "DISCOVERY_DUPLICATE_ENUM_CASE" $"Enum '{key}' declares case '{caseName}' more than once." (Some key) [ "unique enum case names" ] [ caseName ]
+            | None -> ()
+
+        let recordNames = records |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let scalarNames = scalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let enumNames = enums |> Map.toSeq |> Seq.map fst |> Set.ofSeq
         let duplicateType =
-            records
-            |> Map.toSeq
-            |> Seq.map fst
-            |> Set.ofSeq
-            |> Set.intersect (scalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+            Set.unionMany [ recordNames; scalarNames; enumNames ]
             |> Set.toList
-            |> List.tryHead
+            |> List.tryFind (fun name ->
+                [ recordNames.Contains name; scalarNames.Contains name; enumNames.Contains name ]
+                |> List.filter id
+                |> List.length
+                |> fun count -> count > 1)
         match duplicateType with
-        | Some name -> raiseDiscovery "DISCOVERY_DUPLICATE_TYPE" $"'{name}' is both a record and a scalar type." (Some name) [ "one nominal type declaration" ] [ "record"; "scalar" ]
+        | Some name -> raiseDiscovery "DISCOVERY_DUPLICATE_TYPE" $"'{name}' is declared by more than one nominal type definition." (Some name) [ "one nominal type declaration" ] [ "record"; "scalar"; "enum" ]
         | None -> ()
 
         for KeyValue(name, entry) in words do
@@ -164,7 +186,7 @@ module Discovery =
                 |> Set.fold (fun result dependency ->
                     let existing = result.TryFind dependency |> Option.defaultValue Set.empty
                     Map.add dependency (Set.add caller existing) result) graph) Map.empty
-        { Words = words; Records = records; Scalars = scalars; Dependencies = dependencies; Callers = callers }
+        { Words = words; Records = records; Scalars = scalars; Enums = enums; Dependencies = dependencies; Callers = callers }
 
     let private requireKnownWord (index: DiscoveryIndex) (name: string) =
         if not (index.Words.ContainsKey name) then
@@ -343,6 +365,15 @@ module Discovery =
         node["validator"] <- scalar.Validator |> Option.map JsonValue.Create |> Option.defaultValue null
         node
 
+    let private contextEnumNode (name: string) (enumDefinition: EnumDefinition) =
+        let node = JsonObject()
+        node["name"] <- JsonValue.Create name
+        node["kind"] <- JsonValue.Create "enum"
+        let cases = JsonArray()
+        enumDefinition.Cases |> List.iter (JsonValue.Create >> cases.Add)
+        node["cases"] <- cases
+        node
+
     let private contextDocumentation (documentation: string) =
         let normalized = documentation.Replace("\r\n", "\n").Replace('\r', '\n')
         let lines = normalized.Split('\n')
@@ -445,20 +476,21 @@ module Discovery =
         let allWords = reachableWords index root
         let allWordSet = Set.ofList allWords
         let depthWords = breadthFirst (dependenciesFor index) root maxDepth |> List.map fst
-        let allTypes = typeRootsForWords index allWords |> namedTypeClosure index.Records index.Scalars
+        let allTypes = typeRootsForWords index allWords |> namedTypeClosure index.Records index.Scalars index.Enums
 
         let typeNodes names =
             names
             |> Set.toList
             |> List.choose (fun name ->
-                match index.Records.TryFind name, index.Scalars.TryFind name with
-                | Some record, _ -> Some(contextRecordNode name record.Definition)
-                | None, Some scalar -> Some(contextScalarNode name scalar.Definition)
-                | None, None -> None)
+                match index.Records.TryFind name, index.Scalars.TryFind name, index.Enums.TryFind name with
+                | Some record, _, _ -> Some(contextRecordNode name record.Definition)
+                | None, Some scalar, _ -> Some(contextScalarNode name scalar.Definition)
+                | None, None, Some enumEntry -> Some(contextEnumNode name enumEntry.Definition)
+                | None, None, None -> None)
 
         let makeResult included reasons =
             let includedSet = Set.ofList included
-            let selectedTypes = typeRootsForWords index included |> namedTypeClosure index.Records index.Scalars
+            let selectedTypes = typeRootsForWords index included |> namedTypeClosure index.Records index.Scalars index.Enums
             let omittedWords = allWordSet.Count - includedSet.Count
             let omittedTypes = Set.difference allTypes selectedTypes |> Set.count
             let wordNodes = included |> List.map (contextWordNode index >> fun node -> node :> JsonNode)

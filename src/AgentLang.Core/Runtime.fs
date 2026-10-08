@@ -43,6 +43,7 @@ module Runtime =
           Deprecated: Set<string>
           Records: Map<string, RecordEntry>
           Scalars: Map<string, ScalarEntry>
+          Enums: Map<string, EnumEntry>
           TypeSources: Map<string, AuthoredTypeSource>
           Tests: Map<string, TestDefinition>
           Examples: Map<string, ExampleDefinition>
@@ -131,6 +132,59 @@ module Runtime =
                     Set.union found (Set.union (collect okBranch) (collect errorBranch))
                 | _ -> found) Set.empty
         collect body
+
+    let private enumReferencesForWord (state: DictionaryState) (words: Map<string, WordEntry>) (root: string) =
+        let rec referencesInType (seen: Set<string>) (typeValue: LangType) =
+            match typeValue with
+            | TNamed name when state.Enums.ContainsKey name -> Set.singleton name
+            | TNamed name when not (seen.Contains name) ->
+                let nextSeen = Set.add name seen
+                match state.Records.TryFind name, state.Scalars.TryFind name with
+                | Some record, _ -> record.Definition.Fields |> List.map (fun field -> referencesInType nextSeen field.Type) |> Set.unionMany
+                | None, Some scalar -> referencesInType nextSeen scalar.Definition.BaseType
+                | _ -> Set.empty
+            | TList item | TOption item -> referencesInType seen item
+            | TResult(okType, errorType) -> Set.union (referencesInType seen okType) (referencesInType seen errorType)
+            | _ -> Set.empty
+
+        let rec containsEnumMatch expressions =
+            expressions
+            |> List.exists (function
+                | MatchEnum _ -> true
+                | If(thenBranch, elseBranch, _)
+                | MatchOption(_, thenBranch, elseBranch, _) -> containsEnumMatch thenBranch || containsEnumMatch elseBranch
+                | MatchResult(_, _, okBranch, errorBranch, _) -> containsEnumMatch okBranch || containsEnumMatch errorBranch
+                | Scope(innerBody, _) -> containsEnumMatch innerBody
+                | _ -> false)
+
+        let rec visit (pending: string list) (seenWords: Set<string>) (foundEnums: Set<string>) =
+            match pending with
+            | [] -> foundEnums
+            | name :: rest when seenWords.Contains name -> visit rest seenWords foundEnums
+            | name :: rest ->
+                match words.TryFind name with
+                | None -> visit rest (Set.add name seenWords) foundEnums
+                | Some entry ->
+                    let signatureTypes = entry.Definition.Inputs @ entry.Definition.Outputs
+                    let signatureEnums = signatureTypes |> List.map (referencesInType Set.empty) |> Set.unionMany
+                    let bodyTypeEnums =
+                        if entry.Builtin.IsNone then
+                            expressionTypeReferences entry.Definition.Body
+                            |> Set.toList
+                            |> List.map (TNamed >> referencesInType Set.empty)
+                            |> Set.unionMany
+                        else Set.empty
+                    let builtinEnums =
+                        match entry.Builtin with
+                        | Some(EnumCaseConstructor(enumName, _)) -> Set.singleton enumName
+                        | _ -> Set.empty
+                    let matchMarker = if entry.Builtin.IsNone && containsEnumMatch entry.Definition.Body then Set.singleton "<enum match>" else Set.empty
+                    let dependencies =
+                        if entry.Builtin.IsNone then Compiler.dependencies entry.Definition.Body |> Set.toList
+                        else []
+                    visit (rest @ dependencies) (Set.add name seenWords) (Set.unionMany [ foundEnums; signatureEnums; bodyTypeEnums; builtinEnums; matchMarker ])
+
+        visit [ root ] Set.empty Set.empty
 
     let private testExpressions (test: TestDefinition) =
         match test.Expected with
@@ -324,6 +378,7 @@ module Runtime =
               Deprecated = Set.empty
               Records = Map.empty
               Scalars = Map.empty
+              Enums = Map.empty
               TypeSources = Map.empty
               Tests = Map.empty
               Examples = Map.empty
@@ -347,8 +402,11 @@ module Runtime =
         let userWords (state: DictionaryState) = state.Words |> Map.filter (fun _ value -> value.Builtin.IsNone)
         let recordDefinitions (state: DictionaryState) = state.Records |> Map.map (fun _ value -> value.Definition)
         let scalarDefinitions (state: DictionaryState) = state.Scalars |> Map.map (fun _ value -> value.Definition)
+        let enumDefinitions (state: DictionaryState) = state.Enums |> Map.map (fun _ value -> value.Definition)
         let knownTypes (state: DictionaryState) =
-            Set.union (state.Records |> Map.toSeq |> Seq.map fst |> Set.ofSeq) (state.Scalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+            Set.unionMany [ state.Records |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+                            state.Scalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+                            state.Enums |> Map.toSeq |> Seq.map fst |> Set.ofSeq ]
 
         let makeGenerated (state: DictionaryState) : Map<string, WordEntry> =
             let recordWords =
@@ -384,7 +442,16 @@ module Runtime =
                     let accessor = wordDef accessorName [ TNamed name ] [ scalar.BaseType ] Set.empty "Explicitly unwraps a nominal scalar to its underlying value." scalar.SourceText
                     [ constructorName, entry constructor (Some(ScalarConstructor name)) scalarEntry.Status LibraryWord 1
                       accessorName, entry accessor (Some(ScalarAccessor name)) scalarEntry.Status LibraryWord 1 ])
-            let generatedWords = recordWords @ scalarWords
+            let enumWords =
+                state.Enums
+                |> Map.toList
+                |> List.collect (fun (name, enumEntry) ->
+                    enumEntry.Definition.Cases
+                    |> List.map (fun caseName ->
+                        let constructorName = name + "." + caseName
+                        let constructor = wordDef constructorName [] [ TNamed name ] Set.empty $"Constructs the {caseName} case of {name}." enumEntry.Definition.SourceText
+                        constructorName, entry constructor (Some(EnumCaseConstructor(name, caseName))) enumEntry.Status LibraryWord 1))
+            let generatedWords = recordWords @ scalarWords @ enumWords
             match generatedWords |> List.groupBy fst |> List.tryFind (fun (_, entries) -> entries.Length > 1) with
             | Some(name, _) -> error "NAME_GENERATED_COLLISION" $"Generated type word '{name}' has more than one owner. Rename the type or record field." (Some name) None [] []
             | None ->
@@ -411,6 +478,14 @@ module Runtime =
             Map.fold (fun found name value ->
                 if value.Builtin.IsNone then Map.add name value found else found) withGenerated state.Words
 
+        let rejectEnumLibraryQualification (state: DictionaryState) (words: Map<string, WordEntry>) (wordName: string) =
+            match words.TryFind wordName with
+            | Some item when item.Maturity = LibraryWord ->
+                let references = enumReferencesForWord state words wordName
+                if not references.IsEmpty then
+                    error "LIBRARY_FINITE_COVERAGE_UNSUPPORTED" $"Library qualification of '{wordName}' is blocked until finite enum coverage is implemented." (Some wordName) (Some item.Definition.Span) [ "no enum-bearing signatures, bodies, or dependencies" ] (Set.toList references)
+            | _ -> ()
+
         let wordIdentity (state: DictionaryState) (item: WordEntry) =
             match item.Builtin with
             | Some(BuiltinOp _) -> "primitive_" + item.Definition.Name
@@ -429,9 +504,10 @@ module Runtime =
 
         let defaultTypeSource (state: DictionaryState) name =
             let definitionSource =
-                match state.Records.TryFind name, state.Scalars.TryFind name with
-                | Some record, _ -> Source.renderRecord record.Definition
-                | _, Some scalar -> Source.renderScalar scalar.Definition
+                match state.Records.TryFind name, state.Scalars.TryFind name, state.Enums.TryFind name with
+                | Some record, _, _ -> Source.renderRecord record.Definition
+                | _, Some scalar, _ -> Source.renderScalar scalar.Definition
+                | _, _, Some enumEntry -> Source.renderEnum enumEntry.Definition
                 | _ -> error "TYPE_SOURCE_OWNER_MISSING" $"Type source metadata has no declared type '{name}'." (Some name) None [] []
             let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition definitionSource
             { SourceFormat = { Frontend = SourceFrontend.Stack; Version = 1 }
@@ -457,12 +533,12 @@ module Runtime =
                 | frontend, version ->
                     let frontendName = if frontend = SourceFrontend.Flow then "Flow" else "Stack"
                     error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Type '{name}' uses unsupported {frontendName} syntax version {version}." (Some name) None [ "Stack/1"; "Flow/1"; "Flow/2" ] [ $"{frontendName}/{version}" ]
-                match state.Records.TryFind name, state.Scalars.TryFind name with
-                | Some _, Some _ -> error "TYPE_SOURCE_OWNER_AMBIGUOUS" $"Type source '{name}' maps to both a record and scalar." (Some name) None [] []
-                | Some _, None when source.ValidatorTarget.IsSome ->
+                match state.Records.TryFind name, state.Scalars.TryFind name, state.Enums.TryFind name with
+                | Some _, Some _, _ | Some _, _, Some _ | _, Some _, Some _ -> error "TYPE_SOURCE_OWNER_AMBIGUOUS" $"Type source '{name}' maps to more than one nominal type." (Some name) None [] []
+                | Some _, None, None when source.ValidatorTarget.IsSome ->
                     error "TYPE_VALIDATOR_TARGET_INVALID" $"Record type '{name}' cannot carry a scalar validator target." (Some name) None [] [ string source.ValidatorTarget.Value ]
-                | Some _, None -> ()
-                | None, Some scalar ->
+                | Some _, None, None -> ()
+                | None, Some scalar, None ->
                     match scalar.Definition.Validator, source.ValidatorTarget with
                     | None, Some target -> error "TYPE_VALIDATOR_TARGET_INVALID" $"Scalar type '{name}' has a validator target but no validator declaration." (Some name) None [] [ string target ]
                     | Some _, Some target ->
@@ -473,7 +549,10 @@ module Runtime =
                     | Some _, None when source.SourceFormat.Frontend = SourceFrontend.Flow ->
                         error "TYPE_VALIDATOR_TARGET_MISSING" $"Flow scalar type '{name}' requires a stable validator target binding." (Some name) (Some scalar.Definition.Span) [ "resolved user, generated, or primitive target" ] []
                     | _ -> ()
-                | None, None -> error "TYPE_SOURCE_OWNER_MISSING" $"Type source metadata has no declared type '{name}'." (Some name) None [] []
+                | None, None, Some _ when source.ValidatorTarget.IsSome ->
+                    error "TYPE_VALIDATOR_TARGET_INVALID" $"Enum type '{name}' cannot carry a scalar validator target." (Some name) None [] [ string source.ValidatorTarget.Value ]
+                | None, None, Some _ -> ()
+                | None, None, None -> error "TYPE_SOURCE_OWNER_MISSING" $"Type source metadata has no declared type '{name}'." (Some name) None [] []
 
         let log (kind: string) (name: string) =
             match activeTask with
@@ -582,15 +661,17 @@ module Runtime =
                     else restored.WordIds.TryFind name |> Option.map WordId)
                 |> Set.ofSeq
             let persistentTypeNames =
-                Set.union
-                    (restored.Records |> Map.toSeq |> Seq.choose (fun (name, item) -> if item.Status = Persistent then Some name else None) |> Set.ofSeq)
-                    (restored.Scalars |> Map.toSeq |> Seq.choose (fun (name, item) -> if item.Status = Persistent then Some name else None) |> Set.ofSeq)
+                Set.unionMany
+                    [ restored.Records |> Map.toSeq |> Seq.choose (fun (name, item) -> if item.Status = Persistent then Some name else None) |> Set.ofSeq
+                      restored.Scalars |> Map.toSeq |> Seq.choose (fun (name, item) -> if item.Status = Persistent then Some name else None) |> Set.ofSeq
+                      restored.Enums |> Map.toSeq |> Seq.choose (fun (name, item) -> if item.Status = Persistent then Some name else None) |> Set.ofSeq ]
             let projected =
                 { restored with
                     Words = persistentWords
                     WordIds = restored.WordIds |> Map.filter (fun name _ -> persistentWords.ContainsKey name)
                     Records = restored.Records |> Map.filter (fun _ value -> value.Status = Persistent)
                     Scalars = restored.Scalars |> Map.filter (fun _ value -> value.Status = Persistent)
+                    Enums = restored.Enums |> Map.filter (fun _ value -> value.Status = Persistent)
                     TypeSources = restored.TypeSources |> Map.filter (fun name _ -> persistentTypeNames.Contains name)
                     Tests = Map.empty
                     Examples = Map.empty
@@ -643,6 +724,11 @@ module Runtime =
                     | { Frontend = SourceFrontend.Stack; Version = 1 } -> addSection "stack" 1 (Source.renderScalar item.Definition)
                     | { Frontend = SourceFrontend.Flow; Version = version } when version = 1 || version = 2 -> addSection "flow" version (FlowSource.renderScalar item.Definition)
                     | format -> error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Type '{name}' uses unsupported source format {format.Frontend}/{format.Version}." (Some name) None [ "Stack/1"; "Flow/1"; "Flow/2" ] [ $"{format.Frontend}/{format.Version}" ]
+            for name, item in state.Enums |> Map.toSeq |> Seq.sortBy fst do
+                if item.Status = Persistent then
+                    match (state.TypeSources.TryFind name |> Option.defaultValue (defaultTypeSource state name)).SourceFormat with
+                    | { Frontend = SourceFrontend.Flow; Version = 2 } -> addSection "flow" 2 (FlowSource.renderEnum item.Definition)
+                    | format -> error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Enum type '{name}' uses unsupported source format {format.Frontend}/{format.Version}." (Some name) None [ "Flow/2" ] [ $"{format.Frontend}/{format.Version}" ]
             for word in topologicalWords state do
                 if not (stackWordNames.Contains word.Definition.Name) then addSection "stack" 1 (Source.renderWord true word.Definition)
             state.FlowWords
@@ -654,6 +740,7 @@ module Runtime =
                 Set.union
                     (state.Records |> Map.toSeq |> Seq.choose (fun (name, item) -> if item.Status = Persistent then Some(lowerFirst name) else None) |> Set.ofSeq)
                     (state.Scalars |> Map.toSeq |> Seq.choose (fun (name, item) -> if item.Status = Persistent then Some name else None) |> Set.ofSeq)
+                    |> fun found -> Set.union found (state.Enums |> Map.toSeq |> Seq.choose (fun (name, item) -> if item.Status = Persistent then Some name else None) |> Set.ofSeq)
             let durableTests =
                 state.Tests
                 |> Map.toList
@@ -727,6 +814,10 @@ module Runtime =
                 parsed.Scalars
                 |> List.map (fun (value: ScalarTypeDefinition) -> value.Name, ({ Definition = value; Status = Persistent }: ScalarEntry))
                 |> Map.ofList
+            let enums: Map<string, EnumEntry> =
+                parsed.Enums
+                |> List.map (fun (value: EnumDefinition) -> value.Name, ({ Definition = value; Status = Persistent }: EnumEntry))
+                |> Map.ofList
             let words =
                 parsed.Words
                 |> List.map (fun value -> value.Name, entry value None Persistent value.Maturity value.Revision)
@@ -742,6 +833,7 @@ module Runtime =
                     Deprecated = Set.empty
                     Records = records
                     Scalars = scalars
+                    Enums = enums
                     TypeSources = Map.empty
                     Tests = parsed.Tests |> List.fold addTest Map.empty
                     Examples = parsed.Examples |> List.fold addExample Map.empty
@@ -780,7 +872,16 @@ module Runtime =
                       | Some _, None ->
                           error "TYPE_VALIDATOR_TARGET_INVALID" $"Scalar type '{name}' has a stored validator target without a validator declaration." (Some name) (Some item.Definition.Span) [] []
                       | _ -> ()
-                      yield { Name = name; Definition = sourceObject.Reference; SourceFormat = authored.SourceFormat; ValidatorTarget = resolved } ]
+                      yield { Name = name; Definition = sourceObject.Reference; SourceFormat = authored.SourceFormat; ValidatorTarget = resolved }
+                  for KeyValue(name, _) in durable.Enums do
+                      let authored = durable.TypeSources.TryFind name |> Option.defaultValue (defaultTypeSource durable name)
+                      let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition authored.Content
+                      if sourceObject.Reference <> authored.Reference then
+                          error "TYPE_SOURCE_REFERENCE_MISMATCH" $"Type source '{name}' does not match its immutable source reference." (Some name) None [ authored.Reference.Hash ] [ sourceObject.Reference.Hash ]
+                      sourceObjects.Add sourceObject
+                      if authored.ValidatorTarget.IsSome then
+                          error "TYPE_VALIDATOR_TARGET_INVALID" $"Enum type '{name}' cannot carry a scalar validator target." (Some name) None [] []
+                      yield { Name = name; Definition = sourceObject.Reference; SourceFormat = authored.SourceFormat; ValidatorTarget = None } ]
             let manifestVersion =
                 if manifestBase.FormatVersion >= 3
                    || (typeSources |> List.exists (fun source -> source.SourceFormat.Frontend = SourceFrontend.Flow || source.ValidatorTarget.IsSome)) then 3
@@ -1009,7 +1110,7 @@ module Runtime =
         let validateGraph (state: DictionaryState) =
             let words = effectiveWords state
             let user = userWords state
-            for entry in user |> Map.toSeq |> Seq.map snd do Compiler.checkDefinition (knownTypes state) words entry.Definition |> ignore
+            for entry in user |> Map.toSeq |> Seq.map snd do Compiler.checkDefinitionWithEnums (knownTypes state) (enumDefinitions state) words entry.Definition |> ignore
             for record in state.Records |> Map.toSeq |> Seq.map (fun (_, item) -> item.Definition) do
                 let rec validateFieldType (field: RecordField) = function
                     | TNamed name when not ((knownTypes state).Contains name) ->
@@ -1025,8 +1126,8 @@ module Runtime =
                 | Some validator when deps.Contains(scalar.Name + ".new") || deps.Contains(scalar.Name + ".value") ->
                     error "TYPE_VALIDATOR_RECURSION" $"Validator '{validator}' cannot construct or unwrap '{scalar.Name}'." (Some scalar.Name) (Some scalar.Span) [] (Set.toList deps)
                 | _ -> ()
-            for test in state.Tests |> Map.toSeq |> Seq.map (fun (_, value) -> value) do Compiler.checkTest (knownTypes state) words test |> ignore
-            for example in state.Examples |> Map.toSeq |> Seq.map (fun (_, value) -> value) do Compiler.checkExample (knownTypes state) words example |> ignore
+            for test in state.Tests |> Map.toSeq |> Seq.map (fun (_, value) -> value) do Compiler.checkTestWithEnums (knownTypes state) (enumDefinitions state) words test |> ignore
+            for example in state.Examples |> Map.toSeq |> Seq.map (fun (_, value) -> value) do Compiler.checkExampleWithEnums (knownTypes state) (enumDefinitions state) words example |> ignore
             let graph =
                 words
                 |> Map.toSeq
@@ -1069,6 +1170,7 @@ module Runtime =
                 { Words = baseWords
                   Records = recordDefinitions state
                   Scalars = scalarDefinitions state
+                  Enums = enumDefinitions state
                   WordIds = baseWords |> Map.map (fun name item -> WordId(wordIdentity stackBase item)) }
             let flowContext: FlowLowering.Context =
                 { FlowLowering.CompilerContext = baseCompilerContext
@@ -1279,6 +1381,7 @@ module Runtime =
                         { Words = words
                           Records = recordDefinitions state
                           Scalars = scalarDefinitions state
+                          Enums = enumDefinitions state
                           WordIds = words |> Map.map (fun name item -> WordId(wordIdentity state item)) }
                     state, Some flowContext, None, words, context, Compiler.compileIrProgram context
             if not (Map.isEmpty finalState.FlowWords) then validateGraph finalState
@@ -1452,6 +1555,7 @@ module Runtime =
                         Deprecated = Set.empty
                         Records = Map.empty
                         Scalars = Map.empty
+                        Enums = Map.empty
                         TypeSources = Map.empty
                         Tests = Map.empty
                         Examples = Map.empty
@@ -1476,6 +1580,7 @@ module Runtime =
                 let hash = manifestHash |> Option.defaultWith (fun () -> error "STORAGE_INVALID_MANIFEST" "Manifest authority has no manifest hash." None None [] [])
                 let records = ResizeArray<RecordDefinition>()
                 let scalars = ResizeArray<ScalarTypeDefinition>()
+                let enums = ResizeArray<EnumDefinition>()
                 let loadedTypeSources = ResizeArray<string * AuthoredTypeSource>()
                 let stackWords = ResizeArray<WordDefinition>()
                 let stackTests = ResizeArray<TestDefinition>()
@@ -1494,13 +1599,14 @@ module Runtime =
                             match typeSource.SourceFormat.Frontend, typeSource.SourceFormat.Version with
                             | SourceFrontend.Stack, 1 ->
                                 let parsed = parseProjectSource ($"<type:{typeSource.Name}>") source
-                                match parsed.Records, parsed.Scalars with
-                                | [ record ], [] when record.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty ->
+                                match parsed.Records, parsed.Scalars, parsed.Enums with
+                                | [ record ], [], [] when record.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty ->
                                     records.Add record
                                     { SourceFormat = typeSource.SourceFormat; Content = source; Reference = typeSource.Definition; ValidatorTarget = typeSource.ValidatorTarget }
-                                | [], [ scalar ] when scalar.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty ->
+                                | [], [ scalar ], [] when scalar.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty ->
                                     scalars.Add scalar
                                     { SourceFormat = typeSource.SourceFormat; Content = source; Reference = typeSource.Definition; ValidatorTarget = typeSource.ValidatorTarget }
+                                | [], [], [] -> mismatch $"Manifest type object '{typeSource.Name}' does not contain exactly that type." (Some typeSource.Name)
                                 | _ -> mismatch $"Manifest type object '{typeSource.Name}' does not contain exactly that type." (Some typeSource.Name)
                             | SourceFrontend.Flow, version when version = 1 || version = 2 ->
                                 let file = $"<type:{typeSource.Name}/{typeSource.Definition.Hash}>"
@@ -1508,12 +1614,15 @@ module Runtime =
                                     match FlowParser.parseDocumentWithVersion version file source with
                                     | Ok document -> document
                                     | Error diagnostic -> raise (LanguageException diagnostic)
-                                match parsed.Records, parsed.Scalars with
-                                | [ record ], [] when record.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty ->
+                                match parsed.Records, parsed.Scalars, parsed.Enums with
+                                | [ record ], [], [] when record.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty ->
                                     records.Add record
                                     { SourceFormat = typeSource.SourceFormat; Content = source; Reference = typeSource.Definition; ValidatorTarget = typeSource.ValidatorTarget }
-                                | [], [ scalar ] when scalar.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty ->
+                                | [], [ scalar ], [] when scalar.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty ->
                                     scalars.Add scalar
+                                    { SourceFormat = typeSource.SourceFormat; Content = source; Reference = typeSource.Definition; ValidatorTarget = typeSource.ValidatorTarget }
+                                | [], [], [ enumDefinition ] when version = 2 && enumDefinition.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty ->
+                                    enums.Add enumDefinition
                                     { SourceFormat = typeSource.SourceFormat; Content = source; Reference = typeSource.Definition; ValidatorTarget = typeSource.ValidatorTarget }
                                 | _ -> mismatch $"Manifest Flow type object '{typeSource.Name}' does not contain exactly that type." (Some typeSource.Name)
                             | frontend, version ->
@@ -1701,6 +1810,7 @@ module Runtime =
                 let stackParsed: ParsedSource =
                     { Records = List.ofSeq records
                       Scalars = List.ofSeq scalars
+                      Enums = List.ofSeq enums
                       Words = List.ofSeq stackWords
                       Tests = List.ofSeq stackTests
                       Examples = List.ofSeq stackExamples }
@@ -1761,11 +1871,12 @@ module Runtime =
                 for typeSource in value.Types do
                     let authored = stackState.TypeSources[typeSource.Name]
                     let expected =
-                        match stackState.Records.TryFind typeSource.Name, stackState.Scalars.TryFind typeSource.Name with
-                        | Some record, _ when typeSource.SourceFormat.Frontend = SourceFrontend.Flow -> FlowSource.renderRecord record.Definition
-                        | Some record, _ -> Source.renderRecord record.Definition
-                        | _, Some scalar when typeSource.SourceFormat.Frontend = SourceFrontend.Flow -> FlowSource.renderScalar scalar.Definition
-                        | _, Some scalar -> Source.renderScalar scalar.Definition
+                        match stackState.Records.TryFind typeSource.Name, stackState.Scalars.TryFind typeSource.Name, stackState.Enums.TryFind typeSource.Name with
+                        | Some record, _, _ when typeSource.SourceFormat.Frontend = SourceFrontend.Flow -> FlowSource.renderRecord record.Definition
+                        | Some record, _, _ -> Source.renderRecord record.Definition
+                        | _, Some scalar, _ when typeSource.SourceFormat.Frontend = SourceFrontend.Flow -> FlowSource.renderScalar scalar.Definition
+                        | _, Some scalar, _ -> Source.renderScalar scalar.Definition
+                        | _, _, Some enumEntry -> FlowSource.renderEnum enumEntry.Definition
                         | _ -> mismatch $"Manifest type '{typeSource.Name}' is not present in the loaded type source objects." (Some typeSource.Name)
                     if authored.Reference <> typeSource.Definition
                        || authored.SourceFormat <> typeSource.SourceFormat
@@ -1779,15 +1890,16 @@ module Runtime =
                                 match FlowParser.parseDocumentWithVersion typeSource.SourceFormat.Version file authored.Content with
                                 | Ok document -> document
                                 | Error diagnostic -> raise (LanguageException diagnostic)
-                            match parsed.Records, parsed.Scalars with
-                            | [ record ], [] -> FlowSource.renderRecord record
-                            | [], [ scalar ] -> FlowSource.renderScalar scalar
+                            match parsed.Records, parsed.Scalars, parsed.Enums with
+                            | [ record ], [], [] -> FlowSource.renderRecord record
+                            | [], [ scalar ], [] -> FlowSource.renderScalar scalar
+                            | [], [], [ enumDefinition ] when typeSource.SourceFormat.Version = 2 -> FlowSource.renderEnum enumDefinition
                             | _ -> mismatch $"Manifest Flow type object '{typeSource.Name}' does not contain exactly that type." (Some typeSource.Name)
                         | SourceFrontend.Stack ->
                             let parsed = parseProjectSource ($"<type:{typeSource.Name}>") authored.Content
-                            match parsed.Records, parsed.Scalars with
-                            | [ record ], [] -> Source.renderRecord record
-                            | [], [ scalar ] -> Source.renderScalar scalar
+                            match parsed.Records, parsed.Scalars, parsed.Enums with
+                            | [ record ], [], [] -> Source.renderRecord record
+                            | [], [ scalar ], [] -> Source.renderScalar scalar
                             | _ -> mismatch $"Manifest type object '{typeSource.Name}' does not contain exactly that type." (Some typeSource.Name)
                     if canonical <> expected then mismatch $"Manifest type '{typeSource.Name}' differs from its source object." (Some typeSource.Name)
 
@@ -2427,6 +2539,9 @@ module Runtime =
                 | _ -> ()
             let proposed = { old with Records = records; Scalars = scalars; Words = entries; WordIds = wordIds; Tests = tests; Examples = examples; Replacements = replacements }
             let executable = compileRuntimeSnapshot proposed
+            for definition in parsed.Words do
+                if old.Words.TryFind definition.Name |> Option.exists (fun prior -> prior.Maturity = LibraryWord) then
+                    rejectEnumLibraryQualification executable.State executable.Words definition.Name
             let frozen = frozenValidatorWords old (effectiveWords old)
             let changed = parsed.Words |> List.map (fun word -> word.Name) |> Set.ofList
             let conflict = Set.intersect frozen changed
@@ -2482,7 +2597,11 @@ module Runtime =
             let candidateWords = data.Words |> Map.filter (fun _ value -> value.Status = Candidate)
             let candidateRecords = data.Records |> Map.filter (fun _ value -> value.Status = Candidate)
             let candidateScalars = data.Scalars |> Map.filter (fun _ value -> value.Status = Candidate)
-            let candidateTypes = Set.union (candidateRecords |> Map.toSeq |> Seq.map fst |> Set.ofSeq) (candidateScalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+            let candidateEnums = data.Enums |> Map.filter (fun _ value -> value.Status = Candidate)
+            let candidateTypes =
+                Set.unionMany [ candidateRecords |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+                                candidateScalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+                                candidateEnums |> Map.toSeq |> Seq.map fst |> Set.ofSeq ]
             let currentWords = effectiveWords data
 
             let rec wordClosure (pending: string list) (found: Set<string>) =
@@ -2509,6 +2628,7 @@ module Runtime =
                 | Some { Builtin = Some(RecordAccessor(owner, _)) } -> Some owner
                 | Some { Builtin = Some(ScalarConstructor owner) } -> Some owner
                 | Some { Builtin = Some(ScalarAccessor owner) } -> Some owner
+                | Some { Builtin = Some(EnumCaseConstructor(owner, _)) } -> Some owner
                 | _ -> None
 
             let typeReferencesForWord (name: string) =
@@ -2530,9 +2650,9 @@ module Runtime =
                 | name :: rest when not (candidateTypes.Contains name) -> typeClosure rest found
                 | name :: rest ->
                     let referenced =
-                        match candidateRecords.TryFind name, candidateScalars.TryFind name with
-                        | Some record, _ -> record.Definition.Fields |> List.map (fun field -> namedTypes field.Type) |> Set.unionMany
-                        | _, Some scalar -> namedTypes scalar.Definition.BaseType
+                        match candidateRecords.TryFind name, candidateScalars.TryFind name, candidateEnums.TryFind name with
+                        | Some record, _, _ -> record.Definition.Fields |> List.map (fun field -> namedTypes field.Type) |> Set.unionMany
+                        | _, Some scalar, _ -> namedTypes scalar.Definition.BaseType
                         | _ -> Set.empty
                     typeClosure (rest @ Set.toList referenced) (Set.add name found)
 
@@ -2656,12 +2776,16 @@ module Runtime =
                     else value)
             let proposedRecords = data.Records |> Map.map (fun name value -> if selectedTypes.Contains name then { value with Status = Persistent } else value)
             let proposedScalars = data.Scalars |> Map.map (fun name value -> if selectedTypes.Contains name then { value with Status = Persistent } else value)
+            let proposedEnums = data.Enums |> Map.map (fun name value -> if selectedTypes.Contains name then { value with Status = Persistent } else value)
             let proposed =
                 { data with
                     Words = proposedWords
                     Records = proposedRecords
                     Scalars = proposedScalars
+                    Enums = proposedEnums
                     Replacements = data.Replacements |> Map.filter (fun name _ -> not (selectedWords.Contains name)) }
+            for name in selectedWords do
+                rejectEnumLibraryQualification proposed (effectiveWords proposed) name
             compileRuntimeSnapshot proposed |> ignore
             for name in selectedWords do
                 let candidate = candidateWords[name]
@@ -2944,11 +3068,11 @@ module Runtime =
         let registerFlowProjectParsed (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
             let old = data
             let temporary = readOptionalStrictBool arguments "temporary" false
-            let hasTypes = not document.Records.IsEmpty || not document.Scalars.IsEmpty
+            let hasTypes = not document.Records.IsEmpty || not document.Scalars.IsEmpty || not document.Enums.IsEmpty
             if document.SyntaxVersion <> syntaxVersion then
                 error "FLOW_VERSION_UNSUPPORTED" "Flow project syntax version does not match the selected syntaxVersion." None None [ string syntaxVersion ] [ string document.SyntaxVersion ]
-            if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Words.IsEmpty then
-                error "FLOW_PROJECT_EMPTY" "A Flow project document must declare at least one type or word." None None [ "record, type, or word declaration" ] []
+            if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.IsEmpty then
+                error "FLOW_PROJECT_EMPTY" "A Flow project document must declare at least one type or word." None None [ "record, scalar, enum, or word declaration" ] []
             if hasTypes && temporary then
                 error "FLOW_PROJECT_TEMPORARY_TYPES_UNSUPPORTED" "Flow types do not have a temporary lifecycle; define the typed project as candidates or omit its type declarations." None None [ "temporary=false for project types" ] [ "temporary=true" ]
             if readOptionalStrictBool arguments "replace" false
@@ -2959,7 +3083,7 @@ module Runtime =
                 error "FLOW_PROJECT_REQUEST_SHAPE" "A multi-declaration Flow project is add-only; put tests and examples in the document and use the existing one-word CAS route for replacement." None None
                     [ "new project declarations with inline test/example sources" ] [ "replace, expectedRevision, or external attachment changes" ]
 
-            let typeNames = (document.Records |> List.map (fun item -> item.Name)) @ (document.Scalars |> List.map (fun item -> item.Name))
+            let typeNames = (document.Records |> List.map (fun item -> item.Name)) @ (document.Scalars |> List.map (fun item -> item.Name)) @ (document.Enums |> List.map (fun item -> item.Name))
             let wordNames = document.Words |> List.map (fun item -> item.Name)
             let duplicateWord = wordNames |> List.groupBy id |> List.tryFind (fun (_, grouped) -> grouped.Length > 1)
             match duplicateWord with
@@ -2968,6 +3092,9 @@ module Runtime =
             match Set.intersect (Set.ofList typeNames) (Set.ofList wordNames) |> Set.toList with
             | name :: _ -> error "FLOW_PROJECT_NAME_COLLISION" $"'{name}' is declared as both a type and a word." (Some name) None [] [ name ]
             | [] -> ()
+            match typeNames |> List.groupBy id |> List.tryFind (fun (_, grouped) -> grouped.Length > 1) with
+            | Some(name, _) -> error "FLOW_PROJECT_DUPLICATE_TYPE" $"Type '{name}' is declared more than once in the Flow project." (Some name) None [] [ name ]
+            | None -> ()
             for name in typeNames do
                 if (knownTypes old).Contains name then
                     error "FLOW_PROJECT_TYPE_ALREADY_EXISTS" $"Type '{name}' already exists; project documents do not replace type sources." (Some name) None [ "unused type name" ] [ name ]
@@ -2979,7 +3106,10 @@ module Runtime =
                 let scalars: Map<string, ScalarEntry> =
                     document.Scalars
                     |> List.fold (fun found definition -> Map.add definition.Name ({ Definition = definition; Status = Candidate }: ScalarEntry) found) old.Scalars
-                { old with Records = records; Scalars = scalars }
+                let enums: Map<string, EnumEntry> =
+                    document.Enums
+                    |> List.fold (fun found definition -> Map.add definition.Name ({ Definition = definition; Status = Candidate }: EnumEntry) found) old.Enums
+                { old with Records = records; Scalars = scalars; Enums = enums }
             let generatedBeforeWords = makeGenerated typeCollisionState
             for name in wordNames do
                 if existingWords.ContainsKey name || generatedBeforeWords.ContainsKey name then
@@ -2995,8 +3125,8 @@ module Runtime =
                         match FlowParser.parseDocumentWithVersion syntaxVersion file content with
                         | Ok value -> value
                         | Error diagnostic -> raise (LanguageException diagnostic)
-                    match reparsed.Records, reparsed.Scalars, reparsed.Words, reparsed.Tests, reparsed.Examples with
-                    | [ definition ], [], [], [], [] when definition.Name = parsed.Name ->
+                    match reparsed.Records, reparsed.Scalars, reparsed.Enums, reparsed.Words, reparsed.Tests, reparsed.Examples with
+                    | [ definition ], [], [], [], [], [] when definition.Name = parsed.Name ->
                         parsed.Name,
                         ({ Definition = definition; Status = Candidate }: RecordEntry),
                         { SourceFormat = { Frontend = SourceFrontend.Flow; Version = syntaxVersion }
@@ -3014,8 +3144,8 @@ module Runtime =
                         match FlowParser.parseDocumentWithVersion syntaxVersion file content with
                         | Ok value -> value
                         | Error diagnostic -> raise (LanguageException diagnostic)
-                    match reparsed.Records, reparsed.Scalars, reparsed.Words, reparsed.Tests, reparsed.Examples with
-                    | [], [ definition ], [], [], [] when definition.Name = parsed.Name ->
+                    match reparsed.Records, reparsed.Scalars, reparsed.Enums, reparsed.Words, reparsed.Tests, reparsed.Examples with
+                    | [], [ definition ], [], [], [], [] when definition.Name = parsed.Name ->
                         parsed.Name,
                         ({ Definition = definition; Status = Candidate }: ScalarEntry),
                         { SourceFormat = { Frontend = SourceFrontend.Flow; Version = syntaxVersion }
@@ -3023,6 +3153,25 @@ module Runtime =
                           Reference = sourceObject.Reference
                           ValidatorTarget = None }
                     | _ -> error "FLOW_PROJECT_TYPE_SOURCE_INVALID" $"Scalar source '{parsed.Name}' must contain exactly its authored Flow type declaration." (Some parsed.Name) (Some parsed.Span) [] [] )
+            let newEnums: (string * EnumEntry * AuthoredTypeSource) list =
+                document.Enums
+                |> List.map (fun parsed ->
+                    let content = parsed.SourceText
+                    let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition content
+                    let file = $"<flow-type:{parsed.Name}/{sourceObject.Reference.Hash}>"
+                    let reparsed =
+                        match FlowParser.parseDocumentWithVersion syntaxVersion file content with
+                        | Ok value -> value
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    match reparsed.Records, reparsed.Scalars, reparsed.Enums, reparsed.Words, reparsed.Tests, reparsed.Examples with
+                    | [], [], [ definition ], [], [], [] when syntaxVersion = 2 && definition.Name = parsed.Name ->
+                        parsed.Name,
+                        ({ Definition = definition; Status = Candidate }: EnumEntry),
+                        { SourceFormat = { Frontend = SourceFrontend.Flow; Version = syntaxVersion }
+                          Content = content
+                          Reference = sourceObject.Reference
+                          ValidatorTarget = None }
+                    | _ -> error "FLOW_PROJECT_TYPE_SOURCE_INVALID" $"Enum source '{parsed.Name}' must contain exactly its authored Flow enum declaration." (Some parsed.Name) (Some parsed.Span) [] [] )
 
             let identities =
                 document.Words
@@ -3128,9 +3277,11 @@ module Runtime =
 
             let records = newRecords |> List.fold (fun found (name, item, _) -> Map.add name item found) old.Records
             let scalars = newScalars |> List.fold (fun found (name, item, _) -> Map.add name item found) old.Scalars
+            let enums = newEnums |> List.fold (fun found (name, item, _) -> Map.add name item found) old.Enums
             let typeSourceRows =
                 (newRecords |> List.map (fun (name, _, source) -> name, source))
                 @ (newScalars |> List.map (fun (name, _, source) -> name, source))
+                @ (newEnums |> List.map (fun (name, _, source) -> name, source))
             let typeSources = typeSourceRows |> List.fold (fun found (name, source) -> Map.add name source found) old.TypeSources
             let words = newWordMap |> Map.fold (fun found name item -> Map.add name item found) old.Words
             let wordIds = identities |> Map.fold (fun found name identity -> Map.add name (wordIdText identity) found) old.WordIds
@@ -3143,6 +3294,7 @@ module Runtime =
                     WordIds = wordIds
                     Records = records
                     Scalars = scalars
+                    Enums = enums
                     TypeSources = typeSources
                     FlowWords = flowWords
                     FlowTests = flowTests
@@ -3417,6 +3569,8 @@ module Runtime =
                     FlowExamples = nextFlowExamples
                     Replacements = replacementBackups }
             let executable = compileRuntimeSnapshot proposed
+            if maturity = LibraryWord then
+                rejectEnumLibraryQualification executable.State executable.Words parsedWord.Name
             let frozen = frozenValidatorWords old (effectiveWords old)
             if frozen.Contains parsedWord.Name then
                 error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{parsedWord.Name}' while a scalar type is persistent." (Some parsedWord.Name) (Some parsedWord.Span) [] [ parsedWord.Name ]
@@ -3441,7 +3595,7 @@ module Runtime =
             if owners.Count <> 1 then
                 error "FLOW_ATTACHMENT_OWNER_MISMATCH" "A Flow attachment-only document must name exactly one owner across its tests and examples." None None [ "one Flow word owner" ] (owners |> Set.toList)
             let ownerName = Set.minElement owners
-            if not (document.Records.IsEmpty && document.Scalars.IsEmpty && document.Words.IsEmpty)
+            if not (document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.IsEmpty)
                || (document.Tests.IsEmpty && document.Examples.IsEmpty) then
                 error "FLOW_ATTACHMENT_DOCUMENT_SHAPE" "An attachment-only Flow document must contain tests and/or examples for one existing Flow word and no declarations." (Some ownerName) None [ "test/example declarations only" ] []
             if not (flowSourceStrings arguments "tests").IsEmpty || not (flowSourceStrings arguments "examples").IsEmpty then
@@ -3515,9 +3669,9 @@ module Runtime =
                 match FlowParser.parseDocumentWithVersion syntaxVersion "<flow-project>" source with
                 | Ok value -> value
                 | Error diagnostic -> raise (LanguageException diagnostic)
-            if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Words.IsEmpty && (not document.Tests.IsEmpty || not document.Examples.IsEmpty) then
+            if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.IsEmpty && (not document.Tests.IsEmpty || not document.Examples.IsEmpty) then
                 registerFlowAttachmentsOnly arguments syntaxVersion document
-            elif document.Records.IsEmpty && document.Scalars.IsEmpty && document.Words.Length = 1 then
+            elif document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.Length = 1 then
                 if document.Tests.IsEmpty && document.Examples.IsEmpty then
                     // Preserve the byte-for-byte legacy source object for the established
                     // one-word request shape, including comments and trailing whitespace.
@@ -3579,7 +3733,7 @@ module Runtime =
 
         let buildDiscoveryIndex () : Map<string, WordEntry> * DiscoveryIndex =
             let words = effectiveWords data
-            words, Discovery.build words data.Records data.Scalars
+            words, Discovery.build words data.Records data.Scalars data.Enums
 
         let ensureKnownDiscoveryType (typeValue: LangType) : unit =
             let rec names = function
@@ -3977,6 +4131,7 @@ module Runtime =
                         (data.Words |> Map.exists (fun _ value -> value.Status = Candidate))
                         || (data.Records |> Map.exists (fun _ value -> value.Status = Candidate))
                         || (data.Scalars |> Map.exists (fun _ value -> value.Status = Candidate))
+                        || (data.Enums |> Map.exists (fun _ value -> value.Status = Candidate))
                     if operation = "task.commit" && not (activeTask |> Option.exists (fun task -> task.Active)) then
                         error "TASK_NOT_ACTIVE" "No active task can be committed." None None [] []
                     elif actor <> "client" && actor <> "host" then
@@ -4012,7 +4167,8 @@ module Runtime =
                         error "RENAME_INVALID_NAME" "Rename requires distinct nonempty source and target names." (if oldName = "" then None else Some oldName) None [] [ oldName; newName ]
                     elif (data.Words |> Map.exists (fun _ item -> item.Status = Candidate || item.Status = Temporary))
                          || (data.Records |> Map.exists (fun _ item -> item.Status = Candidate))
-                         || (data.Scalars |> Map.exists (fun _ item -> item.Status = Candidate)) then
+                         || (data.Scalars |> Map.exists (fun _ item -> item.Status = Candidate))
+                         || (data.Enums |> Map.exists (fun _ item -> item.Status = Candidate)) then
                         error "RENAME_STAGED_CHANGES" "Commit or discard staged edits before renaming persistent vocabulary." None None [] []
                     else
                         let effective = effectiveWords data
@@ -4328,6 +4484,8 @@ module Runtime =
                                 |> List.choose (fun ownerId -> executable.State.FlowWords.TryFind ownerId |> Option.map (fun authored -> authored.Source.OwnerName))
                                 |> Set.ofList
                             let changedWordNames = Set.union changedStackOwnerNames changedFlowOwnerNames
+                            for name in changedWordNames do
+                                rejectEnumLibraryQualification executable.State executable.Words name
                             let testOwnersToRun = Set.union changedWordNames changedStackAttachmentOwners
                             let results =
                                 testOwnersToRun
@@ -4390,7 +4548,8 @@ module Runtime =
                         error "PROVENANCE_INVALID_ACTOR" "Maintenance actor must be 'client' or 'host'." None None [ "client"; "host" ] [ actor ]
                     elif (data.Words |> Map.exists (fun _ item -> item.Status = Candidate || item.Status = Temporary))
                          || (data.Records |> Map.exists (fun _ item -> item.Status = Candidate))
-                         || (data.Scalars |> Map.exists (fun _ item -> item.Status = Candidate)) then
+                         || (data.Scalars |> Map.exists (fun _ item -> item.Status = Candidate))
+                         || (data.Enums |> Map.exists (fun _ item -> item.Status = Candidate)) then
                         error "DEPRECATE_STAGED_CHANGES" "Commit or discard staged edits before deprecating a word." None None [] []
                     else
                         match data.Words.TryFind name with
@@ -4475,6 +4634,7 @@ module Runtime =
                             let failed = tests |> List.filter (fun result -> not result.Passed)
                             if not (List.isEmpty failed) then error "DEPRECATE_TESTS_FAILED" "The word's attached tests must pass before deprecation." (Some name) None [] (failed |> List.map (fun result -> result.Name))
                             if item.Maturity = LibraryWord then
+                                rejectEnumLibraryQualification testSnapshot.State testSnapshot.Words name
                                 let requiredInstructions, requiredBranches = coverageObligations testSnapshot name
                                 let coveredInstructions = tests |> List.fold (fun found test -> Set.union found test.Instructions) Set.empty
                                 let coveredBranches = tests |> List.fold (fun found test -> Set.union found test.BranchOutcomes) Set.empty
@@ -4592,6 +4752,18 @@ module Runtime =
                         activateRuntimeSnapshot executable
                         lastResults <- []
                         success "discard" $"Discarded candidate scalar type '{name}'." None
+                    | None when data.Enums.TryFind name |> Option.exists (fun value -> value.Status = Candidate) ->
+                        let prefix = name + "."
+                        let proposed =
+                            { data with
+                                Enums = Map.remove name data.Enums
+                                TypeSources = Map.remove name data.TypeSources
+                                Tests = data.Tests |> Map.filter (fun _ test -> not (test.Word.StartsWith(prefix, StringComparison.Ordinal)))
+                                Examples = data.Examples |> Map.filter (fun _ example -> not (example.Word.StartsWith(prefix, StringComparison.Ordinal))) }
+                        let executable = compileRuntimeSnapshot proposed
+                        activateRuntimeSnapshot executable
+                        lastResults <- []
+                        success "discard" $"Discarded candidate enum type '{name}'." None
                     | _ -> error "DISCARD_NOT_STAGED" $"'{name}' is not staged." (Some name) None [] []
                 | "task.begin" ->
                     match activeTask with

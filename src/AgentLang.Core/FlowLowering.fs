@@ -245,6 +245,7 @@ module FlowLowering =
         | SemanticScope of SemanticExpr list
         | SemanticMatchOption of string * SemanticExpr list * SemanticExpr list
         | SemanticMatchResult of string * string * SemanticExpr list * SemanticExpr list
+        | SemanticMatchEnum of (string * SemanticExpr list) list
 
     type private RetainedFlowSource =
         { Document: FlowSourceDocument
@@ -294,9 +295,10 @@ module FlowLowering =
           HasNamedArguments: bool }
 
     let private knownTypes (context: Context) =
-        Set.union
-            (context.CompilerContext.Records |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
-            (context.CompilerContext.Scalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+        Set.unionMany
+            [ context.CompilerContext.Records |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+              context.CompilerContext.Scalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+              context.CompilerContext.Enums |> Map.toSeq |> Seq.map fst |> Set.ofSeq ]
 
     let private fail code message word span expected actual =
         Diagnostics.raiseError code message word span expected actual
@@ -320,7 +322,8 @@ module FlowLowering =
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Container(_, _, _, span)
         | FlowExpression.MatchOption(_, _, _, span)
-        | FlowExpression.MatchResult(_, _, _, span) -> span
+        | FlowExpression.MatchResult(_, _, _, span)
+        | FlowExpression.MatchEnum(_, _, span) -> span
 
     let private rememberSpan state span =
         state.AuthoredSpans <- Set.add span state.AuthoredSpans
@@ -834,6 +837,8 @@ module FlowLowering =
             | Some okValues, Some errorValues when okValues = errorValues -> okValues
             | Some okValues, Some errorValues -> fail "FLOW_MATCH_BRANCH_TYPE" "Result match cases must produce the same output vector in the same order." None (Some matchSpan) (okValues |> List.map Types.format) (errorValues |> List.map Types.format)
             | _ -> fail "FLOW_MATCH_BRANCH_VALUE" "Both Result match cases must produce a nonempty output vector." None (Some matchSpan) [ "one or more outputs from Ok and Error" ] []
+        | FlowExpression.MatchEnum(scrutinee, cases, matchSpan) ->
+            inferEnumMatchOutput context state environment scrutinee cases matchSpan
         | FlowExpression.If(condition, thenBody, elseBody, _) ->
             let conditionType = inferExpression context state environment condition
             if conditionType <> TBool then fail "FLOW_IF_CONDITION_TYPE" "Flow if condition must have type Bool." None (Some(spanOfExpression condition)) [ "Bool" ] [ Types.format conditionType ]
@@ -843,6 +848,35 @@ module FlowLowering =
             | Some left, Some right when left = right -> left
             | Some left, Some right -> fail "FLOW_IF_BRANCH_TYPE" "Both Flow if branches must produce the same output vector in the same order." None (Some span) (left |> List.map Types.format) (right |> List.map Types.format)
             | None, _ | _, None -> fail "FLOW_IF_BRANCH_VALUE" "Each Flow if branch must produce a nonempty output vector." None (Some span) [ "one or more outputs in each branch" ] []
+
+    and private inferEnumMatchOutput context state environment scrutinee cases matchSpan =
+        let enumName =
+            match inferExpression context state environment scrutinee with
+            | TNamed name when context.CompilerContext.Enums.ContainsKey name -> name
+            | TNamed name when context.CompilerContext.Records.ContainsKey name || context.CompilerContext.Scalars.ContainsKey name ->
+                fail "FLOW_MATCH_REQUIRES_ENUM" "Enum match requires a declared enum type as its scrutinee." None (Some matchSpan) [ "enum type" ] [ name ]
+            | actual -> fail "FLOW_MATCH_REQUIRES_ENUM" "Enum match requires a declared enum type as its scrutinee." None (Some matchSpan) [ "enum type" ] [ Types.format actual ]
+        let declaredCases = context.CompilerContext.Enums[enumName].Cases
+        let actualCases = cases |> List.map (fun caseValue -> caseValue.Name)
+        match actualCases |> List.countBy id |> List.tryFind (fun (_, count) -> count > 1) with
+        | Some(name, _) -> fail "FLOW_MATCH_CASE_DUPLICATE" $"Enum match contains case '{name}' more than once." None (Some matchSpan) [] [ name ]
+        | None -> ()
+        match actualCases |> List.tryFind (fun name -> not (List.contains name declaredCases)) with
+        | Some name -> fail "FLOW_MATCH_CASE_UNKNOWN" $"Enum '{enumName}' has no case named '{name}'." None (Some matchSpan) declaredCases [ name ]
+        | None -> ()
+        let missing = declaredCases |> List.filter (fun name -> not (List.contains name actualCases))
+        if not (List.isEmpty missing) then
+            fail "FLOW_MATCH_CASE_MISSING" $"Enum match must cover every case of '{enumName}'." None (Some matchSpan) declaredCases actualCases
+        let outputs = cases |> List.map (fun caseValue -> caseValue, inferStatements context state environment caseValue.Statements)
+        let firstCase, firstOutputs = outputs.Head
+        for caseValue, caseOutputs in outputs |> List.skip 1 do
+            match firstOutputs, caseOutputs with
+            | Some expected, Some actual when expected = actual -> ()
+            | Some expected, Some actual -> fail "FLOW_MATCH_BRANCH_TYPE" "Enum match cases must produce the same output vector in the same order." None (Some matchSpan) (expected |> List.map Types.format) (actual |> List.map Types.format)
+            | _ -> fail "FLOW_MATCH_BRANCH_VALUE" "Every enum match case must produce a nonempty output vector." None (Some matchSpan) [ $"one or more outputs from {firstCase.Name} and {caseValue.Name}" ] []
+        match firstOutputs with
+        | Some values -> values
+        | None -> fail "FLOW_MATCH_BRANCH_VALUE" "Every enum match case must produce a nonempty output vector." None (Some matchSpan) [ "one or more outputs per case" ] []
 
     and private inferStatements (context: Context) (state: LoweringState) (initialEnvironment: Map<string, Binding>) (statements: FlowStatement list) =
         let mutable environment = initialEnvironment
@@ -1052,6 +1086,20 @@ module FlowLowering =
             let scrutineeFragment = lowerFlowExpression context state environment (extendPath path FlowAstPathSegment.ResultScrutinee) scrutinee
             { Expressions = scrutineeFragment.Expressions @ [ MatchResult(okCase.Name, errorCase.Name, [ okScope ], [ errorScope ], matchSpan) ]
               CallEvents = scrutineeFragment.CallEvents @ okFragment.CallEvents @ errorFragment.CallEvents }
+        | FlowExpression.MatchEnum(scrutinee, cases, matchSpan) ->
+            inferOutputs context state environment expression |> ignore
+            let caseFragments =
+                cases
+                |> List.mapi (fun caseIndex caseValue ->
+                    let segment statementIndex = FlowAstPathSegment.EnumCaseStatement(caseIndex, statementIndex)
+                    let caseFragment, _ = lowerStatementsWithPath context state environment path segment caseValue.Statements
+                    let scope = Scope(caseFragment.Expressions, syntheticSpan state caseValue.Span)
+                    caseValue.Name, scope, caseFragment)
+            let scrutineeFragment = lowerFlowExpression context state environment (extendPath path FlowAstPathSegment.EnumScrutinee) scrutinee
+            let loweredCases = caseFragments |> List.map (fun (caseName, scope, _) -> caseName, [ scope ])
+            let armEvents = caseFragments |> List.collect (fun (_, _, caseFragment) -> caseFragment.CallEvents)
+            { Expressions = scrutineeFragment.Expressions @ [ MatchEnum(loweredCases, matchSpan) ]
+              CallEvents = scrutineeFragment.CallEvents @ armEvents }
         | FlowExpression.If(condition, thenStatements, elseStatements, ifSpan) ->
             inferOutputs context state environment expression |> ignore
             let conditionType = inferExpression context state environment condition
@@ -1135,11 +1183,14 @@ module FlowLowering =
               CallEvents = (evaluatedFragments |> Seq.collect (fun value -> value.CallEvents) |> Seq.toList) @ [ event ] }
 
     and private lowerStatements context state initialEnvironment path statements =
+        lowerStatementsWithPath context state initialEnvironment path FlowAstPathSegment.BlockStatement statements
+
+    and private lowerStatementsWithPath context state initialEnvironment path statementPathSegment statements =
         let mutable environment = initialEnvironment
         let output = ResizeArray<Expr>()
         let callEvents = ResizeArray<FlowCallEvent>()
         for index, statement in statements |> List.indexed do
-            let statementPath = extendPath path (FlowAstPathSegment.BlockStatement index)
+            let statementPath = extendPath path (statementPathSegment index)
             match statement with
             | FlowStatement.Let(name, value, statementSpan) ->
                 rememberSpan state statementSpan
@@ -1228,6 +1279,8 @@ module FlowLowering =
                         // The validator is an implicit type contract, not an
                         // authored Flow call site.
                         [ { Site = instruction.Site; Call = call; Operation = instruction.Operation } ]
+                    | IrOperation.MakeEnumCase(call, _, _) ->
+                        [ { Site = instruction.Site; Call = call; Operation = instruction.Operation } ]
                     | _ -> []
                 let nested =
                     match instruction.Operation with
@@ -1235,6 +1288,7 @@ module FlowLowering =
                     | IrOperation.If(thenBlock, elseBlock) -> walk thenBlock @ walk elseBlock
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> walk someBlock @ walk noneBlock
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> walk okBlock @ walk errorBlock
+                    | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (snd >> walk)
                     | _ -> []
                 authored @ nested)
         walk block
@@ -1295,6 +1349,7 @@ module FlowLowering =
             | SignatureKind.Generated(RecordAccessor _), IrOperation.GetRecordField _ -> true
             | SignatureKind.Generated(ScalarConstructor _), IrOperation.WrapScalar _ -> true
             | SignatureKind.Generated(ScalarAccessor _), IrOperation.UnwrapScalar _ -> true
+            | SignatureKind.Generated(EnumCaseConstructor _), IrOperation.MakeEnumCase _ -> true
             | SignatureKind.Generated _, _ -> false
             | (SignatureKind.TrustedPrimitive _ | SignatureKind.UserWord), IrOperation.Call _ -> true
             | _ -> false
@@ -1416,6 +1471,7 @@ module FlowLowering =
             | MatchOption(name, someBranch, noneBranch, _) -> SemanticMatchOption(name, semanticExpressions someBranch, semanticExpressions noneBranch)
             | MatchResult(okName, errorName, okBranch, errorBranch, _) ->
                 SemanticMatchResult(okName, errorName, semanticExpressions okBranch, semanticExpressions errorBranch)
+            | MatchEnum(cases, _) -> SemanticMatchEnum(cases |> List.map (fun (caseName, body) -> caseName, semanticExpressions body))
         expressions |> List.map normalize
 
     let private validateFlowSourceDocument (document: FlowSourceDocument) =
@@ -1485,6 +1541,10 @@ module FlowLowering =
                 walkExpression (extendPath path FlowAstPathSegment.ResultScrutinee) scrutinee
                 walkStatements (extendPath path (FlowAstPathSegment.ResultOkStatement 0)) okCase.Statements
                 walkStatements (extendPath path (FlowAstPathSegment.ResultErrorStatement 0)) errorCase.Statements
+            | FlowExpression.MatchEnum(scrutinee, cases, _) ->
+                walkExpression (extendPath path FlowAstPathSegment.EnumScrutinee) scrutinee
+                cases |> List.iteri (fun caseIndex caseValue ->
+                    walkStatementsWithPath path (fun statementIndex -> FlowAstPathSegment.EnumCaseStatement(caseIndex, statementIndex)) caseValue.Statements)
             | FlowExpression.Literal _ | FlowExpression.Local _ -> ()
         and walkArgument path form index argument =
             let argumentPath = extendPath path (argumentPath form index)
@@ -1505,6 +1565,15 @@ module FlowLowering =
                 | FlowStatement.Return(values, _) ->
                     values |> List.iteri (fun outputIndex value ->
                         walkExpression (extendPath statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
+        and walkStatementsWithPath path statementPathSegment statements =
+            statements
+            |> List.iteri (fun index statement ->
+                let statementPath = extendPath path (statementPathSegment index)
+                match statement with
+                | FlowStatement.Let(_, value, _) -> walkExpression (extendPath statementPath FlowAstPathSegment.LetInitializer) value
+                | FlowStatement.LetMany(_, value, _) -> walkExpression (extendPath statementPath FlowAstPathSegment.DestructureInitializer) value
+                | FlowStatement.Evaluate expression -> walkExpression (extendPath statementPath FlowAstPathSegment.EvaluateExpression) expression
+                | FlowStatement.Return(values, _) -> values |> List.iteri (fun outputIndex value -> walkExpression (extendPath statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
         walkStatements (FlowAstPath.FlowAstPath []) flowWord.Body
         found |> Seq.toList
 
@@ -1545,6 +1614,10 @@ module FlowLowering =
                 walkExpression role (extendPath path FlowAstPathSegment.ResultScrutinee) scrutinee
                 walkStatements role (extendPath path (FlowAstPathSegment.ResultOkStatement 0)) okCase.Statements
                 walkStatements role (extendPath path (FlowAstPathSegment.ResultErrorStatement 0)) errorCase.Statements
+            | FlowExpression.MatchEnum(scrutinee, cases, _) ->
+                walkExpression role (extendPath path FlowAstPathSegment.EnumScrutinee) scrutinee
+                cases |> List.iteri (fun caseIndex caseValue ->
+                    walkStatementsWithPath role path (fun statementIndex -> FlowAstPathSegment.EnumCaseStatement(caseIndex, statementIndex)) caseValue.Statements)
             | FlowExpression.Literal _ | FlowExpression.Local _ -> ()
         and walkArgument role path form index argument =
             let argumentNodePath = extendPath path (argumentPath form index)
@@ -1565,6 +1638,15 @@ module FlowLowering =
                 | FlowStatement.Return(values, _) ->
                     values |> List.iteri (fun outputIndex value ->
                         walkExpression role (extendPath statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
+        and walkStatementsWithPath role path statementPathSegment statements =
+            statements
+            |> List.iteri (fun index statement ->
+                let statementPath = extendPath path (statementPathSegment index)
+                match statement with
+                | FlowStatement.Let(_, value, _) -> walkExpression role (extendPath statementPath FlowAstPathSegment.LetInitializer) value
+                | FlowStatement.LetMany(_, value, _) -> walkExpression role (extendPath statementPath FlowAstPathSegment.DestructureInitializer) value
+                | FlowStatement.Evaluate expression -> walkExpression role (extendPath statementPath FlowAstPathSegment.EvaluateExpression) expression
+                | FlowStatement.Return(values, _) -> values |> List.iteri (fun outputIndex value -> walkExpression role (extendPath statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
         match attachment with
         | ParsedFlowTest test ->
             walkStatements FlowAttachmentBodyRole.Actual (FlowAstPath.FlowAstPath []) test.Body
@@ -1716,7 +1798,7 @@ module FlowLowering =
 
     let checkWord context flowWord =
         let lowered = lowerWord context flowWord
-        let checkedDefinition = Compiler.checkDefinition (knownTypes context) context.CompilerContext.Words lowered.Definition
+        let checkedDefinition = Compiler.checkDefinitionWithEnums (knownTypes context) context.CompilerContext.Enums context.CompilerContext.Words lowered.Definition
         lowered, checkedDefinition
 
     let compileWord context wordId flowWord : CompiledWord =
@@ -1755,7 +1837,7 @@ module FlowLowering =
         let signatures = signatureCatalog context
         let artifacts = withFlowOwnerPath flowWord (fun () -> lowerWordWithSignaturesAndEvents context signatures context.SourceOrigins flowWord)
         let lowered = artifacts.Lowered
-        Compiler.checkDefinition (knownTypes context) context.CompilerContext.Words lowered.Definition |> ignore
+        Compiler.checkDefinitionWithEnums (knownTypes context) context.CompilerContext.Enums context.CompilerContext.Words lowered.Definition |> ignore
         if context.CompilerContext.Words.ContainsKey lowered.Definition.Name then
             fail "FLOW_WORD_EXISTS" $"Word '{lowered.Definition.Name}' already exists in the supplied compiler snapshot." (Some lowered.Definition.Name) (Some flowWord.Span) [] [ lowered.Definition.Name ]
         if context.CompilerContext.WordIds.ContainsKey lowered.Definition.Name then
@@ -1927,13 +2009,14 @@ module FlowLowering =
                     | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
                     | MapList(_, span) | FilterList(_, span) | EachList(_, span) | FoldList(_, span)
                     | Let(_, span) | Load(_, span) | If(_, _, span) | Scope(_, span)
-                    | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) -> span
+                    | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) | MatchEnum(_, span) -> span
                 let found = if span.Length = 0 then Set.add span found else found
                 match expression with
                 | If(thenBranch, elseBranch, _) -> Set.union found (Set.union (collect thenBranch) (collect elseBranch))
                 | Scope(innerBody, _) -> Set.union found (collect innerBody)
                 | MatchOption(_, someBranch, noneBranch, _) -> Set.union found (Set.union (collect someBranch) (collect noneBranch))
                 | MatchResult(_, _, okBranch, errorBranch, _) -> Set.union found (Set.union (collect okBranch) (collect errorBranch))
+                | MatchEnum(cases, _) -> cases |> List.fold (fun accumulated (_, caseBody) -> Set.union accumulated (collect caseBody)) found
                 | _ -> found) Set.empty
         collect expressions
 

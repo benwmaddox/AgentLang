@@ -403,6 +403,10 @@ module Storage =
         let setIndexed name index =
             node["segment"] <- jsonString name
             node["index"] <- jsonInt index
+        let setDoubleIndexed name first second =
+            node["segment"] <- jsonString name
+            node["caseIndex"] <- jsonInt first
+            node["statementIndex"] <- jsonInt second
         let setNamed name = node["segment"] <- jsonString name
         match segment with
         | FlowAstPathSegment.BlockStatement index -> setIndexed "blockStatement" index
@@ -427,6 +431,8 @@ module Storage =
         | FlowAstPathSegment.ResultScrutinee -> setNamed "resultScrutinee"
         | FlowAstPathSegment.ResultOkStatement index -> setIndexed "resultOkStatement" index
         | FlowAstPathSegment.ResultErrorStatement index -> setIndexed "resultErrorStatement" index
+        | FlowAstPathSegment.EnumScrutinee -> setNamed "enumScrutinee"
+        | FlowAstPathSegment.EnumCaseStatement(caseIndex, statementIndex) -> setDoubleIndexed "enumCaseStatement" caseIndex statementIndex
         node :> JsonNode
 
     let private parseCallBindingPathSegment path node =
@@ -438,6 +444,14 @@ module Storage =
             if index > StorageLimits.MaxCallBindingPathIndex then
                 failure "STORAGE_LIMIT_EXCEEDED" $"Call binding path indexes cannot exceed {StorageLimits.MaxCallBindingPathIndex}." path
             constructor index
+        let doubleIndexed constructor =
+            let caseIndex = requireInt "call binding enum case index" value["caseIndex"]
+            let statementIndex = requireInt "call binding enum statement index" value["statementIndex"]
+            for index in [ caseIndex; statementIndex ] do
+                if index < 0 then failure "STORAGE_INVALID_MANIFEST" "Call binding path indexes cannot be negative." path
+                if index > StorageLimits.MaxCallBindingPathIndex then
+                    failure "STORAGE_LIMIT_EXCEEDED" $"Call binding path indexes cannot exceed {StorageLimits.MaxCallBindingPathIndex}." path
+            constructor (caseIndex, statementIndex)
         match segment with
         | "blockStatement" -> indexed FlowAstPathSegment.BlockStatement
         | "letInitializer" -> FlowAstPathSegment.LetInitializer
@@ -461,6 +475,8 @@ module Storage =
         | "resultScrutinee" -> FlowAstPathSegment.ResultScrutinee
         | "resultOkStatement" -> indexed FlowAstPathSegment.ResultOkStatement
         | "resultErrorStatement" -> indexed FlowAstPathSegment.ResultErrorStatement
+        | "enumScrutinee" -> FlowAstPathSegment.EnumScrutinee
+        | "enumCaseStatement" -> doubleIndexed FlowAstPathSegment.EnumCaseStatement
         | value -> failure "STORAGE_INVALID_MANIFEST" $"Unknown call binding path segment '{value}'." path
 
     let private storedCallFormNode = function
@@ -591,6 +607,7 @@ module Storage =
         | FlowAstPathSegment.OptionNoneStatement index
         | FlowAstPathSegment.ResultOkStatement index
         | FlowAstPathSegment.ResultErrorStatement index -> Some index
+        | FlowAstPathSegment.EnumCaseStatement(caseIndex, statementIndex) -> Some caseIndex
         | FlowAstPathSegment.LetInitializer
         | FlowAstPathSegment.DestructureInitializer
         | FlowAstPathSegment.EvaluateExpression
@@ -602,6 +619,11 @@ module Storage =
         | FlowAstPathSegment.ContainerPayload
         | FlowAstPathSegment.OptionScrutinee
         | FlowAstPathSegment.ResultScrutinee -> None
+        | FlowAstPathSegment.EnumScrutinee -> None
+
+    let private additionalIndexedCallBindingPathValue = function
+        | FlowAstPathSegment.EnumCaseStatement(_, statementIndex) -> Some statementIndex
+        | _ -> None
 
     let private validateCallBindingBounds path (revisions: WordRevision list) =
         let mutable bindingCount = 0
@@ -618,12 +640,10 @@ module Storage =
                     failure "STORAGE_LIMIT_EXCEEDED" $"A manifest may contain at most {StorageLimits.MaxCallBindingPathSegments} aggregate call binding path segments." path
                 pathSegmentCount <- pathSegmentCount + segments.Length
                 for segment in segments do
-                    match indexedCallBindingPathValue segment with
-                    | Some index when index < 0 ->
-                        failure "STORAGE_INVALID_MANIFEST" "Call binding path indexes cannot be negative." path
-                    | Some index when index > StorageLimits.MaxCallBindingPathIndex ->
-                        failure "STORAGE_LIMIT_EXCEEDED" $"Call binding path indexes cannot exceed {StorageLimits.MaxCallBindingPathIndex}." path
-                    | Some _ | None -> ()
+                    for index in [ indexedCallBindingPathValue segment; additionalIndexedCallBindingPathValue segment ] |> List.choose id do
+                        if index < 0 then failure "STORAGE_INVALID_MANIFEST" "Call binding path indexes cannot be negative." path
+                        if index > StorageLimits.MaxCallBindingPathIndex then
+                            failure "STORAGE_LIMIT_EXCEEDED" $"Call binding path indexes cannot exceed {StorageLimits.MaxCallBindingPathIndex}." path
 
     let private wordRevisionNode manifestVersion (revision: WordRevision) =
         let isDefaultSource = revision.SourceFormat = defaultSourceFormat && List.isEmpty revision.CallBindings
@@ -926,10 +946,12 @@ module Storage =
                         |> List.exists (function
                             | FlowAstPathSegment.PropertyReceiver
                             | FlowAstPathSegment.EqualityLeft
-                            | FlowAstPathSegment.EqualityRight -> true
+                            | FlowAstPathSegment.EqualityRight
+                            | FlowAstPathSegment.EnumScrutinee
+                            | FlowAstPathSegment.EnumCaseStatement _ -> true
                             | _ -> false)
                     if hasFlow2Path || (match binding.Form with | StoredCallForm.PropertyAccess _ -> true | _ -> false) then
-                        failure "STORAGE_INVALID_MANIFEST" "Flow/1 revisions cannot contain Flow/2 property-access or equality call-binding metadata." path
+                        failure "STORAGE_INVALID_MANIFEST" "Flow/1 revisions cannot contain Flow/2 property-access, equality, or enum match call-binding metadata." path
                 match binding.Form with
                 | StoredCallForm.Direct | StoredCallForm.AbsoluteRoot -> ()
                 | StoredCallForm.DotStage stage -> validMetadataText "Call binding dot stage" 128 path stage
