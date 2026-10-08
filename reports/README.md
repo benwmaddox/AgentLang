@@ -29,8 +29,10 @@ The structural correctness checkpoints are
 and [112 — Closed domain states](112-closed-domain-states.md): checked ratios,
 a validated bounded-rate library, and payload-free Flow/2 enums with exhaustive
 matching and durable project definitions. Enum library qualification remains
-blocked pending finite-value coverage. Cross-field construction and authored
-effect assertions remain pending. These are implementation checks, not new
+blocked pending finite-value coverage.
+[113 — Effect-count assertions](113-effect-count-assertions.md) adds optional
+target-scoped provider counts to Flow/2 tests. Cross-field construction and
+provider-state assertions remain pending. These are implementation checks, not new
 agent-efficacy results.
 
 The latest ownership demonstration is [108 — Native handler mailbox suspension](108-native-mailbox-suspension.md):

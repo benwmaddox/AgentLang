@@ -82,7 +82,10 @@ including nested callees and excluding setup and expectation evaluation. Counts
 must include attempted provider calls that fault; repeated target invocations
 aggregate, and the target must actually run. Preserve pure expectations and
 existing tests without the optional assertion. The extra-write control must fail
-under the stronger tests. This assertion facility is pending implementation.
+under the stronger tests. Report 113 implements this optional Flow/2 assertion
+facility, including persisted tests and library replacement enforcement. Agent
+adoption remains a separate empirical check; provider-state assertions and
+finite-value library coverage remain pending.
 
 ## Delivery and evidence
 

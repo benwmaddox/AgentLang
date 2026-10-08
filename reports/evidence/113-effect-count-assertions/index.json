@@ -40,6 +40,26 @@
     "bytes": 54
   },
   {
+    "path": "frozen-runtime-check.json",
+    "sha256": "bf9841c2a26dc2c40b892adb132375ed98f68c65ff863cfbc24ea8ea139f05fc",
+    "bytes": 2758
+  },
+  {
+    "path": "full-validation-auxiliary.zip",
+    "sha256": "8e55d5fcceb45f225a7a794de32c8c5913fcad6faa0b368b78ff2a291ab66df6",
+    "bytes": 1412873
+  },
+  {
+    "path": "full-validation.json",
+    "sha256": "437c0310b9063d557bef40b6747755cf4a6b332ec210522eb1720bdad1033d6b",
+    "bytes": 27938
+  },
+  {
+    "path": "full-validation.log",
+    "sha256": "fbab8d1f5308377b43f904d3321e600dadb6425ed45913ff2df33a764675e1dd",
+    "bytes": 15709
+  },
+  {
     "path": "implementation-review.md",
     "sha256": "e507998ee7f8116dd902fabd35ec4de3c8f9c7b0eb2e04eeafcdf1e8a02c13dc",
     "bytes": 3919

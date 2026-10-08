@@ -165,6 +165,9 @@ Cross-field record construction and decision/executor stateful properties follow
 Report 111's extra-write control passed full library coverage but violated the
 IO contract. Make provider-state and effect-count assertions straightforward in
 authored tests, and require that control to fail under the stronger tests.
+Report 113 implements optional exact effect-count assertions scoped to the target
+function. Run a fresh-subagent adoption probe before expanding this mechanism;
+explicit provider-state assertions remain pending.
 
 Implement the approved module boundaries and stricter qualification rules:
 cross-module authored calls require library qualification; library functions

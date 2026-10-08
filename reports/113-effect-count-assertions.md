@@ -1,7 +1,8 @@
 # Authored effect-count assertions
 
-Local implementation checkpoint. Focused tests pass; the full Debug gate and
-external-agent adoption probe remain in progress. This is not an efficacy result.
+Implementation validated locally: all 37 full Debug gate checks pass. The
+external-agent adoption probe is separate and still running. This is not an
+efficacy result.
 
 ## Behavior
 
@@ -52,8 +53,7 @@ feature for Flow/2.
 
 The scripted extra-write case is covered by the runtime tests: return-only tests
 can pass, while an opted-in zero-write assertion rejects the write and blocks
-library replacement. The complete local gate is still running; its result will
-be added before publication.
+library replacement. The full Debug gate passed all 37 checks, including business-policy preflight: 98 checks across 30 independent outcomes.
 
 ## Research boundary and next check
 
@@ -67,3 +67,14 @@ checks whether the resulting tests detect the reintroduced defect.
 Finite input/return coverage, complete-record construction invariants and scoped
 dictionary overrides remain separate pending requirements. Count assertions do
 not establish final state, event order or correctness for every input.
+
+## Full gate provenance
+
+Command: `./scripts/Validate.ps1 -Configuration Debug -ReportPath .agentlang/effect-assertions-001/full-validation.json`.
+
+The run began on dirty revision `502011e6` and tested the source subsequently
+committed as `a8e7d34`. It exited zero after 37 passing checks. No source changed
+after that checkpoint; subsequent edits update documentation and evidence only.
+The solution build reported zero warnings and errors. All ten frozen Release
+artifacts from report 108 remain unchanged. Evidence includes the full gate
+summary/log, archived auxiliary JSON outputs, focused logs and a SHA-256 index.
