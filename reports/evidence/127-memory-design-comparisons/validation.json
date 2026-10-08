@@ -1,0 +1,42 @@
+{
+  "kind": "documentation-link-and-source-check",
+  "files": [
+    {
+      "path": "docs/PRD.md",
+      "sha256": "339964f8a7840e0f6da408bfed0dd841de56ebc4d5d5dff7eda61f357fd9f5be"
+    },
+    {
+      "path": "docs/STACK-ONLY-RESEARCH.md",
+      "sha256": "eaeeac299fb53483305e20522a13a2c06e2805f000b0fe7e2e31043d1b6492b1"
+    },
+    {
+      "path": "docs/ROADMAP.md",
+      "sha256": "028e37b5ac7767fc10e02db2743574817a841861a054fc13c9f4ae9a7a0d5573"
+    },
+    {
+      "path": "docs/ASYNC-ARENA-EVALUATION.md",
+      "sha256": "c1e7e25f6eef3a018610be661154da718fca4b479763d7a2a33d29c2a22ec00d"
+    },
+    {
+      "path": "docs/MIDORI-RESEARCH.md",
+      "sha256": "8b76ed196c2939167cc9177a09222e7039d1861af8977b5d3f104dd85a9ce620"
+    },
+    {
+      "path": "docs/GOOSE-RESEARCH.md",
+      "sha256": "a3ba7e2b2f8c5ee76147e005379fbb3d2b9eae54ebcc73de981b685f8f07bab6"
+    },
+    {
+      "path": "reports/127-memory-design-comparisons.md",
+      "sha256": "e23c128e6a62dc6116b138b27b348fc2e66ba117d0ff33b9bb4af7a4033c0c76"
+    },
+    {
+      "path": "reports/README.md",
+      "sha256": "f5979de6410e76a1aa297eb866afeb9fe71d24cf5ec1b9edfb23a423195031b4"
+    }
+  ],
+  "localLinksChecked": 100,
+  "missing": [],
+  "passed": true,
+  "productTestsRun": false,
+  "hashEncoding": "UTF-8 without BOM, line endings normalized to LF (Git text representation)"
+}

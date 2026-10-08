@@ -48,6 +48,23 @@ removal. An implementation optimization is acceptable only if it preserves these
 contracts. Opaque external-resource capabilities have a separate resource-cleanup
 contract; releasing value bytes alone does not acknowledge pending provider I/O.
 
+### Physical locality
+
+The user's Stasislang experience motivates actual payload locality. Consecutive
+working values should occupy nearby physical address ranges, and nested fields
+should be stored within their owner's contiguous representation. A dense stack
+of handles to scattered allocations is not an acceptable implementation. Here
+"physical" means actual program byte layout, not a guarantee that virtual pages
+are contiguous in hardware RAM. Arena backing may use pages or bounded chunks.
+
+Acceptance must inspect offsets, extents and stride, including alignment and
+reserved frame/local space. Assert nested payload containment and disjoint
+duplicate ownership, and report gaps/reservations separately from live bytes.
+Later performance comparisons must exercise real traversal and transformation
+patterns, including large values and field-wise scans; tighter packing does not
+automatically improve every access pattern. Keep cache locality claims separate
+from correctness and total-memory accounting.
+
 Test scalars and variable-sized nested values, duplication, moves, returning a
 non-topmost result, early errors, branch joins and repeated work under a fixed
 capacity. After each pop/rewind assert exact live storage and validity of surviving

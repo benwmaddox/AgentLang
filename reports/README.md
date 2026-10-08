@@ -8,6 +8,11 @@ Run `./scripts/Validate.ps1` from PowerShell to build the solution and run every
 
 Validation runs locally. The GitHub workflow is manual-only; milestone publication does not trigger a CI run. Human feedback and milestone conclusions belong in numbered Markdown reports here. Credentials must never appear in reports. Live provider traces can contain project information and should remain in the experiment's local output directory unless deliberately reviewed for publication.
 
+Latest design research: [127 — Midori and Goose comparisons](127-memory-design-comparisons.md)
+records external architectural references and hypotheses for memory experiments.
+It is a documentation-only checkpoint; the owning-value implementation remains
+in progress and no external benchmark claim is treated as an AgentLang result.
+
 Latest native checkpoint: [126 — Standalone native mailbox dispatch](126-native-mailbox-dispatch.md)
 moves bounded turns and arena ownership out of the managed host. The native
 integration passes 353 checks, native conformance 476 assertions, and the full

@@ -109,14 +109,33 @@ throughput comparison; holding cleared scratch is not a valid substitute.
 Memory priority clarification (2026-10-08): implement and test an owning value
 stack for most working data, with explicit retained mailbox state. Values own
 nested payloads; duplication creates independent values; moves transfer ownership;
-pops reclaim owned payload without surviving aliases. The current invocation bump
-arena/shared record DAG does not implement this. The next bounded experiment must
+pops reclaim owned payload without surviving aliases. The stack must also
+provide actual payload locality: adjacent owning values and
+nested fields occupy nearby bytes, not merely nearby handles. Measure offsets,
+extents, padding/reservations and access-pattern performance separately.
+The current invocation bump arena/shared record DAG does not implement this.
+The next bounded experiment must
 exercise variable-sized nested values, copy/move/pop, returned results, surviving
 outer values, branch joins and capacity failure, with exact storage oracles.
-Physical layout/source syntax remain open; shared-graph regions are comparison
+Implementation starts with fixed-size nested records to establish copy/move/pop
+and return placement on actual verified IR. That first stage alone does not
+satisfy the variable-size requirement or select the final representation.
+Exact byte encoding/source syntax remain open; shared-graph regions are comparison
 controls, not replacements for the owning-value goal. Keep the actual
 keep-associated versus return-at-suspension async comparison as the subsequent
 throughput decision; mailboxes alone are not the memory differentiator.
+
+The [Midori research note](MIDORI-RESEARCH.md) records relevant primary accounts
+and their limits. For later async work, keep suspension explicit, bound queued
+bytes/outstanding operations, measure copy costs, and test state changes across
+awaits. Midori's linked execution stacks and collected/shared heaps are not
+evidence for our owning program-data-stack model.
+
+Include [Goose](GOOSE-RESEARCH.md) as a close memory-layout comparison and a
+source of testable alternatives, especially destination construction and
+variable-size layout tradeoffs. Review its inferred stack/lifetime rules against
+our stricter owning-value contract before adopting them. Repository benchmark
+claims require independent replication; no throughput advantage is inferred.
 
 Keep the semantic IR authoritative. Development backends add LLVM
 JIT while release builds use LLVM AOT plus a minimal runtime. Research arenas,

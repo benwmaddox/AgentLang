@@ -449,8 +449,10 @@ Required research addition: evaluate **no language heap; program data stack
 only**, distinct from the CPU stack. The data stack may be arena-backed.
 Compare strict LIFO compound-value storage with processing-arena variants,
 including cleanup, escaping outputs, retained state, memory growth and agent
-comprehension. This requires a research investigation, not adoption of the
-restriction in V1. See [the scope and acceptance criteria](STACK-ONLY-RESEARCH.md).
+comprehension. Originally a research alternative, the later user clarification
+below makes owning values and physical payload locality the target native model;
+the representation and performance still require validation. See
+[the scope and acceptance criteria](STACK-ONLY-RESEARCH.md).
 
 The user subsequently requested an early switch away from RPN after finding it difficult to read. Expression/dot source is implemented, with the default authoring cutover validated by the complete 27-check Release gate, retaining words and verified semantic IR; see [the migration plan](FRONTEND-MIGRATION.md). Remaining later research compares presentation/locality instead of postponing that switch. Preserve strong types, effects, inspection and library test/coverage gates.
 
@@ -539,9 +541,20 @@ separate and owns its stored values. Do not substitute a tracing collector,
 reference-counted object heap, shared record graph, or whole-turn bump arena for
 this intended lifetime behavior. Compiler copy elision/moves are permitted only
 when they preserve independent value semantics and the specified reclamation
-boundaries. No RPN syntax or particular physical layout is mandated. Evaluate
+boundaries. No RPN syntax or exact byte encoding is mandated. Evaluate
 nested records/lists/text, return placement, branch joins, copying/compaction and
 capacity failures through the authoritative semantic IR before general rollout.
+
+Physical locality is part of this requirement, informed by the user's Stasislang
+experience: neighboring data-stack values must have nearby actual payloads, and
+compound values must keep their nested data together. A contiguous table of
+handles to separately scattered objects does not satisfy it. Prefer contiguous
+storage within each owning stack region; document alignment, frame reservations,
+chunk boundaries and any unavoidable gaps. Verify field offsets, owner extents,
+copy independence and live payload address spans, then measure representative
+traversal/transformation workloads. Locality is a layout requirement, not proof
+of a speedup; byte packing and array-of-record versus field-wise layouts remain
+measured implementation choices.
 
 The current native backend uses handles and shared record DAGs in invocation-wide
 arenas. It is validated groundwork, not implementation of this owning-stack model.

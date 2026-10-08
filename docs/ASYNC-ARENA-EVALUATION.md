@@ -12,6 +12,10 @@ validates host-driven suspension and scratch reuse with actual Flow/2 handlers.
 native dispatch of those handlers. Actual async I/O, saturation, production
 throughput and tail latency remain untested. See [the roadmap](ROADMAP.md).
 
+[Midori research](MIDORI-RESEARCH.md) supplies architectural comparisons, not
+AgentLang performance evidence. Include bounded outstanding work, explicit
+suspension, copy costs and retained-state interleaving in this evaluation.
+
 ## Candidates
 
 Use **per-turn scratch arenas as the main candidate**. A handler turn runs to
