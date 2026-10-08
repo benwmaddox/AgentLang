@@ -1,0 +1,70 @@
+{"kind":"mailbox-unit-check","case":"invalid_storage","name":"checked storage requirement succeeds","passed":true}
+{"kind":"mailbox-unit-check","case":"invalid_storage","name":"storage requirements report ABI and alignment","passed":true}
+{"kind":"mailbox-unit-check","case":"retained_capacity","name":"retained reservation reports both descriptors and banks per mailbox","passed":true}
+{"kind":"mailbox-unit-check","case":"scratch_cleanup","name":"scratch reservation includes its descriptor and node table","passed":true}
+{"kind":"mailbox-unit-check","case":"invalid_storage","name":"backing categories reconcile exactly to checked storage bytes","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"zero mailbox capacity rejects","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"wrong control ABI version rejects","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"checked layout rejects multiplication overflow","passed":true}
+{"kind":"mailbox-unit-check","case":"invalid_module","name":"wrong module ABI version rejects","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"unselected zero-output entry is valid module metadata","passed":true}
+{"kind":"mailbox-unit-check","case":"invalid_module","name":"canonical built-in type names are required","passed":true}
+{"kind":"mailbox-unit-check","case":"invalid_module","name":"canonical Int type ID must carry the Int kind","passed":true}
+{"kind":"mailbox-unit-check","case":"invalid_module","name":"Int-backed nominal message type cannot bypass canonical Int ID","passed":true}
+{"kind":"mailbox-unit-check","case":"invalid_module","name":"inconsistent continuation type ID rejects","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"unaligned requirement output rejects","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"contract tests pass before runtime behavior tests","passed":true}
+{"kind":"mailbox-unit-check","case":"invalid_storage","name":"behavior fixture fits bounded test storage","passed":true}
+{"kind":"mailbox-unit-check","case":"invalid_storage","name":"one-byte-short storage rejects before initialization","passed":true}
+{"kind":"mailbox-unit-check","case":"invalid_storage","name":"misaligned storage rejects","passed":true}
+{"kind":"mailbox-unit-check","case":"invalid_storage","name":"module descriptor cannot be reused as writable runtime storage","passed":true}
+{"kind":"mailbox-unit-check","case":"invalid_storage","name":"exact checked storage initializes runtime A","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"second runtime receives a distinct runtime identity","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"init stores opaque State in mailbox A","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"initial state view exposes only a borrowed arena root","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"init stores an independent State in mailbox B","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"mailbox cannot be initialized twice","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"mailbox ID outside fixed capacity rejects","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"second runtime initializes an independent mailbox","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"begin retains State and Continuation before issuing token","passed":true}
+{"kind":"mailbox-unit-check","case":"busy","name":"reentrant begin for another mailbox is rejected by the shared lease","passed":true}
+{"kind":"mailbox-unit-check","case":"invalid_storage","name":"begin rejects token output that aliases caller-owned runtime storage","passed":true}
+{"kind":"mailbox-unit-check","case":"argument_alias","name":"begin rejects overlapping token and call-info output buffers","passed":true}
+{"kind":"mailbox-unit-check","case":"invalid_storage","name":"resume/stats/view reject buffers aliasing runtime or module storage","passed":true}
+{"kind":"mailbox-unit-check","case":"retained_capacity","name":"begin stages into a freshly generated retained bank","passed":true}
+{"kind":"mailbox-unit-check","case":"argument_alias","name":"overlapping begin suspends mailbox B","passed":true}
+{"kind":"mailbox-unit-check","case":"busy","name":"busy admission rejects before handler and preserves token output","passed":true}
+{"kind":"mailbox-unit-check","case":"wrong_owner_token","name":"wrong-mailbox token rejects before handler and preserves state","passed":true}
+{"kind":"mailbox-unit-check","case":"foreign_thread","name":"foreign thread cannot resume or dispose the runtime","passed":true}
+{"kind":"mailbox-unit-check","case":"cross_runtime_token","name":"cross-runtime token rejects before handler","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"mailbox B resumes with its own token and primitive message","passed":true}
+{"kind":"mailbox-unit-check","case":"duplicate_token","name":"last completed token is a bounded duplicate identity","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"empty state view fails closed","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"handler diagnostic preserves State and retryable pending token","passed":true}
+{"kind":"mailbox-unit-check","case":"retained_capacity","name":"seven-byte retained limit preserves State and token after capacity error","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"same completion token retries successfully after failures","passed":true}
+{"kind":"mailbox-unit-check","case":"duplicate_token","name":"successful resume consumes its completion exactly once","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"explicit zero node limit is literal and failed begin issues no token","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"begin after a completed turn starts a new pending identity","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"second A completion produces expected truncating result","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"reused bank rejects a saved handle from its prior generation","passed":true}
+{"kind":"mailbox-unit-check","case":"stale_token","name":"older completion outside bounded last-completed slot is stale","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"second runtime prepares an independent mailbox for token boundary tests","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"test-only sequence hook positions the exhaustion boundary","passed":true}
+{"kind":"mailbox-unit-check","case":"token_exhaustion","name":"maximum token sequence may be issued once without wrapping","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"maximum sequence completion is accepted once","passed":true}
+{"kind":"mailbox-unit-check","case":"token_exhaustion","name":"token sequence exhaustion rejects before handler execution","passed":true}
+{"kind":"mailbox-unit-check","case":"scratch_cleanup","name":"stats separate both-bank backing from live state and balance scratch leases","passed":true}
+{"kind":"mailbox-unit-check","case":"scratch_cleanup","name":"every direct handler observes fresh poisoned scratch and workspace","passed":true}
+{"kind":"mailbox-unit-check","case":"generation_exhaustion","name":"test-only generation hook positions the final safe pair","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"generation boundary begin executes the last safe generation pair","passed":true}
+{"kind":"mailbox-unit-check","case":"generation_exhaustion","name":"last distinct nonzero scratch and staging generations are usable","passed":true}
+{"kind":"mailbox-unit-check","case":"generation_exhaustion","name":"generation exhaustion rejects before handler and preserves pending state/token","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"disposal is idempotent on creator thread","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"post-dispose stats expose fully released state and balanced cleanup","passed":true}
+{"kind":"mailbox-unit-check","case":"argument_alias","name":"post-dispose stats reject output aliasing live module metadata","passed":true}
+{"kind":"mailbox-unit-check","case":"post_disposal","name":"disposed runtime rejects later work","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"second runtime disposes independently","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"test-only hook reaches process instance ID boundary","passed":true}
+{"kind":"mailbox-unit-check","case":"general","name":"process runtime instance IDs reject exhaustion without reuse","passed":true}
+{"kind":"mailbox-unit-summary","passed":true,"failureCount":0}

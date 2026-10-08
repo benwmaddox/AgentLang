@@ -1,0 +1,2869 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-dispatch-integration",
+  "runId": "616dde51afc9466f9d6e5d49470d8210",
+  "startedUtc": "2026-10-08T11:45:09.3656368Z",
+  "completedUtc": "2026-10-08T11:45:32.3969280Z",
+  "passed": false,
+  "evidencePath": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\integration-evidence.json",
+  "runDirectory": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210",
+  "scope": "standalone native C mailbox controller dispatching Flow handlers from one verified-IR module; not a throughput or final allocation-policy claim",
+  "source": {
+    "copiedFixture": "experiments/AgentLang.NativeDispatch/mailbox.flow",
+    "referenceFixture": "experiments/AgentLang.NativeMailbox/mailbox.flow",
+    "bytes": 802,
+    "sha256": "31ac3af8a450fd0554f6fff5d386d1ae3e1b424df1417f810adae71a6875a9ab",
+    "referenceSha256": "31ac3af8a450fd0554f6fff5d386d1ae3e1b424df1417f810adae71a6875a9ab"
+  },
+  "nativeSources": [
+    {
+      "path": "D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\native_dispatch.c",
+      "bytes": 44390,
+      "sha256": "9feae2544cc628589e2da2e2f7575fe846010bb7822f0870d8cb9f3c0747e37e"
+    },
+    {
+      "path": "D:\\code\\AgentLang\\src\\AgentLang.Llvm\\native\\arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "path": "D:\\code\\AgentLang\\src\\AgentLang.Llvm\\native\\mailbox_runtime.c",
+      "bytes": 54904,
+      "sha256": "7bbfcbd61b779e51dc24f36caff650b9b36e97743052772931d7aa75a0778fdb"
+    },
+    {
+      "path": "D:\\code\\AgentLang\\src\\AgentLang.Llvm\\native\\mailbox_runtime_windows.c",
+      "bytes": 1092,
+      "sha256": "97ca4a9fdca6f5fdb2a7347272158cfcd722da62adb4737f0bb207a5577685d9"
+    },
+    {
+      "path": "D:\\code\\AgentLang\\src\\AgentLang.Llvm\\native\\mailbox_runtime_test.c",
+      "bytes": 43149,
+      "sha256": "003ad2c2eb2ded0dc91f3c1cc10313cb8d5608824eadc23ebb13300c4701f293"
+    }
+  ],
+  "dependencyBuild": {
+    "name": "fresh-dotnet-dependency-build",
+    "file": "C:\\Program Files\\dotnet\\dotnet.exe",
+    "arguments": [
+      "build",
+      "D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\AgentLang.NativeDispatch.fsproj",
+      "--artifacts-path",
+      "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\dotnet-artifacts",
+      "--configuration",
+      "Release",
+      "--verbosity",
+      "minimal"
+    ],
+    "workingDirectory": "D:\\code\\AgentLang",
+    "startedUtc": "2026-10-08T11:45:09.7354747Z",
+    "elapsedMilliseconds": 19873.119,
+    "exitCode": 0,
+    "timedOut": false,
+    "startError": null,
+    "stdout": "  Determining projects to restore...\r\n  Restored D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj (in 198 ms).\r\n  Restored D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\AgentLang.NativeDispatch.fsproj (in 198 ms).\r\n  Restored D:\\code\\AgentLang\\src\\AgentLang.Llvm\\AgentLang.Llvm.fsproj (in 198 ms).\r\n  AgentLang.Core -> D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\dotnet-artifacts\\bin\\AgentLang.Core\\release\\AgentLang.Core.dll\r\n  AgentLang.Llvm -> D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\dotnet-artifacts\\bin\\AgentLang.Llvm\\release\\AgentLang.Llvm.dll\r\n  AgentLang.NativeDispatch -> D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\dotnet-artifacts\\bin\\AgentLang.NativeDispatch\\release\\AgentLang.NativeDispatch.dll\r\n\r\nBuild succeeded.\r\n    0 Warning(s)\r\n    0 Error(s)\r\n\r\nTime Elapsed 00:00:19.67\r\n",
+    "stderr": ""
+  },
+  "compiler": {
+    "dotnet": "C:\\Program Files\\dotnet\\dotnet.exe",
+    "clang": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\clang.exe",
+    "clangSha256": "c5d3d309c036d1666d50500e87be514dc9916adc427e7aec267c95178bec14ff",
+    "lld": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\lld-link.exe",
+    "lldSha256": "b24601b51e04b2ef371c2809ad33e3b35dff5cb7e166e26a1d2ddb74148c212c",
+    "llvmReadObj": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\llvm-readobj.exe",
+    "overrides": {
+      "clang": null,
+      "lld": null,
+      "compilerRuntimeLibrary": null
+    },
+    "clangVersion": "clang version 19.1.5\nTarget: x86_64-pc-windows-msvc\nThread model: posix\nInstalledDir: C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin",
+    "dotnetVersion": "9.0.308"
+  },
+  "moduleBuilds": [
+    {
+      "label": "O0",
+      "optimization": "O0",
+      "outputDirectory": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0",
+      "process": {
+        "name": "compile-module-O0",
+        "file": "C:\\Program Files\\dotnet\\dotnet.exe",
+        "arguments": [
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\dotnet-artifacts\\bin\\AgentLang.NativeDispatch\\release\\AgentLang.NativeDispatch.dll",
+          "O0",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0",
+          "D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\mailbox.flow"
+        ],
+        "workingDirectory": "D:\\code\\AgentLang",
+        "startedUtc": "2026-10-08T11:45:29.6442824Z",
+        "elapsedMilliseconds": 671.35,
+        "exitCode": 0,
+        "timedOut": false,
+        "startError": null,
+        "stdout": "{\"entryIrPaths\":[\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\entry-000.ll\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\entry-001.ll\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\entry-002.ll\"],\"fingerprint\":\"42cb8120131d080198582b79bc1f7e48d1336a4f99d7287777dd8ef690dc4f05\",\"libraryPath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-module.dll\",\"manifestPath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-module-manifest.json\",\"metadataSourcePath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-module-metadata.c\",\"objectPaths\":[\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-entry-000.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-entry-001.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-entry-002.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-module-metadata.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-arena-runtime.obj\"],\"optimization\":\"O0\",\"sameVerifiedProgramInstance\":true,\"sourcePath\":\"D:\\\\code\\\\AgentLang\\\\experiments\\\\AgentLang.NativeDispatch\\\\mailbox.flow\"}\r\n",
+        "stderr": ""
+      },
+      "bootstrap": {
+        "entryIrPaths": [
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\entry-000.ll",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\entry-001.ll",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\entry-002.ll"
+        ],
+        "fingerprint": "42cb8120131d080198582b79bc1f7e48d1336a4f99d7287777dd8ef690dc4f05",
+        "libraryPath": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-module.dll",
+        "manifestPath": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-module-manifest.json",
+        "metadataSourcePath": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-module-metadata.c",
+        "objectPaths": [
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-entry-000.obj",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-entry-001.obj",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-entry-002.obj",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-module-metadata.obj",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-arena-runtime.obj"
+        ],
+        "optimization": "O0",
+        "sameVerifiedProgramInstance": true,
+        "sourcePath": "D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\mailbox.flow"
+      },
+      "manifest": {
+        "fingerprint": "42cb8120131d080198582b79bc1f7e48d1336a4f99d7287777dd8ef690dc4f05",
+        "optimization": "O0",
+        "sourceSha256": {
+          "metadataC": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be",
+          "arenaRuntimeC": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7",
+          "arenaRuntimeHeader": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0",
+          "moduleAbiHeader": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+        },
+        "binarySha256": "985b00c916b38598e9e04564709a52016b906d2e5808996c96756532782dfb61",
+        "module": {
+          "moduleAbiVersion": 1,
+          "runtimeAbiVersion": 3,
+          "target": "Windows x64",
+          "types": [
+            {
+              "id": 0,
+              "name": "Int",
+              "kind": 1,
+              "fields": []
+            },
+            {
+              "id": 1,
+              "name": "Bool",
+              "kind": 2,
+              "fields": []
+            },
+            {
+              "id": 2,
+              "name": "Unit",
+              "kind": 3,
+              "fields": []
+            },
+            {
+              "id": 3,
+              "name": "Continuation",
+              "kind": 4,
+              "fields": [
+                {
+                  "name": "delta",
+                  "typeId": 0
+                }
+              ]
+            },
+            {
+              "id": 4,
+              "name": "State",
+              "kind": 4,
+              "fields": [
+                {
+                  "name": "total",
+                  "typeId": 0
+                }
+              ]
+            }
+          ],
+          "entries": [
+            {
+              "id": 0,
+              "name": "mailbox.begin",
+              "inputTypeIds": [
+                4,
+                0
+              ],
+              "outputTypeIds": [
+                4,
+                3
+              ],
+              "inputTypes": [
+                "State",
+                "Int"
+              ],
+              "outputTypes": [
+                "State",
+                "Continuation"
+              ],
+              "workspaceCapacity": 2,
+              "requiresRecordArenas": true,
+              "irSha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b",
+              "diagnostics": [
+                {
+                  "id": 0,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "<mailbox.begin>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 1,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 16,
+                  "column": 1,
+                  "length": 259,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 2,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 16,
+                  "column": 32,
+                  "length": 10,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 3,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 16,
+                  "column": 18,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 4,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 24,
+                  "length": 32,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 5,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 50,
+                  "length": 5,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 6,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 42,
+                  "length": 13,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 7,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 24,
+                  "length": 32,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 8,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 24,
+                  "length": 32,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 9,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "continuation.new",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 10,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 5,
+                  "length": 51,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 11,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 21,
+                  "column": 13,
+                  "length": 5,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 12,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 21,
+                  "column": 20,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                }
+              ]
+            },
+            {
+              "id": 1,
+              "name": "mailbox.initialize",
+              "inputTypeIds": [
+                0
+              ],
+              "outputTypeIds": [
+                4
+              ],
+              "inputTypes": [
+                "Int"
+              ],
+              "outputTypes": [
+                "State"
+              ],
+              "workspaceCapacity": 2,
+              "requiresRecordArenas": true,
+              "irSha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103",
+              "diagnostics": [
+                {
+                  "id": 0,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "<mailbox.initialize>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 1,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 9,
+                  "column": 1,
+                  "length": 153,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 2,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 9,
+                  "column": 23,
+                  "length": 9,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 3,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 5,
+                  "length": 24,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 4,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 24,
+                  "length": 4,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 5,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 16,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 6,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 5,
+                  "length": 24,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 7,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 5,
+                  "length": 24,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 8,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "state.new",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                }
+              ]
+            },
+            {
+              "id": 2,
+              "name": "mailbox.resume",
+              "inputTypeIds": [
+                4,
+                3,
+                0
+              ],
+              "outputTypeIds": [
+                4
+              ],
+              "inputTypes": [
+                "State",
+                "Continuation",
+                "Int"
+              ],
+              "outputTypes": [
+                "State"
+              ],
+              "workspaceCapacity": 3,
+              "requiresRecordArenas": true,
+              "irSha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa",
+              "diagnostics": [
+                {
+                  "id": 0,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "<mailbox.resume>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 1,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 24,
+                  "column": 1,
+                  "length": 298,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 2,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 24,
+                  "column": 61,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 3,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 24,
+                  "column": 33,
+                  "length": 26,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 4,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 24,
+                  "column": 19,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 5,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 25,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 6,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 25,
+                  "length": 18,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 7,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "continuation.delta",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 8,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 45,
+                  "length": 7,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 9,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 18,
+                  "length": 35,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 10,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "divide",
+                  "file": "<standard>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 6,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 11,
+                  "code": "RUNTIME_DIVIDE_BY_ZERO",
+                  "message": "Integer division by zero.",
+                  "word": "divide",
+                  "file": "",
+                  "line": 0,
+                  "column": 0,
+                  "length": 0,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 12,
+                  "code": "RUNTIME_OVERFLOW",
+                  "message": "Integer division overflow.",
+                  "word": "divide",
+                  "file": "",
+                  "line": 0,
+                  "column": 0,
+                  "length": 0,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 13,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 5,
+                  "length": 48,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 14,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 21,
+                  "length": 5,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 15,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 21,
+                  "length": 11,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 16,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "state.total",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 17,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 34,
+                  "length": 6,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 18,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 17,
+                  "length": 24,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 19,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "add",
+                  "file": "<standard>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 3,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 20,
+                  "code": "RUNTIME_OVERFLOW",
+                  "message": "'add' overflowed its Int64 result.",
+                  "word": "add",
+                  "file": "<standard>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 3,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 21,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 5,
+                  "length": 36,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 22,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 5,
+                  "length": 25,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 23,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 24,
+                  "length": 5,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 24,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 16,
+                  "length": 13,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 25,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 5,
+                  "length": 25,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 26,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 5,
+                  "length": 25,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 27,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "state.new",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "artifactHashes": [
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-arena-runtime.obj",
+          "bytes": 21801,
+          "sha256": "cce55a29555845847071821ef35cbd27f3a3a0fb3a6e08057cdd995494ad88c7"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-entry-000.obj",
+          "bytes": 4057,
+          "sha256": "c94b9d72cfae4af224dc1760d01aaa273d31814b1b7357ac1de0c682ab499eff"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-entry-001.obj",
+          "bytes": 3768,
+          "sha256": "a476289610d1120c620513e4da9f3c63bb4206d0d20b0a845d760594aa6b7ca3"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-entry-002.obj",
+          "bytes": 5850,
+          "sha256": "991111758646a7375b0c3c13c8f1945ecdb141834bbf8aee84ef3812dd03dedb"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-module-manifest.json",
+          "bytes": 22049,
+          "sha256": "94ea5db6b9188e2097e5a793c2d793d43ac961b8cc25abed161c3fbacc61750b"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-module-metadata.c",
+          "bytes": 6994,
+          "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-module-metadata.obj",
+          "bytes": 9379,
+          "sha256": "aa9206a30f5848f7833e9a1a38604ae2cdf31636b6c4a3b12b08f9ba8b8a539f"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-module.dll",
+          "bytes": 32768,
+          "sha256": "985b00c916b38598e9e04564709a52016b906d2e5808996c96756532782dfb61"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\entry-000.ll",
+          "bytes": 24179,
+          "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\entry-001.ll",
+          "bytes": 20998,
+          "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\entry-002.ll",
+          "bytes": 34961,
+          "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+        }
+      ]
+    },
+    {
+      "label": "O0-repeat",
+      "optimization": "O0",
+      "outputDirectory": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat",
+      "process": {
+        "name": "compile-module-O0-repeat",
+        "file": "C:\\Program Files\\dotnet\\dotnet.exe",
+        "arguments": [
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\dotnet-artifacts\\bin\\AgentLang.NativeDispatch\\release\\AgentLang.NativeDispatch.dll",
+          "O0",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat",
+          "D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\mailbox.flow"
+        ],
+        "workingDirectory": "D:\\code\\AgentLang",
+        "startedUtc": "2026-10-08T11:45:30.4148487Z",
+        "elapsedMilliseconds": 668.812,
+        "exitCode": 0,
+        "timedOut": false,
+        "startError": null,
+        "stdout": "{\"entryIrPaths\":[\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\entry-000.ll\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\entry-001.ll\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\entry-002.ll\"],\"fingerprint\":\"42cb8120131d080198582b79bc1f7e48d1336a4f99d7287777dd8ef690dc4f05\",\"libraryPath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-module.dll\",\"manifestPath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-module-manifest.json\",\"metadataSourcePath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-module-metadata.c\",\"objectPaths\":[\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-entry-000.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-entry-001.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-entry-002.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-module-metadata.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-arena-runtime.obj\"],\"optimization\":\"O0\",\"sameVerifiedProgramInstance\":true,\"sourcePath\":\"D:\\\\code\\\\AgentLang\\\\experiments\\\\AgentLang.NativeDispatch\\\\mailbox.flow\"}\r\n",
+        "stderr": ""
+      },
+      "bootstrap": {
+        "entryIrPaths": [
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\entry-000.ll",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\entry-001.ll",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\entry-002.ll"
+        ],
+        "fingerprint": "42cb8120131d080198582b79bc1f7e48d1336a4f99d7287777dd8ef690dc4f05",
+        "libraryPath": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-module.dll",
+        "manifestPath": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-module-manifest.json",
+        "metadataSourcePath": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-module-metadata.c",
+        "objectPaths": [
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-entry-000.obj",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-entry-001.obj",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-entry-002.obj",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-module-metadata.obj",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-arena-runtime.obj"
+        ],
+        "optimization": "O0",
+        "sameVerifiedProgramInstance": true,
+        "sourcePath": "D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\mailbox.flow"
+      },
+      "manifest": {
+        "fingerprint": "42cb8120131d080198582b79bc1f7e48d1336a4f99d7287777dd8ef690dc4f05",
+        "optimization": "O0",
+        "sourceSha256": {
+          "metadataC": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be",
+          "arenaRuntimeC": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7",
+          "arenaRuntimeHeader": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0",
+          "moduleAbiHeader": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+        },
+        "binarySha256": "5733ad78b898597c683bc36b815f94525ee69951895d652477a503b0a5a9e5a4",
+        "module": {
+          "moduleAbiVersion": 1,
+          "runtimeAbiVersion": 3,
+          "target": "Windows x64",
+          "types": [
+            {
+              "id": 0,
+              "name": "Int",
+              "kind": 1,
+              "fields": []
+            },
+            {
+              "id": 1,
+              "name": "Bool",
+              "kind": 2,
+              "fields": []
+            },
+            {
+              "id": 2,
+              "name": "Unit",
+              "kind": 3,
+              "fields": []
+            },
+            {
+              "id": 3,
+              "name": "Continuation",
+              "kind": 4,
+              "fields": [
+                {
+                  "name": "delta",
+                  "typeId": 0
+                }
+              ]
+            },
+            {
+              "id": 4,
+              "name": "State",
+              "kind": 4,
+              "fields": [
+                {
+                  "name": "total",
+                  "typeId": 0
+                }
+              ]
+            }
+          ],
+          "entries": [
+            {
+              "id": 0,
+              "name": "mailbox.begin",
+              "inputTypeIds": [
+                4,
+                0
+              ],
+              "outputTypeIds": [
+                4,
+                3
+              ],
+              "inputTypes": [
+                "State",
+                "Int"
+              ],
+              "outputTypes": [
+                "State",
+                "Continuation"
+              ],
+              "workspaceCapacity": 2,
+              "requiresRecordArenas": true,
+              "irSha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b",
+              "diagnostics": [
+                {
+                  "id": 0,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "<mailbox.begin>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 1,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 16,
+                  "column": 1,
+                  "length": 259,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 2,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 16,
+                  "column": 32,
+                  "length": 10,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 3,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 16,
+                  "column": 18,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 4,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 24,
+                  "length": 32,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 5,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 50,
+                  "length": 5,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 6,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 42,
+                  "length": 13,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 7,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 24,
+                  "length": 32,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 8,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 24,
+                  "length": 32,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 9,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "continuation.new",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 10,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 5,
+                  "length": 51,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 11,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 21,
+                  "column": 13,
+                  "length": 5,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 12,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 21,
+                  "column": 20,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                }
+              ]
+            },
+            {
+              "id": 1,
+              "name": "mailbox.initialize",
+              "inputTypeIds": [
+                0
+              ],
+              "outputTypeIds": [
+                4
+              ],
+              "inputTypes": [
+                "Int"
+              ],
+              "outputTypes": [
+                "State"
+              ],
+              "workspaceCapacity": 2,
+              "requiresRecordArenas": true,
+              "irSha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103",
+              "diagnostics": [
+                {
+                  "id": 0,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "<mailbox.initialize>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 1,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 9,
+                  "column": 1,
+                  "length": 153,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 2,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 9,
+                  "column": 23,
+                  "length": 9,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 3,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 5,
+                  "length": 24,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 4,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 24,
+                  "length": 4,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 5,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 16,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 6,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 5,
+                  "length": 24,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 7,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 5,
+                  "length": 24,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 8,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "state.new",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                }
+              ]
+            },
+            {
+              "id": 2,
+              "name": "mailbox.resume",
+              "inputTypeIds": [
+                4,
+                3,
+                0
+              ],
+              "outputTypeIds": [
+                4
+              ],
+              "inputTypes": [
+                "State",
+                "Continuation",
+                "Int"
+              ],
+              "outputTypes": [
+                "State"
+              ],
+              "workspaceCapacity": 3,
+              "requiresRecordArenas": true,
+              "irSha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa",
+              "diagnostics": [
+                {
+                  "id": 0,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "<mailbox.resume>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 1,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 24,
+                  "column": 1,
+                  "length": 298,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 2,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 24,
+                  "column": 61,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 3,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 24,
+                  "column": 33,
+                  "length": 26,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 4,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 24,
+                  "column": 19,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 5,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 25,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 6,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 25,
+                  "length": 18,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 7,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "continuation.delta",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 8,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 45,
+                  "length": 7,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 9,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 18,
+                  "length": 35,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 10,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "divide",
+                  "file": "<standard>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 6,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 11,
+                  "code": "RUNTIME_DIVIDE_BY_ZERO",
+                  "message": "Integer division by zero.",
+                  "word": "divide",
+                  "file": "",
+                  "line": 0,
+                  "column": 0,
+                  "length": 0,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 12,
+                  "code": "RUNTIME_OVERFLOW",
+                  "message": "Integer division overflow.",
+                  "word": "divide",
+                  "file": "",
+                  "line": 0,
+                  "column": 0,
+                  "length": 0,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 13,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 5,
+                  "length": 48,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 14,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 21,
+                  "length": 5,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 15,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 21,
+                  "length": 11,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 16,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "state.total",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 17,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 34,
+                  "length": 6,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 18,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 17,
+                  "length": 24,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 19,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "add",
+                  "file": "<standard>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 3,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 20,
+                  "code": "RUNTIME_OVERFLOW",
+                  "message": "'add' overflowed its Int64 result.",
+                  "word": "add",
+                  "file": "<standard>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 3,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 21,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 5,
+                  "length": 36,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 22,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 5,
+                  "length": 25,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 23,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 24,
+                  "length": 5,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 24,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 16,
+                  "length": 13,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 25,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 5,
+                  "length": 25,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 26,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 5,
+                  "length": 25,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 27,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "state.new",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "artifactHashes": [
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-arena-runtime.obj",
+          "bytes": 21801,
+          "sha256": "c6006309fde17963b910d00644cb132c8a4fa7820517ea767aa3cdfa6b81a95b"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-entry-000.obj",
+          "bytes": 4057,
+          "sha256": "c94b9d72cfae4af224dc1760d01aaa273d31814b1b7357ac1de0c682ab499eff"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-entry-001.obj",
+          "bytes": 3768,
+          "sha256": "a476289610d1120c620513e4da9f3c63bb4206d0d20b0a845d760594aa6b7ca3"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-entry-002.obj",
+          "bytes": 5850,
+          "sha256": "991111758646a7375b0c3c13c8f1945ecdb141834bbf8aee84ef3812dd03dedb"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-module-manifest.json",
+          "bytes": 22049,
+          "sha256": "6127baf848fb5e21f49474843ffb6083111670824c07ec14ce2a1afc3449bb5d"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-module-metadata.c",
+          "bytes": 6994,
+          "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-module-metadata.obj",
+          "bytes": 9379,
+          "sha256": "aa9206a30f5848f7833e9a1a38604ae2cdf31636b6c4a3b12b08f9ba8b8a539f"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-module.dll",
+          "bytes": 32768,
+          "sha256": "5733ad78b898597c683bc36b815f94525ee69951895d652477a503b0a5a9e5a4"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\entry-000.ll",
+          "bytes": 24179,
+          "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\entry-001.ll",
+          "bytes": 20998,
+          "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\entry-002.ll",
+          "bytes": 34961,
+          "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+        }
+      ]
+    },
+    {
+      "label": "O2",
+      "optimization": "O2",
+      "outputDirectory": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2",
+      "process": {
+        "name": "compile-module-O2",
+        "file": "C:\\Program Files\\dotnet\\dotnet.exe",
+        "arguments": [
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\dotnet-artifacts\\bin\\AgentLang.NativeDispatch\\release\\AgentLang.NativeDispatch.dll",
+          "O2",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2",
+          "D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\mailbox.flow"
+        ],
+        "workingDirectory": "D:\\code\\AgentLang",
+        "startedUtc": "2026-10-08T11:45:31.1148758Z",
+        "elapsedMilliseconds": 826.639,
+        "exitCode": 0,
+        "timedOut": false,
+        "startError": null,
+        "stdout": "{\"entryIrPaths\":[\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\entry-000.ll\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\entry-001.ll\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\entry-002.ll\"],\"fingerprint\":\"42cb8120131d080198582b79bc1f7e48d1336a4f99d7287777dd8ef690dc4f05\",\"libraryPath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-module.dll\",\"manifestPath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-module-manifest.json\",\"metadataSourcePath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-module-metadata.c\",\"objectPaths\":[\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-entry-000.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-entry-001.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-entry-002.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-module-metadata.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-arena-runtime.obj\"],\"optimization\":\"O2\",\"sameVerifiedProgramInstance\":true,\"sourcePath\":\"D:\\\\code\\\\AgentLang\\\\experiments\\\\AgentLang.NativeDispatch\\\\mailbox.flow\"}\r\n",
+        "stderr": ""
+      },
+      "bootstrap": {
+        "entryIrPaths": [
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\entry-000.ll",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\entry-001.ll",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\entry-002.ll"
+        ],
+        "fingerprint": "42cb8120131d080198582b79bc1f7e48d1336a4f99d7287777dd8ef690dc4f05",
+        "libraryPath": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-module.dll",
+        "manifestPath": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-module-manifest.json",
+        "metadataSourcePath": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-module-metadata.c",
+        "objectPaths": [
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-entry-000.obj",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-entry-001.obj",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-entry-002.obj",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-module-metadata.obj",
+          "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-arena-runtime.obj"
+        ],
+        "optimization": "O2",
+        "sameVerifiedProgramInstance": true,
+        "sourcePath": "D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\mailbox.flow"
+      },
+      "manifest": {
+        "fingerprint": "42cb8120131d080198582b79bc1f7e48d1336a4f99d7287777dd8ef690dc4f05",
+        "optimization": "O2",
+        "sourceSha256": {
+          "metadataC": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be",
+          "arenaRuntimeC": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7",
+          "arenaRuntimeHeader": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0",
+          "moduleAbiHeader": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+        },
+        "binarySha256": "cf3f8b531b2fe3e08243259135fee4810879c7101126f33213cc81646b58de82",
+        "module": {
+          "moduleAbiVersion": 1,
+          "runtimeAbiVersion": 3,
+          "target": "Windows x64",
+          "types": [
+            {
+              "id": 0,
+              "name": "Int",
+              "kind": 1,
+              "fields": []
+            },
+            {
+              "id": 1,
+              "name": "Bool",
+              "kind": 2,
+              "fields": []
+            },
+            {
+              "id": 2,
+              "name": "Unit",
+              "kind": 3,
+              "fields": []
+            },
+            {
+              "id": 3,
+              "name": "Continuation",
+              "kind": 4,
+              "fields": [
+                {
+                  "name": "delta",
+                  "typeId": 0
+                }
+              ]
+            },
+            {
+              "id": 4,
+              "name": "State",
+              "kind": 4,
+              "fields": [
+                {
+                  "name": "total",
+                  "typeId": 0
+                }
+              ]
+            }
+          ],
+          "entries": [
+            {
+              "id": 0,
+              "name": "mailbox.begin",
+              "inputTypeIds": [
+                4,
+                0
+              ],
+              "outputTypeIds": [
+                4,
+                3
+              ],
+              "inputTypes": [
+                "State",
+                "Int"
+              ],
+              "outputTypes": [
+                "State",
+                "Continuation"
+              ],
+              "workspaceCapacity": 2,
+              "requiresRecordArenas": true,
+              "irSha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b",
+              "diagnostics": [
+                {
+                  "id": 0,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "<mailbox.begin>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 1,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 16,
+                  "column": 1,
+                  "length": 259,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 2,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 16,
+                  "column": 32,
+                  "length": 10,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 3,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 16,
+                  "column": 18,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 4,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 24,
+                  "length": 32,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 5,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 50,
+                  "length": 5,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 6,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 42,
+                  "length": 13,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 7,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 24,
+                  "length": 32,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 8,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 24,
+                  "length": 32,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 9,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "continuation.new",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 10,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 20,
+                  "column": 5,
+                  "length": 51,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 11,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 21,
+                  "column": 13,
+                  "length": 5,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 12,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.begin",
+                  "file": "mailbox.flow",
+                  "line": 21,
+                  "column": 20,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                }
+              ]
+            },
+            {
+              "id": 1,
+              "name": "mailbox.initialize",
+              "inputTypeIds": [
+                0
+              ],
+              "outputTypeIds": [
+                4
+              ],
+              "inputTypes": [
+                "Int"
+              ],
+              "outputTypes": [
+                "State"
+              ],
+              "workspaceCapacity": 2,
+              "requiresRecordArenas": true,
+              "irSha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103",
+              "diagnostics": [
+                {
+                  "id": 0,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "<mailbox.initialize>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 1,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 9,
+                  "column": 1,
+                  "length": 153,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 2,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 9,
+                  "column": 23,
+                  "length": 9,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 3,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 5,
+                  "length": 24,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 4,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 24,
+                  "length": 4,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 5,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 16,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 6,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 5,
+                  "length": 24,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 7,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.initialize",
+                  "file": "mailbox.flow",
+                  "line": 13,
+                  "column": 5,
+                  "length": 24,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 8,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "state.new",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                }
+              ]
+            },
+            {
+              "id": 2,
+              "name": "mailbox.resume",
+              "inputTypeIds": [
+                4,
+                3,
+                0
+              ],
+              "outputTypeIds": [
+                4
+              ],
+              "inputTypes": [
+                "State",
+                "Continuation",
+                "Int"
+              ],
+              "outputTypes": [
+                "State"
+              ],
+              "workspaceCapacity": 3,
+              "requiresRecordArenas": true,
+              "irSha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa",
+              "diagnostics": [
+                {
+                  "id": 0,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "<mailbox.resume>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 1,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 24,
+                  "column": 1,
+                  "length": 298,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 2,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 24,
+                  "column": 61,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 3,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 24,
+                  "column": 33,
+                  "length": 26,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 4,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 24,
+                  "column": 19,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 5,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 25,
+                  "length": 12,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 6,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 25,
+                  "length": 18,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 7,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "continuation.delta",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 8,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 45,
+                  "length": 7,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 9,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 18,
+                  "length": 35,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 10,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "divide",
+                  "file": "<standard>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 6,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 11,
+                  "code": "RUNTIME_DIVIDE_BY_ZERO",
+                  "message": "Integer division by zero.",
+                  "word": "divide",
+                  "file": "",
+                  "line": 0,
+                  "column": 0,
+                  "length": 0,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 12,
+                  "code": "RUNTIME_OVERFLOW",
+                  "message": "Integer division overflow.",
+                  "word": "divide",
+                  "file": "",
+                  "line": 0,
+                  "column": 0,
+                  "length": 0,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 13,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 28,
+                  "column": 5,
+                  "length": 48,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 14,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 21,
+                  "length": 5,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 15,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 21,
+                  "length": 11,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 16,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "state.total",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 17,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 34,
+                  "length": 6,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 18,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 17,
+                  "length": 24,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 19,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "add",
+                  "file": "<standard>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 3,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 20,
+                  "code": "RUNTIME_OVERFLOW",
+                  "message": "'add' overflowed its Int64 result.",
+                  "word": "add",
+                  "file": "<standard>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 3,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 21,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 29,
+                  "column": 5,
+                  "length": 36,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 22,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 5,
+                  "length": 25,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 23,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 24,
+                  "length": 5,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 24,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 16,
+                  "length": 13,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 25,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 5,
+                  "length": 25,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 26,
+                  "code": "RUNTIME_STEP_LIMIT",
+                  "message": "Execution exceeded the 10,000 instruction limit.",
+                  "word": "mailbox.resume",
+                  "file": "mailbox.flow",
+                  "line": 30,
+                  "column": 5,
+                  "length": 25,
+                  "expected": [],
+                  "actual": []
+                },
+                {
+                  "id": 27,
+                  "code": "RUNTIME_CALL_DEPTH",
+                  "message": "Execution exceeded the 64 word call-depth limit.",
+                  "word": "state.new",
+                  "file": "<generated-native-dispatch-record>",
+                  "line": 1,
+                  "column": 1,
+                  "length": 1,
+                  "expected": [],
+                  "actual": []
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "artifactHashes": [
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-arena-runtime.obj",
+          "bytes": 14673,
+          "sha256": "a547c3ea276822df232c891c4e63104c4f1c92bb33d7c2af2fb00c3d5d374447"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-entry-000.obj",
+          "bytes": 2575,
+          "sha256": "6cdcc9abc3d17e1aae2bb2d850cd7693ba7ff8af8757e13235955dfb2f955b0b"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-entry-001.obj",
+          "bytes": 2418,
+          "sha256": "cf3d6f2863af5ffebb33da16f6514faf867cd04f6448c0af9ed9691629ad223c"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-entry-002.obj",
+          "bytes": 3323,
+          "sha256": "75e55b232b44b6809318996d6bbbbc2b43cba02a648a9a9f27a8535f48485db6"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-module-manifest.json",
+          "bytes": 22049,
+          "sha256": "463d6cb1d724e81027aa71a7a151d0c428e73e49ddf3d65dc8eccd37279eb154"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-module-metadata.c",
+          "bytes": 6994,
+          "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-module-metadata.obj",
+          "bytes": 9379,
+          "sha256": "4e578ff6d4001c07e344365f3426cfb2bbcebf8103b38213bdaabdf387261192"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-module.dll",
+          "bytes": 23040,
+          "sha256": "cf3f8b531b2fe3e08243259135fee4810879c7101126f33213cc81646b58de82"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\entry-000.ll",
+          "bytes": 24179,
+          "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\entry-001.ll",
+          "bytes": 20998,
+          "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+        },
+        {
+          "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\entry-002.ll",
+          "bytes": 34961,
+          "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+        }
+      ]
+    }
+  ],
+  "nativeBuilds": [],
+  "nativeRuns": [],
+  "mailboxUnitRuns": [],
+  "importAudits": [],
+  "peAudits": [],
+  "fixtureComparisons": [],
+  "checks": [
+    {
+      "name": "new Flow fixture is byte-identical to report108 mailbox source",
+      "passed": true
+    },
+    {
+      "name": "Clang version command exited cleanly",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": ".NET SDK version command exited cleanly",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Fresh bootstrap and project dependency build succeeded",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "fresh build produced exactly one bootstrap assembly",
+      "passed": true,
+      "details": {
+        "count": 1
+      }
+    },
+    {
+      "name": "bootstrap assembly belongs to this run artifact root",
+      "passed": true
+    },
+    {
+      "name": "Fresh O0 native module compile succeeded",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "O0 output contains one module DLL",
+      "passed": true,
+      "details": {
+        "dllCount": 1,
+        "libraryPath": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0\\agentlang-module.dll"
+      }
+    },
+    {
+      "name": "O0 manifest has the three Flow handlers",
+      "passed": true,
+      "details": {
+        "entryNames": [
+          "mailbox.begin",
+          "mailbox.initialize",
+          "mailbox.resume"
+        ]
+      }
+    },
+    {
+      "name": "O0 records optimization separately from its semantic fingerprint",
+      "passed": true
+    },
+    {
+      "name": "O0 bootstrap proves one shared VerifiedIrProgram",
+      "passed": true
+    },
+    {
+      "name": "Fresh O0-repeat native module compile succeeded",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "O0-repeat output contains one module DLL",
+      "passed": true,
+      "details": {
+        "dllCount": 1,
+        "libraryPath": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat\\agentlang-module.dll"
+      }
+    },
+    {
+      "name": "O0-repeat manifest has the three Flow handlers",
+      "passed": true,
+      "details": {
+        "entryNames": [
+          "mailbox.begin",
+          "mailbox.initialize",
+          "mailbox.resume"
+        ]
+      }
+    },
+    {
+      "name": "O0-repeat records optimization separately from its semantic fingerprint",
+      "passed": true
+    },
+    {
+      "name": "O0-repeat bootstrap proves one shared VerifiedIrProgram",
+      "passed": true
+    },
+    {
+      "name": "Fresh O2 native module compile succeeded",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "O2 output contains one module DLL",
+      "passed": true,
+      "details": {
+        "dllCount": 1,
+        "libraryPath": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2\\agentlang-module.dll"
+      }
+    },
+    {
+      "name": "O2 manifest has the three Flow handlers",
+      "passed": true,
+      "details": {
+        "entryNames": [
+          "mailbox.begin",
+          "mailbox.initialize",
+          "mailbox.resume"
+        ]
+      }
+    },
+    {
+      "name": "O2 records optimization separately from its semantic fingerprint",
+      "passed": true
+    },
+    {
+      "name": "O2 bootstrap proves one shared VerifiedIrProgram",
+      "passed": true
+    },
+    {
+      "name": "two fresh O0 artifact builds have identical metadata and fingerprint",
+      "passed": true
+    },
+    {
+      "name": "O0 and O2 builds share deterministic semantic metadata and fingerprint",
+      "passed": true
+    },
+    {
+      "name": "O0 native runner build succeeded",
+      "passed": false,
+      "details": "D:\\code\\AgentLang\\src\\AgentLang.Llvm\\native\\mailbox_runtime.c:630:17: error: unused function 'al_runtime_external_arguments_valid' [-Werror,-Wunused-function]\r\n  630 | static uint32_t al_runtime_external_arguments_valid(\r\n      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n1 error generated.\r\n"
+    },
+    {
+      "name": "verification completed without an uncaught failure",
+      "passed": false,
+      "details": "O0 native runner build succeeded failed (exit 1): D:\\code\\AgentLang\\src\\AgentLang.Llvm\\native\\mailbox_runtime.c:630:17: error: unused function 'al_runtime_external_arguments_valid' [-Werror,-Wunused-function]\r\n  630 | static uint32_t al_runtime_external_arguments_valid(\r\n      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n1 error generated.\r\n"
+    }
+  ],
+  "failure": "O0 native runner build succeeded\r\nverification completed without an uncaught failure",
+  "processes": [
+    {
+      "name": "clang-version",
+      "file": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\clang.exe",
+      "arguments": [
+        "--version"
+      ],
+      "workingDirectory": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210",
+      "startedUtc": "2026-10-08T11:45:09.5627577Z",
+      "elapsedMilliseconds": 53.368,
+      "exitCode": 0,
+      "timedOut": false,
+      "startError": null,
+      "stdout": "clang version 19.1.5\nTarget: x86_64-pc-windows-msvc\nThread model: posix\nInstalledDir: C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\n",
+      "stderr": ""
+    },
+    {
+      "name": "dotnet-version",
+      "file": "C:\\Program Files\\dotnet\\dotnet.exe",
+      "arguments": [
+        "--version"
+      ],
+      "workingDirectory": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210",
+      "startedUtc": "2026-10-08T11:45:09.6284693Z",
+      "elapsedMilliseconds": 105.696,
+      "exitCode": 0,
+      "timedOut": false,
+      "startError": null,
+      "stdout": "9.0.308\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "fresh-dotnet-dependency-build",
+      "file": "C:\\Program Files\\dotnet\\dotnet.exe",
+      "arguments": [
+        "build",
+        "D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\AgentLang.NativeDispatch.fsproj",
+        "--artifacts-path",
+        "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\dotnet-artifacts",
+        "--configuration",
+        "Release",
+        "--verbosity",
+        "minimal"
+      ],
+      "workingDirectory": "D:\\code\\AgentLang",
+      "startedUtc": "2026-10-08T11:45:09.7354747Z",
+      "elapsedMilliseconds": 19873.119,
+      "exitCode": 0,
+      "timedOut": false,
+      "startError": null,
+      "stdout": "  Determining projects to restore...\r\n  Restored D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj (in 198 ms).\r\n  Restored D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\AgentLang.NativeDispatch.fsproj (in 198 ms).\r\n  Restored D:\\code\\AgentLang\\src\\AgentLang.Llvm\\AgentLang.Llvm.fsproj (in 198 ms).\r\n  AgentLang.Core -> D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\dotnet-artifacts\\bin\\AgentLang.Core\\release\\AgentLang.Core.dll\r\n  AgentLang.Llvm -> D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\dotnet-artifacts\\bin\\AgentLang.Llvm\\release\\AgentLang.Llvm.dll\r\n  AgentLang.NativeDispatch -> D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\dotnet-artifacts\\bin\\AgentLang.NativeDispatch\\release\\AgentLang.NativeDispatch.dll\r\n\r\nBuild succeeded.\r\n    0 Warning(s)\r\n    0 Error(s)\r\n\r\nTime Elapsed 00:00:19.67\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "compile-module-O0",
+      "file": "C:\\Program Files\\dotnet\\dotnet.exe",
+      "arguments": [
+        "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\dotnet-artifacts\\bin\\AgentLang.NativeDispatch\\release\\AgentLang.NativeDispatch.dll",
+        "O0",
+        "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0",
+        "D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\mailbox.flow"
+      ],
+      "workingDirectory": "D:\\code\\AgentLang",
+      "startedUtc": "2026-10-08T11:45:29.6442824Z",
+      "elapsedMilliseconds": 671.35,
+      "exitCode": 0,
+      "timedOut": false,
+      "startError": null,
+      "stdout": "{\"entryIrPaths\":[\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\entry-000.ll\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\entry-001.ll\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\entry-002.ll\"],\"fingerprint\":\"42cb8120131d080198582b79bc1f7e48d1336a4f99d7287777dd8ef690dc4f05\",\"libraryPath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-module.dll\",\"manifestPath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-module-manifest.json\",\"metadataSourcePath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-module-metadata.c\",\"objectPaths\":[\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-entry-000.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-entry-001.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-entry-002.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-module-metadata.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0\\\\agentlang-arena-runtime.obj\"],\"optimization\":\"O0\",\"sameVerifiedProgramInstance\":true,\"sourcePath\":\"D:\\\\code\\\\AgentLang\\\\experiments\\\\AgentLang.NativeDispatch\\\\mailbox.flow\"}\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "compile-module-O0-repeat",
+      "file": "C:\\Program Files\\dotnet\\dotnet.exe",
+      "arguments": [
+        "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\dotnet-artifacts\\bin\\AgentLang.NativeDispatch\\release\\AgentLang.NativeDispatch.dll",
+        "O0",
+        "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O0-repeat",
+        "D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\mailbox.flow"
+      ],
+      "workingDirectory": "D:\\code\\AgentLang",
+      "startedUtc": "2026-10-08T11:45:30.4148487Z",
+      "elapsedMilliseconds": 668.812,
+      "exitCode": 0,
+      "timedOut": false,
+      "startError": null,
+      "stdout": "{\"entryIrPaths\":[\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\entry-000.ll\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\entry-001.ll\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\entry-002.ll\"],\"fingerprint\":\"42cb8120131d080198582b79bc1f7e48d1336a4f99d7287777dd8ef690dc4f05\",\"libraryPath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-module.dll\",\"manifestPath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-module-manifest.json\",\"metadataSourcePath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-module-metadata.c\",\"objectPaths\":[\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-entry-000.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-entry-001.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-entry-002.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-module-metadata.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O0-repeat\\\\agentlang-arena-runtime.obj\"],\"optimization\":\"O0\",\"sameVerifiedProgramInstance\":true,\"sourcePath\":\"D:\\\\code\\\\AgentLang\\\\experiments\\\\AgentLang.NativeDispatch\\\\mailbox.flow\"}\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "compile-module-O2",
+      "file": "C:\\Program Files\\dotnet\\dotnet.exe",
+      "arguments": [
+        "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\dotnet-artifacts\\bin\\AgentLang.NativeDispatch\\release\\AgentLang.NativeDispatch.dll",
+        "O2",
+        "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\module-O2",
+        "D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\mailbox.flow"
+      ],
+      "workingDirectory": "D:\\code\\AgentLang",
+      "startedUtc": "2026-10-08T11:45:31.1148758Z",
+      "elapsedMilliseconds": 826.639,
+      "exitCode": 0,
+      "timedOut": false,
+      "startError": null,
+      "stdout": "{\"entryIrPaths\":[\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\entry-000.ll\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\entry-001.ll\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\entry-002.ll\"],\"fingerprint\":\"42cb8120131d080198582b79bc1f7e48d1336a4f99d7287777dd8ef690dc4f05\",\"libraryPath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-module.dll\",\"manifestPath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-module-manifest.json\",\"metadataSourcePath\":\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-module-metadata.c\",\"objectPaths\":[\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-entry-000.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-entry-001.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-entry-002.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-module-metadata.obj\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\native-dispatch-001\\\\integration-run-616dde51afc9466f9d6e5d49470d8210\\\\module-O2\\\\agentlang-arena-runtime.obj\"],\"optimization\":\"O2\",\"sameVerifiedProgramInstance\":true,\"sourcePath\":\"D:\\\\code\\\\AgentLang\\\\experiments\\\\AgentLang.NativeDispatch\\\\mailbox.flow\"}\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "native-runner-build-O0",
+      "file": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\clang.exe",
+      "arguments": [
+        "--target=x86_64-pc-windows-msvc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-O0",
+        "-I",
+        "D:\\code\\AgentLang\\src\\AgentLang.Llvm\\native",
+        "D:\\code\\AgentLang\\experiments\\AgentLang.NativeDispatch\\native_dispatch.c",
+        "D:\\code\\AgentLang\\src\\AgentLang.Llvm\\native\\arena_runtime.c",
+        "D:\\code\\AgentLang\\src\\AgentLang.Llvm\\native\\mailbox_runtime.c",
+        "D:\\code\\AgentLang\\src\\AgentLang.Llvm\\native\\mailbox_runtime_windows.c",
+        "-o",
+        "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\runner-O0\\native-dispatch-O0.exe"
+      ],
+      "workingDirectory": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\integration-run-616dde51afc9466f9d6e5d49470d8210\\runner-O0",
+      "startedUtc": "2026-10-08T11:45:31.9887819Z",
+      "elapsedMilliseconds": 398.522,
+      "exitCode": 1,
+      "timedOut": false,
+      "startError": null,
+      "stdout": "",
+      "stderr": "D:\\code\\AgentLang\\src\\AgentLang.Llvm\\native\\mailbox_runtime.c:630:17: error: unused function 'al_runtime_external_arguments_valid' [-Werror,-Wunused-function]\r\n  630 | static uint32_t al_runtime_external_arguments_valid(\r\n      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n1 error generated.\r\n"
+    }
+  ]
+}

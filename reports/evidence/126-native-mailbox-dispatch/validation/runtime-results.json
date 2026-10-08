@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "scope": "native mailbox controller runtime",
+  "platform": "Windows x64",
+  "compiler": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\clang.exe",
+  "commands": {
+    "o0": [
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-DAL_MAILBOX_RUNTIME_TESTING",
+      "-O0",
+      "-I",
+      "src/AgentLang.Llvm/native",
+      "src/AgentLang.Llvm/native/arena_runtime.c",
+      "src/AgentLang.Llvm/native/mailbox_runtime.c",
+      "src/AgentLang.Llvm/native/mailbox_runtime_windows.c",
+      "src/AgentLang.Llvm/native/mailbox_runtime_test.c",
+      "-o",
+      ".agentlang/native-dispatch-001/runtime-O0.exe"
+    ],
+    "o2": [
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-DAL_MAILBOX_RUNTIME_TESTING",
+      "-O2",
+      "-I",
+      "src/AgentLang.Llvm/native",
+      "src/AgentLang.Llvm/native/arena_runtime.c",
+      "src/AgentLang.Llvm/native/mailbox_runtime.c",
+      "src/AgentLang.Llvm/native/mailbox_runtime_windows.c",
+      "src/AgentLang.Llvm/native/mailbox_runtime_test.c",
+      "-o",
+      ".agentlang/native-dispatch-001/runtime-O2.exe"
+    ],
+    "ubsanTrapO1": [
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-DAL_MAILBOX_RUNTIME_TESTING",
+      "-O1",
+      "-fsanitize=undefined",
+      "-fsanitize-trap=undefined",
+      "-I",
+      "src/AgentLang.Llvm/native",
+      "src/AgentLang.Llvm/native/arena_runtime.c",
+      "src/AgentLang.Llvm/native/mailbox_runtime.c",
+      "src/AgentLang.Llvm/native/mailbox_runtime_windows.c",
+      "src/AgentLang.Llvm/native/mailbox_runtime_test.c",
+      "-o",
+      ".agentlang/native-dispatch-001/runtime-ubsan-trap.exe",
+      "-lpsapi"
+    ],
+    "clangFormatApply": [
+      "-i",
+      "src/AgentLang.Llvm/native/mailbox_runtime.h",
+      "src/AgentLang.Llvm/native/mailbox_runtime.c",
+      "src/AgentLang.Llvm/native/mailbox_runtime_windows.c",
+      "src/AgentLang.Llvm/native/mailbox_runtime_test.c"
+    ],
+    "clangFormatCheck": [
+      "--dry-run",
+      "--Werror",
+      "src/AgentLang.Llvm/native/mailbox_runtime.h",
+      "src/AgentLang.Llvm/native/mailbox_runtime.c",
+      "src/AgentLang.Llvm/native/mailbox_runtime_windows.c",
+      "src/AgentLang.Llvm/native/mailbox_runtime_test.c"
+    ],
+    "cxxHeader": [
+      "-std=c++17",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fsyntax-only",
+      "-I",
+      "src/AgentLang.Llvm/native",
+      ".agentlang/native-dispatch-001/runtime-header-check.cpp"
+    ],
+    "productionMailboxObject": [
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-I",
+      "src/AgentLang.Llvm/native",
+      "-c",
+      "src/AgentLang.Llvm/native/mailbox_runtime.c",
+      "-o",
+      ".agentlang/native-dispatch-001/runtime-prod-mailbox.obj"
+    ],
+    "productionWindowsObject": [
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-I",
+      "src/AgentLang.Llvm/native",
+      "-c",
+      "src/AgentLang.Llvm/native/mailbox_runtime_windows.c",
+      "-o",
+      ".agentlang/native-dispatch-001/runtime-prod-windows.obj"
+    ]
+  },
+  "runs": [
+    {
+      "name": "runtime-O0",
+      "binary": "runtime-O0.exe",
+      "output": "runtime-O0.jsonl",
+      "passed": true,
+      "namedCheckCount": 69,
+      "failedCheckCount": 0,
+      "cases": [
+        "invalid_storage",
+        "retained_capacity",
+        "scratch_cleanup",
+        "general",
+        "invalid_module",
+        "busy",
+        "argument_alias",
+        "wrong_owner_token",
+        "foreign_thread",
+        "cross_runtime_token",
+        "duplicate_token",
+        "stale_token",
+        "token_exhaustion",
+        "generation_exhaustion",
+        "post_disposal"
+      ]
+    },
+    {
+      "name": "runtime-O2",
+      "binary": "runtime-O2.exe",
+      "output": "runtime-O2.jsonl",
+      "passed": true,
+      "namedCheckCount": 69,
+      "failedCheckCount": 0,
+      "cases": [
+        "invalid_storage",
+        "retained_capacity",
+        "scratch_cleanup",
+        "general",
+        "invalid_module",
+        "busy",
+        "argument_alias",
+        "wrong_owner_token",
+        "foreign_thread",
+        "cross_runtime_token",
+        "duplicate_token",
+        "stale_token",
+        "token_exhaustion",
+        "generation_exhaustion",
+        "post_disposal"
+      ]
+    },
+    {
+      "name": "runtime-ubsan-trap",
+      "binary": "runtime-ubsan-trap.exe",
+      "output": "runtime-ubsan-trap.jsonl",
+      "passed": true,
+      "namedCheckCount": 69,
+      "failedCheckCount": 0,
+      "cases": [
+        "invalid_storage",
+        "retained_capacity",
+        "scratch_cleanup",
+        "general",
+        "invalid_module",
+        "busy",
+        "argument_alias",
+        "wrong_owner_token",
+        "foreign_thread",
+        "cross_runtime_token",
+        "duplicate_token",
+        "stale_token",
+        "token_exhaustion",
+        "generation_exhaustion",
+        "post_disposal"
+      ]
+    }
+  ],
+  "sourceSha256": {
+    "src/AgentLang.Llvm/native/mailbox_runtime.c": "2c4fa4c25bb113b13f319f15dce7bc35f8d380196058b8b4bf9dc3700336c4ef",
+    "src/AgentLang.Llvm/native/mailbox_runtime_test.c": "35c2f2f55109cc3499b799cd04f695c962264e4da42b79fad42221f911e5e41a",
+    "src/AgentLang.Llvm/native/mailbox_runtime.h": "dc15e12b852e0ed5c9e0075af4bfdcd3863d6fe95d16d90a37520cd054744334",
+    "src/AgentLang.Llvm/native/mailbox_runtime_windows.c": "97ca4a9fdca6f5fdb2a7347272158cfcd722da62adb4737f0bb207a5577685d9"
+  },
+  "binarySha256": {
+    "runtime-ubsan-trap.exe": "39abaed8abdaf6aa3079a544e939e8dd48d7ecad63ec88ab9e35eefbb7766d3c",
+    "runtime-O2.exe": "b7349d1ea2774e7b27341e2ac6aff6b06e2bb20bf5168dc2699d15a6b58ce295",
+    "runtime-O0.exe": "57f97920076ada31be2a4c48aff0d73cc18561049d87ee4eaff95e1bfd478e92",
+    "runtime-prod-mailbox.obj": "99a615fe643b4133f40076626ddc7321bab1b79c8a3276a44a8e0aeea4ed0472",
+    "runtime-prod-windows.obj": "9aea4f83a832d30c5ed3c46d4fc780e68bc62e78e1c8e91b3324c5e3a6a465f1"
+  },
+  "resultFiles": [
+    "runtime-O0.jsonl",
+    "runtime-O2.jsonl",
+    "runtime-ubsan-trap.jsonl",
+    "runtime-header-check.cpp",
+    "runtime-plan.md",
+    "runtime-prod-mailbox.obj",
+    "runtime-prod-windows.obj"
+  ]
+}

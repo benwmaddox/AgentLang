@@ -97,11 +97,26 @@ without managed graph decoding, preserving old state on failure. This currently
 copies the input graph and live outputs, and requires one verified program
 instance. [Report 108](../reports/108-native-mailbox-suspension.md) now passes 120
 checks for readable Flow/2 handlers suspending/resuming fixed mailboxes through
-one reusable scratch owner, using an explicit .NET experiment host. Next move
-bounded dispatch/pending state into the native runtime and define reproducible
-entry/type metadata for release execution. Real I/O, provider cancellation and a
+one reusable scratch owner, using an explicit .NET experiment host.
+[Report 126](../reports/126-native-mailbox-dispatch.md) moves bounded dispatch,
+pending state and arena ownership into a standalone native controller, with
+versioned entry/type metadata; its integrated verifier passes 353 checks.
+The tiny fixture reserves 1,400 bytes for controller/arenas/workspace, not total
+process memory. This is not general release certification. Real I/O, provider cancellation and a
 genuine whole-request lifetime alternative remain prerequisites for the fair
 throughput comparison; holding cleared scratch is not a valid substitute.
+
+Memory priority clarification (2026-10-08): implement and test an owning value
+stack for most working data, with explicit retained mailbox state. Values own
+nested payloads; duplication creates independent values; moves transfer ownership;
+pops reclaim owned payload without surviving aliases. The current invocation bump
+arena/shared record DAG does not implement this. The next bounded experiment must
+exercise variable-sized nested values, copy/move/pop, returned results, surviving
+outer values, branch joins and capacity failure, with exact storage oracles.
+Physical layout/source syntax remain open; shared-graph regions are comparison
+controls, not replacements for the owning-value goal. Keep the actual
+keep-associated versus return-at-suspension async comparison as the subsequent
+throughput decision; mailboxes alone are not the memory differentiator.
 
 Keep the semantic IR authoritative. Development backends add LLVM
 JIT while release builds use LLVM AOT plus a minimal runtime. Research arenas,
@@ -121,6 +136,15 @@ sustained successful requests per second at the same enforced memory ceiling
 and acceptable tail latency, including slow clients, cancellation and bounded
 pending I/O. Record copying, backpressure and whole-process memory as well as
 arena accounting before adopting either design.
+User clarification (2026-10-08): keep mailbox identity/static state the same in
+both arms. Compare keeping its actual stack/scratch associated throughout async
+work against returning scratch to the pool at suspension and reacquiring it on
+completion. The keep-associated arm must retain real data and avoid unnecessary
+promotion copies, not hold a cleared arena artificially. Record memory,
+throughput, tail latency, copying and allocation churn under matched limits;
+[the explicit comparison contract](ASYNC-ARENA-EVALUATION.md#explicit-comparison-keep-or-return-the-mailbox-stack)
+defines this next experiment. The simulated report104 comparison does not
+replace the real-I/O comparison.
 The latest memory candidate preserves mailbox static state while releasing
 unused stack/scratch backing storage after inactivity. Reset safe turn-local
 state promptly, retain reusable
@@ -223,8 +247,9 @@ retained actor omits task.commit despite a correct persisted library revision;
 record workflow completion separately. The reset condition is compact, not
 reset-rich, and these small samples do not establish a reliability advantage.
 
-Resume the approved native-runtime work in section 3: bounded native mailbox
-dispatch/pending state, then the arena-lifetime comparison under matched limits.
+Continue the approved native-runtime work in section 3: bounded native dispatch
+is validated in report126; next test stack/region lifetime rules and compare the
+async arena policies under matched limits.
 Do not gate that work on more easy repair variants. Future efficacy trials should
 use a held-out multi-function change with collateral-regression opportunities,
 independent expected values and unchanged controls. A bounded interface follow-up

@@ -1,0 +1,138 @@
+{
+  "passed": true,
+  "files": [
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/AgentLang.Cli.deps.json",
+      "expected": "6382F6DC29BB8F827824839010E313B266E51A3F87A4FDB8C382931D2549E97E",
+      "actual": "6382F6DC29BB8F827824839010E313B266E51A3F87A4FDB8C382931D2549E97E",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/AgentLang.Cli.dll",
+      "expected": "DA0A9677A7D9694B8B8E1D24D72F49CD8D7D4180F21A9077612A8D4B84373A02",
+      "actual": "DA0A9677A7D9694B8B8E1D24D72F49CD8D7D4180F21A9077612A8D4B84373A02",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/AgentLang.Cli.exe",
+      "expected": "8D85CA1F3B44E8715C0F230241DEAB3A2B02222C7428D4A5D3ABE2B0A866822B",
+      "actual": "8D85CA1F3B44E8715C0F230241DEAB3A2B02222C7428D4A5D3ABE2B0A866822B",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/AgentLang.Cli.pdb",
+      "expected": "633CD91E742620ECAFA470B256853ED53DA8736223A9783B1317ED2E358FE492",
+      "actual": "633CD91E742620ECAFA470B256853ED53DA8736223A9783B1317ED2E358FE492",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/AgentLang.Cli.runtimeconfig.json",
+      "expected": "A45057885F807F4A337FDEA3CCDFA64E1675D22A6D6A6FC7C7394FD44BA9EEBE",
+      "actual": "A45057885F807F4A337FDEA3CCDFA64E1675D22A6D6A6FC7C7394FD44BA9EEBE",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/AgentLang.Core.dll",
+      "expected": "32ECE1BDAD77A8ABCFF9D81F0A6EBB913AC319706B8258F978FC0FCA2814B214",
+      "actual": "32ECE1BDAD77A8ABCFF9D81F0A6EBB913AC319706B8258F978FC0FCA2814B214",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/AgentLang.Core.pdb",
+      "expected": "AE6254707A274B3DF5B6FBD7A680E34F04D049C523B1220E18149863A60C9441",
+      "actual": "AE6254707A274B3DF5B6FBD7A680E34F04D049C523B1220E18149863A60C9441",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/AgentLang.Core.xml",
+      "expected": "09AC15A5F53B3D6FD39E721BB9E7EDA22F7B2269A7676F95866F822C9BCCBE7A",
+      "actual": "09AC15A5F53B3D6FD39E721BB9E7EDA22F7B2269A7676F95866F822C9BCCBE7A",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/cs/FSharp.Core.resources.dll",
+      "expected": "EB8BD755CFE0D39CE27615027FE22556E8B9DCB470F2B47A36F4BFBF3C31BE64",
+      "actual": "EB8BD755CFE0D39CE27615027FE22556E8B9DCB470F2B47A36F4BFBF3C31BE64",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/de/FSharp.Core.resources.dll",
+      "expected": "7419E4F5CEED9E03821686E865FED7D29C6217FDF5D3A46A2919A369C98C38CE",
+      "actual": "7419E4F5CEED9E03821686E865FED7D29C6217FDF5D3A46A2919A369C98C38CE",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/es/FSharp.Core.resources.dll",
+      "expected": "636866649564C72EB763EB3942E021B52B1F9B3869D037ACA48F73D4474353C5",
+      "actual": "636866649564C72EB763EB3942E021B52B1F9B3869D037ACA48F73D4474353C5",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/fr/FSharp.Core.resources.dll",
+      "expected": "F38F2FD6BC4C4E233DD098A36B315A2BC87673CF2F07C6BA3DAF71A3264F4A64",
+      "actual": "F38F2FD6BC4C4E233DD098A36B315A2BC87673CF2F07C6BA3DAF71A3264F4A64",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/FSharp.Core.dll",
+      "expected": "BF72714C36DC21357A6530D59479E1D7FC5E6BC815A9AF9A872E5E41611C1E6F",
+      "actual": "BF72714C36DC21357A6530D59479E1D7FC5E6BC815A9AF9A872E5E41611C1E6F",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/it/FSharp.Core.resources.dll",
+      "expected": "61A0BE9C6A2ED95F8E98493B17C54A55C68CEF84E23A0D82114319E2C5F3C2CD",
+      "actual": "61A0BE9C6A2ED95F8E98493B17C54A55C68CEF84E23A0D82114319E2C5F3C2CD",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/ja/FSharp.Core.resources.dll",
+      "expected": "DD7F36036D906E991DA5505B074EF889A603F449D3324750FDA5F5445BA2854F",
+      "actual": "DD7F36036D906E991DA5505B074EF889A603F449D3324750FDA5F5445BA2854F",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/ko/FSharp.Core.resources.dll",
+      "expected": "0F3EF625E379577E3B60C15D8CC3759D3DC8840F99894282DF1E702B4A166462",
+      "actual": "0F3EF625E379577E3B60C15D8CC3759D3DC8840F99894282DF1E702B4A166462",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/pl/FSharp.Core.resources.dll",
+      "expected": "755BAB9FBD85E5E4B4771870C9C4D655E91E3CE39CC1C2735FE0BC7CEC6B84C3",
+      "actual": "755BAB9FBD85E5E4B4771870C9C4D655E91E3CE39CC1C2735FE0BC7CEC6B84C3",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/pt-BR/FSharp.Core.resources.dll",
+      "expected": "A4BBBDAABF2003A5FDFF5F5BC4143C3FD4A064F2681FC481F449D4558074DC61",
+      "actual": "A4BBBDAABF2003A5FDFF5F5BC4143C3FD4A064F2681FC481F449D4558074DC61",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/ru/FSharp.Core.resources.dll",
+      "expected": "A1133F9AB7E661803D1AF0C2489626BD53AC33A11DFE891F5A02F3186F2F5D78",
+      "actual": "A1133F9AB7E661803D1AF0C2489626BD53AC33A11DFE891F5A02F3186F2F5D78",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/tr/FSharp.Core.resources.dll",
+      "expected": "6B0CBA5139A86EE681909FDFCEBAC07C99AFBA3BFCFF4FB8AB12B9C2112A0B31",
+      "actual": "6B0CBA5139A86EE681909FDFCEBAC07C99AFBA3BFCFF4FB8AB12B9C2112A0B31",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/zh-Hans/FSharp.Core.resources.dll",
+      "expected": "25F82F35A9234BCAAB272921B0D50054DDB4A669D96C111907C9D31F5B18C121",
+      "actual": "25F82F35A9234BCAAB272921B0D50054DDB4A669D96C111907C9D31F5B18C121",
+      "passed": true
+    },
+    {
+      "path": ".agentlang/pair-repair-001/runtime/debug-artifacts/zh-Hant/FSharp.Core.resources.dll",
+      "expected": "AC03EE7C4112C755705776C700033794586F980FE9476E6A13811A7153BEABB8",
+      "actual": "AC03EE7C4112C755705776C700033794586F980FE9476E6A13811A7153BEABB8",
+      "passed": true
+    }
+  ],
+  "note": "Read-only verification of copied report125 trial runtime; current Release acceptance builds do not use these files."
+}

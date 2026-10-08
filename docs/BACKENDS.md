@@ -1,6 +1,6 @@
 # Shared semantic IR and later native backends
 
-This is the architecture contract. Source lowering, IR verification, a standalone interpreter, and structured inspection are implemented. The public Runtime now executes verified IR through the interpreter; cutover validation is recorded in report 010. An optional LLVM AOT backend for scalars and fixed-layout records is locally validated; see [report 106](../reports/106-native-record-ownership.md). JIT and general native release support remain future work.
+This is the architecture contract. Source lowering, IR verification, a standalone interpreter, and structured inspection are implemented. The public Runtime now executes verified IR through the interpreter; cutover validation is recorded in report 010. An optional LLVM AOT backend for scalars and fixed-layout records is locally validated; see [report 126](../reports/126-native-mailbox-dispatch.md). JIT and general native release support remain future work.
 
 Source → parsed AST → resolved/type-and-effect-checked definitions → typed semantic IR → interpreter.
 
@@ -42,7 +42,7 @@ experiment. Per-turn scratch with explicit retained mailbox state is the main
 candidate; compare whole-request arenas before adopting it. General native
 release support still requires complete semantics and checked lifetime/ABI rules.
 
-The proposed allocation direction includes [scoped arenas](MEMORY-REGIONS.md) for phase-oriented values and a distinct retained-data strategy. Define escape/promotion and old-generation retention before resetting a region. Bulk reclamation must not invalidate returned values, snapshots or active code, and does not replace resource cleanup. The managed interpreter and eventual native backends share value/lifetime semantics without a promise of identical physical allocation. A standalone native arena/mailbox experiment measured bounded memory behavior in [report 104](../reports/104-native-arena-mailbox-feasibility.md); native record execution now has an invocation-scratch and retained-output boundary ([report 106](../reports/106-native-record-ownership.md)). Mailbox/suspension lifetimes remain unimplemented.
+The proposed allocation direction includes [scoped arenas](MEMORY-REGIONS.md) for phase-oriented values and a distinct retained-data strategy. Define escape/promotion and old-generation retention before resetting a region. Bulk reclamation must not invalidate returned values, snapshots or active code, and does not replace resource cleanup. The managed interpreter and eventual native backends share value/lifetime semantics without a promise of identical physical allocation. A standalone native arena/mailbox experiment measured bounded memory behavior in [report 104](../reports/104-native-arena-mailbox-feasibility.md); native record execution now has an invocation-scratch and retained-output boundary ([report 106](../reports/106-native-record-ownership.md)). Source-defined suspension handlers first ran under a managed experiment host ([report 108](../reports/108-native-mailbox-suspension.md)); the bounded native controller and module boundary are described in [report 126](../reports/126-native-mailbox-dispatch.md). Real provider I/O and cancellation lifetimes remain unimplemented.
 
 Later syntax research may introduce a frontend with named inputs, expression notation, or pipelines while retaining local flow through recently produced values. All frontends must lower to this same typed semantic IR and preserve evaluation order, diagnostics, effects, and source-level coverage obligations. Source notation and backend memory behavior are separate experiments. LLVM is an execution/code-generation backend, not necessarily a replacement for the F# host/compiler implementation; lower memory usage requires measured allocation and value-layout choices. See [the late syntax research item](PRD.md#late-research-syntax-and-stack-locality).
 
@@ -67,8 +67,9 @@ context, preserving the definition spans used by interpreter diagnostics.
 Compile-time metadata and runtime error arguments reconstruct the structured
 language error in the host wrapper. The emitted DLL returns a status and
 metadata identifier; it does not unwind a managed exception across the ABI.
-The diagnostic metadata currently lives in the compiler-side artifact handle,
-so this API is not yet a standalone release packaging format.
+The legacy single-entry API retains diagnostic metadata in its compiler-side
+artifact handle. Multi-entry modules also publish a native diagnostic table and
+a full JSON manifest. Neither API certifies a general release package.
 
 ABI v3 uses a 96-byte context, 8-byte value slots and a 4-byte status, with
 explicit scratch/retained arena descriptors and separate call workspace.
@@ -122,3 +123,38 @@ rejected before Clang. [Report 108](../reports/108-native-mailbox-suspension.md)
 demonstrates source-defined handlers suspending/resuming through a .NET host
 with one reusable scratch owner. Production native dispatch, real I/O, JIT and
 standalone release packaging remain future work.
+
+## Standalone module and mailbox boundary
+
+`LlvmAot.compileModule` accepts named verified bodies from one exact authorized
+program instance and returns artifact paths without loading the DLL. Module
+ABI1 has deterministic entry IDs, exact signatures, a shared type universe,
+workspace requirements, entry pointers and compact diagnostics. Its semantic
+fingerprint covers emitted LLVM and semantic metadata; separate manifest hashes
+identify generated sources and the built DLL. It excludes optimization and
+output-directory paths from semantic identity. It does not promise migration
+between distinct dictionary generations.
+
+Mailbox control ABI1 is separate from execution ABI3. A Windows native controller
+uses caller-supplied bounded storage for fixed mailbox identities, one scratch
+arena/workspace and two retained banks per mailbox. Selected handlers have
+`Int -> State`, `State Int -> State Continuation`, and
+`State Continuation Int -> State` signatures. State and Continuation are distinct
+supported record types; messages use canonical Int, not arbitrary refined Int
+storage. These are explicit handler boundaries, not automatic async lowering.
+
+Successful turns replace retained state atomically; failure leaves prior state
+and the pending completion available for retry. Actual OS thread identity and
+an in-handler guard protect shared scratch. Checked runtime/mailbox/sequence
+completion identities reject stale delivery. Fresh scratch and staging owner
+generations reject stale handles after reuse; exhaustion fails without wrapping.
+Two generations per invocation impose a finite lifetime under ABI3's 32-bit
+owner generations. This must be revisited before a long-running production target.
+
+Caller storage and loaded module lifetimes remain explicit obligations of the
+trusted C host. Disposal clears live state but does not free caller storage.
+All backing, including inactive banks and metadata, remains reserved until the
+caller releases it. Native execution of this pure subset requires no managed
+turn callbacks; frontend/compiler tooling remains F#. JIT, language-level async,
+real I/O buffers/cancellation, a genuine whole-request comparison and general
+release certification remain future work.

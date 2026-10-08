@@ -1,0 +1,155 @@
+{
+  "abiVersion": 2,
+  "target": "x86_64-pc-windows-msvc",
+  "callingConvention": "C",
+  "littleEndian": true,
+  "nativeLayoutOracle": "Copied from src/AgentLang.Llvm/native/runtime_test.c --layout-json; this C-derived layout is independent of the managed ABI declarations.",
+  "publicEntry": {
+    "name": "agentlang_execute",
+    "parameters": [
+      { "name": "context", "type": "NativeExecutionContext*" },
+      { "name": "publicOutputs", "type": "int64_t*" },
+      { "name": "outputCapacity", "type": "int32_t", "meaning": "caller-provided public root slots; must be at least logicalOutputCount and is separate from the workspace capacity" },
+      { "name": "status", "type": "int32_t*" }
+    ],
+    "return": "void"
+  },
+  "workspaceCapacityQuery": {
+    "name": "agentlang_output_capacity",
+    "return": "int32_t",
+    "meaning": "historically named query for minimum i64 workspace slots: max(entry output arity, reachable user-word output arity, max declared record field count + 1 helper slots when records exist); an empty record graph still needs one helper slot. This is not the public root capacity."
+  },
+  "resultBuffer": {
+    "logicalOutputCount": "number of values the entry body returns",
+    "publicOutputCapacity": "caller-provided number of public roots; may equal logicalOutputCount",
+    "requiredWorkspaceCapacity": "max(entry output arity, maximum reachable user-word output arity, maximum declared record field count + 1 helper slots when records exist)",
+    "example": {
+      "bodyOutputCount": 1,
+      "reachableUserWordOutputCounts": [2],
+      "maxRecordConstructorFieldCount": 3,
+      "logicalOutputCount": 1,
+      "publicOutputCapacity": 1,
+      "requiredWorkspaceCapacity": 4
+    }
+  },
+  "preconditions": [
+    "context is non-null and points to at least 64 bytes aligned to 8 bytes",
+    "status is non-null and points to an aligned 4-byte int32_t",
+    "raw callers initialize status to INVALID_REQUEST before entry; rejection before context, status, output, and internal workspace/arena spans are validated leaves status unchanged",
+    "outputCapacity is at least the logical public output count",
+    "publicOutputs is non-null and points to outputCapacity aligned 8-byte int64_t slots when capacity is nonzero",
+    "context scratch and retained arena descriptors and their data and node-directory allocations are caller-owned, distinct, and 8-byte aligned",
+    "context workspace is non-null and points to workspaceCapacity aligned 8-byte int64_t slots when workspaceCapacity is nonzero",
+    "scratch and retained node and byte capacities are representable by uint32_t",
+    "the retained arena is empty at entry",
+    "agentlang_execute validates the 32-byte ABI prefix before reading any ABI v2 tail field",
+    "agentlang_execute validates the full declared spans and pairwise non-overlap before execution"
+  ],
+  "context": {
+    "size": 64,
+    "alignment": 8,
+    "fields": [
+      { "name": "abiVersion", "type": "uint32_t", "offset": 0, "size": 4 },
+      { "name": "stepsConsumed", "type": "uint32_t", "offset": 4, "size": 4 },
+      { "name": "errorMetadataId", "type": "int32_t", "offset": 8, "size": 4 },
+      { "name": "reservedPrefix", "type": "int32_t", "offset": 12, "size": 4 },
+      { "name": "errorArgument0", "type": "int64_t", "offset": 16, "size": 8 },
+      { "name": "errorArgument1", "type": "int64_t", "offset": 24, "size": 8 },
+      { "name": "scratch", "type": "ArenaDescriptor*", "offset": 32, "size": 8 },
+      { "name": "retained", "type": "ArenaDescriptor*", "offset": 40, "size": 8 },
+      { "name": "workspace", "type": "int64_t*", "offset": 48, "size": 8 },
+      { "name": "workspaceCapacity", "type": "uint32_t", "offset": 56, "size": 4 },
+      { "name": "reservedTail", "type": "uint32_t", "offset": 60, "size": 4 }
+    ]
+  },
+  "arena": {
+    "size": 48,
+    "alignment": 8,
+    "fields": [
+      { "name": "data", "type": "uint8_t*", "offset": 0, "size": 8 },
+      { "name": "byteCapacity", "type": "uint32_t", "offset": 8, "size": 4 },
+      { "name": "used", "type": "uint32_t", "offset": 12, "size": 4 },
+      { "name": "nodes", "type": "Node*", "offset": 16, "size": 8 },
+      { "name": "nodeCapacity", "type": "uint32_t", "offset": 24, "size": 4 },
+      { "name": "nodeCount", "type": "uint32_t", "offset": 28, "size": 4 },
+      { "name": "generation", "type": "uint32_t", "offset": 32, "size": 4 },
+      { "name": "flags", "type": "uint32_t", "offset": 36, "size": 4 },
+      { "name": "reserved", "type": "uint64_t", "offset": 40, "size": 8 }
+    ]
+  },
+  "node": {
+    "size": 32,
+    "alignment": 8,
+    "fields": [
+      { "name": "typeId", "type": "uint32_t", "offset": 0, "size": 4 },
+      { "name": "fieldCount", "type": "uint32_t", "offset": 4, "size": 4 },
+      { "name": "payloadOffset", "type": "uint32_t", "offset": 8, "size": 4 },
+      { "name": "payloadBytes", "type": "uint32_t", "offset": 12, "size": 4 },
+      { "name": "mark", "type": "uint32_t", "offset": 16, "size": 4 },
+      { "name": "reserved", "type": "uint32_t", "offset": 20, "size": 4 },
+      { "name": "forwardHandle", "type": "uint64_t", "offset": 24, "size": 8 }
+    ],
+    "retainedScratchFields": "mark and forwardHandle are cleared in retained entries"
+  },
+  "typeDescriptor": {
+    "size": 16,
+    "alignment": 8,
+    "fields": [
+      { "name": "kind", "type": "uint32_t", "offset": 0, "size": 4 },
+      { "name": "fieldCount", "type": "uint32_t", "offset": 4, "size": 4 },
+      { "name": "fieldTypes", "type": "uint32_t*", "offset": 8, "size": 8 }
+    ]
+  },
+  "programDescriptor": {
+    "size": 16,
+    "alignment": 8,
+    "fields": [
+      { "name": "types", "type": "TypeDescriptor*", "offset": 0, "size": 8 },
+      { "name": "typeCount", "type": "uint32_t", "offset": 8, "size": 4 },
+      { "name": "reserved", "type": "uint32_t", "offset": 12, "size": 4 }
+    ]
+  },
+  "typeIndices": {
+    "int": 0,
+    "bool": 1,
+    "unit": 2,
+    "nominalIndices": "zero-based contiguous array indexes from 3 onward, sorted by ProgramTypeKey; field_types, node type_id, constructor IDs, and root type IDs all use indexes",
+    "descriptorCount": "3 + number of nominal definitions"
+  },
+  "typeKinds": {
+    "int": 1,
+    "bool": 2,
+    "unit": 3,
+    "record": 4,
+    "nominalDescriptorKind": "Int/Bool scalar descriptors use the base kind; record descriptors use record"
+  },
+  "handle": {
+    "size": 8,
+    "generation": "high 32 bits; nonzero",
+    "nodeIndex": "low 32 bits; 1-based"
+  },
+  "slot": {
+    "size": 8,
+    "alignment": 8,
+    "intEncoding": "signed int64",
+    "boolEncoding": { "false": 0, "true": 1 },
+    "unitEncoding": 0,
+    "recordEncoding": "signed int64 representation of an arena handle; never infer record-ness from bits"
+  },
+  "nativeSemanticSupport": {
+    "supported": ["Int", "Bool", "Unit", "nominal Int/Bool scalars", "records with supported scalar or record fields", "empty records", "structural record equality"],
+    "excludedKinds": ["Float", "String", "containers", "effects", "recursive record type graphs"]
+  },
+  "status": {
+    "size": 4,
+    "alignment": 4,
+    "success": 0,
+    "languageDiagnostic": 1,
+    "invalidRequest": 2,
+    "scratchCapacity": 3,
+    "retainedCapacity": 4,
+    "invalidReference": 5
+  },
+  "firstFailureOnly": true,
+  "unmanagedUnwind": false
+}

@@ -1,18 +1,31 @@
 # Proposed scoped arenas and retained memory
 
-Status: partially implemented native ownership boundary, 2026-10-07.
+Status: partially implemented native ownership boundary, 2026-10-08.
 [Report 106](../reports/106-native-record-ownership.md) validates native fixed-layout
 records in invocation scratch arenas with independent retained outputs, including
 first decoding after scratch reuse and compiled-DLL disposal. The managed
 interpreter still uses managed storage. [Report 107](../reports/107-native-state-reentry.md)
 adds typed retained-input re-entry without a managed graph round trip. Source-level
-regions and production native mailbox dispatch remain unimplemented.
+regions remain unimplemented. [Report 126](../reports/126-native-mailbox-dispatch.md)
+adds bounded standalone native mailbox dispatch; it does not add nested
+allocation scopes or general production scheduling.
 [Report 108](../reports/108-native-mailbox-suspension.md) validates a bounded
 host-driven suspension/reuse sequence with actual AgentLang handlers. The separate
 [report 104](../reports/104-native-arena-mailbox-feasibility.md) probe compares
 bounded native memory policies but does not execute AgentLang handlers.
 
 ## Objective
+
+The user's clarified memory intent is an owning value stack for most working
+data: values own their complete payload, duplication creates independent values,
+and removal reclaims owned storage without surviving aliases. Explicit mailbox
+state owns longer-lived values. See [the authoritative owning-value contract](STACK-ONLY-RESEARCH.md#preferred-semantics-owning-values).
+
+The region/alias discussion below records the earlier shared-graph candidate and
+its safety requirements, still relevant to the current native implementation and
+comparison controls. It must not be mistaken for the preferred owning-stack
+semantics. Report126's invocation-wide arena and shared record handles are
+validated prerequisites, not completion of that memory model.
 
 Use arenas for phase-oriented values that can be reclaimed together. This can reduce allocation/reclamation overhead and make temporary lifetimes explicit. It does not by itself minimize peak memory: dead intermediate objects may remain allocated until a region ends, promotion can copy data, and reset may retain backing capacity. Measure used, reserved and process memory separately.
 

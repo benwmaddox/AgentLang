@@ -1,0 +1,16 @@
+{
+  "controlAbiVersion": 1,
+  "moduleAbiVersion": 1,
+  "executionAbiVersion": 3,
+  "target": "Windows x64",
+  "pointerBytes": 8,
+  "config": { "size": 48, "controlAbiVersion": 0, "structSize": 4, "mailboxCapacity": 8, "scratchByteCapacity": 12, "scratchNodeCapacity": 16, "retainedByteCapacity": 20, "retainedNodeCapacity": 24, "initEntryId": 28, "beginEntryId": 32, "resumeEntryId": 36, "reserved": 40 },
+  "callLimits": { "size": 16, "controlAbiVersion": 0, "structSize": 4, "retainedByteLimit": 8, "retainedNodeLimit": 12 },
+  "storageRequirements": { "size": 56, "storageAlignment": 8, "workspaceCapacity": 12, "storageBytes": 16, "retainedReservedBytes": 24, "scratchReservedBytes": 32, "workspaceReservedBytes": 40, "controllerReservedBytes": 48 },
+  "callInfo": { "size": 40, "handlerStatus": 8, "errorMetadataId": 12, "errorArgument0": 16, "errorArgument1": 24, "stepsConsumed": 32, "reserved": 36 },
+  "token": { "size": 24, "alignment": 8, "opaque": 0 },
+  "stats": { "size": 128, "mailboxCapacity": 8, "initializedMailboxes": 12, "pendingMailboxes": 16, "workspaceCapacity": 20, "storageReservedBytes": 24, "retainedReservedBytes": 32, "scratchReservedBytes": 40, "workspaceReservedBytes": 48, "liveRetainedBytes": 56, "liveRetainedNodes": 64, "scratchHighWaterBytes": 72, "scratchHighWaterNodes": 80, "handlerInvocations": 88, "handlerFailures": 96, "scratchLeaseAcquisitions": 104, "scratchLeaseReturns": 112, "outstandingScratchLeases": 120, "reserved": 124 },
+  "stateView": { "size": 48, "owner": 8, "roots": 16, "rootTypeIds": 24, "rootCount": 32, "stateTypeId": 36, "pending": 40, "reserved": 44 },
+  "results": { "ok": 0, "invalidArgument": 1, "invalidModule": 2, "invalidStorage": 3, "wrongThread": 4, "disposed": 5, "invalidMailbox": 6, "notInitialized": 7, "alreadyInitialized": 8, "busy": 9, "notPending": 10, "crossRuntimeToken": 11, "wrongOwnerToken": 12, "staleToken": 13, "duplicateToken": 14, "tokenExhausted": 15, "generationExhausted": 16, "handlerFailure": 17, "scratchCapacity": 18, "retainedCapacity": 19, "invalidReference": 20, "sizeOverflow": 21, "instanceExhausted": 22 },
+  "source": "Independent x64 size/offset arithmetic and assigned status contract fixed before controller execution; compare native sizeof/offsetof/status probes."
+}

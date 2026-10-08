@@ -1,0 +1,101 @@
+{
+  "objective": "Native multi-entry compilation with ABI v1 immutable metadata",
+  "api": {
+    "entryType": "NativeModuleEntry { Name: string; Body: VerifiedIrBody }",
+    "compile": "LlvmAot.compileModule toolchain optimization outputDirectory diagnosticSources entries",
+    "resultType": "NativeModuleArtifact",
+    "resultFields": [
+      "LibraryPath",
+      "ManifestPath",
+      "Fingerprint",
+      "EntryIrPaths",
+      "MetadataSourcePath",
+      "ObjectPaths"
+    ]
+  },
+  "validation": [
+    {
+      "name": "LLVM project build",
+      "command": "dotnet build tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj --no-restore",
+      "exitCode": 0,
+      "output": "Build succeeded; 0 warnings, 0 errors."
+    },
+    {
+      "name": "Targeted module checks",
+      "command": "dotnet run --project tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj --no-build -- --module-only",
+      "exitCode": 0,
+      "assertions": 21,
+      "artifactDirectory": "D:\\code\\AgentLang\\.agentlang\\native-validation\\tests-7ce620a59e864d2c82196add8244b42e",
+      "output": "AgentLang.Llvm.Tests module checks: 21 assertions passed."
+    },
+    {
+      "name": "Fresh native conformance",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Verify-NativeConformance.ps1",
+      "internalBuildCommand": "dotnet build tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj --artifacts-path D:\\code\\AgentLang\\.agentlang\\native-validation\\run-aa8eb1eff3e742718a75fef5c0a13063",
+      "testAssembly": "D:\\code\\AgentLang\\.agentlang\\native-validation\\run-aa8eb1eff3e742718a75fef5c0a13063\\bin\\AgentLang.Llvm.Tests\\debug\\AgentLang.Llvm.Tests.dll",
+      "exitCode": 0,
+      "assertions": 476,
+      "buildOutput": "Build succeeded; 0 warnings, 0 errors.",
+      "output": "AgentLang.Llvm.Tests: 476 assertions passed.",
+      "buildArtifactDirectory": "D:\\code\\AgentLang\\.agentlang\\native-validation\\run-aa8eb1eff3e742718a75fef5c0a13063",
+      "testArtifactDirectory": "D:\\code\\AgentLang\\.agentlang\\native-validation\\tests-55e2ef0b2df94c508a3c31d0a15f8b6d"
+    },
+    {
+      "name": "COFF import audit",
+      "command": "llvm-readobj --coff-imports D:\\code\\AgentLang\\.agentlang\\native-validation\\tests-55e2ef0b2df94c508a3c31d0a15f8b6d\\module\\fresh-a\\O0\\agentlang-module.dll",
+      "exitCode": 0,
+      "output": "COFF x86-64, 64-bit; no import records were reported."
+    },
+    {
+      "name": "Whitespace/diff check",
+      "command": "git diff --check -- src/AgentLang.Llvm/LlvmAot.fs src/AgentLang.Llvm/LlvmToolchain.fs src/AgentLang.Llvm/AgentLang.Llvm.fsproj tests/AgentLang.Llvm.Tests/Program.fs tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj",
+      "exitCode": 0,
+      "output": "No whitespace errors."
+    }
+  ],
+  "moduleArtifact": {
+    "libraryPath": "D:\\code\\AgentLang\\.agentlang\\native-validation\\tests-55e2ef0b2df94c508a3c31d0a15f8b6d\\module\\fresh-a\\O0\\agentlang-module.dll",
+    "manifestPath": "D:\\code\\AgentLang\\.agentlang\\native-validation\\tests-55e2ef0b2df94c508a3c31d0a15f8b6d\\module\\fresh-a\\O0\\agentlang-module-manifest.json",
+    "metadataSourcePath": "D:\\code\\AgentLang\\.agentlang\\native-validation\\tests-55e2ef0b2df94c508a3c31d0a15f8b6d\\module\\fresh-a\\O0\\agentlang-module-metadata.c",
+    "entryIrPaths": [
+      "D:\\code\\AgentLang\\.agentlang\\native-validation\\tests-55e2ef0b2df94c508a3c31d0a15f8b6d\\module\\fresh-a\\O0\\entry-000.ll",
+      "D:\\code\\AgentLang\\.agentlang\\native-validation\\tests-55e2ef0b2df94c508a3c31d0a15f8b6d\\module\\fresh-a\\O0\\entry-001.ll",
+      "D:\\code\\AgentLang\\.agentlang\\native-validation\\tests-55e2ef0b2df94c508a3c31d0a15f8b6d\\module\\fresh-a\\O0\\entry-002.ll"
+    ],
+    "fingerprint": "b71580f3d68fbe572b60cd8435219e822bf71dc84ca2b07a2946c119fc6e64a1",
+    "fingerprintMeaning": "Semantic/module-IR identity over sorted entries, IR hashes, signatures, diagnostics, and full type descriptors; excludes optimization and output paths.",
+    "binarySha256": "59cea45d4f862b4dd0c79adac9774f0619369f5897ebc77d54aa2fe88d96e928",
+    "sourceSha256": {
+      "metadataC": "2970445f14ed5d2d819e07d31e080c9ad55f6a572d0e41e28c4b590bb8d9bae9",
+      "arenaRuntimeC": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7",
+      "arenaRuntimeHeader": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0",
+      "moduleAbiHeader": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+    }
+  },
+  "sourceSha256": {
+    ".agentlang/native-dispatch-001/compiler-plan.md": "2cdca5631972f95138580e1b5579d91322b76b47ad1a30a48f33c0b2186d23d9",
+    "src/AgentLang.Llvm/LlvmAot.fs": "4633336ae677dbbd434b494596bb4891ac3f280d6e2a6c9f84a5d6ffa708acf4",
+    "src/AgentLang.Llvm/LlvmToolchain.fs": "c26fe898bdac3ef58e5b9cca163d755f2fff4c0c178a1f37f0a5b70621b81a4a",
+    "src/AgentLang.Llvm/AgentLang.Llvm.fsproj": "19ae8d16715c9b962ceb8edd2f25174bee96f485b79cb2176cf5f6b5e408ded1",
+    "tests/AgentLang.Llvm.Tests/Program.fs": "263cb28020f6fcbe34d0a8c92c61811c9bb305360a2ae10212956b889113bcda",
+    "tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj": "71ce88ffbb2a63465b511590f8b6b6eafdade3e5d69687ef165603b57a2c08ce",
+    "src/AgentLang.Llvm/native/module_abi.h": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b",
+    "tests/fixtures/native-conformance/module-abi-v1.json": "ac20ba361545ff7ee9d3a30f254e11ff711eb65897003d3412db52376f098ec8"
+  },
+  "resolvedFailures": [
+    {
+      "attempt": "Initial module test",
+      "outcome": "Resolved",
+      "reason": "clang rejected a dllexport redeclaration of the descriptor getter; generated C now narrowly suppresses -Wdll-attribute-on-redeclaration around the exported definition."
+    },
+    {
+      "attempt": "Manifest test",
+      "outcome": "Resolved",
+      "reason": "Default System.Text.Json emitted empty F# record objects; replaced with an explicit deterministic Utf8JsonWriter encoder."
+    }
+  ],
+  "outputCapture": {
+    "path": "D:\\code\\AgentLang\\.agentlang\\native-dispatch-001\\compiler-validation.json",
+    "note": "The verifier writes no standalone transcript; command outcomes and observed final output lines are recorded in this evidence JSON."
+  }
+}

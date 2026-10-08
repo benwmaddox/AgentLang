@@ -1,0 +1,949 @@
+{
+  "schemaVersion": 1,
+  "selectedIntegrationRun": "integration-run-f0cea07ec0af461c896fc16057ed25d9",
+  "note": "Exact text evidence and tested source bytes; executables/object/build binaries excluded and identified by recorded hashes. Compiler validation records observed command summaries, not a full raw transcript.",
+  "files": [
+    {
+      "source": ".agentlang/native-dispatch-001/archive-evidence.py",
+      "path": "validation/archive-evidence.py",
+      "bytes": 3412,
+      "sha256": "bd864d30849be0ca41d950930035cc9c96d9c50649abfbca988ac4049f8b88ed"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/compiler-plan.md",
+      "path": "validation/compiler-plan.md",
+      "bytes": 1530,
+      "sha256": "2cdca5631972f95138580e1b5579d91322b76b47ad1a30a48f33c0b2186d23d9"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/compiler-review.md",
+      "path": "validation/compiler-review.md",
+      "bytes": 1859,
+      "sha256": "6101cd00042d91b770a1ef0c6271e25b46fba707c0f6f2cdb0603b9089b5c0a0"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/compiler-validation.json",
+      "path": "validation/compiler-validation.json",
+      "bytes": 6341,
+      "sha256": "4a773147aebdb8adf93aae91e770996e3aa33037fd75e00e803a47c7a98e68de"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/frozen-runtime-preservation.json",
+      "path": "validation/frozen-runtime-preservation.json",
+      "bytes": 6863,
+      "sha256": "327c4bc2836d843baf7e2baac29083f66418ba313eeaa75f3430c9f4c356acdd"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/full-release-validation.business-policy-preflight.json",
+      "compression": "gzip",
+      "uncompressedBytes": 14422242,
+      "uncompressedSha256": "142e6eca70d6810cd56bb68bf71d19893805f862b8824048ee9c34a635795ac3",
+      "path": "validation/full-release-validation.business-policy-preflight.json.gz",
+      "bytes": 1254820,
+      "sha256": "b9b92fc37b48ec0e7be4db066da634409c7f4e82b1bca4717df4a5fb42e21113"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/full-release-validation.early-agent-negative.json",
+      "path": "validation/full-release-validation.early-agent-negative.json",
+      "bytes": 171520,
+      "sha256": "d3d98c5b96edee8498f21f8e341fe1272c74f49b244f54a251697a2264e84968"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/full-release-validation.flow-matched-fixtures.json",
+      "path": "validation/full-release-validation.flow-matched-fixtures.json",
+      "bytes": 228018,
+      "sha256": "886f2d95c3cf1ced939808a5fbca0c3e1fd69bfffd1c37c5163e8231ba085bb4"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/full-release-validation.json",
+      "path": "validation/full-release-validation.json",
+      "bytes": 29708,
+      "sha256": "7754ecaee59cc5d65dfbafc681744e12c970b923669ae6c68c8d9cfa77263119"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/full-release-validation.log",
+      "path": "validation/full-release-validation.log",
+      "bytes": 16957,
+      "sha256": "3a51862848520fd1003f543e0fa93a59b419592d19c205ec71e502e6cea3fb0d"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/full-release-validation.matched-fixtures.json",
+      "path": "validation/full-release-validation.matched-fixtures.json",
+      "bytes": 98961,
+      "sha256": "fdf66e1fb89534e255166efccd7832b2333d9ad213f57d1c02e5db843cfc98d0"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/full-release-validation.matched-snapshots.json",
+      "path": "validation/full-release-validation.matched-snapshots.json",
+      "bytes": 85030,
+      "sha256": "64bfce6cc72934f6051dc6bf3d24b128d425541239a85b092ba6382cc26e65bf"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/full-release-validation.parser-limits.json",
+      "path": "validation/full-release-validation.parser-limits.json",
+      "bytes": 3186,
+      "sha256": "bf10930fea9dd306813c59df221701a222d39d2f5ca4fe8c706606fe9171a6c6"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/full-release-validation.projection.json",
+      "path": "validation/full-release-validation.projection.json",
+      "bytes": 123380,
+      "sha256": "d9b5a2609b175f25eecd2a8d7baab37dab3a8726d02de4b354604e8a25a7fe0d"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/full-release-validation.renewal-acceptance-gate.json",
+      "compression": "gzip",
+      "uncompressedBytes": 1014511,
+      "uncompressedSha256": "70fc178cfe42450bf81f3954bd1ecc1bc683fbe02258cc6ba26572fab34e7ef3",
+      "path": "validation/full-release-validation.renewal-acceptance-gate.json.gz",
+      "bytes": 73612,
+      "sha256": "5d82cdb334037c6d3b210247e255d8cc5fe5843137a8f34f07e224f6d7331068"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/full-release-validation.renewal-replay.json",
+      "path": "validation/full-release-validation.renewal-replay.json",
+      "bytes": 303780,
+      "sha256": "73fce2fc5d873b979c87b0fbddf2e7ad2b28f9f6d4cd2ab04333818cdee9aa19"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/full-release-validation.subagent-host-v2.json",
+      "path": "validation/full-release-validation.subagent-host-v2.json",
+      "bytes": 20880,
+      "sha256": "86cd25023a3afaf18e57915773dcc9d90c22315b0b039320be01e31da443794f"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/full-release-validation.subagent-host.json",
+      "path": "validation/full-release-validation.subagent-host.json",
+      "bytes": 339955,
+      "sha256": "485632d14a363e8dc54183b18dea27f82d7eb503ab816a4a3e8e850b19fa80bc"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/historical-abi-baseline.json",
+      "path": "validation/historical-abi-baseline.json",
+      "bytes": 569,
+      "sha256": "3b3f6a90bb792e17a514ca17783cf16813621b239e52fd11fa614ff541fee654"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-plan.md",
+      "path": "validation/integration-plan.md",
+      "bytes": 2584,
+      "sha256": "b5cadc08b1c50f2157b4259aa709e15c2ed6b21786c8042eefb6fca3e30f7dc3"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/legacy-mailbox-result.json",
+      "path": "validation/legacy-mailbox-result.json",
+      "bytes": 23205,
+      "sha256": "4e9987f99ee21eae91dc301aebaa4d6ff552e7b695ea8ef240ffa80593ed5e7b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/oracle.json",
+      "path": "validation/oracle.json",
+      "bytes": 1910,
+      "sha256": "3534f0d4de40518b33ae49917ff82ad4f4783199b123c0730541a5cb5088295e"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/plan.md",
+      "path": "validation/plan.md",
+      "bytes": 5545,
+      "sha256": "2361f3e04c42d21e1a7ed4f6c3fd5c3dd2be3783c34974a078a789f8ef980cb6"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/root-review.md",
+      "path": "validation/root-review.md",
+      "bytes": 3597,
+      "sha256": "fcecfe12e1b39bb3ee7144ffad3a08ee21c838bc5915c7e46e048c90125056ec"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/runtime-header-check.cpp",
+      "path": "validation/runtime-header-check.cpp",
+      "bytes": 93,
+      "sha256": "6f820b159706a24aefdcc7efa7ee9418288d0349da98d52d86b2a3fcac0aa944"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/runtime-O0-build.log",
+      "path": "validation/runtime-O0-build.log",
+      "bytes": 606,
+      "sha256": "3432f202156e5b086683c2eaa789b0c0291121207e23ff73140f16b58922cf3d"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/runtime-O0.jsonl",
+      "path": "validation/runtime-O0.jsonl",
+      "bytes": 8955,
+      "sha256": "8d020b23460932834272926ec9ea72eebdde90d2f70eb2a8747d7330a109510d"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/runtime-O2.jsonl",
+      "path": "validation/runtime-O2.jsonl",
+      "bytes": 8955,
+      "sha256": "8d020b23460932834272926ec9ea72eebdde90d2f70eb2a8747d7330a109510d"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/runtime-plan.md",
+      "path": "validation/runtime-plan.md",
+      "bytes": 4083,
+      "sha256": "e3a1aebb1edfd6aca1895f268977775b764bf21535f45c6a7a7f9b086588c461"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/runtime-results.json",
+      "path": "validation/runtime-results.json",
+      "bytes": 6457,
+      "sha256": "b022a66742d08c99dc5006316d89f3fc715c64c17e0a9c03d2ec3e60bc866502"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/runtime-ubsan-trap.jsonl",
+      "path": "validation/runtime-ubsan-trap.jsonl",
+      "bytes": 8955,
+      "sha256": "8d020b23460932834272926ec9ea72eebdde90d2f70eb2a8747d7330a109510d"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-19dfa274bc6349278148f8e8b33c1daa/integration-evidence.json",
+      "path": "integration/integration-run-19dfa274bc6349278148f8e8b33c1daa/integration-evidence.json",
+      "bytes": 9905,
+      "sha256": "990cfec5ab119d86b6a97d491aa95f34cafb72f353e1e1da70682c0e4d8f7f43"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/integration-evidence.json",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/integration-evidence.json",
+      "bytes": 128149,
+      "sha256": "1f58473b1328b7f447fd3ad4612d18500f09d3c8ccb0901eeedad05faa828309"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/agentlang-module-manifest.json",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/agentlang-module-manifest.json",
+      "bytes": 22049,
+      "sha256": "94ea5db6b9188e2097e5a793c2d793d43ac961b8cc25abed161c3fbacc61750b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/agentlang-module-metadata.c",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/agentlang-module-metadata.c",
+      "bytes": 6994,
+      "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/entry-000.ll",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/entry-000.ll",
+      "bytes": 24179,
+      "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/entry-001.ll",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/entry-001.ll",
+      "bytes": 20998,
+      "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/entry-002.ll",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/entry-002.ll",
+      "bytes": 34961,
+      "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/native-runtime/arena_runtime.c",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/native-runtime/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/native-runtime/arena_runtime.h",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/native-runtime/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/native-runtime/module_abi.h",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0/native-runtime/module_abi.h",
+      "bytes": 4419,
+      "sha256": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/agentlang-module-manifest.json",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/agentlang-module-manifest.json",
+      "bytes": 22049,
+      "sha256": "6127baf848fb5e21f49474843ffb6083111670824c07ec14ce2a1afc3449bb5d"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/agentlang-module-metadata.c",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/agentlang-module-metadata.c",
+      "bytes": 6994,
+      "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/entry-000.ll",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/entry-000.ll",
+      "bytes": 24179,
+      "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/entry-001.ll",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/entry-001.ll",
+      "bytes": 20998,
+      "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/entry-002.ll",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/entry-002.ll",
+      "bytes": 34961,
+      "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/native-runtime/arena_runtime.c",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/native-runtime/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/native-runtime/arena_runtime.h",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/native-runtime/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/native-runtime/module_abi.h",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O0-repeat/native-runtime/module_abi.h",
+      "bytes": 4419,
+      "sha256": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/agentlang-module-manifest.json",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/agentlang-module-manifest.json",
+      "bytes": 22049,
+      "sha256": "463d6cb1d724e81027aa71a7a151d0c428e73e49ddf3d65dc8eccd37279eb154"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/agentlang-module-metadata.c",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/agentlang-module-metadata.c",
+      "bytes": 6994,
+      "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/entry-000.ll",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/entry-000.ll",
+      "bytes": 24179,
+      "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/entry-001.ll",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/entry-001.ll",
+      "bytes": 20998,
+      "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/entry-002.ll",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/entry-002.ll",
+      "bytes": 34961,
+      "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/native-runtime/arena_runtime.c",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/native-runtime/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/native-runtime/arena_runtime.h",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/native-runtime/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/native-runtime/module_abi.h",
+      "path": "integration/integration-run-616dde51afc9466f9d6e5d49470d8210/module-O2/native-runtime/module_abi.h",
+      "bytes": 4419,
+      "sha256": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/integration-evidence.json",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/integration-evidence.json",
+      "bytes": 451703,
+      "sha256": "3b7f32644f1068d48c857e8ac18817fe549bfd1555ed2b50040ca56362ab68b4"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/agentlang-module-manifest.json",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/agentlang-module-manifest.json",
+      "bytes": 22049,
+      "sha256": "e1abd8618d93c0efe596eb46af63097128cee8c595b34efb6f079164640f31a8"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/agentlang-module-metadata.c",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/agentlang-module-metadata.c",
+      "bytes": 6994,
+      "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/entry-000.ll",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/entry-000.ll",
+      "bytes": 24179,
+      "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/entry-001.ll",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/entry-001.ll",
+      "bytes": 20998,
+      "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/entry-002.ll",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/entry-002.ll",
+      "bytes": 34961,
+      "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/native-runtime/arena_runtime.c",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/native-runtime/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/native-runtime/arena_runtime.h",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/native-runtime/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/native-runtime/module_abi.h",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0/native-runtime/module_abi.h",
+      "bytes": 4419,
+      "sha256": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/agentlang-module-manifest.json",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/agentlang-module-manifest.json",
+      "bytes": 22049,
+      "sha256": "dc94a650b8dd40fa5f5b21074ce5955f0aa50e734dc04791d36b2c82c033c1e3"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/agentlang-module-metadata.c",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/agentlang-module-metadata.c",
+      "bytes": 6994,
+      "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/entry-000.ll",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/entry-000.ll",
+      "bytes": 24179,
+      "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/entry-001.ll",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/entry-001.ll",
+      "bytes": 20998,
+      "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/entry-002.ll",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/entry-002.ll",
+      "bytes": 34961,
+      "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/native-runtime/arena_runtime.c",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/native-runtime/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/native-runtime/arena_runtime.h",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/native-runtime/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/native-runtime/module_abi.h",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O0-repeat/native-runtime/module_abi.h",
+      "bytes": 4419,
+      "sha256": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/agentlang-module-manifest.json",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/agentlang-module-manifest.json",
+      "bytes": 22049,
+      "sha256": "3ab7e355c42320510610d7745f1f9ba4e11d50c038d938d153df4690a54040c2"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/agentlang-module-metadata.c",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/agentlang-module-metadata.c",
+      "bytes": 6994,
+      "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/entry-000.ll",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/entry-000.ll",
+      "bytes": 24179,
+      "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/entry-001.ll",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/entry-001.ll",
+      "bytes": 20998,
+      "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/entry-002.ll",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/entry-002.ll",
+      "bytes": 34961,
+      "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/native-runtime/arena_runtime.c",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/native-runtime/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/native-runtime/arena_runtime.h",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/native-runtime/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/native-runtime/module_abi.h",
+      "path": "integration/integration-run-a6d49666f0804306a41c6ab2c7337c44/module-O2/native-runtime/module_abi.h",
+      "bytes": 4419,
+      "sha256": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/integration-evidence.json",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/integration-evidence.json",
+      "bytes": 342740,
+      "sha256": "1e239d25faece1fe3a7b947466ca03b74f22197eb3242a2adae043b28c848845"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/agentlang-module-manifest.json",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/agentlang-module-manifest.json",
+      "bytes": 22049,
+      "sha256": "c8379f45979506cd11fbffb32d3db4786b28321d32570b1f384c361646a8d4f2"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/agentlang-module-metadata.c",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/agentlang-module-metadata.c",
+      "bytes": 6994,
+      "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/entry-000.ll",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/entry-000.ll",
+      "bytes": 24179,
+      "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/entry-001.ll",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/entry-001.ll",
+      "bytes": 20998,
+      "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/entry-002.ll",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/entry-002.ll",
+      "bytes": 34961,
+      "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/native-runtime/arena_runtime.c",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/native-runtime/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/native-runtime/arena_runtime.h",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/native-runtime/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/native-runtime/module_abi.h",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0/native-runtime/module_abi.h",
+      "bytes": 4419,
+      "sha256": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/agentlang-module-manifest.json",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/agentlang-module-manifest.json",
+      "bytes": 22049,
+      "sha256": "64f67db6fc01cf72ecf8397d2d1eae2ec7b0f7567caa0b5d234f4777baa27021"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/agentlang-module-metadata.c",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/agentlang-module-metadata.c",
+      "bytes": 6994,
+      "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/entry-000.ll",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/entry-000.ll",
+      "bytes": 24179,
+      "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/entry-001.ll",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/entry-001.ll",
+      "bytes": 20998,
+      "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/entry-002.ll",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/entry-002.ll",
+      "bytes": 34961,
+      "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/native-runtime/arena_runtime.c",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/native-runtime/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/native-runtime/arena_runtime.h",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/native-runtime/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/native-runtime/module_abi.h",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O0-repeat/native-runtime/module_abi.h",
+      "bytes": 4419,
+      "sha256": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/agentlang-module-manifest.json",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/agentlang-module-manifest.json",
+      "bytes": 22049,
+      "sha256": "c03fd3c82aa441bba454701e30bc2c1c9701e22d47223ca3cd165536781f6025"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/agentlang-module-metadata.c",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/agentlang-module-metadata.c",
+      "bytes": 6994,
+      "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/entry-000.ll",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/entry-000.ll",
+      "bytes": 24179,
+      "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/entry-001.ll",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/entry-001.ll",
+      "bytes": 20998,
+      "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/entry-002.ll",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/entry-002.ll",
+      "bytes": 34961,
+      "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/native-runtime/arena_runtime.c",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/native-runtime/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/native-runtime/arena_runtime.h",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/native-runtime/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/native-runtime/module_abi.h",
+      "path": "integration/integration-run-bebd30d8c6c2497ebcf1e30951563282/module-O2/native-runtime/module_abi.h",
+      "bytes": 4419,
+      "sha256": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/integration-evidence.json",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/integration-evidence.json",
+      "bytes": 451458,
+      "sha256": "15a767230860ca5bb156812639527ee69282cdcd36fea0e1f88ea522056d4585"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/agentlang-module-manifest.json",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/agentlang-module-manifest.json",
+      "bytes": 22049,
+      "sha256": "cf7db0deececb0e29a33d487483266a37f2abcaef0fe933ab6589bd371991bcf"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/agentlang-module-metadata.c",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/agentlang-module-metadata.c",
+      "bytes": 6994,
+      "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/entry-000.ll",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/entry-000.ll",
+      "bytes": 24179,
+      "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/entry-001.ll",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/entry-001.ll",
+      "bytes": 20998,
+      "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/entry-002.ll",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/entry-002.ll",
+      "bytes": 34961,
+      "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/native-runtime/arena_runtime.c",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/native-runtime/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/native-runtime/arena_runtime.h",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/native-runtime/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/native-runtime/module_abi.h",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0/native-runtime/module_abi.h",
+      "bytes": 4419,
+      "sha256": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/agentlang-module-manifest.json",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/agentlang-module-manifest.json",
+      "bytes": 22049,
+      "sha256": "4d038d5101fabdd7a93e538e758aec10cfe871e3e1fba545a0219a9068e38520"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/agentlang-module-metadata.c",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/agentlang-module-metadata.c",
+      "bytes": 6994,
+      "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/entry-000.ll",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/entry-000.ll",
+      "bytes": 24179,
+      "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/entry-001.ll",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/entry-001.ll",
+      "bytes": 20998,
+      "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/entry-002.ll",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/entry-002.ll",
+      "bytes": 34961,
+      "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/native-runtime/arena_runtime.c",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/native-runtime/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/native-runtime/arena_runtime.h",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/native-runtime/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/native-runtime/module_abi.h",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O0-repeat/native-runtime/module_abi.h",
+      "bytes": 4419,
+      "sha256": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/agentlang-module-manifest.json",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/agentlang-module-manifest.json",
+      "bytes": 22049,
+      "sha256": "f630aa02972bb888145358e55c49bc811115ec9064a5ddfcf1046e893542821d"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/agentlang-module-metadata.c",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/agentlang-module-metadata.c",
+      "bytes": 6994,
+      "sha256": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/entry-000.ll",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/entry-000.ll",
+      "bytes": 24179,
+      "sha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/entry-001.ll",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/entry-001.ll",
+      "bytes": 20998,
+      "sha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/entry-002.ll",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/entry-002.ll",
+      "bytes": 34961,
+      "sha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/native-runtime/arena_runtime.c",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/native-runtime/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/native-runtime/arena_runtime.h",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/native-runtime/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "source": ".agentlang/native-dispatch-001/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/native-runtime/module_abi.h",
+      "path": "integration/integration-run-f0cea07ec0af461c896fc16057ed25d9/module-O2/native-runtime/module_abi.h",
+      "bytes": 4419,
+      "sha256": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+    },
+    {
+      "source": "experiments/AgentLang.NativeDispatch/AgentLang.NativeDispatch.fsproj",
+      "path": "source/experiments/AgentLang.NativeDispatch/AgentLang.NativeDispatch.fsproj",
+      "bytes": 586,
+      "sha256": "6e30d4e8f1370a54af5d5d247f1aa35d288864d6765f2bc26d046f88be4fff37"
+    },
+    {
+      "source": "experiments/AgentLang.NativeDispatch/Program.fs",
+      "path": "source/experiments/AgentLang.NativeDispatch/Program.fs",
+      "bytes": 6833,
+      "sha256": "f4e465fae46b5f59682d6a6c72fec11e06d4b5331b90c9db1c82316fb74a67eb"
+    },
+    {
+      "source": "experiments/AgentLang.NativeDispatch/mailbox.flow",
+      "path": "source/experiments/AgentLang.NativeDispatch/mailbox.flow",
+      "bytes": 802,
+      "sha256": "31ac3af8a450fd0554f6fff5d386d1ae3e1b424df1417f810adae71a6875a9ab"
+    },
+    {
+      "source": "experiments/AgentLang.NativeDispatch/native_dispatch.c",
+      "path": "source/experiments/AgentLang.NativeDispatch/native_dispatch.c",
+      "bytes": 44457,
+      "sha256": "c23c5b4a7a3e95cc2f5b5b48ae2a2e649fad5c3a0200b966a8ac4e7e860b73ba"
+    },
+    {
+      "source": "scripts/Verify-NativeDispatch.ps1",
+      "path": "source/scripts/Verify-NativeDispatch.ps1",
+      "bytes": 42448,
+      "sha256": "5013df2c506321f88e4435c012012ab221c92a2a6fb9b2e16d8ca7a3df1b9dbe"
+    },
+    {
+      "source": "src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+      "path": "source/src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+      "bytes": 978,
+      "sha256": "19ae8d16715c9b962ceb8edd2f25174bee96f485b79cb2176cf5f6b5e408ded1"
+    },
+    {
+      "source": "src/AgentLang.Llvm/LlvmAot.fs",
+      "path": "source/src/AgentLang.Llvm/LlvmAot.fs",
+      "bytes": 130875,
+      "sha256": "4633336ae677dbbd434b494596bb4891ac3f280d6e2a6c9f84a5d6ffa708acf4"
+    },
+    {
+      "source": "src/AgentLang.Llvm/LlvmToolchain.fs",
+      "path": "source/src/AgentLang.Llvm/LlvmToolchain.fs",
+      "bytes": 12674,
+      "sha256": "c26fe898bdac3ef58e5b9cca163d755f2fff4c0c178a1f37f0a5b70621b81a4a"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/arena_runtime.c",
+      "path": "source/src/AgentLang.Llvm/native/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/arena_runtime.h",
+      "path": "source/src/AgentLang.Llvm/native/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/mailbox_runtime.c",
+      "path": "source/src/AgentLang.Llvm/native/mailbox_runtime.c",
+      "bytes": 57925,
+      "sha256": "2c4fa4c25bb113b13f319f15dce7bc35f8d380196058b8b4bf9dc3700336c4ef"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/mailbox_runtime.h",
+      "path": "source/src/AgentLang.Llvm/native/mailbox_runtime.h",
+      "bytes": 9494,
+      "sha256": "dc15e12b852e0ed5c9e0075af4bfdcd3863d6fe95d16d90a37520cd054744334"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/mailbox_runtime_test.c",
+      "path": "source/src/AgentLang.Llvm/native/mailbox_runtime_test.c",
+      "bytes": 45955,
+      "sha256": "35c2f2f55109cc3499b799cd04f695c962264e4da42b79fad42221f911e5e41a"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/mailbox_runtime_windows.c",
+      "path": "source/src/AgentLang.Llvm/native/mailbox_runtime_windows.c",
+      "bytes": 1092,
+      "sha256": "97ca4a9fdca6f5fdb2a7347272158cfcd722da62adb4737f0bb207a5577685d9"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/module_abi.h",
+      "path": "source/src/AgentLang.Llvm/native/module_abi.h",
+      "bytes": 4419,
+      "sha256": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/runtime_test.c",
+      "path": "source/src/AgentLang.Llvm/native/runtime_test.c",
+      "bytes": 64314,
+      "sha256": "9cc2600b4ace7fcb92f9bcca1ac7c743f2be246657410bdb09f1171b78cccb2a"
+    },
+    {
+      "source": "tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj",
+      "path": "source/tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj",
+      "bytes": 1323,
+      "sha256": "71ce88ffbb2a63465b511590f8b6b6eafdade3e5d69687ef165603b57a2c08ce"
+    },
+    {
+      "source": "tests/AgentLang.Llvm.Tests/Program.fs",
+      "path": "source/tests/AgentLang.Llvm.Tests/Program.fs",
+      "bytes": 169737,
+      "sha256": "263cb28020f6fcbe34d0a8c92c61811c9bb305360a2ae10212956b889113bcda"
+    },
+    {
+      "source": "tests/fixtures/native-conformance/abi-v1.json",
+      "path": "source/tests/fixtures/native-conformance/abi-v1.json",
+      "bytes": 3035,
+      "sha256": "ff6324bb46d6cd3fc101ae074a59806cb17be04452e64eeb9c6fe35bb22d4615"
+    },
+    {
+      "source": "tests/fixtures/native-conformance/abi-v2.json",
+      "path": "source/tests/fixtures/native-conformance/abi-v2.json",
+      "bytes": 7322,
+      "sha256": "b738f4e1b540ba00bd161eaa9d08c41aadac4f18da5fff997157a7a86ca64a33"
+    },
+    {
+      "source": "tests/fixtures/native-conformance/abi-v3.json",
+      "path": "source/tests/fixtures/native-conformance/abi-v3.json",
+      "bytes": 2940,
+      "sha256": "4c9f138ac623217636c44f4a95248c0d1557e7f3edb0c626ca46b7c2d7cd726f"
+    },
+    {
+      "source": "tests/fixtures/native-conformance/mailbox-abi-v1.json",
+      "path": "source/tests/fixtures/native-conformance/mailbox-abi-v1.json",
+      "bytes": 2276,
+      "sha256": "e20a0dd9cde4e16d49a3fe8577bd84612b6ca391eef50a3fd0fea77b78575c23"
+    },
+    {
+      "source": "tests/fixtures/native-conformance/module-abi-v1.json",
+      "path": "source/tests/fixtures/native-conformance/module-abi-v1.json",
+      "bytes": 584,
+      "sha256": "ac20ba361545ff7ee9d3a30f254e11ff711eb65897003d3412db52376f098ec8"
+    },
+    {
+      "source": "tests/fixtures/native-conformance/native-dispatch-v1.json",
+      "path": "source/tests/fixtures/native-conformance/native-dispatch-v1.json",
+      "bytes": 1910,
+      "sha256": "3534f0d4de40518b33ae49917ff82ad4f4783199b123c0730541a5cb5088295e"
+    }
+  ]
+}

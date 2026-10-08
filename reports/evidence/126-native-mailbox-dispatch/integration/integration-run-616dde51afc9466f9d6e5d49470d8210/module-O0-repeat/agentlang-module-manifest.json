@@ -1,0 +1,731 @@
+{
+  "fingerprint": "42cb8120131d080198582b79bc1f7e48d1336a4f99d7287777dd8ef690dc4f05",
+  "optimization": "O0",
+  "sourceSha256": {
+    "metadataC": "dc1a9d9e8e0744eae17852cfcf350b17e2411d5df439ad3f8aa432cb43e918be",
+    "arenaRuntimeC": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7",
+    "arenaRuntimeHeader": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0",
+    "moduleAbiHeader": "c0a44176f813375737a8e413b2a07e147b542e457f5922802c18b2640d74b16b"
+  },
+  "binarySha256": "5733ad78b898597c683bc36b815f94525ee69951895d652477a503b0a5a9e5a4",
+  "module": {
+    "moduleAbiVersion": 1,
+    "runtimeAbiVersion": 3,
+    "target": "Windows x64",
+    "types": [
+      {
+        "id": 0,
+        "name": "Int",
+        "kind": 1,
+        "fields": []
+      },
+      {
+        "id": 1,
+        "name": "Bool",
+        "kind": 2,
+        "fields": []
+      },
+      {
+        "id": 2,
+        "name": "Unit",
+        "kind": 3,
+        "fields": []
+      },
+      {
+        "id": 3,
+        "name": "Continuation",
+        "kind": 4,
+        "fields": [
+          {
+            "name": "delta",
+            "typeId": 0
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "name": "State",
+        "kind": 4,
+        "fields": [
+          {
+            "name": "total",
+            "typeId": 0
+          }
+        ]
+      }
+    ],
+    "entries": [
+      {
+        "id": 0,
+        "name": "mailbox.begin",
+        "inputTypeIds": [
+          4,
+          0
+        ],
+        "outputTypeIds": [
+          4,
+          3
+        ],
+        "inputTypes": [
+          "State",
+          "Int"
+        ],
+        "outputTypes": [
+          "State",
+          "Continuation"
+        ],
+        "workspaceCapacity": 2,
+        "requiresRecordArenas": true,
+        "irSha256": "6dd8c65b8235b6c6af726aa7fd48530139810e69eea3af50924bd963c0aaeb3b",
+        "diagnostics": [
+          {
+            "id": 0,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.begin",
+            "file": "\u003Cmailbox.begin\u003E",
+            "line": 1,
+            "column": 1,
+            "length": 1,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 1,
+            "code": "RUNTIME_CALL_DEPTH",
+            "message": "Execution exceeded the 64 word call-depth limit.",
+            "word": "mailbox.begin",
+            "file": "mailbox.flow",
+            "line": 16,
+            "column": 1,
+            "length": 259,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 2,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.begin",
+            "file": "mailbox.flow",
+            "line": 16,
+            "column": 32,
+            "length": 10,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 3,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.begin",
+            "file": "mailbox.flow",
+            "line": 16,
+            "column": 18,
+            "length": 12,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 4,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.begin",
+            "file": "mailbox.flow",
+            "line": 20,
+            "column": 24,
+            "length": 32,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 5,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.begin",
+            "file": "mailbox.flow",
+            "line": 20,
+            "column": 50,
+            "length": 5,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 6,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.begin",
+            "file": "mailbox.flow",
+            "line": 20,
+            "column": 42,
+            "length": 13,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 7,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.begin",
+            "file": "mailbox.flow",
+            "line": 20,
+            "column": 24,
+            "length": 32,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 8,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.begin",
+            "file": "mailbox.flow",
+            "line": 20,
+            "column": 24,
+            "length": 32,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 9,
+            "code": "RUNTIME_CALL_DEPTH",
+            "message": "Execution exceeded the 64 word call-depth limit.",
+            "word": "continuation.new",
+            "file": "\u003Cgenerated-native-dispatch-record\u003E",
+            "line": 1,
+            "column": 1,
+            "length": 1,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 10,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.begin",
+            "file": "mailbox.flow",
+            "line": 20,
+            "column": 5,
+            "length": 51,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 11,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.begin",
+            "file": "mailbox.flow",
+            "line": 21,
+            "column": 13,
+            "length": 5,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 12,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.begin",
+            "file": "mailbox.flow",
+            "line": 21,
+            "column": 20,
+            "length": 12,
+            "expected": [],
+            "actual": []
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "name": "mailbox.initialize",
+        "inputTypeIds": [
+          0
+        ],
+        "outputTypeIds": [
+          4
+        ],
+        "inputTypes": [
+          "Int"
+        ],
+        "outputTypes": [
+          "State"
+        ],
+        "workspaceCapacity": 2,
+        "requiresRecordArenas": true,
+        "irSha256": "a57231535b546c2ba77c9a2876bafa14af9b6c8863d009137d8c2db4eaa95103",
+        "diagnostics": [
+          {
+            "id": 0,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.initialize",
+            "file": "\u003Cmailbox.initialize\u003E",
+            "line": 1,
+            "column": 1,
+            "length": 1,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 1,
+            "code": "RUNTIME_CALL_DEPTH",
+            "message": "Execution exceeded the 64 word call-depth limit.",
+            "word": "mailbox.initialize",
+            "file": "mailbox.flow",
+            "line": 9,
+            "column": 1,
+            "length": 153,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 2,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.initialize",
+            "file": "mailbox.flow",
+            "line": 9,
+            "column": 23,
+            "length": 9,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 3,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.initialize",
+            "file": "mailbox.flow",
+            "line": 13,
+            "column": 5,
+            "length": 24,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 4,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.initialize",
+            "file": "mailbox.flow",
+            "line": 13,
+            "column": 24,
+            "length": 4,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 5,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.initialize",
+            "file": "mailbox.flow",
+            "line": 13,
+            "column": 16,
+            "length": 12,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 6,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.initialize",
+            "file": "mailbox.flow",
+            "line": 13,
+            "column": 5,
+            "length": 24,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 7,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.initialize",
+            "file": "mailbox.flow",
+            "line": 13,
+            "column": 5,
+            "length": 24,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 8,
+            "code": "RUNTIME_CALL_DEPTH",
+            "message": "Execution exceeded the 64 word call-depth limit.",
+            "word": "state.new",
+            "file": "\u003Cgenerated-native-dispatch-record\u003E",
+            "line": 1,
+            "column": 1,
+            "length": 1,
+            "expected": [],
+            "actual": []
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "name": "mailbox.resume",
+        "inputTypeIds": [
+          4,
+          3,
+          0
+        ],
+        "outputTypeIds": [
+          4
+        ],
+        "inputTypes": [
+          "State",
+          "Continuation",
+          "Int"
+        ],
+        "outputTypes": [
+          "State"
+        ],
+        "workspaceCapacity": 3,
+        "requiresRecordArenas": true,
+        "irSha256": "506314f0fea086b91c09baef3c8dc05c57d12e7f3cf9b2ed568b5e3b799060aa",
+        "diagnostics": [
+          {
+            "id": 0,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "\u003Cmailbox.resume\u003E",
+            "line": 1,
+            "column": 1,
+            "length": 1,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 1,
+            "code": "RUNTIME_CALL_DEPTH",
+            "message": "Execution exceeded the 64 word call-depth limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 24,
+            "column": 1,
+            "length": 298,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 2,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 24,
+            "column": 61,
+            "length": 12,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 3,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 24,
+            "column": 33,
+            "length": 26,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 4,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 24,
+            "column": 19,
+            "length": 12,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 5,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 28,
+            "column": 25,
+            "length": 12,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 6,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 28,
+            "column": 25,
+            "length": 18,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 7,
+            "code": "RUNTIME_CALL_DEPTH",
+            "message": "Execution exceeded the 64 word call-depth limit.",
+            "word": "continuation.delta",
+            "file": "\u003Cgenerated-native-dispatch-record\u003E",
+            "line": 1,
+            "column": 1,
+            "length": 1,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 8,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 28,
+            "column": 45,
+            "length": 7,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 9,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 28,
+            "column": 18,
+            "length": 35,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 10,
+            "code": "RUNTIME_CALL_DEPTH",
+            "message": "Execution exceeded the 64 word call-depth limit.",
+            "word": "divide",
+            "file": "\u003Cstandard\u003E",
+            "line": 1,
+            "column": 1,
+            "length": 6,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 11,
+            "code": "RUNTIME_DIVIDE_BY_ZERO",
+            "message": "Integer division by zero.",
+            "word": "divide",
+            "file": "",
+            "line": 0,
+            "column": 0,
+            "length": 0,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 12,
+            "code": "RUNTIME_OVERFLOW",
+            "message": "Integer division overflow.",
+            "word": "divide",
+            "file": "",
+            "line": 0,
+            "column": 0,
+            "length": 0,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 13,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 28,
+            "column": 5,
+            "length": 48,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 14,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 29,
+            "column": 21,
+            "length": 5,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 15,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 29,
+            "column": 21,
+            "length": 11,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 16,
+            "code": "RUNTIME_CALL_DEPTH",
+            "message": "Execution exceeded the 64 word call-depth limit.",
+            "word": "state.total",
+            "file": "\u003Cgenerated-native-dispatch-record\u003E",
+            "line": 1,
+            "column": 1,
+            "length": 1,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 17,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 29,
+            "column": 34,
+            "length": 6,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 18,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 29,
+            "column": 17,
+            "length": 24,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 19,
+            "code": "RUNTIME_CALL_DEPTH",
+            "message": "Execution exceeded the 64 word call-depth limit.",
+            "word": "add",
+            "file": "\u003Cstandard\u003E",
+            "line": 1,
+            "column": 1,
+            "length": 3,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 20,
+            "code": "RUNTIME_OVERFLOW",
+            "message": "\u0027add\u0027 overflowed its Int64 result.",
+            "word": "add",
+            "file": "\u003Cstandard\u003E",
+            "line": 1,
+            "column": 1,
+            "length": 3,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 21,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 29,
+            "column": 5,
+            "length": 36,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 22,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 30,
+            "column": 5,
+            "length": 25,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 23,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 30,
+            "column": 24,
+            "length": 5,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 24,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 30,
+            "column": 16,
+            "length": 13,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 25,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 30,
+            "column": 5,
+            "length": 25,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 26,
+            "code": "RUNTIME_STEP_LIMIT",
+            "message": "Execution exceeded the 10,000 instruction limit.",
+            "word": "mailbox.resume",
+            "file": "mailbox.flow",
+            "line": 30,
+            "column": 5,
+            "length": 25,
+            "expected": [],
+            "actual": []
+          },
+          {
+            "id": 27,
+            "code": "RUNTIME_CALL_DEPTH",
+            "message": "Execution exceeded the 64 word call-depth limit.",
+            "word": "state.new",
+            "file": "\u003Cgenerated-native-dispatch-record\u003E",
+            "line": 1,
+            "column": 1,
+            "length": 1,
+            "expected": [],
+            "actual": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -77,8 +77,9 @@ ordinary interpreter tests do not require LLVM. See
 [the native architecture report](reports/103-llvm-architecture-and-native-slice.md)
 and [typed native state re-entry](reports/107-native-state-reentry.md) for supported
 semantics, evidence and limits. Native records use invocation scratch arenas and
-independent retained outputs. A general release packager, JIT backend and mailbox
-scheduler remain future work.
+independent retained outputs. A bounded standalone native mailbox controller is
+validated in [report 126](reports/126-native-mailbox-dispatch.md). A general
+release packager, JIT backend and real async I/O remain future work.
 
 A separate Windows C11 arena/mailbox experiment compares per-turn and
 whole-request lifetimes. Run `pwsh -NoProfile -File scripts/Verify-NativeArenaMailbox.ps1`
@@ -298,7 +299,7 @@ This explicitly replays the historical Stack scripted fixture and checks protoco
 
 The runtime interprets verified typed semantic IR; source ASTs are used for authoring and diagnostics. Records, nominal scalar types, and closed containers are supported. Generic user definitions and local file, database, network, or process access are not implemented. The file and console effects use in-memory providers, and the clock is fixed by the host.
 
-The typed semantic IR model, verifier and source lowerer are available, with closed executable types/effects and linked call identities. Runtime execution now routes through the IR interpreter; [the migration plan](docs/IR-MIGRATION.md) records the cutover and its acceptance/parity evidence. LLVM development JIT and release AOT remain conditional follow-ons. [Vocabulary analysis](docs/VOCABULARY-ANALYSIS.md) provides exact structural duplicate candidates and static call expansion; runtime warnings and reuse metrics remain pending.
+The typed semantic IR model, verifier and source lowerer are available, with closed executable types/effects and linked call identities. Runtime execution now routes through the IR interpreter; [the migration plan](docs/IR-MIGRATION.md) records the cutover and its acceptance/parity evidence. Bounded LLVM AOT is implemented; development JIT and general release support remain follow-ons. [Vocabulary analysis](docs/VOCABULARY-ANALYSIS.md) provides exact structural duplicate candidates and static call expansion; runtime warnings and reuse metrics remain pending.
 
 Committed projects use hashed manifests and source objects under `.agentlang/store`; `dictionary.agent` remains the readable export and legacy import format. Stable word IDs and prior revision sources survive reload. `history` and `diff` inspect those durable revisions. `rename` rewrites semantic calls and attached cases while preserving identity; `deprecate` retains callable behavior; `replace-word` commits a staged replacement after its own and affected caller tests pass. Named `snapshot.save`/`snapshot.load` operations restore committed vocabulary and virtual provider state while retaining current host capabilities. See [storage](docs/STORAGE.md), [canonical source](docs/SOURCE.md), and [expected-error tests](docs/TEST-ERRORS.md).
 
@@ -317,3 +318,15 @@ an independent oracle. See [report 108](reports/108-native-mailbox-suspension.md
 and [the Flow/2 handlers](experiments/AgentLang.NativeMailbox/mailbox.flow).
 This uses a .NET experiment host; it is not a server throughput benchmark or a
 compiler-free native mailbox runtime.
+
+## Standalone native mailbox dispatch
+
+Run `pwsh -NoProfile -File scripts/Verify-NativeDispatch.ps1` for a fresh local
+Windows x64 build of compiled Flow/2 handlers and the C mailbox controller.
+The compiler/bootstrap uses .NET; the turn-execution process does not. The
+verifier passes 353 checks across O0/O2 and repeated module builds, including
+state preservation, token rejection, ABI layouts and native dependency audits.
+See [report 126](reports/126-native-mailbox-dispatch.md) for exact storage totals,
+validation and limits. This is not a real-I/O throughput comparison. The next
+[arena comparison](docs/ASYNC-ARENA-EVALUATION.md) explicitly tests keeping the
+mailbox's stack associated during async waits versus returning it to a pool.

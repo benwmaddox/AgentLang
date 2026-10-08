@@ -1,6 +1,6 @@
 # Async arena throughput experiment
 
-Status: real-I/O throughput evaluation remains planned, 2026-10-07. A standalone
+Status: real-I/O throughput evaluation remains planned, 2026-10-08. A standalone
 native ownership/memory comparison is complete in [report 104](../reports/104-native-arena-mailbox-feasibility.md):
 72 runs passed, with lower per-turn backing for disposable working data and a
 retained-only counterexample. [Report 106](../reports/106-native-record-ownership.md)
@@ -8,7 +8,9 @@ validates the native invocation-scratch/retained-output boundary.
 [Report 107](../reports/107-native-state-reentry.md) adds typed retained state
 re-entry across native invocations. [Report 108](../reports/108-native-mailbox-suspension.md)
 validates host-driven suspension and scratch reuse with actual Flow/2 handlers.
-Production native dispatch, actual async I/O, saturation and tail latency remain untested. See [the roadmap](ROADMAP.md).
+[Report 126](../reports/126-native-mailbox-dispatch.md) validates bounded standalone
+native dispatch of those handlers. Actual async I/O, saturation, production
+throughput and tail latency remain untested. See [the roadmap](ROADMAP.md).
 
 ## Candidates
 
@@ -24,6 +26,33 @@ on the same backend. Keep the scheduling model fixed in the first comparison;
 whole-process versus per-mailbox single-thread execution is a separate variable.
 Arena chunk allocation/pooling and safe buffer transfer policies must be recorded,
 so changing those does not masquerade as a lifetime-policy improvement.
+
+### Explicit comparison: keep or return the mailbox stack
+
+User clarification, 2026-10-08: compare both policies using the same persistent
+mailbox identity and static state. The variable is the lifetime and ownership
+of its arena-backed program-data stack/scratch, not whether the mailbox survives.
+
+| Policy | While async work is pending | On resumption/completion |
+| --- | --- | --- |
+| Keep associated | Keep the mailbox's actual stack/scratch arena and surviving graph associated with that mailbox; do not return it to the shared pool. | Resume from the retained working data; reset/return the arena only when the request or declared operation group and all provider references have safely finished. |
+| Return at suspension | Move the required state, continuation and provider buffers to explicit retained owners, then return scratch to a bounded pool. | Reacquire scratch for the same mailbox, resume, and release it again at the next safe boundary. |
+
+The keep-associated implementation must retain real working data and avoid
+copies that its lifetime policy makes unnecessary. Merely holding an empty,
+already-reset arena while still performing all promotion copies would bias the
+comparison. Both sides must implement equivalent language behavior, scheduling,
+I/O, cancellation acknowledgements and admission limits. Neither policy may
+reuse memory while a provider still holds a reference.
+
+Compare maximum sustained successful completions per second at the same enforced
+memory ceiling and acceptable tail latency. Also record live and reserved arena
+bytes, cached/pinned capacity, whole-process peak memory, copying bytes/time,
+allocation/reset churn, pending work, rejection/backpressure and p50/p95/p99
+latency. Include small/large working sets, small/large retained state, fast/slow
+I/O, slow clients and cancellation. The earlier report104 logical-delay results
+are preliminary mechanism evidence; the actual compiled-handler async comparison
+is still required before selecting either memory policy.
 
 The working hypothesis is that releasing scratch before I/O waits permits more
 useful concurrent requests under a memory ceiling. Copying retained state and
@@ -60,7 +89,9 @@ backing memory to the OS. The pool may retain unused chunks for reuse and releas
 them after inactivity, subject to aggregate limits. Ordinary completed turns may
 reuse assigned stack capacity under the idle-release candidate; async suspension
 explicitly hands capacity back to the pool. The standalone probe implements
-bounded pooling, but no idle-release policy or language-integrated native behavior.
+bounded pooling, but no idle-release policy. The compiled-handler controller
+validates scratch reuse; a real async provider and both lifetime policies remain
+to be integrated.
 
 ## Safety prerequisites
 

@@ -1,0 +1,31 @@
+record State {
+    field total: Int;
+}
+
+record Continuation {
+    field delta: Int;
+}
+
+fn mailbox.initialize(seed: Int) -> State {
+    effects none
+    doc "Creates the persistent state root for one mailbox."
+
+    state::new(total = seed)
+}
+
+fn mailbox.begin(state: State, delta: Int) -> (State, Continuation) {
+    effects none
+    doc "Captures one completion delta while retaining the current state root."
+
+    let continuation = continuation::new(delta = delta);
+    return (state, continuation)
+}
+
+fn mailbox.resume(state: State, continuation: Continuation, divisor: Int) -> State {
+    effects none
+    doc "Applies a primitive completion message to retained state."
+
+    let change = divide(continuation.delta, divisor);
+    let total = add(state.total, change);
+    state::new(total = total)
+}

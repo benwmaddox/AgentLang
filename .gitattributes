@@ -111,3 +111,6 @@ reports/evidence/124-efficacy-assessment/** -text -whitespace
 
 # Preserve matched pair-repair trial evidence hashes.
 reports/evidence/125-matched-pair-repair/** -text -whitespace
+
+# Preserve standalone native dispatch evidence and tested source byte hashes.
+reports/evidence/126-native-mailbox-dispatch/** -text -whitespace

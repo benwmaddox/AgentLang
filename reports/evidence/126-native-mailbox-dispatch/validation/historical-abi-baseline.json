@@ -1,0 +1,17 @@
+[
+  {
+    "path": "tests/fixtures/native-conformance/abi-v1.json",
+    "sha256": "ff6324bb46d6cd3fc101ae074a59806cb17be04452e64eeb9c6fe35bb22d4615",
+    "matchesHeadContent": true
+  },
+  {
+    "path": "tests/fixtures/native-conformance/abi-v2.json",
+    "sha256": "b738f4e1b540ba00bd161eaa9d08c41aadac4f18da5fff997157a7a86ca64a33",
+    "matchesHeadContent": true
+  },
+  {
+    "path": "tests/fixtures/native-conformance/abi-v3.json",
+    "sha256": "4c9f138ac623217636c44f4a95248c0d1557e7f3edb0c626ca46b7c2d7cd726f",
+    "matchesHeadContent": true
+  }
+]

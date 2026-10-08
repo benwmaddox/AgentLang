@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "frozenBeforeNativeDispatchExecution": true,
+  "referenceOracle": "reports/evidence/108-native-mailbox-suspension/oracle.json",
+  "sourceFixture": "experiments/AgentLang.NativeMailbox/mailbox.flow",
+  "backends": ["native/O0", "native/O2"],
+  "mailboxCount": 2,
+  "initial": {"A": 10, "B": 100},
+  "delta": {"A": 7, "B": 3},
+  "firstDivisor": 1,
+  "firstCompleted": {"A": 17, "B": 103},
+  "secondA": {"delta": 5, "divisor": 2, "completed": 19},
+  "divideFailure": {"divisor": 0, "diagnosticCode": "RUNTIME_DIVIDE_BY_ZERO", "preserveStateAndPendingToken": true},
+  "retainedFailure": {"byteLimit": 7, "requiredBytes": 8, "requiredNodes": 1, "preserveStateAndPendingToken": true},
+  "physicalCapacities": {"scratchOwners": 1, "scratchBytes": 24, "scratchNodes": 3, "retainedBanksPerMailbox": 2, "retainedBytesPerBank": 16, "retainedNodesPerBank": 2},
+  "expectedStorageComponents": {"arenaDescriptorBytes": 48, "nodeBytes": 32, "scratchArenaBackingBytes": 168, "retainedArenaBackingBytes": 512, "derivation": "scratch 48+24+3*32; retained 2 mailboxes*2 banks*(48+16+2*32). Root arrays, workspace and control structures are additional and must be reported."},
+  "expectedMaximumLiveGraph": {"bytesPerMailbox": 16, "nodesPerMailbox": 2},
+  "suspensionOutstandingScratchLeases": 0,
+  "cleanup": {"outstandingScratchLeases": 0, "initializedMailboxes": 0, "pendingMailboxes": 0, "liveRetainedBytes": 0, "liveRetainedNodes": 0},
+  "requiredRejections": ["busy", "wrong owner token", "stale token", "duplicate token", "cross-runtime token", "foreign thread", "invalid module", "invalid or short storage", "token exhaustion", "generation exhaustion", "post-disposal work"],
+  "limitations": ["No real provider I/O or cancellation buffer lifetime.", "Two retained banks are reserved up front; zero scratch leases is not zero reserved backing.", "No throughput or final memory-policy claim."]
+}

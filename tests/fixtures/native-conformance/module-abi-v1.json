@@ -1,0 +1,10 @@
+{
+  "moduleAbiVersion": 1,
+  "executionAbiVersion": 3,
+  "target": "Windows x64",
+  "pointerBytes": 8,
+  "diagnostic": { "size": 40, "code": 16, "word": 24, "file": 32 },
+  "entry": { "size": 64, "name": 8, "execute": 16, "inputCount": 24, "outputCount": 28, "workspaceCapacity": 32, "diagnosticCount": 36, "inputTypeIds": 40, "outputTypeIds": 48, "diagnostics": 56 },
+  "module": { "size": 72, "fingerprint": 16, "program": 48, "entries": 56, "typeNames": 64 },
+  "source": "Independently specified x64 layout before implementation; compare actual native sizeof/offsetof output."
+}

@@ -1,0 +1,4811 @@
+{
+  "schemaVersion": 2,
+  "passed": true,
+  "failure": null,
+  "results": [
+    {
+      "task": 1,
+      "word": "customer.premium?",
+      "expectedBoundary": "finite bool-return coverage at library commit",
+      "passed": true,
+      "checks": [
+        {
+          "name": "setup define succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "defined",
+            "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+            "data": {
+              "frontend": "flow",
+              "words": [
+                {
+                  "name": "customer.premium?",
+                  "id": "word_6090ceb275604e1ab572dc447e696309",
+                  "revision": 1
+                }
+              ],
+              "types": [
+                "Customer",
+                "Subscription"
+              ]
+            }
+          }
+        },
+        {
+          "name": "setup commit succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "commit",
+            "text": "0 attached test(s) passed; selected candidates committed.",
+            "data": []
+          }
+        },
+        {
+          "name": "setup commit succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "commit",
+            "text": "0 attached test(s) passed; selected candidates committed.",
+            "data": []
+          }
+        },
+        {
+          "name": "setup test-all succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "constant",
+                  "word": "customer.premium?",
+                  "passed": true,
+                  "expected": "true",
+                  "actual": [
+                    "true"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "setup describe succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.premium?.",
+            "data": {
+              "name": "customer.premium?",
+              "flowReference": "customer::premium?",
+              "flowReferenceUnavailableReason": null,
+              "inputs": [
+                "Customer"
+              ],
+              "outputs": [
+                "Bool"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_6090ceb275604e1ab572dc447e696309",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<flow:customer.premium?/1:5ce892ff098a8e0cb2226d267c98f0d93a1beb7a7ff45579dedf316d1431794c>",
+              "line": 1,
+              "kind": "word",
+              "status": "candidate",
+              "maturity": "project",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "finiteCoverage": {
+                  "targetInvocations": 1,
+                  "inputs": [],
+                  "returns": [
+                    {
+                      "position": 0,
+                      "type": "Bool",
+                      "required": [
+                        "false",
+                        "true"
+                      ],
+                      "observed": [
+                        "true"
+                      ],
+                      "missing": [
+                        "false"
+                      ]
+                    }
+                  ],
+                  "unsupported": [],
+                  "missing": [
+                    "return[0] Bool: false"
+                  ],
+                  "complete": false
+                },
+                "status": "current"
+              }
+            }
+          }
+        },
+        {
+          "name": "target self-test passes before library commit",
+          "passed": true,
+          "details": [
+            {
+              "name": "constant",
+              "word": "customer.premium?",
+              "passed": true,
+              "expected": "true",
+              "actual": [
+                "true"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "candidate has complete structural instruction and branch coverage",
+          "passed": true,
+          "details": {
+            "instructionsCovered": 1,
+            "instructionsTotal": 1,
+            "branchesCovered": 0,
+            "branchesTotal": 0,
+            "uncoveredInstructions": [],
+            "uncoveredBranchOutcomes": [],
+            "finiteCoverage": {
+              "targetInvocations": 1,
+              "inputs": [],
+              "returns": [
+                {
+                  "position": 0,
+                  "type": "Bool",
+                  "required": [
+                    "false",
+                    "true"
+                  ],
+                  "observed": [
+                    "true"
+                  ],
+                  "missing": [
+                    "false"
+                  ]
+                }
+              ],
+              "unsupported": [],
+              "missing": [
+                "return[0] Bool: false"
+              ],
+              "complete": false
+            },
+            "status": "current"
+          }
+        },
+        {
+          "name": "target is still an unpublished project candidate before commit",
+          "passed": true,
+          "details": {
+            "maturity": "project",
+            "status": "candidate"
+          }
+        },
+        {
+          "name": "library commit is rejected by finite coverage",
+          "passed": true,
+          "details": {
+            "ok": false,
+            "kind": "error",
+            "text": "LIBRARY_FINITE_COVERAGE_INCOMPLETE in customer.premium?: Library word 'customer.premium?' has uncovered finite input or return values.",
+            "error": {
+              "code": "LIBRARY_FINITE_COVERAGE_INCOMPLETE",
+              "message": "Library word 'customer.premium?' has uncovered finite input or return values.",
+              "word": "customer.premium?",
+              "expected": [
+                "return[0] Bool: false"
+              ],
+              "actual": [
+                "return[0] Bool: true"
+              ]
+            }
+          }
+        },
+        {
+          "name": "finite rejection identifies the uncovered false return",
+          "passed": true,
+          "details": {
+            "actual": [
+              "return[0] Bool: true"
+            ],
+            "expected": [
+              "return[0] Bool: false"
+            ]
+          }
+        },
+        {
+          "name": "finite rejection shows the constant true return was observed",
+          "passed": true,
+          "details": {
+            "actual": [
+              "return[0] Bool: true"
+            ],
+            "expected": [
+              "return[0] Bool: false"
+            ]
+          }
+        },
+        {
+          "name": "rejected target remains only a project candidate",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.premium?.",
+            "data": {
+              "name": "customer.premium?",
+              "flowReference": "customer::premium?",
+              "flowReferenceUnavailableReason": null,
+              "inputs": [
+                "Customer"
+              ],
+              "outputs": [
+                "Bool"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_6090ceb275604e1ab572dc447e696309",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<flow:customer.premium?/1:5ce892ff098a8e0cb2226d267c98f0d93a1beb7a7ff45579dedf316d1431794c>",
+              "line": 1,
+              "kind": "word",
+              "status": "candidate",
+              "maturity": "project",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "finiteCoverage": {
+                  "targetInvocations": 1,
+                  "inputs": [],
+                  "returns": [
+                    {
+                      "position": 0,
+                      "type": "Bool",
+                      "required": [
+                        "false",
+                        "true"
+                      ],
+                      "observed": [
+                        "true"
+                      ],
+                      "missing": [
+                        "false"
+                      ]
+                    }
+                  ],
+                  "unsupported": [],
+                  "missing": [
+                    "return[0] Bool: false"
+                  ],
+                  "complete": false
+                },
+                "status": "current"
+              }
+            }
+          }
+        },
+        {
+          "name": "rejected target has no durable history entry",
+          "passed": true,
+          "details": {
+            "ok": false,
+            "kind": "error",
+            "text": "HISTORY_WORD_UNKNOWN in customer.premium?: No durable history exists for 'customer.premium?'.",
+            "error": {
+              "code": "HISTORY_WORD_UNKNOWN",
+              "message": "No durable history exists for 'customer.premium?'.",
+              "word": "customer.premium?",
+              "expected": [],
+              "actual": []
+            }
+          }
+        }
+      ],
+      "setupRequests": [
+        {
+          "source": "record Customer {\n    field kind: String;\n    field balance: Float;\n}\n\nrecord Subscription {\n    field term: String;\n    field renewable: Bool;\n}\r\n\nword customer.premium?(customer: Customer) -> Bool {\n    effects none\n    true\n}\ntest customer.premium?/constant {\n    customer::premium?(customer::new(\"premium\", 100.0)) => true\n}",
+          "frontend": "flow",
+          "op": "define"
+        },
+        {
+          "op": "commit",
+          "word": "Customer"
+        },
+        {
+          "op": "commit",
+          "word": "Subscription"
+        },
+        {
+          "op": "test-all"
+        },
+        {
+          "op": "describe",
+          "word": "customer.premium?"
+        },
+        {
+          "word": "customer.premium?",
+          "library": true,
+          "op": "commit"
+        },
+        {
+          "op": "describe",
+          "word": "customer.premium?"
+        },
+        {
+          "op": "history",
+          "word": "customer.premium?"
+        }
+      ],
+      "setupRawOutput": [
+        "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.\",\"data\":{\"frontend\":\"flow\",\"words\":[{\"name\":\"customer.premium?\",\"id\":\"word_6090ceb275604e1ab572dc447e696309\",\"revision\":1}],\"types\":[\"Customer\",\"Subscription\"]}}",
+        "{\"ok\":true,\"kind\":\"commit\",\"text\":\"0 attached test(s) passed; selected candidates committed.\",\"data\":[]}",
+        "{\"ok\":true,\"kind\":\"commit\",\"text\":\"0 attached test(s) passed; selected candidates committed.\",\"data\":[]}",
+        "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"constant\",\"word\":\"customer.premium?\",\"passed\":true,\"expected\":\"true\",\"actual\":[\"true\"]}]}}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for customer.premium?.\",\"data\":{\"name\":\"customer.premium?\",\"flowReference\":\"customer::premium?\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Customer\"],\"outputs\":[\"Bool\"],\"parameters\":[{\"name\":\"customer\",\"type\":\"Customer\"}],\"effects\":[],\"documentation\":\"\",\"id\":\"word_6090ceb275604e1ab572dc447e696309\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[],\"tests\":[\"constant\"],\"examples\":[],\"source\":\"\\u003Cflow:customer.premium?/1:5ce892ff098a8e0cb2226d267c98f0d93a1beb7a7ff45579dedf316d1431794c\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"candidate\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":1,\"instructionsTotal\":1,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"finiteCoverage\":{\"targetInvocations\":1,\"inputs\":[],\"returns\":[{\"position\":0,\"type\":\"Bool\",\"required\":[\"false\",\"true\"],\"observed\":[\"true\"],\"missing\":[\"false\"]}],\"unsupported\":[],\"missing\":[\"return[0] Bool: false\"],\"complete\":false},\"status\":\"current\"}}}",
+        "{\"ok\":false,\"kind\":\"error\",\"text\":\"LIBRARY_FINITE_COVERAGE_INCOMPLETE in customer.premium?: Library word \\u0027customer.premium?\\u0027 has uncovered finite input or return values.\",\"error\":{\"code\":\"LIBRARY_FINITE_COVERAGE_INCOMPLETE\",\"message\":\"Library word \\u0027customer.premium?\\u0027 has uncovered finite input or return values.\",\"word\":\"customer.premium?\",\"expected\":[\"return[0] Bool: false\"],\"actual\":[\"return[0] Bool: true\"]}}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for customer.premium?.\",\"data\":{\"name\":\"customer.premium?\",\"flowReference\":\"customer::premium?\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Customer\"],\"outputs\":[\"Bool\"],\"parameters\":[{\"name\":\"customer\",\"type\":\"Customer\"}],\"effects\":[],\"documentation\":\"\",\"id\":\"word_6090ceb275604e1ab572dc447e696309\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[],\"tests\":[\"constant\"],\"examples\":[],\"source\":\"\\u003Cflow:customer.premium?/1:5ce892ff098a8e0cb2226d267c98f0d93a1beb7a7ff45579dedf316d1431794c\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"candidate\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":1,\"instructionsTotal\":1,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"finiteCoverage\":{\"targetInvocations\":1,\"inputs\":[],\"returns\":[{\"position\":0,\"type\":\"Bool\",\"required\":[\"false\",\"true\"],\"observed\":[\"true\"],\"missing\":[\"false\"]}],\"unsupported\":[],\"missing\":[\"return[0] Bool: false\"],\"complete\":false},\"status\":\"current\"}}}",
+        "{\"ok\":false,\"kind\":\"error\",\"text\":\"HISTORY_WORD_UNKNOWN in customer.premium?: No durable history exists for \\u0027customer.premium?\\u0027.\",\"error\":{\"code\":\"HISTORY_WORD_UNKNOWN\",\"message\":\"No durable history exists for \\u0027customer.premium?\\u0027.\",\"word\":\"customer.premium?\",\"expected\":[],\"actual\":[]}}"
+      ],
+      "setupResponses": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+          "data": {
+            "frontend": "flow",
+            "words": [
+              {
+                "name": "customer.premium?",
+                "id": "word_6090ceb275604e1ab572dc447e696309",
+                "revision": 1
+              }
+            ],
+            "types": [
+              "Customer",
+              "Subscription"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "1/1 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "constant",
+                "word": "customer.premium?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for customer.premium?.",
+          "data": {
+            "name": "customer.premium?",
+            "flowReference": "customer::premium?",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "parameters": [
+              {
+                "name": "customer",
+                "type": "Customer"
+              }
+            ],
+            "effects": [],
+            "documentation": "",
+            "id": "word_6090ceb275604e1ab572dc447e696309",
+            "dependencies": [],
+            "transitiveDependencies": [],
+            "callers": [],
+            "tests": [
+              "constant"
+            ],
+            "examples": [],
+            "source": "<flow:customer.premium?/1:5ce892ff098a8e0cb2226d267c98f0d93a1beb7a7ff45579dedf316d1431794c>",
+            "line": 1,
+            "kind": "word",
+            "status": "candidate",
+            "maturity": "project",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 1,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 1,
+              "instructionsTotal": 1,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "finiteCoverage": {
+                "targetInvocations": 1,
+                "inputs": [],
+                "returns": [
+                  {
+                    "position": 0,
+                    "type": "Bool",
+                    "required": [
+                      "false",
+                      "true"
+                    ],
+                    "observed": [
+                      "true"
+                    ],
+                    "missing": [
+                      "false"
+                    ]
+                  }
+                ],
+                "unsupported": [],
+                "missing": [
+                  "return[0] Bool: false"
+                ],
+                "complete": false
+              },
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "LIBRARY_FINITE_COVERAGE_INCOMPLETE in customer.premium?: Library word 'customer.premium?' has uncovered finite input or return values.",
+          "error": {
+            "code": "LIBRARY_FINITE_COVERAGE_INCOMPLETE",
+            "message": "Library word 'customer.premium?' has uncovered finite input or return values.",
+            "word": "customer.premium?",
+            "expected": [
+              "return[0] Bool: false"
+            ],
+            "actual": [
+              "return[0] Bool: true"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for customer.premium?.",
+          "data": {
+            "name": "customer.premium?",
+            "flowReference": "customer::premium?",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "parameters": [
+              {
+                "name": "customer",
+                "type": "Customer"
+              }
+            ],
+            "effects": [],
+            "documentation": "",
+            "id": "word_6090ceb275604e1ab572dc447e696309",
+            "dependencies": [],
+            "transitiveDependencies": [],
+            "callers": [],
+            "tests": [
+              "constant"
+            ],
+            "examples": [],
+            "source": "<flow:customer.premium?/1:5ce892ff098a8e0cb2226d267c98f0d93a1beb7a7ff45579dedf316d1431794c>",
+            "line": 1,
+            "kind": "word",
+            "status": "candidate",
+            "maturity": "project",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 1,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 1,
+              "instructionsTotal": 1,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "finiteCoverage": {
+                "targetInvocations": 1,
+                "inputs": [],
+                "returns": [
+                  {
+                    "position": 0,
+                    "type": "Bool",
+                    "required": [
+                      "false",
+                      "true"
+                    ],
+                    "observed": [
+                      "true"
+                    ],
+                    "missing": [
+                      "false"
+                    ]
+                  }
+                ],
+                "unsupported": [],
+                "missing": [
+                  "return[0] Bool: false"
+                ],
+                "complete": false
+              },
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "HISTORY_WORD_UNKNOWN in customer.premium?: No durable history exists for 'customer.premium?'.",
+          "error": {
+            "code": "HISTORY_WORD_UNKNOWN",
+            "message": "No durable history exists for 'customer.premium?'.",
+            "word": "customer.premium?",
+            "expected": [],
+            "actual": []
+          }
+        }
+      ],
+      "acceptance": null,
+      "rejectedAt": "LIBRARY_FINITE_COVERAGE_INCOMPLETE"
+    },
+    {
+      "task": 2,
+      "word": "customer.discounted-balance",
+      "expectedBoundary": "independent behavioral acceptance after library commit",
+      "passed": true,
+      "checks": [
+        {
+          "name": "setup define succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "defined",
+            "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+            "data": {
+              "frontend": "flow",
+              "words": [
+                {
+                  "name": "customer.discounted-balance",
+                  "id": "word_6e884c825f354c30a32274f5b479f1b4",
+                  "revision": 1
+                }
+              ],
+              "types": [
+                "Customer",
+                "Subscription"
+              ]
+            }
+          }
+        },
+        {
+          "name": "setup commit succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "commit",
+            "text": "0 attached test(s) passed; selected candidates committed.",
+            "data": []
+          }
+        },
+        {
+          "name": "setup commit succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "commit",
+            "text": "0 attached test(s) passed; selected candidates committed.",
+            "data": []
+          }
+        },
+        {
+          "name": "setup test-all succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "constant",
+                  "word": "customer.discounted-balance",
+                  "passed": true,
+                  "expected": "90",
+                  "actual": [
+                    "90"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "setup describe succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.discounted-balance.",
+            "data": {
+              "name": "customer.discounted-balance",
+              "flowReference": "customer::discounted-balance",
+              "flowReferenceUnavailableReason": null,
+              "inputs": [
+                "Customer"
+              ],
+              "outputs": [
+                "Float"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_6e884c825f354c30a32274f5b479f1b4",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<flow:customer.discounted-balance/1:b8e8baffaa50653c89abd8d177d7de455538c55cd408ff2361a2d74ad032b20c>",
+              "line": 1,
+              "kind": "word",
+              "status": "candidate",
+              "maturity": "project",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "finiteCoverage": {
+                  "targetInvocations": 1,
+                  "inputs": [],
+                  "returns": [
+                    {
+                      "position": 0,
+                      "type": "Float",
+                      "required": [],
+                      "observed": [],
+                      "missing": []
+                    }
+                  ],
+                  "unsupported": [],
+                  "missing": [],
+                  "complete": true
+                },
+                "status": "current"
+              }
+            }
+          }
+        },
+        {
+          "name": "target self-test passes before library commit",
+          "passed": true,
+          "details": [
+            {
+              "name": "constant",
+              "word": "customer.discounted-balance",
+              "passed": true,
+              "expected": "90",
+              "actual": [
+                "90"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "candidate has complete structural instruction and branch coverage",
+          "passed": true,
+          "details": {
+            "instructionsCovered": 1,
+            "instructionsTotal": 1,
+            "branchesCovered": 0,
+            "branchesTotal": 0,
+            "uncoveredInstructions": [],
+            "uncoveredBranchOutcomes": [],
+            "finiteCoverage": {
+              "targetInvocations": 1,
+              "inputs": [],
+              "returns": [
+                {
+                  "position": 0,
+                  "type": "Float",
+                  "required": [],
+                  "observed": [],
+                  "missing": []
+                }
+              ],
+              "unsupported": [],
+              "missing": [],
+              "complete": true
+            },
+            "status": "current"
+          }
+        },
+        {
+          "name": "target is still an unpublished project candidate before commit",
+          "passed": true,
+          "details": {
+            "maturity": "project",
+            "status": "candidate"
+          }
+        },
+        {
+          "name": "Float-result library commit succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "commit",
+            "text": "1 attached test(s) passed; selected candidates committed.",
+            "data": [
+              "customer.discounted-balance/constant"
+            ]
+          }
+        },
+        {
+          "name": "Float-result target is durably published as a library",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.discounted-balance.",
+            "data": {
+              "name": "customer.discounted-balance",
+              "flowReference": "customer::discounted-balance",
+              "flowReferenceUnavailableReason": null,
+              "inputs": [
+                "Customer"
+              ],
+              "outputs": [
+                "Float"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_6e884c825f354c30a32274f5b479f1b4",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<flow:customer.discounted-balance/1:b8e8baffaa50653c89abd8d177d7de455538c55cd408ff2361a2d74ad032b20c>",
+              "line": 1,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "library",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "finiteCoverage": {
+                  "targetInvocations": 1,
+                  "inputs": [],
+                  "returns": [
+                    {
+                      "position": 0,
+                      "type": "Float",
+                      "required": [],
+                      "observed": [],
+                      "missing": []
+                    }
+                  ],
+                  "unsupported": [],
+                  "missing": [],
+                  "complete": true
+                },
+                "status": "current"
+              }
+            }
+          }
+        },
+        {
+          "name": "published target has durable library history",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "history",
+            "text": "1 durable revision(s) for customer.discounted-balance.",
+            "data": [
+              {
+                "id": "word_6e884c825f354c30a32274f5b479f1b4",
+                "name": "customer.discounted-balance",
+                "revision": 1,
+                "source": "word customer.discounted-balance(customer: Customer) -> Float {\n    effects none\n    90.0\n}",
+                "maturity": "library",
+                "actor": "client",
+                "task": null,
+                "timestampUtc": "1999-12-31T19:00:00-05:00",
+                "deprecated": false,
+                "tests": [
+                  "test customer.discounted-balance/constant {\n    customer::discounted-balance(customer::new(\"premium\", 100.0)) => 90.0\n}"
+                ],
+                "examples": []
+              }
+            ]
+          }
+        },
+        {
+          "name": "published wrong Float solution reaches independent result rejection",
+          "passed": true,
+          "details": {
+            "lastCheck": {
+              "name": "standard-annual-true independent Float result",
+              "passed": false
+            },
+            "failedIndependentResults": 1
+          }
+        }
+      ],
+      "setupRequests": [
+        {
+          "source": "record Customer {\n    field kind: String;\n    field balance: Float;\n}\n\nrecord Subscription {\n    field term: String;\n    field renewable: Bool;\n}\r\n\nword customer.discounted-balance(customer: Customer) -> Float {\n    effects none\n    90.0\n}\ntest customer.discounted-balance/constant {\n    customer::discounted-balance(customer::new(\"premium\", 100.0)) => 90.0\n}",
+          "frontend": "flow",
+          "op": "define"
+        },
+        {
+          "op": "commit",
+          "word": "Customer"
+        },
+        {
+          "op": "commit",
+          "word": "Subscription"
+        },
+        {
+          "op": "test-all"
+        },
+        {
+          "op": "describe",
+          "word": "customer.discounted-balance"
+        },
+        {
+          "word": "customer.discounted-balance",
+          "library": true,
+          "op": "commit"
+        },
+        {
+          "op": "describe",
+          "word": "customer.discounted-balance"
+        },
+        {
+          "op": "history",
+          "word": "customer.discounted-balance"
+        }
+      ],
+      "setupRawOutput": [
+        "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.\",\"data\":{\"frontend\":\"flow\",\"words\":[{\"name\":\"customer.discounted-balance\",\"id\":\"word_6e884c825f354c30a32274f5b479f1b4\",\"revision\":1}],\"types\":[\"Customer\",\"Subscription\"]}}",
+        "{\"ok\":true,\"kind\":\"commit\",\"text\":\"0 attached test(s) passed; selected candidates committed.\",\"data\":[]}",
+        "{\"ok\":true,\"kind\":\"commit\",\"text\":\"0 attached test(s) passed; selected candidates committed.\",\"data\":[]}",
+        "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"constant\",\"word\":\"customer.discounted-balance\",\"passed\":true,\"expected\":\"90\",\"actual\":[\"90\"]}]}}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for customer.discounted-balance.\",\"data\":{\"name\":\"customer.discounted-balance\",\"flowReference\":\"customer::discounted-balance\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Customer\"],\"outputs\":[\"Float\"],\"parameters\":[{\"name\":\"customer\",\"type\":\"Customer\"}],\"effects\":[],\"documentation\":\"\",\"id\":\"word_6e884c825f354c30a32274f5b479f1b4\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[],\"tests\":[\"constant\"],\"examples\":[],\"source\":\"\\u003Cflow:customer.discounted-balance/1:b8e8baffaa50653c89abd8d177d7de455538c55cd408ff2361a2d74ad032b20c\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"candidate\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":1,\"instructionsTotal\":1,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"finiteCoverage\":{\"targetInvocations\":1,\"inputs\":[],\"returns\":[{\"position\":0,\"type\":\"Float\",\"required\":[],\"observed\":[],\"missing\":[]}],\"unsupported\":[],\"missing\":[],\"complete\":true},\"status\":\"current\"}}}",
+        "{\"ok\":true,\"kind\":\"commit\",\"text\":\"1 attached test(s) passed; selected candidates committed.\",\"data\":[\"customer.discounted-balance/constant\"]}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for customer.discounted-balance.\",\"data\":{\"name\":\"customer.discounted-balance\",\"flowReference\":\"customer::discounted-balance\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Customer\"],\"outputs\":[\"Float\"],\"parameters\":[{\"name\":\"customer\",\"type\":\"Customer\"}],\"effects\":[],\"documentation\":\"\",\"id\":\"word_6e884c825f354c30a32274f5b479f1b4\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[],\"tests\":[\"constant\"],\"examples\":[],\"source\":\"\\u003Cflow:customer.discounted-balance/1:b8e8baffaa50653c89abd8d177d7de455538c55cd408ff2361a2d74ad032b20c\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":1,\"instructionsTotal\":1,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"finiteCoverage\":{\"targetInvocations\":1,\"inputs\":[],\"returns\":[{\"position\":0,\"type\":\"Float\",\"required\":[],\"observed\":[],\"missing\":[]}],\"unsupported\":[],\"missing\":[],\"complete\":true},\"status\":\"current\"}}}",
+        "{\"ok\":true,\"kind\":\"history\",\"text\":\"1 durable revision(s) for customer.discounted-balance.\",\"data\":[{\"id\":\"word_6e884c825f354c30a32274f5b479f1b4\",\"name\":\"customer.discounted-balance\",\"revision\":1,\"source\":\"word customer.discounted-balance(customer: Customer) -\\u003E Float {\\n    effects none\\n    90.0\\n}\",\"maturity\":\"library\",\"actor\":\"client\",\"task\":null,\"timestampUtc\":\"2000-01-01T00:00:00.0000000\\u002B00:00\",\"deprecated\":false,\"tests\":[\"test customer.discounted-balance/constant {\\n    customer::discounted-balance(customer::new(\\u0022premium\\u0022, 100.0)) =\\u003E 90.0\\n}\"],\"examples\":[]}]}"
+      ],
+      "setupResponses": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+          "data": {
+            "frontend": "flow",
+            "words": [
+              {
+                "name": "customer.discounted-balance",
+                "id": "word_6e884c825f354c30a32274f5b479f1b4",
+                "revision": 1
+              }
+            ],
+            "types": [
+              "Customer",
+              "Subscription"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "1/1 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "constant",
+                "word": "customer.discounted-balance",
+                "passed": true,
+                "expected": "90",
+                "actual": [
+                  "90"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for customer.discounted-balance.",
+          "data": {
+            "name": "customer.discounted-balance",
+            "flowReference": "customer::discounted-balance",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "parameters": [
+              {
+                "name": "customer",
+                "type": "Customer"
+              }
+            ],
+            "effects": [],
+            "documentation": "",
+            "id": "word_6e884c825f354c30a32274f5b479f1b4",
+            "dependencies": [],
+            "transitiveDependencies": [],
+            "callers": [],
+            "tests": [
+              "constant"
+            ],
+            "examples": [],
+            "source": "<flow:customer.discounted-balance/1:b8e8baffaa50653c89abd8d177d7de455538c55cd408ff2361a2d74ad032b20c>",
+            "line": 1,
+            "kind": "word",
+            "status": "candidate",
+            "maturity": "project",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 1,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 1,
+              "instructionsTotal": 1,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "finiteCoverage": {
+                "targetInvocations": 1,
+                "inputs": [],
+                "returns": [
+                  {
+                    "position": 0,
+                    "type": "Float",
+                    "required": [],
+                    "observed": [],
+                    "missing": []
+                  }
+                ],
+                "unsupported": [],
+                "missing": [],
+                "complete": true
+              },
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "1 attached test(s) passed; selected candidates committed.",
+          "data": [
+            "customer.discounted-balance/constant"
+          ]
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for customer.discounted-balance.",
+          "data": {
+            "name": "customer.discounted-balance",
+            "flowReference": "customer::discounted-balance",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "parameters": [
+              {
+                "name": "customer",
+                "type": "Customer"
+              }
+            ],
+            "effects": [],
+            "documentation": "",
+            "id": "word_6e884c825f354c30a32274f5b479f1b4",
+            "dependencies": [],
+            "transitiveDependencies": [],
+            "callers": [],
+            "tests": [
+              "constant"
+            ],
+            "examples": [],
+            "source": "<flow:customer.discounted-balance/1:b8e8baffaa50653c89abd8d177d7de455538c55cd408ff2361a2d74ad032b20c>",
+            "line": 1,
+            "kind": "word",
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 1,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 1,
+              "instructionsTotal": 1,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "finiteCoverage": {
+                "targetInvocations": 1,
+                "inputs": [],
+                "returns": [
+                  {
+                    "position": 0,
+                    "type": "Float",
+                    "required": [],
+                    "observed": [],
+                    "missing": []
+                  }
+                ],
+                "unsupported": [],
+                "missing": [],
+                "complete": true
+              },
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "history",
+          "text": "1 durable revision(s) for customer.discounted-balance.",
+          "data": [
+            {
+              "id": "word_6e884c825f354c30a32274f5b479f1b4",
+              "name": "customer.discounted-balance",
+              "revision": 1,
+              "source": "word customer.discounted-balance(customer: Customer) -> Float {\n    effects none\n    90.0\n}",
+              "maturity": "library",
+              "actor": "client",
+              "task": null,
+              "timestampUtc": "1999-12-31T19:00:00-05:00",
+              "deprecated": false,
+              "tests": [
+                "test customer.discounted-balance/constant {\n    customer::discounted-balance(customer::new(\"premium\", 100.0)) => 90.0\n}"
+              ],
+              "examples": []
+            }
+          ]
+        }
+      ],
+      "acceptance": {
+        "schemaVersion": 1,
+        "passed": false,
+        "failure": "Pilot acceptance failed: standard-annual-true independent Float result",
+        "task": 2,
+        "word": "customer.discounted-balance",
+        "cliSha256": "34310b5774541f1c6308cb15c7a5cc591d1ab4cf063561ae4236b07cc90bd323",
+        "oracleSha256": "7ed0ba4d7925978424b98b7a17aae5276315cf1dff612a8f4688c178472c03eb",
+        "verifierSha256": "e8748381ab8d87e1baf8e8386205927951072909f250faa808473af6eb35cace",
+        "checks": [
+          {
+            "name": "fresh process exit",
+            "passed": true
+          },
+          {
+            "name": "one response per request",
+            "passed": true
+          },
+          {
+            "name": "all requests succeed",
+            "passed": true
+          },
+          {
+            "name": "all attached tests pass",
+            "passed": true
+          },
+          {
+            "name": "exact target signature",
+            "passed": true
+          },
+          {
+            "name": "pure persistent library target",
+            "passed": true
+          },
+          {
+            "name": "target has attached tests",
+            "passed": true
+          },
+          {
+            "name": "complete current own coverage",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true independent Float result",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false independent Float result",
+            "passed": true
+          },
+          {
+            "name": "premium-monthly-true exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-monthly-true independent Float result",
+            "passed": true
+          },
+          {
+            "name": "premium-monthly-false exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-monthly-false independent Float result",
+            "passed": true
+          },
+          {
+            "name": "standard-annual-true exact output shape",
+            "passed": true
+          },
+          {
+            "name": "standard-annual-true independent Float result",
+            "passed": false
+          }
+        ],
+        "requests": [
+          {
+            "op": "test-all"
+          },
+          {
+            "op": "describe",
+            "word": "customer.discounted-balance"
+          },
+          {
+            "op": "dependencies",
+            "word": "customer.discounted-balance"
+          },
+          {
+            "op": "source",
+            "word": "customer.discounted-balance"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"Premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 0.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = -100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 250.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 250.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"prémium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 3.141592653589793))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 1E-100))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 1E+100))"
+          }
+        ],
+        "responses": [
+          {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "constant",
+                  "word": "customer.discounted-balance",
+                  "passed": true,
+                  "expected": "90",
+                  "actual": [
+                    "90"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.discounted-balance.",
+            "data": {
+              "name": "customer.discounted-balance",
+              "flowReference": "customer::discounted-balance",
+              "flowReferenceUnavailableReason": null,
+              "inputs": [
+                "Customer"
+              ],
+              "outputs": [
+                "Float"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_6e884c825f354c30a32274f5b479f1b4",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<revision:customer.discounted-balance/1>",
+              "line": 1,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "library",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "finiteCoverage": {
+                  "targetInvocations": 1,
+                  "inputs": [],
+                  "returns": [
+                    {
+                      "position": 0,
+                      "type": "Float",
+                      "required": [],
+                      "observed": [],
+                      "missing": []
+                    }
+                  ],
+                  "unsupported": [],
+                  "missing": [],
+                  "complete": true
+                },
+                "status": "current"
+              }
+            }
+          },
+          {
+            "ok": true,
+            "kind": "dependencies",
+            "text": "0 direct dependency/dependencies.",
+            "data": {
+              "dependencies": [],
+              "callers": []
+            }
+          },
+          {
+            "ok": true,
+            "kind": "source",
+            "text": "word customer.discounted-balance(customer: Customer) -> Float {\n    effects none\n    90.0\n}",
+            "data": "word customer.discounted-balance(customer: Customer) -> Float {\n    effects none\n    90.0\n}"
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          }
+        ],
+        "limits": [
+          "Behavioral acceptance only; no model-efficiency claim.",
+          "Float tolerance is not bitwise or signed-zero equivalence.",
+          "Whole-state preservation and retained-helper quality require a separate audit."
+        ]
+      },
+      "rejectedAt": "standard-annual-true independent Float result"
+    },
+    {
+      "task": 3,
+      "word": "subscription.annual-renewable?",
+      "expectedBoundary": "finite bool-return coverage at library commit",
+      "passed": true,
+      "checks": [
+        {
+          "name": "setup define succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "defined",
+            "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+            "data": {
+              "frontend": "flow",
+              "words": [
+                {
+                  "name": "subscription.annual-renewable?",
+                  "id": "word_6bd261afd4bf440d83adeb0db04e7852",
+                  "revision": 1
+                }
+              ],
+              "types": [
+                "Customer",
+                "Subscription"
+              ]
+            }
+          }
+        },
+        {
+          "name": "setup commit succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "commit",
+            "text": "0 attached test(s) passed; selected candidates committed.",
+            "data": []
+          }
+        },
+        {
+          "name": "setup commit succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "commit",
+            "text": "0 attached test(s) passed; selected candidates committed.",
+            "data": []
+          }
+        },
+        {
+          "name": "setup test-all succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "constant",
+                  "word": "subscription.annual-renewable?",
+                  "passed": true,
+                  "expected": "true",
+                  "actual": [
+                    "true"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "setup describe succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for subscription.annual-renewable?.",
+            "data": {
+              "name": "subscription.annual-renewable?",
+              "flowReference": "subscription::annual-renewable?",
+              "flowReferenceUnavailableReason": null,
+              "inputs": [
+                "Subscription"
+              ],
+              "outputs": [
+                "Bool"
+              ],
+              "parameters": [
+                {
+                  "name": "subscription",
+                  "type": "Subscription"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_6bd261afd4bf440d83adeb0db04e7852",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<flow:subscription.annual-renewable?/1:50c69b227f20982c8aaea1a07cfefc1fb55d1f69743566f1dbbef66612cd4323>",
+              "line": 1,
+              "kind": "word",
+              "status": "candidate",
+              "maturity": "project",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "finiteCoverage": {
+                  "targetInvocations": 1,
+                  "inputs": [],
+                  "returns": [
+                    {
+                      "position": 0,
+                      "type": "Bool",
+                      "required": [
+                        "false",
+                        "true"
+                      ],
+                      "observed": [
+                        "true"
+                      ],
+                      "missing": [
+                        "false"
+                      ]
+                    }
+                  ],
+                  "unsupported": [],
+                  "missing": [
+                    "return[0] Bool: false"
+                  ],
+                  "complete": false
+                },
+                "status": "current"
+              }
+            }
+          }
+        },
+        {
+          "name": "target self-test passes before library commit",
+          "passed": true,
+          "details": [
+            {
+              "name": "constant",
+              "word": "subscription.annual-renewable?",
+              "passed": true,
+              "expected": "true",
+              "actual": [
+                "true"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "candidate has complete structural instruction and branch coverage",
+          "passed": true,
+          "details": {
+            "instructionsCovered": 1,
+            "instructionsTotal": 1,
+            "branchesCovered": 0,
+            "branchesTotal": 0,
+            "uncoveredInstructions": [],
+            "uncoveredBranchOutcomes": [],
+            "finiteCoverage": {
+              "targetInvocations": 1,
+              "inputs": [],
+              "returns": [
+                {
+                  "position": 0,
+                  "type": "Bool",
+                  "required": [
+                    "false",
+                    "true"
+                  ],
+                  "observed": [
+                    "true"
+                  ],
+                  "missing": [
+                    "false"
+                  ]
+                }
+              ],
+              "unsupported": [],
+              "missing": [
+                "return[0] Bool: false"
+              ],
+              "complete": false
+            },
+            "status": "current"
+          }
+        },
+        {
+          "name": "target is still an unpublished project candidate before commit",
+          "passed": true,
+          "details": {
+            "maturity": "project",
+            "status": "candidate"
+          }
+        },
+        {
+          "name": "library commit is rejected by finite coverage",
+          "passed": true,
+          "details": {
+            "ok": false,
+            "kind": "error",
+            "text": "LIBRARY_FINITE_COVERAGE_INCOMPLETE in subscription.annual-renewable?: Library word 'subscription.annual-renewable?' has uncovered finite input or return values.",
+            "error": {
+              "code": "LIBRARY_FINITE_COVERAGE_INCOMPLETE",
+              "message": "Library word 'subscription.annual-renewable?' has uncovered finite input or return values.",
+              "word": "subscription.annual-renewable?",
+              "expected": [
+                "return[0] Bool: false"
+              ],
+              "actual": [
+                "return[0] Bool: true"
+              ]
+            }
+          }
+        },
+        {
+          "name": "finite rejection identifies the uncovered false return",
+          "passed": true,
+          "details": {
+            "actual": [
+              "return[0] Bool: true"
+            ],
+            "expected": [
+              "return[0] Bool: false"
+            ]
+          }
+        },
+        {
+          "name": "finite rejection shows the constant true return was observed",
+          "passed": true,
+          "details": {
+            "actual": [
+              "return[0] Bool: true"
+            ],
+            "expected": [
+              "return[0] Bool: false"
+            ]
+          }
+        },
+        {
+          "name": "rejected target remains only a project candidate",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for subscription.annual-renewable?.",
+            "data": {
+              "name": "subscription.annual-renewable?",
+              "flowReference": "subscription::annual-renewable?",
+              "flowReferenceUnavailableReason": null,
+              "inputs": [
+                "Subscription"
+              ],
+              "outputs": [
+                "Bool"
+              ],
+              "parameters": [
+                {
+                  "name": "subscription",
+                  "type": "Subscription"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_6bd261afd4bf440d83adeb0db04e7852",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<flow:subscription.annual-renewable?/1:50c69b227f20982c8aaea1a07cfefc1fb55d1f69743566f1dbbef66612cd4323>",
+              "line": 1,
+              "kind": "word",
+              "status": "candidate",
+              "maturity": "project",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "finiteCoverage": {
+                  "targetInvocations": 1,
+                  "inputs": [],
+                  "returns": [
+                    {
+                      "position": 0,
+                      "type": "Bool",
+                      "required": [
+                        "false",
+                        "true"
+                      ],
+                      "observed": [
+                        "true"
+                      ],
+                      "missing": [
+                        "false"
+                      ]
+                    }
+                  ],
+                  "unsupported": [],
+                  "missing": [
+                    "return[0] Bool: false"
+                  ],
+                  "complete": false
+                },
+                "status": "current"
+              }
+            }
+          }
+        },
+        {
+          "name": "rejected target has no durable history entry",
+          "passed": true,
+          "details": {
+            "ok": false,
+            "kind": "error",
+            "text": "HISTORY_WORD_UNKNOWN in subscription.annual-renewable?: No durable history exists for 'subscription.annual-renewable?'.",
+            "error": {
+              "code": "HISTORY_WORD_UNKNOWN",
+              "message": "No durable history exists for 'subscription.annual-renewable?'.",
+              "word": "subscription.annual-renewable?",
+              "expected": [],
+              "actual": []
+            }
+          }
+        }
+      ],
+      "setupRequests": [
+        {
+          "source": "record Customer {\n    field kind: String;\n    field balance: Float;\n}\n\nrecord Subscription {\n    field term: String;\n    field renewable: Bool;\n}\r\n\nword subscription.annual-renewable?(subscription: Subscription) -> Bool {\n    effects none\n    true\n}\ntest subscription.annual-renewable?/constant {\n    subscription::annual-renewable?(subscription::new(\"annual\", true)) => true\n}",
+          "frontend": "flow",
+          "op": "define"
+        },
+        {
+          "op": "commit",
+          "word": "Customer"
+        },
+        {
+          "op": "commit",
+          "word": "Subscription"
+        },
+        {
+          "op": "test-all"
+        },
+        {
+          "op": "describe",
+          "word": "subscription.annual-renewable?"
+        },
+        {
+          "word": "subscription.annual-renewable?",
+          "library": true,
+          "op": "commit"
+        },
+        {
+          "op": "describe",
+          "word": "subscription.annual-renewable?"
+        },
+        {
+          "op": "history",
+          "word": "subscription.annual-renewable?"
+        }
+      ],
+      "setupRawOutput": [
+        "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.\",\"data\":{\"frontend\":\"flow\",\"words\":[{\"name\":\"subscription.annual-renewable?\",\"id\":\"word_6bd261afd4bf440d83adeb0db04e7852\",\"revision\":1}],\"types\":[\"Customer\",\"Subscription\"]}}",
+        "{\"ok\":true,\"kind\":\"commit\",\"text\":\"0 attached test(s) passed; selected candidates committed.\",\"data\":[]}",
+        "{\"ok\":true,\"kind\":\"commit\",\"text\":\"0 attached test(s) passed; selected candidates committed.\",\"data\":[]}",
+        "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"constant\",\"word\":\"subscription.annual-renewable?\",\"passed\":true,\"expected\":\"true\",\"actual\":[\"true\"]}]}}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for subscription.annual-renewable?.\",\"data\":{\"name\":\"subscription.annual-renewable?\",\"flowReference\":\"subscription::annual-renewable?\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Subscription\"],\"outputs\":[\"Bool\"],\"parameters\":[{\"name\":\"subscription\",\"type\":\"Subscription\"}],\"effects\":[],\"documentation\":\"\",\"id\":\"word_6bd261afd4bf440d83adeb0db04e7852\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[],\"tests\":[\"constant\"],\"examples\":[],\"source\":\"\\u003Cflow:subscription.annual-renewable?/1:50c69b227f20982c8aaea1a07cfefc1fb55d1f69743566f1dbbef66612cd4323\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"candidate\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":1,\"instructionsTotal\":1,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"finiteCoverage\":{\"targetInvocations\":1,\"inputs\":[],\"returns\":[{\"position\":0,\"type\":\"Bool\",\"required\":[\"false\",\"true\"],\"observed\":[\"true\"],\"missing\":[\"false\"]}],\"unsupported\":[],\"missing\":[\"return[0] Bool: false\"],\"complete\":false},\"status\":\"current\"}}}",
+        "{\"ok\":false,\"kind\":\"error\",\"text\":\"LIBRARY_FINITE_COVERAGE_INCOMPLETE in subscription.annual-renewable?: Library word \\u0027subscription.annual-renewable?\\u0027 has uncovered finite input or return values.\",\"error\":{\"code\":\"LIBRARY_FINITE_COVERAGE_INCOMPLETE\",\"message\":\"Library word \\u0027subscription.annual-renewable?\\u0027 has uncovered finite input or return values.\",\"word\":\"subscription.annual-renewable?\",\"expected\":[\"return[0] Bool: false\"],\"actual\":[\"return[0] Bool: true\"]}}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for subscription.annual-renewable?.\",\"data\":{\"name\":\"subscription.annual-renewable?\",\"flowReference\":\"subscription::annual-renewable?\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Subscription\"],\"outputs\":[\"Bool\"],\"parameters\":[{\"name\":\"subscription\",\"type\":\"Subscription\"}],\"effects\":[],\"documentation\":\"\",\"id\":\"word_6bd261afd4bf440d83adeb0db04e7852\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[],\"tests\":[\"constant\"],\"examples\":[],\"source\":\"\\u003Cflow:subscription.annual-renewable?/1:50c69b227f20982c8aaea1a07cfefc1fb55d1f69743566f1dbbef66612cd4323\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"candidate\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":1,\"instructionsTotal\":1,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"finiteCoverage\":{\"targetInvocations\":1,\"inputs\":[],\"returns\":[{\"position\":0,\"type\":\"Bool\",\"required\":[\"false\",\"true\"],\"observed\":[\"true\"],\"missing\":[\"false\"]}],\"unsupported\":[],\"missing\":[\"return[0] Bool: false\"],\"complete\":false},\"status\":\"current\"}}}",
+        "{\"ok\":false,\"kind\":\"error\",\"text\":\"HISTORY_WORD_UNKNOWN in subscription.annual-renewable?: No durable history exists for \\u0027subscription.annual-renewable?\\u0027.\",\"error\":{\"code\":\"HISTORY_WORD_UNKNOWN\",\"message\":\"No durable history exists for \\u0027subscription.annual-renewable?\\u0027.\",\"word\":\"subscription.annual-renewable?\",\"expected\":[],\"actual\":[]}}"
+      ],
+      "setupResponses": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+          "data": {
+            "frontend": "flow",
+            "words": [
+              {
+                "name": "subscription.annual-renewable?",
+                "id": "word_6bd261afd4bf440d83adeb0db04e7852",
+                "revision": 1
+              }
+            ],
+            "types": [
+              "Customer",
+              "Subscription"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "1/1 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "constant",
+                "word": "subscription.annual-renewable?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for subscription.annual-renewable?.",
+          "data": {
+            "name": "subscription.annual-renewable?",
+            "flowReference": "subscription::annual-renewable?",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Subscription"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "parameters": [
+              {
+                "name": "subscription",
+                "type": "Subscription"
+              }
+            ],
+            "effects": [],
+            "documentation": "",
+            "id": "word_6bd261afd4bf440d83adeb0db04e7852",
+            "dependencies": [],
+            "transitiveDependencies": [],
+            "callers": [],
+            "tests": [
+              "constant"
+            ],
+            "examples": [],
+            "source": "<flow:subscription.annual-renewable?/1:50c69b227f20982c8aaea1a07cfefc1fb55d1f69743566f1dbbef66612cd4323>",
+            "line": 1,
+            "kind": "word",
+            "status": "candidate",
+            "maturity": "project",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 1,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 1,
+              "instructionsTotal": 1,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "finiteCoverage": {
+                "targetInvocations": 1,
+                "inputs": [],
+                "returns": [
+                  {
+                    "position": 0,
+                    "type": "Bool",
+                    "required": [
+                      "false",
+                      "true"
+                    ],
+                    "observed": [
+                      "true"
+                    ],
+                    "missing": [
+                      "false"
+                    ]
+                  }
+                ],
+                "unsupported": [],
+                "missing": [
+                  "return[0] Bool: false"
+                ],
+                "complete": false
+              },
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "LIBRARY_FINITE_COVERAGE_INCOMPLETE in subscription.annual-renewable?: Library word 'subscription.annual-renewable?' has uncovered finite input or return values.",
+          "error": {
+            "code": "LIBRARY_FINITE_COVERAGE_INCOMPLETE",
+            "message": "Library word 'subscription.annual-renewable?' has uncovered finite input or return values.",
+            "word": "subscription.annual-renewable?",
+            "expected": [
+              "return[0] Bool: false"
+            ],
+            "actual": [
+              "return[0] Bool: true"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for subscription.annual-renewable?.",
+          "data": {
+            "name": "subscription.annual-renewable?",
+            "flowReference": "subscription::annual-renewable?",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Subscription"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "parameters": [
+              {
+                "name": "subscription",
+                "type": "Subscription"
+              }
+            ],
+            "effects": [],
+            "documentation": "",
+            "id": "word_6bd261afd4bf440d83adeb0db04e7852",
+            "dependencies": [],
+            "transitiveDependencies": [],
+            "callers": [],
+            "tests": [
+              "constant"
+            ],
+            "examples": [],
+            "source": "<flow:subscription.annual-renewable?/1:50c69b227f20982c8aaea1a07cfefc1fb55d1f69743566f1dbbef66612cd4323>",
+            "line": 1,
+            "kind": "word",
+            "status": "candidate",
+            "maturity": "project",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 1,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 1,
+              "instructionsTotal": 1,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "finiteCoverage": {
+                "targetInvocations": 1,
+                "inputs": [],
+                "returns": [
+                  {
+                    "position": 0,
+                    "type": "Bool",
+                    "required": [
+                      "false",
+                      "true"
+                    ],
+                    "observed": [
+                      "true"
+                    ],
+                    "missing": [
+                      "false"
+                    ]
+                  }
+                ],
+                "unsupported": [],
+                "missing": [
+                  "return[0] Bool: false"
+                ],
+                "complete": false
+              },
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "HISTORY_WORD_UNKNOWN in subscription.annual-renewable?: No durable history exists for 'subscription.annual-renewable?'.",
+          "error": {
+            "code": "HISTORY_WORD_UNKNOWN",
+            "message": "No durable history exists for 'subscription.annual-renewable?'.",
+            "word": "subscription.annual-renewable?",
+            "expected": [],
+            "actual": []
+          }
+        }
+      ],
+      "acceptance": null,
+      "rejectedAt": "LIBRARY_FINITE_COVERAGE_INCOMPLETE"
+    },
+    {
+      "task": 4,
+      "word": "customer.renewal-balance",
+      "expectedBoundary": "independent behavioral acceptance after library commit",
+      "passed": true,
+      "checks": [
+        {
+          "name": "setup define succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "defined",
+            "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+            "data": {
+              "frontend": "flow",
+              "words": [
+                {
+                  "name": "customer.renewal-balance",
+                  "id": "word_5e44dadc4715493189d3da9ab8ee9c19",
+                  "revision": 1
+                }
+              ],
+              "types": [
+                "Customer",
+                "Subscription"
+              ]
+            }
+          }
+        },
+        {
+          "name": "setup commit succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "commit",
+            "text": "0 attached test(s) passed; selected candidates committed.",
+            "data": []
+          }
+        },
+        {
+          "name": "setup commit succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "commit",
+            "text": "0 attached test(s) passed; selected candidates committed.",
+            "data": []
+          }
+        },
+        {
+          "name": "setup test-all succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "constant",
+                  "word": "customer.renewal-balance",
+                  "passed": true,
+                  "expected": "85.5",
+                  "actual": [
+                    "85.5"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "setup describe succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.renewal-balance.",
+            "data": {
+              "name": "customer.renewal-balance",
+              "flowReference": "customer::renewal-balance",
+              "flowReferenceUnavailableReason": null,
+              "inputs": [
+                "Customer",
+                "Subscription"
+              ],
+              "outputs": [
+                "Float"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                },
+                {
+                  "name": "subscription",
+                  "type": "Subscription"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_5e44dadc4715493189d3da9ab8ee9c19",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<flow:customer.renewal-balance/1:9047001b7eda47ffe5d01dc3d660452bf8f91288e0ef4df4d75bc7d5019ce34b>",
+              "line": 1,
+              "kind": "word",
+              "status": "candidate",
+              "maturity": "project",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "finiteCoverage": {
+                  "targetInvocations": 1,
+                  "inputs": [],
+                  "returns": [
+                    {
+                      "position": 0,
+                      "type": "Float",
+                      "required": [],
+                      "observed": [],
+                      "missing": []
+                    }
+                  ],
+                  "unsupported": [],
+                  "missing": [],
+                  "complete": true
+                },
+                "status": "current"
+              }
+            }
+          }
+        },
+        {
+          "name": "target self-test passes before library commit",
+          "passed": true,
+          "details": [
+            {
+              "name": "constant",
+              "word": "customer.renewal-balance",
+              "passed": true,
+              "expected": "85.5",
+              "actual": [
+                "85.5"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "candidate has complete structural instruction and branch coverage",
+          "passed": true,
+          "details": {
+            "instructionsCovered": 1,
+            "instructionsTotal": 1,
+            "branchesCovered": 0,
+            "branchesTotal": 0,
+            "uncoveredInstructions": [],
+            "uncoveredBranchOutcomes": [],
+            "finiteCoverage": {
+              "targetInvocations": 1,
+              "inputs": [],
+              "returns": [
+                {
+                  "position": 0,
+                  "type": "Float",
+                  "required": [],
+                  "observed": [],
+                  "missing": []
+                }
+              ],
+              "unsupported": [],
+              "missing": [],
+              "complete": true
+            },
+            "status": "current"
+          }
+        },
+        {
+          "name": "target is still an unpublished project candidate before commit",
+          "passed": true,
+          "details": {
+            "maturity": "project",
+            "status": "candidate"
+          }
+        },
+        {
+          "name": "Float-result library commit succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "commit",
+            "text": "1 attached test(s) passed; selected candidates committed.",
+            "data": [
+              "customer.renewal-balance/constant"
+            ]
+          }
+        },
+        {
+          "name": "Float-result target is durably published as a library",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.renewal-balance.",
+            "data": {
+              "name": "customer.renewal-balance",
+              "flowReference": "customer::renewal-balance",
+              "flowReferenceUnavailableReason": null,
+              "inputs": [
+                "Customer",
+                "Subscription"
+              ],
+              "outputs": [
+                "Float"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                },
+                {
+                  "name": "subscription",
+                  "type": "Subscription"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_5e44dadc4715493189d3da9ab8ee9c19",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<flow:customer.renewal-balance/1:9047001b7eda47ffe5d01dc3d660452bf8f91288e0ef4df4d75bc7d5019ce34b>",
+              "line": 1,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "library",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "finiteCoverage": {
+                  "targetInvocations": 1,
+                  "inputs": [],
+                  "returns": [
+                    {
+                      "position": 0,
+                      "type": "Float",
+                      "required": [],
+                      "observed": [],
+                      "missing": []
+                    }
+                  ],
+                  "unsupported": [],
+                  "missing": [],
+                  "complete": true
+                },
+                "status": "current"
+              }
+            }
+          }
+        },
+        {
+          "name": "published target has durable library history",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "history",
+            "text": "1 durable revision(s) for customer.renewal-balance.",
+            "data": [
+              {
+                "id": "word_5e44dadc4715493189d3da9ab8ee9c19",
+                "name": "customer.renewal-balance",
+                "revision": 1,
+                "source": "word customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    85.5\n}",
+                "maturity": "library",
+                "actor": "client",
+                "task": null,
+                "timestampUtc": "1999-12-31T19:00:00-05:00",
+                "deprecated": false,
+                "tests": [
+                  "test customer.renewal-balance/constant {\n    customer::renewal-balance(customer::new(\"premium\", 100.0), subscription::new(\"annual\", true)) => 85.5\n}"
+                ],
+                "examples": []
+              }
+            ]
+          }
+        },
+        {
+          "name": "published wrong Float solution reaches independent result rejection",
+          "passed": true,
+          "details": {
+            "lastCheck": {
+              "name": "premium-annual-false independent Float result",
+              "passed": false
+            },
+            "failedIndependentResults": 1
+          }
+        }
+      ],
+      "setupRequests": [
+        {
+          "source": "record Customer {\n    field kind: String;\n    field balance: Float;\n}\n\nrecord Subscription {\n    field term: String;\n    field renewable: Bool;\n}\r\n\nword customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    85.5\n}\ntest customer.renewal-balance/constant {\n    customer::renewal-balance(customer::new(\"premium\", 100.0), subscription::new(\"annual\", true)) => 85.5\n}",
+          "frontend": "flow",
+          "op": "define"
+        },
+        {
+          "op": "commit",
+          "word": "Customer"
+        },
+        {
+          "op": "commit",
+          "word": "Subscription"
+        },
+        {
+          "op": "test-all"
+        },
+        {
+          "op": "describe",
+          "word": "customer.renewal-balance"
+        },
+        {
+          "word": "customer.renewal-balance",
+          "library": true,
+          "op": "commit"
+        },
+        {
+          "op": "describe",
+          "word": "customer.renewal-balance"
+        },
+        {
+          "op": "history",
+          "word": "customer.renewal-balance"
+        }
+      ],
+      "setupRawOutput": [
+        "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.\",\"data\":{\"frontend\":\"flow\",\"words\":[{\"name\":\"customer.renewal-balance\",\"id\":\"word_5e44dadc4715493189d3da9ab8ee9c19\",\"revision\":1}],\"types\":[\"Customer\",\"Subscription\"]}}",
+        "{\"ok\":true,\"kind\":\"commit\",\"text\":\"0 attached test(s) passed; selected candidates committed.\",\"data\":[]}",
+        "{\"ok\":true,\"kind\":\"commit\",\"text\":\"0 attached test(s) passed; selected candidates committed.\",\"data\":[]}",
+        "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"constant\",\"word\":\"customer.renewal-balance\",\"passed\":true,\"expected\":\"85.5\",\"actual\":[\"85.5\"]}]}}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for customer.renewal-balance.\",\"data\":{\"name\":\"customer.renewal-balance\",\"flowReference\":\"customer::renewal-balance\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Customer\",\"Subscription\"],\"outputs\":[\"Float\"],\"parameters\":[{\"name\":\"customer\",\"type\":\"Customer\"},{\"name\":\"subscription\",\"type\":\"Subscription\"}],\"effects\":[],\"documentation\":\"\",\"id\":\"word_5e44dadc4715493189d3da9ab8ee9c19\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[],\"tests\":[\"constant\"],\"examples\":[],\"source\":\"\\u003Cflow:customer.renewal-balance/1:9047001b7eda47ffe5d01dc3d660452bf8f91288e0ef4df4d75bc7d5019ce34b\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"candidate\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":1,\"instructionsTotal\":1,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"finiteCoverage\":{\"targetInvocations\":1,\"inputs\":[],\"returns\":[{\"position\":0,\"type\":\"Float\",\"required\":[],\"observed\":[],\"missing\":[]}],\"unsupported\":[],\"missing\":[],\"complete\":true},\"status\":\"current\"}}}",
+        "{\"ok\":true,\"kind\":\"commit\",\"text\":\"1 attached test(s) passed; selected candidates committed.\",\"data\":[\"customer.renewal-balance/constant\"]}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for customer.renewal-balance.\",\"data\":{\"name\":\"customer.renewal-balance\",\"flowReference\":\"customer::renewal-balance\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Customer\",\"Subscription\"],\"outputs\":[\"Float\"],\"parameters\":[{\"name\":\"customer\",\"type\":\"Customer\"},{\"name\":\"subscription\",\"type\":\"Subscription\"}],\"effects\":[],\"documentation\":\"\",\"id\":\"word_5e44dadc4715493189d3da9ab8ee9c19\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[],\"tests\":[\"constant\"],\"examples\":[],\"source\":\"\\u003Cflow:customer.renewal-balance/1:9047001b7eda47ffe5d01dc3d660452bf8f91288e0ef4df4d75bc7d5019ce34b\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":1,\"instructionsTotal\":1,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"finiteCoverage\":{\"targetInvocations\":1,\"inputs\":[],\"returns\":[{\"position\":0,\"type\":\"Float\",\"required\":[],\"observed\":[],\"missing\":[]}],\"unsupported\":[],\"missing\":[],\"complete\":true},\"status\":\"current\"}}}",
+        "{\"ok\":true,\"kind\":\"history\",\"text\":\"1 durable revision(s) for customer.renewal-balance.\",\"data\":[{\"id\":\"word_5e44dadc4715493189d3da9ab8ee9c19\",\"name\":\"customer.renewal-balance\",\"revision\":1,\"source\":\"word customer.renewal-balance(customer: Customer, subscription: Subscription) -\\u003E Float {\\n    effects none\\n    85.5\\n}\",\"maturity\":\"library\",\"actor\":\"client\",\"task\":null,\"timestampUtc\":\"2000-01-01T00:00:00.0000000\\u002B00:00\",\"deprecated\":false,\"tests\":[\"test customer.renewal-balance/constant {\\n    customer::renewal-balance(customer::new(\\u0022premium\\u0022, 100.0), subscription::new(\\u0022annual\\u0022, true)) =\\u003E 85.5\\n}\"],\"examples\":[]}]}"
+      ],
+      "setupResponses": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+          "data": {
+            "frontend": "flow",
+            "words": [
+              {
+                "name": "customer.renewal-balance",
+                "id": "word_5e44dadc4715493189d3da9ab8ee9c19",
+                "revision": 1
+              }
+            ],
+            "types": [
+              "Customer",
+              "Subscription"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "1/1 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "constant",
+                "word": "customer.renewal-balance",
+                "passed": true,
+                "expected": "85.5",
+                "actual": [
+                  "85.5"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for customer.renewal-balance.",
+          "data": {
+            "name": "customer.renewal-balance",
+            "flowReference": "customer::renewal-balance",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer",
+              "Subscription"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "parameters": [
+              {
+                "name": "customer",
+                "type": "Customer"
+              },
+              {
+                "name": "subscription",
+                "type": "Subscription"
+              }
+            ],
+            "effects": [],
+            "documentation": "",
+            "id": "word_5e44dadc4715493189d3da9ab8ee9c19",
+            "dependencies": [],
+            "transitiveDependencies": [],
+            "callers": [],
+            "tests": [
+              "constant"
+            ],
+            "examples": [],
+            "source": "<flow:customer.renewal-balance/1:9047001b7eda47ffe5d01dc3d660452bf8f91288e0ef4df4d75bc7d5019ce34b>",
+            "line": 1,
+            "kind": "word",
+            "status": "candidate",
+            "maturity": "project",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 1,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 1,
+              "instructionsTotal": 1,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "finiteCoverage": {
+                "targetInvocations": 1,
+                "inputs": [],
+                "returns": [
+                  {
+                    "position": 0,
+                    "type": "Float",
+                    "required": [],
+                    "observed": [],
+                    "missing": []
+                  }
+                ],
+                "unsupported": [],
+                "missing": [],
+                "complete": true
+              },
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "1 attached test(s) passed; selected candidates committed.",
+          "data": [
+            "customer.renewal-balance/constant"
+          ]
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for customer.renewal-balance.",
+          "data": {
+            "name": "customer.renewal-balance",
+            "flowReference": "customer::renewal-balance",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer",
+              "Subscription"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "parameters": [
+              {
+                "name": "customer",
+                "type": "Customer"
+              },
+              {
+                "name": "subscription",
+                "type": "Subscription"
+              }
+            ],
+            "effects": [],
+            "documentation": "",
+            "id": "word_5e44dadc4715493189d3da9ab8ee9c19",
+            "dependencies": [],
+            "transitiveDependencies": [],
+            "callers": [],
+            "tests": [
+              "constant"
+            ],
+            "examples": [],
+            "source": "<flow:customer.renewal-balance/1:9047001b7eda47ffe5d01dc3d660452bf8f91288e0ef4df4d75bc7d5019ce34b>",
+            "line": 1,
+            "kind": "word",
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 1,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 1,
+              "instructionsTotal": 1,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "finiteCoverage": {
+                "targetInvocations": 1,
+                "inputs": [],
+                "returns": [
+                  {
+                    "position": 0,
+                    "type": "Float",
+                    "required": [],
+                    "observed": [],
+                    "missing": []
+                  }
+                ],
+                "unsupported": [],
+                "missing": [],
+                "complete": true
+              },
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "history",
+          "text": "1 durable revision(s) for customer.renewal-balance.",
+          "data": [
+            {
+              "id": "word_5e44dadc4715493189d3da9ab8ee9c19",
+              "name": "customer.renewal-balance",
+              "revision": 1,
+              "source": "word customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    85.5\n}",
+              "maturity": "library",
+              "actor": "client",
+              "task": null,
+              "timestampUtc": "1999-12-31T19:00:00-05:00",
+              "deprecated": false,
+              "tests": [
+                "test customer.renewal-balance/constant {\n    customer::renewal-balance(customer::new(\"premium\", 100.0), subscription::new(\"annual\", true)) => 85.5\n}"
+              ],
+              "examples": []
+            }
+          ]
+        }
+      ],
+      "acceptance": {
+        "schemaVersion": 1,
+        "passed": false,
+        "failure": "Pilot acceptance failed: premium-annual-false independent Float result",
+        "task": 4,
+        "word": "customer.renewal-balance",
+        "cliSha256": "34310b5774541f1c6308cb15c7a5cc591d1ab4cf063561ae4236b07cc90bd323",
+        "oracleSha256": "7ed0ba4d7925978424b98b7a17aae5276315cf1dff612a8f4688c178472c03eb",
+        "verifierSha256": "e8748381ab8d87e1baf8e8386205927951072909f250faa808473af6eb35cace",
+        "checks": [
+          {
+            "name": "fresh process exit",
+            "passed": true
+          },
+          {
+            "name": "one response per request",
+            "passed": true
+          },
+          {
+            "name": "all requests succeed",
+            "passed": true
+          },
+          {
+            "name": "all attached tests pass",
+            "passed": true
+          },
+          {
+            "name": "exact target signature",
+            "passed": true
+          },
+          {
+            "name": "pure persistent library target",
+            "passed": true
+          },
+          {
+            "name": "target has attached tests",
+            "passed": true
+          },
+          {
+            "name": "complete current own coverage",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true independent Float result",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false independent Float result",
+            "passed": false
+          }
+        ],
+        "requests": [
+          {
+            "op": "test-all"
+          },
+          {
+            "op": "describe",
+            "word": "customer.renewal-balance"
+          },
+          {
+            "op": "dependencies",
+            "word": "customer.renewal-balance"
+          },
+          {
+            "op": "source",
+            "word": "customer.renewal-balance"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"monthly\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"annual\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"monthly\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"Premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"Annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual \", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 0.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = -100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 250.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 250.0), subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"prémium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 3.141592653589793), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 1E-100), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 1E+100), subscription::new(term = \"annual\", renewable = true))"
+          }
+        ],
+        "responses": [
+          {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "constant",
+                  "word": "customer.renewal-balance",
+                  "passed": true,
+                  "expected": "85.5",
+                  "actual": [
+                    "85.5"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.renewal-balance.",
+            "data": {
+              "name": "customer.renewal-balance",
+              "flowReference": "customer::renewal-balance",
+              "flowReferenceUnavailableReason": null,
+              "inputs": [
+                "Customer",
+                "Subscription"
+              ],
+              "outputs": [
+                "Float"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                },
+                {
+                  "name": "subscription",
+                  "type": "Subscription"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_5e44dadc4715493189d3da9ab8ee9c19",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<revision:customer.renewal-balance/1>",
+              "line": 1,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "library",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "finiteCoverage": {
+                  "targetInvocations": 1,
+                  "inputs": [],
+                  "returns": [
+                    {
+                      "position": 0,
+                      "type": "Float",
+                      "required": [],
+                      "observed": [],
+                      "missing": []
+                    }
+                  ],
+                  "unsupported": [],
+                  "missing": [],
+                  "complete": true
+                },
+                "status": "current"
+              }
+            }
+          },
+          {
+            "ok": true,
+            "kind": "dependencies",
+            "text": "0 direct dependency/dependencies.",
+            "data": {
+              "dependencies": [],
+              "callers": []
+            }
+          },
+          {
+            "ok": true,
+            "kind": "source",
+            "text": "word customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    85.5\n}",
+            "data": "word customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    85.5\n}"
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          }
+        ],
+        "limits": [
+          "Behavioral acceptance only; no model-efficiency claim.",
+          "Float tolerance is not bitwise or signed-zero equivalence.",
+          "Whole-state preservation and retained-helper quality require a separate audit."
+        ]
+      },
+      "rejectedAt": "premium-annual-false independent Float result"
+    },
+    {
+      "task": 5,
+      "word": "customer.renewal-savings",
+      "expectedBoundary": "independent behavioral acceptance after library commit",
+      "passed": true,
+      "checks": [
+        {
+          "name": "setup define succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "defined",
+            "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+            "data": {
+              "frontend": "flow",
+              "words": [
+                {
+                  "name": "customer.renewal-savings",
+                  "id": "word_7103be146e014e859fd458b6638a0e12",
+                  "revision": 1
+                }
+              ],
+              "types": [
+                "Customer",
+                "Subscription"
+              ]
+            }
+          }
+        },
+        {
+          "name": "setup commit succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "commit",
+            "text": "0 attached test(s) passed; selected candidates committed.",
+            "data": []
+          }
+        },
+        {
+          "name": "setup commit succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "commit",
+            "text": "0 attached test(s) passed; selected candidates committed.",
+            "data": []
+          }
+        },
+        {
+          "name": "setup test-all succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "constant",
+                  "word": "customer.renewal-savings",
+                  "passed": true,
+                  "expected": "14.5",
+                  "actual": [
+                    "14.5"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "setup describe succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.renewal-savings.",
+            "data": {
+              "name": "customer.renewal-savings",
+              "flowReference": "customer::renewal-savings",
+              "flowReferenceUnavailableReason": null,
+              "inputs": [
+                "Customer",
+                "Subscription"
+              ],
+              "outputs": [
+                "Float"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                },
+                {
+                  "name": "subscription",
+                  "type": "Subscription"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_7103be146e014e859fd458b6638a0e12",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<flow:customer.renewal-savings/1:bd24dee51baa8dd886318d7fd7ffb5465c01b1a3f0908dcb67be28e5dd906165>",
+              "line": 1,
+              "kind": "word",
+              "status": "candidate",
+              "maturity": "project",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "finiteCoverage": {
+                  "targetInvocations": 1,
+                  "inputs": [],
+                  "returns": [
+                    {
+                      "position": 0,
+                      "type": "Float",
+                      "required": [],
+                      "observed": [],
+                      "missing": []
+                    }
+                  ],
+                  "unsupported": [],
+                  "missing": [],
+                  "complete": true
+                },
+                "status": "current"
+              }
+            }
+          }
+        },
+        {
+          "name": "target self-test passes before library commit",
+          "passed": true,
+          "details": [
+            {
+              "name": "constant",
+              "word": "customer.renewal-savings",
+              "passed": true,
+              "expected": "14.5",
+              "actual": [
+                "14.5"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "candidate has complete structural instruction and branch coverage",
+          "passed": true,
+          "details": {
+            "instructionsCovered": 1,
+            "instructionsTotal": 1,
+            "branchesCovered": 0,
+            "branchesTotal": 0,
+            "uncoveredInstructions": [],
+            "uncoveredBranchOutcomes": [],
+            "finiteCoverage": {
+              "targetInvocations": 1,
+              "inputs": [],
+              "returns": [
+                {
+                  "position": 0,
+                  "type": "Float",
+                  "required": [],
+                  "observed": [],
+                  "missing": []
+                }
+              ],
+              "unsupported": [],
+              "missing": [],
+              "complete": true
+            },
+            "status": "current"
+          }
+        },
+        {
+          "name": "target is still an unpublished project candidate before commit",
+          "passed": true,
+          "details": {
+            "maturity": "project",
+            "status": "candidate"
+          }
+        },
+        {
+          "name": "Float-result library commit succeeds",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "commit",
+            "text": "1 attached test(s) passed; selected candidates committed.",
+            "data": [
+              "customer.renewal-savings/constant"
+            ]
+          }
+        },
+        {
+          "name": "Float-result target is durably published as a library",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.renewal-savings.",
+            "data": {
+              "name": "customer.renewal-savings",
+              "flowReference": "customer::renewal-savings",
+              "flowReferenceUnavailableReason": null,
+              "inputs": [
+                "Customer",
+                "Subscription"
+              ],
+              "outputs": [
+                "Float"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                },
+                {
+                  "name": "subscription",
+                  "type": "Subscription"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_7103be146e014e859fd458b6638a0e12",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<flow:customer.renewal-savings/1:bd24dee51baa8dd886318d7fd7ffb5465c01b1a3f0908dcb67be28e5dd906165>",
+              "line": 1,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "library",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "finiteCoverage": {
+                  "targetInvocations": 1,
+                  "inputs": [],
+                  "returns": [
+                    {
+                      "position": 0,
+                      "type": "Float",
+                      "required": [],
+                      "observed": [],
+                      "missing": []
+                    }
+                  ],
+                  "unsupported": [],
+                  "missing": [],
+                  "complete": true
+                },
+                "status": "current"
+              }
+            }
+          }
+        },
+        {
+          "name": "published target has durable library history",
+          "passed": true,
+          "details": {
+            "ok": true,
+            "kind": "history",
+            "text": "1 durable revision(s) for customer.renewal-savings.",
+            "data": [
+              {
+                "id": "word_7103be146e014e859fd458b6638a0e12",
+                "name": "customer.renewal-savings",
+                "revision": 1,
+                "source": "word customer.renewal-savings(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    14.5\n}",
+                "maturity": "library",
+                "actor": "client",
+                "task": null,
+                "timestampUtc": "1999-12-31T19:00:00-05:00",
+                "deprecated": false,
+                "tests": [
+                  "test customer.renewal-savings/constant {\n    customer::renewal-savings(customer::new(\"premium\", 100.0), subscription::new(\"annual\", true)) => 14.5\n}"
+                ],
+                "examples": []
+              }
+            ]
+          }
+        },
+        {
+          "name": "published wrong Float solution reaches independent result rejection",
+          "passed": true,
+          "details": {
+            "lastCheck": {
+              "name": "premium-annual-false independent Float result",
+              "passed": false
+            },
+            "failedIndependentResults": 1
+          }
+        }
+      ],
+      "setupRequests": [
+        {
+          "source": "record Customer {\n    field kind: String;\n    field balance: Float;\n}\n\nrecord Subscription {\n    field term: String;\n    field renewable: Bool;\n}\r\n\nword customer.renewal-savings(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    14.5\n}\ntest customer.renewal-savings/constant {\n    customer::renewal-savings(customer::new(\"premium\", 100.0), subscription::new(\"annual\", true)) => 14.5\n}",
+          "frontend": "flow",
+          "op": "define"
+        },
+        {
+          "op": "commit",
+          "word": "Customer"
+        },
+        {
+          "op": "commit",
+          "word": "Subscription"
+        },
+        {
+          "op": "test-all"
+        },
+        {
+          "op": "describe",
+          "word": "customer.renewal-savings"
+        },
+        {
+          "word": "customer.renewal-savings",
+          "library": true,
+          "op": "commit"
+        },
+        {
+          "op": "describe",
+          "word": "customer.renewal-savings"
+        },
+        {
+          "op": "history",
+          "word": "customer.renewal-savings"
+        }
+      ],
+      "setupRawOutput": [
+        "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.\",\"data\":{\"frontend\":\"flow\",\"words\":[{\"name\":\"customer.renewal-savings\",\"id\":\"word_7103be146e014e859fd458b6638a0e12\",\"revision\":1}],\"types\":[\"Customer\",\"Subscription\"]}}",
+        "{\"ok\":true,\"kind\":\"commit\",\"text\":\"0 attached test(s) passed; selected candidates committed.\",\"data\":[]}",
+        "{\"ok\":true,\"kind\":\"commit\",\"text\":\"0 attached test(s) passed; selected candidates committed.\",\"data\":[]}",
+        "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"constant\",\"word\":\"customer.renewal-savings\",\"passed\":true,\"expected\":\"14.5\",\"actual\":[\"14.5\"]}]}}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for customer.renewal-savings.\",\"data\":{\"name\":\"customer.renewal-savings\",\"flowReference\":\"customer::renewal-savings\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Customer\",\"Subscription\"],\"outputs\":[\"Float\"],\"parameters\":[{\"name\":\"customer\",\"type\":\"Customer\"},{\"name\":\"subscription\",\"type\":\"Subscription\"}],\"effects\":[],\"documentation\":\"\",\"id\":\"word_7103be146e014e859fd458b6638a0e12\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[],\"tests\":[\"constant\"],\"examples\":[],\"source\":\"\\u003Cflow:customer.renewal-savings/1:bd24dee51baa8dd886318d7fd7ffb5465c01b1a3f0908dcb67be28e5dd906165\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"candidate\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":1,\"instructionsTotal\":1,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"finiteCoverage\":{\"targetInvocations\":1,\"inputs\":[],\"returns\":[{\"position\":0,\"type\":\"Float\",\"required\":[],\"observed\":[],\"missing\":[]}],\"unsupported\":[],\"missing\":[],\"complete\":true},\"status\":\"current\"}}}",
+        "{\"ok\":true,\"kind\":\"commit\",\"text\":\"1 attached test(s) passed; selected candidates committed.\",\"data\":[\"customer.renewal-savings/constant\"]}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for customer.renewal-savings.\",\"data\":{\"name\":\"customer.renewal-savings\",\"flowReference\":\"customer::renewal-savings\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Customer\",\"Subscription\"],\"outputs\":[\"Float\"],\"parameters\":[{\"name\":\"customer\",\"type\":\"Customer\"},{\"name\":\"subscription\",\"type\":\"Subscription\"}],\"effects\":[],\"documentation\":\"\",\"id\":\"word_7103be146e014e859fd458b6638a0e12\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[],\"tests\":[\"constant\"],\"examples\":[],\"source\":\"\\u003Cflow:customer.renewal-savings/1:bd24dee51baa8dd886318d7fd7ffb5465c01b1a3f0908dcb67be28e5dd906165\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":1,\"instructionsTotal\":1,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"finiteCoverage\":{\"targetInvocations\":1,\"inputs\":[],\"returns\":[{\"position\":0,\"type\":\"Float\",\"required\":[],\"observed\":[],\"missing\":[]}],\"unsupported\":[],\"missing\":[],\"complete\":true},\"status\":\"current\"}}}",
+        "{\"ok\":true,\"kind\":\"history\",\"text\":\"1 durable revision(s) for customer.renewal-savings.\",\"data\":[{\"id\":\"word_7103be146e014e859fd458b6638a0e12\",\"name\":\"customer.renewal-savings\",\"revision\":1,\"source\":\"word customer.renewal-savings(customer: Customer, subscription: Subscription) -\\u003E Float {\\n    effects none\\n    14.5\\n}\",\"maturity\":\"library\",\"actor\":\"client\",\"task\":null,\"timestampUtc\":\"2000-01-01T00:00:00.0000000\\u002B00:00\",\"deprecated\":false,\"tests\":[\"test customer.renewal-savings/constant {\\n    customer::renewal-savings(customer::new(\\u0022premium\\u0022, 100.0), subscription::new(\\u0022annual\\u0022, true)) =\\u003E 14.5\\n}\"],\"examples\":[]}]}"
+      ],
+      "setupResponses": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+          "data": {
+            "frontend": "flow",
+            "words": [
+              {
+                "name": "customer.renewal-savings",
+                "id": "word_7103be146e014e859fd458b6638a0e12",
+                "revision": 1
+              }
+            ],
+            "types": [
+              "Customer",
+              "Subscription"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "1/1 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "constant",
+                "word": "customer.renewal-savings",
+                "passed": true,
+                "expected": "14.5",
+                "actual": [
+                  "14.5"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for customer.renewal-savings.",
+          "data": {
+            "name": "customer.renewal-savings",
+            "flowReference": "customer::renewal-savings",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer",
+              "Subscription"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "parameters": [
+              {
+                "name": "customer",
+                "type": "Customer"
+              },
+              {
+                "name": "subscription",
+                "type": "Subscription"
+              }
+            ],
+            "effects": [],
+            "documentation": "",
+            "id": "word_7103be146e014e859fd458b6638a0e12",
+            "dependencies": [],
+            "transitiveDependencies": [],
+            "callers": [],
+            "tests": [
+              "constant"
+            ],
+            "examples": [],
+            "source": "<flow:customer.renewal-savings/1:bd24dee51baa8dd886318d7fd7ffb5465c01b1a3f0908dcb67be28e5dd906165>",
+            "line": 1,
+            "kind": "word",
+            "status": "candidate",
+            "maturity": "project",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 1,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 1,
+              "instructionsTotal": 1,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "finiteCoverage": {
+                "targetInvocations": 1,
+                "inputs": [],
+                "returns": [
+                  {
+                    "position": 0,
+                    "type": "Float",
+                    "required": [],
+                    "observed": [],
+                    "missing": []
+                  }
+                ],
+                "unsupported": [],
+                "missing": [],
+                "complete": true
+              },
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "1 attached test(s) passed; selected candidates committed.",
+          "data": [
+            "customer.renewal-savings/constant"
+          ]
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for customer.renewal-savings.",
+          "data": {
+            "name": "customer.renewal-savings",
+            "flowReference": "customer::renewal-savings",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer",
+              "Subscription"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "parameters": [
+              {
+                "name": "customer",
+                "type": "Customer"
+              },
+              {
+                "name": "subscription",
+                "type": "Subscription"
+              }
+            ],
+            "effects": [],
+            "documentation": "",
+            "id": "word_7103be146e014e859fd458b6638a0e12",
+            "dependencies": [],
+            "transitiveDependencies": [],
+            "callers": [],
+            "tests": [
+              "constant"
+            ],
+            "examples": [],
+            "source": "<flow:customer.renewal-savings/1:bd24dee51baa8dd886318d7fd7ffb5465c01b1a3f0908dcb67be28e5dd906165>",
+            "line": 1,
+            "kind": "word",
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 1,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 1,
+              "instructionsTotal": 1,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "finiteCoverage": {
+                "targetInvocations": 1,
+                "inputs": [],
+                "returns": [
+                  {
+                    "position": 0,
+                    "type": "Float",
+                    "required": [],
+                    "observed": [],
+                    "missing": []
+                  }
+                ],
+                "unsupported": [],
+                "missing": [],
+                "complete": true
+              },
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "history",
+          "text": "1 durable revision(s) for customer.renewal-savings.",
+          "data": [
+            {
+              "id": "word_7103be146e014e859fd458b6638a0e12",
+              "name": "customer.renewal-savings",
+              "revision": 1,
+              "source": "word customer.renewal-savings(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    14.5\n}",
+              "maturity": "library",
+              "actor": "client",
+              "task": null,
+              "timestampUtc": "1999-12-31T19:00:00-05:00",
+              "deprecated": false,
+              "tests": [
+                "test customer.renewal-savings/constant {\n    customer::renewal-savings(customer::new(\"premium\", 100.0), subscription::new(\"annual\", true)) => 14.5\n}"
+              ],
+              "examples": []
+            }
+          ]
+        }
+      ],
+      "acceptance": {
+        "schemaVersion": 1,
+        "passed": false,
+        "failure": "Pilot acceptance failed: premium-annual-false independent Float result",
+        "task": 5,
+        "word": "customer.renewal-savings",
+        "cliSha256": "34310b5774541f1c6308cb15c7a5cc591d1ab4cf063561ae4236b07cc90bd323",
+        "oracleSha256": "7ed0ba4d7925978424b98b7a17aae5276315cf1dff612a8f4688c178472c03eb",
+        "verifierSha256": "e8748381ab8d87e1baf8e8386205927951072909f250faa808473af6eb35cace",
+        "checks": [
+          {
+            "name": "fresh process exit",
+            "passed": true
+          },
+          {
+            "name": "one response per request",
+            "passed": true
+          },
+          {
+            "name": "all requests succeed",
+            "passed": true
+          },
+          {
+            "name": "all attached tests pass",
+            "passed": true
+          },
+          {
+            "name": "exact target signature",
+            "passed": true
+          },
+          {
+            "name": "pure persistent library target",
+            "passed": true
+          },
+          {
+            "name": "target has attached tests",
+            "passed": true
+          },
+          {
+            "name": "complete current own coverage",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true independent Float result",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false independent Float result",
+            "passed": false
+          }
+        ],
+        "requests": [
+          {
+            "op": "test-all"
+          },
+          {
+            "op": "describe",
+            "word": "customer.renewal-savings"
+          },
+          {
+            "op": "dependencies",
+            "word": "customer.renewal-savings"
+          },
+          {
+            "op": "source",
+            "word": "customer.renewal-savings"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"monthly\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"annual\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"monthly\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"Premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"Annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual \", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 0.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = -100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 250.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 250.0), subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"prémium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 3.141592653589793), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 1E-100), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 1E+100), subscription::new(term = \"annual\", renewable = true))"
+          }
+        ],
+        "responses": [
+          {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "constant",
+                  "word": "customer.renewal-savings",
+                  "passed": true,
+                  "expected": "14.5",
+                  "actual": [
+                    "14.5"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.renewal-savings.",
+            "data": {
+              "name": "customer.renewal-savings",
+              "flowReference": "customer::renewal-savings",
+              "flowReferenceUnavailableReason": null,
+              "inputs": [
+                "Customer",
+                "Subscription"
+              ],
+              "outputs": [
+                "Float"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                },
+                {
+                  "name": "subscription",
+                  "type": "Subscription"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_7103be146e014e859fd458b6638a0e12",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<revision:customer.renewal-savings/1>",
+              "line": 1,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "library",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "finiteCoverage": {
+                  "targetInvocations": 1,
+                  "inputs": [],
+                  "returns": [
+                    {
+                      "position": 0,
+                      "type": "Float",
+                      "required": [],
+                      "observed": [],
+                      "missing": []
+                    }
+                  ],
+                  "unsupported": [],
+                  "missing": [],
+                  "complete": true
+                },
+                "status": "current"
+              }
+            }
+          },
+          {
+            "ok": true,
+            "kind": "dependencies",
+            "text": "0 direct dependency/dependencies.",
+            "data": {
+              "dependencies": [],
+              "callers": []
+            }
+          },
+          {
+            "ok": true,
+            "kind": "source",
+            "text": "word customer.renewal-savings(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    14.5\n}",
+            "data": "word customer.renewal-savings(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    14.5\n}"
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          }
+        ],
+        "limits": [
+          "Behavioral acceptance only; no model-efficiency claim.",
+          "Float tolerance is not bitwise or signed-zero equivalence.",
+          "Whole-state preservation and retained-helper quality require a separate audit."
+        ]
+      },
+      "rejectedAt": "premium-annual-false independent Float result"
+    }
+  ],
+  "limits": [
+    "Root-authored adversarial fixtures, not external-agent trials.",
+    "Boolean-output controls are stopped at finite library qualification; Float controls proceed to the independent behavioral oracle.",
+    "Positive solutions require separate acceptance verification.",
+    "Full coverage alone is not business correctness."
+  ]
+}

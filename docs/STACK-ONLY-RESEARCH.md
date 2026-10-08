@@ -1,7 +1,10 @@
 # Research: no language heap, program data stack only
 
-Status: user-requested research track, 2026-10-05. This is not an adopted V1
-allocation restriction or an implemented allocator.
+Status: user-requested research and implementation direction, clarified
+2026-10-08. The preferred semantics are an owning value stack for most working
+data. Physical representation, copy/move lowering and source details still need
+validation. Report126's shared record DAGs and whole-invocation scratch do not
+implement this ownership model.
 
 ## Question and boundary
 
@@ -20,10 +23,43 @@ arbitrarily connected values with a common lifetime without enforcing a stack.
 The strict candidate must specify what pushing, consuming, duplicating,
 returning and retaining a compound value do to both data and storage.
 
+## Preferred semantics: owning values
+
+The user explicitly intends values, not references to independently lived language
+objects. Each stack entry owns its entire nested payload. Removing that entry
+reclaims the payload; no other surviving entry/local/container may point into it.
+This changes the earlier open alias/region discussion into a stronger default:
+
+- A duplicate is an independent value, including nested text/list/record payloads.
+- A move transfers ownership and invalidates the old location. Copy elision must
+  preserve the same observable values and reclamation boundaries.
+- Returned results occupy caller-owned stack storage before callee storage is
+  reclaimed, by a checked move, copy or equivalent layout-preserving transfer.
+- Retained mailbox state, queued messages and exported results own their values;
+  they cannot retain pointers into a popped stack value.
+- Named locals occupy owning locations too. Reading/reusing a local must not
+  introduce a hidden shared heap or reference-counting lifetime scheme.
+- Capacity failure must not partially move a value, publish half a result, leak
+  owned payload, or invalidate the previous mailbox state.
+
+Internal offsets or pointers may describe payload within its own representation;
+they cannot create independently lived shared objects or survive the owner's
+removal. An implementation optimization is acceptable only if it preserves these
+contracts. Opaque external-resource capabilities have a separate resource-cleanup
+contract; releasing value bytes alone does not acknowledge pending provider I/O.
+
+Test scalars and variable-sized nested values, duplication, moves, returning a
+non-topmost result, early errors, branch joins and repeated work under a fixed
+capacity. After each pop/rewind assert exact live storage and validity of surviving
+independent values. Poison/reuse freed storage to expose dangling aliases. Include
+large value copies and transformations: report costs rather than selecting only
+cheap scalar examples. Source notation and final physical layout remain open.
+
 ## Candidates to compare
 
-1. A strict LIFO value stack, optionally arena-backed. Compound values own their
-   nested payload; duplication copies or uses a specifically safe scoped view.
+1. The preferred owning LIFO value stack, optionally arena-backed. Compound values own their
+   nested payload; duplication creates an independent value; an optimization must preserve the
+   owning-value and reclamation contracts above.
    No arbitrary references into storage that can be popped/reset independently.
 2. A stack of typed values backed by one processing arena. Popping values need
    not reclaim individual payloads; reclaim together at a phase boundary.
@@ -47,7 +83,8 @@ retention. Whole-arena retention is a separate candidate, not an unnoticed escap
 from this restriction. Specify state/output publication on handler failure,
 schema changes, reload, snapshots and rollback before claiming useful coverage.
 
-Specify allowed aliases and region-reference direction, stack marks, lexical
+For alternative controls, specify aliases and region-reference direction. For
+the preferred model, enforce independent ownership. In both cases specify stack marks, lexical
 locals, variable-sized strings/lists/records, Option/Result payloads, callbacks,
 branch joins and multi-output returns. Measure copying, compaction or arena
 transfer needed when useful results are not the newest allocations. Do not call
@@ -86,7 +123,7 @@ retained demand exceeds its declared capacity: bounded failure is correct, but
 the frequency/cost determines whether this policy is useful for that workload.
 
 Use identical semantic fixtures for nested values, repeated transforms, large
-lists, early errors, returned results and shared inputs. Include awkward
+lists, early errors, returned results and repeated equal inputs with independent ownership. Include awkward
 lifetimes, not only streaming scalar pipelines. Test that cleanup never leaves
 usable dangling references and that capacity failure is structured and bounded.
 
@@ -99,7 +136,9 @@ Host serialization is a possible boundary, not free or unmeasured persistence.
 Measure used/reserved/peak bytes, growth across repeated work, allocation and
 cleanup time, copy/compaction bytes and time, retained dead payload, runtime
 complexity, and agent comprehension/error recovery. Compare against the managed
-reference and scoped arenas before selecting a default memory policy. Syntax
+reference and shared/scoped arenas, while keeping the preferred owning-value
+semantics explicit. Do not treat a faster reference-based control as completion
+of the owning-stack design. Syntax
 and LLVM adoption are separate variables; RPN is not required for this study.
 
 Finish the early flow frontend first. Then specify a bounded prototype and

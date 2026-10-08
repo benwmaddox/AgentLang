@@ -1,0 +1,705 @@
+{
+  "passed": true,
+  "experiment": "Native handler mailbox suspension",
+  "handlerSource": "mailbox.flow",
+  "handlerSourceSha256": "31ac3af8a450fd0554f6fff5d386d1ae3e1b424df1417f810adae71a6875a9ab",
+  "sameVerifiedProgramInstance": true,
+  "resultRootShape": "State \u002B Continuation; resume returns State",
+  "independentExpected": {
+    "aAfterOverlap": 17,
+    "bAfterOverlap": 103,
+    "aFinal": 19
+  },
+  "checks": [
+    {
+      "name": "interpreter/A suspends without scratch lease",
+      "passed": true,
+      "detail": "A retains promoted State and Continuation roots only."
+    },
+    {
+      "name": "interpreter/A initialization owner is replaced only after successful begin",
+      "passed": true,
+      "detail": "Begin produced a new retained owner."
+    },
+    {
+      "name": "interpreter/busy admission code",
+      "passed": true,
+      "detail": "expected MAILBOX_BUSY, observed MAILBOX_BUSY"
+    },
+    {
+      "name": "interpreter/busy admission before handler",
+      "passed": true,
+      "detail": "invalid protocol request did not invoke a handler"
+    },
+    {
+      "name": "interpreter/busy admission leaves owner and token unchanged",
+      "passed": true,
+      "detail": "A\u0027s suspended retained owner and completion token were preserved."
+    },
+    {
+      "name": "interpreter/foreign-thread operation rejected",
+      "passed": true,
+      "detail": "observed MAILBOX_FOREIGN_THREAD"
+    },
+    {
+      "name": "interpreter/foreign-thread operation rejected before handler",
+      "passed": true,
+      "detail": "foreign thread did not enter a handler."
+    },
+    {
+      "name": "interpreter/foreign-thread rejection preserves A token",
+      "passed": true,
+      "detail": "A\u0027s pending completion remains unchanged."
+    },
+    {
+      "name": "interpreter/B suspends without scratch lease",
+      "passed": true,
+      "detail": "B retains promoted State and Continuation roots only."
+    },
+    {
+      "name": "interpreter/wrong-mailbox token code",
+      "passed": true,
+      "detail": "expected MAILBOX_WRONG_OWNER, observed MAILBOX_WRONG_OWNER"
+    },
+    {
+      "name": "interpreter/wrong-mailbox token before handler",
+      "passed": true,
+      "detail": "invalid protocol request did not invoke a handler"
+    },
+    {
+      "name": "interpreter/wrong-mailbox rejection preserves B owner and token",
+      "passed": true,
+      "detail": "B\u0027s state and own token remain unchanged."
+    },
+    {
+      "name": "interpreter/duplicate completion code",
+      "passed": true,
+      "detail": "expected MAILBOX_DUPLICATE_TOKEN, observed MAILBOX_DUPLICATE_TOKEN"
+    },
+    {
+      "name": "interpreter/duplicate completion before handler",
+      "passed": true,
+      "detail": "invalid protocol request did not invoke a handler"
+    },
+    {
+      "name": "interpreter/duplicate completion does not change invocation count",
+      "passed": true,
+      "detail": "Duplicate delivery was rejected before handler execution."
+    },
+    {
+      "name": "interpreter/A remains opaque through scratch reuse",
+      "passed": true,
+      "detail": "No retained graph was decoded between mailbox calls."
+    },
+    {
+      "name": "interpreter/failed handler reports divide-by-zero",
+      "passed": true,
+      "detail": "observed RUNTIME_DIVIDE_BY_ZERO"
+    },
+    {
+      "name": "interpreter/failed handler preserves old owner and completion token",
+      "passed": true,
+      "detail": "A can retry the same token because neither owner nor token was published on failure."
+    },
+    {
+      "name": "interpreter/failed handler leaves no scratch lease",
+      "passed": true,
+      "detail": "The failed call returned its scratch lease."
+    },
+    {
+      "name": "interpreter/independent overlap results",
+      "passed": true,
+      "detail": "expected A=17 and B=103, observed A=17 and B=103"
+    },
+    {
+      "name": "interpreter/decoding starts after the overlap sequence",
+      "passed": true,
+      "detail": "Only final observations after A.resume decoded values."
+    },
+    {
+      "name": "interpreter/stale completion code",
+      "passed": true,
+      "detail": "expected MAILBOX_STALE_TOKEN, observed MAILBOX_STALE_TOKEN"
+    },
+    {
+      "name": "interpreter/stale completion before handler",
+      "passed": true,
+      "detail": "invalid protocol request did not invoke a handler"
+    },
+    {
+      "name": "interpreter/independent truncating result",
+      "passed": true,
+      "detail": "expected A=19 after 5/2 truncates to 2, observed 19"
+    },
+    {
+      "name": "interpreter/scratch leases balance",
+      "passed": true,
+      "detail": "acquired=0; returned=0; outstanding=0"
+    },
+    {
+      "name": "interpreter/cleanup releases every successful retained owner",
+      "passed": true,
+      "detail": "created=8; disposed=8"
+    },
+    {
+      "name": "interpreter/double dispose is idempotent",
+      "passed": true,
+      "detail": "A second host disposal did not dispose any owner twice."
+    },
+    {
+      "name": "interpreter/disposed host rejects before handler",
+      "passed": true,
+      "detail": "Cleanup prevents subsequent handler invocation."
+    },
+    {
+      "name": "native/init payload formula",
+      "passed": true,
+      "detail": "State stores one Int slot (8 bytes) in one node."
+    },
+    {
+      "name": "native/second init payload formula",
+      "passed": true,
+      "detail": "Each initialized mailbox owns a separate one-node State graph."
+    },
+    {
+      "name": "native/A retained capacity",
+      "passed": true,
+      "detail": "expected 16 bytes/2 nodes, observed 16/2"
+    },
+    {
+      "name": "native/A suspends without scratch lease",
+      "passed": true,
+      "detail": "A retains promoted State and Continuation roots only."
+    },
+    {
+      "name": "native/A initialization owner is replaced only after successful begin",
+      "passed": true,
+      "detail": "Begin produced a new retained owner."
+    },
+    {
+      "name": "native/busy admission code",
+      "passed": true,
+      "detail": "expected MAILBOX_BUSY, observed MAILBOX_BUSY"
+    },
+    {
+      "name": "native/busy admission before handler",
+      "passed": true,
+      "detail": "invalid protocol request did not invoke a handler"
+    },
+    {
+      "name": "native/busy admission leaves owner and token unchanged",
+      "passed": true,
+      "detail": "A\u0027s suspended retained owner and completion token were preserved."
+    },
+    {
+      "name": "native/foreign-thread operation rejected",
+      "passed": true,
+      "detail": "observed MAILBOX_FOREIGN_THREAD"
+    },
+    {
+      "name": "native/foreign-thread operation rejected before handler",
+      "passed": true,
+      "detail": "foreign thread did not enter a handler."
+    },
+    {
+      "name": "native/foreign-thread rejection preserves A token",
+      "passed": true,
+      "detail": "A\u0027s pending completion remains unchanged."
+    },
+    {
+      "name": "native/B retained capacity",
+      "passed": true,
+      "detail": "expected 16 bytes/2 nodes, observed 16/2"
+    },
+    {
+      "name": "native/B suspends without scratch lease",
+      "passed": true,
+      "detail": "B retains promoted State and Continuation roots only."
+    },
+    {
+      "name": "native/wrong-mailbox token code",
+      "passed": true,
+      "detail": "expected MAILBOX_WRONG_OWNER, observed MAILBOX_WRONG_OWNER"
+    },
+    {
+      "name": "native/wrong-mailbox token before handler",
+      "passed": true,
+      "detail": "invalid protocol request did not invoke a handler"
+    },
+    {
+      "name": "native/wrong-mailbox rejection preserves B owner and token",
+      "passed": true,
+      "detail": "B\u0027s state and own token remain unchanged."
+    },
+    {
+      "name": "native/B retained capacity",
+      "passed": true,
+      "detail": "expected 8 bytes/1 nodes, observed 8/1"
+    },
+    {
+      "name": "native/duplicate completion code",
+      "passed": true,
+      "detail": "expected MAILBOX_DUPLICATE_TOKEN, observed MAILBOX_DUPLICATE_TOKEN"
+    },
+    {
+      "name": "native/duplicate completion before handler",
+      "passed": true,
+      "detail": "invalid protocol request did not invoke a handler"
+    },
+    {
+      "name": "native/duplicate completion does not change invocation count",
+      "passed": true,
+      "detail": "Duplicate delivery was rejected before handler execution."
+    },
+    {
+      "name": "native/A remains opaque through scratch reuse",
+      "passed": true,
+      "detail": "No retained graph was decoded between mailbox calls."
+    },
+    {
+      "name": "native/failed handler reports divide-by-zero",
+      "passed": true,
+      "detail": "observed RUNTIME_DIVIDE_BY_ZERO"
+    },
+    {
+      "name": "native/failed handler preserves old owner and completion token",
+      "passed": true,
+      "detail": "A can retry the same token because neither owner nor token was published on failure."
+    },
+    {
+      "name": "native/failed handler leaves no scratch lease",
+      "passed": true,
+      "detail": "The failed call returned its scratch lease."
+    },
+    {
+      "name": "native/A retained capacity",
+      "passed": true,
+      "detail": "expected 8 bytes/1 nodes, observed 8/1"
+    },
+    {
+      "name": "native/independent overlap results",
+      "passed": true,
+      "detail": "expected A=17 and B=103, observed A=17 and B=103"
+    },
+    {
+      "name": "native/decoding starts after the overlap sequence",
+      "passed": true,
+      "detail": "Only final observations after A.resume decoded values."
+    },
+    {
+      "name": "native/A retained capacity",
+      "passed": true,
+      "detail": "expected 16 bytes/2 nodes, observed 16/2"
+    },
+    {
+      "name": "native/stale completion code",
+      "passed": true,
+      "detail": "expected MAILBOX_STALE_TOKEN, observed MAILBOX_STALE_TOKEN"
+    },
+    {
+      "name": "native/stale completion before handler",
+      "passed": true,
+      "detail": "invalid protocol request did not invoke a handler"
+    },
+    {
+      "name": "native/retained capacity failure totals",
+      "passed": true,
+      "detail": "observed NATIVE_RETAINED_CAPACITY: required 8/1, available 7/2"
+    },
+    {
+      "name": "native/capacity failure preserves old owner and completion token",
+      "passed": true,
+      "detail": "No new result or token was published after retained promotion failed."
+    },
+    {
+      "name": "native/capacity failure returns scratch lease",
+      "passed": true,
+      "detail": "The failed promotion returned the shared scratch lease."
+    },
+    {
+      "name": "native/A retained capacity",
+      "passed": true,
+      "detail": "expected 8 bytes/1 nodes, observed 8/1"
+    },
+    {
+      "name": "native/independent truncating result",
+      "passed": true,
+      "detail": "expected A=19 after 5/2 truncates to 2, observed 19"
+    },
+    {
+      "name": "native/exact retained graph maxima",
+      "passed": true,
+      "detail": "expected max 16 bytes/2 nodes, observed 16/2"
+    },
+    {
+      "name": "native/scratch leases balance",
+      "passed": true,
+      "detail": "acquired=10; returned=10; outstanding=0"
+    },
+    {
+      "name": "native/one shared scratch arena owner",
+      "passed": true,
+      "detail": "observed 1 NativeScratchArena owner(s)"
+    },
+    {
+      "name": "native/scratch arena capacity follows independent formula",
+      "passed": true,
+      "detail": "expected 24 bytes/3 nodes, observed 24/3"
+    },
+    {
+      "name": "native/scratch was poisoned between mailboxes",
+      "passed": true,
+      "detail": "observed 1 poison pass(es)"
+    },
+    {
+      "name": "native/suspended calls carry no lease",
+      "passed": true,
+      "detail": "Every Begin returned at zero outstanding leases."
+    },
+    {
+      "name": "native/cleanup releases every successful retained owner",
+      "passed": true,
+      "detail": "created=8; disposed=8"
+    },
+    {
+      "name": "native/double dispose is idempotent",
+      "passed": true,
+      "detail": "A second host disposal did not dispose any owner twice."
+    },
+    {
+      "name": "native/disposed host rejects before handler",
+      "passed": true,
+      "detail": "Cleanup prevents subsequent handler invocation."
+    },
+    {
+      "name": "native/init payload formula",
+      "passed": true,
+      "detail": "State stores one Int slot (8 bytes) in one node."
+    },
+    {
+      "name": "native/second init payload formula",
+      "passed": true,
+      "detail": "Each initialized mailbox owns a separate one-node State graph."
+    },
+    {
+      "name": "native/A retained capacity",
+      "passed": true,
+      "detail": "expected 16 bytes/2 nodes, observed 16/2"
+    },
+    {
+      "name": "native/A suspends without scratch lease",
+      "passed": true,
+      "detail": "A retains promoted State and Continuation roots only."
+    },
+    {
+      "name": "native/A initialization owner is replaced only after successful begin",
+      "passed": true,
+      "detail": "Begin produced a new retained owner."
+    },
+    {
+      "name": "native/busy admission code",
+      "passed": true,
+      "detail": "expected MAILBOX_BUSY, observed MAILBOX_BUSY"
+    },
+    {
+      "name": "native/busy admission before handler",
+      "passed": true,
+      "detail": "invalid protocol request did not invoke a handler"
+    },
+    {
+      "name": "native/busy admission leaves owner and token unchanged",
+      "passed": true,
+      "detail": "A\u0027s suspended retained owner and completion token were preserved."
+    },
+    {
+      "name": "native/foreign-thread operation rejected",
+      "passed": true,
+      "detail": "observed MAILBOX_FOREIGN_THREAD"
+    },
+    {
+      "name": "native/foreign-thread operation rejected before handler",
+      "passed": true,
+      "detail": "foreign thread did not enter a handler."
+    },
+    {
+      "name": "native/foreign-thread rejection preserves A token",
+      "passed": true,
+      "detail": "A\u0027s pending completion remains unchanged."
+    },
+    {
+      "name": "native/B retained capacity",
+      "passed": true,
+      "detail": "expected 16 bytes/2 nodes, observed 16/2"
+    },
+    {
+      "name": "native/B suspends without scratch lease",
+      "passed": true,
+      "detail": "B retains promoted State and Continuation roots only."
+    },
+    {
+      "name": "native/wrong-mailbox token code",
+      "passed": true,
+      "detail": "expected MAILBOX_WRONG_OWNER, observed MAILBOX_WRONG_OWNER"
+    },
+    {
+      "name": "native/wrong-mailbox token before handler",
+      "passed": true,
+      "detail": "invalid protocol request did not invoke a handler"
+    },
+    {
+      "name": "native/wrong-mailbox rejection preserves B owner and token",
+      "passed": true,
+      "detail": "B\u0027s state and own token remain unchanged."
+    },
+    {
+      "name": "native/B retained capacity",
+      "passed": true,
+      "detail": "expected 8 bytes/1 nodes, observed 8/1"
+    },
+    {
+      "name": "native/duplicate completion code",
+      "passed": true,
+      "detail": "expected MAILBOX_DUPLICATE_TOKEN, observed MAILBOX_DUPLICATE_TOKEN"
+    },
+    {
+      "name": "native/duplicate completion before handler",
+      "passed": true,
+      "detail": "invalid protocol request did not invoke a handler"
+    },
+    {
+      "name": "native/duplicate completion does not change invocation count",
+      "passed": true,
+      "detail": "Duplicate delivery was rejected before handler execution."
+    },
+    {
+      "name": "native/A remains opaque through scratch reuse",
+      "passed": true,
+      "detail": "No retained graph was decoded between mailbox calls."
+    },
+    {
+      "name": "native/failed handler reports divide-by-zero",
+      "passed": true,
+      "detail": "observed RUNTIME_DIVIDE_BY_ZERO"
+    },
+    {
+      "name": "native/failed handler preserves old owner and completion token",
+      "passed": true,
+      "detail": "A can retry the same token because neither owner nor token was published on failure."
+    },
+    {
+      "name": "native/failed handler leaves no scratch lease",
+      "passed": true,
+      "detail": "The failed call returned its scratch lease."
+    },
+    {
+      "name": "native/A retained capacity",
+      "passed": true,
+      "detail": "expected 8 bytes/1 nodes, observed 8/1"
+    },
+    {
+      "name": "native/independent overlap results",
+      "passed": true,
+      "detail": "expected A=17 and B=103, observed A=17 and B=103"
+    },
+    {
+      "name": "native/decoding starts after the overlap sequence",
+      "passed": true,
+      "detail": "Only final observations after A.resume decoded values."
+    },
+    {
+      "name": "native/A retained capacity",
+      "passed": true,
+      "detail": "expected 16 bytes/2 nodes, observed 16/2"
+    },
+    {
+      "name": "native/stale completion code",
+      "passed": true,
+      "detail": "expected MAILBOX_STALE_TOKEN, observed MAILBOX_STALE_TOKEN"
+    },
+    {
+      "name": "native/stale completion before handler",
+      "passed": true,
+      "detail": "invalid protocol request did not invoke a handler"
+    },
+    {
+      "name": "native/retained capacity failure totals",
+      "passed": true,
+      "detail": "observed NATIVE_RETAINED_CAPACITY: required 8/1, available 7/2"
+    },
+    {
+      "name": "native/capacity failure preserves old owner and completion token",
+      "passed": true,
+      "detail": "No new result or token was published after retained promotion failed."
+    },
+    {
+      "name": "native/capacity failure returns scratch lease",
+      "passed": true,
+      "detail": "The failed promotion returned the shared scratch lease."
+    },
+    {
+      "name": "native/A retained capacity",
+      "passed": true,
+      "detail": "expected 8 bytes/1 nodes, observed 8/1"
+    },
+    {
+      "name": "native/independent truncating result",
+      "passed": true,
+      "detail": "expected A=19 after 5/2 truncates to 2, observed 19"
+    },
+    {
+      "name": "native/exact retained graph maxima",
+      "passed": true,
+      "detail": "expected max 16 bytes/2 nodes, observed 16/2"
+    },
+    {
+      "name": "native/scratch leases balance",
+      "passed": true,
+      "detail": "acquired=10; returned=10; outstanding=0"
+    },
+    {
+      "name": "native/one shared scratch arena owner",
+      "passed": true,
+      "detail": "observed 1 NativeScratchArena owner(s)"
+    },
+    {
+      "name": "native/scratch arena capacity follows independent formula",
+      "passed": true,
+      "detail": "expected 24 bytes/3 nodes, observed 24/3"
+    },
+    {
+      "name": "native/scratch was poisoned between mailboxes",
+      "passed": true,
+      "detail": "observed 1 poison pass(es)"
+    },
+    {
+      "name": "native/suspended calls carry no lease",
+      "passed": true,
+      "detail": "Every Begin returned at zero outstanding leases."
+    },
+    {
+      "name": "native/cleanup releases every successful retained owner",
+      "passed": true,
+      "detail": "created=8; disposed=8"
+    },
+    {
+      "name": "native/double dispose is idempotent",
+      "passed": true,
+      "detail": "A second host disposal did not dispose any owner twice."
+    },
+    {
+      "name": "native/disposed host rejects before handler",
+      "passed": true,
+      "detail": "Cleanup prevents subsequent handler invocation."
+    },
+    {
+      "name": "interpreter/Core/interpreter-independent parity",
+      "passed": true,
+      "detail": "Expected A=17, B=103, final A=19, and a retryable divide-by-zero failure."
+    },
+    {
+      "name": "native/O0/interpreter-independent parity",
+      "passed": true,
+      "detail": "Expected A=17, B=103, final A=19, and a retryable divide-by-zero failure."
+    },
+    {
+      "name": "native/O2/interpreter-independent parity",
+      "passed": true,
+      "detail": "Expected A=17, B=103, final A=19, and a retryable divide-by-zero failure."
+    },
+    {
+      "name": "O0/O2 native parity",
+      "passed": true,
+      "detail": "O0 and O2 produce the same independent numeric outcomes."
+    }
+  ],
+  "runs": [
+    {
+      "backend": "interpreter",
+      "optimization": "Core",
+      "aAfterOverlap": 17,
+      "bAfterOverlap": 103,
+      "aFinal": 19,
+      "languageFailureCode": "RUNTIME_DIVIDE_BY_ZERO",
+      "capacityFailureCode": "not-applicable",
+      "capacityRequiredBytes": 0,
+      "capacityRequiredNodes": 0,
+      "capacityAvailableBytes": 0,
+      "retainedMaximumBytes": 0,
+      "retainedMaximumNodes": 0,
+      "scratchArenaOwnersCreated": 0,
+      "scratchArenaByteCapacity": 0,
+      "scratchArenaNodeCapacity": 0,
+      "scratchLeaseAcquisitions": 0,
+      "scratchLeaseReturns": 0,
+      "scratchPoisonPasses": 0,
+      "suspensionLeaseCounts": [
+        0,
+        0,
+        0
+      ],
+      "handlerInvocations": 9,
+      "decodeCalls": 3,
+      "createdOwners": 8,
+      "disposedOwners": 8
+    },
+    {
+      "backend": "native",
+      "optimization": "O0",
+      "aAfterOverlap": 17,
+      "bAfterOverlap": 103,
+      "aFinal": 19,
+      "languageFailureCode": "RUNTIME_DIVIDE_BY_ZERO",
+      "capacityFailureCode": "NATIVE_RETAINED_CAPACITY",
+      "capacityRequiredBytes": 8,
+      "capacityRequiredNodes": 1,
+      "capacityAvailableBytes": 7,
+      "retainedMaximumBytes": 16,
+      "retainedMaximumNodes": 2,
+      "scratchArenaOwnersCreated": 1,
+      "scratchArenaByteCapacity": 24,
+      "scratchArenaNodeCapacity": 3,
+      "scratchLeaseAcquisitions": 10,
+      "scratchLeaseReturns": 10,
+      "scratchPoisonPasses": 1,
+      "suspensionLeaseCounts": [
+        0,
+        0,
+        0
+      ],
+      "handlerInvocations": 10,
+      "decodeCalls": 3,
+      "createdOwners": 8,
+      "disposedOwners": 8
+    },
+    {
+      "backend": "native",
+      "optimization": "O2",
+      "aAfterOverlap": 17,
+      "bAfterOverlap": 103,
+      "aFinal": 19,
+      "languageFailureCode": "RUNTIME_DIVIDE_BY_ZERO",
+      "capacityFailureCode": "NATIVE_RETAINED_CAPACITY",
+      "capacityRequiredBytes": 8,
+      "capacityRequiredNodes": 1,
+      "capacityAvailableBytes": 7,
+      "retainedMaximumBytes": 16,
+      "retainedMaximumNodes": 2,
+      "scratchArenaOwnersCreated": 1,
+      "scratchArenaByteCapacity": 24,
+      "scratchArenaNodeCapacity": 3,
+      "scratchLeaseAcquisitions": 10,
+      "scratchLeaseReturns": 10,
+      "scratchPoisonPasses": 1,
+      "suspensionLeaseCounts": [
+        0,
+        0,
+        0
+      ],
+      "handlerInvocations": 10,
+      "decodeCalls": 3,
+      "createdOwners": 8,
+      "disposedOwners": 8
+    }
+  ],
+  "failure": ""
+}

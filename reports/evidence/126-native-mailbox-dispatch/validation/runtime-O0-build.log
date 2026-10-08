@@ -1,0 +1,8 @@
+src/AgentLang.Llvm/native/mailbox_runtime_test.c:758:41: error: use of undeclared identifier 'AL_RUNTIME_STATUS_RETAINED_CAPACITY'; did you mean 'AL_RUNTIME_RETAINED_CAPACITY'?
+  758 |             call_info.handler_status == AL_RUNTIME_STATUS_RETAINED_CAPACITY &&
+      |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                         AL_RUNTIME_RETAINED_CAPACITY
+src/AgentLang.Llvm/native\arena_runtime.h:30:3: note: 'AL_RUNTIME_RETAINED_CAPACITY' declared here
+   30 |   AL_RUNTIME_RETAINED_CAPACITY = 4
+      |   ^
+1 error generated.

@@ -1,0 +1,9 @@
+# Native module compiler review
+
+`LlvmAot.compileModule` accepts named `VerifiedIrBody` entries and returns file paths, a semantic fingerprint, and the manifest. It validates names and the exact shared backend-authorized `VerifiedIrProgram` object before emission or tool invocation, sorts IDs by ordinal entry name, and emits every entry before clang/lld starts.
+
+Each verified entry is compiled to its own COFF object with deterministic indexed entry exports. The linker combines those objects with one arena runtime object and one generated immutable ABI v1 metadata object. `agentlang_module_descriptor` exposes entry names, IDs, execution pointers, type IDs, workspace capacities, diagnostic IDs/source spans, and the shared full type table and nominal names. The artifact API does not load the DLL or own native state.
+
+The manifest includes canonical signatures, full type descriptors, complete compiler diagnostic details, and each emitted IR hash. The SHA-256 fingerprint covers this semantic data and excludes optimization and output paths. Optimization, generated source hashes, and the final DLL SHA-256 are recorded separately. The ABI diagnostic table itself remains the compact shared header contract (code, word, file, span); detailed message/expected/actual values are retained in the manifest.
+
+Validation passed: the focused module mode reported 21 assertions, and fresh `scripts/Verify-NativeConformance.ps1` reported 476 assertions. The independent module ABI fixture matched the descriptor layout, O0/O2 builds at different paths had the same semantic fingerprint, both zero-input and typed-input entries executed, UTF-8 metadata round-tripped, and `llvm-readobj --coff-imports` reported no import records. Exact commands, artifact paths, hashes, and resolved early failures are in [compiler-validation.json](compiler-validation.json).

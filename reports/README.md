@@ -8,6 +8,12 @@ Run `./scripts/Validate.ps1` from PowerShell to build the solution and run every
 
 Validation runs locally. The GitHub workflow is manual-only; milestone publication does not trigger a CI run. Human feedback and milestone conclusions belong in numbered Markdown reports here. Credentials must never appear in reports. Live provider traces can contain project information and should remain in the experiment's local output directory unless deliberately reviewed for publication.
 
+Latest native checkpoint: [126 — Standalone native mailbox dispatch](126-native-mailbox-dispatch.md)
+moves bounded turns and arena ownership out of the managed host. The native
+integration passes 353 checks, native conformance 476 assertions, and the full
+local Release gate all 37 checks. Real async I/O, throughput, JIT and general
+release certification remain pending; this is not new agent-efficacy evidence.
+
 Latest comparison: [125 — Matched pair repair](125-matched-pair-repair.md) records
 six fresh agents, each passing 12/12 frozen independent cases. Retained Flow and
 F# actors reuse their existing helper; no reliability advantage is established.

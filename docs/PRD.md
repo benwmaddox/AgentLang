@@ -525,6 +525,35 @@ mailbox allocation model. Compare native footprint, peak/reserved memory and
 startup on equivalent workloads separately from agent-edit reliability.
 
 
+Memory intent clarified 2026-10-08: the preferred model is an **owning value-based
+program-data stack** for most working data, not a stack of references into a
+separately lived object graph. Each stack value owns its complete nested payload.
+Popping/destroying it reclaims that owned payload without leaving orphaned storage
+or a surviving alias to reclaimed bytes. Duplication produces independent values;
+returning or retaining data moves ownership or performs a bounded value copy
+before the source is removed. Subsequent use after a move must reject. Named
+locals must obey the same ownership semantics rather than hide extra roots.
+
+The stack may be arena-backed. Explicit longer-lived mailbox/static state remains
+separate and owns its stored values. Do not substitute a tracing collector,
+reference-counted object heap, shared record graph, or whole-turn bump arena for
+this intended lifetime behavior. Compiler copy elision/moves are permitted only
+when they preserve independent value semantics and the specified reclamation
+boundaries. No RPN syntax or particular physical layout is mandated. Evaluate
+nested records/lists/text, return placement, branch joins, copying/compaction and
+capacity failures through the authoritative semantic IR before general rollout.
+
+The current native backend uses handles and shared record DAGs in invocation-wide
+arenas. It is validated groundwork, not implementation of this owning-stack model.
+The alternative region/whole-turn designs remain comparison controls, not silent
+replacements for the clarified intent. See [owning value-stack semantics](STACK-ONLY-RESEARCH.md#preferred-semantics-owning-values).
+
+Compare keeping the same mailbox's actual stack/scratch associated across async
+work until safe completion against returning it to a bounded pool at suspension
+and reacquiring it on resume. Keep behavior, scheduling, memory ceiling and tail
+latency criteria matched; measure throughput, live/reserved/process memory,
+copying and allocation churn. See [the explicit async comparison](ASYNC-ARENA-EVALUATION.md#explicit-comparison-keep-or-return-the-mailbox-stack).
+
 Optional mailbox memory candidate: declare a bounded typed retained-data layout
 outside processing arenas, and allow arena-backed program data stack allocation
 for transient values without an independent language object heap. Research
