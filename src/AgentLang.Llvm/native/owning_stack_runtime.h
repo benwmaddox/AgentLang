@@ -131,7 +131,11 @@ enum {
   AL_OWNING_EVENT_SCOPE_CLEAR = 13,
   AL_OWNING_EVENT_LOCAL_COMPACT = 14,
   AL_OWNING_EVENT_STRING_CONCAT_LEFT = 15,
-  AL_OWNING_EVENT_STRING_CONCAT_RIGHT = 16
+  AL_OWNING_EVENT_STRING_CONCAT_RIGHT = 16,
+  /* Metadata transfer only: the described payload stays in place. */
+  AL_OWNING_EVENT_DESCRIPTOR_TRANSFER = 17,
+  /* The compiler proves lifetime safety; the runtime executes the rewind. */
+  AL_OWNING_EVENT_ARENA_REWIND = 18
 };
 
 void al_owning_begin(al_owning_stack_context *ctx);
@@ -201,6 +205,10 @@ void al_owning_duplicate(al_owning_stack_context *ctx,
                          uint32_t destination_offset, uint32_t source_offset,
                          uint32_t extent_bytes, uint32_t payload_bytes,
                          uint32_t type_id);
+void al_owning_copy_range(al_owning_stack_context *ctx,
+                          uint32_t destination_offset, uint32_t source_offset,
+                          uint32_t extent_bytes, uint32_t payload_bytes,
+                          uint32_t type_id, uint32_t event_kind);
 void al_owning_drop(al_owning_stack_context *ctx, uint32_t start_offset,
                     uint32_t extent_bytes, uint32_t payload_bytes,
                     uint32_t type_id);

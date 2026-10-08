@@ -1,0 +1,971 @@
+{
+  "formatVersion": 1,
+  "phase": "final",
+  "scope": "Milestone 130 focused, component, and terminal full-repository-gate evidence.",
+  "focusedRunId": "61fac6dad198462e8ec12a426f8b808c",
+  "focusedVerifier": {
+    "passed": true,
+    "checksPassed": 35,
+    "checksTotal": 35,
+    "sourceInputsStable": true,
+    "nativeExperimentPassed": true,
+    "nativeBooleanAssertionsPassed": 626,
+    "nativeAssertionFailures": 0
+  },
+  "componentCounts": {
+    "arenaLifetimeAssertions": 33,
+    "irAssertions": 193,
+    "cStorageCases": 43,
+    "cStorageChecks": 507,
+    "legacyLlvmAssertions": 476,
+    "negativeControl": "Expected failure: source-preservation assertion detects move-instead-of-copy mutant."
+  },
+  "fullGate": {
+    "passed": true,
+    "checksPassed": 37,
+    "checksTotal": 37,
+    "startedAt": "10/08/2026 13:16:12",
+    "completedAt": "10/08/2026 13:49:05",
+    "validationJson": "full-gate/validation.json",
+    "validationLog": "full-gate/validation.log",
+    "sidecarJsonCount": 11,
+    "sourceRelation": "The full gate preceded a formatting-only trailing-line-ending cleanup documented in review-notes/post-gate-formatting.json; the focused source snapshots bind the final focused run."
+  },
+  "uncompressedPayloadSha256": "d57e493a0c1cc4e4566b8b20ab5a4242d06540e9d389ed9e980062f3e2a8ec29",
+  "uncompressedPayloadHashAlgorithm": "SHA-256 of sorted UTF-8 relative path, NUL, raw file bytes, NUL; manifest excluded.",
+  "files": [
+    {
+      "source": ".agentlang/owning-stack-003/Archive-StableArenaEvidence.ps1",
+      "archive": "archive-tooling/Archive-StableArenaEvidence.ps1",
+      "category": "archive-tooling",
+      "sha256": "b1d08ca594400331d62d0ef35c470c8ce6b5af76cdde3b028a9da32283481990"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/storage-tests/O0.json",
+      "archive": "component-tests/c-storage/O0.json",
+      "category": "c-507",
+      "sha256": "3be1f5abe2621d7ba899cc978caef1b0751d6d13b0722372ccc4b7ec4daa91c6"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/storage-tests/O2.json",
+      "archive": "component-tests/c-storage/O2.json",
+      "category": "c-507",
+      "sha256": "3be1f5abe2621d7ba899cc978caef1b0751d6d13b0722372ccc4b7ec4daa91c6"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/storage-tests/ubsan-trap.json",
+      "archive": "component-tests/c-storage/ubsan-trap.json",
+      "category": "c-507",
+      "sha256": "3be1f5abe2621d7ba899cc978caef1b0751d6d13b0722372ccc4b7ec4daa91c6"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/storage-tests/validation.json",
+      "archive": "component-tests/c-storage/validation.json",
+      "category": "c-507",
+      "sha256": "6071606c03c1c4a5f3cf532e25b3efbd47502e0145c739492ce3b889e0d47f39"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/ir-validation.json",
+      "archive": "component-tests/ir-validation.json",
+      "category": "ir-193",
+      "sha256": "5690800c062b9183a83f5ec417672976192bbd15b4a837cbdf77893b621266eb"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/legacy-regression/build.log",
+      "archive": "component-tests/legacy-llvm-476/build.log",
+      "category": "legacy-llvm-476",
+      "sha256": "326d03201385ff7859bdde44549ceca8cc24c53e29d3a94a23588969762c38c7"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/legacy-regression/tests.log",
+      "archive": "component-tests/legacy-llvm-476/tests.log",
+      "category": "legacy-llvm-476",
+      "sha256": "c362977d8969f1bde185137bf17d6cda7f0805c6ed3d23911a8c9a700abbfcbf"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/legacy-regression/validation.json",
+      "archive": "component-tests/legacy-llvm-476/validation.json",
+      "category": "legacy-llvm-476",
+      "sha256": "00ca0d709d0b64783cfaa6bc7e0d986f3d24a6f4cce156b8781a272586fe7225"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/fresh-dotnet-build.stderr.txt",
+      "archive": "focused/build-log/fresh-dotnet-build.stderr.txt",
+      "category": "build-log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/fresh-dotnet-build.stdout.txt",
+      "archive": "focused/build-log/fresh-dotnet-build.stdout.txt",
+      "category": "build-log",
+      "sha256": "9d6a0ee2507b0f256d7f64872d608e03f280527304d4cd2dbba8fa9f34733473"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/fresh-owning-stack-c-build-O0.stderr.txt",
+      "archive": "focused/c-build-log/fresh-owning-stack-c-build-O0.stderr.txt",
+      "category": "c-build-log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/fresh-owning-stack-c-build-O0.stdout.txt",
+      "archive": "focused/c-build-log/fresh-owning-stack-c-build-O0.stdout.txt",
+      "category": "c-build-log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/fresh-owning-stack-c-build-O2.stderr.txt",
+      "archive": "focused/c-build-log/fresh-owning-stack-c-build-O2.stderr.txt",
+      "category": "c-build-log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/fresh-owning-stack-c-build-O2.stdout.txt",
+      "archive": "focused/c-build-log/fresh-owning-stack-c-build-O2.stdout.txt",
+      "category": "c-build-log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/owning-stack-native-storage-tests-O0.stderr.txt",
+      "archive": "focused/c-test-log/owning-stack-native-storage-tests-O0.stderr.txt",
+      "category": "c-test-log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/owning-stack-native-storage-tests-O0.stdout.txt",
+      "archive": "focused/c-test-log/owning-stack-native-storage-tests-O0.stdout.txt",
+      "category": "c-test-log",
+      "sha256": "3be1f5abe2621d7ba899cc978caef1b0751d6d13b0722372ccc4b7ec4daa91c6"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/owning-stack-native-storage-tests-O2.stderr.txt",
+      "archive": "focused/c-test-log/owning-stack-native-storage-tests-O2.stderr.txt",
+      "category": "c-test-log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/owning-stack-native-storage-tests-O2.stdout.txt",
+      "archive": "focused/c-test-log/owning-stack-native-storage-tests-O2.stdout.txt",
+      "category": "c-test-log",
+      "sha256": "3be1f5abe2621d7ba899cc978caef1b0751d6d13b0722372ccc4b7ec4daa91c6"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/same-ir-cross-backend-experiment.stderr.txt",
+      "archive": "focused/experiment-log/same-ir-cross-backend-experiment.stderr.txt",
+      "category": "experiment-log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/same-ir-cross-backend-experiment.stdout.txt",
+      "archive": "focused/experiment-log/same-ir-cross-backend-experiment.stdout.txt",
+      "category": "experiment-log",
+      "sha256": "65de60a3b122986c638edd81988c0693e2b083ce04041eb46765bfd93852aafc"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/verification-evidence.json",
+      "archive": "focused/focused-verifier/verification-evidence.json",
+      "category": "focused-verifier",
+      "sha256": "c9b148c06cd6dbb5f19aad4e99fb0971d0b843b593ec8d45160b7404b645134d"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/fresh-arena-lifetime-tests-build.stderr.txt",
+      "archive": "focused/lifetime-build-log/fresh-arena-lifetime-tests-build.stderr.txt",
+      "category": "lifetime-build-log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/fresh-arena-lifetime-tests-build.stdout.txt",
+      "archive": "focused/lifetime-build-log/fresh-arena-lifetime-tests-build.stdout.txt",
+      "category": "lifetime-build-log",
+      "sha256": "1bfe91e848500c9e11ebf669448b0dab0106c8240c8e1e979d3ffc3cf393ee5c"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/compiler-proved-arena-lifetime-tests.stderr.txt",
+      "archive": "focused/lifetime-test-log/compiler-proved-arena-lifetime-tests.stderr.txt",
+      "category": "lifetime-test-log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/compiler-proved-arena-lifetime-tests.stdout.txt",
+      "archive": "focused/lifetime-test-log/compiler-proved-arena-lifetime-tests.stdout.txt",
+      "category": "lifetime-test-log",
+      "sha256": "1e2a370ffcd1a8d2c22ffd89b356be5fcca9d11f2cc4f8e33dac04094d71e33b"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/native-value-stack-evidence.json",
+      "archive": "focused/native-experiment/native-value-stack-evidence.json",
+      "category": "native-experiment",
+      "sha256": "1c24a94f71e72a4b72dfbaa2f072dd3b52bdc395d032b6d50bb57fa72a11b4ea"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/owning-stack-ubsan-normal-build.stderr.txt",
+      "archive": "focused/ubsan-link-log/owning-stack-ubsan-normal-build.stderr.txt",
+      "category": "ubsan-link-log",
+      "sha256": "e959aee710329d206dad24fa22cb2f6ebcedade15a679c593f68e5e96af822e7"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/owning-stack-ubsan-normal-build.stdout.txt",
+      "archive": "focused/ubsan-link-log/owning-stack-ubsan-normal-build.stdout.txt",
+      "category": "ubsan-link-log",
+      "sha256": "2ffc6d9a1e7337391e033507409c37da71f37b88fce452fe8607adae6a744589"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/owning-stack-ubsan-trap-build.stderr.txt",
+      "archive": "focused/ubsan-trap-log/owning-stack-ubsan-trap-build.stderr.txt",
+      "category": "ubsan-trap-log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/owning-stack-ubsan-trap-build.stdout.txt",
+      "archive": "focused/ubsan-trap-log/owning-stack-ubsan-trap-build.stdout.txt",
+      "category": "ubsan-trap-log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/owning-stack-ubsan-trap-run.stderr.txt",
+      "archive": "focused/ubsan-trap-log/owning-stack-ubsan-trap-run.stderr.txt",
+      "category": "ubsan-trap-log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/verification-61fac6dad198462e8ec12a426f8b808c/owning-stack-ubsan-trap-run.stdout.txt",
+      "archive": "focused/ubsan-trap-log/owning-stack-ubsan-trap-run.stdout.txt",
+      "category": "ubsan-trap-log",
+      "sha256": "3be1f5abe2621d7ba899cc978caef1b0751d6d13b0722372ccc4b7ec4daa91c6"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/full-validation/validation.business-policy-preflight.json",
+      "archive": "full-gate/validation.business-policy-preflight.json.gz",
+      "category": "full-gate-sidecar",
+      "sha256": "be1932b1a30a12f154dbb8b5931ead614d1733be6a415957dca4f5e409dffaf3",
+      "sourceSha256": "04fb71271d71237b2f46c2ff7dba38d25b9e97eface6ad1f9b7d39bfcbb90e4e",
+      "compression": "gzip"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/full-validation/validation.early-agent-negative.json",
+      "archive": "full-gate/validation.early-agent-negative.json.gz",
+      "category": "full-gate-sidecar",
+      "sha256": "d1e80568d1cd0e7c5e43a93ecc0e38553fd5eef62f406a6b272a361ed101087f",
+      "sourceSha256": "d3d2b5da5998a067ce5a2188a27a3a8a602b271478cc1ba1ba2e7e5be830be01",
+      "compression": "gzip"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/full-validation/validation.flow-matched-fixtures.json",
+      "archive": "full-gate/validation.flow-matched-fixtures.json.gz",
+      "category": "full-gate-sidecar",
+      "sha256": "90cb09b2ccbc8c323f1cfcdfbc518c9f5f35a5edd969c85a6b738287cadfe1a7",
+      "sourceSha256": "28236cd10baabd33ba573a7dbbb7d4d1dc27294bea7bfe3c90381795607dc749",
+      "compression": "gzip"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/full-validation/validation.json",
+      "archive": "full-gate/validation.json",
+      "category": "full-gate",
+      "sha256": "9ea8dc577c0dffba356ada5577e036580f47b913a76f38e585c66050a2ed62b4"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/full-validation/validation.log",
+      "archive": "full-gate/validation.log",
+      "category": "full-gate-log",
+      "sha256": "4ded51c907f86eb526d6977afa99d346fe1eca00599209ddb9d0957d02c5fe09"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/full-validation/validation.matched-fixtures.json",
+      "archive": "full-gate/validation.matched-fixtures.json.gz",
+      "category": "full-gate-sidecar",
+      "sha256": "3d5f48205a7448ae32a45af746fec33a70365798785f8daa9df2f1e61ad29c4e",
+      "sourceSha256": "09deabe18f0055087e9fec0cde1dc49005ee181d8403f972d52d71cafbdd6177",
+      "compression": "gzip"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/full-validation/validation.matched-snapshots.json",
+      "archive": "full-gate/validation.matched-snapshots.json.gz",
+      "category": "full-gate-sidecar",
+      "sha256": "2994379a86ccbf2e5dac3b942a66e89d72a8725ddd1bd5f40b675be832e21e8a",
+      "sourceSha256": "c575e1e955d46aab7a4a2459ca18c4df3aabaf27ac57b5ea6ba36b7fa81d27fa",
+      "compression": "gzip"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/full-validation/validation.parser-limits.json",
+      "archive": "full-gate/validation.parser-limits.json.gz",
+      "category": "full-gate-sidecar",
+      "sha256": "298e1482909bbb3dd7e322b6bb320c824b412704120105eb54fb64fc0cd26054",
+      "sourceSha256": "780f479f995a3416367329507cc44453d5144ca933919a6ed7399b497f04d863",
+      "compression": "gzip"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/full-validation/validation.projection.json",
+      "archive": "full-gate/validation.projection.json.gz",
+      "category": "full-gate-sidecar",
+      "sha256": "3b56909430c49635bff89e30b61a284ad65bb710e498c9d7ca5c238cf48f98d0",
+      "sourceSha256": "2e8903fea9f008f34e6e4c254f729496eda79b47ae8bfa5079af1236ae6a694e",
+      "compression": "gzip"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/full-validation/validation.renewal-acceptance-gate.json",
+      "archive": "full-gate/validation.renewal-acceptance-gate.json.gz",
+      "category": "full-gate-sidecar",
+      "sha256": "93636f5d4d41d71b12351d7ae0ac09033b21efdc0a4e90ffe852a974e7df4d63",
+      "sourceSha256": "5ded6579ce5a8093516611ccf6342f5a53afa671d402aa0251674eacbb2e97ff",
+      "compression": "gzip"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/full-validation/validation.renewal-replay.json",
+      "archive": "full-gate/validation.renewal-replay.json.gz",
+      "category": "full-gate-sidecar",
+      "sha256": "7d034c826ea05001f0bc31af2a736e3aa2c36104e3e4d040a46c797ca7e56c50",
+      "sourceSha256": "a8ffd26348018c7ec2c3da01e8745a5b1908f27bb1f2a403894ba3ec599598a4",
+      "compression": "gzip"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/full-validation/validation.subagent-host-v2.json",
+      "archive": "full-gate/validation.subagent-host-v2.json.gz",
+      "category": "full-gate-sidecar",
+      "sha256": "ae72d33bad4d835ffdb77119ccf1b02b563bc1ed3182c055138777001f7b1f20",
+      "sourceSha256": "e923936f8dee502dad4dcd5211c1d697fbbe0b4ebbef53a98d6cf92ebc879421",
+      "compression": "gzip"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/full-validation/validation.subagent-host.json",
+      "archive": "full-gate/validation.subagent-host.json.gz",
+      "category": "full-gate-sidecar",
+      "sha256": "de9ede828c689ace4901d324f6a2f63bd4e17cf64b76f4c3874c5615402f6c00",
+      "sourceSha256": "da7ca227f98bc7b832097ed794b3d0a10d1fe4a255525bb44f4bf3e8bcd6adaf",
+      "compression": "gzip"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/copy-negative-control/evidence.json",
+      "archive": "negative-control/source-preservation/evidence.json",
+      "category": "negative-control",
+      "sha256": "64e4fb495e386cbaf92c7b4d3717d2e44b5d51e50c031eb8011a9acd057b6f42"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/copy-negative-control/move-instead-of-copy.c",
+      "archive": "negative-control/source-preservation/move-instead-of-copy.c",
+      "category": "negative-control-source",
+      "sha256": "a51298e0725b1cc72693f87efc622a01a044a2ca88cebe4a01468d81352a074f"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/copy-negative-control/result.txt",
+      "archive": "negative-control/source-preservation/result.txt",
+      "category": "negative-control",
+      "sha256": "dfe30bb7d6d1231f1884f38081b9e50faf868deed8ae7b04cd794fba55a48f5a"
+    },
+    {
+      "source": "generated:README.md",
+      "archive": "README.md",
+      "category": "archive-readme",
+      "sha256": "d9c6663a8c5bf1f4baa9417a39200daafc0b8e5eca9781ae294d5d8bf19bbe35"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/acceptance-followup-review.md",
+      "archive": "review-notes/acceptance-followup-review.md",
+      "category": "review",
+      "sha256": "bb650bada03b42f745a17a809f69c98a443619007a625e5c3ac364af74ad1d50"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/acceptance-plan.md",
+      "archive": "review-notes/acceptance-plan.md",
+      "category": "plan",
+      "sha256": "e29b7e5d4f3762df7d7bae9195ecc61b261b2e9e388cbe126f57473b3a33a804"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/acceptance-review.md",
+      "archive": "review-notes/acceptance-review.md",
+      "category": "review",
+      "sha256": "0a7c0301080034269720a93f6a329840754f3ee60b58451ee992a73f36f49293"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/emitter-notes.md",
+      "archive": "review-notes/emitter-notes.md",
+      "category": "review",
+      "sha256": "ada0e7aa48b731b96a1a984811b7c157fd5d4d9cbc68681e8db9f2370fd6ba4d"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/emitter-review.md",
+      "archive": "review-notes/emitter-review.md",
+      "category": "review",
+      "sha256": "a48ba221e752f145920fa8893d231ca11f2eb1d61ac9909426542a213bf345f5"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/implementation-plan.md",
+      "archive": "review-notes/implementation-plan.md",
+      "category": "plan",
+      "sha256": "dcf602afba4027bcc528c3103f765264d42a01733df8c28be485caa214fba1bf"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/lifetime-review.md",
+      "archive": "review-notes/lifetime-review.md",
+      "category": "review",
+      "sha256": "95973a9bf392193c35a37185af258263160979599a6ed761b7b57387738f4af0"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/post-gate-formatting.json",
+      "archive": "review-notes/post-gate-formatting.json",
+      "category": "post-gate-formatting",
+      "sha256": "d8ba9fdd90021de33d39d950678ffcd432277fae874180d1066f573e63fe05bf"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/provenance-notes.md",
+      "archive": "review-notes/provenance-notes.md",
+      "category": "review",
+      "sha256": "dc0511be9d2b166a84bbb0a8f690effb2e23aaf7ebc14dbe785b664c2c5a5d36"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/acceptance-plan.md",
+      "archive": "source-snapshots/.agentlang/owning-stack-003/acceptance-plan.md",
+      "category": "focused-verifier-source",
+      "sha256": "e29b7e5d4f3762df7d7bae9195ecc61b261b2e9e388cbe126f57473b3a33a804"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/implementation-plan.md",
+      "archive": "source-snapshots/.agentlang/owning-stack-003/implementation-plan.md",
+      "category": "focused-verifier-source",
+      "sha256": "dcf602afba4027bcc528c3103f765264d42a01733df8c28be485caa214fba1bf"
+    },
+    {
+      "source": "docs/STACK-ONLY-RESEARCH.md",
+      "archive": "source-snapshots/docs/STACK-ONLY-RESEARCH.md",
+      "category": "focused-verifier-source",
+      "sha256": "ea631c2c42331c6a8d092c965f14ff1358b8af160411622b30300a192720a74d"
+    },
+    {
+      "source": "experiments/AgentLang.NativeValueStack/AgentLang.NativeValueStack.fsproj",
+      "archive": "source-snapshots/experiments/AgentLang.NativeValueStack/AgentLang.NativeValueStack.fsproj",
+      "category": "focused-verifier-source",
+      "sha256": "1a41bd5ae6735f751b06476351ab0e7f9a15aee10d808ce8a94379ddbae1b068"
+    },
+    {
+      "source": "experiments/AgentLang.NativeValueStack/Program.fs",
+      "archive": "source-snapshots/experiments/AgentLang.NativeValueStack/Program.fs",
+      "category": "focused-verifier-source",
+      "sha256": "2d1e6dc216e6b32914dd3df8cc7073237795cc4813bf6f88b2d3640cb96f84a1"
+    },
+    {
+      "source": "experiments/AgentLang.NativeValueStack/value-stack.flow",
+      "archive": "source-snapshots/experiments/AgentLang.NativeValueStack/value-stack.flow",
+      "category": "focused-verifier-source",
+      "sha256": "62eac4e0aa5b9cb5caba5f350788fd5b554715c6b9021e287ef2081951f09c35"
+    },
+    {
+      "source": "scripts/Verify-NativeValueStack.ps1",
+      "archive": "source-snapshots/scripts/Verify-NativeValueStack.ps1",
+      "category": "focused-verifier-source",
+      "sha256": "074de6b832cfb7aca92a3793bf866eee6c62302a0f9237f69387338f9f68d448"
+    },
+    {
+      "source": "src/AgentLang.Core/AgentLang.Core.fsproj",
+      "archive": "source-snapshots/src/AgentLang.Core/AgentLang.Core.fsproj",
+      "category": "focused-verifier-source",
+      "sha256": "4948705084736ac21769ce20741fbf1c442b24ce1c6e6f217610f7ff5c3ce9aa"
+    },
+    {
+      "source": "src/AgentLang.Core/AuthoringHelp.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/AuthoringHelp.fs",
+      "category": "focused-verifier-source",
+      "sha256": "3ff07fa9aebd1e26907fa91a5189b09ddb9e7c41554c27ee333b834d46532316"
+    },
+    {
+      "source": "src/AgentLang.Core/Compiler.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Compiler.fs",
+      "category": "focused-verifier-source",
+      "sha256": "22d5f12ca4f68b199314db04b6f49658516e85765ba989e14c0aca3960929486"
+    },
+    {
+      "source": "src/AgentLang.Core/Core.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Core.fs",
+      "category": "focused-verifier-source",
+      "sha256": "57fe2d9512afa26fc920c06a8b4558bdf965157e27a2bd35ceda64dfabb85428"
+    },
+    {
+      "source": "src/AgentLang.Core/Discovery.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Discovery.fs",
+      "category": "focused-verifier-source",
+      "sha256": "e79746a41666d11acf928c201e054a4f7cccc0c2d04de3c95bd72db406624842"
+    },
+    {
+      "source": "src/AgentLang.Core/FiniteCoverage.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/FiniteCoverage.fs",
+      "category": "focused-verifier-source",
+      "sha256": "cb3f072280035d004bcd573648e6da5b1b396c8ab6d0c2760cbf243793695e3c"
+    },
+    {
+      "source": "src/AgentLang.Core/FlowLint.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/FlowLint.fs",
+      "category": "focused-verifier-source",
+      "sha256": "5ba6a10171f4d67cff6f43d32ddce8b9e7aa33eb3f97d407aee3bcd76bfb5ccf"
+    },
+    {
+      "source": "src/AgentLang.Core/FlowLowering.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/FlowLowering.fs",
+      "category": "focused-verifier-source",
+      "sha256": "1d9c6871408b33b9d0a7eff51ee3f354093409234fc10c1e07f33a1655c1292c"
+    },
+    {
+      "source": "src/AgentLang.Core/FlowParser.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/FlowParser.fs",
+      "category": "focused-verifier-source",
+      "sha256": "6f0461fd29d689607190618880efdfdfaf8378af665ec7d68b0793767029408d"
+    },
+    {
+      "source": "src/AgentLang.Core/FlowPersistence.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/FlowPersistence.fs",
+      "category": "focused-verifier-source",
+      "sha256": "71f842004d040bff9d9c830e10fb394fef4c55c827a6ccbb3cfb1c427869e793"
+    },
+    {
+      "source": "src/AgentLang.Core/FlowRewrite.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/FlowRewrite.fs",
+      "category": "focused-verifier-source",
+      "sha256": "c71db651c17d9413d6a68d93633a52247991a26a3eb653fe188bd63af1869a96"
+    },
+    {
+      "source": "src/AgentLang.Core/FlowSyntax.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/FlowSyntax.fs",
+      "category": "focused-verifier-source",
+      "sha256": "9ccff37dbc15983831b7f0120774c7878047ff1e8302fe0dd73aedd33cff72fc"
+    },
+    {
+      "source": "src/AgentLang.Core/IrFormatting.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/IrFormatting.fs",
+      "category": "focused-verifier-source",
+      "sha256": "9f219735b931f4503ec0f8e5a217630b2fc8a38b8fb84931a17c5959316ecdb7"
+    },
+    {
+      "source": "src/AgentLang.Core/IrInterpreter.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/IrInterpreter.fs",
+      "category": "focused-verifier-source",
+      "sha256": "f223a37384ac014bef6c48dc920f034aba530761dcc441c46bba30f2151aa24a"
+    },
+    {
+      "source": "src/AgentLang.Core/Parser.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Parser.fs",
+      "category": "focused-verifier-source",
+      "sha256": "996140b145d04314da8ae9755e926323ff71852d36a49383f75b0941aa304521"
+    },
+    {
+      "source": "src/AgentLang.Core/Protocol.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Protocol.fs",
+      "category": "focused-verifier-source",
+      "sha256": "d1dfb67c82760aa5b6663162c31f1dfce70441275c073fd344a13a00e34f27e5"
+    },
+    {
+      "source": "src/AgentLang.Core/Runtime.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Runtime.fs",
+      "category": "focused-verifier-source",
+      "sha256": "f5bab04a89b8cd6c268e75e0bb9b265112843a81e388920af0942d9c783079d9"
+    },
+    {
+      "source": "src/AgentLang.Core/Source.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Source.fs",
+      "category": "focused-verifier-source",
+      "sha256": "f661d907d27be0627197e20cc0b008bbd562b7b14a33c0dd9a6ffd17c092f9fc"
+    },
+    {
+      "source": "src/AgentLang.Core/Storage.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Storage.fs",
+      "category": "focused-verifier-source",
+      "sha256": "34cd5205294e5afab4aeb3fcbc8a4d70e685412f60eea287a8a42dd95c25ba09"
+    },
+    {
+      "source": "src/AgentLang.Core/TrustedValues.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/TrustedValues.fs",
+      "category": "focused-verifier-source",
+      "sha256": "c26edc9681c879c5f0a410274901d6e1cfc3c515f7628f139235747daad57659"
+    },
+    {
+      "source": "src/AgentLang.Core/TypedIR.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/TypedIR.fs",
+      "category": "focused-verifier-source",
+      "sha256": "e564bcb0785ea7c71030848934ae9cc6af331d5a74add3d87ff0f51cc0152dc1"
+    },
+    {
+      "source": "src/AgentLang.Core/ValueInspection.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/ValueInspection.fs",
+      "category": "focused-verifier-source",
+      "sha256": "cf323570d8898de919bea520aa290645f2c722b988da91a7879b9ef893a7a645"
+    },
+    {
+      "source": "src/AgentLang.Core/VocabularyAnalysis.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/VocabularyAnalysis.fs",
+      "category": "focused-verifier-source",
+      "sha256": "0be80d5bc6f5774151cc054e2c4225297c4bbfcb8d09d5f91b447f4d295bd826"
+    },
+    {
+      "source": "src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+      "archive": "source-snapshots/src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+      "category": "focused-verifier-source",
+      "sha256": "9060b7d5195a9ae98ec362689686a52b73eac9c398ea0ed2e9e6699c185a6f59"
+    },
+    {
+      "source": "src/AgentLang.Llvm/ArenaLifetime.fs",
+      "archive": "source-snapshots/src/AgentLang.Llvm/ArenaLifetime.fs",
+      "category": "focused-verifier-source",
+      "sha256": "265705df031bd43d3f16f76a0dd8a646e5923f864e305dad0bd781411bc01ec8"
+    },
+    {
+      "source": "src/AgentLang.Llvm/LlvmAot.fs",
+      "archive": "source-snapshots/src/AgentLang.Llvm/LlvmAot.fs",
+      "category": "focused-verifier-source",
+      "sha256": "4633336ae677dbbd434b494596bb4891ac3f280d6e2a6c9f84a5d6ffa708acf4"
+    },
+    {
+      "source": "src/AgentLang.Llvm/LlvmToolchain.fs",
+      "archive": "source-snapshots/src/AgentLang.Llvm/LlvmToolchain.fs",
+      "category": "focused-verifier-source",
+      "sha256": "c26fe898bdac3ef58e5b9cca163d755f2fff4c0c178a1f37f0a5b70621b81a4a"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+      "archive": "source-snapshots/src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+      "category": "focused-verifier-source",
+      "sha256": "ef264d148dec8c41e3ac9046e569bcf380d5e47e6b508b77b27f516cd6260a8c"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "archive": "source-snapshots/src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "category": "focused-verifier-source",
+      "sha256": "44b43d8a0ada2faefb81c700b3fd2b43fa94dc5585a47473fa97e4eb1f37b84a"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "archive": "source-snapshots/src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "category": "focused-verifier-source",
+      "sha256": "785c4ab720ba1e50caa25b08c0317686193a9dee87af3f009096ecb31c41b00c"
+    },
+    {
+      "source": "src/AgentLang.Llvm/NativeAbi.fs",
+      "archive": "source-snapshots/src/AgentLang.Llvm/NativeAbi.fs",
+      "category": "focused-verifier-source",
+      "sha256": "4c2504edcff2bf4d52ccfb0ec920c92ff9298f347278e996a2de46828199791a"
+    },
+    {
+      "source": "src/AgentLang.Llvm/NativeValueMetrics.fs",
+      "archive": "source-snapshots/src/AgentLang.Llvm/NativeValueMetrics.fs",
+      "category": "focused-verifier-source",
+      "sha256": "e0e4f8d764a3bcc2abeb29a7ddfb4c7500b8c3bd01fc89104840b1a9eb593b25"
+    },
+    {
+      "source": "src/AgentLang.Llvm/NativeValues.fs",
+      "archive": "source-snapshots/src/AgentLang.Llvm/NativeValues.fs",
+      "category": "focused-verifier-source",
+      "sha256": "a5a2898a23d98c6f52b48cc471f111f757d4560dc9e30aed8fe40bb54dd93957"
+    },
+    {
+      "source": "src/AgentLang.Llvm/OwningStackAot.fs",
+      "archive": "source-snapshots/src/AgentLang.Llvm/OwningStackAot.fs",
+      "category": "focused-verifier-source",
+      "sha256": "c8b34bdcd3e59f039d9785c23bb87efb556adbcdf43d20909e5dbb80a6c26ad0"
+    },
+    {
+      "source": "tests/AgentLang.IR.Tests/Program.fs",
+      "archive": "source-snapshots/tests/AgentLang.IR.Tests/Program.fs",
+      "category": "ir-validation-source",
+      "sha256": "fa924e3145c4cdd5513830d7823c2dcf6ea924b2ec669b705011578d5f2db7e7"
+    },
+    {
+      "source": "tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj",
+      "archive": "source-snapshots/tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj",
+      "category": "focused-verifier-source",
+      "sha256": "8b98394da31b4b404f2d065ac4b459373dc026fb7ae8ad831e8dce27d5185866"
+    },
+    {
+      "source": "tests/AgentLang.Llvm.Tests/ArenaLifetimeTests.fs",
+      "archive": "source-snapshots/tests/AgentLang.Llvm.Tests/ArenaLifetimeTests.fs",
+      "category": "focused-verifier-source",
+      "sha256": "881ca08ea354c70d5325a52a851f0696651095901760ae1244d6fea94c36d666"
+    },
+    {
+      "source": "tests/AgentLang.Llvm.Tests/Program.fs",
+      "archive": "source-snapshots/tests/AgentLang.Llvm.Tests/Program.fs",
+      "category": "focused-verifier-source",
+      "sha256": "23b2be2e933e7723e18ac4047e01acd05a08c12c2e0d230e496f589ff29f0dd1"
+    },
+    {
+      "source": "tests/fixtures/native-conformance/native-value-stack.json",
+      "archive": "source-snapshots/tests/fixtures/native-conformance/native-value-stack.json",
+      "category": "focused-verifier-source",
+      "sha256": "a36f207caf4018bedda36b70fb1bd52ee8da1b65dc0214aa1aabf88173fd6590"
+    }
+  ],
+  "sourceSnapshots": [
+    {
+      "source": "experiments/AgentLang.NativeValueStack/AgentLang.NativeValueStack.fsproj",
+      "archive": "source-snapshots/experiments/AgentLang.NativeValueStack/AgentLang.NativeValueStack.fsproj",
+      "sha256": "1a41bd5ae6735f751b06476351ab0e7f9a15aee10d808ce8a94379ddbae1b068",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj",
+      "archive": "source-snapshots/tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj",
+      "sha256": "8b98394da31b4b404f2d065ac4b459373dc026fb7ae8ad831e8dce27d5185866",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "experiments/AgentLang.NativeValueStack/Program.fs",
+      "archive": "source-snapshots/experiments/AgentLang.NativeValueStack/Program.fs",
+      "sha256": "2d1e6dc216e6b32914dd3df8cc7073237795cc4813bf6f88b2d3640cb96f84a1",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "experiments/AgentLang.NativeValueStack/value-stack.flow",
+      "archive": "source-snapshots/experiments/AgentLang.NativeValueStack/value-stack.flow",
+      "sha256": "62eac4e0aa5b9cb5caba5f350788fd5b554715c6b9021e287ef2081951f09c35",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "scripts/Verify-NativeValueStack.ps1",
+      "archive": "source-snapshots/scripts/Verify-NativeValueStack.ps1",
+      "sha256": "074de6b832cfb7aca92a3793bf866eee6c62302a0f9237f69387338f9f68d448",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "tests/fixtures/native-conformance/native-value-stack.json",
+      "archive": "source-snapshots/tests/fixtures/native-conformance/native-value-stack.json",
+      "sha256": "a36f207caf4018bedda36b70fb1bd52ee8da1b65dc0214aa1aabf88173fd6590",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+      "archive": "source-snapshots/src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+      "sha256": "9060b7d5195a9ae98ec362689686a52b73eac9c398ea0ed2e9e6699c185a6f59",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/AgentLang.Core.fsproj",
+      "archive": "source-snapshots/src/AgentLang.Core/AgentLang.Core.fsproj",
+      "sha256": "4948705084736ac21769ce20741fbf1c442b24ce1c6e6f217610f7ff5c3ce9aa",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "archive": "source-snapshots/src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "sha256": "785c4ab720ba1e50caa25b08c0317686193a9dee87af3f009096ecb31c41b00c",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "archive": "source-snapshots/src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "sha256": "44b43d8a0ada2faefb81c700b3fd2b43fa94dc5585a47473fa97e4eb1f37b84a",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+      "archive": "source-snapshots/src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+      "sha256": "ef264d148dec8c41e3ac9046e569bcf380d5e47e6b508b77b27f516cd6260a8c",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "docs/STACK-ONLY-RESEARCH.md",
+      "archive": "source-snapshots/docs/STACK-ONLY-RESEARCH.md",
+      "sha256": "ea631c2c42331c6a8d092c965f14ff1358b8af160411622b30300a192720a74d",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/implementation-plan.md",
+      "archive": "source-snapshots/.agentlang/owning-stack-003/implementation-plan.md",
+      "sha256": "dcf602afba4027bcc528c3103f765264d42a01733df8c28be485caa214fba1bf",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": ".agentlang/owning-stack-003/acceptance-plan.md",
+      "archive": "source-snapshots/.agentlang/owning-stack-003/acceptance-plan.md",
+      "sha256": "e29b7e5d4f3762df7d7bae9195ecc61b261b2e9e388cbe126f57473b3a33a804",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "tests/AgentLang.Llvm.Tests/ArenaLifetimeTests.fs",
+      "archive": "source-snapshots/tests/AgentLang.Llvm.Tests/ArenaLifetimeTests.fs",
+      "sha256": "881ca08ea354c70d5325a52a851f0696651095901760ae1244d6fea94c36d666",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "tests/AgentLang.Llvm.Tests/Program.fs",
+      "archive": "source-snapshots/tests/AgentLang.Llvm.Tests/Program.fs",
+      "sha256": "23b2be2e933e7723e18ac4047e01acd05a08c12c2e0d230e496f589ff29f0dd1",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/AuthoringHelp.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/AuthoringHelp.fs",
+      "sha256": "3ff07fa9aebd1e26907fa91a5189b09ddb9e7c41554c27ee333b834d46532316",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/Compiler.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Compiler.fs",
+      "sha256": "22d5f12ca4f68b199314db04b6f49658516e85765ba989e14c0aca3960929486",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/Core.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Core.fs",
+      "sha256": "57fe2d9512afa26fc920c06a8b4558bdf965157e27a2bd35ceda64dfabb85428",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/Discovery.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Discovery.fs",
+      "sha256": "e79746a41666d11acf928c201e054a4f7cccc0c2d04de3c95bd72db406624842",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/FiniteCoverage.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/FiniteCoverage.fs",
+      "sha256": "cb3f072280035d004bcd573648e6da5b1b396c8ab6d0c2760cbf243793695e3c",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/FlowLint.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/FlowLint.fs",
+      "sha256": "5ba6a10171f4d67cff6f43d32ddce8b9e7aa33eb3f97d407aee3bcd76bfb5ccf",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/FlowLowering.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/FlowLowering.fs",
+      "sha256": "1d9c6871408b33b9d0a7eff51ee3f354093409234fc10c1e07f33a1655c1292c",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/FlowParser.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/FlowParser.fs",
+      "sha256": "6f0461fd29d689607190618880efdfdfaf8378af665ec7d68b0793767029408d",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/FlowPersistence.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/FlowPersistence.fs",
+      "sha256": "71f842004d040bff9d9c830e10fb394fef4c55c827a6ccbb3cfb1c427869e793",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/FlowRewrite.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/FlowRewrite.fs",
+      "sha256": "c71db651c17d9413d6a68d93633a52247991a26a3eb653fe188bd63af1869a96",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/FlowSyntax.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/FlowSyntax.fs",
+      "sha256": "9ccff37dbc15983831b7f0120774c7878047ff1e8302fe0dd73aedd33cff72fc",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/IrFormatting.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/IrFormatting.fs",
+      "sha256": "9f219735b931f4503ec0f8e5a217630b2fc8a38b8fb84931a17c5959316ecdb7",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/IrInterpreter.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/IrInterpreter.fs",
+      "sha256": "f223a37384ac014bef6c48dc920f034aba530761dcc441c46bba30f2151aa24a",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/Parser.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Parser.fs",
+      "sha256": "996140b145d04314da8ae9755e926323ff71852d36a49383f75b0941aa304521",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/Protocol.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Protocol.fs",
+      "sha256": "d1dfb67c82760aa5b6663162c31f1dfce70441275c073fd344a13a00e34f27e5",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/Runtime.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Runtime.fs",
+      "sha256": "f5bab04a89b8cd6c268e75e0bb9b265112843a81e388920af0942d9c783079d9",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/Source.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Source.fs",
+      "sha256": "f661d907d27be0627197e20cc0b008bbd562b7b14a33c0dd9a6ffd17c092f9fc",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/Storage.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/Storage.fs",
+      "sha256": "34cd5205294e5afab4aeb3fcbc8a4d70e685412f60eea287a8a42dd95c25ba09",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/TrustedValues.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/TrustedValues.fs",
+      "sha256": "c26edc9681c879c5f0a410274901d6e1cfc3c515f7628f139235747daad57659",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/TypedIR.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/TypedIR.fs",
+      "sha256": "e564bcb0785ea7c71030848934ae9cc6af331d5a74add3d87ff0f51cc0152dc1",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/ValueInspection.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/ValueInspection.fs",
+      "sha256": "cf323570d8898de919bea520aa290645f2c722b988da91a7879b9ef893a7a645",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Core/VocabularyAnalysis.fs",
+      "archive": "source-snapshots/src/AgentLang.Core/VocabularyAnalysis.fs",
+      "sha256": "0be80d5bc6f5774151cc054e2c4225297c4bbfcb8d09d5f91b447f4d295bd826",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Llvm/ArenaLifetime.fs",
+      "archive": "source-snapshots/src/AgentLang.Llvm/ArenaLifetime.fs",
+      "sha256": "265705df031bd43d3f16f76a0dd8a646e5923f864e305dad0bd781411bc01ec8",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Llvm/LlvmAot.fs",
+      "archive": "source-snapshots/src/AgentLang.Llvm/LlvmAot.fs",
+      "sha256": "4633336ae677dbbd434b494596bb4891ac3f280d6e2a6c9f84a5d6ffa708acf4",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Llvm/LlvmToolchain.fs",
+      "archive": "source-snapshots/src/AgentLang.Llvm/LlvmToolchain.fs",
+      "sha256": "c26fe898bdac3ef58e5b9cca163d755f2fff4c0c178a1f37f0a5b70621b81a4a",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Llvm/NativeAbi.fs",
+      "archive": "source-snapshots/src/AgentLang.Llvm/NativeAbi.fs",
+      "sha256": "4c2504edcff2bf4d52ccfb0ec920c92ff9298f347278e996a2de46828199791a",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Llvm/NativeValueMetrics.fs",
+      "archive": "source-snapshots/src/AgentLang.Llvm/NativeValueMetrics.fs",
+      "sha256": "e0e4f8d764a3bcc2abeb29a7ddfb4c7500b8c3bd01fc89104840b1a9eb593b25",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Llvm/NativeValues.fs",
+      "archive": "source-snapshots/src/AgentLang.Llvm/NativeValues.fs",
+      "sha256": "a5a2898a23d98c6f52b48cc471f111f757d4560dc9e30aed8fe40bb54dd93957",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "src/AgentLang.Llvm/OwningStackAot.fs",
+      "archive": "source-snapshots/src/AgentLang.Llvm/OwningStackAot.fs",
+      "sha256": "c8b34bdcd3e59f039d9785c23bb87efb556adbcdf43d20909e5dbb80a6c26ad0",
+      "provenance": "focused-verifier-source"
+    },
+    {
+      "source": "tests/AgentLang.IR.Tests/Program.fs",
+      "archive": "source-snapshots/tests/AgentLang.IR.Tests/Program.fs",
+      "sha256": "fa924e3145c4cdd5513830d7823c2dcf6ea924b2ec669b705011578d5f2db7e7",
+      "provenance": "ir-validation-source"
+    }
+  ],
+  "archive": "130-stable-arena-rewinds.zip",
+  "archiveSha256": "543219edbe29ea1d00155fc0b9539062a2bdce96ceb455c0a4807ef69f370407",
+  "manifestSha256": "30ca2a3bd60122ed54bd3cdb81a3120a871cef0c1210f9e17c19392d6d132b53"
+}

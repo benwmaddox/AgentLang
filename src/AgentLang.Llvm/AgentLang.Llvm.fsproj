@@ -8,6 +8,7 @@
     <Compile Include="NativeAbi.fs" />
     <Compile Include="NativeValues.fs" />
     <Compile Include="NativeValueMetrics.fs" />
+    <Compile Include="ArenaLifetime.fs" />
     <Compile Include="LlvmToolchain.fs" />
     <Compile Include="LlvmAot.fs" />
     <Compile Include="OwningStackAot.fs" />

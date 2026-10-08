@@ -1627,6 +1627,30 @@ let private testCompilerLowering () =
     let detached = Compiler.compileIrBodyAgainstProgram context verified "<agent-eval>" [ TInt ] [ Push(LInt 4L, line 130); Call("add", line 131) ]
     check "detached body retains the exact verified snapshot object" (Object.ReferenceEquals(VerifiedIrBody.program detached, verified))
     check "detached body has its own ownerless source map and coverage" (VerifiedIrBody.inspect detached |> fun body -> body.BodySourceMap.Count = 2 && body.BodyCoverage.CoveredSites.Count = 2 && body.BodySourceMap |> Map.forall (fun site source -> (let (SourceSiteId(owner, _)) = site in owner.IsNone) && source.SiteOwner.IsNone))
+    let scopeIdentityBody =
+        Compiler.compileIrBodyAgainstProgram context verified "scope-identities" []
+            [ Scope([ Push(LString "A", line 3001) ], line 3000)
+              Push(LString "B", line 3002)
+              Call("string.concat", line 3003)
+              Call("drop", line 3004)
+              Scope([ Push(LString "dead", line 3006); Call("drop", line 3007) ], line 3005) ]
+        |> VerifiedIrBody.inspect
+    let scopeSites =
+        scopeIdentityBody.BodyBlock.Code
+        |> List.choose (fun item -> match item.Operation with IrOperation.Scope _ -> Some item.Site | _ -> None)
+    check "detached scope identity regression starts with two distinct sites" (scopeSites.Length = 2 && scopeSites[0] <> scopeSites[1])
+    let duplicateBlock =
+        { scopeIdentityBody.BodyBlock with
+            Code = scopeIdentityBody.BodyBlock.Code |> List.map (fun item ->
+                if item.Site = scopeSites[1] then { item with Site = scopeSites[0] } else item) }
+    let duplicateSourceMap = scopeIdentityBody.BodySourceMap |> Map.remove scopeSites[1]
+    let duplicateBody =
+        { scopeIdentityBody with
+            BodyBlock = duplicateBlock
+            BodySourceMap = duplicateSourceMap
+            BodyCoverage = IrVerifier.coverageObligationsWithSourceMap duplicateSourceMap duplicateBlock }
+    expectDiagnostic "detached scopes cannot overwrite lifetime decisions with duplicate source identities" "IR_DUPLICATE_SOURCE_SITE"
+        (fun () -> IrVerifier.verifyBody verified duplicateBody |> ignore)
     let throwingTest: TestDefinition =
         { Name = "division-error"
           Word = "math"

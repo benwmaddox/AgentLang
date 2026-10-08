@@ -25,14 +25,22 @@ records external architectural references and hypotheses for memory experiments.
 It is a documentation-only checkpoint preceding the native results below;
 no external benchmark claim is treated as an AgentLang result.
 
-Latest owning-memory checkpoint: [129 — Variable-sized owning values](129-variable-owning-values.md)
+Current owning-memory checkpoint: [130 — Stable arena rewinds](130-stable-arena-rewinds.md)
+passes 626 boolean native assertions and 35 focused verifier checks. Bindings,
+fields and same-arena calls keep payloads stable; compiler-proven dead suffixes
+rewind, while escaping results retain underlying temporary storage. The full
+local Release gate passes all 37 checks; tested sources and evidence are archived.
+This is memory
+conformance evidence, not a new efficacy or throughput advantage claim.
+
+Previous owning-memory checkpoint: [129 — Variable-sized owning values](129-variable-owning-values.md)
 passes 796 comparison checks, 29 verifier checks, 453 C storage assertions per
 configuration, and the 37-check local Release gate. Strings and nested records
 preserve independent inline ownership at LLVM O0/O2. Direct concat peaks at
 80 bytes versus 144 through the tested user-function wrapper; copying and
 instrumentation prevent a total-memory or throughput advantage claim. Packed
-locals conflict with the user's clarified rare-movement intent; stable arena
-payloads and bulk reset are the next implementation step. Native owning
+locals conflict with the user's clarified rare-movement intent; report 130
+replaces them with stable arena payloads and compiler-proven rewinds. Native owning
 mailbox integration, real async I/O, and JIT remain pending.
 
 Previous native checkpoint: [126 — Standalone native mailbox dispatch](126-native-mailbox-dispatch.md)

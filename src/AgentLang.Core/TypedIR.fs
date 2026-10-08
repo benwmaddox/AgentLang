@@ -1004,7 +1004,11 @@ module IrVerifier =
         let obligations = { CoveredSites = sites; BranchOutcomes = branches }
         if body.BodyCoverage <> obligations then
             failure "IR_BODY_COVERAGE_MISMATCH" "Detached body coverage metadata does not match its executable structure." [ string obligations.CoveredSites.Count; string obligations.BranchOutcomes.Count ] [ string body.BodyCoverage.CoveredSites.Count; string body.BodyCoverage.BranchOutcomes.Count ]
-        let bodySites = instructionsInBlock body.BodyBlock |> List.map (fun instruction -> instruction.Site) |> Set.ofList
+        let instructionSites = instructionsInBlock body.BodyBlock |> List.map (fun instruction -> instruction.Site)
+        let duplicateSites = instructionSites |> List.countBy id |> List.filter (fun (_, count) -> count > 1)
+        if not duplicateSites.IsEmpty then
+            failure "IR_DUPLICATE_SOURCE_SITE" "Each detached source expression must have one executable instruction identity across all nested blocks." [ "unique source-site ID per executable instruction" ] (duplicateSites |> List.map (fun (site, count) -> sprintf "%A (%d instructions)" site count))
+        let bodySites = instructionSites |> Set.ofList
         if body.BodySourceMap |> Map.toSeq |> Seq.map fst |> Set.ofSeq <> bodySites then
             failure "IR_BODY_SOURCE_MAP_MISMATCH" "Detached body source map must contain every operation site, including synthetic implementation details." (bodySites |> Set.toList |> List.map (sprintf "%A")) (body.BodySourceMap |> Map.toList |> List.map (fun (site, _) -> sprintf "%A" site))
         let pseudoOwner =

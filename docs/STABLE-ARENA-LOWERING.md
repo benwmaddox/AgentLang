@@ -1,6 +1,7 @@
 # Stable arena lowering
 
-Status: selected implementation direction, 2026-10-08. Not yet implemented.
+Status: implemented in the bounded owning backend, 2026-10-08; focused native
+acceptance and the full local Release gate passed. See [report 130](../reports/130-stable-arena-rewinds.md).
 This replaces the packed placement policy measured in
 [report 129](../reports/129-variable-owning-values.md). The semantic IR, immutable
 source values and inline record layout remain authoritative.
@@ -50,6 +51,37 @@ No runtime reference counting, allocation liveness graph or per-object free is
 required for this compiler-controlled policy. Unused interior space is deliberate.
 Do not add eager per-operation reclamation before proving a need for it.
 
+Explicit compaction is deferred research, not part of this implementation.
+The suggested `Allocation.drop(temporary)` spelling is not a committed API.
+Logical dropping and physical relocation must remain distinct. Consider a
+relocation mechanism only after measuring retained dead space, and only with
+compiler-proven control of all affected locations and external dependencies.
+
+The user's subsequent refinement is an opt-in compaction point after a deep
+computation: retain its few surviving results at the region's saved mark, then
+rewind past those results to recover the intervening dead allocations. Prefer
+evaluating a structured region whose outputs identify the survivors over dropping
+one arbitrary temporary. The user prefers this candidate form for future work:
+
+```text
+let summary = compact {
+    let raw = loadData()
+    let processed = analyze(raw)
+    summarize(processed)
+}
+```
+
+This is planned syntax, not an available language feature. A record or tuple
+could carry multiple surviving results. Being at the logical stack top
+alone is insufficient: the compiler must prove that the reclaimed region has no
+other live dependents, including projected fields and pending I/O. Relocation
+must preserve complete nested/variable-sized results and update every affected
+internal descriptor. If proof is unavailable, an explicit reclaiming operation
+must fail validation rather than guess at runtime. A runtime size threshold may
+choose whether a proved-safe move is worthwhile; it cannot establish safety.
+Ordinary scope exits, function returns and logical drops still never compact.
+Compare bytes recovered with bytes moved and latency before adopting this option.
+
 ## Implementation boundary
 
 Replace the implicit contiguous operand-payload suffix in
@@ -97,3 +129,10 @@ and sanitizer-trap checks, applicable formatting, and the full local
 Compare with frozen report 129 at equal and sufficient capacities; different
 exhaustion points are expected. Byte counters alone do not establish throughput,
 whole-process memory or agent-edit reliability improvements.
+
+Tiny exact-capacity fixtures are correctness controls, not service sizing
+targets. The user accepts modest retained-space growth to avoid movement.
+Application evaluation must use representative request sizes and concurrency,
+including slow I/O, with throughput, tail latency and whole-process memory
+measured together. Do not optimize away a few fixture bytes at the expense of
+the intended stable-placement policy.

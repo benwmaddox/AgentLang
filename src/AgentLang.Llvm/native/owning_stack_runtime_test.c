@@ -1695,6 +1695,65 @@ failed:
   return 0;
 }
 
+static int al_test_record_copy_preserves_source(void) {
+  al_test_fixture fixture;
+  al_owning_stack_context *ctx = &fixture.ctx;
+  uint8_t before[AL_TEST_STACK_CAPACITY];
+  uint32_t direction;
+  uint32_t invalid;
+  for (direction = 0u; direction < 2u; ++direction) {
+    const uint32_t source = direction == 0u ? 0u : 32u;
+    const uint32_t destination = direction == 0u ? 32u : 0u;
+    al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+    AL_CHECK(al_owning_reserve_to(ctx, 48u, 210u) == 0);
+    al_owning_store_i64(ctx, source, INT64_C(0x0102030405060708),
+                        AL_TEST_TYPE_INT);
+    al_owning_store_i64(ctx, source + 8u, 0, AL_TEST_TYPE_INT);
+    al_owning_store_i64(ctx, 24u, 7711, AL_TEST_TYPE_INT);
+    (void)memcpy(before, ctx->stack_data, sizeof(before));
+    al_owning_copy_range(ctx, destination, source, 16u, 10u,
+                         AL_TEST_TYPE_TEXT_LEAF, AL_OWNING_EVENT_RECORD_BUILD);
+    AL_CHECK(ctx->status == AL_OWNING_STATUS_OK);
+    AL_CHECK(memcmp(ctx->stack_data + source, before + source, 16u) == 0);
+    AL_CHECK(memcmp(ctx->stack_data + destination, before + source, 16u) == 0);
+    AL_CHECK(memcmp(ctx->stack_data + 16u, before + 16u, 16u) == 0);
+    AL_CHECK(al_owning_check_initialized(ctx, source, 16u) == 0);
+    AL_CHECK(al_owning_check_initialized(ctx, destination, 16u) == 0);
+    AL_CHECK(ctx->deep_copy_bytes == 16u && ctx->move_bytes == 0u);
+    AL_CHECK(ctx->duplicate_disjoint_checks == 0u &&
+             ctx->live_payload_bytes == 10u);
+    AL_CHECK(fixture.events[ctx->trace_event_count - 1u].kind ==
+             AL_OWNING_EVENT_RECORD_BUILD);
+    AL_CHECK(fixture.events[ctx->trace_event_count - 1u].source_offset ==
+             source);
+    AL_CHECK(al_test_case_begin("record_copy_preserves_source", &fixture));
+  }
+  /* Overlap, uninitialized source, unreserved destination, invalid payload,
+     and overflowing source offsets must fail without modifying storage. */
+  for (invalid = 0u; invalid < 5u; ++invalid) {
+    const uint32_t source = invalid == 1u   ? 16u
+                            : invalid == 4u ? UINT32_MAX
+                                            : 0u;
+    const uint32_t destination = invalid == 0u ? 4u : invalid == 2u ? 48u : 32u;
+    al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+    AL_CHECK(al_owning_reserve_to(ctx, 40u, 211u) == 0);
+    al_owning_store_i64(ctx, 0u, 112233, AL_TEST_TYPE_INT);
+    (void)memcpy(before, ctx->stack_data, sizeof(before));
+    al_owning_copy_range(ctx, destination, source, 8u, invalid == 3u ? 9u : 8u,
+                         AL_TEST_TYPE_INT, AL_OWNING_EVENT_RECORD_BUILD);
+    AL_CHECK(ctx->status == AL_OWNING_STATUS_INTERNAL);
+    AL_CHECK(memcmp(ctx->stack_data, before, sizeof(before)) == 0);
+    AL_CHECK(ctx->deep_copy_bytes == 0u && ctx->move_bytes == 0u &&
+             ctx->duplicate_disjoint_checks == 0u);
+    AL_CHECK(ctx->live_payload_bytes == 0u && ctx->cursor_bytes == 40u);
+    ctx->status = AL_OWNING_STATUS_OK;
+    AL_CHECK(al_test_case_begin("record_copy_rejects_invalid_range", &fixture));
+  }
+  return 1;
+failed:
+  return 0;
+}
+
 int main(void) {
   if (!al_test_duplicate_drop_reuse() || !al_test_primitive_slots() ||
       !al_test_inline_nested_and_empty() ||
@@ -1725,7 +1784,8 @@ int main(void) {
       !al_test_dynamic_move_range_source_only_invalidation() ||
       !al_test_dynamic_return_larger_than_arguments() ||
       !al_test_dynamic_constant_copy() ||
-      !al_test_dynamic_malformed_external_values()) {
+      !al_test_dynamic_malformed_external_values() ||
+      !al_test_record_copy_preserves_source()) {
     return 1;
   }
   (void)printf(

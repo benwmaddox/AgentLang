@@ -2744,7 +2744,15 @@ let private runFullSuite () =
 
 [<EntryPoint>]
 let main args =
-    if args |> Array.contains "--module-only" then
+    if args |> Array.contains "--arena-lifetime" then
+        try
+            let assertions = global.AgentLang.Llvm.ArenaLifetimeTests.run ()
+            printfn "AgentLang.Llvm.Tests arena lifetime: %d assertions passed" assertions
+            0
+        with ex ->
+            eprintfn "%s" (ex.ToString())
+            1
+    elif args |> Array.contains "--module-only" then
         try
             printStage "native module validation, immutable ABI metadata, and multi-entry compilation"
             testNativeModuleValidationBeforeTools ()

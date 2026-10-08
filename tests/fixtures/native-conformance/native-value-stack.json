@@ -363,38 +363,22 @@
       ],
       "programStack": {
         "independentDynamicConcat": {
-      "body": "Compiler-minted direct string.concat(String, String) -> String VerifiedIrBody, exercised by the interpreter and owning backend with two runtime Value inputs",
+          "body": "Compiler-minted direct string.concat(String, String) -> String VerifiedIrBody, exercised by the interpreter and owning backend with two runtime Value inputs",
           "inputCodeUnitsHex": ["3ed8", "eadd"],
           "inputStringExtentsBytes": [16, 16],
           "inputStackBytes": 32,
-          "entryFrameInputBytes": 32,
+          "concatOutputCodeUnitsHex": "3ed8eadd",
           "concatOutputExtentBytes": 16,
-          "schedule": [
-            {"owner": "wrapper-left-input", "startBytes": 0, "extentBytes": 16},
-            {"owner": "wrapper-right-input", "startBytes": 16, "extentBytes": 16},
-            {"owner": "entry-frame-left-input-copy", "startBytes": 32, "extentBytes": 16},
-            {"owner": "entry-frame-right-input-copy", "startBytes": 48, "extentBytes": 16},
-            {"owner": "concat-staging-before-input-replacement", "startBytes": 64, "extentBytes": 16}
-          ],
-      "requiredStackCapacityBytes": 80,
-      "wrappedUserCallExpectedPeakBytes": 144,
-      "wrappedUserCallSchedule": [
-        {"owner": "wrapper-left-input", "startBytes": 0, "extentBytes": 16},
-        {"owner": "wrapper-right-input", "startBytes": 16, "extentBytes": 16},
-        {"owner": "entry-frame-left-input-copy", "startBytes": 32, "extentBytes": 16},
-        {"owner": "entry-frame-right-input-copy", "startBytes": 48, "extentBytes": 16},
-        {"owner": "user-call-left-input-copy", "startBytes": 64, "extentBytes": 16},
-        {"owner": "user-call-right-input-copy", "startBytes": 80, "extentBytes": 16},
-        {"owner": "left-LoadLocal-operand-copy", "startBytes": 96, "extentBytes": 16},
-        {"owner": "right-LoadLocal-operand-copy", "startBytes": 112, "extentBytes": 16},
-        {"owner": "concat-result-scratch", "startBytes": 128, "extentBytes": 16}
-      ],
-          "oneByteBelowAvailableBytes": 79,
+          "deepCopyBytes": 16,
+          "requiredStackCapacityBytes": 48,
+          "oneByteBelowAvailableBytes": 47,
+          "capacityFormula": "one arena copy of each external input extent, followed by one canonical concat result copy covering its full output extent including header and padding",
+          "expectedPayloadMoveBytes": 0,
           "expectFailureAfterInputCopies": true,
           "expectCallerOutputUnchangedAndNativeOwnersZero": true,
           "capacityExcludesHostInputRetainedBuffersAndFrameMetadata": true
         },
-        "complexTextStateTurnProbe": "Search below the successful long TextState turn's observed high-water until the candidate reports a program-data-stack failure after copy events and a completed helper return. This is an empirical unwind probe, not an independent capacity oracle. Caller output must remain unchanged and stack/live owners must return to zero."
+        "complexTextStateTurnProbe": "Search below the successful long TextState turn's observed cursor high-water until the candidate reports a program-data-stack failure after an allocation/copy event and a completed helper return. This is an empirical unwind probe, not an independent capacity oracle. Caller output must remain unchanged and request state must return to its entry mark."
       }
     },
     "backendScope": "interpreter and owning O0/O2 use the same String VerifiedIrProgram/body; ABI3 runs the separate fixed-only program",
@@ -495,7 +479,7 @@
     "failureDiagnosticCode": "RUNTIME_CALL_DEPTH",
     "notRecursionEvidence": true
   },
-  "flowLocalDropSemantics": "drop(left) and drop(right) consume copies loaded from immutable locals; the local bindings remain owned until the exercise function exits. directTopDupDrop tests an actual top-of-stack dup followed by drop.",
+  "flowLocalDropSemantics": "drop(left) and drop(right) consume descriptors loaded from immutable locals; the logical local bindings remain in scope until exercise exits. directTopDupDrop tests an actual top-of-stack dup followed by drop.",
   "failureAfterAllocation": {
     "diagnosticCode": "RUNTIME_DIVIDE_BY_ZERO",
     "retainedStateUnchanged": true,
@@ -549,17 +533,134 @@
     "emptyRecordUsesZeroPayloadWithDistinctEightByteTokenExtent": true,
     "directDuplicateRangesMustBeDisjoint": true,
     "droppedDuplicateMustNotChangeDecodedSurvivor": true,
-    "retainedCopyMustReadTheSurvivingEnvelopeRangeAfterReturnTransfer": true,
-    "turnHelperFramesMustReuseTheSamePeakForN1AndN8": true,
+    "retainedCopyMustReadTheSurvivingEnvelopeDescriptorRange": true,
+    "descriptorOperationsHaveNoPayloadMoveBytes": true,
+    "descriptorOperationsHaveNoDeepCopyBytes": true,
     "absolutePeakIsReportedFromNativeExecution": true,
     "traceTruncationInvalidatesRangeEvidence": true,
-    "reportReservedSpanAndLivePayloadSeparately": true,
+    "reportOccupiedCursorAndCapacitySeparatelyFromUnavailableAliasedLiveMetrics": true,
     "reportInstrumentationAndHostMarshalingSeparately": true
+  },
+  "stableArenaCases": {
+    "fixedSixLocalNestedDeadOnly": {
+      "input": [11, 22, 33, 44, 55, 66],
+      "localCount": 6,
+      "nestedScopeCount": 2,
+      "functionExitRewindCount": 1,
+      "rewindEventCount": 3,
+    "inputCopyBytes": 48,
+    "innerRewindExtentBytes": 16,
+    "outerRewindExtentBytes": 16,
+    "functionExitRewindExtentBytes": 0,
+    "postRewindAllocationOffsetBytes": 48,
+    "postRewindAllocationExtentBytes": 8,
+    "postRewindConstructionOffsetBytes": 56,
+    "postRewindConstructionExtentBytes": 8,
+    "expectedPeakCursorBytes": 64,
+    "deepCopyBytes": 16,
+      "moveBytes": 0,
+      "outputCount": 0
+    },
+    "fixedEscapingScopeResult": {
+      "input": {"value": 17, "tag": 1017},
+      "temporaryLeafValue": 99,
+      "expected": {"type": "Envelope", "leaf": {"value": 17}, "tag": 1017},
+      "retainedBytesHex": "1100000000000000f903000000000000",
+      "inputCopyBytes": 16,
+      "deepCopyBytes": 32,
+      "moveBytes": 0,
+      "minimumPeakCursorBytes": 56,
+      "scopeRewinds": 0
+    },
+    "fixedBranchEscapingScopeResult": {
+      "inputValue": 17,
+      "leftTag": 700,
+      "rightTag": 800,
+      "leftRetainedBytesHex": "1100000000000000bc02000000000000",
+      "rightRetainedBytesHex": "11000000000000002003000000000000",
+      "scopeRewinds": 0,
+      "moveBytes": 0
+    },
+    "stringSixLocalNestedDeadOnly": {
+      "inputs": ["a", "b", "c", "d", "e", "f"],
+      "localCount": 6,
+      "nestedScopeCount": 2,
+      "functionExitRewindCount": 1,
+      "rewindEventCount": 3,
+    "inputCopyBytes": 96,
+    "concatResultExtentBytes": 16,
+    "innerRewindExtentBytes": 16,
+    "outerRewindExtentBytes": 16,
+    "functionExitRewindExtentBytes": 0,
+    "postRewindAllocationOffsetBytes": 96,
+    "postRewindAllocationExtentBytes": 16,
+    "postRewindAllocationPayloadBytes": 10,
+    "expectedPeakCursorBytes": 112,
+    "deepCopyBytes": 32,
+      "moveBytes": 0,
+      "outputCount": 0
+    },
+    "stringEscapingScopeResult": {
+      "temporaryLiteral": "dead",
+      "concatLiterals": ["a", "b"],
+      "expected": "ab",
+      "retainedBytesHex": "02000000000000006100620000000000",
+      "literalExtentsBytes": [16, 16, 16],
+      "resultExtentBytes": 16,
+      "minimumPeakCursorBytes": 64,
+      "deepCopyBytes": 64,
+      "moveBytes": 0,
+      "scopeRewinds": 0
+    },
+    "stringBindingRoundTrip": {
+      "value": "stable",
+      "retainedBytesHex": "060000000000000073007400610062006c00650000000000",
+      "literalExtentBytes": 24,
+      "literalPayloadBytes": 20,
+      "descriptorTransferCount": 3,
+      "descriptorTransferBytes": 60,
+      "moveBytes": 0,
+      "deepCopyBytes": 24,
+      "scopeRewinds": 0
+    },
+    "stringUncertainCallScope": {
+      "input": "a",
+      "retainedBytesHex": "01000000000000006100000000000000",
+      "moveBytes": 0,
+      "scopeRewinds": 0,
+      "calledFunctionRewindSites": 1,
+      "calledFunctionRewindEventCount": 1,
+      "calledFunctionRewindExtentBytes": 0
+    }
+  },
+  "stableArenaOracle": {
+    "layoutPolicy": "The fixed-only and String-bearing owning-stack programs both use descriptor-based stable arena lowering.",
+    "eventKinds": {"descriptorTransfer": 17, "arenaRewind": 18},
+    "descriptorMetadataBytes": 20,
+    "descriptorOperations": ["local-store", "local-load", "field-extract", "same-arena-call-input", "same-arena-return", "scope-cleanup"],
+    "descriptorOperationsPayloadMoveBytes": 0,
+    "descriptorOperationsPayloadDeepCopyBytes": 0,
+    "canonicalRecordConstructionAndExplicitDuplicationMayCopy": true,
+    "inputAndRetainedBoundaryCopiesAreSeparate": true,
+    "logicalRootBytesAccounting": "unavailable; no root traversal instrumentation",
+    "uniqueLivePayloadAccounting": "unavailable unless the backend supplies exact interval-union evidence",
+    "occupiedCursorAccounting": "peak and final cursor are reported from native execution; a live result may retain dead bytes beneath it",
+    "deadOnlyNestedScopesRewindToSavedMarks": true,
+    "postRewindAllocationReusesSavedMarkWithoutMovingPremarkPayloads": true,
+    "escapingResultKeepsTemporaryBytesBelowItUntilAnEnclosingProof": true,
+    "projectedFieldInheritsParentOwnerEnd": true,
+    "branchOrUncertainProvenanceBlocksEarlyRewind": true,
+    "sameSlotShadowingRestoresOuterDescriptor": true,
+    "requestCompletionResetsCursorToEntryMark": true,
+    "resultAddressStabilityCorrelatesConstructionLocalTransfersAndRetainedSource": true,
+    "livePayloadAndDeadInteriorAccountingUnavailable": true,
+    "rewindAuthorizationIsCompilerStatic": true,
+    "runtimeRootScansOrLivenessSearches": false
   },
   "storageRuntimeTestOracle": {
     "suite": "owning_stack_runtime_storage_v2",
-    "cases": 36,
-    "checks": 453,
+    "cases": 43,
+    "checks": 507,
     "rawFrameBoundary": {
       "successfulHelperEnters": 66,
       "nextEnterDiagnosticDepth": 66,
@@ -576,7 +677,7 @@
       "peakCursorBytes": 56,
       "maxStackCapacityBytes": 64
     },
-    "dynamicCases": { "cases": 20, "checks": 264 },
+    "dynamicCases": { "cases": 27, "checks": 318 },
     "abi": {
       "eventSizeBytes": 40,
       "eventChecksumOffsetBytes": 32,
@@ -646,6 +747,26 @@
   },
   "owningStack": {
     "stackCapacityBytes": 512,
+    "stableArenaExecutionCapacityBytes": 1024,
+    "stableArenaCapacityControl": {
+      "legacyCapacityBytes": 512,
+      "cursorFormula": "32 + 40 + 64 * repetitions + 48",
+      "inputExtentsBytes": [24, 8],
+      "preExerciseAllocationBytes": 40,
+      "perExerciseAllocationBytes": 64,
+      "postExerciseAllocationBytes": 48,
+      "sourceDerivedPeakCursorBytes": {"1": 184, "8": 632},
+      "n8CompletedExercisesBeforeFailure": 6,
+      "n8SeventhExercisePrefixBytes": 56,
+      "n8FinalIntResultBytes": 8,
+      "sourceDerivedN8FirstRejectedReservationBytes": 520,
+      "n1FitsLegacyCapacity": true,
+      "n8ExceedsLegacyCapacity": true,
+      "boundary": "program-data-stack",
+      "firstRejectedReservationExceedsAvailable": true,
+      "unwindToCursorZero": true,
+      "callerBufferUnchanged": true
+    },
     "retainedCapacityBytes": 24,
     "inputStateBytes": 24,
     "inputIntBytes": 8,
@@ -656,8 +777,8 @@
     "nativePublishPreflightIsSeparatelyCoveredByStorageUnitTest": true,
     "layoutHasNoPaddingForFixtureTypes": true,
     "emptyRecordConformanceBoundary": "Empty is inserted into the compiler lowering context because Flow currently rejects zero-field record declarations; its verified constructor and body are still compiler-produced.",
-    "repetitionPeakInvariant": "N=1 and N=8 have the same maximum nested call depth; report observed absolute peak and reservation slack without replacing it with a guessed constant",
-    "copyAccounting": "Report candidate DeepCopyBytes, MoveBytes, InputCopyBytes, and RetainedCopyBytes as distinct measured categories; the 16-byte explicit Envelope dup per mailbox.exercise is an independent lower-bound oracle for the repeated body."
+    "repetitionPeakInvariant": "N=1 and N=8 have the same maximum nested call depth; report each observed absolute peak cursor because retained dead interior space can differ with the unrolled call count",
+    "copyAccounting": "Report descriptor-transfer metadata separately from DeepCopyBytes, MoveBytes, InputCopyBytes, and RetainedCopyBytes; construction and the 16-byte explicit Envelope dup per mailbox.exercise are permitted deep-copy lower-bound categories."
   },
   "capacityFailure": {
     "retainedOutput": {

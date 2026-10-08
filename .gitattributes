@@ -120,3 +120,6 @@ reports/evidence/128-owning-value-stack/** -text -whitespace
 
 # Preserve variable-size owning-value source and validation evidence hashes.
 reports/evidence/129-variable-owning-values/** -text -whitespace
+
+# Preserve stable-arena source snapshots and validation evidence byte hashes.
+reports/evidence/130-stable-arena-rewinds/** -text -whitespace

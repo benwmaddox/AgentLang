@@ -1453,6 +1453,42 @@ void al_owning_move_range(al_owning_stack_context *ctx,
                   payload_bytes, source_offset, byte_count, 0u);
 }
 
+void al_owning_copy_range(al_owning_stack_context *ctx,
+                          uint32_t destination_offset, uint32_t source_offset,
+                          uint32_t extent_bytes, uint32_t payload_bytes,
+                          uint32_t type_id, uint32_t event_kind) {
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return;
+  /* Check the complete request before writing or updating counters. */
+  if (payload_bytes > extent_bytes || payload_bytes > INT32_MAX ||
+      payload_bytes > UINT32_MAX - ctx->live_payload_bytes ||
+      !al_owning_range_valid(ctx, source_offset, extent_bytes) ||
+      !al_owning_range_valid(ctx, destination_offset, extent_bytes) ||
+      source_offset > ctx->cursor_bytes ||
+      extent_bytes > ctx->cursor_bytes - source_offset ||
+      destination_offset > ctx->cursor_bytes ||
+      extent_bytes > ctx->cursor_bytes - destination_offset) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, 0u, extent_bytes,
+                          ctx->cursor_bytes);
+    return;
+  }
+  if (extent_bytes != 0u && destination_offset < source_offset + extent_bytes &&
+      source_offset < destination_offset + extent_bytes) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, 0u, extent_bytes,
+                          ctx->cursor_bytes);
+    return;
+  }
+  if (al_owning_check_initialized(ctx, source_offset, extent_bytes) != 0)
+    return;
+  al_owning_bytes_copy(ctx->stack_data + destination_offset,
+                       ctx->stack_data + source_offset, extent_bytes);
+  al_owning_mark(ctx, destination_offset, extent_bytes, 1, 0);
+  ctx->deep_copy_bytes += extent_bytes;
+  al_owning_update_live(ctx, (int32_t)payload_bytes, 0);
+  al_owning_event(ctx, event_kind, type_id, destination_offset, extent_bytes,
+                  payload_bytes, source_offset, extent_bytes, 0u);
+}
+
 void al_owning_duplicate(al_owning_stack_context *ctx,
                          uint32_t destination_offset, uint32_t source_offset,
                          uint32_t extent_bytes, uint32_t payload_bytes,

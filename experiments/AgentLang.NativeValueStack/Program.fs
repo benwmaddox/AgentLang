@@ -27,6 +27,9 @@ type private EntryBodies =
       Depth64: VerifiedIrBody
       Depth65: VerifiedIrBody
       DirectDupDrop: VerifiedIrBody
+      StableDeadOnlySixLocals: VerifiedIrBody
+      StableEscapingScopeResult: VerifiedIrBody
+      StableBranchEscapingScopeResult: VerifiedIrBody
       FailAfterAllocation: VerifiedIrBody }
 
 type private StringEntryBodies =
@@ -44,7 +47,11 @@ type private StringEntryBodies =
       FailAfterTextAllocation: VerifiedIrBody
       DirectDupDrop: VerifiedIrBody
       ScopeShadow: VerifiedIrBody
-      ZeroOutputUserCall: VerifiedIrBody }
+      ZeroOutputUserCall: VerifiedIrBody
+      StableDeadOnlySixLocals: VerifiedIrBody
+      StableEscapingScopeResult: VerifiedIrBody
+      StableBindingRoundTrip: VerifiedIrBody
+      StableUncertainCallScope: VerifiedIrBody }
 
 type private LayoutDepthCase =
     { Program: VerifiedIrProgram
@@ -235,9 +242,66 @@ let private compileEntries (source: string) =
                   Call("dup", span "<native-value-stack-direct-dup-drop>" 2)
                   Call("drop", span "<native-value-stack-direct-dup-drop>" 3) ]
                 compiled.Context.SourceOrigins
+          StableDeadOnlySixLocals =
+            let localNames = [ "stable0"; "stable1"; "stable2"; "stable3"; "stable4"; "stable5" ]
+            let site label column = span ("<native-value-stack-stable-dead-six-" + label + ">") column
+            let deadInnerScope =
+                Scope(
+                    [ Push(LInt 777L, site "temporary" 1)
+                      Call("leaf.new", site "construct-temporary" 2)
+                      Call("drop", site "drop-temporary" 3) ],
+                    site "inner-scope" 4)
+            let allocationAfterRewind =
+                [ Push(LInt 888L, site "reuse-value" 5)
+                  Call("leaf.new", site "reuse-construction" 6)
+                  Call("drop", site "drop-reused-value" 7) ]
+            let localStores = localNames |> List.mapi (fun index name -> Let(name, site ("store-" + name) (index + 1)))
+            let localLoadsAndDrops =
+                localNames
+                |> List.mapi (fun index name ->
+                    [ Load(name, site ("load-" + name) (index + 10))
+                      Call("drop", site ("drop-" + name) (index + 20)) ])
+                |> List.concat
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext
+                compiled.Program
+                "native-value-stack-stable-dead-only-six-locals"
+                [ TInt; TInt; TInt; TInt; TInt; TInt ]
+                [ Scope(localStores @ [ deadInnerScope ] @ allocationAfterRewind @ localLoadsAndDrops, site "outer-scope" 30) ]
+                compiled.Context.SourceOrigins
+          StableEscapingScopeResult =
+            let site label column = span ("<native-value-stack-stable-escaping-result-" + label + ">") column
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext
+                compiled.Program
+                "native-value-stack-stable-escaping-scope-result"
+                [ TInt; TInt ]
+                [ Scope(
+                    [ Push(LInt 99L, site "temporary-value" 1)
+                      Call("leaf.new", site "temporary-leaf" 2)
+                      Call("drop", site "drop-temporary" 3)
+                      Call("mailbox.make-envelope", site "escaping-result" 4) ],
+                    site "inner-scope" 5) ]
+                compiled.Context.SourceOrigins
+          StableBranchEscapingScopeResult =
+            let site label column = span ("<native-value-stack-stable-branch-result-" + label + ">") column
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext
+                compiled.Program
+                "native-value-stack-stable-branch-escaping-scope-result"
+                [ TInt; TBool ]
+                [ Scope(
+                    [ If(
+                        [ Push(LInt 700L, site "left-tag" 1)
+                          Call("mailbox.make-envelope", site "left-envelope" 2) ],
+                        [ Push(LInt 800L, site "right-tag" 3)
+                          Call("mailbox.make-envelope", site "right-envelope" 4) ],
+                        site "branch" 5) ],
+                    site "outer-scope" 6) ]
+                compiled.Context.SourceOrigins
           FailAfterAllocation = compileEntry "mailbox.fail-after-allocation.entry" "mailbox.fail-after-allocation" [ TNamed "State"; TInt ] }
     let bodies =
-        [ entries.Initialize; entries.TurnOne; entries.TurnEight; entries.Branch; entries.UnitValue; entries.UnitDrop; entries.EmptyValue; entries.EmptyIdentity; entries.ScopedWidth; entries.Depth64; entries.Depth65; entries.ScopeShadow; entries.DirectDupDrop; entries.FailAfterAllocation ]
+        [ entries.Initialize; entries.TurnOne; entries.TurnEight; entries.Branch; entries.UnitValue; entries.UnitDrop; entries.EmptyValue; entries.EmptyIdentity; entries.ScopedWidth; entries.Depth64; entries.Depth65; entries.ScopeShadow; entries.DirectDupDrop; entries.StableDeadOnlySixLocals; entries.StableEscapingScopeResult; entries.StableBranchEscapingScopeResult; entries.FailAfterAllocation ]
     if not (VerifiedIrProgram.isBackendExecutable entries.Program) then
         invalidOp "Flow lowering did not produce a backend-authorized VerifiedIrProgram."
     if bodies |> List.exists (fun body -> not (Object.ReferenceEquals(VerifiedIrBody.program body, entries.Program))) then
@@ -265,10 +329,27 @@ let private compileStringEntries (source: string) =
           Maturity = LibraryWord
           Revision = 1 }
     let discardName = discardDefinition.Name
+    let uncertainIdentityDefinition: WordDefinition =
+        { Name = "mailbox.uncertain-identity"
+          Inputs = [ TString ]
+          Outputs = [ TString ]
+          Effects = Set.empty
+          Maturity = LibraryWord
+          Revision = 1
+          Documentation = "Conformance target with an intentionally unavailable provenance summary."
+          Body = []
+          SourceText = "compiler-minted uncertain identity"
+          Span = span "<native-value-stack-uncertain-identity>" 1 }
+    let uncertainIdentityEntry: WordEntry =
+        { Definition = uncertainIdentityDefinition
+          Builtin = None
+          Status = Persistent
+          Maturity = LibraryWord
+          Revision = 1 }
     let compilerContext =
         { flowCompiled.Context.CompilerContext with
-            Words = Map.add discardName discardEntry flowCompiled.Context.CompilerContext.Words
-            WordIds = Map.add discardName (WordId "native-value-stack-string-discard-text-envelope") flowCompiled.Context.CompilerContext.WordIds }
+            Words = flowCompiled.Context.CompilerContext.Words |> Map.add discardName discardEntry |> Map.add uncertainIdentityDefinition.Name uncertainIdentityEntry
+            WordIds = flowCompiled.Context.CompilerContext.WordIds |> Map.add discardName (WordId "native-value-stack-string-discard-text-envelope") |> Map.add uncertainIdentityDefinition.Name (WordId "native-value-stack-uncertain-identity") }
     let verifiedProgram = Compiler.compileIrProgramWithSourceOrigins compilerContext flowCompiled.Context.SourceOrigins
     let compiled =
         { flowCompiled with
@@ -332,6 +413,68 @@ let private compileStringEntries (source: string) =
                 "native-value-stack-string-zero-output-user-call"
                 [ TNamed "TextEnvelope" ]
                 [ Call("mailbox.discard-text-envelope", stringSpan "zero-output-user-call" 1) ]
+                compiled.Context.SourceOrigins
+          StableDeadOnlySixLocals =
+            let localNames = [ "string0"; "string1"; "string2"; "string3"; "string4"; "string5" ]
+            let localStores = localNames |> List.mapi (fun index name -> Let(name, stringSpan ("stable-dead-store-" + name) (index + 1)))
+            let deadInnerScope =
+                Scope(
+                    [ Load("string0", stringSpan "stable-dead-load-left" 10)
+                      Load("string1", stringSpan "stable-dead-load-right" 11)
+                      Call("string.concat", stringSpan "stable-dead-concat" 12)
+                      Call("drop", stringSpan "stable-dead-drop" 13) ],
+                    stringSpan "stable-dead-inner-scope" 14)
+            let allocationAfterRewind =
+                [ Push(LString "z", stringSpan "stable-dead-post-rewind-allocation" 15)
+                  Call("drop", stringSpan "stable-dead-post-rewind-drop" 16) ]
+            let localLoadsAndDrops =
+                localNames
+                |> List.mapi (fun index name ->
+                    [ Load(name, stringSpan ("stable-dead-load-" + name) (index + 20))
+                      Call("drop", stringSpan ("stable-dead-drop-" + name) (index + 30)) ])
+                |> List.concat
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext
+                compiled.Program
+                "native-value-stack-string-stable-dead-only-six-locals"
+                (List.replicate 6 TString)
+                [ Scope(localStores @ [ deadInnerScope ] @ allocationAfterRewind @ localLoadsAndDrops, stringSpan "stable-dead-outer-scope" 40) ]
+                compiled.Context.SourceOrigins
+          StableEscapingScopeResult =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext
+                compiled.Program
+                "native-value-stack-string-stable-escaping-scope-result"
+                []
+                [ Scope(
+                    [ Push(LString "dead", stringSpan "stable-escaping-temporary" 1)
+                      Let("temporary", stringSpan "stable-escaping-store-temporary" 2)
+                      Push(LString "a", stringSpan "stable-escaping-left" 3)
+                      Push(LString "b", stringSpan "stable-escaping-right" 4)
+                      Call("string.concat", stringSpan "stable-escaping-concat" 5) ],
+                    stringSpan "stable-escaping-inner-scope" 6) ]
+                compiled.Context.SourceOrigins
+          StableBindingRoundTrip =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compilerContext
+                verifiedProgram
+                "native-value-stack-string-stable-binding-round-trip"
+                []
+                [ Scope(
+                    [ Push(LString "stable", stringSpan "stable-binding-value" 1)
+                      Let("saved", stringSpan "stable-binding-store" 2)
+                      Load("saved", stringSpan "stable-binding-load" 3) ],
+                    stringSpan "stable-binding-scope" 4) ]
+                compiled.Context.SourceOrigins
+          StableUncertainCallScope =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compilerContext
+                verifiedProgram
+                "native-value-stack-string-stable-uncertain-call-scope"
+                [ TString ]
+                [ Scope(
+                    [ Call("mailbox.uncertain-identity", stringSpan "stable-uncertain-call" 1) ],
+                    stringSpan "stable-uncertain-call-scope" 2) ]
                 compiled.Context.SourceOrigins }
     let bodies =
         [ entries.TurnText
@@ -345,7 +488,11 @@ let private compileStringEntries (source: string) =
           entries.FailAfterTextAllocation
           entries.DirectDupDrop
           entries.ScopeShadow
-          entries.ZeroOutputUserCall ]
+          entries.ZeroOutputUserCall
+          entries.StableDeadOnlySixLocals
+          entries.StableEscapingScopeResult
+          entries.StableBindingRoundTrip
+          entries.StableUncertainCallScope ]
     if not (VerifiedIrProgram.isBackendExecutable entries.Program) then
         invalidOp "Flow lowering did not produce a backend-authorized String VerifiedIrProgram."
     if bodies |> List.exists (fun body -> not (Object.ReferenceEquals(VerifiedIrBody.program body, entries.Program))) then
@@ -825,6 +972,8 @@ let private layoutEventKind (event: OwningStackLayoutEvent) =
     elif event.Kind = "local-compact" then 14L
     elif event.Kind = "string-concat-left" then 15L
     elif event.Kind = "string-concat-right" then 16L
+    elif event.Kind = "descriptor-transfer" then 17L
+    elif event.Kind = "arena-rewind" then 18L
     elif event.Kind = "allocate" then 1L
     else -1L
 
@@ -1279,15 +1428,22 @@ let private runNativeChain
 let private stackMetrics (result: obj) = getProperty result "Metrics"
 
 let private metricSummary (metrics: obj) =
+    let typed = metrics :?> OwningStackMetrics
     let boolean name =
         let value = getProperty metrics name
         if isNull value then invalidOp $"Expected metric property '{name}'."
         Convert.ToBoolean(value, CultureInfo.InvariantCulture)
+    let optionInt = function Some value -> box value | None -> null
     jsonObject [
-        "stackCapacityBytes", box (int64Property metrics "StackCapacityBytes")
-        "peakLiveStackBytes", box (int64Property metrics "PeakLiveStackBytes")
-        "reservedStackBytes", box (int64Property metrics "ReservedStackBytes")
-        "peakLiveLocalBytes", box (int64Property metrics "PeakLiveLocalBytes")
+        "reservedArenaCapacityBytes", box (int64Property metrics "StackCapacityBytes")
+        "occupiedCursorPeakBytes", box (int64Property metrics "ReservedStackBytes")
+        "occupiedCursorFinalBytes", box (int64Property metrics "FinalCursorBytes")
+        "logicalRootBytes", null
+        "uniqueLivePayloadBytes", optionInt typed.UniqueLivePayloadBytes
+        "deadInteriorBytes", null
+        "livePayloadAccounting", box (string (getProperty metrics "LivePayloadAccountingUnavailableReason"))
+        "legacyPeakLivePayloadCounterBytes", null
+        "legacyPeakLiveLocalPayloadCounterBytes", null
         "reservedLocalBytes", box (int64Property metrics "ReservedLocalBytes")
         "inputBytes", box (int64Property metrics "InputBytes")
         "inputCopyBytes", box (int64Property metrics "InputCopyBytes")
@@ -1300,6 +1456,8 @@ let private metricSummary (metrics: obj) =
         "deepCopyBytes", box (int64Property metrics "DeepCopyBytes")
         "moveBytes", box (int64Property metrics "MoveBytes")
         "retainedCopyBytes", box (int64Property metrics "RetainedCopyBytes")
+        "descriptorTransferCount", optionInt typed.DescriptorTransferCount
+        "descriptorTransferBytes", optionInt typed.DescriptorTransferBytes
         "cursorInvariantChecks", box (int64Property metrics "CursorInvariantChecks")
         "frameReturnCount", box (int64Property metrics "FrameReturnCount")
         "duplicateDisjointChecks", box (int64Property metrics "DuplicateDisjointChecks")
@@ -1311,8 +1469,79 @@ let private metricSummary (metrics: obj) =
         "instrumentationReservedBytes", box (int64Property metrics "InstrumentationReservedBytes")
         "backendMetadataPerFrameBytes", box (int64Property metrics "BackendMetadataPerFrameBytes")
         "backendMetadataPeakBoundBytes", box (int64Property metrics "BackendMetadataPeakBoundBytes")
-        "finalCursorBytes", box (int64Property metrics "FinalCursorBytes")
-        "finalLiveStackBytes", box (int64Property metrics "FinalLiveStackBytes") ]
+        "runtimeLayoutScannerScratchBytes", box (int64Property metrics "RuntimeLayoutScannerScratchBytes")
+        "finalLivePayloadBytes", null
+        "finalLivePayloadAccounting", box "unavailable; final cursor reset is the request-completion oracle" ]
+
+let private descriptorTransferMetricsPass (metrics: OwningStackMetrics) (events: OwningStackLayoutEvent list) =
+    let transferEvents = events |> List.filter (fun event -> event.Kind = "descriptor-transfer")
+    if metrics.TraceTruncated then
+        metrics.DescriptorTransferCount.IsNone && metrics.DescriptorTransferBytes.IsNone
+    else
+        metrics.DescriptorTransferCount = Some transferEvents.Length
+        && metrics.DescriptorTransferBytes = Some(transferEvents.Length * 20)
+        && (transferEvents |> List.forall (fun event -> event.ExtentBytes = 20))
+
+let private substringCount (source: string) (needle: string) =
+    let mutable found = 0
+    let mutable offset = 0
+    let mutable next = source.IndexOf(needle, offset, StringComparison.Ordinal)
+    while next >= 0 do
+        found <- found + 1
+        offset <- next + needle.Length
+        next <- source.IndexOf(needle, offset, StringComparison.Ordinal)
+    found
+
+let private generatedStablePolicyPass (program: OwningStackCompiledProgram) expectedRewindSites =
+    let ir = program.LlvmIr
+    let frameMarker = "define internal i32 @agentlang_entry_frame("
+    let frameStart = ir.IndexOf(frameMarker, StringComparison.Ordinal)
+    let frameEnd = if frameStart < 0 then -1 else ir.IndexOf("\ndefine internal i32 @", frameStart + frameMarker.Length, StringComparison.Ordinal)
+    let entryFrame = if frameStart < 0 then "" elif frameEnd < 0 then ir.Substring(frameStart) else ir.Substring(frameStart, frameEnd - frameStart)
+    let rewindSites = substringCount entryFrame "call void @al_owning_record_layout(ptr %ctx, i32 18,"
+    let runtimeLivenessQueries =
+        [ "@al_owning_can_rewind"; "@al_owning_find_live"; "@al_owning_scan_roots"; "@al_owning_any_live_range" ]
+        |> List.filter (fun symbol -> ir.Contains(symbol, StringComparison.Ordinal))
+    frameStart >= 0 && rewindSites = expectedRewindSites && runtimeLivenessQueries.IsEmpty, jsonObject [
+        "entryFrameFound", box (frameStart >= 0)
+        "authorizedRewindEventSites", box rewindSites
+        "expectedAuthorizedRewindEventSites", box expectedRewindSites
+        "runtimeLivenessQuerySymbols", box runtimeLivenessQueries ]
+
+let private generatedCalledFunctionRewindPass (program: OwningStackCompiledProgram) expectedRewindSites =
+    let ir = program.LlvmIr
+    let frameMarker = "define internal i32 @agentlang_entry_frame("
+    let frameStart = ir.IndexOf(frameMarker, StringComparison.Ordinal)
+    let frameEnd = if frameStart < 0 then -1 else ir.IndexOf("\ndefine internal i32 @", frameStart + frameMarker.Length, StringComparison.Ordinal)
+    let entryFrame = if frameStart < 0 then "" elif frameEnd < 0 then ir.Substring(frameStart) else ir.Substring(frameStart, frameEnd - frameStart)
+    let callPrefix = "call i32 @agentlang_word_"
+    let symbols = ResizeArray<string>()
+    let mutable offset = 0
+    let mutable callStart = entryFrame.IndexOf(callPrefix, offset, StringComparison.Ordinal)
+    while callStart >= 0 do
+        let symbolStart = callStart + "call i32 ".Length
+        let symbolEnd = entryFrame.IndexOf('(', symbolStart)
+        if symbolEnd > symbolStart then symbols.Add(entryFrame.Substring(symbolStart, symbolEnd - symbolStart))
+        offset <- if symbolEnd < 0 then entryFrame.Length else symbolEnd + 1
+        callStart <- entryFrame.IndexOf(callPrefix, offset, StringComparison.Ordinal)
+    let calledFunctionTexts =
+        symbols
+        |> Seq.map (fun symbol ->
+            let marker = $"define internal i32 {symbol}("
+            let start = ir.IndexOf(marker, StringComparison.Ordinal)
+            let finish = if start < 0 then -1 else ir.IndexOf("\ndefine internal i32 @", start + marker.Length, StringComparison.Ordinal)
+            if start < 0 then "" elif finish < 0 then ir.Substring(start) else ir.Substring(start, finish - start))
+        |> Seq.toList
+    let rewindSites = calledFunctionTexts |> List.map (fun text -> substringCount text "call void @al_owning_record_layout(ptr %ctx, i32 18,")
+    let runtimeLivenessQueries =
+        [ "@al_owning_can_rewind"; "@al_owning_find_live"; "@al_owning_scan_roots"; "@al_owning_any_live_range" ]
+        |> List.filter (fun symbol -> ir.Contains(symbol, StringComparison.Ordinal))
+    let passed = symbols.Count = 1 && calledFunctionTexts.Length = 1 && rewindSites = [ expectedRewindSites ] && runtimeLivenessQueries.IsEmpty
+    passed, jsonObject [
+        "calledFunctionSymbols", box (symbols |> Seq.toList)
+        "calledFunctionRewindSites", box rewindSites
+        "expectedCalledFunctionRewindSites", box expectedRewindSites
+        "runtimeLivenessQuerySymbols", box runtimeLivenessQueries ]
 
 let private checkTraceUsable (checks: ResizeArray<obj>) (failures: ResizeArray<string>) name (metrics: obj) (events: OwningStackLayoutEvent list) =
     let eventCount = events.Length
@@ -1372,6 +1601,7 @@ let private runOwningStackChain
     use directProgram = compile "direct-dup-drop" entries.DirectDupDrop
     use failProgram = compile "fail-after-allocation" entries.FailAfterAllocation
     let stackCapacity = 512
+    let executionStackCapacity = fixture.GetProperty("owningStack").GetProperty("stableArenaExecutionCapacityBytes").GetInt32()
     let stateCapacity = 24
     let initialElement = fixture.GetProperty("initialState")
     let expectedInitial = expectedValues initialElement
@@ -1389,7 +1619,7 @@ let private runOwningStackChain
     let turns = fixture.GetProperty("turns").EnumerateArray() |> Seq.toArray
     let firstInput = turns[0].GetProperty("input").GetInt64()
     let firstOutput = Array.create stateCapacity 0xA5uy
-    let firstResult = turnProgram.ExecuteInto(initialValues @ [ IntValue firstInput ], stackCapacity, firstOutput)
+    let firstResult = turnProgram.ExecuteInto(initialValues @ [ IntValue firstInput ], executionStackCapacity, firstOutput)
     let firstValues = getProperty (box firstResult) "Values" :?> Value list
     let firstMetrics = stackMetrics (box firstResult)
     let expectedFirstElement = turns[0].GetProperty("expectedState")
@@ -1400,13 +1630,118 @@ let private runOwningStackChain
         "independentValueEncodingHex", box (bytesHex (stateBytesFromJson expectedFirstElement)) ])
     recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/turn-1" (firstValues = expectedFirst) (ValueInspection.toJson entries.Program firstValues)
     recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/turn-1-retained-bytes" (firstOutput = expectedFirstBytes) (bufferCheckDetails expectedFirstBytes firstOutput)
+    let mutable stableArenaCapacityControlReport: obj = null
+    if repetition = 1 then
+        let control = fixture.GetProperty("owningStack").GetProperty("stableArenaCapacityControl")
+        let controlBuffer = Array.copy oldRetainedState
+        let controlBefore = Array.copy controlBuffer
+        let controlResult =
+            try
+                Some(turnProgram.ExecuteInto(initialValues @ [ IntValue firstInput ], stackCapacity, controlBuffer))
+            with _ -> None
+        let expectedPeak = control.GetProperty("sourceDerivedPeakCursorBytes").GetProperty("1").GetInt32()
+        let expectedInputBytes =
+            control.GetProperty("inputExtentsBytes").EnumerateArray()
+            |> Seq.sumBy (fun item -> item.GetInt32())
+        match controlResult with
+        | Some result ->
+            let metrics = result.Metrics
+            let controlPassed =
+                control.GetProperty("n1FitsLegacyCapacity").GetBoolean()
+                && result.Values = firstValues
+                && controlBuffer = firstOutput
+                && controlBuffer <> controlBefore
+                && metrics.StackCapacityBytes = stackCapacity
+                && int64Property (box metrics) "ReservedStackBytes" = int64 expectedPeak
+                && int64Property (box metrics) "FinalCursorBytes" = 0L
+                && int64Property (box metrics) "InputCopyBytes" = int64 expectedInputBytes
+                && int64Property (box metrics) "MoveBytes" = 0L
+                && descriptorTransferMetricsPass metrics result.LayoutEvents
+            recordCheck checks failures $"owning-stack/{optimization}/N=1/stable-arena-512-byte-capacity-control" controlPassed (jsonObject [
+                "capacityBytes", box stackCapacity
+                "expectedSourceDerivedPeakCursorBytes", box expectedPeak
+                "actualPeakCursorBytes", box metrics.ReservedStackBytes
+                "resultMatchesSufficientCapacityRun", box (result.Values = firstValues && controlBuffer = firstOutput)
+                "metrics", box (metricSummary (box metrics)) ])
+            checkTraceUsable checks failures $"owning-stack/{optimization}/N=1/stable-arena-512-byte-capacity-control-trace" metrics result.LayoutEvents |> ignore
+            stableArenaCapacityControlReport <- jsonObject [
+                "repetitionCount", box repetition
+                "capacityBytes", box stackCapacity
+                "outcome", box "success"
+                "expectedSourceDerivedPeakCursorBytes", box expectedPeak
+                "actualPeakCursorBytes", box metrics.ReservedStackBytes
+                "callerBufferMatchesSemanticRun", box (controlBuffer = firstOutput)
+                "metrics", box (metricSummary (box metrics)) ]
+        | None ->
+            recordCheck checks failures $"owning-stack/{optimization}/N=1/stable-arena-512-byte-capacity-control" false "The source-derived 184-byte N=1 schedule must fit the preserved 512-byte capacity."
+    elif repetition = 8 then
+        let control = fixture.GetProperty("owningStack").GetProperty("stableArenaCapacityControl")
+        let controlBuffer = Array.copy oldRetainedState
+        let controlBefore = Array.copy controlBuffer
+        let failure =
+            try
+                turnProgram.ExecuteInto(initialValues @ [ IntValue firstInput ], stackCapacity, controlBuffer) |> ignore
+                None
+            with error -> Some error
+        match failure with
+        | Some error ->
+            let metrics = getProperty error "Metrics"
+            let required = int64Property error "RequiredBytes"
+            let available = int64Property error "AvailableBytes"
+            let inputBytes =
+                control.GetProperty("inputExtentsBytes").EnumerateArray()
+                |> Seq.sumBy (fun item -> item.GetInt32())
+            let schedule =
+                int64 inputBytes
+                + int64 (control.GetProperty("preExerciseAllocationBytes").GetInt32())
+                + int64 (control.GetProperty("n8CompletedExercisesBeforeFailure").GetInt32()) * int64 (control.GetProperty("perExerciseAllocationBytes").GetInt32())
+                + int64 (control.GetProperty("n8SeventhExercisePrefixBytes").GetInt32())
+                + int64 (control.GetProperty("n8FinalIntResultBytes").GetInt32())
+            let expectedRequired = int64 (control.GetProperty("sourceDerivedN8FirstRejectedReservationBytes").GetInt32())
+            let traceTruncated = Convert.ToBoolean(getProperty metrics "TraceTruncated", CultureInfo.InvariantCulture)
+            let controlPassed =
+                control.GetProperty("n8ExceedsLegacyCapacity").GetBoolean()
+                && schedule = expectedRequired
+                && (getProperty error "Code" |> string) = "OWNING_STACK_CAPACITY"
+                && (getProperty error "Boundary" |> string) = control.GetProperty("boundary").GetString()
+                && available = int64 stackCapacity
+                && required = expectedRequired
+                && required > available
+                && int64Property metrics "FrameReturnCount" > 0L
+                && int64Property metrics "DeepCopyBytes" > 0L
+                && int64Property metrics "MoveBytes" = 0L
+                && int64Property metrics "FinalCursorBytes" = 0L
+                && controlBuffer = controlBefore
+                && not traceTruncated
+            recordCheck checks failures $"owning-stack/{optimization}/N=8/stable-arena-512-byte-capacity-control" controlPassed (jsonObject [
+                "capacityBytes", box stackCapacity
+                "sourceDerivedFirstRejectedReservationBytes", box schedule
+                "actualFirstRejectedReservationBytes", box required
+                "availableBytes", box available
+                "frameReturnsBeforeFailure", box (int64Property metrics "FrameReturnCount")
+                "deepCopyBytesBeforeFailure", box (int64Property metrics "DeepCopyBytes")
+                "moveBytesBeforeFailure", box (int64Property metrics "MoveBytes")
+                "traceTruncated", box traceTruncated
+                "cursorResetToZero", box (int64Property metrics "FinalCursorBytes" = 0L)
+                "callerBufferUnchanged", box (controlBuffer = controlBefore)
+                "metrics", box (metricSummary metrics) ])
+            stableArenaCapacityControlReport <- jsonObject [
+                "repetitionCount", box repetition
+                "capacityBytes", box stackCapacity
+                "outcome", box "capacity-failure"
+                "sourceDerivedFirstRejectedReservationBytes", box schedule
+                "actualFirstRejectedReservationBytes", box required
+                "callerBufferUnchanged", box (controlBuffer = controlBefore)
+                "metrics", box (metricSummary metrics) ]
+        | None ->
+            recordCheck checks failures $"owning-stack/{optimization}/N=8/stable-arena-512-byte-capacity-control" false "The source-derived 632-byte N=8 schedule must exceed the preserved 512-byte capacity."
     let firstPublishedState = stateFromRetainedBytes firstOutput
     recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/turn-1-raw-publication-decodes-to-next-input" (firstValues = [ firstPublishedState ]) (jsonObject [
         "decodedFromRawRetainedHex", box (bytesHex firstOutput)
         "decodedValue", ValueInspection.toJson entries.Program [ firstPublishedState ] ])
     let secondInput = turns[1].GetProperty("input").GetInt64()
     let secondOutput = Array.create stateCapacity 0xA5uy
-    let secondResult = turnProgram.ExecuteInto([ firstPublishedState; IntValue secondInput ], stackCapacity, secondOutput)
+    let secondResult = turnProgram.ExecuteInto([ firstPublishedState; IntValue secondInput ], executionStackCapacity, secondOutput)
     let secondValues = getProperty (box secondResult) "Values" :?> Value list
     let secondMetrics = stackMetrics (box secondResult)
     let expectedSecondElement = turns[1].GetProperty("expectedState")
@@ -1417,11 +1752,41 @@ let private runOwningStackChain
         "independentValueEncodingHex", box (bytesHex (stateBytesFromJson expectedSecondElement)) ])
     recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/turn-2" (secondValues = expectedSecond) (ValueInspection.toJson entries.Program secondValues)
     recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/turn-2-retained-bytes" (secondOutput = expectedSecondBytes) (bufferCheckDetails expectedSecondBytes secondOutput)
+    let stableCapacitySchedule = fixture.GetProperty("owningStack").GetProperty("stableArenaCapacityControl")
+    let scheduleInputBytes =
+        stableCapacitySchedule.GetProperty("inputExtentsBytes").EnumerateArray()
+        |> Seq.sumBy (fun item -> item.GetInt32())
+    let sourceDerivedPeak =
+        scheduleInputBytes
+        + stableCapacitySchedule.GetProperty("preExerciseAllocationBytes").GetInt32()
+        + stableCapacitySchedule.GetProperty("perExerciseAllocationBytes").GetInt32() * repetition
+        + stableCapacitySchedule.GetProperty("postExerciseAllocationBytes").GetInt32()
+    let expectedSchedulePeak = stableCapacitySchedule.GetProperty("sourceDerivedPeakCursorBytes").GetProperty(string repetition).GetInt32()
+    let cursorSchedulePass =
+        stackCapacity = stableCapacitySchedule.GetProperty("legacyCapacityBytes").GetInt32()
+        && executionStackCapacity >= expectedSchedulePeak
+        && sourceDerivedPeak = expectedSchedulePeak
+        && int64Property firstMetrics "ReservedStackBytes" = int64 expectedSchedulePeak
+        && int64Property secondMetrics "ReservedStackBytes" = int64 expectedSchedulePeak
+        && int64Property firstMetrics "StackCapacityBytes" = int64 executionStackCapacity
+        && int64Property secondMetrics "StackCapacityBytes" = int64 executionStackCapacity
+        && int64Property firstMetrics "FinalCursorBytes" = 0L
+        && int64Property secondMetrics "FinalCursorBytes" = 0L
+    recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/source-derived-stable-cursor-schedule" cursorSchedulePass (jsonObject [
+        "inputBytes", box scheduleInputBytes
+        "preExerciseAllocationBytes", box (stableCapacitySchedule.GetProperty("preExerciseAllocationBytes").GetInt32())
+        "perExerciseAllocationBytes", box (stableCapacitySchedule.GetProperty("perExerciseAllocationBytes").GetInt32())
+        "repetitions", box repetition
+        "postExerciseAllocationBytes", box (stableCapacitySchedule.GetProperty("postExerciseAllocationBytes").GetInt32())
+        "expectedPeakCursorBytes", box expectedSchedulePeak
+        "sourceDerivedFormulaPeakCursorBytes", box sourceDerivedPeak
+        "turn1ActualPeakCursorBytes", box (int64Property firstMetrics "ReservedStackBytes")
+        "turn2ActualPeakCursorBytes", box (int64Property secondMetrics "ReservedStackBytes") ])
     let retainedBefore = Array.copy oldRetainedState
     let retainedBuffer = Array.copy retainedBefore
     let retainedCapacityFailure =
         try
-            turnProgram.ExecuteInto(initialValues @ [ IntValue firstInput ], stackCapacity, retainedBuffer, 23) |> ignore
+            turnProgram.ExecuteInto(initialValues @ [ IntValue firstInput ], executionStackCapacity, retainedBuffer, 23) |> ignore
             None
         with error -> Some error
     match retainedCapacityFailure with
@@ -1431,13 +1796,11 @@ let private runOwningStackChain
         let required = int64Property error "RequiredBytes"
         let available = int64Property error "AvailableBytes"
         let metrics = getProperty error "Metrics"
-        let finalLive = int64Property metrics "FinalLiveStackBytes"
         let finalCursor = int64Property metrics "FinalCursorBytes"
         let unchanged = retainedBuffer = retainedBefore
-        let passed = code = "OWNING_RETAINED_CAPACITY" && boundary = "retained-output" && required = 24L && available = 23L && finalLive = 0L && finalCursor = 0L && unchanged
+        let passed = code = "OWNING_RETAINED_CAPACITY" && boundary = "retained-output" && required = 24L && available = 23L && finalCursor = 0L && unchanged
         recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/retained-capacity-buffer-atomicity" passed (jsonObject [
             "exception", box (resourceExceptionDetails error)
-            "finalLiveStackBytes", box finalLive
             "finalCursorBytes", box finalCursor
             "callerBuffer", bufferCheckDetails retainedBefore retainedBuffer ])
     | None -> recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/retained-capacity-buffer-atomicity" false "Retained output capacity one byte below State's inline payload unexpectedly succeeded."
@@ -1452,17 +1815,15 @@ let private runOwningStackChain
     | Some error ->
         let code = getProperty error "Code" |> string
         let boundary = getProperty error "Boundary" |> string
-        let finalLive = int64Property (getProperty error "Metrics") "FinalLiveStackBytes"
         let finalCursor = int64Property (getProperty error "Metrics") "FinalCursorBytes"
         let unchanged = stackFailureBuffer = stackFailureBefore
         let required = int64Property error "RequiredBytes"
         let available = int64Property error "AvailableBytes"
-        let passed = code = "OWNING_STACK_CAPACITY" && boundary = "host-input-encoding" && required = 32L && available = 1L && finalLive = 0L && finalCursor = 0L && unchanged
+        let passed = code = "OWNING_STACK_CAPACITY" && boundary = "host-input-encoding" && required = 32L && available = 1L && finalCursor = 0L && unchanged
         recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/host-input-encoding-capacity-buffer-atomicity" passed (jsonObject [
             "exception", box (resourceExceptionDetails error)
             "requiredInputBytes", box required
             "availableStackCapacityBytes", box available
-            "finalLiveStackBytes", box finalLive
             "finalCursorBytes", box finalCursor
             "callerBuffer", bufferCheckDetails stackFailureBefore stackFailureBuffer ])
     | None -> recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/host-input-encoding-capacity-buffer-atomicity" false "One-byte stack capacity unexpectedly accepted the 32-byte host input encoding."
@@ -1473,12 +1834,10 @@ let private runOwningStackChain
             failProgram.ExecuteInto(initialValues @ [ IntValue firstInput ], stackCapacity, diagnosticBuffer) |> ignore
             "unexpected-success", null
         with error -> diagnosticCode error, getProperty error "Metrics"
-    let diagnosticFinalLive = if isNull diagnosticMetrics then -1L else int64Property diagnosticMetrics "FinalLiveStackBytes"
     let diagnosticFinalCursor = if isNull diagnosticMetrics then -1L else int64Property diagnosticMetrics "FinalCursorBytes"
     let diagnosticBufferUnchanged = diagnosticBuffer = diagnosticBefore
-    recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/error-after-allocation-buffer-atomicity" (diagnostic = "RUNTIME_DIVIDE_BY_ZERO" && diagnosticFinalLive = 0L && diagnosticFinalCursor = 0L && diagnosticBufferUnchanged) (jsonObject [
+    recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/error-after-allocation-buffer-atomicity" (diagnostic = "RUNTIME_DIVIDE_BY_ZERO" && diagnosticFinalCursor = 0L && diagnosticBufferUnchanged) (jsonObject [
         "code", box diagnostic
-        "finalLiveStackBytes", box diagnosticFinalLive
         "finalCursorBytes", box diagnosticFinalCursor
         "callerBuffer", bufferCheckDetails diagnosticBefore diagnosticBuffer ])
     let directOutput = Array.create 16 0xA5uy
@@ -1492,22 +1851,12 @@ let private runOwningStackChain
     let dropEvents = directRanges |> Array.filter (fun event -> event.Kind = 3L)
     let callReturnEvents = directRanges |> Array.filter (fun event -> event.Kind = 9L)
     let retainedEvents = directRanges |> Array.filter (fun event -> event.Kind = 10L)
+    let descriptorTransferEvents = directRanges |> Array.filter (fun event -> event.Kind = 17L)
     let droppedDuplicates =
         duplicateEvents
         |> Array.collect (fun duplicate ->
             dropEvents
             |> Array.filter (fun dropped -> dropped.Offset = duplicate.Offset && dropped.Extent = duplicate.Extent && dropped.Payload = duplicate.Payload))
-    let survivorReturnEvents =
-        match duplicateEvents, retainedEvents with
-        | [| duplicate |], [| retained |] ->
-            callReturnEvents
-            |> Array.filter (fun transfer ->
-                transfer.Offset = retained.SourceOffset
-                && transfer.Extent = duplicate.SourceExtent
-                && transfer.Payload = duplicate.Payload
-                && transfer.SourceOffset = duplicate.SourceOffset
-                && transfer.SourceExtent = duplicate.SourceExtent)
-        | _ -> [||]
     let duplicateIndex =
         directRanges |> Array.tryFindIndex (fun event -> event.Kind = 2L) |> Option.defaultValue -1
     let droppedDuplicateIndex =
@@ -1518,15 +1867,12 @@ let private runOwningStackChain
             && event.Offset = duplicateEvents[0].Offset
             && event.Extent = duplicateEvents[0].Extent)
         |> Option.defaultValue -1
-    let survivorReturnIndex =
-        directRanges
-        |> Array.tryFindIndex (fun event -> event.Kind = 9L && Array.contains event survivorReturnEvents)
-        |> Option.defaultValue -1
     let retainedCopyIndex = directRanges |> Array.tryFindIndex (fun event -> event.Kind = 10L) |> Option.defaultValue -1
     let directDuplicateRangesPass =
         duplicateEvents.Length = 1
         && droppedDuplicates.Length = 1
         && retainedEvents.Length = 1
+        && callReturnEvents.Length = 0
         && duplicateIndex >= 0
         && duplicateEvents[0].Extent = 16L
         && duplicateEvents[0].Payload = 16L
@@ -1536,14 +1882,10 @@ let private runOwningStackChain
         && droppedDuplicates[0].Offset = duplicateEvents[0].Offset
         && droppedDuplicates[0].Extent = duplicateEvents[0].Extent
         && duplicateIndex < droppedDuplicateIndex
-        && survivorReturnEvents.Length = 1
-        && survivorReturnIndex > droppedDuplicateIndex
-        && retainedCopyIndex > survivorReturnIndex
-        && survivorReturnEvents[0].Offset = retainedEvents[0].SourceOffset
-        && survivorReturnEvents[0].SourceOffset = duplicateEvents[0].SourceOffset
-        && survivorReturnEvents[0].SourceExtent = duplicateEvents[0].SourceExtent
-        && retainedEvents[0].SourceOffset = survivorReturnEvents[0].Offset
+        && retainedCopyIndex > droppedDuplicateIndex
+        && retainedEvents[0].SourceOffset = duplicateEvents[0].SourceOffset
         && retainedEvents[0].SourceExtent = duplicateEvents[0].SourceExtent
+        && (descriptorTransferEvents |> Array.exists (fun event -> event.Offset = duplicateEvents[0].SourceOffset && event.Payload = 16L))
         && retainedEvents[0].Payload = 16L
     let directLayouts = getProperty (box directResult) "Layouts" :?> OwningStackTypeLayout list
     recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/direct-top-dup-drop" (directValues = directExpected) (ValueInspection.toJson entries.Program directValues)
@@ -1551,26 +1893,44 @@ let private runOwningStackChain
     recordCheck checks failures $"fixture/N={repetition}/direct-Envelope-little-endian-layout-bytes" (directExpectedBytes = bytesFromInt64s [ 17L; 1017L ]) (box (bytesHex directExpectedBytes))
     recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/direct-retained-bytes" (directOutput = directExpectedBytes) (bufferCheckDetails directExpectedBytes directOutput)
     let directTraceComplete = checkTraceUsable checks failures $"owning-stack/{optimization}/N={repetition}/direct-trace-complete" directMetrics directEvents
-    recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/direct-physical-duplicate-drop-return-ranges" (directDuplicateRangesPass && directTraceComplete) (jsonObject [
+    let directMetricsTyped = directMetrics :?> OwningStackMetrics
+    let directTransferMetricsPass = descriptorTransferMetricsPass directMetricsTyped directEvents
+    recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/direct-dup-drop-keeps-survivor-address" (directDuplicateRangesPass && directTraceComplete && directTransferMetricsPass && int64Property directMetrics "MoveBytes" = 0L && int64Property directMetrics "DeepCopyBytes" = 40L) (jsonObject [
         "duplicateEvents", box duplicateEvents
         "dropEvents", box dropEvents
         "matchingDroppedDuplicateEvents", box droppedDuplicates
-        "survivorReturnMoveEvents", box survivorReturnEvents
-        "retainedCopyEvents", box retainedEvents ])
+        "callReturnMoveEvents", box callReturnEvents
+        "descriptorTransferEvents", box descriptorTransferEvents
+        "retainedCopyEvents", box retainedEvents
+        "expectedDeepCopyBytes", box 40
+        "measuredDeepCopyBytes", box (int64Property directMetrics "DeepCopyBytes")
+        "transferMetricsMatchCompleteTrace", box directTransferMetricsPass ])
     let allocatedScalars = directRanges |> Array.filter (fun event -> event.Kind = 1L && event.Extent = 8L && event.Payload = 8L) |> Array.sortBy (fun event -> event.Offset)
     let adjacentScalars = allocatedScalars |> Array.pairwise |> Array.exists (fun (left, right) -> left.Offset + left.Extent = right.Offset)
-    recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/adjacent-inline-scalar-ranges" adjacentScalars (box allocatedScalars)
+    let noCompactionEvents = directEvents |> List.forall (fun event -> event.Kind <> "local-compact")
+    recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/descriptor-path-does-not-compact-live-payload" (adjacentScalars && noCompactionEvents && int64Property directMetrics "MoveBytes" = 0L) (jsonObject [
+        "adjacentFreshScalarAllocations", box allocatedScalars
+        "localCompactEvents", box (directEvents |> List.filter (fun event -> event.Kind = "local-compact") |> layoutEventDetails)
+        "moveBytes", box (int64Property directMetrics "MoveBytes") ])
     let directDeepCopyBytes = int64Property directMetrics "DeepCopyBytes"
-    recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/explicit-Envelope-dup-copy-bytes" (directDeepCopyBytes >= 16L) (jsonObject [ "expectedExplicitCopyBytes", box 16; "measuredDeepCopyBytes", box directDeepCopyBytes ])
+    recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/record-construction-and-dup-copy-categories" (directDeepCopyBytes = 40L && int64Property directMetrics "MoveBytes" = 0L && int64Property directMetrics "InputCopyBytes" = 16L && int64Property directMetrics "RetainedCopyBytes" = 16L) (jsonObject [
+        "expectedMakeRecordConstructionBytes", box 24
+        "expectedExplicitDuplicateBytes", box 16
+        "expectedDeepCopyBytes", box 40
+        "measuredDeepCopyBytes", box directDeepCopyBytes
+        "moveBytes", box (int64Property directMetrics "MoveBytes")
+        "inputCopyBytes", box (int64Property directMetrics "InputCopyBytes")
+        "retainedCopyBytes", box (int64Property directMetrics "RetainedCopyBytes") ])
     let directReserved = int64Property directMetrics "ReservedStackBytes"
-    let directLive = int64Property directMetrics "PeakLiveStackBytes"
-    let directReservedLocal = int64Property directMetrics "ReservedLocalBytes"
-    let directLiveLocal = int64Property directMetrics "PeakLiveLocalBytes"
-    recordCheck checks failures $"owning-stack/{optimization}/direct-live-reserved-byte-categories" (directReserved >= directLive && directReservedLocal >= directLiveLocal) (jsonObject [
-        "addressSpanBytes", box (directReserved + directReservedLocal)
-        "livePayloadBytes", box (directLive + directLiveLocal)
-        "stackReservationSlackBytes", box (directReserved - directLive)
-        "localReservationSlackBytes", box (directReservedLocal - directLiveLocal)
+    let directUniqueLive = directMetricsTyped.UniqueLivePayloadBytes
+    recordCheck checks failures $"owning-stack/{optimization}/direct-cursor-and-metadata-categories" (directReserved >= 56L && directUniqueLive.IsNone && directTransferMetricsPass) (jsonObject [
+        "reservedArenaCapacityBytes", box (int64Property directMetrics "StackCapacityBytes")
+        "occupiedCursorPeakBytes", box directReserved
+        "logicalRootBytes", null
+        "uniqueLivePayloadBytes", box (directUniqueLive |> Option.map box |> Option.defaultValue null)
+        "deadInteriorBytes", null
+        "backendMetadataPerFrameBytes", box (int64Property directMetrics "BackendMetadataPerFrameBytes")
+        "backendMetadataPeakBoundBytes", box (int64Property directMetrics "BackendMetadataPeakBoundBytes")
         "metrics", box (metricSummary directMetrics) ])
     let afterAllocationCapacity = max 0L (directReserved - 1L) |> int
     let afterAllocationBuffer = Array.copy oldRetainedState
@@ -1584,23 +1944,23 @@ let private runOwningStackChain
     | Some error ->
         let metrics = getProperty error "Metrics"
         let frameReturns = int64Property metrics "FrameReturnCount"
-        let finalLive = int64Property metrics "FinalLiveStackBytes"
         let finalCursor = int64Property metrics "FinalCursorBytes"
-        let peakLive = int64Property metrics "PeakLiveStackBytes"
+        let peakCursor = int64Property metrics "ReservedStackBytes"
+        let deepCopyBytes = int64Property metrics "DeepCopyBytes"
         let inputCopyBytes = int64Property metrics "InputCopyBytes"
         let retainedCopyBytes = int64Property metrics "RetainedCopyBytes"
         let bufferUnchanged = afterAllocationBuffer = afterAllocationBefore
         let code = getProperty error "Code" |> string
         let boundary = getProperty error "Boundary" |> string
-        let passed = code = "OWNING_STACK_CAPACITY" && boundary = "program-data-stack" && frameReturns > 0L && peakLive >= 16L && finalLive = 0L && finalCursor = 0L && inputCopyBytes = 16L && retainedCopyBytes = 0L && bufferUnchanged
+        let passed = code = "OWNING_STACK_CAPACITY" && boundary = "program-data-stack" && frameReturns > 0L && peakCursor > 0L && deepCopyBytes > 0L && finalCursor = 0L && inputCopyBytes = 16L && retainedCopyBytes = 0L && bufferUnchanged
         recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/post-allocation-post-frame-capacity-unwind" passed (jsonObject [
             "exception", box (resourceExceptionDetails error)
             "configuredStackCapacityBytes", box afterAllocationCapacity
             "frameReturnsBeforeFailure", box frameReturns
             "inputCopyBytes", box inputCopyBytes
-            "peakLiveStackBytesBeforeFailure", box peakLive
+            "occupiedCursorPeakBytesBeforeFailure", box peakCursor
+            "deepCopyBytesBeforeFailure", box deepCopyBytes
             "retainedCopyBytes", box retainedCopyBytes
-            "finalLiveStackBytes", box finalLive
             "finalCursorBytes", box finalCursor
             "callerBuffer", bufferCheckDetails afterAllocationBefore afterAllocationBuffer ])
     | None -> recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/post-allocation-post-frame-capacity-unwind" false "Capacity one byte below the successful program high-water unexpectedly succeeded."
@@ -1656,9 +2016,10 @@ let private runOwningStackChain
             && unitDropOutput = unitDropExpectedBytes
             && unitDropResult.RetainedBytesWritten = unitDropExpectedBytes.Length
             && unitDropEvents.Length >= 1
-            && int64Property unitDropMetrics "PeakLiveStackBytes" >= 8L
-            && int64Property unitDropMetrics "FinalLiveStackBytes" = 0L
-        recordCheck checks failures $"owning-stack/{optimization}/unit-drop-releases-eight-byte-token-and-continues" unitDropPassed (jsonObject [
+            && int64Property unitDropMetrics "ReservedStackBytes" >= 8L
+            && int64Property unitDropMetrics "MoveBytes" = 0L
+            && int64Property unitDropMetrics "FinalCursorBytes" = 0L
+        recordCheck checks failures $"owning-stack/{optimization}/unit-drop-preserves-semantics-with-stable-cursor" unitDropPassed (jsonObject [
             "values", box (ValueInspection.toJson entries.Program unitDropResult.Values)
             "retainedBytes", box (bytesHex unitDropOutput)
             "unitDropEvents", box (layoutEventRanges unitDropEvents)
@@ -1714,8 +2075,8 @@ let private runOwningStackChain
                 "layout", box (jsonNode options layoutSummary)
                 "retainedBytes", box (bytesHex output)
                 "metrics", box (jsonNode options (metricSummary (box result.Metrics))) ])
-            let localReservationPassed = int64Property (box result.Metrics) "ReservedLocalBytes" >= int64Property (box result.Metrics) "PeakLiveLocalBytes" && int64Property (box result.Metrics) "FinalLiveStackBytes" = 0L
-            recordCheck checks failures $"owning-stack/{optimization}/scoped-width-{index}-local-frame-cleanup" localReservationPassed (jsonNode options (metricSummary (box result.Metrics)))
+            let cleanupPassed = int64Property (box result.Metrics) "FinalCursorBytes" = 0L
+            recordCheck checks failures $"owning-stack/{optimization}/scoped-width-{index}-local-frame-cleanup" cleanupPassed (jsonNode options (metricSummary (box result.Metrics)))
             checkTraceUsable checks failures $"owning-stack/{optimization}/scoped-width-{index}-trace-complete" result.Metrics result.LayoutEvents |> ignore
             fixedCaseReports.Add(box (jsonObject [ "case", box "scoped-width"; "input", box input; "values", jsonNode options (ValueInspection.toData entries.Program result.Values); "retainedBytes", box (bytesHex output); "metrics", jsonNode options (metricSummary (box result.Metrics)) ]))
         let shadowCase = fixedCases.GetProperty("scopeShadow")
@@ -1727,19 +2088,188 @@ let private runOwningStackChain
         for details in shadowLayoutChecks do checks.Add details
         for failure in shadowLayoutFailures do failures.Add($"owning-stack/{optimization}/scope-shadow-layout: {failure}")
         let shadowMetrics = box shadowResult.Metrics
+        let shadowEvents = shadowResult.LayoutEvents
+        let shadowDescriptorOnly =
+            int64Property shadowMetrics "MoveBytes" = 0L
+            && (shadowEvents |> List.forall (fun event -> event.Kind <> "call-input-move" && event.Kind <> "call-return-move" && event.Kind <> "local-compact"))
         let shadowScopePassed =
             shadowResult.Values = shadowExpected
             && shadowOutput = shadowExpectedBytes
             && shadowLayoutFailures.Length = 0
-            && int64Property shadowMetrics "ReservedLocalBytes" >= 16L
-            && int64Property shadowMetrics "FinalLiveStackBytes" = 0L
+            && shadowDescriptorOnly
+            && int64Property shadowMetrics "FinalCursorBytes" = 0L
         recordCheck checks failures $"owning-stack/{optimization}/scope-shadow-same-slot-restores-envelope" shadowScopePassed (jsonObject [
             "values", box (ValueInspection.toJson entries.Program shadowResult.Values)
             "retainedBytes", box (bytesHex shadowOutput)
             "layout", box (jsonNode options shadowLayoutSummary)
+            "descriptorOnlyPathHasNoPayloadMoves", box shadowDescriptorOnly
             "metrics", box (jsonNode options (metricSummary shadowMetrics)) ])
         checkTraceUsable checks failures $"owning-stack/{optimization}/scope-shadow-trace-complete" shadowResult.Metrics shadowResult.LayoutEvents |> ignore
         fixedCaseReports.Add(box (jsonObject [ "case", box "scope-shadow"; "values", jsonNode options (ValueInspection.toData entries.Program shadowResult.Values); "retainedBytes", box (bytesHex shadowOutput); "metrics", jsonNode options (metricSummary shadowMetrics) ]))
+        let stableCases = fixture.GetProperty("stableArenaCases")
+        let stableDead = stableCases.GetProperty("fixedSixLocalNestedDeadOnly")
+        use stableDeadProgram = compile "stable-six-local-dead-only" entries.StableDeadOnlySixLocals
+        let stableDeadInputs = stableDead.GetProperty("input").EnumerateArray() |> Seq.map (fun value -> IntValue(value.GetInt64())) |> Seq.toList
+        let stableDeadResult = stableDeadProgram.ExecuteInto(stableDeadInputs, stackCapacity, Array.empty)
+        let stableDeadMetrics = stableDeadResult.Metrics
+        let stableDeadEvents = stableDeadResult.LayoutEvents
+        let stableDeadRewinds = stableDeadEvents |> List.filter (fun event -> event.Kind = "arena-rewind")
+        let stableDeadIndexedEvents = stableDeadEvents |> List.indexed |> List.toArray
+        let stableDeadMark = stableDead.GetProperty("inputCopyBytes").GetInt32()
+        let stableDeadRewindPositions =
+            stableDeadIndexedEvents
+            |> Array.choose (fun (index, event) -> if event.Kind = "arena-rewind" then Some(index, event) else None)
+        let stableDeadInnerRewindIndex = stableDeadRewindPositions |> Array.tryItem 0 |> Option.map fst |> Option.defaultValue -1
+        let stableDeadReusedAllocation =
+            stableDeadIndexedEvents
+            |> Array.tryFind (fun (index, event) ->
+                index > stableDeadInnerRewindIndex
+                && event.Kind = "allocate"
+                && event.TypeId = 1u
+                && event.OffsetBytes = stableDead.GetProperty("postRewindAllocationOffsetBytes").GetInt32()
+                && event.ExtentBytes = stableDead.GetProperty("postRewindAllocationExtentBytes").GetInt32()
+                && event.PayloadBytes = 8)
+        let stableDeadReusedAllocationIndex = stableDeadReusedAllocation |> Option.map fst |> Option.defaultValue -1
+        let stableDeadReusedConstruction =
+            stableDeadIndexedEvents
+            |> Array.tryFind (fun (index, event) ->
+                index > stableDeadReusedAllocationIndex
+                && event.Kind = "record-build"
+                && event.OffsetBytes = stableDead.GetProperty("postRewindConstructionOffsetBytes").GetInt32()
+                && event.ExtentBytes = stableDead.GetProperty("postRewindConstructionExtentBytes").GetInt32()
+                && event.PayloadBytes = 8)
+        let stableDeadLoadsAfterReuse =
+            match stableDeadRewindPositions |> Array.tryItem 1 with
+            | None -> [||]
+            | Some(outerRewindIndex, _) ->
+                stableDeadIndexedEvents
+                |> Array.choose (fun (index, event) ->
+                    if index > stableDeadReusedAllocationIndex
+                       && index < outerRewindIndex
+                       && event.Kind = "descriptor-transfer"
+                       && event.TypeId = 1u
+                       && event.PayloadBytes = 8
+                       && event.SourceExtentBytes = Some 8
+                       && event.SourceOffsetBytes = Some(event.OffsetBytes + 8) then
+                        Some event.OffsetBytes
+                    else None)
+        let stableDeadAllocationBetweenRewindsPass =
+            stableDeadRewindPositions.Length = 3
+            && (stableDeadReusedAllocation |> Option.exists (fun (allocationIndex, allocation) ->
+                allocationIndex > fst stableDeadRewindPositions[0]
+                && allocationIndex < fst stableDeadRewindPositions[1]
+                && allocation.OffsetBytes = stableDeadMark))
+        let stableDeadConstructionBeforeOuterRewindPass =
+            stableDeadRewindPositions.Length = 3
+            && (stableDeadReusedConstruction |> Option.exists (fun (index, event) ->
+                index < fst stableDeadRewindPositions[1]
+                && event.OffsetBytes = stableDead.GetProperty("postRewindConstructionOffsetBytes").GetInt32()
+                && event.ExtentBytes = stableDead.GetProperty("postRewindConstructionExtentBytes").GetInt32()
+                && event.PayloadBytes = 8))
+        let stableDeadInputsRemainAtOriginalOffsetsPass = Array.sort stableDeadLoadsAfterReuse = [| 0; 8; 16; 24; 32; 40 |]
+        let stableDeadReusePass =
+            stableDeadAllocationBetweenRewindsPass
+            && stableDeadConstructionBeforeOuterRewindPass
+            && stableDeadInputsRemainAtOriginalOffsetsPass
+        let stableDeadRewindRangesPass =
+            stableDeadRewinds.Length = stableDead.GetProperty("rewindEventCount").GetInt32()
+            && stableDead.GetProperty("nestedScopeCount").GetInt32() + stableDead.GetProperty("functionExitRewindCount").GetInt32() = stableDeadRewinds.Length
+            && List.sort (stableDeadRewinds |> List.map (fun event -> event.OffsetBytes, event.ExtentBytes, event.PayloadBytes)) =
+               List.sort [
+                   stableDeadMark, stableDead.GetProperty("innerRewindExtentBytes").GetInt32(), 0
+                   stableDeadMark, stableDead.GetProperty("outerRewindExtentBytes").GetInt32(), 0
+                   stableDeadMark, stableDead.GetProperty("functionExitRewindExtentBytes").GetInt32(), 0 ]
+        let stableDeadMetricsPass =
+            stableDeadResult.Values.IsEmpty
+            && stableDeadResult.RetainedBytesWritten = stableDead.GetProperty("outputCount").GetInt32()
+            && int64Property (box stableDeadMetrics) "InputCopyBytes" = int64 (stableDead.GetProperty("inputCopyBytes").GetInt32())
+            && int64Property (box stableDeadMetrics) "DeepCopyBytes" = int64 (stableDead.GetProperty("deepCopyBytes").GetInt32())
+            && int64Property (box stableDeadMetrics) "MoveBytes" = int64 (stableDead.GetProperty("moveBytes").GetInt32())
+            && int64Property (box stableDeadMetrics) "ReservedStackBytes" = int64 (stableDead.GetProperty("expectedPeakCursorBytes").GetInt32())
+            && int64Property (box stableDeadMetrics) "FinalCursorBytes" = 0L
+            && stableDeadRewindRangesPass
+            && stableDeadReusePass
+            && descriptorTransferMetricsPass stableDeadMetrics stableDeadEvents
+        let stableDeadLlvmSites = stableDead.GetProperty("nestedScopeCount").GetInt32() + stableDead.GetProperty("functionExitRewindCount").GetInt32()
+        let stableDeadLlvmPass, stableDeadLlvmDetails = generatedStablePolicyPass stableDeadProgram stableDeadLlvmSites
+        recordCheck checks failures $"owning-stack/{optimization}/stable-arena/fixed-dead-only-nested-scope-rewinds" (stableDeadMetricsPass && stableDeadLlvmPass && checkTraceUsable checks failures $"owning-stack/{optimization}/stable-arena/fixed-dead-only-trace-complete" stableDeadMetrics stableDeadEvents) (jsonObject [
+            "inputCount", box stableDeadInputs.Length
+            "expectedInputCopyBytes", box (stableDead.GetProperty("inputCopyBytes").GetInt32())
+            "expectedDeepCopyBytes", box (stableDead.GetProperty("deepCopyBytes").GetInt32())
+            "scopeRewindSiteCount", box (stableDead.GetProperty("nestedScopeCount").GetInt32())
+            "functionExitRewindSiteCount", box (stableDead.GetProperty("functionExitRewindCount").GetInt32())
+            "rewindEvents", box (layoutEventDetails stableDeadRewinds)
+            "rewindRangesMatchSavedMarks", box stableDeadRewindRangesPass
+            "postRewindAllocation", box (stableDeadReusedAllocation |> Option.map (fun (_, event) -> layoutEventDetails [ event ]) |> Option.defaultValue [||])
+            "postRewindConstruction", box (stableDeadReusedConstruction |> Option.map (fun (_, event) -> layoutEventDetails [ event ]) |> Option.defaultValue [||])
+            "postRewindInputDescriptorOffsets", box stableDeadLoadsAfterReuse
+            "postRewindEventIndices", box (jsonObject [
+                "allocation", box (stableDeadReusedAllocation |> Option.map fst |> Option.defaultValue -1)
+                "rewinds", box (stableDeadRewindPositions |> Array.map fst)
+                "construction", box (stableDeadReusedConstruction |> Option.map fst |> Option.defaultValue -1) ])
+            "postRewindSubchecks", box (jsonObject [
+                "allocationBetweenRewinds", box stableDeadAllocationBetweenRewindsPass
+                "constructionBeforeOuterRewind", box stableDeadConstructionBeforeOuterRewindPass
+                "premarkInputsAtOriginalOffsets", box stableDeadInputsRemainAtOriginalOffsetsPass ])
+            "postRewindAllocationReusesSavedMarkWithoutMovingPremarkInputs", box stableDeadReusePass
+            "generatedLlvmPolicy", box stableDeadLlvmDetails
+            "metrics", box (jsonNode options (metricSummary (box stableDeadMetrics))) ])
+        fixedCaseReports.Add(box (jsonObject [ "case", box "stable-dead-only-nested-scope"; "rewindEvents", box (layoutEventDetails stableDeadRewinds); "metrics", jsonNode options (metricSummary (box stableDeadMetrics)) ]))
+
+        let stableEscape = stableCases.GetProperty("fixedEscapingScopeResult")
+        use stableEscapeProgram = compile "stable-escaping-scope-result" entries.StableEscapingScopeResult
+        let stableEscapeInput = stableEscape.GetProperty("input")
+        let stableEscapeArgs = [ IntValue(stableEscapeInput.GetProperty("value").GetInt64()); IntValue(stableEscapeInput.GetProperty("tag").GetInt64()) ]
+        let stableEscapeExpected = RecordValue("Envelope", Map.ofList [
+            "leaf", RecordValue("Leaf", Map.ofList [ "value", IntValue(stableEscapeInput.GetProperty("value").GetInt64()) ])
+            "tag", IntValue(stableEscapeInput.GetProperty("tag").GetInt64()) ])
+        let stableEscapeBytes = bytesFromHex (stableEscape.GetProperty("retainedBytesHex").GetString())
+        let stableEscapeOutput = Array.create stableEscapeBytes.Length 0xA5uy
+        let stableEscapeResult = stableEscapeProgram.ExecuteInto(stableEscapeArgs, stackCapacity, stableEscapeOutput)
+        let stableEscapeMetrics = stableEscapeResult.Metrics
+        let stableEscapeRewinds = stableEscapeResult.LayoutEvents |> List.filter (fun event -> event.Kind = "arena-rewind")
+        let stableEscapeRetention = stableEscapeResult.LayoutEvents |> List.tryFind (fun event -> event.Kind = "retained-copy")
+        let stableEscapeMetricsPass =
+            stableEscapeResult.Values = [ stableEscapeExpected]
+            && stableEscapeOutput = stableEscapeBytes
+            && int64Property (box stableEscapeMetrics) "InputCopyBytes" = int64 (stableEscape.GetProperty("inputCopyBytes").GetInt32())
+            && int64Property (box stableEscapeMetrics) "DeepCopyBytes" = int64 (stableEscape.GetProperty("deepCopyBytes").GetInt32())
+            && int64Property (box stableEscapeMetrics) "MoveBytes" = int64 (stableEscape.GetProperty("moveBytes").GetInt32())
+            && int64Property (box stableEscapeMetrics) "ReservedStackBytes" >= int64 (stableEscape.GetProperty("minimumPeakCursorBytes").GetInt32())
+            && int64Property (box stableEscapeMetrics) "FinalCursorBytes" = 0L
+            && stableEscapeRewinds.Length = stableEscape.GetProperty("scopeRewinds").GetInt32()
+            && (stableEscapeRetention |> Option.exists (fun event -> event.SourceOffsetBytes |> Option.exists (fun source -> source > 16)))
+            && descriptorTransferMetricsPass stableEscapeMetrics stableEscapeResult.LayoutEvents
+        let stableEscapeLlvmPass, stableEscapeLlvmDetails = generatedStablePolicyPass stableEscapeProgram (stableEscape.GetProperty("scopeRewinds").GetInt32())
+        let stableEscapeTracePass = checkTraceUsable checks failures $"owning-stack/{optimization}/stable-arena/fixed-escape-trace-complete" stableEscapeMetrics stableEscapeResult.LayoutEvents
+        recordCheck checks failures $"owning-stack/{optimization}/stable-arena/fixed-escape-keeps-temp-under-result" (stableEscapeMetricsPass && stableEscapeLlvmPass && stableEscapeTracePass) (jsonObject [
+            "values", box (ValueInspection.toJson entries.Program stableEscapeResult.Values)
+            "retainedBytes", box (bytesHex stableEscapeOutput)
+            "retainedCopySourceOffset", box (stableEscapeRetention |> Option.bind (fun event -> event.SourceOffsetBytes) |> Option.map box |> Option.defaultValue null)
+            "rewindEvents", box (layoutEventDetails stableEscapeRewinds)
+            "generatedLlvmPolicy", box stableEscapeLlvmDetails
+            "metrics", box (jsonNode options (metricSummary (box stableEscapeMetrics))) ])
+        fixedCaseReports.Add(box (jsonObject [ "case", box "stable-escaping-scope-result"; "retainedBytes", box (bytesHex stableEscapeOutput); "metrics", jsonNode options (metricSummary (box stableEscapeMetrics)) ]))
+
+        let branchEscape = stableCases.GetProperty("fixedBranchEscapingScopeResult")
+        use stableBranchProgram = compile "stable-branch-escaping-scope-result" entries.StableBranchEscapingScopeResult
+        let branchLlvmPass, branchLlvmDetails = generatedStablePolicyPass stableBranchProgram (branchEscape.GetProperty("scopeRewinds").GetInt32())
+        for chooseLeft, tagField, bytesField in [ true, "leftTag", "leftRetainedBytesHex"; false, "rightTag", "rightRetainedBytesHex" ] do
+            let branchBytes = bytesFromHex (branchEscape.GetProperty(bytesField).GetString())
+            let branchOutput = Array.create branchBytes.Length 0xA5uy
+            let branchResult = stableBranchProgram.ExecuteInto([ IntValue(branchEscape.GetProperty("inputValue").GetInt64()); BoolValue chooseLeft ], stackCapacity, branchOutput)
+            let branchMetrics = branchResult.Metrics
+            let tag = branchEscape.GetProperty(tagField).GetInt64()
+            let branchExpected = RecordValue("Envelope", Map.ofList [ "leaf", RecordValue("Leaf", Map.ofList [ "value", IntValue(branchEscape.GetProperty("inputValue").GetInt64()) ]); "tag", IntValue tag ])
+            let branchRewinds = branchResult.LayoutEvents |> List.filter (fun event -> event.Kind = "arena-rewind")
+            let branchPass = branchResult.Values = [ branchExpected ] && branchOutput = branchBytes && int64Property (box branchMetrics) "MoveBytes" = int64 (branchEscape.GetProperty("moveBytes").GetInt32()) && branchRewinds.Length = branchEscape.GetProperty("scopeRewinds").GetInt32() && int64Property (box branchMetrics) "FinalCursorBytes" = 0L && descriptorTransferMetricsPass branchMetrics branchResult.LayoutEvents
+            recordCheck checks failures $"owning-stack/{optimization}/stable-arena/fixed-branch-result-blocks-rewind/{chooseLeft}" (branchPass && branchLlvmPass && checkTraceUsable checks failures $"owning-stack/{optimization}/stable-arena/fixed-branch-trace/{chooseLeft}" branchMetrics branchResult.LayoutEvents) (jsonObject [
+                "chooseLeft", box chooseLeft
+                "expectedBytes", box (bytesHex branchBytes)
+                "actualBytes", box (bytesHex branchOutput)
+                "rewindEvents", box (layoutEventDetails branchRewinds)
+                "generatedLlvmPolicy", box branchLlvmDetails
+                "metrics", box (jsonNode options (metricSummary (box branchMetrics))) ])
         let depthOutput = Array.create 8 0xA5uy
         let depthResult = depth64Program.ExecuteInto([ IntValue 42L ], 32768, depthOutput)
         recordCheck checks failures $"owning-stack/{optimization}/call-depth-64-succeeds" (depthResult.Values = [ IntValue 42L ] && depthOutput = bytesFromInt64s [ 42L ]) (jsonObject [
@@ -1753,11 +2283,9 @@ let private runOwningStackChain
                 depth65Program.ExecuteInto([ IntValue 42L ], 32768, depthFailureBuffer) |> ignore
                 "unexpected-success", null
             with error -> diagnosticCode error, getProperty error "Metrics"
-        let depthFinalLive = if isNull depthFailureMetrics then -1L else int64Property depthFailureMetrics "FinalLiveStackBytes"
         let depthFinalCursor = if isNull depthFailureMetrics then -1L else int64Property depthFailureMetrics "FinalCursorBytes"
-        recordCheck checks failures $"owning-stack/{optimization}/call-depth-65-diagnostic-unwinds" (depthFailure = "RUNTIME_CALL_DEPTH" && depthFinalLive = 0L && depthFinalCursor = 0L && depthFailureBuffer = depthFailureBefore) (jsonObject [
+        recordCheck checks failures $"owning-stack/{optimization}/call-depth-65-diagnostic-unwinds" (depthFailure = "RUNTIME_CALL_DEPTH" && depthFinalCursor = 0L && depthFailureBuffer = depthFailureBefore) (jsonObject [
             "diagnosticCode", box depthFailure
-            "finalLiveStackBytes", box depthFinalLive
             "finalCursorBytes", box depthFinalCursor
             "callerBuffer", box (bufferCheckDetails depthFailureBefore depthFailureBuffer)
             "metrics", (if isNull depthFailureMetrics then null else jsonNode options (metricSummary depthFailureMetrics)) ])
@@ -1793,13 +2321,28 @@ let private runOwningStackChain
     for (turnName, metrics) in [ "turn1", firstMetrics; "turn2", secondMetrics ] do
         let summary = metricSummary metrics
         candidateSummaries.Add($"{optimization}/N={repetition}/{turnName}", summary)
+        let completedResult = if turnName = "turn1" then box firstResult else box secondResult
+        let completedEvents = getProperty completedResult "LayoutEvents" :?> OwningStackLayoutEvent list
+        let completedCursorReset = int64Property metrics "FinalCursorBytes" = 0L
+        recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/{turnName}/request-cursor-resets" completedCursorReset (jsonObject [
+            "finalCursorBytes", box (int64Property metrics "FinalCursorBytes")
+            "livePayloadBytes", null
+            "livePayloadAccounting", box (string (getProperty metrics "LivePayloadAccountingUnavailableReason"))
+            "descriptorTransferMetricsMatchTrace", box (descriptorTransferMetricsPass (metrics :?> OwningStackMetrics) completedEvents) ])
         let inputBytes = int64Property metrics "InputBytes"
         let inputCopyBytes = int64Property metrics "InputCopyBytes"
         let retainedCopyBytes = int64Property metrics "RetainedCopyBytes"
         let retainedCapacityBytes = int64Property metrics "RetainedCapacityBytes"
         let hostStagingBytes = int64Property metrics "HostRetainedStagingBytes"
         let hostCommitBytes = int64Property metrics "HostRetainedCommitBytes"
-        let measuredCopySizesPass = inputBytes = 32L && inputCopyBytes = 32L && retainedCopyBytes = 24L && retainedCapacityBytes = 24L && hostStagingBytes = 24L && hostCommitBytes = 24L
+        let operationEvents = getProperty (if turnName = "turn1" then box firstResult else box secondResult) "LayoutEvents" :?> OwningStackLayoutEvent list
+        let typedMetrics = metrics :?> OwningStackMetrics
+        let descriptorMetricsPass = descriptorTransferMetricsPass typedMetrics operationEvents
+        let descriptorPathPass =
+            int64Property metrics "MoveBytes" = 0L
+            && (operationEvents |> List.forall (fun event -> event.Kind <> "call-input-move" && event.Kind <> "call-return-move" && event.Kind <> "local-compact"))
+            && descriptorMetricsPass
+        let measuredCopySizesPass = inputBytes = 32L && inputCopyBytes = 32L && retainedCopyBytes = 24L && retainedCapacityBytes = 24L && hostStagingBytes = 24L && hostCommitBytes = 24L && descriptorPathPass
         recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/{turnName}/input-retained-copy-categories" measuredCopySizesPass (jsonObject [
             "expectedInputBytes", box 32
             "actualInputBytes", box inputBytes
@@ -1809,16 +2352,21 @@ let private runOwningStackChain
             "actualRetainedCopyBytes", box retainedCopyBytes
             "retainedCapacityBytes", box retainedCapacityBytes
             "hostRetainedStagingBytes", box hostStagingBytes
-            "hostRetainedCommitBytes", box hostCommitBytes ])
+            "hostRetainedCommitBytes", box hostCommitBytes
+            "moveBytes", box (int64Property metrics "MoveBytes")
+            "callOrCompactionPayloadEvents", box (operationEvents |> List.filter (fun event -> event.Kind = "call-input-move" || event.Kind = "call-return-move" || event.Kind = "local-compact") |> layoutEventDetails)
+            "descriptorTransferMetricsMatchTrace", box descriptorMetricsPass ])
         let reserved = int64Property metrics "ReservedStackBytes"
-        let live = int64Property metrics "PeakLiveStackBytes"
         let reservedLocal = int64Property metrics "ReservedLocalBytes"
-        let liveLocal = int64Property metrics "PeakLiveLocalBytes"
-        recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/{turnName}/live-reserved-span" (reserved >= live && reservedLocal >= liveLocal) (jsonObject [
-            "addressSpanBytes", box (reserved + reservedLocal)
-            "livePayloadBytes", box (live + liveLocal)
-            "stackReservationSlackBytes", box (reserved - live)
-            "localReservationSlackBytes", box (reservedLocal - liveLocal)
+        let uniqueLive = typedMetrics.UniqueLivePayloadBytes
+        recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/{turnName}/cursor-metadata-and-live-metric-categories" (reserved >= 0L && reservedLocal >= 0L && uniqueLive.IsNone) (jsonObject [
+            "occupiedCursorPeakBytes", box reserved
+            "backendMetadataPerFrameBytes", box (int64Property metrics "BackendMetadataPerFrameBytes")
+            "backendMetadataPeakBoundBytes", box (int64Property metrics "BackendMetadataPeakBoundBytes")
+            "legacyPeakLivePayloadCounterBytes", null
+            "legacyPeakLiveLocalPayloadCounterBytes", null
+            "uniqueLivePayloadBytes", box null
+            "logicalRootBytes", box null
             "metrics", box summary ])
     let stateLayoutChecks, stateLayoutFailures, stateLayoutElement =
         validateTypeLayouts fixture [ "Leaf"; "Envelope"; "State" ] (getProperty (box firstResult) "Layouts" :?> OwningStackTypeLayout list)
@@ -1831,6 +2379,9 @@ let private runOwningStackChain
     jsonObject [
         "backend", box $"inline-owning-stack/{optimization}"
         "repetitions", box repetition
+        "legacyStackCapacityControlBytes", box stackCapacity
+        "semanticExecutionStackCapacityBytes", box executionStackCapacity
+        "stableArenaCapacityControl", stableArenaCapacityControlReport
         "afterTurn1", jsonNode options (ValueInspection.toData entries.Program firstValues)
         "afterTurn2", jsonNode options (ValueInspection.toData entries.Program secondValues)
         "retainedBytesAfterTurn1", box (bytesHex firstOutput)
@@ -1989,6 +2540,10 @@ let private runStringWorkload
     use duplicateProgram = compile "text-envelope-dup-drop" entries.DirectDupDrop
     use scopeProgram = compile "text-envelope-scope-shadow" entries.ScopeShadow
     use zeroOutputProgram = compile "zero-output-user-call" entries.ZeroOutputUserCall
+    use stableDeadProgram = compile "stable-six-string-local-dead-only" entries.StableDeadOnlySixLocals
+    use stableEscapeProgram = compile "stable-string-escaping-scope-result" entries.StableEscapingScopeResult
+    use stableBindingProgram = compile "stable-string-binding-round-trip" entries.StableBindingRoundTrip
+    use stableUncertainCallProgram = compile "stable-string-uncertain-call-scope" entries.StableUncertainCallScope
     use failProgram = compile "fail-after-text-allocation" entries.FailAfterTextAllocation
     let owningReports = ResizeArray<obj>()
     let metricsByCase = Dictionary<string, OwningStackMetrics>(StringComparer.Ordinal)
@@ -2103,13 +2658,8 @@ let private runStringWorkload
             && int64 rightStart < int64 leftStart + int64 leftExtent
         let mutationRanges event =
             let destination = [ event.OffsetBytes, event.ExtentBytes ]
-            let source =
-                match event.SourceOffsetBytes, event.SourceExtentBytes with
-                | Some offset, Some extent -> [ offset, extent ]
-                | _ -> []
             match event.Kind with
-            | "allocate" | "duplicate" | "local-load" | "drop" | "scope-clear" | "string-concat-left" | "string-concat-right" -> destination
-            | "local-store" | "record-build" | "field-extract" | "call-input-move" | "call-return-move" | "local-compact" -> destination @ source
+            | "allocate" | "duplicate" | "record-build" | "string-concat-left" | "string-concat-right" -> destination
             | _ -> []
         let tagCandidates =
             indexedEvents
@@ -2124,30 +2674,30 @@ let private runStringWorkload
                 if not isTagField then
                     None
                 else
-                    let parentLoads =
+                    let parentTransfers =
                         indexedEvents
-                        |> Array.filter (fun (loadIndex, load) ->
-                            loadIndex < tagIndex
-                            && load.Kind = "local-load"
-                            && load.TypeId = textEnvelopeTypeId
-                            && load.OffsetBytes = event.OffsetBytes
-                            && load.ExtentBytes = expectedEnvelopeExtent
-                            && load.PayloadBytes = expectedEnvelopePayload)
-                    if parentLoads.Length = 0 then
+                        |> Array.filter (fun (transferIndex, transfer) ->
+                            transferIndex < tagIndex
+                            && transfer.Kind = "descriptor-transfer"
+                            && transfer.TypeId = textEnvelopeTypeId
+                            && transfer.OffsetBytes = event.OffsetBytes
+                            && transfer.SourceExtentBytes = Some expectedEnvelopeExtent
+                            && transfer.PayloadBytes = expectedEnvelopePayload)
+                    if parentTransfers.Length = 0 then
                         None
                     else
-                        let parentLoadIndex, parentLoad = parentLoads[parentLoads.Length - 1]
+                        let parentTransferIndex, parentTransfer = parentTransfers[parentTransfers.Length - 1]
                         let invalidatingEvents =
                             indexedEvents
                             |> Array.choose (fun (index, intervening) ->
-                                if index <= parentLoadIndex || index >= tagIndex then
+                                if index <= parentTransferIndex || index >= tagIndex then
                                     None
                                 else
                                     let mutatesOwner =
                                         mutationRanges intervening
                                         |> List.exists (fun (offset, extent) -> rangeOverlaps offset extent event.OffsetBytes expectedEnvelopeExtent)
                                     if mutatesOwner then Some(index, intervening) else None)
-                        Some(tagIndex, event, parentLoadIndex, parentLoad, invalidatingEvents))
+                        Some(tagIndex, event, parentTransferIndex, parentTransfer, invalidatingEvents))
         let validTagCandidates = tagCandidates |> Array.filter (fun (_, _, _, _, invalidating) -> invalidating.Length = 0)
         let dynamicTagFound = tagOffsetOracleMatches && validTagCandidates.Length > 0
         let tagEvidence =
@@ -2155,8 +2705,8 @@ let private runStringWorkload
             |> Array.map (fun (tagIndex, tagEvent, loadIndex, loadEvent, _) ->
                 jsonObject [
                     "tagExtractionIndex", box tagIndex
-                    "parentLoadIndex", box loadIndex
-                    "parentLoad", box (layoutEventDetails [ loadEvent ])
+                    "parentDescriptorTransferIndex", box loadIndex
+                    "parentDescriptorTransfer", box (layoutEventDetails [ loadEvent ])
                     "tagExtraction", box (layoutEventDetails [ tagEvent ]) ])
         let rejectedTagEvidence =
             tagCandidates
@@ -2214,6 +2764,36 @@ let private runStringWorkload
         let metrics = stackMetrics (box result)
         let inputBytes = int64Property metrics "InputBytes"
         let encodedBytes = int64Property metrics "HostEncodedInputBytes"
+        let indexedEvents = result.LayoutEvents |> List.indexed |> List.toArray
+        let retainedEvent = indexedEvents |> Array.tryFind (fun (_, event) -> event.Kind = "retained-copy")
+        let inputStringPayloadBytes = 8 + 2 * (stringFromCodeUnitsHex codeUnitsHex).Length
+        let inputAllocation =
+            indexedEvents
+            |> Array.tryFind (fun (_, event) ->
+                event.Kind = "allocate"
+                && event.TypeId = stringTypeId
+                && event.ExtentBytes = expectedBytes.Length
+                && event.PayloadBytes = inputStringPayloadBytes)
+        let descriptorTransfers = indexedEvents |> Array.choose (fun (index, event) -> if event.Kind = "descriptor-transfer" then Some(index, event) else None)
+        let addressStable =
+            match inputAllocation, descriptorTransfers, retainedEvent with
+            | Some(inputAllocateIndex, inputAllocate), transfers, Some(retainedIndex, retained) when transfers.Length > 0 ->
+                let everyTransferKeepsOriginalAddress =
+                    transfers
+                    |> Array.forall (fun (index, transfer) ->
+                        index > inputAllocateIndex
+                        && index < retainedIndex
+                        && transfer.TypeId = stringTypeId
+                        && transfer.OffsetBytes = inputAllocate.OffsetBytes
+                        && transfer.PayloadBytes = inputAllocate.PayloadBytes
+                        && transfer.SourceOffsetBytes = Some(inputAllocate.OffsetBytes + inputAllocate.ExtentBytes)
+                        && transfer.SourceExtentBytes = Some inputAllocate.ExtentBytes)
+                everyTransferKeepsOriginalAddress
+                && retained.TypeId = stringTypeId
+                && retained.SourceOffsetBytes = Some inputAllocate.OffsetBytes
+                && retained.SourceExtentBytes = Some inputAllocate.ExtentBytes
+                && retained.ExtentBytes = inputAllocate.ExtentBytes
+            | _ -> false
         let passed =
             resultValues = [ value ]
             && callerOutput = expectedBytes
@@ -2221,11 +2801,19 @@ let private runStringWorkload
             && int64Property metrics "RetainedCopyBytes" = int64 expectedBytes.Length
             && inputBytes = int64 expectedBytes.Length
             && encodedBytes = int64 expectedBytes.Length
+            && int64Property metrics "DeepCopyBytes" = 0L
+            && int64Property metrics "MoveBytes" = 0L
+            && addressStable
+            && descriptorTransferMetricsPass (metrics :?> OwningStackMetrics) result.LayoutEvents
         recordCheck checks failures $"owning-stack/{optimizationName}/String/{name}/direct-value-roundtrip" passed (jsonObject [
             "values", box (codeUnitSafeValuesJson resultValues)
             "retainedBytes", box (bytesHex callerOutput)
             "inputBytes", box inputBytes
             "hostEncodedInputBytes", box encodedBytes
+            "inputAllocation", box (inputAllocation |> Option.map (fun (_, event) -> layoutEventDetails [ event ]) |> Option.defaultValue [||])
+            "descriptorTransfers", box (descriptorTransfers |> Array.map snd |> Array.toList |> layoutEventDetails)
+            "retainedCopy", box (retainedEvent |> Option.map (fun (_, event) -> layoutEventDetails [ event ]) |> Option.defaultValue [||])
+            "addressStable", box addressStable
             "metrics", box (jsonNode options (metricSummary metrics)) ])
         checkTraceUsable checks failures $"owning-stack/{optimizationName}/String/{name}/direct-roundtrip-trace-complete" metrics result.LayoutEvents |> ignore
         roundTripReports.Add(box (jsonObject [ "case", box name; "bytes", box (bytesHex callerOutput); "metrics", box (jsonNode options (metricSummary metrics)) ]))
@@ -2325,6 +2913,7 @@ let private runStringWorkload
         && mixedRecordBuild
         && mixedStringAllocate
         && mixedEmptyTokenAllocate
+        && int64Property mixedConstructMetrics "MoveBytes" = 0L
     recordCheck checks failures $"owning-stack/{optimizationName}/String/mixed-empty-string-int-record/construction-and-inline-nesting" mixedConstructPassed (jsonObject [
         "values", box (codeUnitSafeValuesJson mixedConstructResult.Values)
         "expectedRecordBytes", box (bytesHex mixedRecordBytes)
@@ -2380,16 +2969,57 @@ let private runStringWorkload
     let mixedProjectionOutput = Array.create mixedFixtureTextAndSentinelBytes.Length 0xA5uy
     let mixedProjectionResult = mixedProjectProgram.ExecuteInto([ mixedValue ], stateCapacity, mixedProjectionOutput)
     let mixedProjectionMetrics = stackMetrics (box mixedProjectionResult)
+    let mixedProjectionEvents = mixedProjectionResult.LayoutEvents
+    let mixedProjectionIndexedEvents = mixedProjectionEvents |> List.indexed |> List.toArray
+    let mixedProjectionParentTransfers =
+        mixedProjectionIndexedEvents
+        |> Array.choose (fun (index, event) ->
+            if event.Kind = "descriptor-transfer" && event.TypeId = textMixedTypeId && event.PayloadBytes = mixedExpectedRecordPayloadBytes then Some(index, event)
+            else None)
+    let mixedProjectionFieldExtracts = mixedProjectionIndexedEvents |> Array.choose (fun (index, event) -> if event.Kind = "field-extract" then Some(index, event) else None)
+    let mixedProjectionTextExtracts = mixedProjectionFieldExtracts |> Array.filter (fun (_, event) -> event.TypeId = stringTypeId && event.ExtentBytes = mixedStringExtentBytes)
+    let mixedProjectionSentinelExtracts = mixedProjectionFieldExtracts |> Array.filter (fun (_, event) -> event.TypeId = intTypeId && event.ExtentBytes = 8 && event.SourceOffsetBytes = Some mixedStringExtentBytes)
+    let mixedProjectionRetainedIndex =
+        mixedProjectionIndexedEvents
+        |> Array.tryFind (fun (_, event) -> event.Kind = "retained-copy")
+        |> Option.map fst
+        |> Option.defaultValue Int32.MaxValue
+    let projectedFieldCarriesOwnerEnd parentIndex parent expectedType (fieldIndex, field) =
+        fieldIndex > parentIndex
+        && field.OffsetBytes = parent.OffsetBytes
+        && (mixedProjectionIndexedEvents
+            |> Array.exists (fun (transferIndex, transfer) ->
+                transferIndex > fieldIndex
+                && transferIndex < mixedProjectionRetainedIndex
+                && transfer.Kind = "descriptor-transfer"
+                && transfer.TypeId = expectedType
+                && transfer.OffsetBytes = (Option.defaultValue -1 field.SourceOffsetBytes)
+                && transfer.PayloadBytes = field.PayloadBytes
+                && transfer.SourceExtentBytes = Some field.ExtentBytes
+                && transfer.SourceOffsetBytes = parent.SourceOffsetBytes))
+    let mixedProjectionOwnerEndPass =
+        mixedProjectionParentTransfers
+        |> Array.exists (fun (parentIndex, parent) ->
+            let textFieldCarriesOwnerEnd = mixedProjectionTextExtracts |> Array.exists (projectedFieldCarriesOwnerEnd parentIndex parent stringTypeId)
+            let sentinelCarriesOwnerEnd = mixedProjectionSentinelExtracts |> Array.exists (projectedFieldCarriesOwnerEnd parentIndex parent intTypeId)
+            textFieldCarriesOwnerEnd && sentinelCarriesOwnerEnd)
     let mixedProjectionPassed =
         mixedProjectionResult.Values = [ StringValue mixedText; IntValue mixedSentinel ]
         && mixedProjectionOutput = mixedFixtureTextAndSentinelBytes
         && mixedProjectionResult.RetainedBytesWritten = mixedFixtureTextAndSentinelBytes.Length
+        && int64Property mixedProjectionMetrics "DeepCopyBytes" = 0L
+        && int64Property mixedProjectionMetrics "MoveBytes" = 0L
+        && mixedProjectionOwnerEndPass
     recordCheck checks failures $"owning-stack/{optimizationName}/String/mixed-empty-string-int-record/project-string-and-following-sentinel" mixedProjectionPassed (jsonObject [
         "values", box (codeUnitSafeValuesJson mixedProjectionResult.Values)
         "expectedProjectionBytes", box (bytesHex mixedFixtureTextAndSentinelBytes)
         "actualProjectionBytes", box (bytesHex mixedProjectionOutput)
         "sentinelExpectedOffsetBytes", box (mixedStringBytes.Length)
         "sentinelExpectedValue", box mixedSentinel
+        "parentOwnerEndPreservedByProjectedDescriptors", box mixedProjectionOwnerEndPass
+        "parentDescriptors", box (mixedProjectionParentTransfers |> Array.map snd |> Array.toList |> layoutEventDetails)
+        "projectedFieldExtractions", box (mixedProjectionFieldExtracts |> Array.map snd |> Array.toList |> layoutEventDetails)
+        "projectedDescriptorTransfers", box (layoutEventDetails (mixedProjectionEvents |> List.filter (fun event -> event.Kind = "descriptor-transfer" && (event.TypeId = stringTypeId || event.TypeId = intTypeId))))
         "metrics", box (jsonNode options (metricSummary mixedProjectionMetrics))
         "events", box (layoutEventDetails mixedProjectionResult.LayoutEvents) ])
     let mixedEmptyProjectionOutput = Array.create mixedEmptyTokenBytes.Length 0xA5uy
@@ -2398,6 +3028,8 @@ let private runStringWorkload
         mixedEmptyProjectionResult.Values = [ mixedEmpty ]
         && mixedEmptyProjectionOutput = mixedEmptyTokenBytes
         && mixedEmptyProjectionResult.RetainedBytesWritten = 8
+        && int64Property (box mixedEmptyProjectionResult.Metrics) "DeepCopyBytes" = 0L
+        && int64Property (box mixedEmptyProjectionResult.Metrics) "MoveBytes" = 0L
     recordCheck checks failures $"owning-stack/{optimizationName}/String/mixed-empty-string-int-record/project-empty-as-standalone-token" mixedEmptyProjectionPassed (jsonObject [
         "values", box (codeUnitSafeValuesJson mixedEmptyProjectionResult.Values)
         "expectedTokenBytes", box (bytesHex mixedEmptyTokenBytes)
@@ -2524,63 +3156,41 @@ let private runStringWorkload
     checkTraceUsable checks failures $"owning-stack/{optimizationName}/String/joined-surrogate-pair/trace-complete" joinedMetrics joinedResult.LayoutEvents |> ignore
 
     let independentCapacityOracle = workload.GetProperty("capacityCases").GetProperty("programStack").GetProperty("independentDynamicConcat")
-    let scheduledExtents = independentCapacityOracle.GetProperty("inputStringExtentsBytes").EnumerateArray() |> Seq.map (fun item -> item.GetInt32()) |> Seq.toList
-    let scheduledInputBytes = scheduledExtents |> List.sum
-    let scheduledEntryFrameBytes = independentCapacityOracle.GetProperty("entryFrameInputBytes").GetInt32()
-    let stagedConcatExtent = independentCapacityOracle.GetProperty("concatOutputExtentBytes").GetInt32()
+    let inputExtents = independentCapacityOracle.GetProperty("inputStringExtentsBytes").EnumerateArray() |> Seq.map (fun item -> item.GetInt32()) |> Seq.toList
+    let inputStackBytes = independentCapacityOracle.GetProperty("inputStackBytes").GetInt32()
+    let concatOutputExtent = independentCapacityOracle.GetProperty("concatOutputExtentBytes").GetInt32()
+    let concatDeepCopyBytes = independentCapacityOracle.GetProperty("deepCopyBytes").GetInt32()
     let requiredStackBytes = independentCapacityOracle.GetProperty("requiredStackCapacityBytes").GetInt32()
     let oneByteBelowCapacity = independentCapacityOracle.GetProperty("oneByteBelowAvailableBytes").GetInt32()
-    let wrappedJoinArgumentCopyBytes = scheduledInputBytes
-    let wrappedJoinExpectedPeakBytes = scheduledInputBytes + 3 * scheduledEntryFrameBytes + stagedConcatExtent
-    let wrappedJoinFixturePeakBytes = independentCapacityOracle.GetProperty("wrappedUserCallExpectedPeakBytes").GetInt32()
-    let wrappedScheduleOwners = [
-        "wrapper-left-input"; "wrapper-right-input"
-        "entry-frame-left-input-copy"; "entry-frame-right-input-copy"
-        "user-call-left-input-copy"; "user-call-right-input-copy"
-        "left-LoadLocal-operand-copy"; "right-LoadLocal-operand-copy"
-        "concat-result-scratch" ]
-    let wrappedScheduleExtents = [
-        scheduledExtents[0]; scheduledExtents[1]
-        scheduledExtents[0]; scheduledExtents[1]
-        scheduledExtents[0]; scheduledExtents[1]
-        scheduledExtents[0]; scheduledExtents[1]
-        stagedConcatExtent ]
-    let wrappedScheduleStarts = wrappedScheduleExtents |> List.scan (+) 0 |> List.take wrappedScheduleExtents.Length
-    let expectedWrappedSchedule = List.map3 (fun owner start extent -> owner, start, extent) wrappedScheduleOwners wrappedScheduleStarts wrappedScheduleExtents
-    let fixtureWrappedSchedule =
-        independentCapacityOracle.GetProperty("wrappedUserCallSchedule").EnumerateArray()
-        |> Seq.map (fun item -> item.GetProperty("owner").GetString(), item.GetProperty("startBytes").GetInt32(), item.GetProperty("extentBytes").GetInt32())
-        |> Seq.toList
-    let wrappedSchedulePeakBytes = List.last wrappedScheduleStarts + List.last wrappedScheduleExtents
-    let wrappedSchedulePass = expectedWrappedSchedule = fixtureWrappedSchedule && wrappedSchedulePeakBytes = wrappedJoinExpectedPeakBytes
+    let expectedOutputCodeUnits = independentCapacityOracle.GetProperty("concatOutputCodeUnitsHex").GetString()
+    let expectedOutputBytes = stringBytesFromCodeUnitsHex expectedOutputCodeUnits
+    let joinedTransferMetricsPass = descriptorTransferMetricsPass (joinedMetrics :?> OwningStackMetrics) joinedResult.LayoutEvents
     let wrappedJoinObservedPeakBytes = int64Property joinedMetrics "ReservedStackBytes"
-    recordCheck checks failures $"owning-stack/{optimizationName}/String/wrapped-user-call-observed-stack-span" (wrappedSchedulePass && wrappedJoinExpectedPeakBytes = wrappedJoinFixturePeakBytes && wrappedJoinObservedPeakBytes = int64 wrappedJoinFixturePeakBytes) (jsonObject [
-        "hostInputBytes", box scheduledInputBytes
-        "entryFrameCopyBytes", box scheduledEntryFrameBytes
-        "userCallFrameCopyBytes", box scheduledEntryFrameBytes
-        "userCallLocalArgumentCopyBytes", box wrappedJoinArgumentCopyBytes
-        "concatScratchBytes", box stagedConcatExtent
-        "fixtureWrappedSchedule", box (JsonNode.Parse(independentCapacityOracle.GetProperty("wrappedUserCallSchedule").GetRawText()))
-        "expectedStackSpanBytes", box wrappedJoinExpectedPeakBytes
-        "fixtureExpectedStackSpanBytes", box wrappedJoinFixturePeakBytes
-        "observedReservedStackBytes", box wrappedJoinObservedPeakBytes ])
     let independentSchedulePass =
-        scheduledExtents = [ 16; 16 ]
-        && scheduledInputBytes = independentCapacityOracle.GetProperty("inputStackBytes").GetInt32()
-        && scheduledEntryFrameBytes = scheduledInputBytes
-        && requiredStackBytes = scheduledInputBytes + scheduledEntryFrameBytes + stagedConcatExtent
+        inputExtents = [ 16; 16 ]
+        && inputStackBytes = List.sum inputExtents
+        && requiredStackBytes = inputStackBytes + concatOutputExtent
         && oneByteBelowCapacity = requiredStackBytes - 1
-        && joinedBytes.Length = stagedConcatExtent
-        && int64Property joinedMetrics "InputBytes" = int64 scheduledInputBytes
-    recordCheck checks failures $"owning-stack/{optimizationName}/String/independent-concat-capacity-schedule" independentSchedulePass (jsonObject [
-        "leftInputExtentBytes", box scheduledExtents[0]
-        "rightInputExtentBytes", box scheduledExtents[1]
-        "inputOwnerBytes", box scheduledInputBytes
-        "entryFrameInputCopyBytes", box scheduledEntryFrameBytes
-        "concatStagingExtentBytes", box stagedConcatExtent
-        "independentlyRequiredStackCapacityBytes", box requiredStackBytes
+        && joinedBytes = expectedOutputBytes
+        && joinedBytes.Length = concatOutputExtent
+        && int64Property joinedMetrics "InputBytes" = int64 inputStackBytes
+        && int64Property joinedMetrics "InputCopyBytes" = int64 inputStackBytes
+        && concatDeepCopyBytes = concatOutputExtent
+        && int64Property joinedMetrics "DeepCopyBytes" = int64 concatDeepCopyBytes
+        && int64Property joinedMetrics "MoveBytes" = 0L
+        && int64Property joinedMetrics "ReservedStackBytes" = int64 requiredStackBytes
+        && joinedTransferMetricsPass
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/descriptor-call-concat-cursor-capacity" independentSchedulePass (jsonObject [
+        "inputExtentsBytes", box inputExtents
+        "inputCopyBytes", box inputStackBytes
+        "concatResultExtentBytes", box concatOutputExtent
+        "independentlyRequiredCursorBytes", box requiredStackBytes
         "oneByteBelowAvailableBytes", box oneByteBelowCapacity
-        "schedule", box (JsonNode.Parse(independentCapacityOracle.GetProperty("schedule").GetRawText())) ])
+        "observedPeakCursorBytes", box wrappedJoinObservedPeakBytes
+        "deepCopyBytes", box (int64Property joinedMetrics "DeepCopyBytes")
+        "moveBytes", box (int64Property joinedMetrics "MoveBytes")
+        "descriptorTransferMetricsMatchTrace", box joinedTransferMetricsPass
+        "outputBytes", box (bytesHex joinedBytes) ])
     let exactCapacityFailureOutput = Array.create joinedBytes.Length 0xA5uy
     let exactCapacityFailureBefore = Array.copy exactCapacityFailureOutput
     let exactCapacityFailureCode, exactCapacityFailureMetrics, exactCapacityFailureRequired, exactCapacityFailureAvailable, exactCapacityFailureBoundary =
@@ -2599,12 +3209,11 @@ let private runStringWorkload
         && exactCapacityFailureRequired = int64 requiredStackBytes
         && exactCapacityFailureAvailable = int64 oneByteBelowCapacity
         && not (isNull exactCapacityFailureMetrics)
-        && int64Property exactCapacityFailureMetrics "InputBytes" = int64 scheduledInputBytes
-        && int64Property exactCapacityFailureMetrics "InputCopyBytes" = int64 scheduledInputBytes
+        && int64Property exactCapacityFailureMetrics "InputBytes" = int64 inputStackBytes
+        && int64Property exactCapacityFailureMetrics "InputCopyBytes" = int64 inputStackBytes
         && int64Property exactCapacityFailureMetrics "TraceEventCount" > 0L
         && not (Convert.ToBoolean(getProperty exactCapacityFailureMetrics "TraceTruncated", CultureInfo.InvariantCulture))
         && int64Property exactCapacityFailureMetrics "FinalCursorBytes" = 0L
-        && int64Property exactCapacityFailureMetrics "FinalLiveStackBytes" = 0L
         && exactCapacityFailureOutput = exactCapacityFailureBefore
     recordCheck checks failures $"owning-stack/{optimizationName}/String/independent-concat-capacity-one-byte-short" exactCapacityFailurePassed (jsonObject [
         "code", box exactCapacityFailureCode
@@ -2623,7 +3232,7 @@ let private runStringWorkload
         exactCapacityResult.Values = [ joinedValue ]
         && exactCapacityOutput = joinedBytes
         && exactCapacityResult.RetainedBytesWritten = joinedBytes.Length
-        && int64Property exactCapacityResultMetrics "InputCopyBytes" = int64 scheduledInputBytes
+        && int64Property exactCapacityResultMetrics "InputCopyBytes" = int64 inputStackBytes
         && int64Property exactCapacityResultMetrics "ReservedStackBytes" = int64 requiredStackBytes
     recordCheck checks failures $"owning-stack/{optimizationName}/String/independent-concat-capacity-exact-boundary-succeeds" exactCapacitySuccessPassed (jsonObject [
         "capacityBytes", box requiredStackBytes
@@ -2664,18 +3273,18 @@ let private runStringWorkload
         let scopeResult = scopeProgram.ExecuteInto([ outerValue; innerValue ], stateCapacity, scopeOutput)
         let scopeMetrics = stackMetrics (box scopeResult)
         let scopeValuePass = scopeResult.Values = [ outerValue ] && scopeOutput = expectedEnvelopeBytes
-        let cleanupPass = int64Property scopeMetrics "FinalLiveStackBytes" = 0L && int64Property scopeMetrics "FinalCursorBytes" = 0L
+        let cleanupPass = int64Property scopeMetrics "FinalCursorBytes" = 0L
         recordCheck checks failures $"owning-stack/{optimizationName}/String/scope-shadow/{caseName}/outer-restore" scopeValuePass (jsonObject [
             "values", box (codeUnitSafeValuesJson scopeResult.Values)
             "expectedOuterBytes", box (bytesHex expectedEnvelopeBytes)
             "actualOuterBytes", box (bytesHex scopeOutput) ])
-        recordCheck checks failures $"owning-stack/{optimizationName}/String/scope-shadow/{caseName}/cleanup-and-local-categories" (cleanupPass && int64Property scopeMetrics "ReservedLocalBytes" >= int64Property scopeMetrics "PeakLiveLocalBytes") (jsonObject [
+        let descriptorOnly = int64Property scopeMetrics "MoveBytes" = 0L && int64Property scopeMetrics "DeepCopyBytes" = 0L
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/scope-shadow/{caseName}/cleanup-and-local-categories" (cleanupPass && descriptorOnly) (jsonObject [
             "reservedLocalBytes", box (int64Property scopeMetrics "ReservedLocalBytes")
-            "peakLiveLocalBytes", box (int64Property scopeMetrics "PeakLiveLocalBytes")
             "backendMetadataPerFrameBytes", box (int64Property scopeMetrics "BackendMetadataPerFrameBytes")
             "backendMetadataPeakBoundBytes", box (int64Property scopeMetrics "BackendMetadataPeakBoundBytes")
+            "descriptorOnlyPathHasNoPayloadCopiesOrMoves", box descriptorOnly
             "finalCursorBytes", box (int64Property scopeMetrics "FinalCursorBytes")
-            "finalLiveStackBytes", box (int64Property scopeMetrics "FinalLiveStackBytes")
             "metrics", box (jsonNode options (metricSummary scopeMetrics)) ])
         checkTraceUsable checks failures $"owning-stack/{optimizationName}/String/scope-shadow/{caseName}/trace-complete" scopeMetrics scopeResult.LayoutEvents |> ignore
         scopeReports.Add(box (jsonObject [
@@ -2684,6 +3293,213 @@ let private runStringWorkload
             "outerValueBytes", box (bytesHex expectedEnvelopeBytes)
             "metrics", box (jsonNode options (metricSummary scopeMetrics))
             "events", box (layoutEventDetails scopeResult.LayoutEvents) ]))
+
+    let stableCases = fixture.GetProperty("stableArenaCases")
+    let stableDead = stableCases.GetProperty("stringSixLocalNestedDeadOnly")
+    let stableDeadInputs = stableDead.GetProperty("inputs").EnumerateArray() |> Seq.map (fun item -> StringValue(item.GetString())) |> Seq.toList
+    let stableDeadResult = stableDeadProgram.ExecuteInto(stableDeadInputs, stateCapacity, Array.empty)
+    let stableDeadMetrics = stableDeadResult.Metrics
+    let stableDeadRewinds = stableDeadResult.LayoutEvents |> List.filter (fun event -> event.Kind = "arena-rewind")
+    let stableDeadIndexedEvents = stableDeadResult.LayoutEvents |> List.indexed |> List.toArray
+    let stableDeadMark = stableDead.GetProperty("inputCopyBytes").GetInt32()
+    let stableDeadRewindPositions =
+        stableDeadIndexedEvents
+        |> Array.choose (fun (index, event) -> if event.Kind = "arena-rewind" then Some(index, event) else None)
+    let stableDeadInnerRewindIndex = stableDeadRewindPositions |> Array.tryItem 0 |> Option.map fst |> Option.defaultValue -1
+    let stableDeadReusedAllocation =
+        stableDeadIndexedEvents
+        |> Array.tryFind (fun (index, event) ->
+            index > stableDeadInnerRewindIndex
+            && event.Kind = "allocate"
+            && event.TypeId = stringTypeId
+            && event.OffsetBytes = stableDead.GetProperty("postRewindAllocationOffsetBytes").GetInt32()
+            && event.ExtentBytes = stableDead.GetProperty("postRewindAllocationExtentBytes").GetInt32()
+            && event.PayloadBytes = stableDead.GetProperty("postRewindAllocationPayloadBytes").GetInt32())
+    let stableDeadReusedAllocationIndex = stableDeadReusedAllocation |> Option.map fst |> Option.defaultValue -1
+    let stableDeadLoadsAfterReuse =
+        match stableDeadRewindPositions |> Array.tryItem 1 with
+        | None -> [||]
+        | Some(outerRewindIndex, _) ->
+            stableDeadIndexedEvents
+            |> Array.choose (fun (index, event) ->
+                if index > stableDeadReusedAllocationIndex
+                   && index < outerRewindIndex
+                   && event.Kind = "descriptor-transfer"
+                   && event.TypeId = stringTypeId
+                   && event.PayloadBytes = 10
+                   && event.SourceExtentBytes = Some 16
+                   && event.SourceOffsetBytes = Some(event.OffsetBytes + 16) then
+                    Some event.OffsetBytes
+                else None)
+    let stableDeadReusePass =
+        stableDeadRewindPositions.Length = 3
+        && (stableDeadReusedAllocation |> Option.exists (fun (allocationIndex, allocation) ->
+            allocationIndex > fst stableDeadRewindPositions[0]
+            && allocationIndex < fst stableDeadRewindPositions[1]
+            && allocation.OffsetBytes = stableDeadMark))
+        && Array.sort stableDeadLoadsAfterReuse = [| 0; 16; 32; 48; 64; 80 |]
+    let stableDeadRewindPass =
+        stableDeadRewinds.Length = stableDead.GetProperty("rewindEventCount").GetInt32()
+        && stableDead.GetProperty("nestedScopeCount").GetInt32() + stableDead.GetProperty("functionExitRewindCount").GetInt32() = stableDeadRewinds.Length
+        && List.sort (stableDeadRewinds |> List.map (fun event -> event.OffsetBytes, event.ExtentBytes, event.PayloadBytes)) =
+           List.sort [
+               stableDeadMark, stableDead.GetProperty("innerRewindExtentBytes").GetInt32(), 0
+               stableDeadMark, stableDead.GetProperty("outerRewindExtentBytes").GetInt32(), 0
+               stableDeadMark, stableDead.GetProperty("functionExitRewindExtentBytes").GetInt32(), 0 ]
+    let stableDeadMetricsPass =
+        stableDeadResult.Values.IsEmpty
+        && stableDeadResult.RetainedBytesWritten = stableDead.GetProperty("outputCount").GetInt32()
+        && int64Property (box stableDeadMetrics) "InputCopyBytes" = int64 (stableDead.GetProperty("inputCopyBytes").GetInt32())
+        && int64Property (box stableDeadMetrics) "DeepCopyBytes" = int64 (stableDead.GetProperty("deepCopyBytes").GetInt32())
+        && int64Property (box stableDeadMetrics) "MoveBytes" = int64 (stableDead.GetProperty("moveBytes").GetInt32())
+        && int64Property (box stableDeadMetrics) "ReservedStackBytes" = int64 (stableDead.GetProperty("expectedPeakCursorBytes").GetInt32())
+        && int64Property (box stableDeadMetrics) "FinalCursorBytes" = 0L
+        && stableDeadRewindPass
+        && stableDeadReusePass
+        && descriptorTransferMetricsPass stableDeadMetrics stableDeadResult.LayoutEvents
+    let stableDeadLlvmSites = stableDead.GetProperty("nestedScopeCount").GetInt32() + stableDead.GetProperty("functionExitRewindCount").GetInt32()
+    let stableDeadLlvmPass, stableDeadLlvmDetails = generatedStablePolicyPass stableDeadProgram stableDeadLlvmSites
+    let stableDeadTracePass = checkTraceUsable checks failures $"owning-stack/{optimizationName}/String/stable-arena/dead-only-trace-complete" stableDeadMetrics stableDeadResult.LayoutEvents
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/stable-arena/dead-only-nested-scopes-rewind" (stableDeadMetricsPass && stableDeadLlvmPass && stableDeadTracePass) (jsonObject [
+        "inputCount", box stableDeadInputs.Length
+        "scopeRewindSiteCount", box (stableDead.GetProperty("nestedScopeCount").GetInt32())
+        "functionExitRewindSiteCount", box (stableDead.GetProperty("functionExitRewindCount").GetInt32())
+        "rewindEvents", box (layoutEventDetails stableDeadRewinds)
+        "rewindRangesMatchSavedMarks", box stableDeadRewindPass
+        "postRewindAllocation", box (stableDeadReusedAllocation |> Option.map (fun (_, event) -> layoutEventDetails [ event ]) |> Option.defaultValue [||])
+        "postRewindInputDescriptorOffsets", box stableDeadLoadsAfterReuse
+        "postRewindAllocationReusesSavedMarkWithoutMovingPremarkInputs", box stableDeadReusePass
+        "generatedLlvmPolicy", box stableDeadLlvmDetails
+        "metrics", box (jsonNode options (metricSummary (box stableDeadMetrics))) ])
+
+    let stableEscape = stableCases.GetProperty("stringEscapingScopeResult")
+    let stableEscapeBytes = bytesFromHex (stableEscape.GetProperty("retainedBytesHex").GetString())
+    let stableEscapeOutput = Array.create stableEscapeBytes.Length 0xA5uy
+    let stableEscapeResult = stableEscapeProgram.ExecuteInto([], stateCapacity, stableEscapeOutput)
+    let stableEscapeMetrics = stableEscapeResult.Metrics
+    let stableEscapeRewinds = stableEscapeResult.LayoutEvents |> List.filter (fun event -> event.Kind = "arena-rewind")
+    let stableEscapeRetention = stableEscapeResult.LayoutEvents |> List.tryFind (fun event -> event.Kind = "retained-copy")
+    let stableEscapeConstructionCopyBytes =
+        (stableEscape.GetProperty("literalExtentsBytes").EnumerateArray() |> Seq.sumBy (fun item -> item.GetInt32()))
+        + stableEscape.GetProperty("resultExtentBytes").GetInt32()
+    let stableEscapeMetricsPass =
+        stableEscapeResult.Values = [ StringValue(stableEscape.GetProperty("expected").GetString()) ]
+        && stableEscapeOutput = stableEscapeBytes
+        && stableEscapeConstructionCopyBytes = stableEscape.GetProperty("deepCopyBytes").GetInt32()
+        && int64Property (box stableEscapeMetrics) "DeepCopyBytes" = int64 stableEscapeConstructionCopyBytes
+        && int64Property (box stableEscapeMetrics) "MoveBytes" = int64 (stableEscape.GetProperty("moveBytes").GetInt32())
+        && int64Property (box stableEscapeMetrics) "ReservedStackBytes" >= int64 (stableEscape.GetProperty("minimumPeakCursorBytes").GetInt32())
+        && int64Property (box stableEscapeMetrics) "FinalCursorBytes" = 0L
+        && stableEscapeRewinds.Length = stableEscape.GetProperty("scopeRewinds").GetInt32()
+        && (stableEscapeRetention |> Option.exists (fun event -> event.SourceOffsetBytes |> Option.exists (fun source -> source > 16)))
+        && descriptorTransferMetricsPass stableEscapeMetrics stableEscapeResult.LayoutEvents
+    let stableEscapeLlvmPass, stableEscapeLlvmDetails = generatedStablePolicyPass stableEscapeProgram (stableEscape.GetProperty("scopeRewinds").GetInt32())
+    let stableEscapeTracePass = checkTraceUsable checks failures $"owning-stack/{optimizationName}/String/stable-arena/escape-trace-complete" stableEscapeMetrics stableEscapeResult.LayoutEvents
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/stable-arena/escaping-result-keeps-temporary-below-result" (stableEscapeMetricsPass && stableEscapeLlvmPass && stableEscapeTracePass) (jsonObject [
+        "values", box (codeUnitSafeValuesJson stableEscapeResult.Values)
+        "expectedBytes", box (bytesHex stableEscapeBytes)
+        "actualBytes", box (bytesHex stableEscapeOutput)
+        "retainedCopySourceOffset", box (stableEscapeRetention |> Option.bind (fun event -> event.SourceOffsetBytes) |> Option.map box |> Option.defaultValue null)
+        "rewindEvents", box (layoutEventDetails stableEscapeRewinds)
+        "generatedLlvmPolicy", box stableEscapeLlvmDetails
+        "metrics", box (jsonNode options (metricSummary (box stableEscapeMetrics))) ])
+
+    let stableBinding = stableCases.GetProperty("stringBindingRoundTrip")
+    let stableBindingBytes = bytesFromHex (stableBinding.GetProperty("retainedBytesHex").GetString())
+    let stableBindingOutput = Array.create stableBindingBytes.Length 0xA5uy
+    let stableBindingResult = stableBindingProgram.ExecuteInto([], stateCapacity, stableBindingOutput)
+    let stableBindingMetrics = stableBindingResult.Metrics
+    let stableBindingIndexedEvents = stableBindingResult.LayoutEvents |> List.indexed |> List.toArray
+    let stableBindingTransfers = stableBindingIndexedEvents |> Array.choose (fun (index, event) -> if event.Kind = "descriptor-transfer" then Some(index, event) else None)
+    let stableBindingRewinds = stableBindingResult.LayoutEvents |> List.filter (fun event -> event.Kind = "arena-rewind")
+    let stableBindingExpectedLiteralBytes = stableBinding.GetProperty("literalExtentBytes").GetInt32()
+    let stableBindingExpectedLiteralPayloadBytes = 8 + 2 * stableBinding.GetProperty("value").GetString().Length
+    let stableBindingLiteral =
+        stableBindingIndexedEvents
+        |> Array.tryFind (fun (_, event) ->
+            event.Kind = "allocate"
+            && event.TypeId = stringTypeId
+            && event.ExtentBytes = stableBindingExpectedLiteralBytes
+            && event.PayloadBytes = stableBindingExpectedLiteralPayloadBytes)
+    let stableBindingRetention =
+        stableBindingIndexedEvents
+        |> Array.tryFind (fun (_, event) -> event.Kind = "retained-copy")
+    let stableBindingTransferMatchesLiteral (literal: OwningStackLayoutEvent) (transfer: OwningStackLayoutEvent) =
+        transfer.TypeId = stringTypeId
+        && transfer.OffsetBytes = literal.OffsetBytes
+        && transfer.PayloadBytes = literal.PayloadBytes
+        && transfer.SourceOffsetBytes = Some(literal.OffsetBytes + literal.ExtentBytes)
+        && transfer.SourceExtentBytes = Some literal.ExtentBytes
+    let stableBindingAddressStable =
+        match stableBindingLiteral, stableBindingTransfers |> Array.toList, stableBindingRetention with
+        | Some(literalIndex, literal), [ (storeIndex, store); (loadIndex, load); (resultIndex, resultTransfer) ], Some(retainedIndex, retained) ->
+            literalIndex < storeIndex
+            && storeIndex < loadIndex
+            && loadIndex < resultIndex
+            && resultIndex < retainedIndex
+            && ([ store; load; resultTransfer ] |> List.forall (stableBindingTransferMatchesLiteral literal))
+            && retained.TypeId = stringTypeId
+            && retained.SourceOffsetBytes = Some literal.OffsetBytes
+            && retained.SourceExtentBytes = Some literal.ExtentBytes
+            && retained.ExtentBytes = literal.ExtentBytes
+        | _ -> false
+    let stableBindingPass =
+        stableBindingResult.Values = [ StringValue(stableBinding.GetProperty("value").GetString()) ]
+        && stableBindingOutput = stableBindingBytes
+        && stableBindingExpectedLiteralBytes = stableBindingBytes.Length
+        && stableBindingExpectedLiteralPayloadBytes = stableBinding.GetProperty("literalPayloadBytes").GetInt32()
+        && stableBinding.GetProperty("deepCopyBytes").GetInt32() = stableBindingExpectedLiteralBytes
+        && int64Property (box stableBindingMetrics) "DeepCopyBytes" = int64 (stableBinding.GetProperty("deepCopyBytes").GetInt32())
+        && int64Property (box stableBindingMetrics) "MoveBytes" = int64 (stableBinding.GetProperty("moveBytes").GetInt32())
+        && stableBindingMetrics.DescriptorTransferCount = Some(stableBinding.GetProperty("descriptorTransferCount").GetInt32())
+        && stableBindingMetrics.DescriptorTransferBytes = Some(stableBinding.GetProperty("descriptorTransferBytes").GetInt32())
+        && int64Property (box stableBindingMetrics) "RetainedCopyBytes" = int64 stableBindingBytes.Length
+        && int64Property (box stableBindingMetrics) "FinalCursorBytes" = 0L
+        && stableBindingRewinds.Length = stableBinding.GetProperty("scopeRewinds").GetInt32()
+        && stableBindingAddressStable
+        && descriptorTransferMetricsPass stableBindingMetrics stableBindingResult.LayoutEvents
+    let stableBindingLlvmPass, stableBindingLlvmDetails = generatedStablePolicyPass stableBindingProgram (stableBinding.GetProperty("scopeRewinds").GetInt32())
+    let stableBindingTracePass = checkTraceUsable checks failures $"owning-stack/{optimizationName}/String/stable-arena/binding-trace-complete" stableBindingMetrics stableBindingResult.LayoutEvents
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/stable-arena/local-store-load-preserves-result-address" (stableBindingPass && stableBindingLlvmPass && stableBindingTracePass) (jsonObject [
+        "values", box (codeUnitSafeValuesJson stableBindingResult.Values)
+        "expectedBytes", box (bytesHex stableBindingBytes)
+        "actualBytes", box (bytesHex stableBindingOutput)
+        "literalAllocation", box (stableBindingLiteral |> Option.map (fun (_, event) -> layoutEventDetails [ event ]) |> Option.defaultValue [||])
+        "descriptorTransferIndices", box (stableBindingTransfers |> Array.map fst)
+        "expectedDescriptorTransferRoles", box [| "local-store"; "local-load"; "frame-result" |]
+        "descriptorTransfersInStoreLoadReturnOrder", box (stableBindingTransfers |> Array.map (fun (_, event) -> event) |> Array.toList |> layoutEventDetails)
+        "retainedCopy", box (stableBindingRetention |> Option.map (fun (_, event) -> layoutEventDetails [ event ]) |> Option.defaultValue [||])
+        "addressStable", box stableBindingAddressStable
+        "generatedLlvmPolicy", box stableBindingLlvmDetails
+        "metrics", box (jsonNode options (metricSummary (box stableBindingMetrics))) ])
+
+    let stableUncertain = stableCases.GetProperty("stringUncertainCallScope")
+    let stableUncertainValue = StringValue(stableUncertain.GetProperty("input").GetString())
+    let stableUncertainBytes = bytesFromHex (stableUncertain.GetProperty("retainedBytesHex").GetString())
+    let stableUncertainOutput = Array.create stableUncertainBytes.Length 0xA5uy
+    let stableUncertainResult = stableUncertainCallProgram.ExecuteInto([ stableUncertainValue ], stateCapacity, stableUncertainOutput)
+    let stableUncertainMetrics = stableUncertainResult.Metrics
+    let stableUncertainRewinds = stableUncertainResult.LayoutEvents |> List.filter (fun event -> event.Kind = "arena-rewind")
+    let stableUncertainPass =
+        stableUncertainResult.Values = [ stableUncertainValue ]
+        && stableUncertainOutput = stableUncertainBytes
+        && int64Property (box stableUncertainMetrics) "InputCopyBytes" = int64 stableUncertainBytes.Length
+        && int64Property (box stableUncertainMetrics) "DeepCopyBytes" = 0L
+        && int64Property (box stableUncertainMetrics) "MoveBytes" = int64 (stableUncertain.GetProperty("moveBytes").GetInt32())
+        && int64Property (box stableUncertainMetrics) "FinalCursorBytes" = 0L
+        && stableUncertainRewinds.Length = stableUncertain.GetProperty("calledFunctionRewindEventCount").GetInt32()
+        && (stableUncertainRewinds |> List.forall (fun event -> event.OffsetBytes = stableUncertainBytes.Length && event.ExtentBytes = stableUncertain.GetProperty("calledFunctionRewindExtentBytes").GetInt32() && event.PayloadBytes = 0))
+        && descriptorTransferMetricsPass stableUncertainMetrics stableUncertainResult.LayoutEvents
+    let stableUncertainLlvmPass, stableUncertainLlvmDetails = generatedStablePolicyPass stableUncertainCallProgram (stableUncertain.GetProperty("scopeRewinds").GetInt32())
+    let stableUncertainCalledFunctionPass, stableUncertainCalledFunctionDetails = generatedCalledFunctionRewindPass stableUncertainCallProgram (stableUncertain.GetProperty("calledFunctionRewindSites").GetInt32())
+    let stableUncertainTracePass = checkTraceUsable checks failures $"owning-stack/{optimizationName}/String/stable-arena/uncertain-call-trace-complete" stableUncertainMetrics stableUncertainResult.LayoutEvents
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/stable-arena/uncertain-call-output-blocks-rewind" (stableUncertainPass && stableUncertainLlvmPass && stableUncertainCalledFunctionPass && stableUncertainTracePass) (jsonObject [
+        "inputBytes", box (bytesHex stableUncertainBytes)
+        "outputBytes", box (bytesHex stableUncertainOutput)
+        "rewindEvents", box (layoutEventDetails stableUncertainRewinds)
+        "generatedLlvmPolicy", box stableUncertainLlvmDetails
+        "calledFunctionGeneratedLlvmPolicy", box stableUncertainCalledFunctionDetails
+        "metrics", box (jsonNode options (metricSummary (box stableUncertainMetrics))) ])
 
     let duplicateInputFactory = compileTextEnvelopePairFactory entries "duplicate-long" longEnvelope longEnvelope
     use duplicateInputOwner = IrInterpreter.executeBodyWithInputs interpreterHost "duplicate-long-input" duplicateInputFactory None []
@@ -2707,6 +3523,9 @@ let private runStringWorkload
             | None -> false))
         && (duplicateDropEvents |> List.exists (fun drop -> duplicateCopyEvents |> List.exists (fun duplicate -> drop.OffsetBytes = duplicate.OffsetBytes && drop.ExtentBytes = duplicate.ExtentBytes)))
         && duplicateResult.Values = [ longEnvelope ]
+        && int64Property (box duplicateResult.Metrics) "MoveBytes" = 0L
+        && int64Property (box duplicateResult.Metrics) "DeepCopyBytes" = int64 duplicateCopyEvents[0].ExtentBytes
+        && (duplicateEvents |> List.forall (fun event -> event.Kind <> "call-input-move" && event.Kind <> "call-return-move" && event.Kind <> "local-compact"))
         && duplicateOutput = duplicateExpectedBytes
     recordCheck checks failures $"owning-stack/{optimizationName}/String/direct-dup-drop-disjoint-and-survivor" duplicatePhysicalPass (jsonObject [
         "expectedEnvelopeBytes", box (bytesHex duplicateExpectedBytes)
@@ -2725,7 +3544,7 @@ let private runStringWorkload
     let zeroBefore = Array.copy zeroBuffer
     let zeroResult = zeroOutputProgram.ExecuteInto([ zeroEnvelope ], stateCapacity, zeroBuffer)
     let zeroMetrics = box zeroResult.Metrics
-    let zeroPassed = zeroResult.Values = [] && zeroResult.RetainedBytesWritten = 0 && zeroBuffer = zeroBefore && int64Property zeroMetrics "FinalCursorBytes" = 0L && int64Property zeroMetrics "FinalLiveStackBytes" = 0L
+    let zeroPassed = zeroResult.Values = [] && zeroResult.RetainedBytesWritten = 0 && zeroBuffer = zeroBefore && int64Property zeroMetrics "FinalCursorBytes" = 0L
     recordCheck checks failures $"owning-stack/{optimizationName}/String/zero-output-user-call-return" zeroPassed (jsonObject [
         "values", box []
         "retainedBytesWritten", box zeroResult.RetainedBytesWritten
@@ -2754,7 +3573,6 @@ let private runStringWorkload
         && not (isNull nativeFailureMetrics)
         && int64Property nativeFailureMetrics "DeepCopyBytes" > 0L
         && int64Property nativeFailureMetrics "FinalCursorBytes" = 0L
-        && int64Property nativeFailureMetrics "FinalLiveStackBytes" = 0L
         && failureBuffer = failureBefore
     recordCheck checks failures $"owning-stack/{optimizationName}/String/failure-after-concat-unwinds-and-does-not-publish" nativeFailurePassed (jsonObject [
         "diagnosticCode", box nativeFailure
@@ -2779,7 +3597,7 @@ let private runStringWorkload
                 optionalInt64 error "RequiredBytes",
                 optionalInt64 error "AvailableBytes",
                 (getProperty error "Boundary" |> string)
-        let passed = failureCode = "OWNING_RETAINED_CAPACITY" && boundary = "retained-output" && required = int64 expectedBytes.Length && actualAvailable = int64 available && sentinel = old && not (isNull failureMetrics) && int64Property failureMetrics "FinalCursorBytes" = 0L && int64Property failureMetrics "FinalLiveStackBytes" = 0L
+        let passed = failureCode = "OWNING_RETAINED_CAPACITY" && boundary = "retained-output" && required = int64 expectedBytes.Length && actualAvailable = int64 available && sentinel = old && not (isNull failureMetrics) && int64Property failureMetrics "FinalCursorBytes" = 0L
         recordCheck checks failures $"owning-stack/{optimizationName}/String/{name}/retained-capacity-atomicity" passed (jsonObject [
             "code", box failureCode
             "boundary", box boundary
@@ -2820,7 +3638,6 @@ let private runStringWorkload
             && frameReturns > 0L
             && traceCount > 0L
             && int64Property metrics "FinalCursorBytes" = 0L
-            && int64Property metrics "FinalLiveStackBytes" = 0L
             && attemptOutput = attemptBefore
         recordCheck checks failures $"owning-stack/{optimizationName}/String/program-stack-capacity-after-concat" capacityPassed (jsonObject [
             "capacityBytes", box available
@@ -3038,13 +3855,13 @@ let main argv =
             for turnName in [ "turn1"; "turn2" ] do
                 let n1 = readSummary $"{optimizationName}/N=1/{turnName}"
                 let n8 = readSummary $"{optimizationName}/N=8/{turnName}"
-                let invariantFields = [ "peakLiveStackBytes"; "reservedStackBytes"; "peakLiveLocalBytes"; "reservedLocalBytes"; "inputBytes"; "inputCopyBytes"; "retainedCopyBytes"; "hostRetainedStagingBytes"; "hostRetainedCommitBytes" ]
+                let invariantFields = [ "inputBytes"; "inputCopyBytes"; "retainedCopyBytes"; "hostRetainedStagingBytes"; "hostRetainedCommitBytes" ]
                 let invariantResults =
                     invariantFields
                     |> List.map (fun field -> field, metricInt n1 field, metricInt n8 field)
                 let invariantPassed = invariantResults |> List.forall (fun (_, left, right) -> left = right)
-                recordCheck checks failures $"owning-stack/{optimizationName}/{turnName}/same-maximum-depth-for-N1-and-N8" invariantPassed (jsonObject [
-                    "independentExpectation", box "The unrolled repeated helper calls have the same maximum call depth, and the helper's scoped local frame is released on each return."
+                recordCheck checks failures $"owning-stack/{optimizationName}/{turnName}/same-boundary-copy-bytes-for-N1-and-N8" invariantPassed (jsonObject [
+                    "independentExpectation", box "Input and retained-output boundary bytes depend on the request shape, while the stable arena cursor may retain dead interior allocations across helper calls."
                     "categories", box (invariantResults |> List.map (fun (name, n1Value, n8Value) -> jsonObject [ "category", box name; "N1", box n1Value; "N8", box n8Value ])) ])
                 let copyDelta = metricInt n8 "deepCopyBytes" - metricInt n1 "deepCopyBytes"
                 let frameDelta = metricInt n8 "frameReturnCount" - metricInt n1 "frameReturnCount"
@@ -3058,6 +3875,8 @@ let main argv =
                     "optimization", box optimizationName
                     "turn", box turnName
                     "categories", box (invariantResults |> List.map (fun (name, n1Value, n8Value) -> jsonObject [ "category", box name; "N1", box n1Value; "N8", box n8Value ]))
+                    "occupiedCursorPeakBytesN1", box (metricInt n1 "occupiedCursorPeakBytes")
+                    "occupiedCursorPeakBytesN8", box (metricInt n8 "occupiedCursorPeakBytes")
                     "deepCopyGrowthBytes", box copyDelta
                     "frameReturnGrowth", box frameDelta ]))
         report["runs"] <- runReports.ToArray()

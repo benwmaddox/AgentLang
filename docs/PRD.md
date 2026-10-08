@@ -5,6 +5,11 @@
 - Primary user: an AI coding agent
 - Secondary user: a developer inspecting and controlling that agent
 
+Naming remains undecided. Use AgentLang as the project placeholder and
+data-flow syntax as a description. Existing Flow/Flow2 identifiers and historical
+reports are provisional implementation labels, not a selected product name.
+HobThrush is a user-suggested candidate; no rename is authorized yet.
+
 Implementation-language decision: prioritize correctness, maintainability and
 measured runtime behavior over retaining any particular host language. Keep the
 existing F# compiler/frontends while they serve those goals; choose the native
@@ -605,6 +610,14 @@ Do not decide rewind safety through runtime liveness checks or root scans.
 Runtime-sized offsets and normal bounds/capacity checks remain permitted; they
 do not decide whether a value is still needed.
 
+Future opt-in candidate: `let result = compact { ... }`. A structured block
+identifies surviving results that may be moved to its saved region mark before
+rewinding past them. Require compiler proof over every affected location and
+dependency; stack-top placement alone is insufficient. Ordinary returns and
+scope exits never compact automatically. This syntax is not implemented; measure
+retained dead space and relocation cost before adopting it. See the
+[candidate design](STABLE-ARENA-LOWERING.md#allocation-and-lifetime).
+
 Ordinary binding, read-only local access, same-arena calls and returns should
 transfer compiler-managed locations or ownership without copying full payloads.
 Internal location descriptors are allowed; they do not introduce source-level
@@ -639,13 +652,13 @@ for local cleanup, optimization and capacity-error boundaries.
 The earlier native backend uses handles and shared record DAGs in invocation-wide
 arenas. The additional owning-stack backend now implements independent inline
 fixed-size records, variable-sized Strings/nested records and compiler-controlled
-cleanup; see [report 129](../reports/129-variable-owning-values.md). Owning mailbox
+cleanup; see [report 130](../reports/130-stable-arena-rewinds.md). Owning mailbox
 integration remains in progress; conformance does not establish the complete
-memory model or a footprint/throughput advantage. Its packed policy performs
-substantial copying and does not satisfy the clarified rare-movement objective.
-Replace that placement policy with stable arena payloads and bulk reset; retain
-the measured packed implementation as historical evidence, not a required second
-production policy. See [owning value-stack semantics](STACK-ONLY-RESEARCH.md#preferred-semantics-owning-values).
+memory model or a footprint/throughput advantage. Report 130 replaces report
+129's packed policy with stable arena payloads and compiler-proven rewinds;
+focused native acceptance and the full local Release gate pass.
+The measured packed implementation remains historical evidence, not a required
+second production policy. See [owning value-stack semantics](STACK-ONLY-RESEARCH.md#preferred-semantics-owning-values).
 
 Compare keeping the same mailbox's actual stack/scratch associated across async
 work until safe completion against returning it to a bounded pool at suspension

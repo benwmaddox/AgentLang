@@ -7,13 +7,14 @@ $ErrorActionPreference = 'Stop'
 
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $runId = [Guid]::NewGuid().ToString('N')
-$runDirectory = Join-Path $repo ".agentlang/owning-stack-002/verification-$runId"
+$runDirectory = Join-Path $repo ".agentlang/owning-stack-003/verification-$runId"
 $buildDirectory = Join-Path $runDirectory 'dotnet-artifacts'
 $nativeDirectory = Join-Path $runDirectory 'native'
 $nativeOutputDirectory = Join-Path $runDirectory 'native-output'
 $repoTempDirectory = Join-Path $runDirectory 'compiler-temp'
 $evidencePath = Join-Path $runDirectory 'verification-evidence.json'
 $runnerProject = Join-Path $repo 'experiments/AgentLang.NativeValueStack/AgentLang.NativeValueStack.fsproj'
+$arenaLifetimeTestProject = Join-Path $repo 'tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj'
 $fixturePath = Join-Path $repo 'tests/fixtures/native-conformance/native-value-stack.json'
 $nativeSourceDirectory = Join-Path $repo 'src/AgentLang.Llvm/native'
 $nativeTestSource = Join-Path $nativeSourceDirectory 'owning_stack_runtime_test.c'
@@ -27,6 +28,7 @@ $nativeUnitBuilds = [Collections.Generic.List[object]]::new()
 $nativeUnitRuns = [Collections.Generic.List[object]]::new()
 $sourceInputPaths = @(
     $runnerProject,
+    $arenaLifetimeTestProject,
     (Join-Path $repo 'experiments/AgentLang.NativeValueStack/Program.fs'),
     (Join-Path $repo 'experiments/AgentLang.NativeValueStack/value-stack.flow'),
     (Join-Path $repo 'scripts/Verify-NativeValueStack.ps1'),
@@ -36,7 +38,14 @@ $sourceInputPaths = @(
     (Join-Path $nativeSourceDirectory 'owning_stack_runtime.h'),
     $nativeRuntimeSource,
     $nativeTestSource,
-    (Join-Path $repo 'docs/STACK-ONLY-RESEARCH.md')
+    (Join-Path $repo 'docs/STACK-ONLY-RESEARCH.md'),
+    (Join-Path $repo '.agentlang/owning-stack-003/implementation-plan.md'),
+    (Join-Path $repo '.agentlang/owning-stack-003/acceptance-plan.md')
+)
+$sourceInputPaths += @(
+    Get-ChildItem -LiteralPath (Join-Path $repo 'tests/AgentLang.Llvm.Tests') -File -Filter '*.fs' |
+    Sort-Object FullName |
+    ForEach-Object { [IO.Path]::GetFullPath($_.FullName) }
 )
 $sourceInputPaths += @(
     Get-ChildItem -LiteralPath (Join-Path $repo 'src/AgentLang.Core') -File -Filter '*.fs' |
@@ -61,6 +70,8 @@ $report = [ordered]@{
     sourceInputHashesAfter = @()
     sourceInputsStable = $false
     dependencyBuild = $null
+    arenaLifetimeTestBuild = $null
+    arenaLifetimeTestRun = $null
     compiler = $null
     nativeUnitBuilds = @()
     nativeUnitRuns = @()
@@ -216,6 +227,23 @@ try {
     Add-Check 'fresh build emitted exactly one comparison runner' ($assemblies.Count -eq 1) ([ordered]@{ count = $assemblies.Count })
     $runnerAssembly = [IO.Path]::GetFullPath($assemblies[0].FullName)
     Add-Check 'comparison runner assembly is inside fresh artifact root' $runnerAssembly.StartsWith([IO.Path]::GetFullPath($buildDirectory), [StringComparison]::OrdinalIgnoreCase) $runnerAssembly
+
+    $arenaLifetimeBuild = Invoke-CapturedProcess 'fresh-arena-lifetime-tests-build' $dotnet @(
+        'build', $arenaLifetimeTestProject, '--artifacts-path', $buildDirectory, '--configuration', 'Release', '--verbosity', 'minimal', '-p:NuGetAudit=false', '-m:1'
+    ) $repo
+    $report.arenaLifetimeTestBuild = $arenaLifetimeBuild
+    Require-ProcessSuccess $arenaLifetimeBuild 'fresh Release build of the compiler-proved arena-lifetime analysis tests'
+    $arenaLifetimeAssemblies = @(Get-ChildItem -LiteralPath (Join-Path $buildDirectory 'bin') -Recurse -File -Filter 'AgentLang.Llvm.Tests.dll')
+    Add-Check 'fresh build emitted exactly one arena-lifetime test assembly' ($arenaLifetimeAssemblies.Count -eq 1) ([ordered]@{ count = $arenaLifetimeAssemblies.Count })
+    $arenaLifetimeAssembly = [IO.Path]::GetFullPath($arenaLifetimeAssemblies[0].FullName)
+    Add-Check 'arena-lifetime test assembly is inside fresh artifact root' $arenaLifetimeAssembly.StartsWith([IO.Path]::GetFullPath($buildDirectory), [StringComparison]::OrdinalIgnoreCase) $arenaLifetimeAssembly
+    $arenaLifetimeRun = Invoke-CapturedProcess 'compiler-proved-arena-lifetime-tests' $dotnet @($arenaLifetimeAssembly, '--arena-lifetime') $repo
+    $report.arenaLifetimeTestRun = $arenaLifetimeRun
+    Require-ProcessSuccess $arenaLifetimeRun 'compiler-proved arena-lifetime analysis cases passed'
+    $arenaLifetimeAssertionMatch = [regex]::Match($arenaLifetimeRun.stdout, 'arena lifetime: (?<count>[0-9]+) assertions passed')
+    Add-Check 'arena-lifetime test output reports its assertion count' $arenaLifetimeAssertionMatch.Success ([ordered]@{ stdout = $arenaLifetimeRun.stdout })
+    $report.arenaLifetimeAssertions = [int]$arenaLifetimeAssertionMatch.Groups['count'].Value
+    Add-Check 'arena-lifetime test suite exercised its static cases' ($report.arenaLifetimeAssertions -gt 0) ([ordered]@{ assertions = $report.arenaLifetimeAssertions })
 
     $storageOracle = (Read-JsonFile $fixturePath).storageRuntimeTestOracle
     foreach ($optimizationName in @('O0', 'O2')) {

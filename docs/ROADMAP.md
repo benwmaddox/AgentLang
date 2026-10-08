@@ -170,12 +170,51 @@ reset. Require saved scope marks and compiler-checked early suffix rewind;
 escaping results must prevent unsafe rewind. At request completion, reset the
 whole arena or return it to the pool. Verify reset safety, unchanged retained output on failure and repeated-turn
 capacity reuse. Measure metadata separately from payload traffic, and compare
-with report 129's frozen evidence. This is the next implementation step, not an
-unresolved preference between packing and bulk reset; see the
+with report 129's frozen evidence. This implementation now passes focused native
+acceptance and the full local Release gate in
+[report 130](../reports/130-stable-arena-rewinds.md).
+Owning mailbox/async integration remains the next step.
+This is not an unresolved preference between packing and bulk reset; see the
 [simplicity review](OWNING-STACK-DESIGN-REVIEW.md#stable-arena-payloads-and-bulk-reset-selected-direction).
 Rewind placement requires compiler proof; uncertain lifetimes retain storage
 until a later proved boundary. Runtime liveness decisions are excluded. Follow
 the [stable arena lowering contract](STABLE-ARENA-LOWERING.md).
+
+Deferred research: the user suggested an explicit operation such as
+`Allocation.drop(temporary)` that might request compaction. This is an idea,
+not selected syntax or part of the current backend work. Distinguish ending a
+binding's logical lifetime from relocating surviving payloads. First measure
+whether retained dead space is a practical problem. If it is, compare selective
+transfer into a fresh arena with in-place compaction. Require compiler proof
+that every affected location is controlled and updated, including projected
+fields and retained/provider dependencies; pending I/O may make relocation
+ineligible. No hidden compaction on ordinary scope exit or drop.
+
+The refined candidate is an explicitly selected region boundary after a deep
+function chain, with only its returned values surviving. Move those few results
+to the saved region mark and rewind after them when compiler proof permits it.
+Evaluate this against retaining the dead space until full reset; measure bytes
+recovered, bytes moved and latency. Stack-top placement alone does not prove
+safety. A size-based profitability threshold may be dynamic, but lifetime safety
+must remain static. The user prefers `let result = compact { ... }` as the
+candidate form, with the block's returned value (possibly a record or tuple)
+identifying its survivors. Record it as future syntax, not an available feature;
+thresholds and detailed semantics remain open. Implementation is deferred until
+realistic workloads demonstrate a need. See the
+[candidate example and safety rules](STABLE-ARENA-LOWERING.md#allocation-and-lifetime).
+
+Related deferred research: Koka and Perceus, identified by the user on
+2026-10-08. Study compiler-inserted last-use drops and reuse analysis that can
+implement functional updates in place. Perceus uses precise reference counting;
+the compiler's inserted operations can still perform runtime uniqueness checks.
+It is not evidence that arbitrary lifetimes or safe mutation are always decided
+entirely at compile time. Our adaptation should first investigate statically
+proved last-use reuse of existing arena slots without changing source value
+semantics, adding reference counting, or relocating unrelated survivors.
+If uniqueness or layout suitability cannot be proved, keep the ordinary
+allocation path. Measure copy bytes and retained capacity before adopting it.
+Sources: [Microsoft Research's Perceus paper](https://www.microsoft.com/en-us/research/publication/perceus-garbage-free-reference-counting-with-reuse/)
+and [Koka's reference-counting and reuse examples](https://koka-lang.github.io/koka/doc/book.html).
 Final byte encoding remains an experimental choice; shared-graph regions are comparison
 controls, not replacements for the owning-value goal. Keep the actual
 keep-associated versus return-at-suspension async comparison as the subsequent
