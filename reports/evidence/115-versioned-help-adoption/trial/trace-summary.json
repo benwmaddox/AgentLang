@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "exchangeCount": 25,
+  "operations": [
+    {
+      "name": "context",
+      "count": 1
+    },
+    {
+      "name": "define",
+      "count": 2
+    },
+    {
+      "name": "describe",
+      "count": 6
+    },
+    {
+      "name": "example",
+      "count": 2
+    },
+    {
+      "name": "help",
+      "count": 4
+    },
+    {
+      "name": "replace-word",
+      "count": 1
+    },
+    {
+      "name": "source",
+      "count": 2
+    },
+    {
+      "name": "task.status",
+      "count": 1
+    },
+    {
+      "name": "test",
+      "count": 4
+    },
+    {
+      "name": "tests",
+      "count": 1
+    },
+    {
+      "name": "words",
+      "count": 1
+    }
+  ],
+  "help": [
+    {
+      "index": 1,
+      "request": "{\"op\":\"help\",\"syntaxVersion\":2}",
+      "requestSyntaxVersion": 2,
+      "responseOk": true,
+      "responseSyntaxVersion": 2,
+      "effectAssertionVisible": false,
+      "exampleSourceCount": 0,
+      "errorCode": null
+    },
+    {
+      "index": 2,
+      "request": "{\"op\":\"help\",\"syntaxVersion\":2,\"topic\":\"define\"}",
+      "requestSyntaxVersion": 2,
+      "responseOk": true,
+      "responseSyntaxVersion": 2,
+      "effectAssertionVisible": false,
+      "exampleSourceCount": 1,
+      "errorCode": null
+    },
+    {
+      "index": 10,
+      "request": "{\"op\":\"help\",\"syntaxVersion\":2,\"topic\":\"examples\"}",
+      "requestSyntaxVersion": 2,
+      "responseOk": true,
+      "responseSyntaxVersion": 2,
+      "effectAssertionVisible": true,
+      "exampleSourceCount": 5,
+      "errorCode": null
+    },
+    {
+      "index": 11,
+      "request": "{\"op\":\"help\",\"syntaxVersion\":2,\"topic\":\"replacement\"}",
+      "requestSyntaxVersion": 2,
+      "responseOk": true,
+      "responseSyntaxVersion": 2,
+      "effectAssertionVisible": false,
+      "exampleSourceCount": 0,
+      "errorCode": null
+    }
+  ],
+  "protocolErrors": [
+    {
+      "index": 5,
+      "operation": "describe",
+      "code": "NAME_UNKNOWN_WORD",
+      "message": "NAME_UNKNOWN_WORD in Invoice: Word 'Invoice' is not defined."
+    }
+  ],
+  "terminalEvents": [
+    {
+      "event": "host-close",
+      "atUtc": "2026-10-07T23:35:32.2419233-04:00",
+      "exchangeCount": 25,
+      "requestWireUtf8Bytes": 21,
+      "requestWireSha256": "67769e43602273314f617203ed27eced4816cbcb8d267bcfbabdd3689608a53d",
+      "requestWireBase64": "eyJvcCI6Imhvc3QuY2xvc2UifQ0K",
+      "requestRaw": "{\"op\":\"host.close\"}\r",
+      "requestCanonical": "{\"op\":\"host.close\"}"
+    },
+    {
+      "event": "session-end",
+      "finishedUtc": "2026-10-07T23:35:32.2538395-04:00",
+      "exchangeCount": 25,
+      "terminationKind": "host-close",
+      "hostExitCode": 0,
+      "runtimeExitCode": 0,
+      "runtimeStderrPrefixBytes": 0,
+      "runtimeStderrTotalBytes": 0,
+      "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "runtimeStderrCaptureTruncated": false
+    }
+  ]
+}

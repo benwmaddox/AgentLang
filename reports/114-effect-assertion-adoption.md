@@ -69,3 +69,7 @@ frozen prompt/runtime/provenance, verifier copies and reviews, preflight
 controls, final behavioral acceptance, source inventories, and disposable
 mutant inputs and outputs. It contains no runtime binaries. See its `README.md`
 and `SHA256SUMS.txt` for the package map and integrity index.
+
+Follow-up: [Report 115](115-versioned-help-adoption.md) records the separate
+versioned-help replay using the same pinned runtime, seed and oracle. The negative
+result above remains unchanged.

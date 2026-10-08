@@ -1,0 +1,9 @@
+{
+  "hostCloseWasSent": true,
+  "hostClosePollResult": "Unknown process id",
+  "traceHostExitCode": 0,
+  "traceRuntimeExitCode": 0,
+  "runtimeStderrBytes": 0,
+  "redundantSecondLaunchExitCode": 1,
+  "redundantSecondLaunchMessage": "TRIAL_HOST_FAILURE: Trace path already exists; refusing to overwrite it."
+}

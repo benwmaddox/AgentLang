@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "sourceSha256": "d451d3ea1d6c9386f39b8ca51c9829b589a25668a64c603f0dff49f93918df5f",
+  "matchesFrozenReport111Source": true,
+  "disposableCopyStartedByteIdenticalToActor": true,
+  "define": {
+    "ok": true,
+    "stagedRevision": 5,
+    "retainedTestCount": 5
+  },
+  "tests": {
+    "passed": 2,
+    "total": 5,
+    "failed": [
+      "existing-custom-marker",
+      "existing-queued-marker",
+      "repeated-call-preserves-marker"
+    ],
+    "effectFailures": [
+      {
+        "caseName": "existing-custom-marker",
+        "errorCode": "TEST_EFFECT_ASSERTION_FAILED",
+        "expected": {
+          "clock.read": 0,
+          "console.write": 0,
+          "fs.read": 2,
+          "fs.write": 0
+        },
+        "actual": {
+          "clock.read": 0,
+          "console.write": 0,
+          "fs.read": 2,
+          "fs.write": 1
+        },
+        "targetInvocationCount": 1
+      },
+      {
+        "caseName": "existing-queued-marker",
+        "errorCode": "TEST_EFFECT_ASSERTION_FAILED",
+        "expected": {
+          "clock.read": 0,
+          "console.write": 0,
+          "fs.read": 2,
+          "fs.write": 0
+        },
+        "actual": {
+          "clock.read": 0,
+          "console.write": 0,
+          "fs.read": 2,
+          "fs.write": 1
+        },
+        "targetInvocationCount": 1
+      },
+      {
+        "caseName": "repeated-call-preserves-marker",
+        "errorCode": "TEST_EFFECT_ASSERTION_FAILED",
+        "expected": {
+          "clock.read": 0,
+          "console.write": 0,
+          "fs.read": 4,
+          "fs.write": 0
+        },
+        "actual": {
+          "clock.read": 0,
+          "console.write": 0,
+          "fs.read": 4,
+          "fs.write": 2
+        },
+        "targetInvocationCount": 2
+      }
+    ],
+    "coverage": {
+      "instructionsCovered": 25,
+      "instructionsTotal": 25,
+      "branchesCovered": 4,
+      "branchesTotal": 4,
+      "uncoveredInstructions": [],
+      "uncoveredBranchOutcomes": []
+    }
+  },
+  "replacement": {
+    "ok": false,
+    "blocked": true,
+    "errorCode": "COMMIT_TESTS_FAILED",
+    "failedCases": [
+      "invoice.queue-reminder-once/existing-custom-marker",
+      "invoice.queue-reminder-once/existing-queued-marker",
+      "invoice.queue-reminder-once/repeated-call-preserves-marker"
+    ]
+  },
+  "describeCandidate": {
+    "revision": 5,
+    "status": "candidate",
+    "testCount": 5,
+    "coverage": {
+      "instructionsCovered": 25,
+      "instructionsTotal": 25,
+      "branchesCovered": 4,
+      "branchesTotal": 4,
+      "uncoveredInstructions": [],
+      "uncoveredBranchOutcomes": [],
+      "status": "current"
+    }
+  },
+  "persistedStateAfterBlockedReplacement": {
+    "manifestHash": "a88d044685e6a6744cc922fc69bd8426b685c8155fe29a23c771878cbe184669",
+    "revision": 4,
+    "maturity": "library",
+    "testCount": 5
+  },
+  "disposableProjectUnchangedAfterRun": true,
+  "actorProjectUnchangedAfterRun": true,
+  "actorFileCountAfterRun": 39,
+  "terminalEvents": [
+    {
+      "event": "host-close",
+      "atUtc": "2026-10-07T23:39:42.4715553-04:00",
+      "exchangeCount": 4,
+      "requestWireUtf8Bytes": 21,
+      "requestWireSha256": "67769e43602273314f617203ed27eced4816cbcb8d267bcfbabdd3689608a53d",
+      "requestWireBase64": "eyJvcCI6Imhvc3QuY2xvc2UifQ0K",
+      "requestRaw": "{\"op\":\"host.close\"}\r",
+      "requestCanonical": "{\"op\":\"host.close\"}"
+    },
+    {
+      "event": "session-end",
+      "finishedUtc": "2026-10-07T23:39:42.4839956-04:00",
+      "exchangeCount": 4,
+      "terminationKind": "host-close",
+      "hostExitCode": 0,
+      "runtimeExitCode": 0,
+      "runtimeStderrPrefixBytes": 0,
+      "runtimeStderrTotalBytes": 0,
+      "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "runtimeStderrCaptureTruncated": false
+    }
+  ],
+  "hostClosePoll": "Unknown process id",
+  "redundantLaunchAttempt": {
+    "exitCode": 1,
+    "reason": "TRIAL_HOST_FAILURE: Trace path already exists; refusing to overwrite it.",
+    "effect": "No process launched and no existing trace or project was overwritten."
+  }
+}

@@ -1,0 +1,7 @@
+test invoice.queue-reminder-once/repeated-call-preserves-marker {
+    let invoice = invoice::new(InvoiceId::new("r2-repeated-test"), InvoiceStatus::new("open"));
+    file::write(invoice::reminder-path(invoice.id), "repeat marker");
+    let first = invoice::queue-reminder-once(invoice);
+    let second = invoice::queue-reminder-once(invoice);
+    string::concat(first, second) => "repeat markerrepeat marker" effects { fs.read: 4; fs.write: 0; }
+}

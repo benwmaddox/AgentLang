@@ -1,0 +1,28 @@
+diff --git a/.agentlang/effect-contract-adoption-001/prompts/flow.md b/.agentlang/effect-contract-adoption-001/prompts/flow-versioned-help.md
+index d34fef2..7f99a36 100644
+--- a/.agentlang/effect-contract-adoption-001/prompts/flow.md
++++ b/.agentlang/effect-contract-adoption-001/prompts/flow-versioned-help.md
+@@ -77,7 +77,7 @@ Useful requests:
+ {"op":"describe","word":"some.name"}
+ {"op":"source","word":"some.name"}
+ {"op":"context","word":"some.name"}
+-{"op":"help"}
++{"op":"help","syntaxVersion":2}
+ {"op":"define","frontend":"flow","syntaxVersion":2,"source":"..."}
+ {"op":"eval","frontend":"flow","syntaxVersion":2,"code":"..."}
+ {"op":"test","word":"some.name"}
+@@ -85,7 +85,7 @@ Useful requests:
+ {"op":"examples","word":"some.name"}
+ {"op":"commit","word":"some.name"}
+ 
+-Use help for exact task, attachment, qualification and persistence commands.
++Use help with syntaxVersion 2 for exact task, attachment, qualification and persistence commands. For testing help, use {"op":"help","topic":"examples","syntaxVersion":2}.
+ Attach tests/examples in source using the dotted owner name followed by /case.
+ A test ends with => literal, => value pure-expression, or => error ERROR_CODE;
+ an example uses a literal expectation. Full own coverage and passing attached
+@@ -104,4 +104,4 @@ terminal process status before your final response. Do not restart a closed host
+ 
+ Launch once from D:\code\AgentLang using exec_command with tty:true and yield_time_ms:10000. Use require_escalated if sandbox creation fails:
+ 
+-& 'D:\code\AgentLang\scripts\Start-SubagentTrialHostV2.ps1' -CliDll 'D:\code\AgentLang\.agentlang\effect-contract-adoption-001\runtime\AgentLang.Cli.dll' -ProjectPath 'D:\code\AgentLang\.agentlang\effect-contract-adoption-001\actors\flow' -TracePath 'D:\code\AgentLang\.agentlang\effect-contract-adoption-001\logs\flow-actor.trace.jsonl' -AllowedOperations @('help','words','describe','search','source','dependencies','callers','eval','define','test','test-all','tests','commit','replace-word','task.begin','task.commit','task.status','task.log','ir','context','failed-tests','examples','example','effects','type-of','search-type','search-output','history','diff','graph','transitive-dependencies','transitive-callers','search-dependency','snapshot.save','snapshot.load') -Capabilities @('fs.read','fs.write') -Profile agentlang -ClockValue '2000-01-01T00:00:00Z' -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100
++& 'D:\code\AgentLang\scripts\Start-SubagentTrialHostV2.ps1' -CliDll 'D:\code\AgentLang\.agentlang\effect-contract-adoption-001\runtime\AgentLang.Cli.dll' -ProjectPath 'D:\code\AgentLang\.agentlang\effect-contract-adoption-001\actors\flow-versioned-help' -TracePath 'D:\code\AgentLang\.agentlang\effect-contract-adoption-001\logs\flow-versioned-help-actor.trace.jsonl' -AllowedOperations @('help','words','describe','search','source','dependencies','callers','eval','define','test','test-all','tests','commit','replace-word','task.begin','task.commit','task.status','task.log','ir','context','failed-tests','examples','example','effects','type-of','search-type','search-output','history','diff','graph','transitive-dependencies','transitive-callers','search-dependency','snapshot.save','snapshot.load') -Capabilities @('fs.read','fs.write') -Profile agentlang -ClockValue '2000-01-01T00:00:00Z' -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100

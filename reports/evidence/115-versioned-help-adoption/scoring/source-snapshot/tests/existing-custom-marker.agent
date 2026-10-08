@@ -1,0 +1,5 @@
+test invoice.queue-reminder-once/existing-custom-marker {
+    let invoice = invoice::new(InvoiceId::new("r2-custom-test"), InvoiceStatus::new("open"));
+    file::write(invoice::reminder-path(invoice.id), "custom reminder marker");
+    invoice::queue-reminder-once(invoice) => "custom reminder marker" effects { fs.read: 2; fs.write: 0; }
+}

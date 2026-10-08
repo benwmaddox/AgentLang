@@ -1,0 +1,4 @@
+test invoice.queue-reminder-once/non-open-status {
+    let invoice = invoice::new(InvoiceId::new("r2-non-open-test"), InvoiceStatus::new("Open"));
+    invoice::queue-reminder-once(invoice) => "not-open" effects { fs.read: 0; fs.write: 0; }
+}

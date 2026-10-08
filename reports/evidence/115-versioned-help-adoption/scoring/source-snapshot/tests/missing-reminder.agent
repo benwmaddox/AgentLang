@@ -1,0 +1,4 @@
+test invoice.queue-reminder-once/missing-reminder {
+    let invoice = invoice::new(InvoiceId::new("r2-missing-test"), InvoiceStatus::new("open"));
+    invoice::queue-reminder-once(invoice) => "queued" effects { fs.read: 1; fs.write: 1; }
+}

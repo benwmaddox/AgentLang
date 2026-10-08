@@ -1,0 +1,5 @@
+test invoice.queue-reminder-once/existing-queued-marker {
+    let invoice = invoice::new(InvoiceId::new("r2-queued-test"), InvoiceStatus::new("open"));
+    file::write(invoice::reminder-path(invoice.id), "queued");
+    invoice::queue-reminder-once(invoice) => "queued" effects { fs.read: 2; fs.write: 0; }
+}

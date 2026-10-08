@@ -40,7 +40,10 @@ negative discovery result: one fresh actor repaired the reminder behavior but
 did not adopt Flow/2 count assertions; its help requests received Flow/1 guidance.
 Its seven tests
 accepted the extra-write mutant. Behavior acceptance and feature adoption are
-reported separately; a versioned-help primer and fresh probe come next.
+reported separately. [115 — Versioned-help adoption](115-versioned-help-adoption.md)
+records a fresh actor using the same runtime with a corrected help primer: its
+tests reject the restored write and block publication. One actor per condition
+establishes bounded usability, not comparative superiority.
 
 The latest ownership demonstration is [108 — Native handler mailbox suspension](108-native-mailbox-suspension.md):
 120 checks across Core/O0/O2, with readable Flow/2 handlers and opaque retained

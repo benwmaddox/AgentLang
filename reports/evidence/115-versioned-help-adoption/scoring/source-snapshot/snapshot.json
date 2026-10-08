@@ -1,0 +1,63 @@
+{
+  "projectManifestHash": "a88d044685e6a6744cc922fc69bd8426b685c8155fe29a23c771878cbe184669",
+  "wordId": "word_e06f6118daa44ef994220e63548714eb",
+  "name": "invoice.queue-reminder-once",
+  "revision": 4,
+  "maturity": "library",
+  "deprecated": false,
+  "sourceFormat": {
+    "frontend": "flow",
+    "version": 2
+  },
+  "definition": {
+    "objectHash": "2b13d3028f5155ea0c0731d22902b62db58a4968a67dfa0e67859bd8eb0c78d9",
+    "sourceFile": "definition.agent",
+    "sha256": "2b13d3028f5155ea0c0731d22902b62db58a4968a67dfa0e67859bd8eb0c78d9"
+  },
+  "tests": [
+    {
+      "caseName": "existing-queued-marker",
+      "sourceFile": "tests/existing-queued-marker.agent",
+      "objectHash": "0a8aaa467aa4d4dd16409f3daa4cb04a5d6ff71ed022228df5a824fa1799bc7a",
+      "sha256": "0a8aaa467aa4d4dd16409f3daa4cb04a5d6ff71ed022228df5a824fa1799bc7a",
+      "hasEffectAssertion": true
+    },
+    {
+      "caseName": "existing-custom-marker",
+      "sourceFile": "tests/existing-custom-marker.agent",
+      "objectHash": "660e2d57719ce11ae4159a5aff9c6974769f303480d1dd0b945bd7cba83f8c55",
+      "sha256": "660e2d57719ce11ae4159a5aff9c6974769f303480d1dd0b945bd7cba83f8c55",
+      "hasEffectAssertion": true
+    },
+    {
+      "caseName": "repeated-call-preserves-marker",
+      "sourceFile": "tests/repeated-call-preserves-marker.agent",
+      "objectHash": "73cdb3024618c72b15f55a9d1f35befe7fa7679419216e1469c9024fd800b706",
+      "sha256": "73cdb3024618c72b15f55a9d1f35befe7fa7679419216e1469c9024fd800b706",
+      "hasEffectAssertion": true
+    },
+    {
+      "caseName": "non-open-status",
+      "sourceFile": "tests/non-open-status.agent",
+      "objectHash": "8baf375a5a112806705bde915c350299caaa8e641e30d38ebf3d858a316f36b9",
+      "sha256": "8baf375a5a112806705bde915c350299caaa8e641e30d38ebf3d858a316f36b9",
+      "hasEffectAssertion": true
+    },
+    {
+      "caseName": "missing-reminder",
+      "sourceFile": "tests/missing-reminder.agent",
+      "objectHash": "f087a88bd5ab52bd042a3ea411d56b2ee7295b6592978179da05205c51c5ba8a",
+      "sha256": "f087a88bd5ab52bd042a3ea411d56b2ee7295b6592978179da05205c51c5ba8a",
+      "hasEffectAssertion": true
+    }
+  ],
+  "examples": [
+    {
+      "caseName": "queues-missing-reminder",
+      "sourceFile": "examples/queues-missing-reminder.agent",
+      "objectHash": "b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420",
+      "sha256": "b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420"
+    }
+  ],
+  "effectAssertionTestCount": 5
+}

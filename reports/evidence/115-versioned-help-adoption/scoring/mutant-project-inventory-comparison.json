@@ -1,0 +1,10 @@
+{
+  "byteIdenticalToStart": true,
+  "startFileCount": 39,
+  "persistedCurrentFileUnchanged": true,
+  "persistedManifestHash": "a88d044685e6a6744cc922fc69bd8426b685c8155fe29a23c771878cbe184669",
+  "actorManifestHash": "a88d044685e6a6744cc922fc69bd8426b685c8155fe29a23c771878cbe184669",
+  "persistedManifestMatchesActor": true,
+  "persistedTargetRevision": 4,
+  "persistedTargetMaturity": "library"
+}

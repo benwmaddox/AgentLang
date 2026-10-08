@@ -169,10 +169,12 @@ Report 113 implements optional exact effect-count assertions scoped to the targe
 function. Report 114's fresh-subagent probe repaired the behavior but failed to
 adopt the assertion: unversioned help returned Flow/1 guidance while the actor
 worked in Flow/2, and its seven tests still accepted the extra-write mutant.
-First repeat this bounded probe with explicit version-2 help requests in the
-primer, keeping runtime, seed and oracle fixed. This isolates the help-version
-confound without teaching assertion syntax or changing authoring semantics. Explicit
-provider-state assertions remain pending.
+Report 115 repeats the probe with version-2 help requests and an explicit testing
+help topic in the primer, keeping runtime, seed and oracle fixed. The fresh actor
+used effect assertions; its three relevant tests rejected the restored write and
+blocked library replacement. This establishes bounded usability, not comparative
+reliability or a causal estimate from two actors. Keep help examples version-matched
+in future trials. Explicit provider-state assertions remain pending.
 
 Implement the approved module boundaries and stricter qualification rules:
 cross-module authored calls require library qualification; library functions

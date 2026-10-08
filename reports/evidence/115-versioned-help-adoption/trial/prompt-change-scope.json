@@ -1,0 +1,16 @@
+{
+  "originalPromptSha256": "eb67368943ed47117911b5cf4d41a122e0737f323e4340abf9901cf5da405ae4",
+  "versionedPromptSha256": "50435b5d6035a7e0f584b73953978bb4cb498473a18cc9afe984e62894fe608f",
+  "taskSpecificationChanged": false,
+  "changes": [
+    "Useful request example now supplies syntaxVersion 2 to help.",
+    "Help instruction now explicitly requests syntaxVersion 2 and gives the Flow/2 examples-topic request.",
+    "Actor project path changed to actors/flow-versioned-help.",
+    "Broker trace path changed to logs/flow-versioned-help-actor.trace.jsonl."
+  ],
+  "examplesTopicPrimerAdded": true,
+  "runtimePinSha256Unchanged": true,
+  "oracleSha256Unchanged": true,
+  "sourceCheckpointUnchanged": true,
+  "startingManifestHash": "efafec711482ffd2c7b9bb11015b90b0e8a0bc5ef6be40eb870e955157aff536"
+}
