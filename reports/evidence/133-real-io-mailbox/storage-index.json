@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "archive": "133-real-io-mailbox.zip",
+  "sha256": "a94c8a406267efdfc3dacd7649fd9899ccdfefe15aaa43835a72e5732cabbf59",
+  "bytes": 3601796,
+  "payloadFiles": 333,
+  "sourceFiles": 87,
+  "finalRun": "463112b53ca945748dd326c06f52f580",
+  "limitations": "Archives final source bytes, generated IR/manifests, process logs and failed attempts. Excludes compiled binaries and dependency build trees. Earlier failed-attempt source revisions are not reconstructed."
+}

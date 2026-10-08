@@ -541,6 +541,43 @@ al_owning_bank_result al_owning_byte_store_abort(
   return AL_OWNING_BANK_OK;
 }
 
+al_owning_bank_result al_owning_byte_store_trim_last_root(
+    al_owning_byte_store *store) {
+  al_owning_byte_bank *active;
+  al_owning_bank_root *roots;
+  uint32_t active_index;
+  uint32_t retained_end;
+
+  if (!al_owning_bank_valid(store))
+    return AL_OWNING_BANK_INVALID_STORAGE;
+  if (store->transaction_open != 0u)
+    return AL_OWNING_BANK_BUSY;
+  active_index = store->active_index;
+  active = &store->banks[active_index];
+  if (active->root_count != 2u || active->used_bytes == 0u)
+    return AL_OWNING_BANK_INVALID_VALUE;
+  roots = store->storage_roots[active_index];
+  if (roots[0].offset_bytes != 0u || roots[0].extent_bytes == 0u ||
+      roots[0].owner_end_bytes != roots[0].extent_bytes ||
+      roots[0].owner_end_bytes > active->used_bytes ||
+      roots[0].payload_bytes > roots[0].extent_bytes ||
+      roots[1].offset_bytes != roots[0].owner_end_bytes ||
+      roots[1].extent_bytes == 0u ||
+      roots[1].offset_bytes > active->used_bytes ||
+      roots[1].extent_bytes > active->used_bytes - roots[1].offset_bytes ||
+      roots[1].owner_end_bytes !=
+          roots[1].offset_bytes + roots[1].extent_bytes ||
+      roots[1].owner_end_bytes != active->used_bytes ||
+      roots[1].payload_bytes > roots[1].extent_bytes)
+    return AL_OWNING_BANK_INVALID_VALUE;
+
+  retained_end = roots[0].owner_end_bytes;
+  memset(&roots[1], 0, sizeof(roots[1]));
+  active->used_bytes = retained_end;
+  active->root_count = 1u;
+  return AL_OWNING_BANK_OK;
+}
+
 const al_owning_byte_bank *al_owning_byte_store_active(
     const al_owning_byte_store *store) {
   if (!al_owning_bank_valid(store))

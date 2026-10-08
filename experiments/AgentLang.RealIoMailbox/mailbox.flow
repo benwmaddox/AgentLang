@@ -1,0 +1,41 @@
+record State {
+    field attempted: Int;
+    field completed: Int;
+    field latest: String;
+}
+
+record Continuation {
+    field request: String;
+}
+
+fn mailbox.initialize(seed: String) -> State {
+    effects none
+    doc "Creates bounded mailbox counters and an initial latest-response value."
+
+    state::new(attempted = 0, completed = 0, latest = seed)
+}
+
+fn mailbox.begin(state: State, request: String) -> (State, Continuation) {
+    effects none
+    doc "Counts an attempted request and retains only its request text in the continuation."
+
+    let attempted = add(state.attempted, 1);
+    let nextState = state::new(attempted = attempted, completed = state.completed, latest = state.latest);
+    let continuation = continuation::new(request = request);
+    return (nextState, continuation)
+}
+
+fn mailbox.resume(state: State, continuation: Continuation, message: String) -> State {
+    effects none
+    doc "Counts one successful completion and replaces latest with this request's response."
+
+    let guard = if message == "FAIL" {
+        divide(1, 0)
+    } else {
+        0
+    };
+    let completedWithGuard = add(state.completed, guard);
+    let completed = add(completedWithGuard, 1);
+    let latest = string::concat(continuation.request, message);
+    state::new(attempted = state.attempted, completed = completed, latest = latest)
+}

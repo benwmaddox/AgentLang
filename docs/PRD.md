@@ -656,8 +656,10 @@ cleanup; see [report 130](../reports/130-stable-arena-rewinds.md). The bounded o
 mailbox integration passes native lifecycle and full local Release validation
 in [report 131](../reports/131-owning-native-mailboxes.md). The focused native
 keep-associated/return-at-suspension comparison passes in
-[report 132](../reports/132-associated-arena-comparison.md). Actual asynchronous
-I/O and the matched throughput/RAM comparison remain incomplete; conformance does
+[report 132](../reports/132-associated-arena-comparison.md). Bounded asynchronous
+socket completion/cancellation correctness now passes both policies at O0/O2 in
+[report 133](../reports/133-real-io-mailbox-correctness.md). The matched throughput/RAM
+comparison remains incomplete; conformance does
 not establish the complete memory model or a footprint/throughput advantage.
 Report 130 replaces report
 129's packed policy with stable arena payloads and compiler-proven rewinds;

@@ -108,6 +108,12 @@ al_owning_bank_result al_owning_byte_store_commit(
 al_owning_bank_result al_owning_byte_store_abort(
     al_owning_byte_store *store);
 
+/* Drops the last root from a published two-root bank without recopying the
+ * preserved prefix. Used when a pending mailbox keeps State as root zero and
+ * discards only its trailing Continuation. */
+al_owning_bank_result al_owning_byte_store_trim_last_root(
+    al_owning_byte_store *store);
+
 const al_owning_byte_bank *al_owning_byte_store_active(
     const al_owning_byte_store *store);
 

@@ -274,6 +274,15 @@ al_mailbox_result al_mailbox_resume_text(
     const al_mailbox_token *token, const uint8_t *utf8, uint32_t byte_count,
     al_mailbox_call_info *call_info);
 
+/* Terminally cancels an owning text operation. The host may call this only
+ * after the provider has acknowledged completion or cancellation and no
+ * longer owns any operation buffer; the runtime cannot infer kernel/provider
+ * ownership. State produced by Begin is preserved and Continuation is
+ * retired. */
+al_mailbox_result al_mailbox_cancel_text(al_mailbox_runtime *runtime,
+                                         uint32_t mailbox_id,
+                                         const al_mailbox_token *token);
+
 /* Idempotent on the creating thread. The caller-supplied storage remains
  * caller-owned. Keep the loaded module alive through the final API call,
  * including post-disposal stats reads. */

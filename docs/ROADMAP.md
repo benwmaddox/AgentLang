@@ -189,9 +189,12 @@ arena avoids intermediate publication/reimport, preserves failed-resume retry,
 and pins slots that returning scratch makes available to other mailboxes. Both
 policies use equal configured storage. Broader local validation also passes:
 35 owning-stack checks, 353 native-dispatch checks, all 37 Release checks and
-476 LLVM assertions. Next compare both policies with real bounded
-I/O, explicit provider release/cancellation acknowledgements, and matched F#
-workloads. Native conformance does not
+476 LLVM assertions. The bounded real-I/O comparison now passes seven cases
+under both policies at O0/O2, including terminal cancellation and retry; see
+[report 133](../reports/133-real-io-mailbox-correctness.md). Fresh policy and ordinary
+mailbox regressions also pass. Next remove correctness-only runtime instrumentation
+from the measured release path and compare sustained load with matched F# workloads.
+Native conformance does not
 establish service throughput, process RAM or improved agent reliability.
 This is not an unresolved preference between packing and bulk reset; see the
 [simplicity review](OWNING-STACK-DESIGN-REVIEW.md#stable-arena-payloads-and-bulk-reset-selected-direction).

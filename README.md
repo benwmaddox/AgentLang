@@ -92,7 +92,10 @@ The focused [arena-policy comparison](reports/132-associated-arena-comparison.md
 also passes at O0/O2. Run `pwsh -NoProfile -File scripts/Verify-OwningMailboxPolicy.ps1`
 to compare keeping actual scratch attached across suspension with returning it.
 Keeping scratch avoids intermediate state copies but pins pool slots while
-waiting. Real I/O and throughput comparisons remain pending.
+waiting. The bounded [real-I/O correctness comparison](reports/133-real-io-mailbox-correctness.md)
+now passes both policies at O0/O2, including terminal cancellation and failed-resume
+retry. Run `pwsh -NoProfile -File scripts/Verify-OwningMailboxRealIo.ps1` on Windows
+with local loopback access. Throughput and whole-process memory comparisons remain pending.
 
 A separate Windows C11 arena/mailbox experiment compares per-turn and
 whole-request lifetimes. Run `pwsh -NoProfile -File scripts/Verify-NativeArenaMailbox.ps1`

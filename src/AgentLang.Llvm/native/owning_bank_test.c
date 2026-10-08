@@ -495,6 +495,66 @@ static void test_slice_overlap_and_transaction_state(void) {
         al_owning_byte_store_abort(&storage.store) == AL_OWNING_BANK_OK);
 }
 
+static void test_trim_last_root(void) {
+  test_bank_storage storage;
+  test_context_storage source_storage;
+  uint8_t record[24];
+  uint8_t active_before[TEST_BANK_CAPACITY];
+  al_owning_bank_root roots_before[2];
+  al_owning_bank_stack_slice slices[2];
+  const al_owning_byte_bank *active;
+  al_owning_bank_root *mutable_roots;
+
+  make_record(record);
+  CHECK("trim store and source initialize",
+        store_init(&storage, TEST_BANK_CAPACITY, 2u) &&
+            context_init(&source_storage) &&
+            context_load(&source_storage, record, 20u, 24u,
+                         TEST_TYPE_RECORD) &&
+            al_owning_byte_store_begin(&storage.store) == AL_OWNING_BANK_OK);
+  slices[0] = (al_owning_bank_stack_slice){TEST_LAYOUT_RECORD, 0u, 24u, 0u};
+  slices[1] = (al_owning_bank_stack_slice){TEST_LAYOUT_STRING, 8u, 24u, 0u};
+  CHECK("trim fixture publishes State and Continuation roots",
+        al_owning_byte_store_stage_stack_values(
+            &storage.store, &source_storage.context, &test_layout, slices, 2u,
+            0u) == AL_OWNING_BANK_OK &&
+            al_owning_byte_store_commit(&storage.store) == AL_OWNING_BANK_OK);
+  active = al_owning_byte_store_active(&storage.store);
+  CHECK("trim fixture has two contiguous roots",
+        active != NULL && active->root_count == 2u &&
+            active->used_bytes == 40u &&
+            active->byte_capacity == sizeof(active_before));
+  memcpy(active_before, active->bytes, active->byte_capacity);
+  memcpy(roots_before, active->roots, sizeof(roots_before));
+  mutable_roots = storage.store.storage_roots[storage.store.active_index];
+  mutable_roots[1].owner_end_bytes -= 1u;
+  {
+    al_owning_bank_root corrupt_roots[2];
+    memcpy(corrupt_roots, mutable_roots, sizeof(corrupt_roots));
+    CHECK("invalid tail rejects trim without changing bank bytes or metadata",
+          al_owning_byte_store_trim_last_root(&storage.store) ==
+                  AL_OWNING_BANK_INVALID_VALUE &&
+              active == al_owning_byte_store_active(&storage.store) &&
+              active->used_bytes == 40u &&
+              active->root_count == 2u &&
+              memcmp(active->bytes, active_before,
+                     active->byte_capacity) == 0 &&
+              memcmp(active->roots, corrupt_roots,
+                     sizeof(corrupt_roots)) == 0);
+  }
+  memcpy(mutable_roots, roots_before, sizeof(roots_before));
+  CHECK("valid trim preserves prefix and removes only the last root",
+        al_owning_byte_store_trim_last_root(&storage.store) ==
+                AL_OWNING_BANK_OK &&
+            active == al_owning_byte_store_active(&storage.store) &&
+            active->used_bytes == roots_before[0].owner_end_bytes &&
+            active->root_count == 1u &&
+            memcmp(active->bytes, active_before,
+                   active->byte_capacity) == 0 &&
+            memcmp(&active->roots[1], &(al_owning_bank_root){0},
+                   sizeof(al_owning_bank_root)) == 0);
+}
+
 int main(void) {
   test_storage_validation();
   test_layout_overlap_rejected();
@@ -503,6 +563,7 @@ int main(void) {
   test_prevalidation_and_abort();
   test_capacity_failures();
   test_slice_overlap_and_transaction_state();
+  test_trim_last_root();
   if (failures != 0u) {
     printf("owning bank: %u/%u checks failed\n", failures, checks);
     return 1;

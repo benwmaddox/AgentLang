@@ -14,7 +14,9 @@ native dispatch of those handlers. The owning-value integration in
 lifecycle and full Release gates. The focused owning-value policy comparison in
 [report 132](../reports/132-associated-arena-comparison.md) also passes O0/O2:
 KEEP avoids the suspension-boundary copies but pins pool slots, and both policies
-preserve exact results and failure/retry behavior. Actual async I/O, saturation, production
+preserve exact results and failure/retry behavior. The bounded socket correctness
+comparison in [report 133](../reports/133-real-io-mailbox-correctness.md) passes both
+policies at O0/O2, including terminal cancellation. Saturation, production
 throughput and tail latency remain untested. See [the roadmap](ROADMAP.md).
 
 [Midori research](MIDORI-RESEARCH.md) supplies architectural comparisons, not
@@ -146,6 +148,11 @@ useful concurrent requests under a memory ceiling. Copying retained state and
 additional transitions may instead limit CPU throughput. Measure both outcomes.
 
 ### Next bounded implementation
+
+Report 133 completes the bounded native socket fixture and terminal-cancellation
+slice below. Its F# process is only the shared echo provider, not the application
+baseline. The release reset path, sustained-load driver, matched F# application,
+late-completion stress and socket-level capacity rejection remain ahead.
 
 Preserve report 132's fixtures and add one bounded steady-state fixture: latest
 response plus a fixed-width request count, with an independent state/output

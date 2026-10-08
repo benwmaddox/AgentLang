@@ -2220,6 +2220,31 @@ static al_mailbox_result al_owning_validate_output_slices(
   return AL_MAILBOX_OK;
 }
 
+static al_mailbox_result al_owning_validate_begin_state_fits_bank(
+    al_mailbox_runtime *runtime, const al_owning_byte_store *store,
+    al_owning_stack_context *context,
+    const al_owning_bank_stack_slice *state) {
+  const al_owning_byte_bank *staging;
+  al_owning_value_size measured;
+  if (runtime == NULL || store == NULL || context == NULL || state == NULL ||
+      store->active_index > 1u ||
+      state->type_index != runtime->owning_state_type_index ||
+      state->reserved != 0u)
+    return AL_MAILBOX_INVALID_REFERENCE;
+  staging = &store->banks[1u - store->active_index];
+  if (staging->root_capacity == 0u)
+    return AL_MAILBOX_RETAINED_CAPACITY;
+  if (al_owning_measure_value(
+          context, runtime->owning_module->layout, state->type_index,
+          state->source_offset_bytes, state->source_owner_end_bytes, 0u,
+          &measured) != 0 ||
+      measured.extent_bytes == 0u)
+    return AL_MAILBOX_INVALID_REFERENCE;
+  return measured.extent_bytes <= staging->byte_capacity
+             ? AL_MAILBOX_OK
+             : AL_MAILBOX_RETAINED_CAPACITY;
+}
+
 static void al_owning_record_context_deltas(
     al_mailbox_runtime *runtime, const al_owning_stack_context *before,
     const al_owning_stack_context *after) {
@@ -2324,6 +2349,10 @@ static al_mailbox_result al_execute_owning_entry(
     result = al_owning_validate_output_slices(
         runtime, entry, context, runtime->owning_outputs);
     callback_outputs_valid = result == AL_MAILBOX_OK ? 1u : 0u;
+    if (result == AL_MAILBOX_OK && publish_outputs == 0u &&
+        entry == runtime->owning_entries[1])
+      result = al_owning_validate_begin_state_fits_bank(
+          runtime, store, context, &runtime->owning_outputs[0]);
   }
 
   if (callback_outputs_valid != 0u) {
@@ -2885,6 +2914,136 @@ al_mailbox_result al_mailbox_resume_text(
   al_owning_scratch_slot_release(runtime, scratch_slot_index);
   if (result != AL_MAILBOX_OK)
     return result;
+  al_mailbox_commit_resume(slot, &completed_token);
+  return AL_MAILBOX_OK;
+}
+
+al_mailbox_result al_mailbox_cancel_text(al_mailbox_runtime *runtime,
+                                         uint32_t mailbox_id,
+                                         const al_mailbox_token *token) {
+  uint32_t current_thread_id = al_mailbox_platform_current_thread_id();
+  al_mailbox_result result;
+  al_mailbox_slot *slot;
+  al_mailbox_token completed_token;
+  const al_external_argument argument = {
+      token, token == NULL ? 0u : sizeof(*token), 0u};
+
+  if (token == NULL || !al_pointer_aligned(token, 8u))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  result = al_runtime_access(runtime, current_thread_id, 0u);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  if (runtime->payload_kind != AL_MAILBOX_PAYLOAD_OWNING)
+    return AL_MAILBOX_INVALID_MODULE;
+  if (!al_runtime_external_arguments_valid(runtime, &argument, 1u))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  result = al_mailbox_at(runtime, mailbox_id, &slot);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  if (slot->initialized == 0u)
+    return AL_MAILBOX_NOT_INITIALIZED;
+  result = al_validate_token(runtime, mailbox_id, slot, token);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  if (runtime->busy != 0u)
+    return AL_MAILBOX_BUSY;
+
+  completed_token = slot->pending_token;
+  if (runtime->owning_config.suspension_policy ==
+      AL_MAILBOX_OWNING_POLICY_RETURN) {
+    const al_owning_byte_bank *active =
+        al_owning_byte_store_active(&slot->payload.owning);
+    al_owning_external_slice state_input;
+    al_owning_external_slice continuation_input;
+    al_owning_bank_result bank_result;
+    const al_owning_attachment *attachment =
+        &runtime->owning_attachments[mailbox_id];
+
+    if (attachment->scratch_slot_index != AL_OWNING_NO_SCRATCH_SLOT ||
+        attachment->root_count != 0u || active == NULL ||
+        active->root_count != 2u)
+      return AL_MAILBOX_STALE_TOKEN;
+    result = al_owning_bank_root_input(
+        runtime, active, 0u, runtime->owning_state_type_index, &state_input);
+    if (result != AL_MAILBOX_OK)
+      return result;
+    result = al_owning_bank_root_input(
+        runtime, active, 1u, runtime->owning_continuation_type_index,
+        &continuation_input);
+    if (result != AL_MAILBOX_OK)
+      return result;
+    bank_result =
+        al_owning_byte_store_trim_last_root(&slot->payload.owning);
+    result = al_map_owning_bank_result(bank_result);
+    if (result != AL_MAILBOX_OK)
+      return result;
+  } else {
+    al_owning_attachment *attachment =
+        &runtime->owning_attachments[mailbox_id];
+    uint32_t scratch_index = attachment->scratch_slot_index;
+    al_owning_scratch_slot *scratch_slot;
+    al_owning_stack_context *context;
+    al_owning_stack_context saved_context;
+    al_owning_byte_store *store = &slot->payload.owning;
+    al_owning_bank_result bank_result;
+    uint64_t publication_bytes;
+
+    if (attachment->root_count != AL_MAILBOX_MAX_ROOTS ||
+        attachment->reserved != 0u ||
+        scratch_index >= runtime->owning_config.scratch_slot_capacity)
+      return AL_MAILBOX_STALE_TOKEN;
+    scratch_slot = &runtime->owning_scratch_slots[scratch_index];
+    if (scratch_slot->state != AL_OWNING_SCRATCH_ATTACHED ||
+        scratch_slot->owner_mailbox_id != mailbox_id)
+      return AL_MAILBOX_STALE_TOKEN;
+    context = &scratch_slot->context;
+    saved_context = *context;
+    if (!al_owning_context_storage_valid(runtime, scratch_slot) ||
+        context->cursor_bytes != attachment->protected_cursor_bytes ||
+        attachment->protected_cursor_bytes == 0u ||
+        context->status != AL_OWNING_STATUS_OK || context->call_depth != 0u) {
+      *context = saved_context;
+      return AL_MAILBOX_INVALID_REFERENCE;
+    }
+    result = al_owning_validate_attached_roots(runtime, scratch_slot,
+                                               attachment);
+    if (result != AL_MAILBOX_OK || context->status != AL_OWNING_STATUS_OK) {
+      *context = saved_context;
+      return result == AL_MAILBOX_OK ? AL_MAILBOX_INVALID_REFERENCE : result;
+    }
+    bank_result = al_owning_byte_store_begin(store);
+    if (bank_result != AL_OWNING_BANK_OK) {
+      *context = saved_context;
+      return al_map_owning_bank_result(bank_result);
+    }
+    bank_result = al_owning_byte_store_stage_stack_values(
+        store, context, runtime->owning_module->layout, attachment->roots,
+        1u, 0u);
+    if (bank_result == AL_OWNING_BANK_OK)
+      bank_result = al_owning_byte_store_commit(store);
+    if (bank_result != AL_OWNING_BANK_OK) {
+      if (store->transaction_open != 0u)
+        (void)al_owning_byte_store_abort(store);
+      *context = saved_context;
+      return al_map_owning_bank_result(bank_result);
+    }
+
+    publication_bytes =
+        al_owning_byte_store_last_committed_copy_bytes(store);
+    al_saturating_add(&runtime->owning_publication_copy_bytes,
+                      publication_bytes);
+    {
+      uint32_t old_index = 1u - store->active_index;
+      al_owning_byte_bank *old_bank = &store->banks[old_index];
+      memset(store->storage_bytes[old_index], AL_MAILBOX_POISON_BYTE,
+             old_bank->byte_capacity);
+      memset(store->storage_roots[old_index], 0,
+             (size_t)old_bank->root_capacity * sizeof(al_owning_bank_root));
+      old_bank->used_bytes = 0u;
+      old_bank->root_count = 0u;
+    }
+    al_owning_scratch_slot_release(runtime, scratch_index);
+  }
   al_mailbox_commit_resume(slot, &completed_token);
   return AL_MAILBOX_OK;
 }
