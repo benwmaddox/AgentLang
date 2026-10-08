@@ -4,6 +4,11 @@ Status: validated fixed-layout prototype checkpoint, 2026-10-08.
 Tested as a working tree based on `60b4cee`; see the source hashes and commands in
 the [evidence index](evidence/128-owning-value-stack/index.json).
 
+Published as `7579a39` on `main`. Following the user's branch-policy update,
+the identical local and remote `prototype` branches were removed on 2026-10-08.
+Subsequent work and milestone publication use `main` directly; this workflow
+change does not alter the tested implementation or its evidence.
+
 ## Question
 
 Can the native backend store complete nested values inline, preserve independent

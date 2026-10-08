@@ -331,6 +331,7 @@ compiler exhaustiveness establishes handled alternatives. Require both where
 specified. After implementation, run another bounded external-agent study to
 test whether the stronger contracts improve edits and recovery.
 
-For every milestone: save the report, run applicable checks locally, commit,
-merge and push together. Automatic CI remains disabled; remote publication
+For every milestone: work on `main`, save the report, run applicable checks
+locally, then commit and push together. The separate `prototype` branch has been
+retired at the user's request. Automatic CI remains disabled; remote publication
 failures are reported separately from local validation results.
