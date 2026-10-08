@@ -593,3 +593,14 @@ separate quantities, along with host-library allocations and runtime failures.
 Retain raw artifacts and periodic reports, including failed migration attempts
 and semantic mismatches. A successful initial port is not sufficient: later
 maintenance and sustained execution are part of the acceptance evidence.
+
+## Structural correctness update
+
+The approved [structural correctness requirements](STRUCTURAL-CORRECTNESS.md)
+add closed internal domain states, arithmetic operations with explicit rounding,
+pure typed decisions with narrow effectful execution, construction invariants
+including relationships between fields, and deterministic property tests with
+independent expected values. These are implementation requirements, not claims
+that every feature is already delivered. Preserve existing domain contracts
+until explicitly migrated, and record backend support separately. Full coverage
+and valid types remain necessary constraints rather than proof of business policy.

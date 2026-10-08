@@ -1,0 +1,9 @@
+PASS GUID normalization and canonical storage
+PASS Email validation against the conventional fixture
+PASS checked Int64 arithmetic against BigInteger and Money
+PASS exact ratio scaling against an independent BigInteger oracle
+PASS instant parsing against the immutable contract
+PASS canonical UTC comparison and day arithmetic
+PASS primitive metadata and typed IR execution
+PASS typed IR runtime and failure boundaries
+Trusted values tests: 8 groups, 3206 assertions

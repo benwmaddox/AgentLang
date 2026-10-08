@@ -4,6 +4,7 @@ open System
 open System.Diagnostics
 open System.Globalization
 open System.IO
+open System.Numerics
 open System.Text.Json.Nodes
 open AgentLang
 open AgentLang.Business
@@ -113,6 +114,10 @@ module Program =
 
     let private resultErrorCode node = fieldString (resultError node) "code"
     let private resultErrorMessage node = fieldString (resultError node) "message"
+    let private resultErrorString node =
+        let error = resultError node
+        equal "string" (kind error) "string-error Result contains a String error"
+        stringValue error.["value"]
 
     let private successValue response = outputValue response |> resultOk
     let private errorCode response = outputValue response |> resultErrorCode
@@ -239,6 +244,9 @@ module Program =
     let private moneyMinor response =
         successValue response |> scalarPayload |> Int64.Parse
 
+    let private moneyScalarMinor response =
+        outputValue response |> scalarPayload |> Int64.Parse
+
     let private testMoneyOracle (engine: Runtime.Engine) =
         let additionCases =
             [ 0L, 0L
@@ -280,6 +288,87 @@ module Program =
                 | Error problem ->
                     equal (Domain.DomainError.code problem) (errorCode response) $"multiply-by-quantity overflow code at {quantity}"
                     equal (Domain.DomainError.message problem) (resultErrorMessage (outputValue response)) "multiply-by-quantity overflow message matches oracle"
+
+    let private expectedRatioResult (value: int64) (numerator: int64) (denominator: int64) =
+        if denominator = 0L then Error "DIVIDE_BY_ZERO"
+        else
+            let quotient = (BigInteger(value) * BigInteger(numerator)) / BigInteger(denominator)
+            if quotient < BigInteger(Int64.MinValue) || quotient > BigInteger(Int64.MaxValue) then
+                Error "INT_OVERFLOW"
+            else
+                Ok(int64 quotient)
+
+    let private testMoneyRatioOracle (engine: Runtime.Engine) =
+        let edgeValues =
+            [ Int64.MinValue; Int64.MinValue + 1L; -3L; -2L; -1L; 0L; 1L; 2L; 3L
+              Int64.MaxValue - 1L; Int64.MaxValue ]
+        let edgeCases =
+            [ for value in edgeValues do
+                for numerator in edgeValues do
+                    for denominator in edgeValues do
+                        yield value, numerator, denominator ]
+        let random = Random(0x51CA1E)
+        let nextInt64 () =
+            let bytes = Array.zeroCreate<byte> sizeof<int64>
+            random.NextBytes bytes
+            BitConverter.ToInt64(bytes, 0)
+        let generatedCases =
+            [ for index = 0 to 63 do
+                let denominator = if index % 13 = 0 then 0L else nextInt64 ()
+                yield nextInt64 (), nextInt64 (), denominator ]
+        let cases =
+            [ (7L, 1L, 2L)
+              (-7L, 1L, 2L)
+              (1L, 1L, 2L)
+              (Int64.MaxValue, 2L, 2L)
+              (Int64.MaxValue, 2L, 1L)
+              (Int64.MinValue, -1L, -1L) ]
+            @ edgeCases
+            @ generatedCases
+
+        for value, numerator, denominator in cases do
+            let response =
+                eval engine
+                    $"money::scale-ratio-toward-zero(amount = Money::new({value}), numerator = {numerator}, denominator = {denominator})"
+            match expectedRatioResult value numerator denominator with
+            | Ok expected ->
+                equal expected (moneyMinor response) $"Money ratio result agrees with BigInteger for {value}*{numerator}/{denominator}"
+            | Error expected ->
+                equal expected (resultErrorString (outputValue response)) $"Money ratio error agrees with BigInteger for {value}*{numerator}/{denominator}"
+
+    let private expectedBasisPointResult (amount: int64) (rate: int64) =
+        int64 ((BigInteger(amount) * BigInteger(rate)) / BigInteger(10000))
+
+    let private testMoneyBasisPointOracle (engine: Runtime.Engine) =
+        let amounts =
+            [ Int64.MinValue; Int64.MinValue + 1L; -10001L; -7L; -1L; 0L; 1L; 7L; 10001L
+              Int64.MaxValue - 1L; Int64.MaxValue ]
+        let rates = [ 0L; 1L; 4999L; 5000L; 9000L; 9999L; 10000L ]
+        let edgeCases = [ for amount in amounts do for rate in rates do yield amount, rate ]
+        let random = Random(0xB0515)
+        let nextInt64 () =
+            let bytes = Array.zeroCreate<byte> sizeof<int64>
+            random.NextBytes bytes
+            BitConverter.ToInt64(bytes, 0)
+        let generatedCases =
+            [ for _ in 0 .. 127 do
+                yield nextInt64 (), int64 (random.Next(0, 10001)) ]
+        let cases =
+            [ Int64.MinValue, 10000L
+              Int64.MaxValue, 10000L
+              Int64.MinValue, 0L
+              Int64.MaxValue, 0L
+              -7L, 5000L
+              7L, 5000L ]
+            @ edgeCases
+            @ generatedCases
+
+        for amount, rate in cases do
+            let response =
+                eval engine
+                    $"money::scale-basis-points-toward-zero(Money::new({amount}), UnitBasisPoints::new({rate}))"
+            equal (expectedBasisPointResult amount rate) (moneyScalarMinor response)
+                $"basis-point scaling agrees with BigInteger for {amount} at {rate} bps"
 
     let private idValue value = Domain.CustomerId.parse value |> expectDomainSuccess "customer ID"
     let private productIdValue value = Domain.ProductId.parse value |> expectDomainSuccess "product ID"
@@ -632,6 +721,116 @@ module Program =
         check (reloadedRows.Count = document.Tests.Length) "reloaded test result inventory is complete"
         fresh
 
+    let private testMoneyRatioExtension (engine: Runtime.Engine) projectPath source (document: FlowProjectDocument) =
+        let names = document.Words |> List.map _.Name |> List.sort
+        equal [ "money.scale-basis-points-toward-zero"
+                "money.scale-by-90-percent"
+                "money.scale-ratio-toward-zero"
+                "unit-basis-points.valid?" ]
+            names "the Flow/2 Money extension declares the generic ratio, validated basis-point wrapper, and fixed caller"
+        equal 1 document.Scalars.Length "the Flow/2 Money extension declares one validated scalar"
+        equal ("UnitBasisPoints", TInt, Some "unit-basis-points.valid?")
+            (document.Scalars.Head.Name, document.Scalars.Head.BaseType, document.Scalars.Head.Validator)
+            "UnitBasisPoints is an Int scalar bound to its validator"
+        equal 27 document.Tests.Length "the Flow/2 Money extension attaches all generic, validation, boundary, and fixed-caller cases"
+        let fixedCaller = document.Words |> List.find (fun word -> word.Name = "money.scale-by-90-percent")
+        equal ([ TNamed "Money" ], [ TNamed "Money" ])
+            (fixedCaller.Parameters |> List.map (fun parameter -> parameter.Type), fixedCaller.Outputs)
+            "the fixed 9000 caller has a total Money-to-Money signature without a Result arm"
+        equal 2 fixedCaller.SyntaxVersion "the fixed 9000 caller is authored in Flow/2"
+        let defined =
+            dispatch engine "define"
+                [ "frontend", jstr "flow"
+                  "syntaxVersion", JsonValue.Create(2) :> JsonNode
+                  "source", jstr source ]
+            |> expectOk "define the dedicated Flow/2 Money extension after the base library reload"
+        equal names
+            (defined.["data"].["words"].AsArray() |> Seq.map (fun item -> stringValue item.["name"]) |> Seq.toList |> List.sort)
+            "the Flow/2 extension stages each authored word"
+        equal [ "UnitBasisPoints" ] (jsonStrings defined.["data"].["types"])
+            "the Flow/2 extension stages UnitBasisPoints"
+
+        let runAttachedTests (target: Runtime.Engine) =
+            let mutable total = 0
+            for word in names do
+                let expectedCases =
+                    document.Tests
+                    |> List.filter (fun test -> test.Word = word)
+                    |> List.map (fun test -> test.CaseName)
+                    |> List.sort
+                let tested = dispatch target "test" [ "word", jstr word ] |> expectOk $"run Flow/2 tests for {word}"
+                let rows = tested.["data"].["results"].AsArray()
+                equal expectedCases.Length rows.Count $"all authored Flow/2 tests run for {word}"
+                for item in rows do
+                    let caseName = stringValue item.["name"]
+                    check (boolValue item.["passed"]) $"Flow/2 test passed for {word}/{caseName}"
+                let described = dispatch target "describe" [ "word", jstr word ] |> expectOk $"inspect Flow/2 coverage for {word}"
+                let coverage = described.["data"].["coverage"]
+                equal "current" (stringValue coverage.["status"]) $"{word} has current own-test coverage"
+                equal 0 (coverage.["uncoveredInstructions"].AsArray().Count) $"{word} has no uncovered instructions"
+                equal 0 (coverage.["uncoveredBranchOutcomes"].AsArray().Count) $"{word} has no uncovered branch outcomes"
+                total <- total + rows.Count
+            equal document.Tests.Length total "all authored Flow/2 Money tests ran"
+            total
+
+        let assertInvalidConstructors (target: Runtime.Engine) =
+            for rate in [ -1L; 10001L; Int64.MinValue; Int64.MaxValue ] do
+                let rejected = evalFailure target $"UnitBasisPoints::new({rate})"
+                equal "REFINEMENT_FAILED" (stringValue rejected.["error"].["code"])
+                    $"UnitBasisPoints rejects invalid constructor input {rate}"
+
+        let sourcesBefore = names |> List.map (fun name -> name, sourceForWord engine name)
+        let typeSourceBefore = sourceForType engine "UnitBasisPoints"
+        let basisPointSource =
+            sourcesBefore
+            |> List.find (fun (name, _) -> name = "money.scale-basis-points-toward-zero")
+            |> snd
+        check (basisPointSource.StartsWith("fn money.scale-basis-points-toward-zero", StringComparison.Ordinal))
+            "the validated basis-point scaler is retained in Flow/2 function syntax"
+        let precommitCaseCount = runAttachedTests engine
+        assertInvalidConstructors engine
+        testMoneyRatioOracle engine
+        testMoneyBasisPointOracle engine
+
+        dispatch engine "commit" [ "library", jbool true ]
+        |> expectOk "commit the tested Flow/2 Money functions and UnitBasisPoints type as a library"
+        |> ignore
+        wordsCommitted <- wordsCommitted + names.Length
+        typesCommitted <- typesCommitted + document.Scalars.Length
+
+        let committedWords = dispatch engine "words" [] |> expectOk "inspect committed Flow/2 Money words" |> fun response -> response.["data"].["words"].AsArray()
+        for name in names do
+            let item = committedWords |> Seq.find (fun row -> stringValue row.["name"] = name)
+            equal "persistent" (stringValue item.["status"]) $"{name} persists after library qualification"
+            equal "library" (stringValue item.["maturity"]) $"{name} is library-qualified"
+        runAttachedTests engine |> ignore
+
+        let fresh = Runtime.Engine(projectPath, Set.empty, "2024-02-29T12:00:00.0000000+00:00")
+        for name, source in sourcesBefore do
+            equal source (sourceForWord fresh name) $"Flow/2 source reloads exactly for {name}"
+        equal typeSourceBefore (sourceForType fresh "UnitBasisPoints") "the validated scalar source reloads exactly"
+        assertInvalidConstructors fresh
+        let reloadedBeforeTestsCoverage =
+            dispatch fresh "describe" [ "word", jstr "money.scale-by-90-percent" ]
+            |> expectOk "inspect fresh fixed-caller coverage before rerunning its own tests"
+            |> fun response -> response.["data"].["coverage"]
+        equal "not-run" (stringValue reloadedBeforeTestsCoverage.["status"])
+            "fresh reload does not inherit transient test coverage"
+        let reloadedCaseCount = runAttachedTests fresh
+        equal precommitCaseCount reloadedCaseCount "all 27 Flow/2 Money tests pass after reload"
+        let reloadedFixedCall =
+            eval fresh "money::scale-by-90-percent(Money::new(10000))"
+            |> moneyScalarMinor
+        equal 9000L reloadedFixedCall "the fixed 9000 caller executes after fresh reload"
+
+        let publishedWords = dispatch fresh "words" [] |> expectOk "inspect committed Flow/2 Money words" |> fun response -> response.["data"].["words"].AsArray()
+        for name in names do
+            let item = publishedWords |> Seq.find (fun row -> stringValue row.["name"] = name)
+            equal "persistent" (stringValue item.["status"]) $"{name} persists after library qualification"
+            equal "library" (stringValue item.["maturity"]) $"{name} is library-qualified"
+        reloadChecks <- reloadChecks + names.Length + 1
+        totalTests <- totalTests + reloadedCaseCount
+
     let private gitValue args =
         try
             let start = ProcessStartInfo("git")
@@ -693,6 +892,12 @@ module Program =
         equal 16 document.Records.Length "fixture defines 16 records including fold helper states"
         equal 10 document.Scalars.Length "fixture defines 10 nominal scalar types"
 
+        let ratioPath = Path.Combine(root, "examples", "money-ratio.agent")
+        let ratioSource = File.ReadAllText ratioPath
+        let ratioDocument =
+            FlowParser.parseDocumentWithVersion 2 "<business-money-ratio>" ratioSource
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+
         let projectPath = Path.Combine(Path.GetTempPath(), $"agentlang-business-language-{Guid.NewGuid():N}")
         Directory.CreateDirectory projectPath |> ignore
         let engine = Runtime.Engine(projectPath, Set.empty, "2024-02-29T12:00:00.0000000+00:00")
@@ -714,6 +919,10 @@ module Program =
             runGroup "constructor validation, trimming precedence, and public-record boundary" (fun () -> testConstructorOracleAndPublicRecordBoundary engine)
             runGroup "Store empty, multi-add, duplicate rejection, lookup order, and nominal rejection" (fun () -> testStoreAndNominalBoundary engine)
             runGroup "library/type commit, source and metadata persistence, and fresh reload" (fun () -> testLibraryCommitAndReload engine projectPath document |> ignore)
+            // Reopen the now-committed base in the same project so the Flow/2 extension can
+            // depend on the persisted Money nominal type without changing the base fixture.
+            let fresh = Runtime.Engine(projectPath, Set.empty, "2024-02-29T12:00:00.0000000+00:00")
+            runGroup "Flow/2 Money ratio wrapper, independent oracle, and fresh reload" (fun () -> testMoneyRatioExtension fresh projectPath ratioSource ratioDocument)
 
             printfn "PASS %d groups, %d assertions; %d attached tests; %d examples; %d words and %d types persisted and reloaded." groups assertions totalTests totalExamples wordsCommitted typesCommitted
             evidencePath |> Option.iter (fun path -> writeEvidence path command "passed" None)

@@ -120,7 +120,7 @@ module IrInterpreter =
             "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
             "equals"; "bool.and"; "bool.or"; "bool.not"
             "string.guid-canonical?"; "string.guid-normalize"; "string.email-address-valid?"
-            "int.add-checked"; "int.multiply-checked"
+            "int.add-checked"; "int.multiply-checked"; "int.scale-ratio-toward-zero"
             "instant.parse-utc"; "instant.is-canonical-utc?"; "instant.before?"; "instant.add-days"
             "string.concat"; "string.contains"; "string.starts-with"; "string.ends-with"
             "string.length"; "string.trim"; "string.to-lower"; "string.to-upper"
@@ -503,6 +503,8 @@ module IrInterpreter =
                 [ RuntimeResult(IrInt, IrString, TrustedValues.addChecked left right |> Result.map RuntimeInt |> Result.mapError RuntimeString) ]
             | "int.multiply-checked", [ RuntimeInt left; RuntimeInt right ] ->
                 [ RuntimeResult(IrInt, IrString, TrustedValues.multiplyChecked left right |> Result.map RuntimeInt |> Result.mapError RuntimeString) ]
+            | "int.scale-ratio-toward-zero", [ RuntimeInt value; RuntimeInt numerator; RuntimeInt denominator ] ->
+                [ RuntimeResult(IrInt, IrString, TrustedValues.scaleRatioTowardZero value numerator denominator |> Result.map RuntimeInt |> Result.mapError RuntimeString) ]
             | "float.add", [ RuntimeFloat left; RuntimeFloat right ] -> [ finiteFloat (left + right) ]
             | "float.subtract", [ RuntimeFloat left; RuntimeFloat right ] -> [ finiteFloat (left - right) ]
             | "float.multiply", [ RuntimeFloat left; RuntimeFloat right ] -> [ finiteFloat (left * right) ]

@@ -1939,6 +1939,20 @@ let private testRejectsEffectsAndUnsupportedUntakenBranches () =
     let effectError = errorOf (fun () -> LlvmAot.emit body |> ignore)
     check "effects in an untaken reachable branch are rejected" (effectError.Code = "IR_LLVM_EFFECT_UNSUPPORTED")
 
+    let ratioSpan = span "unsupported-ratio-primitive.agent" 4
+    let ratioBody =
+        compileBody (contextWith []) "unsupported-ratio-primitive"
+            [ Push(LInt 7L, ratioSpan)
+              Push(LInt 1L, ratioSpan)
+              Push(LInt 2L, ratioSpan)
+              Call("int.scale-ratio-toward-zero", ratioSpan)
+              Call("drop", ratioSpan) ]
+    let ratioError = errorOf (fun () -> LlvmAot.emit ratioBody |> ignore)
+    check "LLVM rejects the ratio Result type at its explicit unsupported boundary"
+        (ratioError.Code = "IR_LLVM_UNSUPPORTED_TYPE"
+         && ratioError.Span = Some ratioSpan
+         && ratioError.Actual = [ "Result<Int, String>" ])
+
     let unsupported =
         compileBody (contextWith []) "unsupported-branch"
             [ Push(LBool true, span "unsupported.agent" 1)

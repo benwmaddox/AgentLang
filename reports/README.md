@@ -18,6 +18,12 @@ actors: all repair the unnamed target to 54/54 independent cases. Vocabulary is
 preserved in the language conditions; F# also completes two existing placeholders.
 Fixture differences and one actor per condition preclude a superiority claim.
 
+The current structural correctness checkpoint is
+[110 — Explicit arithmetic and domain contracts](110-structural-correctness.md):
+checked rational scaling and a validated bounded-rate library, with independent
+arithmetic properties. Closed enums and cross-field construction remain pending;
+this checkpoint is not another agent-efficacy result.
+
 The latest ownership demonstration is [108 — Native handler mailbox suspension](108-native-mailbox-suspension.md):
 120 checks across Core/O0/O2, with readable Flow/2 handlers and opaque retained
 state across scratch reuse. Scheduling is still a .NET experiment host; no

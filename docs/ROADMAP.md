@@ -145,6 +145,23 @@ support, as described in [report 088](../reports/088-late-application-migration-
 
 ## 4. Strengthen reusable library contracts
 
+The next approved correctness checkpoint implements the
+[structural correctness requirements](STRUCTURAL-CORRECTNESS.md) in bounded
+slices: explicit checked ratio/rounding operations, closed state types and
+exhaustive decisions, invariant-preserving construction, narrow effectful
+execution, and deterministic properties backed by independent expectations.
+Inspect existing support before adding mechanisms; a language-native property
+framework and general proof system are not prerequisites. Preserve frozen
+comparison fixtures and resume efficacy evaluation after the implementation
+checkpoint. Track delivered and pending requirements explicitly in its report.
+
+Report 110 delivers the first arithmetic slice: exact checked ratios and an
+authored total Money scaler using validated unit basis points. The next type
+slice is payload-free closed enums with verified exhaustive matching, durable
+source and explicit finite-coverage qualification. Use new fixtures. Enums must
+not be advertised as library-ready before their required coverage is enforced.
+Cross-field record construction and decision/executor stateful properties follow.
+
 Implement the approved module boundaries and stricter qualification rules:
 cross-module authored calls require library qualification; library functions
 call only qualified authored library functions or trusted/generated operations.

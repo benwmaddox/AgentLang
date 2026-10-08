@@ -1,0 +1,13 @@
+PASS fixture and authored cases
+PASS nominal identifiers, Email, and normalized instants against oracle
+PASS Money checked arithmetic and signed Int32 quantity against oracle
+PASS constructor validation, trimming precedence, and public-record boundary
+PASS Store empty, multi-add, duplicate rejection, lookup order, and nominal rejection
+PASS library/type commit, source and metadata persistence, and fresh reload
+FAIL after 6 groups and 5943 assertions: all attached Flow/2 Money test names reload: expected [money.scale-ratio-toward-zero/final-overflow; money.scale-ratio-toward-zero/minimum-quotient; money.scale-ratio-toward-zero/negative-fraction; ... ], got [final-overflow; minimum-quotient; negative-fraction; ... ]
+Unhandled exception. System.Exception: all attached Flow/2 Money test names reload: expected [money.scale-ratio-toward-zero/final-overflow; money.scale-ratio-toward-zero/minimum-quotient; money.scale-ratio-toward-zero/negative-fraction; ... ], got [final-overflow; minimum-quotient; negative-fraction; ... ]
+   at AgentLang.Business.Language.Tests.Program.equal[a,b](a expected, a actual, b message) in D:\code\AgentLang\tests\AgentLang.Business.Language.Tests\Program.fs:line 27
+   at AgentLang.Business.Language.Tests.Program.testMoneyRatioExtension(Engine engine, String projectPath, String source, FlowProjectDocument document) in D:\code\AgentLang\tests\AgentLang.Business.Language.Tests\Program.fs:line 731
+   at AgentLang.Business.Language.Tests.Program.main@833-6.Invoke(Unit unitVar0) in D:\code\AgentLang\tests\AgentLang.Business.Language.Tests\Program.fs:line 833
+   at AgentLang.Business.Language.Tests.Program.runGroup(String name, FSharpFunc`2 action) in D:\code\AgentLang\tests\AgentLang.Business.Language.Tests\Program.fs:line 129
+   at AgentLang.Business.Language.Tests.Program.main(String[] argv) in D:\code\AgentLang\tests\AgentLang.Business.Language.Tests\Program.fs:line 833

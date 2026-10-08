@@ -1,0 +1,8 @@
+PASS fixture and authored cases
+PASS nominal identifiers, Email, and normalized instants against oracle
+PASS Money checked arithmetic and signed Int32 quantity against oracle
+PASS constructor validation, trimming precedence, and public-record boundary
+PASS Store empty, multi-add, duplicate rejection, lookup order, and nominal rejection
+PASS library/type commit, source and metadata persistence, and fresh reload
+PASS Flow/2 Money ratio wrapper, independent oracle, and fresh reload
+PASS 7 groups, 5957 assertions; 92 attached tests; 27 examples; 33 words and 26 types persisted and reloaded.

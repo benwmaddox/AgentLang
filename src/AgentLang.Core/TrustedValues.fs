@@ -88,6 +88,22 @@ module TrustedValues =
         try Ok(Checked.(*) left right)
         with :? OverflowException -> Error integerOverflow
 
+    /// Scale a signed Int64 value by a rational factor without losing precision
+    /// in the intermediate product. Integer division truncates toward zero.
+    let scaleRatioTowardZero (value: int64) (numerator: int64) (denominator: int64) =
+        if denominator = 0L then Error "DIVIDE_BY_ZERO"
+        else
+            // The product of any two Int64 values fits in Int128. Dividing only
+            // after that exact multiplication preserves fractions and allows
+            // large intermediate products whose final quotient still fits.
+            let quotient =
+                (Int128.CreateChecked value * Int128.CreateChecked numerator)
+                / Int128.CreateChecked denominator
+            if quotient < Int128.CreateChecked Int64.MinValue || quotient > Int128.CreateChecked Int64.MaxValue then
+                Error integerOverflow
+            else
+                Ok(int64 quotient)
+
     let private parseInstant (value: string) : Result<DateTimeOffset, string> =
         let isAsciiDigit (character: char) = character >= '0' && character <= '9'
         let hasAsciiDigits (text: string) start count =

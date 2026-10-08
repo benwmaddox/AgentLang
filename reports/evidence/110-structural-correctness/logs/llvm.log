@@ -1,0 +1,10 @@
+[native-conformance] scalar operators and arithmetic
+[native-conformance] ABI layout and raw request guards
+[native-conformance] branches, locals, and user-word calls
+[native-conformance] nominal scalar support and limits
+[native-conformance] record construction, accessors, aliases, and equality
+[native-conformance] record value depth and aggregate limits
+[native-conformance] record preflight diagnostics
+[native-conformance] record capacity atomicity and retained ownership
+[native-conformance] ABI v3 typed state re-entry, import budgets, and provenance
+AgentLang.Llvm.Tests: 442 assertions passed; artifacts: D:\code\AgentLang\.agentlang\structural-correctness-001\.agentlang\native-validation\tests-f3b67a80987e42819a8ce61f28c1b6f4

@@ -688,6 +688,65 @@ fn customer.has-email(value: Customer) -> Bool {
     | Ok warnings -> failwithf "Flow/2 property/equality linter reported unexpected warnings: %A" warnings
     | Error problem -> failwith $"{problem.Code}: {problem.Message}"
 
+let private testFlow2CheckedRatioPrimitive () =
+    let parseExpression source =
+        match FlowParser.parseExpressionWithVersion 2 "<flow2-ratio>" source with
+        | Ok expression -> expression
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let context = loweringContext [] Map.empty
+    let _, checkedExpression =
+        FlowLowering.checkExpressionWithVersion 2 context
+            (parseExpression "int::scale-ratio-toward-zero(7, 1, 2)")
+    equal "Flow/2 resolves the ratio primitive to its typed Result signature"
+        [ TResult(TInt, TString) ] checkedExpression.Stack
+    expectLanguageError "Flow/2 rejects a non-Int ratio operand using the primitive contract" "FLOW_ARGUMENT_TYPE" (fun () ->
+        FlowLowering.checkExpressionWithVersion 2 context
+            (parseExpression "int::scale-ratio-toward-zero(\"7\", 1, 2)")
+        |> ignore)
+
+    let moneyType =
+        { Name = "Money"
+          BaseType = TInt
+          Validator = None
+          SourceText = "type Money : Int { }"
+          Span = sourceSpan }
+    let moneyContext =
+        loweringContextWith Map.empty (Map.ofList [ "Money", moneyType ])
+            [ generatedEntry "money.new" (ScalarConstructor "Money") [ TInt ] [ TNamed "Money" ] Set.empty
+              generatedEntry "money.value" (ScalarAccessor "Money") [ TNamed "Money" ] [ TInt ] Set.empty ]
+            Map.empty
+    let wrapperSource =
+        """fn money.scale-ratio(value: Money, numerator: Int, denominator: Int) -> Result<Money, String> {
+    doc "Flow/2 Money wrapper over exact ratio scaling"
+
+    let scaled = int::scale-ratio-toward-zero(money::value(value), numerator, denominator);
+    match scaled {
+        ok minor => { result::ok<Money, String>(money::new(minor)) }
+        error code => { result::error<Money, String>(code) }
+    }
+}"""
+    let wrapper =
+        match FlowParser.parseWordWithVersion 2 "<flow2-ratio-wrapper>" wrapperSource with
+        | Ok word -> word
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let compiled = FlowLowering.compileWord moneyContext (WordId "flow2-money-ratio") wrapper
+    let invocation =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+            compiled.Context.CompilerContext compiled.Program "flow2-money-ratio-invoke" []
+            [ Push(LInt -7L, sourceSpan)
+              Call("money.new", sourceSpan)
+              Push(LInt 1L, sourceSpan)
+              Push(LInt 2L, sourceSpan)
+              Call("money.scale-ratio", sourceSpan) ]
+            compiled.Context.SourceOrigins
+    let actual = IrInterpreter.executeBody (host (ResizeArray())) "flow2-money-ratio" invocation
+    equal "Flow/2 Money wrapper returns Result<Money,String> through verified IR"
+        [ TResult(TNamed "Money", TString) ] (actual |> List.map Types.ofValue)
+    match actual with
+    | [ ResultValue(TNamed "Money", TString, Ok(NamedValue("Money", IntValue -3L))) ] ->
+        check "Flow/2 named Money output preserves toward-zero semantics" true
+    | other -> failwithf "Flow/2 Money ratio wrapper returned an unexpected value: %A" other
+
 let private testSparseFlowSourceMarkerAllocation () =
     let context = loweringContext [] (Map.ofList [ "add", [ "left"; "right" ] ])
     let flowWord =
@@ -4687,6 +4746,7 @@ let main _ =
     testParserLocationsAndQualification ()
     testIterativeAstDepthLimit ()
     testFlow2Frontend ()
+    testFlow2CheckedRatioPrimitive ()
     testSparseFlowSourceMarkerAllocation ()
     testFlowSourceCanonicalRoundTrip ()
     testContainerAndMatchSyntaxRoundTrip ()

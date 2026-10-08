@@ -76,6 +76,7 @@ module Compiler =
         | "string.guid-canonical?" | "string.email-address-valid?" | "instant.is-canonical-utc?" -> [ TString ], [ TBool ]
         | "string.guid-normalize" | "instant.parse-utc" -> [ TString ], [ TResult(TString, TString) ]
         | "int.add-checked" | "int.multiply-checked" -> [ TInt; TInt ], [ TResult(TInt, TString) ]
+        | "int.scale-ratio-toward-zero" -> [ TInt; TInt; TInt ], [ TResult(TInt, TString) ]
         | "instant.before?" -> [ TString; TString ], [ TBool ]
         | "instant.add-days" -> [ TString; TInt ], [ TResult(TString, TString) ]
         | "string.concat" -> [ TString; TString ], [ TString ]
@@ -118,7 +119,7 @@ module Compiler =
               "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
               "equals"; "bool.and"; "bool.or"; "bool.not"
               "string.guid-canonical?"; "string.guid-normalize"; "string.email-address-valid?"
-              "int.add-checked"; "int.multiply-checked"
+              "int.add-checked"; "int.multiply-checked"; "int.scale-ratio-toward-zero"
               "instant.parse-utc"; "instant.is-canonical-utc?"; "instant.before?"; "instant.add-days"
               "string.concat"; "string.contains"; "string.starts-with"; "string.ends-with"
               "string.length"; "string.trim"; "string.to-lower"; "string.to-upper"; "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"
@@ -141,6 +142,7 @@ module Compiler =
                     | "string.email-address-valid?" -> "Checks an ASCII address policy: local segments use letters, digits, underscore, percent, plus, or hyphen and are separated by single dots with no empty segments; the domain has at least two labels with alphanumeric ends and internal hyphens. Rejects whitespace and values over 254 characters."
                     | "int.add-checked" -> "Adds Int64 values exactly; returns INT_OVERFLOW on overflow."
                     | "int.multiply-checked" -> "Multiplies Int64 values exactly; returns INT_OVERFLOW on overflow."
+                    | "int.scale-ratio-toward-zero" -> "Computes (value * numerator) / denominator with an exact Int128 intermediate for the full signed Int64 input range, truncating the quotient toward zero. Returns DIVIDE_BY_ZERO for a zero denominator and INT_OVERFLOW when the final quotient is outside Int64."
                     | "instant.parse-utc" -> "Parses invariant ISO yyyy-MM-ddTHH:mm:ss text with optional one-to-seven fractional digits and an explicit Z, z, or signed HH:mm offset; returns UTC round-trip text with seven fractional digits and +00:00. Unzoned or non-ISO input returns INVALID_INSTANT."
                     | "instant.is-canonical-utc?" -> "Returns true only for the exact UTC O-format text emitted by instant.parse-utc."
                     | "instant.before?" -> "Compares two canonical UTC O-format instants; equality is false and invalid operands raise RUNTIME_INVALID_INSTANT."

@@ -1,0 +1,219 @@
+{
+  "passed": true,
+  "checks": 98,
+  "outcomes": 30,
+  "sourceSha256": "6e8e7cb41cd24fba40edf28e1f8112c21272b5aa58067d7879bd4552727d31e6",
+  "archiveEntry": "full-validation-r2.business-policy-preflight.json",
+  "runs": [
+    {
+      "mode": "growing",
+      "control": "correct",
+      "taskId": "S01",
+      "expectedPassed": true,
+      "passed": true
+    },
+    {
+      "mode": "growing",
+      "control": "correct",
+      "taskId": "S06",
+      "expectedPassed": true,
+      "passed": true
+    },
+    {
+      "mode": "growing",
+      "control": "correct",
+      "taskId": "S07",
+      "expectedPassed": true,
+      "passed": true
+    },
+    {
+      "mode": "growing",
+      "control": "noop",
+      "taskId": "S01",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "growing",
+      "control": "noop",
+      "taskId": "S06",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "growing",
+      "control": "noop",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "growing",
+      "control": "wrong-trim",
+      "taskId": "S01",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "growing",
+      "control": "wrong-rate",
+      "taskId": "S06",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "growing",
+      "control": "wrong-rounding",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "growing",
+      "control": "wrong-overflow",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "flat",
+      "control": "correct",
+      "taskId": "S01",
+      "expectedPassed": true,
+      "passed": true
+    },
+    {
+      "mode": "flat",
+      "control": "correct",
+      "taskId": "S06",
+      "expectedPassed": true,
+      "passed": true
+    },
+    {
+      "mode": "flat",
+      "control": "correct",
+      "taskId": "S07",
+      "expectedPassed": true,
+      "passed": true
+    },
+    {
+      "mode": "flat",
+      "control": "noop",
+      "taskId": "S01",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "flat",
+      "control": "noop",
+      "taskId": "S06",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "flat",
+      "control": "noop",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "flat",
+      "control": "wrong-trim",
+      "taskId": "S01",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "flat",
+      "control": "wrong-rate",
+      "taskId": "S06",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "flat",
+      "control": "wrong-rounding",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "flat",
+      "control": "wrong-overflow",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "conventional",
+      "control": "correct",
+      "taskId": "S01",
+      "expectedPassed": true,
+      "passed": true
+    },
+    {
+      "mode": "conventional",
+      "control": "correct",
+      "taskId": "S06",
+      "expectedPassed": true,
+      "passed": true
+    },
+    {
+      "mode": "conventional",
+      "control": "correct",
+      "taskId": "S07",
+      "expectedPassed": true,
+      "passed": true
+    },
+    {
+      "mode": "conventional",
+      "control": "noop",
+      "taskId": "S01",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "conventional",
+      "control": "noop",
+      "taskId": "S06",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "conventional",
+      "control": "noop",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "conventional",
+      "control": "wrong-trim",
+      "taskId": "S01",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "conventional",
+      "control": "wrong-rate",
+      "taskId": "S06",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "conventional",
+      "control": "wrong-rounding",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false
+    },
+    {
+      "mode": "conventional",
+      "control": "wrong-overflow",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false
+    }
+  ]
+}

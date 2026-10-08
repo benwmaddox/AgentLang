@@ -114,6 +114,11 @@ let private expectedInt64Result (value: BigInteger) =
     else
         Ok(int64 value)
 
+let private expectedScaleRatioResult (value: int64) (numerator: int64) (denominator: int64) =
+    if denominator = 0L then Error "DIVIDE_BY_ZERO"
+    else
+        expectedInt64Result ((BigInteger(value) * BigInteger(numerator)) / BigInteger(denominator))
+
 let private helperOverflowAsMoneyCode = function
     | Ok value -> Ok value
     | Error "INT_OVERFLOW" -> Error "MONEY_OVERFLOW"
@@ -150,6 +155,55 @@ let private testCheckedIntegerArithmeticAgainstBigIntegerAndMoney () =
     equal "subtracting below Int64.MinValue reports low-level overflow" (Error "INT_OVERFLOW") (TrustedValues.addChecked Int64.MinValue -1L)
     equal "minimum multiplied by negative one reports low-level overflow" (Error "INT_OVERFLOW") (TrustedValues.multiplyChecked Int64.MinValue -1L)
     equal "multiplication by zero remains exact at the maximum" (Ok 0L) (TrustedValues.multiplyChecked Int64.MaxValue 0L)
+
+let private testScaleRatioAgainstBigIntegerOracle () =
+    let edgeValues =
+        [ Int64.MinValue; Int64.MinValue + 1L; -3_037_000_500L; -3L; -2L; -1L
+          0L; 1L; 2L; 3L; 3_037_000_499L; Int64.MaxValue - 1L; Int64.MaxValue ]
+
+    for value in edgeValues do
+        for numerator in edgeValues do
+            for denominator in edgeValues do
+                let expected = expectedScaleRatioResult value numerator denominator
+                equal
+                    $"ratio scaling matches exact BigInteger oracle for {value} * {numerator} / {denominator}"
+                    expected
+                    (TrustedValues.scaleRatioTowardZero value numerator denominator)
+
+    let random = Random(0x51CA1E)
+    let nextInt64 () =
+        let bytes = Array.zeroCreate<byte> sizeof<int64>
+        random.NextBytes bytes
+        BitConverter.ToInt64(bytes, 0)
+    for index = 0 to 511 do
+        let value = nextInt64 ()
+        let numerator = nextInt64 ()
+        let denominator = if index % 17 = 0 then 0L else nextInt64 ()
+        equal
+            $"generated ratio case {index} matches independent BigInteger oracle"
+            (expectedScaleRatioResult value numerator denominator)
+            (TrustedValues.scaleRatioTowardZero value numerator denominator)
+
+    equal "positive fractional quotient truncates toward zero" (Ok 3L) (TrustedValues.scaleRatioTowardZero 7L 1L 2L)
+    equal "negative fractional quotient truncates toward zero" (Ok -3L) (TrustedValues.scaleRatioTowardZero -7L 1L 2L)
+    equal "a small positive fraction truncates to zero" (Ok 0L) (TrustedValues.scaleRatioTowardZero 1L 1L 2L)
+    equal "a small negative fraction truncates to zero" (Ok 0L) (TrustedValues.scaleRatioTowardZero -1L 1L 2L)
+    equal "negative numerator and denominator preserve a positive quotient" (Ok 3L) (TrustedValues.scaleRatioTowardZero 7L -1L -2L)
+    equal "intermediate product overflow can have an exact representable quotient"
+        (Ok Int64.MaxValue)
+        (TrustedValues.scaleRatioTowardZero Int64.MaxValue 2L 2L)
+    equal "the minimum signed quotient remains representable after a wide intermediate"
+        (Ok Int64.MinValue)
+        (TrustedValues.scaleRatioTowardZero Int64.MinValue -1L -1L)
+    equal "a zero denominator returns a structured value error even for a zero numerator"
+        (Error "DIVIDE_BY_ZERO")
+        (TrustedValues.scaleRatioTowardZero 0L 0L 0L)
+    equal "a quotient above Int64.MaxValue reports checked overflow"
+        (Error "INT_OVERFLOW")
+        (TrustedValues.scaleRatioTowardZero Int64.MaxValue 2L 1L)
+    equal "a quotient above Int64.MaxValue reports checked overflow when MinValue is negated"
+        (Error "INT_OVERFLOW")
+        (TrustedValues.scaleRatioTowardZero Int64.MinValue -1L 1L)
 
 let private contractInstantFixture (value: string) =
     let quoted = System.Text.Json.JsonSerializer.Serialize(value)
@@ -315,6 +369,7 @@ let private trustedPrimitiveContracts = [
     "string.email-address-valid?", [ TString ], [ TBool ]
     "int.add-checked", [ TInt; TInt ], [ TResult(TInt, TString) ]
     "int.multiply-checked", [ TInt; TInt ], [ TResult(TInt, TString) ]
+    "int.scale-ratio-toward-zero", [ TInt; TInt; TInt ], [ TResult(TInt, TString) ]
     "instant.parse-utc", [ TString ], [ TResult(TString, TString) ]
     "instant.is-canonical-utc?", [ TString ], [ TBool ]
     "instant.before?", [ TString; TString ], [ TBool ]
@@ -347,6 +402,11 @@ let private testRegisteredPrimitiveContracts () =
     check "GUID normalization documents Guid.TryParse input coverage" ((documentation "string.guid-normalize").Contains("Guid.TryParse", StringComparison.Ordinal))
     check "email primitive documents the bounded ASCII policy" ((documentation "string.email-address-valid?").Contains("254 characters", StringComparison.Ordinal))
     check "checked arithmetic documents its structured overflow code" ((documentation "int.add-checked").Contains("INT_OVERFLOW", StringComparison.Ordinal))
+    check "ratio arithmetic documents its exact product, truncation policy, and error codes"
+        ((documentation "int.scale-ratio-toward-zero").Contains("full signed Int64 input range", StringComparison.Ordinal)
+         && (documentation "int.scale-ratio-toward-zero").Contains("truncating the quotient toward zero", StringComparison.Ordinal)
+         && (documentation "int.scale-ratio-toward-zero").Contains("DIVIDE_BY_ZERO", StringComparison.Ordinal)
+         && (documentation "int.scale-ratio-toward-zero").Contains("INT_OVERFLOW", StringComparison.Ordinal))
     check "instant parser documents exact precision and explicit zone rules" ((documentation "instant.parse-utc").Contains("one-to-seven fractional digits", StringComparison.Ordinal))
     check "instant comparison documents its invalid-input runtime diagnostic" ((documentation "instant.before?").Contains("RUNTIME_INVALID_INSTANT", StringComparison.Ordinal))
     check "instant day addition documents range errors" ((documentation "instant.add-days").Contains("INSTANT_RANGE", StringComparison.Ordinal))
@@ -394,6 +454,17 @@ let private testTypedIrRuntimeAndFailureBoundaries () =
     equal "checked multiply returns an error value instead of a runtime failure"
         (ResultValue(TInt, TString, Error(StringValue "INT_OVERFLOW")))
         (call "int.multiply-checked" [ LInt Int64.MaxValue; LInt 2L ])
+    let scaledRatio = call "int.scale-ratio-toward-zero" [ LInt -7L; LInt 1L; LInt 2L ]
+    equal "ratio primitive returns a typed Result through verified IR"
+        (ResultValue(TInt, TString, Ok(IntValue -3L))) scaledRatio
+    equal "ratio primitive preserves Int/String Result type arguments"
+        (TResult(TInt, TString)) (Types.ofValue scaledRatio)
+    equal "ratio primitive returns division by zero as a structured Result error"
+        (ResultValue(TInt, TString, Error(StringValue "DIVIDE_BY_ZERO")))
+        (call "int.scale-ratio-toward-zero" [ LInt 0L; LInt 0L; LInt 0L ])
+    equal "ratio primitive returns final overflow as a structured Result error"
+        (ResultValue(TInt, TString, Error(StringValue "INT_OVERFLOW")))
+        (call "int.scale-ratio-toward-zero" [ LInt Int64.MaxValue; LInt 2L; LInt 1L ])
 
     let normalizedInstant = call "instant.parse-utc" [ LString "2024-02-29T23:15:04.1+02:30" ]
     equal "instant parser returns the normalized typed Result through verified IR"
@@ -427,6 +498,16 @@ let private testTypedIrRuntimeAndFailureBoundaries () =
         Compiler.compileIrBodyAgainstProgram context program "wrong-trusted-value-types" [] wrongTypes |> ignore)
     |> ignore
 
+    expectDiagnostic "ratio primitive rejects non-Int operands during typed IR compilation" "TYPE_STACK_MISMATCH" (fun () ->
+        let wrongTypes = [
+            Push(LInt 1L, site)
+            Push(LString "2", site)
+            Push(LInt 3L, site)
+            Call("int.scale-ratio-toward-zero", site)
+        ]
+        Compiler.compileIrBodyAgainstProgram context program "wrong-ratio-operand-types" [] wrongTypes |> ignore)
+    |> ignore
+
     expectDiagnostic "legacy add retains its runtime overflow diagnostic" "RUNTIME_OVERFLOW" (fun () ->
         executePrimitiveCall program host "add" [ LInt Int64.MaxValue; LInt 1L ] site |> ignore)
     |> ignore
@@ -441,6 +522,7 @@ let main _ =
         group "GUID normalization and canonical storage" testGuidReferenceFormsAndCanonicalStorage
         group "Email validation against the conventional fixture" testEmailPolicyAgainstReference
         group "checked Int64 arithmetic against BigInteger and Money" testCheckedIntegerArithmeticAgainstBigIntegerAndMoney
+        group "exact ratio scaling against an independent BigInteger oracle" testScaleRatioAgainstBigIntegerOracle
         group "instant parsing against the immutable contract" testInstantParsingAgainstImmutableContract
         group "canonical UTC comparison and day arithmetic" testCanonicalInstantComparisonAndCheckedDayArithmetic
         group "primitive metadata and typed IR execution" testRegisteredPrimitiveContracts
