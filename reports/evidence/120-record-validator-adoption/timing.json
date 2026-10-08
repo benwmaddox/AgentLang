@@ -1,0 +1,10 @@
+{
+  "brokerSessionStarted": "2026-10-08T08:18:41.4703452+00:00",
+  "brokerSessionFinished": "2026-10-08T08:26:53.3935118+00:00",
+  "brokerSessionSeconds": 491.923166,
+  "firstExchange": "2026-10-08T08:18:54.9814354+00:00",
+  "lastExchange": "2026-10-08T08:26:48.0171346+00:00",
+  "firstThroughLastExchangeSeconds": 473.035699,
+  "exchangeCount": 50,
+  "modelTokenUsage": null
+}

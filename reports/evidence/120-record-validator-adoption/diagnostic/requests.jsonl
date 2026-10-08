@@ -1,0 +1,11 @@
+{"op":"define","source":"record BoundedRange {\n    field start: Int;\n    field finish: Int;\n    validate range::is-valid;\n}\n\nfn range.is-valid(value: BoundedRange) -> Bool {\n    int::less-or-equal(value.start, value.finish)\n}\n\nfn range.width(value: BoundedRange) -> Int {\n    doc \"Return the distance from start to finish.\"\n\n    subtract(value.finish, value.start)\n}\n\ntest range.is-valid/equal-endpoints {\n    range::is-valid(value = BoundedRange(start = 3, finish = 3))\n    => true\n}\n\ntest range.is-valid/increasing {\n    range::is-valid(value = BoundedRange(start = 2, finish = 7))\n    => true\n}\n\ntest range.width/equal-endpoints {\n    range::width(value = BoundedRange(start = 3, finish = 3))\n    => 0\n}\n\ntest range.width/positive {\n    range::width(value = BoundedRange(start = 2, finish = 7))\n    => 5\n}\n\ntest range.width/reversed-rejected {\n    range::width(value = BoundedRange(start = 8, finish = 2))\n    => error RECORD_VALIDATION_FAILED\n}\n\ntest range.is-valid/reversed-library-evidence {\n    BoundedRange(start = 8, finish = 2) => error RECORD_VALIDATION_FAILED\n}\n","syntaxVersion":2,"frontend":"flow"}
+{"op":"test","word":"range.is-valid"}
+{"op":"describe","word":"range.is-valid"}
+{"op":"commit","word":"range.is-valid","library":true}
+{"op":"describe","word":"range.is-valid"}
+{"op":"describe","word":"range.width"}
+{"op":"test-all"}
+{"op":"source","type":"BoundedRange"}
+{"op":"source","word":"range.is-valid"}
+{"op":"source","word":"range.width"}
+{"op":"host.close"}

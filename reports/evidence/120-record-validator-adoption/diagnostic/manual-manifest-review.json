@@ -1,0 +1,11 @@
+{
+  "manifestHash": "6ffe84af8338fbab65c79e3dcd8580be4be3b05800cea7f37186bbd502d8509d",
+  "schemaFormatVersion": 3,
+  "typeValidatorTarget": {
+    "kind": "userWord",
+    "identity": "word_5d5963057a5b4248a90a596f3d9d6e1a"
+  },
+  "predicateWordId": "word_5d5963057a5b4248a90a596f3d9d6e1a",
+  "stableTargetMatches": true,
+  "predicateMaturity": "library"
+}

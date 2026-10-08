@@ -1,0 +1,329 @@
+[
+  {
+    "index": 12,
+    "request": {
+      "op": "define",
+      "source": "record range.BoundedRange {\n    start: Int\n    finish: Int\n    validate range::is-valid;\n}\n\nfn range.is-valid(value: range.BoundedRange) -> Bool {\n    int::less-or-equal(value.start, value.finish)\n}\n\nfn range.width(value: range.BoundedRange) -> Int {\n    doc \"Return the distance from start to finish.\"\n    subtract(value.finish, value.start)\n}\n\ntest range.width/positive { range::width(range::BoundedRange(start: 2, finish: 7)) => 5 }\ntest range.width/equal-endpoints { range::width(range::BoundedRange(start: 3, finish: 3)) => 0 }\ntest range.width/reversed-rejected { range::width(range::BoundedRange(start: 8, finish: 2)) => error RECORD_VALIDATION_FAILED }",
+      "syntaxVersion": 2
+    },
+    "ok": false,
+    "kind": "error",
+    "text": "FLOW_EXPECTED_TOKEN at <flow-project>:1:13: Expected '{', found '.'.",
+    "data": null
+  },
+  {
+    "index": 13,
+    "request": {
+      "op": "define",
+      "source": "record BoundedRange {\n    start: Int\n    finish: Int\n    validate range::is-valid;\n}\n\nfn range.is-valid(value: BoundedRange) -> Bool {\n    int::less-or-equal(value.start, value.finish)\n}\n\nfn range.width(value: BoundedRange) -> Int {\n    doc \"Return the distance from start to finish.\"\n    subtract(value.finish, value.start)\n}\n\ntest range.width/positive { range::width(BoundedRange(start: 2, finish: 7)) => 5 }\ntest range.width/equal-endpoints { range::width(BoundedRange(start: 3, finish: 3)) => 0 }\ntest range.width/reversed-rejected { range::width(BoundedRange(start: 8, finish: 2)) => error RECORD_VALIDATION_FAILED }",
+      "syntaxVersion": 2
+    },
+    "ok": false,
+    "kind": "error",
+    "text": "FLOW_RECORD_DECLARATION at <flow-project>:2:5: Record bodies contain field declarations and at most one validator declaration.",
+    "data": null
+  },
+  {
+    "index": 14,
+    "request": {
+      "op": "define",
+      "source": "record BoundedRange {\n    field start: Int\n    field finish: Int\n    validate range::is-valid;\n}\n\nfn range.is-valid(value: BoundedRange) -> Bool {\n    int::less-or-equal(value.start, value.finish)\n}\n\nfn range.width(value: BoundedRange) -> Int {\n    doc \"Return the distance from start to finish.\"\n    subtract(value.finish, value.start)\n}\n\ntest range.width/positive { range::width(BoundedRange(start: 2, finish: 7)) => 5 }\ntest range.width/equal-endpoints { range::width(BoundedRange(start: 3, finish: 3)) => 0 }\ntest range.width/reversed-rejected { range::width(BoundedRange(start: 8, finish: 2)) => error RECORD_VALIDATION_FAILED }",
+      "syntaxVersion": 2
+    },
+    "ok": false,
+    "kind": "error",
+    "text": "FLOW_RECORD_FIELD_SEMICOLON at <flow-project>:3:5: Every Flow record field must end with ';'.",
+    "data": null
+  },
+  {
+    "index": 15,
+    "request": {
+      "op": "define",
+      "source": "record BoundedRange {\n    field start: Int;\n    field finish: Int;\n    validate range::is-valid;\n}\n\nfn range.is-valid(value: BoundedRange) -> Bool {\n    int::less-or-equal(value.start, value.finish)\n}\n\nfn range.width(value: BoundedRange) -> Int {\n    doc \"Return the distance from start to finish.\"\n    subtract(value.finish, value.start)\n}\n\ntest range.width/positive { range::width(BoundedRange(start: 2, finish: 7)) => 5 }\ntest range.width/equal-endpoints { range::width(BoundedRange(start: 3, finish: 3)) => 0 }\ntest range.width/reversed-rejected { range::width(BoundedRange(start: 8, finish: 2)) => error RECORD_VALIDATION_FAILED }",
+      "syntaxVersion": 2
+    },
+    "ok": false,
+    "kind": "error",
+    "text": "FLOW_EXPECTED_TOKEN at <flow-project>:16:60: Expected ')', found ':'.",
+    "data": null
+  },
+  {
+    "index": 16,
+    "request": {
+      "op": "define",
+      "source": "record BoundedRange {\n    field start: Int;\n    field finish: Int;\n    validate range::is-valid;\n}\n\nfn range.is-valid(value: BoundedRange) -> Bool {\n    int::less-or-equal(value.start, value.finish)\n}\n\nfn range.width(value: BoundedRange) -> Int {\n    doc \"Return the distance from start to finish.\"\n    subtract(value.finish, value.start)\n}\n\ntest range.width/positive { range::width(value: BoundedRange(2, 7)) => 5 }\ntest range.width/equal-endpoints { range::width(value: BoundedRange(3, 3)) => 0 }\ntest range.width/reversed-rejected { range::width(value: BoundedRange(8, 2)) => error RECORD_VALIDATION_FAILED }",
+      "syntaxVersion": 2
+    },
+    "ok": false,
+    "kind": "error",
+    "text": "FLOW_EXPECTED_TOKEN at <flow-project>:16:47: Expected ')', found ':'.",
+    "data": null
+  },
+  {
+    "index": 17,
+    "request": {
+      "op": "define",
+      "source": "record BoundedRange {\n    field start: Int;\n    field finish: Int;\n    validate range::is-valid;\n}\n\nfn range.is-valid(value: BoundedRange) -> Bool {\n    int::less-or-equal(value.start, value.finish)\n}\n\nfn range.width(value: BoundedRange) -> Int {\n    doc \"Return the distance from start to finish.\"\n    subtract(value.finish, value.start)\n}\n\ntest range.width/positive { range::width(BoundedRange(2, 7)) => 5 }\ntest range.width/equal-endpoints { range::width(BoundedRange(3, 3)) => 0 }\ntest range.width/reversed-rejected { range::width(BoundedRange(8, 2)) => error RECORD_VALIDATION_FAILED }",
+      "syntaxVersion": 2
+    },
+    "ok": true,
+    "kind": "defined",
+    "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+    "data": null
+  },
+  {
+    "index": 19,
+    "request": {
+      "op": "describe",
+      "word": "range.width"
+    },
+    "ok": true,
+    "kind": "describe",
+    "text": "Description for range.width.",
+    "data": null
+  },
+  {
+    "index": 21,
+    "request": {
+      "op": "describe",
+      "word": "range.is-valid"
+    },
+    "ok": true,
+    "kind": "describe",
+    "text": "Description for range.is-valid.",
+    "data": null
+  },
+  {
+    "index": 24,
+    "request": {
+      "op": "describe",
+      "word": "BoundedRange"
+    },
+    "ok": false,
+    "kind": "error",
+    "text": "NAME_UNKNOWN_WORD in BoundedRange: Word 'BoundedRange' is not defined.",
+    "data": null
+  },
+  {
+    "index": 26,
+    "request": {
+      "op": "describe",
+      "word": "boundedRange.new"
+    },
+    "ok": true,
+    "kind": "describe",
+    "text": "Description for boundedRange.new.",
+    "data": null
+  },
+  {
+    "index": 28,
+    "request": {
+      "op": "describe",
+      "word": "boundedRange.start"
+    },
+    "ok": true,
+    "kind": "describe",
+    "text": "Description for boundedRange.start.",
+    "data": null
+  },
+  {
+    "index": 35,
+    "request": {
+      "expectedRevision": 1,
+      "op": "define",
+      "replace": true,
+      "source": "fn range.width(value: BoundedRange) -> Int {\n    doc \"Return the distance from start to finish.\"\n    subtract(value.finish, value.start)\n}\n\ntest range.width/positive { range::width(value = BoundedRange(start = 2, finish = 7)) => 5 }\ntest range.width/equal-endpoints { range::width(value = BoundedRange(start = 3, finish = 3)) => 0 }\ntest range.width/reversed-rejected { range::width(value = BoundedRange(start = 8, finish = 2)) => error RECORD_VALIDATION_FAILED }",
+      "syntaxVersion": 2
+    },
+    "ok": true,
+    "kind": "defined",
+    "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+    "data": null
+  },
+  {
+    "index": 36,
+    "request": {
+      "op": "define",
+      "source": "test range.is-valid/increasing { range::is-valid(value = BoundedRange(start = 2, finish = 7)) => true }\ntest range.is-valid/equal-endpoints { range::is-valid(value = BoundedRange(start = 3, finish = 3)) => true }",
+      "syntaxVersion": 2
+    },
+    "ok": true,
+    "kind": "defined",
+    "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+    "data": null
+  },
+  {
+    "index": 39,
+    "request": {
+      "op": "define",
+      "source": "test boundedRange.new/valid-increasing { boundedRange::start(boundedRange::new(start = 2, finish = 7)) == 2 => true }\ntest boundedRange.new/equal-endpoints { boundedRange::finish(boundedRange::new(start = 3, finish = 3)) == 3 => true }\ntest boundedRange.new/reversed-rejected { boundedRange::new(start = 8, finish = 2) => error RECORD_VALIDATION_FAILED }",
+      "syntaxVersion": 2
+    },
+    "ok": false,
+    "kind": "error",
+    "text": "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD in boundedRange.new: Flow attachment owner 'boundedRange.new' is a generated type word and cannot own authored Flow cases.",
+    "data": null
+  },
+  {
+    "index": 41,
+    "request": {
+      "library": true,
+      "op": "commit",
+      "word": "range.width"
+    },
+    "ok": true,
+    "kind": "commit",
+    "text": "5 attached test(s) passed; selected candidates committed.",
+    "data": [
+      "range.is-valid/equal-endpoints",
+      "range.is-valid/increasing",
+      "range.width/equal-endpoints",
+      "range.width/positive",
+      "range.width/reversed-rejected"
+    ]
+  },
+  {
+    "index": 42,
+    "request": {
+      "op": "describe",
+      "word": "range.width"
+    },
+    "ok": true,
+    "kind": "describe",
+    "text": "Description for range.width.",
+    "data": null
+  },
+  {
+    "index": 43,
+    "request": {
+      "op": "describe",
+      "word": "range.is-valid"
+    },
+    "ok": true,
+    "kind": "describe",
+    "text": "Description for range.is-valid.",
+    "data": null
+  },
+  {
+    "index": 44,
+    "request": {
+      "op": "describe",
+      "word": "boundedRange.new"
+    },
+    "ok": true,
+    "kind": "describe",
+    "text": "Description for boundedRange.new.",
+    "data": null
+  },
+  {
+    "index": 50,
+    "request": {
+      "op": "task.commit"
+    },
+    "ok": true,
+    "kind": "task.commit",
+    "text": "Task committed and temporary words were cleared. The task log was saved.",
+    "data": {
+      "active": false,
+      "effects": {},
+      "errors": [
+        "DISCOVERY_INVALID_ARGUMENT",
+        "FLOW_EXPECTED_TOKEN",
+        "FLOW_RECORD_DECLARATION",
+        "FLOW_RECORD_FIELD_SEMICOLON",
+        "FLOW_EXPECTED_TOKEN",
+        "FLOW_EXPECTED_TOKEN",
+        "NAME_UNKNOWN_WORD",
+        "NAME_UNKNOWN_WORD",
+        "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD"
+      ],
+      "goal": "",
+      "task": "task-0001",
+      "testsFailed": 0,
+      "testsRun": 23,
+      "wordsCreated": [
+        "BoundedRange",
+        "range.is-valid",
+        "range.width"
+      ],
+      "wordsInspected": [
+        "add",
+        "bool.and",
+        "bool.not",
+        "bool.or",
+        "boundedRange.finish",
+        "boundedRange.new",
+        "boundedRange.start",
+        "clock.now",
+        "console.write",
+        "divide",
+        "drop",
+        "dup",
+        "equals",
+        "file.exists?",
+        "file.read",
+        "file.write",
+        "float.add",
+        "float.divide",
+        "float.greater-or-equal",
+        "float.greater-than",
+        "float.less-or-equal",
+        "float.less-than",
+        "float.multiply",
+        "float.round",
+        "float.subtract",
+        "float.to-int",
+        "float.to-string",
+        "instant.add-days",
+        "instant.before?",
+        "instant.is-canonical-utc?",
+        "instant.parse-utc",
+        "int.abs",
+        "int.add-checked",
+        "int.greater-or-equal",
+        "int.greater-than",
+        "int.less-or-equal",
+        "int.less-than",
+        "int.max",
+        "int.min",
+        "int.multiply-checked",
+        "int.scale-ratio-toward-zero",
+        "int.to-float",
+        "int.to-string",
+        "list.append",
+        "list.concat",
+        "list.count",
+        "list.get",
+        "list.is-empty?",
+        "list.tail",
+        "multiply",
+        "range.is-valid",
+        "range.width",
+        "search-type:BoundedRange",
+        "search-type:Int",
+        "string.concat",
+        "string.contains",
+        "string.email-address-valid?",
+        "string.ends-with",
+        "string.guid-canonical?",
+        "string.guid-normalize",
+        "string.length",
+        "string.starts-with",
+        "string.to-lower",
+        "string.to-upper",
+        "string.trim",
+        "subtract",
+        "swap"
+      ],
+      "wordsUsed": [
+        "boundedRange.finish",
+        "boundedRange.new",
+        "boundedRange.start",
+        "int.less-or-equal",
+        "range.is-valid",
+        "range.width",
+        "subtract"
+      ]
+    }
+  }
+]

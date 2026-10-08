@@ -1,0 +1,5 @@
+record BoundedRange {
+    field start: Int;
+    field finish: Int;
+    validate range::is-valid;
+}

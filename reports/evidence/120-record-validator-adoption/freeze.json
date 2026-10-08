@@ -1,0 +1,799 @@
+{
+  "schemaVersion": 1,
+  "status": "frozen-preparation-only",
+  "frozenUtc": "2026-10-08T08:10:48.1011283Z",
+  "actorDispatched": false,
+  "dispatchGate": "Await root full Debug gate and commit; this preparation does not authorize dispatch.",
+  "source": {
+    "baseRevision": "db481e26d1bf5016aba6ff708d099b52a6d3e6ae",
+    "worktreeState": "dirty at build capture; see tested-source.json",
+    "testedSourceSnapshot": {
+      "path": "tested-source.json",
+      "sha256": "A5B5DC99B7BF37C85A6BDE704095A4DEED23AEBAEE2C763115EDA37653B89062"
+    }
+  },
+  "runtime": {
+    "pinPath": "runtime-pin.json",
+    "pinSha256": "A7EB241527152838ACA731194D82F1A6363AED8A7F1B8C1E3E768D875268E9DF",
+    "cliDllSha256": "C77268B252E1485B08499D41F3D8853363C49048A8F9620A6B86A397EBC7E368",
+    "coreDllSha256": "6497DFF02632195A08CC51D0761CD0FF1B93BA70F2FA33D9ADBD51BB6C67528A",
+    "fileCount": 22,
+    "totalBytes": 6511598.0,
+    "files": [
+      {
+        "path": "AgentLang.Cli.deps.json",
+        "bytes": 2903,
+        "sha256": "6382F6DC29BB8F827824839010E313B266E51A3F87A4FDB8C382931D2549E97E"
+      },
+      {
+        "path": "AgentLang.Cli.dll",
+        "bytes": 43008,
+        "sha256": "C77268B252E1485B08499D41F3D8853363C49048A8F9620A6B86A397EBC7E368"
+      },
+      {
+        "path": "AgentLang.Cli.exe",
+        "bytes": 156160,
+        "sha256": "CD22D236933B27BB95545E3BBEBE674E1B2CDCDE11AA4DDEFDBFD76E0F371760"
+      },
+      {
+        "path": "AgentLang.Cli.pdb",
+        "bytes": 12932,
+        "sha256": "D10070C9789772C163DC3EC7FD71AF9D752436DB63F00086C0F8971DB1F970F0"
+      },
+      {
+        "path": "AgentLang.Cli.runtimeconfig.json",
+        "bytes": 268,
+        "sha256": "A45057885F807F4A337FDEA3CCDFA64E1675D22A6D6A6FC7C7394FD44BA9EEBE"
+      },
+      {
+        "path": "AgentLang.Core.dll",
+        "bytes": 2585600,
+        "sha256": "6497DFF02632195A08CC51D0761CD0FF1B93BA70F2FA33D9ADBD51BB6C67528A"
+      },
+      {
+        "path": "AgentLang.Core.pdb",
+        "bytes": 902220,
+        "sha256": "AADD280965594D981F1E8FCA34A0C7D21BAA9AC48FDFCE822C35A930B1FE270C"
+      },
+      {
+        "path": "AgentLang.Core.xml",
+        "bytes": 37131,
+        "sha256": "09AC15A5F53B3D6FD39E721BB9E7EDA22F7B2269A7676F95866F822C9BCCBE7A"
+      },
+      {
+        "path": "cs/FSharp.Core.resources.dll",
+        "bytes": 34600,
+        "sha256": "EB8BD755CFE0D39CE27615027FE22556E8B9DCB470F2B47A36F4BFBF3C31BE64"
+      },
+      {
+        "path": "de/FSharp.Core.resources.dll",
+        "bytes": 35592,
+        "sha256": "7419E4F5CEED9E03821686E865FED7D29C6217FDF5D3A46A2919A369C98C38CE"
+      },
+      {
+        "path": "es/FSharp.Core.resources.dll",
+        "bytes": 34600,
+        "sha256": "636866649564C72EB763EB3942E021B52B1F9B3869D037ACA48F73D4474353C5"
+      },
+      {
+        "path": "fr/FSharp.Core.resources.dll",
+        "bytes": 35128,
+        "sha256": "F38F2FD6BC4C4E233DD098A36B315A2BC87673CF2F07C6BA3DAF71A3264F4A64"
+      },
+      {
+        "path": "FSharp.Core.dll",
+        "bytes": 2314000,
+        "sha256": "BF72714C36DC21357A6530D59479E1D7FC5E6BC815A9AF9A872E5E41611C1E6F"
+      },
+      {
+        "path": "it/FSharp.Core.resources.dll",
+        "bytes": 34576,
+        "sha256": "61A0BE9C6A2ED95F8E98493B17C54A55C68CEF84E23A0D82114319E2C5F3C2CD"
+      },
+      {
+        "path": "ja/FSharp.Core.resources.dll",
+        "bytes": 37160,
+        "sha256": "DD7F36036D906E991DA5505B074EF889A603F449D3324750FDA5F5445BA2854F"
+      },
+      {
+        "path": "ko/FSharp.Core.resources.dll",
+        "bytes": 36104,
+        "sha256": "0F3EF625E379577E3B60C15D8CC3759D3DC8840F99894282DF1E702B4A166462"
+      },
+      {
+        "path": "pl/FSharp.Core.resources.dll",
+        "bytes": 35632,
+        "sha256": "755BAB9FBD85E5E4B4771870C9C4D655E91E3CE39CC1C2735FE0BC7CEC6B84C3"
+      },
+      {
+        "path": "pt-BR/FSharp.Core.resources.dll",
+        "bytes": 34096,
+        "sha256": "A4BBBDAABF2003A5FDFF5F5BC4143C3FD4A064F2681FC481F449D4558074DC61"
+      },
+      {
+        "path": "ru/FSharp.Core.resources.dll",
+        "bytes": 41232,
+        "sha256": "A1133F9AB7E661803D1AF0C2489626BD53AC33A11DFE891F5A02F3186F2F5D78"
+      },
+      {
+        "path": "tr/FSharp.Core.resources.dll",
+        "bytes": 34072,
+        "sha256": "6B0CBA5139A86EE681909FDFCEBAC07C99AFBA3BFCFF4FB8AB12B9C2112A0B31"
+      },
+      {
+        "path": "zh-Hans/FSharp.Core.resources.dll",
+        "bytes": 32552,
+        "sha256": "25F82F35A9234BCAAB272921B0D50054DDB4A669D96C111907C9D31F5B18C121"
+      },
+      {
+        "path": "zh-Hant/FSharp.Core.resources.dll",
+        "bytes": 32032,
+        "sha256": "AC03EE7C4112C755705776C700033794586F980FE9476E6A13811A7153BEABB8"
+      }
+    ]
+  },
+  "broker": {
+    "path": "scripts/Start-SubagentTrialHostV2.ps1",
+    "bytes": 81288,
+    "sha256": "6573321E8C0FC92926E43221AE10836FD5C62139E5FDB51CC34FF482FBC81F2B"
+  },
+  "task": {
+    "prompt": {
+      "path": "actor-prompt.md",
+      "bytes": 3590,
+      "sha256": "232D5F3361B577E6EDD709D3D4EAD085484B8F637180CAC5ACDF45F33C174639"
+    },
+    "plan": {
+      "path": "plan.md",
+      "bytes": 4451,
+      "sha256": "7315B5BEF30B778004E32645C2AFFCEC82DE3F68BED3FA9BBEFCDEC1C2023DF6"
+    },
+    "hiddenOracle": {
+      "path": "oracle.json",
+      "bytes": 1004,
+      "sha256": "8A9C248CF4EDD2BB2FFE5EF1717FE80CD920728C55D740502C51C908664DBC4E"
+    },
+    "acceptancePairs": 9,
+    "actorProjectPath": "project/actor",
+    "actorProjectFiles": []
+  },
+  "finalPreflight": {
+    "attempt": "04",
+    "runner": {
+      "path": "preflight/Run-Preflight.ps1",
+      "bytes": 9503,
+      "sha256": "E2D7604053B71FCE0759BD0D771BC1975CF0468D97C3A0258FACEE4F11DBF9AB"
+    },
+    "controlSummary": {
+      "path": "preflight/summary.json",
+      "bytes": 5851,
+      "sha256": "9F5151D413661D86F81F5F3925B03B62C3C2CC3CA4F252D01295F0A1F985D267"
+    },
+    "operationScope": [
+      "define",
+      "test-all",
+      "eval"
+    ],
+    "commitOrReloadExercised": false,
+    "controls": [
+      {
+        "name": "correct",
+        "hostExitCode": 0,
+        "requestCount": 12,
+        "responseCount": 11,
+        "definitionOk": true,
+        "testsRun": 3,
+        "testsPassed": 3,
+        "testsFailed": 0,
+        "tests": [
+          {
+            "name": "ordered-range",
+            "word": "range.valid?",
+            "passed": true,
+            "expected": "true",
+            "actual": [
+              "true"
+            ]
+          },
+          {
+            "name": "reversed-construction-is-rejected",
+            "word": "range.valid?",
+            "passed": true,
+            "expected": "error RECORD_VALIDATION_FAILED",
+            "expectedErrorCode": "RECORD_VALIDATION_FAILED",
+            "actual": []
+          },
+          {
+            "name": "positive-range",
+            "word": "range.width",
+            "passed": true,
+            "expected": "3",
+            "actual": [
+              "3"
+            ]
+          }
+        ],
+        "oracle": [
+          {
+            "start": 2,
+            "finish": 5,
+            "expected": "3",
+            "actual": "3",
+            "passed": true
+          },
+          {
+            "start": 0,
+            "finish": 0,
+            "expected": "0",
+            "actual": "0",
+            "passed": true
+          },
+          {
+            "start": -3,
+            "finish": 4,
+            "expected": "7",
+            "actual": "7",
+            "passed": true
+          },
+          {
+            "start": -8,
+            "finish": -5,
+            "expected": "3",
+            "actual": "3",
+            "passed": true
+          },
+          {
+            "start": 7,
+            "finish": 7,
+            "expected": "0",
+            "actual": "0",
+            "passed": true
+          },
+          {
+            "start": 5,
+            "finish": 2,
+            "expected": "RECORD_VALIDATION_FAILED",
+            "actual": "RECORD_VALIDATION_FAILED",
+            "passed": true
+          },
+          {
+            "start": 0,
+            "finish": -1,
+            "expected": "RECORD_VALIDATION_FAILED",
+            "actual": "RECORD_VALIDATION_FAILED",
+            "passed": true
+          },
+          {
+            "start": -4,
+            "finish": -8,
+            "expected": "RECORD_VALIDATION_FAILED",
+            "actual": "RECORD_VALIDATION_FAILED",
+            "passed": true
+          },
+          {
+            "start": 9,
+            "finish": 4,
+            "expected": "RECORD_VALIDATION_FAILED",
+            "actual": "RECORD_VALIDATION_FAILED",
+            "passed": true
+          }
+        ],
+        "tracePath": "preflight\\correct-04.trace.jsonl",
+        "requestPath": "preflight\\correct-04.requests.jsonl",
+        "responsePath": "preflight\\correct-04.responses.jsonl",
+        "stderrPath": "preflight\\correct-04.stderr.log"
+      },
+      {
+        "name": "always-true",
+        "hostExitCode": 0,
+        "requestCount": 12,
+        "responseCount": 11,
+        "definitionOk": true,
+        "testsRun": 3,
+        "testsPassed": 2,
+        "testsFailed": 1,
+        "tests": [
+          {
+            "name": "ordered-range",
+            "word": "range.valid?",
+            "passed": true,
+            "expected": "true",
+            "actual": [
+              "true"
+            ]
+          },
+          {
+            "name": "reversed-construction-is-rejected",
+            "word": "range.valid?",
+            "passed": false,
+            "expected": "error RECORD_VALIDATION_FAILED",
+            "expectedErrorCode": "RECORD_VALIDATION_FAILED",
+            "actual": [
+              "BoundedRange { finish = 2, start = 5 }"
+            ],
+            "errorCode": "TEST_EXPECTED_RUNTIME_ERROR",
+            "message": "Expected runtime error 'RECORD_VALIDATION_FAILED', but the test expression completed normally."
+          },
+          {
+            "name": "positive-range",
+            "word": "range.width",
+            "passed": true,
+            "expected": "3",
+            "actual": [
+              "3"
+            ]
+          }
+        ],
+        "oracle": [
+          {
+            "start": 2,
+            "finish": 5,
+            "expected": "3",
+            "actual": "3",
+            "passed": true
+          },
+          {
+            "start": 0,
+            "finish": 0,
+            "expected": "0",
+            "actual": "0",
+            "passed": true
+          },
+          {
+            "start": -3,
+            "finish": 4,
+            "expected": "7",
+            "actual": "7",
+            "passed": true
+          },
+          {
+            "start": -8,
+            "finish": -5,
+            "expected": "3",
+            "actual": "3",
+            "passed": true
+          },
+          {
+            "start": 7,
+            "finish": 7,
+            "expected": "0",
+            "actual": "0",
+            "passed": true
+          },
+          {
+            "start": 5,
+            "finish": 2,
+            "expected": "accepted by mutant",
+            "actual": "accepted",
+            "passed": true
+          },
+          {
+            "start": 0,
+            "finish": -1,
+            "expected": "accepted by mutant",
+            "actual": "accepted",
+            "passed": true
+          },
+          {
+            "start": -4,
+            "finish": -8,
+            "expected": "accepted by mutant",
+            "actual": "accepted",
+            "passed": true
+          },
+          {
+            "start": 9,
+            "finish": 4,
+            "expected": "accepted by mutant",
+            "actual": "accepted",
+            "passed": true
+          }
+        ],
+        "tracePath": "preflight\\always-true-04.trace.jsonl",
+        "requestPath": "preflight\\always-true-04.requests.jsonl",
+        "responsePath": "preflight\\always-true-04.responses.jsonl",
+        "stderrPath": "preflight\\always-true-04.stderr.log"
+      }
+    ],
+    "exactFiles": [
+      {
+        "path": "preflight/Run-Preflight.ps1",
+        "bytes": 9503,
+        "sha256": "E2D7604053B71FCE0759BD0D771BC1975CF0468D97C3A0258FACEE4F11DBF9AB"
+      },
+      {
+        "path": "preflight/summary.json",
+        "bytes": 5851,
+        "sha256": "9F5151D413661D86F81F5F3925B03B62C3C2CC3CA4F252D01295F0A1F985D267"
+      },
+      {
+        "path": "preflight/correct-04.requests.jsonl",
+        "bytes": 1997,
+        "sha256": "3030B6DCD993821D8FAA086D34ACDC925BD1320AC35B347FFEBD6267F9B043B9"
+      },
+      {
+        "path": "preflight/correct-04.responses.jsonl",
+        "bytes": 3700,
+        "sha256": "17CE84D8511A223AC82AA76905DAA9B219B3AF433678D43558C80825102FD65B"
+      },
+      {
+        "path": "preflight/correct-04.trace.jsonl",
+        "bytes": 37288,
+        "sha256": "5C4C26DC8F8FA5A13B2668C73D6240A76AE423906D643E0FCB67F031FA40640C"
+      },
+      {
+        "path": "preflight/correct-04.stderr.log",
+        "bytes": 0,
+        "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+      },
+      {
+        "path": "preflight/always-true-04.requests.jsonl",
+        "bytes": 1956,
+        "sha256": "5EA48AB544EC999DEC613DF69D747F72EE620A5E1263E8D969CE2048296E72F5"
+      },
+      {
+        "path": "preflight/always-true-04.responses.jsonl",
+        "bytes": 3901,
+        "sha256": "D3795A1581BB7C239925EADB4CE8FFB24D6661943DDAC7AA80708F9E461ECEB9"
+      },
+      {
+        "path": "preflight/always-true-04.trace.jsonl",
+        "bytes": 39390,
+        "sha256": "29223DC9704EFD4A0DAC143E1ED96816B918838F724DA1B42BFDBC2FC199A181"
+      },
+      {
+        "path": "preflight/always-true-04.stderr.log",
+        "bytes": 0,
+        "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+      }
+    ]
+  },
+  "priorAttemptsRetained": [
+    "attempt-01 parser mismatch",
+    "attempt-02 corrected scorer",
+    "attempt-03 strict test-all checks"
+  ],
+  "artifactCountExcludingFreeze": 68,
+  "artifacts": [
+    {
+      "path": "actor-prompt.md",
+      "bytes": 3590,
+      "sha256": "232D5F3361B577E6EDD709D3D4EAD085484B8F637180CAC5ACDF45F33C174639"
+    },
+    {
+      "path": "controls/always-true-project-02/.agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "controls/always-true-project-03/.agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "controls/always-true-project-04/.agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "controls/correct-project-02/.agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "controls/correct-project-03/.agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "controls/correct-project-04/.agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "controls/correct-project/.agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "oracle.json",
+      "bytes": 1004,
+      "sha256": "8A9C248CF4EDD2BB2FFE5EF1717FE80CD920728C55D740502C51C908664DBC4E"
+    },
+    {
+      "path": "plan.md",
+      "bytes": 4451,
+      "sha256": "7315B5BEF30B778004E32645C2AFFCEC82DE3F68BED3FA9BBEFCDEC1C2023DF6"
+    },
+    {
+      "path": "preflight/always-true-02.requests.jsonl",
+      "bytes": 1956,
+      "sha256": "5EA48AB544EC999DEC613DF69D747F72EE620A5E1263E8D969CE2048296E72F5"
+    },
+    {
+      "path": "preflight/always-true-02.responses.jsonl",
+      "bytes": 3901,
+      "sha256": "215300EEBCEFDF583DEA922E87F7E529F1C97204FC03C61C73FA62D93CFD6954"
+    },
+    {
+      "path": "preflight/always-true-02.stderr.log",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "preflight/always-true-02.trace.jsonl",
+      "bytes": 39390,
+      "sha256": "10DC5866BF15E67748EEA285BE56649459772DC1BCF96FA048D5DC2A9D21B136"
+    },
+    {
+      "path": "preflight/always-true-03.requests.jsonl",
+      "bytes": 1956,
+      "sha256": "5EA48AB544EC999DEC613DF69D747F72EE620A5E1263E8D969CE2048296E72F5"
+    },
+    {
+      "path": "preflight/always-true-03.responses.jsonl",
+      "bytes": 3901,
+      "sha256": "AF2C2F756536F82514730C5BA25F7FFE95776D9C93ED712D3A5C103D87010AF3"
+    },
+    {
+      "path": "preflight/always-true-03.stderr.log",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "preflight/always-true-03.trace.jsonl",
+      "bytes": 39391,
+      "sha256": "055FA7645A2ACA0A9339C27206611DC6FCC8913A987E04687811C10A1354FA4F"
+    },
+    {
+      "path": "preflight/always-true-04.requests.jsonl",
+      "bytes": 1956,
+      "sha256": "5EA48AB544EC999DEC613DF69D747F72EE620A5E1263E8D969CE2048296E72F5"
+    },
+    {
+      "path": "preflight/always-true-04.responses.jsonl",
+      "bytes": 3901,
+      "sha256": "D3795A1581BB7C239925EADB4CE8FFB24D6661943DDAC7AA80708F9E461ECEB9"
+    },
+    {
+      "path": "preflight/always-true-04.stderr.log",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "preflight/always-true-04.trace.jsonl",
+      "bytes": 39390,
+      "sha256": "29223DC9704EFD4A0DAC143E1ED96816B918838F724DA1B42BFDBC2FC199A181"
+    },
+    {
+      "path": "preflight/attempt-01/correct.requests.jsonl",
+      "bytes": 1997,
+      "sha256": "3030B6DCD993821D8FAA086D34ACDC925BD1320AC35B347FFEBD6267F9B043B9"
+    },
+    {
+      "path": "preflight/attempt-01/correct.responses.jsonl",
+      "bytes": 3700,
+      "sha256": "2AEC120F8A1058B130FC7B9272B2D257C947A5DA669D4196422570B925D472B5"
+    },
+    {
+      "path": "preflight/attempt-01/correct.stderr.log",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "preflight/attempt-01/correct.trace.jsonl",
+      "bytes": 37285,
+      "sha256": "8F7F130DF88BDB8E32F26D7FA7669A55E2AF8550713ABD456E2D16C45E16C94B"
+    },
+    {
+      "path": "preflight/correct-02.requests.jsonl",
+      "bytes": 1997,
+      "sha256": "3030B6DCD993821D8FAA086D34ACDC925BD1320AC35B347FFEBD6267F9B043B9"
+    },
+    {
+      "path": "preflight/correct-02.responses.jsonl",
+      "bytes": 3700,
+      "sha256": "599A11E120AD43211D9222A38820DFEE2206A95611C8B7B5898EB1831C17C303"
+    },
+    {
+      "path": "preflight/correct-02.stderr.log",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "preflight/correct-02.trace.jsonl",
+      "bytes": 37288,
+      "sha256": "B8054C65ED365B47C91243D4B53AF1948D505AE5F01DABB3E06CF3CB5563D20F"
+    },
+    {
+      "path": "preflight/correct-03.requests.jsonl",
+      "bytes": 1997,
+      "sha256": "3030B6DCD993821D8FAA086D34ACDC925BD1320AC35B347FFEBD6267F9B043B9"
+    },
+    {
+      "path": "preflight/correct-03.responses.jsonl",
+      "bytes": 3700,
+      "sha256": "D3F7F80951EC2136FC22C6BDB7805768386562CC0384B0A01641E4D622050CA5"
+    },
+    {
+      "path": "preflight/correct-03.stderr.log",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "preflight/correct-03.trace.jsonl",
+      "bytes": 37285,
+      "sha256": "D375A6C930512EFFF05F3F35F0616DFDAB10CECCB0A2C561C6FA25C774B81317"
+    },
+    {
+      "path": "preflight/correct-04.requests.jsonl",
+      "bytes": 1997,
+      "sha256": "3030B6DCD993821D8FAA086D34ACDC925BD1320AC35B347FFEBD6267F9B043B9"
+    },
+    {
+      "path": "preflight/correct-04.responses.jsonl",
+      "bytes": 3700,
+      "sha256": "17CE84D8511A223AC82AA76905DAA9B219B3AF433678D43558C80825102FD65B"
+    },
+    {
+      "path": "preflight/correct-04.stderr.log",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "preflight/correct-04.trace.jsonl",
+      "bytes": 37288,
+      "sha256": "5C4C26DC8F8FA5A13B2668C73D6240A76AE423906D643E0FCB67F031FA40640C"
+    },
+    {
+      "path": "preflight/correct.requests.jsonl",
+      "bytes": 1997,
+      "sha256": "3030B6DCD993821D8FAA086D34ACDC925BD1320AC35B347FFEBD6267F9B043B9"
+    },
+    {
+      "path": "preflight/correct.responses.jsonl",
+      "bytes": 3700,
+      "sha256": "2AEC120F8A1058B130FC7B9272B2D257C947A5DA669D4196422570B925D472B5"
+    },
+    {
+      "path": "preflight/correct.stderr.log",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "preflight/correct.trace.jsonl",
+      "bytes": 37285,
+      "sha256": "8F7F130DF88BDB8E32F26D7FA7669A55E2AF8550713ABD456E2D16C45E16C94B"
+    },
+    {
+      "path": "preflight/Run-Preflight.ps1",
+      "bytes": 9503,
+      "sha256": "E2D7604053B71FCE0759BD0D771BC1975CF0468D97C3A0258FACEE4F11DBF9AB"
+    },
+    {
+      "path": "preflight/summary.json",
+      "bytes": 5851,
+      "sha256": "9F5151D413661D86F81F5F3925B03B62C3C2CC3CA4F252D01295F0A1F985D267"
+    },
+    {
+      "path": "runtime-pin.json",
+      "bytes": 4708,
+      "sha256": "A7EB241527152838ACA731194D82F1A6363AED8A7F1B8C1E3E768D875268E9DF"
+    },
+    {
+      "path": "runtime/debug-artifacts/AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382F6DC29BB8F827824839010E313B266E51A3F87A4FDB8C382931D2549E97E"
+    },
+    {
+      "path": "runtime/debug-artifacts/AgentLang.Cli.dll",
+      "bytes": 43008,
+      "sha256": "C77268B252E1485B08499D41F3D8853363C49048A8F9620A6B86A397EBC7E368"
+    },
+    {
+      "path": "runtime/debug-artifacts/AgentLang.Cli.exe",
+      "bytes": 156160,
+      "sha256": "CD22D236933B27BB95545E3BBEBE674E1B2CDCDE11AA4DDEFDBFD76E0F371760"
+    },
+    {
+      "path": "runtime/debug-artifacts/AgentLang.Cli.pdb",
+      "bytes": 12932,
+      "sha256": "D10070C9789772C163DC3EC7FD71AF9D752436DB63F00086C0F8971DB1F970F0"
+    },
+    {
+      "path": "runtime/debug-artifacts/AgentLang.Cli.runtimeconfig.json",
+      "bytes": 268,
+      "sha256": "A45057885F807F4A337FDEA3CCDFA64E1675D22A6D6A6FC7C7394FD44BA9EEBE"
+    },
+    {
+      "path": "runtime/debug-artifacts/AgentLang.Core.dll",
+      "bytes": 2585600,
+      "sha256": "6497DFF02632195A08CC51D0761CD0FF1B93BA70F2FA33D9ADBD51BB6C67528A"
+    },
+    {
+      "path": "runtime/debug-artifacts/AgentLang.Core.pdb",
+      "bytes": 902220,
+      "sha256": "AADD280965594D981F1E8FCA34A0C7D21BAA9AC48FDFCE822C35A930B1FE270C"
+    },
+    {
+      "path": "runtime/debug-artifacts/AgentLang.Core.xml",
+      "bytes": 37131,
+      "sha256": "09AC15A5F53B3D6FD39E721BB9E7EDA22F7B2269A7676F95866F822C9BCCBE7A"
+    },
+    {
+      "path": "runtime/debug-artifacts/cs/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "EB8BD755CFE0D39CE27615027FE22556E8B9DCB470F2B47A36F4BFBF3C31BE64"
+    },
+    {
+      "path": "runtime/debug-artifacts/de/FSharp.Core.resources.dll",
+      "bytes": 35592,
+      "sha256": "7419E4F5CEED9E03821686E865FED7D29C6217FDF5D3A46A2919A369C98C38CE"
+    },
+    {
+      "path": "runtime/debug-artifacts/es/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "636866649564C72EB763EB3942E021B52B1F9B3869D037ACA48F73D4474353C5"
+    },
+    {
+      "path": "runtime/debug-artifacts/fr/FSharp.Core.resources.dll",
+      "bytes": 35128,
+      "sha256": "F38F2FD6BC4C4E233DD098A36B315A2BC87673CF2F07C6BA3DAF71A3264F4A64"
+    },
+    {
+      "path": "runtime/debug-artifacts/FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "BF72714C36DC21357A6530D59479E1D7FC5E6BC815A9AF9A872E5E41611C1E6F"
+    },
+    {
+      "path": "runtime/debug-artifacts/it/FSharp.Core.resources.dll",
+      "bytes": 34576,
+      "sha256": "61A0BE9C6A2ED95F8E98493B17C54A55C68CEF84E23A0D82114319E2C5F3C2CD"
+    },
+    {
+      "path": "runtime/debug-artifacts/ja/FSharp.Core.resources.dll",
+      "bytes": 37160,
+      "sha256": "DD7F36036D906E991DA5505B074EF889A603F449D3324750FDA5F5445BA2854F"
+    },
+    {
+      "path": "runtime/debug-artifacts/ko/FSharp.Core.resources.dll",
+      "bytes": 36104,
+      "sha256": "0F3EF625E379577E3B60C15D8CC3759D3DC8840F99894282DF1E702B4A166462"
+    },
+    {
+      "path": "runtime/debug-artifacts/pl/FSharp.Core.resources.dll",
+      "bytes": 35632,
+      "sha256": "755BAB9FBD85E5E4B4771870C9C4D655E91E3CE39CC1C2735FE0BC7CEC6B84C3"
+    },
+    {
+      "path": "runtime/debug-artifacts/pt-BR/FSharp.Core.resources.dll",
+      "bytes": 34096,
+      "sha256": "A4BBBDAABF2003A5FDFF5F5BC4143C3FD4A064F2681FC481F449D4558074DC61"
+    },
+    {
+      "path": "runtime/debug-artifacts/ru/FSharp.Core.resources.dll",
+      "bytes": 41232,
+      "sha256": "A1133F9AB7E661803D1AF0C2489626BD53AC33A11DFE891F5A02F3186F2F5D78"
+    },
+    {
+      "path": "runtime/debug-artifacts/tr/FSharp.Core.resources.dll",
+      "bytes": 34072,
+      "sha256": "6B0CBA5139A86EE681909FDFCEBAC07C99AFBA3BFCFF4FB8AB12B9C2112A0B31"
+    },
+    {
+      "path": "runtime/debug-artifacts/zh-Hans/FSharp.Core.resources.dll",
+      "bytes": 32552,
+      "sha256": "25F82F35A9234BCAAB272921B0D50054DDB4A669D96C111907C9D31F5B18C121"
+    },
+    {
+      "path": "runtime/debug-artifacts/zh-Hant/FSharp.Core.resources.dll",
+      "bytes": 32032,
+      "sha256": "AC03EE7C4112C755705776C700033794586F980FE9476E6A13811A7153BEABB8"
+    },
+    {
+      "path": "tested-source.json",
+      "bytes": 6173,
+      "sha256": "A5B5DC99B7BF37C85A6BDE704095A4DEED23AEBAEE2C763115EDA37653B89062"
+    }
+  ]
+}

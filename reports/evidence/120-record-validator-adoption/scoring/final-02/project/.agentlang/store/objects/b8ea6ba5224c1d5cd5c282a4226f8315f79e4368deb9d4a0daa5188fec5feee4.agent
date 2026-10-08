@@ -1,0 +1,1 @@
+test range.width/positive { range::width(value = BoundedRange(start = 2, finish = 7)) => 5 }

@@ -1,0 +1,3 @@
+fn range.is-valid(value: BoundedRange) -> Bool {
+    int::less-or-equal(value.start, value.finish)
+}

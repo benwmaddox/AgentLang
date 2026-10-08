@@ -1,0 +1,1 @@
+{"ok":false,"kind":"error","text":"NAME_UNKNOWN_WORD in BoundedRange: Word \u0027BoundedRange\u0027 is not defined.","error":{"code":"NAME_UNKNOWN_WORD","message":"Word \u0027BoundedRange\u0027 is not defined.","word":"BoundedRange","expected":[],"actual":[]}}

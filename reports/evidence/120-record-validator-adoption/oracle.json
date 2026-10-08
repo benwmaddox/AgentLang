@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "start": 2,
+      "finish": 5,
+      "construction": "accepted",
+      "width": 3
+    },
+    {
+      "start": 0,
+      "finish": 0,
+      "construction": "accepted",
+      "width": 0
+    },
+    {
+      "start": -3,
+      "finish": 4,
+      "construction": "accepted",
+      "width": 7
+    },
+    {
+      "start": -8,
+      "finish": -5,
+      "construction": "accepted",
+      "width": 3
+    },
+    {
+      "start": 7,
+      "finish": 7,
+      "construction": "accepted",
+      "width": 0
+    },
+    {
+      "start": 5,
+      "finish": 2,
+      "construction": "RECORD_VALIDATION_FAILED"
+    },
+    {
+      "start": 0,
+      "finish": -1,
+      "construction": "RECORD_VALIDATION_FAILED"
+    },
+    {
+      "start": -4,
+      "finish": -8,
+      "construction": "RECORD_VALIDATION_FAILED"
+    },
+    {
+      "start": 9,
+      "finish": 4,
+      "construction": "RECORD_VALIDATION_FAILED"
+    }
+  ]
+}

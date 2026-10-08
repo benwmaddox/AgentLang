@@ -1,0 +1,3 @@
+test range.is-valid/reversed-library-evidence {
+    BoundedRange(start = 8, finish = 2) => error RECORD_VALIDATION_FAILED
+}

@@ -1,0 +1,1 @@
+test range.width/reversed-rejected { range::width(value = BoundedRange(start = 8, finish = 2)) => error RECORD_VALIDATION_FAILED }

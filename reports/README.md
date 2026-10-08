@@ -73,6 +73,13 @@ inspection-script repair passed its exact 31-assertion probe separately. The rep
 implementation checkpoint, not fresh-agent adoption; provider-state assertions,
 broader module/library closure and test-local override rules remain open.
 
+[120 — Record-invariant adoption](120-record-validator-adoption.md) records one
+fresh Luna/max actor: all nine independent cases and five tests pass after
+reload, but validator qualification remains incomplete. A separate coordinator
+case proves the same predicate can qualify when the rejection test belongs to
+the validator. This is behavioral success with an authoring/discovery gap,
+not a comparative reliability result.
+
 The latest ownership demonstration is [108 — Native handler mailbox suspension](108-native-mailbox-suspension.md):
 120 checks across Core/O0/O2, with readable Flow/2 handlers and opaque retained
 state across scratch reuse. Scheduling is still a .NET experiment host; no

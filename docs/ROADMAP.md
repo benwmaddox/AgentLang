@@ -194,8 +194,15 @@ compatibility failure was repaired and passed 31 assertions separately. Function
 remain unqualifiable without a proven valid-value domain. This is implementation
 evidence, not fresh-agent adoption.
 
-Next run a bounded fresh-agent trial of discovery and construction-invariant
-adoption before adding more structural mechanisms. Provider-state assertions,
+The bounded fresh-agent trial is complete ([report 120](../reports/120-record-validator-adoption.md)):
+behavior and reload pass, but the agent misunderstood validator-owned coverage
+and left the predicate at project maturity. A separate diagnostic qualified the
+same predicate with one correctly owned rejection case. Next clarify the runtime
+example, type-source selector and caller-view scopes, then test a fresh agent on
+a comparable invariant before adding more structural mechanisms. Separately assess
+whether unchecked construction inputs need a distinct type or field-based
+validation contract; report 120 exposes this reasoning tension but does not
+settle the design. Provider-state assertions,
 broader module/library closure, test-local overrides and native enums remain
 pending. Use new fixtures and preserve historical research inputs.
 

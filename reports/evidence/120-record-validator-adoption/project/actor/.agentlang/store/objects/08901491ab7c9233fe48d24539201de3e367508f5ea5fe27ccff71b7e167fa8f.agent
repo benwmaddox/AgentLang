@@ -1,0 +1,56 @@
+// frontend: flow/2
+
+record BoundedRange {
+    field start: Int;
+    field finish: Int;
+    validate range::is-valid;
+}
+
+// frontend: flow/2
+
+fn range.is-valid(value: BoundedRange) -> Bool {
+    int::less-or-equal(value.start, value.finish)
+}
+
+// frontend: flow/2
+
+fn range.width(value: BoundedRange) -> Int {
+    doc "Return the distance from start to finish."
+
+    subtract(value.finish, value.start)
+}
+
+// frontend: flow/2
+
+test range.is-valid/equal-endpoints {
+    range::is-valid(value = BoundedRange(start = 3, finish = 3))
+    => true
+}
+
+// frontend: flow/2
+
+test range.is-valid/increasing {
+    range::is-valid(value = BoundedRange(start = 2, finish = 7))
+    => true
+}
+
+// frontend: flow/2
+
+test range.width/equal-endpoints {
+    range::width(value = BoundedRange(start = 3, finish = 3))
+    => 0
+}
+
+// frontend: flow/2
+
+test range.width/positive {
+    range::width(value = BoundedRange(start = 2, finish = 7))
+    => 5
+}
+
+// frontend: flow/2
+
+test range.width/reversed-rejected {
+    range::width(value = BoundedRange(start = 8, finish = 2))
+    => error RECORD_VALIDATION_FAILED
+}

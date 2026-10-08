@@ -1,0 +1,110 @@
+[
+  {
+    "path": ".agentlang",
+    "kind": "directory"
+  },
+  {
+    "path": ".agentlang/store",
+    "kind": "directory"
+  },
+  {
+    "path": ".agentlang/store/CURRENT",
+    "kind": "file",
+    "bytes": 134,
+    "sha256": "73F8AE4F91A979E36565E9192C232A6C2D7E32DE810AC344C1476975F8BCA38A"
+  },
+  {
+    "path": ".agentlang/store/manifests",
+    "kind": "directory"
+  },
+  {
+    "path": ".agentlang/store/manifests/d1304c345795bcf6a319ce525068fb8985997e08585933aa4dd046c6b0d212cf.json",
+    "kind": "file",
+    "bytes": 8322,
+    "sha256": "D1304C345795BCF6A319CE525068FB8985997E08585933AA4DD046C6B0D212CF"
+  },
+  {
+    "path": ".agentlang/store/objects",
+    "kind": "directory"
+  },
+  {
+    "path": ".agentlang/store/objects/08901491ab7c9233fe48d24539201de3e367508f5ea5fe27ccff71b7e167fa8f.agent",
+    "kind": "file",
+    "bytes": 1092,
+    "sha256": "08901491AB7C9233FE48D24539201DE3E367508F5EA5FE27CCFF71B7E167FA8F"
+  },
+  {
+    "path": ".agentlang/store/objects/3f3bd788ec1573a14dd6e5f116aa2463f67c4e2746d5215a13181bf1dd9f3a8d.agent",
+    "kind": "file",
+    "bytes": 98,
+    "sha256": "3F3BD788EC1573A14DD6E5F116AA2463F67C4E2746D5215A13181BF1DD9F3A8D"
+  },
+  {
+    "path": ".agentlang/store/objects/6e523e88028e6c80f64ffc364ae9d50d03a8d836bd4b1067541745fd5e4f8366.agent",
+    "kind": "file",
+    "bytes": 103,
+    "sha256": "6E523E88028E6C80F64FFC364AE9D50D03A8D836BD4B1067541745FD5E4F8366"
+  },
+  {
+    "path": ".agentlang/store/objects/79a18662ef8ba6591dc8a367f0b13d3b180aa8446384c70867e5c5d7b6f8513e.agent",
+    "kind": "file",
+    "bytes": 99,
+    "sha256": "79A18662EF8BA6591DC8A367F0B13D3B180AA8446384C70867E5C5D7B6F8513E"
+  },
+  {
+    "path": ".agentlang/store/objects/8f7e65054c62da5447dc3699e4d1ec3095ca0d98533a41972b3e0c3a8b3d8fb7.agent",
+    "kind": "file",
+    "bytes": 130,
+    "sha256": "8F7E65054C62DA5447DC3699E4D1EC3095CA0D98533A41972B3E0C3A8B3D8FB7"
+  },
+  {
+    "path": ".agentlang/store/objects/963b966e204fa8ade7066716f09387d221b9b74d73cfddaa07e2f3a01f429112.agent",
+    "kind": "file",
+    "bytes": 138,
+    "sha256": "963B966E204FA8ADE7066716F09387D221B9B74D73CFDDAA07E2F3A01F429112"
+  },
+  {
+    "path": ".agentlang/store/objects/b7bc1f14aa248336278f6ff2a0d795d842c7988636334a6c8b6658b992c7abf4.agent",
+    "kind": "file",
+    "bytes": 108,
+    "sha256": "B7BC1F14AA248336278F6FF2A0D795D842C7988636334A6C8B6658B992C7ABF4"
+  },
+  {
+    "path": ".agentlang/store/objects/b8ea6ba5224c1d5cd5c282a4226f8315f79e4368deb9d4a0daa5188fec5feee4.agent",
+    "kind": "file",
+    "bytes": 92,
+    "sha256": "B8EA6BA5224C1D5CD5C282A4226F8315F79E4368DEB9D4A0DAA5188FEC5FEEE4"
+  },
+  {
+    "path": ".agentlang/store/objects/cf6ed24073747a54b004ffac192dac0fb37c224e44dfdd2d3664fcbe109bf9f7.agent",
+    "kind": "file",
+    "bytes": 100,
+    "sha256": "CF6ED24073747A54B004FFAC192DAC0FB37C224E44DFDD2D3664FCBE109BF9F7"
+  },
+  {
+    "path": ".agentlang/store/snapshots",
+    "kind": "directory"
+  },
+  {
+    "path": ".agentlang/store/WRITE.lock",
+    "kind": "file",
+    "bytes": 0,
+    "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  {
+    "path": "dictionary.agent",
+    "kind": "file",
+    "bytes": 1092,
+    "sha256": "08901491AB7C9233FE48D24539201DE3E367508F5EA5FE27CCFF71B7E167FA8F"
+  },
+  {
+    "path": "history",
+    "kind": "directory"
+  },
+  {
+    "path": "history/task-0001.json",
+    "kind": "file",
+    "bytes": 2225,
+    "sha256": "71EDB6817EC0C7DA09B6B4BC9FF44BA557A6C6A0011B40D3F6CF110A98C0EF42"
+  }
+]

@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "label": "dirty source snapshot associated with copied Debug binaries; not a clean committed build",
+  "baseRevision": "db481e26d1bf5016aba6ff708d099b52a6d3e6ae",
+  "capturedUtc": "2026-10-08T08:10:03.1285646Z",
+  "projects": [
+    "src/AgentLang.Core/AgentLang.Core.fsproj",
+    "src/AgentLang.Cli/AgentLang.Cli.fsproj"
+  ],
+  "files": [
+    {
+      "path": "src/AgentLang.Cli/AgentLang.Cli.fsproj",
+      "bytes": 335,
+      "sha256": "098AF580CDF940C858376EFA126E7105E181370B58540878040EE07F57063A0A",
+      "worktreeStatus": "clean relative to base"
+    },
+    {
+      "path": "src/AgentLang.Cli/Program.fs",
+      "bytes": 30268,
+      "sha256": "94C4320C442F071C4C11191A1B4314FB72BA4ED7C18F20C4AE7DA1D21C71BD2D",
+      "worktreeStatus": "clean relative to base"
+    },
+    {
+      "path": "src/AgentLang.Core/AgentLang.Core.fsproj",
+      "bytes": 1110,
+      "sha256": "4948705084736AC21769CE20741FBF1C442B24CE1C6E6F217610F7FF5C3CE9AA",
+      "worktreeStatus": "clean relative to base"
+    },
+    {
+      "path": "src/AgentLang.Core/AuthoringHelp.fs",
+      "bytes": 24750,
+      "sha256": "3994BB77E9DDA3F3654744CD87BBA3D4B7273A4A2ECF1F5DF879DDB9D79543A5",
+      "worktreeStatus": "M src/AgentLang.Core/AuthoringHelp.fs"
+    },
+    {
+      "path": "src/AgentLang.Core/Compiler.fs",
+      "bytes": 116257,
+      "sha256": "22D5F12CA4F68B199314DB04B6F49658516E85765BA989E14C0ACA3960929486",
+      "worktreeStatus": "M src/AgentLang.Core/Compiler.fs"
+    },
+    {
+      "path": "src/AgentLang.Core/Core.fs",
+      "bytes": 8402,
+      "sha256": "57FE2D9512AFA26FC920C06A8B4558BDF965157E27A2BD35CEDA64DFABB85428",
+      "worktreeStatus": "M src/AgentLang.Core/Core.fs"
+    },
+    {
+      "path": "src/AgentLang.Core/Discovery.fs",
+      "bytes": 31714,
+      "sha256": "E79746A41666D11ACF928C201E054A4F7CCCC0C2D04DE3C95BD72DB406624842",
+      "worktreeStatus": "M src/AgentLang.Core/Discovery.fs"
+    },
+    {
+      "path": "src/AgentLang.Core/FiniteCoverage.fs",
+      "bytes": 24435,
+      "sha256": "CB3F072280035D004BCD573648E6DA5B1B396C8AB6D0C2760CBF243793695E3C",
+      "worktreeStatus": "M src/AgentLang.Core/FiniteCoverage.fs"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowLint.fs",
+      "bytes": 14022,
+      "sha256": "5BA6A10171F4D67CFF6F43D32DDCE8B9E7AA33EB3F97D407AEE3BCD76BFB5CCF",
+      "worktreeStatus": "clean relative to base"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowLowering.fs",
+      "bytes": 213141,
+      "sha256": "1D9C6871408B33B9D0A7EFF51EE3F354093409234FC10C1E07F33A1655C1292C",
+      "worktreeStatus": "M src/AgentLang.Core/FlowLowering.fs"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowParser.fs",
+      "bytes": 74943,
+      "sha256": "6F0461FD29D689607190618880EFDFDFAF8378AF665EC7D68B0793767029408D",
+      "worktreeStatus": "M src/AgentLang.Core/FlowParser.fs"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowPersistence.fs",
+      "bytes": 2584,
+      "sha256": "71F842004D040BFF9D9C830E10FB394FEF4C55C827A6CCBB3CFB1C427869E793",
+      "worktreeStatus": "clean relative to base"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowRewrite.fs",
+      "bytes": 42641,
+      "sha256": "C71DB651C17D9413D6A68D93633A52247991A26A3EB653FE188BD63AF1869A96",
+      "worktreeStatus": "clean relative to base"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowSyntax.fs",
+      "bytes": 50676,
+      "sha256": "9CCFF37DBC15983831B7F0120774C7878047FF1E8302FE0DD73AEDD33CFF72FC",
+      "worktreeStatus": "M src/AgentLang.Core/FlowSyntax.fs"
+    },
+    {
+      "path": "src/AgentLang.Core/IrFormatting.fs",
+      "bytes": 52796,
+      "sha256": "9F219735B931F4503EC0F8E5A217630B2FC8A38B8FB84931A17C5959316ECDB7",
+      "worktreeStatus": "M src/AgentLang.Core/IrFormatting.fs"
+    },
+    {
+      "path": "src/AgentLang.Core/IrInterpreter.fs",
+      "bytes": 70591,
+      "sha256": "F223A37384AC014BEF6C48DC920F034ABA530761DCC441C46BBA30F2151AA24A",
+      "worktreeStatus": "M src/AgentLang.Core/IrInterpreter.fs"
+    },
+    {
+      "path": "src/AgentLang.Core/Parser.fs",
+      "bytes": 44492,
+      "sha256": "996140B145D04314DA8AE9755E926323FF71852D36A49383F75B0941AA304521",
+      "worktreeStatus": "M src/AgentLang.Core/Parser.fs"
+    },
+    {
+      "path": "src/AgentLang.Core/Protocol.fs",
+      "bytes": 3314,
+      "sha256": "D1DFB67C82760AA5B6663162C31F1DFCE70441275C073FD344A13A00E34F27E5",
+      "worktreeStatus": "clean relative to base"
+    },
+    {
+      "path": "src/AgentLang.Core/Runtime.fs",
+      "bytes": 387188,
+      "sha256": "F5BAB04A89B8CD6C268E75E0BB9B265112843A81E388920AF0942D9C783079D9",
+      "worktreeStatus": "M src/AgentLang.Core/Runtime.fs"
+    },
+    {
+      "path": "src/AgentLang.Core/Source.fs",
+      "bytes": 11285,
+      "sha256": "F661D907D27BE0627197E20CC0B008BBD562B7B14A33C0DD9A6FFD17C092F9FC",
+      "worktreeStatus": "M src/AgentLang.Core/Source.fs"
+    },
+    {
+      "path": "src/AgentLang.Core/Storage.fs",
+      "bytes": 89654,
+      "sha256": "34CD5205294E5AFAB4AEB3FCBC8A4D70E685412F60EEA287A8A42DD95C25BA09",
+      "worktreeStatus": "clean relative to base"
+    },
+    {
+      "path": "src/AgentLang.Core/TrustedValues.fs",
+      "bytes": 8978,
+      "sha256": "C26EDC9681C879C5F0A410274901D6E1CFC3C515F7628F139235747DAAD57659",
+      "worktreeStatus": "clean relative to base"
+    },
+    {
+      "path": "src/AgentLang.Core/TypedIR.fs",
+      "bytes": 83030,
+      "sha256": "2994D472747C01C15B5E2091BD5DBAAD6D07493FF10B781EB867712266FAB013",
+      "worktreeStatus": "M src/AgentLang.Core/TypedIR.fs"
+    },
+    {
+      "path": "src/AgentLang.Core/ValueInspection.fs",
+      "bytes": 29556,
+      "sha256": "CF323570D8898DE919BEA520AA290645F2C722B988DA91A7879B9EF893A7A645",
+      "worktreeStatus": "clean relative to base"
+    },
+    {
+      "path": "src/AgentLang.Core/VocabularyAnalysis.fs",
+      "bytes": 26114,
+      "sha256": "0BE80D5BC6F5774151CC054E2C4225297C4BBFCB8D09D5F91B447F4D295BD826",
+      "worktreeStatus": "M src/AgentLang.Core/VocabularyAnalysis.fs"
+    }
+  ]
+}

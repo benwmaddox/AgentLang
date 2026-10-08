@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "actorProjectUnchanged": true,
+  "actorProjectFileCount": 14,
+  "scoringCopy": "D:\\code\\AgentLang\\.agentlang\\record-validator-adoption-001\\scoring\\final-02\\project",
+  "testAllOk": true,
+  "allTestsPassed": true,
+  "sourceReadsOk": true,
+  "testsRun": 5,
+  "testsPassed": 5,
+  "acceptedConstructionTestCount": 4,
+  "rejectedConstructionExpectedErrorTestCount": 1,
+  "recordFields": [
+    "finish:Int",
+    "start:Int"
+  ],
+  "recordFieldsMatch": true,
+  "widthSignatureMatch": true,
+  "validatorReference": "range::is-valid",
+  "validatorName": "range.is-valid",
+  "validatorPure": true,
+  "validatorSignatureMatch": true,
+  "validatorWordId": "word_3fd568b972e446c18832e483e14e16a3",
+  "validatorEffects": [],
+  "validatorMaturity": "project",
+  "widthMaturity": "library",
+  "oracle": [
+    {
+      "start": 2,
+      "finish": 5,
+      "expected": "3",
+      "actual": "3",
+      "passed": true
+    },
+    {
+      "start": 0,
+      "finish": 0,
+      "expected": "0",
+      "actual": "0",
+      "passed": true
+    },
+    {
+      "start": -3,
+      "finish": 4,
+      "expected": "7",
+      "actual": "7",
+      "passed": true
+    },
+    {
+      "start": -8,
+      "finish": -5,
+      "expected": "3",
+      "actual": "3",
+      "passed": true
+    },
+    {
+      "start": 7,
+      "finish": 7,
+      "expected": "0",
+      "actual": "0",
+      "passed": true
+    },
+    {
+      "start": 5,
+      "finish": 2,
+      "expected": "RECORD_VALIDATION_FAILED",
+      "actual": "RECORD_VALIDATION_FAILED",
+      "passed": true
+    },
+    {
+      "start": 0,
+      "finish": -1,
+      "expected": "RECORD_VALIDATION_FAILED",
+      "actual": "RECORD_VALIDATION_FAILED",
+      "passed": true
+    },
+    {
+      "start": -4,
+      "finish": -8,
+      "expected": "RECORD_VALIDATION_FAILED",
+      "actual": "RECORD_VALIDATION_FAILED",
+      "passed": true
+    },
+    {
+      "start": 9,
+      "finish": 4,
+      "expected": "RECORD_VALIDATION_FAILED",
+      "actual": "RECORD_VALIDATION_FAILED",
+      "passed": true
+    }
+  ],
+  "operations": [
+    "test-all",
+    "source",
+    "describe",
+    "eval"
+  ],
+  "actorProjectMutatedByScorer": false,
+  "scoringProjectWasCopy": true
+}

@@ -1,0 +1,12 @@
+{"op":"define","source":"record BoundedRange {\n    field start: Int;\n    field finish: Int;\n    validate range::valid?;\n}\n\nfn range.valid?(value: BoundedRange) -> Bool {\n    int::less-or-equal(value.start, value.finish)\n}\n\nfn range.width(value: BoundedRange) -> Int {\n    subtract(value.finish, value.start)\n}\n\ntest range.valid?/ordered-range {\n    range::valid?(boundedRange::new(start = 2, finish = 5))\n    => true\n}\n\ntest range.valid?/reversed-construction-is-rejected {\n    boundedRange::new(start = 5, finish = 2)\n    => error RECORD_VALIDATION_FAILED\n}\n\ntest range.width/positive-range {\n    range::width(boundedRange::new(start = 2, finish = 5))\n    => 3\n}","syntaxVersion":2,"frontend":"flow"}
+{"op":"test-all"}
+{"op":"eval","code":"int::to-string(range::width(boundedRange::new(start = 2, finish = 5)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"int::to-string(range::width(boundedRange::new(start = 0, finish = 0)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"int::to-string(range::width(boundedRange::new(start = -3, finish = 4)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"int::to-string(range::width(boundedRange::new(start = -8, finish = -5)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"int::to-string(range::width(boundedRange::new(start = 7, finish = 7)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"boundedRange::new(start = 5, finish = 2)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"boundedRange::new(start = 0, finish = -1)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"boundedRange::new(start = -4, finish = -8)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"boundedRange::new(start = 9, finish = 4)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"host.close"}

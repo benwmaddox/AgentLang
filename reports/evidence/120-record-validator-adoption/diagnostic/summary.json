@@ -1,0 +1,100 @@
+{
+  "diagnosticOnly": true,
+  "actorProjectChanged": false,
+  "originalBodiesAndTestsMatch": true,
+  "addedTest": "range.is-valid/reversed-library-evidence",
+  "predicateTestPassed": true,
+  "predicateTestResults": [
+    {
+      "name": "equal-endpoints",
+      "word": "range.is-valid",
+      "passed": true,
+      "expected": "true",
+      "actual": [
+        "true"
+      ]
+    },
+    {
+      "name": "increasing",
+      "word": "range.is-valid",
+      "passed": true,
+      "expected": "true",
+      "actual": [
+        "true"
+      ]
+    },
+    {
+      "name": "reversed-library-evidence",
+      "word": "range.is-valid",
+      "passed": true,
+      "expected": "error RECORD_VALIDATION_FAILED",
+      "expectedErrorCode": "RECORD_VALIDATION_FAILED",
+      "actual": []
+    }
+  ],
+  "coverageBeforeCommit": {
+    "targetInvocations": 5,
+    "inputs": [],
+    "returns": [
+      {
+        "position": 0,
+        "type": "Bool",
+        "required": [
+          "false",
+          "true"
+        ],
+        "observed": [
+          "false",
+          "true"
+        ],
+        "missing": []
+      }
+    ],
+    "unsupported": [],
+    "missing": [],
+    "complete": true
+  },
+  "libraryCommitOk": true,
+  "libraryCommitText": "3 attached test(s) passed; selected candidates committed.",
+  "predicateMaturityAfterCommit": "library",
+  "coverageAfterCommit": {
+    "targetInvocations": 5,
+    "inputs": [],
+    "returns": [
+      {
+        "position": 0,
+        "type": "Bool",
+        "required": [
+          "false",
+          "true"
+        ],
+        "observed": [
+          "false",
+          "true"
+        ],
+        "missing": []
+      }
+    ],
+    "unsupported": [],
+    "missing": [],
+    "complete": true
+  },
+  "widthMaturityInScratch": "project",
+  "allTestsPassed": true,
+  "allTestCount": 6,
+  "manifest": {
+    "manifestHash": "6ffe84af8338fbab65c79e3dcd8580be4be3b05800cea7f37186bbd502d8509d",
+    "schemaFormatVersion": 3,
+    "typeValidatorTarget": {
+      "kind": "userWord",
+      "identity": "word_5d5963057a5b4248a90a596f3d9d6e1a"
+    },
+    "predicateWordId": "word_5d5963057a5b4248a90a596f3d9d6e1a",
+    "stableTargetMatches": true,
+    "predicateMaturity": "library"
+  },
+  "requests": "requests.jsonl",
+  "responses": "responses.jsonl",
+  "trace": "trace.jsonl",
+  "stderr": "stderr.log"
+}

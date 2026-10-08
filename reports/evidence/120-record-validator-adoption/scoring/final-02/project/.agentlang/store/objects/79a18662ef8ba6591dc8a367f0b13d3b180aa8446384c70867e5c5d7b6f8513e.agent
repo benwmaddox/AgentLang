@@ -1,0 +1,1 @@
+test range.width/equal-endpoints { range::width(value = BoundedRange(start = 3, finish = 3)) => 0 }

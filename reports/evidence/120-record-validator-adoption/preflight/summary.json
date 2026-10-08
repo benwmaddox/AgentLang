@@ -1,0 +1,225 @@
+{
+  "schemaVersion": 1,
+  "purpose": "bounded direct-JSONL preflight; not actor evidence",
+  "runtime": "runtime\\debug-artifacts\\AgentLang.Cli.dll",
+  "controls": [
+    {
+      "name": "correct",
+      "hostExitCode": 0,
+      "requestCount": 12,
+      "responseCount": 11,
+      "definitionOk": true,
+      "testsRun": 3,
+      "testsPassed": 3,
+      "testsFailed": 0,
+      "tests": [
+        {
+          "name": "ordered-range",
+          "word": "range.valid?",
+          "passed": true,
+          "expected": "true",
+          "actual": [
+            "true"
+          ]
+        },
+        {
+          "name": "reversed-construction-is-rejected",
+          "word": "range.valid?",
+          "passed": true,
+          "expected": "error RECORD_VALIDATION_FAILED",
+          "expectedErrorCode": "RECORD_VALIDATION_FAILED",
+          "actual": []
+        },
+        {
+          "name": "positive-range",
+          "word": "range.width",
+          "passed": true,
+          "expected": "3",
+          "actual": [
+            "3"
+          ]
+        }
+      ],
+      "oracle": [
+        {
+          "start": 2,
+          "finish": 5,
+          "expected": "3",
+          "actual": "3",
+          "passed": true
+        },
+        {
+          "start": 0,
+          "finish": 0,
+          "expected": "0",
+          "actual": "0",
+          "passed": true
+        },
+        {
+          "start": -3,
+          "finish": 4,
+          "expected": "7",
+          "actual": "7",
+          "passed": true
+        },
+        {
+          "start": -8,
+          "finish": -5,
+          "expected": "3",
+          "actual": "3",
+          "passed": true
+        },
+        {
+          "start": 7,
+          "finish": 7,
+          "expected": "0",
+          "actual": "0",
+          "passed": true
+        },
+        {
+          "start": 5,
+          "finish": 2,
+          "expected": "RECORD_VALIDATION_FAILED",
+          "actual": "RECORD_VALIDATION_FAILED",
+          "passed": true
+        },
+        {
+          "start": 0,
+          "finish": -1,
+          "expected": "RECORD_VALIDATION_FAILED",
+          "actual": "RECORD_VALIDATION_FAILED",
+          "passed": true
+        },
+        {
+          "start": -4,
+          "finish": -8,
+          "expected": "RECORD_VALIDATION_FAILED",
+          "actual": "RECORD_VALIDATION_FAILED",
+          "passed": true
+        },
+        {
+          "start": 9,
+          "finish": 4,
+          "expected": "RECORD_VALIDATION_FAILED",
+          "actual": "RECORD_VALIDATION_FAILED",
+          "passed": true
+        }
+      ],
+      "tracePath": "preflight\\correct-04.trace.jsonl",
+      "requestPath": "preflight\\correct-04.requests.jsonl",
+      "responsePath": "preflight\\correct-04.responses.jsonl",
+      "stderrPath": "preflight\\correct-04.stderr.log"
+    },
+    {
+      "name": "always-true",
+      "hostExitCode": 0,
+      "requestCount": 12,
+      "responseCount": 11,
+      "definitionOk": true,
+      "testsRun": 3,
+      "testsPassed": 2,
+      "testsFailed": 1,
+      "tests": [
+        {
+          "name": "ordered-range",
+          "word": "range.valid?",
+          "passed": true,
+          "expected": "true",
+          "actual": [
+            "true"
+          ]
+        },
+        {
+          "name": "reversed-construction-is-rejected",
+          "word": "range.valid?",
+          "passed": false,
+          "expected": "error RECORD_VALIDATION_FAILED",
+          "expectedErrorCode": "RECORD_VALIDATION_FAILED",
+          "actual": [
+            "BoundedRange { finish = 2, start = 5 }"
+          ],
+          "errorCode": "TEST_EXPECTED_RUNTIME_ERROR",
+          "message": "Expected runtime error 'RECORD_VALIDATION_FAILED', but the test expression completed normally."
+        },
+        {
+          "name": "positive-range",
+          "word": "range.width",
+          "passed": true,
+          "expected": "3",
+          "actual": [
+            "3"
+          ]
+        }
+      ],
+      "oracle": [
+        {
+          "start": 2,
+          "finish": 5,
+          "expected": "3",
+          "actual": "3",
+          "passed": true
+        },
+        {
+          "start": 0,
+          "finish": 0,
+          "expected": "0",
+          "actual": "0",
+          "passed": true
+        },
+        {
+          "start": -3,
+          "finish": 4,
+          "expected": "7",
+          "actual": "7",
+          "passed": true
+        },
+        {
+          "start": -8,
+          "finish": -5,
+          "expected": "3",
+          "actual": "3",
+          "passed": true
+        },
+        {
+          "start": 7,
+          "finish": 7,
+          "expected": "0",
+          "actual": "0",
+          "passed": true
+        },
+        {
+          "start": 5,
+          "finish": 2,
+          "expected": "accepted by mutant",
+          "actual": "accepted",
+          "passed": true
+        },
+        {
+          "start": 0,
+          "finish": -1,
+          "expected": "accepted by mutant",
+          "actual": "accepted",
+          "passed": true
+        },
+        {
+          "start": -4,
+          "finish": -8,
+          "expected": "accepted by mutant",
+          "actual": "accepted",
+          "passed": true
+        },
+        {
+          "start": 9,
+          "finish": 4,
+          "expected": "accepted by mutant",
+          "actual": "accepted",
+          "passed": true
+        }
+      ],
+      "tracePath": "preflight\\always-true-04.trace.jsonl",
+      "requestPath": "preflight\\always-true-04.requests.jsonl",
+      "responsePath": "preflight\\always-true-04.responses.jsonl",
+      "stderrPath": "preflight\\always-true-04.stderr.log"
+    }
+  ]
+}

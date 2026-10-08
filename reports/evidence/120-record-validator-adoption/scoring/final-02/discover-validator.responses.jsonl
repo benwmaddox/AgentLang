@@ -1,0 +1,1 @@
+{"ok":true,"kind":"source","text":"record BoundedRange {\n    field start: Int;\n    field finish: Int;\n    validate range::is-valid;\n}","data":"record BoundedRange {\n    field start: Int;\n    field finish: Int;\n    validate range::is-valid;\n}"}

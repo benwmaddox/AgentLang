@@ -1,0 +1,52 @@
+[
+  {
+    "file": "integrity-check.json",
+    "sha256": "C7446041DC613C6DEF0140113DFA4C9953CB5E9C622BE4FC952BFA63DA20B069",
+    "bytes": 323
+  },
+  {
+    "file": "manual-manifest-review.json",
+    "sha256": "7A104DF5ACEEE29551D7F029F29C5B77B959E23FD1FD95D04EAC8FAA8F4FBEBB",
+    "bytes": 367
+  },
+  {
+    "file": "reconstruction.source.agent",
+    "sha256": "7A8A034BB6196999F9C3E868F8E76C0832B91F11C0405F5F4B14B5AF96EDEC1B",
+    "bytes": 1049
+  },
+  {
+    "file": "requests.jsonl",
+    "sha256": "774DD3E49DFDE09E703E5918A87C99401152CD043E291BF9C06C6FAF1DA57304",
+    "bytes": 1539
+  },
+  {
+    "file": "responses.jsonl",
+    "sha256": "9E4F188D63EC4D660464B5865030C9DAA7A851C2C62E9FF89E7B8FA6EF44D4BC",
+    "bytes": 7267
+  },
+  {
+    "file": "Run-Diagnostic.ps1",
+    "sha256": "1F91C78D441C4B485900CE590CDE70CC8E49FCA7B4AF59824B29302C66BB9BA3",
+    "bytes": 8193
+  },
+  {
+    "file": "source-body-hashes.json",
+    "sha256": "24D60B687C8768845799F348862EEF48835F34CFF25191F732D3750478D41877",
+    "bytes": 2058
+  },
+  {
+    "file": "stderr.log",
+    "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "bytes": 0
+  },
+  {
+    "file": "summary.json",
+    "sha256": "1829E5C948A63EFDF7F1A3D29E24443343C429B943473CE9C9F9D247F95AB28E",
+    "bytes": 2415
+  },
+  {
+    "file": "trace.jsonl",
+    "sha256": "C0363C6812D77353704404AFC7D984F35BE822EF6E94D390B6EFD0DC5EA40693",
+    "bytes": 49497
+  }
+]

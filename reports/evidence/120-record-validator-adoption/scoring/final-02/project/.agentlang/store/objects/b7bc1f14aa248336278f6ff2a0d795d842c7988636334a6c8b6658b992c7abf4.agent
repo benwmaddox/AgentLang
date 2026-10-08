@@ -1,0 +1,1 @@
+test range.is-valid/equal-endpoints { range::is-valid(value = BoundedRange(start = 3, finish = 3)) => true }

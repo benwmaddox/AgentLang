@@ -1,0 +1,1 @@
+test range.is-valid/increasing { range::is-valid(value = BoundedRange(start = 2, finish = 7)) => true }

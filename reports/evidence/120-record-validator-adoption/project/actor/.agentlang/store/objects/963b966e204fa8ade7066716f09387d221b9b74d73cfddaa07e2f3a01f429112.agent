@@ -1,0 +1,4 @@
+fn range.width(value: BoundedRange) -> Int {
+    doc "Return the distance from start to finish."
+    subtract(value.finish, value.start)
+}

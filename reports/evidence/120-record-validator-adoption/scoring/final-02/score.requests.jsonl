@@ -1,0 +1,16 @@
+{"op":"test-all"}
+{"op":"source","type":"BoundedRange"}
+{"op":"source","word":"range.width"}
+{"op":"source","word":"range.is-valid"}
+{"op":"describe","word":"range.width"}
+{"op":"describe","word":"range.is-valid"}
+{"op":"eval","code":"int::to-string(range::width(boundedRange::new(start = 2, finish = 5)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"int::to-string(range::width(boundedRange::new(start = 0, finish = 0)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"int::to-string(range::width(boundedRange::new(start = -3, finish = 4)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"int::to-string(range::width(boundedRange::new(start = -8, finish = -5)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"int::to-string(range::width(boundedRange::new(start = 7, finish = 7)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"boundedRange::new(start = 5, finish = 2)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"boundedRange::new(start = 0, finish = -1)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"boundedRange::new(start = -4, finish = -8)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"boundedRange::new(start = 9, finish = 4)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"host.close"}
