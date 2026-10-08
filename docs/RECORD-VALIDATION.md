@@ -45,6 +45,10 @@ test interval.valid?/reversed {
 
 The predicate actually returns false before the constructor rejects the value.
 That completed invocation can contribute finite-return and branch evidence.
+The test must belong to the validator (`interval.valid?/...`) for its
+invocations to qualify that validator. A rejection test owned by a caller may
+verify safe argument construction, but does not count toward the validator's
+own library evidence. Generated constructors cannot own authored Flow tests.
 A target that throws does not gain a fictitious return observation. Ordinary
 successful tests must cover the predicate's true return too.
 
@@ -55,6 +59,18 @@ customer, and a mismatching constructor expected to fail. The predicate itself
 qualifies as a library function after tests cover both branches and both Bool
 returns. Its record validator target and test metadata survive a fresh Engine
 reload. This is implementation validation, not a fresh-agent adoption trial.
+
+Inspect type source using `{"op":"source","type":"Interval"}` and function
+source using `{"op":"source","word":"interval.valid?"}`. Retrieve current
+Flow/2 authoring guidance with
+`{"op":"help","topic":"define","syntaxVersion":2}`. Definition requests use
+`source`; evaluation requests use `code`. These are different request fields.
+
+The validator's input has a special construction-time interpretation: it is an
+unchecked candidate, even though its nominal type name is `Interval`. Ordinary
+callers can only construct validated values. This distinction is explicit in
+the current runtime contract; whether a separate construction-input type would
+be clearer remains an open research question from [report 120](../reports/120-record-validator-adoption.md).
 
 Validation can rule out otherwise possible field combinations. Finite coverage
 must not enumerate those combinations as though all remained valid. A refined

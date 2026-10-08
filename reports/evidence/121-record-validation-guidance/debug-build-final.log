@@ -1,0 +1,41 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  AgentLang.Business -> D:\code\AgentLang\experiments\AgentLang.Business\bin\Debug\net9.0\AgentLang.Business.dll
+  AgentLang.Conventional -> D:\code\AgentLang\experiments\AgentLang.Conventional\bin\Debug\net9.0\AgentLang.Conventional.dll
+  MatchedRenewal -> D:\code\AgentLang\experiments\AgentLang.SubagentTrials\matched-renewal-001\fixtures\conventional\bin\Debug\net9.0\MatchedRenewal.dll
+  AgentLang.TaskBank.Tests -> D:\code\AgentLang\tests\AgentLang.TaskBank.Tests\bin\Debug\net9.0\AgentLang.TaskBank.Tests.dll
+  MatchedRenewal.Flow -> D:\code\AgentLang\experiments\AgentLang.SubagentTrials\matched-renewal-001\fixtures\flow\conventional\bin\Debug\net9.0\MatchedRenewal.Flow.dll
+  AgentLang.Business.Contracts -> D:\code\AgentLang\experiments\AgentLang.Business.Contracts\bin\Debug\net9.0\AgentLang.Business.Contracts.dll
+  AgentLang.Business.Tests -> D:\code\AgentLang\tests\AgentLang.Business.Tests\bin\Debug\net9.0\AgentLang.Business.Tests.dll
+  AgentLang.Conventional.Tests -> D:\code\AgentLang\tests\AgentLang.Conventional.Tests\bin\Debug\net9.0\AgentLang.Conventional.Tests.dll
+  AgentLang.Conventional.Cli -> D:\code\AgentLang\experiments\AgentLang.Conventional.Cli\bin\Debug\net9.0\AgentLang.Conventional.Cli.dll
+  AgentLang.Business.Contracts.Tests -> D:\code\AgentLang\tests\AgentLang.Business.Contracts.Tests\bin\Debug\net9.0\AgentLang.Business.Contracts.Tests.dll
+  AgentLang.Conventional.Cli.Tests -> D:\code\AgentLang\tests\AgentLang.Conventional.Cli.Tests\bin\Debug\net9.0\AgentLang.Conventional.Cli.Tests.dll
+  AgentLang.Core -> D:\code\AgentLang\src\AgentLang.Core\bin\Debug\net9.0\AgentLang.Core.dll
+  AgentLang.IR.Interpreter.Tests -> D:\code\AgentLang\tests\AgentLang.IR.Interpreter.Tests\bin\Debug\net9.0\AgentLang.IR.Interpreter.Tests.dll
+  AgentLang.IR.Formatting.Tests -> D:\code\AgentLang\tests\AgentLang.IR.Formatting.Tests\bin\Debug\net9.0\AgentLang.IR.Formatting.Tests.dll
+  AgentLang.Vocabulary.Tests -> D:\code\AgentLang\tests\AgentLang.Vocabulary.Tests\bin\Debug\net9.0\AgentLang.Vocabulary.Tests.dll
+  AgentLang.Discovery.Tests -> D:\code\AgentLang\tests\AgentLang.Discovery.Tests\bin\Debug\net9.0\AgentLang.Discovery.Tests.dll
+  AgentLang.IR.Tests -> D:\code\AgentLang\tests\AgentLang.IR.Tests\bin\Debug\net9.0\AgentLang.IR.Tests.dll
+  AgentLang.TrustedValues.Tests -> D:\code\AgentLang\tests\AgentLang.TrustedValues.Tests\bin\Debug\net9.0\AgentLang.TrustedValues.Tests.dll
+  AgentLang.Llvm -> D:\code\AgentLang\src\AgentLang.Llvm\bin\Debug\net9.0\AgentLang.Llvm.dll
+  AgentLang.Benchmarks -> D:\code\AgentLang\experiments\AgentLang.Benchmarks\bin\Debug\net9.0\AgentLang.Benchmarks.dll
+  AgentLang.Storage.Tests -> D:\code\AgentLang\tests\AgentLang.Storage.Tests\bin\Debug\net9.0\AgentLang.Storage.Tests.dll
+  AgentLang.Flow.Tests -> D:\code\AgentLang\tests\AgentLang.Flow.Tests\bin\Debug\net9.0\AgentLang.Flow.Tests.dll
+  AgentLang.Flow.Lint.Tests -> D:\code\AgentLang\tests\AgentLang.Flow.Lint.Tests\bin\Debug\net9.0\AgentLang.Flow.Lint.Tests.dll
+  AgentLang.Business.Transitions.Tests -> D:\code\AgentLang\tests\AgentLang.Business.Transitions.Tests\bin\Debug\net9.0\AgentLang.Business.Transitions.Tests.dll
+  AgentLang.Cli -> D:\code\AgentLang\src\AgentLang.Cli\bin\Debug\net9.0\AgentLang.Cli.dll
+  AgentLang.Acceptance -> D:\code\AgentLang\tests\AgentLang.Acceptance\bin\Debug\net9.0\AgentLang.Acceptance.dll
+  AgentLang.Business.Language.Tests -> D:\code\AgentLang\tests\AgentLang.Business.Language.Tests\bin\Debug\net9.0\AgentLang.Business.Language.Tests.dll
+  AgentLang.ValueInspection.Tests -> D:\code\AgentLang\tests\AgentLang.ValueInspection.Tests\bin\Debug\net9.0\AgentLang.ValueInspection.Tests.dll
+  AgentLang.Harness.Tests -> D:\code\AgentLang\tests\AgentLang.Harness.Tests\bin\Debug\net9.0\AgentLang.Harness.Tests.dll
+  AgentLang.Cli.Tests -> D:\code\AgentLang\tests\AgentLang.Cli.Tests\bin\Debug\net9.0\AgentLang.Cli.Tests.dll
+  AgentLang.Source.Tests -> D:\code\AgentLang\tests\AgentLang.Source.Tests\bin\Debug\net9.0\AgentLang.Source.Tests.dll
+  AgentLang.Llvm.Tests -> D:\code\AgentLang\tests\AgentLang.Llvm.Tests\bin\Debug\net9.0\AgentLang.Llvm.Tests.dll
+  AgentLang.Flow.Runtime.Tests -> D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\bin\Debug\net9.0\AgentLang.Flow.Runtime.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:04.22

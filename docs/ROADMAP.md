@@ -197,9 +197,12 @@ evidence, not fresh-agent adoption.
 The bounded fresh-agent trial is complete ([report 120](../reports/120-record-validator-adoption.md)):
 behavior and reload pass, but the agent misunderstood validator-owned coverage
 and left the predicate at project maturity. A separate diagnostic qualified the
-same predicate with one correctly owned rejection case. Next clarify the runtime
-example, type-source selector and caller-view scopes, then test a fresh agent on
-a comparable invariant before adding more structural mechanisms. Separately assess
+same predicate with one correctly owned rejection case.
+[Report 121](../reports/121-record-validation-guidance.md) supplies an executable
+Flow/2 validator example, exact request selectors and documented caller-view
+scopes. A fresh Debug build, 1,023 Flow Runtime assertions and 145 CLI assertions
+pass. Next test a fresh agent on a comparable bounds invariant before adding more
+structural mechanisms; no adoption result is claimed yet. Separately assess
 whether unchecked construction inputs need a distinct type or field-based
 validation contract; report 120 exposes this reasoning tension but does not
 settle the design. Provider-state assertions,

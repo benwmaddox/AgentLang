@@ -222,6 +222,39 @@ example tutorial.sign/negative { tutorial::sign(-2) => -1 }"""
     if int::less-than(value, 0) { -1 } else { 1 }
 }"""
 
+    let private tutorialSpanTypeSourceV2 =
+        """record TutorialSpan {
+    field start: Int;
+    field finish: Int;
+    validate tutorialSpan::valid?;
+}"""
+
+    let private tutorialSpanValidatorSourceV2 =
+        """fn tutorialSpan.valid?(value: TutorialSpan) -> Bool {
+    doc "A span is ordered when its finish is not before its start."
+
+    int::less-or-equal(value.start, value.finish)
+}"""
+
+    let private tutorialSpanTestsSourceV2 =
+        """test tutorialSpan.valid?/ordered {
+    tutorialSpan::valid?(tutorialSpan::new(start = 1, finish = 3))
+    => true
+}
+
+test tutorialSpan.valid?/equal {
+    tutorialSpan::valid?(tutorialSpan::new(start = 3, finish = 3))
+    => true
+}
+
+test tutorialSpan.valid?/reversed {
+    tutorialSpan::new(start = 3, finish = 1)
+    => error RECORD_VALIDATION_FAILED
+}"""
+
+    let private tutorialSpanSourceV2 =
+        String.concat "\n\n" [ tutorialSpanTypeSourceV2; tutorialSpanValidatorSourceV2; tutorialSpanTestsSourceV2 ]
+
     let private text value = Text value
     let private textField name value = name, text value
 
@@ -235,6 +268,37 @@ example tutorial.sign/negative { tutorial::sign(-2) => -1 }"""
         { Name = "tutorial-sign"
           Description = "Complete Flow source with inline documentation, three tests, and one example."
           Source = tutorialSource }
+
+    let private tutorialSpanSourceExample =
+        { Name = "tutorial-span-validator"
+          Description = "Complete Flow/2 record, pure predicate, predicate-owned valid and expected-error tests."
+          Source = tutorialSpanSourceV2 }
+
+    let private tutorialSpanRequestExamples =
+        [ { Name = "eval-tutorial-sign-v2"
+            Description = "Evaluate compact Flow/2 code through eval's code field."
+            Operation = "eval"
+            Fields = [ textField "frontend" "flow"; "syntaxVersion", Integer 2; textField "code" "tutorial::sign(-2)" ] }
+          { Name = "define-tutorial-span-validator"
+            Description = "Define the complete Flow/2 record, predicate, and its own tests."
+            Operation = "define"
+            Fields = [ textField "source" tutorialSpanSourceV2; "syntaxVersion", Integer 2 ] }
+          { Name = "test-tutorial-span-validator"
+            Description = "Run the predicate's ordered, equal, and rejected-constructor tests."
+            Operation = "test"
+            Fields = [ textField "word" "tutorialSpan.valid?" ] }
+          { Name = "commit-tutorial-span-validator-as-library"
+            Description = "Publish the predicate after its own tests cover true and false returns."
+            Operation = "commit"
+            Fields = [ textField "word" "tutorialSpan.valid?"; "library", Boolean true ] }
+          { Name = "source-tutorial-span-predicate"
+            Description = "Read the exact authored Flow source for the predicate word."
+            Operation = "source"
+            Fields = [ textField "word" "tutorialSpan.valid?" ] }
+          { Name = "source-tutorial-span-type"
+            Description = "Read the exact authored Flow source for the record type."
+            Operation = "source"
+            Fields = [ textField "type" "TutorialSpan" ] } ]
 
     let private topicContent =
         [ Topic.Authoring,
@@ -385,19 +449,27 @@ example tutorial.sign/negative { tutorial::sign(-2) => -1 }"""
                             fields @ [ "syntaxVersion", Integer 2 ]
                         else fields
                     { example with Fields = fields })
+            let requestExamples =
+                if topic = Topic.Define then requestExamples @ tutorialSpanRequestExamples
+                else requestExamples
             { original with
                 Documentation =
                     original.Documentation
                     + " This help response is selected for Flow/2; write function declarations with `fn`."
+                    + (if topic = Topic.Define then
+                           " Use eval with the compact `code` field for expressions; define uses `source` for complete declarations. Use source with `word` to read authored word text and with `type` to read the exact type declaration. A record validator sees the complete unchecked construction candidate and must not assume the invariant already holds. Put valid and expected-error constructor tests on the validator itself: its completed false return is observed before RECORD_VALIDATION_FAILED, while caller-owned tests do not qualify the callee and generated constructors cannot own authored Flow tests for it."
+                       else "")
                     + (if topic = Topic.Examples then
                            " Flow/2 tests may add `effects { fs.read: 2; fs.write: 0; }` after the value or error expectation. This asserts exact counts of provider calls made while the attached user word is active, including nested helpers; omitted categories are zero. The observable categories are fs.read, fs.write, clock.read, and console.write. Other effect categories are unsupported, and examples cannot use this test-only suffix."
                        else "")
                 SourceExamples =
                     let examples =
                         match versionedSource, original.SourceExamples with
-                        | Some source, example :: _ -> [ { example with Source = source } ]
+                        | Some source, example :: rest -> { example with Source = source } :: rest
                         | _ -> original.SourceExamples
-                    if topic = Topic.Examples then
+                    if topic = Topic.Define then
+                        examples @ [ tutorialSpanSourceExample ]
+                    elif topic = Topic.Examples then
                         examples
                         @ [ { Name = "effect-count-test-v2"
                               Description = "Flow/2 test with exact provider counts for the attached user word and its nested helper calls."

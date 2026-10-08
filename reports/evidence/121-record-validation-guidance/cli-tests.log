@@ -1,0 +1,12 @@
+PASS CLI frontend selection and protocol authority
+PASS compact and full words CLI requests
+PASS Flow parser-driven interactive buffering
+PASS Flow incomplete EOF and malformed recovery
+PASS runtime help topics match protocol and recover from malformed input
+PASS Flow file definition, CAS, and stable source identity
+PASS Flow type source inspection and durable reload
+PASS migrated Flow examples and fresh-process durability
+PASS explicit Stack REPL retains end blocks
+PASS Flow/2 CLI selection, properties, temporary functions and reload
+PASS Flow/2 human formatting is an explicit nonmutating operation
+PASS 11 groups, 145 assertions

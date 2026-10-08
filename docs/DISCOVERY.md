@@ -6,7 +6,13 @@
 
 `Discovery.build words records scalars` validates map keys, generated record/scalar references, nominal types in signatures and declarations, duplicate record fields, validator names, and every direct word dependency. It returns a private index with forward and reverse edges. Invalid snapshots raise the existing `LanguageException` diagnostics.
 
-For user-defined words, direct edges come from `Compiler.dependencies`, including calls and statically named `list.map`, `list.filter`, and `list.each` callbacks. A generated scalar constructor has an edge to the scalar's validator. A primitive's host implementation is not expanded into invented word dependencies. `dependencies` and `searchDependency` expose direct edges; `transitiveDependencies` and `transitiveCallers` return stable, unique closures and omit the requested root even when the graph is cyclic.
+For user-defined words, direct edges come from `Compiler.dependencies`, including calls and statically named `list.map`, `list.filter`, and `list.each` callbacks. A generated scalar or record constructor has an edge to its declared validator. A primitive's host implementation is not expanded into invented word dependencies. `dependencies` and `searchDependency` expose direct edges; `transitiveDependencies` and `transitiveCallers` return stable, unique closures and omit the requested root even when the graph is cyclic.
+
+`describe.callers` and the legacy `callers` command list authored callers only.
+They omit generated constructors. Use `search-dependency` for direct callers
+including generated words, or `transitive-callers` for their transitive closure.
+An empty legacy callers list does not imply that no generated constructor calls
+a validator.
 
 `graphText index root maxDepth maxNodes` renders dependencies in stable order. It marks ancestor cycles as `[cycle]`, already expanded shared nodes as `[reused]`, and limits with explicit placeholders and an omitted unique-word count. A missing root or invalid limit raises a structured language diagnostic.
 
@@ -49,6 +55,7 @@ The JSON-lines dispatcher and human REPL expose these commands:
 
 | Operation | Required arguments | Result |
 | --- | --- | --- |
+| `source` | Exactly one of `word` or `type` | Retained source for that word or declared type. `{"op":"source","type":"Interval"}` inspects a type; do not put its name in `word`. |
 | `type-of` | `word` | The same word or syntax descriptor metadata returned by `describe`. |
 | `search-type` | `type` | `data.words` contains words whose input or output structurally contains the closed type. |
 | `search-output` | `type` | `data.words` contains words whose output structurally contains the closed type. |

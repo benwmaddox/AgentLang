@@ -1,0 +1,36 @@
+{
+  "task": "record-validation-help-001",
+  "validation": [
+    {
+      "command": "dotnet build AgentLang.sln --configuration Debug",
+      "exitCode": 0,
+      "log": ".agentlang/record-validation-help-001/debug-build-final.log"
+    },
+    {
+      "command": "dotnet run --no-build -c Debug --project tests/AgentLang.Flow.Runtime.Tests",
+      "exitCode": 0,
+      "result": "30 groups, 1023 assertions passed",
+      "log": ".agentlang/record-validation-help-001/flow-runtime-tests.log"
+    },
+    {
+      "command": "dotnet run --no-build -c Debug --project tests/AgentLang.Cli.Tests",
+      "exitCode": 0,
+      "result": "11 groups, 145 assertions passed",
+      "log": ".agentlang/record-validation-help-001/cli-tests.log"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "sourceHashes": [
+    {
+      "path": "src/AgentLang.Core/AuthoringHelp.fs",
+      "sha256": "3FF07FA9AEBD1E26907FA91A5189B09DDB9E7C41554C27EE333B834D46532316"
+    },
+    {
+      "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "sha256": "4DE3A231759BDC2A1502F918F36D2AFF98D1FB485B35531DCC568956D459A947"
+    }
+  ]
+}

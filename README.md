@@ -35,6 +35,11 @@ Use JSONL help with the same syntaxVersion as your source—for example,
 `{"op":"help","topic":"examples","syntaxVersion":2}`—or REPL :help TOPIC for
 the corresponding inspectable contracts.
 
+Flow/2 record-validation help includes executable predicate-owned rejection tests
+and library qualification requests; see [report 121](reports/121-record-validation-guidance.md).
+The preceding fresh-agent trial produced correct behavior but incomplete library
+qualification, so improved guidance is being tested separately.
+
 The implementation targets .NET 9 and uses no external test framework or model API key.
 
 ## Build and acceptance checks

@@ -202,35 +202,139 @@ module Program =
         check (not (fieldNames |> List.contains "code")) "Flow define help does not advertise a code alias"
         check ((stringValue defineData.["documentation"]).Contains("doc", StringComparison.Ordinal)) "define help explains inline word documentation"
         check ((stringValue defineData.["documentation"]).Contains("effects", StringComparison.Ordinal)) "define help explains effect declarations"
+        equal [ "tutorial-sign" ]
+            (defineData.["sourceExamples"].AsArray() |> Seq.map (fun item -> stringValue item.["name"]) |> Seq.toList)
+            "default Flow/1 define help preserves its existing source-example inventory"
+        check
+            (defineData.["requestExamples"].AsArray()
+             |> Seq.forall (fun item -> stringValue item.["name"] <> "define-tutorial-span-validator"))
+            "default Flow/1 define help does not advertise Flow/2 record source"
 
         let flow2HelpEngine = Runtime.Engine(Path.Combine(root, "authoring-help-flow2"), Set.empty, "2041-02-03T04:05:06Z")
         let defineHelpV2 =
             dispatch flow2HelpEngine "help" [ "topic", jstr "define"; "syntaxVersion", jint 2 ]
             |> expectOk "read Flow/2 define help"
-        let defineHelpDataV2 = defineHelpV2["data"]
-        equal 2 ((defineHelpDataV2["syntaxVersion"]).GetValue<int>()) "help response records selected syntaxVersion"
-        check ((stringValue (defineHelpDataV2["documentation"])).Contains("Flow/2", StringComparison.Ordinal)) "Flow/2 help identifies its selected syntax"
-        let sourceExampleV2 = (defineHelpDataV2["sourceExamples"]).AsArray() |> Seq.head |> fun item -> stringValue (item["source"])
+        let defineHelpDataV2 = defineHelpV2.["data"]
+        equal 2 ((defineHelpDataV2.["syntaxVersion"]).GetValue<int>()) "help response records selected syntaxVersion"
+        check ((stringValue (defineHelpDataV2.["documentation"])).Contains("Flow/2", StringComparison.Ordinal)) "Flow/2 help identifies its selected syntax"
+        for guidance in [ "eval"; "`code`"; "define uses `source`"; "`word`"; "`type`"; "unchecked construction candidate"; "completed false return"; "caller-owned tests do not qualify the callee"; "generated constructors cannot own authored Flow tests" ] do
+            check ((stringValue defineHelpDataV2.["documentation"]).Contains(guidance, StringComparison.Ordinal)) $"Flow/2 Define help explains {guidance}"
+        equal [ "tutorial-sign"; "tutorial-span-validator" ]
+            (defineHelpDataV2.["sourceExamples"].AsArray() |> Seq.map (fun item -> stringValue item.["name"]) |> Seq.toList)
+            "Flow/2 help retains tutorial sign and appends the record-validator source"
+        let sourceExampleV2 = (defineHelpDataV2.["sourceExamples"]).AsArray() |> Seq.head |> fun item -> stringValue (item.["source"])
         check (sourceExampleV2.StartsWith("fn tutorial.sign", StringComparison.Ordinal)) "Flow/2 help returns an fn source example"
         check (not (sourceExampleV2.Contains("effects ", StringComparison.Ordinal))) "Flow/2 help preserves omitted effects metadata"
+        let requestExampleV2 name =
+            defineHelpDataV2.["requestExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = name)
+            |> fun item -> item.["request"]
         let formatRequestV2 =
-            (defineHelpDataV2["requestExamples"]).AsArray()
-            |> Seq.find (fun item -> stringValue item["name"] = "format-tutorial-sign")
-            |> fun item -> item["request"]
-        equal 2 ((formatRequestV2["syntaxVersion"]).GetValue<int>()) "Flow/2 format example selects syntax version 2"
+            requestExampleV2 "format-tutorial-sign"
+        equal 2 ((formatRequestV2.["syntaxVersion"]).GetValue<int>()) "Flow/2 format example selects syntax version 2"
         let formattedHelpSource = Protocol.dispatchLine flow2HelpEngine (formatRequestV2.ToJsonString()) |> expectOk "format the Flow/2 help example"
         let stagedBeforeDefine = dispatch flow2HelpEngine "words" [] |> expectOk "check help example before explicit define"
-        check (not ((stagedBeforeDefine["data"]["words"]).AsArray() |> Seq.exists (fun item -> stringValue (item["name"]) = "tutorial.sign"))) "Flow/2 formatter does not stage the help example"
+        check (not ((stagedBeforeDefine.["data"].["words"]).AsArray() |> Seq.exists (fun item -> stringValue (item.["name"]) = "tutorial.sign"))) "Flow/2 formatter does not stage the help example"
         let defineRequestV2 =
-            (defineHelpDataV2["requestExamples"]).AsArray()
-            |> Seq.find (fun item -> stringValue item["name"] = "define-tutorial-sign")
-            |> fun item -> item["request"]
-        equal 2 ((defineRequestV2["syntaxVersion"]).GetValue<int>()) "Flow/2 define example selects syntax version 2"
+            (defineHelpDataV2.["requestExamples"]).AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "define-tutorial-sign")
+            |> fun item -> item.["request"]
+        equal 2 ((defineRequestV2.["syntaxVersion"]).GetValue<int>()) "Flow/2 define example selects syntax version 2"
         let explicitDefineRequest = defineRequestV2.AsObject()
-        let formattedHelpData = formattedHelpSource["data"]
-        explicitDefineRequest["source"] <- jstr (stringValue (formattedHelpData["source"]))
+        let formattedHelpData = formattedHelpSource.["data"]
+        explicitDefineRequest.["source"] <- jstr (stringValue (formattedHelpData.["source"]))
         Protocol.dispatchLine flow2HelpEngine (explicitDefineRequest.ToJsonString()) |> expectOk "stage the Flow/2 help example through explicit define" |> ignore
         assertAllPassed 3 (dispatch flow2HelpEngine "test" [ "word", jstr "tutorial.sign" ] |> expectOk "run Flow/2 help tests")
+
+        let evalRequestV2 = requestExampleV2 "eval-tutorial-sign-v2"
+        equal "eval" (stringValue evalRequestV2.["op"]) "compact Flow/2 example uses eval"
+        equal "tutorial::sign(-2)" (stringValue evalRequestV2.["code"]) "compact eval example uses the exact code field"
+        check (not ((evalRequestV2.AsObject()).ContainsKey("source"))) "compact eval example does not use define's source field"
+        equal 2 ((evalRequestV2.["syntaxVersion"]).GetValue<int>()) "compact eval example selects Flow/2"
+        let evaluatedHelpCode = Protocol.dispatchLine flow2HelpEngine (evalRequestV2.ToJsonString()) |> expectOk "execute the Flow/2 compact eval example"
+        equal "-1" (stringValue evaluatedHelpCode.["data"].["stack"].[0]) "compact Flow/2 eval example returns the documented value"
+
+        let tutorialSpanSourceExample =
+            defineHelpDataV2.["sourceExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "tutorial-span-validator")
+            |> fun item -> stringValue item.["source"]
+        let tutorialSpanDefineRequest = requestExampleV2 "define-tutorial-span-validator"
+        equal tutorialSpanSourceExample (stringValue tutorialSpanDefineRequest.["source"]) "record source example exactly matches its define request"
+        equal 2 ((tutorialSpanDefineRequest.["syntaxVersion"]).GetValue<int>()) "record define request explicitly selects Flow/2"
+        Protocol.dispatchLine flow2HelpEngine (tutorialSpanDefineRequest.ToJsonString())
+        |> expectOk "execute the Flow/2 TutorialSpan source example through its returned define request"
+        |> ignore
+
+        let tutorialSpanTestRequest = requestExampleV2 "test-tutorial-span-validator"
+        equal "tutorialSpan.valid?" (stringValue tutorialSpanTestRequest.["word"]) "record tests are owned by the predicate word"
+        let tutorialSpanTests = Protocol.dispatchLine flow2HelpEngine (tutorialSpanTestRequest.ToJsonString()) |> expectOk "execute the returned TutorialSpan test request"
+        assertAllPassed 3 tutorialSpanTests
+        let tutorialSpanCoverage =
+            dispatch flow2HelpEngine "describe" [ "word", jstr "tutorialSpan.valid?" ]
+            |> expectOk "inspect predicate-owned finite return evidence"
+            |> fun response -> response.["data"].["coverage"].["finiteCoverage"]
+        check (tutorialSpanCoverage.["complete"].GetValue<bool>()) "predicate-owned tests cover both finite Bool returns"
+        let tutorialSpanObservedReturns = jsonArrayStrings tutorialSpanCoverage.["returns"].[0].["observed"]
+        check (tutorialSpanObservedReturns |> List.contains "true") "ordered/equal constructor tests observe the predicate's true return"
+        check (tutorialSpanObservedReturns |> List.contains "false") "predicate-owned expected-error constructor test retains its completed false return"
+
+        let tutorialSpanCommitRequest = requestExampleV2 "commit-tutorial-span-validator-as-library"
+        equal "commit" (stringValue tutorialSpanCommitRequest.["op"]) "predicate library example uses commit"
+        equal "tutorialSpan.valid?" (stringValue tutorialSpanCommitRequest.["word"]) "library example commits the predicate, not its caller"
+        equal true (boolValue tutorialSpanCommitRequest.["library"]) "predicate library example explicitly requests library maturity"
+        Protocol.dispatchLine flow2HelpEngine (tutorialSpanCommitRequest.ToJsonString())
+        |> expectOk "execute the returned predicate library-commit request"
+        |> ignore
+
+        let tutorialSpanEffects =
+            dispatch flow2HelpEngine "effects" [ "word", jstr "tutorialSpan.valid?" ]
+            |> expectOk "inspect predicate effects"
+            |> fun response -> jsonArrayStrings response.["data"]
+        equal [] tutorialSpanEffects "TutorialSpan predicate has an empty effect set"
+
+        let tutorialSpanReloaded = Runtime.Engine(Path.Combine(root, "authoring-help-flow2"), Set.empty, "2041-02-03T04:05:06Z")
+        let tutorialSpanAfterReload =
+            dispatch tutorialSpanReloaded "describe" [ "word", jstr "tutorialSpan.valid?" ]
+            |> expectOk "inspect predicate after fresh reload"
+        equal "library" (stringValue tutorialSpanAfterReload.["data"].["maturity"]) "predicate library maturity survives fresh reload"
+        assertAllPassed 3 (dispatch tutorialSpanReloaded "test" [ "word", jstr "tutorialSpan.valid?" ] |> expectOk "run predicate-owned cases after fresh reload")
+        let tutorialSpanTypeRequest = requestExampleV2 "source-tutorial-span-type"
+        equal "{\"op\":\"source\",\"type\":\"TutorialSpan\"}" (tutorialSpanTypeRequest.ToJsonString()) "type-source help request has the exact source(type) shape"
+        let tutorialSpanTypeSource =
+            "record TutorialSpan {\n"
+            + "    field start: Int;\n"
+            + "    field finish: Int;\n"
+            + "    validate tutorialSpan::valid?;\n"
+            + "}"
+        equal tutorialSpanTypeSource
+            (Protocol.dispatchLine tutorialSpanReloaded (tutorialSpanTypeRequest.ToJsonString())
+             |> expectOk "execute the returned source(type) request after reload"
+             |> fun response -> stringValue response.["data"])
+            "source(type) returns the exact authored TutorialSpan declaration after reload"
+
+        let tutorialSpanWordRequest = requestExampleV2 "source-tutorial-span-predicate"
+        equal "{\"op\":\"source\",\"word\":\"tutorialSpan.valid?\"}" (tutorialSpanWordRequest.ToJsonString()) "word-source help request uses the word selector"
+        let tutorialSpanPredicateSource =
+            "fn tutorialSpan.valid?(value: TutorialSpan) -> Bool {\n"
+            + "    doc \"A span is ordered when its finish is not before its start.\"\n"
+            + "\n"
+            + "    int::less-or-equal(value.start, value.finish)\n"
+            + "}"
+        equal tutorialSpanPredicateSource
+            (Protocol.dispatchLine tutorialSpanReloaded (tutorialSpanWordRequest.ToJsonString())
+             |> expectOk "execute the returned source(word) request after reload"
+             |> fun response -> stringValue response.["data"])
+            "source(word) returns the exact authored TutorialSpan predicate"
+
+        for word in [ "tutorialSpan.valid?"; "tutorialSpan.new" ] do
+            equal []
+                (dispatch tutorialSpanReloaded "effects" [ "word", jstr word ]
+                 |> expectOk $"inspect {word} effects after reload"
+                 |> fun response -> jsonArrayStrings response.["data"])
+                $"{word} preserves an empty effect closure after reload"
+        evalFlow tutorialSpanReloaded "tutorialSpan::new(start = 3, finish = 1)"
+        |> expectError "RECORD_VALIDATION_FAILED"
+        |> ignore
 
         let sourceExample = defineData.["sourceExamples"].AsArray() |> Seq.head
         let canonicalSource = stringValue sourceExample.["source"]

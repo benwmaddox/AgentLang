@@ -1,0 +1,39 @@
+{
+  "files": [
+    {
+      "path": "cli-tests.log",
+      "sha256": "6C717C418FE18BD519D294F91F67379B8806A26494197C503B7265761A00A587",
+      "bytes": 650
+    },
+    {
+      "path": "debug-build-final.log",
+      "sha256": "2C06B02A7E789529FCE709944F9E1C5087F6D5E07051964217852C7B1A3C5525",
+      "bytes": 4447
+    },
+    {
+      "path": "debug-build.log",
+      "sha256": "8ED2AE4B8C960B0F78A369F6F9DDB4BE88D700156E4037550EA855708D52B720",
+      "bytes": 16009
+    },
+    {
+      "path": "flow-runtime-tests.log",
+      "sha256": "E7BABDD2B6538E52C9DD42D704C71EA6FF14FA99B405C24864BF2ED9A7986182",
+      "bytes": 56
+    },
+    {
+      "path": "plan.md",
+      "sha256": "17B50F368BCAF9DC88000DBB460B1A94DDE6ED0E74A37EB96D4C7300B90111BA",
+      "bytes": 1579
+    },
+    {
+      "path": "results.json",
+      "sha256": "10692808D89C28DDA8046D3B725A16B67A03FE7ED0952EDA77F6DC4174B5CB40",
+      "bytes": 1180
+    },
+    {
+      "path": "review.md",
+      "sha256": "9997F180AA7C217E6EE1862646667B6E621DFBAF6269EF4963E9A7F09B403BFD",
+      "bytes": 1980
+    }
+  ]
+}
