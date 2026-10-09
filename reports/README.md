@@ -20,9 +20,10 @@ audit for the solution build and child verification processes; report this
 limitation. Both options are opt-in, and the evidence records the options and
 exact build arguments. `Verify-NativeDispatch.ps1` accepts the same options.
 
-Current efficacy comparison: [143 � Subscription overlap](143-subscription-overlap-comparison.md)
-has frozen a shared 19-case acceptance suite after positive, unchanged-seed and
-compiling-mutation controls. Participant outcomes remain pending.
+Current efficacy comparison: [143 — Subscription overlap](143-subscription-overlap-comparison.md)
+scores four fresh submissions: one language submission passes 18/19 cases; the
+other language submission and both F# submissions pass 19/19. All own suites and
+boundary mutation checks pass, exposing a remaining limit of coverage gates.
 
 Latest library-contract checkpoint: [142 — Library dependency qualification](142-library-dependency-qualification.md)
 extends qualification to all authored dependencies. A fresh guided subagent

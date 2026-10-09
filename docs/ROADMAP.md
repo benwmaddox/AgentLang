@@ -99,6 +99,21 @@ Next actions:
    is supporting evidence, not proof that duplicated logic has been removed.
    Native runtime throughput remains separate evidence.
 
+6. Shared payment maintenance is complete ([report 141](../reports/141-paid-invoice-maintenance.md)):
+   all four participants passed independent behavior and preserved shared structure.
+   The strict new-test criterion was unnecessarily prescriptive; retain its recorded
+   failures, but assess resulting regression protection in subsequent work. Library
+   dependency qualification is now enforced ([report 142](../reports/142-library-dependency-qualification.md));
+   its guided helper-test probe establishes local qualification, not an additional
+   project-wide defect detection benefit. The reachable subscription-overlap
+   comparison ([report 143](../reports/143-subscription-overlap-comparison.md)) is
+   complete: one language submission passes 18/19 cases, the other language
+   submission and both F# submissions pass 19/19. All own suites and compiled
+   boundary mutation checks pass. Complete library coverage did not expose the
+   missing empty-interval guard. No language reliability advantage is established.
+   A bounded follow-up can compare discovery/reuse of a validated nonempty-period
+   abstraction in both environments; do not add mailbox infrastructure as a prerequisite.
+
 Acceptance is an evidence-backed review of the declared conditions, including
 their limitations. Completing a language feature or passing actor-written tests
 alone is not acceptance of the research hypothesis.
