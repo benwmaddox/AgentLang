@@ -132,6 +132,14 @@ Next actions:
    Focused suites and host inspection-budget checks pass; use the new bootstrap
    in future frozen trials, without revising historical interaction counts or
    claiming an unmeasured reduction in agent errors.
+   [Report 147](../reports/147-agent-authored-batch-reuse.md) prepares the next
+   direct retention test: fresh agents implement batch billing with or without
+   the single-rental queries actually authored by report145's flat participants.
+   Correct controls pass 18 independent cases in both languages, and compiling
+   wrong-aggregation controls fail six. Inputs are frozen; agent outcomes remain
+   pending. The feasibility probe also records a library-coverage tradeoff:
+   carrying invalid-window errors through a fold makes every branch testable
+   but traverses the input even for invalid windows.
 
 Acceptance is an evidence-backed review of the declared conditions, including
 their limitations. Completing a language feature or passing actor-written tests
