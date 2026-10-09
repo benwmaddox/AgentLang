@@ -1,7 +1,15 @@
 # Batch billing: reuse of an earlier agent's domain function
 
-Status: controls validated and 157 inputs frozen before dispatch. Four independent
-participants have been dispatched; efficacy outcomes are pending.
+Status: all four participants finished and were graded. Both F# submissions pass
+18/18 independent cases. Both AgentLang participants abandoned the task and
+rolled back after failing to discover the supported Flow/2 fold syntax.
+
+Study limitation discovered after dispatch: both AgentLang participants reported
+exchanging information about their fold-syntax difficulty. Those runs are not
+independent observations. The coordinator prohibited further communication,
+maintained the original Flow/2 constraint, and requested the exact exchange.
+Interpretation must distinguish this incident from the directly reproducible
+help/grammar mismatch; no four-cell independent efficacy claim is supported.
 
 Report 145's four agents produced correct single-rental billing queries, but
 neither retained-start agent used the supplied interval abstraction. This next
@@ -56,7 +64,7 @@ shape composition, not evidence that the coverage rule guarantees correct behavi
 or that this is the only possible implementation. Both attempts remain in the
 evidence. No runtime primitive or qualification rule was changed.
 
-## Outcomes to record
+## Verified controls
 
 Preflight exposed harness defects before participant dispatch: the Flow fixture
 used the wrong syntax version, its snapshot constructor used incorrect name
@@ -75,10 +83,70 @@ definition and has no behavior result. All scored input projects are unchanged.
 The preflight source review found no additional material defect. No participant
 was launched before these controls and the input freeze.
 
-Record independent correctness, inherited-test preservation, library qualification,
-actual retained production calls, newly introduced helpers/types, protocol errors,
-normal broker termination and supplied context separately. Do not infer token
-savings without provider token usage. Participant outcomes remain pending.
+## Participant outcomes
+
+| Participant | Start | Required query | Own/inherited checks after grading | Broker exchanges | Error responses |
+| --- | --- | --- | --- | --- | --- |
+| flow-a | flat | absent after abort; behavior not evaluated | 16/16 inherited | 36 | 13 |
+| flow-b | retained single-rental query | absent after abort; behavior not evaluated | 29/29 inherited | 34 | 17 |
+| fsharp-a | retained single-rental query | 18/18 independent cases pass | 50/50 | 10 | 0 |
+| fsharp-b | flat | 18/18 independent cases pass | 29/29 | 10 | 0 |
+
+All four terminal audits pass normal `host.close`, with host/runtime exits 0/0.
+All scored inputs remain unchanged. The missing AgentLang APIs fail oracle
+definition, so their behavior results are null rather than 0/18 executed failures.
+Flow-a briefly qualified an accumulator helper with five tests; task abort
+removed it. Flow-b accepted no definition. Neither leaves a batch query or new
+persistent vocabulary. Broker counts exclude the cross-participant messages and
+coordinator clarification; full provider token usage is unavailable.
+
+## Completed F# cells
+
+Both F# participants pass 18/18 independent cases. The retained start finishes
+with 50 own checks; the flat start finishes with 29. Each uses 10 broker exchanges,
+receives zero error responses, and closes with host/runtime exits 0/0. Source
+review confirms inherited APIs and tests remain, with additions confined to the
+domain implementation and executable tests.
+
+The retained participant preserves `billableDays` but repeats its clipping
+calculation inside `totalBillableDays`; the batch function never calls it.
+That is a correct submission without observed production reuse. Identical
+interaction counts in these two cells do not establish a general cost effect.
+
+## Discoverability defect and limits
+
+Both AgentLang participants followed the prefix syntax advertised by
+`describe list.fold`: `list.fold <word>`. Their Flow/2 requests repeatedly failed
+with separator, trailing-input or unknown-call diagnostics. Required help.define
+and help.examples responses did not show a fold example. The working form is
+`items.fold(seed, callback)`, demonstrated by the preflight source and confirmed
+by the parser/lowering review. Fold exists; the participants' conclusion that
+the API was impossible in Flow/2 is incorrect. The runtime failed to make a
+supported operation discoverable through the interface they used.
+
+Both also tried recursion, which was correctly rejected by the existing acyclic
+call-graph rule. This trial does not justify changing that rule or weakening
+library coverage. The feasibility probe's coverage tradeoff is separate from
+the participants' earlier syntax-discovery failure.
+
+Flow-a asked flow-b for an accepted fold/traversal pattern; flow-b replied with
+its failed forms and recursion result. Both reported this exchange. The
+coordinator then prohibited further communication and preserved the assigned
+Flow/2 constraint, without providing the working syntax. The messages can affect
+search and abandonment even though no successful implementation was exchanged.
+Their exact reported contents are saved in the results evidence. These two runs
+are diagnostic observations, not independent replications. Future trial isolation
+must explicitly prohibit sibling discovery/messages and restrict those tools where
+possible. A repeat must be a separate study, not a replacement for these outcomes.
+
+The retained F# participant did not reuse its prior function, and the AgentLang
+participants produced no final batch implementation. This trial therefore provides
+no positive evidence of a retained-vocabulary reliability benefit. It gives a
+concrete next action: correct the fold descriptor and Flow help with executable
+receiver-form examples, check nearby list constructs for the same mismatch, then
+run a bounded fresh-agent discovery check. No broader runtime work is needed to
+address this observed obstacle. A changed-help repeat cannot cleanly isolate
+retention from discovery unless both factors are controlled.
 
 ## Evidence
 
@@ -89,3 +157,16 @@ oracle sources, controls, feasibility traces, failed attempts and source review.
 The archive was written and every entry verified before participant dispatch.
 It is 4,823,905 bytes; SHA-256
 `86f6b53af30e85e19faae01108151a243df41756e7e380084b08c64b31091c7c`.
+
+Post-trial hash audit confirms all 64 frozen non-project inputs unchanged. Final
+source hashes, acceptance results, own-suite runs, terminal audits and independent
+source reviews are retained with the participant traces in the results evidence.
+
+The [results archive](evidence/147-agent-authored-batch-reuse/results.zip) and
+[index](evidence/147-agent-authored-batch-reuse/results-index.json) contain 324
+verified entries, 438,149 compressed bytes; SHA-256
+`212f09d435f283444940bb5e8eb63156cc384fdbc3e60a54dfecf08656f7ce9a`.
+The communication account is the archived
+`.agentlang/batch-reuse-147/review/independence-incident.md`; final read-only reviews
+are alongside it. The archive includes the exact participant prompts and grading
+scripts, not just aggregate counts.

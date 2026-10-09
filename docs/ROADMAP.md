@@ -132,12 +132,18 @@ Next actions:
    Focused suites and host inspection-budget checks pass; use the new bootstrap
    in future frozen trials, without revising historical interaction counts or
    claiming an unmeasured reduction in agent errors.
-   [Report 147](../reports/147-agent-authored-batch-reuse.md) prepares the next
-   direct retention test: fresh agents implement batch billing with or without
+   [Report 147](../reports/147-agent-authored-batch-reuse.md) completes a
+   direct retention test: fresh agents attempted batch billing with or without
    the single-rental queries actually authored by report145's flat participants.
    Correct controls pass 18 independent cases in both languages, and compiling
-   wrong-aggregation controls fail six. Inputs are frozen; agent outcomes remain
-   pending. The feasibility probe also records a library-coverage tradeoff:
+   wrong-aggregation controls fail six. Both F# submissions pass; neither
+   AgentLang participant finds the supported Flow/2 fold spelling, and both
+   abort. The F# retained participant duplicates rather than calls its helper.
+   The AgentLang participants exchanged failed syntax information, so their runs
+   cannot be treated as independent observations. Correct the fold metadata/help
+   mismatch and tighten trial isolation before a separately identified discovery
+   repeat; do not infer a vocabulary benefit from this outcome.
+   The feasibility probe also records a library-coverage tradeoff:
    carrying invalid-window errors through a fold makes every branch testable
    but traverses the input even for invalid windows.
 

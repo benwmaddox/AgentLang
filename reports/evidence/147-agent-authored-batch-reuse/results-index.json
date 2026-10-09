@@ -1,0 +1,1641 @@
+{
+  "schemaVersion": 1,
+  "utc": "2026-10-09T08:02:22.870927+00:00",
+  "archive": {
+    "path": "results.zip",
+    "bytes": 438149,
+    "sha256": "212f09d435f283444940bb5e8eb63156cc384fdbc3e60a54dfecf08656f7ce9a",
+    "entries": 324
+  },
+  "verifiedAgainstSourceAndZip": true,
+  "exclusions": [
+    "bin",
+    "obj",
+    "__pycache__",
+    "tmp",
+    "temp",
+    "WRITE.lock"
+  ],
+  "files": [
+    {
+      "path": ".agentlang/batch-reuse-147/dispatch.json",
+      "bytes": 405,
+      "sha256": "70d1744d34ca040c53391ade5708676e444d3378e40b017bc16733b460241127"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/freeze.json",
+      "bytes": 45154,
+      "sha256": "13d0be8e7495a844f029c289d8b786288e24e57f5003f1bb971196db76d8777b"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/grade-one.py",
+      "bytes": 2660,
+      "sha256": "fdc5774cb57195d86f6a6f44eab3e80f30f1f93b2f335719bb234764fc2f70eb"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/package-results.py",
+      "bytes": 1667,
+      "sha256": "c0afea50db5d2b57b714770b672508fb9e899ece09532ffe60a3c7abc9e7fef5"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/actor.trace.jsonl",
+      "bytes": 356269,
+      "sha256": "39513d9f16f4193469b2212a628c743e6278f12c9a1b425d571b169534a19a00"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "db12cd4b8945e2c9628cbed2513b2546b752710200b07b4c420fd08ae5a52df2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/manifests/42db9d8206507b007c1f2402771c7612e2d614b3a41e1a60986190b66182f203.json",
+      "bytes": 48397,
+      "sha256": "42db9d8206507b007c1f2402771c7612e2d614b3a41e1a60986190b66182f203"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/manifests/54a641136da82344a04f255bed6b2f8bad562ad3a0cb8b00bef88f7488de1bcc.json",
+      "bytes": 12261,
+      "sha256": "54a641136da82344a04f255bed6b2f8bad562ad3a0cb8b00bef88f7488de1bcc"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/manifests/7f60b66d94fcb78b58a1766130a508dfd23bffc93e82f98ae6dee08081bf3bd4.json",
+      "bytes": 29526,
+      "sha256": "7f60b66d94fcb78b58a1766130a508dfd23bffc93e82f98ae6dee08081bf3bd4"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/manifests/e9ca5688aa9ab075de17af289c18891f5b9ba43704cde51835e69b9dd9d483b2.json",
+      "bytes": 15911,
+      "sha256": "e9ca5688aa9ab075de17af289c18891f5b9ba43704cde51835e69b9dd9d483b2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/manifests/ea45b0e2c40389c09fd8ac9f7804045b9441863e0060ff53da39d327a82dc55b.json",
+      "bytes": 64518,
+      "sha256": "ea45b0e2c40389c09fd8ac9f7804045b9441863e0060ff53da39d327a82dc55b"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/119ca35bab3c996397004efc4b3c9677de97eaa49862c381351fadc0f9a13bb8.agent",
+      "bytes": 169,
+      "sha256": "119ca35bab3c996397004efc4b3c9677de97eaa49862c381351fadc0f9a13bb8"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/1e3bcab8af40ed166d56a4957cb0e8a81e7e3f8939ac14024eaf7f62c1183c39.agent",
+      "bytes": 164,
+      "sha256": "1e3bcab8af40ed166d56a4957cb0e8a81e7e3f8939ac14024eaf7f62c1183c39"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/1f373cbe26e8478eb96f3cfb2544058e18e940ab25e62cb2bc67feb052b1bcf6.agent",
+      "bytes": 593,
+      "sha256": "1f373cbe26e8478eb96f3cfb2544058e18e940ab25e62cb2bc67feb052b1bcf6"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/2610940f87d05740d611612f58b5d974a2b31b7060687cf4f5f64853dca5797a.agent",
+      "bytes": 688,
+      "sha256": "2610940f87d05740d611612f58b5d974a2b31b7060687cf4f5f64853dca5797a"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/2851a4d335eabed2ccf686a043324abd2a9ec91f4e8656d834bd715e775a0e42.agent",
+      "bytes": 188,
+      "sha256": "2851a4d335eabed2ccf686a043324abd2a9ec91f4e8656d834bd715e775a0e42"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/2a07a496b041fc8f328303d16d77959681c9c814f4416a62af87f5d5a0438048.agent",
+      "bytes": 499,
+      "sha256": "2a07a496b041fc8f328303d16d77959681c9c814f4416a62af87f5d5a0438048"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/2ebd08b75606cc47f7287d8d4cd57364859cbef660dfe02027a245c5bc60e03c.agent",
+      "bytes": 73,
+      "sha256": "2ebd08b75606cc47f7287d8d4cd57364859cbef660dfe02027a245c5bc60e03c"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/394c20b5f731c8175e356b25c6f4aeeb6027141304133e513ae8db12f8fb91ff.agent",
+      "bytes": 204,
+      "sha256": "394c20b5f731c8175e356b25c6f4aeeb6027141304133e513ae8db12f8fb91ff"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/436a37f68b9c41c3024954f94705b4bdcd11d1038a3d2ae709fa89b6a2c64205.agent",
+      "bytes": 878,
+      "sha256": "436a37f68b9c41c3024954f94705b4bdcd11d1038a3d2ae709fa89b6a2c64205"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/52aac3348a9d59e7e41280f71fbedbb0c98cf20b5a1c0c99a265f65678094b68.agent",
+      "bytes": 4439,
+      "sha256": "52aac3348a9d59e7e41280f71fbedbb0c98cf20b5a1c0c99a265f65678094b68"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/55c7de2fc10422b21adfea6e55ec225ff86945648d37e853edccfd38fa6e88f3.agent",
+      "bytes": 194,
+      "sha256": "55c7de2fc10422b21adfea6e55ec225ff86945648d37e853edccfd38fa6e88f3"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/79711c54e507b3e4094b4c3c3b27f1b9f6c26003c3fc1bc40615de2940a4af06.agent",
+      "bytes": 10158,
+      "sha256": "79711c54e507b3e4094b4c3c3b27f1b9f6c26003c3fc1bc40615de2940a4af06"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/7cee497a5d6bab5a4d200b1e899205455f08373a6db990b2b2f9ca971a8a1701.agent",
+      "bytes": 777,
+      "sha256": "7cee497a5d6bab5a4d200b1e899205455f08373a6db990b2b2f9ca971a8a1701"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/7f47065f8288a3091b99456f7a0d592ca9c8acd6ca08e8995ead1ca3007c0bee.agent",
+      "bytes": 167,
+      "sha256": "7f47065f8288a3091b99456f7a0d592ca9c8acd6ca08e8995ead1ca3007c0bee"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/80aa6cb49e747b6ea74910bf636e7bc7c4e91e12a2d831328a8ad8a3481a1c9b.agent",
+      "bytes": 359,
+      "sha256": "80aa6cb49e747b6ea74910bf636e7bc7c4e91e12a2d831328a8ad8a3481a1c9b"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/840b537e94acc27545cc15c432272cf2db89d125962a9d4341bc703f67342a22.agent",
+      "bytes": 339,
+      "sha256": "840b537e94acc27545cc15c432272cf2db89d125962a9d4341bc703f67342a22"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/896790abd74266b915ff48af24405c93f6bb1df28623ec54b325c9c67759c8ad.agent",
+      "bytes": 291,
+      "sha256": "896790abd74266b915ff48af24405c93f6bb1df28623ec54b325c9c67759c8ad"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/8dc84ef6a154783ee75a4a9a4b5feffedc4084657badfafc1d701cf5631c6e74.agent",
+      "bytes": 190,
+      "sha256": "8dc84ef6a154783ee75a4a9a4b5feffedc4084657badfafc1d701cf5631c6e74"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/943e17320f0919a22b48c25bc48f58f8ba77158b9a20c22796d00b4109215d43.agent",
+      "bytes": 137,
+      "sha256": "943e17320f0919a22b48c25bc48f58f8ba77158b9a20c22796d00b4109215d43"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/95bd384c9e14b8da8fef59549aa5b2e30bd630d1fb55fc42f085a50bf1869afd.agent",
+      "bytes": 408,
+      "sha256": "95bd384c9e14b8da8fef59549aa5b2e30bd630d1fb55fc42f085a50bf1869afd"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/abe5a4292fb8a6184fbf6dfede02e0f12a7ccd703cabd02d98c0270d06b9a033.agent",
+      "bytes": 176,
+      "sha256": "abe5a4292fb8a6184fbf6dfede02e0f12a7ccd703cabd02d98c0270d06b9a033"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/ac6877e22501b68f7ed2bed736dda5702896e38d0e9e4d054c8587187ef299f5.agent",
+      "bytes": 300,
+      "sha256": "ac6877e22501b68f7ed2bed736dda5702896e38d0e9e4d054c8587187ef299f5"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/b15b71926953aa9126fe5b2153a541919cd801e262b25d29ed872f116c27170f.agent",
+      "bytes": 205,
+      "sha256": "b15b71926953aa9126fe5b2153a541919cd801e262b25d29ed872f116c27170f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/b2142a9316c190304b6bba2c131f6d4ad08e450b2ad1df47655c9414fd3a32f0.agent",
+      "bytes": 180,
+      "sha256": "b2142a9316c190304b6bba2c131f6d4ad08e450b2ad1df47655c9414fd3a32f0"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/b2fa241ce3265da0fa703307fee9f041cf5a65f7bd583ebdb7a945f443279d7c.agent",
+      "bytes": 300,
+      "sha256": "b2fa241ce3265da0fa703307fee9f041cf5a65f7bd583ebdb7a945f443279d7c"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/b528d530214f6d44e735cd398cc5660c99ae7235263cc665c8d7db2b1bf72c41.agent",
+      "bytes": 102,
+      "sha256": "b528d530214f6d44e735cd398cc5660c99ae7235263cc665c8d7db2b1bf72c41"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/ba5b268d7a59a601867b495bdbaf57c2c78112bad11d2f54a80bbc7d996ca6ba.agent",
+      "bytes": 493,
+      "sha256": "ba5b268d7a59a601867b495bdbaf57c2c78112bad11d2f54a80bbc7d996ca6ba"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/bcd5e552a81fbb36b36fb5b8693d30cc32ad68a34d0280583895850def90b5f2.agent",
+      "bytes": 7710,
+      "sha256": "bcd5e552a81fbb36b36fb5b8693d30cc32ad68a34d0280583895850def90b5f2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/c71865598b144d855b032ec861e22bb52b9b959378dc3d82ecd769e4a6e9362f.agent",
+      "bytes": 197,
+      "sha256": "c71865598b144d855b032ec861e22bb52b9b959378dc3d82ecd769e4a6e9362f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/cc5b95590f4c14cf0078817b699ae9655c648d16db3ba95a53d231f92e66faad.agent",
+      "bytes": 606,
+      "sha256": "cc5b95590f4c14cf0078817b699ae9655c648d16db3ba95a53d231f92e66faad"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/d5be4936fa3a6fb8a8f225a9fd998ff30561dfc6d6ff9eeb679ddf9279cfb64f.agent",
+      "bytes": 203,
+      "sha256": "d5be4936fa3a6fb8a8f225a9fd998ff30561dfc6d6ff9eeb679ddf9279cfb64f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/db24404a22dd8ba1a85a3f10d17b31851ab1d25cd644436fdcba24c31e02b039.agent",
+      "bytes": 288,
+      "sha256": "db24404a22dd8ba1a85a3f10d17b31851ab1d25cd644436fdcba24c31e02b039"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/e091eb89778222d629656cc1a250d6c3fb65e6d9c64e4bee035eb19d2c62a720.agent",
+      "bytes": 2638,
+      "sha256": "e091eb89778222d629656cc1a250d6c3fb65e6d9c64e4bee035eb19d2c62a720"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/.agentlang/store/objects/ffc29325e7be8817fca313d66b754326912405b087ea8bce0e259b74894c8f39.agent",
+      "bytes": 2103,
+      "sha256": "ffc29325e7be8817fca313d66b754326912405b087ea8bce0e259b74894c8f39"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/dictionary.agent",
+      "bytes": 7710,
+      "sha256": "bcd5e552a81fbb36b36fb5b8693d30cc32ad68a34d0280583895850def90b5f2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/project/history/task-0001.json",
+      "bytes": 2514,
+      "sha256": "e6981f249f7707c726f79abfa82dafa4b91c6c22f352119e6b8009aac42b724c"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/prompt.md",
+      "bytes": 4342,
+      "sha256": "79c92fa8bafaeafa4112e06910c45db72fad18225c67452136f52543df537f82"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/start-inventory.json",
+      "bytes": 7814,
+      "sha256": "3d304df76c065e52cf12cc9d56bfdda80555fbe2cd3f15f16d21a0fd8825c9a5"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-a/wrapper.txt",
+      "bytes": 499,
+      "sha256": "6998878cf17dd701198c22aed0d6043d3a5e251aaf9635a1f9322befde76817e"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/actor.trace.jsonl",
+      "bytes": 388043,
+      "sha256": "d1f6162b423386cbe2a469bf4bd30a250055e4331948ac151b3a2ebb4588eb33"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "d4591b986aa1be3c33d7735f10e382623f718882acbfc32f8c047963d8d971b5"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/manifests/42db9d8206507b007c1f2402771c7612e2d614b3a41e1a60986190b66182f203.json",
+      "bytes": 48397,
+      "sha256": "42db9d8206507b007c1f2402771c7612e2d614b3a41e1a60986190b66182f203"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/manifests/54a641136da82344a04f255bed6b2f8bad562ad3a0cb8b00bef88f7488de1bcc.json",
+      "bytes": 12261,
+      "sha256": "54a641136da82344a04f255bed6b2f8bad562ad3a0cb8b00bef88f7488de1bcc"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/manifests/7f60b66d94fcb78b58a1766130a508dfd23bffc93e82f98ae6dee08081bf3bd4.json",
+      "bytes": 29526,
+      "sha256": "7f60b66d94fcb78b58a1766130a508dfd23bffc93e82f98ae6dee08081bf3bd4"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/manifests/e9ca5688aa9ab075de17af289c18891f5b9ba43704cde51835e69b9dd9d483b2.json",
+      "bytes": 15911,
+      "sha256": "e9ca5688aa9ab075de17af289c18891f5b9ba43704cde51835e69b9dd9d483b2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/manifests/f4a215bf61a18232f1226761bfe093e53fef208218d82dfccb2176ea80dc9bd9.json",
+      "bytes": 68887,
+      "sha256": "f4a215bf61a18232f1226761bfe093e53fef208218d82dfccb2176ea80dc9bd9"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/119ca35bab3c996397004efc4b3c9677de97eaa49862c381351fadc0f9a13bb8.agent",
+      "bytes": 169,
+      "sha256": "119ca35bab3c996397004efc4b3c9677de97eaa49862c381351fadc0f9a13bb8"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/1e3bcab8af40ed166d56a4957cb0e8a81e7e3f8939ac14024eaf7f62c1183c39.agent",
+      "bytes": 164,
+      "sha256": "1e3bcab8af40ed166d56a4957cb0e8a81e7e3f8939ac14024eaf7f62c1183c39"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/1f373cbe26e8478eb96f3cfb2544058e18e940ab25e62cb2bc67feb052b1bcf6.agent",
+      "bytes": 593,
+      "sha256": "1f373cbe26e8478eb96f3cfb2544058e18e940ab25e62cb2bc67feb052b1bcf6"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/2610940f87d05740d611612f58b5d974a2b31b7060687cf4f5f64853dca5797a.agent",
+      "bytes": 688,
+      "sha256": "2610940f87d05740d611612f58b5d974a2b31b7060687cf4f5f64853dca5797a"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/2851a4d335eabed2ccf686a043324abd2a9ec91f4e8656d834bd715e775a0e42.agent",
+      "bytes": 188,
+      "sha256": "2851a4d335eabed2ccf686a043324abd2a9ec91f4e8656d834bd715e775a0e42"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/2a07a496b041fc8f328303d16d77959681c9c814f4416a62af87f5d5a0438048.agent",
+      "bytes": 499,
+      "sha256": "2a07a496b041fc8f328303d16d77959681c9c814f4416a62af87f5d5a0438048"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/2b6a36af0a047b94492e7be574c39475590ba6b74bb562579bfcd9ddb87966d5.agent",
+      "bytes": 336,
+      "sha256": "2b6a36af0a047b94492e7be574c39475590ba6b74bb562579bfcd9ddb87966d5"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/2ebd08b75606cc47f7287d8d4cd57364859cbef660dfe02027a245c5bc60e03c.agent",
+      "bytes": 73,
+      "sha256": "2ebd08b75606cc47f7287d8d4cd57364859cbef660dfe02027a245c5bc60e03c"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/394c20b5f731c8175e356b25c6f4aeeb6027141304133e513ae8db12f8fb91ff.agent",
+      "bytes": 204,
+      "sha256": "394c20b5f731c8175e356b25c6f4aeeb6027141304133e513ae8db12f8fb91ff"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/436a37f68b9c41c3024954f94705b4bdcd11d1038a3d2ae709fa89b6a2c64205.agent",
+      "bytes": 878,
+      "sha256": "436a37f68b9c41c3024954f94705b4bdcd11d1038a3d2ae709fa89b6a2c64205"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/49aa7280ee5341f6780edbaec9feb4448e3e6b6a9a21cebc05657e6215d5e1b1.agent",
+      "bytes": 292,
+      "sha256": "49aa7280ee5341f6780edbaec9feb4448e3e6b6a9a21cebc05657e6215d5e1b1"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/52aac3348a9d59e7e41280f71fbedbb0c98cf20b5a1c0c99a265f65678094b68.agent",
+      "bytes": 4439,
+      "sha256": "52aac3348a9d59e7e41280f71fbedbb0c98cf20b5a1c0c99a265f65678094b68"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/537877c25ad1028c1cf4735c9bc4893a414ac0afd6cb9932955298421dc4cad2.agent",
+      "bytes": 279,
+      "sha256": "537877c25ad1028c1cf4735c9bc4893a414ac0afd6cb9932955298421dc4cad2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/55c7de2fc10422b21adfea6e55ec225ff86945648d37e853edccfd38fa6e88f3.agent",
+      "bytes": 194,
+      "sha256": "55c7de2fc10422b21adfea6e55ec225ff86945648d37e853edccfd38fa6e88f3"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/6f7ec217f5a4fc216f9287d42bf708cdd925050a2dbd8a255eb44eebd8a915e4.agent",
+      "bytes": 281,
+      "sha256": "6f7ec217f5a4fc216f9287d42bf708cdd925050a2dbd8a255eb44eebd8a915e4"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/709f0230bcd2689807a90846aad20889ce615a52870dff4bb0342d02db0967af.agent",
+      "bytes": 12996,
+      "sha256": "709f0230bcd2689807a90846aad20889ce615a52870dff4bb0342d02db0967af"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/7f47065f8288a3091b99456f7a0d592ca9c8acd6ca08e8995ead1ca3007c0bee.agent",
+      "bytes": 167,
+      "sha256": "7f47065f8288a3091b99456f7a0d592ca9c8acd6ca08e8995ead1ca3007c0bee"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/7f9feee69ed04f627768bd7f3c84e75a18abf705a370cee393c8574073104ec7.agent",
+      "bytes": 270,
+      "sha256": "7f9feee69ed04f627768bd7f3c84e75a18abf705a370cee393c8574073104ec7"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/80aa6cb49e747b6ea74910bf636e7bc7c4e91e12a2d831328a8ad8a3481a1c9b.agent",
+      "bytes": 359,
+      "sha256": "80aa6cb49e747b6ea74910bf636e7bc7c4e91e12a2d831328a8ad8a3481a1c9b"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/8dc84ef6a154783ee75a4a9a4b5feffedc4084657badfafc1d701cf5631c6e74.agent",
+      "bytes": 190,
+      "sha256": "8dc84ef6a154783ee75a4a9a4b5feffedc4084657badfafc1d701cf5631c6e74"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/943e17320f0919a22b48c25bc48f58f8ba77158b9a20c22796d00b4109215d43.agent",
+      "bytes": 137,
+      "sha256": "943e17320f0919a22b48c25bc48f58f8ba77158b9a20c22796d00b4109215d43"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/95bd384c9e14b8da8fef59549aa5b2e30bd630d1fb55fc42f085a50bf1869afd.agent",
+      "bytes": 408,
+      "sha256": "95bd384c9e14b8da8fef59549aa5b2e30bd630d1fb55fc42f085a50bf1869afd"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/abe5a4292fb8a6184fbf6dfede02e0f12a7ccd703cabd02d98c0270d06b9a033.agent",
+      "bytes": 176,
+      "sha256": "abe5a4292fb8a6184fbf6dfede02e0f12a7ccd703cabd02d98c0270d06b9a033"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/aed0b99a2605615a59500b4a636c589860c6e89c6992530dc1d00fc8dd26d9b8.agent",
+      "bytes": 350,
+      "sha256": "aed0b99a2605615a59500b4a636c589860c6e89c6992530dc1d00fc8dd26d9b8"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/b15b71926953aa9126fe5b2153a541919cd801e262b25d29ed872f116c27170f.agent",
+      "bytes": 205,
+      "sha256": "b15b71926953aa9126fe5b2153a541919cd801e262b25d29ed872f116c27170f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/b2142a9316c190304b6bba2c131f6d4ad08e450b2ad1df47655c9414fd3a32f0.agent",
+      "bytes": 180,
+      "sha256": "b2142a9316c190304b6bba2c131f6d4ad08e450b2ad1df47655c9414fd3a32f0"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/ba5b268d7a59a601867b495bdbaf57c2c78112bad11d2f54a80bbc7d996ca6ba.agent",
+      "bytes": 493,
+      "sha256": "ba5b268d7a59a601867b495bdbaf57c2c78112bad11d2f54a80bbc7d996ca6ba"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/bcd5e552a81fbb36b36fb5b8693d30cc32ad68a34d0280583895850def90b5f2.agent",
+      "bytes": 7710,
+      "sha256": "bcd5e552a81fbb36b36fb5b8693d30cc32ad68a34d0280583895850def90b5f2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/c71865598b144d855b032ec861e22bb52b9b959378dc3d82ecd769e4a6e9362f.agent",
+      "bytes": 197,
+      "sha256": "c71865598b144d855b032ec861e22bb52b9b959378dc3d82ecd769e4a6e9362f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/cc5b95590f4c14cf0078817b699ae9655c648d16db3ba95a53d231f92e66faad.agent",
+      "bytes": 606,
+      "sha256": "cc5b95590f4c14cf0078817b699ae9655c648d16db3ba95a53d231f92e66faad"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/d4063d4c4c5f08a0855f2aeaa487b7097e0a98c35ac0250711673a78f6b2bc3a.agent",
+      "bytes": 267,
+      "sha256": "d4063d4c4c5f08a0855f2aeaa487b7097e0a98c35ac0250711673a78f6b2bc3a"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/d5be4936fa3a6fb8a8f225a9fd998ff30561dfc6d6ff9eeb679ddf9279cfb64f.agent",
+      "bytes": 203,
+      "sha256": "d5be4936fa3a6fb8a8f225a9fd998ff30561dfc6d6ff9eeb679ddf9279cfb64f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/d76fcd52a68852462cea282141cbbf343b25e2696f39bbb205e77b42100463d3.agent",
+      "bytes": 937,
+      "sha256": "d76fcd52a68852462cea282141cbbf343b25e2696f39bbb205e77b42100463d3"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/df6031ded0d76dcdf6aa4e055a677e82f5b9f1eef24d57ad0dadd965f8ab7914.agent",
+      "bytes": 333,
+      "sha256": "df6031ded0d76dcdf6aa4e055a677e82f5b9f1eef24d57ad0dadd965f8ab7914"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/e091eb89778222d629656cc1a250d6c3fb65e6d9c64e4bee035eb19d2c62a720.agent",
+      "bytes": 2638,
+      "sha256": "e091eb89778222d629656cc1a250d6c3fb65e6d9c64e4bee035eb19d2c62a720"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/eb9f473a8a5a16656b67ab1861c10845df8c461f23835b48d81377da3de3ffc4.agent",
+      "bytes": 273,
+      "sha256": "eb9f473a8a5a16656b67ab1861c10845df8c461f23835b48d81377da3de3ffc4"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/ed2d6ed4627441cd9cdddad5352d145ce5dad1538df78260a500f2ea12c9938b.agent",
+      "bytes": 313,
+      "sha256": "ed2d6ed4627441cd9cdddad5352d145ce5dad1538df78260a500f2ea12c9938b"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/ee1498cf76b0c9721a30d1767d628b75188a116aa6aba0e766c7affd16f0cd84.agent",
+      "bytes": 269,
+      "sha256": "ee1498cf76b0c9721a30d1767d628b75188a116aa6aba0e766c7affd16f0cd84"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/f36e12fb4d86ec85b21785a3c3296cbd27b09a0ee8598a9e12be7463991b30b6.agent",
+      "bytes": 273,
+      "sha256": "f36e12fb4d86ec85b21785a3c3296cbd27b09a0ee8598a9e12be7463991b30b6"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/f6276765001d8681df37d734696ee015622c49dd673e855b59caa966fe4ff619.agent",
+      "bytes": 270,
+      "sha256": "f6276765001d8681df37d734696ee015622c49dd673e855b59caa966fe4ff619"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/.agentlang/store/objects/ffc29325e7be8817fca313d66b754326912405b087ea8bce0e259b74894c8f39.agent",
+      "bytes": 2103,
+      "sha256": "ffc29325e7be8817fca313d66b754326912405b087ea8bce0e259b74894c8f39"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/dictionary.agent",
+      "bytes": 12996,
+      "sha256": "709f0230bcd2689807a90846aad20889ce615a52870dff4bb0342d02db0967af"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/history/task-0001.json",
+      "bytes": 2413,
+      "sha256": "084e90b231c3c01bd18ed5566a793a5c9a458071f00f283b6807bf65172b8c95"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/project/history/task-0002.json",
+      "bytes": 2290,
+      "sha256": "30aa27ac0bc9200c15a917ffef34f5793e3bce228a6466e2a9ce1e5622014df9"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/prompt.md",
+      "bytes": 4342,
+      "sha256": "832c1bebe4b0dd8ca3f788dcf5dd6d2092f50af0f43c1ea177b337f043485115"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/start-inventory.json",
+      "bytes": 11649,
+      "sha256": "a7c0d8e89eac375e45568251c539c8d4fb67557848ea19a58afba62f45dbe6c4"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/flow-b/wrapper.txt",
+      "bytes": 499,
+      "sha256": "26d04bf526d77b5df52fc66a2ea6bed930bc59140f6afe122fa363817648fbbd"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-a/actor.trace.jsonl",
+      "bytes": 96587,
+      "sha256": "69c6f2c2c8ca6274990b746cb62ae7f3c85b29d6e24fc35590b76c4a00bdf414"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-a/project/project/Rental.fs",
+      "bytes": 3395,
+      "sha256": "a53ef3c31e8528c49db9282c7553680e0540952379cb018729edd0dbcdecb319"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-a/project/project/RentalDomain.fsproj",
+      "bytes": 284,
+      "sha256": "949e9338c50e74163d5e3cd4cf7c586c76045c156c54157bf88aee4b69449520"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-a/project/README.md",
+      "bytes": 128,
+      "sha256": "9177870730220f89ff712603713579ccb8755d06036cc679d53ae5acca8daf55"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-a/project/tests/DomainBaselineTests.fs",
+      "bytes": 7031,
+      "sha256": "c18f9d11fc077ab8fa82f9b80824894257e67e377bd0ed4073704ef4a9ab4661"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-a/project/tests/Program.fs",
+      "bytes": 129,
+      "sha256": "e846904bc45248fd4138d5c0ff2dec5be9297a02eedd79f6cc71ce4305b564b8"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-a/project/tests/RentalDomain.Tests.fsproj",
+      "bytes": 433,
+      "sha256": "6f00333a5934f2f5b7630b581c79e4e11e2efd10174bc64cfb78e1d4ce3da7e3"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-a/prompt.md",
+      "bytes": 3826,
+      "sha256": "367b1206d0dd84eadc8a99f2479670536b1c10c79f1635bf8fa1e725b8830222"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-a/start-inventory.json",
+      "bytes": 1552,
+      "sha256": "d906a012482ed88239978a334a4d0d44b346612e3a72658cd7f2cf82f1a92538"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-a/wrapper.txt",
+      "bytes": 503,
+      "sha256": "4d1f7418e8cd193bae24d1fc0f34e2217ba62a0e1bc4e56feb179b8fc2239fdd"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-b/actor.trace.jsonl",
+      "bytes": 63967,
+      "sha256": "592c772eefdd10880336c42af0217935e92a9750d55cfe5f35f5b0e853ad179f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-b/project/project/Rental.fs",
+      "bytes": 2376,
+      "sha256": "70bdb5c16b35b29c652a35fefd30260caa40f70b64025e5c1d7c940b7046153b"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-b/project/project/RentalDomain.fsproj",
+      "bytes": 284,
+      "sha256": "949e9338c50e74163d5e3cd4cf7c586c76045c156c54157bf88aee4b69449520"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-b/project/README.md",
+      "bytes": 128,
+      "sha256": "9177870730220f89ff712603713579ccb8755d06036cc679d53ae5acca8daf55"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-b/project/tests/DomainBaselineTests.fs",
+      "bytes": 4976,
+      "sha256": "3650d89c88a4f8a75065fc2dffcad67b6f972e057a1171059915ad6202827810"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-b/project/tests/Program.fs",
+      "bytes": 129,
+      "sha256": "e846904bc45248fd4138d5c0ff2dec5be9297a02eedd79f6cc71ce4305b564b8"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-b/project/tests/RentalDomain.Tests.fsproj",
+      "bytes": 433,
+      "sha256": "6f00333a5934f2f5b7630b581c79e4e11e2efd10174bc64cfb78e1d4ce3da7e3"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-b/prompt.md",
+      "bytes": 3826,
+      "sha256": "181c8fe1bc5bcd36ccc414cceb32303ece6d1ffd5f57f5d4cdad87cb864a2fba"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-b/start-inventory.json",
+      "bytes": 1544,
+      "sha256": "80c229d78fe77d417346b06242288da3432ddfa3c9bf9e200cd42d4994ee9b8a"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/fsharp-b/wrapper.txt",
+      "bytes": 503,
+      "sha256": "a6e990f1967ab1b2d0d1977a1b62c7619d0cfdf5c883aba715572973f6063f6a"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/NOT-DISPATCHED.txt",
+      "bytes": 78,
+      "sha256": "f797bdc18a506f7ff6b5ba900aa98811f156967c2ac1aa2454565f4466044765"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/participants/summary.json",
+      "bytes": 5697,
+      "sha256": "6428712746857bc55f652e80ae924ca8da14846540d54b23d1b17631e82cbfe9"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/acceptance.json",
+      "bytes": 9076,
+      "sha256": "144781148de42fff5df522f1d36d748393798edecb822cf1a074dcabfd16832c"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/cases.json",
+      "bytes": 2853,
+      "sha256": "7c6d6e942e8f7344553e37e842cc1915c1200d0f10a2b48cc266fdd84551c866"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/exit-code.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/requests.jsonl",
+      "bytes": 59667,
+      "sha256": "5866cbed2233df9c2bcf8cf28b92aef0ce11192c4060db469533961a90b1d153"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/source-hashes.after.json",
+      "bytes": 6927,
+      "sha256": "6a64e21ac10df1a6282cc364b9567e310b0426f0abe434e045689cb66d2f21ab"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/source-hashes.before.json",
+      "bytes": 6927,
+      "sha256": "6a64e21ac10df1a6282cc364b9567e310b0426f0abe434e045689cb66d2f21ab"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/stdout.txt",
+      "bytes": 3280,
+      "sha256": "a5aaa9f71d44bbbd28dc95443de2f8c05df5420456da51c6e0c3a52f4b908bec"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "db12cd4b8945e2c9628cbed2513b2546b752710200b07b4c420fd08ae5a52df2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/manifests/42db9d8206507b007c1f2402771c7612e2d614b3a41e1a60986190b66182f203.json",
+      "bytes": 48397,
+      "sha256": "42db9d8206507b007c1f2402771c7612e2d614b3a41e1a60986190b66182f203"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/manifests/54a641136da82344a04f255bed6b2f8bad562ad3a0cb8b00bef88f7488de1bcc.json",
+      "bytes": 12261,
+      "sha256": "54a641136da82344a04f255bed6b2f8bad562ad3a0cb8b00bef88f7488de1bcc"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/manifests/7f60b66d94fcb78b58a1766130a508dfd23bffc93e82f98ae6dee08081bf3bd4.json",
+      "bytes": 29526,
+      "sha256": "7f60b66d94fcb78b58a1766130a508dfd23bffc93e82f98ae6dee08081bf3bd4"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/manifests/e9ca5688aa9ab075de17af289c18891f5b9ba43704cde51835e69b9dd9d483b2.json",
+      "bytes": 15911,
+      "sha256": "e9ca5688aa9ab075de17af289c18891f5b9ba43704cde51835e69b9dd9d483b2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/manifests/ea45b0e2c40389c09fd8ac9f7804045b9441863e0060ff53da39d327a82dc55b.json",
+      "bytes": 64518,
+      "sha256": "ea45b0e2c40389c09fd8ac9f7804045b9441863e0060ff53da39d327a82dc55b"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/119ca35bab3c996397004efc4b3c9677de97eaa49862c381351fadc0f9a13bb8.agent",
+      "bytes": 169,
+      "sha256": "119ca35bab3c996397004efc4b3c9677de97eaa49862c381351fadc0f9a13bb8"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/1e3bcab8af40ed166d56a4957cb0e8a81e7e3f8939ac14024eaf7f62c1183c39.agent",
+      "bytes": 164,
+      "sha256": "1e3bcab8af40ed166d56a4957cb0e8a81e7e3f8939ac14024eaf7f62c1183c39"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/1f373cbe26e8478eb96f3cfb2544058e18e940ab25e62cb2bc67feb052b1bcf6.agent",
+      "bytes": 593,
+      "sha256": "1f373cbe26e8478eb96f3cfb2544058e18e940ab25e62cb2bc67feb052b1bcf6"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/2610940f87d05740d611612f58b5d974a2b31b7060687cf4f5f64853dca5797a.agent",
+      "bytes": 688,
+      "sha256": "2610940f87d05740d611612f58b5d974a2b31b7060687cf4f5f64853dca5797a"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/2851a4d335eabed2ccf686a043324abd2a9ec91f4e8656d834bd715e775a0e42.agent",
+      "bytes": 188,
+      "sha256": "2851a4d335eabed2ccf686a043324abd2a9ec91f4e8656d834bd715e775a0e42"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/2a07a496b041fc8f328303d16d77959681c9c814f4416a62af87f5d5a0438048.agent",
+      "bytes": 499,
+      "sha256": "2a07a496b041fc8f328303d16d77959681c9c814f4416a62af87f5d5a0438048"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/2ebd08b75606cc47f7287d8d4cd57364859cbef660dfe02027a245c5bc60e03c.agent",
+      "bytes": 73,
+      "sha256": "2ebd08b75606cc47f7287d8d4cd57364859cbef660dfe02027a245c5bc60e03c"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/394c20b5f731c8175e356b25c6f4aeeb6027141304133e513ae8db12f8fb91ff.agent",
+      "bytes": 204,
+      "sha256": "394c20b5f731c8175e356b25c6f4aeeb6027141304133e513ae8db12f8fb91ff"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/436a37f68b9c41c3024954f94705b4bdcd11d1038a3d2ae709fa89b6a2c64205.agent",
+      "bytes": 878,
+      "sha256": "436a37f68b9c41c3024954f94705b4bdcd11d1038a3d2ae709fa89b6a2c64205"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/52aac3348a9d59e7e41280f71fbedbb0c98cf20b5a1c0c99a265f65678094b68.agent",
+      "bytes": 4439,
+      "sha256": "52aac3348a9d59e7e41280f71fbedbb0c98cf20b5a1c0c99a265f65678094b68"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/55c7de2fc10422b21adfea6e55ec225ff86945648d37e853edccfd38fa6e88f3.agent",
+      "bytes": 194,
+      "sha256": "55c7de2fc10422b21adfea6e55ec225ff86945648d37e853edccfd38fa6e88f3"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/79711c54e507b3e4094b4c3c3b27f1b9f6c26003c3fc1bc40615de2940a4af06.agent",
+      "bytes": 10158,
+      "sha256": "79711c54e507b3e4094b4c3c3b27f1b9f6c26003c3fc1bc40615de2940a4af06"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/7cee497a5d6bab5a4d200b1e899205455f08373a6db990b2b2f9ca971a8a1701.agent",
+      "bytes": 777,
+      "sha256": "7cee497a5d6bab5a4d200b1e899205455f08373a6db990b2b2f9ca971a8a1701"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/7f47065f8288a3091b99456f7a0d592ca9c8acd6ca08e8995ead1ca3007c0bee.agent",
+      "bytes": 167,
+      "sha256": "7f47065f8288a3091b99456f7a0d592ca9c8acd6ca08e8995ead1ca3007c0bee"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/80aa6cb49e747b6ea74910bf636e7bc7c4e91e12a2d831328a8ad8a3481a1c9b.agent",
+      "bytes": 359,
+      "sha256": "80aa6cb49e747b6ea74910bf636e7bc7c4e91e12a2d831328a8ad8a3481a1c9b"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/840b537e94acc27545cc15c432272cf2db89d125962a9d4341bc703f67342a22.agent",
+      "bytes": 339,
+      "sha256": "840b537e94acc27545cc15c432272cf2db89d125962a9d4341bc703f67342a22"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/896790abd74266b915ff48af24405c93f6bb1df28623ec54b325c9c67759c8ad.agent",
+      "bytes": 291,
+      "sha256": "896790abd74266b915ff48af24405c93f6bb1df28623ec54b325c9c67759c8ad"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/8dc84ef6a154783ee75a4a9a4b5feffedc4084657badfafc1d701cf5631c6e74.agent",
+      "bytes": 190,
+      "sha256": "8dc84ef6a154783ee75a4a9a4b5feffedc4084657badfafc1d701cf5631c6e74"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/943e17320f0919a22b48c25bc48f58f8ba77158b9a20c22796d00b4109215d43.agent",
+      "bytes": 137,
+      "sha256": "943e17320f0919a22b48c25bc48f58f8ba77158b9a20c22796d00b4109215d43"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/95bd384c9e14b8da8fef59549aa5b2e30bd630d1fb55fc42f085a50bf1869afd.agent",
+      "bytes": 408,
+      "sha256": "95bd384c9e14b8da8fef59549aa5b2e30bd630d1fb55fc42f085a50bf1869afd"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/abe5a4292fb8a6184fbf6dfede02e0f12a7ccd703cabd02d98c0270d06b9a033.agent",
+      "bytes": 176,
+      "sha256": "abe5a4292fb8a6184fbf6dfede02e0f12a7ccd703cabd02d98c0270d06b9a033"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/ac6877e22501b68f7ed2bed736dda5702896e38d0e9e4d054c8587187ef299f5.agent",
+      "bytes": 300,
+      "sha256": "ac6877e22501b68f7ed2bed736dda5702896e38d0e9e4d054c8587187ef299f5"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/b15b71926953aa9126fe5b2153a541919cd801e262b25d29ed872f116c27170f.agent",
+      "bytes": 205,
+      "sha256": "b15b71926953aa9126fe5b2153a541919cd801e262b25d29ed872f116c27170f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/b2142a9316c190304b6bba2c131f6d4ad08e450b2ad1df47655c9414fd3a32f0.agent",
+      "bytes": 180,
+      "sha256": "b2142a9316c190304b6bba2c131f6d4ad08e450b2ad1df47655c9414fd3a32f0"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/b2fa241ce3265da0fa703307fee9f041cf5a65f7bd583ebdb7a945f443279d7c.agent",
+      "bytes": 300,
+      "sha256": "b2fa241ce3265da0fa703307fee9f041cf5a65f7bd583ebdb7a945f443279d7c"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/b528d530214f6d44e735cd398cc5660c99ae7235263cc665c8d7db2b1bf72c41.agent",
+      "bytes": 102,
+      "sha256": "b528d530214f6d44e735cd398cc5660c99ae7235263cc665c8d7db2b1bf72c41"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/ba5b268d7a59a601867b495bdbaf57c2c78112bad11d2f54a80bbc7d996ca6ba.agent",
+      "bytes": 493,
+      "sha256": "ba5b268d7a59a601867b495bdbaf57c2c78112bad11d2f54a80bbc7d996ca6ba"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/bcd5e552a81fbb36b36fb5b8693d30cc32ad68a34d0280583895850def90b5f2.agent",
+      "bytes": 7710,
+      "sha256": "bcd5e552a81fbb36b36fb5b8693d30cc32ad68a34d0280583895850def90b5f2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/c71865598b144d855b032ec861e22bb52b9b959378dc3d82ecd769e4a6e9362f.agent",
+      "bytes": 197,
+      "sha256": "c71865598b144d855b032ec861e22bb52b9b959378dc3d82ecd769e4a6e9362f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/cc5b95590f4c14cf0078817b699ae9655c648d16db3ba95a53d231f92e66faad.agent",
+      "bytes": 606,
+      "sha256": "cc5b95590f4c14cf0078817b699ae9655c648d16db3ba95a53d231f92e66faad"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/d5be4936fa3a6fb8a8f225a9fd998ff30561dfc6d6ff9eeb679ddf9279cfb64f.agent",
+      "bytes": 203,
+      "sha256": "d5be4936fa3a6fb8a8f225a9fd998ff30561dfc6d6ff9eeb679ddf9279cfb64f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/db24404a22dd8ba1a85a3f10d17b31851ab1d25cd644436fdcba24c31e02b039.agent",
+      "bytes": 288,
+      "sha256": "db24404a22dd8ba1a85a3f10d17b31851ab1d25cd644436fdcba24c31e02b039"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/e091eb89778222d629656cc1a250d6c3fb65e6d9c64e4bee035eb19d2c62a720.agent",
+      "bytes": 2638,
+      "sha256": "e091eb89778222d629656cc1a250d6c3fb65e6d9c64e4bee035eb19d2c62a720"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/.agentlang/store/objects/ffc29325e7be8817fca313d66b754326912405b087ea8bce0e259b74894c8f39.agent",
+      "bytes": 2103,
+      "sha256": "ffc29325e7be8817fca313d66b754326912405b087ea8bce0e259b74894c8f39"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/dictionary.agent",
+      "bytes": 7710,
+      "sha256": "bcd5e552a81fbb36b36fb5b8693d30cc32ad68a34d0280583895850def90b5f2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle/working-project/history/task-0001.json",
+      "bytes": 2514,
+      "sha256": "e6981f249f7707c726f79abfa82dafa4b91c6c22f352119e6b8009aac42b724c"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle.command.json",
+      "bytes": 515,
+      "sha256": "44bf74e3331d1f42ad494c3952f3711305639486a1d1171ed0e29d1e0fcc549e"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle.exit.txt",
+      "bytes": 3,
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/oracle.stdout.txt",
+      "bytes": 183,
+      "sha256": "865c88cf3eb3c7b85696b0710b0df332bd04c60584a9caf2dfa48d153e07abb1"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/termination-audit.command.json",
+      "bytes": 231,
+      "sha256": "a3d396b3fef7d9872addcaab1dc5e6e632ed45638e73e8ddb6809aead1ac8c7b"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/termination-audit.exit.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/termination-audit.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/termination-audit.stdout.txt",
+      "bytes": 93,
+      "sha256": "139148e89627aa3ae90384698849aaeec61a4256be9ef2df4e79fc046edd7f08"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-a/trace-summary.json",
+      "bytes": 9814,
+      "sha256": "211ab0a4e75a1b54f8d74c4d5ef24c0a4143871f2ed410fb04c829a64a954c1f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/acceptance.json",
+      "bytes": 9094,
+      "sha256": "3b4e7f54623d4ac1c65d4ccc99eb9c6e558b2e847a82f711239ce111b69c5ee8"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/cases.json",
+      "bytes": 2853,
+      "sha256": "7c6d6e942e8f7344553e37e842cc1915c1200d0f10a2b48cc266fdd84551c866"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/exit-code.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/requests.jsonl",
+      "bytes": 59667,
+      "sha256": "5866cbed2233df9c2bcf8cf28b92aef0ce11192c4060db469533961a90b1d153"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/source-hashes.after.json",
+      "bytes": 8214,
+      "sha256": "8cef12978292c6a50ecd8d61f6aff20589d4f874b969bf6f5806a82faf9ab3e3"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/source-hashes.before.json",
+      "bytes": 8214,
+      "sha256": "8cef12978292c6a50ecd8d61f6aff20589d4f874b969bf6f5806a82faf9ab3e3"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/stdout.txt",
+      "bytes": 4990,
+      "sha256": "8c6912d9e4083f1a0b1632c2e0db2d8932ee9f26c1b33860915e0a94091fb520"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "d4591b986aa1be3c33d7735f10e382623f718882acbfc32f8c047963d8d971b5"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/manifests/42db9d8206507b007c1f2402771c7612e2d614b3a41e1a60986190b66182f203.json",
+      "bytes": 48397,
+      "sha256": "42db9d8206507b007c1f2402771c7612e2d614b3a41e1a60986190b66182f203"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/manifests/54a641136da82344a04f255bed6b2f8bad562ad3a0cb8b00bef88f7488de1bcc.json",
+      "bytes": 12261,
+      "sha256": "54a641136da82344a04f255bed6b2f8bad562ad3a0cb8b00bef88f7488de1bcc"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/manifests/7f60b66d94fcb78b58a1766130a508dfd23bffc93e82f98ae6dee08081bf3bd4.json",
+      "bytes": 29526,
+      "sha256": "7f60b66d94fcb78b58a1766130a508dfd23bffc93e82f98ae6dee08081bf3bd4"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/manifests/e9ca5688aa9ab075de17af289c18891f5b9ba43704cde51835e69b9dd9d483b2.json",
+      "bytes": 15911,
+      "sha256": "e9ca5688aa9ab075de17af289c18891f5b9ba43704cde51835e69b9dd9d483b2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/manifests/f4a215bf61a18232f1226761bfe093e53fef208218d82dfccb2176ea80dc9bd9.json",
+      "bytes": 68887,
+      "sha256": "f4a215bf61a18232f1226761bfe093e53fef208218d82dfccb2176ea80dc9bd9"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/119ca35bab3c996397004efc4b3c9677de97eaa49862c381351fadc0f9a13bb8.agent",
+      "bytes": 169,
+      "sha256": "119ca35bab3c996397004efc4b3c9677de97eaa49862c381351fadc0f9a13bb8"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/1e3bcab8af40ed166d56a4957cb0e8a81e7e3f8939ac14024eaf7f62c1183c39.agent",
+      "bytes": 164,
+      "sha256": "1e3bcab8af40ed166d56a4957cb0e8a81e7e3f8939ac14024eaf7f62c1183c39"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/1f373cbe26e8478eb96f3cfb2544058e18e940ab25e62cb2bc67feb052b1bcf6.agent",
+      "bytes": 593,
+      "sha256": "1f373cbe26e8478eb96f3cfb2544058e18e940ab25e62cb2bc67feb052b1bcf6"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/2610940f87d05740d611612f58b5d974a2b31b7060687cf4f5f64853dca5797a.agent",
+      "bytes": 688,
+      "sha256": "2610940f87d05740d611612f58b5d974a2b31b7060687cf4f5f64853dca5797a"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/2851a4d335eabed2ccf686a043324abd2a9ec91f4e8656d834bd715e775a0e42.agent",
+      "bytes": 188,
+      "sha256": "2851a4d335eabed2ccf686a043324abd2a9ec91f4e8656d834bd715e775a0e42"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/2a07a496b041fc8f328303d16d77959681c9c814f4416a62af87f5d5a0438048.agent",
+      "bytes": 499,
+      "sha256": "2a07a496b041fc8f328303d16d77959681c9c814f4416a62af87f5d5a0438048"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/2b6a36af0a047b94492e7be574c39475590ba6b74bb562579bfcd9ddb87966d5.agent",
+      "bytes": 336,
+      "sha256": "2b6a36af0a047b94492e7be574c39475590ba6b74bb562579bfcd9ddb87966d5"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/2ebd08b75606cc47f7287d8d4cd57364859cbef660dfe02027a245c5bc60e03c.agent",
+      "bytes": 73,
+      "sha256": "2ebd08b75606cc47f7287d8d4cd57364859cbef660dfe02027a245c5bc60e03c"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/394c20b5f731c8175e356b25c6f4aeeb6027141304133e513ae8db12f8fb91ff.agent",
+      "bytes": 204,
+      "sha256": "394c20b5f731c8175e356b25c6f4aeeb6027141304133e513ae8db12f8fb91ff"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/436a37f68b9c41c3024954f94705b4bdcd11d1038a3d2ae709fa89b6a2c64205.agent",
+      "bytes": 878,
+      "sha256": "436a37f68b9c41c3024954f94705b4bdcd11d1038a3d2ae709fa89b6a2c64205"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/49aa7280ee5341f6780edbaec9feb4448e3e6b6a9a21cebc05657e6215d5e1b1.agent",
+      "bytes": 292,
+      "sha256": "49aa7280ee5341f6780edbaec9feb4448e3e6b6a9a21cebc05657e6215d5e1b1"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/52aac3348a9d59e7e41280f71fbedbb0c98cf20b5a1c0c99a265f65678094b68.agent",
+      "bytes": 4439,
+      "sha256": "52aac3348a9d59e7e41280f71fbedbb0c98cf20b5a1c0c99a265f65678094b68"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/537877c25ad1028c1cf4735c9bc4893a414ac0afd6cb9932955298421dc4cad2.agent",
+      "bytes": 279,
+      "sha256": "537877c25ad1028c1cf4735c9bc4893a414ac0afd6cb9932955298421dc4cad2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/55c7de2fc10422b21adfea6e55ec225ff86945648d37e853edccfd38fa6e88f3.agent",
+      "bytes": 194,
+      "sha256": "55c7de2fc10422b21adfea6e55ec225ff86945648d37e853edccfd38fa6e88f3"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/6f7ec217f5a4fc216f9287d42bf708cdd925050a2dbd8a255eb44eebd8a915e4.agent",
+      "bytes": 281,
+      "sha256": "6f7ec217f5a4fc216f9287d42bf708cdd925050a2dbd8a255eb44eebd8a915e4"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/709f0230bcd2689807a90846aad20889ce615a52870dff4bb0342d02db0967af.agent",
+      "bytes": 12996,
+      "sha256": "709f0230bcd2689807a90846aad20889ce615a52870dff4bb0342d02db0967af"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/7f47065f8288a3091b99456f7a0d592ca9c8acd6ca08e8995ead1ca3007c0bee.agent",
+      "bytes": 167,
+      "sha256": "7f47065f8288a3091b99456f7a0d592ca9c8acd6ca08e8995ead1ca3007c0bee"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/7f9feee69ed04f627768bd7f3c84e75a18abf705a370cee393c8574073104ec7.agent",
+      "bytes": 270,
+      "sha256": "7f9feee69ed04f627768bd7f3c84e75a18abf705a370cee393c8574073104ec7"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/80aa6cb49e747b6ea74910bf636e7bc7c4e91e12a2d831328a8ad8a3481a1c9b.agent",
+      "bytes": 359,
+      "sha256": "80aa6cb49e747b6ea74910bf636e7bc7c4e91e12a2d831328a8ad8a3481a1c9b"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/8dc84ef6a154783ee75a4a9a4b5feffedc4084657badfafc1d701cf5631c6e74.agent",
+      "bytes": 190,
+      "sha256": "8dc84ef6a154783ee75a4a9a4b5feffedc4084657badfafc1d701cf5631c6e74"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/943e17320f0919a22b48c25bc48f58f8ba77158b9a20c22796d00b4109215d43.agent",
+      "bytes": 137,
+      "sha256": "943e17320f0919a22b48c25bc48f58f8ba77158b9a20c22796d00b4109215d43"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/95bd384c9e14b8da8fef59549aa5b2e30bd630d1fb55fc42f085a50bf1869afd.agent",
+      "bytes": 408,
+      "sha256": "95bd384c9e14b8da8fef59549aa5b2e30bd630d1fb55fc42f085a50bf1869afd"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/abe5a4292fb8a6184fbf6dfede02e0f12a7ccd703cabd02d98c0270d06b9a033.agent",
+      "bytes": 176,
+      "sha256": "abe5a4292fb8a6184fbf6dfede02e0f12a7ccd703cabd02d98c0270d06b9a033"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/aed0b99a2605615a59500b4a636c589860c6e89c6992530dc1d00fc8dd26d9b8.agent",
+      "bytes": 350,
+      "sha256": "aed0b99a2605615a59500b4a636c589860c6e89c6992530dc1d00fc8dd26d9b8"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/b15b71926953aa9126fe5b2153a541919cd801e262b25d29ed872f116c27170f.agent",
+      "bytes": 205,
+      "sha256": "b15b71926953aa9126fe5b2153a541919cd801e262b25d29ed872f116c27170f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/b2142a9316c190304b6bba2c131f6d4ad08e450b2ad1df47655c9414fd3a32f0.agent",
+      "bytes": 180,
+      "sha256": "b2142a9316c190304b6bba2c131f6d4ad08e450b2ad1df47655c9414fd3a32f0"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/ba5b268d7a59a601867b495bdbaf57c2c78112bad11d2f54a80bbc7d996ca6ba.agent",
+      "bytes": 493,
+      "sha256": "ba5b268d7a59a601867b495bdbaf57c2c78112bad11d2f54a80bbc7d996ca6ba"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/bcd5e552a81fbb36b36fb5b8693d30cc32ad68a34d0280583895850def90b5f2.agent",
+      "bytes": 7710,
+      "sha256": "bcd5e552a81fbb36b36fb5b8693d30cc32ad68a34d0280583895850def90b5f2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/c71865598b144d855b032ec861e22bb52b9b959378dc3d82ecd769e4a6e9362f.agent",
+      "bytes": 197,
+      "sha256": "c71865598b144d855b032ec861e22bb52b9b959378dc3d82ecd769e4a6e9362f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/cc5b95590f4c14cf0078817b699ae9655c648d16db3ba95a53d231f92e66faad.agent",
+      "bytes": 606,
+      "sha256": "cc5b95590f4c14cf0078817b699ae9655c648d16db3ba95a53d231f92e66faad"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/d4063d4c4c5f08a0855f2aeaa487b7097e0a98c35ac0250711673a78f6b2bc3a.agent",
+      "bytes": 267,
+      "sha256": "d4063d4c4c5f08a0855f2aeaa487b7097e0a98c35ac0250711673a78f6b2bc3a"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/d5be4936fa3a6fb8a8f225a9fd998ff30561dfc6d6ff9eeb679ddf9279cfb64f.agent",
+      "bytes": 203,
+      "sha256": "d5be4936fa3a6fb8a8f225a9fd998ff30561dfc6d6ff9eeb679ddf9279cfb64f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/d76fcd52a68852462cea282141cbbf343b25e2696f39bbb205e77b42100463d3.agent",
+      "bytes": 937,
+      "sha256": "d76fcd52a68852462cea282141cbbf343b25e2696f39bbb205e77b42100463d3"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/df6031ded0d76dcdf6aa4e055a677e82f5b9f1eef24d57ad0dadd965f8ab7914.agent",
+      "bytes": 333,
+      "sha256": "df6031ded0d76dcdf6aa4e055a677e82f5b9f1eef24d57ad0dadd965f8ab7914"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/e091eb89778222d629656cc1a250d6c3fb65e6d9c64e4bee035eb19d2c62a720.agent",
+      "bytes": 2638,
+      "sha256": "e091eb89778222d629656cc1a250d6c3fb65e6d9c64e4bee035eb19d2c62a720"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/eb9f473a8a5a16656b67ab1861c10845df8c461f23835b48d81377da3de3ffc4.agent",
+      "bytes": 273,
+      "sha256": "eb9f473a8a5a16656b67ab1861c10845df8c461f23835b48d81377da3de3ffc4"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/ed2d6ed4627441cd9cdddad5352d145ce5dad1538df78260a500f2ea12c9938b.agent",
+      "bytes": 313,
+      "sha256": "ed2d6ed4627441cd9cdddad5352d145ce5dad1538df78260a500f2ea12c9938b"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/ee1498cf76b0c9721a30d1767d628b75188a116aa6aba0e766c7affd16f0cd84.agent",
+      "bytes": 269,
+      "sha256": "ee1498cf76b0c9721a30d1767d628b75188a116aa6aba0e766c7affd16f0cd84"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/f36e12fb4d86ec85b21785a3c3296cbd27b09a0ee8598a9e12be7463991b30b6.agent",
+      "bytes": 273,
+      "sha256": "f36e12fb4d86ec85b21785a3c3296cbd27b09a0ee8598a9e12be7463991b30b6"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/f6276765001d8681df37d734696ee015622c49dd673e855b59caa966fe4ff619.agent",
+      "bytes": 270,
+      "sha256": "f6276765001d8681df37d734696ee015622c49dd673e855b59caa966fe4ff619"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/.agentlang/store/objects/ffc29325e7be8817fca313d66b754326912405b087ea8bce0e259b74894c8f39.agent",
+      "bytes": 2103,
+      "sha256": "ffc29325e7be8817fca313d66b754326912405b087ea8bce0e259b74894c8f39"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/dictionary.agent",
+      "bytes": 12996,
+      "sha256": "709f0230bcd2689807a90846aad20889ce615a52870dff4bb0342d02db0967af"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/history/task-0001.json",
+      "bytes": 2413,
+      "sha256": "084e90b231c3c01bd18ed5566a793a5c9a458071f00f283b6807bf65172b8c95"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle/working-project/history/task-0002.json",
+      "bytes": 2290,
+      "sha256": "30aa27ac0bc9200c15a917ffef34f5793e3bce228a6466e2a9ce1e5622014df9"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle.command.json",
+      "bytes": 515,
+      "sha256": "6e870b0643bac0054b9e87025749e6759d9f4c24f80e01729a8332dfc4ab0e65"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle.exit.txt",
+      "bytes": 3,
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/oracle.stdout.txt",
+      "bytes": 183,
+      "sha256": "282398486c4135326fbfdea7e67f900482d31c5a8ba4e81caf1e908ac46fb54b"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/termination-audit.command.json",
+      "bytes": 231,
+      "sha256": "55937d4cf1fb8ccff8bcdc6b23a1389dae433a051f30138b51e734b3041ece4a"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/termination-audit.exit.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/termination-audit.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/termination-audit.stdout.txt",
+      "bytes": 93,
+      "sha256": "48ae93535772b23aa490a18c4241e2947813fa4558bec6065c2032442662580e"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/flow-b/trace-summary.json",
+      "bytes": 9612,
+      "sha256": "34e46347daa92f102b13a8a9cfc9721afeec35a068ecb5172888204073af4532"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/acceptance.json",
+      "bytes": 8606,
+      "sha256": "1c802f7e8040156843ec1f9bbcc013b3fe4ba25bbe097d8aaa32f7219121cb99"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/build.exit-code.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/build.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/build.stdout.txt",
+      "bytes": 713,
+      "sha256": "370b966c5c7701cda35eaa469dddbf972c9a62f7d8c070c49e5eda0abe43ac72"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/cases.json",
+      "bytes": 2853,
+      "sha256": "7c6d6e942e8f7344553e37e842cc1915c1200d0f10a2b48cc266fdd84551c866"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/exit-code.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/fsharp-harness/BatchReuse147RentalOracle.fsproj",
+      "bytes": 453,
+      "sha256": "c1c54b25e7a63a0eedc3adb8d2f99ef48824f2bcc279717e97d8db829db531be"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/fsharp-harness/Program.fs",
+      "bytes": 8439,
+      "sha256": "1025314a00a777250376392cb9857f2bd486203b626afa4c96b5229dcb659c98"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/requests.jsonl",
+      "bytes": 169,
+      "sha256": "97050cd736d948f8ea12ce37ba248d7255b27a45fece9ff2d6a564460e4e0c0b"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/source-hashes.after.json",
+      "bytes": 583,
+      "sha256": "d74632a12935a8326f620d8da8775aec24a4a9c0bef1b399fbe3a9a495b4f896"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/source-hashes.before.json",
+      "bytes": 583,
+      "sha256": "d74632a12935a8326f620d8da8775aec24a4a9c0bef1b399fbe3a9a495b4f896"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/stdout.txt",
+      "bytes": 3162,
+      "sha256": "f99bbe317c8e209ca1d402121e6ce392e0b6f06a8400e7080a4d4aeaf818a625"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/working-project/project/Rental.fs",
+      "bytes": 3395,
+      "sha256": "a53ef3c31e8528c49db9282c7553680e0540952379cb018729edd0dbcdecb319"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/working-project/project/RentalDomain.fsproj",
+      "bytes": 284,
+      "sha256": "949e9338c50e74163d5e3cd4cf7c586c76045c156c54157bf88aee4b69449520"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/working-project/README.md",
+      "bytes": 128,
+      "sha256": "9177870730220f89ff712603713579ccb8755d06036cc679d53ae5acca8daf55"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/working-project/tests/DomainBaselineTests.fs",
+      "bytes": 7031,
+      "sha256": "c18f9d11fc077ab8fa82f9b80824894257e67e377bd0ed4073704ef4a9ab4661"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/working-project/tests/Program.fs",
+      "bytes": 129,
+      "sha256": "e846904bc45248fd4138d5c0ff2dec5be9297a02eedd79f6cc71ce4305b564b8"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle/working-project/tests/RentalDomain.Tests.fsproj",
+      "bytes": 433,
+      "sha256": "6f00333a5934f2f5b7630b581c79e4e11e2efd10174bc64cfb78e1d4ce3da7e3"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle.command.json",
+      "bytes": 439,
+      "sha256": "59e727feeb58fbf169789a2e30a3b7269f6081313216783bb5fe955a0c6e233f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle.exit.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/oracle.stdout.txt",
+      "bytes": 186,
+      "sha256": "bc9b30393a659865dfc74ee625358467a74a7f38299b65ccda55e513586299eb"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/own-suite.command.json",
+      "bytes": 226,
+      "sha256": "6d89023a119a67a8ad422a5a70aa3fa38448393eb975976ba8c9d016bf39650c"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/own-suite.exit.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/own-suite.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/own-suite.stdout.txt",
+      "bytes": 25,
+      "sha256": "fd0ab8ee07e3093602577ecc36966306bc7d359e04957cb08cd4d66937a5f460"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/termination-audit.command.json",
+      "bytes": 233,
+      "sha256": "9575125db1b88f283bafbf56f76dacc5dfe7e4a34fa62f97e11e7467d7d5ce48"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/termination-audit.exit.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/termination-audit.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/termination-audit.stdout.txt",
+      "bytes": 93,
+      "sha256": "f5a9219b62329202d4d7a2a9a52a68036317f0ab396195066fd6fb9e1a71404e"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-a/trace-summary.json",
+      "bytes": 1289,
+      "sha256": "d8d0a405054d08325b5308c2075af47ac39cd1a29d3bb8c0bb4f6771ef7a3920"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/acceptance.json",
+      "bytes": 8606,
+      "sha256": "2ccb3112f67c6efadac256ba88f339705877a3b36fd21d9145b832c7af39c8dc"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/build.exit-code.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/build.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/build.stdout.txt",
+      "bytes": 713,
+      "sha256": "ce733480e188ddebeb46d31ebe0f992f49a55499b3d63f71d3bca446aa6efae7"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/cases.json",
+      "bytes": 2853,
+      "sha256": "7c6d6e942e8f7344553e37e842cc1915c1200d0f10a2b48cc266fdd84551c866"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/exit-code.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/fsharp-harness/BatchReuse147RentalOracle.fsproj",
+      "bytes": 453,
+      "sha256": "9c37cc01b8321c02c61e43e7613e2b19d6f34ecf6996d59edd7ecd2500acbd43"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/fsharp-harness/Program.fs",
+      "bytes": 8439,
+      "sha256": "1025314a00a777250376392cb9857f2bd486203b626afa4c96b5229dcb659c98"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/requests.jsonl",
+      "bytes": 169,
+      "sha256": "7562ff5693604c120813831edc66988dcf1df9f0ab39af2e975608c81c038ce2"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/source-hashes.after.json",
+      "bytes": 583,
+      "sha256": "e3a1ff0e7e25ca8975e21c7251e6dad1e17307cf69cfae565467fda259e59aa7"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/source-hashes.before.json",
+      "bytes": 583,
+      "sha256": "e3a1ff0e7e25ca8975e21c7251e6dad1e17307cf69cfae565467fda259e59aa7"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/stdout.txt",
+      "bytes": 3162,
+      "sha256": "f99bbe317c8e209ca1d402121e6ce392e0b6f06a8400e7080a4d4aeaf818a625"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/working-project/project/Rental.fs",
+      "bytes": 2376,
+      "sha256": "70bdb5c16b35b29c652a35fefd30260caa40f70b64025e5c1d7c940b7046153b"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/working-project/project/RentalDomain.fsproj",
+      "bytes": 284,
+      "sha256": "949e9338c50e74163d5e3cd4cf7c586c76045c156c54157bf88aee4b69449520"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/working-project/README.md",
+      "bytes": 128,
+      "sha256": "9177870730220f89ff712603713579ccb8755d06036cc679d53ae5acca8daf55"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/working-project/tests/DomainBaselineTests.fs",
+      "bytes": 4976,
+      "sha256": "3650d89c88a4f8a75065fc2dffcad67b6f972e057a1171059915ad6202827810"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/working-project/tests/Program.fs",
+      "bytes": 129,
+      "sha256": "e846904bc45248fd4138d5c0ff2dec5be9297a02eedd79f6cc71ce4305b564b8"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle/working-project/tests/RentalDomain.Tests.fsproj",
+      "bytes": 433,
+      "sha256": "6f00333a5934f2f5b7630b581c79e4e11e2efd10174bc64cfb78e1d4ce3da7e3"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle.command.json",
+      "bytes": 439,
+      "sha256": "2111eba1f2a2370ad6c19b763f20e108c70a328b6b5836d08084d784faf4c794"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle.exit.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/oracle.stdout.txt",
+      "bytes": 186,
+      "sha256": "00f5045975c3bd8a95573feb646579ab7baf561a2a48e7293600b1c294fd86d1"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/own-suite.command.json",
+      "bytes": 226,
+      "sha256": "0cafb37e8d8963e489f0dfdbc512643aa83186a2aa06e65ed8a06074093eb730"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/own-suite.exit.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/own-suite.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/own-suite.stdout.txt",
+      "bytes": 25,
+      "sha256": "6035aedac3188be08c70a76c60c5a2f8e6a262aea13aacbb3f217a602491672f"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/termination-audit.command.json",
+      "bytes": 233,
+      "sha256": "aa7914a641023876a4a5fa6505f950cbfe2073d089e7647db46cd18219cfb24d"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/termination-audit.exit.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/termination-audit.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/termination-audit.stdout.txt",
+      "bytes": 93,
+      "sha256": "f5a9219b62329202d4d7a2a9a52a68036317f0ab396195066fd6fb9e1a71404e"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/fsharp-b/trace-summary.json",
+      "bytes": 1289,
+      "sha256": "5253bf48541d45ba5ca36601c354b2e8038dea6274de62999bfe1231b74e0b15"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/immutable-input-audit.json",
+      "bytes": 16753,
+      "sha256": "0728b66819a7ffcf28e0cd1cebc4beb05a1e8048c61ca6c6aa97e142543dc8cf"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/results/summary.json",
+      "bytes": 36477,
+      "sha256": "8b8a4257b032a7590fa02e1050233d33db1053d226e5a5db882c058881d373c9"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/review/flow-final.md",
+      "bytes": 2322,
+      "sha256": "37f9ab2d78d9a9a58f3b529ac89255896372771b85e9eccb10f81e9aec05777a"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/review/flow-friction.md",
+      "bytes": 2520,
+      "sha256": "8b0085ef1ff1a20710336c63a4ed0c431218d342487aea727dbf465b4d811ddb"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/review/fsharp-final.md",
+      "bytes": 2032,
+      "sha256": "fcf09dd3fc08642608f44cae672c76e66713af96ea5d3fb3426dc2ab62192d05"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/review/independence-incident.md",
+      "bytes": 2780,
+      "sha256": "9f3cf1c5a54772a14a43f4746b547993174fd107aef34178e6d7fc0fd9b010f8"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/review/preflight.md",
+      "bytes": 2937,
+      "sha256": "9059d5ead83f15f1bea99178ecda07b763c5157d102a7c545c0339ed698a62e9"
+    },
+    {
+      "path": ".agentlang/batch-reuse-147/summarize-results.py",
+      "bytes": 3024,
+      "sha256": "035425fe1cb840e93b3c9c98bb9e91a588f28574769eead2c60f470398b72111"
+    }
+  ]
+}
