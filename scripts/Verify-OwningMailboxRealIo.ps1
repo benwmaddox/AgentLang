@@ -83,9 +83,12 @@ $sourceInputAfter = @()
 $timeoutMilliseconds = 300000
 $tempDirectory = Join-Path $runDirectory 'repo-temp'
 $resetProfiles = @(
-    [ordered]@{ name = 'diagnostic'; define = $null; expected = 'diagnostic' },
-    [ordered]@{ name = 'fast'; define = '-DAL_MAILBOX_FAST_RESET=1'; expected = 'fast' }
+    [ordered]@{ name = 'diagnostic'; define = $null; expected = 'diagnostic'; moduleProfile = 'diagnostic' },
+    [ordered]@{ name = 'fast'; define = '-DAL_MAILBOX_FAST_RESET=1'; expected = 'fast'; moduleProfile = 'diagnostic' },
+    [ordered]@{ name = 'trusted-generated'; define = '-DAL_OWNING_TRUSTED_GENERATED=1'; expected = 'trusted-generated'; moduleProfile = 'trusted-generated' }
 )
+$moduleProfiles = @('diagnostic', 'trusted-generated')
+$storageModel = $null
 $oracleHashBeforeNative = $null
 $oracleFreezeCopyPath = $null
 $oracleFreezeCopySha256 = $null
@@ -107,7 +110,7 @@ $report = [ordered]@{
     fixture = $fixturePath
     flow = $flowPath
     sourceInputs = @($sourceInputPaths)
-    measurementScope = 'Actual-I/O correctness and mailbox/provider counters. Reserved-storage counters are caller-owned controller storage. resetTelemetry records logical runtime-requested reset stores for owning scratch checkout/release, excludes initialization poison, and separates cursor extent from payload-write bytes and bitmap store operations; these are not hardware traffic.'
+    measurementScope = 'Actual-I/O correctness and mailbox/provider counters across diagnostic, fast-reset and trusted-generated profiles. Reserved-storage counters are caller-owned controller storage. resetTelemetry records logical runtime-requested reset stores for owning scratch checkout/release, excludes initialization poison, and separates cursor extent from payload-write bytes and bitmap store operations; these are not hardware traffic.'
     provider = $null
     checks = @()
 }
@@ -198,6 +201,82 @@ function Get-Hash([string]$Path) {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
+function Get-ManifestInfoFingerprint([string]$Path) {
+    $document = [System.Text.Json.JsonDocument]::Parse([IO.File]::ReadAllText($Path))
+    try {
+        $moduleInfo = $document.RootElement.GetProperty('moduleInfo')
+        $options = [System.Text.Json.JsonSerializerOptions]::new()
+        $options.WriteIndented = $true
+        $serialized = [System.Text.Json.JsonSerializer]::Serialize[System.Text.Json.JsonElement]($moduleInfo, $options)
+        $digest = [Security.Cryptography.SHA256]::HashData($script:utf8.GetBytes($serialized))
+        return [Convert]::ToHexString($digest).ToLowerInvariant()
+    } finally {
+        $document.Dispose()
+    }
+}
+
+function Validate-ModuleRuntimeProfile($Manifest, [string]$ManifestPath, [string]$ExpectedProfile, [string]$Label) {
+    Require-Fields $Manifest @('fingerprint', 'librarySha256', 'moduleInfo') "$Label manifest"
+    $fingerprint = Require-JsonString (Get-ExactField $Manifest 'fingerprint') "$Label manifest fingerprint"
+    $moduleInfo = Get-ExactField $Manifest 'moduleInfo'
+    Require-Fields $moduleInfo @('runtimeProfile') "$Label manifest moduleInfo"
+    $runtimeProfile = Require-JsonString (Get-ExactField $moduleInfo 'runtimeProfile') "$Label manifest moduleInfo.runtimeProfile"
+    $profileMatches = $runtimeProfile -ceq $ExpectedProfile
+    Add-Check "$Label manifest moduleInfo.runtimeProfile matches the selected compiler profile" $profileMatches ([ordered]@{ expected = $ExpectedProfile; actual = $runtimeProfile })
+    if (-not $profileMatches) { throw "$Label manifest runtime profile differs from the selected compiler profile." }
+    $computedFingerprint = Get-ManifestInfoFingerprint $ManifestPath
+    $fingerprintMatches = $fingerprint -ceq $computedFingerprint
+    Add-Check "$Label manifest fingerprint covers the exact moduleInfo including runtimeProfile" $fingerprintMatches ([ordered]@{ manifestFingerprint = $fingerprint; computedModuleInfoFingerprint = $computedFingerprint; runtimeProfile = $runtimeProfile })
+    if (-not $fingerprintMatches) { throw "$Label manifest fingerprint does not match its moduleInfo." }
+    return [ordered]@{ runtimeProfile = $runtimeProfile; fingerprint = $fingerprint }
+}
+
+function Get-SourceEnumConstant([string]$Source, [string]$Name) {
+    $pattern = "(?m)^\s*$([regex]::Escape($Name))\s*=\s*(?<value>\d+)u?,\s*$"
+    $match = [regex]::Match($Source, $pattern)
+    if (-not $match.Success) { throw "Could not read native host enum constant $Name." }
+    return [long]::Parse($match.Groups['value'].Value, [Globalization.CultureInfo]::InvariantCulture)
+}
+
+function Get-SourceAssignedEnumConstant([string]$Source, [string]$FieldName) {
+    $pattern = "(?m)^\s*driver->fixture\.config\.$([regex]::Escape($FieldName))\s*=\s*(?<constant>[A-Z_][A-Z0-9_]*)\s*;\s*$"
+    $match = [regex]::Match($Source, $pattern)
+    if (-not $match.Success) { throw "Could not read native host configuration assignment for $FieldName." }
+    return Get-SourceEnumConstant $Source $match.Groups['constant'].Value
+}
+
+function Get-SourceMacroConstant([string]$Source, [string]$Name) {
+    $pattern = "(?m)^\s*#define\s+$([regex]::Escape($Name))\s+(?<value>\d+)u?\s*$"
+    $match = [regex]::Match($Source, $pattern)
+    if (-not $match.Success) { throw "Could not read native runtime macro $Name." }
+    return [long]::Parse($match.Groups['value'].Value, [Globalization.CultureInfo]::InvariantCulture)
+}
+
+function Align-StorageValue([long]$Value, [long]$Alignment) {
+    if ($Value -lt 0 -or $Alignment -le 0) { throw 'Storage alignment inputs must be nonnegative with a positive alignment.' }
+    $remainder = $Value % $Alignment
+    if ($remainder -eq 0) { return $Value }
+    return ($Value + $Alignment - $remainder)
+}
+
+function New-TrustedStorageModel([long]$ScratchCapacity, [long]$ScratchSlots, [long]$Alignment) {
+    $bitmapBytes = [long][Math]::Floor($ScratchCapacity / 8) + $(if (($ScratchCapacity % 8) -ne 0) { 1 } else { 0 })
+    $diagnosticStride = (Align-StorageValue $ScratchCapacity $Alignment) + 2 * (Align-StorageValue $bitmapBytes $Alignment)
+    $trustedStride = Align-StorageValue $ScratchCapacity $Alignment
+    $logicalSaving = 2 * $bitmapBytes * $ScratchSlots
+    $alignedSaving = ($diagnosticStride - $trustedStride) * $ScratchSlots
+    return [ordered]@{
+        scratchCapacityBytes = $ScratchCapacity
+        scratchSlotCapacity = $ScratchSlots
+        storageAlignmentBytes = $Alignment
+        bitmapBytesPerBitmap = $bitmapBytes
+        diagnosticScratchStrideBytes = $diagnosticStride
+        trustedScratchStrideBytes = $trustedStride
+        logicalBitmapStorageSavingBytes = $logicalSaving
+        alignedStorageSavingBytes = $alignedSaving
+    }
+}
+
 function Validate-ResetTelemetry($Native, [string]$ExpectedProfile, [string]$Label) {
     $telemetry = Get-ExactField $Native 'resetTelemetry'
     Require-Fields $telemetry @('valid', 'profile', 'scope', 'payloadWriteSemantics', 'initializationPoisonWrites', 'fullCapacityPayloadWriteBytesRequested', 'livePrefixPayloadWriteBytesRequested', 'bitmapStoreOperations', 'turnResetCursorExtentBytes') "$Label resetTelemetry"
@@ -215,12 +294,20 @@ function Validate-ResetTelemetry($Native, [string]$ExpectedProfile, [string]$Lab
         $initializationPoison -ceq 'excluded: scratch, retained banks, text staging'
     Add-Check "$Label reset telemetry identifies a valid profile, logical byte scope, and excluded initialization poison" $profileOkay ([ordered]@{ expectedProfile = $ExpectedProfile; actualProfile = $profile; expectedScope = 'owningScratchCheckoutRelease'; actualScope = $scope; payloadWriteSemantics = $payloadSemantics; initializationPoisonWrites = $initializationPoison; valid = $valid })
     if (-not $profileOkay) { throw "$Label resetTelemetry profile or scope does not match the selected build." }
-    $capacityOkay = if ($ExpectedProfile -ceq 'diagnostic') { $values.fullCapacityPayloadWriteBytesRequested -gt 0 } else { $values.fullCapacityPayloadWriteBytesRequested -eq 0 }
-    Add-Check "$Label full-capacity payload write counter matches the reset profile" $capacityOkay ([ordered]@{ profile = $ExpectedProfile; fullCapacityPayloadWriteBytesRequested = $values.fullCapacityPayloadWriteBytesRequested; expected = if ($ExpectedProfile -ceq 'diagnostic') { 'greater than zero' } else { 0 } })
-    if (-not $capacityOkay) { throw "$Label full-capacity payload write counter does not match the reset profile." }
-    $separateCountersOkay = $values.livePrefixPayloadWriteBytesRequested -eq $values.turnResetCursorExtentBytes -and $values.bitmapStoreOperations -gt 0
-    Add-Check "$Label live-prefix payload writes match cursor extent while bitmap stores remain separately counted" $separateCountersOkay ([ordered]@{ livePrefixPayloadWriteBytesRequested = $values.livePrefixPayloadWriteBytesRequested; turnResetCursorExtentBytes = $values.turnResetCursorExtentBytes; bitmapStoreOperations = $values.bitmapStoreOperations })
-    if (-not $separateCountersOkay) { throw "$Label resetTelemetry payload and cursor counters are inconsistent." }
+    if ($ExpectedProfile -ceq 'trusted-generated') {
+        $trustedCountersOkay = $values.fullCapacityPayloadWriteBytesRequested -eq 0 -and
+            $values.livePrefixPayloadWriteBytesRequested -eq 0 -and $values.bitmapStoreOperations -eq 0 -and
+            $values.turnResetCursorExtentBytes -gt 0
+        Add-Check "$Label trusted-generated reset payload and bitmap counters are zero while cursor extent remains measured" $trustedCountersOkay ([ordered]@{ profile = $ExpectedProfile; fullCapacityPayloadWriteBytesRequested = $values.fullCapacityPayloadWriteBytesRequested; livePrefixPayloadWriteBytesRequested = $values.livePrefixPayloadWriteBytesRequested; bitmapStoreOperations = $values.bitmapStoreOperations; turnResetCursorExtentBytes = $values.turnResetCursorExtentBytes })
+        if (-not $trustedCountersOkay) { throw "$Label trusted-generated reset telemetry must omit payload and bitmap writes while preserving cursor extent." }
+    } else {
+        $capacityOkay = if ($ExpectedProfile -ceq 'diagnostic') { $values.fullCapacityPayloadWriteBytesRequested -gt 0 } else { $values.fullCapacityPayloadWriteBytesRequested -eq 0 }
+        Add-Check "$Label full-capacity payload write counter matches the reset profile" $capacityOkay ([ordered]@{ profile = $ExpectedProfile; fullCapacityPayloadWriteBytesRequested = $values.fullCapacityPayloadWriteBytesRequested; expected = if ($ExpectedProfile -ceq 'diagnostic') { 'greater than zero' } else { 0 } })
+        if (-not $capacityOkay) { throw "$Label full-capacity payload write counter does not match the reset profile." }
+        $separateCountersOkay = $values.livePrefixPayloadWriteBytesRequested -eq $values.turnResetCursorExtentBytes -and $values.bitmapStoreOperations -gt 0
+        Add-Check "$Label live-prefix payload writes match cursor extent while bitmap stores remain separately counted" $separateCountersOkay ([ordered]@{ livePrefixPayloadWriteBytesRequested = $values.livePrefixPayloadWriteBytesRequested; turnResetCursorExtentBytes = $values.turnResetCursorExtentBytes; bitmapStoreOperations = $values.bitmapStoreOperations })
+        if (-not $separateCountersOkay) { throw "$Label resetTelemetry payload and cursor counters are inconsistent." }
+    }
     return [ordered]@{ profile = $profile; scope = $scope; fullCapacityPayloadWriteBytesRequested = $values.fullCapacityPayloadWriteBytesRequested; livePrefixPayloadWriteBytesRequested = $values.livePrefixPayloadWriteBytesRequested; bitmapStoreOperations = $values.bitmapStoreOperations; turnResetCursorExtentBytes = $values.turnResetCursorExtentBytes }
 }
 
@@ -998,36 +1085,86 @@ function Compare-RunStorage($Left, $Right, [string]$Label) {
     Add-Check $Label $allEqual ([ordered]@{ comparedFields = $fields; differences = @($differences) })
 }
 
-function Compare-RunStats($Diagnostic, $Fast, [string]$Label) {
-    if ($Diagnostic.cases.Count -ne $Fast.cases.Count) { Add-Check $Label $false ([ordered]@{ diagnosticCases = $Diagnostic.cases.Count; fastCases = $Fast.cases.Count }); return }
+function Compare-RunStats($Left, $Right, [string]$Label, [string[]]$ExcludedFields = @()) {
+    if ($Left.cases.Count -ne $Right.cases.Count) { Add-Check $Label $false ([ordered]@{ leftCases = $Left.cases.Count; rightCases = $Right.cases.Count }); return }
     $allEqual = $true
     $differences = [Collections.Generic.List[object]]::new()
-    for ($caseIndex = 0; $caseIndex -lt $Diagnostic.cases.Count; $caseIndex++) {
-        $diagnosticCase = $Diagnostic.cases[$caseIndex]
-        $fastCase = $Fast.cases[$caseIndex]
-        if ($diagnosticCase.caseId -cne $fastCase.caseId) {
+    for ($caseIndex = 0; $caseIndex -lt $Left.cases.Count; $caseIndex++) {
+        $leftCase = $Left.cases[$caseIndex]
+        $rightCase = $Right.cases[$caseIndex]
+        if ($leftCase.caseId -cne $rightCase.caseId) {
             $allEqual = $false
-            $differences.Add([ordered]@{ caseIndex = $caseIndex; field = 'caseId'; diagnostic = $diagnosticCase.caseId; fast = $fastCase.caseId })
+            $differences.Add([ordered]@{ caseIndex = $caseIndex; field = 'caseId'; left = $leftCase.caseId; right = $rightCase.caseId })
             continue
         }
         foreach ($section in @('stats', 'afterDisposeStats')) {
-            $diagnosticValues = $diagnosticCase[$section]
-            $fastValues = $fastCase[$section]
-            $fields = @($diagnosticValues.Keys)
-            if ((@($fastValues.Keys) -join "`n") -cne ($fields -join "`n")) {
+            $leftValues = $leftCase[$section]
+            $rightValues = $rightCase[$section]
+            $allFields = @($leftValues.Keys)
+            $fields = @($allFields | Where-Object { $_ -notin $ExcludedFields })
+            if ((@($rightValues.Keys) -join "`n") -cne ($allFields -join "`n")) {
                 $allEqual = $false
-                $differences.Add([ordered]@{ caseId = $diagnosticCase.caseId; field = "$section.keys"; diagnostic = $fields; fast = @($fastValues.Keys) })
+                $differences.Add([ordered]@{ caseId = $leftCase.caseId; field = "$section.keys"; left = $allFields; right = @($rightValues.Keys) })
                 continue
             }
             foreach ($field in $fields) {
-                if ($diagnosticValues[$field] -ne $fastValues[$field]) {
+                if ($leftValues[$field] -ne $rightValues[$field]) {
                     $allEqual = $false
-                    $differences.Add([ordered]@{ caseId = $diagnosticCase.caseId; field = "$section.$field"; diagnostic = $diagnosticValues[$field]; fast = $fastValues[$field] })
+                    $differences.Add([ordered]@{ caseId = $leftCase.caseId; field = "$section.$field"; left = $leftValues[$field]; right = $rightValues[$field] })
                 }
             }
         }
     }
-    Add-Check $Label $allEqual ([ordered]@{ compared = @('all per-case stats fields', 'all after-dispose stats fields, including turnResetBytes cursor extent'); differences = @($differences) })
+    Add-Check $Label $allEqual ([ordered]@{ compared = @('all non-excluded per-case stats fields', 'all non-excluded after-dispose stats fields, including turnResetBytes cursor extent'); excludedFields = $ExcludedFields; differences = @($differences) })
+}
+
+function Compare-TrustedRunStorage($Diagnostic, $Trusted, [string]$Label) {
+    if ($Diagnostic.cases.Count -ne $Trusted.cases.Count) { Add-Check $Label $false ([ordered]@{ diagnosticCases = $Diagnostic.cases.Count; trustedCases = $Trusted.cases.Count }); return }
+    $model = $script:storageModel
+    $allMatch = $true
+    $differences = [Collections.Generic.List[object]]::new()
+    for ($caseIndex = 0; $caseIndex -lt $Diagnostic.cases.Count; $caseIndex++) {
+        $diagnosticCase = $Diagnostic.cases[$caseIndex]
+        $trustedCase = $Trusted.cases[$caseIndex]
+        if ($diagnosticCase.caseId -cne $trustedCase.caseId) {
+            $allMatch = $false
+            $differences.Add([ordered]@{ caseIndex = $caseIndex; field = 'caseId'; diagnostic = $diagnosticCase.caseId; trusted = $trustedCase.caseId })
+            continue
+        }
+        foreach ($section in @('stats', 'afterDisposeStats')) {
+            $diagnosticValues = $diagnosticCase[$section]
+            $trustedValues = $trustedCase[$section]
+            $alignedSaving = [long]$diagnosticValues.storageReservedBytes - [long]$trustedValues.storageReservedBytes
+            $logicalSaving = [long]$diagnosticValues.scratchReservedBytes - [long]$trustedValues.scratchReservedBytes
+            $matched = $alignedSaving -eq $model.alignedStorageSavingBytes -and
+                $logicalSaving -eq $model.logicalBitmapStorageSavingBytes -and
+                $diagnosticValues.scratchSlotCapacity -eq $model.scratchSlotCapacity -and
+                $trustedValues.scratchSlotCapacity -eq $model.scratchSlotCapacity -and
+                $diagnosticValues.mailboxCapacity -eq $trustedValues.mailboxCapacity -and
+                $diagnosticValues.retainedReservedBytes -eq $trustedValues.retainedReservedBytes -and
+                $diagnosticValues.textStagingReservedBytes -eq $trustedValues.textStagingReservedBytes
+            if (-not $matched) {
+                $allMatch = $false
+                $differences.Add([ordered]@{
+                    caseId = $diagnosticCase.caseId
+                    section = $section
+                    actualAlignedStorageSavingBytes = $alignedSaving
+                    expectedAlignedStorageSavingBytes = $model.alignedStorageSavingBytes
+                    actualLogicalBitmapStorageSavingBytes = $logicalSaving
+                    expectedLogicalBitmapStorageSavingBytes = $model.logicalBitmapStorageSavingBytes
+                    diagnosticScratchSlots = $diagnosticValues.scratchSlotCapacity
+                    trustedScratchSlots = $trustedValues.scratchSlotCapacity
+                    diagnosticMailboxCapacity = $diagnosticValues.mailboxCapacity
+                    trustedMailboxCapacity = $trustedValues.mailboxCapacity
+                    diagnosticRetainedReservedBytes = $diagnosticValues.retainedReservedBytes
+                    trustedRetainedReservedBytes = $trustedValues.retainedReservedBytes
+                    diagnosticTextStagingReservedBytes = $diagnosticValues.textStagingReservedBytes
+                    trustedTextStagingReservedBytes = $trustedValues.textStagingReservedBytes
+                })
+            }
+        }
+    }
+    Add-Check $Label $allMatch ([ordered]@{ storageModel = $model; compared = @('actual aligned storageReservedBytes saving', 'logical scratchReservedBytes bitmap saving', 'unchanged mailbox capacity, retained and text-staging storage'); differences = @($differences) })
 }
 
 function Compare-ResetTelemetry($Diagnostic, $Fast, [string]$Label) {
@@ -1044,6 +1181,18 @@ function Compare-ResetTelemetry($Diagnostic, $Fast, [string]$Label) {
         }
     }
     Add-Check $Label $equal ([ordered]@{ excludedDifference = 'fullCapacityPayloadWriteBytesRequested'; comparedEqualFields = $fields; diagnostic = $Diagnostic; fast = $Fast; differences = @($differences) })
+}
+
+function Compare-TrustedResetTelemetry($Diagnostic, $Trusted, [string]$Label) {
+    $allOmitted = $Trusted.profile -ceq 'trusted-generated' -and
+        $Trusted.fullCapacityPayloadWriteBytesRequested -eq 0 -and
+        $Trusted.livePrefixPayloadWriteBytesRequested -eq 0 -and
+        $Trusted.bitmapStoreOperations -eq 0
+    $cursorMatches = $Diagnostic.turnResetCursorExtentBytes -eq $Trusted.turnResetCursorExtentBytes -and
+        $Diagnostic.turnResetCursorExtentBytes -gt 0
+    $scopeMatches = $Diagnostic.scope -ceq $Trusted.scope
+    $passed = $allOmitted -and $cursorMatches -and $scopeMatches
+    Add-Check $Label $passed ([ordered]@{ excludedTrustedCounters = @('fullCapacityPayloadWriteBytesRequested', 'livePrefixPayloadWriteBytesRequested', 'bitmapStoreOperations'); comparedEqualFields = @('turnResetCursorExtentBytes', 'scope'); diagnostic = $Diagnostic; trusted = $Trusted })
 }
 
 function Start-Provider([string]$ProviderAssemblyPath) {
@@ -1168,6 +1317,20 @@ try {
     }
     $oracleHashBeforeNative = [string]($sourceInputBefore | Where-Object { $_.path -ceq [IO.Path]::GetFullPath($fixturePath) } | Select-Object -First 1).sha256
     Add-Check 'source hashes include the oracle before any build or native execution' (-not [string]::IsNullOrWhiteSpace($oracleHashBeforeNative)) ([ordered]@{ oracle = $fixturePath; sha256 = $oracleHashBeforeNative })
+    $hostSourceText = [IO.File]::ReadAllText($nativeHostPath)
+    $runtimeSourceText = [IO.File]::ReadAllText((Join-Path $nativeDirectory 'mailbox_runtime.c'))
+    $hostMailboxCapacity = Get-SourceAssignedEnumConstant $hostSourceText 'mailbox_capacity'
+    $scratchCapacity = Get-SourceAssignedEnumConstant $hostSourceText 'scratch_byte_capacity'
+    $scratchSlots = Get-SourceAssignedEnumConstant $hostSourceText 'scratch_slot_capacity'
+    $storageAlignment = Get-SourceMacroConstant $runtimeSourceText 'AL_MAILBOX_ALIGNMENT'
+    $storageModel = New-TrustedStorageModel $scratchCapacity $scratchSlots $storageAlignment
+    $script:storageModel = $storageModel
+    Add-Check 'trusted storage model reads the configured scratch capacity and slot count and independently aligns profile strides' (
+        $hostMailboxCapacity -gt 0 -and $scratchCapacity -gt 0 -and $scratchSlots -gt 0 -and
+        $storageAlignment -gt 0 -and $storageModel.diagnosticScratchStrideBytes -ge $storageModel.trustedScratchStrideBytes -and
+        $storageModel.logicalBitmapStorageSavingBytes -gt 0 -and $storageModel.alignedStorageSavingBytes -gt 0
+    ) $storageModel
+    $report.storageModel = $storageModel
 
     if (Test-Path -LiteralPath $providerFreezePath -PathType Leaf) {
         $freeze = Read-JsonFile $providerFreezePath
@@ -1221,40 +1384,52 @@ try {
     $providerAssembly = Get-UniqueAssembly $providerArtifacts 'AgentLang.RealIoMailbox.Provider.dll' 'real-I/O provider'
 
     foreach ($optimization in @('O0', 'O2')) {
-        $moduleDirectory = Join-Path $runDirectory "module-$optimization"
-        [IO.Directory]::CreateDirectory($moduleDirectory) | Out-Null
-        $moduleProcess = Invoke-CapturedProcess "compile-real-io-module-$optimization" $dotnet @($bootstrapAssembly, $optimization, $moduleDirectory, $flowPath) $repo
-        Require-ProcessSuccess $moduleProcess "fresh $optimization mailbox.flow compile succeeds"
-        $bootstrap = ConvertFrom-JsonText $moduleProcess.stdout.Trim() "$optimization real-I/O module bootstrap"
-        Require-Fields $bootstrap @('optimization', 'sourcePath', 'sameVerifiedProgramInstance', 'modulePath', 'manifestPath', 'diagnostics', 'interpreterOracle') "$optimization module bootstrap"
-        $bootstrapOptimization = Require-JsonString (Get-ExactField $bootstrap 'optimization') "$optimization bootstrap optimization"
-        $bootstrapSourcePath = Require-JsonString (Get-ExactField $bootstrap 'sourcePath') "$optimization bootstrap sourcePath"
-        $sameProgramInstance = Require-JsonBoolean (Get-ExactField $bootstrap 'sameVerifiedProgramInstance') "$optimization bootstrap sameVerifiedProgramInstance"
-        Add-Check "$optimization compiler bootstrap uses the requested optimization and Flow source" (
-            $bootstrapOptimization -ceq $optimization -and
-            [IO.Path]::GetFullPath($bootstrapSourcePath) -ceq [IO.Path]::GetFullPath($flowPath) -and
-            $sameProgramInstance)
-        $modulePath = Require-JsonString (Get-ExactField $bootstrap 'modulePath') "$optimization module path"
-        $manifestPath = Require-JsonString (Get-ExactField $bootstrap 'manifestPath') "$optimization manifest path"
-        if (-not (Test-Path -LiteralPath $modulePath -PathType Leaf) -or -not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw "$optimization generated mailbox module or manifest is missing." }
-        $diagnostics = Require-JsonArray (Get-ExactField $bootstrap 'diagnostics') "$optimization compiler diagnostics"
-        $divideDiagnostics = @($diagnostics | Where-Object { (Get-ExactField $_ 'code') -ceq 'RUNTIME_DIVIDE_BY_ZERO' })
-        Add-Check "$optimization compiler emits the checked-divide diagnostic needed by the failure case" ($divideDiagnostics.Count -eq 1) ([ordered]@{ diagnosticCount = $divideDiagnostics.Count; diagnostics = $divideDiagnostics })
-        if ($divideDiagnostics.Count -ne 1) { throw "$optimization module must contain exactly one RUNTIME_DIVIDE_BY_ZERO diagnostic." }
-        $divideDiagnosticId = Require-JsonInteger (Get-ExactField $divideDiagnostics[0] 'id') "$optimization divide diagnostic id" -NonNegative
-        $interpreterEvidence = Assert-InterpreterUnicode $bootstrap $oracle $optimization
-        $manifest = Read-JsonFile $manifestPath
-        $moduleBuilds.Add([ordered]@{
-            optimization = $optimization
-            modulePath = [IO.Path]::GetFullPath($modulePath)
-            manifestPath = [IO.Path]::GetFullPath($manifestPath)
-            moduleSha256 = Get-Hash $modulePath
-            manifestSha256 = Get-Hash $manifestPath
-            divideByZeroDiagnosticId = $divideDiagnosticId
-            bootstrap = $bootstrap
-            manifest = $manifest
-            interpreterEvidence = $interpreterEvidence
-        })
+        foreach ($moduleProfile in $moduleProfiles) {
+            $moduleLabel = "$optimization/$moduleProfile"
+            $moduleDirectory = Join-Path $runDirectory "module-$optimization-$moduleProfile"
+            [IO.Directory]::CreateDirectory($moduleDirectory) | Out-Null
+            $moduleProcess = Invoke-CapturedProcess "compile-real-io-module-$optimization-$moduleProfile" $dotnet @($bootstrapAssembly, $optimization, $moduleDirectory, $flowPath, '--runtime-profile', $moduleProfile) $repo
+            Require-ProcessSuccess $moduleProcess "fresh $moduleLabel mailbox.flow compile succeeds with a matching runtime profile"
+            $bootstrap = ConvertFrom-JsonText $moduleProcess.stdout.Trim() "$moduleLabel real-I/O module bootstrap"
+            Require-Fields $bootstrap @('optimization', 'runtimeProfile', 'sourcePath', 'sameVerifiedProgramInstance', 'modulePath', 'manifestPath', 'diagnostics', 'interpreterOracle') "$moduleLabel module bootstrap"
+            $bootstrapOptimization = Require-JsonString (Get-ExactField $bootstrap 'optimization') "$moduleLabel bootstrap optimization"
+            $bootstrapProfile = Require-JsonString (Get-ExactField $bootstrap 'runtimeProfile') "$moduleLabel bootstrap runtimeProfile"
+            $bootstrapSourcePath = Require-JsonString (Get-ExactField $bootstrap 'sourcePath') "$moduleLabel bootstrap sourcePath"
+            $sameProgramInstance = Require-JsonBoolean (Get-ExactField $bootstrap 'sameVerifiedProgramInstance') "$moduleLabel bootstrap sameVerifiedProgramInstance"
+            Add-Check "$moduleLabel compiler bootstrap uses the requested optimization, runtime profile and Flow source" (
+                $bootstrapOptimization -ceq $optimization -and $bootstrapProfile -ceq $moduleProfile -and
+                [IO.Path]::GetFullPath($bootstrapSourcePath) -ceq [IO.Path]::GetFullPath($flowPath) -and
+                $sameProgramInstance) ([ordered]@{ expectedOptimization = $optimization; actualOptimization = $bootstrapOptimization; expectedRuntimeProfile = $moduleProfile; actualRuntimeProfile = $bootstrapProfile; sourcePath = $bootstrapSourcePath; sameVerifiedProgramInstance = $sameProgramInstance })
+            $modulePath = Require-JsonString (Get-ExactField $bootstrap 'modulePath') "$moduleLabel module path"
+            $manifestPath = Require-JsonString (Get-ExactField $bootstrap 'manifestPath') "$moduleLabel manifest path"
+            if (-not (Test-Path -LiteralPath $modulePath -PathType Leaf) -or -not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw "$moduleLabel generated mailbox module or manifest is missing." }
+            $diagnostics = Require-JsonArray (Get-ExactField $bootstrap 'diagnostics') "$moduleLabel compiler diagnostics"
+            $divideDiagnostics = @($diagnostics | Where-Object { (Get-ExactField $_ 'code') -ceq 'RUNTIME_DIVIDE_BY_ZERO' })
+            Add-Check "$moduleLabel compiler emits the checked-divide diagnostic needed by the failure case" ($divideDiagnostics.Count -eq 1) ([ordered]@{ diagnosticCount = $divideDiagnostics.Count; diagnostics = $divideDiagnostics })
+            if ($divideDiagnostics.Count -ne 1) { throw "$moduleLabel module must contain exactly one RUNTIME_DIVIDE_BY_ZERO diagnostic." }
+            $divideDiagnosticId = Require-JsonInteger (Get-ExactField $divideDiagnostics[0] 'id') "$moduleLabel divide diagnostic id" -NonNegative
+            $interpreterEvidence = Assert-InterpreterUnicode $bootstrap $oracle $moduleLabel
+            $manifest = Read-JsonFile $manifestPath
+            $manifestProfileEvidence = Validate-ModuleRuntimeProfile $manifest $manifestPath $moduleProfile $moduleLabel
+            $moduleBuilds.Add([ordered]@{
+                optimization = $optimization
+                runtimeProfile = $moduleProfile
+                modulePath = [IO.Path]::GetFullPath($modulePath)
+                manifestPath = [IO.Path]::GetFullPath($manifestPath)
+                moduleSha256 = Get-Hash $modulePath
+                manifestSha256 = Get-Hash $manifestPath
+                manifestProfileEvidence = $manifestProfileEvidence
+                divideByZeroDiagnosticId = $divideDiagnosticId
+                bootstrap = $bootstrap
+                manifest = $manifest
+                interpreterEvidence = $interpreterEvidence
+            })
+        }
+        $diagnosticModule = $moduleBuilds | Where-Object { $_.optimization -ceq $optimization -and $_.runtimeProfile -ceq 'diagnostic' } | Select-Object -First 1
+        $trustedModule = $moduleBuilds | Where-Object { $_.optimization -ceq $optimization -and $_.runtimeProfile -ceq 'trusted-generated' } | Select-Object -First 1
+        $differentFingerprints = $diagnosticModule.manifestProfileEvidence.fingerprint -cne $trustedModule.manifestProfileEvidence.fingerprint
+        Add-Check "$optimization diagnostic and trusted-generated module profiles have distinct fingerprinted metadata" $differentFingerprints ([ordered]@{ diagnosticFingerprint = $diagnosticModule.manifestProfileEvidence.fingerprint; trustedGeneratedFingerprint = $trustedModule.manifestProfileEvidence.fingerprint })
+        if (-not $differentFingerprints) { throw "$optimization diagnostic and trusted-generated module manifests have the same fingerprint." }
     }
 
     $maxCase = Get-OracleCaseById $oracle 'maximum-sized-request-and-message'
@@ -1288,9 +1463,14 @@ try {
     $provider = Start-Provider $providerAssembly
     $semanticRuns = [Collections.Generic.List[object]]::new()
     foreach ($optimization in @('O0', 'O2')) {
-        $module = $moduleBuilds | Where-Object { $_.optimization -ceq $optimization } | Select-Object -First 1
         foreach ($resetProfile in $resetProfiles) {
             $profileName = [string]$resetProfile.name
+            $moduleProfile = [string]$resetProfile.moduleProfile
+            $module = $moduleBuilds | Where-Object { $_.optimization -ceq $optimization -and $_.runtimeProfile -ceq $moduleProfile } | Select-Object -First 1
+            if ($null -eq $module) { throw "$optimization/$profileName native host has no matching $moduleProfile module build." }
+            $profileMatch = $module.runtimeProfile -ceq $moduleProfile
+            Add-Check "$optimization/$profileName native host selects a module built for the matching runtime profile" $profileMatch ([ordered]@{ hostProfile = $profileName; expectedModuleProfile = $moduleProfile; actualModuleProfile = $module.runtimeProfile; modulePath = $module.modulePath })
+            if (-not $profileMatch) { throw "$optimization/$profileName native host and module runtime profiles differ." }
             $runnerDirectory = Join-Path $runDirectory "native-$optimization-$profileName"
             [IO.Directory]::CreateDirectory($runnerDirectory) | Out-Null
             $runnerPath = Join-Path $runnerDirectory "native-realio-mailbox-$optimization-$profileName.exe"
@@ -1299,7 +1479,7 @@ try {
             $compileArguments = @('--target=x86_64-pc-windows-msvc', '-std=c11', '-Wall', '-Wextra', '-Werror', "-$optimization") + $profileArguments + @('-I', $nativeDirectory) + $nativeSources + @('-lws2_32', '-o', $runnerPath)
             $nativeBuild = Invoke-CapturedProcess "native-real-io-build-$optimization-$profileName" $clang $compileArguments $runnerDirectory
             Require-ProcessSuccess $nativeBuild "$optimization/$profileName real-I/O native host compiles with strict warnings and Winsock"
-            $nativeBuilds.Add([ordered]@{ optimization = $optimization; resetProfile = $profileName; compileDefine = $resetProfile.define; executable = $runnerPath; sha256 = Get-Hash $runnerPath; process = $nativeBuild })
+            $nativeBuilds.Add([ordered]@{ optimization = $optimization; resetProfile = $profileName; moduleProfile = $moduleProfile; compileDefine = $resetProfile.define; modulePath = $module.modulePath; executable = $runnerPath; sha256 = Get-Hash $runnerPath; process = $nativeBuild })
             foreach ($policy in @('return', 'keep')) {
                 $beforeRunHash = Get-Hash $fixturePath
                 Add-Check "$optimization/$profileName/$policy execution begins with the pre-native frozen oracle hash" ($beforeRunHash -ceq $oracleHashBeforeNative) ([ordered]@{ expected = $oracleHashBeforeNative; actual = $beforeRunHash })
@@ -1321,12 +1501,12 @@ try {
                     $validated = Validate-CaseSteps $nativeCases[$caseIndex] $oracleCases[$caseIndex] $policy $optimization $diagnosticId
                     $normalizedCases.Add($validated)
                 }
-                $semanticRuns.Add([ordered]@{ optimization = $optimization; resetProfile = $profileName; policy = $policy; cases = @($normalizedCases); rawResult = $native; resetTelemetry = $resetTelemetry; process = $nativeRun })
-                $nativeRuns.Add([ordered]@{ optimization = $optimization; resetProfile = $profileName; policy = $policy; process = $nativeRun; result = $native; resetTelemetry = $resetTelemetry; validatedCases = @($normalizedCases) })
+                $semanticRuns.Add([ordered]@{ optimization = $optimization; resetProfile = $profileName; moduleProfile = $moduleProfile; policy = $policy; cases = @($normalizedCases); rawResult = $native; resetTelemetry = $resetTelemetry; process = $nativeRun })
+                $nativeRuns.Add([ordered]@{ optimization = $optimization; resetProfile = $profileName; moduleProfile = $moduleProfile; policy = $policy; process = $nativeRun; result = $native; resetTelemetry = $resetTelemetry; validatedCases = @($normalizedCases) })
             }
         }
     }
-    Stop-Provider 'all eight real-I/O profile/policy/optimization runs completed'
+    Stop-Provider 'all twelve real-I/O host-profile/policy/optimization runs completed'
     $providerEvidence = Validate-ProviderCounters $providerCounters @($semanticRuns)
 
     foreach ($resetProfile in $resetProfiles) {
@@ -1348,10 +1528,17 @@ try {
         foreach ($policy in @('return', 'keep')) {
             $diagnosticRun = $semanticRuns | Where-Object { $_.optimization -ceq $optimization -and $_.resetProfile -ceq 'diagnostic' -and $_.policy -ceq $policy } | Select-Object -First 1
             $fastRun = $semanticRuns | Where-Object { $_.optimization -ceq $optimization -and $_.resetProfile -ceq 'fast' -and $_.policy -ceq $policy } | Select-Object -First 1
+            $trustedRun = $semanticRuns | Where-Object { $_.optimization -ceq $optimization -and $_.resetProfile -ceq 'trusted-generated' -and $_.policy -ceq $policy } | Select-Object -First 1
             Compare-RunSemantics $diagnosticRun $fastRun "$optimization/$policy diagnostic and fast profiles have identical exact semantic state traces"
             Compare-RunStorage $diagnosticRun $fastRun "$optimization/$policy diagnostic and fast profiles use equal caller-reserved controller storage"
             Compare-RunStats $diagnosticRun $fastRun "$optimization/$policy diagnostic and fast profiles have identical existing runtime stats"
             Compare-ResetTelemetry $diagnosticRun.resetTelemetry $fastRun.resetTelemetry "$optimization/$policy reset telemetry preserves prefix, bitmap, and cursor counts separately from capacity writes"
+            Compare-RunSemantics $diagnosticRun $trustedRun "$optimization/$policy diagnostic and trusted-generated profiles have identical exact semantic state traces"
+            Compare-RunStats $diagnosticRun $trustedRun "$optimization/$policy diagnostic and trusted-generated profiles have identical non-storage runtime cost stats" @('storageReservedBytes', 'scratchReservedBytes')
+            Compare-TrustedRunStorage $diagnosticRun $trustedRun "$optimization/$policy trusted-generated profile saves exactly the independently computed bitmap storage"
+            Compare-TrustedResetTelemetry $diagnosticRun.resetTelemetry $trustedRun.resetTelemetry "$optimization/$policy trusted-generated omits reset payload/bitmap counters while preserving cursor extent"
+            Compare-RunSemantics $fastRun $trustedRun "$optimization/$policy fast and trusted-generated profiles have identical exact semantic state traces"
+            Compare-RunStats $fastRun $trustedRun "$optimization/$policy fast and trusted-generated profiles have identical non-storage runtime cost stats" @('storageReservedBytes', 'scratchReservedBytes')
         }
     }
     $report.provider = [ordered]@{ ready = $providerReady; lifecycle = $providerLifecycle; evidence = $providerEvidence; counters = $providerCounters; counterOutput = if ($null -eq $providerHandle) { $null } else { $providerHandle.Record.stdout } }
@@ -1381,7 +1568,7 @@ try {
             if ($sourceInputBefore[$index].path -cne $sourceInputAfter[$index].path -or $sourceInputBefore[$index].sha256 -cne $sourceInputAfter[$index].sha256) { $sourceStable = $false }
         }
     }
-    Add-Check 'all real-I/O acceptance source hashes remain unchanged during fresh builds and diagnostic/fast native runs' $sourceStable ([ordered]@{ beforeCount = $sourceInputBefore.Count; afterCount = $sourceInputAfter.Count; expectedCount = $sourceInputPaths.Count })
+    Add-Check 'all real-I/O acceptance source hashes remain unchanged during fresh builds and diagnostic/fast/trusted-generated native runs' $sourceStable ([ordered]@{ beforeCount = $sourceInputBefore.Count; afterCount = $sourceInputAfter.Count; expectedCount = $sourceInputPaths.Count })
     if (-not [string]::IsNullOrWhiteSpace($oracleHashBeforeNative)) {
         $oracleHashAfter = if (Test-Path -LiteralPath $fixturePath -PathType Leaf) { Get-Hash $fixturePath } else { $null }
         Add-Check 'frozen expected-oracle hash remains unchanged through evidence capture' ($oracleHashAfter -ceq $oracleHashBeforeNative) ([ordered]@{ beforeNative = $oracleHashBeforeNative; afterRun = $oracleHashAfter })
@@ -1397,10 +1584,10 @@ try {
     if ($null -eq $report.provider -and $null -ne $providerHandle) { $report.provider = [ordered]@{ ready = $providerReady; lifecycle = $providerLifecycle; counters = $providerCounters; outputPath = $providerHandle.Record.stdoutPath; errorPath = $providerHandle.Record.stderrPath } }
     $report.providerLifecycle = $providerLifecycle
     $report.errors = @($errors)
-    $eightNativeRuns = $nativeRuns.Count -eq 8
-    Add-Check 'all eight O0/O2 by diagnostic/fast by RETURN/KEEP native runs completed' $eightNativeRuns ([ordered]@{ expected = 8; actual = $nativeRuns.Count })
+    $twelveNativeRuns = $nativeRuns.Count -eq 12
+    Add-Check 'all twelve O0/O2 by diagnostic/fast/trusted-generated by RETURN/KEEP native runs completed' $twelveNativeRuns ([ordered]@{ expected = 12; actual = $nativeRuns.Count })
     $report.checks = @($checks)
-    $report.passed = $runChecksPassed -and $eightNativeRuns -and $errors.Count -eq 0 -and @($checks | Where-Object { -not $_.passed }).Count -eq 0
+    $report.passed = $runChecksPassed -and $twelveNativeRuns -and $errors.Count -eq 0 -and @($checks | Where-Object { -not $_.passed }).Count -eq 0
     try {
         [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($reportPath)) | Out-Null
         [IO.File]::WriteAllText($reportPath, (ConvertTo-Json -InputObject $report -Depth 100), $utf8)

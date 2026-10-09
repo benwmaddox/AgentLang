@@ -63,6 +63,9 @@ typedef struct al_owning_mailbox_entry {
   al_owning_mailbox_execute_fn execute;
 } al_owning_mailbox_entry;
 
+/* Direct callers of associated_resume must be trusted hosts that control the
+ * context and retained slice descriptors. The mailbox runtime uses this entry
+ * only with its own validated attachment roots. */
 typedef int32_t (*al_owning_mailbox_associated_resume_fn)(
     al_owning_stack_context *context,
     const al_owning_bank_stack_slice *retained_inputs,

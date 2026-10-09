@@ -114,6 +114,12 @@ static void record_check(const char *name, int passed) {
 
 #define CHECK(name, condition) record_check((name), (condition))
 
+#if defined(AL_OWNING_TRUSTED_GENERATED) && AL_OWNING_TRUSTED_GENERATED
+#define OWNING_TRUSTED_PROFILE 1
+#else
+#define OWNING_TRUSTED_PROFILE 0
+#endif
+
 static uint32_t align8(uint32_t value) {
   return (value + 7u) & ~7u;
 }
@@ -186,7 +192,8 @@ static void accumulate_reset_telemetry(const al_mailbox_reset_stats *stats) {
                            AL_MAILBOX_CONTROL_ABI_VERSION ||
       stats->struct_size != sizeof(*stats) ||
       (stats->reset_profile != AL_MAILBOX_RESET_PROFILE_DIAGNOSTIC &&
-       stats->reset_profile != AL_MAILBOX_RESET_PROFILE_FAST)) {
+       stats->reset_profile != AL_MAILBOX_RESET_PROFILE_FAST &&
+       stats->reset_profile != AL_MAILBOX_RESET_PROFILE_TRUSTED)) {
     reset_telemetry_valid = 0u;
     return;
   }
@@ -221,14 +228,19 @@ static void print_reset_telemetry_json(void) {
   const char *profile = reset_telemetry_valid != 0u &&
                                 reset_telemetry_has_value != 0u &&
                                 reset_telemetry.reset_profile ==
-                                    AL_MAILBOX_RESET_PROFILE_FAST
-                            ? "fast"
+                                    AL_MAILBOX_RESET_PROFILE_TRUSTED
+                            ? "trusted-generated"
                             : (reset_telemetry_valid != 0u &&
                                        reset_telemetry_has_value != 0u &&
                                        reset_telemetry.reset_profile ==
-                                           AL_MAILBOX_RESET_PROFILE_DIAGNOSTIC
-                                   ? "diagnostic"
-                                   : "invalid");
+                                           AL_MAILBOX_RESET_PROFILE_FAST
+                                   ? "fast"
+                                   : (reset_telemetry_valid != 0u &&
+                                              reset_telemetry_has_value != 0u &&
+                                              reset_telemetry.reset_profile ==
+                                                  AL_MAILBOX_RESET_PROFILE_DIAGNOSTIC
+                                          ? "diagnostic"
+                                          : "invalid"));
   printf("{\"valid\":%s,\"profile\":\"%s\","
          "\"scope\":\"owningScratchCheckoutRelease\","
          "\"payloadWriteSemantics\":\"logicalRuntimeRequestedBytesNotHardwareTraffic\","
@@ -387,10 +399,17 @@ static int capture_attached_snapshot(al_mailbox_runtime *runtime,
                  (snapshot->cursor_bytes % 8u != 0u ? 1u : 0u);
   if (bitmap_bytes > sizeof(snapshot->initialized))
     return 0;
-  memcpy(snapshot->initialized, view.associated_context->init_bitmap,
-         bitmap_bytes);
-  memcpy(snapshot->poisoned, view.associated_context->poison_bitmap,
-         bitmap_bytes);
+  if (OWNING_TRUSTED_PROFILE) {
+    if (view.associated_context->init_bitmap_bytes != 0u ||
+        view.associated_context->init_bitmap != NULL ||
+        view.associated_context->poison_bitmap != NULL)
+      return 0;
+  } else if (bitmap_bytes > 0u) {
+    memcpy(snapshot->initialized, view.associated_context->init_bitmap,
+           bitmap_bytes);
+    memcpy(snapshot->poisoned, view.associated_context->poison_bitmap,
+           bitmap_bytes);
+  }
   return 1;
 }
 
@@ -414,10 +433,15 @@ static int attached_snapshot_unchanged(al_mailbox_runtime *runtime,
          ((bitmap_bytes = snapshot->cursor_bytes / 8u +
                           (snapshot->cursor_bytes % 8u != 0u ? 1u : 0u)),
           bitmap_bytes <= sizeof(snapshot->initialized)) &&
-         memcmp(view.associated_context->init_bitmap, snapshot->initialized,
-                bitmap_bytes) == 0 &&
-         memcmp(view.associated_context->poison_bitmap, snapshot->poisoned,
-                bitmap_bytes) == 0;
+         (OWNING_TRUSTED_PROFILE
+              ? view.associated_context->init_bitmap_bytes == 0u &&
+                    view.associated_context->init_bitmap == NULL &&
+                    view.associated_context->poison_bitmap == NULL
+              : bitmap_bytes == 0u ||
+                    (memcmp(view.associated_context->init_bitmap,
+                            snapshot->initialized, bitmap_bytes) == 0 &&
+                     memcmp(view.associated_context->poison_bitmap,
+                            snapshot->poisoned, bitmap_bytes) == 0));
 }
 
 static int snapshot_bank(al_mailbox_runtime *runtime, uint32_t mailbox_id,
@@ -578,12 +602,17 @@ static int setup_direct(direct_buffers *buffers, uint32_t capacity) {
   memset(buffers, 0, sizeof(*buffers));
   buffers->context.abi_version = AL_OWNING_STACK_ABI_VERSION;
   buffers->context.stack_capacity_bytes = capacity;
-  buffers->context.init_bitmap_bytes =
-      capacity / 8u + (capacity % 8u != 0u ? 1u : 0u);
+  buffers->context.init_bitmap_bytes = OWNING_TRUSTED_PROFILE
+                                           ? 0u
+                                           : capacity / 8u +
+                                                 (capacity % 8u != 0u ? 1u
+                                                                      : 0u);
   buffers->context.trace_event_capacity = DIRECT_TRACE_EVENTS;
   buffers->context.stack_data = buffers->stack;
-  buffers->context.init_bitmap = buffers->initialized;
-  buffers->context.poison_bitmap = buffers->poisoned;
+  buffers->context.init_bitmap =
+      OWNING_TRUSTED_PROFILE ? NULL : buffers->initialized;
+  buffers->context.poison_bitmap =
+      OWNING_TRUSTED_PROFILE ? NULL : buffers->poisoned;
   buffers->context.trace_events = buffers->events;
   al_owning_begin(&buffers->context);
   return buffers->context.status == AL_OWNING_STATUS_OK;
@@ -598,6 +627,147 @@ static int outputs_unchanged(const al_owning_bank_stack_slice *outputs,
                              const al_owning_bank_stack_slice *before,
                              uint32_t count) {
   return memcmp(outputs, before, sizeof(*outputs) * count) == 0;
+}
+
+static int bytes_match(const uint8_t *bytes, uint32_t count, uint8_t value) {
+  uint32_t index;
+  for (index = 0u; index < count; ++index) {
+    if (bytes[index] != value)
+      return 0;
+  }
+  return 1;
+}
+
+static int setup_direct_empty_roots(
+    const al_owning_mailbox_module *module, direct_buffers *buffers,
+    al_owning_bank_stack_slice roots[2]) {
+  static const uint8_t empty_root[8] = {0u};
+  al_owning_value_size state_size;
+  al_owning_value_size continuation_size;
+  if (module == NULL || buffers == NULL || roots == NULL ||
+      !setup_direct(buffers, DIRECT_CAPACITY))
+    return 0;
+  memset(buffers->stack, 0xa5, sizeof(buffers->stack));
+  memcpy(buffers->stack, empty_root, sizeof(empty_root));
+  memcpy(buffers->stack + sizeof(empty_root), empty_root, sizeof(empty_root));
+  buffers->context.cursor_bytes = 16u;
+  buffers->context.peak_cursor_bytes = 16u;
+  buffers->context.available_bytes =
+      buffers->context.stack_capacity_bytes - 16u;
+  if (!OWNING_TRUSTED_PROFILE) {
+    buffers->context.init_bitmap[0] = 0xffu;
+    buffers->context.init_bitmap[1] = 0xffu;
+    buffers->context.poison_bitmap[0] = 0u;
+    buffers->context.poison_bitmap[1] = 0u;
+  }
+  memset(roots, 0, sizeof(*roots) * 2u);
+  roots[0].type_index = EXPECTED_STATE_INDEX;
+  roots[0].source_offset_bytes = 0u;
+  roots[0].source_owner_end_bytes = 8u;
+  roots[1].type_index = EXPECTED_CONTINUATION_INDEX;
+  roots[1].source_offset_bytes = 8u;
+  roots[1].source_owner_end_bytes = 16u;
+  return al_owning_measure_value(&buffers->context, module->layout,
+                                EXPECTED_STATE_INDEX, 0u, 8u, 0u,
+                                &state_size) == 0 &&
+         state_size.extent_bytes == 8u &&
+         al_owning_measure_value(&buffers->context, module->layout,
+                                 EXPECTED_CONTINUATION_INDEX, 8u, 16u, 0u,
+                                 &continuation_size) == 0 &&
+         continuation_size.extent_bytes == 8u;
+}
+
+static void run_associated_profile_check(
+    const al_owning_mailbox_module *module, int expect_profile_rejection) {
+  static const uint8_t empty_completion[8] = {0u};
+  direct_buffers buffers;
+  al_owning_bank_stack_slice roots[2];
+  al_owning_bank_stack_slice before_roots[2];
+  al_owning_bank_stack_slice output;
+  al_owning_bank_stack_slice before_output;
+  al_owning_external_slice completion;
+  al_owning_value_size result_size;
+  int32_t callback_status;
+  int fixture_valid = setup_direct_empty_roots(module, &buffers, roots);
+  CHECK("profile callback fixture contains valid empty State and Continuation roots",
+        fixture_valid);
+  if (!fixture_valid)
+    return;
+  memcpy(before_roots, roots, sizeof(roots));
+  completion.bytes = empty_completion;
+  completion.extent_bytes = sizeof(empty_completion);
+  completion.type_index = EXPECTED_STRING_INDEX;
+  fill_invalid_outputs(&output, 1u);
+  before_output = output;
+  callback_status = module->associated_resume(
+      &buffers.context, roots, 2u, &completion, 16u, &output, 1u);
+  if (expect_profile_rejection) {
+    CHECK("cross-profile associated callback rejects before writes and preserves valid active roots",
+          callback_status != 0 && buffers.context.cursor_bytes == 16u &&
+              buffers.context.status != AL_OWNING_STATUS_OK &&
+              buffers.context.input_copy_bytes == 0u &&
+              bytes_match(buffers.stack, 16u, 0u) &&
+              bytes_match(buffers.stack + 16u,
+                          (uint32_t)sizeof(buffers.stack) - 16u, 0xa5u) &&
+              memcmp(roots, before_roots, sizeof(roots)) == 0 &&
+              outputs_unchanged(&output, &before_output, 1u));
+  } else {
+      CHECK("same-profile associated callback accepts valid empty State and Continuation roots",
+            callback_status == 0 && buffers.context.status == AL_OWNING_STATUS_OK &&
+                output.type_index == EXPECTED_STATE_INDEX &&
+                output.source_offset_bytes >= 16u &&
+                output.source_owner_end_bytes <= buffers.context.cursor_bytes &&
+                al_owning_measure_value(&buffers.context, module->layout,
+                                        output.type_index,
+                                        output.source_offset_bytes,
+                                        output.source_owner_end_bytes, 0u,
+                                        &result_size) == 0 &&
+                result_size.extent_bytes == 8u &&
+                bytes_match(buffers.stack + output.source_offset_bytes, 8u,
+                            0u) &&
+                memcmp(roots, before_roots, sizeof(roots)) == 0);
+  }
+}
+
+static void run_profile_mismatch_preflight(
+    const al_owning_mailbox_module *module) {
+  static const uint16_t request_units[] = {0x0041u};
+  uint8_t request[SMALL_BYTES];
+  uint32_t request_extent = encode_expected_string(
+      request_units, (uint32_t)(sizeof(request_units) / sizeof(request_units[0])),
+      request, (uint32_t)sizeof(request));
+  direct_buffers buffers;
+  al_owning_external_slice input;
+  al_owning_bank_stack_slice output;
+  al_owning_bank_stack_slice before_output;
+  int32_t callback_status;
+
+  CHECK("profile mismatch fixture uses the selected host bitmap shape",
+        setup_direct(&buffers, DIRECT_CAPACITY) &&
+            (OWNING_TRUSTED_PROFILE
+                 ? buffers.context.init_bitmap_bytes == 0u &&
+                       buffers.context.init_bitmap == NULL &&
+                       buffers.context.poison_bitmap == NULL
+                 : buffers.context.init_bitmap_bytes == DIRECT_BITMAP_BYTES &&
+                       buffers.context.init_bitmap == buffers.initialized &&
+                       buffers.context.poison_bitmap == buffers.poisoned));
+  if (buffers.context.stack_data == NULL || request_extent == 0u)
+    return;
+  memset(buffers.stack, 0xa5, sizeof(buffers.stack));
+  input.bytes = request;
+  input.extent_bytes = request_extent;
+  input.type_index = EXPECTED_STRING_INDEX;
+  fill_invalid_outputs(&output, 1u);
+  before_output = output;
+  callback_status = module->entries[0].execute(
+      &buffers.context, &input, 1u, &output, 1u);
+  CHECK("cross-profile module is rejected before stack writes and preserves caller outputs",
+        callback_status != 0 && buffers.context.cursor_bytes == 0u &&
+            buffers.context.status != AL_OWNING_STATUS_OK &&
+            buffers.context.input_copy_bytes == 0u &&
+            bytes_match(buffers.stack, (uint32_t)sizeof(buffers.stack), 0xa5u) &&
+            outputs_unchanged(&output, &before_output, 1u));
+  run_associated_profile_check(module, 1);
 }
 
 static int outputs_invalidated(const al_owning_bank_stack_slice *outputs,
@@ -688,8 +858,13 @@ static void capture_direct_prefix(const direct_buffers *buffers,
   if (bitmap_bytes > SMALL_BYTES / 2u)
     return;
   memcpy(prefix, buffers->context.stack_data, *cursor_bytes);
-  memcpy(initialized, buffers->context.init_bitmap, bitmap_bytes);
-  memcpy(poisoned, buffers->context.poison_bitmap, bitmap_bytes);
+  if (OWNING_TRUSTED_PROFILE) {
+    (void)initialized;
+    (void)poisoned;
+  } else if (bitmap_bytes > 0u) {
+    memcpy(initialized, buffers->context.init_bitmap, bitmap_bytes);
+    memcpy(poisoned, buffers->context.poison_bitmap, bitmap_bytes);
+  }
 }
 
 static int direct_prefix_unchanged(
@@ -702,8 +877,15 @@ static int direct_prefix_unchanged(
          bitmap_bytes <= SMALL_BYTES / 2u &&
          buffers->context.cursor_bytes == cursor_bytes &&
          memcmp(buffers->context.stack_data, prefix, cursor_bytes) == 0 &&
-         memcmp(buffers->context.init_bitmap, initialized, bitmap_bytes) == 0 &&
-         memcmp(buffers->context.poison_bitmap, poisoned, bitmap_bytes) == 0;
+         (OWNING_TRUSTED_PROFILE
+              ? buffers->context.init_bitmap_bytes == 0u &&
+                    buffers->context.init_bitmap == NULL &&
+                    buffers->context.poison_bitmap == NULL
+              : bitmap_bytes == 0u ||
+                    (memcmp(buffers->context.init_bitmap, initialized,
+                            bitmap_bytes) == 0 &&
+                     memcmp(buffers->context.poison_bitmap, poisoned,
+                            bitmap_bytes) == 0));
 }
 
 static void run_direct_callback_preflight(
@@ -1149,8 +1331,12 @@ static int assert_storage_arithmetic(const runtime_fixture *fixture) {
                         2u * sizeof(al_owning_bank_root);
   uint64_t expected_retained = bank_bytes * 2u *
                                fixture->config.mailbox_capacity;
+#if OWNING_TRUSTED_PROFILE
+  uint64_t expected_bitmap = 0u;
+#else
   uint64_t expected_bitmap = fixture->config.scratch_byte_capacity / 8u +
                              (fixture->config.scratch_byte_capacity % 8u != 0u);
+#endif
   uint64_t expected_scratch =
       (uint64_t)fixture->config.scratch_slot_capacity *
       (fixture->config.scratch_byte_capacity + 2u * expected_bitmap);
@@ -1733,8 +1919,12 @@ static int policy_storage_arithmetic(const runtime_fixture *fixture) {
   uint64_t bank_bytes = (uint64_t)fixture->config.retained_byte_capacity +
                         2u * sizeof(al_owning_bank_root);
   uint64_t retained = bank_bytes * 2u * fixture->config.mailbox_capacity;
+#if OWNING_TRUSTED_PROFILE
+  uint64_t bitmap_bytes = 0u;
+#else
   uint64_t bitmap_bytes = fixture->config.scratch_byte_capacity / 8u +
                           (fixture->config.scratch_byte_capacity % 8u != 0u);
+#endif
   uint64_t scratch = fixture->config.scratch_slot_capacity *
                      ((uint64_t)fixture->config.scratch_byte_capacity +
                       2u * bitmap_bytes);
@@ -1928,7 +2118,8 @@ static void run_policy_adversarial_case(
   }
   CHECK("adversarial policy reservation matches source-derived component arithmetic",
         policy_storage_arithmetic(&fixture) &&
-            fixture.requirements.scratch_reserved_bytes == 163840u &&
+            fixture.requirements.scratch_reserved_bytes ==
+                (OWNING_TRUSTED_PROFILE ? 131072u : 163840u) &&
             fixture.requirements.retained_reserved_bytes == 432u &&
             fixture.requirements.text_staging_reserved_bytes == 16384u);
   initialize_call_info(&info);
@@ -2357,13 +2548,18 @@ int main(int argc, char **argv) {
   runtime_fixture main_fixture;
   int main_fixture_ready = 0;
   int policy_mode = argc == 3 && strcmp(argv[2], "--policy") == 0;
+  int profile_mismatch_mode =
+      argc == 3 && strcmp(argv[2], "--profile-mismatch") == 0;
+  int profile_control_mode =
+      argc == 3 && strcmp(argv[2], "--profile-control") == 0;
   policy_case_evidence small_return;
   policy_case_evidence small_keep;
   policy_case_evidence adversity_return;
   policy_case_evidence adversity_keep;
-  if (argc != 2 && !policy_mode) {
+  if (argc != 2 && !policy_mode && !profile_mismatch_mode &&
+      !profile_control_mode) {
     fprintf(stderr,
-            "Usage: native-owning-mailbox <owning-mailbox-module.dll> [--policy]\n");
+            "Usage: native-owning-mailbox <owning-mailbox-module.dll> [--policy|--profile-mismatch|--profile-control]\n");
     return 2;
   }
   memset(snapshots, 0, sizeof(snapshots));
@@ -2389,6 +2585,26 @@ int main(int argc, char **argv) {
         valid_module_roles(module));
   if (!valid_module_roles(module))
     goto done;
+
+  if (profile_mismatch_mode) {
+    run_profile_mismatch_preflight(module);
+    printf("{\"passed\":%s,\"failureCount\":%u,\"checks\":",
+           failure_count == 0u ? "true" : "false", failure_count);
+    print_checks_json();
+    printf("}\n");
+    FreeLibrary(library);
+    return failure_count == 0u ? 0 : 1;
+  }
+
+  if (profile_control_mode) {
+    run_associated_profile_check(module, 0);
+    printf("{\"passed\":%s,\"failureCount\":%u,\"checks\":",
+           failure_count == 0u ? "true" : "false", failure_count);
+    print_checks_json();
+    printf("}\n");
+    FreeLibrary(library);
+    return failure_count == 0u ? 0 : 1;
+  }
 
   if (policy_mode) {
     memset(&small_return, 0, sizeof(small_return));

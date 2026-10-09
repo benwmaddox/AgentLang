@@ -105,15 +105,10 @@ static int al_owning_bank_storage_disjoint_from_context(
   size_t root_bytes;
 
   if (store == NULL || context == NULL ||
-      context->abi_version != AL_OWNING_STACK_ABI_VERSION ||
       context->status != AL_OWNING_STATUS_OK ||
       context->stack_capacity_bytes == 0u ||
       context->cursor_bytes > context->stack_capacity_bytes ||
-      context->stack_data == NULL || context->init_bitmap == NULL ||
-      context->poison_bitmap == NULL ||
-      context->init_bitmap_bytes <
-          context->stack_capacity_bytes / 8u +
-              (context->stack_capacity_bytes % 8u != 0u ? 1u : 0u) ||
+      al_owning_build_profile_valid(context) == 0 ||
       (context->trace_event_capacity != 0u &&
        context->trace_events == NULL) ||
       (size_t)context->trace_event_capacity >

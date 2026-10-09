@@ -213,10 +213,14 @@ under both policies at O0/O2, including terminal cancellation and retry; see
 [report 133](../reports/133-real-io-mailbox-correctness.md). Fresh policy and ordinary
 mailbox regressions also pass. The optional reset profile now removes full-capacity
 scratch payload clears at checkout/release, with matching policy and socket
-behavior ([report 138](../reports/138-native-reset-profile.md)). Live-prefix
-poisoning and bitmap tracking remain. Next establish the remaining trusted-code
-release path and compare sustained load with matched F# workloads; the present
-diagnostic host is not a performance baseline.
+behavior ([report 138](../reports/138-native-reset-profile.md)). The opt-in
+[trusted-generated profile](../reports/139-trusted-generated-native-profile.md)
+removes the remaining diagnostic bitmap storage, poison writes and tracking
+scans while preserving serialized input checks and callback boundaries. Its
+12-run socket matrix preserves both policies' behavior at O0/O2. Next compare
+sustained load with matched F# workloads using this explicit profile; the
+diagnostic host is not a performance baseline. Do not add a general actor
+framework as a prerequisite for that comparison.
 Native conformance does not
 establish service throughput, process RAM or improved agent reliability.
 This is not an unresolved preference between packing and bulk reset; see the
@@ -331,6 +335,17 @@ At async suspension, the proposed refinement stores surviving data and resume
 state in that same mailbox, returns its stack arena to the pool, and reacquires
 stack storage for resumption. No additional processing mailbox is required;
 ordering during suspension remains a policy to specify and test.
+
+Runtime organization remains an open design choice. The user is considering
+specialized typed mailboxes connected as a data-flow system, with Smalltalk-inspired
+live inspection and implementation replacement, rather than committing to a
+general actor system. Evaluate functions as the unit of ordinary composition
+and mailboxes as state, scheduling and lifetime boundaries; do not require a
+mailbox for every function. State retention, async resumption and explicit typed
+routing fit this candidate. General spawning, supervision and distribution are
+separate decisions. Current native arena/profile work supports the shared
+foundation and does not select a general actor framework. AI coding agents
+remain external developers, not language-runtime entities.
 
 No current interpreter result proves native footprint, throughput or arena
 safety. Require semantic conformance and measured memory, throughput and tail

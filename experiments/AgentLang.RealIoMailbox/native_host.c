@@ -1293,7 +1293,12 @@ static int dispose_case(case_driver *driver) {
           sizeof(driver->result->reset_stats))
     return failf("%s: post-dispose reset stats query failed",
                  driver->result->id);
-#if defined(AL_MAILBOX_FAST_RESET) && AL_MAILBOX_FAST_RESET
+#if defined(AL_OWNING_TRUSTED_GENERATED) && AL_OWNING_TRUSTED_GENERATED
+  if (driver->result->reset_stats.reset_profile !=
+      AL_MAILBOX_RESET_PROFILE_TRUSTED)
+    return failf("%s: reset stats profile differs from trusted-generated build",
+                 driver->result->id);
+#elif defined(AL_MAILBOX_FAST_RESET) && AL_MAILBOX_FAST_RESET
   if (driver->result->reset_stats.reset_profile !=
       AL_MAILBOX_RESET_PROFILE_FAST)
     return failf("%s: reset stats profile differs from fast build",
@@ -1810,7 +1815,9 @@ static void print_reset_telemetry(void) {
   memset(&total, 0, sizeof(total));
   total.control_abi_version = AL_MAILBOX_CONTROL_ABI_VERSION;
   total.struct_size = (uint32_t)sizeof(total);
-#if defined(AL_MAILBOX_FAST_RESET) && AL_MAILBOX_FAST_RESET
+#if defined(AL_OWNING_TRUSTED_GENERATED) && AL_OWNING_TRUSTED_GENERATED
+  total.reset_profile = AL_MAILBOX_RESET_PROFILE_TRUSTED;
+#elif defined(AL_MAILBOX_FAST_RESET) && AL_MAILBOX_FAST_RESET
   total.reset_profile = AL_MAILBOX_RESET_PROFILE_FAST;
 #else
   total.reset_profile = AL_MAILBOX_RESET_PROFILE_DIAGNOSTIC;
@@ -1844,9 +1851,12 @@ static void print_reset_telemetry(void) {
          "\"bitmapStoreOperations\":%" PRIu64 ","
          "\"turnResetCursorExtentBytes\":%" PRIu64 "}",
          valid != 0u ? "true" : "false",
-         valid != 0u && total.reset_profile == AL_MAILBOX_RESET_PROFILE_FAST
-             ? "fast"
-             : (valid != 0u ? "diagnostic" : "invalid"),
+         valid != 0u && total.reset_profile == AL_MAILBOX_RESET_PROFILE_TRUSTED
+             ? "trusted-generated"
+             : (valid != 0u &&
+                        total.reset_profile == AL_MAILBOX_RESET_PROFILE_FAST
+                    ? "fast"
+                    : (valid != 0u ? "diagnostic" : "invalid")),
          total.full_capacity_payload_write_bytes_requested,
          total.live_prefix_payload_write_bytes_requested,
          total.bitmap_store_operations, total.turn_reset_cursor_extent_bytes);

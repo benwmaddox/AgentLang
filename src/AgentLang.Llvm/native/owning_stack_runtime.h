@@ -3,6 +3,14 @@
 
 #include <stdint.h>
 
+#ifndef AL_OWNING_TRUSTED_GENERATED
+#define AL_OWNING_TRUSTED_GENERATED 0
+#endif
+
+#if AL_OWNING_TRUSTED_GENERATED != 0 && AL_OWNING_TRUSTED_GENERATED != 1
+#error "AL_OWNING_TRUSTED_GENERATED must be 0 or 1"
+#endif
+
 #define AL_OWNING_STACK_ABI_VERSION 1u
 
 #define AL_OWNING_LAYOUT_ABI_VERSION 1u
@@ -139,6 +147,8 @@ enum {
 };
 
 void al_owning_begin(al_owning_stack_context *ctx);
+/* Returns 1 when ctx has the storage shape required by this build profile. */
+int32_t al_owning_build_profile_valid(const al_owning_stack_context *ctx);
 int32_t al_owning_enter_frame(al_owning_stack_context *ctx, uint32_t error_id);
 void al_owning_leave_frame(al_owning_stack_context *ctx);
 int32_t al_owning_reserve_to(al_owning_stack_context *ctx, uint32_t new_cursor,

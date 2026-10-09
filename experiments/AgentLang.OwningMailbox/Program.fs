@@ -163,26 +163,40 @@ let private parseOptimization = function
     | "O2" -> LlvmOptimization.O2
     | value -> invalidArg "optimization" $"Unsupported optimization '{value}'; expected O0 or O2."
 
-let private usage = "Usage: AgentLang.OwningMailbox <O0|O2> <output-directory> <owning-mailbox.flow>"
+let private parseRuntimeProfile = function
+    | [] -> OwningRuntimeProfile.Diagnostic
+    | [ "--runtime-profile"; "diagnostic" ] -> OwningRuntimeProfile.Diagnostic
+    | [ "--runtime-profile"; "trusted-generated" ] -> OwningRuntimeProfile.TrustedGenerated
+    | arguments ->
+        let shownArguments = String.concat " " arguments
+        invalidArg "runtimeProfile" $"Unsupported runtime profile arguments '{shownArguments}'; expected --runtime-profile diagnostic or --runtime-profile trusted-generated."
+
+let private runtimeProfileName = function
+    | OwningRuntimeProfile.Diagnostic -> "diagnostic"
+    | OwningRuntimeProfile.TrustedGenerated -> "trusted-generated"
+
+let private usage = "Usage: AgentLang.OwningMailbox <O0|O2> <output-directory> <owning-mailbox.flow> [--runtime-profile <diagnostic|trusted-generated>]"
 
 [<EntryPoint>]
 let main argv =
     try
-        if argv.Length <> 3 then
+        if argv.Length <> 3 && argv.Length <> 5 then
             eprintfn "%s" usage
             2
         else
             let optimizationName = argv[0]
             let optimization = parseOptimization optimizationName
+            let runtimeProfile = argv |> Array.skip 3 |> Array.toList |> parseRuntimeProfile
             let outputDirectory = Path.GetFullPath argv[1]
             let sourcePath = Path.GetFullPath argv[2]
             let source = File.ReadAllText sourcePath
             Directory.CreateDirectory outputDirectory |> ignore
             let bodies = compileBodies source
             let artifact =
-                OwningStackAot.compileMailbox
-                    (LlvmToolchain.discover ()) optimization outputDirectory
+                OwningStackAot.compileMailboxWithProfile
+                    (LlvmToolchain.discover ()) optimization runtimeProfile outputDirectory
                     bodies.Initialize bodies.Begin bodies.Resume
+            let compiledRuntimeProfile = runtimeProfileName artifact.RuntimeProfile
             let unicodeOracle = interpreterOracle bodies "A🙂" "δ" "\u0000🚀"
             let emptyOracle = interpreterOracle bodies "" "" "B"
             let controllerReservedStorageBytes =
@@ -248,6 +262,7 @@ let main argv =
                 values |> Map.toSeq |> Seq.map snd |> Seq.fold max 0
             let result =
                 {| optimization = optimizationName
+                   runtimeProfile = compiledRuntimeProfile
                    sourcePath = sourcePath
                    sameVerifiedProgramInstance = true
                    modulePath = artifact.LibraryPath

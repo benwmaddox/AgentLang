@@ -118,6 +118,7 @@ type OwningMailboxCompiledModule internal
      metadataSourcePath: string,
      manifestPath: string,
      runtimeDirectory: string,
+     runtimeProfile: OwningRuntimeProfile,
      llvmIr: string,
      entries: OwningMailboxEntryMetadata list,
      entryFrameIrPaths: string list,
@@ -135,6 +136,7 @@ type OwningMailboxCompiledModule internal
     member _.MetadataSourcePath = metadataSourcePath
     member _.ManifestPath = manifestPath
     member _.RuntimeDirectory = runtimeDirectory
+    member _.RuntimeProfile = runtimeProfile
     member _.LlvmIr = llvmIr
     member _.Entries = entries
     member _.EntryFrameIrPaths = entryFrameIrPaths
@@ -3828,7 +3830,9 @@ module OwningStackAot =
         append "  al_owning_mailbox_span spans[16];"
         append "  uint32_t span_count = 0u;"
         append "  uint32_t index;"
+        append "#if !AL_OWNING_TRUSTED_GENERATED"
         append "  uint32_t required_bitmap_bytes;"
+        append "#endif"
         append "  uint64_t trace_bytes;"
         append "  uint64_t type_bytes;"
         append "  uint64_t field_bytes;"
@@ -3840,6 +3844,16 @@ module OwningStackAot =
         append "  if (ctx->status != AL_OWNING_STATUS_OK) return 1;"
         append "  if (ctx->abi_version != AL_OWNING_STACK_ABI_VERSION || ctx->cursor_bytes != 0u || ctx->call_depth != 0u || ((uintptr_t)ctx % _Alignof(al_owning_stack_context)) != 0u)"
         append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "#if !AL_OWNING_TRUSTED_GENERATED"
+        append "  required_bitmap_bytes = ctx->stack_capacity_bytes / 8u + (ctx->stack_capacity_bytes % 8u == 0u ? 0u : 1u);"
+        append "#endif"
+        append "  if (!al_owning_build_profile_valid(ctx)) {"
+        append "#if AL_OWNING_TRUSTED_GENERATED"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, ctx->init_bitmap_bytes);"
+        append "#else"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, required_bitmap_bytes, ctx->init_bitmap_bytes);"
+        append "#endif"
+        append "  }"
         append "  if (module->abi_version != AL_OWNING_MAILBOX_ABI_VERSION || module->struct_size != sizeof(*module) || module->layout == 0 || module->associated_resume != agentlang_mailbox_resume_associated || entry_index >= AL_OWNING_MAILBOX_ENTRY_COUNT)"
         append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
         append "  layout = module->layout;"
@@ -3880,9 +3894,13 @@ module OwningStackAot =
         append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
         append "  if (ctx->stack_capacity_bytes == 0u || ctx->stack_data == 0)"
         append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
-        append "  required_bitmap_bytes = ctx->stack_capacity_bytes / 8u + (ctx->stack_capacity_bytes % 8u == 0u ? 0u : 1u);"
-        append "  if (ctx->init_bitmap_bytes < required_bitmap_bytes || ctx->init_bitmap == 0 || ctx->poison_bitmap == 0 || (ctx->trace_event_capacity != 0u && ctx->trace_events == 0))"
+        append "  if (ctx->trace_event_capacity != 0u && ctx->trace_events == 0) {"
+        append "#if AL_OWNING_TRUSTED_GENERATED"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, ctx->init_bitmap_bytes);"
+        append "#else"
         append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, required_bitmap_bytes, ctx->init_bitmap_bytes);"
+        append "#endif"
+        append "  }"
         append "  trace_bytes = (uint64_t)ctx->trace_event_capacity * (uint64_t)sizeof(al_owning_stack_event);"
         append "  if (!al_owning_mailbox_add_span(spans, &span_count, module, sizeof(*module)) ||"
         append "      !al_owning_mailbox_add_span(spans, &span_count, layout, sizeof(*layout)) ||"
@@ -3890,8 +3908,10 @@ module OwningStackAot =
         append "      !al_owning_mailbox_add_span(spans, &span_count, layout->fields, field_bytes) ||"
         append "      !al_owning_mailbox_add_span(spans, &span_count, ctx, sizeof(*ctx)) ||"
         append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->stack_data, ctx->stack_capacity_bytes) ||"
+        append "#if !AL_OWNING_TRUSTED_GENERATED"
         append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->init_bitmap, ctx->init_bitmap_bytes) ||"
         append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->poison_bitmap, ctx->init_bitmap_bytes) ||"
+        append "#endif"
         append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->trace_events, trace_bytes) ||"
         append "      !al_owning_mailbox_add_span(spans, &span_count, inputs, (uint64_t)input_count * sizeof(*inputs)) ||"
         append "      !al_owning_mailbox_add_span(spans, &span_count, outputs, (uint64_t)entry->output_count * AL_OWNING_MAILBOX_OUTPUT_SLICE_BYTES))"
@@ -3918,7 +3938,9 @@ module OwningStackAot =
         append "  al_owning_mailbox_span spans[16];"
         append "  uint32_t span_count = 0u;"
         append "  uint32_t index;"
+        append "#if !AL_OWNING_TRUSTED_GENERATED"
         append "  uint32_t required_bitmap_bytes;"
+        append "#endif"
         append "  uint64_t trace_bytes;"
         append "  uint64_t type_bytes;"
         append "  uint64_t field_bytes;"
@@ -3933,6 +3955,16 @@ module OwningStackAot =
         append "  if (ctx->status != AL_OWNING_STATUS_OK) return 1;"
         append "  if (ctx->abi_version != AL_OWNING_STACK_ABI_VERSION || protected_cursor_bytes == 0u || ctx->cursor_bytes != protected_cursor_bytes || ctx->call_depth != 0u || ((uintptr_t)ctx % _Alignof(al_owning_stack_context)) != 0u)"
         append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, protected_cursor_bytes, ctx->cursor_bytes);"
+        append "#if !AL_OWNING_TRUSTED_GENERATED"
+        append "  required_bitmap_bytes = ctx->stack_capacity_bytes / 8u + (ctx->stack_capacity_bytes % 8u == 0u ? 0u : 1u);"
+        append "#endif"
+        append "  if (!al_owning_build_profile_valid(ctx)) {"
+        append "#if AL_OWNING_TRUSTED_GENERATED"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, ctx->init_bitmap_bytes);"
+        append "#else"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, required_bitmap_bytes, ctx->init_bitmap_bytes);"
+        append "#endif"
+        append "  }"
         append "  if (module->abi_version != AL_OWNING_MAILBOX_ABI_VERSION || module->struct_size != sizeof(*module) || module->layout == 0 || module->associated_resume != agentlang_mailbox_resume_associated)"
         append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
         append "  layout = module->layout;"
@@ -3958,9 +3990,13 @@ module OwningStackAot =
         append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
         append "  if (ctx->stack_capacity_bytes == 0u || ctx->stack_capacity_bytes > (uint32_t)INT32_MAX || ctx->cursor_bytes > ctx->stack_capacity_bytes || ctx->stack_data == 0 || ((uintptr_t)ctx->stack_data % _Alignof(uint64_t)) != 0u)"
         append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
-        append "  required_bitmap_bytes = ctx->stack_capacity_bytes / 8u + (ctx->stack_capacity_bytes % 8u == 0u ? 0u : 1u);"
-        append "  if (ctx->init_bitmap_bytes < required_bitmap_bytes || ctx->init_bitmap == 0 || ctx->poison_bitmap == 0 || (ctx->trace_event_capacity != 0u && ctx->trace_events == 0))"
+        append "  if (ctx->trace_event_capacity != 0u && ctx->trace_events == 0) {"
+        append "#if AL_OWNING_TRUSTED_GENERATED"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, ctx->init_bitmap_bytes);"
+        append "#else"
         append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, required_bitmap_bytes, ctx->init_bitmap_bytes);"
+        append "#endif"
+        append "  }"
         append "  if ((uint64_t)ctx->trace_event_capacity > UINT64_MAX / (uint64_t)sizeof(al_owning_stack_event))"
         append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
         append "  trace_bytes = (uint64_t)ctx->trace_event_capacity * (uint64_t)sizeof(al_owning_stack_event);"
@@ -3970,8 +4006,10 @@ module OwningStackAot =
         append "      !al_owning_mailbox_add_span(spans, &span_count, layout->fields, field_bytes) ||"
         append "      !al_owning_mailbox_add_span(spans, &span_count, ctx, sizeof(*ctx)) ||"
         append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->stack_data, ctx->stack_capacity_bytes) ||"
+        append "#if !AL_OWNING_TRUSTED_GENERATED"
         append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->init_bitmap, ctx->init_bitmap_bytes) ||"
         append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->poison_bitmap, ctx->init_bitmap_bytes) ||"
+        append "#endif"
         append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->trace_events, trace_bytes) ||"
         append "      !al_owning_mailbox_add_span(spans, &span_count, retained_inputs, (uint64_t)retained_count * AL_OWNING_MAILBOX_OUTPUT_SLICE_BYTES) ||"
         append "      !al_owning_mailbox_add_span(spans, &span_count, completion, sizeof(*completion)) ||"
@@ -4045,9 +4083,10 @@ module OwningStackAot =
     /// Compile the fixed initialize/begin/resume lifecycle into one immutable
     /// owning module with a shared type-index layout, ordinary mailbox callbacks,
     /// and a callback that resumes from two retained arena roots.
-    let compileMailbox
+    let compileMailboxWithProfile
         (toolchain: LlvmToolchain)
         optimization
+        (runtimeProfile: OwningRuntimeProfile)
         outputDirectory
         (verifiedInit: VerifiedIrBody)
         (verifiedBegin: VerifiedIrBody)
@@ -4123,7 +4162,8 @@ module OwningStackAot =
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.c" runtimeSourcePath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_mailbox_abi.h" mailboxAbiHeaderPath
         let compiledPath, objectPaths =
-            LlvmToolchain.compileModuleLibrary toolchain optimization [ llvmIrPath ] metadataSourcePath runtimeSourcePath runtimeDirectory libraryPath
+            LlvmToolchain.compileModuleLibraryWithProfile
+                toolchain optimization runtimeProfile [ llvmIrPath ] metadataSourcePath runtimeSourcePath runtimeDirectory libraryPath
         let hashText (value: string) =
             SHA256.HashData(Encoding.UTF8.GetBytes value)
             |> Convert.ToHexString
@@ -4211,6 +4251,10 @@ module OwningStackAot =
                    diagnosticIds = entry.DiagnosticIds
                    frameSourcePath = entry.FrameSourcePath
                    sourceIrPath = entry.SourceIrPath |})
+        let runtimeProfileName =
+            match runtimeProfile with
+            | OwningRuntimeProfile.Diagnostic -> "diagnostic"
+            | OwningRuntimeProfile.TrustedGenerated -> "trusted-generated"
         let associatedResumeMetadataBytes =
             callbackMetadataPerEntryBytes.TryFind "resume_associated"
             |> Option.defaultWith (fun () -> invalidOp "Associated-resume callback metadata bound is missing.")
@@ -4230,6 +4274,7 @@ module OwningStackAot =
             {| formatVersion = 1
                abiVersion = 1
                optimization = optimizationName
+               runtimeProfile = runtimeProfileName
                entryOrder = roles
                entries = entryManifest
                associatedResume = associatedResumeManifest
@@ -4275,6 +4320,7 @@ module OwningStackAot =
             metadataSourcePath,
             manifestPath,
             runtimeDirectory,
+            runtimeProfile,
             llvmIr,
             entryMetadata,
             entryFrameIrPaths,
@@ -4287,3 +4333,15 @@ module OwningStackAot =
             scannerScratchBytes,
             16 * IntPtr.Size * 2,
             objectPaths)
+
+    /// Compile the fixed mailbox lifecycle with diagnostic runtime checks enabled.
+    let compileMailbox
+        (toolchain: LlvmToolchain)
+        optimization
+        outputDirectory
+        (verifiedInit: VerifiedIrBody)
+        (verifiedBegin: VerifiedIrBody)
+        (verifiedResume: VerifiedIrBody) =
+        compileMailboxWithProfile
+            toolchain optimization OwningRuntimeProfile.Diagnostic outputDirectory
+            verifiedInit verifiedBegin verifiedResume

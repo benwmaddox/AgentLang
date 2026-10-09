@@ -16,9 +16,12 @@ enum {
   AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED = 1u
 };
 
+/* Reported by reset stats. TRUSTED uses null scratch bitmaps and assumes the
+ * generated module follows the trusted initialization contract. */
 enum {
   AL_MAILBOX_RESET_PROFILE_DIAGNOSTIC = 0u,
-  AL_MAILBOX_RESET_PROFILE_FAST = 1u
+  AL_MAILBOX_RESET_PROFILE_FAST = 1u,
+  AL_MAILBOX_RESET_PROFILE_TRUSTED = 2u
 };
 
 typedef enum al_mailbox_result {

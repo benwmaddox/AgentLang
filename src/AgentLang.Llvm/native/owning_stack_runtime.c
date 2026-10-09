@@ -4,9 +4,11 @@
 
 #define AL_OWNING_POISON 0xA5u
 
+#if !AL_OWNING_TRUSTED_GENERATED
 static uint32_t al_owning_bit_bytes(uint32_t byte_count) {
   return byte_count / 8u + ((byte_count & 7u) != 0u ? 1u : 0u);
 }
+#endif
 
 static int32_t al_owning_range_valid(const al_owning_stack_context *ctx,
                                      uint32_t offset, uint32_t byte_count) {
@@ -14,6 +16,7 @@ static int32_t al_owning_range_valid(const al_owning_stack_context *ctx,
          byte_count <= ctx->stack_capacity_bytes - offset;
 }
 
+#if !AL_OWNING_TRUSTED_GENERATED
 static int32_t al_owning_bit_get(const uint8_t *bits, uint32_t index) {
   return (bits[index >> 3] & (uint8_t)(1u << (index & 7u))) != 0u;
 }
@@ -26,10 +29,18 @@ static void al_owning_bit_set(uint8_t *bits, uint32_t index, int32_t value) {
     bits[index >> 3] = (uint8_t)(bits[index >> 3] & (uint8_t)~mask);
   }
 }
+#endif
 
 static void al_owning_mark(al_owning_stack_context *ctx, uint32_t offset,
                            uint32_t byte_count, int32_t initialized,
                            int32_t poisoned) {
+#if AL_OWNING_TRUSTED_GENERATED
+  (void)ctx;
+  (void)offset;
+  (void)byte_count;
+  (void)initialized;
+  (void)poisoned;
+#else
   uint32_t index;
   for (index = 0u; index < byte_count; ++index) {
     al_owning_bit_set(ctx->init_bitmap, offset + index, initialized);
@@ -38,6 +49,7 @@ static void al_owning_mark(al_owning_stack_context *ctx, uint32_t offset,
     else if (!initialized)
       al_owning_bit_set(ctx->poison_bitmap, offset + index, 0);
   }
+#endif
 }
 
 static void al_owning_fill(al_owning_stack_context *ctx, uint32_t offset,
@@ -51,6 +63,18 @@ static void al_owning_fill(al_owning_stack_context *ctx, uint32_t offset,
   for (index = 0u; index < byte_count; ++index) {
     ctx->stack_data[offset + index] = value;
   }
+}
+
+static void al_owning_poison(al_owning_stack_context *ctx, uint32_t offset,
+                             uint32_t byte_count) {
+#if AL_OWNING_TRUSTED_GENERATED
+  (void)ctx;
+  (void)offset;
+  (void)byte_count;
+#else
+  al_owning_fill(ctx, offset, byte_count, (uint8_t)AL_OWNING_POISON);
+  al_owning_mark(ctx, offset, byte_count, 0, 1);
+#endif
 }
 
 static void al_owning_bytes_copy(uint8_t *destination, const uint8_t *source,
@@ -81,6 +105,7 @@ static void al_owning_stack_bytes_move(al_owning_stack_context *ctx,
   }
 }
 
+#if !AL_OWNING_TRUSTED_GENERATED
 static uint64_t al_owning_checksum(const uint8_t *bytes, uint32_t byte_count) {
   uint64_t value = 1469598103934665603ull;
   uint32_t index;
@@ -90,12 +115,24 @@ static uint64_t al_owning_checksum(const uint8_t *bytes, uint32_t byte_count) {
   }
   return value;
 }
+#endif
 
 static void al_owning_event(al_owning_stack_context *ctx, uint32_t kind,
                             uint32_t type_id, uint32_t offset,
                             uint32_t extent_bytes, uint32_t payload_bytes,
                             uint32_t source_offset,
                             uint32_t source_extent_bytes, uint64_t checksum) {
+#if AL_OWNING_TRUSTED_GENERATED
+  (void)ctx;
+  (void)kind;
+  (void)type_id;
+  (void)offset;
+  (void)extent_bytes;
+  (void)payload_bytes;
+  (void)source_offset;
+  (void)source_extent_bytes;
+  (void)checksum;
+#else
   al_owning_stack_event *event;
   if (ctx->trace_events == 0 || ctx->trace_event_capacity == 0u)
     return;
@@ -113,6 +150,7 @@ static void al_owning_event(al_owning_stack_context *ctx, uint32_t kind,
   event->source_extent_bytes = source_extent_bytes;
   event->flags = 0u;
   event->checksum = checksum;
+#endif
 }
 
 void al_owning_set_failure(al_owning_stack_context *ctx, uint32_t status,
@@ -124,6 +162,21 @@ void al_owning_set_failure(al_owning_stack_context *ctx, uint32_t status,
   ctx->error_id = error_id;
   ctx->required_bytes = required_bytes;
   ctx->available_bytes = available_bytes;
+}
+
+int32_t al_owning_build_profile_valid(const al_owning_stack_context *ctx) {
+  if (ctx == 0 || ctx->abi_version != AL_OWNING_STACK_ABI_VERSION ||
+      ctx->stack_capacity_bytes > (uint32_t)INT32_MAX ||
+      ctx->stack_data == 0)
+    return 0;
+#if AL_OWNING_TRUSTED_GENERATED
+  return ctx->init_bitmap == 0 && ctx->poison_bitmap == 0 &&
+         ctx->init_bitmap_bytes == 0u;
+#else
+  return ctx->init_bitmap_bytes >=
+             al_owning_bit_bytes(ctx->stack_capacity_bytes) &&
+         ctx->init_bitmap != 0 && ctx->poison_bitmap != 0;
+#endif
 }
 
 void al_owning_begin(al_owning_stack_context *ctx) {
@@ -154,16 +207,18 @@ void al_owning_begin(al_owning_stack_context *ctx) {
   ctx->move_bytes = 0u;
   ctx->input_copy_bytes = 0u;
   ctx->retained_copy_bytes = 0u;
-  if (ctx->abi_version != AL_OWNING_STACK_ABI_VERSION ||
-      ctx->stack_capacity_bytes > (uint32_t)INT32_MAX ||
-      ctx->init_bitmap_bytes < al_owning_bit_bytes(ctx->stack_capacity_bytes) ||
-      ctx->stack_data == 0 || ctx->init_bitmap == 0 ||
-      ctx->poison_bitmap == 0) {
+  if (!al_owning_build_profile_valid(ctx)) {
+#if AL_OWNING_TRUSTED_GENERATED
+    const uint32_t required_bitmap_bytes = 0u;
+#else
+    const uint32_t required_bitmap_bytes =
+        al_owning_bit_bytes(ctx->stack_capacity_bytes);
+#endif
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INVALID_REQUEST, 0u,
-                          al_owning_bit_bytes(ctx->stack_capacity_bytes),
-                          ctx->init_bitmap_bytes);
+                          required_bitmap_bytes, ctx->init_bitmap_bytes);
     return;
   }
+#if !AL_OWNING_TRUSTED_GENERATED
   {
     uint32_t index;
     for (index = 0u; index < ctx->init_bitmap_bytes; ++index) {
@@ -171,6 +226,7 @@ void al_owning_begin(al_owning_stack_context *ctx) {
       ctx->poison_bitmap[index] = 0u;
     }
   }
+#endif
 }
 
 int32_t al_owning_enter_frame(al_owning_stack_context *ctx, uint32_t error_id) {
@@ -202,7 +258,6 @@ void al_owning_leave_frame(al_owning_stack_context *ctx) {
 
 int32_t al_owning_reserve_to(al_owning_stack_context *ctx, uint32_t new_cursor,
                              uint32_t error_id) {
-  uint32_t index;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
   if (new_cursor < ctx->cursor_bytes) {
@@ -215,11 +270,7 @@ int32_t al_owning_reserve_to(al_owning_stack_context *ctx, uint32_t new_cursor,
                           new_cursor, ctx->stack_capacity_bytes);
     return 1;
   }
-  for (index = ctx->cursor_bytes; index < new_cursor; ++index) {
-    ctx->stack_data[index] = (uint8_t)AL_OWNING_POISON;
-    al_owning_bit_set(ctx->init_bitmap, index, 0);
-    al_owning_bit_set(ctx->poison_bitmap, index, 1);
-  }
+  al_owning_poison(ctx, ctx->cursor_bytes, new_cursor - ctx->cursor_bytes);
   ctx->cursor_bytes = new_cursor;
   if (new_cursor > ctx->peak_cursor_bytes)
     ctx->peak_cursor_bytes = new_cursor;
@@ -229,7 +280,6 @@ int32_t al_owning_reserve_to(al_owning_stack_context *ctx, uint32_t new_cursor,
 void al_owning_release_to(al_owning_stack_context *ctx, uint32_t new_cursor,
                           uint32_t event_kind, uint32_t type_id,
                           uint32_t payload_bytes) {
-  uint32_t index;
   uint32_t old_cursor;
   if (ctx == 0)
     return;
@@ -242,18 +292,16 @@ void al_owning_release_to(al_owning_stack_context *ctx, uint32_t new_cursor,
   if (event_kind != 0u)
     al_owning_event(ctx, event_kind, type_id, new_cursor,
                     old_cursor - new_cursor, payload_bytes, 0u, 0u, 0u);
-  for (index = new_cursor; index < old_cursor; ++index) {
-    ctx->stack_data[index] = (uint8_t)AL_OWNING_POISON;
-    al_owning_bit_set(ctx->init_bitmap, index, 0);
-    al_owning_bit_set(ctx->poison_bitmap, index, 1);
-  }
+  al_owning_poison(ctx, new_cursor, old_cursor - new_cursor);
   ctx->cursor_bytes = new_cursor;
 }
 
 int32_t al_owning_check_initialized(al_owning_stack_context *ctx,
                                     uint32_t offset, uint32_t byte_count) {
+#if !AL_OWNING_TRUSTED_GENERATED
   uint32_t index;
   int32_t saw_poison = 0;
+#endif
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
   if (!al_owning_range_valid(ctx, offset, byte_count) ||
@@ -262,6 +310,9 @@ int32_t al_owning_check_initialized(al_owning_stack_context *ctx,
                           offset + byte_count, ctx->stack_capacity_bytes);
     return 1;
   }
+#if AL_OWNING_TRUSTED_GENERATED
+  return 0;
+#else
   for (index = 0u; index < byte_count; ++index) {
     if (!al_owning_bit_get(ctx->init_bitmap, offset + index)) {
       al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, 0u,
@@ -277,6 +328,7 @@ int32_t al_owning_check_initialized(al_owning_stack_context *ctx,
       al_owning_bit_set(ctx->poison_bitmap, offset + index, 0);
   }
   return 0;
+#endif
 }
 
 int64_t al_owning_load_i64(al_owning_stack_context *ctx, uint32_t offset) {
@@ -303,8 +355,8 @@ void al_owning_store_i64(al_owning_stack_context *ctx, uint32_t offset,
   }
   for (index = 0u; index < 8u; ++index) {
     ctx->stack_data[offset + index] = (uint8_t)(bits >> (index * 8u));
-    al_owning_bit_set(ctx->init_bitmap, offset + index, 1);
   }
+  al_owning_mark(ctx, offset, 8u, 1, 0);
   al_owning_event(ctx, AL_OWNING_EVENT_ALLOCATE, type_id, offset, 8u, 8u, 0u,
                   0u, 0u);
 }
@@ -1434,19 +1486,13 @@ void al_owning_move_range(al_owning_stack_context *ctx,
   if (destination_offset < source_offset) {
     const uint32_t clear_start =
         destination_end > source_offset ? destination_end : source_offset;
-    if (clear_start < source_end) {
-      al_owning_fill(ctx, clear_start, source_end - clear_start,
-                     (uint8_t)AL_OWNING_POISON);
-      al_owning_mark(ctx, clear_start, source_end - clear_start, 0, 1);
-    }
+    if (clear_start < source_end)
+      al_owning_poison(ctx, clear_start, source_end - clear_start);
   } else if (destination_offset > source_offset) {
     const uint32_t clear_end =
         destination_offset < source_end ? destination_offset : source_end;
-    if (source_offset < clear_end) {
-      al_owning_fill(ctx, source_offset, clear_end - source_offset,
-                     (uint8_t)AL_OWNING_POISON);
-      al_owning_mark(ctx, source_offset, clear_end - source_offset, 0, 1);
-    }
+    if (source_offset < clear_end)
+      al_owning_poison(ctx, source_offset, clear_end - source_offset);
   }
   ctx->move_bytes += byte_count;
   al_owning_event(ctx, event_kind, type_id, destination_offset, byte_count,
@@ -1493,7 +1539,9 @@ void al_owning_duplicate(al_owning_stack_context *ctx,
                          uint32_t destination_offset, uint32_t source_offset,
                          uint32_t extent_bytes, uint32_t payload_bytes,
                          uint32_t type_id) {
+#if !AL_OWNING_TRUSTED_GENERATED
   uint64_t checksum;
+#endif
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return;
   if (!al_owning_range_valid(ctx, source_offset, extent_bytes) ||
@@ -1515,19 +1563,27 @@ void al_owning_duplicate(al_owning_stack_context *ctx,
   al_owning_bytes_copy(ctx->stack_data + destination_offset,
                        ctx->stack_data + source_offset, extent_bytes);
   al_owning_mark(ctx, destination_offset, extent_bytes, 1, 0);
+#if !AL_OWNING_TRUSTED_GENERATED
   checksum = al_owning_checksum(ctx->stack_data + source_offset, extent_bytes);
   ++ctx->duplicate_disjoint_checks;
+#endif
   ctx->deep_copy_bytes += extent_bytes;
   al_owning_update_live(ctx, (int32_t)payload_bytes, 0);
   al_owning_event(ctx, AL_OWNING_EVENT_DUPLICATE, type_id, destination_offset,
                   extent_bytes, payload_bytes, source_offset, extent_bytes,
+#if AL_OWNING_TRUSTED_GENERATED
+                  0u);
+#else
                   checksum);
+#endif
 }
 
 void al_owning_drop(al_owning_stack_context *ctx, uint32_t start_offset,
                     uint32_t extent_bytes, uint32_t payload_bytes,
                     uint32_t type_id) {
+#if !AL_OWNING_TRUSTED_GENERATED
   uint32_t index;
+#endif
   uint32_t old_cursor;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return;
@@ -1539,6 +1595,7 @@ void al_owning_drop(al_owning_stack_context *ctx, uint32_t start_offset,
   }
   if (al_owning_check_initialized(ctx, start_offset, extent_bytes) != 0)
     return;
+#if !AL_OWNING_TRUSTED_GENERATED
   for (index = ctx->trace_event_count; index > 0u; --index) {
     al_owning_stack_event *event = &ctx->trace_events[index - 1u];
     if (event->kind == AL_OWNING_EVENT_DUPLICATE &&
@@ -1565,15 +1622,12 @@ void al_owning_drop(al_owning_stack_context *ctx, uint32_t start_offset,
       break;
     }
   }
+#endif
   if (ctx->status != AL_OWNING_STATUS_OK)
     return;
   al_owning_event(ctx, AL_OWNING_EVENT_DROP, type_id, start_offset,
                   extent_bytes, payload_bytes, 0u, 0u, 0u);
-  for (index = start_offset; index < old_cursor; ++index) {
-    ctx->stack_data[index] = (uint8_t)AL_OWNING_POISON;
-    al_owning_bit_set(ctx->init_bitmap, index, 0);
-    al_owning_bit_set(ctx->poison_bitmap, index, 1);
-  }
+  al_owning_poison(ctx, start_offset, old_cursor - start_offset);
   ctx->cursor_bytes = start_offset;
   al_owning_update_live(ctx, -(int32_t)payload_bytes, 0);
 }
@@ -1651,8 +1705,7 @@ void al_owning_clear_local(al_owning_stack_context *ctx, uint32_t offset,
                           offset + reserved_bytes, ctx->stack_capacity_bytes);
     return;
   }
-  al_owning_fill(ctx, offset, reserved_bytes, (uint8_t)AL_OWNING_POISON);
-  al_owning_mark(ctx, offset, reserved_bytes, 0, 1);
+  al_owning_poison(ctx, offset, reserved_bytes);
   al_owning_update_live(ctx, -(int32_t)payload_bytes, -(int32_t)payload_bytes);
   al_owning_event(ctx, AL_OWNING_EVENT_SCOPE_CLEAR, type_id, offset,
                   reserved_bytes, payload_bytes, 0u, 0u, 0u);

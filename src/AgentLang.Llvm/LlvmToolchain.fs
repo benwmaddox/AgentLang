@@ -9,6 +9,11 @@ type LlvmOptimization =
     | O0
     | O2
 
+[<RequireQualifiedAccess>]
+type OwningRuntimeProfile =
+    | Diagnostic
+    | TrustedGenerated
+
 [<Sealed>]
 type LlvmToolchain internal (clangPath: string, lldLinkPath: string, compilerRuntimeLibrary: string option) =
     member _.ClangPath = clangPath
@@ -133,9 +138,13 @@ module LlvmToolchain =
               "-o"; objectPath ]
             workingDirectory
 
-    let private compileCObject (toolchain: LlvmToolchain) optimization (sourcePath: string) (includeDirectory: string) (objectPath: string) workingDirectory =
+    let private compileCObject (toolchain: LlvmToolchain) optimization (runtimeProfile: OwningRuntimeProfile) (sourcePath: string) (includeDirectory: string) (objectPath: string) workingDirectory =
         if File.Exists objectPath then File.Delete objectPath
-        run toolchain.ClangPath
+        let profileArguments =
+            match runtimeProfile with
+            | OwningRuntimeProfile.Diagnostic -> []
+            | OwningRuntimeProfile.TrustedGenerated -> [ "-DAL_OWNING_TRUSTED_GENERATED=1" ]
+        let arguments =
             [ "--target=x86_64-pc-windows-msvc"
               "-std=c11"
               "-ffreestanding"
@@ -143,11 +152,13 @@ module LlvmToolchain =
               "-Wall"
               "-Wextra"
               "-Werror"
-              optimizationArgument optimization
+              optimizationArgument optimization ]
+            @ profileArguments
+            @ [
               "-c"; Path.GetFullPath sourcePath
               "-I"; Path.GetFullPath includeDirectory
               "-o"; objectPath ]
-            workingDirectory
+        run toolchain.ClangPath arguments workingDirectory
 
     let private linkObjects (toolchain: LlvmToolchain) (outputDllPath: string) (objectPaths: string list) =
         if File.Exists outputDllPath then File.Delete outputDllPath
@@ -215,9 +226,10 @@ module LlvmToolchain =
     /// Compile a deterministic set of per-entry LLVM objects, one immutable
     /// module-metadata C object, and one arena runtime object into a DLL.
     /// Returns the DLL path and the object paths in link order.
-    let compileModuleLibrary
+    let compileModuleLibraryWithProfile
         (toolchain: LlvmToolchain)
         optimization
+        (runtimeProfile: OwningRuntimeProfile)
         (llvmIrPaths: string list)
         (metadataSourcePath: string)
         (runtimeSourcePath: string)
@@ -244,8 +256,21 @@ module LlvmToolchain =
                 compileLlvmObject toolchain optimization irPath objectPath workingDirectory |> ignore
                 objectPath)
         let metadataObjectPath = Path.Combine(workingDirectory, "agentlang-module-metadata.obj")
-        compileCObject toolchain optimization sourcePath includePath metadataObjectPath workingDirectory
+        compileCObject toolchain optimization runtimeProfile sourcePath includePath metadataObjectPath workingDirectory
         let runtimeObjectPath = Path.Combine(workingDirectory, "agentlang-arena-runtime.obj")
-        compileCObject toolchain optimization runtimePath includePath runtimeObjectPath workingDirectory
+        compileCObject toolchain optimization runtimeProfile runtimePath includePath runtimeObjectPath workingDirectory
         let objectPaths = entryObjects @ [ metadataObjectPath; runtimeObjectPath ]
         linkObjects toolchain dllPath objectPaths, objectPaths
+
+    /// Compile a module with diagnostic runtime checks enabled.
+    let compileModuleLibrary
+        (toolchain: LlvmToolchain)
+        optimization
+        (llvmIrPaths: string list)
+        (metadataSourcePath: string)
+        (runtimeSourcePath: string)
+        (includeDirectory: string)
+        (outputDllPath: string) =
+        compileModuleLibraryWithProfile
+            toolchain optimization OwningRuntimeProfile.Diagnostic
+            llvmIrPaths metadataSourcePath runtimeSourcePath includeDirectory outputDllPath

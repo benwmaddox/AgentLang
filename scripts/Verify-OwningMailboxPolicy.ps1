@@ -30,6 +30,8 @@ $sourceInputPaths = @(
     $runnerSourcePath, $fixturePath, $historicalFixturePath, $PSCommandPath,
     (Join-Path $repo 'src/AgentLang.Llvm/AgentLang.Llvm.fsproj'),
     (Join-Path $repo 'src/AgentLang.Llvm/OwningStackAot.fs'),
+    (Join-Path $repo 'src/AgentLang.Llvm/LlvmAot.fs'),
+    (Join-Path $repo 'src/AgentLang.Llvm/LlvmToolchain.fs'),
     (Join-Path $nativeDirectory 'module_abi.h'),
     (Join-Path $nativeDirectory 'arena_runtime.h'),
     (Join-Path $nativeDirectory 'mailbox_runtime.h'),
@@ -58,8 +60,9 @@ $sourceInputAfter = @()
 $timeoutMilliseconds = 300000
 $tempDirectory = Join-Path $runDirectory 'repo-temp'
 $resetProfiles = @(
-    [ordered]@{ name = 'diagnostic'; define = $null; expected = 'diagnostic' },
-    [ordered]@{ name = 'fast'; define = '-DAL_MAILBOX_FAST_RESET=1'; expected = 'fast' }
+    [ordered]@{ name = 'diagnostic'; define = $null; expected = 'diagnostic'; runtimeProfile = 'diagnostic' },
+    [ordered]@{ name = 'fast'; define = '-DAL_MAILBOX_FAST_RESET=1'; expected = 'fast'; runtimeProfile = 'diagnostic' },
+    [ordered]@{ name = 'trusted-generated'; define = '-DAL_OWNING_TRUSTED_GENERATED=1'; expected = 'trusted-generated'; runtimeProfile = 'trusted-generated' }
 )
 $report = [ordered]@{
     schemaVersion = 1
@@ -129,8 +132,12 @@ function Get-ResetTelemetry($Native, [string]$ExpectedProfile, [string]$Label) {
     $capacityOkay = if ($ExpectedProfile -ceq 'diagnostic') { $values.fullCapacityPayloadWriteBytesRequested -gt 0 } else { $values.fullCapacityPayloadWriteBytesRequested -eq 0 }
     Add-Check "$Label full-capacity payload write counter matches the reset profile" $capacityOkay ([ordered]@{ profile = $ExpectedProfile; fullCapacityPayloadWriteBytesRequested = $values.fullCapacityPayloadWriteBytesRequested; expected = if ($ExpectedProfile -ceq 'diagnostic') { 'greater than zero' } else { 0 } })
     if (-not $capacityOkay) { throw "$Label full-capacity payload write counter does not match the reset profile." }
-    $separateCountersOkay = $values.livePrefixPayloadWriteBytesRequested -eq $values.turnResetCursorExtentBytes -and $values.bitmapStoreOperations -gt 0
-    Add-Check "$Label live-prefix payload writes match cursor extent while bitmap stores remain separately counted" $separateCountersOkay ([ordered]@{ livePrefixPayloadWriteBytesRequested = $values.livePrefixPayloadWriteBytesRequested; turnResetCursorExtentBytes = $values.turnResetCursorExtentBytes; bitmapStoreOperations = $values.bitmapStoreOperations })
+    $separateCountersOkay = if ($ExpectedProfile -ceq 'trusted-generated') {
+        $values.livePrefixPayloadWriteBytesRequested -eq 0 -and $values.bitmapStoreOperations -eq 0 -and $values.turnResetCursorExtentBytes -gt 0
+    } else {
+        $values.livePrefixPayloadWriteBytesRequested -eq $values.turnResetCursorExtentBytes -and $values.bitmapStoreOperations -gt 0
+    }
+    Add-Check "$Label payload, bitmap, and cursor reset counters match $ExpectedProfile behavior" $separateCountersOkay ([ordered]@{ profile = $ExpectedProfile; livePrefixPayloadWriteBytesRequested = $values.livePrefixPayloadWriteBytesRequested; turnResetCursorExtentBytes = $values.turnResetCursorExtentBytes; bitmapStoreOperations = $values.bitmapStoreOperations })
     if (-not $separateCountersOkay) { throw "$Label resetTelemetry payload and cursor counters are inconsistent." }
     return [ordered]@{ profile = $profile; scope = $scope; fullCapacityPayloadWriteBytesRequested = $values.fullCapacityPayloadWriteBytesRequested; livePrefixPayloadWriteBytesRequested = $values.livePrefixPayloadWriteBytesRequested; bitmapStoreOperations = $values.bitmapStoreOperations; turnResetCursorExtentBytes = $values.turnResetCursorExtentBytes }
 }
@@ -168,6 +175,61 @@ function Compare-PolicySemantics($Diagnostic, $Fast, [string]$Label) {
     $diagnosticJson = ConvertTo-Json -InputObject (Get-PolicySemanticProjection $Diagnostic) -Depth 90 -Compress
     $fastJson = ConvertTo-Json -InputObject (Get-PolicySemanticProjection $Fast) -Depth 90 -Compress
     Add-Check $Label ([string]::Equals($diagnosticJson, $fastJson, [StringComparison]::Ordinal)) ([ordered]@{ compared = @('complete RETURN and KEEP case results, including existing runtime stats, storage requirements, final states, pending attachments, and admission results'); excluded = @('top-level resetTelemetry') })
+}
+
+function Get-PolicyRuntimeSemanticProjection($Native) {
+    $statsFields = @(
+        'mailboxCapacity', 'initializedMailboxes', 'pendingMailboxes',
+        'scratchSlotCapacity', 'pinnedScratchSlots', 'pinnedScratchBytes',
+        'liveRetainedBytes', 'liveRetainedRoots', 'utf8InputBytes', 'utf16StagingBytes',
+        'inputImportBytes', 'publicationCopyBytes', 'beginPublicationCopyBytes',
+        'resumeRootImportBytes', 'deepCopyBytes', 'moveBytes', 'returnedOutputDescriptors',
+        'handlerInvocations', 'handlerFailures', 'scratchLeaseAcquisitions',
+        'scratchLeaseReturns', 'outstandingScratchLeases', 'suspensionPolicy'
+    )
+    $projection = [ordered]@{}
+    foreach ($caseName in @('pairedUnicodeEmpty', 'interleavedFailures')) {
+        $sourceCase = Get-Field $Native $caseName
+        $caseProjection = [ordered]@{}
+        foreach ($policyName in @('RETURN', 'KEEP_ASSOCIATED')) {
+            $source = Get-Field $sourceCase $policyName
+            $stats = [ordered]@{}
+            foreach ($field in $statsFields) { $stats[$field] = Get-Field (Get-Field $source 'stats') $field }
+            $caseProjection[$policyName] = [ordered]@{
+                stats = $stats
+                finalStates = Get-Field $source 'finalStates'
+                pendingAttachments = Get-Field $source 'pendingAttachments'
+                admission = Get-Field $source 'admission'
+            }
+        }
+        $projection[$caseName] = $caseProjection
+    }
+    return $projection
+}
+
+function Compare-PolicyRuntimeSemantics($Diagnostic, $Trusted, [string]$Label) {
+    $diagnosticJson = ConvertTo-Json -InputObject (Get-PolicyRuntimeSemanticProjection $Diagnostic) -Depth 90 -Compress
+    $trustedJson = ConvertTo-Json -InputObject (Get-PolicyRuntimeSemanticProjection $Trusted) -Depth 90 -Compress
+    Add-Check $Label ([string]::Equals($diagnosticJson, $trustedJson, [StringComparison]::Ordinal)) ([ordered]@{ compared = @('final state bytes and pending attachments', 'admission/status results', 'semantic copy and lease counters'); excluded = @('caller storage totals', 'reset tracking counters') })
+}
+
+function Compare-PolicyStorageProfiles($Diagnostic, $Trusted, $Reservation, [string]$Label) {
+    $scratchCapacity = [uint64](Get-Field $Reservation 'scratchByteCapacityPerSlot')
+    $slots = [uint64](Get-Field $Reservation 'scratchSlotCapacity')
+    $bitmapBytes = [uint64][Math]::Ceiling($scratchCapacity / 8.0)
+    $expectedLogicalReduction = 2 * $bitmapBytes * $slots
+    $alignedBitmapBytes = [uint64]([Math]::Ceiling($bitmapBytes / 8.0) * 8)
+    $expectedStorageReduction = 2 * $alignedBitmapBytes * $slots
+    $diagnosticScratch = [int64](Get-Field $Diagnostic 'scratchReservedBytes')
+    $trustedScratch = [int64](Get-Field $Trusted 'scratchReservedBytes')
+    $diagnosticTotal = [int64](Get-Field $Diagnostic 'storageBytes')
+    $trustedTotal = [int64](Get-Field $Trusted 'storageBytes')
+    $actualScratchReduction = $diagnosticScratch - $trustedScratch
+    $actualStorageReduction = $diagnosticTotal - $trustedTotal
+    $controllerReduction = [int64](Get-Field $Diagnostic 'controllerReservedBytes') - [int64](Get-Field $Trusted 'controllerReservedBytes')
+    $otherComponentsEqual = [uint64](Get-Field $Diagnostic 'retainedReservedBytes') -eq [uint64](Get-Field $Trusted 'retainedReservedBytes') -and
+        [uint64](Get-Field $Diagnostic 'textStagingReservedBytes') -eq [uint64](Get-Field $Trusted 'textStagingReservedBytes')
+    Add-Check $Label ($otherComponentsEqual -and $actualScratchReduction -eq $expectedLogicalReduction -and $actualStorageReduction -eq $expectedStorageReduction -and $controllerReduction -eq ($expectedStorageReduction - $expectedLogicalReduction)) ([ordered]@{ expectedLogicalBitmapReductionBytes = $expectedLogicalReduction; actualScratchReductionBytes = $actualScratchReduction; expectedAlignedCallerStorageReductionBytes = $expectedStorageReduction; actualCallerStorageReductionBytes = $actualStorageReduction; controllerPaddingReductionBytes = $controllerReduction; diagnostic = $Diagnostic; trusted = $Trusted })
 }
 
 function Resolve-Executable([string]$EnvironmentName, [string]$DefaultPath, [string]$CommandName) {
@@ -335,7 +397,7 @@ function Compare-FinalStates($ActualStates, $ExpectedStates, $TypeIds, [string]$
     }
 }
 
-function Compare-Case($Case, $FixtureCase, $TypeIds, [string]$PolicyName, [string]$CaseName) {
+function Compare-Case($Case, $FixtureCase, $TypeIds, [string]$PolicyName, [string]$CaseName, [string]$RuntimeProfile) {
     $common = Get-Field (Get-Field $FixtureCase 'sourceDerivedTotals') 'common'
     $policyExpected = Get-Field (Get-Field $FixtureCase 'sourceDerivedTotals') $PolicyName
     if (-not (Has-Fields $Case @('stats', 'storageRequirements', 'finalStates')) -or
@@ -352,7 +414,7 @@ function Compare-Case($Case, $FixtureCase, $TypeIds, [string]$PolicyName, [strin
     }
     if (-not (Has-Fields $requirements @('mailboxCapacity', 'retainedReservedBytes', 'scratchReservedBytes', 'textStagingReservedBytes', 'controllerReservedBytes', 'storageBytes')) -or
         -not (Has-Fields $stats @('storageReservedBytes', 'scratchSlotCapacity')) -or
-        -not (Has-Fields $reservation @('mailboxCapacity', 'scratchSlotCapacity', 'retainedByteCapacityPerBank', 'owningBankRootBytes', 'bankRootCapacity', 'scratchReservedBytes', 'textStagingByteCapacity'))) {
+        -not (Has-Fields $reservation @('mailboxCapacity', 'scratchSlotCapacity', 'scratchByteCapacityPerSlot', 'retainedByteCapacityPerBank', 'owningBankRootBytes', 'bankRootCapacity', 'scratchReservedBytes', 'textStagingByteCapacity'))) {
         Add-Check "$CaseName $PolicyName reservation and stats contain all required fields" $false ([ordered]@{ requirements = $requirements; stats = $stats })
         return
     }
@@ -362,8 +424,11 @@ function Compare-Case($Case, $FixtureCase, $TypeIds, [string]$PolicyName, [strin
     $rootBytes = [uint64](Get-Field $reservation 'owningBankRootBytes')
     $bankRoots = [uint64](Get-Field $reservation 'bankRootCapacity')
     $retainedExpected = ($retained + $rootBytes * $bankRoots) * 2 * $mailboxes
-    $scratchExpected = [uint64](Get-Field (Get-Field $fixture 'equalReservation') 'scratchReservedBytes')
-    $stagingExpected = [uint64](Get-Field (Get-Field $fixture 'equalReservation') 'textStagingByteCapacity')
+    $scratchCapacity = [uint64](Get-Field $reservation 'scratchByteCapacityPerSlot')
+    $bitmapBytes = [Math]::Ceiling($scratchCapacity / 8.0)
+    $bitmapCount = if ($RuntimeProfile -ceq 'trusted-generated') { 0 } else { 2 }
+    $scratchExpected = [uint64]$capacity * ($scratchCapacity + $bitmapCount * $bitmapBytes)
+    $stagingExpected = [uint64](Get-Field $reservation 'textStagingByteCapacity')
     $requirementOkay = [uint32](Get-Field $requirements 'mailboxCapacity') -eq $mailboxes -and
         [uint64](Get-Field $requirements 'retainedReservedBytes') -eq $retainedExpected -and
         [uint64](Get-Field $requirements 'scratchReservedBytes') -eq $scratchExpected -and
@@ -372,7 +437,7 @@ function Compare-Case($Case, $FixtureCase, $TypeIds, [string]$PolicyName, [strin
         [uint64](Get-Field $requirements 'storageBytes') -eq ($retainedExpected + $scratchExpected + $stagingExpected + [uint64](Get-Field $requirements 'controllerReservedBytes')) -and
         [uint64](Get-Field $stats 'storageReservedBytes') -eq [uint64](Get-Field $requirements 'storageBytes') -and
         [uint64](Get-Field $stats 'scratchSlotCapacity') -eq [uint64]$capacity
-    Add-Check "$CaseName $PolicyName caller reservation matches equal-pool arithmetic" $requirementOkay $requirements
+    Add-Check "$CaseName $PolicyName caller reservation matches $RuntimeProfile profile arithmetic" $requirementOkay ([ordered]@{ runtimeProfile = $RuntimeProfile; requirements = $requirements; expectedScratchReservedBytes = $scratchExpected })
     Compare-FinalStates (Get-Field $Case 'finalStates') (Get-Field $FixtureCase 'finalStates') $TypeIds "$CaseName $PolicyName"
 }
 
@@ -459,39 +524,57 @@ try {
     if ($assemblies.Count -ne 1) { throw 'Expected one non-reference bootstrap assembly in the isolated build root.' }
     $assemblyPath = $assemblies[0].FullName
 
+    $runtimeProfiles = @('diagnostic', 'trusted-generated')
     foreach ($optimization in @('O0', 'O2')) {
-        $moduleDirectory = Join-Path $runDirectory "module-$optimization"
-        [IO.Directory]::CreateDirectory($moduleDirectory) | Out-Null
-        $moduleProcess = Invoke-CapturedProcess "compile-module-$optimization" $dotnet @($assemblyPath, $optimization, $moduleDirectory, $flowPath) $repo
-        Require-ProcessSuccess $moduleProcess "Fresh $optimization owning mailbox module compile succeeded"
-        $bootstrap = ConvertFrom-JsonText $moduleProcess.stdout.Trim() "$optimization policy module bootstrap"
-        $modulePath = [string](Get-Field $bootstrap 'modulePath')
-        $manifestPath = [string](Get-Field $bootstrap 'manifestPath')
-        if (-not (Test-Path -LiteralPath $modulePath -PathType Leaf) -or -not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw "$optimization generated module or manifest is missing." }
-        $manifest = Read-JsonFile $manifestPath
-        $moduleInfo = Get-Field $manifest 'moduleInfo'
-        $associated = Get-Field $moduleInfo 'associatedResume'
-        $resumeEntries = @(Get-Field $moduleInfo 'entries' | Where-Object { [string](Get-Field $_ 'role') -ceq 'resume' })
-        $expectedModule = Get-Field $fixture 'module'
-        $associatedOkay = $resumeEntries.Count -eq 1 -and
-            [int](Get-Field $moduleInfo 'abiVersion') -eq [int](Get-Field $expectedModule 'abiVersion') -and
-            [string](Get-Field $associated 'functionSymbol') -ceq [string](Get-Field $expectedModule 'associatedResumeSymbol') -and
-            [string](Get-Field $associated 'entryFrameSymbol') -ceq [string](Get-Field $resumeEntries[0] 'entryFrameSymbol') -and
-            (@(Get-Field $associated 'inputTypeIndexes') -join ',') -ceq (@(Get-Field $expectedModule 'associatedResumeInputTypeIndexes') -join ',') -and
-            (@(Get-Field $associated 'outputTypeIndexes') -join ',') -ceq (@(Get-Field $expectedModule 'associatedResumeOutputTypeIndexes') -join ',') -and
-            [int](Get-Field $associated 'callbackMetadataBytes') -gt 0
-        Add-Check "$optimization generated module manifest preserves ABI v1 and the associated resume frame contract" $associatedOkay $associated
-        $moduleBuilds.Add([ordered]@{ optimization = $optimization; modulePath = $modulePath; manifestPath = $manifestPath; moduleSha256 = Get-Hash $modulePath; manifestSha256 = Get-Hash $manifestPath; bootstrap = $bootstrap; manifest = $manifest })
+        foreach ($runtimeProfile in $runtimeProfiles) {
+            $moduleLabel = "$optimization/$runtimeProfile"
+            $moduleDirectory = Join-Path $runDirectory "module-$moduleLabel"
+            [IO.Directory]::CreateDirectory($moduleDirectory) | Out-Null
+            $moduleArguments = @($assemblyPath, $optimization, $moduleDirectory, $flowPath)
+            if ($runtimeProfile -ceq 'trusted-generated') { $moduleArguments += @('--runtime-profile', 'trusted-generated') }
+            $moduleProcess = Invoke-CapturedProcess "compile-module-$moduleLabel" $dotnet $moduleArguments $repo
+            Require-ProcessSuccess $moduleProcess "Fresh $moduleLabel owning mailbox module compile succeeded"
+            $bootstrap = ConvertFrom-JsonText $moduleProcess.stdout.Trim() "$moduleLabel policy module bootstrap"
+            $modulePath = [string](Get-Field $bootstrap 'modulePath')
+            $manifestPath = [string](Get-Field $bootstrap 'manifestPath')
+            if (-not (Test-Path -LiteralPath $modulePath -PathType Leaf) -or -not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw "$moduleLabel generated module or manifest is missing." }
+            $manifest = Read-JsonFile $manifestPath
+            $moduleInfo = Get-Field $manifest 'moduleInfo'
+            Add-Check "$moduleLabel manifest records the selected runtime profile" ([string](Get-Field $moduleInfo 'runtimeProfile') -ceq $runtimeProfile) ([ordered]@{ expected = $runtimeProfile; actual = Get-Field $moduleInfo 'runtimeProfile' })
+            $associated = Get-Field $moduleInfo 'associatedResume'
+            $resumeEntries = @(Get-Field $moduleInfo 'entries' | Where-Object { [string](Get-Field $_ 'role') -ceq 'resume' })
+            $expectedModule = Get-Field $fixture 'module'
+            $associatedOkay = $resumeEntries.Count -eq 1 -and
+                [int](Get-Field $moduleInfo 'abiVersion') -eq [int](Get-Field $expectedModule 'abiVersion') -and
+                [string](Get-Field $associated 'functionSymbol') -ceq [string](Get-Field $expectedModule 'associatedResumeSymbol') -and
+                [string](Get-Field $associated 'entryFrameSymbol') -ceq [string](Get-Field $resumeEntries[0] 'entryFrameSymbol') -and
+                (@(Get-Field $associated 'inputTypeIndexes') -join ',') -ceq (@(Get-Field $expectedModule 'associatedResumeInputTypeIndexes') -join ',') -and
+                (@(Get-Field $associated 'outputTypeIndexes') -join ',') -ceq (@(Get-Field $expectedModule 'associatedResumeOutputTypeIndexes') -join ',') -and
+                [int](Get-Field $associated 'callbackMetadataBytes') -gt 0
+            Add-Check "$moduleLabel generated module manifest preserves ABI v1 and the associated resume frame contract" $associatedOkay $associated
+            $moduleBuilds.Add([ordered]@{ optimization = $optimization; runtimeProfile = $runtimeProfile; modulePath = $modulePath; manifestPath = $manifestPath; moduleSha256 = Get-Hash $modulePath; manifestSha256 = Get-Hash $manifestPath; bootstrap = $bootstrap; manifest = $manifest })
+        }
     }
 
-    $sameArtifacts = [string](Get-Field $moduleBuilds[0].manifest.moduleInfo 'abiVersion') -ceq [string](Get-Field $moduleBuilds[1].manifest.moduleInfo 'abiVersion') -and
-        (@(Get-Field $moduleBuilds[0].manifest.moduleInfo.associatedResume 'inputTypeIndexes') -join ',') -ceq (@(Get-Field $moduleBuilds[1].manifest.moduleInfo.associatedResume 'inputTypeIndexes') -join ',')
-    Add-Check 'O0 and O2 expose the same associated callback ABI indexes' $sameArtifacts
+    foreach ($runtimeProfile in $runtimeProfiles) {
+        $o0Module = $moduleBuilds | Where-Object { $_.optimization -ceq 'O0' -and $_.runtimeProfile -ceq $runtimeProfile } | Select-Object -First 1
+        $o2Module = $moduleBuilds | Where-Object { $_.optimization -ceq 'O2' -and $_.runtimeProfile -ceq $runtimeProfile } | Select-Object -First 1
+        $sameArtifacts = [string](Get-Field $o0Module.manifest.moduleInfo 'abiVersion') -ceq [string](Get-Field $o2Module.manifest.moduleInfo 'abiVersion') -and
+            (@(Get-Field $o0Module.manifest.moduleInfo.associatedResume 'inputTypeIndexes') -join ',') -ceq (@(Get-Field $o2Module.manifest.moduleInfo.associatedResume 'inputTypeIndexes') -join ',')
+        Add-Check "$runtimeProfile O0 and O2 expose the same associated callback ABI indexes" $sameArtifacts
+    }
+    $diagModule = $moduleBuilds | Where-Object { $_.optimization -ceq 'O0' -and $_.runtimeProfile -ceq 'diagnostic' } | Select-Object -First 1
+    $trustedModule = $moduleBuilds | Where-Object { $_.optimization -ceq 'O0' -and $_.runtimeProfile -ceq 'trusted-generated' } | Select-Object -First 1
+    $crossProfileAbiSame = [string](Get-Field $diagModule.manifest.moduleInfo 'abiVersion') -ceq [string](Get-Field $trustedModule.manifest.moduleInfo 'abiVersion') -and
+        (@(Get-Field $diagModule.manifest.moduleInfo.associatedResume 'inputTypeIndexes') -join ',') -ceq (@(Get-Field $trustedModule.manifest.moduleInfo.associatedResume 'inputTypeIndexes') -join ',') -and
+        (@(Get-Field $diagModule.manifest.moduleInfo 'entries' | ForEach-Object { [string](Get-Field $_ 'role') }) -join ',') -ceq (@(Get-Field $trustedModule.manifest.moduleInfo 'entries' | ForEach-Object { [string](Get-Field $_ 'role') }) -join ',')
+    Add-Check 'diagnostic and trusted-generated modules retain the same published callback ABI' $crossProfileAbiSame
 
     foreach ($optimization in @('O0', 'O2')) {
-        $module = $moduleBuilds | Where-Object { $_.optimization -ceq $optimization } | Select-Object -First 1
         foreach ($resetProfile in $resetProfiles) {
             $profileName = [string]$resetProfile.name
+            $module = $moduleBuilds | Where-Object { $_.optimization -ceq $optimization -and $_.runtimeProfile -ceq $resetProfile.runtimeProfile } | Select-Object -First 1
+            if ($null -eq $module) { throw "No $optimization module was compiled for runtime profile $($resetProfile.runtimeProfile)." }
             $runnerDirectory = Join-Path $runDirectory "native-$optimization-$profileName"
             [IO.Directory]::CreateDirectory($runnerDirectory) | Out-Null
             $runnerPath = Join-Path $runnerDirectory "native-owning-mailbox-policy-$optimization-$profileName.exe"
@@ -500,7 +583,7 @@ try {
             $compileArguments = @('--target=x86_64-pc-windows-msvc', '-std=c11', '-Wall', '-Wextra', '-Werror', "-$optimization", '-DAL_MAILBOX_RUNTIME_TESTING') + $profileArguments + @('-I', $nativeDirectory) + $nativeSources + @('-o', $runnerPath)
             $nativeBuild = Invoke-CapturedProcess "native-policy-build-$optimization-$profileName" $clang $compileArguments $runnerDirectory
             Require-ProcessSuccess $nativeBuild "$optimization/$profileName policy native runner compiled with strict warnings"
-            $nativeBuilds.Add([ordered]@{ optimization = $optimization; resetProfile = $profileName; compileDefine = $resetProfile.define; executable = $runnerPath; sha256 = Get-Hash $runnerPath; process = $nativeBuild })
+            $nativeBuilds.Add([ordered]@{ optimization = $optimization; resetProfile = $profileName; runtimeProfile = $resetProfile.runtimeProfile; compileDefine = $resetProfile.define; executable = $runnerPath; sha256 = Get-Hash $runnerPath; process = $nativeBuild })
             $nativeRun = Invoke-CapturedProcess "native-policy-run-$optimization-$profileName" $runnerPath @([string]$module.modulePath, '--policy') $runnerDirectory
             Require-ProcessSuccess $nativeRun "$optimization/$profileName paired ownership-policy native suite passed"
             $native = ConvertFrom-JsonText $nativeRun.stdout.Trim() "$optimization/$profileName policy native result"
@@ -522,9 +605,9 @@ try {
         $typeIds = Get-Field (Get-Field $historicalFixture 'sourceDerivedTypeIds') 'typeIds'
         foreach ($policyName in @('RETURN', 'KEEP_ASSOCIATED')) {
             $simpleCase = Get-Field (Get-Field $native 'pairedUnicodeEmpty') $policyName
-            Compare-Case $simpleCase (Get-Field $fixture 'pairedUnicodeEmpty') $typeIds $policyName 'pairedUnicodeEmpty'
+            Compare-Case $simpleCase (Get-Field $fixture 'pairedUnicodeEmpty') $typeIds $policyName 'pairedUnicodeEmpty' ([string]$resetProfile.runtimeProfile)
             $adversityCase = Get-Field (Get-Field $native 'interleavedFailures') $policyName
-            Compare-Case $adversityCase (Get-Field $fixture 'interleavedFailures') $typeIds $policyName 'interleavedFailures'
+            Compare-Case $adversityCase (Get-Field $fixture 'interleavedFailures') $typeIds $policyName 'interleavedFailures' ([string]$resetProfile.runtimeProfile)
             Check-PendingAttachments $adversityCase (Get-Field $fixture 'interleavedFailures') $policyName
         }
         $admission = Get-Field (Get-Field (Get-Field $native 'interleavedFailures') 'KEEP_ASSOCIATED') 'admission'
@@ -542,7 +625,7 @@ try {
             (Has-Fields $admissionExpected @('laterAdmittedTokenSequence'))
         Add-Check "$optimization/$profileName RETURN admission fields are present" $returnAdmissionShape $returnAdmission
         Add-Check "$optimization/$profileName RETURN admits C with the same seeded token sequence" ($returnAdmissionShape -and [uint64](Get-Field $returnAdmission 'admittedCTokenSequence') -eq [uint64](Get-Field $admissionExpected 'laterAdmittedTokenSequence')) $returnAdmission
-            $nativeRuns.Add([ordered]@{ optimization = $optimization; resetProfile = $profileName; process = $nativeRun; result = $native; resetTelemetry = $resetTelemetry })
+            $nativeRuns.Add([ordered]@{ optimization = $optimization; resetProfile = $profileName; runtimeProfile = $resetProfile.runtimeProfile; process = $nativeRun; result = $native; resetTelemetry = $resetTelemetry })
         }
     }
 
@@ -552,15 +635,32 @@ try {
         if ($null -eq $diagnosticRun -or $null -eq $fastRun) { throw "$optimization did not produce both diagnostic and fast reset runs." }
         Compare-PolicySemantics $diagnosticRun.result $fastRun.result "$optimization diagnostic and fast profiles have identical frozen policy outcomes"
         Compare-ResetTelemetry $diagnosticRun.resetTelemetry $fastRun.resetTelemetry "$optimization profile telemetry preserves prefix, bitmap, and cursor counts separately from capacity writes"
+        $trustedRun = $nativeRuns | Where-Object { $_.optimization -ceq $optimization -and $_.resetProfile -ceq 'trusted-generated' } | Select-Object -First 1
+        if ($null -eq $trustedRun) { throw "$optimization did not produce a trusted-generated run." }
+        Compare-PolicyRuntimeSemantics $diagnosticRun.result $trustedRun.result "$optimization diagnostic and trusted-generated preserve policy outcomes, state, statuses, and copy semantics"
+        $cursorMatches = [uint64](Get-Field $diagnosticRun.resetTelemetry 'turnResetCursorExtentBytes') -eq [uint64](Get-Field $trustedRun.resetTelemetry 'turnResetCursorExtentBytes') -and
+            [uint64](Get-Field $trustedRun.resetTelemetry 'livePrefixPayloadWriteBytesRequested') -eq 0 -and
+            [uint64](Get-Field $trustedRun.resetTelemetry 'bitmapStoreOperations') -eq 0
+        Add-Check "$optimization trusted-generated reset skips payload and bitmap writes with the same cursor extent" $cursorMatches ([ordered]@{ diagnostic = $diagnosticRun.resetTelemetry; trusted = $trustedRun.resetTelemetry })
+        foreach ($caseName in @('pairedUnicodeEmpty', 'interleavedFailures')) {
+            $fixtureCase = Get-Field $fixture $caseName
+            $reservation = if ($caseName -ceq 'pairedUnicodeEmpty') { Get-Field $fixtureCase 'callerReservation' } else { Get-Field $fixture 'equalReservation' }
+            foreach ($policyName in @('RETURN', 'KEEP_ASSOCIATED')) {
+                $diagnosticCase = Get-Field (Get-Field $diagnosticRun.result $caseName) $policyName
+                $trustedCase = Get-Field (Get-Field $trustedRun.result $caseName) $policyName
+                Compare-PolicyStorageProfiles (Get-Field $diagnosticCase 'storageRequirements') (Get-Field $trustedCase 'storageRequirements') $reservation "$optimization/$caseName/$policyName trusted storage removes both bitmap regions per scratch slot"
+            }
+        }
     }
 
-    $defaultRun = $nativeRuns | Where-Object { $_.optimization -ceq 'O0' -and $_.resetProfile -ceq 'diagnostic' } | Select-Object -First 1
-    foreach ($caseName in @('pairedUnicodeEmpty', 'interleavedFailures')) {
-        $returnCase = if ($caseName -ceq 'pairedUnicodeEmpty') { Get-Field $defaultRun.result.pairedUnicodeEmpty 'RETURN' } else { Get-Field $defaultRun.result.interleavedFailures 'RETURN' }
-        $keepCase = if ($caseName -ceq 'pairedUnicodeEmpty') { Get-Field $defaultRun.result.pairedUnicodeEmpty 'KEEP_ASSOCIATED' } else { Get-Field $defaultRun.result.interleavedFailures 'KEEP_ASSOCIATED' }
-        Add-Check "$caseName RETURN and KEEP have exact equal storage reservation" (
-            [uint64](Get-Field $returnCase.storageRequirements 'storageBytes') -eq [uint64](Get-Field $keepCase.storageRequirements 'storageBytes') -and
-            [uint64](Get-Field $returnCase.storageRequirements 'scratchReservedBytes') -eq [uint64](Get-Field $keepCase.storageRequirements 'scratchReservedBytes'))
+    foreach ($nativeRun in $nativeRuns) {
+        foreach ($caseName in @('pairedUnicodeEmpty', 'interleavedFailures')) {
+            $returnCase = Get-Field (Get-Field $nativeRun.result $caseName) 'RETURN'
+            $keepCase = Get-Field (Get-Field $nativeRun.result $caseName) 'KEEP_ASSOCIATED'
+            Add-Check "$($nativeRun.optimization)/$($nativeRun.resetProfile)/$caseName RETURN and KEEP have exact equal storage reservation" (
+                [uint64](Get-Field (Get-Field $returnCase 'storageRequirements') 'storageBytes') -eq [uint64](Get-Field (Get-Field $keepCase 'storageRequirements') 'storageBytes') -and
+                [uint64](Get-Field (Get-Field $returnCase 'storageRequirements') 'scratchReservedBytes') -eq [uint64](Get-Field (Get-Field $keepCase 'storageRequirements') 'scratchReservedBytes'))
+        }
     }
 } catch {
     $errors.Add($_.Exception.ToString())
@@ -576,11 +676,11 @@ try {
         for ($index = 0; $index -lt $sourceInputBefore.Count; $index++) {
             if ($sourceInputBefore[$index].path -cne $sourceInputAfter[$index].path -or $sourceInputBefore[$index].sha256 -cne $sourceInputAfter[$index].sha256) { $sourceStable = $false }
         }
-        Add-Check 'all policy acceptance source hashes remain unchanged during fresh O0/O2 diagnostic/fast builds and runs' $sourceStable
+        Add-Check 'all policy acceptance source hashes remain unchanged during fresh O0/O2 diagnostic/fast/trusted-generated builds and runs' $sourceStable
     } else {
-        Add-Check 'all policy acceptance source hashes remain unchanged during fresh O0/O2 diagnostic/fast builds and runs' $false
+        Add-Check 'all policy acceptance source hashes remain unchanged during fresh O0/O2 diagnostic/fast/trusted-generated builds and runs' $false
     }
-    Add-Check 'all four O0/O2 by diagnostic/fast policy native runs completed' ($nativeRuns.Count -eq 4) ([ordered]@{ expected = 4; actual = $nativeRuns.Count })
+    Add-Check 'all six O0/O2 by diagnostic/fast/trusted-generated policy native runs completed' ($nativeRuns.Count -eq 6) ([ordered]@{ expected = 6; actual = $nativeRuns.Count })
     $report.completedUtc = [DateTime]::UtcNow.ToString('O')
     $report.sourceHashesBefore = $sourceInputBefore
     $report.sourceHashesAfter = $sourceInputAfter

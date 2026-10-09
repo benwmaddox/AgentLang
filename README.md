@@ -362,5 +362,10 @@ validation and limits. This is not a real-I/O throughput comparison. The next
 mailbox's stack associated during async waits versus returning it to a pool.
 The [optional native reset profile](reports/138-native-reset-profile.md) removes
 full-capacity scratch clears at checkout/release while retaining the existing
-checks. Both policies pass the same socket fixtures at O0/O2; remaining bitmap
-and live-prefix work means this is not yet a production throughput result.
+checks. The subsequent [trusted-generated profile](reports/139-trusted-generated-native-profile.md)
+also removes diagnostic bitmap storage and live-prefix poisoning. Both policies
+pass the same socket fixtures at O0/O2 across all three profiles. Compile mailbox
+modules with `--runtime-profile trusted-generated` and the native host with
+`AL_OWNING_TRUSTED_GENERATED=1` to select matching trusted builds. Diagnostic
+remains the default. These are correctness and storage results; sustained
+throughput and whole-process memory comparisons remain pending.
