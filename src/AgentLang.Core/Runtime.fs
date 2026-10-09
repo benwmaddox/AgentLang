@@ -10,6 +10,7 @@ open System.Text.Json.Nodes
 module Runtime =
     let private wordIdText (WordId value) = value
     let private flowAttachmentKey (owner: WordId) caseName = wordIdText owner + "/" + caseName
+    let private flowTestFileKey (owner: WordId) (reference: SourceRef) = wordIdText owner + "/" + reference.Hash
 
     type private FlowAuthoredWord =
         { Definition: FlowWordDefinition
@@ -21,6 +22,17 @@ module Runtime =
     type private FlowAuthoredAttachment =
         { Source: FlowLowering.FlowAttachmentSourceDocument
           /// Bindings retained from durable metadata, or None for a staged edit.
+          StoredBindings: StoredCallBinding list option }
+
+    type private FlowAuthoredTestFile =
+        { OwnerName: string
+          OwnerId: WordId
+          OwnerRevision: int
+          SyntaxVersion: int
+          Reference: SourceRef
+          SourceFile: string
+          Settings: FlowTestFileSettings
+          /// Wrapper-scoped target and fixture-body bindings, stored once per file.
           StoredBindings: StoredCallBinding list option }
 
     type private AuthoredTypeSource =
@@ -35,6 +47,7 @@ module Runtime =
           Examples: Map<string, ExampleDefinition>
           FlowWord: FlowAuthoredWord option
           FlowTests: Map<string, FlowAuthoredAttachment>
+          FlowTestFiles: Map<string, FlowAuthoredTestFile>
           FlowExamples: Map<string, FlowAuthoredAttachment> }
 
     type private DictionaryState =
@@ -50,9 +63,22 @@ module Runtime =
           History: Map<string, WordDefinition list>
           FlowWords: Map<string, FlowAuthoredWord>
           FlowTests: Map<string, FlowAuthoredAttachment>
+          FlowTestFiles: Map<string, FlowAuthoredTestFile>
           FlowExamples: Map<string, FlowAuthoredAttachment>
           FlowHistory: Map<string, FlowAuthoredWord list>
           Replacements: Map<string, ReplacementBackup> }
+
+    type private TestFileOverlay =
+        { Program: VerifiedIrProgram
+          Dispatch: Map<IrCallTarget, IrCallTarget>
+          ActiveOverrides: string list }
+
+    type private CompiledTestFile =
+        { Source: FlowAuthoredTestFile
+          Compilation: FlowLowering.CompiledTestFileSettings
+          Tests: Map<string, FlowLowering.CompiledCallBoundTest>
+          TestBindings: Map<string, StoredCallBinding list>
+          BindingSpans: Map<StoredCallBinding, SourceSpan> }
 
     /// One executable view of one immutable dictionary projection. Detached
     /// bodies in the snapshot are verified against this exact program handle.
@@ -65,6 +91,7 @@ module Runtime =
           FlowProject: FlowLowering.FlowBoundProjectCompilation option
           TestBodies: Map<string, VerifiedIrBody>
           TestExpectationBodies: Map<string, VerifiedIrBody>
+          TestFileOverlays: Map<string, TestFileOverlay>
           ExampleBodies: Map<string, VerifiedIrBody> }
 
     type private TaskSession =
@@ -103,6 +130,7 @@ module Runtime =
           Expected: TestExpectation
           ExpectedValue: Value option
           EffectAssertion: EffectAssertionObservation option
+          ActiveOverrides: string list
           TargetInputs: Value list list
           TargetReturns: Value list list
           TargetInvocationCount: int
@@ -408,6 +436,7 @@ module Runtime =
               History = Map.empty
               FlowWords = Map.empty
               FlowTests = Map.empty
+              FlowTestFiles = Map.empty
               FlowExamples = Map.empty
               FlowHistory = Map.empty
               Replacements = Map.empty }
@@ -710,6 +739,10 @@ module Runtime =
                                 current.FlowTests
                                 |> Map.filter (fun _ attachment -> attachment.Source.OwnerId <> ownerId)
                                 |> fun found -> Map.fold (fun acc key value -> Map.add key value acc) found backup.FlowTests
+                            let flowTestFiles =
+                                current.FlowTestFiles
+                                |> Map.filter (fun _ file -> file.OwnerId <> ownerId)
+                                |> fun found -> Map.fold (fun acc key value -> Map.add key value acc) found backup.FlowTestFiles
                             let flowExamples =
                                 current.FlowExamples
                                 |> Map.filter (fun _ attachment -> attachment.Source.OwnerId <> ownerId)
@@ -720,6 +753,7 @@ module Runtime =
                                 Examples = examples
                                 FlowWords = flowWords
                                 FlowTests = flowTests
+                                FlowTestFiles = flowTestFiles
                                 FlowExamples = flowExamples
                                 Replacements = Map.remove name current.Replacements }
                         | _ -> current)
@@ -750,6 +784,7 @@ module Runtime =
                     Examples = Map.empty
                     FlowWords = restored.FlowWords |> Map.filter (fun _ authored -> persistentOwnerIds.Contains authored.Source.OwnerId)
                     FlowTests = restored.FlowTests |> Map.filter (fun _ attachment -> persistentOwnerIds.Contains attachment.Source.OwnerId)
+                    FlowTestFiles = restored.FlowTestFiles |> Map.filter (fun _ file -> persistentOwnerIds.Contains file.OwnerId)
                     FlowExamples = restored.FlowExamples |> Map.filter (fun _ attachment -> persistentOwnerIds.Contains attachment.Source.OwnerId)
                     FlowHistory =
                         restored.FlowHistory
@@ -778,7 +813,7 @@ module Runtime =
                 |> Map.toSeq
                 |> Seq.choose (fun (name, source) -> if source.SourceFormat.Frontend = SourceFrontend.Flow then Some name else None)
                 |> Set.ofSeq
-            let hasFlow = not (Map.isEmpty state.FlowWords) || not flowTypeNames.IsEmpty
+            let hasFlow = not (Map.isEmpty state.FlowWords) || not (Map.isEmpty state.FlowTestFiles) || not flowTypeNames.IsEmpty
             let stackWordNames = state.FlowWords |> Map.toSeq |> Seq.map (fun (_, authored) -> authored.Source.OwnerName) |> Set.ofSeq
             let flowTestKeys = state.FlowTests |> Map.toSeq |> Seq.map (fun (_, item) -> item.Source.OwnerName + "/" + item.Source.CaseName) |> Set.ofSeq
             let flowExampleKeys = state.FlowExamples |> Map.toSeq |> Seq.map (fun (_, item) -> item.Source.OwnerName + "/" + item.Source.CaseName) |> Set.ofSeq
@@ -828,12 +863,23 @@ module Runtime =
             state.FlowTests
             |> Map.toList
             |> List.map snd
+            |> List.filter (fun authored -> not (state.FlowTestFiles.ContainsKey(flowTestFileKey authored.Source.OwnerId authored.Source.Reference)))
             |> List.filter (fun authored -> state.Words.TryFind authored.Source.OwnerName |> Option.exists (fun word -> word.Status = Persistent))
             |> List.sortBy (fun authored -> authored.Source.OwnerName, authored.Source.CaseName)
             |> List.iter (fun authored ->
                 match FlowParser.parseTestWithVersion authored.Source.SyntaxVersion authored.Source.SourceFile authored.Source.Content with
                 | Error diagnostic -> raise (LanguageException diagnostic)
                 | Ok definition -> addSection "flow" authored.Source.SyntaxVersion (FlowSource.renderTest definition))
+            state.FlowTestFiles
+            |> Map.toList
+            |> List.map snd
+            |> List.filter (fun authored -> state.Words.TryFind authored.OwnerName |> Option.exists (fun word -> word.Status = Persistent))
+            |> List.sortBy (fun authored -> authored.OwnerName, authored.Reference.Hash)
+            |> List.iter (fun authored ->
+                let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition authored.Settings.SourceText
+                if sourceObject.Reference <> authored.Reference then
+                    error "FLOW_RUNTIME_SOURCE_MISMATCH" "A test-file wrapper no longer matches its immutable source reference." (Some authored.OwnerName) None [ authored.Reference.Hash ] [ sourceObject.Reference.Hash ]
+                addSection "flow" authored.SyntaxVersion authored.Settings.SourceText)
             let durableExamples =
                 state.Examples
                 |> Map.toList
@@ -961,8 +1007,9 @@ module Runtime =
                           error "TYPE_VALIDATOR_TARGET_INVALID" $"Enum type '{name}' cannot carry a scalar validator target." (Some name) None [] []
                       yield { Name = name; Definition = sourceObject.Reference; SourceFormat = authored.SourceFormat; ValidatorTarget = None } ]
             let manifestVersion =
-                if manifestBase.FormatVersion >= 3
-                   || (typeSources |> List.exists (fun source -> source.SourceFormat.Frontend = SourceFrontend.Flow || source.ValidatorTarget.IsSome)) then 3
+                if manifestBase.FormatVersion >= 4 || not (Map.isEmpty durable.FlowTestFiles) then 4
+                elif manifestBase.FormatVersion >= 3
+                     || (typeSources |> List.exists (fun source -> source.SourceFormat.Frontend = SourceFrontend.Flow || source.ValidatorTarget.IsSome)) then 3
                 else 2
             let revisions = ResizeArray<WordRevision>(manifestBase.Revisions)
             let mutable revisionKeys = revisions |> Seq.map (fun item -> item.WordId, item.Revision) |> Set.ofSeq
@@ -1019,7 +1066,9 @@ module Runtime =
                             durable.FlowTests
                             |> Map.toSeq
                             |> Seq.map snd
-                            |> Seq.filter (fun item -> item.Source.OwnerName = wordName)
+                            |> Seq.filter (fun item ->
+                                item.Source.OwnerName = wordName
+                                && not (durable.FlowTestFiles.ContainsKey(flowTestFileKey item.Source.OwnerId item.Source.Reference)))
                             |> Seq.sortBy (fun item -> item.Source.CaseName)
                             |> Seq.map (fun item ->
                                 let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition item.Source.Content
@@ -1028,7 +1077,20 @@ module Runtime =
                                 sourceObjects.Add sourceObject
                                 sourceObject.Reference)
                             |> Seq.toList
-                        stack @ flow
+                        let files =
+                            durable.FlowTestFiles
+                            |> Map.toSeq
+                            |> Seq.map snd
+                            |> Seq.filter (fun item -> item.OwnerName = wordName)
+                            |> Seq.sortBy (fun item -> item.Reference.Hash)
+                            |> Seq.map (fun item ->
+                                let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition item.Settings.SourceText
+                                if sourceObject.Reference <> item.Reference then
+                                    error "FLOW_RUNTIME_SOURCE_MISMATCH" "A Flow test-file source no longer matches its immutable source reference." (Some wordName) None [ item.Reference.Hash ] [ sourceObject.Reference.Hash ]
+                                sourceObjects.Add sourceObject
+                                sourceObject.Reference)
+                            |> Seq.toList
+                        stack @ flow @ files
                 let examples =
                     durable.Examples
                     |> Map.toSeq
@@ -1102,6 +1164,16 @@ module Runtime =
                             | Some bindings -> bindings
                             | None -> error "FLOW_RUNTIME_BINDINGS_MISSING" "Flow test call bindings must be regenerated against the exact candidate program before publication." (Some(item.Definition.Name + "/" + authored.Source.CaseName)) None [] [])
                         |> Seq.toList
+                    let flowTestFileBindings =
+                        durable.FlowTestFiles
+                        |> Map.toSeq
+                        |> Seq.map snd
+                        |> Seq.filter (fun authored -> authored.OwnerId = ownerIdentity)
+                        |> Seq.collect (fun authored ->
+                            match authored.StoredBindings with
+                            | Some bindings -> bindings
+                            | None -> error "FLOW_RUNTIME_BINDINGS_MISSING" "Flow test-file override bindings must be regenerated against the exact candidate program before publication." (Some item.Definition.Name) (Some authored.Settings.Span) [] [])
+                        |> Seq.toList
                     let flowExampleBindings =
                         durable.FlowExamples
                         |> Map.toSeq
@@ -1125,7 +1197,7 @@ module Runtime =
                           TimestampUtc = timestamp
                           Deprecated = durable.Deprecated.Contains item.Definition.Name
                           SourceFormat = sourceFormat
-                          CallBindings = wordBindings @ flowTestBindings @ flowExampleBindings }
+                          CallBindings = wordBindings @ flowTestBindings @ flowTestFileBindings @ flowExampleBindings }
                     revisions.Add revision
                     revisionKeys <- Set.add (wordId, item.Definition.Revision) revisionKeys
 
@@ -1247,7 +1319,7 @@ module Runtime =
             graph |> Map.toSeq |> Seq.iter (fun (name, _) -> visit [] name)
 
         let compileRuntimeSnapshot (state: DictionaryState) =
-            if Map.isEmpty state.FlowWords && (not (Map.isEmpty state.FlowTests) || not (Map.isEmpty state.FlowExamples)) then
+            if Map.isEmpty state.FlowWords && (not (Map.isEmpty state.FlowTests) || not (Map.isEmpty state.FlowTestFiles) || not (Map.isEmpty state.FlowExamples)) then
                 error "FLOW_RUNTIME_ORPHAN_ATTACHMENT" "Flow source attachments cannot exist without a Flow-authored owner definition." None None [ "Flow owner" ] []
             if Map.isEmpty state.FlowWords then validateGraph state
             let flowNames = state.FlowWords |> Map.toSeq |> Seq.map (fun (_, authored) -> authored.Source.OwnerName) |> Set.ofSeq
@@ -1270,7 +1342,7 @@ module Runtime =
             let flowProject =
                 if Map.isEmpty state.FlowWords then None
                 else
-                    if not (Map.isEmpty state.FlowTests) || not (Map.isEmpty state.FlowExamples) then
+                    if not (Map.isEmpty state.FlowTests) || not (Map.isEmpty state.FlowTestFiles) || not (Map.isEmpty state.FlowExamples) then
                         let flowOwners = state.FlowWords |> Map.toSeq |> Seq.map (fun (_, authored) -> authored.Source.OwnerId) |> Set.ofSeq
                         for KeyValue(_, attachment) in state.FlowTests do
                             if not (flowOwners.Contains attachment.Source.OwnerId) then
@@ -1327,6 +1399,45 @@ module Runtime =
                                 [ key; source.OwnerName; string source.SyntaxVersion; string source.OwnerRevision; string source.Reference.Kind ]
                     state.FlowTests |> Map.iter (fun key attachment -> validateAttachment FlowLowering.FlowAttachmentKind.Test key attachment)
                     state.FlowExamples |> Map.iter (fun key attachment -> validateAttachment FlowLowering.FlowAttachmentKind.Example key attachment)
+                    let wrapperCaseKeys = System.Collections.Generic.HashSet<string>(StringComparer.Ordinal)
+                    let wrapperScopeKeys = System.Collections.Generic.HashSet<string>(StringComparer.Ordinal)
+                    for KeyValue(key, file) in state.FlowTestFiles do
+                        let ownerKey = wordIdText file.OwnerId
+                        let owner =
+                            state.FlowWords.TryFind ownerKey
+                            |> Option.defaultWith (fun () -> error "FLOW_RUNTIME_ORPHAN_ATTACHMENT" "A test-file wrapper has no Flow-authored owner definition." (Some file.OwnerName) None [] [ ownerKey ])
+                        let ownerEntry =
+                            state.Words.TryFind file.OwnerName
+                            |> Option.defaultWith (fun () -> error "FLOW_RUNTIME_OWNER_MISSING" "A test-file wrapper owner has no executable word entry." (Some file.OwnerName) None [] [])
+                        let expectedKey = flowTestFileKey file.OwnerId file.Reference
+                        let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition file.Settings.SourceText
+                        if key <> expectedKey
+                           || owner.Source.OwnerName <> file.OwnerName
+                           || file.Settings.SyntaxVersion <> file.SyntaxVersion
+                           || file.SyntaxVersion <> owner.Source.SyntaxVersion
+                           || file.OwnerRevision <> ownerEntry.Revision
+                           || file.OwnerRevision <> owner.Source.OwnerRevision
+                           || file.Reference.Kind <> StorageObjectKind.TestDefinition
+                           || sourceObject.Reference <> file.Reference then
+                            error "FLOW_RUNTIME_TEST_FILE_METADATA_MISMATCH" "Test-file owner, revision, source kind, and immutable source must agree within the runtime snapshot." (Some file.OwnerName) None
+                                [ expectedKey; owner.Source.OwnerName; string owner.Source.SyntaxVersion; ownerEntry.Revision.ToString(CultureInfo.InvariantCulture); sourceObject.Reference.Hash ]
+                                [ key; file.OwnerName; string file.SyntaxVersion; string file.OwnerRevision; file.Reference.Hash ]
+                        if file.Settings.Tests.IsEmpty then
+                            error "FLOW_RUNTIME_TEST_FILE_EMPTY" "A test-file wrapper must retain at least one case." (Some file.OwnerName) (Some file.Settings.Span) [ "one or more tests" ] []
+                        let scopeKey = flowAttachmentKey file.OwnerId file.Settings.ScopeName
+                        if not (wrapperScopeKeys.Add scopeKey) then
+                            error "FLOW_TEST_FILE_SCOPE_DUPLICATE" "A Flow owner cannot have two test-file wrappers with the same scope label." (Some file.OwnerName) (Some file.Settings.Span) [ "unique test-file scope label per owner" ] [ file.Settings.ScopeName ]
+                        for test in file.Settings.Tests do
+                            let testKey = flowAttachmentKey file.OwnerId test.CaseName
+                            if test.Word <> file.OwnerName || not (wrapperCaseKeys.Add testKey) then
+                                error "FLOW_RUNTIME_TEST_FILE_OWNER_MISMATCH" "A wrapper case must belong to its one tested owner and may appear only once across wrapper files." (Some(test.Word + "/" + test.CaseName)) (Some test.Span) [ file.OwnerName; "unique case" ] [ test.Word; test.CaseName ]
+                            match state.FlowTests.TryFind testKey with
+                            | Some attachment when attachment.Source.Reference = file.Reference && attachment.Source.OwnerId = file.OwnerId && attachment.Source.CaseName = test.CaseName -> ()
+                            | _ -> error "FLOW_RUNTIME_TEST_FILE_CASE_MISSING" "Each wrapper case must map to a test attachment row that points to the same full-file source." (Some(test.Word + "/" + test.CaseName)) (Some test.Span) [ file.Reference.Hash ] []
+                    for KeyValue(_, attachment) in state.FlowTests do
+                        let fileKey = flowTestFileKey attachment.Source.OwnerId attachment.Source.Reference
+                        if state.FlowTestFiles.ContainsKey fileKey && not (wrapperCaseKeys.Contains(flowAttachmentKey attachment.Source.OwnerId attachment.Source.CaseName)) then
+                            error "FLOW_RUNTIME_TEST_FILE_CASE_EXTRA" "A wrapper-backed attachment row is not declared by its full-file source." (Some(attachment.Source.OwnerName + "/" + attachment.Source.CaseName)) None [] [ attachment.Source.Reference.Hash ]
                     let wordInventory: FlowLowering.FlowSourceInventory =
                         { ExpectedFlowOwnerIds = Set.empty
                           Sources = [] }
@@ -1347,6 +1458,8 @@ module Runtime =
                         [ yield!
                             state.FlowTests
                             |> Map.toList
+                            |> List.filter (fun (_, attachment) ->
+                                not (state.FlowTestFiles.ContainsKey(flowTestFileKey attachment.Source.OwnerId attachment.Source.Reference)))
                             |> List.map (fun (_, attachment) -> FlowLowering.FlowAttachmentChange.Add attachment.Source)
                           yield!
                             state.FlowExamples
@@ -1354,9 +1467,76 @@ module Runtime =
                             |> List.map (fun (_, attachment) -> FlowLowering.FlowAttachmentChange.Add attachment.Source) ]
                     let project =
                         FlowLowering.compileBatchFlowProjectSources flowContext wordInventory wordChanges attachmentInventory attachmentChanges
+                    let compiledTestFiles =
+                        state.FlowTestFiles
+                        |> Map.toList
+                        |> List.map (fun (fileKey, file) ->
+                            let settings =
+                                match FlowParser.parseTestFileSettingsWithVersion file.SyntaxVersion file.SourceFile file.Settings.SourceText with
+                                | Ok parsed -> parsed
+                                | Error diagnostic -> raise (LanguageException { diagnostic with Word = Some file.OwnerName })
+                            let parsedOwners = settings.Tests |> List.map (fun test -> test.Word) |> List.distinct
+                            if parsedOwners <> [ file.OwnerName ] then
+                                error "FLOW_RUNTIME_TEST_FILE_OWNER_MISMATCH" "A test-file wrapper must retain exactly its recorded Flow owner." (Some file.OwnerName) (Some settings.Span) [ file.OwnerName ] parsedOwners
+                            let compilation =
+                                FlowLowering.compileTestFileSettings project.WordCompilation.Context project.WordCompilation.Program settings
+                            IrInterpreter.validateProgram compilation.Program
+                            let overrideBindingSpans =
+                                compilation.Overrides
+                                |> List.collect (fun item ->
+                                    let stored = FlowPersistence.testOverrideBindings file.Reference [ item ]
+                                    let spans = item.Header.Span :: (item.BodySites |> List.map (fun site -> site.Span))
+                                    if stored.Length <> spans.Length then
+                                        error "FLOW_RUNTIME_BINDING_PROOF_MISMATCH" "Test override persistence rows do not correspond to their compiler-proven call sites." (Some file.OwnerName) (Some settings.Span) [ string stored.Length ] [ string spans.Length ]
+                                    List.zip stored spans)
+                                |> Map.ofList
+                            let testsWithBindings =
+                                settings.Tests
+                                |> List.map (fun test ->
+                                    let key = test.Word + "/" + test.CaseName
+                                    let compiled = FlowLowering.compileTestWithCallBindings compilation.Context compilation.Program test
+                                    let attachment: FlowLowering.FlowAttachmentKey =
+                                        { OwnerId = file.OwnerId
+                                          Kind = FlowLowering.FlowAttachmentKind.Test
+                                          CaseName = test.CaseName }
+                                    let callBindings =
+                                        compiled.CallSites
+                                        |> Map.toList
+                                        |> List.collect (fun (role, sites) ->
+                                            sites
+                                            |> List.map (fun site ->
+                                                let binding: FlowLowering.FlowAttachmentCallBinding =
+                                                    { Attachment = attachment
+                                                      OwnerName = file.OwnerName
+                                                      OwnerRevision = file.OwnerRevision
+                                                      Source = file.Reference
+                                                      BodyRole = role
+                                                      Site = site }
+                                                binding))
+                                    let storedBindings = FlowPersistence.attachmentBindings callBindings
+                                    let callBindingSpans =
+                                        callBindings
+                                        |> List.map (fun item -> FlowPersistence.attachmentBindings [ item ] |> List.head, item.Site.Span)
+                                        |> Map.ofList
+                                    key, test, compiled, storedBindings, callBindingSpans)
+                            let tests = testsWithBindings |> List.map (fun (key, _, compiled, _, _) -> key, compiled) |> Map.ofList
+                            let testBindings = testsWithBindings |> List.map (fun (key, _, _, bindings, _) -> key, bindings) |> Map.ofList
+                            let bindingSpans =
+                                testsWithBindings
+                                |> List.collect (fun (_, _, _, _, spans) -> spans |> Map.toList)
+                                |> fun spans -> Map.ofList (Map.toList overrideBindingSpans @ spans)
+                            let source =
+                                { file with
+                                    Settings = settings }
+                            { Source = source
+                              Compilation = compilation
+                              Tests = tests
+                              TestBindings = testBindings
+                              BindingSpans = bindingSpans })
                     let generatedBindings =
                         FlowPersistence.wordBindings project.WordCompilation.CallBindings
                         @ FlowPersistence.attachmentBindings project.AttachmentBindings
+                        @ (compiledTestFiles |> List.collect (fun file -> file.TestBindings |> Map.toList |> List.collect snd))
                     let bindingSpans =
                         [ yield!
                             List.zip
@@ -1366,7 +1546,10 @@ module Runtime =
                             project.AttachmentBindings
                             |> List.collect (fun binding ->
                                 FlowPersistence.attachmentBindings [ binding ]
-                                |> List.map (fun stored -> stored, binding.Site.Span)) ]
+                                |> List.map (fun stored -> stored, binding.Site.Span))
+                          yield!
+                            compiledTestFiles
+                            |> List.collect (fun file -> file.BindingSpans |> Map.toList) ]
                         |> Map.ofList
                     let wordBindingsFor source =
                         generatedBindings
@@ -1425,6 +1608,14 @@ module Runtime =
                         let ownerSpan = state.FlowWords.TryFind(wordIdText attachment.Source.OwnerId) |> Option.map (fun authored -> authored.Definition.Span)
                         checkRetainedBinding (attachment.Source.OwnerName + "/" + attachment.Source.CaseName) ownerSpan attachment.StoredBindings
                             (attachmentBindingsFor attachment.Source.Reference attachment.Source.CaseName)
+                    for file in compiledTestFiles do
+                        checkRetainedBinding (file.Source.OwnerName + "/test-file") (Some file.Source.Settings.Span) file.Source.StoredBindings
+                            (FlowPersistence.testOverrideBindings file.Source.Reference file.Compilation.Overrides)
+                    let compiledTestFiles =
+                        compiledTestFiles
+                        |> List.map (fun file ->
+                            let storedBindings = FlowPersistence.testOverrideBindings file.Source.Reference file.Compilation.Overrides
+                            { file with Source = { file.Source with StoredBindings = Some storedBindings } })
                     let flowWordBindings =
                         state.FlowWords
                         |> Map.map (fun _ authored -> { authored with StoredBindings = Some(wordBindingsFor authored.Source.Reference) })
@@ -1437,6 +1628,24 @@ module Runtime =
                         |> List.fold (fun found (key, source) ->
                             let actual = attachmentBindingsFor source.Reference source.CaseName
                             Map.add key { Source = source; StoredBindings = Some actual } found) Map.empty
+                    let wrapperTestAttachments =
+                        compiledTestFiles
+                        |> List.collect (fun file ->
+                            file.Source.Settings.Tests
+                            |> List.map (fun test ->
+                                let key = flowAttachmentKey file.Source.OwnerId test.CaseName
+                                let source: FlowLowering.FlowAttachmentSourceDocument =
+                                    { OwnerName = file.Source.OwnerName
+                                      SyntaxVersion = file.Source.SyntaxVersion
+                                      OwnerId = file.Source.OwnerId
+                                      OwnerRevision = file.Source.OwnerRevision
+                                      Kind = FlowLowering.FlowAttachmentKind.Test
+                                      CaseName = test.CaseName
+                                      Reference = file.Source.Reference
+                                      SourceFile = file.Source.SourceFile
+                                      Content = file.Source.Settings.SourceText }
+                                key, { Source = source; StoredBindings = Some file.TestBindings[test.Word + "/" + test.CaseName] }))
+                        |> Map.ofList
                     let updatedState =
                         let compiledWords = project.WordCompilation.Context.CompilerContext.Words
                         let words =
@@ -1448,6 +1657,10 @@ module Runtime =
                                 | FlowLowering.FlowCompiledAttachment.Test(source, compiled) -> Some(source.OwnerName + "/" + source.CaseName, compiled.Lowered.Definition)
                                 | _ -> None)
                             |> Map.ofList
+                            |> fun found ->
+                                compiledTestFiles
+                                |> List.collect (fun file -> file.Source.Settings.Tests |> List.map (fun test -> test.Word + "/" + test.CaseName, file.Tests[test.Word + "/" + test.CaseName].Compiled.Lowered.Definition))
+                                |> List.fold (fun current (key, value) -> Map.add key value current) found
                         let compiledExamples =
                             project.Attachments
                             |> List.choose (function
@@ -1459,13 +1672,36 @@ module Runtime =
                             Tests = Map.fold (fun found key value -> Map.add key value found) state.Tests compiledTests
                             Examples = Map.fold (fun found key value -> Map.add key value found) state.Examples compiledExamples
                             FlowWords = flowWordBindings
-                            FlowTests = updateAttachments FlowLowering.FlowAttachmentKind.Test
+                            FlowTests = Map.fold (fun found key value -> Map.add key value found) (updateAttachments FlowLowering.FlowAttachmentKind.Test) wrapperTestAttachments
+                            FlowTestFiles = compiledTestFiles |> List.map (fun file -> flowTestFileKey file.Source.OwnerId file.Source.Reference, file.Source) |> Map.ofList
                             FlowExamples = updateAttachments FlowLowering.FlowAttachmentKind.Example }
-                    Some(project, updatedState, project.WordCompilation.Context, project.WordCompilation.Program)
-            let finalState, flowContext, flowProject, words, context, program =
+                    let testFileBodies =
+                        compiledTestFiles
+                        |> List.collect (fun file -> file.Tests |> Map.toList |> List.map (fun (key, compiled) -> key, compiled.Compiled.Body))
+                        |> Map.ofList
+                    let testFileExpectationBodies =
+                        compiledTestFiles
+                        |> List.collect (fun file ->
+                            file.Tests
+                            |> Map.toList
+                            |> List.choose (fun (key, compiled) -> compiled.Compiled.ExpectationBody |> Option.map (fun body -> key, body)))
+                        |> Map.ofList
+                    let testFileOverlays =
+                        compiledTestFiles
+                        |> List.collect (fun file ->
+                            file.Tests
+                            |> Map.toList
+                            |> List.map (fun (key, _) ->
+                                key,
+                                { Program = file.Compilation.Program
+                                  Dispatch = file.Compilation.Dispatch
+                                  ActiveOverrides = file.Source.Settings.Overrides |> List.map (fun item -> item.Definition.Name) }))
+                        |> Map.ofList
+                    Some(project, updatedState, project.WordCompilation.Context, project.WordCompilation.Program, testFileBodies, testFileExpectationBodies, testFileOverlays)
+            let finalState, flowContext, flowProject, words, context, program, compiledFileTestBodies, compiledFileExpectationBodies, testFileOverlays =
                 match flowProject with
-                | Some(project, updatedState, loweredContext, verifiedProgram) ->
-                    updatedState, Some loweredContext, Some project, project.WordCompilation.Context.CompilerContext.Words, project.WordCompilation.Context.CompilerContext, verifiedProgram
+                | Some(project, updatedState, loweredContext, verifiedProgram, fileTests, fileExpectations, fileOverlays) ->
+                    updatedState, Some loweredContext, Some project, project.WordCompilation.Context.CompilerContext.Words, project.WordCompilation.Context.CompilerContext, verifiedProgram, fileTests, fileExpectations, fileOverlays
                 | None ->
                     let words = effectiveWords state
                     let context: Compiler.IrLoweringContext =
@@ -1474,7 +1710,7 @@ module Runtime =
                           Scalars = scalarDefinitions state
                           Enums = enumDefinitions state
                           WordIds = words |> Map.map (fun name item -> WordId(wordIdentity state item)) }
-                    state, Some flowContext, None, words, context, Compiler.compileIrProgram context
+                    state, Some flowContext, None, words, context, Compiler.compileIrProgram context, Map.empty, Map.empty, Map.empty
             if not (Map.isEmpty finalState.FlowWords) then validateGraph finalState
             IrInterpreter.validateProgram program
             let flowTestBodies, flowExpectationBodies, flowExampleBodies =
@@ -1504,12 +1740,14 @@ module Runtime =
                 |> Map.map (fun _ test -> Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins context program test snapshotSourceOrigins)
             let testBodies =
                 Map.fold (fun found key (actual, _) -> Map.add key actual found) flowTestBodies compiledTests
+                |> fun found -> Map.fold (fun current key body -> Map.add key body current) found compiledFileTestBodies
             let testExpectationBodies =
                 compiledTests
                 |> Map.toSeq
                 |> Seq.choose (fun (key, (_, expected)) -> expected |> Option.map (fun body -> key, body))
                 |> Map.ofSeq
                 |> Map.fold (fun found key body -> Map.add key body found) flowExpectationBodies
+                |> fun found -> Map.fold (fun current key body -> Map.add key body current) found compiledFileExpectationBodies
             let flowExampleKeys = finalState.FlowExamples |> Map.toSeq |> Seq.map (fun (_, item) -> item.Source.OwnerName + "/" + item.Source.CaseName) |> Set.ofSeq
             let stackExamples = finalState.Examples |> Map.filter (fun key _ -> not (flowExampleKeys.Contains key))
             let exampleBodies =
@@ -1524,6 +1762,7 @@ module Runtime =
               FlowProject = flowProject
               TestBodies = testBodies
               TestExpectationBodies = testExpectationBodies
+              TestFileOverlays = testFileOverlays
               ExampleBodies = exampleBodies }
 
         let sourceSite (snapshot: RuntimeSnapshot) (body: VerifiedIrBody option) (site: SourceSiteId) =
@@ -1757,6 +1996,7 @@ module Runtime =
                         History = Map.empty
                         FlowWords = Map.empty
                         FlowTests = Map.empty
+                        FlowTestFiles = Map.empty
                         FlowExamples = Map.empty
                         FlowHistory = Map.empty
                         Replacements = Map.empty }
@@ -1782,6 +2022,7 @@ module Runtime =
                 let stackExamples = ResizeArray<ExampleDefinition>()
                 let currentFlowWords = ResizeArray<FlowAuthoredWord * WordMaturity>()
                 let currentFlowTests = ResizeArray<string * FlowAuthoredAttachment>()
+                let currentFlowTestFiles = ResizeArray<string * FlowAuthoredTestFile>()
                 let currentFlowExamples = ResizeArray<string * FlowAuthoredAttachment>()
                 let mutable loadedHistory: Map<string, WordDefinition list> = Map.empty
                 let mutable loadedFlowHistory: Map<string, FlowAuthoredWord list> = Map.empty
@@ -1911,8 +2152,15 @@ module Runtime =
                         |> List.map (fun (reference, source) ->
                             let file = $"{sourceFile}/test:{reference.Hash}"
                             match metadata.SourceFormat.Frontend with
-                            | SourceFrontend.Stack -> Choice1Of2(stackTest file source metadata.Name)
-                            | SourceFrontend.Flow -> Choice2Of2(flowTest metadata.SourceFormat.Version file source metadata.Name))
+                            | SourceFrontend.Stack -> Choice1Of3(stackTest file source metadata.Name)
+                            | SourceFrontend.Flow ->
+                                match FlowParser.parseTestWithVersion metadata.SourceFormat.Version file source with
+                                | Ok test when test.Word = metadata.Name && test.SyntaxVersion = metadata.SourceFormat.Version -> Choice2Of3 test
+                                | _ ->
+                                    let wrapperFile = $"{sourceFile}/test-file:{reference.Hash}"
+                                    match FlowParser.parseTestFileSettingsWithVersion metadata.SourceFormat.Version wrapperFile source with
+                                    | Ok settings -> Choice3Of3 settings
+                                    | Error diagnostic -> raise (LanguageException diagnostic))
                     let parsedExamples =
                         List.zip metadata.Examples revisionContent.ExampleSources
                         |> List.map (fun (reference, source) ->
@@ -1922,7 +2170,10 @@ module Runtime =
                             | SourceFrontend.Flow -> Choice2Of2(flowExample metadata.SourceFormat.Version file source metadata.Name))
                     let testNames =
                         parsedTests
-                        |> List.map (function Choice1Of2 test -> test.Name | Choice2Of2 test -> test.CaseName)
+                        |> List.collect (function
+                            | Choice1Of3 test -> [ test.Name ]
+                            | Choice2Of3 test -> [ test.CaseName ]
+                            | Choice3Of3 settings -> settings.Tests |> List.map (fun test -> test.CaseName))
                     let exampleNames =
                         parsedExamples
                         |> List.map (function Choice1Of2 example -> example.Name | Choice2Of2 example -> example.CaseName)
@@ -1933,8 +2184,8 @@ module Runtime =
                     | Choice1Of2 definition ->
                         for parsed in parsedTests do
                             match parsed with
-                            | Choice1Of2 test -> if isCurrent then stackTests.Add test
-                            | _ -> mismatch "A Stack definition cannot own Flow test sources." (Some metadata.Name)
+                            | Choice1Of3 test -> if isCurrent then stackTests.Add test
+                            | _ -> mismatch "A Stack definition cannot own Flow test sources or test-file wrappers." (Some metadata.Name)
                         for parsed in parsedExamples do
                             match parsed with
                             | Choice1Of2 example -> if isCurrent then stackExamples.Add example
@@ -1962,7 +2213,7 @@ module Runtime =
                         if isCurrent then currentFlowWords.Add(historyAuthored, metadata.Maturity)
                         for index in 0 .. parsedTests.Length - 1 do
                             match parsedTests[index], metadata.Tests[index] with
-                            | Choice2Of2 test, reference when isCurrent ->
+                            | Choice2Of3 test, reference when isCurrent ->
                                 let key = flowAttachmentKey ownerId test.CaseName
                                 let sourceDocument: FlowLowering.FlowAttachmentSourceDocument =
                                     { OwnerName = metadata.Name
@@ -1978,7 +2229,44 @@ module Runtime =
                                     { Source = sourceDocument
                                       StoredBindings = Some(bindingSubset reference (Some test.CaseName) [ StoredCallBodyRole.Actual; StoredCallBodyRole.ExpectedExpression ] metadata) }
                                 currentFlowTests.Add(key, authored)
-                            | Choice2Of2 _, _ -> ()
+                            | Choice3Of3 settings, reference when isCurrent ->
+                                let wrapperFile = $"{sourceFile}/test-file:{reference.Hash}"
+                                let localSettings =
+                                    match FlowParser.parseTestFileSettingsWithVersion metadata.SourceFormat.Version wrapperFile revisionContent.TestSources[index] with
+                                    | Ok parsed -> parsed
+                                    | Error diagnostic -> raise (LanguageException diagnostic)
+                                let owners = localSettings.Tests |> List.map (fun test -> test.Word) |> List.distinct
+                                if owners <> [ metadata.Name ] then
+                                    mismatch $"Stored Flow test-file wrapper for '{metadata.Name}' has a foreign owner." (Some metadata.Name)
+                                let fileKey = flowTestFileKey ownerId reference
+                                let authoredFile: FlowAuthoredTestFile =
+                                    { OwnerName = metadata.Name
+                                      OwnerId = ownerId
+                                      OwnerRevision = metadata.Revision
+                                      SyntaxVersion = metadata.SourceFormat.Version
+                                      Reference = reference
+                                      SourceFile = wrapperFile
+                                      Settings = localSettings
+                                      StoredBindings = Some(bindingSubset reference None [ StoredCallBodyRole.TestOverride ] metadata) }
+                                currentFlowTestFiles.Add(fileKey, authoredFile)
+                                for test in localSettings.Tests do
+                                    let key = flowAttachmentKey ownerId test.CaseName
+                                    let sourceDocument: FlowLowering.FlowAttachmentSourceDocument =
+                                        { OwnerName = metadata.Name
+                                          SyntaxVersion = metadata.SourceFormat.Version
+                                          OwnerId = ownerId
+                                          OwnerRevision = metadata.Revision
+                                          Kind = FlowLowering.FlowAttachmentKind.Test
+                                          CaseName = test.CaseName
+                                          Reference = reference
+                                          SourceFile = wrapperFile
+                                          Content = revisionContent.TestSources[index] }
+                                    let authored =
+                                        { Source = sourceDocument
+                                          StoredBindings = Some(bindingSubset reference (Some test.CaseName) [ StoredCallBodyRole.Actual; StoredCallBodyRole.ExpectedExpression ] metadata) }
+                                    currentFlowTests.Add(key, authored)
+                            | Choice3Of3 _, _ -> ()
+                            | Choice2Of3 _, _ -> ()
                             | _ -> mismatch "A Flow definition cannot own Stack test sources." (Some metadata.Name)
                         for index in 0 .. parsedExamples.Length - 1 do
                             match parsedExamples[index], metadata.Examples[index] with
@@ -2021,7 +2309,7 @@ module Runtime =
                 // behavior, where the aggregate was the source of these cases.
                 let generatedProjectCases =
                     match value.FormatVersion, projectSource with
-                    | version, Some exact when version = 1 || version = 2 || version = 3 ->
+                    | version, Some exact when version = 1 || version = 2 || version = 3 || version = 4 ->
                         let stackSource =
                             if currentFlowWords.Count = 0
                                && (loadedTypeSources |> Seq.forall (fun (_, authored) -> authored.SourceFormat.Frontend = SourceFrontend.Stack)) then exact
@@ -2100,6 +2388,7 @@ module Runtime =
 
                 let flowWords = currentFlowWords |> Seq.map (fun (authored, _) -> wordIdText authored.Source.OwnerId, authored) |> Map.ofSeq
                 let flowTests = currentFlowTests |> Map.ofSeq
+                let flowTestFiles = currentFlowTestFiles |> Map.ofSeq
                 let flowExamples = currentFlowExamples |> Map.ofSeq
                 let orphanCases =
                     (flowTests |> Map.toSeq |> Seq.exists (fun (_, item) -> not (flowWords.ContainsKey(wordIdText item.Source.OwnerId))))
@@ -2137,6 +2426,7 @@ module Runtime =
                         History = loadedHistory
                         FlowWords = flowWords
                         FlowTests = flowTests
+                        FlowTestFiles = flowTestFiles
                         FlowExamples = flowExamples
                         FlowHistory = loadedFlowHistory
                         Replacements = Map.empty }
@@ -2203,6 +2493,18 @@ module Runtime =
             let sites, branches = coverageObligations snapshot test.Word
             let trace = createTrace (Some test.Word) FileSystemMode.Virtual true false Map.empty
             let bodyKey = $"{test.Word}/{test.Name}"
+            let testFileOverlay = snapshot.TestFileOverlays.TryFind bodyKey
+            let executionSnapshot =
+                testFileOverlay
+                |> Option.map (fun overlay -> { snapshot with Program = overlay.Program })
+                |> Option.defaultValue snapshot
+            let executeTestBody executionName bodyTrace verifiedBody =
+                match testFileOverlay with
+                | Some overlay ->
+                    let host = interpreterHost executionSnapshot bodyTrace (Some verifiedBody)
+                    use result = IrInterpreter.executeBodyWithTestDispatch host executionName snapshot.Program overlay.Dispatch verifiedBody None []
+                    result.Decode()
+                | None -> executeIRBody snapshot executionName bodyTrace verifiedBody
             let body =
                 snapshot.TestBodies.TryFind bodyKey
                 |> Option.defaultWith (fun () ->
@@ -2216,6 +2518,7 @@ module Runtime =
                   Expected = test.Expected
                   ExpectedValue = expectedValue
                   EffectAssertion = None
+                  ActiveOverrides = testFileOverlay |> Option.map (fun overlay -> overlay.ActiveOverrides) |> Option.defaultValue []
                   TargetInputs = trace.TargetInputs
                   TargetReturns = trace.TargetReturns
                   TargetInvocationCount = trace.TargetInvocationCount
@@ -2228,7 +2531,7 @@ module Runtime =
             | _ -> trace.TargetIdentity <- None
             let executionResult =
                 try
-                    let stack = executeIRBody snapshot "<test>" trace body
+                    let stack = executeTestBody "<test>" trace body
                     match test.Expected with
                     | ExpectedValue literal ->
                         let expected = Types.literalValue literal
@@ -2260,7 +2563,7 @@ module Runtime =
                                 error "IR_TEST_EXPECTATION_BODY_MISSING" "Compiled test expectation is absent from its exact executable snapshot." (Some test.Word) (Some test.Span) [] [ bodyKey ])
                         let expectedTrace = createTrace None FileSystemMode.Virtual true false Map.empty
                         try
-                            let expectedStack = executeIRBody snapshot "<test-expectation>" expectedTrace expectedBody
+                            let expectedStack = executeTestBody "<test-expectation>" expectedTrace expectedBody
                             match expectedStack with
                             | [ expectedValue ] ->
                                 let passed = stack = [ expectedValue ]
@@ -2333,6 +2636,8 @@ module Runtime =
             node["name"] <- jstr result.Name
             node["word"] <- jstr result.Word
             node["passed"] <- jbool result.Passed
+            if not result.ActiveOverrides.IsEmpty then
+                node["activeOverrides"] <- jsonNode result.ActiveOverrides
             let addStructuredObservation (fieldName: string) (values: Value list) =
                 match inspectStructuredValues snapshot.Program values with
                 | Choice1Of2 value -> node[fieldName] <- value
@@ -2528,7 +2833,7 @@ module Runtime =
         let cleanupTaskTemporaries (task: TaskSession) =
             let temporaryNames = data.Words |> Map.toSeq |> Seq.choose (fun (name, item) -> if item.Status = Temporary then Some name else None) |> Seq.toList
             let mutable proposed = data
-            let restoreFlowOwner (current: DictionaryState) ownerId (flowWord: FlowAuthoredWord option) (flowTests: Map<string, FlowAuthoredAttachment>) (flowExamples: Map<string, FlowAuthoredAttachment>) =
+            let restoreFlowOwner (current: DictionaryState) ownerId (flowWord: FlowAuthoredWord option) (flowTests: Map<string, FlowAuthoredAttachment>) (flowTestFiles: Map<string, FlowAuthoredTestFile>) (flowExamples: Map<string, FlowAuthoredAttachment>) =
                 let withoutFlowWord = current.FlowWords |> Map.filter (fun _ authored -> authored.Source.OwnerId <> ownerId)
                 let restoredFlowWords =
                     match flowWord with
@@ -2541,9 +2846,17 @@ module Runtime =
                         saved
                         |> Map.filter (fun _ attachment -> attachment.Source.OwnerId = ownerId)
                         |> Map.fold (fun found key attachment -> Map.add key attachment found) remaining
+                let restoreTestFiles (existing: Map<string, FlowAuthoredTestFile>) (saved: Map<string, FlowAuthoredTestFile>) =
+                    existing
+                    |> Map.filter (fun _ file -> file.OwnerId <> ownerId)
+                    |> fun remaining ->
+                        saved
+                        |> Map.filter (fun _ file -> file.OwnerId = ownerId)
+                        |> Map.fold (fun found key file -> Map.add key file found) remaining
                 { current with
                     FlowWords = restoredFlowWords
                     FlowTests = restoreAttachments current.FlowTests flowTests
+                    FlowTestFiles = restoreTestFiles current.FlowTestFiles flowTestFiles
                     FlowExamples = restoreAttachments current.FlowExamples flowExamples }
             for name in temporaryNames do
                 let ownerId = proposed.WordIds.TryFind name |> Option.map WordId
@@ -2566,6 +2879,7 @@ module Runtime =
                                 identity
                                 (task.Snapshot.FlowWords.TryFind(wordIdText identity))
                                 task.Snapshot.FlowTests
+                                task.Snapshot.FlowTestFiles
                                 task.Snapshot.FlowExamples
                     | None -> ()
                 | _ ->
@@ -2587,7 +2901,7 @@ module Runtime =
                                 Replacements = Map.remove name proposed.Replacements }
                         match ownerId with
                         | Some identity ->
-                            proposed <- restoreFlowOwner proposed identity backup.FlowWord backup.FlowTests backup.FlowExamples
+                            proposed <- restoreFlowOwner proposed identity backup.FlowWord backup.FlowTests backup.FlowTestFiles backup.FlowExamples
                         | None -> ()
                     | None ->
                         proposed <-
@@ -2597,7 +2911,7 @@ module Runtime =
                                 Tests = proposed.Tests |> Map.filter (fun _ test -> test.Word <> name)
                                 Examples = proposed.Examples |> Map.filter (fun _ example -> example.Word <> name) }
                         match ownerId with
-                        | Some identity -> proposed <- restoreFlowOwner proposed identity None Map.empty Map.empty
+                        | Some identity -> proposed <- restoreFlowOwner proposed identity None Map.empty Map.empty Map.empty
                         | None -> ()
             let retainedFlowOwnerIds =
                 proposed.Words
@@ -2610,6 +2924,7 @@ module Runtime =
                 { proposed with
                     FlowWords = proposed.FlowWords |> Map.filter (fun _ authored -> retainedFlowOwnerIds.Contains authored.Source.OwnerId)
                     FlowTests = proposed.FlowTests |> Map.filter (fun _ attachment -> retainedFlowOwnerIds.Contains attachment.Source.OwnerId)
+                    FlowTestFiles = proposed.FlowTestFiles |> Map.filter (fun _ file -> retainedFlowOwnerIds.Contains file.OwnerId)
                     FlowExamples = proposed.FlowExamples |> Map.filter (fun _ attachment -> retainedFlowOwnerIds.Contains attachment.Source.OwnerId)
                     FlowHistory =
                         proposed.FlowHistory
@@ -2816,6 +3131,7 @@ module Runtime =
                                   Examples = originalExamples
                                   FlowWord = originalFlowWords
                                   FlowTests = originalFlowTests
+                                  FlowTestFiles = old.FlowTestFiles |> Map.filter (fun _ file -> ownerId |> Option.exists (fun identity -> file.OwnerId = identity))
                                   FlowExamples = originalFlowExamples }
                                 backups
                         | _ -> backups
@@ -2841,6 +3157,7 @@ module Runtime =
                               Examples = old.Examples |> Map.filter (fun _ example -> example.Word = name)
                               FlowWord = ownerId |> Option.bind (fun identity -> old.FlowWords.TryFind(wordIdText identity))
                               FlowTests = old.FlowTests |> Map.filter (fun _ attachment -> ownerId |> Option.exists (fun identity -> attachment.Source.OwnerId = identity))
+                              FlowTestFiles = old.FlowTestFiles |> Map.filter (fun _ file -> ownerId |> Option.exists (fun identity -> file.OwnerId = identity))
                               FlowExamples = old.FlowExamples |> Map.filter (fun _ attachment -> ownerId |> Option.exists (fun identity -> attachment.Source.OwnerId = identity)) })
                     let revision = item.Revision + 1
                     let definition = { item.Definition with Revision = revision }
@@ -3394,7 +3711,7 @@ module Runtime =
             let hasTypes = not document.Records.IsEmpty || not document.Scalars.IsEmpty || not document.Enums.IsEmpty
             if document.SyntaxVersion <> syntaxVersion then
                 error "FLOW_VERSION_UNSUPPORTED" "Flow project syntax version does not match the selected syntaxVersion." None None [ string syntaxVersion ] [ string document.SyntaxVersion ]
-            if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.IsEmpty then
+            if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.IsEmpty && document.TestFiles.IsEmpty then
                 error "FLOW_PROJECT_EMPTY" "A Flow project document must declare at least one type or word." None None [ "record, scalar, enum, or word declaration" ] []
             if hasTypes && temporary then
                 error "FLOW_PROJECT_TEMPORARY_TYPES_UNSUPPORTED" "Flow types do not have a temporary lifecycle; define the typed project as candidates or omit its type declarations." None None [ "temporary=false for project types" ] [ "temporary=true" ]
@@ -3598,6 +3915,61 @@ module Runtime =
             duplicates newTests "test"
             duplicates newExamples "example"
 
+            let newTestFiles =
+                document.TestFiles
+                |> List.map (fun parsed ->
+                    if parsed.SyntaxVersion <> syntaxVersion then
+                        error "FLOW_VERSION_UNSUPPORTED" "Flow test-file syntax version does not match the selected syntaxVersion." None (Some parsed.Span) [ string syntaxVersion ] [ string parsed.SyntaxVersion ]
+                    let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition parsed.SourceText
+                    let sourceFile = $"<flow-test-file:{parsed.ScopeName}/{sourceObject.Reference.Hash}>"
+                    let settings =
+                        match FlowParser.parseTestFileSettingsWithVersion syntaxVersion sourceFile parsed.SourceText with
+                        | Ok value -> value
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    let owners = settings.Tests |> List.map (fun test -> test.Word) |> List.distinct
+                    let ownerName =
+                        match owners with
+                        | [ name ] -> name
+                        | _ -> error "FLOW_TEST_FILE_OWNER_MISMATCH" "A test-file wrapper must target exactly one Flow word owner." None (Some settings.Span) [ "one owner" ] owners
+                    let ownerId, ownerRevision =
+                        match identities.TryFind ownerName with
+                        | Some identity -> identity, revision
+                        | None ->
+                            match old.WordIds.TryFind ownerName, old.Words.TryFind ownerName with
+                            | Some identity, Some word when word.Builtin.IsNone && word.Status <> Primitive ->
+                                let ownerId = WordId identity
+                                match old.FlowWords.TryFind(wordIdText ownerId) with
+                                | Some authored when authored.Source.OwnerRevision = word.Revision && authored.Source.SyntaxVersion = syntaxVersion ->
+                                    error "FLOW_PROJECT_TEST_FILE_OWNER_NOT_DECLARED" "A multi-declaration Flow project may attach test-file wrappers only to words declared in that transaction. Submit a wrapper-only document to attach to an existing Flow owner." (Some ownerName) (Some settings.Span) [ "owner declared in this project; otherwise wrapper-only attachment" ] [ "existing Flow owner outside this project" ]
+                                | Some authored ->
+                                    error "FLOW_ATTACHMENT_OWNER_STALE" $"Flow test-file owner '{ownerName}' does not match its current Flow revision or syntax version." (Some ownerName) (Some settings.Span) [ $"{ownerName}@{word.Revision}"; string syntaxVersion ] [ $"{authored.Source.OwnerName}@{authored.Source.OwnerRevision}"; string authored.Source.SyntaxVersion ]
+                                | None -> error "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD" $"Test-file owner '{ownerName}' is not authored in Flow." (Some ownerName) (Some settings.Span) [ "Flow-authored word" ] [ "Stack word" ]
+                            | _ -> error "FLOW_ATTACHMENT_OWNER_MISMATCH" $"Test-file owner '{ownerName}' must be declared in this project or name an existing Flow word." (Some ownerName) (Some settings.Span) wordNames [ ownerName ]
+                    let key = flowTestFileKey ownerId sourceObject.Reference
+                    if old.FlowTestFiles.ContainsKey key then
+                        error "FLOW_TEST_FILE_ALREADY_EXISTS" "A test-file wrapper with the same immutable source is already attached to this owner." (Some ownerName) (Some settings.Span) [] [ sourceObject.Reference.Hash ]
+                    let file: FlowAuthoredTestFile =
+                        { OwnerName = ownerName
+                          OwnerId = ownerId
+                          OwnerRevision = ownerRevision
+                          SyntaxVersion = syntaxVersion
+                          Reference = sourceObject.Reference
+                          SourceFile = sourceFile
+                          Settings = settings
+                          StoredBindings = None }
+                    file, settings.Tests)
+            let newTestFileCaseKeys =
+                newTestFiles
+                |> List.collect (fun (file, tests) -> tests |> List.map (fun test -> flowAttachmentKey file.OwnerId test.CaseName))
+            let allNewFlowTestCaseKeys = (newTests |> List.map fst) @ newTestFileCaseKeys
+            let duplicateNewTestFileCase = allNewFlowTestCaseKeys |> List.groupBy id |> List.tryFind (fun (_, grouped) -> grouped.Length > 1)
+            match duplicateNewTestFileCase with
+            | Some(key, _) -> error "FLOW_ATTACHMENT_DUPLICATE_CHANGE" "A Flow project may declare one test case key across standalone tests and test-file wrappers only once." (Some key) None [] [ key ]
+            | None -> ()
+            for key in allNewFlowTestCaseKeys do
+                if old.FlowTests.ContainsKey key then
+                    error "FLOW_TEST_CASE_ALREADY_EXISTS" "A Flow test-file wrapper cannot replace an existing test attachment in an add-only project registration." (Some key) None [ "unused Flow test case key" ] [ key ]
+
             let records = newRecords |> List.fold (fun found (name, item, _) -> Map.add name item found) old.Records
             let scalars = newScalars |> List.fold (fun found (name, item, _) -> Map.add name item found) old.Scalars
             let enums = newEnums |> List.fold (fun found (name, item, _) -> Map.add name item found) old.Enums
@@ -3609,7 +3981,30 @@ module Runtime =
             let words = newWordMap |> Map.fold (fun found name item -> Map.add name item found) old.Words
             let wordIds = identities |> Map.fold (fun found name identity -> Map.add name (wordIdText identity) found) old.WordIds
             let flowWords = flowWordMap |> Map.fold (fun found identity item -> Map.add identity item found) old.FlowWords
-            let flowTests = newTests |> List.fold (fun found (key, item) -> Map.add key item found) old.FlowTests
+            let wrapperCaseRows =
+                newTestFiles
+                |> List.collect (fun (file, tests) ->
+                    tests
+                    |> List.map (fun test ->
+                        let key = flowAttachmentKey file.OwnerId test.CaseName
+                        let source: FlowLowering.FlowAttachmentSourceDocument =
+                            { OwnerName = file.OwnerName
+                              SyntaxVersion = file.SyntaxVersion
+                              OwnerId = file.OwnerId
+                              OwnerRevision = file.OwnerRevision
+                              Kind = FlowLowering.FlowAttachmentKind.Test
+                              CaseName = test.CaseName
+                              Reference = file.Reference
+                              SourceFile = file.SourceFile
+                              Content = file.Settings.SourceText }
+                        key, { Source = source; StoredBindings = None }))
+            let flowTests =
+                (newTests @ wrapperCaseRows)
+                |> List.fold (fun found (key, item) -> Map.add key item found) old.FlowTests
+            let flowTestFiles =
+                newTestFiles
+                |> List.map (fun (file, _) -> flowTestFileKey file.OwnerId file.Reference, file)
+                |> List.fold (fun found (key, item) -> Map.add key item found) old.FlowTestFiles
             let flowExamples = newExamples |> List.fold (fun found (key, item) -> Map.add key item found) old.FlowExamples
             let proposed: DictionaryState =
                 { old with
@@ -3621,6 +4016,7 @@ module Runtime =
                     TypeSources = typeSources
                     FlowWords = flowWords
                     FlowTests = flowTests
+                    FlowTestFiles = flowTestFiles
                     FlowExamples = flowExamples }
             let stableTypeSources =
                 proposed.TypeSources
@@ -3658,7 +4054,7 @@ module Runtime =
                 payload["name"] <- jstr name
                 payload["id"] <- jstr (wordIdentity executable.State item)
                 payload["revision"] <- jint item.Revision
-                payload["tests"] <- jsonNode (newTests |> List.map (fun (_, attachment) -> attachment.Source.CaseName) |> List.sort)
+                payload["tests"] <- jsonNode ((newTests |> List.map (fun (_, attachment) -> attachment.Source.CaseName)) @ (wrapperCaseRows |> List.map (fun (_, attachment) -> attachment.Source.CaseName)) |> List.sort)
                 payload["examples"] <- jsonNode (newExamples |> List.map (fun (_, attachment) -> attachment.Source.CaseName) |> List.sort)
             success "defined" "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically." (Some payload)
 
@@ -3760,6 +4156,7 @@ module Runtime =
                 error "FLOW_SOURCE_VERSION_CHANGE_REQUIRES_SELECTION" "Replacing a Flow word with a different syntax version requires an explicit syntaxVersion selector." (Some parsedWord.Name) (Some parsedWord.Span) [ string authored.Source.SyntaxVersion; "explicit syntaxVersion" ] [ string syntaxVersion ]
             | _ -> ()
             let currentFlowTests = old.FlowTests |> Map.filter (fun _ item -> item.Source.OwnerId = ownerId)
+            let currentFlowTestFiles = old.FlowTestFiles |> Map.filter (fun _ item -> item.OwnerId = ownerId)
             let currentFlowExamples = old.FlowExamples |> Map.filter (fun _ item -> item.Source.OwnerId = ownerId)
             let suppliedTestNames = parsedTests |> List.map fst |> Set.ofList
             let suppliedExampleNames = parsedExamples |> List.map fst |> Set.ofList
@@ -3823,6 +4220,53 @@ module Runtime =
                   SourceText = source
                   Span = parsedWord.Span }
 
+            let rewrittenRemovedTestFiles =
+                currentFlowTestFiles
+                |> Map.toList
+                |> List.map (fun (key, file) ->
+                    let removedCases =
+                        removals
+                        |> List.choose (fun (kind, caseName, _) ->
+                            if kind = FlowLowering.FlowAttachmentKind.Test
+                               && (file.Settings.Tests |> List.exists (fun test -> test.CaseName = caseName)) then Some caseName
+                            else None)
+                    if removedCases.IsEmpty then
+                        key,
+                        Some
+                            { file with
+                                OwnerRevision = revision
+                                SourceFile = $"<flow:{parsedWord.Name}/{revision}>/test-file:{file.Reference.Hash}" }
+                    else
+                        let remaining =
+                            removedCases
+                            |> List.fold (fun current caseName ->
+                                match current with
+                                | None -> None
+                                | Some settings ->
+                                    match FlowRewrite.removeTestFileCase caseName settings with
+                                    | Ok updated -> updated
+                                    | Error diagnostic -> raise (LanguageException diagnostic))
+                                (Some file.Settings)
+                        match remaining with
+                        | None -> key, None
+                        | Some settings ->
+                            let content = FlowSource.renderTestFileSettings settings
+                            let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition content
+                            let sourceFile = $"<flow:{parsedWord.Name}/{revision}>/test-file:{sourceObject.Reference.Hash}"
+                            let parsed =
+                                match FlowParser.parseTestFileSettingsWithVersion syntaxVersion sourceFile content with
+                                | Ok value -> value
+                                | Error diagnostic -> raise (LanguageException diagnostic)
+                            key,
+                            Some
+                                { file with
+                                    OwnerRevision = revision
+                                    Reference = sourceObject.Reference
+                                    SourceFile = sourceFile
+                                    Settings = parsed
+                                    StoredBindings = None })
+                |> Map.ofList
+
             let priorStackTestNames =
                 old.Tests |> Map.toSeq |> Seq.choose (fun (key, test) -> if test.Word = parsedWord.Name then Some key else None) |> Set.ofSeq
             let priorStackExampleNames =
@@ -3831,8 +4275,24 @@ module Runtime =
                 currentFlowTests
                 |> Map.filter (fun _ item -> not (List.contains (FlowLowering.FlowAttachmentKind.Test, item.Source.CaseName) (removals |> List.map (fun (kind, name, _) -> kind, name))))
                 |> Map.map (fun _ item ->
-                    { item with
-                        Source = { item.Source with OwnerRevision = revision; SourceFile = $"<flow:{parsedWord.Name}/{revision}>/test:{item.Source.Reference.Hash}" } })
+                    let oldFileKey = flowTestFileKey item.Source.OwnerId item.Source.Reference
+                    match rewrittenRemovedTestFiles.TryFind oldFileKey with
+                    | Some None -> error "FLOW_RUNTIME_TEST_FILE_CASE_MISSING" "A surviving test-file case has no wrapper after source-level case removal." (Some(parsedWord.Name + "/" + item.Source.CaseName)) None [] [ item.Source.Reference.Hash ]
+                    | Some(Some file) ->
+                        { item with
+                            StoredBindings = if item.Source.Reference = file.Reference then item.StoredBindings else None
+                            Source =
+                                { item.Source with
+                                    OwnerRevision = revision
+                                    Reference = file.Reference
+                                    SourceFile = file.SourceFile
+                                    Content = file.Settings.SourceText } }
+                    | None ->
+                        { item with
+                            Source =
+                                { item.Source with
+                                    OwnerRevision = revision
+                                    SourceFile = $"<flow:{parsedWord.Name}/{revision}>/test:{item.Source.Reference.Hash}" } })
                 |> fun items ->
                     (parsedTests
                      |> List.map (fun (caseName, document) ->
@@ -3865,6 +4325,7 @@ module Runtime =
                           Examples = old.Examples |> Map.filter (fun _ example -> example.Word = parsedWord.Name)
                           FlowWord = currentFlowWord
                           FlowTests = currentFlowTests
+                          FlowTestFiles = currentFlowTestFiles
                           FlowExamples = currentFlowExamples }
                     Map.add parsedWord.Name backup old.Replacements
                 | _ -> old.Replacements
@@ -3878,6 +4339,11 @@ module Runtime =
                 old.FlowTests
                 |> Map.filter (fun _ authored -> authored.Source.OwnerId <> ownerId)
                 |> fun found -> Map.fold (fun current key authored -> Map.add key authored current) found nextTests
+            let nextFlowTestFiles =
+                rewrittenRemovedTestFiles
+                |> Map.toList
+                |> List.choose (fun (_, updated) -> updated |> Option.map (fun file -> flowTestFileKey file.OwnerId file.Reference, file))
+                |> Map.ofList
             let nextFlowExamples =
                 old.FlowExamples
                 |> Map.filter (fun _ authored -> authored.Source.OwnerId <> ownerId)
@@ -3890,6 +4356,7 @@ module Runtime =
                     Examples = old.Examples |> Map.filter (fun key _ -> not (priorStackExampleNames.Contains key))
                     FlowWords = nextFlowWords
                     FlowTests = nextFlowTests
+                    FlowTestFiles = nextFlowTestFiles
                     FlowExamples = nextFlowExamples
                     Replacements = replacementBackups }
             let executable = compileRuntimeSnapshot proposed
@@ -3910,7 +4377,361 @@ module Runtime =
             payload["examples"] <- jsonNode (executable.State.FlowExamples |> Map.toList |> List.map snd |> List.filter (fun item -> item.Source.OwnerId = ownerId) |> List.map (fun item -> item.Source.CaseName) |> List.sort)
             success "defined" "Flow definition, tests, examples, and retained source bindings validated and staged." (Some payload)
 
-        let registerFlowAttachmentsOnly (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
+        let registerFlowTestFilesOnly (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
+            let old = data
+            if not document.Records.IsEmpty || not document.Scalars.IsEmpty || not document.Enums.IsEmpty || not document.Words.IsEmpty then
+                error "FLOW_ATTACHMENT_DOCUMENT_SHAPE" "A test-file attachment document cannot also define a word or type." None None [ "test-file and attachment declarations only" ] []
+            if not (flowSourceStrings arguments "tests").IsEmpty || not (flowSourceStrings arguments "examples").IsEmpty then
+                error "FLOW_PROJECT_REQUEST_SHAPE" "A test-file attachment document must keep all source in its inline Flow declarations." None None [ "inline test-file source" ] [ "external tests or examples" ]
+            if document.SyntaxVersion <> syntaxVersion then
+                error "FLOW_VERSION_UNSUPPORTED" "Flow test-file source syntax version does not match the selected syntaxVersion." None None [ string syntaxVersion ] [ string document.SyntaxVersion ]
+            let ownerNames =
+                [ yield! document.Tests |> List.map (fun test -> test.Word)
+                  yield! document.Examples |> List.map (fun example -> example.Word)
+                  yield! document.TestFiles |> List.collect (fun settings -> settings.Tests |> List.map (fun test -> test.Word)) ]
+                |> List.distinct
+            let ownerName =
+                match ownerNames with
+                | [ name ] -> name
+                | _ -> error "FLOW_ATTACHMENT_OWNER_MISMATCH" "A test-file attachment document must name exactly one owner across every nested case." None None [ "one Flow word owner" ] ownerNames
+            if document.TestFiles.IsEmpty then
+                error "FLOW_ATTACHMENT_DOCUMENT_SHAPE" "This registration route requires at least one test-file wrapper." (Some ownerName) None [ "test-file wrapper" ] []
+            if (makeGenerated old).ContainsKey ownerName then
+                error "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD" $"Flow attachment owner '{ownerName}' is a generated type word and cannot own authored Flow cases." (Some ownerName) None [ "user-authored Flow word" ] [ "generated type word" ]
+            let ownerWord =
+                old.Words.TryFind ownerName
+                |> Option.defaultWith (fun () -> error "FLOW_ATTACHMENT_OWNER_NOT_FOUND" $"Flow attachment owner '{ownerName}' is not a current user word." (Some ownerName) None [ "existing Flow user word" ] [])
+            if ownerWord.Builtin.IsSome || ownerWord.Status = Primitive then
+                error "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD" $"Flow attachment owner '{ownerName}' is a primitive or generated word and cannot own authored Flow cases." (Some ownerName) None [ "user-authored Flow word" ] [ ownerName ]
+            let ownerIdText =
+                old.WordIds.TryFind ownerName
+                |> Option.defaultWith (fun () -> error "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD" $"Flow attachment owner '{ownerName}' has no stable user-word identity." (Some ownerName) None [ "existing Flow user word" ] [])
+            let ownerId = WordId ownerIdText
+            let currentFlowWord =
+                old.FlowWords.TryFind ownerIdText
+                |> Option.defaultWith (fun () -> error "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD" $"Flow attachment owner '{ownerName}' is not authored in Flow." (Some ownerName) None [ "Flow-authored word" ] [ "Stack definition" ])
+            if currentFlowWord.Source.OwnerName <> ownerName || currentFlowWord.Source.OwnerRevision <> ownerWord.Revision then
+                error "FLOW_ATTACHMENT_OWNER_STALE" $"Flow attachment owner '{ownerName}' does not match its current immutable word revision." (Some ownerName) None [ $"{ownerName}@{ownerWord.Revision}" ] [ $"{currentFlowWord.Source.OwnerName}@{currentFlowWord.Source.OwnerRevision}" ]
+            if currentFlowWord.Source.SyntaxVersion <> syntaxVersion then
+                error "FLOW_ATTACHMENT_VERSION_MISMATCH" "Flow test-file syntaxVersion must match the owner word's source version." (Some ownerName) None [ string currentFlowWord.Source.SyntaxVersion ] [ string syntaxVersion ]
+
+            let currentFlowTests = old.FlowTests |> Map.filter (fun _ item -> item.Source.OwnerId = ownerId)
+            let currentFlowFiles = old.FlowTestFiles |> Map.filter (fun _ file -> file.OwnerId = ownerId)
+            let currentFlowExamples = old.FlowExamples |> Map.filter (fun _ item -> item.Source.OwnerId = ownerId)
+            let replace = readOptionalStrictBool arguments "replace" false
+            let removals = flowAttachmentRemovals arguments
+            if arguments.ContainsKey "expectedRevision" && not replace then
+                error "FLOW_ATTACHMENT_CAS_REQUIRED" "An explicit expectedRevision for test-file edits must be paired with replace=true." (Some ownerName) None [ "replace=true with expectedRevision" ] [ "expectedRevision without replace=true" ]
+            match removals |> List.groupBy (fun (kind, caseName, _) -> kind, caseName) |> List.tryFind (fun (_, grouped) -> grouped.Length > 1) with
+            | Some((kind, caseName), _) -> error "FLOW_ATTACHMENT_DUPLICATE_CHANGE" "A Flow test-file document may change one attachment key at most once." (Some ownerName) None [] [ sprintf "%A/%s" kind caseName ]
+            | None -> ()
+
+            let incomingFileSettings =
+                document.TestFiles
+                |> List.map (fun parsed ->
+                    if parsed.SyntaxVersion <> syntaxVersion then
+                        error "FLOW_VERSION_UNSUPPORTED" "Flow test-file syntax version does not match the selected syntaxVersion." (Some ownerName) (Some parsed.Span) [ string syntaxVersion ] [ string parsed.SyntaxVersion ]
+                    let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition parsed.SourceText
+                    let sourceFile = $"<flow:{ownerName}/{ownerWord.Revision + 1}>/test-file:{sourceObject.Reference.Hash}"
+                    let settings =
+                        match FlowParser.parseTestFileSettingsWithVersion syntaxVersion sourceFile parsed.SourceText with
+                        | Ok value -> value
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    let owners = settings.Tests |> List.map (fun test -> test.Word) |> List.distinct
+                    if owners <> [ ownerName ] then
+                        error "FLOW_TEST_FILE_OWNER_MISMATCH" "A test-file wrapper must retain exactly its existing Flow owner." (Some ownerName) (Some settings.Span) [ ownerName ] owners
+                    { OwnerName = ownerName
+                      OwnerId = ownerId
+                      OwnerRevision = ownerWord.Revision + 1
+                      SyntaxVersion = syntaxVersion
+                      Reference = sourceObject.Reference
+                      SourceFile = sourceFile
+                      Settings = settings
+                      StoredBindings = None })
+            let incomingScopes = incomingFileSettings |> List.map (fun file -> file.Settings.ScopeName)
+            if (incomingScopes |> List.distinct).Length <> incomingScopes.Length then
+                error "FLOW_TEST_FILE_SCOPE_DUPLICATE" "A test-file registration may declare each wrapper label once." (Some ownerName) None [] incomingScopes
+            let replacementScopeNames =
+                incomingScopes
+                |> List.choose (fun scope ->
+                    currentFlowFiles
+                    |> Map.toList
+                    |> List.map snd
+                    |> List.tryFind (fun file -> file.Settings.ScopeName = scope)
+                    |> Option.map (fun file -> file.Settings.ScopeName))
+                |> Set.ofList
+            let replacingFiles =
+                currentFlowFiles
+                |> Map.toList
+                |> List.map snd
+                |> List.filter (fun file -> replacementScopeNames.Contains file.Settings.ScopeName)
+            let replacedFileKeys = replacingFiles |> List.map (fun file -> flowTestFileKey file.OwnerId file.Reference) |> Set.ofList
+            let replacedFileCaseKeys =
+                replacingFiles
+                |> List.collect (fun file -> file.Settings.Tests |> List.map (fun test -> flowAttachmentKey file.OwnerId test.CaseName))
+                |> Set.ofList
+            let incomingTests =
+                document.Tests
+                |> List.map (fun parsed ->
+                    let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition parsed.SourceText
+                    let sourceFile = $"<flow:{ownerName}/{ownerWord.Revision + 1}>/test:{sourceObject.Reference.Hash}"
+                    let definition =
+                        match FlowParser.parseTestWithVersion syntaxVersion sourceFile parsed.SourceText with
+                        | Ok value when value.Word = ownerName -> value
+                        | Ok value -> error "FLOW_ATTACHMENT_OWNER_MISMATCH" "A standalone Flow test source changed its declared owner during validation." (Some ownerName) (Some value.Span) [ ownerName ] [ value.Word ]
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    let source: FlowLowering.FlowAttachmentSourceDocument =
+                        { OwnerName = ownerName
+                          SyntaxVersion = syntaxVersion
+                          OwnerId = ownerId
+                          OwnerRevision = ownerWord.Revision + 1
+                          Kind = FlowLowering.FlowAttachmentKind.Test
+                          CaseName = definition.CaseName
+                          Reference = sourceObject.Reference
+                          SourceFile = sourceFile
+                          Content = parsed.SourceText }
+                    flowAttachmentKey ownerId definition.CaseName, { Source = source; StoredBindings = None })
+            let incomingExamples =
+                document.Examples
+                |> List.map (fun parsed ->
+                    let sourceObject = Storage.sourceObject StorageObjectKind.ExampleDefinition parsed.SourceText
+                    let sourceFile = $"<flow:{ownerName}/{ownerWord.Revision + 1}>/example:{sourceObject.Reference.Hash}"
+                    let definition =
+                        match FlowParser.parseExampleWithVersion syntaxVersion sourceFile parsed.SourceText with
+                        | Ok value when value.Word = ownerName -> value
+                        | Ok value -> error "FLOW_ATTACHMENT_OWNER_MISMATCH" "A standalone Flow example source changed its declared owner during validation." (Some ownerName) (Some value.Span) [ ownerName ] [ value.Word ]
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    let source: FlowLowering.FlowAttachmentSourceDocument =
+                        { OwnerName = ownerName
+                          SyntaxVersion = syntaxVersion
+                          OwnerId = ownerId
+                          OwnerRevision = ownerWord.Revision + 1
+                          Kind = FlowLowering.FlowAttachmentKind.Example
+                          CaseName = definition.CaseName
+                          Reference = sourceObject.Reference
+                          SourceFile = sourceFile
+                          Content = parsed.SourceText }
+                    flowAttachmentKey ownerId definition.CaseName, { Source = source; StoredBindings = None })
+            let incomingFileCases = incomingFileSettings |> List.collect (fun file -> file.Settings.Tests |> List.map (fun test -> flowAttachmentKey ownerId test.CaseName))
+            let incomingTestKeys = (incomingTests |> List.map fst) @ incomingFileCases
+            let incomingExampleKeys = incomingExamples |> List.map fst
+            let allIncomingKeys = incomingTestKeys @ incomingExampleKeys
+            if (allIncomingKeys |> List.distinct).Length <> allIncomingKeys.Length then
+                error "FLOW_ATTACHMENT_DUPLICATE_CHANGE" "A Flow test-file document may declare each case key only once." (Some ownerName) None [] allIncomingKeys
+            let removalsByKey = removals |> List.map (fun (kind, caseName, _) -> (kind, flowAttachmentKey ownerId caseName)) |> Set.ofList
+            if incomingTests |> List.exists (fun (key, _) -> removalsByKey.Contains(FlowLowering.FlowAttachmentKind.Test, key))
+               || incomingFileCases |> List.exists (fun key -> removalsByKey.Contains(FlowLowering.FlowAttachmentKind.Test, key))
+               || incomingExamples |> List.exists (fun (key, _) -> removalsByKey.Contains(FlowLowering.FlowAttachmentKind.Example, key)) then
+                error "FLOW_ATTACHMENT_DUPLICATE_CHANGE" "One Flow attachment key cannot be replaced and removed in the same test-file request." (Some ownerName) None [] []
+
+            let changedCaseKeys =
+                currentFlowTests
+                |> Map.toList
+                |> List.choose (fun (key, _) -> if replacedFileCaseKeys.Contains key then Some(FlowLowering.FlowAttachmentKind.Test, key) else None)
+                |> fun values -> values @ (incomingTests |> List.map (fun (key, _) -> FlowLowering.FlowAttachmentKind.Test, key))
+                |> fun values -> values @ (incomingFileCases |> List.map (fun key -> FlowLowering.FlowAttachmentKind.Test, key))
+                |> fun values -> values @ (incomingExamples |> List.map (fun (key, _) -> FlowLowering.FlowAttachmentKind.Example, key))
+            let removalChanges = removals |> List.map (fun (kind, caseName, _) -> kind, flowAttachmentKey ownerId caseName)
+            if removals |> List.exists (fun (kind, caseName, _) -> List.contains (kind, flowAttachmentKey ownerId caseName) changedCaseKeys) then
+                error "FLOW_ATTACHMENT_DUPLICATE_CHANGE" "One Flow attachment key cannot be replaced and removed in the same test-file request." (Some ownerName) None [] []
+
+            let caseCollisionKeys =
+                let tests =
+                    currentFlowTests
+                    |> Map.toList
+                    |> List.choose (fun (key, item) ->
+                        if item.Source.OwnerId = ownerId && not (replacedFileCaseKeys.Contains key) && not (removalChanges |> List.contains (FlowLowering.FlowAttachmentKind.Test, key)) then Some(FlowLowering.FlowAttachmentKind.Test, key)
+                        else None)
+                let examples =
+                    currentFlowExamples
+                    |> Map.toList
+                    |> List.choose (fun (key, _) -> if not (removalChanges |> List.contains (FlowLowering.FlowAttachmentKind.Example, key)) then Some(FlowLowering.FlowAttachmentKind.Example, key) else None)
+                tests @ examples
+            let collisions =
+                caseCollisionKeys
+                |> List.choose (fun (kind, key) -> if List.contains (kind, key) changedCaseKeys then Some(sprintf "%A/%s" kind key) else None)
+            let hasRemovals = not removals.IsEmpty
+            let needsCas = not replacementScopeNames.IsEmpty || not collisions.IsEmpty || hasRemovals
+            if needsCas && (not replace || not (arguments.ContainsKey "expectedRevision")) then
+                error "FLOW_ATTACHMENT_CAS_REQUIRED" "Replacing a shared test-file scope, colliding case, or removing an attachment requires replace=true and the current expectedRevision." (Some ownerName) None [ "replace=true and expectedRevision" ] (collisions @ (if replacementScopeNames.IsEmpty then [] else replacementScopeNames |> Set.toList) @ (if hasRemovals then [ "attachment removal" ] else []))
+            if replace && not (arguments.ContainsKey "expectedRevision") then
+                error "FLOW_ATTACHMENT_CAS_REQUIRED" "An explicit test-file replacement requires the owner's current expectedRevision." (Some ownerName) None [ "expectedRevision" ] []
+            if arguments.ContainsKey "expectedRevision" then
+                let expected = flowExpectedRevision arguments
+                if expected <> ownerWord.Revision then
+                    error "FLOW_BATCH_STALE_REVISION" "Test-file edit expectedRevision does not match the current Flow owner revision." (Some ownerName) None [ string ownerWord.Revision ] [ string expected ]
+            for kind, caseName, expectedHash in removals do
+                let key = flowAttachmentKey ownerId caseName
+                let prior =
+                    (if kind = FlowLowering.FlowAttachmentKind.Test then currentFlowTests.TryFind key
+                     else currentFlowExamples.TryFind key)
+                    |> Option.defaultWith (fun () -> error "FLOW_ATTACHMENT_REMOVE_MISSING" "Attachment removal requires an existing Flow test or example source." (Some(ownerName + "/" + caseName)) None [ "existing Flow attachment" ] [])
+                if prior.Source.Reference.Hash <> expectedHash then
+                    error "FLOW_ATTACHMENT_STALE_SOURCE" "Attachment removal expectedSourceHash does not match the current immutable source reference." (Some(ownerName + "/" + caseName)) None [ prior.Source.Reference.Hash ] [ expectedHash ]
+
+            let mutable nextFiles = currentFlowFiles |> Map.filter (fun key file -> not (replacedFileKeys.Contains key))
+            let mutable nextTests = currentFlowTests |> Map.filter (fun key _ -> not (replacedFileCaseKeys.Contains key))
+            let mutable nextExamples = currentFlowExamples
+            let removeTestCase caseName =
+                let key = flowAttachmentKey ownerId caseName
+                match nextTests.TryFind key with
+                | None -> error "FLOW_ATTACHMENT_REMOVE_MISSING" "Attachment removal requires an existing Flow test source." (Some(ownerName + "/" + caseName)) None [ "existing Flow test" ] []
+                | Some attachment ->
+                    let fileKey = flowTestFileKey ownerId attachment.Source.Reference
+                    match nextFiles.TryFind fileKey with
+                    | None -> nextTests <- Map.remove key nextTests
+                    | Some file ->
+                        let updated =
+                            match FlowRewrite.removeTestFileCase caseName file.Settings with
+                            | Ok result -> result
+                            | Error diagnostic -> raise (LanguageException diagnostic)
+                        nextTests <- nextTests |> Map.filter (fun _ item -> item.Source.OwnerId <> ownerId || item.Source.Reference <> file.Reference)
+                        match updated with
+                        | None -> nextFiles <- Map.remove fileKey nextFiles
+                        | Some settings ->
+                            let content = FlowSource.renderTestFileSettings settings
+                            let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition content
+                            let sourceFile = $"<flow:{ownerName}/{ownerWord.Revision + 1}>/test-file:{sourceObject.Reference.Hash}"
+                            let settings =
+                                match FlowParser.parseTestFileSettingsWithVersion syntaxVersion sourceFile content with
+                                | Ok parsed -> parsed
+                                | Error diagnostic -> raise (LanguageException diagnostic)
+                            let updatedFile = { file with Reference = sourceObject.Reference; SourceFile = sourceFile; Settings = settings; StoredBindings = None }
+                            let newFileKey = flowTestFileKey ownerId updatedFile.Reference
+                            nextFiles <- nextFiles |> Map.remove fileKey |> Map.add newFileKey updatedFile
+                            for test in settings.Tests do
+                                let source: FlowLowering.FlowAttachmentSourceDocument =
+                                    { OwnerName = ownerName
+                                      SyntaxVersion = syntaxVersion
+                                      OwnerId = ownerId
+                                      OwnerRevision = ownerWord.Revision + 1
+                                      Kind = FlowLowering.FlowAttachmentKind.Test
+                                      CaseName = test.CaseName
+                                      Reference = updatedFile.Reference
+                                      SourceFile = sourceFile
+                                      Content = content }
+                                nextTests <- Map.add (flowAttachmentKey ownerId test.CaseName) { Source = source; StoredBindings = None } nextTests
+            for kind, caseName, _ in removals do
+                match kind with
+                | FlowLowering.FlowAttachmentKind.Test -> removeTestCase caseName
+                | FlowLowering.FlowAttachmentKind.Example -> nextExamples <- Map.remove (flowAttachmentKey ownerId caseName) nextExamples
+
+            for key, item in incomingTests do
+                match nextTests.TryFind key with
+                | Some prior when currentFlowFiles.ContainsKey(flowTestFileKey ownerId prior.Source.Reference) ->
+                    error "FLOW_TEST_FILE_EDIT_REQUIRED" "A case in a shared wrapper must be replaced by submitting its complete test-file source." (Some key) None [ "complete wrapper source" ] [ "standalone test source" ]
+                | Some _ when replace -> ()
+                | Some _ -> error "FLOW_TEST_CASE_ALREADY_EXISTS" "A Flow test case already exists; use replace=true with the current expectedRevision or submit the complete wrapper." (Some key) None [] [ key ]
+                | None -> ()
+                nextTests <- Map.add key item nextTests
+            for key, item in incomingExamples do
+                if nextExamples.ContainsKey key && not replace then
+                    error "FLOW_EXAMPLE_CASE_ALREADY_EXISTS" "A Flow example case already exists; use replace=true with the current expectedRevision." (Some key) None [] [ key ]
+                nextExamples <- Map.add key item nextExamples
+            for file in incomingFileSettings do
+                let fileCaseKeys = file.Settings.Tests |> List.map (fun test -> flowAttachmentKey ownerId test.CaseName)
+                for key in fileCaseKeys do
+                    match nextTests.TryFind key with
+                    | Some prior when currentFlowFiles.ContainsKey(flowTestFileKey ownerId prior.Source.Reference) ->
+                        error "FLOW_TEST_FILE_SCOPE_REQUIRED" "A case in another shared wrapper cannot be shadowed; replace or edit that wrapper by its label." (Some key) (Some file.Settings.Span) [ "unused test case key or matching wrapper label" ] [ key ]
+                    | Some _ when replace -> nextTests <- Map.remove key nextTests
+                    | Some _ -> error "FLOW_TEST_CASE_ALREADY_EXISTS" "A Flow test case already exists; use replace=true with the current expectedRevision." (Some key) (Some file.Settings.Span) [] [ key ]
+                    | None -> ()
+                let fileKey = flowTestFileKey ownerId file.Reference
+                nextFiles <- Map.add fileKey file nextFiles
+                for test in file.Settings.Tests do
+                    let source: FlowLowering.FlowAttachmentSourceDocument =
+                        { OwnerName = ownerName
+                          SyntaxVersion = syntaxVersion
+                          OwnerId = ownerId
+                          OwnerRevision = ownerWord.Revision + 1
+                          Kind = FlowLowering.FlowAttachmentKind.Test
+                          CaseName = test.CaseName
+                          Reference = file.Reference
+                          SourceFile = file.SourceFile
+                          Content = file.Settings.SourceText }
+                    nextTests <- Map.add (flowAttachmentKey ownerId test.CaseName) { Source = source; StoredBindings = None } nextTests
+
+            let revision = ownerWord.Revision + 1
+            let status = if ownerWord.Status = Persistent then Candidate else ownerWord.Status
+            let ownerSourceFile = $"<flow:{ownerName}/{revision}>"
+            let ownerDefinition =
+                match FlowParser.parseWordWithVersion syntaxVersion ownerSourceFile currentFlowWord.Source.Content with
+                | Ok parsed when parsed.Name = ownerName -> parsed
+                | Ok parsed -> error "FLOW_RUNTIME_OWNER_MISMATCH" "The current Flow owner source changed its name while updating test-file metadata." (Some ownerName) (Some parsed.Span) [ ownerName ] [ parsed.Name ]
+                | Error diagnostic -> raise (LanguageException diagnostic)
+            let nextFlowWord =
+                { currentFlowWord with
+                    Definition = ownerDefinition
+                    Source = { currentFlowWord.Source with OwnerRevision = revision; SourceFile = ownerSourceFile } }
+            let nextFiles =
+                nextFiles
+                |> Map.map (fun _ file ->
+                    if file.OwnerRevision = ownerWord.Revision + 1 then file
+                    else
+                        { file with
+                            OwnerRevision = revision
+                            SourceFile = $"<flow:{ownerName}/{revision}>/test-file:{file.Reference.Hash}" })
+            let nextTests =
+                nextTests
+                |> Map.map (fun _ item ->
+                    let fileKey = flowTestFileKey ownerId item.Source.Reference
+                    let isWrapper = nextFiles.ContainsKey fileKey
+                    { item with
+                        Source =
+                            { item.Source with
+                                OwnerRevision = revision
+                                SourceFile =
+                                    if isWrapper then nextFiles[fileKey].SourceFile
+                                    else $"<flow:{ownerName}/{revision}>/test:{item.Source.Reference.Hash}" } })
+            let nextExamples = nextExamples |> Map.map (fun _ item -> { item with Source = { item.Source with OwnerRevision = revision; SourceFile = $"<flow:{ownerName}/{revision}>/example:{item.Source.Reference.Hash}" } })
+            let oldTests = old.Tests |> Map.filter (fun _ test -> test.Word = ownerName)
+            let oldExamples = old.Examples |> Map.filter (fun _ example -> example.Word = ownerName)
+            let replacementBackups =
+                match ownerWord.Status, old.Replacements.TryFind ownerName with
+                | Persistent, None ->
+                    let backup =
+                        { Word = ownerWord
+                          Tests = oldTests
+                          Examples = oldExamples
+                          FlowWord = Some currentFlowWord
+                          FlowTests = currentFlowTests
+                          FlowTestFiles = currentFlowFiles
+                          FlowExamples = currentFlowExamples }
+                    Map.add ownerName backup old.Replacements
+                | _ -> old.Replacements
+            let finalTestKeys = nextTests |> Map.toList |> List.map fst |> Set.ofList
+            let finalExampleKeys = nextExamples |> Map.toList |> List.map fst |> Set.ofList
+            let projectedOwner =
+                { ownerWord.Definition with
+                    Revision = revision
+                    SourceText = currentFlowWord.Source.Content
+                    Span = ownerDefinition.Span }
+            let words = Map.add ownerName { ownerWord with Definition = projectedOwner; Revision = revision; Status = status } old.Words
+            let proposed =
+                { old with
+                    Words = words
+                    FlowWords = Map.add ownerIdText nextFlowWord old.FlowWords
+                    FlowTests = (old.FlowTests |> Map.filter (fun _ item -> item.Source.OwnerId <> ownerId)) |> fun current -> Map.fold (fun found key value -> Map.add key value found) current nextTests
+                    FlowTestFiles = (old.FlowTestFiles |> Map.filter (fun _ file -> file.OwnerId <> ownerId)) |> fun current -> Map.fold (fun found key value -> Map.add key value found) current nextFiles
+                    FlowExamples = (old.FlowExamples |> Map.filter (fun _ item -> item.Source.OwnerId <> ownerId)) |> fun current -> Map.fold (fun found key value -> Map.add key value found) current nextExamples
+                    Tests = old.Tests |> Map.filter (fun _ test -> test.Word <> ownerName || finalTestKeys.Contains(test.Word + "/" + test.Name))
+                    Examples = old.Examples |> Map.filter (fun _ example -> example.Word <> ownerName || finalExampleKeys.Contains(example.Word + "/" + example.Name))
+                    Replacements = replacementBackups }
+            let executable = compileRuntimeSnapshot proposed
+            activateRuntimeSnapshot executable
+            lastResults <- []
+            log "create" ownerName
+            let payload = JsonObject()
+            payload["frontend"] <- jstr "flow"
+            payload["name"] <- jstr ownerName
+            payload["id"] <- jstr ownerIdText
+            payload["revision"] <- jint revision
+            payload["tests"] <- jsonNode (executable.State.FlowTests |> Map.toList |> List.map snd |> List.filter (fun item -> item.Source.OwnerId = ownerId) |> List.map (fun item -> item.Source.CaseName) |> List.sort)
+            payload["testFiles"] <- jsonNode (executable.State.FlowTestFiles |> Map.toList |> List.map snd |> List.filter (fun file -> file.OwnerId = ownerId) |> List.map (fun file -> file.Settings.ScopeName) |> List.sort)
+            success "defined" "Flow test-file source, cases, replacement targets, and bindings validated atomically." (Some payload)
+
+        let registerFlowAttachmentsOnlyLegacy (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
             let old = data
             let attachmentSources =
                 (document.Tests |> List.map (fun item -> item.Word))
@@ -3987,15 +4808,21 @@ module Runtime =
                 routed["expectedRevision"] <- jint ownerWord.Revision
             registerFlowParsedLegacy routed syntaxVersion
 
+        let registerFlowAttachmentsOnly (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
+            if not document.TestFiles.IsEmpty then
+                registerFlowTestFilesOnly arguments syntaxVersion document
+            else
+                registerFlowAttachmentsOnlyLegacy arguments syntaxVersion document
+
         let registerFlowParsed (arguments: JsonObject) syntaxVersion =
             let source = requiredFlowString arguments "source"
             let document =
                 match FlowParser.parseDocumentWithVersion syntaxVersion "<flow-project>" source with
                 | Ok value -> value
                 | Error diagnostic -> raise (LanguageException diagnostic)
-            if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.IsEmpty && (not document.Tests.IsEmpty || not document.Examples.IsEmpty) then
+            if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.IsEmpty && (not document.Tests.IsEmpty || not document.Examples.IsEmpty || not document.TestFiles.IsEmpty) then
                 registerFlowAttachmentsOnly arguments syntaxVersion document
-            elif document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.Length = 1 then
+            elif document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.Length = 1 && document.TestFiles.IsEmpty then
                 if document.Tests.IsEmpty && document.Examples.IsEmpty then
                     // Preserve the byte-for-byte legacy source object for the established
                     // one-word request shape, including comments and trailing whitespace.
@@ -4546,6 +5373,7 @@ module Runtime =
                                     authored, result, changed, content)
                             let rewrittenFlowTests: Map<string, FlowAuthoredAttachment * FlowRewriteResult<FlowTestDefinition> * bool * string> =
                                 data.FlowTests
+                                |> Map.filter (fun _ authored -> not (data.FlowTestFiles.ContainsKey(flowTestFileKey authored.Source.OwnerId authored.Source.Reference)))
                                 |> Map.map (fun _ authored ->
                                     let parsed =
                                         match FlowParser.parseTestWithVersion authored.Source.SyntaxVersion authored.Source.SourceFile authored.Source.Content with
@@ -4557,6 +5385,28 @@ module Runtime =
                                         |> rewriteResult (authored.Source.OwnerName + "/" + authored.Source.CaseName)
                                     let changed = result.Definition.Word <> parsed.Word || result.Bindings <> prior
                                     let content = if changed then result.Definition.SourceText else authored.Source.Content
+                                    authored, result, changed, content)
+                            let rewrittenFlowTestFiles: Map<string, FlowAuthoredTestFile * FlowRewriteResult<FlowTestFileSettings> * bool * string> =
+                                data.FlowTestFiles
+                                |> Map.map (fun _ authored ->
+                                    let parsed =
+                                        match FlowParser.parseTestFileSettingsWithVersion authored.SyntaxVersion authored.SourceFile authored.Settings.SourceText with
+                                        | Ok settings -> settings
+                                        | Error diagnostic -> raise (LanguageException diagnostic)
+                                    let caseBindings =
+                                        data.FlowTests
+                                        |> Map.toList
+                                        |> List.collect (fun (_, attachment) ->
+                                            if attachment.Source.OwnerId = authored.OwnerId && attachment.Source.Reference = authored.Reference then
+                                                requireBindings ("Flow test-file case '" + authored.OwnerName + "/" + attachment.Source.CaseName + "'") attachment.StoredBindings
+                                            else [])
+                                    let priorOverrides = requireBindings ("Flow test-file '" + authored.OwnerName + "'") authored.StoredBindings
+                                    let prior = priorOverrides @ caseBindings
+                                    let result =
+                                        FlowRewrite.rewriteTestFileSettings oldName newName target parsed prior
+                                        |> rewriteResult (authored.OwnerName + "/test-file")
+                                    let changed = result.Changed || result.Bindings <> prior
+                                    let content = if changed then FlowSource.renderTestFileSettings result.Definition else authored.Settings.SourceText
                                     authored, result, changed, content)
                             let rewrittenFlowExamples: Map<string, FlowAuthoredAttachment * FlowRewriteResult<FlowExampleDefinition> * bool * string> =
                                 data.FlowExamples
@@ -4582,6 +5432,12 @@ module Runtime =
                                 |> Map.toSeq
                                 |> Seq.choose (fun (_, (authored, _, changed, _)) -> if changed then Some(wordIdText authored.Source.OwnerId) else None)
                                 |> Set.ofSeq
+                                |> fun owners ->
+                                    rewrittenFlowTestFiles
+                                    |> Map.toSeq
+                                    |> Seq.choose (fun (_, (authored, _, changed, _)) -> if changed then Some(wordIdText authored.OwnerId) else None)
+                                    |> Set.ofSeq
+                                    |> Set.union owners
                             let changedFlowExampleOwners =
                                 rewrittenFlowExamples
                                 |> Map.toSeq
@@ -4601,6 +5457,7 @@ module Runtime =
                                 owner.Revision + (if changedFlowOwnerIds.Contains ownerId then 1 else 0)
                             let flowSourceFile ownerName revision = $"<flow:{ownerName}/{revision}>"
                             let flowTestSourceFile ownerName revision reference = $"<flow:{ownerName}/{revision}>/test:{reference.Hash}"
+                            let flowTestFileSourceFile ownerName revision reference = $"<flow:{ownerName}/{revision}>/test-file:{reference.Hash}"
                             let flowExampleSourceFile ownerName revision reference = $"<flow:{ownerName}/{revision}>/example:{reference.Hash}"
                             let finalFlowWords: Map<string, FlowAuthoredWord> =
                                 rewrittenFlowWords
@@ -4623,7 +5480,32 @@ module Runtime =
                                             Content = content }
                                     let bindings = result.Bindings |> List.map (fun binding -> { binding with Source = source.Reference })
                                     { Definition = definition; Source = source; StoredBindings = Some bindings })
-                            let finalFlowTests: Map<string, FlowAuthoredAttachment> =
+                            let finalFlowTestFileRows =
+                                rewrittenFlowTestFiles
+                                |> Map.toList
+                                |> List.map (fun (oldKey, (authored, result, _, content)) ->
+                                    let ownerName = result.Definition.Tests.Head.Word
+                                    let revision = flowRevision (wordIdText authored.OwnerId)
+                                    let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition content
+                                    let sourceFile = flowTestFileSourceFile ownerName revision sourceObject.Reference
+                                    let settings =
+                                        match FlowParser.parseTestFileSettingsWithVersion authored.SyntaxVersion sourceFile content with
+                                        | Ok parsed when parsed.SyntaxVersion = authored.SyntaxVersion -> parsed
+                                        | Ok parsed -> error "FLOW_REWRITE_OWNER_MISMATCH" "Rewritten Flow test-file source changed its syntax version." (Some ownerName) (Some parsed.Span) [ string authored.SyntaxVersion ] [ string parsed.SyntaxVersion ]
+                                        | Error diagnostic -> raise (LanguageException diagnostic)
+                                    let bindings = result.Bindings |> List.map (fun binding -> { binding with Source = sourceObject.Reference })
+                                    let file =
+                                        { authored with
+                                            OwnerName = ownerName
+                                            OwnerRevision = revision
+                                            Reference = sourceObject.Reference
+                                            SourceFile = sourceFile
+                                            Settings = settings
+                                            StoredBindings = Some(bindings |> List.filter (fun binding -> binding.BodyRole = StoredCallBodyRole.TestOverride)) }
+                                    oldKey, flowTestFileKey authored.OwnerId sourceObject.Reference, file, result)
+                            let finalFlowTestFiles: Map<string, FlowAuthoredTestFile> =
+                                finalFlowTestFileRows |> List.map (fun (_, key, file, _) -> key, file) |> Map.ofList
+                            let finalStandaloneFlowTests: Map<string, FlowAuthoredAttachment> =
                                 rewrittenFlowTests
                                 |> Map.toList
                                 |> List.map (fun (_, (authored, result, _, content)) ->
@@ -4648,6 +5530,30 @@ module Runtime =
                                     flowAttachmentKey authored.Source.OwnerId definition.CaseName,
                                     { Source = source; StoredBindings = Some bindings })
                                 |> Map.ofList
+                            let finalWrapperFlowTests: Map<string, FlowAuthoredAttachment> =
+                                finalFlowTestFileRows
+                                |> List.collect (fun (_, _, file, result) ->
+                                    file.Settings.Tests
+                                    |> List.map (fun test ->
+                                        let key = flowAttachmentKey file.OwnerId test.CaseName
+                                        let source: FlowLowering.FlowAttachmentSourceDocument =
+                                            { OwnerName = file.OwnerName
+                                              SyntaxVersion = file.SyntaxVersion
+                                              OwnerId = file.OwnerId
+                                              OwnerRevision = file.OwnerRevision
+                                              Kind = FlowLowering.FlowAttachmentKind.Test
+                                              CaseName = test.CaseName
+                                              Reference = file.Reference
+                                              SourceFile = file.SourceFile
+                                              Content = file.Settings.SourceText }
+                                        let bindings =
+                                            result.Bindings
+                                            |> List.filter (fun binding -> binding.CaseName = Some test.CaseName)
+                                            |> List.map (fun binding -> { binding with Source = file.Reference })
+                                        key, { Source = source; StoredBindings = Some bindings }))
+                                |> Map.ofList
+                            let finalFlowTests =
+                                Map.fold (fun found key item -> Map.add key item found) finalStandaloneFlowTests finalWrapperFlowTests
                             let finalFlowExamples: Map<string, FlowAuthoredAttachment> =
                                 rewrittenFlowExamples
                                 |> Map.toList
@@ -4809,6 +5715,7 @@ module Runtime =
                                     Examples = examples
                                     FlowWords = finalFlowWords
                                     FlowTests = finalFlowTests
+                                    FlowTestFiles = finalFlowTestFiles
                                     FlowExamples = finalFlowExamples
                                     Replacements = Map.empty }
                             let executable = compileRuntimeSnapshot proposed
@@ -4922,7 +5829,21 @@ module Runtime =
                                                     Source =
                                                         { attachment.Source with
                                                             OwnerRevision = revision
-                                                            SourceFile = $"<flow:{name}/{revision}>/test:{attachment.Source.Reference.Hash}" } })
+                                                            SourceFile =
+                                                                if data.FlowTestFiles.ContainsKey(flowTestFileKey attachment.Source.OwnerId attachment.Source.Reference) then
+                                                                    $"<flow:{name}/{revision}>/test-file:{attachment.Source.Reference.Hash}"
+                                                                else $"<flow:{name}/{revision}>/test:{attachment.Source.Reference.Hash}" } })
+                                    let flowTestFiles =
+                                        data.FlowTestFiles
+                                        |> Map.map (fun _ file ->
+                                            if file.OwnerId <> authored.Source.OwnerId then file
+                                            else
+                                                let sourceFile = $"<flow:{name}/{revision}>/test-file:{file.Reference.Hash}"
+                                                let settings =
+                                                    match FlowParser.parseTestFileSettingsWithVersion file.SyntaxVersion sourceFile file.Settings.SourceText with
+                                                    | Ok parsed -> parsed
+                                                    | Error diagnostic -> raise (LanguageException diagnostic)
+                                                { file with OwnerRevision = revision; SourceFile = sourceFile; Settings = settings })
                                     let flowExamples =
                                         data.FlowExamples
                                         |> Map.map (fun _ attachment ->
@@ -4946,6 +5867,7 @@ module Runtime =
                                         Deprecated = Set.add name data.Deprecated
                                         FlowWords = Map.add identity nextWord data.FlowWords
                                         FlowTests = flowTests
+                                        FlowTestFiles = flowTestFiles
                                         FlowExamples = flowExamples }
                                 | None ->
                                     let definition = { item.Definition with Revision = revision }
@@ -5018,9 +5940,13 @@ module Runtime =
                                         match backup.FlowWord with
                                         | Some authored -> Map.add (wordIdText authored.Source.OwnerId) authored current
                                         | None -> current
-                                let restoreFlowAttachments current saved =
+                                let restoreFlowAttachments (current: Map<string, FlowAuthoredAttachment>) (saved: Map<string, FlowAuthoredAttachment>) =
                                     current
                                     |> Map.filter (fun _ attachment -> ownerId <> Some attachment.Source.OwnerId)
+                                    |> fun remaining -> Map.fold (fun found key value -> Map.add key value found) remaining saved
+                                let restoreFlowTestFiles (current: Map<string, FlowAuthoredTestFile>) (saved: Map<string, FlowAuthoredTestFile>) =
+                                    current
+                                    |> Map.filter (fun _ file -> ownerId <> Some file.OwnerId)
                                     |> fun remaining -> Map.fold (fun found key value -> Map.add key value found) remaining saved
                                 { data with
                                     Words = Map.add name backup.Word data.Words
@@ -5028,11 +5954,13 @@ module Runtime =
                                     Examples = examples
                                     FlowWords = flowWords
                                     FlowTests = restoreFlowAttachments data.FlowTests backup.FlowTests
+                                    FlowTestFiles = restoreFlowTestFiles data.FlowTestFiles backup.FlowTestFiles
                                     FlowExamples = restoreFlowAttachments data.FlowExamples backup.FlowExamples
                                     Replacements = Map.remove name data.Replacements }
                             | None ->
                                 let flowWords = data.FlowWords |> Map.filter (fun _ authored -> ownerId <> Some authored.Source.OwnerId)
                                 let flowTests = data.FlowTests |> Map.filter (fun _ attachment -> ownerId <> Some attachment.Source.OwnerId)
+                                let flowTestFiles = data.FlowTestFiles |> Map.filter (fun _ file -> ownerId <> Some file.OwnerId)
                                 let flowExamples = data.FlowExamples |> Map.filter (fun _ attachment -> ownerId <> Some attachment.Source.OwnerId)
                                 let flowHistory = ownerId |> Option.map (fun identity -> Map.remove (wordIdText identity) data.FlowHistory) |> Option.defaultValue data.FlowHistory
                                 { data with
@@ -5042,6 +5970,7 @@ module Runtime =
                                     Examples = data.Examples |> Map.filter (fun _ example -> example.Word <> name)
                                     FlowWords = flowWords
                                     FlowTests = flowTests
+                                    FlowTestFiles = flowTestFiles
                                     FlowExamples = flowExamples
                                     FlowHistory = flowHistory }
                         let executable = compileRuntimeSnapshot proposed

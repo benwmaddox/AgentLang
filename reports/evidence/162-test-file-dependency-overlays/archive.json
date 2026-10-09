@@ -1,0 +1,41 @@
+{
+  "archive": "evidence.zip",
+  "entries": 272,
+  "bytes": 2482802,
+  "sha256": "ca21033ad60f62adbcd94735208c674a7e017657bf9f66a89d8e8ee5c6fd0e95",
+  "sourceBaseHead": "8535b2c0f0ebd5de7bdf783f7c5aef5a6c45e6c2",
+  "sourceFiles": [
+    "README.md",
+    "docs/LIBRARY-IO-TESTING.md",
+    "docs/PRD.md",
+    "docs/ROADMAP.md",
+    "docs/STORAGE.md",
+    "docs/TEST-FILE-DEPENDENCIES.md",
+    "docs/TESTING.md",
+    "examples/test-file-settings.agent",
+    "src/AgentLang.Core/AuthoringHelp.fs",
+    "src/AgentLang.Core/FlowLowering.fs",
+    "src/AgentLang.Core/FlowParser.fs",
+    "src/AgentLang.Core/FlowPersistence.fs",
+    "src/AgentLang.Core/FlowRewrite.fs",
+    "src/AgentLang.Core/FlowSyntax.fs",
+    "src/AgentLang.Core/IrInterpreter.fs",
+    "src/AgentLang.Core/Runtime.fs",
+    "src/AgentLang.Core/Storage.fs",
+    "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+    "tests/AgentLang.Flow.Tests/Program.fs",
+    "tests/AgentLang.IR.Interpreter.Tests/Program.fs",
+    "tests/AgentLang.Source.Tests/Program.fs",
+    "tests/AgentLang.Storage.Tests/Program.fs"
+  ],
+  "evidenceRoots": [
+    ".agentlang/matched-fixture-flow-verification/4ad2443e12ac4caf812f48360f69ed03",
+    ".agentlang/projection-verification-1bc5b8816b874926ab80367d333e3e2e",
+    ".agentlang/renewal-acceptance-gate/1697ebbb5c3d485c935ce457027cba52",
+    ".agentlang/test-file-overlays"
+  ],
+  "validationChecks": 37,
+  "allEntriesAndSourcesHashChecked": true,
+  "sourceRepresentation": "Frozen Git index of the validated test-file overlay milestone; unrelated efficacy preparation remains untracked and excluded.",
+  "exclusions": "Build binaries, bin/obj, runtime copies, compiler temporary files, and the referencing report."
+}

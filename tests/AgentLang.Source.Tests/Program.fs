@@ -648,6 +648,40 @@ end
             |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
         equal formatted (FlowSource.renderDocument reparsed) "Flow/2 document has stable canonical rendering"
 
+    let private testFlow2TestFileSourceRoundTrip () =
+        let source =
+            """test-file settings {
+    override fn file.read(path: String) -> String {
+        effects fs.read
+        "fixture"
+    }
+    test settings.load/enabled {
+        file.read("settings.txt")
+        => "fixture"
+    }
+    test settings.load/disabled {
+        file.read("settings.txt")
+        => "fixture"
+    }
+}"""
+        let parsed =
+            FlowParser.parseDocumentWithVersion 2 "<flow2-test-file-source>" source
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+        let settings = parsed.TestFiles |> List.exactlyOne
+        equal "settings" settings.ScopeName "Flow/2 test-file scope label survives parsing"
+        equal 1 settings.Overrides.Length "Flow/2 test-file source keeps its one shared override"
+        equal [ "settings.load", "enabled"; "settings.load", "disabled" ]
+            (settings.Tests |> List.map (fun definition -> definition.Word, definition.CaseName))
+            "Flow/2 test-file source keeps all cases in the shared wrapper"
+        equal [] parsed.Words "test-file replacements stay outside the production word inventory"
+        let formatted = FlowSource.renderDocument parsed
+        let reparsed =
+            FlowParser.parseDocumentWithVersion 2 "<flow2-test-file-roundtrip>" formatted
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+        equal formatted (FlowSource.renderDocument reparsed) "Flow/2 test-file wrapper rendering is canonical and idempotent"
+        equal 1 reparsed.TestFiles.Length "Flow/2 document rendering retains the whole wrapper once"
+        equal 2 reparsed.TestFiles.Head.Tests.Length "Flow/2 document rendering retains all shared cases"
+
     [<EntryPoint>]
     let main _ =
         try
@@ -658,6 +692,7 @@ end
             testRuntimeSemanticEquivalence ()
             testParserNestingAndFlatInputLimits ()
             testFlow2CanonicalRoundTrip ()
+            testFlow2TestFileSourceRoundTrip ()
             Console.WriteLine($"All source tests passed ({assertions} assertions).")
             0
         with error ->

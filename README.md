@@ -289,6 +289,14 @@ CAS. A file-based revision uses:
 :replace-word WORD
 ~~~
 
+Flow/2 `test-file` wrappers can share typed dependency replacements between
+their cases. For example, `override fn file.read(path: String) -> String`
+inside the wrapper supplies fixture contents to nested calls, while normal
+execution still reads real project files. Attached tests always use virtual
+filesystem providers. Replacements never count as coverage for the original
+function. See [test-file dependency replacements](docs/TEST-FILE-DEPENDENCIES.md)
+for a complete example and persistence rules.
+
 New multitype/multiword documents are add-only. Temporary documents cannot
 introduce project types. Case-only documents must name one existing Flow user
 word; test generated constructors/accessors through a user word, or select

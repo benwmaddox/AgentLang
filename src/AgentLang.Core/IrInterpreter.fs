@@ -256,6 +256,159 @@ module IrInterpreter =
     let validateProgram (verified: VerifiedIrProgram) =
         requireBackendRegistry verified
 
+    let private ensureProgramContainsOriginalSnapshot (original: IrProgram) (expanded: IrProgram) =
+        let requireSubset label (source: Map<'key, 'value>) (target: Map<'key, 'value>) =
+            for KeyValue(key, value) in source do
+                match target.TryFind key with
+                | Some expandedValue when expandedValue = value -> ()
+                | Some _ ->
+                    fail "IR_TEST_DISPATCH_ORIGINAL_CHANGED" "A test-specific verified program changes an entry from the original production snapshot." None None
+                        [ $"unchanged {label} entry" ] [ sprintf "%A" key ]
+                | None ->
+                    fail "IR_TEST_DISPATCH_ORIGINAL_MISSING" "A test-specific verified program omits an entry from the original production snapshot." None None
+                        [ $"preserved {label} entry" ] [ sprintf "%A" key ]
+        requireSubset "user function" original.FunctionsById expanded.FunctionsById
+        requireSubset "generated target" original.GeneratedTargetsById expanded.GeneratedTargetsById
+        requireSubset "nominal type" original.NominalTypesByKey expanded.NominalTypesByKey
+        requireSubset "source map" original.SourceMap expanded.SourceMap
+        requireSubset "coverage" original.CoverageByWord expanded.CoverageByWord
+
+    type private TestDispatchTargetContract =
+        | ConcreteTargetContract of IrType list * IrType list * Set<IrEffect>
+        | PrimitiveTargetContract of IrTypePattern list * IrTypePattern list * Set<IrEffect>
+
+    let private targetContract (program: IrProgram) (target: IrCallTarget) =
+        match target with
+        | UserWordTarget(wordId, revision) ->
+            match program.FunctionsById.TryFind wordId with
+            | Some functionValue when functionValue.FunctionRevision = revision ->
+                Some(ConcreteTargetContract(functionValue.InputTypes, functionValue.OutputTypes, functionValue.FunctionDeclaredEffects))
+            | _ -> None
+        | PrimitiveTarget primitiveId ->
+            Compiler.primitiveIrCatalog.TryFind primitiveId
+            |> Option.map (fun contract -> PrimitiveTargetContract(contract.InputPatterns, contract.OutputPatterns, contract.PrimitiveEffects))
+        | GeneratedWordTarget _ -> None
+
+    let private primitiveSignatureMatches (inputPatterns: IrTypePattern list) (outputPatterns: IrTypePattern list) (inputs: IrType list) (outputs: IrType list) =
+        if inputPatterns.Length <> inputs.Length || outputPatterns.Length <> outputs.Length then false
+        else
+            let mutable substitutions = Map.empty<int, IrType>
+            let rec matches pattern actual =
+                match pattern, actual with
+                | PatternInt, IrInt | PatternFloat, IrFloat | PatternBool, IrBool | PatternString, IrString | PatternUnit, IrUnit -> true
+                | PatternList expected, IrList actual
+                | PatternOption expected, IrOption actual -> matches expected actual
+                | PatternResult(expectedOk, expectedError), IrResult(actualOk, actualError) ->
+                    matches expectedOk actualOk && matches expectedError actualError
+                | PatternVariable index, actual ->
+                    match substitutions.TryFind index with
+                    | Some prior -> prior = actual
+                    | None -> substitutions <- Map.add index actual substitutions; true
+                | _ -> false
+            List.forall2 matches inputPatterns inputs && List.forall2 matches outputPatterns outputs
+
+    let private primitiveContractIsClosed (inputPatterns: IrTypePattern list) (outputPatterns: IrTypePattern list) =
+        let rec isClosed = function
+            | PatternVariable _ -> false
+            | PatternList item | PatternOption item -> isClosed item
+            | PatternResult(okType, errorType) -> isClosed okType && isClosed errorType
+            | PatternInt | PatternFloat | PatternBool | PatternString | PatternUnit -> true
+        List.forall isClosed (inputPatterns @ outputPatterns)
+
+    let private validateTestDispatch (originalProgram: VerifiedIrProgram) (expandedProgram: VerifiedIrProgram) (dispatch: Map<IrCallTarget, IrCallTarget>) =
+        requireBackendRegistry originalProgram
+        requireBackendRegistry expandedProgram
+        let original = VerifiedIrProgram.inspect originalProgram
+        let expanded = VerifiedIrProgram.inspect expandedProgram
+        ensureProgramContainsOriginalSnapshot original expanded
+        let fixtureTargets = ResizeArray<WordId>()
+        for KeyValue(originalTarget, fixtureTarget) in dispatch do
+            match targetContract original originalTarget with
+            | None ->
+                fail "IR_TEST_DISPATCH_ORIGINAL_TARGET" "Test dispatch supports only an authored user word or trusted primitive at its active identity; generated targets are not replaceable." None None
+                    [ "active authored user-word or primitive target" ] [ sprintf "%A" originalTarget ]
+            | Some contract ->
+                match contract with
+                | PrimitiveTargetContract(inputPatterns, outputPatterns, _) when not (primitiveContractIsClosed inputPatterns outputPatterns) ->
+                    fail "IR_TEST_DISPATCH_POLYMORPHIC_TARGET" "Test dispatch cannot replace a polymorphic primitive whose call sites may use different concrete signatures." None None
+                        [ "closed primitive signature" ] [ sprintf "%A" originalTarget ]
+                | _ -> ()
+                match fixtureTarget with
+                | UserWordTarget(fixtureId, fixtureRevision) ->
+                    if (original.FunctionsById.ContainsKey fixtureId) then
+                        fail "IR_TEST_DISPATCH_FIXTURE_ID_COLLISION" "A test fixture must use a user-function identity distinct from every production function." None None
+                            [ "distinct synthetic fixture ID" ] [ sprintf "%A" fixtureId ]
+                    match expanded.FunctionsById.TryFind fixtureId with
+                    | None ->
+                        fail "IR_TEST_DISPATCH_FIXTURE_MISSING" "Test dispatch refers to a fixture function absent from its exact verified program." None None
+                            [ sprintf "%A" fixtureId ] [ sprintf "%A" fixtureTarget ]
+                    | Some fixture when fixture.FunctionRevision <> fixtureRevision ->
+                        fail "IR_TEST_DISPATCH_FIXTURE_REVISION" "Test dispatch revision differs from the fixture function in its exact verified program." (Some fixture.FunctionName) None
+                            [ string fixtureRevision ] [ string fixture.FunctionRevision ]
+                    | Some fixture ->
+                        let isSyntheticFixtureId =
+                            match fixtureId with
+                            | WordId raw -> raw.StartsWith("flow-test-fixture-", StringComparison.Ordinal)
+                        if fixture.FunctionId <> fixtureId
+                           || not (fixture.FunctionName.StartsWith("$flow$test-fixture$", StringComparison.Ordinal))
+                           || not isSyntheticFixtureId then
+                            fail "IR_TEST_DISPATCH_FIXTURE_IDENTITY" "Test dispatch fixtures must use the lowerer's reserved ephemeral name and identity namespace." (Some fixture.FunctionName) None
+                                [ "$flow$test-fixture$... / flow-test-fixture-..." ] [ sprintf "%A %s" fixtureId fixture.FunctionName ]
+                        let signatureMatches =
+                            match contract with
+                            | ConcreteTargetContract(originalInputs, originalOutputs, _) ->
+                                fixture.InputTypes = originalInputs && fixture.OutputTypes = originalOutputs
+                            | PrimitiveTargetContract(inputPatterns, outputPatterns, _) ->
+                                primitiveSignatureMatches inputPatterns outputPatterns fixture.InputTypes fixture.OutputTypes
+                        let originalEffects =
+                            match contract with
+                            | ConcreteTargetContract(_, _, effects)
+                            | PrimitiveTargetContract(_, _, effects) -> effects
+                        if not signatureMatches then
+                            let originalDescription =
+                                match contract with
+                                | ConcreteTargetContract(originalInputs, originalOutputs, _) ->
+                                    (originalInputs |> List.map (formatType expanded)) @ [ "->" ] @ (originalOutputs |> List.map (formatType expanded))
+                                | PrimitiveTargetContract(inputPatterns, outputPatterns, _) ->
+                                    [ sprintf "%A" inputPatterns; "->"; sprintf "%A" outputPatterns ]
+                            fail "IR_TEST_DISPATCH_SIGNATURE" "Test fixture signature is incompatible with the original target contract." (Some fixture.FunctionName) None
+                                originalDescription
+                                ((fixture.InputTypes |> List.map (formatType expanded)) @ [ "->" ] @ (fixture.OutputTypes |> List.map (formatType expanded)))
+                        if not (Set.isSubset fixture.FunctionDeclaredEffects originalEffects) then
+                            fail "IR_TEST_DISPATCH_EFFECTS" "Test fixture declares an effect outside the original target contract." (Some fixture.FunctionName) None
+                                (originalEffects |> Set.toList |> List.map IrEffects.format)
+                                (fixture.FunctionDeclaredEffects |> Set.toList |> List.map IrEffects.format)
+                        if fixtureTargets.Contains fixtureId then
+                            fail "IR_TEST_DISPATCH_FIXTURE_DUPLICATE" "Two original targets cannot share one synthetic fixture function." (Some fixture.FunctionName) None
+                                [ "unique fixture target per override" ] [ sprintf "%A" fixtureId ]
+                        fixtureTargets.Add fixtureId
+                | _ ->
+                    fail "IR_TEST_DISPATCH_FIXTURE_KIND" "Test dispatch values must identify synthetic verified user functions." None None
+                        [ "UserWordTarget fixture" ] [ sprintf "%A" fixtureTarget ]
+        let fixtureIdSet = fixtureTargets |> Set.ofSeq
+        let keySet (entries: Map<'key, 'value>) = entries |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let requireExactKeys label (expected: Set<'key>) (actual: Set<'key>) =
+            if expected <> actual then
+                fail "IR_TEST_DISPATCH_PROGRAM_SHAPE" $"The test-specific verified program contains unexpected {label} identities." None None
+                    (expected |> Set.toList |> List.map (sprintf "%A")) (actual |> Set.toList |> List.map (sprintf "%A"))
+        requireExactKeys "user-function" (Set.union (keySet original.FunctionsById) fixtureIdSet) (keySet expanded.FunctionsById)
+        requireExactKeys "generated-target" (keySet original.GeneratedTargetsById) (keySet expanded.GeneratedTargetsById)
+        requireExactKeys "nominal-type" (keySet original.NominalTypesByKey) (keySet expanded.NominalTypesByKey)
+        requireExactKeys "coverage" (Set.union (keySet original.CoverageByWord) fixtureIdSet) (keySet expanded.CoverageByWord)
+        let unexpectedSourceSites =
+            expanded.SourceMap
+            |> Map.toSeq
+            |> Seq.choose (fun (site, _) ->
+                if original.SourceMap.ContainsKey site then None
+                else
+                    match site with
+                    | SourceSiteId(Some owner, _) when fixtureIdSet.Contains owner -> None
+                    | _ -> Some site)
+            |> Seq.toList
+        if not (List.isEmpty unexpectedSourceSites) then
+            fail "IR_TEST_DISPATCH_PROGRAM_SHAPE" "The test-specific verified program contains source-map entries outside its original snapshot and mapped fixtures." None None
+                [ "original or fixture-owned source sites" ] (unexpectedSourceSites |> List.map (sprintf "%A"))
+
     let private sourceAt (sourceMap: Map<SourceSiteId, IrSourceSite>) site =
         sourceMap.TryFind site |> Option.map (fun entry -> entry.SiteSpan)
 
@@ -264,14 +417,27 @@ module IrInterpreter =
         with :? OverflowException ->
             fail "RUNTIME_OVERFLOW" $"'{operation}' overflowed its Int64 result." (Some operation) span [] [ string left; string right ]
 
-    let executeBodyWithInputs
+    let private executeBodyWithInputsAndDispatch
         (host: IrInterpreterHost)
         (executionName: string)
         (verifiedBody: VerifiedIrBody)
+        (testOriginalProgram: VerifiedIrProgram option)
+        (testDispatch: Map<IrCallTarget, IrCallTarget>)
         (inputOwner: IrInterpreterResult option)
         (arguments: IrEntryArgument list) : IrInterpreterResult =
         let verifiedProgram = VerifiedIrBody.program verifiedBody
         requireBackendRegistry verifiedProgram
+        match testOriginalProgram with
+        | Some original when not (Object.ReferenceEquals(original, verifiedProgram)) ->
+            validateTestDispatch original verifiedProgram testDispatch
+        | Some _ when Map.isEmpty testDispatch -> ()
+        | Some _ ->
+            fail "IR_TEST_DISPATCH_PROGRAM_MISMATCH" "A test overlay must use a distinct verified program from its original production snapshot." None None
+                [ "separate ephemeral overlay program" ] [ "same VerifiedIrProgram instance" ]
+        | None when not (Map.isEmpty testDispatch) ->
+            fail "IR_TEST_DISPATCH_ORIGINAL_REQUIRED" "Test dispatch requires the original production snapshot for target validation." None None
+                [ "original VerifiedIrProgram" ] [ "none" ]
+        | None -> ()
         let program = VerifiedIrProgram.inspect verifiedProgram
         let body = VerifiedIrBody.inspect verifiedBody
 
@@ -457,6 +623,32 @@ module IrInterpreter =
             if depth > maxCallDepth then
                 fail "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." (Some call.ResolvedName) (host.WordDefinitionSpan call.ResolvedName) [] []
             host.PreflightEffects call.ResolvedEffects (Some call.ResolvedName) site
+            match testDispatch.TryFind call.ResolvedTarget with
+            | Some(UserWordTarget(fixtureId, fixtureRevision)) ->
+                executeDispatchedFixture call fixtureId fixtureRevision arguments depth
+            | Some other ->
+                fail "IR_TEST_DISPATCH_FIXTURE_KIND" "Test dispatch values must identify synthetic verified user functions." (Some call.ResolvedName) (site |> Option.bind sourceSpan)
+                    [ "UserWordTarget fixture" ] [ sprintf "%A" other ]
+            | None ->
+                invokeUnchanged depth call arguments site
+
+        and executeDispatchedFixture (call: IrResolvedCall) (fixtureId: WordId) (fixtureRevision: int) (arguments: RuntimeValue list) (depth: int) =
+            match program.FunctionsById.TryFind fixtureId with
+            | Some fixture when fixture.FunctionRevision = fixtureRevision ->
+                if call.InputTypes <> fixture.InputTypes || call.OutputTypes <> fixture.OutputTypes then
+                    fail "IR_TEST_DISPATCH_CALL_SIGNATURE" "A resolved original call specialization does not match its test fixture signature." (Some call.ResolvedName) None
+                        ((call.InputTypes |> List.map (formatType program)) @ [ "->" ] @ (call.OutputTypes |> List.map (formatType program)))
+                        ((fixture.InputTypes |> List.map (formatType program)) @ [ "->" ] @ (fixture.OutputTypes |> List.map (formatType program)))
+                if not (Set.isSubset fixture.FunctionDeclaredEffects call.ResolvedDeclaredEffects) then
+                    fail "IR_TEST_DISPATCH_CALL_EFFECTS" "A test fixture declares effects outside this original call specialization's contract." (Some call.ResolvedName) None
+                        (call.ResolvedDeclaredEffects |> Set.toList |> List.map IrEffects.format)
+                        (fixture.FunctionDeclaredEffects |> Set.toList |> List.map IrEffects.format)
+                host.RecordUse fixture.FunctionName
+                executeFunction depth fixture arguments
+            | _ -> fail "IR_TEST_DISPATCH_FIXTURE_MISSING" "Test dispatch fixture is absent or stale in its exact verified program." (Some call.ResolvedName) None
+                     [ sprintf "%A" fixtureId; string fixtureRevision ] []
+
+        and invokeUnchanged (depth: int) (call: IrResolvedCall) (arguments: RuntimeValue list) (site: SourceSiteId option) =
             match call.ResolvedTarget with
             | UserWordTarget(wordId, revision) ->
                 match program.FunctionsById.TryFind wordId with
@@ -922,6 +1114,28 @@ module IrInterpreter =
             verifiedProgram,
             result |> List.toArray,
             decodeValue)
+
+    /// Execute a detached test body with an immutable, test-scoped replacement
+    /// map. The original production snapshot is used to validate exact targets;
+    /// the body and all fixture functions must belong to the expanded program.
+    let executeBodyWithTestDispatch
+        (host: IrInterpreterHost)
+        (executionName: string)
+        (originalProgram: VerifiedIrProgram)
+        (dispatch: Map<IrCallTarget, IrCallTarget>)
+        (verifiedBody: VerifiedIrBody)
+        (inputOwner: IrInterpreterResult option)
+        (arguments: IrEntryArgument list) : IrInterpreterResult =
+        executeBodyWithInputsAndDispatch host executionName verifiedBody (Some originalProgram) dispatch inputOwner arguments
+
+    /// Execute an ordinary detached body without test-scoped replacement routing.
+    let executeBodyWithInputs
+        (host: IrInterpreterHost)
+        (executionName: string)
+        (verifiedBody: VerifiedIrBody)
+        (inputOwner: IrInterpreterResult option)
+        (arguments: IrEntryArgument list) : IrInterpreterResult =
+        executeBodyWithInputsAndDispatch host executionName verifiedBody None Map.empty inputOwner arguments
 
     /// Compatibility entry point for callers that only execute zero-input
     /// bodies and immediately observe public Values.

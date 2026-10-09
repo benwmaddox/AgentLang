@@ -1115,6 +1115,72 @@ module FlowParser =
             FlowStructure.validateExampleNesting definition
             definition))
 
+    and private parseTestFileSettingsState state =
+        withDepth state (fun () ->
+            let startToken = expect state "test-file"
+            if state.SyntaxVersion <> 2 then
+                fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_SYNTAX_VERSION" "Test-file settings require Flow/2 syntax."
+            let scopeToken = expectIdentifier state
+            expect state "{" |> ignore
+            let overrides = ResizeArray<FlowTestOverrideDefinition>()
+            let tests = ResizeArray<FlowTestDefinition>()
+            let overrideNames = HashSet<string>(StringComparer.Ordinal)
+            let caseNames = HashSet<string>(StringComparer.Ordinal)
+            let mutable owner: string option = None
+            while not (atEnd state) && peek state <> Some "}" do
+                match peek state with
+                | Some "override" ->
+                    let overrideToken = expect state "override"
+                    match current state with
+                    | Some token when token.Text <> "fn" ->
+                        fail state.File token.Line token.Column token.Text.Length "FLOW_TEST_OVERRIDE_FN_REQUIRED" "A test-file replacement must use 'override fn' followed by a Flow/2 function declaration."
+                    | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected 'fn' after 'override'."
+                    | _ -> ()
+                    let functionStartIndex = state.Index
+                    let definition = parseWordState state
+                    let targetStart = state.Tokens[functionStartIndex + 1]
+                    let mutable targetEnd = targetStart
+                    let mutable targetCursor = functionStartIndex + 2
+                    while targetCursor + 1 < state.Tokens.Length
+                          && state.Tokens[targetCursor].Text = "."
+                          && state.Tokens[targetCursor + 1].Kind = Identifier do
+                        targetEnd <- state.Tokens[targetCursor + 1]
+                        targetCursor <- targetCursor + 2
+                    let targetSpan = sourceSpan state.File targetStart (Some targetEnd)
+                    if not (overrideNames.Add definition.Name) then
+                        fail state.File definition.Span.Line definition.Span.Column definition.Span.Length "FLOW_TEST_OVERRIDE_DUPLICATE" $"Replacement '{definition.Name}' is repeated in one test-file wrapper."
+                    let endToken = previous state |> Option.get
+                    let overrideDefinition =
+                        { Definition = definition
+                          TargetSpan = targetSpan
+                          SourceText = sourceSlice state overrideToken endToken
+                          Span = sourceSpan state.File overrideToken (Some endToken) }
+                    requireNewlineOrSeparator state "}" "FLOW_TEST_FILE_DECLARATION_SEPARATOR" "Separate test-file declarations with a newline or ';'."
+                    overrides.Add overrideDefinition
+                | Some "test" ->
+                    let definition = parseTestState state
+                    match owner with
+                    | None -> owner <- Some definition.Word
+                    | Some expected when expected <> definition.Word ->
+                        fail state.File definition.HeaderSpan.Line definition.HeaderSpan.Column definition.HeaderSpan.Length "FLOW_TEST_FILE_OWNER_MISMATCH" "All tests in one test-file wrapper must belong to the same Flow word."
+                    | Some _ -> ()
+                    if not (caseNames.Add definition.CaseName) then
+                        fail state.File definition.HeaderSpan.Line definition.HeaderSpan.Column definition.HeaderSpan.Length "FLOW_TEST_FILE_DUPLICATE_CASE" $"Test case '{definition.CaseName}' is repeated in one test-file wrapper."
+                    requireNewlineOrSeparator state "}" "FLOW_TEST_FILE_DECLARATION_SEPARATOR" "Separate test-file declarations with a newline or ';'."
+                    tests.Add definition
+                | Some _ ->
+                    tokenError state "FLOW_TEST_FILE_DECLARATION" "A test-file wrapper contains only 'override fn' declarations and nested 'test' cases."
+                | None -> ()
+            let endToken = expect state "}"
+            if tests.Count = 0 then
+                fail state.File startToken.Line startToken.Column (endToken.Offset + endToken.Text.Length - startToken.Offset) "FLOW_TEST_FILE_EMPTY" "A test-file wrapper must contain at least one test case."
+            { ScopeName = scopeToken.Text
+              Overrides = List.ofSeq overrides
+              Tests = List.ofSeq tests
+              SourceText = sourceSlice state startToken endToken
+              Span = sourceSpan state.File startToken (Some endToken)
+              SyntaxVersion = state.SyntaxVersion })
+
     let private reservedTypeNames =
         set [ "Int"; "Float"; "Bool"; "String"; "Unit"; "List"; "Option"; "Result"; "a"; "b"; "c" ]
 
@@ -1331,6 +1397,14 @@ module FlowParser =
 
     let parseTest file source = parseTestWithVersion 1 file source
 
+    let parseTestFileSettingsWithVersion syntaxVersion file source =
+        try
+            let state = createState syntaxVersion file source
+            let settings = parseTestFileSettingsState state
+            rejectTrailing state "test-file settings"
+            Ok { settings with SourceText = source }
+        with LanguageException error -> Error error
+
     let parseExampleWithVersion syntaxVersion file source =
         try
             let state = createState syntaxVersion file source
@@ -1350,6 +1424,8 @@ module FlowParser =
             let words = ResizeArray<FlowWordDefinition>()
             let tests = ResizeArray<FlowTestDefinition>()
             let examples = ResizeArray<FlowExampleDefinition>()
+            let testFiles = ResizeArray<FlowTestFileSettings>()
+            let testFileScopes = HashSet<string * string>()
             let typeNames = HashSet<string>(StringComparer.Ordinal)
             let addType (name: string) (span: SourceSpan) =
                 if not (typeNames.Add name) then
@@ -1372,9 +1448,16 @@ module FlowParser =
                 | Some "word" -> tokenError state "FLOW_SYNTAX_VERSION" "The 'word' declaration requires Flow/1 syntax; use 'fn' in Flow/2."
                 | Some "fn" when state.SyntaxVersion = 2 -> words.Add(parseWordState state)
                 | Some "fn" -> tokenError state "FLOW_SYNTAX_VERSION" "The 'fn' declaration requires Flow/2 syntax."
+                | Some "override" -> tokenError state "FLOW_TEST_OVERRIDE_SCOPE" "A replacement declaration is allowed only inside a test-file wrapper."
+                | Some "test-file" ->
+                    let settings = parseTestFileSettingsState state
+                    let owner = settings.Tests.Head.Word
+                    if not (testFileScopes.Add((owner, settings.ScopeName))) then
+                        fail state.File settings.Span.Line settings.Span.Column settings.Span.Length "FLOW_TEST_FILE_SCOPE_DUPLICATE" "A Flow project may declare each test-file scope label once for each owner."
+                    testFiles.Add settings
                 | Some "test" -> tests.Add(parseTestState state)
                 | Some "example" -> examples.Add(parseExampleState state)
-                | Some _ -> tokenError state "FLOW_PROJECT_UNKNOWN_DECLARATION" "A Flow project document contains only record, type, word, test, and example declarations."
+                | Some _ -> tokenError state "FLOW_PROJECT_UNKNOWN_DECLARATION" "A Flow project document contains only record, type, word, test, example, and test-file declarations."
                 | None -> ()
             Ok
                 { SyntaxVersion = state.SyntaxVersion
@@ -1384,7 +1467,8 @@ module FlowParser =
                   Enums = List.ofSeq enums
                   Words = List.ofSeq words
                   Tests = List.ofSeq tests
-                  Examples = List.ofSeq examples }
+                  Examples = List.ofSeq examples
+                  TestFiles = List.ofSeq testFiles }
         with LanguageException error -> Error error
 
     let parseDocument file source = parseDocumentWithVersion 1 file source

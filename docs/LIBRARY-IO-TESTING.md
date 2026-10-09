@@ -107,14 +107,20 @@ concurrency, permissions or encoding correctly. That adapter needs separate
 integration tests. Counts also do not prove contents or ordering; see
 [effect assertions](EFFECT-ASSERTIONS.md) for final virtual-state checks.
 
-## What remains planned
+## Replacing dependencies in test files
 
-User-authored, test-scoped dictionary replacement is not implemented yet.
-The approved design lets a test temporarily replace an I/O wrapper with a
-signature-compatible function so nested calls see it, then restores dispatch
-on every exit path. Such a replacement must never supply coverage for the
-original function it replaces. The runnable example above uses the existing
-virtual provider layer, not that future override syntax.
+The example above executes real function bodies with a virtual provider.
+Flow/2 test-file replacements additionally let a test file define a typed
+fixture for an authored I/O wrapper or a closed-signature primitive such as
+`file.read`. Nested calls and static callbacks see it, with automatic cleanup.
+The original signature and capability contract remain checked. A fixture
+cannot supply coverage or finite-value observations for the original function
+it replaces; a library dependency still needs its own qualification.
+
+See [test-file dependency replacements](TEST-FILE-DEPENDENCIES.md) for the
+source form, current validation status and shared-source persistence rules.
+Normal execution reads and writes real files; both provider-based tests and
+replacement-based tests keep language filesystem I/O virtual.
 
 See [library testing rules](TESTING.md), [finite coverage](FINITE-COVERAGE.md),
 and [the syntax milestone report](../reports/155-dot-calls-and-newline-syntax.md)

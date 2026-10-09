@@ -312,6 +312,293 @@ let private testVerifiedUserFunctionHooks () =
     check "a user function denied by preflight never enters or returns"
         (deniedEvents.Count = 0)
 
+let private testTestFileReplacementDispatch () =
+    let source = span "test-overlay.flow"
+    let fileReadEffects = Set.singleton "fs.read"
+    let customerLoad =
+        wordEntry "customer.load" [ TString ] [ TString ] fileReadEffects
+            [ Call("file.read", source) ] None
+    let customerCaller =
+        wordEntry "customer.caller" [ TString ] [ TString ] fileReadEffects
+            [ Call("customer.load", source) ] None
+    let customerHelper =
+        wordEntry "customer.helper" [] [ TString ] Set.empty
+            [ Push(LString "customer helper", source) ] None
+    let otherHelper =
+        wordEntry "other.helper" [] [ TString ] Set.empty
+            [ Push(LString "other helper", source) ] None
+    let originalContext = contextWith Map.empty [ customerLoad; customerCaller; customerHelper ]
+    let originalProgram = Compiler.compileIrProgram originalContext
+    let flowContext : FlowLowering.Context =
+        { CompilerContext = originalContext
+          ParameterNames = Map.empty
+          Flow2OwnerIds = Set.empty
+          SourceOrigins = Map.empty }
+    let flowParameter name =
+        { Name = name
+          Type = TString
+          Span = source }
+    let flowCall name arguments = FlowExpression.Call(name, arguments, source)
+    let loadReplacement : FlowWordDefinition =
+        { Name = "customer.load"
+          Parameters = [ flowParameter "path" ]
+          Outputs = [ TString ]
+          Effects = Set.empty
+          EffectsDeclared = true
+          Documentation = "Test-only replacement."
+          Body = [ FlowStatement.Return([ flowCall "helper" [] ], source) ]
+          SourceText = "override fn customer.load(path: String) -> String"
+          Span = source
+          SyntaxVersion = 2 }
+    let fileReadReplacement : FlowWordDefinition =
+        { Name = "file.read"
+          Parameters = [ flowParameter "path" ]
+          Outputs = [ TString ]
+          Effects = Set.empty
+          EffectsDeclared = true
+          Documentation = "Test-only read fixture."
+          Body = [ FlowStatement.Return([ FlowExpression.Literal(LString "file fixture", source) ], source) ]
+          SourceText = "override fn file.read(path: String) -> String"
+          Span = source
+          SyntaxVersion = 2 }
+    let overrideDefinition (definition: FlowWordDefinition) =
+        { Definition = definition
+          TargetSpan = source
+          SourceText = definition.SourceText
+          Span = source }
+    let test : FlowTestDefinition =
+        { Word = "customer.caller"
+          CaseName = "replacement-and-relative-helper"
+          Body =
+            [ FlowStatement.Evaluate(
+                flowCall "customer.caller" [ FlowArgument.Positional(FlowExpression.Literal(LString "settings.txt", source)) ]) ]
+          Expected = FlowTestExpectation.Literal(LString "customer helper", source)
+          EffectAssertion = None
+          SourceText = "test customer.load/replacement-and-relative-helper"
+          Span = source
+          SyntaxVersion = 2
+          HeaderSpan = source
+          ExpectationSpan = source }
+    let settings : FlowTestFileSettings =
+        { ScopeName = "settings"
+          Overrides = [ overrideDefinition loadReplacement; overrideDefinition fileReadReplacement ]
+          Tests = [ test ]
+          SourceText = "test-file settings"
+          Span = source
+          SyntaxVersion = 2 }
+    let overlay = FlowLowering.compileTestFileSettings flowContext originalProgram settings
+    let loadId = originalContext.WordIds["customer.load"]
+    let callerId = originalContext.WordIds["customer.caller"]
+    let helperId = originalContext.WordIds["customer.helper"]
+    let loadDispatch = overlay.Dispatch[UserWordTarget(loadId, 1)]
+    let fileReadDispatch = overlay.Dispatch[PrimitiveTarget(PrimitiveId "file.read")]
+    let fixtureId =
+        match loadDispatch with
+        | UserWordTarget(identity, 0) -> identity
+        | other -> failwithf "expected revision-zero synthetic target, got %A" other
+    let fileReadFixtureId =
+        match fileReadDispatch with
+        | UserWordTarget(identity, 0) -> identity
+        | other -> failwithf "expected revision-zero file.read fixture, got %A" other
+    let bindingsByIndex = overlay.Overrides |> List.map (fun binding -> binding.OverrideIndex, binding) |> Map.ofList
+    check "override header binding is rooted at its structural declaration and pins the stable original ID"
+        (bindingsByIndex[0].Header.Path = FlowAstPath.FlowAstPath [ FlowAstPathSegment.TestOverrideDefinition 0 ]
+         && bindingsByIndex[0].Header.Form = FlowLowering.FlowCallForm.TestOverrideTarget
+         && bindingsByIndex[0].Header.Target = FlowLowering.FlowCallTargetIdentity.UserWord loadId
+         && bindingsByIndex[0].Header.TargetRevision = Some 1)
+    check "the fixture body resolves an unambiguous unqualified helper exactly like ordinary Flow"
+        (match bindingsByIndex[0].BodySites with
+         | [ site ] ->
+             let (FlowAstPath.FlowAstPath path) = site.Path
+             path.Head = FlowAstPathSegment.TestOverrideDefinition 0
+             && site.RequestedName = "helper"
+              && site.Target = FlowLowering.FlowCallTargetIdentity.UserWord helperId
+         | _ -> false)
+    check "a literal fixture still emits a header proof with an empty body-call set"
+        (bindingsByIndex[1].Header.Form = FlowLowering.FlowCallForm.TestOverrideTarget
+         && bindingsByIndex[1].Header.Target = FlowLowering.FlowCallTargetIdentity.Primitive(PrimitiveId "file.read")
+         && List.isEmpty bindingsByIndex[1].BodySites)
+
+    let ambiguousOriginalContext = contextWith Map.empty [ customerLoad; customerCaller; customerHelper; otherHelper ]
+    let ambiguousOriginalProgram = Compiler.compileIrProgram ambiguousOriginalContext
+    let ambiguousFlowContext : FlowLowering.Context =
+        { CompilerContext = ambiguousOriginalContext
+          ParameterNames = Map.empty
+          Flow2OwnerIds = Set.empty
+          SourceOrigins = Map.empty }
+    expectDiagnostic "ordinary Flow keeps globally ambiguous unqualified short calls" "FLOW_AMBIGUOUS_CALL" (fun () ->
+        FlowLowering.lowerWord ambiguousFlowContext loadReplacement |> ignore)
+    expectDiagnostic "test replacement bodies retain ordinary Flow short-name ambiguity" "FLOW_AMBIGUOUS_CALL" (fun () ->
+        FlowLowering.compileTestFileSettings ambiguousFlowContext ambiguousOriginalProgram settings |> ignore)
+
+    let badSignature =
+        { settings with
+            Overrides =
+                [ overrideDefinition
+                    { fileReadReplacement with
+                        Parameters = [ { Name = "path"; Type = TInt; Span = source } ]
+                        Outputs = [ TInt ] } ] }
+    expectDiagnostic "test replacement must preserve its exact declared signature" "FLOW_TEST_OVERRIDE_SIGNATURE_MISMATCH" (fun () ->
+        FlowLowering.compileTestFileSettings flowContext originalProgram badSignature |> ignore)
+    let badEffects =
+        { settings with
+            Overrides =
+                [ overrideDefinition
+                    { fileReadReplacement with Effects = Set.singleton "console.write" } ] }
+    expectDiagnostic "test replacement cannot introduce effects beyond its original target" "FLOW_TEST_OVERRIDE_EFFECT_MISMATCH" (fun () ->
+        FlowLowering.compileTestFileSettings flowContext originalProgram badEffects |> ignore)
+    let duplicateTarget = { settings with Overrides = [ overrideDefinition loadReplacement; overrideDefinition loadReplacement ] }
+    expectDiagnostic "a file scope can replace one target only once" "FLOW_TEST_OVERRIDE_DUPLICATE_TARGET" (fun () ->
+        FlowLowering.compileTestFileSettings flowContext originalProgram duplicateTarget |> ignore)
+    let polymorphicPrimitiveReplacement : FlowWordDefinition =
+        { Name = "equals"
+          Parameters = [ flowParameter "left"; flowParameter "right" ]
+          Outputs = [ TBool ]
+          Effects = Set.empty
+          EffectsDeclared = true
+          Documentation = "Unsupported polymorphic replacement."
+          Body = [ FlowStatement.Return([ FlowExpression.Literal(LBool true, source) ], source) ]
+          SourceText = "override fn equals(left: String, right: String) -> Bool"
+          Span = source
+          SyntaxVersion = 2 }
+    expectDiagnostic "polymorphic primitive overrides are rejected before call-site specialization can vary" "FLOW_TEST_OVERRIDE_POLYMORPHIC_TARGET" (fun () ->
+        FlowLowering.compileTestFileSettings flowContext originalProgram
+            { settings with Overrides = [ overrideDefinition polymorphicPrimitiveReplacement ] }
+        |> ignore)
+
+    let hookEvents = ResizeArray<UserFunctionHookEvent>()
+    let preflights = ResizeArray<Set<IrEffect> * string option>()
+    let invokedEffects = ResizeArray<IrEffectCommand>()
+    let recordUses = ResizeArray<string>()
+    let overlayHost =
+        { recordingHost hookEvents with
+            PreflightEffects = fun effects name _ -> preflights.Add((effects, name))
+            RecordUse = recordUses.Add
+            InvokeEffect = fun command ->
+                invokedEffects.Add command
+                EffectString "real host data" }
+    let boundTest = FlowLowering.compileTestWithCallBindings overlay.Context overlay.Program test
+    let nestedPreflightStart = preflights.Count
+    use testResult =
+        IrInterpreter.executeBodyWithTestDispatch
+            overlayHost "customer.load/replacement-and-relative-helper"
+            originalProgram overlay.Dispatch boundTest.Compiled.Body None []
+    check "a caller executes its real body while its nested target resolves to the file-scoped fixture"
+        (testResult.Decode() = [ StringValue "customer helper" ])
+    check "fixture entry/return use a distinct synthetic identity and the original target never enters"
+        (hookEvents |> Seq.exists (fun event -> event.Phase = "enter" && event.WordId = fixtureId)
+         && not (hookEvents |> Seq.exists (fun event -> event.WordId = loadId)))
+    check "a nested replacement still preflights the original effect contract"
+        (preflights
+         |> Seq.skip nestedPreflightStart
+         |> Seq.exists (fun (effects, name) -> name = Some "customer.load" && effects.Contains IrEffect.FileRead))
+    check "the real caller and relative helper execute as ordinary production functions"
+        ((hookEvents |> Seq.exists (fun event -> event.Phase = "enter" && event.WordId = callerId))
+         && (hookEvents |> Seq.exists (fun event -> event.Phase = "enter" && event.WordId = helperId)))
+    check "the expanded verified program preserves original coverage obligations exactly"
+        ((VerifiedIrProgram.inspect originalProgram).CoverageByWord
+         |> Map.forall (fun identity obligations -> (VerifiedIrProgram.inspect overlay.Program).CoverageByWord.TryFind identity = Some obligations))
+
+    let compileOverlayBody name expressions =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+            overlay.Context.CompilerContext overlay.Program name [] expressions overlay.Context.SourceOrigins
+    let runOverlayBody name expressions =
+        let body = compileOverlayBody name expressions
+        use result = IrInterpreter.executeBodyWithTestDispatch overlayHost name originalProgram overlay.Dispatch body None []
+        result.Decode()
+    check "a direct primitive call dispatches to the source-defined fixture without host I/O"
+        (runOverlayBody "test-file-direct-read" [ Push(LString "settings.txt", source); Call("file.read", source) ] = [ StringValue "file fixture" ])
+    check "static callbacks use the same replacement boundary"
+        (runOverlayBody "test-file-mapped-read"
+            [ Push(LString "settings.txt", source)
+              ConstructContainer(ListSingleton, [ TString ], source)
+              MapList("file.read", source) ] = [ ListValue(TString, [ StringValue "file fixture" ]) ])
+    let preflightStart = preflights.Count
+    check "an empty effectful callback still returns its typed empty collection"
+        (runOverlayBody "test-file-empty-mapped-read"
+            [ ConstructContainer(ListEmpty, [ TString ], source)
+              MapList("file.read", source) ] = [ ListValue(TString, []) ])
+    check "empty callbacks retain the original target effect preflight"
+        (preflights
+         |> Seq.skip preflightStart
+         |> Seq.exists (fun (effects, name) -> name = Some "file.read" && effects.Contains IrEffect.FileRead))
+    check "direct, nested, and callback fixtures perform no real provider I/O"
+        (invokedEffects.Count = 0)
+    check "fixture execution is recorded by synthetic fixture names, not original target names"
+        (recordUses |> Seq.exists (fun name -> name.StartsWith("$flow$test-fixture$", StringComparison.Ordinal))
+         && not (recordUses |> Seq.exists ((=) "file.read"))
+         && not (recordUses |> Seq.exists ((=) "customer.load")))
+
+    let directReadBody = compileOverlayBody "test-file-invalid-dispatch" [ Push(LString "settings.txt", source); Call("file.read", source) ]
+    let preflightCountBeforeInvalid = preflights.Count
+    let hookCountBeforeInvalid = hookEvents.Count
+    expectDiagnostic "dispatch validation rejects an incompatible fixture signature" "IR_TEST_DISPATCH_SIGNATURE" (fun () ->
+        let wrongFixtureId = WordId "flow-test-fixture-wrong-signature"
+        let wrongFixtureName = "$flow$test-fixture$wrong-signature"
+        let wrongFixtureDefinition : WordDefinition =
+            { Name = wrongFixtureName
+              Inputs = []
+              Outputs = [ TString ]
+              Effects = Set.empty
+              Maturity = ProjectWord
+              Revision = 0
+              Documentation = "Invalid fixture used to test dispatch validation."
+              Body = [ Push(LString "wrong signature", source) ]
+              SourceText = ""
+              Span = source }
+        let wrongFixtureEntry : WordEntry =
+            { Definition = wrongFixtureDefinition
+              Builtin = None
+              Status = Candidate
+              Maturity = ProjectWord
+              Revision = 0 }
+        let wrongCompilerContext =
+            { overlay.Context.CompilerContext with
+                Words = Map.add wrongFixtureName wrongFixtureEntry overlay.Context.CompilerContext.Words
+                WordIds = Map.add wrongFixtureName wrongFixtureId overlay.Context.CompilerContext.WordIds }
+        let wrongProgram = Compiler.compileIrProgramWithSourceOrigins wrongCompilerContext overlay.Context.SourceOrigins
+        let wrongBody =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins wrongCompilerContext wrongProgram "wrong-fixture-signature"
+                [] [ Push(LString "settings.txt", source); Call("file.read", source) ] overlay.Context.SourceOrigins
+        IrInterpreter.executeBodyWithTestDispatch
+            overlayHost "wrong-fixture-signature" originalProgram
+            (Map.ofList [ PrimitiveTarget(PrimitiveId "file.read"), UserWordTarget(wrongFixtureId, 0) ])
+            wrongBody None []
+        |> ignore)
+    expectDiagnostic "dispatch validation rejects two originals sharing one fixture" "IR_TEST_DISPATCH_FIXTURE_DUPLICATE" (fun () ->
+        IrInterpreter.executeBodyWithTestDispatch
+            overlayHost "duplicate-test-file-fixture" originalProgram
+            (Map.ofList [ UserWordTarget(loadId, 1), UserWordTarget(fixtureId, 0)
+                          PrimitiveTarget(PrimitiveId "file.read"), UserWordTarget(fixtureId, 0) ])
+            directReadBody None [] |> ignore)
+    expectDiagnostic "dispatch validation rejects unmapped extra fixture functions" "IR_TEST_DISPATCH_PROGRAM_SHAPE" (fun () ->
+        IrInterpreter.executeBodyWithTestDispatch
+            overlayHost "unmapped-test-file-fixture" originalProgram
+            (Map.ofList [ UserWordTarget(loadId, 1), UserWordTarget(fixtureId, 0) ])
+            directReadBody None [] |> ignore)
+    expectDiagnostic "dispatch rejects a stale original revision before execution" "IR_TEST_DISPATCH_ORIGINAL_TARGET" (fun () ->
+        IrInterpreter.executeBodyWithTestDispatch
+            overlayHost "stale-test-file-dispatch" originalProgram
+            (Map.ofList [ UserWordTarget(loadId, 99), UserWordTarget(fixtureId, 0) ])
+            directReadBody None [] |> ignore)
+    expectDiagnostic "dispatch rejects foreign production target identities" "IR_TEST_DISPATCH_ORIGINAL_TARGET" (fun () ->
+        IrInterpreter.executeBodyWithTestDispatch
+            overlayHost "foreign-test-file-dispatch" originalProgram
+            (Map.ofList [ UserWordTarget(WordId "foreign-target", 1), UserWordTarget(fixtureId, 0) ])
+            directReadBody None [] |> ignore)
+    expectDiagnostic "dispatch validation rejects polymorphic primitive maps even when a fixture is present" "IR_TEST_DISPATCH_POLYMORPHIC_TARGET" (fun () ->
+        IrInterpreter.executeBodyWithTestDispatch
+            overlayHost "polymorphic-test-file-dispatch" originalProgram
+            (Map.ofList [ PrimitiveTarget(PrimitiveId "equals"), UserWordTarget(fileReadFixtureId, 0) ])
+            directReadBody None [] |> ignore)
+    expectDiagnostic "dispatch rejects foreign fixture identities" "IR_TEST_DISPATCH_FIXTURE_MISSING" (fun () ->
+        IrInterpreter.executeBodyWithTestDispatch
+            overlayHost "foreign-test-file-fixture" originalProgram
+            (Map.ofList [ PrimitiveTarget(PrimitiveId "file.read"), UserWordTarget(WordId "foreign-fixture", 0) ])
+            directReadBody None [] |> ignore)
+    check "invalid dispatch maps are rejected before preflight or user-function hooks"
+        (preflights.Count = preflightCountBeforeInvalid && hookEvents.Count = hookCountBeforeInvalid)
+
 let private testOpaqueTypedInterpreterReentry () =
     let source = span "typed-reentry.agent"
     let metersValidator =
@@ -968,6 +1255,7 @@ let main _ =
     testProgramTrustAndSnapshotBinding ()
     testPublicBoundaryAndEmptyEntryOnly ()
     testVerifiedUserFunctionHooks ()
+    testTestFileReplacementDispatch ()
     testOpaqueTypedInterpreterReentry ()
     testScopeRestoresOverwrittenOuterLocal ()
     testInterpreterOwnsFuel ()

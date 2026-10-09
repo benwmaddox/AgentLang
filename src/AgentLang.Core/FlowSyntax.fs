@@ -57,6 +57,7 @@ type FlowAstPathSegment =
     | ResultErrorStatement of int
     | EnumScrutinee
     | EnumCaseStatement of int * int
+    | TestOverrideDefinition of int
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type FlowAstPath = FlowAstPath of FlowAstPathSegment list
@@ -143,6 +144,26 @@ type FlowTestDefinition =
       HeaderSpan: SourceSpan
       ExpectationSpan: SourceSpan }
 
+/// A test-file replacement retains the authored override header separately
+/// from its word body so the header can be bound to the replaced target.
+type FlowTestOverrideDefinition =
+    { Definition: FlowWordDefinition
+      TargetSpan: SourceSpan
+      SourceText: string
+      Span: SourceSpan }
+
+/// One lexical test-file scope. Its replacements are shared by its cases, but
+/// the wrapper remains one durable source object rather than one object/case.
+type FlowTestFileSettings =
+    { /// Short authoring label for the lexical wrapper; nested tests carry
+      /// the complete owner name independently.
+      ScopeName: string
+      Overrides: FlowTestOverrideDefinition list
+      Tests: FlowTestDefinition list
+      SourceText: string
+      Span: SourceSpan
+      SyntaxVersion: int }
+
 type FlowExampleDefinition =
     { Word: string
       CaseName: string
@@ -165,7 +186,8 @@ type FlowProjectDocument =
       Enums: EnumDefinition list
       Words: FlowWordDefinition list
       Tests: FlowTestDefinition list
-      Examples: FlowExampleDefinition list }
+      Examples: FlowExampleDefinition list
+      TestFiles: FlowTestFileSettings list }
 
 type FlowSourceProjection =
     { AuthoredSpans: Set<SourceSpan>
@@ -720,6 +742,53 @@ module FlowSource =
         lines.Add("}")
         String.concat "\n" lines
 
+    let renderTestFileSettings (settings: FlowTestFileSettings) =
+        requireSupportedVersion settings.SyntaxVersion (Some settings.ScopeName) (Some settings.Span)
+        requireFlow2 settings.SyntaxVersion (Some settings.ScopeName) (Some settings.Span) "Test-file settings"
+        let validScopeName (value: string) =
+            not (System.String.IsNullOrEmpty value)
+            && (System.Char.IsLetter value[0] || value[0] = '_')
+            && (value |> Seq.skip 1 |> Seq.forall (fun ch -> System.Char.IsLetterOrDigit ch || ch = '_' || ch = '-' || ch = '?' || ch = '!'))
+        if not (validScopeName settings.ScopeName) then
+            Diagnostics.raiseError "FLOW_TEST_FILE_SCOPE_INVALID" "A test-file scope label must be a Flow identifier." (Some settings.ScopeName) (Some settings.Span) [ "identifier" ] [ settings.ScopeName ]
+        if List.isEmpty settings.Tests then
+            Diagnostics.raiseError "FLOW_TEST_FILE_EMPTY" "A test-file wrapper must contain at least one test case." (Some settings.ScopeName) (Some settings.Span) [ "one or more test cases" ] []
+        let owner = settings.Tests.Head.Word
+        let caseNames = System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal)
+        for definition in settings.Tests do
+            if definition.SyntaxVersion <> settings.SyntaxVersion then
+                Diagnostics.raiseError "FLOW_VERSION_MISMATCH" "A test-file wrapper and its nested test declarations must use the same syntax version." (Some definition.Word) (Some definition.Span)
+                    [ string settings.SyntaxVersion ] [ string definition.SyntaxVersion ]
+            if definition.Word <> owner then
+                Diagnostics.raiseError "FLOW_TEST_FILE_OWNER_MISMATCH" "All tests in one test-file wrapper must belong to the same Flow word." (Some definition.Word) (Some definition.HeaderSpan) [ owner ] [ definition.Word ]
+            if not (caseNames.Add definition.CaseName) then
+                Diagnostics.raiseError "FLOW_TEST_FILE_DUPLICATE_CASE" $"Test case '{definition.CaseName}' is repeated in one test-file wrapper." (Some owner) (Some definition.HeaderSpan) [] [ definition.CaseName ]
+            FlowStructure.validateTestNesting definition
+        let overrideNames = System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal)
+        for overrideDefinition in settings.Overrides do
+            let definition = overrideDefinition.Definition
+            if definition.SyntaxVersion <> settings.SyntaxVersion then
+                Diagnostics.raiseError "FLOW_VERSION_MISMATCH" "A test-file wrapper and its replacement declarations must use the same syntax version." (Some definition.Name) (Some definition.Span)
+                    [ string settings.SyntaxVersion ] [ string definition.SyntaxVersion ]
+            if not (overrideNames.Add definition.Name) then
+                Diagnostics.raiseError "FLOW_TEST_OVERRIDE_DUPLICATE" $"Replacement '{definition.Name}' is repeated in one test-file wrapper." (Some owner) (Some overrideDefinition.Span) [] [ definition.Name ]
+            FlowStructure.validateWordNesting definition
+        let indentLines (text: string) =
+            text.Split([| '\n' |], System.StringSplitOptions.None)
+            |> Array.map (fun line -> "    " + line)
+            |> String.concat "\n"
+        let indentAfterFirstLine (text: string) =
+            text.Split([| '\n' |], System.StringSplitOptions.None)
+            |> Array.mapi (fun index line -> if index = 0 then line else "    " + line)
+            |> String.concat "\n"
+        [ yield "test-file " + settings.ScopeName + " {"
+          for overrideDefinition in settings.Overrides do
+              yield "    override " + indentAfterFirstLine (renderWord overrideDefinition.Definition)
+          for definition in settings.Tests do
+              yield indentLines (renderTest definition)
+          yield "}" ]
+        |> String.concat "\n"
+
     let private reservedTypeNames =
         set [ "Int"; "Float"; "Bool"; "String"; "Unit"; "List"; "Option"; "Result"; "a"; "b"; "c" ]
 
@@ -855,6 +924,7 @@ module FlowSource =
     let renderDocument (document: FlowProjectDocument) =
         requireSupportedVersion document.SyntaxVersion None None
         if not document.Enums.IsEmpty then requireFlow2 document.SyntaxVersion None None "Enum declarations"
+        let testFileScopes = System.Collections.Generic.HashSet<string * string>()
         for definition in document.Words do
             if definition.SyntaxVersion <> document.SyntaxVersion then
                 Diagnostics.raiseError "FLOW_VERSION_MISMATCH" "A Flow project document and its word declarations must use the same syntax version." (Some definition.Name) (Some definition.Span)
@@ -867,6 +937,14 @@ module FlowSource =
             if definition.SyntaxVersion <> document.SyntaxVersion then
                 Diagnostics.raiseError "FLOW_VERSION_MISMATCH" "A Flow project document and its example declarations must use the same syntax version." (Some definition.Word) (Some definition.Span)
                     [ string document.SyntaxVersion ] [ string definition.SyntaxVersion ]
+        for settings in document.TestFiles do
+            if settings.SyntaxVersion <> document.SyntaxVersion then
+                Diagnostics.raiseError "FLOW_VERSION_MISMATCH" "A Flow project document and its test-file wrappers must use the same syntax version." (Some settings.ScopeName) (Some settings.Span)
+                    [ string document.SyntaxVersion ] [ string settings.SyntaxVersion ]
+            match settings.Tests with
+            | first :: _ when not (testFileScopes.Add((first.Word, settings.ScopeName))) ->
+                Diagnostics.raiseError "FLOW_TEST_FILE_SCOPE_DUPLICATE" "A Flow project may declare each test-file scope label once for each owner." (Some first.Word) (Some settings.Span) [] [ settings.ScopeName ]
+            | _ -> ()
         let typeNames =
             (document.Records |> List.map (fun definition -> definition.Name))
             @ (document.Scalars |> List.map (fun definition -> definition.Name))
@@ -880,5 +958,6 @@ module FlowSource =
           yield! document.Enums |> List.map (renderEnumWithVersion document.SyntaxVersion)
           yield! document.Words |> List.map renderWord
           yield! document.Tests |> List.map renderTest
-          yield! document.Examples |> List.map renderExample ]
+          yield! document.Examples |> List.map renderExample
+          yield! document.TestFiles |> List.map renderTestFileSettings ]
         |> String.concat "\n\n"

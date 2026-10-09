@@ -40,6 +40,7 @@ type StoredCallBodyRole =
     | Definition
     | Actual
     | ExpectedExpression
+    | TestOverride
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type StoredCallForm =
@@ -48,6 +49,7 @@ type StoredCallForm =
     | DotStage of stage: string
     | PropertyAccess of field: string
     | StaticCallback of stage: string * qualification: FlowWordReferenceQualification
+    | TestOverrideTarget
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type StoredCallTarget =
@@ -190,7 +192,7 @@ module Storage =
     // CURRENT and named snapshots remain version 1 independently from manifests.
     let private pointerSnapshotFormatVersion = 1
     let private minimumManifestFormatVersion = 1
-    let private maximumManifestFormatVersion = 3
+    let private maximumManifestFormatVersion = 4
     let private storeDirectoryName = ".agentlang"
     let private storeDirectory = "store"
     let private objectDirectory = "objects"
@@ -391,11 +393,13 @@ module Storage =
         | StoredCallBodyRole.Definition -> "definition"
         | StoredCallBodyRole.Actual -> "actual"
         | StoredCallBodyRole.ExpectedExpression -> "expectedExpression"
+        | StoredCallBodyRole.TestOverride -> "testOverride"
 
     let private parseStoredCallBodyRole path = function
         | "definition" -> StoredCallBodyRole.Definition
         | "actual" -> StoredCallBodyRole.Actual
         | "expectedExpression" -> StoredCallBodyRole.ExpectedExpression
+        | "testOverride" -> StoredCallBodyRole.TestOverride
         | value -> failure "STORAGE_INVALID_MANIFEST" $"Unknown call binding body role '{value}'." path
 
     let private callBindingPathSegmentNode segment =
@@ -433,6 +437,7 @@ module Storage =
         | FlowAstPathSegment.ResultErrorStatement index -> setIndexed "resultErrorStatement" index
         | FlowAstPathSegment.EnumScrutinee -> setNamed "enumScrutinee"
         | FlowAstPathSegment.EnumCaseStatement(caseIndex, statementIndex) -> setDoubleIndexed "enumCaseStatement" caseIndex statementIndex
+        | FlowAstPathSegment.TestOverrideDefinition index -> setIndexed "testOverrideDefinition" index
         node :> JsonNode
 
     let private parseCallBindingPathSegment path node =
@@ -477,6 +482,7 @@ module Storage =
         | "resultErrorStatement" -> indexed FlowAstPathSegment.ResultErrorStatement
         | "enumScrutinee" -> FlowAstPathSegment.EnumScrutinee
         | "enumCaseStatement" -> doubleIndexed FlowAstPathSegment.EnumCaseStatement
+        | "testOverrideDefinition" -> indexed FlowAstPathSegment.TestOverrideDefinition
         | value -> failure "STORAGE_INVALID_MANIFEST" $"Unknown call binding path segment '{value}'." path
 
     let private storedCallFormNode = function
@@ -509,6 +515,10 @@ module Storage =
                     | FlowWordReferenceQualification.NamespaceQualified -> "namespaceQualified"
                     | FlowWordReferenceQualification.AbsoluteRoot -> "absoluteRoot")
             node :> JsonNode
+        | StoredCallForm.TestOverrideTarget ->
+            let node = JsonObject()
+            node["kind"] <- jsonString "testOverrideTarget"
+            node :> JsonNode
 
     let private parseStoredCallForm path node =
         let value = requireObject "call binding form" node
@@ -525,6 +535,10 @@ module Storage =
                 | "absoluteRoot" -> FlowWordReferenceQualification.AbsoluteRoot
                 | item -> failure "STORAGE_INVALID_MANIFEST" $"Unknown callback qualification '{item}'." path
             StoredCallForm.StaticCallback(requireString "call binding callback stage" value["stage"], qualification)
+        | "testOverrideTarget" ->
+            if value |> Seq.exists (fun property -> property.Key <> "kind") then
+                failure "STORAGE_INVALID_MANIFEST" "A test override target form must contain only its kind." path
+            StoredCallForm.TestOverrideTarget
         | item -> failure "STORAGE_INVALID_MANIFEST" $"Unknown call binding form '{item}'." path
 
     let private storedCallTargetNode = function
@@ -608,6 +622,7 @@ module Storage =
         | FlowAstPathSegment.ResultOkStatement index
         | FlowAstPathSegment.ResultErrorStatement index -> Some index
         | FlowAstPathSegment.EnumCaseStatement(caseIndex, statementIndex) -> Some caseIndex
+        | FlowAstPathSegment.TestOverrideDefinition index -> Some index
         | FlowAstPathSegment.LetInitializer
         | FlowAstPathSegment.DestructureInitializer
         | FlowAstPathSegment.EvaluateExpression
@@ -649,7 +664,7 @@ module Storage =
         let isDefaultSource = revision.SourceFormat = defaultSourceFormat && List.isEmpty revision.CallBindings
         if manifestVersion = 1 && not isDefaultSource then
             failure "STORAGE_INVALID_MANIFEST" "A version-1 manifest can only serialize Stack version 1 revisions with no call bindings." None
-        if manifestVersion <> 1 && manifestVersion <> 2 && manifestVersion <> 3 then
+        if manifestVersion < 1 || manifestVersion > 4 then
             failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported." None
         let node = JsonObject()
         node["wordId"] <- jsonString revision.WordId
@@ -689,7 +704,7 @@ module Storage =
         let node = JsonObject()
         node["name"] <- jsonString item.Name
         node["definition"] <- sourceRefNode item.Definition
-        if manifestVersion = 3 then
+        if manifestVersion >= 3 then
             node["sourceFormat"] <- sourceFormatNode item.SourceFormat
             node["validatorTarget"] <- item.ValidatorTarget |> Option.map storedCallTargetNode |> Option.defaultValue null
         node :> JsonNode
@@ -734,7 +749,8 @@ module Storage =
                     else []
                 sourceFormat, callBindings
             | 2
-            | 3 ->
+            | 3
+            | 4 ->
                 if not (value.ContainsKey "sourceFormat") then
                     failure "STORAGE_INVALID_JSON" $"Version-{manifestVersion} word revisions require sourceFormat." path
                 if not (value.ContainsKey "callBindings") then
@@ -784,11 +800,12 @@ module Storage =
                         if isNull target then None else Some(parseTypeValidatorTarget path target)
                     else None
                 sourceFormat, validatorTarget
-            | 3 ->
+            | 3
+            | 4 ->
                 if not (value.ContainsKey "sourceFormat") then
-                    failure "STORAGE_INVALID_JSON" "Version-3 type sources require sourceFormat." path
+                    failure "STORAGE_INVALID_JSON" $"Version-{manifestVersion} type sources require sourceFormat." path
                 if not (value.ContainsKey "validatorTarget") then
-                    failure "STORAGE_INVALID_JSON" "Version-3 type sources require validatorTarget (use null when no validator is declared)." path
+                    failure "STORAGE_INVALID_JSON" $"Version-{manifestVersion} type sources require validatorTarget (use null when no validator is declared)." path
                 let target = value["validatorTarget"]
                 parseSourceFormat path value["sourceFormat"],
                 (if isNull target then None else Some(parseTypeValidatorTarget path target))
@@ -823,7 +840,7 @@ module Storage =
         // version-specific revision fields so errors are stable and structured.
         let manifestVersion = requireInt "manifest format version" value["formatVersion"]
         if manifestVersion < minimumManifestFormatVersion || manifestVersion > maximumManifestFormatVersion then
-            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported (expected 1, 2, or 3)." path
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported (expected 1, 2, 3, or 4)." path
         let revisionNodes = requireArray "manifest revisions" value["revisions"]
         preflightCallBindingWireBounds path revisionNodes
         { FormatVersion = manifestVersion
@@ -857,7 +874,7 @@ module Storage =
 
     let private validateManifest (manifest: ProjectManifest) path =
         if manifest.FormatVersion < minimumManifestFormatVersion || manifest.FormatVersion > maximumManifestFormatVersion then
-            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifest.FormatVersion} is not supported (expected 1, 2, or 3)." path
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifest.FormatVersion} is not supported (expected 1, 2, 3, or 4)." path
         validateCallBindingBounds path manifest.Revisions
         if manifest.ProjectSource.Kind <> StorageObjectKind.ProjectSource then
             failure "STORAGE_INVALID_MANIFEST" "Manifest projectSource must reference a project-source object." path
@@ -953,12 +970,37 @@ module Storage =
                     if hasFlow2Path || (match binding.Form with | StoredCallForm.PropertyAccess _ -> true | _ -> false) then
                         failure "STORAGE_INVALID_MANIFEST" "Flow/1 revisions cannot contain Flow/2 property-access, equality, or enum match call-binding metadata." path
                 match binding.Form with
-                | StoredCallForm.Direct | StoredCallForm.AbsoluteRoot -> ()
+                | StoredCallForm.Direct | StoredCallForm.AbsoluteRoot | StoredCallForm.TestOverrideTarget -> ()
                 | StoredCallForm.DotStage stage -> validMetadataText "Call binding dot stage" 128 path stage
                 | StoredCallForm.PropertyAccess field -> validMetadataText "Call binding property field" 128 path field
                 | StoredCallForm.StaticCallback(stage, _) ->
                     if stage <> "map" && stage <> "filter" && stage <> "each" && stage <> "fold" then
                         failure "STORAGE_INVALID_MANIFEST" $"Static callback stage '{stage}' is not supported." path
+                let (FlowAstPath.FlowAstPath pathSegments) = binding.Path
+                let hasOverrideRoot = pathSegments |> List.exists (function | FlowAstPathSegment.TestOverrideDefinition _ -> true | _ -> false)
+                let isRootedOverridePath =
+                    match pathSegments with
+                    | FlowAstPathSegment.TestOverrideDefinition _ :: tail ->
+                        not (tail |> List.exists (function | FlowAstPathSegment.TestOverrideDefinition _ -> true | _ -> false))
+                    | _ -> false
+                match binding.BodyRole, binding.Form, pathSegments with
+                | StoredCallBodyRole.TestOverride, StoredCallForm.TestOverrideTarget, [ FlowAstPathSegment.TestOverrideDefinition _ ] ->
+                    if manifest.FormatVersion < 4 then
+                        failure "STORAGE_INVALID_MANIFEST" "Test override bindings require manifest format version 4." path
+                | StoredCallBodyRole.TestOverride, StoredCallForm.TestOverrideTarget, _ ->
+                    failure "STORAGE_INVALID_MANIFEST" "A test override target binding must be rooted only at its test-override declaration." path
+                | StoredCallBodyRole.TestOverride, _, FlowAstPathSegment.TestOverrideDefinition _ :: (_ :: _) ->
+                    if manifest.FormatVersion < 4 then
+                        failure "STORAGE_INVALID_MANIFEST" "Test override bindings require manifest format version 4." path
+                    if not isRootedOverridePath then
+                        failure "STORAGE_INVALID_MANIFEST" "A test override call path must have exactly one test-override declaration root." path
+                | StoredCallBodyRole.TestOverride, _, _ ->
+                    failure "STORAGE_INVALID_MANIFEST" "A test override call binding must be rooted at a test-override declaration." path
+                | _, StoredCallForm.TestOverrideTarget, _ ->
+                    failure "STORAGE_INVALID_MANIFEST" "TestOverrideTarget form is only valid for a test override binding." path
+                | _, _, _ when hasOverrideRoot ->
+                    failure "STORAGE_INVALID_MANIFEST" "Test-override path segments are only valid for test override bindings." path
+                | _ -> ()
                 let belongsToDefinition = binding.Source = revision.Definition
                 let belongsToTest = revision.Tests |> List.contains binding.Source
                 let belongsToExample = revision.Examples |> List.contains binding.Source
@@ -974,6 +1016,8 @@ module Storage =
                     | StoredCallBodyRole.ExpectedExpression, Some caseName, StorageObjectKind.TestDefinition ->
                         validMetadataText "Call binding case name" 256 path caseName
                         belongsToTest
+                    | StoredCallBodyRole.TestOverride, None, StorageObjectKind.TestDefinition ->
+                        manifest.FormatVersion >= 4 && belongsToTest
                     | _ -> false
                 if not roleMatchesSource then
                     failure "STORAGE_INVALID_MANIFEST" $"Call binding source, body role, and case name are incompatible with word revision '{revision.Name}'." path

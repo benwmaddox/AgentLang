@@ -290,14 +290,17 @@ gets a fresh temporary dictionary overlay and simulated provider state. Nested
 calls see the replacement, which is automatically discarded when the test ends.
 Retain the shared file context through save/reload and source editing. This is
 a typed dictionary overlay, not a persistent replacement or only a provider mock.
-Require the same input/output signature and an explicit compatible effect
-contract; retain the original caller's declared effects and capability checks.
+Require the same input/output signature and compatible declared and inferred
+effects. Declared effects must be a subset of the original contract; omitted
+effects mean pure. Retain the original caller's effects and capability checks.
 Never modify the persistent dictionary, history or production bindings.
 Remove the overlay and restore original dispatch on success, assertion failure, runtime error,
 cancellation and test abort, and prevent leakage between tests or sessions.
 The overridden body supplies no coverage evidence for the original body;
 mocking the tested function cannot satisfy its own library qualification.
-Record active overrides separately in test diagnostics and logs. Define concrete
+Record active overrides separately in test results; the initial implementation
+returns `activeOverrides` in JSON. Explicit structured task-log entries for
+these overrides remain outstanding. Define concrete
 test syntax and verify nested-call routing, cleanup and isolation before claiming
 this mechanism is implemented. Provider injection remains independently useful.
 Compiled callers must see the scoped replacement too. Invalidate all affected
@@ -309,8 +312,13 @@ identities/signatures/effects, not arbitrary runtime method discovery. AOT relea
 builds may pin the dictionary graph and optimize calls without a live interpreter.
 
 Flow/2 implements `fn`, record properties, typed `==`, omitted pure effects and
-explicit formatting (report 100). Module/library qualification and scoped test
-overrides below remain planned. Keep
+explicit formatting (report 100). Test-file replacements use `test-file` and
+nested `override fn` declarations; focused checks and all 37 local Release checks
+pass in [report 162](../reports/162-test-file-dependency-overlays.md).
+The first slice supports one tested owner per wrapper, authored functions and
+closed-signature primitives, with shared source retained in manifest v4. See
+[test-file dependency replacements](TEST-FILE-DEPENDENCIES.md). Module/library
+qualification remains a separate requirement. Keep
 the authoritative semantic IR unchanged where these forms can lower to existing
 operations. Preserve existing authored sources and frontend versions across
 reload, introspection and history; define compatibility and update executable

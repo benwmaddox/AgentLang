@@ -806,6 +806,196 @@ module Program =
             equal EmptyAuthority unchanged.Authority $"invalid {name} leaves v3 authority empty"
             equal 0L unchanged.Generation $"invalid {name} leaves v3 generation unchanged"
 
+    let private testManifestV4SharedTestFileRoundTripAndValidation root =
+        let baseManifest, sources, projectText = flowV3Fixture "v4-shared"
+        let sharedTest =
+            source StorageObjectKind.TestDefinition
+                "test-file settings { override fn file.read(path: String) -> String { \"fixture\" } test settings.load/enabled { file.read(\"settings.txt\") => \"fixture\" } test settings.load/disabled { file.read(\"settings.txt\") => \"fixture\" } }"
+        let baseRevision = baseManifest.Revisions.Head
+        let overrideHeader index requestedName target =
+            callBinding sharedTest.Reference None StoredCallBodyRole.TestOverride
+                [ FlowAstPathSegment.TestOverrideDefinition index ]
+                StoredCallForm.TestOverrideTarget requestedName target
+        let overrideBody index requestedName target =
+            callBinding sharedTest.Reference None StoredCallBodyRole.TestOverride
+                [ FlowAstPathSegment.TestOverrideDefinition index
+                  FlowAstPathSegment.BlockStatement 0
+                  FlowAstPathSegment.EvaluateExpression
+                  FlowAstPathSegment.CallArgument 0 ]
+                StoredCallForm.Direct requestedName target
+        let testCase caseName bodyRole requestedName target =
+            callBinding sharedTest.Reference (Some caseName) bodyRole
+                [ FlowAstPathSegment.BlockStatement 0
+                  FlowAstPathSegment.EvaluateExpression
+                  FlowAstPathSegment.CallArgument 0 ]
+                StoredCallForm.Direct requestedName target
+        let ordinaryPathUnderOverride =
+            [ FlowAstPathSegment.TestOverrideDefinition 0
+              FlowAstPathSegment.BlockStatement 0
+              FlowAstPathSegment.EvaluateExpression
+              FlowAstPathSegment.CallArgument 0 ]
+        let ordinaryActualBase = testCase "settings.load/enabled" StoredCallBodyRole.Actual "file.read" (StoredCallTarget.UserWord "word-stable-1")
+        let ordinaryExpectedBase = testCase "settings.load/enabled" StoredCallBodyRole.ExpectedExpression "string.concat" (StoredCallTarget.Primitive "string.concat")
+        let ordinaryActualUnderOverride =
+            { ordinaryActualBase with
+                Path = FlowAstPath.FlowAstPath ordinaryPathUnderOverride }
+        let ordinaryExpectedUnderOverride =
+            { ordinaryExpectedBase with
+                Path = FlowAstPath.FlowAstPath ordinaryPathUnderOverride }
+        let ordinaryDefinitionUnderOverride =
+            callBinding baseRevision.Definition None StoredCallBodyRole.Definition ordinaryPathUnderOverride
+                StoredCallForm.Direct baseRevision.Name (StoredCallTarget.UserWord "word-stable-1")
+        let overrideBindings =
+            [ overrideHeader 0 "file.read" (StoredCallTarget.UserWord "word-stable-1")
+              overrideBody 0 "string.concat" (StoredCallTarget.Primitive "string.concat")
+              overrideHeader 1 "file.read" (StoredCallTarget.UserWord "word-stable-1")
+              overrideBody 1 "string.concat" (StoredCallTarget.Primitive "string.concat")
+              testCase "settings.load/enabled" StoredCallBodyRole.Actual "file.read" (StoredCallTarget.UserWord "word-stable-1")
+              testCase "settings.load/enabled" StoredCallBodyRole.ExpectedExpression "string.concat" (StoredCallTarget.Primitive "string.concat")
+              testCase "settings.load/disabled" StoredCallBodyRole.Actual "file.read" (StoredCallTarget.UserWord "word-stable-1")
+              testCase "settings.load/disabled" StoredCallBodyRole.ExpectedExpression "string.concat" (StoredCallTarget.Primitive "string.concat") ]
+        let revision =
+            { baseRevision with
+                SourceFormat = flow2Format
+                Tests = baseRevision.Tests @ [ sharedTest.Reference ]
+                CallBindings = baseRevision.CallBindings @ overrideBindings }
+        let manifest = { baseManifest with FormatVersion = 4; Revisions = [ revision ] }
+        let allSources = sources @ [ sharedTest ]
+        let firstProject = Path.Combine(root, "v4-shared-first")
+        let firstStore = Storage.create firstProject
+        let committed = Storage.commit firstStore 0L manifest allSources projectText |> ok "commit v4 shared test-file source"
+        let loaded = Storage.load firstStore |> ok "reload v4 shared test-file source"
+        equal committed.ManifestHash loaded.ManifestHash "v4 reload keeps the exact manifest hash"
+        equal 4 loaded.Manifest.Value.FormatVersion "manifest schema version 4 round trips"
+        equal [ sharedTest.Reference ] (loaded.Manifest.Value.Revisions.Head.Tests |> List.filter ((=) sharedTest.Reference)) "one shared wrapper source reference appears once in the revision"
+        equal (Set.ofList revision.CallBindings) (Set.ofList loaded.Manifest.Value.Revisions.Head.CallBindings) "v4 retains header, override-body, and per-case call bindings"
+        let savedRevision = Storage.readRevision firstStore loaded.ManifestHash.Value revision.WordId revision.Revision |> ok "read v4 revision sources"
+        equal 1 (savedRevision.TestSources |> List.filter ((=) sharedTest.Content) |> List.length) "historical revision reload retains the shared wrapper source once"
+
+        let manifestPath = Path.Combine(storageRoot firstProject, "manifests", loaded.ManifestHash.Value + ".json")
+        let rawText = File.ReadAllText manifestPath
+        let rawManifest = JsonNode.Parse(rawText).AsObject()
+        equal [ "formatVersion"; "projectSource"; "revisions"; "types"; "words" ] (rawManifest |> Seq.map (fun pair -> pair.Key) |> Seq.sort |> Seq.toList) "v4 top-level manifest fields match v3"
+        let rawRevision = firstRevisionObject rawManifest
+        let expectedRevisionProperties =
+            [ "actor"; "callBindings"; "definition"; "deprecated"; "examples"; "maturity"; "name"; "revision"
+              "sourceFormat"; "taskId"; "tests"; "timestampUtc"; "wordId" ]
+        equal expectedRevisionProperties (rawRevision |> Seq.map (fun pair -> pair.Key) |> Seq.sort |> Seq.toList) "v4 revision wire fields match v3"
+        let typeNode = firstTypeSourceObject rawManifest
+        equal [ "definition"; "name"; "sourceFormat"; "validatorTarget" ] (typeNode |> Seq.map (fun pair -> pair.Key) |> Seq.sort |> Seq.toList) "v4 type-source wire fields match v3"
+        let rawBindings = rawRevision["callBindings"].AsArray()
+        let rawHeader =
+            rawBindings
+            |> Seq.cast<JsonNode>
+            |> Seq.map _.AsObject()
+            |> Seq.find (fun item -> (item["bodyRole"]).GetValue<string>() = "testOverride" && ((item["form"])["kind"]).GetValue<string>() = "testOverrideTarget")
+        equal [ "bodyRole"; "caseName"; "form"; "path"; "requestedName"; "source"; "target" ] (rawHeader |> Seq.map (fun pair -> pair.Key) |> Seq.sort |> Seq.toList) "v4 override binding adds no wire fields"
+        equal "testOverride" (rawHeader["bodyRole"].GetValue<string>()) "v4 stores the override body role explicitly"
+        equal "testOverrideTarget" ((rawHeader["form"]["kind"]).GetValue<string>()) "v4 stores the override header form explicitly"
+        equal [ "kind" ] (rawHeader["form"].AsObject() |> Seq.map (fun pair -> pair.Key) |> Seq.sort |> Seq.toList) "override target form contains no mutable revision field"
+        check (isNull rawHeader["caseName"]) "override header binding has no case name"
+        check (not (rawHeader.ContainsKey "targetRevision")) "override header binding stores only the stable target identity"
+        equal [ "identity"; "kind" ] (rawHeader["target"].AsObject() |> Seq.map (fun pair -> pair.Key) |> Seq.sort |> Seq.toList) "override target uses the existing stable-identity shape"
+        let rawHeaderPath = rawHeader["path"].AsArray()
+        equal 1 rawHeaderPath.Count "override header path contains only its declaration root"
+        equal [ "index"; "segment" ] (rawHeaderPath[0].AsObject() |> Seq.map (fun pair -> pair.Key) |> Seq.sort |> Seq.toList) "override root uses the existing indexed path shape"
+        equal "testOverrideDefinition" ((rawHeaderPath[0].AsObject()["segment"]).GetValue<string>()) "override path has a stable declaration-root tag"
+        equal 0 ((rawHeaderPath[0].AsObject()["index"]).GetValue<int>()) "override path stores the declaration index"
+
+        let reversedManifest =
+            { manifest with
+                Revisions = [ { revision with CallBindings = List.rev revision.CallBindings } ] }
+        let reversedStore = Storage.create (Path.Combine(root, "v4-shared-reversed"))
+        let reversed = Storage.commit reversedStore 0L reversedManifest allSources projectText |> ok "commit reversed v4 binding order"
+        equal committed.ManifestHash reversed.ManifestHash "v4 canonical serialization ignores binding input order"
+
+        let unreferencedSource = source StorageObjectKind.TestDefinition "unreferenced wrapper"
+        let rejectedBindings =
+            [ "override-case-name", { overrideBindings[0] with CaseName = Some "settings.load/enabled" }, 4, "STORAGE_INVALID_MANIFEST"
+              "override-wrong-kind", { overrideBindings[0] with Source = baseRevision.Examples.Head }, 4, "STORAGE_INVALID_MANIFEST"
+              "override-unreferenced-source", { overrideBindings[0] with Source = unreferencedSource.Reference }, 4, "STORAGE_INVALID_MANIFEST"
+              "override-role-without-root", { overrideBindings[0] with Path = FlowAstPath.FlowAstPath [ FlowAstPathSegment.BlockStatement 0 ] }, 4, "STORAGE_INVALID_MANIFEST"
+              "override-header-with-body-path", { overrideBindings[0] with Path = FlowAstPath.FlowAstPath [ FlowAstPathSegment.TestOverrideDefinition 0; FlowAstPathSegment.BlockStatement 0 ] }, 4, "STORAGE_INVALID_MANIFEST"
+              "override-body-without-child-path", { overrideBindings[1] with Path = FlowAstPath.FlowAstPath [ FlowAstPathSegment.TestOverrideDefinition 0 ] }, 4, "STORAGE_INVALID_MANIFEST"
+              "override-nested-root", { overrideBindings[1] with Path = FlowAstPath.FlowAstPath [ FlowAstPathSegment.TestOverrideDefinition 0; FlowAstPathSegment.TestOverrideDefinition 1; FlowAstPathSegment.BlockStatement 0 ] }, 4, "STORAGE_INVALID_MANIFEST"
+              "override-target-other-role", { overrideBindings[0] with BodyRole = StoredCallBodyRole.Actual }, 4, "STORAGE_INVALID_MANIFEST"
+              "override-role-v3", overrideBindings[0], 3, "STORAGE_INVALID_MANIFEST"
+              "override-negative-index", { overrideBindings[0] with Path = FlowAstPath.FlowAstPath [ FlowAstPathSegment.TestOverrideDefinition -1 ] }, 4, "STORAGE_INVALID_MANIFEST"
+              "override-over-limit-index", { overrideBindings[0] with Path = FlowAstPath.FlowAstPath [ FlowAstPathSegment.TestOverrideDefinition(StorageLimits.MaxCallBindingPathIndex + 1) ] }, 4, "STORAGE_LIMIT_EXCEEDED"
+              "ordinary-definition-override-path", ordinaryDefinitionUnderOverride, 4, "STORAGE_INVALID_MANIFEST"
+              "ordinary-actual-override-path", ordinaryActualUnderOverride, 4, "STORAGE_INVALID_MANIFEST"
+              "ordinary-expected-override-path", ordinaryExpectedUnderOverride, 4, "STORAGE_INVALID_MANIFEST"
+              "legacy-ordinary-override-path", ordinaryActualUnderOverride, 3, "STORAGE_INVALID_MANIFEST"
+              "override-body-role-v3", overrideBindings[1], 3, "STORAGE_INVALID_MANIFEST" ]
+        for name, invalidBinding, formatVersion, expectedCode in rejectedBindings do
+            let invalidRevision = { revision with CallBindings = [ invalidBinding ] }
+            let invalidManifest = { manifest with FormatVersion = formatVersion; Revisions = [ invalidRevision ] }
+            let invalidStore = Storage.create (Path.Combine(root, "v4-invalid-" + name))
+            let providedSources =
+                if invalidBinding.Source = unreferencedSource.Reference then
+                    allSources @ [ unreferencedSource ]
+                else allSources
+            Storage.commit invalidStore 0L invalidManifest providedSources projectText |> error expectedCode |> ignore
+            let unchanged = Storage.load invalidStore |> ok "load after rejecting invalid v4 binding"
+            equal EmptyAuthority unchanged.Authority $"invalid {name} leaves authority empty"
+            equal 0L unchanged.Generation $"invalid {name} leaves generation unchanged"
+
+        let invalidV2Revision = { revision with CallBindings = [ overrideBindings[0] ] }
+        let invalidV2Manifest = { manifest with FormatVersion = 2; Types = []; Revisions = [ invalidV2Revision ] }
+        Storage.commit (Storage.create (Path.Combine(root, "v4-invalid-override-role-v2"))) 0L invalidV2Manifest allSources projectText
+        |> error "STORAGE_INVALID_MANIFEST"
+        |> ignore
+
+        let invalidCaseName = testCase " " StoredCallBodyRole.Actual "file.read" (StoredCallTarget.UserWord "word-stable-1")
+        let invalidCaseManifest = { manifest with Revisions = [ { revision with CallBindings = [ invalidCaseName ] } ] }
+        Storage.commit (Storage.create (Path.Combine(root, "v4-invalid-case-name"))) 0L invalidCaseManifest allSources projectText
+        |> error "STORAGE_INVALID_MANIFEST"
+        |> ignore
+
+        let expectRawFailure name mutate =
+            let project = Path.Combine(root, "v4-raw-" + name)
+            let store = Storage.create project
+            Storage.commit store 0L manifest allSources projectText |> ok "write base v4 manifest for raw validation" |> ignore
+            let loadedBase = Storage.load store |> ok "load base v4 manifest for raw validation"
+            let basePath = Path.Combine(storageRoot project, "manifests", loadedBase.ManifestHash.Value + ".json")
+            let raw = JsonNode.Parse(File.ReadAllText basePath).AsObject()
+            mutate raw
+            installedRawManifest project (raw.ToJsonString()) |> ignore
+            Storage.load store |> error "STORAGE_INVALID_MANIFEST" |> ignore
+        let rawCallBinding (raw: JsonObject) predicate =
+            let revision = firstRevisionObject raw
+            revision["callBindings"].AsArray()
+            |> Seq.cast<JsonNode>
+            |> Seq.map _.AsObject()
+            |> Seq.find predicate
+        let isHeader (item: JsonObject) =
+            (item["bodyRole"]).GetValue<string>() = "testOverride"
+            && ((item["form"])["kind"]).GetValue<string>() = "testOverrideTarget"
+        let isOverrideBody (item: JsonObject) =
+            (item["bodyRole"]).GetValue<string>() = "testOverride"
+            && ((item["form"])["kind"]).GetValue<string>() <> "testOverrideTarget"
+        expectRawFailure "header-case-name" (fun raw ->
+            let header = rawCallBinding raw isHeader
+            header["caseName"] <- JsonValue.Create("settings.load/enabled"))
+        expectRawFailure "header-path-root" (fun raw ->
+            let header = rawCallBinding raw isHeader
+            let headerPath = header["path"].AsArray()
+            let rootSegment = headerPath[0].AsObject()
+            rootSegment["segment"] <- JsonValue.Create("blockStatement"))
+        expectRawFailure "override-role-v3" (fun raw -> raw["formatVersion"] <- JsonValue.Create(3))
+        expectRawFailure "override-role-v2" (fun raw ->
+            raw["formatVersion"] <- JsonValue.Create(2)
+            raw["types"] <- JsonArray())
+        expectRawFailure "ordinary-body-role-override-path" (fun raw ->
+            let body = rawCallBinding raw isOverrideBody
+            body["bodyRole"] <- JsonValue.Create("actual")
+            body["caseName"] <- JsonValue.Create("settings.load/enabled"))
+        expectRawFailure "legacy-ordinary-body-role-override-path" (fun raw ->
+            raw["formatVersion"] <- JsonValue.Create(3)
+            let body = rawCallBinding raw isOverrideBody
+            body["bodyRole"] <- JsonValue.Create("actual")
+            body["caseName"] <- JsonValue.Create("settings.load/enabled"))
+
     let private testV1HistoryMigrationAndSnapshotRestore root =
         let project = Path.Combine(root, "history-migration")
         let store = Storage.create project
@@ -1402,6 +1592,7 @@ module Program =
             testFlow2SourceFormatsAndBindingPaths root
             testFoldStaticCallbackBindingRoundTrip root
             testManifestV3TypeSourceRoundTripAndValidation root
+            testManifestV4SharedTestFileRoundTripAndValidation root
             testV1HistoryMigrationAndSnapshotRestore root
             testManifestV2ValidationAndLimits root
             testRuntimePublishesV2ForExplicitStackFrontend root

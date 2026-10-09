@@ -347,6 +347,37 @@ test tutorial.classify/positive {
           Description = "Closed enum constructors and value-expression tests covering every return case."
           Source = tutorialEnumSourceV2 }
 
+    let private tutorialTestFileOverrideSourceExample =
+        { Name = "tutorial-test-file-override"
+          Description = "Flow/2 project with a shared test-file replacement for a nested IO dependency."
+          Source =
+            """fn tutorial.read-raw(path: String) -> String {
+    effects fs.read
+    file.read(path)
+}
+
+fn tutorial.read-config(path: String) -> String {
+    effects fs.read
+    tutorial.read-raw(path)
+}
+
+test tutorial.read-raw/virtual {
+    file.write("/fixture", "raw")
+    tutorial.read-raw("/fixture")
+    => "raw"
+}
+
+test-file settings {
+    override fn tutorial.read-raw(path: String) -> String {
+        effects none
+        "fixture"
+    }
+    test tutorial.read-config/fixture {
+        tutorial.read-config("settings.txt")
+        => "fixture"
+    }
+}""" }
+
     let private tutorialEnumRequestExamples =
         [ { Name = "define-tutorial-enum-tests"
             Description = "Define the enum, classifier, and all three attached tests."
@@ -587,8 +618,9 @@ test tutorial.classify/positive {
                            " Flow/2 uses `fn`, dotted calls, and newline-separated statements; omitted function effects mean pure. Select `syntaxVersion: 2` for Flow/2, and see the Define help topic for its call and separator rules."
                        else "")
                     + (if topic = Topic.Define then
-                           " Use eval with the compact `code` field for expressions; define uses `source` for complete declarations. Use source with `word` to read authored word text and with `type` to read the exact type declaration. Static list callbacks use receiver forms such as `items.map(callback)`, `items.filter(callback)`, `items.each(callback)`, and `items.fold(seed, callback)`; callback must be a statically named word reference and cannot capture caller locals. A record validator sees the complete unchecked construction candidate and must not assume the invariant already holds. Put valid and expected-error constructor tests on the validator itself: its completed false return is observed before RECORD_VALIDATION_FAILED, while caller-owned tests do not qualify the callee and generated constructors cannot own authored Flow tests for it."
-                       else "")
+                            " Use eval with the compact `code` field for expressions; define uses `source` for complete declarations. Use source with `word` to read authored word text and with `type` to read the exact type declaration. Static list callbacks use receiver forms such as `items.map(callback)`, `items.filter(callback)`, `items.each(callback)`, and `items.fold(seed, callback)`; callback must be a statically named word reference and cannot capture caller locals. A record validator sees the complete unchecked construction candidate and must not assume the invariant already holds. Put valid and expected-error constructor tests on the validator itself: its completed false return is observed before RECORD_VALIDATION_FAILED, while caller-owned tests do not qualify the callee and generated constructors cannot own authored Flow tests for it."
+                            + " Flow/2 test files use `test-file <label> { override fn target(parameters) -> Result { ... } test owner/case { ... } }`. A wrapper has one tested owner; all of its nested cases share the declarations and each case receives a fresh test overlay and virtual effect providers. Overrides are test-only and never enter production source. A fixture must preserve the original input/output signature and cannot add effects beyond the original contract; the original call's effect preflight and host capability check still run before dispatch. Nested calls and static callbacks see the same replacement. Submit a wrapper-only document to attach a test file to an existing Flow owner; a multi-declaration project can attach wrappers to words declared in that transaction."
+                        else "")
                     + (if topic = Topic.Examples then
                            " Define the `tutorial-list-fold` source before running its attached tests or example. Its callback is a statically named word reference and cannot capture caller locals. Flow/2 tests may add `effects { fs.read: 2; fs.write: 0 }` after the value or error expectation. This asserts exact counts of provider calls made while the attached user word is active, including nested helpers; omitted categories are zero. The observable categories are fs.read, fs.write, clock.read, and console.write. Other effect categories are unsupported, and examples cannot use this test-only suffix."
                        else "")
@@ -615,7 +647,7 @@ test tutorial.classify/positive {
                             | Some source -> { example with Source = source }
                             | None -> example)
                     if topic = Topic.Define then
-                        examples @ [ tutorialSpanSourceExample; tutorialListFoldSourceExample; tutorialEnumSourceExample ]
+                        examples @ [ tutorialSpanSourceExample; tutorialListFoldSourceExample; tutorialEnumSourceExample; tutorialTestFileOverrideSourceExample ]
                     elif topic = Topic.Examples then
                         examples
                         @ [ { Name = "effect-count-test-v2"

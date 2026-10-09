@@ -35,6 +35,8 @@ module FlowRewrite =
             invalidArg (nameof form) "Record property accesses do not have explicit call argument paths."
         | StoredCallForm.StaticCallback _ ->
             invalidArg (nameof form) "Static callbacks do not use ordinary expression argument paths."
+        | StoredCallForm.TestOverrideTarget ->
+            invalidArg (nameof form) "Test override header bindings do not have call argument paths."
 
     let private callSite role path form requestedName span =
         { Role = role
@@ -220,6 +222,8 @@ module FlowRewrite =
             match form with
             | StoredCallForm.Direct -> FlowAstPathSegment.CallArgument index
             | StoredCallForm.AbsoluteRoot -> FlowAstPathSegment.RootCallArgument index
+            | StoredCallForm.TestOverrideTarget ->
+                invalidArg (nameof form) "Test override header bindings do not have call argument paths."
             | _ -> invalidArg (nameof form) "A rewritten word call must be direct or absolute-root."
         segment
 
@@ -614,6 +618,219 @@ module FlowRewrite =
                 (Set.ofList [ StoredCallBodyRole.Actual; StoredCallBodyRole.ExpectedExpression ])
                 roots bindings rewrite rootsOf FlowSource.renderTest
                 (FlowParser.parseTestWithVersion definition.SyntaxVersion) definition.Span.File definition.SourceText)
+
+    /// Rewrite one shared test-file source object as a unit. Test attachments
+    /// retain their case keys, while override body bindings are rooted beneath
+    /// their declaration and the override header has its own identity binding.
+    let rewriteTestFileSettings
+        (oldName: string)
+        (newName: string)
+        (target: StoredCallTarget)
+        (settings: FlowTestFileSettings)
+        (bindings: StoredCallBinding list)
+        : Result<FlowRewriteResult<FlowTestFileSettings>, Diagnostic> =
+        withLanguageErrors (fun () ->
+            let owner = settings.Tests |> List.tryHead |> Option.map (fun test -> test.Word) |> Option.defaultValue settings.ScopeName
+            let caseNames = settings.Tests |> List.map (fun test -> test.CaseName) |> Set.ofList
+            match bindings with
+            | first :: rest when rest |> List.exists (fun binding -> binding.Source <> first.Source) ->
+                Diagnostics.raiseError "FLOW_REWRITE_BINDING_SOURCE_MISMATCH"
+                    "All persisted call bindings supplied for one test-file wrapper must reference the same source object."
+                    (Some owner) None [] []
+            | _ -> ()
+
+            let pathSegments (FlowAstPath.FlowAstPath segments) = segments
+            let key (binding: StoredCallBinding) = binding.CaseName, binding.BodyRole, binding.Path
+            let mapped = Dictionary<string option * StoredCallBodyRole * FlowAstPath, StoredCallBinding>()
+            let rewrittenTests = ResizeArray<FlowTestDefinition>()
+            let addMapping (oldBinding: StoredCallBinding) (newBinding: StoredCallBinding) =
+                let oldKey = key oldBinding
+                if mapped.ContainsKey oldKey then
+                    Diagnostics.raiseError "FLOW_REWRITE_BINDING_DUPLICATE"
+                        "A test-file binding was mapped more than once during source rewriting."
+                        (Some owner) None [] [ sprintf "%A" oldKey ]
+                mapped.Add(oldKey, newBinding)
+
+            let overrideRows = bindings |> List.filter (fun binding -> binding.BodyRole = StoredCallBodyRole.TestOverride)
+            for binding in overrideRows do
+                if binding.CaseName.IsSome then
+                    Diagnostics.raiseError "FLOW_REWRITE_BINDING_DOCUMENT_MISMATCH"
+                        "Override bindings are file-scoped and cannot name an individual test case."
+                        (Some owner) None [ "<file-scope>" ] [ binding.CaseName.Value ]
+                match pathSegments binding.Path with
+                | FlowAstPathSegment.TestOverrideDefinition index :: _ when index < 0 || index >= settings.Overrides.Length ->
+                    Diagnostics.raiseError "FLOW_REWRITE_BINDING_UNMAPPED"
+                        "An override binding path names a declaration that is absent from the test-file wrapper."
+                        (Some owner) None [ string settings.Overrides.Length ] [ string index ]
+                | FlowAstPathSegment.TestOverrideDefinition _ :: _ -> ()
+                | _ ->
+                    Diagnostics.raiseError "FLOW_REWRITE_BINDING_UNMAPPED"
+                        "An override binding path is not rooted at a test-file replacement declaration."
+                        (Some owner) None [ "TestOverrideDefinition index" ] [ sprintf "%A" binding.Path ]
+
+            for binding in bindings do
+                match binding.BodyRole, binding.CaseName with
+                | StoredCallBodyRole.TestOverride, None -> ()
+                | (StoredCallBodyRole.Actual | StoredCallBodyRole.ExpectedExpression), Some caseName when caseNames.Contains caseName -> ()
+                | _ ->
+                    let expectedCaseBindings = (caseNames |> Set.toList |> List.map (fun name -> "case " + name)) @ [ "file-scoped override" ]
+                    Diagnostics.raiseError "FLOW_REWRITE_BINDING_DOCUMENT_MISMATCH"
+                        "A persisted binding does not belong to a nested test case or file-scoped replacement in this wrapper."
+                        (Some owner) None expectedCaseBindings
+                        [ sprintf "%A/%A" binding.BodyRole binding.CaseName ]
+
+            for test in settings.Tests do
+                let testBindings = bindings |> List.filter (fun binding -> binding.CaseName = Some test.CaseName)
+                let rewritten =
+                    match rewriteTest oldName newName target test testBindings with
+                    | Ok value -> value
+                    | Error diagnostic -> raise (LanguageException diagnostic)
+                rewrittenTests.Add rewritten.Definition
+                (List.zip testBindings rewritten.Bindings) |> List.iter (fun (before, after) -> addMapping before after)
+
+            let rewrittenOverrides =
+                settings.Overrides
+                |> List.mapi (fun index overrideDefinition ->
+                    let root = FlowAstPathSegment.TestOverrideDefinition index
+                    let headerPath = FlowAstPath.FlowAstPath [ root ]
+                    let headerRows =
+                        overrideRows
+                        |> List.filter (fun binding -> binding.Path = headerPath)
+                    let header =
+                        match headerRows with
+                        | [ value ] -> value
+                        | [] ->
+                            Diagnostics.raiseError "FLOW_REWRITE_BINDING_MISSING"
+                                "A test-file replacement header has no stable-target binding."
+                                (Some overrideDefinition.Definition.Name) (Some overrideDefinition.TargetSpan)
+                                [ "one TestOverrideTarget header binding" ] []
+                        | values ->
+                            Diagnostics.raiseError "FLOW_REWRITE_BINDING_DUPLICATE"
+                                "A test-file replacement header has duplicate stable-target bindings."
+                                (Some overrideDefinition.Definition.Name) (Some overrideDefinition.TargetSpan)
+                                [ "one TestOverrideTarget header binding" ] [ string values.Length ]
+                    if header.Form <> StoredCallForm.TestOverrideTarget || header.RequestedName <> overrideDefinition.Definition.Name then
+                        Diagnostics.raiseError "FLOW_REWRITE_BINDING_MISMATCH"
+                            "A replacement header binding does not match the authored override target."
+                            (Some overrideDefinition.Definition.Name) (Some overrideDefinition.TargetSpan)
+                            [ sprintf "%A %s" StoredCallForm.TestOverrideTarget overrideDefinition.Definition.Name ]
+                            [ sprintf "%A %s" header.Form header.RequestedName ]
+                    let bodyRows =
+                        overrideRows
+                        |> List.filter (fun binding ->
+                            match pathSegments binding.Path with
+                            | FlowAstPathSegment.TestOverrideDefinition pathIndex :: (_ :: _) -> pathIndex = index
+                            | _ -> false)
+                    let bodyBindings =
+                        bodyRows
+                        |> List.map (fun binding ->
+                            match pathSegments binding.Path with
+                            | FlowAstPathSegment.TestOverrideDefinition _ :: rest ->
+                                { binding with BodyRole = StoredCallBodyRole.Definition; Path = FlowAstPath.FlowAstPath rest }
+                            | _ ->
+                                Diagnostics.raiseError "FLOW_REWRITE_BINDING_UNMAPPED"
+                                    "An override body binding lost its declaration root during source rewriting."
+                                    (Some overrideDefinition.Definition.Name) None [ "TestOverrideDefinition index" ] [ sprintf "%A" binding.Path ])
+                    let bodyRewrite =
+                        match rewriteWord "" newName target overrideDefinition.Definition bodyBindings with
+                        | Ok value -> value
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    (List.zip bodyRows bodyRewrite.Bindings)
+                    |> List.iter (fun (original, after) ->
+                        let mappedBody =
+                            { after with
+                                BodyRole = StoredCallBodyRole.TestOverride
+                                CaseName = None
+                                Path = FlowAstPath.FlowAstPath(root :: pathSegments after.Path) }
+                        addMapping original mappedBody)
+                    let renameHeader = header.Target = target
+                    let definition =
+                        if renameHeader then { bodyRewrite.Definition with Name = newName }
+                        else bodyRewrite.Definition
+                    let updated = { overrideDefinition with Definition = definition }
+                    let mappedHeader =
+                        { header with
+                            RequestedName = if renameHeader then newName else header.RequestedName }
+                    addMapping header mappedHeader
+                    updated)
+
+            let updatedSettings =
+                { settings with
+                    Overrides = rewrittenOverrides
+                    Tests = List.ofSeq rewrittenTests }
+            if mapped.Count <> bindings.Length then
+                Diagnostics.raiseError "FLOW_REWRITE_BINDING_UNMAPPED"
+                    "Not every persisted test-file binding was consumed exactly once during wrapper rewriting."
+                    (Some owner) None [ string bindings.Length ] [ string mapped.Count ]
+            let mappedBindings =
+                bindings
+                |> List.map (fun binding ->
+                    match mapped.TryGetValue(key binding) with
+                    | true, value -> value
+                    | false, _ ->
+                        Diagnostics.raiseError "FLOW_REWRITE_BINDING_UNMAPPED"
+                            "A persisted test-file binding did not receive a rewritten source site."
+                            (Some owner) None [ "mapped binding" ] [ sprintf "%A" (key binding) ])
+            let source = FlowSource.renderTestFileSettings updatedSettings
+            let parsed =
+                FlowParser.parseTestFileSettingsWithVersion settings.SyntaxVersion settings.Span.File source
+                |> Result.defaultWith (fun diagnostic -> raise (LanguageException diagnostic))
+            // Revalidate the complete mapped inventory against the reparsed shared
+            // wrapper, including header pseudo-sites and every nested case body.
+            for test in parsed.Tests do
+                let rows = mappedBindings |> List.filter (fun binding -> binding.CaseName = Some test.CaseName)
+                let expected =
+                    let expressions =
+                        match test.Expected with
+                        | FlowTestExpectation.Expression expression -> [ expression ]
+                        | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ -> []
+                    [ StoredCallBodyRole.Actual, [], test.Body
+                      StoredCallBodyRole.ExpectedExpression, expressions, [] ]
+                validateBindingSet test.Word (Some test.CaseName)
+                    (Set.ofList [ StoredCallBodyRole.Actual; StoredCallBodyRole.ExpectedExpression ])
+                    (collectSites expected) rows |> ignore
+            for index, overrideDefinition in parsed.Overrides |> List.indexed do
+                let root = FlowAstPathSegment.TestOverrideDefinition index
+                let headerPath = FlowAstPath.FlowAstPath [ root ]
+                let headerRows = mappedBindings |> List.filter (fun binding -> binding.Path = headerPath)
+                match headerRows with
+                | [ header ] when header.BodyRole = StoredCallBodyRole.TestOverride
+                                 && header.CaseName.IsNone
+                                 && header.Form = StoredCallForm.TestOverrideTarget
+                                 && header.RequestedName = overrideDefinition.Definition.Name -> ()
+                | _ ->
+                    Diagnostics.raiseError "FLOW_REWRITE_FINAL_BINDING_MISMATCH"
+                        "The canonical test-file source did not preserve its replacement header binding."
+                        (Some overrideDefinition.Definition.Name) (Some overrideDefinition.TargetSpan)
+                        [ "one matching TestOverrideTarget header binding" ] [ string headerRows.Length ]
+                let rows =
+                    mappedBindings
+                    |> List.choose (fun binding ->
+                        match pathSegments binding.Path with
+                        | FlowAstPathSegment.TestOverrideDefinition pathIndex :: rest when pathIndex = index && not rest.IsEmpty ->
+                            Some { binding with BodyRole = StoredCallBodyRole.Definition; Path = FlowAstPath.FlowAstPath rest }
+                        | _ -> None)
+                validateBindingSet overrideDefinition.Definition.Name None (Set.singleton StoredCallBodyRole.Definition)
+                    (collectSites [ StoredCallBodyRole.Definition, [], overrideDefinition.Definition.Body ]) rows |> ignore
+            Ok
+                { Definition = parsed
+                  Bindings = mappedBindings
+                  Changed = source <> settings.SourceText })
+
+    /// Removing one case rewrites the complete wrapper so its shared fixture
+    /// declarations remain attached to every surviving case.
+    let removeTestFileCase (caseName: string) (settings: FlowTestFileSettings) : Result<FlowTestFileSettings option, Diagnostic> =
+        withLanguageErrors (fun () ->
+            let remaining = settings.Tests |> List.filter (fun test -> test.CaseName <> caseName)
+            if remaining.Length = settings.Tests.Length then
+                Ok(Some settings)
+            elif List.isEmpty remaining then
+                Ok None
+            else
+                let updated = { settings with Tests = remaining }
+                let source = FlowSource.renderTestFileSettings updated
+                FlowParser.parseTestFileSettingsWithVersion settings.SyntaxVersion settings.Span.File source
+                |> Result.map Some)
 
     let rewriteExample (oldName: string) (newName: string) (target: StoredCallTarget) (definition: FlowExampleDefinition) (bindings: StoredCallBinding list) : Result<FlowRewriteResult<FlowExampleDefinition>, Diagnostic> =
         withLanguageErrors (fun () ->

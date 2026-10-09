@@ -1,0 +1,24 @@
+fn settings.load(path: String) -> Bool {
+    effects fs.read
+    doc "Reads an on/off setting."
+
+    file.read(path) == "on"
+}
+
+test-file settings {
+    override fn file.read(path: String) -> String {
+        doc "Supply settings without reading host files."
+
+        if path == "enabled.txt" { "on" } else { "off" }
+    }
+
+    test settings.load/enabled {
+        settings.load("enabled.txt")
+        => true
+    }
+
+    test settings.load/disabled {
+        settings.load("disabled.txt")
+        => false
+    }
+}

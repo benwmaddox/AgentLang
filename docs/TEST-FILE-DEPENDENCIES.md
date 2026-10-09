@@ -1,94 +1,80 @@
 # Test-file dependency replacements
 
-Status: design and implementation work in progress. The syntax below is a
-proposal, not currently executable. Normal real filesystem operations and
-automatic isolated test providers are a separate implementation step.
+Status: implemented in Flow/2. Focused checks, the documented example and all
+37 full local Release checks pass; see [report 162](../reports/162-test-file-dependency-overlays.md).
 
-A test file may declare replacements for external dependencies, such as
-`file.read`, or for an authored I/O wrapper. Production source cannot declare or
-install these replacements. Every test in the file gets a fresh overlay and
-fresh simulated provider state; one test's calls cannot leak changes to another.
-Common file declarations are shared source, not shared mutable test state.
+Normal CLI `file.*` calls use real project-rooted files by default; explicit
+`--filesystem virtual` simulates non-test execution too. Attached tests always use
+fresh virtual files, including setup, expectations, publication and reload
+qualification. A `test-file` adds typed dictionary replacements on top of that
+provider isolation. Dictionary persistence is host tooling and still writes
+project metadata; the tested language code does not access host files.
 
-Conceptual source form:
+```flow
+fn settings.load(path: String) -> Bool {
+    effects fs.read
+    doc "Reads an on/off setting."
 
-```text
+    file.read(path) == "on"
+}
+
 test-file settings {
     override fn file.read(path: String) -> String {
-        effects fs.read
-        doc "Return a fixture without reading the host filesystem."
+        doc "Supply settings without reading host files."
 
-        "on"
+        if path == "enabled.txt" { "on" } else { "off" }
     }
 
     test settings.load/enabled {
-        settings.load("settings.txt")
+        settings.load("enabled.txt")
         => true
+    }
+
+    test settings.load/disabled {
+        settings.load("disabled.txt")
+        => false
     }
 }
 ```
 
-The exact wrapper spelling remains to be resolved against the parser. The
-required semantics are file scope, nested-call visibility, typed replacement,
-automatic disposal and durable reload. A per-test-only implementation does not
-complete the shared test-file requirement.
+Submit this source through `define` with `frontend: "flow"` and
+`syntaxVersion: 2`, then run `test settings.load`. Outside those tests,
+`settings.load("enabled.txt")` reads the real file in the default real mode. The replacement does not
+require a fixture file to exist. Standalone tests may instead use `file.write`
+to populate their virtual filesystem, as shown in [library I/O testing](LIBRARY-IO-TESTING.md).
 
-Validate the exact original target and input/output signature. Replacement
-effects must be compatible with the original declaration; callers retain the
-original effect contract and host capability requirements even when a fixture
-returns a literal. Compile a test-specific dictionary/program so transitive
-callers and static callbacks see the replacement. Run that closure interpreted
-until a future JIT has correct generation invalidation.
+`override fn` is accepted only inside a `test-file`. A wrapper contains at least
+one test and all its tests belong to one function. Its label is descriptive;
+each nested test's full `owner/case` header selects its owner and case. Several wrappers can appear in an aggregate
+project document. Each case receives fresh replacement dispatch and provider
+state; passing tests, failed assertions and runtime errors all leave production
+dispatch unchanged. Expectations execute separately with fresh virtual state.
 
-Keep original production IDs, bodies, history and dispatch untouched. No fake
-body, fake return observation or expected-value expression can qualify the
-original function. A replaced target cannot qualify itself as library. Tests of
-callers may exercise their real bodies against substituted dependencies, while
-each library dependency still needs its own qualification against its real body.
-Report active replacements separately from coverage.
+Replacements have exactly the original input/output types and declare a subset
+of its effects. Omitted effects mean pure. A pure fixture still retains the
+original call's capability check: the example needs `fs.read` permission in
+tests. Replacement does not grant permission or change production effects.
 
-Current persistence stores each test attachment independently. Do not silently
-discard file-level fixtures when splitting a document into attachments. Retain
-the full test-file context durably as a shared source object referenced by the
-owning revisions. The existing test source refs can hold shared full-file text,
-but each ref must be parsed as a file and its cases selected by owner and name,
-not zipped one-to-one with attachments. Verify source spans, binding identities,
-test selection and replacement scope after save/reload. Rewrite and case removal
-must update the shared context atomically rather than split away its fixtures.
+Nested calls and static list callbacks see the replacement. Dispatch uses the
+original resolved identity and active revision, rather than its display name.
+Fixture names and IDs are private to the ephemeral test program. Production
+bodies, IDs, history and call bindings remain unchanged. This interpreter
+implementation does not establish future JIT invalidation behavior.
 
-The first implementation slice will use Flow/2 and one tested owner per wrapper,
-with multiple cases sharing its declarations. Standalone test declarations remain
-valid. Overrides are test metadata and never enter the production source inventory.
-Bindings for fixture-body calls need a distinct test-override role and structural
-path rooted at the fixture declaration. Audit storage validation, serialization,
-fingerprints and reload oracles together; an older manifest reader cannot safely
-interpret a shared multi-case source object as one ordinary test. Rename and case
-removal must rewrite the wrapper once and update all affected source references.
-Bind each override header to its original target identity as well, even when the
-fixture body is a literal. Reload verifies that identity and current signature
-and effects; rename rewrites the header using the binding. The ephemeral dispatch
-map pins the active revision for the duration of that test.
+Tests of a caller exercise its real body against the fixture. A fixture's body,
+branches, inputs and returns never qualify the original function it replaces.
+Replacing the tested function itself cannot make it library ready. Authored
+library dependencies still need their own real-body qualification and tests.
+Test results report `activeOverrides` separately from coverage.
 
-Implementation must preserve production call-binding identities. An ephemeral
-test program can contain verified fixture bodies, with a test-only dispatch map
-from original call identity to fixture body. Resolve that map before recording
-an original function entry or return; otherwise a fake could supply finite-value
-coverage. Check the original signature and effect contract before dispatch, and
-record fixture execution separately. Original persisted IR and metadata remain
-unchanged. Both direct calls and static callbacks must use that dispatch boundary.
-Use distinct synthetic fixture function IDs in the ephemeral verified program.
-Dispatch by the original compiled target identity (including user revision),
-never by display name. The interpreter's common resolved-call boundary already
-handles nested calls and static list callbacks; intercept there after original
-effect preflight and before original entry/return instrumentation. The original
-body and its coverage obligations remain present. Fixtures must have owner-keyed
-source sites, rather than share the standalone test body's site namespace.
-These are reviewed implementation constraints; the overlay is not yet implemented.
+The initial implementation supports authored functions and trusted primitives
+with closed signatures, including `file.read`, `file.write` and `file.exists?`.
+Generated operations and polymorphic primitives cannot be replaced. Fixture
+calls follow ordinary Flow name resolution; use qualified names when ambiguous.
 
-Acceptance must demonstrate real non-test reads/writes; zero host I/O during test
-setup/body/expectations/publication; capability denial in both contexts; nested
-and callback routing; matching signatures and effects; restoration after passing
-tests, failed assertions and runtime errors; isolation between cases, files and
-sessions; unchanged production dispatch after reload; and failure to qualify an
-original function using its fake. Tests and documentation must distinguish
-provider simulation from source-defined dictionary replacement.
+Manifest v4 preserves a complete wrapper as one shared test source object,
+including stable target bindings for replacement headers and body calls. Reload
+rechecks the current types and effects. Rename rewrites the bound header; case
+removal rewrites the shared wrapper, dropping it when its last case is removed.
+Replace an existing wrapped case by submitting its complete wrapper, rather
+than splitting away its replacements.

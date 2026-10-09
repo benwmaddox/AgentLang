@@ -4853,6 +4853,7 @@ let private testFlowRewrite () =
         | FlowCallForm.DotStage stage -> StoredCallForm.DotStage stage
         | FlowCallForm.PropertyAccess field -> StoredCallForm.PropertyAccess field
         | FlowCallForm.StaticCallback(stage, qualification) -> StoredCallForm.StaticCallback(stage, qualification)
+        | FlowCallForm.TestOverrideTarget -> StoredCallForm.TestOverrideTarget
 
     let storedTarget = function
         | FlowCallTargetIdentity.UserWord(WordId identity) -> StoredCallTarget.UserWord identity
@@ -4936,6 +4937,7 @@ let private testFlowRewrite () =
                     match row.Form with
                     | StoredCallForm.StaticCallback(stage, _) -> StoredCallForm.StaticCallback(stage, FlowWordReferenceQualification.AbsoluteRoot)
                     | StoredCallForm.PropertyAccess field -> StoredCallForm.PropertyAccess field
+                    | StoredCallForm.TestOverrideTarget -> StoredCallForm.TestOverrideTarget
                     | StoredCallForm.Direct | StoredCallForm.AbsoluteRoot | StoredCallForm.DotStage _ -> StoredCallForm.AbsoluteRoot
                 { row with Form = form; RequestedName = "choose" })
     equal "flat rewrite preserves every binding row and stable target while mapping all target forms" expectedFlatRows flatRewrite.Bindings
@@ -5028,6 +5030,7 @@ let private testFlowRewrite () =
                      match row.Form with
                      | StoredCallForm.StaticCallback(stage, _) -> StoredCallForm.StaticCallback(stage, FlowWordReferenceQualification.NamespaceQualified)
                      | StoredCallForm.PropertyAccess field -> StoredCallForm.PropertyAccess field
+                     | StoredCallForm.TestOverrideTarget -> StoredCallForm.TestOverrideTarget
                      | StoredCallForm.Direct | StoredCallForm.AbsoluteRoot | StoredCallForm.DotStage _ -> StoredCallForm.Direct
                  { row with RequestedName = "modern.pick"; Form = form }))
         qualifiedRewrite.Bindings
@@ -5171,11 +5174,12 @@ let private testFlowRewrite () =
         compiledTest.CallSites
         |> Map.toList
         |> List.collect (fun (role, sites) ->
-            let storedRole =
+            let caseName, storedRole =
                 match role with
-                | FlowAttachmentBodyRole.Actual -> StoredCallBodyRole.Actual
-                | FlowAttachmentBodyRole.ExpectedExpression -> StoredCallBodyRole.ExpectedExpression
-            sites |> List.map (bindingForSite testSource.Reference (Some testDefinition.CaseName) storedRole))
+                | FlowAttachmentBodyRole.Actual -> Some testDefinition.CaseName, StoredCallBodyRole.Actual
+                | FlowAttachmentBodyRole.ExpectedExpression -> Some testDefinition.CaseName, StoredCallBodyRole.ExpectedExpression
+                | FlowAttachmentBodyRole.TestOverride -> None, StoredCallBodyRole.TestOverride
+            sites |> List.map (bindingForSite testSource.Reference caseName storedRole))
     let rewrittenTest =
         match FlowRewrite.rewriteTest "pick" "choose" pickTarget testDefinition testRows with
         | Ok value -> assertions <- assertions + 1; value
@@ -5199,8 +5203,12 @@ let private testFlowRewrite () =
         callerTestCompiled.CallSites
         |> Map.toList
         |> List.collect (fun (role, sites) ->
-            let storedRole = if role = FlowAttachmentBodyRole.Actual then StoredCallBodyRole.Actual else StoredCallBodyRole.ExpectedExpression
-            sites |> List.map (bindingForSite callerTestSource.Reference (Some callerTest.CaseName) storedRole))
+            let caseName, storedRole =
+                match role with
+                | FlowAttachmentBodyRole.Actual -> Some callerTest.CaseName, StoredCallBodyRole.Actual
+                | FlowAttachmentBodyRole.ExpectedExpression -> Some callerTest.CaseName, StoredCallBodyRole.ExpectedExpression
+                | FlowAttachmentBodyRole.TestOverride -> None, StoredCallBodyRole.TestOverride
+            sites |> List.map (bindingForSite callerTestSource.Reference caseName storedRole))
     let callerTestRewrite =
         match FlowRewrite.rewriteTest "pick" "choose" pickTarget callerTest callerTestRows with
         | Ok value -> assertions <- assertions + 1; value
@@ -5247,6 +5255,87 @@ let private testFlowRewrite () =
     check "owner-only rewrite changes source bytes" rewrittenOwner.Changed
     check "owner-only rewrite preserves literal text identical to the old word name"
         ((FlowSource.renderWord rewrittenOwner.Definition).Contains("\"pick\"", StringComparison.Ordinal))
+
+    let testFileSource =
+        """test-file settings {
+    override fn file.read(path: Int) -> Int {
+        effects none
+        pick(path)
+    }
+    test settings.load/first {
+        true
+        => true
+    }
+    test settings.load/second {
+        false
+        => false
+    }
+}"""
+    let testFileSettings =
+        FlowParser.parseTestFileSettingsWithVersion 2 "rewrite-settings.test.flow" testFileSource
+        |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+    let testFileSourceObject = Storage.sourceObject StorageObjectKind.TestDefinition testFileSettings.SourceText
+    let fileReadTarget = StoredCallTarget.Primitive "file.read-primitive"
+    let overrideRoot = FlowAstPathSegment.TestOverrideDefinition 0
+    let overrideHeaderBinding: StoredCallBinding =
+        { Source = testFileSourceObject.Reference
+          CaseName = None
+          BodyRole = StoredCallBodyRole.TestOverride
+          Path = FlowAstPath.FlowAstPath [ overrideRoot ]
+          Form = StoredCallForm.TestOverrideTarget
+          RequestedName = "file.read"
+          Target = fileReadTarget }
+    let overrideBodyBinding: StoredCallBinding =
+        { Source = testFileSourceObject.Reference
+          CaseName = None
+          BodyRole = StoredCallBodyRole.TestOverride
+          Path = FlowAstPath.FlowAstPath [ overrideRoot; FlowAstPathSegment.BlockStatement 0; FlowAstPathSegment.EvaluateExpression ]
+          Form = StoredCallForm.Direct
+          RequestedName = "pick"
+          Target = pickTarget }
+    let rewrittenTestFileBody =
+        match FlowRewrite.rewriteTestFileSettings "pick" "choose" pickTarget testFileSettings [ overrideHeaderBinding; overrideBodyBinding ] with
+        | Ok value -> assertions <- assertions + 1; value
+        | Error problem -> failwith $"Shared Flow test-file body rewrite failed: {Diagnostics.render problem}"
+    equal "override header remains bound to its distinct stable target" "file.read" rewrittenTestFileBody.Definition.Overrides.Head.Definition.Name
+    equal "fixture body call binding keeps its structural override root"
+        [ overrideHeaderBinding
+          { overrideBodyBinding with Form = StoredCallForm.AbsoluteRoot; RequestedName = "choose" } ]
+        rewrittenTestFileBody.Bindings
+    check "fixture body call is rewritten below its test-file declaration root"
+        (match rewrittenTestFileBody.Definition.Overrides.Head.Definition.Body with
+         | [ FlowStatement.Evaluate(FlowExpression.RootCall({ Name = "choose" }, _, _)) ] -> true
+         | _ -> false)
+
+    let rewrittenTestFileHeader =
+        match FlowRewrite.rewriteTestFileSettings "file.read" "io.read" fileReadTarget testFileSettings [ overrideHeaderBinding; overrideBodyBinding ] with
+        | Ok value -> assertions <- assertions + 1; value
+        | Error problem -> failwith $"Shared Flow test-file header rewrite failed: {Diagnostics.render problem}"
+    equal "override header follows the stable target even when its body calls another word" "io.read" rewrittenTestFileHeader.Definition.Overrides.Head.Definition.Name
+    equal "header pseudo-binding records the rewritten requested name"
+        "io.read" rewrittenTestFileHeader.Bindings.Head.RequestedName
+    check "header-only target rewrite leaves unrelated fixture body call unchanged"
+        (match rewrittenTestFileHeader.Definition.Overrides.Head.Definition.Body with
+         | [ FlowStatement.Evaluate(FlowExpression.Call("pick", _, _)) ] -> true
+         | _ -> false)
+
+    let missingOverrideHeader = FlowRewrite.rewriteTestFileSettings "file.read" "io.read" fileReadTarget testFileSettings [ overrideBodyBinding ]
+    match missingOverrideHeader with
+    | Error problem -> equal "rewrite requires the stable header identity binding" "FLOW_REWRITE_BINDING_MISSING" problem.Code
+    | Ok _ -> failwith "Flow test-file rewrite accepted an override without its header target binding."
+
+    let removedTestFileCase =
+        match FlowRewrite.removeTestFileCase "first" testFileSettings with
+        | Ok(Some value) -> assertions <- assertions + 1; value
+        | Ok None -> failwith "Removing one of two test-file cases removed the entire wrapper."
+        | Error problem -> failwith $"Shared Flow test-file case removal failed: {Diagnostics.render problem}"
+    equal "removing one case retains every shared override" 1 removedTestFileCase.Overrides.Length
+    equal "removing one case keeps the other case in the rewritten wrapper" [ "second" ] (removedTestFileCase.Tests |> List.map (fun test -> test.CaseName))
+    check "rewritten wrapper source still contains its shared override" (removedTestFileCase.SourceText.Contains("override fn file.read", StringComparison.Ordinal))
+    match FlowRewrite.removeTestFileCase "second" removedTestFileCase with
+    | Ok None -> assertions <- assertions + 1
+    | Ok(Some _) -> failwith "Removing the last test-file case retained an invalid fixture-only wrapper."
+    | Error problem -> failwith $"Removing the last shared case failed: {Diagnostics.render problem}"
 
     let missingBinding = FlowRewrite.rewriteWord "pick" "choose" pickTarget flatCaller (List.tail flatRows)
     match missingBinding with
@@ -5480,6 +5569,133 @@ let private testFlowProjectDocumentParser () =
     expectError "standalone example parser still rejects trailing declarations" "FLOW_TRAILING_INPUT"
         (FlowParser.parseExample file (exampleSource + "\n" + exampleSource)) |> ignore
 
+let private testFlowTestFileSettingsParser () =
+    let file = "settings.test.flow"
+    let productionSource =
+        """fn settings.load(path: String) -> Bool {
+    effects fs.read
+    true
+}"""
+    let standaloneTestSource =
+        """test settings.load/standalone {
+    true
+    => true
+}"""
+    let firstWrapper =
+        """test-file settings {
+    override fn file.read(path: String) -> String {
+        effects fs.read
+        "fixture"
+    }
+    test settings.load/enabled {
+        file.read("settings.txt")
+        => "fixture"
+    }
+    test settings.load/disabled {
+        file.read("settings.txt")
+        => "fixture"
+    }
+}"""
+    let secondWrapper =
+        """test-file alternate {
+    test other.owner/case {
+        true
+        => true
+    }
+}"""
+    let source = [ productionSource; standaloneTestSource; firstWrapper; secondWrapper ] |> String.concat "\n\n"
+    let document =
+        FlowParser.parseDocumentWithVersion 2 file source
+        |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+    equal "test-file wrappers coexist with production declarations" [ "settings.load" ] (document.Words |> List.map (fun definition -> definition.Name))
+    equal "standalone tests remain independent of file wrappers" [ "standalone" ] (document.Tests |> List.map (fun definition -> definition.CaseName))
+    equal "project document retains each test-file wrapper once" [ "settings"; "alternate" ] (document.TestFiles |> List.map (fun settings -> settings.ScopeName))
+    let settings = document.TestFiles.Head
+    equal "one wrapper keeps all shared replacement cases" [ "enabled"; "disabled" ] (settings.Tests |> List.map (fun definition -> definition.CaseName))
+    equal "nested test headers keep their full owner" [ "settings.load"; "settings.load" ] (settings.Tests |> List.map (fun definition -> definition.Word))
+    equal "shared replacement is not a production declaration" [] (document.Words |> List.filter (fun definition -> definition.Name = "file.read"))
+    equal "wrapper source bytes are retained as one exact source slice" firstWrapper settings.SourceText
+    equal "replacement source includes the override keyword" true (settings.Overrides.Head.SourceText.StartsWith("override fn file.read", StringComparison.Ordinal))
+    equal "replacement AST source starts at its function declaration" true (settings.Overrides.Head.Definition.SourceText.StartsWith("fn file.read", StringComparison.Ordinal))
+
+    let wrapperOffset = source.IndexOf(firstWrapper, StringComparison.Ordinal)
+    let prefix = source.Substring(0, wrapperOffset)
+    let expectedLine = 1 + (prefix |> Seq.filter ((=) '\n') |> Seq.length)
+    let expectedColumn = wrapperOffset - prefix.LastIndexOf('\n')
+    equal "wrapper span reports the document source file" file settings.Span.File
+    equal "wrapper span line is document-global" expectedLine settings.Span.Line
+    equal "wrapper span column is document-global" expectedColumn settings.Span.Column
+    equal "wrapper span covers its exact wrapper source" firstWrapper.Length settings.Span.Length
+    let overrideOffset = source.IndexOf(settings.Overrides.Head.SourceText, wrapperOffset, StringComparison.Ordinal)
+    check "replacement source slice occurs inside its wrapper" (overrideOffset >= wrapperOffset)
+    let overridePrefix = source.Substring(0, overrideOffset)
+    equal "replacement span line is document-global" (1 + (overridePrefix |> Seq.filter ((=) '\n') |> Seq.length)) settings.Overrides.Head.Span.Line
+    equal "replacement span covers override source including its header" settings.Overrides.Head.SourceText.Length settings.Overrides.Head.Span.Length
+    let targetOffset = source.IndexOf("file.read", overrideOffset, StringComparison.Ordinal)
+    let targetPrefix = source.Substring(0, targetOffset)
+    equal "replacement header binding span names only its target" "file.read" (source.Substring(targetOffset, settings.Overrides.Head.TargetSpan.Length))
+    equal "replacement target span is document-global" (1 + (targetPrefix |> Seq.filter ((=) '\n') |> Seq.length)) settings.Overrides.Head.TargetSpan.Line
+    equal "replacement target span reports the document file" file settings.Overrides.Head.TargetSpan.File
+
+    let rendered = FlowSource.renderDocument document
+    let reparsed =
+        FlowParser.parseDocumentWithVersion 2 file rendered
+        |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+    equal "mixed production/test-file document rendering is canonical" rendered (FlowSource.renderDocument reparsed)
+    equal "project renderer preserves the number of wrappers" 2 reparsed.TestFiles.Length
+    equal "project renderer preserves cases in shared wrapper" 2 reparsed.TestFiles.Head.Tests.Length
+
+    let repeatedOwnerScope =
+        """test-file settings {
+    test settings.load/first { true => true }
+}
+
+test-file settings {
+    test settings.load/second { true => true }
+}"""
+    expectError "one owner cannot reuse a test-file scope label" "FLOW_TEST_FILE_SCOPE_DUPLICATE"
+        (FlowParser.parseDocumentWithVersion 2 file repeatedOwnerScope) |> ignore
+    let sameScopeAcrossOwners =
+        """test-file settings {
+    test settings.load/first { true => true }
+}
+
+test-file settings {
+    test other.owner/first { true => true }
+}"""
+    let sameScopeAcrossOwnersDocument =
+        FlowParser.parseDocumentWithVersion 2 file sameScopeAcrossOwners
+        |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+    equal "different owners may reuse a test-file scope label" 2 sameScopeAcrossOwnersDocument.TestFiles.Length
+    let duplicateScopeDocument = { document with TestFiles = [ settings; settings ] }
+    expectLanguageError "project renderer rejects duplicate owner/scope labels" "FLOW_TEST_FILE_SCOPE_DUPLICATE"
+        (fun () -> FlowSource.renderDocument duplicateScopeDocument)
+
+    let exactWrapperSource = firstWrapper + "\n"
+    let parsedWrapper =
+        FlowParser.parseTestFileSettingsWithVersion 2 file exactWrapperSource
+        |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+    equal "standalone wrapper parser retains every input byte" exactWrapperSource parsedWrapper.SourceText
+    expectError "standalone wrapper parser rejects trailing declarations" "FLOW_TRAILING_INPUT"
+        (FlowParser.parseTestFileSettingsWithVersion 2 file (firstWrapper + "\n" + standaloneTestSource)) |> ignore
+
+    let expectFileError name code badSource =
+        expectError name code (FlowParser.parseDocumentWithVersion 2 file badSource) |> ignore
+    expectFileError "file replacements are rejected outside a wrapper" "FLOW_TEST_OVERRIDE_SCOPE"
+        "override fn file.read(path: String) -> String { \"fixture\" }"
+    expectError "Flow/1 test-file syntax is rejected" "FLOW_SYNTAX_VERSION"
+        (FlowParser.parseDocument file "test-file settings { test owner/case { true => true } }") |> ignore
+    expectFileError "one wrapper cannot mix test owners" "FLOW_TEST_FILE_OWNER_MISMATCH"
+        "test-file settings { test first.owner/a { true => true }; test second.owner/b { true => true } }"
+    expectFileError "test-file cases require owner and case syntax" "FLOW_EXPECTED_TOKEN"
+        "test-file settings { test owner { true => true } }"
+    expectFileError "replacement signatures require an output declaration" "FLOW_EXPECTED_TOKEN"
+        "test-file settings { override fn file.read(path: String) { \"fixture\" } test owner/case { true => true } }"
+    expectFileError "production declarations cannot be nested inside a test-file wrapper" "FLOW_TEST_FILE_DECLARATION"
+        "test-file settings { fn production() -> Bool { true } test owner/case { true => true } }"
+    expectFileError "test-file wrapper needs at least one test" "FLOW_TEST_FILE_EMPTY"
+        "test-file settings { override fn file.read(path: String) -> String { \"fixture\" } }"
+
 let private testFlowRecordValidatorSyntax () =
     let file = "validated-record.flow"
     let source = "record Customer { field id: Int; validate customer::valid?; }"
@@ -5539,6 +5755,7 @@ let main _ =
     testFlowRewrite ()
     testFlowDiagnostics ()
     testFlowProjectDocumentParser ()
+    testFlowTestFileSettingsParser ()
     testFlowRecordValidatorSyntax ()
     printfn "Flow tests passed: %d assertions" assertions
     0

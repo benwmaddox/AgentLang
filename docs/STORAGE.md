@@ -70,6 +70,17 @@ deterministic frontend-marked rendering. Runtime reparses with the declared
 frontend, validates the complete typed graph and frozen validator target, and
 checks canonical export before activation. Parser fallback is forbidden.
 
+V4 retains the v3 field encoding and adds shared Flow/2 test-file sources and
+test-override call bindings. A revision references each complete wrapper once,
+even when it contains several cases. Header bindings use `testOverride` role,
+`testOverrideTarget` form and a `testOverrideDefinition` root; fixture-body
+bindings use the same role below that root. Their case name is null. Ordinary
+test-body and expectation bindings retain their case names. Earlier manifest
+versions reject these new roles, forms and paths. Runtime selects cases by
+owner/name after parsing the shared source, verifies all retained identities,
+and rechecks replacement signatures and effects before constructing ephemeral
+dispatch. It retains v4 after selection, including historical wrapper revisions.
+
 ## Flow/2 closed enum extension
 
 Payload-free enums use the existing v3 type-source envelope with `flow`, version

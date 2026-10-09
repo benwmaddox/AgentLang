@@ -16,6 +16,14 @@ give isolated tests grants separate from production `--allow`; without it, tests
 inherit the production grants. Test grants never authorize normal execution.
 Reloading a library reruns its qualification with the configured test grants.
 
+Flow/2 `test-file` wrappers can additionally replace an authored function or
+closed-signature primitive for their nested cases. Replacements propagate to
+nested calls and static callbacks while retaining original capabilities. Their
+execution cannot qualify the replaced function's original body, finite inputs
+or returns. Each case and expectation has fresh virtual state; production
+dispatch is unchanged. See [test-file replacements](TEST-FILE-DEPENDENCIES.md)
+for syntax and the shared-source persistence contract.
+
 For a runnable I/O example, see [testing library functions without real I/O](LIBRARY-IO-TESTING.md).
 It demonstrates passing promotion, a coverage rejection, and an effect-count
 rejection using the isolated virtual filesystem.

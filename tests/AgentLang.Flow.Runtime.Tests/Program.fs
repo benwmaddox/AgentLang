@@ -279,11 +279,22 @@ module Program =
         let defineHelpDataV2 = defineHelpV2.["data"]
         equal 2 ((defineHelpDataV2.["syntaxVersion"]).GetValue<int>()) "help response records selected syntaxVersion"
         check ((stringValue (defineHelpDataV2.["documentation"])).Contains("Flow/2", StringComparison.Ordinal)) "Flow/2 help identifies its selected syntax"
-        for guidance in [ "eval"; "`code`"; "define uses `source`"; "`word`"; "`type`"; "unchecked construction candidate"; "completed false return"; "caller-owned tests do not qualify the callee"; "generated constructors cannot own authored Flow tests"; "authored dependencies committed as library words" ] do
+        for guidance in [ "eval"; "`code`"; "define uses `source`"; "`word`"; "`type`"; "unchecked construction candidate"; "completed false return"; "caller-owned tests do not qualify the callee"; "generated constructors cannot own authored Flow tests"; "authored dependencies committed as library words"; "Flow/2 test files use `test-file <label>"; "override fn target(parameters)"; "fresh test overlay"; "original input/output signature"; "original call's effect preflight"; "Nested calls and static callbacks"; "wrapper-only document" ] do
             check ((stringValue defineHelpDataV2.["documentation"]).Contains(guidance, StringComparison.Ordinal)) $"Flow/2 Define help explains {guidance}"
-        equal [ "tutorial-sign"; "tutorial-span-validator"; "tutorial-list-fold"; "tutorial-enum-tests" ]
+        equal [ "tutorial-sign"; "tutorial-span-validator"; "tutorial-list-fold"; "tutorial-enum-tests"; "tutorial-test-file-override" ]
             (defineHelpDataV2.["sourceExamples"].AsArray() |> Seq.map (fun item -> stringValue item.["name"]) |> Seq.toList)
-            "Flow/2 help retains prior source examples and adds the enum tests"
+            "Flow/2 help retains prior source examples and adds enum and test-file guidance"
+        let testFileHelpSource =
+            defineHelpDataV2.["sourceExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "tutorial-test-file-override")
+            |> fun item -> stringValue item.["source"]
+        let parsedTestFileHelp =
+            FlowParser.parseDocumentWithVersion 2 "<flow2-test-file-help>" testFileHelpSource
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+        equal 1 parsedTestFileHelp.TestFiles.Length "test-file help source parses as one wrapper in an aggregate project"
+        equal "settings" parsedTestFileHelp.TestFiles.Head.ScopeName "help source demonstrates an explicit test-file label"
+        equal [ "tutorial.read-config/fixture" ] (parsedTestFileHelp.TestFiles.Head.Tests |> List.map (fun test -> test.Word + "/" + test.CaseName)) "help source demonstrates nested owner-qualified test cases"
+        equal [ "tutorial.read-raw" ] (parsedTestFileHelp.TestFiles.Head.Overrides |> List.map (fun item -> item.Definition.Name)) "help source demonstrates a typed dependency replacement"
         let sourceExampleV2 = (defineHelpDataV2.["sourceExamples"]).AsArray() |> Seq.head |> fun item -> stringValue (item.["source"])
         check (sourceExampleV2.StartsWith("fn tutorial.sign", StringComparison.Ordinal)) "Flow/2 help returns an fn source example"
         check (not (sourceExampleV2.Contains("effects ", StringComparison.Ordinal))) "Flow/2 help preserves omitted effects metadata"
@@ -1589,6 +1600,39 @@ fn renewal.dependent(state: RenewalState) -> String {
         let value = evalStack reloaded "7 receipt.new receipt.amount" |> expectOk "evaluate generated accessor after reload"
         equal "7" (stringValue (value.["data"].["stack"].[0])) "generated accessor body remains executable after reload"
 
+        let v4ReadySource =
+            """fn durable.v4-ready() -> Bool {
+    effects none
+    true
+}
+
+test durable.v4-ready/basic {
+    durable.v4-ready()
+    => true
+}"""
+        defineFlowProject reloaded v4ReadySource [ "syntaxVersion", jint 2 ]
+        |> expectOk "stage a Flow/2 owner for a zero-override test-file wrapper"
+        |> ignore
+        commit reloaded "commit" "durable.v4-ready" [] |> expectOk "commit the Flow/2 wrapper owner" |> ignore
+        let noOverrideWrapper =
+            """test-file no-overrides {
+    test durable.v4-ready/persisted {
+        durable.v4-ready()
+        => true
+    }
+}"""
+        defineFlowProject reloaded noOverrideWrapper [ "syntaxVersion", jint 2 ]
+        |> expectOk "attach a test-file with no override declarations"
+        |> ignore
+        commit reloaded "commit" "durable.v4-ready" [] |> expectOk "commit a v4 shared test-file reference" |> ignore
+        let versionFour = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal 4 (versionFour.Manifest.Value.FormatVersion) "a wrapper with no overrides still selects manifest v4"
+        let versionFourReload = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
+        assertAllPassed 2 (dispatch versionFourReload "test" [ "word", jstr "durable.v4-ready" ] |> expectOk "run standalone and empty-override wrapper cases after v4 reload")
+        assertAllPassed 1 (dispatch versionFourReload "test" [ "word", jstr "receipt.amount" ] |> expectOk "retain generated-type cases beside v4 test files")
+        let v4Value = evalStack versionFourReload "7 receipt.new receipt.amount" |> expectOk "evaluate generated accessor after v4 reload"
+        equal "7" (stringValue (v4Value.["data"].["stack"].[0])) "generated type executable remains intact after v4 reload"
+
     let private testStackGeneratedCasesSurviveV1Manifest root =
         let project = Path.Combine(root, "stack-generated-cases-v1")
         let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
@@ -2378,6 +2422,156 @@ fn renewal.dependent(state: RenewalState) -> String {
         equal "\"saved-value\"" (stringValue (fileValue.["data"].["stack"].[0])) "named snapshot restores exact virtual-file state"
         equal "2" (evalFlow reloaded "durable::increment(1)" |> expectOk "evaluate restored Flow revision" |> fun response -> stringValue (response.["data"].["stack"].[0])) "named snapshot rehydrates the earlier executable Flow revision"
         assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "durable.increment" ] |> expectOk "run restored Flow attachment after snapshot load")
+
+    let private testPersistedTestOverrideHeaderIsVerified root =
+        let project = Path.Combine(root, "persisted-test-override-header-tamper")
+        let engine = Runtime.Engine(project, Set.singleton "fs.read", fileSystemMode = FileSystemMode.Virtual)
+        let source =
+            """fn tamper.read(path: String) -> String {
+    effects fs.read
+    file.read(path)
+}
+
+test-file no-fixture-calls {
+    override fn tamper.read(path: String) -> String {
+        effects none
+        "fixture"
+    }
+    test tamper.read/basic {
+        tamper.read("/missing")
+        => "fixture"
+    }
+}"""
+        defineFlowProject engine source [ "syntaxVersion", jint 2 ]
+        |> expectOk "define a persistent owner with a header-only test-file override binding"
+        |> ignore
+        commit engine "commit" "tamper.read" []
+        |> expectOk "persist the owner and its test-file override header"
+        |> ignore
+
+        let store = Storage.create project
+        let snapshot = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let manifest = snapshot.Manifest.Value
+        let ownerId = getWordId engine "tamper.read"
+        let ownerRevision = manifest.Revisions |> List.find (fun item -> item.WordId = ownerId)
+        let wrapperReference = ownerRevision.Tests |> List.exactlyOne
+        let overrideBindings =
+            ownerRevision.CallBindings
+            |> List.filter (fun binding -> binding.Source = wrapperReference && binding.BodyRole = StoredCallBodyRole.TestOverride)
+        let headerBinding = overrideBindings |> List.exactlyOne
+        equal StoredCallForm.TestOverrideTarget headerBinding.Form "the fixture with no calls persists only its override header site"
+        check overrideBindings.Tail.IsEmpty "the literal fixture has no nested body-call binding to tamper instead"
+        let forgedRevision =
+            { ownerRevision with
+                CallBindings =
+                    ownerRevision.CallBindings
+                    |> List.map (fun binding ->
+                        if binding = headerBinding then
+                            { binding with Target = StoredCallTarget.UserWord "user-forged-test-override-target" }
+                        else binding) }
+        let forgedManifest =
+            { manifest with
+                Revisions = manifest.Revisions |> List.map (fun revision -> if revision.WordId = ownerId then forgedRevision else revision) }
+        let sourceReferences =
+            [ manifest.ProjectSource ]
+            @ (manifest.Types |> List.map _.Definition)
+            @ (manifest.Revisions |> List.collect (fun revision -> revision.Definition :: revision.Tests @ revision.Examples))
+            |> List.distinct
+        let sourceObjects =
+            sourceReferences
+            |> List.map (fun reference ->
+                let content = Storage.readSource store reference |> Result.defaultWith (fun problem -> failwith problem.Message)
+                { Reference = reference; Content = content })
+        let exportText = File.ReadAllText(Path.Combine(project, "dictionary.agent"))
+        Storage.commit store snapshot.Generation forgedManifest sourceObjects exportText
+        |> Result.defaultWith (fun problem -> failwith $"Storage should accept a well-shaped override-header identity edit: {problem.Code}: {problem.Message}")
+        |> ignore
+
+        let diagnostic =
+            try
+                Runtime.Engine(project, Set.singleton "fs.read", fileSystemMode = FileSystemMode.Virtual) |> ignore
+                None
+            with
+            | LanguageException problem -> Some problem
+        let diagnostic = diagnostic |> Option.defaultWith (fun () -> failwith "A fresh Engine trusted a forged persisted test-file override target.")
+        equal "FLOW_RUNTIME_BINDING_MISMATCH" diagnostic.Code "fresh Engine rejects a forged TestOverrideTarget identity"
+
+    let private testTestFileTaskAbortRestoresSharedSource root =
+        let project = Path.Combine(root, "test-file-task-abort-restores-source")
+        let engine = Runtime.Engine(project, Set.singleton "fs.read", "2043-04-05T06:07:08Z", fileSystemMode = FileSystemMode.Virtual)
+        let initialWord =
+            """fn rollback.read(path: String) -> String {
+    effects fs.read
+    file.read(path)
+}"""
+        let initialWrapper =
+            """test-file settings {
+    override fn rollback.read(path: String) -> String {
+        effects none
+        "original"
+    }
+    test rollback.read/basic {
+        rollback.read("/unused")
+        => "original"
+    }
+}"""
+        let initialSource = String.concat "\n\n" [ initialWord; initialWrapper ]
+        defineFlowProject engine initialSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "define an owner and its original shared wrapper before task rollback"
+        |> ignore
+        commit engine "commit" "rollback.read" []
+        |> expectOk "persist the original wrapper before starting a task"
+        |> ignore
+
+        let store = Storage.create project
+        let before = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let ownerId = getWordId engine "rollback.read"
+        let currentRevision snapshot =
+            let head = snapshot.Manifest.Value.Words |> List.find (fun item -> item.WordId = ownerId)
+            snapshot.Manifest.Value.Revisions |> List.find (fun item -> item.WordId = ownerId && item.Revision = head.CurrentRevision)
+        let beforeRevision = currentRevision before
+        let originalWrapperReference = beforeRevision.Tests |> List.exactlyOne
+        let originalWrapperSource = Storage.readSource store originalWrapperReference |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal initialWrapper originalWrapperSource "the committed owner points at the exact original wrapper source"
+
+        dispatch engine "task.begin" [ "goal", jstr "replace a Flow test-file wrapper and restore it" ]
+        |> expectOk "begin a task for a committed shared wrapper replacement"
+        |> ignore
+        let changedWrapper =
+            """test-file settings {
+    override fn rollback.read(path: String) -> String {
+        effects none
+        "changed"
+    }
+    test rollback.read/basic {
+        rollback.read("/unused")
+        => "changed"
+    }
+}"""
+        defineFlowProject engine changedWrapper
+            [ "syntaxVersion", jint 2
+              "replace", jbool true
+              "expectedRevision", jint beforeRevision.Revision ]
+        |> expectOk "replace the committed wrapper inside the task"
+        |> ignore
+        commit engine "replace-word" "rollback.read" []
+        |> expectOk "publish the task-local wrapper replacement"
+        |> ignore
+        let changedSnapshot = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        check (changedSnapshot.ManifestHash <> before.ManifestHash) "task-local wrapper revision becomes durable before abort"
+        let changedReference = currentRevision changedSnapshot |> fun revision -> revision.Tests |> List.exactlyOne
+        check (changedReference <> originalWrapperReference) "task-local wrapper edit receives a distinct immutable source reference"
+        check (boolValue (dispatch engine "test" [ "word", jstr "rollback.read" ] |> expectOk "run the task-local wrapper" |> fun response -> response.["data"].["results"].[0].["passed"])) "task-local fixture is active before rollback"
+
+        dispatch engine "task.abort" [] |> expectOk "abort the committed wrapper replacement" |> ignore
+        let afterAbort = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal before.ManifestHash afterAbort.ManifestHash "task abort restores the exact pre-edit test-file manifest authority"
+        let restoredRevision = currentRevision afterAbort
+        equal [ originalWrapperReference ] restoredRevision.Tests "task abort restores the original shared wrapper reference"
+        equal originalWrapperSource (Storage.readSource store restoredRevision.Tests.Head |> Result.defaultWith (fun problem -> failwith problem.Message)) "task abort restores the complete original wrapper source"
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "rollback.read" ] |> expectOk "run the restored wrapper after task abort")
+        let freshEngine = Runtime.Engine(project, Set.singleton "fs.read", "2043-04-05T06:07:08Z", fileSystemMode = FileSystemMode.Virtual)
+        assertAllPassed 1 (dispatch freshEngine "test" [ "word", jstr "rollback.read" ] |> expectOk "reload and run the restored wrapper after task abort")
 
     let private testPersistedBindingsAreVerified root =
         let project = Path.Combine(root, "persisted-binding-tamper")
@@ -4454,6 +4648,422 @@ test persist.read/exact-count {
         let guardedAfter = Storage.load (Storage.create guardedProject) |> Result.defaultWith (fun problem -> failwith problem.Message)
         equal guardedBefore.ManifestHash guardedAfter.ManifestHash "failed effect assertion leaves library manifest unchanged"
 
+    let private testFlowTestFileOverrides root =
+        let project = Path.Combine(root, "flow-test-file-overrides")
+        let capabilities = Set.ofList [ "fs.read"; "fs.write" ]
+        let engine = Runtime.Engine(project, capabilities, "2043-04-05T06:07:08Z", fileSystemMode = FileSystemMode.Virtual)
+        let source =
+            """fn overlay.read-raw(path: String) -> String {
+    effects fs.read
+    file.read(path)
+}
+
+fn overlay.read-one(path: String) -> String {
+    effects fs.read
+    overlay::read-raw(path)
+}
+
+fn overlay.read-all(paths: List<String>) -> List<String> {
+    effects fs.read
+    if file::exists?("/overlay-write") { paths.map(overlay::read-one) } else { list::empty<String>() }
+}
+
+test overlay.read-raw/basic {
+    file::write("/raw", "raw-value")
+    overlay::read-raw("/raw")
+    => "raw-value"
+}
+
+test overlay.read-one/basic {
+    file::write("/one", "one-value")
+    overlay::read-one("/one")
+    => "one-value"
+}
+
+test-file settings {
+    override fn overlay.read-raw(path: String) -> String {
+        effects none
+        if path == "/explode" {
+            if int::greater-than(divide(1, 0), 0) { "fixture" } else { "fixture" }
+        } else {
+            string::concat("fixture", "")
+        }
+    }
+    test overlay.read-all/a-write {
+        file::write("/overlay-write", "case-a")
+        overlay::read-all(list::singleton<String>("/safe-a"))
+        => value list::singleton<String>("fixture")
+    }
+    test overlay.read-all/b-callback {
+        file::write("/overlay-write", "case-b")
+        overlay::read-all(list::append(list::singleton<String>("/safe-b"), "/safe-c"))
+        => value list::append(list::singleton<String>("fixture"), "fixture")
+    }
+    test overlay.read-all/c-runtime-error {
+        file::write("/overlay-write", "case-error")
+        overlay::read-all(list::singleton<String>("/explode"))
+        => error RUNTIME_DIVIDE_BY_ZERO
+    }
+    test overlay.read-all/d-failed-assertion {
+        file::write("/overlay-write", "case-failure")
+        overlay::read-all(list::singleton<String>("/safe-d"))
+        => value list::singleton<String>("wrong")
+    }
+    test overlay.read-all/z-fresh-provider {
+        overlay::read-all(list::singleton<String>("/safe-z"))
+        => value list::empty<String>()
+    }
+}"""
+        defineFlowProject engine source [ "syntaxVersion", jint 2 ]
+        |> expectOk "define a mixed Flow project with a shared test-file override"
+        |> ignore
+
+        let runTests runtime owner =
+            dispatch runtime "test" [ "word", jstr owner ] |> expectOk ("run tests for " + owner)
+        let rows (response: JsonObject) : JsonObject list =
+            response.["data"].["results"].AsArray()
+            |> Seq.map (fun item -> item.AsObject())
+            |> Seq.toList
+        let initialResults = runTests engine "overlay.read-all" |> rows
+        equal 5 initialResults.Length "every case in one test-file wrapper is selected independently"
+        let findResult (caseName: string) (results: JsonObject list) : JsonObject =
+            results |> List.find (fun item -> stringValue item.["name"] = caseName)
+        let passingCases = [ "a-write"; "b-callback"; "c-runtime-error"; "z-fresh-provider" ]
+        for caseName in passingCases do
+            check (boolValue (findResult caseName initialResults).["passed"]) $"test-file case {caseName} passes"
+        let failedAssertion = findResult "d-failed-assertion" initialResults
+        check (not (boolValue failedAssertion.["passed"])) "a failed assertion remains visible without leaking test provider state"
+        equal "TEST_ASSERTION_FAILED" (stringValue failedAssertion.["errorCode"]) "test-file assertion failure keeps the normal diagnostic"
+        for result in initialResults do
+            equal [ "overlay.read-raw" ] (jsonArrayStrings result.["activeOverrides"]) "case results report their active source override separately"
+        check (boolValue (findResult "z-fresh-provider" initialResults).["passed"]) "a later case starts with a fresh provider after both a runtime error and a failed assertion"
+
+        let editedWrapper =
+            """test-file settings {
+    override fn overlay.read-raw(path: String) -> String {
+        effects none
+        if path == "/explode" {
+            if int::greater-than(divide(1, 0), 0) { "fixture-edited" } else { "fixture-edited" }
+        } else {
+            string::concat("fixture-edited", "")
+        }
+    }
+    test overlay.read-all/a-write {
+        file::write("/overlay-write", "case-a")
+        overlay::read-all(list::singleton<String>("/safe-a"))
+        => value list::singleton<String>("fixture-edited")
+    }
+    test overlay.read-all/b-callback {
+        file::write("/overlay-write", "case-b")
+        overlay::read-all(list::append(list::singleton<String>("/safe-b"), "/safe-c"))
+        => value list::append(list::singleton<String>("fixture-edited"), "fixture-edited")
+    }
+    test overlay.read-all/c-runtime-error {
+        file::write("/overlay-write", "case-error")
+        overlay::read-all(list::singleton<String>("/explode"))
+        => error RUNTIME_DIVIDE_BY_ZERO
+    }
+    test overlay.read-all/z-fresh-provider {
+        overlay::read-all(list::singleton<String>("/safe-z"))
+        => value list::empty<String>()
+    }
+}"""
+        defineFlowProject engine editedWrapper
+            [ "syntaxVersion", jint 2; "replace", jbool true; "expectedRevision", jint 1 ]
+        |> expectOk "replace the complete shared wrapper and remove its failing case"
+        |> ignore
+        let editedResults = runTests engine "overlay.read-all" |> rows
+        equal 4 editedResults.Length "wrapper edit atomically removes one case while retaining its sibling cases"
+        for result in editedResults do
+            let caseName = stringValue result.["name"]
+            check (boolValue result.["passed"]) $"edited wrapper case {caseName} passes"
+        expectError "EFFECT_FILE_NOT_FOUND" (evalFlow engine "overlay::read-raw(\"/missing-outside-tests\")")
+        |> ignore
+        commit engine "commit" "overlay.read-all" [] |> expectOk "commit the owner and its edited shared wrapper" |> ignore
+
+        let store = Storage.create project
+        let load () = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let currentRevision name snapshot =
+            let head = snapshot.Manifest.Value.Words |> List.find (fun item -> item.CurrentName = name)
+            snapshot.Manifest.Value.Revisions |> List.find (fun item -> item.WordId = head.WordId && item.Revision = head.CurrentRevision)
+        let beforeRename = load ()
+        equal 4 beforeRename.Manifest.Value.FormatVersion "shared test-file references use manifest format v4"
+        let ownerRevision = currentRevision "overlay.read-all" beforeRename
+        equal 1 ownerRevision.Tests.Length "a multi-case wrapper is persisted as one shared source reference"
+        let wrapperRef = ownerRevision.Tests.Head
+        let storedWrapper = Storage.readSource store wrapperRef |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal editedWrapper storedWrapper "the edited wrapper is stored as exact full-file source"
+        let overrideBindings = ownerRevision.CallBindings |> List.filter (fun binding -> binding.Source = wrapperRef && binding.BodyRole = StoredCallBodyRole.TestOverride)
+        equal 5 overrideBindings.Length "the wrapper persists its header and every fixture-body call"
+        let headerBinding = overrideBindings |> List.find (fun binding -> binding.Form = StoredCallForm.TestOverrideTarget)
+        equal "overlay.read-raw" headerBinding.RequestedName "the wrapper header persists its original target identity"
+        equal (StoredCallTarget.UserWord(getWordId engine "overlay.read-raw")) headerBinding.Target "the wrapper header binds the exact stable target"
+        check headerBinding.CaseName.IsNone "the wrapper header binding is shared rather than case-scoped"
+        let bodyBindings = overrideBindings |> List.filter (fun binding -> binding.Form <> StoredCallForm.TestOverrideTarget)
+        let expectedFixtureCalls =
+            [ StoredCallForm.Direct, "divide"
+              StoredCallForm.Direct, "equals"
+              StoredCallForm.Direct, "int.greater-than"
+              StoredCallForm.Direct, "string.concat" ]
+        let actualFixtureCalls = bodyBindings |> List.map (fun binding -> binding.Form, binding.RequestedName) |> List.sort
+        equal expectedFixtureCalls actualFixtureCalls "fixture-body proof records the equality, comparison, division, and concatenation calls"
+        for binding in bodyBindings do
+            check binding.CaseName.IsNone "fixture body calls are shared rather than case-scoped"
+            match binding.Target with
+            | StoredCallTarget.Primitive _ -> ()
+            | _ -> failwith $"fixture body call '{binding.RequestedName}' did not bind a primitive target"
+            match binding.Path with
+            | FlowAstPath.FlowAstPath(FlowAstPathSegment.TestOverrideDefinition 0 :: _ :: _) -> ()
+            | _ -> failwith $"fixture body call '{binding.RequestedName}' is not rooted under the override declaration"
+        let originalTargetId = getWordId engine "overlay.read-raw"
+        dispatch engine "rename" [ "word", jstr "overlay.read-raw"; "to", jstr "overlay.fetch-raw"; "actor", jstr "client" ]
+        |> expectOk "rename a dependency referenced by both a caller and a test-file override header"
+        |> ignore
+        equal originalTargetId (getWordId engine "overlay.fetch-raw") "dependency rename preserves its stable identity"
+        let renamedResults = runTests engine "overlay.read-all" |> rows
+        equal 4 renamedResults.Length "renamed wrapper retains all passing cases"
+        for result in renamedResults do
+            let caseName = stringValue result.["name"]
+            check (boolValue result.["passed"]) $"renamed wrapper case {caseName} passes"
+        expectError "EFFECT_FILE_NOT_FOUND" (evalFlow engine "overlay::fetch-raw(\"/missing-after-rename\")")
+        |> ignore
+
+        let afterRename = load ()
+        let renamedOwnerRevision = currentRevision "overlay.read-all" afterRename
+        equal 1 renamedOwnerRevision.Tests.Length "renaming a target rewrites one shared test-file source reference"
+        let renamedWrapper = Storage.readSource store renamedOwnerRevision.Tests.Head |> Result.defaultWith (fun problem -> failwith problem.Message)
+        check (renamedWrapper.Contains("override fn overlay.fetch-raw", StringComparison.Ordinal)) "rename rewrites the test-file target header"
+        let renamedHeader =
+            renamedOwnerRevision.CallBindings
+            |> List.find (fun binding -> binding.Source = renamedOwnerRevision.Tests.Head && binding.Form = StoredCallForm.TestOverrideTarget)
+        equal "overlay.fetch-raw" renamedHeader.RequestedName "renamed durable header binds the new authored name"
+        equal (StoredCallTarget.UserWord originalTargetId) renamedHeader.Target "renamed durable header retains the stable original target identity"
+
+        let followupWrapper =
+            """test-file followup {
+    override fn overlay.fetch-raw(path: String) -> String {
+        effects none
+        string::concat("followup", "")
+    }
+    test overlay.read-all/followup {
+        file::write("/overlay-write", "case-followup")
+        overlay::read-all(list::singleton<String>("/safe-followup"))
+        => value list::singleton<String>("followup")
+    }
+}"""
+        let removeCase = JsonObject()
+        removeCase["kind"] <- jstr "test"
+        removeCase["caseName"] <- jstr "a-write"
+        removeCase["expectedSourceHash"] <- jstr renamedOwnerRevision.Tests.Head.Hash
+        let removals = JsonArray()
+        removals.Add removeCase
+        let renamedOwnerHead = afterRename.Manifest.Value.Words |> List.find (fun item -> item.CurrentName = "overlay.read-all")
+        defineFlowProject engine followupWrapper
+            [ "syntaxVersion", jint 2
+              "replace", jbool true
+              "expectedRevision", jint renamedOwnerHead.CurrentRevision
+              "removeAttachments", removals ]
+        |> expectOk "remove one case by rewriting its shared wrapper and add a separate fixture file"
+        |> ignore
+        let afterRemovalResults = runTests engine "overlay.read-all" |> rows
+        equal [ "b-callback"; "c-runtime-error"; "followup"; "z-fresh-provider" ] (afterRemovalResults |> List.map (fun result -> stringValue result.["name"])) "case removal and a second wrapper update the selected test inventory atomically"
+        for result in afterRemovalResults do
+            let caseName = stringValue result.["name"]
+            check (boolValue result.["passed"]) $"isolated wrapper case {caseName} passes"
+        let retainedErrorCase = afterRemovalResults |> List.find (fun result -> stringValue result.["name"] = "c-runtime-error")
+        check (boolValue retainedErrorCase.["passed"]) "case removal preserves the runtime-error expectation in the original wrapper"
+        commit engine "replace-word" "overlay.read-all" [] |> expectOk "publish shared wrapper removal and second-file attachment" |> ignore
+        let afterRemoval = load ()
+        let finalRevision = currentRevision "overlay.read-all" afterRemoval
+        equal 2 finalRevision.Tests.Length "each test-file wrapper is referenced once on the owner revision"
+        let finalSources = finalRevision.Tests |> List.map (Storage.readSource store >> Result.defaultWith (fun problem -> failwith problem.Message))
+        let settingsSource = finalSources |> List.find (fun content -> content.Contains("test-file settings", StringComparison.Ordinal))
+        check (not (settingsSource.Contains("/a-write", StringComparison.Ordinal))) "removing one nested case preserves the other cases and shared fixture"
+        check (settingsSource.Contains("test overlay.read-all/b-callback", StringComparison.Ordinal)) "the retained case remains in the rewritten wrapper source"
+        let followupSource = finalSources |> List.find (fun content -> content.Contains("test-file followup", StringComparison.Ordinal))
+        check (followupSource.Contains("\"followup\"", StringComparison.Ordinal)) "a second wrapper retains an independent fixture body"
+        let projectSource: string = afterRemoval.ProjectSource |> Option.defaultWith (fun () -> failwith "test-file project export is missing")
+        let countOccurrence (token: string) (text: string) : int =
+            let rec loop start count =
+                let found = text.IndexOf(token, start, StringComparison.Ordinal)
+                if found < 0 then count else loop (found + token.Length) (count + 1)
+            loop 0 0
+        equal 1 (countOccurrence "test-file settings {" projectSource) "aggregate export emits the first shared wrapper once"
+        equal 1 (countOccurrence "test-file followup {" projectSource) "aggregate export emits the second shared wrapper once"
+        let reparsedProject =
+            FlowParser.parseDocumentWithVersion 2 "dictionary.agent" projectSource
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+        equal 2 reparsedProject.TestFiles.Length "durable aggregate export reparses with both wrappers intact"
+        let reloaded = Runtime.Engine(project, capabilities, "2043-04-05T06:07:08Z", fileSystemMode = FileSystemMode.Virtual)
+        let reloadedResults = runTests reloaded "overlay.read-all" |> rows
+        equal 4 reloadedResults.Length "fresh-session reload selects the remaining shared cases exactly once"
+        for result in reloadedResults do
+            let caseName = stringValue result.["name"]
+            check (boolValue result.["passed"]) $"reloaded test-file case {caseName} passes"
+
+        let contractProject = Path.Combine(root, "flow-test-file-override-contracts")
+        let contractEngine = Runtime.Engine(contractProject, capabilities, fileSystemMode = FileSystemMode.Virtual)
+        let contractOwner =
+            """fn contract.read(path: String) -> String {
+    effects fs.read
+    file.read(path)
+}"""
+        let contractOwnerTest =
+            """test contract.read/basic {
+    file.write("/contract", "original")
+    contract.read("/contract")
+    => "original"
+}"""
+        defineFlow contractEngine contractOwner [ contractOwnerTest ] [] [ "syntaxVersion", jint 2 ]
+        |> expectOk "define the original typed and effectful replacement target with its real-body test"
+        |> ignore
+        commit contractEngine "commit" "contract.read" []
+        |> expectOk "persist the existing Flow owner before testing mixed-project routing"
+        |> ignore
+
+        let mixedExistingOwnerProject =
+            """fn transaction.added() -> String {
+    effects none
+    "added"
+}
+
+test-file rejected-existing-owner {
+    override fn contract.read(path: String) -> String {
+        effects none
+        "fixture"
+    }
+    test contract.read/should-not-attach {
+        contract.read("/not-used")
+        => "fixture"
+    }
+}"""
+        let contractStore = Storage.create contractProject
+        let contractBefore = Storage.load contractStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let existingRevision = dispatch contractEngine "describe" [ "word", jstr "contract.read" ] |> expectOk "inspect existing owner before mixed-project request" |> fun response -> response.["data"].["revision"].GetValue<int>()
+        expectError "FLOW_PROJECT_TEST_FILE_OWNER_NOT_DECLARED"
+            (defineFlowProject contractEngine mixedExistingOwnerProject [ "syntaxVersion", jint 2 ])
+        |> ignore
+        equal existingRevision (dispatch contractEngine "describe" [ "word", jstr "contract.read" ] |> expectOk "inspect existing owner after rejected mixed-project request" |> fun response -> response.["data"].["revision"].GetValue<int>()) "rejected mixed project leaves the existing owner revision unchanged"
+        let wordsAfterRejectedProject = dispatch contractEngine "words" [ "compact", jbool true ] |> expectOk "inspect words after rejected mixed-project request"
+        check (not (jsonArrayStrings wordsAfterRejectedProject.["data"].["words"] |> List.contains "transaction.added")) "rejected mixed project does not stage its new production word"
+        let contractAfter = Storage.load contractStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal contractBefore.ManifestHash contractAfter.ManifestHash "rejected mixed project leaves the committed manifest unchanged"
+        let badSignature =
+            """test-file signature {
+    override fn contract.read(path: Int) -> String { "fixture" }
+    test contract.read/case { contract.read(1) => "fixture" }
+}"""
+        expectError "FLOW_TEST_OVERRIDE_SIGNATURE_MISMATCH"
+            (defineFlowProject contractEngine badSignature [ "syntaxVersion", jint 2 ])
+        |> ignore
+        let badEffects =
+            """test-file effects {
+    override fn contract.read(path: String) -> String {
+        effects fs.read, fs.write
+        file.write(path, "fixture")
+        "fixture"
+    }
+    test contract.read/case { contract.read("/x") => "fixture" }
+}"""
+        expectError "FLOW_TEST_OVERRIDE_EFFECT_MISMATCH"
+            (defineFlowProject contractEngine badEffects [ "syntaxVersion", jint 2 ])
+        |> ignore
+
+        let realProject = Path.Combine(root, "flow-test-file-real-filesystem")
+        Directory.CreateDirectory realProject |> ignore
+        let hostFlag = Path.Combine(realProject, "flag.txt")
+        File.WriteAllText(hostFlag, "host-flag")
+        let realEngine = Runtime.Engine(realProject, capabilities, "2043-04-05T06:07:08Z", fileSystemMode = FileSystemMode.Real)
+        let realSource =
+            """fn realio.read(path: String) -> String {
+    effects fs.read
+    file.read(path)
+}
+
+fn realio.is-fixture() -> Bool {
+    effects fs.read
+    realio.read("flag.txt") == "fixture"
+}
+
+test realio.read/virtual-provider {
+    file.write("flag.txt", "virtual-test")
+    realio.read("flag.txt")
+    => "virtual-test"
+}
+
+test-file host-fixture {
+    override fn realio.read(path: String) -> String {
+        effects none
+        "fixture"
+    }
+    test realio.is-fixture/uses-overlay {
+        file.write("flag.txt", "virtual-test")
+        realio.is-fixture()
+        => true
+    }
+}"""
+        defineFlowProject realEngine realSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "define a real-filesystem project with a scoped test-file dependency fake"
+        |> ignore
+        assertAllPassed 1 (runTests realEngine "realio.is-fixture")
+        equal "host-flag" (File.ReadAllText hostFlag) "test-file setup and execution leave the real host file untouched"
+        commit realEngine "commit" "realio.is-fixture" []
+        |> expectOk "persist the caller and real read dependency after virtual-provider tests"
+        |> ignore
+        equal "host-flag" (File.ReadAllText hostFlag) "publication gates use virtual providers for test-file cases"
+        let realReload = Runtime.Engine(realProject, capabilities, "2043-04-05T06:07:08Z", fileSystemMode = FileSystemMode.Real)
+        assertAllPassed 1 (runTests realReload "realio.is-fixture")
+        equal "host-flag" (File.ReadAllText hostFlag) "reloaded test-file cases also leave the host file untouched"
+        let productionRead =
+            dispatch realReload "eval" [ "frontend", jstr "flow"; "syntaxVersion", jint 2; "code", jstr "realio.read(\"flag.txt\")" ]
+            |> expectOk "execute the original production read body after reloading the test overlay"
+        equal "\"host-flag\"" (stringValue productionRead.["data"].["stack"].[0]) "production dispatch reads the unchanged host file after overlay execution"
+        equal "host-flag" (File.ReadAllText hostFlag) "production evaluation leaves the host flag content intact"
+
+        let deniedProject = Path.Combine(root, "flow-test-file-override-capability")
+        let denied = Runtime.Engine(deniedProject, Set.empty, "2043-04-05T06:07:08Z", fileSystemMode = FileSystemMode.Virtual)
+        let deniedSource =
+            """fn denied.read(path: String) -> String {
+    effects fs.read
+    file.read(path)
+}
+
+test-file denied {
+    override fn denied.read(path: String) -> String { "fixture" }
+    test denied.read/cannot-bypass-capability { denied.read("/missing") => "fixture" }
+}"""
+        defineFlowProject denied deniedSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "define a pure fixture over an effectful original target"
+        |> ignore
+        expectError "CAPABILITY_DENIED" (evalFlow denied "denied::read(\"/missing\")") |> ignore
+        let deniedCase = runTests denied "denied.read" |> rows |> List.exactlyOne
+        check (not (boolValue deniedCase.["passed"])) "test-only dispatch cannot skip original effect preflight"
+        equal "CAPABILITY_DENIED" (stringValue deniedCase.["errorCode"]) "a pure test fixture retains the original capability denial"
+
+        let selfProject = Path.Combine(root, "flow-test-file-fake-cannot-qualify")
+        let selfEngine = Runtime.Engine(selfProject, Set.empty, "2043-04-05T06:07:08Z", fileSystemMode = FileSystemMode.Virtual)
+        let selfOverride =
+            """fn proof.flip(value: Bool) -> Bool {
+    effects none
+    if value { false } else { true }
+}
+
+test-file self {
+    override fn proof.flip(value: Bool) -> Bool {
+        effects none
+        if value { false } else { true }
+    }
+    test proof.flip/false { proof.flip(false) => true }
+    test proof.flip/true { proof.flip(true) => false }
+}"""
+        defineFlowProject selfEngine selfOverride [ "syntaxVersion", jint 2 ]
+        |> expectOk "define self-overriding finite target cases"
+        |> ignore
+        assertAllPassed 2 (dispatch selfEngine "test" [ "word", jstr "proof.flip" ] |> expectOk "run self-overridden target cases")
+        expectError "LIBRARY_COVERAGE_INCOMPLETE"
+            (commit selfEngine "commit" "proof.flip" [ "library", jbool true ])
+        |> ignore
+
     [<EntryPoint>]
     let main _ =
         let root = newRoot ()
@@ -4477,7 +5087,9 @@ test persist.read/exact-count {
             testFlowAttachmentOnlyPreservesTemporaryLifetime root
             testTemporaryPromotionAndTaskAbort root
             testNamedSnapshotRestoresFlowAndProviders root
+            testPersistedTestOverrideHeaderIsVerified root
             testPersistedBindingsAreVerified root
+            testTestFileTaskAbortRestoresSharedSource root
             testRetainedDotBindingAcrossReplacement root
             testExpectationCoverageIsNotActualCoverage root
             testFiniteCoverageInvocationAndNormalReturns root
@@ -4491,7 +5103,8 @@ test persist.read/exact-count {
             testFlowProjectDocumentTypesCommitAndReload root
             testRecordValidatorRuntimeAndPersistence root
             testEffectCountAssertions root
-            printfn $"Flow Runtime tests passed: 33 groups, {assertions} assertions."
+            testFlowTestFileOverrides root
+            printfn $"Flow Runtime tests passed: 36 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

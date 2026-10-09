@@ -97,6 +97,7 @@ module FlowLowering =
         | DotStage of string
         | PropertyAccess of string
         | StaticCallback of string * FlowWordReferenceQualification
+        | TestOverrideTarget
 
     [<RequireQualifiedAccess>]
     type FlowCallTargetIdentity =
@@ -111,6 +112,23 @@ module FlowLowering =
           RequestedName: string
           Target: FlowCallTargetIdentity
           TargetRevision: int option }
+
+    /// A proof for one source-declared test replacement. The header records the
+    /// stable original target; body sites record calls made by the synthetic
+    /// fixture function under the declaration's structural path.
+    type FlowTestOverrideBindings =
+        { OverrideIndex: int
+          Header: FlowCallSite
+          BodySites: FlowCallSite list }
+
+    /// A per-wrapper executable overlay. Its dictionary context contains the
+    /// unchanged production snapshot plus distinct synthetic fixture entries.
+    type CompiledTestFileSettings =
+        { Settings: FlowTestFileSettings
+          Context: Context
+          Program: VerifiedIrProgram
+          Dispatch: Map<IrCallTarget, IrCallTarget>
+          Overrides: FlowTestOverrideBindings list }
 
     /// A transient binding proof, scoped to exact owner source bytes and a
     /// structural AST path rather than source-span uniqueness or IR ordinals.
@@ -168,6 +186,7 @@ module FlowLowering =
     type FlowAttachmentBodyRole =
         | Actual
         | ExpectedExpression
+        | TestOverride
 
     type FlowAttachmentCallBinding =
         { Attachment: FlowAttachmentKey
@@ -958,6 +977,7 @@ module FlowLowering =
         | FlowCallForm.DotStage _ -> FlowAstPathSegment.DotArgument index
         | FlowCallForm.PropertyAccess _ -> invalidArg (nameof form) "Record property accesses do not have explicit call arguments."
         | FlowCallForm.StaticCallback _ -> invalidArg (nameof form) "Static callbacks do not lower through ordinary argument binding."
+        | FlowCallForm.TestOverrideTarget -> invalidArg (nameof form) "Test override headers do not lower through ordinary argument binding."
 
     let private callEvent path form requestedName candidate span =
         { Path = path
@@ -1340,6 +1360,7 @@ module FlowLowering =
         | FlowCallForm.StaticCallback("each", _) -> match operation with | IrOperation.ListEach _ -> true | _ -> false
         | FlowCallForm.StaticCallback("fold", _) -> match operation with | IrOperation.ListFold _ -> true | _ -> false
         | FlowCallForm.StaticCallback _ -> false
+        | FlowCallForm.TestOverrideTarget -> false
         | FlowCallForm.PropertyAccess _ ->
             match candidate.Kind, operation with
             // The call site is authored as a property read, but the compiler
@@ -1363,6 +1384,7 @@ module FlowLowering =
         | FlowCallForm.StaticCallback("each", _) -> "list-each"
         | FlowCallForm.StaticCallback("fold", _) -> "list-fold"
         | FlowCallForm.StaticCallback _ -> "invalid-list-callback"
+        | FlowCallForm.TestOverrideTarget -> "test-override-target"
         // The owner-site operation calls a generated accessor; the accessor's
         // own implementation site is separately marked as a record field.
         | FlowCallForm.PropertyAccess _ -> "call"
@@ -2715,6 +2737,258 @@ module FlowLowering =
             |> Map.ofList
         { Compiled = compiled
           CallSites = callSites }
+
+    let private testOverrideTarget
+        (context: Context)
+        (originalProgram: VerifiedIrProgram)
+        (settings: FlowTestFileSettings)
+        (overrideDefinition: FlowTestOverrideDefinition)
+        =
+        let name = overrideDefinition.Definition.Name
+        let span = Some overrideDefinition.TargetSpan
+        let entry =
+            context.CompilerContext.Words.TryFind name
+            |> Option.defaultWith (fun () ->
+                fail "FLOW_TEST_OVERRIDE_TARGET_UNKNOWN" "A test-file override must name a target in the original compiler snapshot." (Some settings.ScopeName) span
+                    (context.CompilerContext.Words |> Map.toList |> List.map fst) [ name ])
+        if entry.Revision <> entry.Definition.Revision then
+            fail "FLOW_TEST_OVERRIDE_TARGET_STALE" "The dictionary entry's active revision differs from its source definition revision." (Some settings.ScopeName) span
+                [ string entry.Revision ] [ string entry.Definition.Revision ]
+        let stableTarget, irTarget, targetRevision =
+            match entry.Builtin with
+            | Some(BuiltinOp operation) ->
+                let identity = PrimitiveId operation
+                let primitiveContract =
+                    Compiler.primitiveIrCatalog.TryFind identity
+                    |> Option.defaultWith (fun () ->
+                    fail "FLOW_TEST_OVERRIDE_PRIMITIVE_UNKNOWN" "The override target does not identify a trusted primitive in the compiler registry." (Some settings.ScopeName) span
+                        (Compiler.primitiveIrCatalog |> Map.toList |> List.map (fst >> sprintf "%A")) [ operation ])
+                let isClosedPattern =
+                    let rec isClosed = function
+                        | PatternVariable _ -> false
+                        | PatternList item | PatternOption item -> isClosed item
+                        | PatternResult(okType, errorType) -> isClosed okType && isClosed errorType
+                        | PatternInt | PatternFloat | PatternBool | PatternString | PatternUnit -> true
+                    isClosed
+                if not (List.forall isClosedPattern (primitiveContract.InputPatterns @ primitiveContract.OutputPatterns)) then
+                    fail "FLOW_TEST_OVERRIDE_POLYMORPHIC_TARGET" "This test-file overlay supports only primitives with one closed signature; polymorphic targets could resolve to incompatible specializations at different call sites." (Some settings.ScopeName) span
+                        [ "closed primitive signature" ] [ operation ]
+                FlowCallTargetIdentity.Primitive identity, PrimitiveTarget identity, None
+            | Some _ ->
+                fail "FLOW_TEST_OVERRIDE_GENERATED_TARGET" "Test-file overrides currently support trusted primitives and authored user words; generated constructors and accessors cannot be replaced." (Some settings.ScopeName) span
+                    [ "trusted primitive or authored user word" ] [ name ]
+            | None ->
+                let identity =
+                    context.CompilerContext.WordIds.TryFind name
+                    |> Option.defaultWith (fun () ->
+                        fail "FLOW_TEST_OVERRIDE_TARGET_ID_MISSING" "An authored override target has no stable dictionary identity." (Some settings.ScopeName) span [ "WordId" ] [ name ])
+                FlowCallTargetIdentity.UserWord identity, UserWordTarget(identity, entry.Revision), Some entry.Revision
+        let originalData = VerifiedIrProgram.inspect originalProgram
+        match irTarget with
+        | UserWordTarget(identity, revision) ->
+            match originalData.FunctionsById.TryFind identity with
+            | Some functionValue when functionValue.FunctionRevision = revision
+                                     && functionValue.InputTypes.Length = entry.Definition.Inputs.Length
+                                     && functionValue.OutputTypes.Length = entry.Definition.Outputs.Length -> ()
+            | Some functionValue ->
+                fail "FLOW_TEST_OVERRIDE_TARGET_STALE" "The original verified program does not match the active authored target revision and shape." (Some settings.ScopeName) span
+                    [ string revision; string entry.Definition.Inputs.Length; string entry.Definition.Outputs.Length ]
+                    [ string functionValue.FunctionRevision; string functionValue.InputTypes.Length; string functionValue.OutputTypes.Length ]
+            | None ->
+                fail "FLOW_TEST_OVERRIDE_TARGET_STALE" "The original verified program is missing the authored override target." (Some settings.ScopeName) span
+                    [ sprintf "%A" identity ] []
+        | PrimitiveTarget identity ->
+            if not (Compiler.primitiveIrCatalog.ContainsKey identity) then
+                fail "FLOW_TEST_OVERRIDE_PRIMITIVE_UNKNOWN" "The original verified program has no trusted contract for the override target." (Some settings.ScopeName) span
+                    [ sprintf "%A" identity ] []
+        | GeneratedWordTarget _ ->
+            fail "FLOW_TEST_OVERRIDE_GENERATED_TARGET" "Generated targets cannot be replaced by this test-file overlay." (Some settings.ScopeName) span
+                [ "trusted primitive or authored user word" ] [ name ]
+
+        let declaredInputs = overrideDefinition.Definition.Parameters |> List.map (fun parameter -> parameter.Type)
+        if declaredInputs <> entry.Definition.Inputs || overrideDefinition.Definition.Outputs <> entry.Definition.Outputs then
+            fail "FLOW_TEST_OVERRIDE_SIGNATURE_MISMATCH" "A test-file replacement must preserve the original target's exact input and output signature." (Some settings.ScopeName) span
+                ((entry.Definition.Inputs |> List.map Types.format) @ [ "->" ] @ (entry.Definition.Outputs |> List.map Types.format))
+                ((declaredInputs |> List.map Types.format) @ [ "->" ] @ (overrideDefinition.Definition.Outputs |> List.map Types.format))
+        if not (Set.isSubset overrideDefinition.Definition.Effects entry.Definition.Effects) then
+            fail "FLOW_TEST_OVERRIDE_EFFECT_MISMATCH" "A test-file replacement cannot declare effects absent from the original target contract." (Some settings.ScopeName) span
+                (entry.Definition.Effects |> Set.toList |> List.sort) (overrideDefinition.Definition.Effects |> Set.toList |> List.sort)
+        stableTarget, irTarget, targetRevision, entry.Definition.Effects
+
+    let private freshTestFixtureIdentity (usedNames: Set<string>) (usedIds: Set<WordId>) =
+        let rec choose () =
+            let token = Guid.NewGuid().ToString("N")
+            let name = "$flow$test-fixture$" + token
+            let identity = WordId("flow-test-fixture-" + token)
+            if usedNames.Contains name || usedIds.Contains identity then
+                choose ()
+            else name, identity
+        choose ()
+
+    /// Compile one parser-verified test-file wrapper into a separate verified
+    /// dictionary snapshot. Production entries remain unchanged; only dispatch
+    /// through this result's exact original-target map can reach its fixtures.
+    let compileTestFileSettings
+        (context: Context)
+        (originalProgram: VerifiedIrProgram)
+        (settings: FlowTestFileSettings)
+        : CompiledTestFileSettings =
+        if String.IsNullOrWhiteSpace settings.ScopeName then
+            fail "FLOW_TEST_FILE_SCOPE_INVALID" "A test-file wrapper requires one nonempty source label." None (Some settings.Span) [ "nonempty source label" ] [ settings.ScopeName ]
+        if settings.SyntaxVersion <> 2 then
+            fail "FLOW_TEST_FILE_VERSION_UNSUPPORTED" "Test-file replacement wrappers are supported only in Flow/2." None (Some settings.Span) [ "2" ] [ string settings.SyntaxVersion ]
+        if List.isEmpty settings.Tests then
+            fail "FLOW_TEST_FILE_CASES_EMPTY" "A test-file wrapper must contain at least one case." None (Some settings.Span) [ "one or more cases" ] []
+        let ownerName = settings.Tests.Head.Word
+        if String.IsNullOrWhiteSpace ownerName then
+            fail "FLOW_TEST_FILE_OWNER_INVALID" "A test-file wrapper requires one nonempty tested owner name." None (Some settings.Span) [ "nonempty owner name" ] [ ownerName ]
+        for test in settings.Tests do
+            if test.Word <> ownerName then
+                fail "FLOW_TEST_FILE_OWNER_MISMATCH" "Every case in a test-file wrapper must test that wrapper's one owner." (Some ownerName) (Some test.HeaderSpan)
+                    [ ownerName ] [ test.Word ]
+            if test.SyntaxVersion <> settings.SyntaxVersion then
+                fail "FLOW_TEST_FILE_CASE_VERSION_MISMATCH" "Every test case in a wrapper must use the wrapper's syntax version." (Some ownerName) (Some test.Span)
+                    [ string settings.SyntaxVersion ] [ string test.SyntaxVersion ]
+        if not (context.CompilerContext.Words.ContainsKey ownerName) then
+            fail "FLOW_TEST_FILE_OWNER_UNKNOWN" "The test-file wrapper owner is absent from the original compiler snapshot." (Some ownerName) (Some settings.Span)
+                (context.CompilerContext.Words |> Map.toList |> List.map fst) [ ownerName ]
+        match settings.Tests |> List.countBy (fun test -> test.CaseName) |> List.tryFind (fun (_, count) -> count > 1) with
+        | Some(caseName, _) ->
+            fail "FLOW_TEST_FILE_CASE_DUPLICATE" "A test-file wrapper cannot define the same case name more than once." (Some settings.ScopeName) (Some settings.Span) [ "unique case name" ] [ caseName ]
+        | None -> ()
+        let originalProgramData = VerifiedIrProgram.inspect originalProgram
+        let signatures = signatureCatalog context
+        let mutable accumulatedOrigins = context.SourceOrigins
+        let mutable additions = []
+        let mutable parameterNames = context.ParameterNames
+        let mutable flow2OwnerIds = context.Flow2OwnerIds
+        let mutable dispatch = Map.empty<IrCallTarget, IrCallTarget>
+        let mutable headerTargets = Set.empty<IrCallTarget>
+        let loweredOverrides =
+            settings.Overrides
+            |> List.mapi (fun index overrideDefinition ->
+                let stableTarget, originalTarget, originalRevision, originalEffects =
+                    testOverrideTarget context originalProgram settings overrideDefinition
+                if headerTargets.Contains originalTarget then
+                    fail "FLOW_TEST_OVERRIDE_DUPLICATE_TARGET" "A test-file wrapper can replace each original target at most once." (Some settings.ScopeName) (Some overrideDefinition.TargetSpan)
+                        [ "one override per target" ] [ overrideDefinition.Definition.Name ]
+                headerTargets <- Set.add originalTarget headerTargets
+                let usedNames =
+                    Set.union
+                        (context.CompilerContext.Words |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+                        (additions |> List.map (fun (name, _, _, _) -> name) |> Set.ofList)
+                let usedIds =
+                    let compilerIds = context.CompilerContext.WordIds |> Map.toSeq |> Seq.map snd |> Set.ofSeq
+                    let originalFunctionIds = originalProgramData.FunctionsById |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+                    let originalGeneratedIds = originalProgramData.GeneratedTargetsById |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+                    let additionIds = additions |> List.map (fun (_, identity, _, _) -> identity) |> Set.ofList
+                    Set.union compilerIds (Set.union originalFunctionIds (Set.union originalGeneratedIds additionIds))
+                let syntheticName, fixtureId = freshTestFixtureIdentity usedNames usedIds
+                let flowWord = overrideDefinition.Definition
+                let artifacts =
+                    withFlowOwnerPath flowWord (fun () ->
+                        lowerWordWithSignaturesAndEvents context signatures accumulatedOrigins flowWord)
+                let lowered = artifacts.Lowered
+                let loweredDefinition = { lowered.Definition with Name = syntheticName; Revision = 0 }
+                let checkedDefinition =
+                    Compiler.checkDefinitionWithEnums
+                        (knownTypes context) context.CompilerContext.Enums context.CompilerContext.Words loweredDefinition
+                if not (Set.isSubset checkedDefinition.InferredEffects originalEffects) then
+                    fail "FLOW_TEST_OVERRIDE_INFERRED_EFFECT_MISMATCH" "The verified replacement body uses effects outside the original target contract." (Some settings.ScopeName) (Some overrideDefinition.TargetSpan)
+                        (originalEffects |> Set.toList |> List.sort) (checkedDefinition.InferredEffects |> Set.toList |> List.sort)
+                let fakeEntry =
+                    { Definition = loweredDefinition
+                      Builtin = None
+                      Status = Candidate
+                      Maturity = ProjectWord
+                      Revision = 0 }
+                additions <- (syntheticName, fixtureId, fakeEntry, lowered.ParameterNames) :: additions
+                parameterNames <- Map.add syntheticName lowered.ParameterNames parameterNames
+                if flowWord.SyntaxVersion = 2 then flow2OwnerIds <- Set.add fixtureId flow2OwnerIds
+                accumulatedOrigins <-
+                    mergeOrigins
+                        { context with SourceOrigins = accumulatedOrigins }
+                        lowered.Projection
+                dispatch <- Map.add originalTarget (UserWordTarget(fixtureId, 0)) dispatch
+                index, overrideDefinition, syntheticName, fixtureId, artifacts.CallEvents, stableTarget, originalTarget, originalRevision)
+        let additions = List.rev additions
+        let expandedCompilerContext : Compiler.IrLoweringContext =
+            additions
+            |> List.fold (fun compilerContext (name, identity, entry, _) ->
+                { compilerContext with
+                    Words = Map.add name entry compilerContext.Words
+                    WordIds = Map.add name identity compilerContext.WordIds }) context.CompilerContext
+        let expandedContext =
+            { CompilerContext = expandedCompilerContext
+              ParameterNames = parameterNames
+              Flow2OwnerIds = flow2OwnerIds
+              SourceOrigins = accumulatedOrigins }
+        let expandedProgram = Compiler.compileIrProgramWithSourceOrigins expandedCompilerContext accumulatedOrigins
+        let expandedProgramData = VerifiedIrProgram.inspect expandedProgram
+        // Compiler append must preserve all original executable objects and call identities.
+        let requireOriginalEntries label (original: Map<'key, 'value>) (expanded: Map<'key, 'value>) =
+            for KeyValue(key, value) in original do
+                if expanded.TryFind key <> Some value then
+                    fail "FLOW_TEST_OVERRIDE_ORIGINAL_CHANGED" $"Compiling a test-file wrapper changed or removed an original {label}." (Some settings.ScopeName) (Some settings.Span)
+                        [ sprintf "%A" value ] [ sprintf "%A" (expanded.TryFind key) ]
+        requireOriginalEntries "function" originalProgramData.FunctionsById expandedProgramData.FunctionsById
+        requireOriginalEntries "generated target" originalProgramData.GeneratedTargetsById expandedProgramData.GeneratedTargetsById
+        requireOriginalEntries "nominal type" originalProgramData.NominalTypesByKey expandedProgramData.NominalTypesByKey
+        requireOriginalEntries "source map site" originalProgramData.SourceMap expandedProgramData.SourceMap
+        requireOriginalEntries "coverage entry" originalProgramData.CoverageByWord expandedProgramData.CoverageByWord
+        let keySet (entries: Map<'key, 'value>) = entries |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let fixtureIds = loweredOverrides |> List.map (fun (_, _, _, fixtureId, _, _, _, _) -> fixtureId) |> Set.ofList
+        let requireExactKeys label (expected: Set<'key>) (actual: Set<'key>) =
+            if expected <> actual then
+                fail "FLOW_TEST_OVERRIDE_PROGRAM_SHAPE" $"The ephemeral test program contains unexpected {label} identities." (Some ownerName) (Some settings.Span)
+                    (expected |> Set.toList |> List.map (sprintf "%A")) (actual |> Set.toList |> List.map (sprintf "%A"))
+        requireExactKeys "user-function" (Set.union (keySet originalProgramData.FunctionsById) fixtureIds) (keySet expandedProgramData.FunctionsById)
+        requireExactKeys "generated-target" (keySet originalProgramData.GeneratedTargetsById) (keySet expandedProgramData.GeneratedTargetsById)
+        requireExactKeys "nominal-type" (keySet originalProgramData.NominalTypesByKey) (keySet expandedProgramData.NominalTypesByKey)
+        requireExactKeys "coverage" (Set.union (keySet originalProgramData.CoverageByWord) fixtureIds) (keySet expandedProgramData.CoverageByWord)
+        let unexpectedSourceSites =
+            expandedProgramData.SourceMap
+            |> Map.toSeq
+            |> Seq.choose (fun (site, _) ->
+                if originalProgramData.SourceMap.ContainsKey site then None
+                else
+                    match site with
+                    | SourceSiteId(Some owner, _) when fixtureIds.Contains owner -> None
+                    | _ -> Some site)
+            |> Seq.toList
+        if not (List.isEmpty unexpectedSourceSites) then
+            fail "FLOW_TEST_OVERRIDE_PROGRAM_SHAPE" "The ephemeral test program contains source-map entries outside its original snapshot and synthetic fixtures." (Some ownerName) (Some settings.Span)
+                [ "original or fixture-owned source sites" ] (unexpectedSourceSites |> List.map (sprintf "%A"))
+        let bindings =
+            loweredOverrides
+            |> List.map (fun (index, overrideDefinition, syntheticName, fixtureId, events, stableTarget, originalTarget, originalRevision) ->
+                let fixture =
+                    expandedProgramData.FunctionsById.TryFind fixtureId
+                    |> Option.defaultWith (fun () ->
+                        fail "FLOW_TEST_OVERRIDE_FIXTURE_MISSING" "The expanded verified program omitted a compiled test fixture." (Some settings.ScopeName) (Some overrideDefinition.TargetSpan)
+                            [ sprintf "%A" fixtureId ] [])
+                if fixture.FunctionRevision <> 0 then
+                    fail "FLOW_TEST_OVERRIDE_FIXTURE_REVISION" "A synthetic test fixture must use revision zero inside its ephemeral verified program." (Some syntheticName) (Some overrideDefinition.TargetSpan) [ "0" ] [ string fixture.FunctionRevision ]
+                let bodySites =
+                    reconcileCallEvents expandedProgram syntheticName fixtureId fixture.FunctionRevision events
+                    |> List.map (fun site ->
+                        let (FlowAstPath.FlowAstPath segments) = site.Path
+                        { site with Path = FlowAstPath.FlowAstPath(FlowAstPathSegment.TestOverrideDefinition index :: segments) })
+                let header =
+                    { Path = FlowAstPath.FlowAstPath [ FlowAstPathSegment.TestOverrideDefinition index ]
+                      Span = overrideDefinition.TargetSpan
+                      Form = FlowCallForm.TestOverrideTarget
+                      RequestedName = overrideDefinition.Definition.Name
+                      Target = stableTarget
+                      TargetRevision = originalRevision }
+                { OverrideIndex = index
+                  Header = header
+                  BodySites = bodySites })
+        { Settings = settings
+          Context = expandedContext
+          Program = expandedProgram
+          Dispatch = dispatch
+          Overrides = bindings }
 
     let private attachmentKeyOfDocument (document: FlowAttachmentSourceDocument) =
         { OwnerId = document.OwnerId

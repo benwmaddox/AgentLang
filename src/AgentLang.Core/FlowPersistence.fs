@@ -19,6 +19,7 @@ module FlowPersistence =
         | FlowLowering.FlowCallForm.PropertyAccess field -> StoredCallForm.PropertyAccess field
         | FlowLowering.FlowCallForm.StaticCallback(stage, qualification) ->
             StoredCallForm.StaticCallback(stage, qualification)
+        | FlowLowering.FlowCallForm.TestOverrideTarget -> StoredCallForm.TestOverrideTarget
 
     let private binding source caseName role (site: FlowLowering.FlowCallSite) : StoredCallBinding =
         { Source = source
@@ -41,8 +42,35 @@ module FlowPersistence =
     let attachmentBindings (bindings: FlowLowering.FlowAttachmentCallBinding list) =
         bindings
         |> List.map (fun item ->
-            let role =
+            let caseName, role =
                 match item.BodyRole with
-                | FlowLowering.FlowAttachmentBodyRole.Actual -> StoredCallBodyRole.Actual
-                | FlowLowering.FlowAttachmentBodyRole.ExpectedExpression -> StoredCallBodyRole.ExpectedExpression
-            binding item.Source (Some item.Attachment.CaseName) role item.Site)
+                | FlowLowering.FlowAttachmentBodyRole.Actual -> Some item.Attachment.CaseName, StoredCallBodyRole.Actual
+                | FlowLowering.FlowAttachmentBodyRole.ExpectedExpression -> Some item.Attachment.CaseName, StoredCallBodyRole.ExpectedExpression
+                | FlowLowering.FlowAttachmentBodyRole.TestOverride -> None, StoredCallBodyRole.TestOverride
+            binding item.Source caseName role item.Site)
+
+    /// Bind each declaration header and fixture-body call to the exact shared
+    /// wrapper source. Override rows are owner-scoped, not case-scoped.
+    let testOverrideBindings (source: SourceRef) (overrides: FlowLowering.FlowTestOverrideBindings list) : StoredCallBinding list =
+        if source.Kind <> StorageObjectKind.TestDefinition then
+            invalidArg (nameof source) "Test override bindings must reference a test-definition source."
+        overrides
+        |> List.collect (fun item ->
+            let expectedRoot = FlowAstPath.FlowAstPath [ FlowAstPathSegment.TestOverrideDefinition item.OverrideIndex ]
+            if item.Header.Path <> expectedRoot || item.Header.Form <> FlowLowering.FlowCallForm.TestOverrideTarget then
+                invalidArg (nameof overrides) "A test override header must bind its declaration root and target form."
+            let header = binding source None StoredCallBodyRole.TestOverride item.Header
+            let body =
+                item.BodySites
+                |> List.map (fun site ->
+                    let rootedAtExpectedDeclaration =
+                        match site.Path with
+                        | FlowAstPath.FlowAstPath (FlowAstPathSegment.TestOverrideDefinition index :: tail) ->
+                            index = item.OverrideIndex
+                            && not (List.isEmpty tail)
+                            && not (tail |> List.exists (function | FlowAstPathSegment.TestOverrideDefinition _ -> true | _ -> false))
+                        | _ -> false
+                    if not rootedAtExpectedDeclaration || site.Form = FlowLowering.FlowCallForm.TestOverrideTarget then
+                        invalidArg (nameof overrides) "A test override body call must be rooted below its declaration."
+                    binding source None StoredCallBodyRole.TestOverride site)
+            header :: body)
