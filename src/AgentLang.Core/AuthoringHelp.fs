@@ -306,6 +306,61 @@ example tutorial.fold-sum/multiple { tutorial.fold-sum(list.append(list.append(l
           Description = "Flow/2 example that calls the named fold word after defining tutorial-list-fold."
           Source = tutorialListFoldExampleV2 }
 
+    let private tutorialEnumSourceV2 =
+        """enum TutorialSign {
+    case negative
+    case zero
+    case positive
+}
+
+fn tutorial.classify(value: Int) -> TutorialSign {
+    doc "Classifies an integer into a closed set of sign outcomes."
+
+    if int.less-than(value, 0) {
+        TutorialSign.negative()
+    } else {
+        if value == 0 {
+            TutorialSign.zero()
+        } else {
+            TutorialSign.positive()
+        }
+    }
+}
+
+test tutorial.classify/negative {
+    tutorial.classify(-1)
+    => value TutorialSign.negative()
+}
+
+test tutorial.classify/zero {
+    tutorial.classify(0)
+    => value TutorialSign.zero()
+}
+
+test tutorial.classify/positive {
+    tutorial.classify(1)
+    => value TutorialSign.positive()
+}"""
+
+    let private tutorialEnumSourceExample =
+        { Name = "tutorial-enum-tests"
+          Description = "Closed enum constructors and value-expression tests covering every return case."
+          Source = tutorialEnumSourceV2 }
+
+    let private tutorialEnumRequestExamples =
+        [ { Name = "define-tutorial-enum-tests"
+            Description = "Define the enum, classifier, and all three attached tests."
+            Operation = "define"
+            Fields = [ textField "source" tutorialEnumSourceV2; "syntaxVersion", Integer 2 ] }
+          { Name = "test-tutorial-classify"
+            Description = "Exercise all classifier branches and enum return cases."
+            Operation = "test"
+            Fields = [ textField "word" "tutorial.classify" ] }
+          { Name = "commit-tutorial-classify-as-library"
+            Description = "Publish the classifier after its own full-coverage tests pass."
+            Operation = "commit"
+            Fields = [ textField "word" "tutorial.classify"; "library", Boolean true ] } ]
+
     let private tutorialListFoldRequestExamples =
         [ { Name = "define-tutorial-list-fold"
             Description = "Define the Flow/2 fold source with its named callback, tests, and example."
@@ -519,8 +574,8 @@ example tutorial.fold-sum/multiple { tutorial.fold-sum(list.append(list.append(l
                         else fields
                     { example with Fields = fields })
             let requestExamples =
-                if topic = Topic.Define then requestExamples @ tutorialSpanRequestExamples @ tutorialListFoldRequestExamples
-                elif topic = Topic.Examples then requestExamples @ tutorialListFoldRequestExamples
+                if topic = Topic.Define then requestExamples @ tutorialSpanRequestExamples @ tutorialListFoldRequestExamples @ tutorialEnumRequestExamples
+                elif topic = Topic.Examples then requestExamples @ tutorialListFoldRequestExamples @ tutorialEnumRequestExamples
                 else requestExamples
             { original with
                 Documentation =
@@ -536,6 +591,9 @@ example tutorial.fold-sum/multiple { tutorial.fold-sum(list.append(list.append(l
                        else "")
                     + (if topic = Topic.Examples then
                            " Define the `tutorial-list-fold` source before running its attached tests or example. Its callback is a statically named word reference and cannot capture caller locals. Flow/2 tests may add `effects { fs.read: 2; fs.write: 0 }` after the value or error expectation. This asserts exact counts of provider calls made while the attached user word is active, including nested helpers; omitted categories are zero. The observable categories are fs.read, fs.write, clock.read, and console.write. Other effect categories are unsupported, and examples cannot use this test-only suffix."
+                       else "")
+                    + (if topic = Topic.Define || topic = Topic.Examples then
+                           " Payload-free enum cases are zero-argument constructor calls: `TutorialSign.positive()`, not a record property `TutorialSign.positive`. Calls with an exact leading-dot root also require parentheses. For an enum expected result, write `=> value TutorialSign.positive()`; bare `=>` accepts supported literals, not constructor expressions. The complete `tutorial-enum-tests` source and requests demonstrate defining, testing and publishing all enum return cases."
                        else "")
                 SourceExamples =
                     let examples =
@@ -557,14 +615,15 @@ example tutorial.fold-sum/multiple { tutorial.fold-sum(list.append(list.append(l
                             | Some source -> { example with Source = source }
                             | None -> example)
                     if topic = Topic.Define then
-                        examples @ [ tutorialSpanSourceExample; tutorialListFoldSourceExample ]
+                        examples @ [ tutorialSpanSourceExample; tutorialListFoldSourceExample; tutorialEnumSourceExample ]
                     elif topic = Topic.Examples then
                         examples
                         @ [ { Name = "effect-count-test-v2"
                               Description = "Flow/2 test with exact provider counts for the attached user word and its nested helper calls."
                               Source = "test tutorial.queue/reads-once {\n    tutorial.queue()\n    => \"queued\" effects {\n        fs.read: 2\n        fs.write: 0\n    }\n}" }
                             tutorialListFoldSourceExample
-                            tutorialListFoldCaseExample ]
+                            tutorialListFoldCaseExample
+                            tutorialEnumSourceExample ]
                     else examples
                 RequestExamples = requestExamples }
 

@@ -119,7 +119,8 @@ module Program =
         String.concat Environment.NewLine
             [ "Usage: agentlang-conventional --project DIR --jsonl --validation-project RELATIVE.fsproj [--max-requests 1..100]"
               "--max-requests counts input lines per process, including malformed requests; it defaults to 100 and cannot exceed 100."
-              "After the limit is reached, the next line receives PROTOCOL_REQUEST_LIMIT and the process exits with code 2. EOF at the limit exits normally." ]
+              "After the limit is reached, the next line receives PROTOCOL_REQUEST_LIMIT and the process exits with code 2. EOF at the limit exits normally."
+              "Host validation skips NuGet's remote vulnerability feed with -p:NuGetAudit=false; normal package restore still runs, so validation is not fully offline." ]
 
     let private parseArguments (arguments: string array) =
         let mutable index = 0

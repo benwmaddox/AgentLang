@@ -281,9 +281,9 @@ module Program =
         check ((stringValue (defineHelpDataV2.["documentation"])).Contains("Flow/2", StringComparison.Ordinal)) "Flow/2 help identifies its selected syntax"
         for guidance in [ "eval"; "`code`"; "define uses `source`"; "`word`"; "`type`"; "unchecked construction candidate"; "completed false return"; "caller-owned tests do not qualify the callee"; "generated constructors cannot own authored Flow tests"; "authored dependencies committed as library words" ] do
             check ((stringValue defineHelpDataV2.["documentation"]).Contains(guidance, StringComparison.Ordinal)) $"Flow/2 Define help explains {guidance}"
-        equal [ "tutorial-sign"; "tutorial-span-validator"; "tutorial-list-fold" ]
+        equal [ "tutorial-sign"; "tutorial-span-validator"; "tutorial-list-fold"; "tutorial-enum-tests" ]
             (defineHelpDataV2.["sourceExamples"].AsArray() |> Seq.map (fun item -> stringValue item.["name"]) |> Seq.toList)
-            "Flow/2 help retains prior source examples and adds the static fold"
+            "Flow/2 help retains prior source examples and adds the enum tests"
         let sourceExampleV2 = (defineHelpDataV2.["sourceExamples"]).AsArray() |> Seq.head |> fun item -> stringValue (item.["source"])
         check (sourceExampleV2.StartsWith("fn tutorial.sign", StringComparison.Ordinal)) "Flow/2 help returns an fn source example"
         check (not (sourceExampleV2.Contains("effects ", StringComparison.Ordinal))) "Flow/2 help preserves omitted effects metadata"
@@ -395,6 +395,26 @@ module Program =
             |> fun item -> item.["request"]
         let evaluatedFold = Protocol.dispatchLine flow2HelpEngine (evalRequest.ToJsonString()) |> expectOk "evaluate the help-returned Flow/2 fold request"
         equal "6" (stringValue evaluatedFold.["data"].["stack"].[0]) "the help-returned Flow/2 fold evaluates to the sum"
+
+        let enumSource =
+            defineHelpDataV2.["sourceExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "tutorial-enum-tests")
+            |> fun item -> stringValue item.["source"]
+        let enumRequests = examplesHelpV2.["requestExamples"].AsArray()
+        let enumRequest name =
+            enumRequests |> Seq.find (fun item -> stringValue item.["name"] = name)
+            |> fun item -> item.["request"]
+        equal enumSource (stringValue ((enumRequest "define-tutorial-enum-tests").["source"])) "enum help source and define request agree"
+        for name in [ "define-tutorial-enum-tests"; "test-tutorial-classify"; "commit-tutorial-classify-as-library" ] do
+            Protocol.dispatchLine flow2HelpEngine ((enumRequest name).ToJsonString())
+            |> expectOk $"execute enum help request {name}"
+            |> ignore
+        let classified = dispatch flow2HelpEngine "describe" [ "word", jstr "tutorial.classify" ] |> expectOk "inspect help-defined enum classifier"
+        equal "library" (stringValue classified.["data"].["maturity"]) "enum help classifier qualifies as library"
+        let enumTests = dispatch flow2HelpEngine "test" [ "word", jstr "tutorial.classify" ] |> expectOk "rerun committed enum help tests"
+        equal "3/3 test(s) passed." (stringValue enumTests.["text"]) "enum constructor expectations pass after publication"
+        let reloadEnum = Runtime.Engine(Path.Combine(root, "authoring-help-flow2"), Set.empty, "2041-02-03T04:05:06Z")
+        dispatch reloadEnum "test" [ "word", jstr "tutorial.classify" ] |> expectOk "reload published enum help tests" |> ignore
 
         let tutorialSpanCommitRequest = requestExampleV2 "commit-tutorial-span-validator-as-library"
         equal "commit" (stringValue tutorialSpanCommitRequest.["op"]) "predicate library example uses commit"

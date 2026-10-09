@@ -8,6 +8,13 @@ The broker is a transport wrapper, not an operating-system sandbox: an external
 subagent can still have other host tools unless its surrounding platform limits
 them.
 
+The current conventional dispatcher fixes `-p:NuGetAudit=false` for both build
+and run validation and records it in each validation response's command array.
+This keeps vulnerability-feed availability out of task acceptance. Package
+restoration still follows normal .NET behavior; this is not a fully offline build
+policy. Pin the runtime and validation policy before participant dispatch.
+Historical traces retain their original commands and outcomes.
+
 ## Participant isolation
 
 Each participant receives a fresh context, its own project copy, pinned prompt

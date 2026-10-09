@@ -479,8 +479,8 @@ type ConventionalDispatcher
             removeCredentialEnvironment startInfo.Environment
             let commandArguments =
                 match validationCommand.Action with
-                | ValidationAction.Build -> [ "build"; latestRelativeProject; "--nologo" ]
-                | ValidationAction.Run -> [ "run"; "--project"; latestRelativeProject; "--no-launch-profile" ]
+                | ValidationAction.Build -> [ "build"; latestRelativeProject; "--nologo"; "-p:NuGetAudit=false" ]
+                | ValidationAction.Run -> [ "run"; "--project"; latestRelativeProject; "--no-launch-profile"; "-p:NuGetAudit=false" ]
             commandArguments |> List.iter startInfo.ArgumentList.Add
 
             use childProcess = new Process(StartInfo = startInfo)

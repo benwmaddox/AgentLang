@@ -1,0 +1,85 @@
+{
+  "sourceBaseHead": "5cb9b87cf0122395cbd81f316c844a91cd73cf07",
+  "archive": "evidence.zip",
+  "entries": 19,
+  "bytes": 11355,
+  "sha256": "b61aa7371ab9f398c6887d5b91b3615f60da4543e18c2110d6bb30ea6d5f26d3",
+  "files": [
+    {
+      "path": "check-cli.py",
+      "sha256": "72fca9822c98108ec18e2f5fac444fb69e910f02929ea546d22706c2e15b76ac"
+    },
+    {
+      "path": "conventional/build.exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": "conventional/build.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "conventional/build.stdout.txt",
+      "sha256": "75efa32d754e6dab6f4ba0ccf52c6b217aa79cef869337f5ee8eaa8baf2d5788"
+    },
+    {
+      "path": "conventional/cli-build.log",
+      "sha256": "bc5cc90cf49529bacd225b251babbc8de2285b5d618f1310cb6499b5ea32dd65"
+    },
+    {
+      "path": "conventional/cli-validation.jsonl",
+      "sha256": "624c39357c398dbdad87905b17b02bf49bca9ff5593fcea3f8de545f67dd336c"
+    },
+    {
+      "path": "conventional/cli-validation.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "conventional/runner.exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": "conventional/runner.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "conventional/runner.stdout.txt",
+      "sha256": "c7b5fe21a773861477e388668b0f18a00007c193ef85d2f19671437ced4a0dbc"
+    },
+    {
+      "path": "flow/build-001.log",
+      "sha256": "032c523757355f6e1ea656c1c8620de3ca7f720cbe9b1541d802212d37c8ec86"
+    },
+    {
+      "path": "flow/discovery-build.log",
+      "sha256": "c01fb58f9640467588e4aacfae82cb260bcb0778b1330a9b55d13d596b034b4a"
+    },
+    {
+      "path": "flow/discovery-tests.log",
+      "sha256": "734576926f7a806b6a00d48b7fc1c36a45208d8885e30c1cfbc6fbd5fd4afbfa"
+    },
+    {
+      "path": "flow/harness-build.log",
+      "sha256": "f9099cc363100471f41d81cac8d473bcd26f6e1b50d95d7485724426d459ccc1"
+    },
+    {
+      "path": "flow/harness-tests-002.log",
+      "sha256": "0fd377789daac6c10971e67e28c372b0e8d9a79b52e9d574fe82d3aa059bef77"
+    },
+    {
+      "path": "flow/tests-001.log",
+      "sha256": "6c2c49c4c9ed8e8623d04ed80fb5d0253a40a22368df73da2baa417284dda7d7"
+    },
+    {
+      "path": "package-evidence.py",
+      "sha256": "2a8180b0470fed80be6be6622cf49c8d98f274c0c0402adaee5c1d1a9443a0de"
+    },
+    {
+      "path": "preflight-attempts.json",
+      "sha256": "5341a3e7c460b1274e0b650e2f499c6c19a4784cd73f34dc1fef36f2cf9cfbf4"
+    },
+    {
+      "path": "working-change.patch",
+      "sha256": "4a7789efca010ac7786a72827317e38c567c04de544fa036410952a17ebb850c"
+    }
+  ]
+}

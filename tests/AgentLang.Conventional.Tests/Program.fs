@@ -491,6 +491,19 @@ let main _ =
 
     let private testFixedDotnetValidation root =
         let project = makeProject root "validation"
+        let projectFile = Path.Combine(project, "Synthetic.fsproj")
+        let guardedProject =
+            File.ReadAllText(projectFile).Replace(
+                "</Project>",
+                """  <PropertyGroup>
+    <NuGetAudit>true</NuGetAudit>
+  </PropertyGroup>
+  <Target Name="RequireNuGetAuditDisabled" BeforeTargets="Restore;Build">
+    <Error Condition="'$(NuGetAudit)' != 'false'" Text="Validation must disable NuGetAudit." />
+  </Target>
+</Project>""",
+                StringComparison.Ordinal)
+        File.WriteAllText(projectFile, guardedProject)
         let programPath = Path.Combine(project, "Program.fs")
         let successBody = "    let secret = Environment.GetEnvironmentVariable(\"AGENTLANG_CONVENTIONAL_TEST_SECRET\")\n    if String.IsNullOrEmpty secret then\n        Console.WriteLine(\"SECRET_ENV_REMOVED\")\n        Console.WriteLine(\"PASS\")\n        0\n    else\n        Console.WriteLine(\"SECRET_ENV_PRESENT\")\n        1"
         File.WriteAllText(programPath, sourceForValidation successBody)
@@ -505,10 +518,21 @@ let main _ =
             check (isOk built) $"fixed dotnet build passes: {buildText}"
             let buildData = built["data"]
             equal 0 (buildData["exitCode"].GetValue<int>()) "build result contains the exit code"
+            let buildCommand =
+                buildData["command"].AsArray()
+                |> Seq.map (fun argument -> argument.GetValue<string>())
+                |> Seq.toList
+            equal [ "build"; "Synthetic.fsproj"; "--nologo"; "-p:NuGetAudit=false" ] buildCommand "build response reports the NuGet audit override"
             let runValidator = defaultDispatcher project ValidationAction.Run 120_000 2048
             let ran = call runValidator "validate" []
             let runText = propertyString ran "text" ""
             check (isOk ran) $"fixed dotnet run passes: {runText}"
+            let runData = ran["data"]
+            let runCommand =
+                runData["command"].AsArray()
+                |> Seq.map (fun argument -> argument.GetValue<string>())
+                |> Seq.toList
+            equal [ "run"; "--project"; "Synthetic.fsproj"; "--no-launch-profile"; "-p:NuGetAudit=false" ] runCommand "run response reports the NuGet audit override"
             let output = propertyString ran["data"] "stdout" "" + propertyString ran["data"] "stderr" ""
             check (output.Contains("PASS", StringComparison.Ordinal)) "test executable output is captured"
             check (output.Contains("SECRET_ENV_REMOVED", StringComparison.Ordinal)) "credential-named process variables are removed before validation"

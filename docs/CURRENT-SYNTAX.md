@@ -5,6 +5,26 @@ Select Flow/2 with `syntaxVersion: 2` in runtime requests or
 omitted. Keep the selected version consistent for definitions, tests, and
 replacements.
 
+Payload-free enum cases are constructor calls, including their empty argument
+list: `PublishOutcome.created()`. They are different from record properties such
+as `customer.email`. An exact-root call also keeps its parentheses:
+`.PublishOutcome.created()`.
+
+An attached test compares a constructed value with a value-expression expectation:
+
+```flow
+test configuration.publish-safely/created {
+    file.write("source.txt", "configuration")
+    configuration.publish-safely("source.txt", "destination.txt")
+    => value PublishOutcome.created()
+}
+```
+
+Bare `=>` accepts supported literals; it cannot precede an enum constructor.
+The expected expression does not supply target-function coverage. Runtime
+`help` with topic `define` or `examples` and syntaxVersion 2 includes the complete
+`tutorial-enum-tests` source and executable define/test/library-commit requests.
+
 ## Dotted calls, properties, and bound receivers
 
 Flow/2 uses dots for namespace calls and generated constructors. A plain record

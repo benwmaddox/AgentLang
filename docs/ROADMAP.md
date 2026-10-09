@@ -81,6 +81,13 @@ address observed enum/test-constructor and UTF-8 transport friction. Keep the
 deferred broad retention study deferred; continue native Option/Result
 conformance as the separate secondary track.
 
+[Report 157](../reports/157-audit-independent-validation-and-enum-help.md) fixes
+vulnerability-feed dependence in conventional validation and adds executable
+Flow/2 enum/library-test help. Focused conventional, runtime, discovery and
+harness checks pass. This is a tooling follow-up, not another participant trial;
+UTF-8 transport friction remains separate. Original report-156 outcomes remain
+unchanged.
+
 The interpreter, typed semantic IR, dictionary, task transactions, introspection,
 Flow/1 authoring and existing library coverage gates are implemented. Earlier
 external-agent comparisons observed reuse; they did not establish a general
