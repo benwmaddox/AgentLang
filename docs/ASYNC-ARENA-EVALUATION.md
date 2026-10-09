@@ -1,6 +1,7 @@
 # Async arena throughput experiment
 
-Status: real-I/O throughput evaluation remains planned, 2026-10-08. A standalone
+Status: first bounded native/F# load comparison is complete; production service
+throughput remains unproven. A standalone
 native ownership/memory comparison is complete in [report 104](../reports/104-native-arena-mailbox-feasibility.md):
 72 runs passed, with lower per-turn backing for disposable working data and a
 retained-only counterexample. [Report 106](../reports/106-native-record-ownership.md)
@@ -24,6 +25,18 @@ reset profile that skips full-capacity scratch payload poisoning at checkout
 and release. Both profiles pass the same policy and socket semantic fixtures.
 Live-prefix poisoning and per-byte initialization tracking remain; this is not
 yet a constant-time pointer-only reset or a production throughput result.
+
+[Report 139](../reports/139-trusted-generated-native-profile.md) adds the explicit
+trusted-generated profile, removing diagnostic bitmap storage, poison writes and
+tracking scans while retaining serialized-input, capacity, token and publication
+checks. Matching native socket/policy tests pass. The separate lean load harness
+in [report 140](../reports/140-matched-mailbox-load.md) passes 197 correctness-checked
+trials and an independent audit. It uses internal open-loop arrivals, not an HTTP
+ingress server. Native process memory is lower on this fixture; KEEP with sixteen
+slots recovers throughput lost by four slots. Native RETURN's high short-run point
+fails its 30-second confirmation, and non-monotonic timing prevents a general
+throughput conclusion. Preserve both policies and these limits when planning
+later external-ingress tests; prioritize the next agent-maintenance comparison.
 
 [Midori research](MIDORI-RESEARCH.md) supplies architectural comparisons, not
 AgentLang performance evidence. Include bounded outstanding work, explicit
@@ -157,8 +170,9 @@ additional transitions may instead limit CPU throughput. Measure both outcomes.
 
 Report 133 completes the bounded native socket fixture and terminal-cancellation
 slice below. Its F# process is only the shared echo provider, not the application
-baseline. The release reset path, sustained-load driver, matched F# application,
-late-completion stress and socket-level capacity rejection remain ahead.
+baseline. Report 139 supplies the trusted-generated release profile; report 140
+adds the separate load driver and matched F# application. Broader late-completion
+stress, slow-client backpressure and service-level admission remain later work.
 
 Preserve report 132's fixtures and add one bounded steady-state fixture: latest
 response plus a fixed-width request count, with an independent state/output
@@ -170,7 +184,7 @@ native processes. Compare a separate idiomatic F# process against the same
 loopback protocol and admission limits; shared provider/load tools may use .NET.
 Add no general scheduler framework or language syntax for this slice.
 
-The missing terminal-cancellation operation must run only after the provider
+The terminal-cancellation operation must run only after the provider
 acknowledges completion or cancellation. Preserve Begin-produced State, retire
 Continuation and invalidate the pending token. RETURN can retain its published
 State; KEEP must publish its attached State before releasing the slot. Check
@@ -178,9 +192,9 @@ that State fits retained storage at admission so cancellation cannot strand an
 admitted operation. Test late completions, failed resumes, capacity rejection
 and full drain with actual sockets before collecting performance results.
 
-The current correctness runtime includes per-byte initialization/poison tracking
-and capacity-sized reset writes. Retain that safety configuration, but validate
-a release pointer-reset/reuse path against matching semantic tests before
+The diagnostic correctness runtime includes per-byte initialization/poison tracking
+and capacity-sized reset writes. Retain that safety configuration alongside the
+validated trusted-generated profile from report 139. Require matching semantics before
 claiming competitive throughput. Measure native hosts without a CLR wrapper,
 and report process memory separately from arena reservations. Use externally
 scheduled arrivals, bounded queues/buffers and predeclared memory, latency and

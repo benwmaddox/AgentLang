@@ -13,6 +13,7 @@ open System.Threading.Tasks
 type private Options =
     { Port: int
       FragmentBytes: int
+      Persistent: bool
       ReadyFile: string
       StopFile: string }
 
@@ -25,6 +26,9 @@ type private Counters() =
     let mutable cancelled = 0L
     let mutable ioFailures = 0L
     let mutable internalErrors = 0L
+    let mutable acceptedFrames = 0L
+    let mutable completedConnections = 0L
+    let mutable invalidConnections = 0L
 
     member _.Accepted = Interlocked.Read(&accepted)
     member _.Completed = Interlocked.Read(&completed)
@@ -34,6 +38,9 @@ type private Counters() =
     member _.Cancelled = Interlocked.Read(&cancelled)
     member _.IoFailures = Interlocked.Read(&ioFailures)
     member _.InternalErrors = Interlocked.Read(&internalErrors)
+    member _.AcceptedFrames = Interlocked.Read(&acceptedFrames)
+    member _.CompletedConnections = Interlocked.Read(&completedConnections)
+    member _.InvalidConnections = Interlocked.Read(&invalidConnections)
 
     member _.RecordAccepted() = Interlocked.Increment(&accepted) |> ignore
     member _.RecordCompleted() = Interlocked.Increment(&completed) |> ignore
@@ -43,6 +50,9 @@ type private Counters() =
     member _.RecordCancelled() = Interlocked.Increment(&cancelled) |> ignore
     member _.RecordIoFailure() = Interlocked.Increment(&ioFailures) |> ignore
     member _.RecordInternalError() = Interlocked.Increment(&internalErrors) |> ignore
+    member _.RecordAcceptedFrame() = Interlocked.Increment(&acceptedFrames) |> ignore
+    member _.RecordCompletedConnection() = Interlocked.Increment(&completedConnections) |> ignore
+    member _.RecordInvalidConnection() = Interlocked.Increment(&invalidConnections) |> ignore
 
 let private maximumDelayMs = 1000u
 let private maximumPayloadBytes = 4096u
@@ -51,13 +61,15 @@ let private connectionTimeoutMs = 5000
 let private stopPollMs = 50
 
 let private usage =
-    "Usage: AgentLang.RealIoMailbox.Provider [--port <0..65535>] [--fragment-bytes <1..4096>] --ready-file <absolute path> --stop-file <absolute path> (defaults: port 0, fragment bytes 4096)"
+    "Usage: AgentLang.RealIoMailbox.Provider [--port <0..65535>] [--fragment-bytes <1..4096>] [--persistent true|false] --ready-file <absolute path> --stop-file <absolute path> (defaults: port 0, fragment bytes 4096, persistent false)"
 
 let private parseOptions (arguments: string array) =
     let mutable port = 0
     let mutable portSeen = false
     let mutable fragmentBytes = int maximumPayloadBytes
     let mutable fragmentBytesSeen = false
+    let mutable persistent = false
+    let mutable persistentSeen = false
     let mutable readyFile: string option = None
     let mutable stopFile: string option = None
     let mutable index = 0
@@ -87,6 +99,13 @@ let private parseOptions (arguments: string array) =
                 invalidArg "arguments" "--fragment-bytes must be an integer from 1 through 4096."
             fragmentBytes <- parsedFragmentBytes
             fragmentBytesSeen <- true
+        | "--persistent" ->
+            if persistentSeen then invalidArg "arguments" "--persistent may be supplied only once."
+            match value with
+            | "true" -> persistent <- true
+            | "false" -> persistent <- false
+            | _ -> invalidArg "arguments" "--persistent must be true or false."
+            persistentSeen <- true
         | "--ready-file" ->
             if readyFile.IsSome then invalidArg "arguments" "--ready-file may be supplied only once."
             readyFile <- Some value
@@ -111,6 +130,7 @@ let private parseOptions (arguments: string array) =
 
     { Port = port
       FragmentBytes = fragmentBytes
+      Persistent = persistent
       ReadyFile = readyPath
       StopFile = stopPath }
 
@@ -137,14 +157,41 @@ let private writeReadyFile (path: string) (port: int) (fragmentBytes: int) =
     finally
         if File.Exists temporaryPath then File.Delete temporaryPath
 
-let private receiveExactly (socket: Socket) (buffer: byte array) cancellationToken =
+let private tryReceiveExactly (socket: Socket) (buffer: byte array) cancellationToken =
     task {
         let mutable offset = 0
+        let mutable cleanEndOfStream = false
 
-        while offset < buffer.Length do
+        while offset < buffer.Length && not cleanEndOfStream do
             let! received = socket.ReceiveAsync(buffer.AsMemory(offset), SocketFlags.None, cancellationToken)
-            if received = 0 then raise (EndOfStreamException("The peer closed before the complete frame arrived."))
-            offset <- offset + received
+            if received = 0 then
+                if offset = 0 then cleanEndOfStream <- true
+                else raise (EndOfStreamException("The peer closed before the complete frame arrived."))
+            else
+                offset <- offset + received
+
+        return not cleanEndOfStream
+    }
+
+let private tryReceivePersistentHeader (socket: Socket) (buffer: byte array) (connectionCancellation: CancellationTokenSource) (shutdownToken: CancellationToken) =
+    task {
+        let! firstBytes = socket.ReceiveAsync(buffer.AsMemory(), SocketFlags.None, shutdownToken)
+        if firstBytes = 0 then
+            return false
+        else
+            connectionCancellation.CancelAfter connectionTimeoutMs
+            let mutable offset = firstBytes
+            while offset < buffer.Length do
+                let! received = socket.ReceiveAsync(buffer.AsMemory(offset), SocketFlags.None, connectionCancellation.Token)
+                if received = 0 then raise (EndOfStreamException("The peer closed before the complete frame arrived."))
+                offset <- offset + received
+            return true
+    }
+
+let private receiveExactly (socket: Socket) (buffer: byte array) cancellationToken =
+    task {
+        let! received = tryReceiveExactly socket buffer cancellationToken
+        if not received then raise (EndOfStreamException("The peer closed before the complete frame arrived."))
     }
 
 let private sendInChunks (socket: Socket) (buffer: byte array) (fragmentBytes: int) (delayAfterFirstChunk: bool) cancellationToken =
@@ -178,42 +225,75 @@ let private writeUInt32LittleEndian value =
        byte ((value >>> 16) &&& 0xFFu)
        byte ((value >>> 24) &&& 0xFFu) |]
 
-let private serveClient (client: TcpClient) (fragmentBytes: int) (shutdownToken: CancellationToken) (counters: Counters) =
+let private serveClient (client: TcpClient) (fragmentBytes: int) (persistent: bool) (shutdownToken: CancellationToken) (counters: Counters) =
     task {
         use clientLifetime = client
 
+        let mutable connectionOutcomeRecorded = false
+
         try
             use connectionCancellation = CancellationTokenSource.CreateLinkedTokenSource shutdownToken
-            connectionCancellation.CancelAfter connectionTimeoutMs
+            if not persistent then connectionCancellation.CancelAfter connectionTimeoutMs
             let token = connectionCancellation.Token
             let socket = clientLifetime.Client
             socket.NoDelay <- true
+            let mutable serving = true
 
-            let requestHeader = Array.zeroCreate<byte> 8
-            do! receiveExactly socket requestHeader token
+            while serving do
+                let requestHeader = Array.zeroCreate<byte> 8
+                let! gotHeader =
+                    if persistent then
+                        tryReceivePersistentHeader socket requestHeader connectionCancellation shutdownToken
+                    else
+                        tryReceiveExactly socket requestHeader token
 
-            let delayMs = readUInt32LittleEndian requestHeader 0
-            let payloadByteCount = readUInt32LittleEndian requestHeader 4
+                if not gotHeader then
+                    if persistent then
+                        serving <- false
+                        counters.RecordCompletedConnection()
+                        connectionOutcomeRecorded <- true
+                    else
+                        raise (EndOfStreamException("The peer closed before the complete frame arrived."))
+                else
+                    let delayMs = readUInt32LittleEndian requestHeader 0
+                    let payloadByteCount = readUInt32LittleEndian requestHeader 4
 
-            if delayMs > maximumDelayMs || payloadByteCount > maximumPayloadBytes then
-                counters.RecordInvalidFrame()
-            else
-                let payload = Array.zeroCreate<byte> (int payloadByteCount)
-                do! receiveExactly socket payload token
-                do! Task.Delay(int delayMs, token)
-                do! sendInChunks socket (writeUInt32LittleEndian payloadByteCount) fragmentBytes true token
-                do! sendInChunks socket payload fragmentBytes false token
-                counters.RecordCompleted()
+                    if delayMs > maximumDelayMs || payloadByteCount > maximumPayloadBytes then
+                        counters.RecordInvalidFrame()
+                        counters.RecordInvalidConnection()
+                        connectionOutcomeRecorded <- true
+                        serving <- false
+                    else
+                        let payload = Array.zeroCreate<byte> (int payloadByteCount)
+                        do! receiveExactly socket payload token
+                        counters.RecordAcceptedFrame()
+                        do! Task.Delay(int delayMs, token)
+                        do! sendInChunks socket (writeUInt32LittleEndian payloadByteCount) fragmentBytes true token
+                        do! sendInChunks socket payload fragmentBytes false token
+                        counters.RecordCompleted()
+
+                        if not persistent then
+                            serving <- false
+                            counters.RecordCompletedConnection()
+                            connectionOutcomeRecorded <- true
+                        else
+                            connectionCancellation.CancelAfter Timeout.Infinite
         with
         | :? OperationCanceledException ->
             if shutdownToken.IsCancellationRequested then counters.RecordCancelled()
             else counters.RecordTimedOut()
+            connectionOutcomeRecorded <- true
         | :? SocketException
         | :? IOException
-        | :? ObjectDisposedException -> counters.RecordIoFailure()
+        | :? ObjectDisposedException ->
+            counters.RecordIoFailure()
+            connectionOutcomeRecorded <- true
         | error ->
             counters.RecordInternalError()
+            connectionOutcomeRecorded <- true
             Console.Error.WriteLine($"provider: handler error {error.GetType().Name}")
+
+        if not connectionOutcomeRecorded then counters.RecordCompletedConnection()
     }
 
 let private watchStopFile (path: string) (shutdown: CancellationTokenSource) =
@@ -239,11 +319,11 @@ let private reapCompleted (handlers: ResizeArray<Task>) =
             handlers.Remove handler |> ignore
     }
 
-let private printCounters (counters: Counters) =
+let private printCounters persistent (counters: Counters) =
     let classifiedOutcomes =
-        counters.Completed
+        counters.CompletedConnections
         + counters.RejectedBusy
-        + counters.InvalidFrames
+        + counters.InvalidConnections
         + counters.TimedOut
         + counters.Cancelled
         + counters.IoFailures
@@ -252,21 +332,36 @@ let private printCounters (counters: Counters) =
     if counters.Accepted <> classifiedOutcomes then
         invalidOp $"Provider outcome accounting mismatch: accepted={counters.Accepted}, classified={classifiedOutcomes}."
 
-    let summary =
-        {| accepted = counters.Accepted
-           completed = counters.Completed
-           rejectedBusy = counters.RejectedBusy
-           invalidFrames = counters.InvalidFrames
-           timedOut = counters.TimedOut
-           cancelled = counters.Cancelled
-           ioFailures = counters.IoFailures
-           internalErrors = counters.InternalErrors |}
-
-    Console.WriteLine(JsonSerializer.Serialize summary)
+    if persistent then
+        let summary =
+            {| accepted = counters.Accepted
+               completed = counters.Completed
+               rejectedBusy = counters.RejectedBusy
+               invalidFrames = counters.InvalidFrames
+               timedOut = counters.TimedOut
+               cancelled = counters.Cancelled
+               ioFailures = counters.IoFailures
+               internalErrors = counters.InternalErrors
+               acceptedConnections = counters.Accepted
+               acceptedFrames = counters.AcceptedFrames
+               completedFrames = counters.Completed |}
+        Console.WriteLine(JsonSerializer.Serialize summary)
+    else
+        let summary =
+            {| accepted = counters.Accepted
+               completed = counters.Completed
+               rejectedBusy = counters.RejectedBusy
+               invalidFrames = counters.InvalidFrames
+               timedOut = counters.TimedOut
+               cancelled = counters.Cancelled
+               ioFailures = counters.IoFailures
+               internalErrors = counters.InternalErrors |}
+        Console.WriteLine(JsonSerializer.Serialize summary)
 
 let private runServer options =
     task {
         use shutdown = new CancellationTokenSource()
+        use handlerShutdown = new CancellationTokenSource()
         use listener = new TcpListener(IPAddress.Loopback, options.Port)
         let counters = Counters()
         let handlers = ResizeArray<Task>()
@@ -296,7 +391,8 @@ let private runServer options =
                         counters.RecordRejectedBusy()
                         client.Dispose()
                     else
-                        handlers.Add(serveClient client options.FragmentBytes shutdown.Token counters :> Task)
+                        let handlerToken = if options.Persistent then handlerShutdown.Token else shutdown.Token
+                        handlers.Add(serveClient client options.FragmentBytes options.Persistent handlerToken counters :> Task)
         with
         | :? OperationCanceledException when shutdown.IsCancellationRequested -> ()
         | :? SocketException when shutdown.IsCancellationRequested -> ()
@@ -310,8 +406,17 @@ let private runServer options =
         Console.CancelKeyPress.RemoveHandler cancelOnConsole
         do! stopWatcher
         do! reapCompleted handlers
-        do! Task.WhenAll(handlers.ToArray())
-        printCounters counters
+
+        if options.Persistent && handlers.Count > 0 then
+            let handlerDrain = Task.WhenAll(handlers.ToArray())
+            let! finished = Task.WhenAny(handlerDrain, Task.Delay connectionTimeoutMs)
+            if not (Object.ReferenceEquals(finished, handlerDrain)) then
+                handlerShutdown.Cancel()
+            do! handlerDrain
+        elif handlers.Count > 0 then
+            do! Task.WhenAll(handlers.ToArray())
+
+        printCounters options.Persistent counters
 
         match serverFailure with
         | Some error -> return raise error

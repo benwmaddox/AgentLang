@@ -217,10 +217,16 @@ behavior ([report 138](../reports/138-native-reset-profile.md)). The opt-in
 [trusted-generated profile](../reports/139-trusted-generated-native-profile.md)
 removes the remaining diagnostic bitmap storage, poison writes and tracking
 scans while preserving serialized input checks and callback boundaries. Its
-12-run socket matrix preserves both policies' behavior at O0/O2. Next compare
-sustained load with matched F# workloads using this explicit profile; the
-diagnostic host is not a performance baseline. Do not add a general actor
-framework as a prerequisite for that comparison.
+12-run socket matrix preserves both policies' behavior at O0/O2. The first
+[matched load comparison](../reports/140-matched-mailbox-load.md) passes 197
+correctness-checked trials plus an independent raw-data audit. Native process
+memory is smaller in this fixture; a sixteen-slot KEEP pool recovers throughput
+lost by four slots. Native RETURN's best short point fails the 30-second check,
+so a general throughput advantage remains unproven. The internal arrival driver
+and non-monotonic timing require investigation before service-throughput claims.
+Keep both arena policies available; return to the primary maintenance-efficacy
+comparison below before expanding performance infrastructure. A general actor
+framework is not a prerequisite for either experiment.
 Native conformance does not
 establish service throughput, process RAM or improved agent reliability.
 This is not an unresolved preference between packing and bulk reset; see the
@@ -449,6 +455,18 @@ validation contract; report 120 exposes this reasoning tension but does not
 settle the design. Provider-state assertions,
 broader module/library closure, test-local overrides and native enums remain
 pending. Use new fixtures and preserve historical research inputs.
+
+After the bounded report 140 runtime comparison, prioritize a small maintenance
+comparison using the accepted retained-language and conventional outputs from
+report 135. Candidate task: change the existing shared payment-total rule to
+include only payments belonging to paid invoices, preserving errors and both
+summary callers. Use two fresh agents per language, a frozen independent oracle
+covering the helper and both callers, and correct/incorrect preflight controls.
+Score behavior, shared structure, collateral changes, tests and finalization
+separately. Preserve the helper-provenance distinction: the language helper came
+from an earlier agent; the conventional equivalent was supplied. This tests
+maintenance of existing vocabulary, not identical prior authorship or a causal
+language advantage. Reuse the harness and leave historical submissions untouched.
 
 Report 111's extra-write control passed full library coverage but violated the
 IO contract. Make provider-state and effect-count assertions straightforward in

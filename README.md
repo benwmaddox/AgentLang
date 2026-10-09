@@ -367,5 +367,10 @@ also removes diagnostic bitmap storage and live-prefix poisoning. Both policies
 pass the same socket fixtures at O0/O2 across all three profiles. Compile mailbox
 modules with `--runtime-profile trusted-generated` and the native host with
 `AL_OWNING_TRUSTED_GENERATED=1` to select matching trusted builds. Diagnostic
-remains the default. These are correctness and storage results; sustained
-throughput and whole-process memory comparisons remain pending.
+remains the default. The first [matched native/F# load comparison](reports/140-matched-mailbox-load.md)
+passes 197 correctness-checked trials and an independent data audit. At a matched
+delayed-I/O point, native RETURN uses about 5.2 MiB peak commit versus F#'s
+26.2 MiB; KEEP with sixteen arenas recovers the throughput lost by a four-arena
+pool at about 8.1 MiB. Native RETURN's high short-run rate fails its 30-second
+confirmation. These bounded host results do not establish general server
+throughput or improved agent edit reliability.
