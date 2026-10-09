@@ -20,6 +20,10 @@ audit for the solution build and child verification processes; report this
 limitation. Both options are opt-in, and the evidence records the options and
 exact build arguments. `Verify-NativeDispatch.ps1` accepts the same options.
 
+Current efficacy comparison: [143 — Subscription overlap](143-subscription-overlap-comparison.md)
+has frozen a shared 19-case acceptance suite after positive, unchanged-seed and
+compiling-mutation controls. Participant outcomes remain pending.
+
 Latest library-contract checkpoint: [142 â€” Library dependency qualification](142-library-dependency-qualification.md)
 extends qualification to all authored dependencies. A fresh guided subagent
 preserves the two-function composition and adds effective helper regression
