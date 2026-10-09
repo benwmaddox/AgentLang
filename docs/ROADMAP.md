@@ -94,6 +94,16 @@ This removes a known comparison confound; it is not a new agent trial and does
 not change report 156's findings. Continue with a bounded efficacy comparison
 using the corrected tooling; keep broad retention preparation deferred.
 
+[Report 159](../reports/159-retained-io-vocabulary-follow-on.md) completes that
+follow-on. Both participants pass twelve independent publication/mirroring
+scenarios. F# reuses the retained safe publisher; AgentLang inspects and tests
+it but duplicates its logic. Library coverage is complete, yet voluntary reuse
+does not follow. Four frozen control-output reports were compacted after freeze;
+the report records that provenance loss separately from unchanged oracle code
+and passing post-dispatch controls. Close this small I/O sequence and continue
+native Option/Result conformance; do not collect more easy variants or resume
+the deferred broad retention preparation.
+
 The interpreter, typed semantic IR, dictionary, task transactions, introspection,
 Flow/1 authoring and existing library coverage gates are implemented. Earlier
 external-agent comparisons observed reuse; they did not establish a general

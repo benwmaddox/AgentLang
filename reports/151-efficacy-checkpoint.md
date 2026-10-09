@@ -123,3 +123,15 @@ conclusion: comparative reliability and accumulated-vocabulary benefits remain
 unproven. Fix offline validation and enum/test-constructor discovery friction
 before another comparison; do not expand the deferred retention study merely
 to collect more easy successes.
+
+[Report 159](159-retained-io-vocabulary-follow-on.md) follows the retained safe
+publisher with mirroring, after the validation/transport fixes. Both fresh
+participants pass twelve independent scenarios. F# calls the helper; AgentLang
+discovers, reads and tests it but duplicates the logic. Its new library passes
+all own-body and finite-return gates. This is a negative reuse observation:
+discoverability and coverage do not guarantee composition. AgentLang uses 23
+broker exchanges versus 10 for F# in this pair, with no transport or audit-feed
+failure. Four frozen control-output reports were replaced with compact copies
+after dispatch; unchanged code pins and passing reruns remain, but full original
+evidence provenance cannot be claimed. Close this I/O microsequence and continue
+the separate native conformance track instead of collecting similar successes.

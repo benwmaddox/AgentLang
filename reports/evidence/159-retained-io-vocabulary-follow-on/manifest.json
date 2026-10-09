@@ -1,0 +1,1110 @@
+{
+  "sourceBaseHead": "342469f3cc31658c55bf3645bb5dd955029388f9",
+  "archive": "evidence.zip",
+  "entries": 275,
+  "bytes": 4143715,
+  "sha256": "0e78b30093991b1fb7f0c8aa0cbaa09c9e977e6fd3124abcec875dfeb9897fd7",
+  "provenanceLimitation": "Original trial pin has four missing pre-dispatch Flow control output reports. See provenance-audit.json in archive. This archive verifies only files actually included.",
+  "files": [
+    {
+      "path": "acceptance-conventional.json",
+      "sha256": "30e268d9da30739edb0539954b5ea2ea042c89c5e623c0fbe6449d6333c64132"
+    },
+    {
+      "path": "acceptance-flow.json",
+      "sha256": "d7c2a530bab6f93c1b4d4cd5f868a5d18c7387b873865dc3f475568159e44c62"
+    },
+    {
+      "path": "actors/conventional/AgentLang.IoMaintenance156.Conventional.fsproj",
+      "sha256": "0f62bb110ccdc16c69b570e75a76584f2d78a7f9e0ed0600410cd825815cc314"
+    },
+    {
+      "path": "actors/conventional/Domain.fs",
+      "sha256": "8d201f3182e29ba2601506bb5f0131edccaa5b67f199b68a4a3f0e542f316d64"
+    },
+    {
+      "path": "actors/conventional/Operations.fs",
+      "sha256": "5844a96875d95b01c0f82fa8eaa65c0cb316b96f4b63fddd77af76047496771a"
+    },
+    {
+      "path": "actors/conventional/Program.fs",
+      "sha256": "a498fad04cb28adf0be37d5afcef60b435ed24df791e8ae090d1878039a81cfd"
+    },
+    {
+      "path": "actors/conventional/Publisher.fs",
+      "sha256": "33601718cc2006e354258a0bf9885a485ba80a9631cc2b86cffb654e51db5591"
+    },
+    {
+      "path": "actors/conventional/SelfTests.fs",
+      "sha256": "e342861a0ae3ee60b562905feac19a9fd64bcc39c5997414ad1d003944ca65b1"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/CURRENT",
+      "sha256": "d219c2680f41a568acd8b568318e8e5cbed5cd57260b7112a8d1ccb0a8ae4c3b"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/manifests/3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4.json",
+      "sha256": "3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/manifests/4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76.json",
+      "sha256": "4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/manifests/5ad4129bf25db13f07720ec238fe3aa398e9dfbf58c4500d08edb2abb7092d74.json",
+      "sha256": "5ad4129bf25db13f07720ec238fe3aa398e9dfbf58c4500d08edb2abb7092d74"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617.agent",
+      "sha256": "116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645.agent",
+      "sha256": "1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510.agent",
+      "sha256": "21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5.agent",
+      "sha256": "30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609.agent",
+      "sha256": "30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2.agent",
+      "sha256": "36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/3d808a3fb4f7bdf7204bfac5bcdcf5189eee7df24887f5c006bd5cdbe61e429e.agent",
+      "sha256": "3d808a3fb4f7bdf7204bfac5bcdcf5189eee7df24887f5c006bd5cdbe61e429e"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9.agent",
+      "sha256": "441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b.agent",
+      "sha256": "5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895.agent",
+      "sha256": "617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/725e25c516a5cc3b26d92570e0bcc71b95d4a290d7286470021c5dbc3502c473.agent",
+      "sha256": "725e25c516a5cc3b26d92570e0bcc71b95d4a290d7286470021c5dbc3502c473"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245.agent",
+      "sha256": "77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/7aea9655c74784d8b2e506922f6bac7c7a7b449a1cec396ede6a3b636f00210f.agent",
+      "sha256": "7aea9655c74784d8b2e506922f6bac7c7a7b449a1cec396ede6a3b636f00210f"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43.agent",
+      "sha256": "82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/8eb40fe1d4c089641c957f86147d4279126e794604093062d3d985df2942e08d.agent",
+      "sha256": "8eb40fe1d4c089641c957f86147d4279126e794604093062d3d985df2942e08d"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/968952360d9d6e7e55d75389aa332c352d7a14bf140c78c6821727e8f2ef7361.agent",
+      "sha256": "968952360d9d6e7e55d75389aa332c352d7a14bf140c78c6821727e8f2ef7361"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080.agent",
+      "sha256": "b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/b561a4fb8f760e052d07658b29b8c6d86dd21135fb79a102cf9a6b562e60c068.agent",
+      "sha256": "b561a4fb8f760e052d07658b29b8c6d86dd21135fb79a102cf9a6b562e60c068"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/cd253607bb14ebfc62c1e933d79819aa94e05761e16724e7356a0992040d3fb6.agent",
+      "sha256": "cd253607bb14ebfc62c1e933d79819aa94e05761e16724e7356a0992040d3fb6"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32.agent",
+      "sha256": "d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2.agent",
+      "sha256": "e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c.agent",
+      "sha256": "eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "actors/flow/dictionary.agent",
+      "sha256": "cd253607bb14ebfc62c1e933d79819aa94e05761e16724e7356a0992040d3fb6"
+    },
+    {
+      "path": "actors/flow/history/task-0001.json",
+      "sha256": "ac0dc1f896b259fae30c7477501956d376d4eed48e255523664be363b06b0463"
+    },
+    {
+      "path": "actors/flow/history/task-0002.json",
+      "sha256": "de049ee55ff53d006b7e17ec1a077afdaabb0c168da6ea4eb89b362f00fa5449"
+    },
+    {
+      "path": "baseline-conventional-002.jsonl",
+      "sha256": "481e30291372361e68208a22e3da3b832a62fef1dc971ffeff779e6cdfe3a3f5"
+    },
+    {
+      "path": "baseline-conventional-002.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "baseline-flow-002.jsonl",
+      "sha256": "596fb898510f709a54bdba3142ee4ff4e4577f72f5a7e636d391866902b009fd"
+    },
+    {
+      "path": "baseline-flow-002.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "baseline-flow-vocabulary.json",
+      "sha256": "4fd20cfacebcb302cb0174a26f7d47977519439d0d6c403ebb7a1daa20ab2679"
+    },
+    {
+      "path": "baseline-flow.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "baseline-flow.stderr.txt",
+      "sha256": "ed77602d16a8583aadf6bbec0c9dc14166b37fb6f5b3210a959ce59c9208eeac"
+    },
+    {
+      "path": "final-flow-vocabulary.json",
+      "sha256": "8402814fff2627b4aec2f790d8da426fd40bdbdf6598f1538f06bf81eb8a0c9d"
+    },
+    {
+      "path": "final-verification.json",
+      "sha256": "695ab032563e6b7741f8a9620932b5fb9650f4d53d5002b635eca8c2b37c8f2b"
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "3d0fbe4f8f84ce6ac2b633359d1f9e6d2adbdf5662df376ecab48a89a860a4fc"
+    },
+    {
+      "path": "oracle/cases.json",
+      "sha256": "be7b28702973787f5ac17218e84ff024da640dd10c160465d115767ee367bd22"
+    },
+    {
+      "path": "oracle/controls/conventional/conflict-mirror-overwrite/project/AgentLang.IoMaintenance156.Conventional.fsproj",
+      "sha256": "0f62bb110ccdc16c69b570e75a76584f2d78a7f9e0ed0600410cd825815cc314"
+    },
+    {
+      "path": "oracle/controls/conventional/conflict-mirror-overwrite/project/Domain.fs",
+      "sha256": "8d201f3182e29ba2601506bb5f0131edccaa5b67f199b68a4a3f0e542f316d64"
+    },
+    {
+      "path": "oracle/controls/conventional/conflict-mirror-overwrite/project/Operations.fs",
+      "sha256": "14f1ae2e6f748b4ad02ad7f49be76f0290096199988a94efe15dfa2774e8f254"
+    },
+    {
+      "path": "oracle/controls/conventional/conflict-mirror-overwrite/project/Program.fs",
+      "sha256": "a498fad04cb28adf0be37d5afcef60b435ed24df791e8ae090d1878039a81cfd"
+    },
+    {
+      "path": "oracle/controls/conventional/conflict-mirror-overwrite/project/Publisher.fs",
+      "sha256": "33601718cc2006e354258a0bf9885a485ba80a9631cc2b86cffb654e51db5591"
+    },
+    {
+      "path": "oracle/controls/conventional/conflict-mirror-overwrite/project/SelfTests.fs",
+      "sha256": "b157faa56dcac8cd0cbe9e575d4bfbf3094d0a3ae33c92e9e2ded2defcf9ece8"
+    },
+    {
+      "path": "oracle/controls/conventional/extra-unchanged-write/project/AgentLang.IoMaintenance156.Conventional.fsproj",
+      "sha256": "0f62bb110ccdc16c69b570e75a76584f2d78a7f9e0ed0600410cd825815cc314"
+    },
+    {
+      "path": "oracle/controls/conventional/extra-unchanged-write/project/Domain.fs",
+      "sha256": "8d201f3182e29ba2601506bb5f0131edccaa5b67f199b68a4a3f0e542f316d64"
+    },
+    {
+      "path": "oracle/controls/conventional/extra-unchanged-write/project/Operations.fs",
+      "sha256": "07ba544296d27658cb4c83e7fa02367c72cb1ec2fd5e9d2a5924ecba3bebb69f"
+    },
+    {
+      "path": "oracle/controls/conventional/extra-unchanged-write/project/Program.fs",
+      "sha256": "a498fad04cb28adf0be37d5afcef60b435ed24df791e8ae090d1878039a81cfd"
+    },
+    {
+      "path": "oracle/controls/conventional/extra-unchanged-write/project/Publisher.fs",
+      "sha256": "33601718cc2006e354258a0bf9885a485ba80a9631cc2b86cffb654e51db5591"
+    },
+    {
+      "path": "oracle/controls/conventional/extra-unchanged-write/project/SelfTests.fs",
+      "sha256": "b157faa56dcac8cd0cbe9e575d4bfbf3094d0a3ae33c92e9e2ded2defcf9ece8"
+    },
+    {
+      "path": "oracle/controls/conventional/positive/project/AgentLang.IoMaintenance156.Conventional.fsproj",
+      "sha256": "0f62bb110ccdc16c69b570e75a76584f2d78a7f9e0ed0600410cd825815cc314"
+    },
+    {
+      "path": "oracle/controls/conventional/positive/project/Domain.fs",
+      "sha256": "8d201f3182e29ba2601506bb5f0131edccaa5b67f199b68a4a3f0e542f316d64"
+    },
+    {
+      "path": "oracle/controls/conventional/positive/project/Operations.fs",
+      "sha256": "052916f94b76bb7da76b8b52cd9294a332801c96ed2d3a83800df1e9d80a6919"
+    },
+    {
+      "path": "oracle/controls/conventional/positive/project/Program.fs",
+      "sha256": "a498fad04cb28adf0be37d5afcef60b435ed24df791e8ae090d1878039a81cfd"
+    },
+    {
+      "path": "oracle/controls/conventional/positive/project/Publisher.fs",
+      "sha256": "33601718cc2006e354258a0bf9885a485ba80a9631cc2b86cffb654e51db5591"
+    },
+    {
+      "path": "oracle/controls/conventional/positive/project/SelfTests.fs",
+      "sha256": "b157faa56dcac8cd0cbe9e575d4bfbf3094d0a3ae33c92e9e2ded2defcf9ece8"
+    },
+    {
+      "path": "oracle/controls/conventional/wrong-mirror-content/project/AgentLang.IoMaintenance156.Conventional.fsproj",
+      "sha256": "0f62bb110ccdc16c69b570e75a76584f2d78a7f9e0ed0600410cd825815cc314"
+    },
+    {
+      "path": "oracle/controls/conventional/wrong-mirror-content/project/Domain.fs",
+      "sha256": "8d201f3182e29ba2601506bb5f0131edccaa5b67f199b68a4a3f0e542f316d64"
+    },
+    {
+      "path": "oracle/controls/conventional/wrong-mirror-content/project/Operations.fs",
+      "sha256": "bfd1321e7fd48f1c9ab81a51c4b2832f1577dde081742d147f2c6710ed726d8b"
+    },
+    {
+      "path": "oracle/controls/conventional/wrong-mirror-content/project/Program.fs",
+      "sha256": "a498fad04cb28adf0be37d5afcef60b435ed24df791e8ae090d1878039a81cfd"
+    },
+    {
+      "path": "oracle/controls/conventional/wrong-mirror-content/project/Publisher.fs",
+      "sha256": "33601718cc2006e354258a0bf9885a485ba80a9631cc2b86cffb654e51db5591"
+    },
+    {
+      "path": "oracle/controls/conventional/wrong-mirror-content/project/SelfTests.fs",
+      "sha256": "b157faa56dcac8cd0cbe9e575d4bfbf3094d0a3ae33c92e9e2ded2defcf9ece8"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/implementation.agent",
+      "sha256": "99a983a28954da0383e4857e00ffe2203fc7a373ca87c9b1cc77784f65e5ccf8"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/CURRENT",
+      "sha256": "dc402a9e93c6cc6a2fbd1781d3f6265552c2e1d1f60518c27e4a2a650f25f51e"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/manifests/3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4.json",
+      "sha256": "3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/manifests/4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76.json",
+      "sha256": "4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617.agent",
+      "sha256": "116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645.agent",
+      "sha256": "1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510.agent",
+      "sha256": "21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5.agent",
+      "sha256": "30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609.agent",
+      "sha256": "30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2.agent",
+      "sha256": "36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9.agent",
+      "sha256": "441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b.agent",
+      "sha256": "5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895.agent",
+      "sha256": "617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245.agent",
+      "sha256": "77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43.agent",
+      "sha256": "82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080.agent",
+      "sha256": "b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32.agent",
+      "sha256": "d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2.agent",
+      "sha256": "e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/objects/eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c.agent",
+      "sha256": "eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/dictionary.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "oracle/controls/flow/conflict-mirror-overwrite/project/history/task-0001.json",
+      "sha256": "ac0dc1f896b259fae30c7477501956d376d4eed48e255523664be363b06b0463"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/implementation.agent",
+      "sha256": "be4ed0d817f77f4b55131283004172364b660ad2f956227b823568a1c0b07d8e"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/CURRENT",
+      "sha256": "dc402a9e93c6cc6a2fbd1781d3f6265552c2e1d1f60518c27e4a2a650f25f51e"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/manifests/3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4.json",
+      "sha256": "3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/manifests/4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76.json",
+      "sha256": "4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617.agent",
+      "sha256": "116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645.agent",
+      "sha256": "1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510.agent",
+      "sha256": "21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5.agent",
+      "sha256": "30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609.agent",
+      "sha256": "30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2.agent",
+      "sha256": "36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9.agent",
+      "sha256": "441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b.agent",
+      "sha256": "5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895.agent",
+      "sha256": "617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245.agent",
+      "sha256": "77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43.agent",
+      "sha256": "82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080.agent",
+      "sha256": "b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32.agent",
+      "sha256": "d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2.agent",
+      "sha256": "e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/objects/eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c.agent",
+      "sha256": "eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/dictionary.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "oracle/controls/flow/extra-unchanged-write/project/history/task-0001.json",
+      "sha256": "ac0dc1f896b259fae30c7477501956d376d4eed48e255523664be363b06b0463"
+    },
+    {
+      "path": "oracle/controls/flow/positive/implementation.agent",
+      "sha256": "7d7cf8cc3b58a8c22815108e24154362cd8d993ba7090a0b430b3fb899e5da1e"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/CURRENT",
+      "sha256": "dc402a9e93c6cc6a2fbd1781d3f6265552c2e1d1f60518c27e4a2a650f25f51e"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/manifests/3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4.json",
+      "sha256": "3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/manifests/4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76.json",
+      "sha256": "4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617.agent",
+      "sha256": "116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645.agent",
+      "sha256": "1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510.agent",
+      "sha256": "21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5.agent",
+      "sha256": "30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609.agent",
+      "sha256": "30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2.agent",
+      "sha256": "36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9.agent",
+      "sha256": "441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b.agent",
+      "sha256": "5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895.agent",
+      "sha256": "617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245.agent",
+      "sha256": "77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43.agent",
+      "sha256": "82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080.agent",
+      "sha256": "b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32.agent",
+      "sha256": "d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2.agent",
+      "sha256": "e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/objects/eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c.agent",
+      "sha256": "eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/dictionary.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "oracle/controls/flow/positive/project/history/task-0001.json",
+      "sha256": "ac0dc1f896b259fae30c7477501956d376d4eed48e255523664be363b06b0463"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/implementation.agent",
+      "sha256": "050ebbf0a8dd22e66d92a5a82021bf0caa9217add1e1d686b2135c1c300bd642"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/CURRENT",
+      "sha256": "dc402a9e93c6cc6a2fbd1781d3f6265552c2e1d1f60518c27e4a2a650f25f51e"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/manifests/3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4.json",
+      "sha256": "3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/manifests/4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76.json",
+      "sha256": "4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617.agent",
+      "sha256": "116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645.agent",
+      "sha256": "1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510.agent",
+      "sha256": "21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5.agent",
+      "sha256": "30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609.agent",
+      "sha256": "30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2.agent",
+      "sha256": "36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9.agent",
+      "sha256": "441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b.agent",
+      "sha256": "5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895.agent",
+      "sha256": "617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245.agent",
+      "sha256": "77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43.agent",
+      "sha256": "82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080.agent",
+      "sha256": "b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32.agent",
+      "sha256": "d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2.agent",
+      "sha256": "e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/objects/eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c.agent",
+      "sha256": "eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/dictionary.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "oracle/controls/flow/wrong-mirror-content/project/history/task-0001.json",
+      "sha256": "ac0dc1f896b259fae30c7477501956d376d4eed48e255523664be363b06b0463"
+    },
+    {
+      "path": "oracle/flow_test_sources.py",
+      "sha256": "3346af12d6d9aa491a91d8d97dfa079bd0e79ea72e27521384d19fdc5ddf657e"
+    },
+    {
+      "path": "oracle/generate_cases.py",
+      "sha256": "3e6cfc3625ae4b21716c465db4cc49cfeacbe2b145867246653839196cce3111"
+    },
+    {
+      "path": "oracle/prepare_controls.py",
+      "sha256": "0844756ef95bfe22fa72fb0dc4fc8f65cfdec9c34a39644737945195217f34d8"
+    },
+    {
+      "path": "oracle/run_flow_oracle.py",
+      "sha256": "e0d80bbb8c23baead0d5a13506606f4c265e8c89ff47c95dfa01747a8eae5580"
+    },
+    {
+      "path": "oracle/run_fsharp_oracle.py",
+      "sha256": "49a8ad5bcd9a5fddf6fea5ecbd74fad3b94db6c91559228145b652bfb1f01625"
+    },
+    {
+      "path": "oracle/runs/flow-conflict-mirror-overwrite-final.json",
+      "sha256": "44d32bb852d2b241867d21b96766673a056935b388a99805d33e013e62f22f4d"
+    },
+    {
+      "path": "oracle/runs/flow-extra-unchanged-write-final.json",
+      "sha256": "210cdfeee0e8e24f057b8652bf7c61ff43306911b81baaaf7eaa87b581d49978"
+    },
+    {
+      "path": "oracle/runs/flow-positive-final.json",
+      "sha256": "03dc60ad61c5937ceb7472d348bf85a55fe972de637d319901329c186aca52b2"
+    },
+    {
+      "path": "oracle/runs/flow-wrong-mirror-content-final.json",
+      "sha256": "389d85bda0d8e8246b53f20e8640140119bd2be302d4528f03052c1eb2dc117a"
+    },
+    {
+      "path": "oracle/runs/fsharp-conflict-mirror-overwrite.json",
+      "sha256": "6dcc1cff2c7284000a588be04498f395376c514abb13291aab7b809261155ec7"
+    },
+    {
+      "path": "oracle/runs/fsharp-extra-unchanged-write.json",
+      "sha256": "67024b8423ab89df09e62ffda0872db9ad9dfa838b72c3ac3c1736959812efc5"
+    },
+    {
+      "path": "oracle/runs/fsharp-positive-validation.json",
+      "sha256": "2093724d59e48af4beb6b1a657ab8f69fc46fb597741afb723a94d68a2844d2e"
+    },
+    {
+      "path": "oracle/runs/fsharp-wrong-mirror-content.json",
+      "sha256": "4e1316c7142e17038df279b4eab2b78a956ada7b4f7e2b9be37323f493140673"
+    },
+    {
+      "path": "oracle/scenario_host.fs",
+      "sha256": "4dae5e8f8041ec776543af5142f2fb4407359842b5d07a3395c31c1a86b404ce"
+    },
+    {
+      "path": "oracle/summarize_controls.py",
+      "sha256": "b9ffc07c468c613a8ce37606a07dbf923798fe3a17e54ace210e57e9957e1566"
+    },
+    {
+      "path": "oracle/validation.json",
+      "sha256": "c84ed89345c300bf92f2c73b58f6b5dc540a1cac3f1f2b86b2fb5f49592d6283"
+    },
+    {
+      "path": "participant-results.json",
+      "sha256": "c8a53eab23dbc5951a08eb6113a7d4eaf4b3a1a30574380e0a32963c52bbd275"
+    },
+    {
+      "path": "post-freeze-controls/conflict-mirror-overwrite.json",
+      "sha256": "44d32bb852d2b241867d21b96766673a056935b388a99805d33e013e62f22f4d"
+    },
+    {
+      "path": "post-freeze-controls/conflict-mirror-overwrite.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "post-freeze-controls/extra-unchanged-write.json",
+      "sha256": "210cdfeee0e8e24f057b8652bf7c61ff43306911b81baaaf7eaa87b581d49978"
+    },
+    {
+      "path": "post-freeze-controls/extra-unchanged-write.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "post-freeze-controls/positive.json",
+      "sha256": "03dc60ad61c5937ceb7472d348bf85a55fe972de637d319901329c186aca52b2"
+    },
+    {
+      "path": "post-freeze-controls/positive.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "post-freeze-controls/wrong-mirror-content.json",
+      "sha256": "389d85bda0d8e8246b53f20e8640140119bd2be302d4528f03052c1eb2dc117a"
+    },
+    {
+      "path": "post-freeze-controls/wrong-mirror-content.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "prompt-conventional.md",
+      "sha256": "11729d81870b5d4edc25c91e452bade09e969c70f4ea45e2f825d34669302614"
+    },
+    {
+      "path": "prompt-flow.md",
+      "sha256": "4f54035f889cfd309ab71e6b77783727711ea9ceaa4713a9d8f818ccc6a4ea79"
+    },
+    {
+      "path": "provenance-audit.json",
+      "sha256": "350e8f8a1f9a1bfd0f38d986cd8d907c43acf071d51cb566e73d53a9c9e9fadb"
+    },
+    {
+      "path": "runtime/conventional/AgentLang.Conventional.Cli.deps.json",
+      "sha256": "286c223538b469e3a5a6364bebc0d68051682db3c80cd6bb043def2b7b33eace"
+    },
+    {
+      "path": "runtime/conventional/AgentLang.Conventional.Cli.dll",
+      "sha256": "827e0fe05421b9dfefbc23c9264ba1e7d6b601bb882d58975904dd530399c8f8"
+    },
+    {
+      "path": "runtime/conventional/AgentLang.Conventional.Cli.exe",
+      "sha256": "6cd8edc62697c1281a9b73ce46a480b2b6c867c1ba617dc4dda9e55c3ea08d65"
+    },
+    {
+      "path": "runtime/conventional/AgentLang.Conventional.Cli.pdb",
+      "sha256": "3dd5788780d51aca6739f884b8eada83c9d461f2f8ad402189ed23517700ee46"
+    },
+    {
+      "path": "runtime/conventional/AgentLang.Conventional.Cli.runtimeconfig.json",
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": "runtime/conventional/AgentLang.Conventional.dll",
+      "sha256": "7834109340380cf0855c8f24daaa180137055cb0ddb09a6c963fc2118268846a"
+    },
+    {
+      "path": "runtime/conventional/AgentLang.Conventional.pdb",
+      "sha256": "d1aa8e5f95ad9b3bfb5377c19bd62ce596512b44a45aaee1feb388e43083af16"
+    },
+    {
+      "path": "runtime/conventional/AgentLang.Conventional.xml",
+      "sha256": "621b5c7c93c495c1dfc83279858dbb31ecd999f56d5237070bf05c59159b81eb"
+    },
+    {
+      "path": "runtime/conventional/cs/FSharp.Core.resources.dll",
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "path": "runtime/conventional/de/FSharp.Core.resources.dll",
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "path": "runtime/conventional/es/FSharp.Core.resources.dll",
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "path": "runtime/conventional/fr/FSharp.Core.resources.dll",
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "path": "runtime/conventional/FSharp.Core.dll",
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": "runtime/conventional/it/FSharp.Core.resources.dll",
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "path": "runtime/conventional/ja/FSharp.Core.resources.dll",
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "path": "runtime/conventional/ko/FSharp.Core.resources.dll",
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "path": "runtime/conventional/pl/FSharp.Core.resources.dll",
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "path": "runtime/conventional/pt-BR/FSharp.Core.resources.dll",
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "path": "runtime/conventional/ru/FSharp.Core.resources.dll",
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "path": "runtime/conventional/tr/FSharp.Core.resources.dll",
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "path": "runtime/conventional/zh-Hans/FSharp.Core.resources.dll",
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "path": "runtime/conventional/zh-Hant/FSharp.Core.resources.dll",
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    },
+    {
+      "path": "runtime/flow/AgentLang.Cli.deps.json",
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "path": "runtime/flow/AgentLang.Cli.dll",
+      "sha256": "c7608928859cf63dfde39f67e6f55dcd1f16746c65e5f74c91f3203703f47b57"
+    },
+    {
+      "path": "runtime/flow/AgentLang.Cli.exe",
+      "sha256": "5517df71d3b06f7c08e3f9261bfe0516f23b60997b15c1053638a312f579ac15"
+    },
+    {
+      "path": "runtime/flow/AgentLang.Cli.pdb",
+      "sha256": "f25ddc49aa934b1d98a45a65e610546f20df10675e6c517a4cb46035ceab572d"
+    },
+    {
+      "path": "runtime/flow/AgentLang.Cli.runtimeconfig.json",
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": "runtime/flow/AgentLang.Core.dll",
+      "sha256": "8d2fe547b1038912ce2b98ad732f72d3a41e924a0aa8a14b19e6eb780f522e60"
+    },
+    {
+      "path": "runtime/flow/AgentLang.Core.pdb",
+      "sha256": "84218225ec1087a1d79ffb397142504c8988f8656a2131a925eb3eff5fc7ff34"
+    },
+    {
+      "path": "runtime/flow/AgentLang.Core.xml",
+      "sha256": "6e16a91e3788a33a213cefd8ee882d292ddf045c83f2869f0e0e32d437db8d77"
+    },
+    {
+      "path": "runtime/flow/cs/FSharp.Core.resources.dll",
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "path": "runtime/flow/de/FSharp.Core.resources.dll",
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "path": "runtime/flow/es/FSharp.Core.resources.dll",
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "path": "runtime/flow/fr/FSharp.Core.resources.dll",
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "path": "runtime/flow/FSharp.Core.dll",
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": "runtime/flow/it/FSharp.Core.resources.dll",
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "path": "runtime/flow/ja/FSharp.Core.resources.dll",
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "path": "runtime/flow/ko/FSharp.Core.resources.dll",
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "path": "runtime/flow/pl/FSharp.Core.resources.dll",
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "path": "runtime/flow/pt-BR/FSharp.Core.resources.dll",
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "path": "runtime/flow/ru/FSharp.Core.resources.dll",
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "path": "runtime/flow/tr/FSharp.Core.resources.dll",
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "path": "runtime/flow/zh-Hans/FSharp.Core.resources.dll",
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "path": "runtime/flow/zh-Hant/FSharp.Core.resources.dll",
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    },
+    {
+      "path": "seeds/conventional/AgentLang.IoMaintenance156.Conventional.fsproj",
+      "sha256": "0f62bb110ccdc16c69b570e75a76584f2d78a7f9e0ed0600410cd825815cc314"
+    },
+    {
+      "path": "seeds/conventional/Domain.fs",
+      "sha256": "8d201f3182e29ba2601506bb5f0131edccaa5b67f199b68a4a3f0e542f316d64"
+    },
+    {
+      "path": "seeds/conventional/Operations.fs",
+      "sha256": "bed060e340a785328fcc8d5dd22ab6536e9a9bb3998639f9536ef77d497b1310"
+    },
+    {
+      "path": "seeds/conventional/Program.fs",
+      "sha256": "a498fad04cb28adf0be37d5afcef60b435ed24df791e8ae090d1878039a81cfd"
+    },
+    {
+      "path": "seeds/conventional/Publisher.fs",
+      "sha256": "33601718cc2006e354258a0bf9885a485ba80a9631cc2b86cffb654e51db5591"
+    },
+    {
+      "path": "seeds/conventional/SelfTests.fs",
+      "sha256": "b157faa56dcac8cd0cbe9e575d4bfbf3094d0a3ae33c92e9e2ded2defcf9ece8"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/CURRENT",
+      "sha256": "dc402a9e93c6cc6a2fbd1781d3f6265552c2e1d1f60518c27e4a2a650f25f51e"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/manifests/3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4.json",
+      "sha256": "3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/manifests/4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76.json",
+      "sha256": "4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617.agent",
+      "sha256": "116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645.agent",
+      "sha256": "1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510.agent",
+      "sha256": "21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5.agent",
+      "sha256": "30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609.agent",
+      "sha256": "30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2.agent",
+      "sha256": "36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9.agent",
+      "sha256": "441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b.agent",
+      "sha256": "5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895.agent",
+      "sha256": "617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245.agent",
+      "sha256": "77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43.agent",
+      "sha256": "82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080.agent",
+      "sha256": "b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32.agent",
+      "sha256": "d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2.agent",
+      "sha256": "e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c.agent",
+      "sha256": "eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "seeds/flow/dictionary.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "seeds/flow/history/task-0001.json",
+      "sha256": "ac0dc1f896b259fae30c7477501956d376d4eed48e255523664be363b06b0463"
+    },
+    {
+      "path": "trace-audit.json",
+      "sha256": "d6c5230f85897c180c37c06e63b3320cead16de3215c90601847df55578b3c9f"
+    },
+    {
+      "path": "trace-conventional.jsonl",
+      "sha256": "e6560644d60a82dfe955d3fd9f1acb0b4f5a16f8163f53d5def2fe3c48bb4258"
+    },
+    {
+      "path": "trace-flow.jsonl",
+      "sha256": "49506a34e27a4d35934a6da5bc51d3d16a502584443eab94ebbab9623791f0d1"
+    }
+  ]
+}
