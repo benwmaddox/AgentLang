@@ -28,6 +28,23 @@ For a runnable I/O example, see [testing library functions without real I/O](LIB
 It demonstrates passing promotion, a coverage rejection, and an effect-count
 rejection using the isolated virtual filesystem.
 
+A returned `Result.error` is an ordinary typed value. Compare it with a value
+expectation; `=> error CODE` instead matches a structured runtime failure raised
+while evaluating the test body. For example:
+
+```flow
+test tutorial.lookup/returned-error {
+    tutorial.lookup(-1)
+    => value result.error<Int, String>("NEGATIVE_INPUT")
+}
+```
+
+`help` for the examples topic with `syntaxVersion: 2` supplies the complete
+`tutorial-result-return` definition, success/zero/error tests, and requests to
+define, test and publish it as library vocabulary. See
+[report 164](../reports/164-result-test-guidance.md) for validation and the agent
+trial that motivated this clarification.
+
 Persistence gates run against the exact durable project projection. A scoped commit includes candidate dependencies used only by its selected tests or examples, including explicit nominal container types; newly included helper words need their own passing tests. Temporary metadata dependencies must be promoted or removed before commit. Selected tests and examples cannot be silently discarded, and unrelated staged metadata remains staged. Replacement gates also check affected transitive persistent callers.
 
 The initial conditional coverage gate requires both `if` outcomes, including the empty outcome of a conditional without `else`. Coverage reports identify uncovered source locations so an agent can add a specific missing case. Typed container support extends the gate to both Option/Result cases, empty/nonempty list iteration, and retained/rejected elements for filtering. The container milestone report records which of these gates have been validated.

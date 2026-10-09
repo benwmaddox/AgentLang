@@ -347,6 +347,37 @@ test tutorial.classify/positive {
           Description = "Closed enum constructors and value-expression tests covering every return case."
           Source = tutorialEnumSourceV2 }
 
+    let private tutorialResultSourceV2 =
+        """fn tutorial.lookup(value: Int) -> Result<Int, String> {
+    doc "Returns an integer for nonnegative input and a Result error for negative input."
+
+    if int.less-than(value, 0) {
+        result.error<Int, String>("NEGATIVE_INPUT")
+    } else {
+        result.ok<Int, String>(value)
+    }
+}
+
+test tutorial.lookup/success {
+    tutorial.lookup(3)
+    => value result.ok<Int, String>(3)
+}
+
+test tutorial.lookup/zero-is-success {
+    tutorial.lookup(0)
+    => value result.ok<Int, String>(0)
+}
+
+test tutorial.lookup/returned-error {
+    tutorial.lookup(-1)
+    => value result.error<Int, String>("NEGATIVE_INPUT")
+}"""
+
+    let private tutorialResultSourceExample =
+        { Name = "tutorial-result-return"
+          Description = "Flow/2 Result tests compare both success and returned-error cases as values."
+          Source = tutorialResultSourceV2 }
+
     let private tutorialTestFileOverrideSourceExample =
         { Name = "tutorial-test-file-override"
           Description = "Flow/2 project with a shared test-file replacement for a nested IO dependency."
@@ -443,6 +474,20 @@ test-file settings {
             Operation = "source"
             Fields = [ textField "type" "TutorialSpan" ] } ]
 
+    let private tutorialResultRequestExamples =
+        [ { Name = "define-tutorial-result-return"
+            Description = "Define the Flow/2 Result example with successful and returned-error value tests."
+            Operation = "define"
+            Fields = [ textField "source" tutorialResultSourceV2; "syntaxVersion", Integer 2 ] }
+          { Name = "test-tutorial-lookup"
+            Description = "Run the success and returned-error value tests for tutorial.lookup."
+            Operation = "test"
+            Fields = [ textField "word" "tutorial.lookup" ] }
+          { Name = "commit-tutorial-lookup-as-library"
+            Description = "Publish tutorial.lookup after its own tests cover both Result cases and branches."
+            Operation = "commit"
+            Fields = [ textField "word" "tutorial.lookup"; "library", Boolean true ] } ]
+
     let private topicContent =
         [ Topic.Authoring,
             { Title = "Authoring through the runtime"
@@ -538,7 +583,7 @@ test-file settings {
           Topic.Examples,
             { Title = "Run tests and examples"
               Documentation =
-                "Use test with word to run one owner's attached tests; use test-all to run every attached test in the current dictionary. Test expectations support `=> <literal>`, `=> value <expression>`, and `=> error CODE`. A value-expression expectation runs in an isolated trace and does not count as coverage of the tested word. For a nominal result compared with an underlying literal, explicitly unwrap it with its accessor in the actual test body; a constructor call cannot follow a bare `=>`. Flow examples accept literal expectations only. Use example with word to run all of that owner's examples, or add caseName to select one. Examples are inspectable documentation metadata and are not a runtime commit gate by themselves. Effects are the declared effect names; inspect them with describe or effects. The latest test or test-all batch replaces the displayed coverage observations. After testing individual words, run test-all before inspecting coverage for several words together. Passing a test batch is not a proof of domain correctness. Library maturity requires every own instruction, branch, and supported iteration outcome; each Bool/enum option for each parameter position; every value in each supported finite return domain; and a dependency closure containing only trusted primitives, generated type operations, and authored library words. Only actual exact-revision calls from passing own tests count. Expected-expression evaluation is isolated, and unsupported finite domains fail closed."
+                "Use test with word to run one owner's attached tests; use test-all to run every attached test in the current dictionary. Test expectations support `=> <literal>`, `=> value <expression>`, and `=> error CODE`. A value-expression expectation runs in an isolated trace and does not count as coverage of the tested word. A returned Result error is a value; use a value-expression expectation to compare it. `=> error CODE` expects a structured runtime error raised while evaluating the test body. For a nominal result compared with an underlying literal, explicitly unwrap it with its accessor in the actual test body; a constructor call cannot follow a bare `=>`. Flow examples accept literal expectations only. Use example with word to run all of that owner's examples, or add caseName to select one. Examples are inspectable documentation metadata and are not a runtime commit gate by themselves. Effects are the declared effect names; inspect them with describe or effects. The latest test or test-all batch replaces the displayed coverage observations. After testing individual words, run test-all before inspecting coverage for several words together. Passing a test batch is not a proof of domain correctness. Library maturity requires every own instruction, branch, and supported iteration outcome; each Bool/enum option for each parameter position; every value in each supported finite return domain; and a dependency closure containing only trusted primitives, generated type operations, and authored library words. Only actual exact-revision calls from passing own tests count. Expected-expression evaluation is isolated, and unsupported finite domains fail closed."
               AllowedFlowDefineFields = []
               SourceExamples =
                 [ { Name = "tutorial-sign-test"
@@ -606,7 +651,7 @@ test-file settings {
                     { example with Fields = fields })
             let requestExamples =
                 if topic = Topic.Define then requestExamples @ tutorialSpanRequestExamples @ tutorialListFoldRequestExamples @ tutorialEnumRequestExamples
-                elif topic = Topic.Examples then requestExamples @ tutorialListFoldRequestExamples @ tutorialEnumRequestExamples
+                elif topic = Topic.Examples then requestExamples @ tutorialListFoldRequestExamples @ tutorialEnumRequestExamples @ tutorialResultRequestExamples
                 else requestExamples
             { original with
                 Documentation =
@@ -622,7 +667,7 @@ test-file settings {
                             + " Flow/2 test files use `test-file <label> { override fn target(parameters) -> Result { ... } test owner/case { ... } }`. A wrapper has one tested owner; all of its nested cases share the declarations and each case receives a fresh test overlay and virtual effect providers. Overrides are test-only and never enter production source. A fixture must preserve the original input/output signature and cannot add effects beyond the original contract; the original call's effect preflight and host capability check still run before dispatch. Nested calls and static callbacks see the same replacement. Submit a wrapper-only document to attach a test file to an existing Flow owner; a multi-declaration project can attach wrappers to words declared in that transaction."
                         else "")
                     + (if topic = Topic.Examples then
-                           " Define the `tutorial-list-fold` source before running its attached tests or example. Its callback is a statically named word reference and cannot capture caller locals. Flow/2 tests may add `effects { fs.read: 2; fs.write: 0 }` after the value or error expectation. This asserts exact counts of provider calls made while the attached user word is active, including nested helpers; omitted categories are zero. The observable categories are fs.read, fs.write, clock.read, and console.write. Other effect categories are unsupported, and examples cannot use this test-only suffix."
+                           " In Flow/2, compare a returned Result error with `=> value result.error<T, E>(...)`; `=> error CODE` expects a structured runtime error raised while evaluating the test body. Define the `tutorial-list-fold` source before running its attached tests or example. Its callback is a statically named word reference and cannot capture caller locals. Flow/2 tests may add `effects { fs.read: 2; fs.write: 0 }` after the value or error expectation. This asserts exact counts of provider calls made while the attached user word is active, including nested helpers; omitted categories are zero. The observable categories are fs.read, fs.write, clock.read, and console.write. Other effect categories are unsupported, and examples cannot use this test-only suffix."
                        else "")
                     + (if topic = Topic.Define || topic = Topic.Examples then
                            " Payload-free enum cases are zero-argument constructor calls: `TutorialSign.positive()`, not a record property `TutorialSign.positive`. Calls with an exact leading-dot root also require parentheses. For an enum expected result, write `=> value TutorialSign.positive()`; bare `=>` accepts supported literals, not constructor expressions. The complete `tutorial-enum-tests` source and requests demonstrate defining, testing and publishing all enum return cases."
@@ -650,7 +695,8 @@ test-file settings {
                         examples @ [ tutorialSpanSourceExample; tutorialListFoldSourceExample; tutorialEnumSourceExample; tutorialTestFileOverrideSourceExample ]
                     elif topic = Topic.Examples then
                         examples
-                        @ [ { Name = "effect-count-test-v2"
+                        @ [ tutorialResultSourceExample
+                            { Name = "effect-count-test-v2"
                               Description = "Flow/2 test with exact provider counts for the attached user word and its nested helper calls."
                               Source = "test tutorial.queue/reads-once {\n    tutorial.queue()\n    => \"queued\" effects {\n        fs.read: 2\n        fs.write: 0\n    }\n}" }
                             tutorialListFoldSourceExample

@@ -384,6 +384,68 @@ module Program =
         check
             ((stringValue examplesHelpV2.["documentation"]).Contains("tutorial-list-fold", StringComparison.Ordinal))
             "Flow/2 examples help explains how to define its fold example"
+        let resultHelpDocumentationV2 = stringValue examplesHelpV2.["documentation"]
+        for guidance in
+            [ "returned Result error is a value"
+              "`=> value result.error<T, E>(...)`"
+              "`=> error CODE` expects a structured runtime error" ] do
+            check (resultHelpDocumentationV2.Contains(guidance, StringComparison.Ordinal)) $"Flow/2 examples help explains {guidance}"
+
+        let resultSourceExampleV2 =
+            examplesHelpV2.["sourceExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "tutorial-result-return")
+            |> fun item -> stringValue item.["source"]
+        check (resultSourceExampleV2.Contains("=> value result.ok<Int, String>(3)", StringComparison.Ordinal)) "Flow/2 Result help compares a successful Result as a value"
+        check (resultSourceExampleV2.Contains("=> value result.error<Int, String>(\"NEGATIVE_INPUT\")", StringComparison.Ordinal)) "Flow/2 Result help compares a returned error as a value"
+        let resultRequest name =
+            examplesHelpV2.["requestExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = name)
+            |> fun item -> item.["request"]
+        let resultDefineRequest = resultRequest "define-tutorial-result-return"
+        equal resultSourceExampleV2 (stringValue resultDefineRequest.["source"]) "Result source example exactly matches its define request"
+        Protocol.dispatchLine flow2HelpEngine (resultDefineRequest.ToJsonString())
+        |> expectOk "define the Flow/2 Result source returned by help"
+        |> ignore
+        let resultTestRequest = resultRequest "test-tutorial-lookup"
+        let resultTests = Protocol.dispatchLine flow2HelpEngine (resultTestRequest.ToJsonString()) |> expectOk "run the Flow/2 Result tests returned by help"
+        assertAllPassed 3 resultTests
+        let returnedErrorTest =
+            resultTests.["data"].["results"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "returned-error")
+        check (boolValue returnedErrorTest.["passed"]) "returned Result error passes a value expectation"
+        equal "Result<Int, String>" (stringValue returnedErrorTest.["expectedType"]) "returned Result error expectation retains its Result type"
+        check (not (returnedErrorTest.AsObject().ContainsKey("expectedErrorCode"))) "returned Result error expectation does not select runtime-error matching"
+        let returnedErrorValue = returnedErrorTest.["actualStructured"].["values"].[0]
+        equal "result" (stringValue returnedErrorValue.["kind"]) "the actual returned error is structured as a Result value"
+        equal "error" (stringValue returnedErrorValue.["case"]) "the actual Result value has its error case"
+        equal "NEGATIVE_INPUT" (stringValue returnedErrorValue.["value"].["value"]) "the actual Result error carries NEGATIVE_INPUT"
+        let flow2RuntimeErrorSource =
+            examplesHelpV2.["sourceExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "runtime-error-test-expectation")
+            |> fun item -> stringValue item.["source"]
+        check (flow2RuntimeErrorSource.Contains("=> error RUNTIME_DIVIDE_BY_ZERO", StringComparison.Ordinal)) "Flow/2 runtime-error help uses the structured runtime-error expectation"
+        let attachFlow2RuntimeErrorRequest = JsonObject()
+        attachFlow2RuntimeErrorRequest["op"] <- jstr "define"
+        attachFlow2RuntimeErrorRequest["syntaxVersion"] <- jint 2
+        attachFlow2RuntimeErrorRequest["source"] <- jstr flow2RuntimeErrorSource
+        Protocol.dispatchLine flow2HelpEngine (attachFlow2RuntimeErrorRequest.ToJsonString())
+        |> expectOk "attach the Flow/2 runtime-error source returned by help"
+        |> ignore
+        let flow2RuntimeErrorTests = dispatch flow2HelpEngine "test" [ "word", jstr "tutorial.sign" ] |> expectOk "run the Flow/2 structured runtime-error help test"
+        assertAllPassed 4 flow2RuntimeErrorTests
+        let flow2RuntimeErrorTest =
+            flow2RuntimeErrorTests.["data"].["results"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "divide-by-zero")
+        equal "RUNTIME_DIVIDE_BY_ZERO" (stringValue flow2RuntimeErrorTest.["expectedErrorCode"]) "the contrasting help test expects a structured runtime error"
+        check (boolValue flow2RuntimeErrorTest.["passed"]) "the contrasting structured runtime-error expectation passes"
+        let resultLibraryCommitRequest = resultRequest "commit-tutorial-lookup-as-library"
+        Protocol.dispatchLine flow2HelpEngine (resultLibraryCommitRequest.ToJsonString())
+        |> expectOk "qualify the help-returned Result function as a library word"
+        |> ignore
+        let resultDescription = dispatch flow2HelpEngine "describe" [ "word", jstr "tutorial.lookup" ] |> expectOk "inspect the Result function after library qualification"
+        equal "library" (stringValue resultDescription.["data"].["maturity"]) "help Result source passes library qualification"
+        check (boolValue resultDescription.["data"].["coverage"].["finiteCoverage"].["complete"]) "help Result tests cover the supported finite Result cases"
+
         let foldSourceExampleInExamplesV2 =
             examplesHelpV2.["sourceExamples"].AsArray()
             |> Seq.find (fun item -> stringValue item.["name"] = "tutorial-list-fold")

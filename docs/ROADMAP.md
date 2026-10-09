@@ -66,6 +66,14 @@ an existing abstraction and callers under restricted context. Improve returned
 Result test examples, keep independent behavior checks and source-access parity,
 and avoid more easy composition variants. LLVM/arena work remains secondary.
 
+[Report 164](../reports/164-result-test-guidance.md) completes the returned-Result
+help improvement with executable examples that qualify as library vocabulary.
+It has not yet been evaluated by a fresh participant. Coordinated signature
+maintenance currently needs atomic multi-function staging: individual edits
+cannot type check against callers or callees that retain their old call shape.
+Add that bounded staging capability before the next maintenance comparison,
+preserving exact revision checks and all publication gates.
+
 [Report 153](../reports/153-owning-native-enums.md) implements closed,
 payload-free enums in `OwningStackAot`, using inline values and the selected
 stable arena policy. Focused O0/O2 conformance, malformed-input rejection and

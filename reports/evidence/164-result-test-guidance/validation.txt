@@ -1,0 +1,18 @@
+AgentLang Result test guidance validation
+
+Working directory: D:\code\AgentLang
+Temporary directory: D:\code\AgentLang\.agentlang\result-test-guidance-164\tmp
+
+Command:
+$env:TEMP = 'D:\code\AgentLang\.agentlang\result-test-guidance-164\tmp'; $env:TMP = $env:TEMP; dotnet build tests/AgentLang.Flow.Runtime.Tests/AgentLang.Flow.Runtime.Tests.fsproj -c Release -m:1 -p:NuGetAudit=false
+Result: Build succeeded. 0 Warning(s), 0 Error(s). Exit code 0.
+
+Command:
+$env:TEMP = 'D:\code\AgentLang\.agentlang\result-test-guidance-164\tmp'; $env:TMP = $env:TEMP; dotnet tests/AgentLang.Flow.Runtime.Tests/bin/Release/net9.0/AgentLang.Flow.Runtime.Tests.dll
+Result: Flow Runtime tests passed: 36 groups, 1355 assertions. Exit code 0.
+
+Command:
+git diff --check
+Result: Passed. Exit code 0.
+
+Failures: None.
