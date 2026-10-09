@@ -117,7 +117,10 @@ prove better application logic, correct test expectations, a causal improvement
 from the diagnostic, or superiority over F#. There is one guided language-only
 participant and no matched comparison arm. The original output behavior was
 already correct; the demonstrated gain is own-function regression protection
-and enforceable qualification of the dependency closure.
+and enforceable qualification of the dependency closure. The wrapper already
+had a false-input regression. The mutation probe deliberately runs the helper's
+own tests, so it does not demonstrate an additional defect detectable by the
+project-wide suite. This distinction matters when assessing the extra test burden.
 
 Explicit modules and scoped dictionary overrides remain unfinished. See the
 [validation plan](../docs/LIBRARY-CLOSURE-VALIDATION.md) for the next proposed
