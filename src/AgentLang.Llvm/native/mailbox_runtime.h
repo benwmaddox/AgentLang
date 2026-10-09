@@ -16,6 +16,11 @@ enum {
   AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED = 1u
 };
 
+enum {
+  AL_MAILBOX_RESET_PROFILE_DIAGNOSTIC = 0u,
+  AL_MAILBOX_RESET_PROFILE_FAST = 1u
+};
+
 typedef enum al_mailbox_result {
   AL_MAILBOX_OK = 0,
   AL_MAILBOX_INVALID_ARGUMENT = 1,
@@ -188,6 +193,23 @@ typedef struct al_mailbox_owning_stats {
   uint64_t resume_root_import_bytes;
 } al_mailbox_owning_stats;
 
+/* Logical runtime-issued store counts for owning scratch checkout/release.
+ * Payload counters count requested poison-write bytes, not hardware traffic.
+ * The counters exclude runtime initialization fills for scratch, retained
+ * banks, and text staging. Bitmap counts are one-byte store operations. All
+ * counters saturate at UINT64_MAX. turn_reset_cursor_extent_bytes preserves
+ * the older cursor-extent metric and is not a payload-write count. */
+typedef struct al_mailbox_reset_stats {
+  uint32_t control_abi_version;
+  uint32_t struct_size;
+  uint32_t reset_profile;
+  uint32_t reserved;
+  uint64_t full_capacity_payload_write_bytes_requested;
+  uint64_t live_prefix_payload_write_bytes_requested;
+  uint64_t bitmap_store_operations;
+  uint64_t turn_reset_cursor_extent_bytes;
+} al_mailbox_reset_stats;
+
 /* Borrowed until the next mutating API call or disposal. roots[0] is State;
  * while pending, roots[1] is its Continuation. */
 typedef struct al_mailbox_state_view {
@@ -300,6 +322,9 @@ al_mailbox_result al_mailbox_get_state_view(al_mailbox_runtime *runtime,
 al_mailbox_result al_mailbox_get_owning_stats(
     al_mailbox_runtime *runtime, al_mailbox_owning_stats *stats);
 
+al_mailbox_result al_mailbox_get_reset_stats(
+    al_mailbox_runtime *runtime, al_mailbox_reset_stats *stats);
+
 al_mailbox_result al_mailbox_get_owning_state_view(
     al_mailbox_runtime *runtime, uint32_t mailbox_id,
     al_mailbox_owning_state_view *view);
@@ -403,6 +428,14 @@ AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_stats,
 AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_stats,
                            resume_root_import_bytes) == 216,
                   "owning resume root import offset");
+AL_MAILBOX_ASSERT(sizeof(al_mailbox_reset_stats) == 48,
+                  "reset stats size");
+AL_MAILBOX_ASSERT(offsetof(al_mailbox_reset_stats,
+                           full_capacity_payload_write_bytes_requested) == 16,
+                  "reset payload write offset");
+AL_MAILBOX_ASSERT(offsetof(al_mailbox_reset_stats, bitmap_store_operations) ==
+                      32,
+                  "reset bitmap store offset");
 AL_MAILBOX_ASSERT(sizeof(al_mailbox_owning_state_view) == 56,
                   "owning state view size");
 AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_state_view, bank) == 8,

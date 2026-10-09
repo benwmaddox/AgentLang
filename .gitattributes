@@ -136,3 +136,4 @@ reports/evidence/135-r09-shared-summary-comparison/** -text -whitespace
 reports/evidence/136-discovery-help/** -text -whitespace
 experiments/AgentLang.SubagentTrials/discovery-composition-137/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 reports/evidence/137-guided-discovery-composition/** -text -whitespace
+reports/evidence/138-native-reset-profile/** -text -whitespace

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "study": "native-reset-138",
+  "createdUtc": "2026-10-09T01:40:23.7883556Z",
+  "repositoryRevision": "cdf6669a8ea82ba19f9e5b47e75a4a165f34600b",
+  "archivePath": "reports/evidence/138-native-reset-profile/138-native-reset-profile.zip",
+  "archiveBytes": 6228027,
+  "archiveSha256": "4ad87dcb9ff8c5102e05d4df4201a074feb4455533390736cc297a5c37e368c8",
+  "zipSha256Sidecar": "reports/evidence/138-native-reset-profile/zip.sha256",
+  "archiveEntryCount": 380,
+  "verifiedPayloadEntryCount": 379,
+  "embeddedPayloadManifestPath": "archive-metadata/payload-sha256-manifest.json",
+  "embeddedPayloadManifestSha256": "0d6ee22ee06e637b69af31d110a50b683924ddda9f05a6bc9869f9c95c26b9ea",
+  "embeddedPayloadManifestBytes": 89226,
+  "sourceIntegrityBeforePath": "archive-metadata/source-integrity-before.json",
+  "sourceIntegrityAfterPath": "archive-metadata/source-integrity-after.json",
+  "sourceIntegrityBeforeFileCount": 376,
+  "sourceIntegrityAfterFileCount": 376,
+  "sourceBytesBefore": 211859102,
+  "sourceBytesAfter": 211859102,
+  "sourceIntegrityBeforeAfterMatched": true,
+  "sourceIntegrityStillStableAfterZipVerification": true,
+  "payload": {
+    "verified": true,
+    "verifiedPayloadEntries": 379,
+    "uncompressedBytes": 212414152,
+    "missingEntries": [],
+    "extraEntries": [],
+    "hashOrLengthMismatches": [],
+    "excludedBuildOrBinaryFileCount": 568,
+    "excludedBuildOrBinaryBytes": 102363461,
+    "compiledBinariesIncluded": false
+  },
+  "finalEvidence": [
+    {
+      "label": "accepted policy",
+      "checks": 479,
+      "passed": true,
+      "evidencePath": ".agentlang/owning-mailbox-002/policy-run-092d7ce060ac469680f8ab6075bb7006/policy-evidence.json"
+    },
+    {
+      "label": "initial real-I/O source-integrity failure",
+      "checks": 139805,
+      "passed": false,
+      "sourceHashesStable": false,
+      "evidencePath": ".agentlang/owning-mailbox-003/io-run-6a27d5a8a90841af82053b02bfca6b6f/io-evidence.json"
+    },
+    {
+      "label": "intermediate real-I/O pass",
+      "checks": 139557,
+      "passed": true,
+      "evidencePath": ".agentlang/owning-mailbox-003/io-run-5dc913d15d044500ad8a04aac85cd989/io-evidence.json"
+    },
+    {
+      "label": "final real-I/O pass",
+      "checks": 139765,
+      "nativeRuns": 8,
+      "passed": true,
+      "sourceHashesStable": true,
+      "evidencePath": ".agentlang/owning-mailbox-003/io-run-4cbaaf69d8cc46b795d63032ecfb756d/io-evidence.json"
+    },
+    {
+      "label": "final component validation",
+      "cases": 9,
+      "passed": true,
+      "evidencePath": ".agentlang/native-reset-138/component-validation-final-corrected/component-validation.json"
+    }
+  ],
+  "sourceUnion": [
+    "source paths referenced by accepted policy, failed/intermediate/final real-I/O, and component evidence",
+    "seven changed native/mailbox implementation and verifier source files",
+    "final report 138 snapshot"
+  ],
+  "limitations": [
+    "The initial real-I/O attempt failed integrity because source hashes changed. Its original logs and hash records are retained verbatim; do not reconstruct historical source contents.",
+    "The earlier component link-failure attempt and assertion/temp correction history are included only where raw logs and summaries exist; missing historical raw logs were not reconstructed."
+  ]
+}

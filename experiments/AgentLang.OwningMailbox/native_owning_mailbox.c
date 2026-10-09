@@ -96,6 +96,9 @@ static al_mailbox_owning_stats boundary_stats;
 static al_mailbox_owning_stats scratch_failure_stats;
 static al_mailbox_owning_stats large_request_stats;
 static al_mailbox_owning_storage_requirements main_requirements;
+static al_mailbox_reset_stats reset_telemetry;
+static uint32_t reset_telemetry_has_value;
+static uint32_t reset_telemetry_valid = 1u;
 
 static void record_check(const char *name, int passed) {
   if (check_count < sizeof(checks) / sizeof(checks[0])) {
@@ -176,6 +179,72 @@ static void initialize_owning_stats(al_mailbox_owning_stats *stats) {
   memset(stats, 0, sizeof(*stats));
   stats->control_abi_version = AL_MAILBOX_CONTROL_ABI_VERSION;
   stats->struct_size = (uint32_t)sizeof(*stats);
+}
+
+static void accumulate_reset_telemetry(const al_mailbox_reset_stats *stats) {
+  if (stats == NULL || stats->control_abi_version !=
+                           AL_MAILBOX_CONTROL_ABI_VERSION ||
+      stats->struct_size != sizeof(*stats) ||
+      (stats->reset_profile != AL_MAILBOX_RESET_PROFILE_DIAGNOSTIC &&
+       stats->reset_profile != AL_MAILBOX_RESET_PROFILE_FAST)) {
+    reset_telemetry_valid = 0u;
+    return;
+  }
+  if (reset_telemetry_has_value == 0u) {
+    reset_telemetry = *stats;
+    reset_telemetry_has_value = 1u;
+    return;
+  }
+#define AL_MAILBOX_SATURATING_ADD(target, amount)                              \
+  do {                                                                         \
+    (target) = (amount) > UINT64_MAX - (target) ? UINT64_MAX                   \
+                                                : (target) + (amount);          \
+  } while (0)
+  if (reset_telemetry.reset_profile != stats->reset_profile) {
+    reset_telemetry.reset_profile = UINT32_MAX;
+    reset_telemetry_valid = 0u;
+  }
+  AL_MAILBOX_SATURATING_ADD(
+      reset_telemetry.full_capacity_payload_write_bytes_requested,
+      stats->full_capacity_payload_write_bytes_requested);
+  AL_MAILBOX_SATURATING_ADD(
+      reset_telemetry.live_prefix_payload_write_bytes_requested,
+      stats->live_prefix_payload_write_bytes_requested);
+  AL_MAILBOX_SATURATING_ADD(reset_telemetry.bitmap_store_operations,
+                            stats->bitmap_store_operations);
+  AL_MAILBOX_SATURATING_ADD(reset_telemetry.turn_reset_cursor_extent_bytes,
+                            stats->turn_reset_cursor_extent_bytes);
+#undef AL_MAILBOX_SATURATING_ADD
+}
+
+static void print_reset_telemetry_json(void) {
+  const char *profile = reset_telemetry_valid != 0u &&
+                                reset_telemetry_has_value != 0u &&
+                                reset_telemetry.reset_profile ==
+                                    AL_MAILBOX_RESET_PROFILE_FAST
+                            ? "fast"
+                            : (reset_telemetry_valid != 0u &&
+                                       reset_telemetry_has_value != 0u &&
+                                       reset_telemetry.reset_profile ==
+                                           AL_MAILBOX_RESET_PROFILE_DIAGNOSTIC
+                                   ? "diagnostic"
+                                   : "invalid");
+  printf("{\"valid\":%s,\"profile\":\"%s\","
+         "\"scope\":\"owningScratchCheckoutRelease\","
+         "\"payloadWriteSemantics\":\"logicalRuntimeRequestedBytesNotHardwareTraffic\","
+         "\"initializationPoisonWrites\":\"excluded: scratch, retained banks, text staging\","
+         "\"fullCapacityPayloadWriteBytesRequested\":%" PRIu64 ","
+         "\"livePrefixPayloadWriteBytesRequested\":%" PRIu64 ","
+         "\"bitmapStoreOperations\":%" PRIu64 ","
+         "\"turnResetCursorExtentBytes\":%" PRIu64 "}",
+          reset_telemetry_valid != 0u && reset_telemetry_has_value != 0u
+              ? "true"
+              : "false",
+          profile,
+         reset_telemetry.full_capacity_payload_write_bytes_requested,
+         reset_telemetry.live_prefix_payload_write_bytes_requested,
+         reset_telemetry.bitmap_store_operations,
+         reset_telemetry.turn_reset_cursor_extent_bytes);
 }
 
 static void initialize_owning_requirements(
@@ -268,7 +337,14 @@ static void dispose_runtime(runtime_fixture *fixture) {
   if (fixture == NULL)
     return;
   if (fixture->runtime != NULL) {
+    al_mailbox_reset_stats stats;
     (void)al_mailbox_dispose(fixture->runtime);
+    if (al_mailbox_get_reset_stats(fixture->runtime, &stats) == AL_MAILBOX_OK)
+      accumulate_reset_telemetry(&stats);
+    else {
+      reset_telemetry_valid = 0u;
+      ++failure_count;
+    }
     fixture->runtime = NULL;
   }
   if (fixture->storage_allocation != NULL) {
@@ -2259,6 +2335,8 @@ static void print_policy_evidence_json(
   printf("{\"passed\":%s,\"failureCount\":%u,\"checks\":",
          failure_count == 0u ? "true" : "false", failure_count);
   print_checks_json();
+  printf(",\"resetTelemetry\":");
+  print_reset_telemetry_json();
   printf(",\"pairedUnicodeEmpty\":{\"RETURN\":");
   print_policy_case_json(small_return, 1);
   printf(",\"KEEP_ASSOCIATED\":");
@@ -2343,6 +2421,8 @@ done:
   printf("{\"passed\":%s,\"failureCount\":%u,\"checks\":",
          failure_count == 0u ? "true" : "false", failure_count);
   print_checks_json();
+  printf(",\"resetTelemetry\":");
+  print_reset_telemetry_json();
   printf(",\"observed\":{\"unicodeInitialize\":");
   print_snapshot_json(&snapshots[0]);
   printf(",\"emptyInitialize\":");

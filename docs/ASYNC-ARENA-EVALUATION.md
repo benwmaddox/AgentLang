@@ -19,6 +19,12 @@ comparison in [report 133](../reports/133-real-io-mailbox-correctness.md) passes
 policies at O0/O2, including terminal cancellation. Saturation, production
 throughput and tail latency remain untested. See [the roadmap](ROADMAP.md).
 
+[Report 138](../reports/138-native-reset-profile.md) adds an optional native
+reset profile that skips full-capacity scratch payload poisoning at checkout
+and release. Both profiles pass the same policy and socket semantic fixtures.
+Live-prefix poisoning and per-byte initialization tracking remain; this is not
+yet a constant-time pointer-only reset or a production throughput result.
+
 [Midori research](MIDORI-RESEARCH.md) supplies architectural comparisons, not
 AgentLang performance evidence. Include bounded outstanding work, explicit
 suspension, copy costs and retained-state interleaving in this evaluation.
@@ -180,7 +186,7 @@ and report process memory separately from arena reservations. Use externally
 scheduled arrivals, bounded queues/buffers and predeclared memory, latency and
 error limits; fewer copies alone do not select a winner.
 
-The next reset-path change should be bounded: add an opt-in profile that removes
+The bounded reset-path change in report 138 adds an opt-in profile that removes
 capacity-sized payload poisoning at scratch checkout and release, while retaining
 the diagnostic default and all existing boundary, initialized-range, token and
 cancellation checks. Keep the context ABI and compiler rewind decisions unchanged.

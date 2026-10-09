@@ -57,6 +57,10 @@ $sourceInputBefore = @()
 $sourceInputAfter = @()
 $timeoutMilliseconds = 300000
 $tempDirectory = Join-Path $runDirectory 'repo-temp'
+$resetProfiles = @(
+    [ordered]@{ name = 'diagnostic'; define = $null; expected = 'diagnostic' },
+    [ordered]@{ name = 'fast'; define = '-DAL_MAILBOX_FAST_RESET=1'; expected = 'fast' }
+)
 $report = [ordered]@{
     schemaVersion = 1
     kind = 'owning-native-mailbox-policy-comparison'
@@ -65,6 +69,7 @@ $report = [ordered]@{
     repository = $repo
     fixture = $fixturePath
     historicalFixture = $historicalFixturePath
+    measurementScope = 'resetTelemetry reports logical runtime-requested reset stores for owning scratch checkout/release; initialization poison is excluded, and cursor extent is separate from payload-write bytes and bitmap store operations.'
     checks = @()
 }
 
@@ -94,6 +99,75 @@ function Has-Fields($Object, [string[]]$Names) {
 
 function Get-Hash([string]$Path) {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+function Get-ResetTelemetry($Native, [string]$ExpectedProfile, [string]$Label) {
+    $telemetry = Get-Field $Native 'resetTelemetry'
+    $fields = @('valid', 'profile', 'scope', 'payloadWriteSemantics', 'initializationPoisonWrites', 'fullCapacityPayloadWriteBytesRequested', 'livePrefixPayloadWriteBytesRequested', 'bitmapStoreOperations', 'turnResetCursorExtentBytes')
+    $shapeOkay = Has-Fields $telemetry $fields
+    Add-Check "$Label reset telemetry contains the separated counters" $shapeOkay $telemetry
+    if (-not $shapeOkay) { throw "$Label native result is missing required resetTelemetry fields." }
+
+    $valid = Get-Field $telemetry 'valid'
+    $profile = [string](Get-Field $telemetry 'profile')
+    $scope = [string](Get-Field $telemetry 'scope')
+    $payloadSemantics = [string](Get-Field $telemetry 'payloadWriteSemantics')
+    $initializationPoison = [string](Get-Field $telemetry 'initializationPoisonWrites')
+    $values = [ordered]@{}
+    foreach ($field in @('fullCapacityPayloadWriteBytesRequested', 'livePrefixPayloadWriteBytesRequested', 'bitmapStoreOperations', 'turnResetCursorExtentBytes')) {
+        $raw = Get-Field $telemetry $field
+        $integerType = $raw -is [sbyte] -or $raw -is [byte] -or $raw -is [int16] -or $raw -is [uint16] -or $raw -is [int32] -or $raw -is [uint32] -or $raw -is [int64] -or $raw -is [uint64]
+        if (-not $integerType -or $raw -is [bool]) { throw "$Label resetTelemetry.$field must be a JSON integer." }
+        try { $values[$field] = [Convert]::ToUInt64($raw, [Globalization.CultureInfo]::InvariantCulture) }
+        catch { throw "$Label resetTelemetry.$field is not a nonnegative integer: $raw" }
+    }
+    $profileOkay = $valid -eq $true -and $profile -ceq $ExpectedProfile -and $scope -ceq 'owningScratchCheckoutRelease' -and
+        $payloadSemantics -ceq 'logicalRuntimeRequestedBytesNotHardwareTraffic' -and
+        $initializationPoison -ceq 'excluded: scratch, retained banks, text staging'
+    Add-Check "$Label reset telemetry identifies a valid profile, logical byte scope, and excluded initialization poison" $profileOkay ([ordered]@{ expectedProfile = $ExpectedProfile; actualProfile = $profile; expectedScope = 'owningScratchCheckoutRelease'; actualScope = $scope; payloadWriteSemantics = $payloadSemantics; initializationPoisonWrites = $initializationPoison; valid = $valid })
+    if (-not $profileOkay) { throw "$Label resetTelemetry profile or scope does not match the selected build." }
+    $capacityOkay = if ($ExpectedProfile -ceq 'diagnostic') { $values.fullCapacityPayloadWriteBytesRequested -gt 0 } else { $values.fullCapacityPayloadWriteBytesRequested -eq 0 }
+    Add-Check "$Label full-capacity payload write counter matches the reset profile" $capacityOkay ([ordered]@{ profile = $ExpectedProfile; fullCapacityPayloadWriteBytesRequested = $values.fullCapacityPayloadWriteBytesRequested; expected = if ($ExpectedProfile -ceq 'diagnostic') { 'greater than zero' } else { 0 } })
+    if (-not $capacityOkay) { throw "$Label full-capacity payload write counter does not match the reset profile." }
+    $separateCountersOkay = $values.livePrefixPayloadWriteBytesRequested -eq $values.turnResetCursorExtentBytes -and $values.bitmapStoreOperations -gt 0
+    Add-Check "$Label live-prefix payload writes match cursor extent while bitmap stores remain separately counted" $separateCountersOkay ([ordered]@{ livePrefixPayloadWriteBytesRequested = $values.livePrefixPayloadWriteBytesRequested; turnResetCursorExtentBytes = $values.turnResetCursorExtentBytes; bitmapStoreOperations = $values.bitmapStoreOperations })
+    if (-not $separateCountersOkay) { throw "$Label resetTelemetry payload and cursor counters are inconsistent." }
+    return [ordered]@{ profile = $profile; scope = $scope; fullCapacityPayloadWriteBytesRequested = $values.fullCapacityPayloadWriteBytesRequested; livePrefixPayloadWriteBytesRequested = $values.livePrefixPayloadWriteBytesRequested; bitmapStoreOperations = $values.bitmapStoreOperations; turnResetCursorExtentBytes = $values.turnResetCursorExtentBytes }
+}
+
+function Compare-ResetTelemetry($Diagnostic, $Fast, [string]$Label) {
+    $fields = @('livePrefixPayloadWriteBytesRequested', 'bitmapStoreOperations', 'turnResetCursorExtentBytes')
+    $equal = $Diagnostic.profile -ceq 'diagnostic' -and $Fast.profile -ceq 'fast' -and
+        $Diagnostic.scope -ceq $Fast.scope -and
+        $Diagnostic.fullCapacityPayloadWriteBytesRequested -gt $Fast.fullCapacityPayloadWriteBytesRequested -and
+        $Fast.fullCapacityPayloadWriteBytesRequested -eq 0
+    $differences = [Collections.Generic.List[object]]::new()
+    foreach ($field in $fields) {
+        if ($Diagnostic[$field] -ne $Fast[$field]) {
+            $equal = $false
+            $differences.Add([ordered]@{ field = $field; diagnostic = $Diagnostic[$field]; fast = $Fast[$field] })
+        }
+    }
+    Add-Check $Label $equal ([ordered]@{ excludedDifference = 'fullCapacityPayloadWriteBytesRequested'; comparedEqualFields = $fields; diagnostic = $Diagnostic; fast = $Fast; differences = @($differences) })
+}
+
+function Get-PolicySemanticProjection($Native) {
+    $projection = [ordered]@{}
+    foreach ($caseName in @('pairedUnicodeEmpty', 'interleavedFailures')) {
+        $sourceCase = Get-Field $Native $caseName
+        $caseProjection = [ordered]@{}
+        foreach ($policyName in @('RETURN', 'KEEP_ASSOCIATED')) {
+            $caseProjection[$policyName] = Get-Field $sourceCase $policyName
+        }
+        $projection[$caseName] = $caseProjection
+    }
+    return $projection
+}
+
+function Compare-PolicySemantics($Diagnostic, $Fast, [string]$Label) {
+    $diagnosticJson = ConvertTo-Json -InputObject (Get-PolicySemanticProjection $Diagnostic) -Depth 90 -Compress
+    $fastJson = ConvertTo-Json -InputObject (Get-PolicySemanticProjection $Fast) -Depth 90 -Compress
+    Add-Check $Label ([string]::Equals($diagnosticJson, $fastJson, [StringComparison]::Ordinal)) ([ordered]@{ compared = @('complete RETURN and KEEP case results, including existing runtime stats, storage requirements, final states, pending attachments, and admission results'); excluded = @('top-level resetTelemetry') })
 }
 
 function Resolve-Executable([string]$EnvironmentName, [string]$DefaultPath, [string]$CommandName) {
@@ -376,7 +450,7 @@ try {
     $report.compiler = [ordered]@{ dotnet = $dotnet; clang = $clang; clangSha256 = Get-Hash $clang; tempDirectory = $tempDirectory }
 
     $artifactsRoot = Join-Path $runDirectory 'dotnet-artifacts'
-    $buildArguments = @('build', $projectPath, '--artifacts-path', $artifactsRoot, '--configuration', 'Release', '--verbosity', 'minimal', '-p:NuGetAudit=false', '-m:1')
+    $buildArguments = @('build', $projectPath, '--artifacts-path', $artifactsRoot, '--configuration', 'Release', '--verbosity', 'minimal', '-p:NuGetAudit=false', '-p:BuildInParallel=false', '-m:1')
     $build = Invoke-CapturedProcess 'fresh-release-project-build' $dotnet $buildArguments $repo
     Require-ProcessSuccess $build 'Fresh Release build of the owning mailbox bootstrap succeeded'
     Add-Check 'fresh Release build produced a successful process result' ($build.exitCode -eq 0)
@@ -416,28 +490,34 @@ try {
 
     foreach ($optimization in @('O0', 'O2')) {
         $module = $moduleBuilds | Where-Object { $_.optimization -ceq $optimization } | Select-Object -First 1
-        $runnerDirectory = Join-Path $runDirectory "native-$optimization"
-        [IO.Directory]::CreateDirectory($runnerDirectory) | Out-Null
-        $runnerPath = Join-Path $runnerDirectory "native-owning-mailbox-policy-$optimization.exe"
-        $compileArguments = @('--target=x86_64-pc-windows-msvc', '-std=c11', '-Wall', '-Wextra', '-Werror', "-$optimization", '-DAL_MAILBOX_RUNTIME_TESTING', '-I', $nativeDirectory) + $nativeSources + @('-o', $runnerPath)
-        $nativeBuild = Invoke-CapturedProcess "native-policy-build-$optimization" $clang $compileArguments $runnerDirectory
-        Require-ProcessSuccess $nativeBuild "$optimization policy native runner compiled with strict warnings"
-        $nativeBuilds.Add([ordered]@{ optimization = $optimization; executable = $runnerPath; sha256 = Get-Hash $runnerPath; process = $nativeBuild })
-        $nativeRun = Invoke-CapturedProcess "native-policy-run-$optimization" $runnerPath @([string]$module.modulePath, '--policy') $runnerDirectory
-        Require-ProcessSuccess $nativeRun "$optimization paired ownership-policy native suite passed"
-        $native = ConvertFrom-JsonText $nativeRun.stdout.Trim() "$optimization policy native result"
-        $nativeShape = Has-Fields $native @('passed', 'failureCount', 'checks')
-        Add-Check "$optimization policy runner result has the required summary fields" $nativeShape
-        $failureCountRaw = Get-Field $native 'failureCount'
-        Add-Check "$optimization policy runner reports zero named assertion failures" ($nativeShape -and (Get-Field $native 'passed') -eq $true -and $null -ne $failureCountRaw -and [uint32]$failureCountRaw -eq 0) ([ordered]@{ failureCount = $failureCountRaw })
-        $nativeChecks = @(Get-Field $native 'checks')
-        $failedChecks = @($nativeChecks | Where-Object { (Get-Field $_ 'passed') -ne $true })
-        $namesPresent = $nativeChecks.Count -eq 97 -and @($nativeChecks | Where-Object { -not (Has-Fields $_ @('name', 'passed')) -or [string]::IsNullOrWhiteSpace([string](Get-Field $_ 'name')) }).Count -eq 0
-        Add-Check "$optimization policy runner emits the complete passing 97-check suite" ($namesPresent -and $failedChecks.Count -eq 0) ([ordered]@{ expectedAssertionCount = 97; assertionCount = $nativeChecks.Count; failed = $failedChecks })
-        $nativeNames = @($nativeChecks | ForEach-Object { [string](Get-Field $_ 'name') })
-        foreach ($required in @('direct fixture creates source-derived roots', 'mismatched saved mark', 'retained root count before writes', 'invalid retained type before writes', 'truncated retained owner after preflight', 'malformed bounded completion', 'overlapping protected payload', 'overlapping retained descriptors', 'overlapping module metadata', 'KEEP rejects a third begin before staging', 'suffix and restores prefix metadata', 'bank-capacity failure restores the attached prefix', 'C admission reuses')) {
-            Add-Check "$optimization contains associated-policy oracle: $required" (@($nativeNames | Where-Object { $_.Contains($required, [StringComparison]::Ordinal) }).Count -gt 0)
-        }
+        foreach ($resetProfile in $resetProfiles) {
+            $profileName = [string]$resetProfile.name
+            $runnerDirectory = Join-Path $runDirectory "native-$optimization-$profileName"
+            [IO.Directory]::CreateDirectory($runnerDirectory) | Out-Null
+            $runnerPath = Join-Path $runnerDirectory "native-owning-mailbox-policy-$optimization-$profileName.exe"
+            $profileArguments = @()
+            if ($null -ne $resetProfile.define) { $profileArguments += [string]$resetProfile.define }
+            $compileArguments = @('--target=x86_64-pc-windows-msvc', '-std=c11', '-Wall', '-Wextra', '-Werror', "-$optimization", '-DAL_MAILBOX_RUNTIME_TESTING') + $profileArguments + @('-I', $nativeDirectory) + $nativeSources + @('-o', $runnerPath)
+            $nativeBuild = Invoke-CapturedProcess "native-policy-build-$optimization-$profileName" $clang $compileArguments $runnerDirectory
+            Require-ProcessSuccess $nativeBuild "$optimization/$profileName policy native runner compiled with strict warnings"
+            $nativeBuilds.Add([ordered]@{ optimization = $optimization; resetProfile = $profileName; compileDefine = $resetProfile.define; executable = $runnerPath; sha256 = Get-Hash $runnerPath; process = $nativeBuild })
+            $nativeRun = Invoke-CapturedProcess "native-policy-run-$optimization-$profileName" $runnerPath @([string]$module.modulePath, '--policy') $runnerDirectory
+            Require-ProcessSuccess $nativeRun "$optimization/$profileName paired ownership-policy native suite passed"
+            $native = ConvertFrom-JsonText $nativeRun.stdout.Trim() "$optimization/$profileName policy native result"
+            $nativeShape = Has-Fields $native @('passed', 'failureCount', 'checks', 'resetTelemetry')
+            Add-Check "$optimization/$profileName policy runner result has the required summary and telemetry fields" $nativeShape
+            if (-not $nativeShape) { throw "$optimization/$profileName policy native result is missing required fields." }
+            $resetTelemetry = Get-ResetTelemetry $native ([string]$resetProfile.expected) "$optimization/$profileName"
+            $failureCountRaw = Get-Field $native 'failureCount'
+            Add-Check "$optimization/$profileName policy runner reports zero named assertion failures" ($nativeShape -and (Get-Field $native 'passed') -eq $true -and $null -ne $failureCountRaw -and [uint32]$failureCountRaw -eq 0) ([ordered]@{ failureCount = $failureCountRaw })
+            $nativeChecks = @(Get-Field $native 'checks')
+            $failedChecks = @($nativeChecks | Where-Object { (Get-Field $_ 'passed') -ne $true })
+            $namesPresent = $nativeChecks.Count -eq 97 -and @($nativeChecks | Where-Object { -not (Has-Fields $_ @('name', 'passed')) -or [string]::IsNullOrWhiteSpace([string](Get-Field $_ 'name')) }).Count -eq 0
+            Add-Check "$optimization/$profileName policy runner emits the complete passing 97-check suite" ($namesPresent -and $failedChecks.Count -eq 0) ([ordered]@{ expectedAssertionCount = 97; assertionCount = $nativeChecks.Count; failed = $failedChecks })
+            $nativeNames = @($nativeChecks | ForEach-Object { [string](Get-Field $_ 'name') })
+            foreach ($required in @('direct fixture creates source-derived roots', 'mismatched saved mark', 'retained root count before writes', 'invalid retained type before writes', 'truncated retained owner after preflight', 'malformed bounded completion', 'overlapping protected payload', 'overlapping retained descriptors', 'overlapping module metadata', 'KEEP rejects a third begin before staging', 'suffix and restores prefix metadata', 'bank-capacity failure restores the attached prefix', 'C admission reuses')) {
+                Add-Check "$optimization/$profileName contains associated-policy oracle: $required" (@($nativeNames | Where-Object { $_.Contains($required, [StringComparison]::Ordinal) }).Count -gt 0)
+            }
 
         $typeIds = Get-Field (Get-Field $historicalFixture 'sourceDerivedTypeIds') 'typeIds'
         foreach ($policyName in @('RETURN', 'KEEP_ASSOCIATED')) {
@@ -451,8 +531,8 @@ try {
         $admissionExpected = Get-Field (Get-Field $fixture 'interleavedFailures') 'admission'
         $admissionShape = (Has-Fields $admission @('noSlotResult', 'noSlotTokenUntouched', 'noSlotCountersUnchanged', 'admittedCTokenSequence')) -and
             (Has-Fields $admissionExpected @('keepNoSlotResult', 'laterAdmittedTokenSequence'))
-        Add-Check "$optimization KEEP no-slot admission fields are present" $admissionShape $admission
-        Add-Check "$optimization KEEP no-slot rejection preserves token output and staging/import counters" ($admissionShape -and
+        Add-Check "$optimization/$profileName KEEP no-slot admission fields are present" $admissionShape $admission
+        Add-Check "$optimization/$profileName KEEP no-slot rejection preserves token output and staging/import counters" ($admissionShape -and
             [uint32](Get-Field $admission 'noSlotResult') -eq [uint32](Get-Field $admissionExpected 'keepNoSlotResult') -and
             (Get-Field $admission 'noSlotTokenUntouched') -eq $true -and
             (Get-Field $admission 'noSlotCountersUnchanged') -eq $true -and
@@ -460,14 +540,24 @@ try {
         $returnAdmission = Get-Field (Get-Field (Get-Field $native 'interleavedFailures') 'RETURN') 'admission'
         $returnAdmissionShape = (Has-Fields $returnAdmission @('admittedCTokenSequence')) -and
             (Has-Fields $admissionExpected @('laterAdmittedTokenSequence'))
-        Add-Check "$optimization RETURN admission fields are present" $returnAdmissionShape $returnAdmission
-        Add-Check "$optimization RETURN admits C with the same seeded token sequence" ($returnAdmissionShape -and [uint64](Get-Field $returnAdmission 'admittedCTokenSequence') -eq [uint64](Get-Field $admissionExpected 'laterAdmittedTokenSequence')) $returnAdmission
-        $nativeRuns.Add([ordered]@{ optimization = $optimization; process = $nativeRun; result = $native })
+        Add-Check "$optimization/$profileName RETURN admission fields are present" $returnAdmissionShape $returnAdmission
+        Add-Check "$optimization/$profileName RETURN admits C with the same seeded token sequence" ($returnAdmissionShape -and [uint64](Get-Field $returnAdmission 'admittedCTokenSequence') -eq [uint64](Get-Field $admissionExpected 'laterAdmittedTokenSequence')) $returnAdmission
+            $nativeRuns.Add([ordered]@{ optimization = $optimization; resetProfile = $profileName; process = $nativeRun; result = $native; resetTelemetry = $resetTelemetry })
+        }
     }
 
+    foreach ($optimization in @('O0', 'O2')) {
+        $diagnosticRun = $nativeRuns | Where-Object { $_.optimization -ceq $optimization -and $_.resetProfile -ceq 'diagnostic' } | Select-Object -First 1
+        $fastRun = $nativeRuns | Where-Object { $_.optimization -ceq $optimization -and $_.resetProfile -ceq 'fast' } | Select-Object -First 1
+        if ($null -eq $diagnosticRun -or $null -eq $fastRun) { throw "$optimization did not produce both diagnostic and fast reset runs." }
+        Compare-PolicySemantics $diagnosticRun.result $fastRun.result "$optimization diagnostic and fast profiles have identical frozen policy outcomes"
+        Compare-ResetTelemetry $diagnosticRun.resetTelemetry $fastRun.resetTelemetry "$optimization profile telemetry preserves prefix, bitmap, and cursor counts separately from capacity writes"
+    }
+
+    $defaultRun = $nativeRuns | Where-Object { $_.optimization -ceq 'O0' -and $_.resetProfile -ceq 'diagnostic' } | Select-Object -First 1
     foreach ($caseName in @('pairedUnicodeEmpty', 'interleavedFailures')) {
-        $returnCase = if ($caseName -ceq 'pairedUnicodeEmpty') { Get-Field $nativeRuns[0].result.pairedUnicodeEmpty 'RETURN' } else { Get-Field $nativeRuns[0].result.interleavedFailures 'RETURN' }
-        $keepCase = if ($caseName -ceq 'pairedUnicodeEmpty') { Get-Field $nativeRuns[0].result.pairedUnicodeEmpty 'KEEP_ASSOCIATED' } else { Get-Field $nativeRuns[0].result.interleavedFailures 'KEEP_ASSOCIATED' }
+        $returnCase = if ($caseName -ceq 'pairedUnicodeEmpty') { Get-Field $defaultRun.result.pairedUnicodeEmpty 'RETURN' } else { Get-Field $defaultRun.result.interleavedFailures 'RETURN' }
+        $keepCase = if ($caseName -ceq 'pairedUnicodeEmpty') { Get-Field $defaultRun.result.pairedUnicodeEmpty 'KEEP_ASSOCIATED' } else { Get-Field $defaultRun.result.interleavedFailures 'KEEP_ASSOCIATED' }
         Add-Check "$caseName RETURN and KEEP have exact equal storage reservation" (
             [uint64](Get-Field $returnCase.storageRequirements 'storageBytes') -eq [uint64](Get-Field $keepCase.storageRequirements 'storageBytes') -and
             [uint64](Get-Field $returnCase.storageRequirements 'scratchReservedBytes') -eq [uint64](Get-Field $keepCase.storageRequirements 'scratchReservedBytes'))
@@ -486,10 +576,11 @@ try {
         for ($index = 0; $index -lt $sourceInputBefore.Count; $index++) {
             if ($sourceInputBefore[$index].path -cne $sourceInputAfter[$index].path -or $sourceInputBefore[$index].sha256 -cne $sourceInputAfter[$index].sha256) { $sourceStable = $false }
         }
-        Add-Check 'all policy acceptance source hashes remain unchanged during fresh O0/O2 builds and runs' $sourceStable
+        Add-Check 'all policy acceptance source hashes remain unchanged during fresh O0/O2 diagnostic/fast builds and runs' $sourceStable
     } else {
-        Add-Check 'all policy acceptance source hashes remain unchanged during fresh O0/O2 builds and runs' $false
+        Add-Check 'all policy acceptance source hashes remain unchanged during fresh O0/O2 diagnostic/fast builds and runs' $false
     }
+    Add-Check 'all four O0/O2 by diagnostic/fast policy native runs completed' ($nativeRuns.Count -eq 4) ([ordered]@{ expected = 4; actual = $nativeRuns.Count })
     $report.completedUtc = [DateTime]::UtcNow.ToString('O')
     $report.sourceHashesBefore = $sourceInputBefore
     $report.sourceHashesAfter = $sourceInputAfter

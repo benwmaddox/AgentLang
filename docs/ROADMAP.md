@@ -211,8 +211,12 @@ policies use equal configured storage. Broader local validation also passes:
 476 LLVM assertions. The bounded real-I/O comparison now passes seven cases
 under both policies at O0/O2, including terminal cancellation and retry; see
 [report 133](../reports/133-real-io-mailbox-correctness.md). Fresh policy and ordinary
-mailbox regressions also pass. Next remove correctness-only runtime instrumentation
-from the measured release path and compare sustained load with matched F# workloads.
+mailbox regressions also pass. The optional reset profile now removes full-capacity
+scratch payload clears at checkout/release, with matching policy and socket
+behavior ([report 138](../reports/138-native-reset-profile.md)). Live-prefix
+poisoning and bitmap tracking remain. Next establish the remaining trusted-code
+release path and compare sustained load with matched F# workloads; the present
+diagnostic host is not a performance baseline.
 Native conformance does not
 establish service throughput, process RAM or improved agent reliability.
 This is not an unresolved preference between packing and bulk reset; see the

@@ -360,3 +360,7 @@ See [report 126](reports/126-native-mailbox-dispatch.md) for exact storage total
 validation and limits. This is not a real-I/O throughput comparison. The next
 [arena comparison](docs/ASYNC-ARENA-EVALUATION.md) explicitly tests keeping the
 mailbox's stack associated during async waits versus returning it to a pool.
+The [optional native reset profile](reports/138-native-reset-profile.md) removes
+full-capacity scratch clears at checkout/release while retaining the existing
+checks. Both policies pass the same socket fixtures at O0/O2; remaining bitmap
+and live-prefix work means this is not yet a production throughput result.

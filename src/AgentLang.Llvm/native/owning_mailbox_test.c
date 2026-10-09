@@ -24,10 +24,24 @@ typedef struct test_cancel_thread_call {
   al_mailbox_result result;
 } test_cancel_thread_call;
 
+typedef struct test_reset_stats_thread_call {
+  al_mailbox_runtime *runtime;
+  al_mailbox_reset_stats stats;
+  al_mailbox_result result;
+} test_reset_stats_thread_call;
+
 static DWORD WINAPI test_cancel_from_worker_thread(LPVOID parameter) {
   test_cancel_thread_call *call = (test_cancel_thread_call *)parameter;
   call->result = al_mailbox_cancel_text(call->runtime, call->mailbox_id,
                                         call->token);
+  return 0u;
+}
+
+static DWORD WINAPI test_get_reset_stats_from_worker_thread(LPVOID parameter) {
+  test_reset_stats_thread_call *call =
+      (test_reset_stats_thread_call *)parameter;
+  call->result =
+      al_mailbox_get_reset_stats(call->runtime, &call->stats);
   return 0u;
 }
 
@@ -876,6 +890,113 @@ static void test_keep_state_admission_capacity(void) {
   assert(al_mailbox_dispose(runtime) == AL_MAILBOX_OK);
 }
 
+static void test_reset_profile_payload_scope(void) {
+  static _Alignas(8) uint8_t storage[65536];
+  const uint32_t scratch_capacity = 72u;
+  const uint8_t initial[] = {'I'};
+  const uint8_t begin0[] = {'B'};
+  const uint8_t begin1[] = {'C'};
+  const uint8_t sentinel = 0x5au;
+  al_mailbox_owning_config config = {
+      AL_MAILBOX_CONTROL_ABI_VERSION, sizeof(al_mailbox_owning_config),
+      1u, scratch_capacity, 64u, 37u, 1u,
+      AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED};
+  al_mailbox_runtime *runtime = NULL;
+  al_mailbox_owning_state_view view;
+  al_mailbox_owning_stats owning_stats;
+  al_mailbox_reset_stats reset_stats;
+  al_owning_stack_context probe_context;
+  al_mailbox_token first_token;
+  al_mailbox_token second_token;
+  test_reset_stats_thread_call thread_call;
+  HANDLE worker;
+  uint32_t bitmap_bytes = scratch_capacity / 8u +
+                          (scratch_capacity % 8u != 0u ? 1u : 0u);
+#if defined(AL_MAILBOX_FAST_RESET) && AL_MAILBOX_FAST_RESET
+  const uint32_t expected_profile = AL_MAILBOX_RESET_PROFILE_FAST;
+#else
+  const uint32_t expected_profile = AL_MAILBOX_RESET_PROFILE_DIAGNOSTIC;
+#endif
+
+  assert(al_mailbox_get_reset_stats(NULL, &reset_stats) ==
+         AL_MAILBOX_INVALID_ARGUMENT);
+  assert(al_mailbox_runtime_init_owning(
+             &test_module, &config, storage, sizeof(storage), &runtime) ==
+         AL_MAILBOX_OK);
+  assert(al_mailbox_get_reset_stats(runtime, NULL) ==
+         AL_MAILBOX_INVALID_ARGUMENT);
+  assert(al_mailbox_get_reset_stats(
+             runtime,
+             (al_mailbox_reset_stats *)(void *)((uint8_t *)&reset_stats + 1u)) ==
+         AL_MAILBOX_INVALID_ARGUMENT);
+  assert(al_mailbox_get_reset_stats(
+             runtime, (al_mailbox_reset_stats *)(void *)runtime) ==
+         AL_MAILBOX_INVALID_ARGUMENT);
+
+  memset(&thread_call, 0, sizeof(thread_call));
+  thread_call.runtime = runtime;
+  worker = CreateThread(NULL, 0u, test_get_reset_stats_from_worker_thread,
+                        &thread_call, 0u, NULL);
+  assert(worker != NULL);
+  assert(WaitForSingleObject(worker, INFINITE) == WAIT_OBJECT_0);
+  assert(CloseHandle(worker) != 0);
+  assert(thread_call.result == AL_MAILBOX_WRONG_THREAD);
+
+  assert(al_mailbox_init_text(runtime, 0u, initial, sizeof(initial), NULL) ==
+         AL_MAILBOX_OK);
+  assert(al_mailbox_begin_text(runtime, 0u, begin0, sizeof(begin0),
+                               &first_token, NULL) == AL_MAILBOX_OK);
+  assert(al_mailbox_get_owning_state_view(runtime, 0u, &view) == AL_MAILBOX_OK);
+  assert(view.pending == 1u && view.associated_context != NULL &&
+         view.associated_context->cursor_bytes < scratch_capacity - 1u);
+  view.associated_context->stack_data[scratch_capacity - 1u] = sentinel;
+  assert(al_mailbox_cancel_text(runtime, 0u, &first_token) == AL_MAILBOX_OK);
+
+  assert(al_mailbox_begin_text(runtime, 0u, begin1, sizeof(begin1),
+                               &second_token, NULL) == AL_MAILBOX_OK);
+  assert(al_mailbox_get_owning_state_view(runtime, 0u, &view) == AL_MAILBOX_OK);
+  assert(view.pending == 1u && view.associated_context != NULL);
+#if defined(AL_MAILBOX_FAST_RESET) && AL_MAILBOX_FAST_RESET
+  assert(view.associated_context->stack_data[scratch_capacity - 1u] == sentinel);
+#else
+  assert(view.associated_context->stack_data[scratch_capacity - 1u] ==
+         0xA5u);
+#endif
+  probe_context = *view.associated_context;
+  probe_context.cursor_bytes = scratch_capacity;
+  probe_context.peak_cursor_bytes = scratch_capacity;
+  probe_context.status = AL_OWNING_STATUS_OK;
+  assert(al_owning_check_initialized(&probe_context, scratch_capacity - 1u,
+                                     1u) != 0);
+  assert(probe_context.status == AL_OWNING_STATUS_INTERNAL);
+  assert(al_mailbox_cancel_text(runtime, 0u, &second_token) == AL_MAILBOX_OK);
+
+  assert(al_mailbox_get_owning_stats(runtime, &owning_stats) == AL_MAILBOX_OK);
+  assert(al_mailbox_get_reset_stats(runtime, &reset_stats) == AL_MAILBOX_OK);
+  assert(reset_stats.control_abi_version == AL_MAILBOX_CONTROL_ABI_VERSION &&
+         reset_stats.struct_size == sizeof(reset_stats) &&
+         reset_stats.reset_profile == expected_profile &&
+         reset_stats.reserved == 0u);
+  assert(owning_stats.scratch_lease_acquisitions == 3u &&
+         owning_stats.scratch_lease_returns == 3u &&
+         owning_stats.turn_reset_bytes ==
+             reset_stats.turn_reset_cursor_extent_bytes);
+#if defined(AL_MAILBOX_FAST_RESET) && AL_MAILBOX_FAST_RESET
+  assert(reset_stats.full_capacity_payload_write_bytes_requested == 0u);
+#else
+  assert(reset_stats.full_capacity_payload_write_bytes_requested ==
+         (uint64_t)owning_stats.scratch_lease_returns * scratch_capacity * 2u);
+#endif
+  assert(reset_stats.live_prefix_payload_write_bytes_requested ==
+         reset_stats.turn_reset_cursor_extent_bytes);
+  assert(reset_stats.bitmap_store_operations ==
+         2u * reset_stats.turn_reset_cursor_extent_bytes +
+             4u * bitmap_bytes * owning_stats.scratch_lease_returns);
+  assert(al_mailbox_dispose(runtime) == AL_MAILBOX_OK);
+  assert(al_mailbox_get_reset_stats(runtime, &reset_stats) == AL_MAILBOX_OK);
+  assert(al_mailbox_dispose(runtime) == AL_MAILBOX_OK);
+}
+
 int main(void) {
   static _Alignas(8) uint8_t storage[65536];
   al_mailbox_owning_config config = {
@@ -998,6 +1119,7 @@ int main(void) {
   test_return_cancellation();
   test_keep_cancellation();
   test_keep_state_admission_capacity();
+  test_reset_profile_payload_scope();
   puts("owning_mailbox_test: passed");
   return 0;
 }

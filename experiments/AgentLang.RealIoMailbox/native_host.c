@@ -121,6 +121,7 @@ typedef struct case_result {
   provider_request_record provider_requests[MAX_PROVIDER_REQUESTS];
   al_mailbox_owning_stats stats;
   al_mailbox_owning_stats after_dispose_stats;
+  al_mailbox_reset_stats reset_stats;
 } case_result;
 
 typedef struct io_request {
@@ -1283,6 +1284,26 @@ static int dispose_case(case_driver *driver) {
   if (result != AL_MAILBOX_OK)
     return failf("%s: runtime disposal failed (%d)", driver->result->id,
                  (int)result);
+  if (al_mailbox_get_reset_stats(driver->fixture.runtime,
+                                 &driver->result->reset_stats) !=
+          AL_MAILBOX_OK ||
+      driver->result->reset_stats.control_abi_version !=
+          AL_MAILBOX_CONTROL_ABI_VERSION ||
+      driver->result->reset_stats.struct_size !=
+          sizeof(driver->result->reset_stats))
+    return failf("%s: post-dispose reset stats query failed",
+                 driver->result->id);
+#if defined(AL_MAILBOX_FAST_RESET) && AL_MAILBOX_FAST_RESET
+  if (driver->result->reset_stats.reset_profile !=
+      AL_MAILBOX_RESET_PROFILE_FAST)
+    return failf("%s: reset stats profile differs from fast build",
+                 driver->result->id);
+#else
+  if (driver->result->reset_stats.reset_profile !=
+      AL_MAILBOX_RESET_PROFILE_DIAGNOSTIC)
+    return failf("%s: reset stats profile differs from diagnostic build",
+                 driver->result->id);
+#endif
   if (!get_owning_stats(driver->fixture.runtime,
                         &driver->result->after_dispose_stats))
     return failf("%s: post-dispose stats query failed", driver->result->id);
@@ -1778,6 +1799,59 @@ static void print_stats(const al_mailbox_owning_stats *stats) {
          stats->resume_root_import_bytes);
 }
 
+static uint64_t saturating_add_u64(uint64_t left, uint64_t right) {
+  return right > UINT64_MAX - left ? UINT64_MAX : left + right;
+}
+
+static void print_reset_telemetry(void) {
+  uint32_t index;
+  uint32_t valid = 1u;
+  al_mailbox_reset_stats total;
+  memset(&total, 0, sizeof(total));
+  total.control_abi_version = AL_MAILBOX_CONTROL_ABI_VERSION;
+  total.struct_size = (uint32_t)sizeof(total);
+#if defined(AL_MAILBOX_FAST_RESET) && AL_MAILBOX_FAST_RESET
+  total.reset_profile = AL_MAILBOX_RESET_PROFILE_FAST;
+#else
+  total.reset_profile = AL_MAILBOX_RESET_PROFILE_DIAGNOSTIC;
+#endif
+  for (index = 0u; index < MAX_CASES; ++index) {
+    const al_mailbox_reset_stats *stats = &g_results[index].reset_stats;
+    if (stats->control_abi_version != AL_MAILBOX_CONTROL_ABI_VERSION ||
+        stats->struct_size != sizeof(*stats) ||
+        stats->reset_profile != total.reset_profile) {
+      valid = 0u;
+      continue;
+    }
+    total.full_capacity_payload_write_bytes_requested = saturating_add_u64(
+        total.full_capacity_payload_write_bytes_requested,
+        stats->full_capacity_payload_write_bytes_requested);
+    total.live_prefix_payload_write_bytes_requested = saturating_add_u64(
+        total.live_prefix_payload_write_bytes_requested,
+        stats->live_prefix_payload_write_bytes_requested);
+    total.bitmap_store_operations = saturating_add_u64(
+        total.bitmap_store_operations, stats->bitmap_store_operations);
+    total.turn_reset_cursor_extent_bytes = saturating_add_u64(
+        total.turn_reset_cursor_extent_bytes,
+        stats->turn_reset_cursor_extent_bytes);
+  }
+  printf("{\"valid\":%s,\"profile\":\"%s\","
+         "\"scope\":\"owningScratchCheckoutRelease\","
+         "\"payloadWriteSemantics\":\"logicalRuntimeRequestedBytesNotHardwareTraffic\","
+         "\"initializationPoisonWrites\":\"excluded: scratch, retained banks, text staging\","
+         "\"fullCapacityPayloadWriteBytesRequested\":%" PRIu64 ","
+         "\"livePrefixPayloadWriteBytesRequested\":%" PRIu64 ","
+         "\"bitmapStoreOperations\":%" PRIu64 ","
+         "\"turnResetCursorExtentBytes\":%" PRIu64 "}",
+         valid != 0u ? "true" : "false",
+         valid != 0u && total.reset_profile == AL_MAILBOX_RESET_PROFILE_FAST
+             ? "fast"
+             : (valid != 0u ? "diagnostic" : "invalid"),
+         total.full_capacity_payload_write_bytes_requested,
+         total.live_prefix_payload_write_bytes_requested,
+         total.bitmap_store_operations, total.turn_reset_cursor_extent_bytes);
+}
+
 static void print_case(const case_result *result) {
   uint32_t index;
   printf("{\"id\":");
@@ -1898,6 +1972,8 @@ int main(int argc, char **argv) {
   success = 1;
   printf("{\"schemaVersion\":1,\"policy\":");
   json_ascii(policy == AL_MAILBOX_OWNING_POLICY_RETURN ? "return" : "keep");
+  fputs(",\"resetTelemetry\":", stdout);
+  print_reset_telemetry();
   fputs(",\"cases\":[", stdout);
   for (index = 0; index < MAX_CASES; ++index) {
     if (index != 0)
