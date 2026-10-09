@@ -31,16 +31,16 @@ not wait for every optional feature or proof of a comparative advantage.
 
 ## 1. Finish the bounded vocabulary-retention review
 
-[Report 149](../reports/149-validated-window-reuse.md) completes the validated
-BillingWindow comparison: both fresh agents pass 18/18 hidden cases and reuse
-the calculation. AgentLang meets unchanged library gates in 21 exchanges with
-two syntax errors; F# uses 11 exchanges without errors. This supports the API
-shape, not a language reliability lead. [Report 150](../reports/150-shared-rule-maintenance.md) prepares that next
-shared-rule maintenance test: 48 acceptance cases across all three APIs pass
-for both correct controls, with executed negative cases for old and partially
-updated policies. Fresh-agent outcomes remain pending.
-Keep the mailbox model open: specialized typed mailboxes/dataflow boundaries
-are a candidate, not a decision to build a full actor framework.
+[Report 149](../reports/149-validated-window-reuse.md) and
+[report 150](../reports/150-shared-rule-maintenance.md) complete the validated
+billing composition/maintenance sequence. Both environments reuse the API and
+pass the respective 18 and 48 hidden cases; no language reliability lead is
+established. The [current efficacy checkpoint](../reports/151-efficacy-checkpoint.md)
+closes this microtrial sequence. Next, address the demonstrated empty-occupancy
+domain gap using validated nonempty periods and explicit absence, while retaining
+independent behavior checks and library gates. Resume native conformance as a
+separate secondary track. Keep the mailbox model open: specialized typed
+mailboxes/dataflow boundaries are a candidate, not a full actor-framework decision.
 
 The interpreter, typed semantic IR, dictionary, task transactions, introspection,
 Flow/1 authoring and existing library coverage gates are implemented. Earlier

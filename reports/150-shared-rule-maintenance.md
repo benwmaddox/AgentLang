@@ -1,7 +1,8 @@
 # 150 — Shared-rule maintenance across billing consumers
 
-Status: prepared controls and acceptance validation pass; fresh-agent results
-pending. Starting revision: `ab1a62a`. No core/runtime changes.
+Status: both fresh agents pass all 48 hidden cases, preserve shared calculation,
+and complete normally. No comparative reliability advantage is established.
+Starting revision: `ab1a62a`; preflight frozen in `05b6ed0`. No core/runtime changes.
 
 Report 149 showed two fresh agents discovering and reusing a coordinator-shaped
 validated-window API. This follow-up tests reliable maintenance: change the
@@ -65,14 +66,67 @@ All control scores report input source unchanged. These checks validate that
 the acceptance suite can distinguish the intended policy from old and partially
 updated behavior. They are not fresh-agent efficacy results.
 
+## Fresh-agent outcomes
+
+| Outcome | AgentLang | F# |
+| --- | ---: | ---: |
+| Singleton acceptance | 21/21 | 21/21 |
+| Direct-helper acceptance | 9/9 | 9/9 |
+| Batch acceptance | 18/18 | 18/18 |
+| Final own suite | 59/59 | 75/75 |
+| Added tests/checks | 12 | 11 |
+| Broker exchanges | 53 | 22 |
+| Error responses | 1 | 1 |
+| Shared production calculation retained | Yes | Yes |
+| Host/runtime exits | 0/0 | 0/0 |
+
+Both final implementations change the shared validated-window calculation and
+retain the singleton and batch delegation paths. AgentLang increments the clipped
+start only when it still coincides with the original start; F# clips against
+`StartDay + 1`. Stored starts are bounded below 366, so this addition cannot
+overflow even when request endpoints span the full signed range. Independent
+day enumeration accepts both implementations across all three APIs.
+
+AgentLang preserves all 47 inherited test names and adds 12. It updates legitimate
+policy-dependent expectations, preserves signatures/types, and does not introduce
+another production function. Fresh own-suite inspection reports library maturity
+and current complete applicable coverage for the helper (39/39 instructions,
+6/6 branches), singleton (12/12, 2/2), fold callback (10/10, no branches), and total
+(19/19, 4/4). Both Result-returning queries observe ok and error tags.
+
+The AgentLang trace records ten earlier failed assertions across four test runs
+while expectations were being updated (2, 5, 2, and 1), followed by passing reruns
+and 59/59 at the end. These are not ten unresolved final failures. Its one error
+response is a malformed eval match expression. Tests can fail inside successful
+protocol envelopes, so error-response counts alone do not describe test recovery.
+The participant commits the task and closes normally without coordinator repair.
+
+F# modifies only `project/Rental.fs`, `tests/DomainBaselineTests.fs`, and
+`tests/BillingWindowTests.fs`. It updates affected assertions, preserves unrelated
+checks, and adds regressions for original-start, split-window, one-day and
+cancellation behavior. Fresh scoring runs its suite successfully with 75 checks.
+Its one rejected patch has an invalid-length expected file hash, corrected before
+applying the edit. The participant reports using in-memory hash-length checks
+to handle terminal wrapping, in addition to prompt verification and broker work;
+it reports no outside project information or agent contact.
+
+Both scorers preserve the submitted source. Both participants report prompt hash
+verification and no sibling information; no participant communication is observed.
+AgentLang reports only prompt/broker use. Isolation remains prompt-level, and
+requested Luna/max dispatch settings are not independently recorded by the broker.
+The participants run sequentially. The differing own-test counts and broker
+protocols cannot establish relative thoroughness, model-token cost, or latency.
+
 ## Interpretation boundary
 
 This is one exploratory maintenance pair on a coordinator-shaped API, following
 a task both languages solved correctly. It cannot establish a population-level
 reliability advantage, autonomous abstraction quality, or model-token savings.
-Preserve failures and actual source changes, and do not infer reuse from test
-success. After the pair, consolidate what the recent trials establish rather
-than automatically expanding the microbenchmark series.
+Source inspection confirms shared propagation separately from test success. Both
+agents also succeeded on the preceding composition task. This pair adds a later
+correct change, but still does not isolate vocabulary retention from language,
+tool, agent variation, or coordinator API design. The next step is the consolidated
+[efficacy checkpoint](151-efficacy-checkpoint.md), not another billing microtrial.
 
 Raw source, commands, requests/responses, failed attempts, independent expectations
 and provenance are preserved under `.agentlang/shared-rule-150/`. Preflight
@@ -91,3 +145,14 @@ recomputed source/prompt hashes and confirmed all stated acceptance counts.
 The two specific mutation probes are F# only; original implementations were
 behaviorally rejected in both languages. No fresh participant had started at
 this preflight checkpoint.
+
+[Results archive](evidence/150-shared-rule-maintenance/results.zip) and
+[results index](evidence/150-shared-rule-maintenance/results-index.json): 772
+entries, 1,116,899 bytes; SHA-256
+`d35af76ba4190e2466a23f56aea38bfd5500439acbec06683f8d79da209f66aa`.
+The archive preserves traces, final sources, API scores, own-suite results,
+post-test coverage, source differences, disclosures and independent review.
+All 1,319 frozen nonparticipant inputs remain unchanged; final source hashes
+match grading (122 AgentLang storage/source files and 8 F# files). Every results
+entry was read back and hash-verified. The final reviewer found no blocking
+discrepancy in the reported outcomes or their interpretation.
