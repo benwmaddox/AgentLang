@@ -310,7 +310,7 @@ module Program =
 
         let evalRequestV2 = requestExampleV2 "eval-tutorial-sign-v2"
         equal "eval" (stringValue evalRequestV2.["op"]) "compact Flow/2 example uses eval"
-        equal "tutorial::sign(-2)" (stringValue evalRequestV2.["code"]) "compact eval example uses the exact code field"
+        equal "tutorial.sign(-2)" (stringValue evalRequestV2.["code"]) "compact Flow/2 eval example uses canonical dotted qualification"
         check (not ((evalRequestV2.AsObject()).ContainsKey("source"))) "compact eval example does not use define's source field"
         equal 2 ((evalRequestV2.["syntaxVersion"]).GetValue<int>()) "compact eval example selects Flow/2"
         let evaluatedHelpCode = Protocol.dispatchLine flow2HelpEngine (evalRequestV2.ToJsonString()) |> expectOk "execute the Flow/2 compact eval example"
@@ -345,7 +345,7 @@ module Program =
             |> Seq.find (fun item -> stringValue item.["name"] = "tutorial-list-fold")
             |> fun item -> stringValue item.["source"]
         check (foldSourceExampleV2.StartsWith("fn tutorial.fold-step", StringComparison.Ordinal)) "Flow/2 fold help uses fn declarations"
-        check (foldSourceExampleV2.Contains("items.fold(0, tutorial::fold-step)", StringComparison.Ordinal)) "Flow/2 fold help uses a named receiver callback"
+        check (foldSourceExampleV2.Contains("items.fold(0, tutorial.fold-step)", StringComparison.Ordinal)) "Flow/2 fold help uses a named receiver callback"
         check (foldSourceExampleV2.Contains("test tutorial.fold-sum/empty", StringComparison.Ordinal)) "Flow/2 fold source includes attached executable tests"
         check (foldSourceExampleV2.Contains("example tutorial.fold-sum/multiple", StringComparison.Ordinal)) "Flow/2 fold source includes an executable example"
 
@@ -382,7 +382,7 @@ module Program =
             examplesHelpV2.["sourceExamples"].AsArray()
             |> Seq.find (fun item -> stringValue item.["name"] = "tutorial-list-fold-example")
             |> fun item -> stringValue item.["source"]
-        check (foldCaseExampleV2.Contains("tutorial::fold-sum", StringComparison.Ordinal)) "Flow/2 examples help includes the executable fold case"
+        check (foldCaseExampleV2.Contains("tutorial.fold-sum", StringComparison.Ordinal)) "Flow/2 examples help includes the executable fold case"
         let exampleRequest =
             examplesHelpV2.["requestExamples"].AsArray()
             |> Seq.find (fun item -> stringValue item.["name"] = "run-tutorial-list-fold-example")
@@ -420,9 +420,9 @@ module Program =
         equal "{\"op\":\"source\",\"type\":\"TutorialSpan\"}" (tutorialSpanTypeRequest.ToJsonString()) "type-source help request has the exact source(type) shape"
         let tutorialSpanTypeSource =
             "record TutorialSpan {\n"
-            + "    field start: Int;\n"
-            + "    field finish: Int;\n"
-            + "    validate tutorialSpan::valid?;\n"
+            + "    field start: Int\n"
+            + "    field finish: Int\n"
+            + "    validate tutorialSpan.valid?\n"
             + "}"
         equal tutorialSpanTypeSource
             (Protocol.dispatchLine tutorialSpanReloaded (tutorialSpanTypeRequest.ToJsonString())
@@ -436,7 +436,7 @@ module Program =
             "fn tutorialSpan.valid?(value: TutorialSpan) -> Bool {\n"
             + "    doc \"A span is ordered when its finish is not before its start.\"\n"
             + "\n"
-            + "    int::less-or-equal(value.start, value.finish)\n"
+            + "    int.less-or-equal(value.start, value.finish)\n"
             + "}"
         equal tutorialSpanPredicateSource
             (Protocol.dispatchLine tutorialSpanReloaded (tutorialSpanWordRequest.ToJsonString())
@@ -450,7 +450,7 @@ module Program =
                  |> expectOk $"inspect {word} effects after reload"
                  |> fun response -> jsonArrayStrings response.["data"])
                 $"{word} preserves an empty effect closure after reload"
-        evalFlow tutorialSpanReloaded "tutorialSpan::new(start = 3, finish = 1)"
+        dispatch tutorialSpanReloaded "eval" [ "frontend", jstr "flow"; "syntaxVersion", jint 2; "code", jstr "tutorialSpan.new(start = 3, finish = 1)" ]
         |> expectError "RECORD_VALIDATION_FAILED"
         |> ignore
 
@@ -511,7 +511,7 @@ module Program =
             examplesHelpV2.["data"].["sourceExamples"].AsArray()
             |> Seq.find (fun item -> stringValue item.["name"] = "effect-count-test-v2")
         check
-            ((stringValue effectCountHelp.["source"]).Contains("effects { fs.read: 2; fs.write: 0; }", StringComparison.Ordinal))
+            ((stringValue effectCountHelp.["source"]).Contains("effects {\n        fs.read: 2\n        fs.write: 0\n    }", StringComparison.Ordinal))
             "Flow/2 examples help includes valid count assertion syntax"
         let afterHelpCases = dispatch engine "describe" [ "word", jstr "tutorial.sign" ] |> expectOk "inspect help-provided test attachments"
         equal [ "divide-by-zero"; "negative"; "positive"; "value-expression"; "zero" ] (jsonArrayStrings afterHelpCases.["data"].["tests"]) "help examples attach to their existing tutorial word"
@@ -1425,20 +1425,24 @@ fn renewal.dependent(state: RenewalState) -> String {
         let flowReference name =
             let data = describe name
             check (not (isNull data.["flowReference"])) $"{name} has a Flow reference"
+            equal 2 (data.["flowReferenceSyntaxVersion"].GetValue<int>()) $"{name} reference is explicitly versioned as Flow/2"
             stringValue data.["flowReference"]
+        let evalFlow2 code =
+            dispatch engine "eval" [ "frontend", jstr "flow"; "syntaxVersion", jint 2; "code", jstr code ]
 
         let advanceReference = flowReference "advance"
-        equal "::advance" advanceReference "unqualified dictionary keys use exact-root Flow references"
+        equal ".advance" advanceReference "unqualified dictionary keys use exact-root Flow/2 references"
         let namespaceReference = flowReference "tools.math.advance"
-        equal "tools::math::advance" namespaceReference "multi-segment dictionary keys preserve every exact namespace segment"
-        equal "102" (stringValue (evalFlow engine $"{advanceReference}(2)" |> expectOk "evaluate described exact-root reference" |> fun response -> response.["data"].["stack"].[0])) "described root reference resolves to the exact root word"
-        equal "11" (stringValue (evalFlow engine $"{namespaceReference}(1)" |> expectOk "evaluate described multi-segment reference" |> fun response -> response.["data"].["stack"].[0])) "described multi-segment reference survives root and suffix collisions"
+        equal ".tools.math.advance" namespaceReference "multi-segment dictionary keys preserve every exact namespace segment"
+        equal "102" (stringValue (evalFlow2 $"{advanceReference}(2)" |> expectOk "evaluate described exact-root reference" |> fun response -> response.["data"].["stack"].[0])) "described root reference resolves to the exact root word"
+        equal "11" (stringValue (evalFlow2 $"{namespaceReference}(1)" |> expectOk "evaluate described multi-segment reference" |> fun response -> response.["data"].["stack"].[0])) "described multi-segment reference survives root and suffix collisions"
         let mathReference = flowReference "math.advance"
-        equal "2" (stringValue (evalFlow engine $"{mathReference}(1)" |> expectOk "evaluate described suffix namespace reference" |> fun response -> response.["data"].["stack"].[0])) "the shorter namespace reference resolves to its exact dictionary key"
+        equal ".math.advance" mathReference "shorter namespace references keep their full exact key"
+        equal "2" (stringValue (evalFlow2 $"{mathReference}(1)" |> expectOk "evaluate described suffix namespace reference" |> fun response -> response.["data"].["stack"].[0])) "the shorter namespace reference resolves to its exact dictionary key"
 
         let floatReference = flowReference "float.add"
-        equal "float::add" floatReference "primitive Float references use exact namespace qualification"
-        let floatResult = evalFlow engine $"{floatReference}(1.5, 2.25)" |> expectOk "evaluate described primitive Float reference"
+        equal ".float.add" floatReference "primitive Float references use exact dotted qualification"
+        let floatResult = evalFlow2 $"{floatReference}(1.5, 2.25)" |> expectOk "evaluate described primitive Float reference"
         equal "Float" (stringValue floatResult.["data"].["stackTypes"].[0]) "described primitive Float reference keeps its Float type"
         equal "3.75" (stringValue floatResult.["data"].["stack"].[0]) "described primitive Float reference computes its value"
 
@@ -1449,41 +1453,43 @@ fn renewal.dependent(state: RenewalState) -> String {
         check ((stringValue tailDescription.["documentation"]).Contains("empty lists remain empty", StringComparison.Ordinal))
             "list.tail discovery documents its empty-list behavior"
         let tailReference = flowReference "list.tail"
-        equal "list::tail" tailReference "list.tail has a deterministic Flow reference"
-        let tailEmpty = evalFlow engine $"{tailReference}(list::empty<Int>())" |> expectOk "evaluate typed empty-list tail"
+        equal ".list.tail" tailReference "list.tail has a deterministic Flow/2 reference"
+        let tailEmpty = evalFlow2 $"{tailReference}(list.empty<Int>())" |> expectOk "evaluate typed empty-list tail"
         equal "List<Int>" (stringValue tailEmpty.["data"].["stackTypes"].[0]) "list.tail preserves the element type of an empty list"
         equal "[]" (stringValue tailEmpty.["data"].["stack"].[0]) "list.tail returns an empty list for an empty input"
 
         let scalarSource =
             "type Email : String { }\n\n"
-            + "word local.shadow(advance: Int) -> Int {\n"
+            + "fn local.shadow(advance: Int) -> Int {\n"
             + "    effects none\n"
             + $"    {advanceReference}(5)\n"
             + "}\n\n"
-            + "word callbacks.map-values(values: List<Int>) -> List<Int> {\n"
+            + "fn callbacks.map-values(values: List<Int>) -> List<Int> {\n"
             + "    effects none\n"
             + $"    values.map({advanceReference})\n"
             + "}"
-        defineFlowProject engine scalarSource [] |> expectOk "define Flow scalar and root-shadowing caller" |> ignore
+        defineFlowProject engine scalarSource [ "syntaxVersion", jint 2 ] |> expectOk "define Flow scalar and Flow/2 root-shadowing caller" |> ignore
         let recordReference = flowReference "cart.new"
-        equal "cart::new" recordReference "generated record constructors expose their exact Flow call spelling"
-        let recordResult = evalFlow engine $"{recordReference}(value = 7)" |> expectOk "evaluate described generated record reference"
+        equal ".cart.new" recordReference "generated record constructors expose their exact Flow/2 call spelling"
+        let recordResult = evalFlow2 $"{recordReference}(value = 7)" |> expectOk "evaluate described generated record reference"
         equal "Cart" (stringValue recordResult.["data"].["stackTypes"].[0]) "described record constructor returns the exact nominal record"
         let scalarReference = flowReference "Email.new"
-        equal "Email::new" scalarReference "generated scalar constructors expose their exact Flow call spelling"
-        let scalarResult = evalFlow engine $"{scalarReference}(\"contact@example.com\")" |> expectOk "evaluate described generated scalar reference"
+        equal ".Email.new" scalarReference "generated scalar constructors expose their exact Flow/2 call spelling"
+        let scalarResult = evalFlow2 $"{scalarReference}(\"contact@example.com\")" |> expectOk "evaluate described generated scalar reference"
         equal "Email" (stringValue scalarResult.["data"].["stackTypes"].[0]) "described scalar constructor returns the exact nominal scalar"
-        equal "105" (stringValue (evalFlow engine "local::shadow(0)" |> expectOk "call root target while a same-named local exists" |> fun response -> response.["data"].["stack"].[0])) "absolute-root reference bypasses a same-named local"
-        let callbackResult = evalFlow engine "callbacks::map-values(list::singleton<Int>(1))" |> expectOk "evaluate metadata-derived callback reference through map"
+        equal "105" (stringValue (evalFlow2 "local::shadow(0)" |> expectOk "call root target while a same-named local exists" |> fun response -> response.["data"].["stack"].[0])) "legacy namespace-qualified reference bypasses a same-named local"
+        let callbackResult = evalFlow2 "callbacks.map-values(list.singleton<Int>(1))" |> expectOk "evaluate metadata-derived callback reference through map"
         equal "[101]" (stringValue callbackResult.["data"].["stack"].[0]) "static map callback uses the exact root word despite suffix collisions"
         let callbackDescription = describe "callbacks.map-values"
         let callbackDependencies = jsonArrayStrings callbackDescription.["dependencies"]
         check (callbackDependencies |> List.contains "advance") "Flow description retains the exact static callback dependency"
 
         for prefix in [ "if"; "match"; "true"; "false"; "unit" ] do
-            let unavailable = describe (prefix + ".target")
-            check (isNull unavailable.["flowReference"]) $"{prefix} namespace prefix does not produce an intercepted Flow spelling"
-            check (not (String.IsNullOrWhiteSpace(stringValue unavailable.["flowReferenceUnavailableReason"]))) $"{prefix} protected-prefix case explains the missing reference"
+            let name = prefix + ".target"
+            let exactReference = flowReference name
+            equal ("." + name) exactReference $"{prefix} prefix has a shadow-safe Flow/2 exact reference"
+            equal "1" (stringValue (evalFlow2 $"{exactReference}(1)" |> expectOk $"evaluate exact reference for {name}" |> fun response -> response.["data"].["stack"].[0]))
+                $"{prefix} exact reference bypasses its keyword-like namespace prefix"
 
         let syntax = describe "list.empty"
         equal "syntax" (stringValue syntax.["kind"]) "container constructors remain syntax descriptors"
@@ -3402,7 +3408,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         |> ignore
         equal callbackId (getWordId reloaded "domain.append-number") "callback rename preserves its stable identity"
         let renamedSource = stringValue (dispatch reloaded "source" [ "word", jstr "domain.fold-number" ] |> expectOk "read rewritten fold source" |> fun response -> response["data"])
-        check (renamedSource.Contains("items.fold(0, domain::append-number)", StringComparison.Ordinal)) "rename rewrites only the callback reference while retaining fold source form"
+        check (renamedSource.Contains("items.fold(0, domain::append-number)", StringComparison.Ordinal)) "rename rewrites only the callback reference while retaining Flow/1 source form"
         let renamedOwner = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun value -> value.Manifest.Value.Revisions |> List.find (fun item -> item.WordId = ownerId && item.Revision = 2)
         let renamedBinding = renamedOwner.CallBindings |> List.find (fun binding -> binding.Form = StoredCallForm.StaticCallback("fold", FlowWordReferenceQualification.NamespaceQualified))
         equal (StoredCallTarget.UserWord callbackId) renamedBinding.Target "renamed fold binding remains attached to the same callback identity"
@@ -3439,18 +3445,190 @@ fn renewal.dependent(state: RenewalState) -> String {
             "fn callbacks.increment(value: Int) -> Int { add(value, 1) }\n\n"
             + "fn callbacks.is-positive(value: Int) -> Bool { int::greater-than(value, 0) }\n\n"
             + "fn callbacks.visit-item(value: Int) -> Unit { unit }\n\n"
+            + "fn identity(value: Int) -> Int { value }\n\n"
             + "fn callbacks.map-values(items: List<Int>) -> List<Int> { items.map(callbacks::increment) }\n\n"
+            + "fn callbacks.map-values-dotted(items: List<Int>) -> List<Int> { items.map(callbacks.increment) }\n\n"
+            + "fn callbacks.map-identity-root(items: List<Int>) -> List<Int> { items.map(.identity) }\n\n"
             + "fn callbacks.filter-positive(items: List<Int>) -> List<Int> { items.filter(callbacks::is-positive) }\n\n"
             + "fn callbacks.visit-all(items: List<Int>) -> Unit { items.each(callbacks::visit-item) }\n\n"
             + "test callbacks.map-values/single { callbacks::map-values(list::singleton<Int>(4)) => value list::singleton<Int>(5) }\n\n"
+            + "test callbacks.map-values-dotted/single { callbacks.map-values-dotted(list.singleton<Int>(4)) => value list.singleton<Int>(5) }\n\n"
+            + "test callbacks.map-identity-root/single { callbacks.map-identity-root(list.singleton<Int>(4)) => value list.singleton<Int>(4) }\n\n"
             + "test callbacks.filter-positive/mixed { callbacks::filter-positive(list::append(list::singleton<Int>(-1), 2)) => value list::singleton<Int>(2) }\n\n"
             + "test callbacks.visit-all/populated { callbacks::visit-all(list::append(list::singleton<Int>(1), 2)) => unit }"
         defineFlowProject engine source [ "syntaxVersion", jint 2 ]
         |> expectOk "define and typecheck Flow/2 map, filter, and each receiver callbacks"
         |> ignore
         assertAllPassed 1 (dispatch engine "test" [ "word", jstr "callbacks.map-values" ] |> expectOk "run Flow/2 map receiver callback")
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "callbacks.map-values-dotted" ] |> expectOk "run Flow/2 dotted map callback")
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "callbacks.map-identity-root" ] |> expectOk "run Flow/2 leading-dot root callback")
         assertAllPassed 1 (dispatch engine "test" [ "word", jstr "callbacks.filter-positive" ] |> expectOk "run Flow/2 filter receiver callback")
         assertAllPassed 1 (dispatch engine "test" [ "word", jstr "callbacks.visit-all" ] |> expectOk "run Flow/2 each receiver callback")
+
+    let private testFlow2DottedCallsAndRename root =
+        let project = Path.Combine(root, "flow2-dotted-calls")
+        let engine = Runtime.Engine(project, Set.ofList [ "fs.read"; "fs.write" ], "2042-03-04T05:06:07Z")
+        let source =
+            """record Customer {
+    field email: String
+    validate customer.valid?
+}
+
+enum State {
+    case ready
+    case waiting
+}
+
+fn identity(value: Int) -> Int { value }
+
+fn customer.balance(value: Int) -> Int { add(value, 1) }
+
+fn customer.active?(value: Int) -> Bool { int.greater-than(value, 0) }
+
+fn customer.valid?(value: Customer) -> Bool { string.contains(value.email, "@") }
+
+fn owner.local(customer: Int) -> Int { customer.balance() }
+
+fn owner.exact(customer: Int) -> Int { .customer.balance(7) }
+
+fn owner.legacy(customer: Int) -> Int { customer::balance(7) }
+
+fn owner.root(identity: Int) -> Int { .identity(identity) }
+
+fn owner.map(values: List<Int>) -> List<Bool> { values.map(customer.active?) }
+
+fn owner.map-shadow(customer: List<Int>) -> List<Bool> { customer.map(customer.active?) }
+
+fn owner.map-root(values: List<Int>) -> List<Int> { values.map(.identity) }
+
+fn owner.option(value: Int) -> Option<Int> { option.some<Int>(value) }
+
+fn owner.result(value: Int) -> Result<Int, String> { result.ok<Int, String>(value) }
+
+fn owner.state() -> State { State.ready() }
+
+fn owner.valid?(email: String) -> Bool { customer.valid?(customer.new(email = email)) }
+
+fn owner.read-path(path: String) -> String {
+    effects fs.read
+    file.read(path)
+}
+
+fn owner.read-bound(file: String) -> String {
+    effects fs.read
+    file.read()
+}
+
+test owner.local/receiver { owner.local(9) => 10 }
+
+test customer.balance/increment { customer.balance(7) => 8 }
+
+test owner.exact/root-qualified { owner.exact(99) => 8 }
+
+test owner.legacy/double-colon { owner.legacy(99) => 8 }
+
+test owner.root/unqualified { owner.root(99) => 99 }
+
+test owner.map/dotted-callback {
+    owner.map(list.append(list.singleton<Int>(-1), 2))
+    => value list.append(list.singleton<Bool>(false), true)
+}
+
+test owner.map-shadow/local-root-shadow {
+    owner.map-shadow(list.append(list.singleton<Int>(-1), 2))
+    => value list.append(list.singleton<Bool>(false), true)
+}
+
+test owner.map-root/root-callback {
+    owner.map-root(list.singleton<Int>(4))
+    => value list.singleton<Int>(4)
+}
+
+test owner.option/dotted-constructor { owner.option(3) => value option.some<Int>(3) }
+
+test owner.result/dotted-constructor { owner.result(5) => value result.ok<Int, String>(5) }
+
+test owner.state/dotted-enum-constructor { owner.state() => value State.ready() }
+
+test owner.valid?/dotted-validator { owner.valid?("person@example.com") => true }
+
+test owner.read-path/dotted-primitive {
+    file.write("dotted-read", "ready")
+    owner.read-path("dotted-read")
+    => "ready" effects {
+        fs.read: 1
+    }
+}
+
+test owner.read-bound/local-receiver {
+    file.write("dotted-bound-read", "ready")
+    owner.read-bound("dotted-bound-read")
+    => "ready" effects {
+        fs.read: 1
+    }
+}"""
+        defineFlowProject engine source [ "syntaxVersion", jint 2 ]
+        |> expectOk "stage Flow/2 dotted calls, constructors, callbacks, validators, and newline-separated cases"
+        |> ignore
+
+        for owner in
+            [ "owner.local"; "owner.exact"; "owner.legacy"; "owner.root"; "owner.map"; "owner.map-root"
+              "owner.map-shadow"; "owner.option"; "owner.result"; "owner.state"; "owner.valid?"; "owner.read-path"; "owner.read-bound" ] do
+            assertAllPassed 1 (dispatch engine "test" [ "word", jstr owner ] |> expectOk ("run dotted-call case for " + owner))
+
+        let balanceId = getWordId engine "customer.balance"
+        commit engine "commit" "customer.balance" [] |> expectOk "persist the exact dotted target" |> ignore
+        commit engine "commit" "owner.local" [] |> expectOk "persist the lexical receiver caller" |> ignore
+        commit engine "commit" "owner.exact" [] |> expectOk "persist the leading-dot exact caller" |> ignore
+        commit engine "commit" "owner.legacy" [] |> expectOk "persist the legacy namespace-qualified caller" |> ignore
+
+        let store = Storage.create project
+        let before = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeManifest = before.Manifest |> Option.defaultWith (fun () -> failwith "dotted-call rename fixture did not persist")
+        let revision name =
+            let head = beforeManifest.Words |> List.find (fun item -> item.CurrentName = name)
+            beforeManifest.Revisions |> List.find (fun item -> item.WordId = head.WordId && item.Revision = head.CurrentRevision)
+        let exactBefore = revision "owner.exact"
+        let exactBinding = exactBefore.CallBindings |> List.find (fun binding -> binding.Target = StoredCallTarget.UserWord balanceId)
+        equal (StoredCallTarget.UserWord balanceId) exactBinding.Target "leading-dot call persists the exact dictionary target identity"
+        let localBefore = revision "owner.local"
+        let localBinding = localBefore.CallBindings |> List.find (fun binding -> binding.Target = StoredCallTarget.UserWord balanceId)
+        equal (StoredCallTarget.UserWord balanceId) localBinding.Target "lexical receiver persists its resolved method target identity"
+        let legacyBefore = revision "owner.legacy"
+        let legacyBeforeSource = Storage.readSource store legacyBefore.Definition |> Result.defaultWith (fun problem -> failwith problem.Message)
+        check (legacyBeforeSource.Contains("customer::balance(7)", StringComparison.Ordinal)) "the committed Flow/2 legacy caller retains its authored double-colon bytes"
+        let legacyReloaded = Runtime.Engine(project, Set.ofList [ "fs.read"; "fs.write" ], "2042-03-04T05:06:07Z")
+        let legacyReloadedSource =
+            dispatch legacyReloaded "source" [ "word", jstr "owner.legacy" ]
+            |> expectOk "read persisted Flow/2 legacy caller after a fresh Engine reload"
+            |> fun response -> stringValue response.["data"]
+        equal legacyBeforeSource legacyReloadedSource "fresh reload preserves the legacy caller source bytes before rename"
+        assertAllPassed 1 (dispatch legacyReloaded "test" [ "word", jstr "owner.legacy" ] |> expectOk "run persisted Flow/2 legacy caller before rename")
+
+        dispatch legacyReloaded "rename" [ "word", jstr "customer.balance"; "to", jstr "account.balance" ]
+        |> expectOk "rename a dotted call target and rewrite its callers"
+        |> ignore
+        equal balanceId (getWordId legacyReloaded "account.balance") "dotted target rename retains its stable identity"
+
+        let after = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let afterManifest = after.Manifest |> Option.defaultWith (fun () -> failwith "renamed dotted-call manifest is missing")
+        let afterRevision name =
+            let head = afterManifest.Words |> List.find (fun item -> item.CurrentName = name)
+            afterManifest.Revisions |> List.find (fun item -> item.WordId = head.WordId && item.Revision = head.CurrentRevision)
+        let exactAfter = afterRevision "owner.exact"
+        let exactAfterBinding = exactAfter.CallBindings |> List.find (fun binding -> binding.Target = StoredCallTarget.UserWord balanceId)
+        equal (StoredCallTarget.UserWord balanceId) exactAfterBinding.Target "renamed leading-dot call keeps its exact target identity"
+        let exactAfterSource = Storage.readSource store exactAfter.Definition |> Result.defaultWith (fun problem -> failwith problem.Message)
+        check (exactAfterSource.Contains("account.balance(7)", StringComparison.Ordinal)) "rename rewrites the exact dotted source to its unshadowed namespace"
+        check (not (exactAfterSource.Contains(".account.balance(7)", StringComparison.Ordinal))) "canonical formatting omits an unnecessary leading-root marker after rename"
+        let localAfter = afterRevision "owner.local"
+        let localAfterBinding = localAfter.CallBindings |> List.find (fun binding -> binding.Target = StoredCallTarget.UserWord balanceId)
+        equal (StoredCallTarget.UserWord balanceId) localAfterBinding.Target "renamed receiver call retains its exact target identity"
+
+        let reloaded = Runtime.Engine(project, Set.ofList [ "fs.read"; "fs.write" ], "2042-03-04T05:06:07Z")
+        assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "owner.local" ] |> expectOk "run the renamed receiver call after reload")
+        assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "owner.exact" ] |> expectOk "run the renamed exact call after reload")
+        assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "owner.legacy" ] |> expectOk "run the rewritten legacy caller after reload")
 
     let private testFlowValidatorCannotBeRenamedAfterTypeCommit root =
         let project = Path.Combine(root, "flow-validator-frozen")
@@ -4207,7 +4385,7 @@ test persist.read/exact-count {
         let afterHead = afterManifest.Words |> List.find (fun item -> item.CurrentName = "persist.load")
         let afterRevision = afterManifest.Revisions |> List.find (fun item -> item.WordId = afterHead.WordId && item.Revision = afterHead.CurrentRevision)
         let rewrittenTest = afterRevision.Tests |> List.map (Storage.readSource persistenceStore >> Result.defaultWith (fun problem -> failwith problem.Message)) |> List.exactlyOne
-        check (rewrittenTest.Contains("effects { fs.read: 1; fs.write: 0; }", StringComparison.Ordinal)) "rename preserves the exact effect assertion suffix"
+        check (rewrittenTest.Contains("effects {\n        fs.read: 1\n        fs.write: 0\n    }", StringComparison.Ordinal)) "rename preserves exact effect counts in canonical newline syntax"
         let reloaded = Runtime.Engine(persistenceProject, Set.empty, "2041-02-03T04:05:06Z")
         let reloadedPersistent = testResult reloaded "persist.load" "exact-count"
         check (boolValue reloadedPersistent.["passed"]) "fresh reload reparses the renamed effect-count test"
@@ -4287,11 +4465,12 @@ test persist.read/exact-count {
             testFlowMaintenanceFailureAndLibraryCoverage root
             testFlowStaticListFold root
             testFlow2StaticListCallbacks root
+            testFlow2DottedCallsAndRename root
             testFlowValidatorCannotBeRenamedAfterTypeCommit root
             testFlowProjectDocumentTypesCommitAndReload root
             testRecordValidatorRuntimeAndPersistence root
             testEffectCountAssertions root
-            printfn $"Flow Runtime tests passed: 32 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 33 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

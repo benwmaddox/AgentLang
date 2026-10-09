@@ -1,7 +1,7 @@
 enum RenewalState {
-    case pending;
-    case renewed;
-    case cancelled;
+    case pending
+    case renewed
+    case cancelled
 }
 
 fn renewal.echo(value: RenewalState) -> RenewalState {
@@ -9,38 +9,38 @@ fn renewal.echo(value: RenewalState) -> RenewalState {
 }
 
 fn renewal.describe(state: RenewalState) -> String {
-    match renewal::echo(state) {
+    match renewal.echo(state) {
         pending => {
-            renewal::echo(RenewalState::pending());
+            renewal.echo(RenewalState.pending())
             "Pending"
         }
         renewed => {
-            renewal::echo(RenewalState::renewed());
+            renewal.echo(RenewalState.renewed())
             "Renewed"
         }
         cancelled => {
-            renewal::echo(RenewalState::cancelled());
+            renewal.echo(RenewalState.cancelled())
             "Cancelled"
         }
     }
 }
 
 test renewal.echo/pending {
-    renewal::echo(RenewalState::pending())
-    => value RenewalState::pending()
+    renewal.echo(RenewalState.pending())
+    => value RenewalState.pending()
 }
 
 test renewal.describe/pending {
-    renewal::describe(RenewalState::pending())
+    renewal.describe(RenewalState.pending())
     => "Pending"
 }
 
 test renewal.describe/renewed {
-    renewal::describe(RenewalState::renewed())
+    renewal.describe(RenewalState.renewed())
     => "Renewed"
 }
 
 test renewal.describe/cancelled {
-    renewal::describe(RenewalState::cancelled())
+    renewal.describe(RenewalState.cancelled())
     => "Cancelled"
 }

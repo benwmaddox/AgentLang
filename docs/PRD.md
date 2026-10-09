@@ -109,6 +109,23 @@ Use an explicit data-flow authoring model with named typed inputs, ordinary call
 
 Evaluation compiles the entire submitted expression before executing it. Type errors prevent every effect. Internal `Int Int -> Int` consumes two integers and produces one; new source supplies named parameters/call arguments without exposing anonymous stack positions.
 
+Approved syntax refinement (2026-10-09): use dots for qualified calls and static
+callback references (`file.read(path)`, `customers.filter(customer.active?)`).
+Plain record properties remain `customer.email`; a call on a lexical value
+passes that value as its first argument. Lexical roots take precedence over
+dictionary namespaces, without fallback after a type or lookup error. A leading
+dot explicitly selects the dictionary (`.customer.balance(customer)`) when a
+local shadows the namespace; `.identity(value)` selects an exact root function.
+
+Newlines are the normal separator for statements and declaration entries.
+Semicolons remain available between multiple entries on one line; canonical
+formatting omits optional semicolons. A single-expression match arm can omit
+braces (`pending => "Pending"`); multi-statement arms retain blocks. Keep existing
+typed IR semantics, evaluation order, exhaustive matching, effects and stable
+definition identities. Apply this to current Flow/2 rather than adding another
+syntax version. Historical experiment evidence remains frozen. See
+[the current syntax guide](CURRENT-SYNTAX.md) for the authoring contract.
+
 Preserve stack-inspired discipline through explicit consumed/produced values and minimal hidden state. No mutable language globals are introduced. Immutable constants remain inspectable typed pure definitions; application state is passed explicitly where practical, and external mutable state is accessed only through declared host effects. Definitions precede use lexically; closeness to first use is lint rather than a type/syntax requirement. A stack representation does not by itself guarantee these policies or low memory use.
 
 Initial scalar types are `Int`, `Float`, `Bool`, `String`, and `Unit`. Integers are signed 64-bit values with defined overflow errors. Floats are floating-point values, not financial decimals. The demo must describe its numeric limitations; a real billing fixture needs an explicit decimal or integer-minor-unit Money type.
@@ -122,7 +139,9 @@ Named semantic types are required in the first release. `Email` is distinct from
 For example, the target Flow declaration contract is:
 
 ```text
-type Email : String { validate email::valid?; }
+type Email : String {
+    validate email.valid?
+}
 type MetersPerSecond : Float {}
 ```
 

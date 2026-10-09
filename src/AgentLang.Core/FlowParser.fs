@@ -24,6 +24,7 @@ module FlowParser =
           Tokens: Token array
           mutable Index: int
           mutable Depth: int
+          mutable LexicalLocals: Set<string>
           EndLine: int
           EndColumn: int }
 
@@ -177,6 +178,13 @@ module FlowParser =
     let private accept state expected =
         if peek state = Some expected then consume state |> ignore; true else false
 
+    let private requireNewlineOrSeparator state closingToken code message =
+        if accept state ";" || peek state = Some closingToken then ()
+        else
+            match current state, previous state with
+            | Some next, Some last when next.Line > last.Line -> ()
+            | _ -> tokenError state code message
+
     let private expectIdentifier state =
         match current state with
         | Some token when token.Kind = Identifier -> consume state
@@ -202,6 +210,12 @@ module FlowParser =
             tokenError state "FLOW_NESTING_LIMIT" $"Flow syntax exceeds the nesting limit of {maxNesting}."
         try action ()
         finally state.Depth <- state.Depth - 1
+
+    let private withLexicalLocals (state: State) locals action =
+        let previous = state.LexicalLocals
+        state.LexicalLocals <- locals
+        try action ()
+        finally state.LexicalLocals <- previous
 
     let rec private parseType state =
         withDepth state (fun () ->
@@ -242,6 +256,45 @@ module FlowParser =
         parts.Add first.Text
         while accept state "::" do parts.Add((expectIdentifier state).Text)
         String.concat "." parts
+
+    let private dottedNameAhead (state: State) =
+        if state.Index >= state.Tokens.Length || state.Tokens[state.Index].Kind <> Identifier then None
+        else
+            let parts = ResizeArray<string>()
+            parts.Add state.Tokens[state.Index].Text
+            let mutable cursor = state.Index + 1
+            let mutable scanning = true
+            while scanning
+                  && cursor + 1 < state.Tokens.Length
+                  && state.Tokens[cursor].Line = state.Tokens[cursor - 1].Line
+                  && state.Tokens[cursor + 1].Line = state.Tokens[cursor].Line
+                  && state.Tokens[cursor].Text = "."
+                  && state.Tokens[cursor + 1].Kind = Identifier do
+                parts.Add state.Tokens[cursor + 1].Text
+                cursor <- cursor + 2
+            if parts.Count > 1 then Some(String.concat "." parts, cursor) else None
+
+    let private parseDottedName state =
+        let first = expectIdentifier state
+        let parts = ResizeArray<string>()
+        parts.Add first.Text
+        while peek state = Some "."
+              && state.Index + 1 < state.Tokens.Length
+              && (current state |> Option.exists (fun dot -> dot.Line = (previous state |> Option.get).Line))
+              && state.Tokens[state.Index + 1].Line = (previous state |> Option.get).Line
+              && state.Tokens[state.Index + 1].Kind = Identifier do
+            consume state |> ignore
+            parts.Add((expectIdentifier state).Text)
+        String.concat "." parts
+
+    let private parseLeadingDotName state =
+        let prefix = expect state "."
+        match current state with
+        | Some next when next.Line <> prefix.Line -> fail state.File next.Line next.Column next.Text.Length "FLOW_DOTTED_NAME_SEPARATOR" "A leading-dot exact name must remain on one line."
+        | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected an exact dictionary name after the leading dot."
+        | _ -> ()
+        let name = parseDottedName state
+        name, sourceSpan state.File prefix (previous state)
 
     let private parseRootTarget state =
         let rootPrefix = expect state "::"
@@ -294,7 +347,7 @@ module FlowParser =
             let mutable qualified = false
             let mutable scanning = true
             while scanning && cursor < state.Tokens.Length do
-                if state.Tokens[cursor].Text = "::"
+                if (state.Tokens[cursor].Text = "::" || (state.SyntaxVersion = 2 && state.Tokens[cursor].Text = "."))
                    && cursor + 1 < state.Tokens.Length
                    && state.Tokens[cursor + 1].Kind = Identifier then
                     qualified <- true
@@ -303,10 +356,40 @@ module FlowParser =
             qualified && (cursor = state.Tokens.Length || isArgumentTerminator state cursor)
 
     let private absoluteRootReferenceAhead (state: State) =
-        state.Index + 1 < state.Tokens.Length
-        && state.Tokens[state.Index].Text = "::"
-        && state.Tokens[state.Index + 1].Kind = Identifier
-        && (state.Index + 2 = state.Tokens.Length || isArgumentTerminator state (state.Index + 2))
+        if state.Index + 1 >= state.Tokens.Length then false
+        elif state.Tokens[state.Index].Text = "::" then
+            state.Tokens[state.Index + 1].Kind = Identifier
+            && (state.Index + 2 = state.Tokens.Length || isArgumentTerminator state (state.Index + 2))
+        elif state.SyntaxVersion = 2 && state.Tokens[state.Index].Text = "." && state.Tokens[state.Index + 1].Kind = Identifier then
+            state.Index + 2 = state.Tokens.Length || isArgumentTerminator state (state.Index + 2)
+        else false
+
+    let private staticCallbackReferenceAheadAt (state: State) index =
+        let previousIndex = state.Index
+        state.Index <- index
+        try explicitShortReferenceAhead state || qualifiedReferenceAhead state || absoluteRootReferenceAhead state
+        finally state.Index <- previousIndex
+
+    let private foldCallbackReferenceAheadAt (state: State) openIndex =
+        let mutable cursor = openIndex + 1
+        let mutable parentheses = 0
+        let mutable angles = 0
+        let mutable braces = 0
+        let mutable commaIndex = None
+        let mutable scanning = true
+        while scanning && cursor < state.Tokens.Length do
+            match state.Tokens[cursor].Text with
+            | "(" -> parentheses <- parentheses + 1
+            | ")" when parentheses = 0 -> scanning <- false
+            | ")" -> parentheses <- parentheses - 1
+            | "<" -> angles <- angles + 1
+            | ">" when angles > 0 -> angles <- angles - 1
+            | "{" -> braces <- braces + 1
+            | "}" when braces > 0 -> braces <- braces - 1
+            | "," when parentheses = 0 && angles = 0 && braces = 0 -> commaIndex <- Some cursor; scanning <- false
+            | _ -> ()
+            cursor <- cursor + 1
+        commaIndex |> Option.exists (fun comma -> staticCallbackReferenceAheadAt state (comma + 1))
 
     let private parseStaticWordReference (state: State) qualification =
         let first =
@@ -319,11 +402,16 @@ module FlowParser =
         let name, referenceSpan =
             match qualification with
             | FlowWordReferenceQualification.AbsoluteRoot ->
-                let target = parseRootTarget state
-                target.Name, target.Span
+                if peek state = Some "." then parseLeadingDotName state
+                else
+                    let target = parseRootTarget state
+                    target.Name, target.Span
             | FlowWordReferenceQualification.ExplicitShort
             | FlowWordReferenceQualification.NamespaceQualified ->
-                let name = parseNamespaceName state
+                let name =
+                    if state.SyntaxVersion = 2 && peek state <> Some "::" && (dottedNameAhead state |> Option.isSome) then
+                        parseDottedName state
+                    else parseNamespaceName state
                 name, sourceSpan state.File first (previous state)
         if qualification = FlowWordReferenceQualification.ExplicitShort && name.Contains('.') then
             fail state.File first.Line first.Column (max first.Text.Length (previous state |> Option.map (fun token -> token.Offset + token.Text.Length - first.Offset) |> Option.defaultValue first.Text.Length))
@@ -377,10 +465,13 @@ module FlowParser =
 
     and private parseBlock state =
         withDepth state (fun () ->
-            expect state "{" |> ignore
-            let statements = parseBlockStatements state
-            expect state "}" |> ignore
-            statements)
+            let locals = state.LexicalLocals
+            try
+                expect state "{" |> ignore
+                let statements = parseBlockStatements state
+                expect state "}" |> ignore
+                statements
+            finally state.LexicalLocals <- locals)
 
     and private parseBlockStatements state =
         parseBlockStatementsUntil state (Set.singleton "}")
@@ -436,11 +527,13 @@ module FlowParser =
                 | None -> ()
                 expect state "=" |> ignore
                 let value = parseExpressionState state
+                state.LexicalLocals <- Set.union (bindings |> Seq.map fst |> Set.ofSeq) state.LexicalLocals
                 FlowStatement.LetMany(List.ofSeq bindings, value, sourceSpan state.File start (previous state))
             else
                 let name = expectIdentifier state
                 expect state "=" |> ignore
                 let value = parseExpressionState state
+                state.LexicalLocals <- Set.add name.Text state.LexicalLocals
                 FlowStatement.Let(name.Text, value, sourceSpan state.File start (previous state))
         elif accept state "return" then
             let values = ResizeArray<FlowExpression>()
@@ -487,20 +580,31 @@ module FlowParser =
                 fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_CONSTRUCTOR_ARITY" $"Container constructor expects {expected}; received {arguments.Length} argument(s)."
         FlowExpression.Container(kind, List.ofSeq typeArguments, payload, sourceSpan state.File startToken (previous state))
 
-    and private parsePayloadCase state labelToken : FlowPayloadCase =
+    and private parsePayloadCase state labelToken : FlowPayloadCase * bool =
         let name = expectIdentifier state
         expect state "=>" |> ignore
-        let statements = parseBlock state
+        let isBare = peek state <> Some "{"
+        if isBare && state.SyntaxVersion <> 2 then
+            tokenError state "FLOW_SYNTAX_VERSION" "Bare match arms require Flow/2 syntax."
+        let statements =
+            withLexicalLocals state (Set.add name.Text state.LexicalLocals) (fun () ->
+                if not isBare then parseBlock state
+                else [ FlowStatement.Evaluate(parseExpressionState state) ])
         { Name = name.Text
           NameSpan = sourceSpan state.File name (Some name)
           Statements = statements
-          Span = sourceSpan state.File labelToken (previous state) }
+          Span = sourceSpan state.File labelToken (previous state) }, isBare
 
-    and private parseBlockCase state labelToken : FlowCaseBlock =
+    and private parseBlockCase state labelToken : FlowCaseBlock * bool =
         expect state "=>" |> ignore
-        let statements = parseBlock state
+        let isBare = peek state <> Some "{"
+        if isBare && state.SyntaxVersion <> 2 then
+            tokenError state "FLOW_SYNTAX_VERSION" "Bare match arms require Flow/2 syntax."
+        let statements =
+            if not isBare then parseBlock state
+            else [ FlowStatement.Evaluate(parseExpressionState state) ]
         { Statements = statements
-          Span = sourceSpan state.File labelToken (previous state) }
+          Span = sourceSpan state.File labelToken (previous state) }, isBare
 
     and private parseMatch state matchToken =
         let scrutinee = parseExpressionState state
@@ -518,34 +622,47 @@ module FlowParser =
             | Some _ -> fail state.File labelToken.Line labelToken.Column labelToken.Text.Length "FLOW_MATCH_CASE_KIND" "Option, Result, and enum case labels cannot be mixed in one match."
         while peek state <> Some "}" && not (atEnd state) do
             let label = expectIdentifier state
-            match label.Text with
-            | "some" ->
-                setCaseKind "option" label
-                if someCase.IsSome then fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" "Option match contains the 'some' case more than once."
-                someCase <- Some(parsePayloadCase state label)
-            | "none" ->
-                setCaseKind "option" label
-                if noneCase.IsSome then fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" "Option match contains the 'none' case more than once."
-                noneCase <- Some(parseBlockCase state label)
-            | "ok" ->
-                setCaseKind "result" label
-                if okCase.IsSome then fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" "Result match contains the 'ok' case more than once."
-                okCase <- Some(parsePayloadCase state label)
-            | "error" ->
-                setCaseKind "result" label
-                if errorCase.IsSome then fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" "Result match contains the 'error' case more than once."
-                errorCase <- Some(parsePayloadCase state label)
-            | _ ->
-                setCaseKind "enum" label
-                if enumCases |> Seq.exists (fun caseValue -> caseValue.Name = label.Text) then
-                    fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" $"Enum match contains case '{label.Text}' more than once."
-                let block = parseBlockCase state label
-                enumCases.Add
-                    { Name = label.Text
-                      NameSpan = sourceSpan state.File label (Some label)
-                      Statements = block.Statements
-                      Span = block.Span }
-            accept state ";" |> ignore
+            let bareArm =
+                match label.Text with
+                | "some" ->
+                    setCaseKind "option" label
+                    if someCase.IsSome then fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" "Option match contains the 'some' case more than once."
+                    let caseValue, isBare = parsePayloadCase state label
+                    someCase <- Some caseValue
+                    isBare
+                | "none" ->
+                    setCaseKind "option" label
+                    if noneCase.IsSome then fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" "Option match contains the 'none' case more than once."
+                    let caseValue, isBare = parseBlockCase state label
+                    noneCase <- Some caseValue
+                    isBare
+                | "ok" ->
+                    setCaseKind "result" label
+                    if okCase.IsSome then fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" "Result match contains the 'ok' case more than once."
+                    let caseValue, isBare = parsePayloadCase state label
+                    okCase <- Some caseValue
+                    isBare
+                | "error" ->
+                    setCaseKind "result" label
+                    if errorCase.IsSome then fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" "Result match contains the 'error' case more than once."
+                    let caseValue, isBare = parsePayloadCase state label
+                    errorCase <- Some caseValue
+                    isBare
+                | _ ->
+                    setCaseKind "enum" label
+                    if enumCases |> Seq.exists (fun caseValue -> caseValue.Name = label.Text) then
+                        fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" $"Enum match contains case '{label.Text}' more than once."
+                    let block, bare = parseBlockCase state label
+                    enumCases.Add
+                        { Name = label.Text
+                          NameSpan = sourceSpan state.File label (Some label)
+                          Statements = block.Statements
+                          Span = block.Span }
+                    bare
+            if bareArm then
+                requireNewlineOrSeparator state "}" "FLOW_MATCH_CASE_SEPARATOR" "Separate bare match arms with a newline or ';'."
+            else
+                accept state ";" |> ignore
         expect state "}" |> ignore
         let matchSpan = sourceSpan state.File matchToken (previous state)
         match someCase, noneCase, okCase, errorCase with
@@ -631,20 +748,83 @@ module FlowParser =
                             "FLOW_ROOT_CALL_REQUIRES_ARGUMENTS" "An absolute-root dictionary name must be called with parentheses."
                     let arguments = parseArguments state None
                     FlowExpression.RootCall(target, arguments, sourceSpan state.File first (previous state))
+                | Symbol, "." when state.SyntaxVersion = 2 ->
+                    let name, targetSpan = parseLeadingDotName state
+                    if peek state <> Some "(" then
+                        fail state.File first.Line first.Column (previous state |> Option.map (fun token -> token.Offset + token.Text.Length - first.Offset) |> Option.defaultValue first.Text.Length)
+                            "FLOW_ROOT_CALL_REQUIRES_ARGUMENTS" "A leading-dot exact dictionary name must be called with parentheses."
+                    let arguments = parseArguments state None
+                    if name.Contains('.') then
+                        FlowExpression.Call(name, arguments, sourceSpan state.File first (previous state))
+                    else
+                        FlowExpression.RootCall({ Name = name; Span = targetSpan }, arguments, sourceSpan state.File first (previous state))
+                | Symbol, "." ->
+                    fail state.File first.Line first.Column first.Text.Length "FLOW_SYNTAX_VERSION" "Leading-dot exact references require Flow/2 syntax."
                 | Identifier, _ ->
-                    let name = parseNamespaceName state
-                    match constructorKind name with
-                    | Some kind -> parseConstructor state first kind
-                    | None when peek state = Some "(" ->
-                        let args = parseArguments state None
-                        FlowExpression.Call(name, args, sourceSpan state.File first (previous state))
-                    | None when name.Contains('.') ->
-                        fail state.File first.Line first.Column first.Text.Length "FLOW_QUALIFIED_CALL_REQUIRES_ARGUMENTS" "A qualified word reference must be called with parentheses."
-                    | None -> FlowExpression.Local(name, sourceSpan state.File first (Some first))
+                    let legacyQualified = state.Index + 1 < state.Tokens.Length && state.Tokens[state.Index + 1].Text = "::"
+                    let dottedConstructor =
+                        if state.SyntaxVersion <> 2 then None
+                        else
+                            dottedNameAhead state
+                            |> Option.bind (fun (name, endIndex) ->
+                                if endIndex < state.Tokens.Length
+                                   && (state.Tokens[endIndex].Text = "<" || state.Tokens[endIndex].Text = "(") then
+                                    constructorKind name |> Option.map (fun kind -> kind)
+                                else None)
+                    let dottedCallbackStage =
+                        if state.SyntaxVersion <> 2 || legacyQualified then None
+                        else
+                            dottedNameAhead state
+                            |> Option.bind (fun (name, endIndex) ->
+                                if endIndex < state.Tokens.Length && state.Tokens[endIndex].Text = "(" then
+                                    let parts = name.Split('.')
+                                    match staticCallbackStage parts[parts.Length - 1] with
+                                    | Some "fold" when foldCallbackReferenceAheadAt state endIndex -> Some "fold"
+                                    | Some stage when staticCallbackReferenceAheadAt state (endIndex + 1) -> Some stage
+                                    | _ -> None
+                                else None)
+                    match dottedConstructor with
+                    | Some kind -> parseDottedName state |> ignore; parseConstructor state first kind
+                    | None when Option.isSome dottedCallbackStage ->
+                        consume state |> ignore
+                        FlowExpression.Local(first.Text, sourceSpan state.File first (Some first))
+                    | None when state.SyntaxVersion = 2 && not legacyQualified && Option.isSome (dottedNameAhead state) && state.LexicalLocals.Contains first.Text ->
+                        consume state |> ignore
+                        FlowExpression.Local(first.Text, sourceSpan state.File first (Some first))
+                    | None when state.SyntaxVersion = 2 && not legacyQualified ->
+                        match dottedNameAhead state with
+                        | Some(name, endIndex) when endIndex < state.Tokens.Length && state.Tokens[endIndex].Text = "(" ->
+                            parseDottedName state |> ignore
+                            let arguments = parseArguments state None
+                            FlowExpression.Call(name, arguments, sourceSpan state.File first (previous state))
+                        | _ ->
+                            let name = parseNamespaceName state
+                            match constructorKind name with
+                            | Some kind -> parseConstructor state first kind
+                            | None when peek state = Some "(" ->
+                                let arguments = parseArguments state None
+                                FlowExpression.Call(name, arguments, sourceSpan state.File first (previous state))
+                            | None when name.Contains('.') ->
+                                fail state.File first.Line first.Column first.Text.Length "FLOW_QUALIFIED_CALL_REQUIRES_ARGUMENTS" "A qualified word reference must be called with parentheses."
+                            | None -> FlowExpression.Local(name, sourceSpan state.File first (Some first))
+                    | None ->
+                        let name = parseNamespaceName state
+                        match constructorKind name with
+                        | Some kind -> parseConstructor state first kind
+                        | None when peek state = Some "(" ->
+                            let args = parseArguments state None
+                            FlowExpression.Call(name, args, sourceSpan state.File first (previous state))
+                        | None when name.Contains('.') ->
+                            fail state.File first.Line first.Column first.Text.Length "FLOW_QUALIFIED_CALL_REQUIRES_ARGUMENTS" "A qualified word reference must be called with parentheses."
+                        | None -> FlowExpression.Local(name, sourceSpan state.File first (Some first))
                 | _ ->
                     fail state.File first.Line first.Column first.Text.Length "FLOW_EXPECTED_EXPRESSION" $"Token '{first.Text}' cannot begin an expression."
             let mutable result = primary
-            while accept state "." do
+            let canContinuePostfix () =
+                match current state, previous state with
+                | Some dot, Some last when dot.Text = "." && dot.Line <= last.Line -> true
+                | _ -> false
+            while (state.SyntaxVersion <> 2 || canContinuePostfix ()) && accept state "." do
                 let stage = expectIdentifier state
                 if peek state = Some "(" then
                     let arguments = parseArguments state (staticCallbackStage stage.Text)
@@ -763,7 +943,9 @@ module FlowParser =
                         match current state with
                         | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected the required effects declaration before end of input."
                         | Some _ -> tokenError state "FLOW_EFFECTS_REQUIRED" "Word definitions require an explicit effects declaration.")
-            let body = parseBlockBody state
+            let body =
+                withLexicalLocals state (parameters |> Seq.map (fun parameter -> parameter.Name) |> Set.ofSeq) (fun () ->
+                    parseBlockBody state)
             let endToken = expect state "}"
             let span = sourceSpan state.File wordToken (Some endToken)
             let definition =
@@ -842,8 +1024,7 @@ module FlowParser =
                    || count > EffectCountAssertion.maximumCount then
                     fail state.File countToken.Line countToken.Column countToken.Text.Length "FLOW_EFFECT_ASSERTION_COUNT_INVALID" $"Effect counts must be integers between 0 and {EffectCountAssertion.maximumCount}."
                 counts.Add(name, count)
-                if not (accept state ";") && peek state <> Some "}" then
-                    tokenError state "FLOW_EFFECT_ASSERTION_SEPARATOR" "Separate effect-count entries with ';'."
+                requireNewlineOrSeparator state "}" "FLOW_EFFECT_ASSERTION_SEPARATOR" "Separate effect-count entries with a newline or ';'."
             let endToken = expect state "}"
             Some
                 { Counts = Map.ofSeq counts
@@ -851,7 +1032,8 @@ module FlowParser =
         | _ -> None
 
     and private parseTestState state =
-        withDepth state (fun () ->
+        withLexicalLocals state Set.empty (fun () ->
+          withDepth state (fun () ->
             let startToken, word, caseName, headerSpan = parseCaseHeader state "test"
             expect state "{" |> ignore
             let body = parseBlockStatementsUntil state (Set.ofList [ "=>"; "}" ])
@@ -893,10 +1075,11 @@ module FlowParser =
                   HeaderSpan = headerSpan
                   ExpectationSpan = expectationSpan }
             FlowStructure.validateTestNesting definition
-            definition)
+            definition))
 
     and private parseExampleState state =
-        withDepth state (fun () ->
+        withLexicalLocals state Set.empty (fun () ->
+          withDepth state (fun () ->
             let startToken, word, caseName, headerSpan = parseCaseHeader state "example"
             expect state "{" |> ignore
             let body = parseBlockStatementsUntil state (Set.ofList [ "=>"; "}" ])
@@ -930,7 +1113,7 @@ module FlowParser =
                   HeaderSpan = headerSpan
                   ExpectationSpan = expectationSpan }
             FlowStructure.validateExampleNesting definition
-            definition)
+            definition))
 
     let private reservedTypeNames =
         set [ "Int"; "Float"; "Bool"; "String"; "Unit"; "List"; "Option"; "Result"; "a"; "b"; "c" ]
@@ -956,6 +1139,9 @@ module FlowParser =
         let label = if kind = "RECORD" then "Record" else "Scalar"
         let code = "FLOW_" + kind + "_VALIDATOR_QUALIFICATION"
         match current state with
+        | Some root when root.Text = "." && state.SyntaxVersion = 2 ->
+            let name, _ = parseLeadingDotName state
+            name
         | Some root when root.Text = "::" ->
             consume state |> ignore
             let target = expectIdentifier state
@@ -963,16 +1149,18 @@ module FlowParser =
                 let next = current state |> Option.get
                 fail state.File root.Line root.Column (next.Offset + next.Text.Length - root.Offset) code $"An absolute-root {label.ToLowerInvariant()} validator must name one unqualified dictionary key."
             target.Text
+        | Some first when first.Kind = Identifier && state.SyntaxVersion = 2 && Option.isSome (dottedNameAhead state) ->
+            parseDottedName state
         | Some first when first.Kind = Identifier ->
-            consume state |> ignore
+            let first = consume state
             if not (accept state "::") then
-                fail state.File first.Line first.Column first.Text.Length code $"{label} validators require an explicit '::rootName' or 'namespace::wordName' reference."
+                fail state.File first.Line first.Column first.Text.Length code $"{label} validators require an explicit namespace-qualified reference or a leading-dot exact root reference."
             let segments = ResizeArray<string>()
             segments.Add first.Text
             segments.Add((expectIdentifier state).Text)
             while accept state "::" do segments.Add((expectIdentifier state).Text)
             String.concat "." segments
-        | Some token -> fail state.File token.Line token.Column token.Text.Length code $"{label} validators require an explicit '::rootName' or 'namespace::wordName' reference."
+        | Some token -> fail state.File token.Line token.Column token.Text.Length code $"{label} validators require an explicit namespace-qualified reference or a leading-dot exact root reference."
         | None -> tokenError state "FLOW_INCOMPLETE_INPUT" $"Expected a qualified {label.ToLowerInvariant()} validator reference."
 
     let private parseValidatorName (state: State) = parseValidatorNameFor "SCALAR" state
@@ -997,10 +1185,13 @@ module FlowParser =
                     fail state.File fieldName.Line fieldName.Column fieldName.Text.Length "FLOW_RECORD_DUPLICATE_FIELD" $"Record field '{fieldName.Text}' is repeated."
                 expect state ":" |> ignore
                 let fieldType = parseType state
-                match current state with
-                | Some token when token.Text = ";" -> consume state |> ignore
-                | Some token -> fail state.File token.Line token.Column token.Text.Length "FLOW_RECORD_FIELD_SEMICOLON" "Every Flow record field must end with ';'."
-                | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected ';' after the Flow record field."
+                if state.SyntaxVersion = 2 then
+                    requireNewlineOrSeparator state "}" "FLOW_RECORD_FIELD_SEMICOLON" "Separate Flow record fields with a newline or ';'."
+                else
+                    match current state with
+                    | Some token when token.Text = ";" -> consume state |> ignore
+                    | Some token -> fail state.File token.Line token.Column token.Text.Length "FLOW_RECORD_FIELD_SEMICOLON" "Every Flow record field must end with ';'."
+                    | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected ';' after the Flow record field."
                 fields.Add { Name = fieldName.Text; Type = fieldType }
             | Some "validate" ->
                 let validateToken = expect state "validate"
@@ -1010,7 +1201,9 @@ module FlowParser =
                 if peek state = Some "(" then
                     let token = current state |> Option.get
                     fail state.File token.Line token.Column token.Text.Length "FLOW_RECORD_VALIDATOR_CALL" "Record validator declarations name a word; they cannot invoke it."
-                expect state ";" |> ignore
+                if state.SyntaxVersion = 2 then
+                    requireNewlineOrSeparator state "}" "FLOW_RECORD_VALIDATOR_SEMICOLON" "Separate Flow record declarations with a newline or ';'."
+                else expect state ";" |> ignore
                 validator <- Some validatorName
             | _ -> tokenError state "FLOW_RECORD_DECLARATION" "Record bodies contain field declarations and at most one validator declaration."
         let endToken = expect state "}"
@@ -1044,7 +1237,9 @@ module FlowParser =
             if peek state = Some "(" then
                 let token = current state |> Option.get
                 fail state.File token.Line token.Column token.Text.Length "FLOW_SCALAR_VALIDATOR_CALL" "Scalar validator declarations name a word; they cannot invoke it."
-            expect state ";" |> ignore
+            if state.SyntaxVersion = 2 then
+                requireNewlineOrSeparator state "}" "FLOW_SCALAR_VALIDATOR_SEMICOLON" "Separate Flow scalar declarations with a newline or ';'."
+            else expect state ";" |> ignore
             validator <- Some validatorName
         let endToken = expect state "}"
         { Name = nameToken.Text
@@ -1072,7 +1267,7 @@ module FlowParser =
                 fail state.File caseToken.Line caseToken.Column caseToken.Text.Length "FLOW_ENUM_RESERVED_CASE" "Enum case names cannot use the reserved Option and Result labels."
             if not (seen.Add caseToken.Text) then
                 fail state.File caseToken.Line caseToken.Column caseToken.Text.Length "FLOW_ENUM_DUPLICATE_CASE" $"Enum case '{caseToken.Text}' is repeated."
-            expect state ";" |> ignore
+            requireNewlineOrSeparator state "}" "FLOW_ENUM_CASE_SEMICOLON" "Separate Flow enum cases with a newline or ';'."
             caseNames.Add caseToken.Text
         let endToken = expect state "}"
         if caseNames.Count = 0 then
@@ -1086,7 +1281,7 @@ module FlowParser =
         if syntaxVersion <> 1 && syntaxVersion <> 2 then
             fail file 1 1 1 "FLOW_VERSION_UNSUPPORTED" "Only Flow syntax versions 1 and 2 are supported by this parser."
         let tokens, endLine, endColumn = tokenize file source
-        { File = file; Source = source; SyntaxVersion = syntaxVersion; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn }
+        { File = file; Source = source; SyntaxVersion = syntaxVersion; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn; LexicalLocals = Set.empty }
 
     let private rejectTrailing (state: State) kind =
         if not (atEnd state) then
@@ -1104,24 +1299,17 @@ module FlowParser =
     let parseExpression file source = parseExpressionWithVersion 1 file source
 
     /// Resolve a dictionary name to an exact ordinary Flow call spelling.
-    /// Names intercepted by Flow syntax and invalid candidates remain unavailable.
+    /// Explicit leading-dot spelling is parsed as the scope-independent Flow/2 form.
     let describeCallReference (name: string) : string option * string option =
-        let protectedPrefixes = set [ "if"; "match"; "true"; "false"; "unit" ]
-        let separator = name.IndexOf('.')
-        let firstSegment = if separator < 0 then name else name.Substring(0, separator)
-        if separator >= 0 && protectedPrefixes.Contains firstSegment then
-            None, Some $"The '{firstSegment}' prefix is reserved for Flow syntax."
-        else
-            let qualifiedName = name.Replace(".", "::")
-            let candidateName = if separator >= 0 then qualifiedName else "::" + qualifiedName
-            match parseExpression "<describe-flow-reference>" (candidateName + "()") with
-            | Error diagnostic ->
-                None, Some $"The candidate is not a valid ordinary Flow call ({diagnostic.Code})."
-            | Ok(FlowExpression.Call(target, _, _)) when target = name -> Some candidateName, None
-            | Ok(FlowExpression.RootCall(target, _, _)) when target.Name = name -> Some candidateName, None
-            | Ok(FlowExpression.Call _ | FlowExpression.RootCall _) ->
-                None, Some "The candidate does not target the exact dictionary key."
-            | Ok _ -> None, Some "The candidate is intercepted by Flow syntax instead of an ordinary call."
+        let candidateName = "." + name
+        match parseExpressionWithVersion 2 "<describe-flow-reference>" (candidateName + "()") with
+        | Error diagnostic ->
+            None, Some $"The candidate is not a valid ordinary Flow call ({diagnostic.Code})."
+        | Ok(FlowExpression.Call(target, _, _)) when target = name -> Some candidateName, None
+        | Ok(FlowExpression.RootCall(target, _, _)) when target.Name = name -> Some candidateName, None
+        | Ok(FlowExpression.Call _ | FlowExpression.RootCall _) ->
+            None, Some "The candidate does not target the exact dictionary key."
+        | Ok _ -> None, Some "The candidate is intercepted by Flow syntax instead of an ordinary call."
 
     let parseWordWithVersion syntaxVersion file source =
         try

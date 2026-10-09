@@ -695,6 +695,405 @@ fn customer.has-email(value: Customer) -> Bool {
     | Ok warnings -> failwithf "Flow/2 property/equality linter reported unexpected warnings: %A" warnings
     | Error problem -> failwith $"{problem.Code}: {problem.Message}"
 
+let private testFlow2DottedCallsAndNewlineSeparators () =
+    let parseExpressionV2 source =
+        FlowParser.parseExpressionWithVersion 2 "<flow2-dots>" source
+        |> Result.defaultWith (Diagnostics.render >> failwith)
+    let parseWordV2 source =
+        FlowParser.parseWordWithVersion 2 "<flow2-dots>" source
+        |> Result.defaultWith (Diagnostics.render >> failwith)
+    let parseDocumentV2 source =
+        FlowParser.parseDocumentWithVersion 2 "<flow2-dots>" source
+        |> Result.defaultWith (Diagnostics.render >> failwith)
+    let checkExpressionRoundTrip source expected =
+        let parsed = parseExpressionV2 source
+        let canonical = FlowSource.renderExpressionWithVersion 2 parsed
+        equal ("Flow/2 dotted spelling for " + source) expected canonical
+        equal ("Flow/2 dotted expression is idempotent for " + source) canonical
+            (canonical |> parseExpressionV2 |> FlowSource.renderExpressionWithVersion 2)
+
+    checkExpressionRoundTrip "file.read(\"x\")" "file.read(\"x\")"
+    checkExpressionRoundTrip "customer.balance()" "customer.balance()"
+    checkExpressionRoundTrip ".identity(5)" ".identity(5)"
+    checkExpressionRoundTrip ".customer.balance(5)" "customer.balance(5)"
+    checkExpressionRoundTrip "values.map(customer.active?)" "values.map(customer.active?)"
+    checkExpressionRoundTrip "values.map(.identity)" "values.map(.identity)"
+    checkExpressionRoundTrip "option.some<Int>(5)" "option.some<Int>(5)"
+    checkExpressionRoundTrip "result.ok<Int, String>(5)" "result.ok<Int, String>(5)"
+    checkExpressionRoundTrip "State.ready()" "State.ready()"
+    checkExpressionRoundTrip "1.25" "1.25"
+
+    let untypedContainerReference, untypedContainerReason = FlowParser.describeCallReference "list.empty"
+    equal "untyped container-named dictionary key has a valid Flow/2 exact spelling" (Some ".list.empty") untypedContainerReference
+    equal "valid container-named Flow reference has no unavailable reason" None untypedContainerReason
+    let typedContainerReference, typedContainerReason = FlowParser.describeCallReference "list.empty<Int>"
+    equal "typed container syntax is not mistaken for a dictionary key" None typedContainerReference
+    check "typed container syntax explains its unavailable exact reference" (Option.isSome typedContainerReason)
+
+    let floatSource =
+        """test float.identity/preserved {
+    float::identity(100.0)
+    => 100.0
+}"""
+    let flow1FloatTest = parseTest floatSource
+    equal "Flow/1 float formatting retains the archived literal spelling"
+        """test float.identity/preserved {
+    float::identity(100)
+    => 100
+}"""
+        (FlowSource.renderTest flow1FloatTest)
+    let flow2FloatTest =
+        match FlowParser.parseTestWithVersion 2 "<flow2-float-test>" floatSource with
+        | Ok definition -> definition
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    equal "Flow/2 float formatting preserves integral-valued Float identity"
+        """test float.identity/preserved {
+    float.identity(100.0)
+    => 100.0
+}"""
+        (FlowSource.renderTest flow2FloatTest)
+
+    let floatCases = [ "100.0"; "-0.0"; "1e2"; "1e200" ]
+    for source in floatCases do
+        let parsed = parseExpressionV2 source
+        let originalFloat =
+            match parsed with
+            | FlowExpression.Literal(LFloat value, _) -> value
+            | other -> failwithf "Expected %s to parse as a Float literal, got %A" source other
+        let canonical = FlowSource.renderExpressionWithVersion 2 parsed
+        let reparsed = parseExpressionV2 canonical
+        let roundTrippedFloat =
+            match reparsed with
+            | FlowExpression.Literal(LFloat value, _) -> value
+            | other -> failwithf "Expected canonical %s to remain a Float literal, got %A" canonical other
+        if source = "-0.0" then
+            equal "negative zero keeps its sign bit after formatting and parsing" Int64.MinValue
+                (BitConverter.DoubleToInt64Bits roundTrippedFloat)
+        else
+            equal ("Float literal type and value survive formatting: " + source) originalFloat roundTrippedFloat
+        let evaluateFloat expression =
+            let compiled = FlowLowering.compileExpressionWithVersion 2 (loweringContext [] Map.empty) expression
+            IrInterpreter.executeBody (host (ResizeArray())) "flow2-float-roundtrip" compiled.Body
+        let originalResult = evaluateFloat parsed
+        let canonicalResult = evaluateFloat reparsed
+        equal ("formatted Float evaluates to the same runtime value: " + source) originalResult canonicalResult
+        match originalResult with
+        | [ FloatValue value ] when source = "-0.0" ->
+            equal "negative zero remains negative in the interpreter" Int64.MinValue (BitConverter.DoubleToInt64Bits value)
+        | [ FloatValue _ ] -> check ("Float literal evaluates as Float: " + source) true
+        | other -> failwithf "Expected Float runtime value for %s, got %A" source other
+
+    let property = parseExpressionV2 "customer.email"
+    match property with
+    | FlowExpression.Property(FlowExpression.Local("customer", _), "email", _) ->
+        check "a field read without parentheses remains a property expression" true
+    | other -> failwithf "Expected dotted property access to remain distinct from calls, got %A" other
+
+    let legacyDoubleColon = parseExpressionV2 "customer::balance(5)"
+    equal "legacy Flow/2 namespace qualification canonicalizes to dotted call syntax" "customer.balance(5)"
+        (FlowSource.renderExpressionWithVersion 2 legacyDoubleColon)
+    expectError "Flow/3 remains unsupported" "FLOW_VERSION_UNSUPPORTED"
+        (FlowParser.parseExpressionWithVersion 3 "<flow3>" "file.read(\"x\")") |> ignore
+
+    let dottedContext =
+        loweringContext
+            [ wordEntry "customer.balance" [ TInt ] [ TInt ] Set.empty [ Push(LInt 1L, sourceSpan); Call("add", sourceSpan) ] ]
+            Map.empty
+    let directFileRead = parseWordV2 """fn flow2.read(path: String) -> String {
+    effects fs.read
+    file.read(path)
+}"""
+    let directRead = FlowLowering.compileWordWithCallBindings dottedContext (WordId "flow2-read") directFileRead
+    let directReadSite = directRead.CallSites |> List.find (fun site -> site.RequestedName = "file.read")
+    equal "an unbound dotted root resolves as an exact qualified call" FlowLowering.FlowCallForm.Direct directReadSite.Form
+    equal "an exact dotted primitive call keeps the file.read target" (FlowLowering.FlowCallTargetIdentity.Primitive(PrimitiveId "file.read")) directReadSite.Target
+
+    let boundFileRead = parseWordV2 """fn flow2.read-bound(file: String) -> String {
+    effects fs.read
+    file.read()
+}"""
+    let boundRead = FlowLowering.compileWordWithCallBindings dottedContext (WordId "flow2-read-bound") boundFileRead
+    let boundReadSite = boundRead.CallSites |> List.find (fun site -> site.Target = directReadSite.Target)
+    equal "a lexically bound dotted root becomes a receiver stage" (FlowLowering.FlowCallForm.DotStage "read") boundReadSite.Form
+
+    let newlineLeadingDot =
+        parseWordV2 """fn flow2.newline-leading-dot(path: String) -> Unit {
+    effects fs.read, fs.write
+    file.read(path)
+    .file.write(path, "next")
+}"""
+    let newlineLeadingDotCompiled = FlowLowering.compileWordWithCallBindings dottedContext (WordId "flow2-newline-leading-dot") newlineLeadingDot
+    equal "a newline-leading dot begins an exact call statement" 2 newlineLeadingDot.Body.Length
+    equal "a newline-leading dot call resolves both exact provider targets"
+        (Set.ofList [ "file.read"; "file.write" ])
+        (newlineLeadingDotCompiled.CallSites |> List.map _.Target |> List.choose (function
+            | FlowLowering.FlowCallTargetIdentity.Primitive(PrimitiveId name) -> Some name
+            | _ -> None) |> Set.ofList)
+    let newlineLeadingCanonical = FlowSource.renderWord newlineLeadingDot
+    equal "newline-leading exact calls format idempotently" newlineLeadingCanonical
+        (newlineLeadingCanonical |> parseWordV2 |> FlowSource.renderWord)
+
+    let unboundRootBeforeNewlineDot = parseWordV2 """fn flow2.unbound-newline-dot() -> Int {
+    customer
+    .balance(7)
+}"""
+    equal "a newline-leading dot begins a separate statement after an unbound root" 2 unboundRootBeforeNewlineDot.Body.Length
+    match unboundRootBeforeNewlineDot.Body with
+    | [ FlowStatement.Evaluate(FlowExpression.Local("customer", _)); FlowStatement.Evaluate(FlowExpression.RootCall(target, _, _)) ] ->
+        equal "the next-line leading dot remains an exact root call" "balance" target.Name
+    | other -> failwithf "Expected a local followed by an exact-root call, got %A" other
+    expectLanguageError "a next-line dot does not bind an unbound name as a qualified call" "FLOW_UNKNOWN_LOCAL" (fun () ->
+        FlowLowering.compileWordWithCallBindings dottedContext (WordId "flow2-unbound-newline-dot") unboundRootBeforeNewlineDot |> ignore)
+
+    let localBalance = parseWordV2 """fn flow2.local-balance(customer: Int) -> Int {
+    customer.balance()
+}"""
+    let localBalanceCompiled = FlowLowering.compileWordWithCallBindings dottedContext (WordId "flow2-local-balance") localBalance
+    let localBalanceSite = localBalanceCompiled.CallSites |> List.find (fun site -> site.RequestedName = "balance")
+    equal "a local root takes precedence over a same-prefixed dictionary word" (FlowLowering.FlowCallForm.DotStage "balance") localBalanceSite.Form
+    equal "local receiver resolution still binds the exact customer.balance word"
+        (FlowLowering.FlowCallTargetIdentity.UserWord(WordId "user-customer.balance")) localBalanceSite.Target
+
+    let inapplicableLocalStage = parseWordV2 """fn flow2.inapplicable-local-stage(customer: Int) -> Int {
+    customer.balance(5)
+}"""
+    match inapplicableLocalStage.Body with
+    | [ FlowStatement.Evaluate(FlowExpression.DotCall(FlowExpression.Local("customer", _), "balance", _, _)) ] ->
+        check "the shadowed root is parsed as a receiver stage before applicability is checked" true
+    | other -> failwithf "Expected a local receiver stage call, got %A" other
+    expectLanguageError "an inapplicable local stage does not fall back to a qualified dictionary call" "FLOW_ARGUMENT_ARITY" (fun () ->
+        FlowLowering.compileWordWithCallBindings dottedContext (WordId "flow2-inapplicable-local-stage") inapplicableLocalStage |> ignore)
+
+    let callbackShadowContext =
+        loweringContext
+            [ wordEntry "customer.active?" [ TInt ] [ TBool ] Set.empty [ Call("drop", sourceSpan); Push(LBool true, sourceSpan) ] ]
+            Map.empty
+    let callbackShadowWord = parseWordV2 """fn flow2.callback-shadow(customer: List<Int>) -> List<Bool> {
+    customer.map(customer.active?)
+}"""
+    let callbackShadowCompiled = FlowLowering.compileWordWithCallBindings callbackShadowContext (WordId "flow2-callback-shadow") callbackShadowWord
+    let callbackShadowSite = callbackShadowCompiled.CallSites |> List.find (fun site -> site.RequestedName = "customer.active?")
+    equal "a local callback prefix does not capture a static qualified reference"
+        (FlowLowering.FlowCallForm.StaticCallback("map", FlowWordReferenceQualification.NamespaceQualified)) callbackShadowSite.Form
+    equal "a shadowed static callback binds its exact dictionary key"
+        (FlowLowering.FlowCallTargetIdentity.UserWord(WordId "user-customer.active?")) callbackShadowSite.Target
+
+    let timingContext =
+        loweringContext
+            [ wordEntry "customer.balance" [] [ TInt ] Set.empty [ Push(LInt 40L, sourceSpan) ]
+              wordEntry "balance" [ TInt ] [ TInt ] Set.empty [ Push(LInt 1L, sourceSpan); Call("add", sourceSpan) ]
+              wordEntry "pair" [] [ TInt; TInt ] Set.empty [ Push(LInt 5L, sourceSpan); Push(LInt 9L, sourceSpan) ] ]
+            Map.empty
+    let timingWord = parseWordV2 """fn flow2.binding-timing() -> Int {
+    let before = .customer.balance()
+    let customer = 9
+    customer.balance()
+}"""
+    let timingCompiled = FlowLowering.compileWordWithCallBindings timingContext (WordId "flow2-binding-timing") timingWord
+    let timingSites = timingCompiled.CallSites |> List.filter (fun site -> site.RequestedName = "customer.balance" || site.RequestedName = "balance")
+    equal "binding availability is evaluated at each call's lexical position"
+        [ ("customer.balance", FlowLowering.FlowCallForm.Direct, FlowLowering.FlowCallTargetIdentity.UserWord(WordId "user-customer.balance"))
+          ("balance", FlowLowering.FlowCallForm.DotStage "balance", FlowLowering.FlowCallTargetIdentity.UserWord(WordId "user-balance")) ]
+        (timingSites |> List.map (fun site -> site.RequestedName, site.Form, site.Target))
+
+    let branchWord = parseWordV2 """fn flow2.branch-binding(customer: Int, condition: Bool) -> Int {
+    if condition {
+        customer.balance()
+    } else {
+        customer.balance()
+    }
+}"""
+    let branchCompiled = FlowLowering.compileWordWithCallBindings timingContext (WordId "flow2-branch-binding") branchWord
+    equal "both lexical branches resolve the same dot call through their outer local"
+        [ AgentLang.FlowAstPathSegment.IfThenStatement 0; AgentLang.FlowAstPathSegment.IfElseStatement 0 ]
+        (branchCompiled.CallSites
+         |> List.filter (fun site -> site.Target = FlowLowering.FlowCallTargetIdentity.UserWord(WordId "user-balance"))
+         |> List.map (fun site -> match site.Path with FlowAstPath.FlowAstPath segments -> List.find (function AgentLang.FlowAstPathSegment.IfThenStatement _ | AgentLang.FlowAstPathSegment.IfElseStatement _ -> true | _ -> false) segments))
+
+    let destructuredWord = parseWordV2 """fn flow2.destructured-binding() -> Int {
+    let (customer, ignored) = .pair()
+    customer.balance()
+}"""
+    let destructuredCompiled = FlowLowering.compileWordWithCallBindings timingContext (WordId "flow2-destructured-binding") destructuredWord
+    let destructuredSite = destructuredCompiled.CallSites |> List.find (fun site -> site.RequestedName = "balance")
+    equal "a destructured local root becomes the dot-call receiver" (FlowLowering.FlowCallForm.DotStage "balance") destructuredSite.Form
+    equal "destructured receiver calls bind to the receiver-stage word"
+        (FlowLowering.FlowCallTargetIdentity.UserWord(WordId "user-balance")) destructuredSite.Target
+
+    let payloadWord = parseWordV2 """fn flow2.payload-binding() -> Int {
+    match option.some<Int>(9) {
+        some customer => customer.balance()
+        none => 0
+    }
+}"""
+    let payloadCompiled = FlowLowering.compileWordWithCallBindings timingContext (WordId "flow2-payload-binding") payloadWord
+    let payloadSite = payloadCompiled.CallSites |> List.find (fun site -> site.RequestedName = "balance")
+    equal "an Option payload can provide the root for a dotted receiver call" (FlowLowering.FlowCallForm.DotStage "balance") payloadSite.Form
+    check "payload receiver binding stays inside its authored some arm"
+        (match payloadSite.Path with
+         | FlowAstPath.FlowAstPath segments -> List.contains (AgentLang.FlowAstPathSegment.OptionSomeStatement 0) segments)
+    let escapedPayload = parseWordV2 """fn flow2.payload-escape() -> Int {
+    match option.some<Int>(9) {
+        some bound => bound.balance()
+        none => bound.balance()
+    }
+}"""
+    check "an Option payload does not bind the same name in the next arm"
+        (try FlowLowering.compileWordWithCallBindings timingContext (WordId "flow2-payload-escape") escapedPayload |> ignore; false
+         with LanguageException _ -> true)
+
+    let exactShadow = parseWordV2 """fn flow2.exact-shadow(customer: Int) -> Int {
+    .customer.balance(5)
+}"""
+    let exactShadowCanonical = FlowSource.renderWord exactShadow
+    check "the formatter retains a leading-dot escape when a local shadows the qualified prefix"
+        (exactShadowCanonical.Contains(".customer.balance(5)", StringComparison.Ordinal))
+    equal "the shadow-safe leading-dot call formats idempotently" exactShadowCanonical
+        (exactShadowCanonical |> parseWordV2 |> FlowSource.renderWord)
+    let exactShadowCompiled = FlowLowering.compileWordWithCallBindings dottedContext (WordId "flow2-exact-shadow") exactShadow
+    let exactShadowSite = exactShadowCompiled.CallSites |> List.find (fun site -> site.RequestedName = "customer.balance")
+    equal "a leading dot bypasses a same-named lexical root and binds the exact dictionary key"
+        (FlowLowering.FlowCallTargetIdentity.UserWord(WordId "user-customer.balance")) exactShadowSite.Target
+
+    let documentSource =
+        """record Customer {
+    field email: String
+    validate customer.valid?
+}
+
+type Email : String {
+    validate email.valid?
+}
+
+enum State {
+    case ready
+    case waiting
+}
+
+fn customer.valid?(value: Customer) -> Bool {
+    effects none
+    doc "A documented validator"
+    string.contains(value.email, "@")
+}"""
+    let document = parseDocumentV2 documentSource
+    equal "newline separators retain all record fields and validator" 1 document.Records.Length
+    equal "newline-separated record metadata keeps its dotted validator" (Some "customer.valid?") document.Records.Head.Validator
+    equal "newline separators retain the scalar validator" (Some "email.valid?") document.Scalars.Head.Validator
+    equal "newline separators retain enum declaration order" [ "ready"; "waiting" ] document.Enums.Head.Cases
+    let canonicalDocument = FlowSource.renderDocument document
+    equal "newline-separated project source formats idempotently" canonicalDocument
+        (canonicalDocument |> parseDocumentV2 |> FlowSource.renderDocument)
+    check "Flow/2 canonical records and enums omit optional semicolons" (not (canonicalDocument.Contains(";", StringComparison.Ordinal)))
+    check "documentation remains separated from the body by one blank line"
+        (canonicalDocument.Contains("    doc \"A documented validator\"\n\n    string.contains", StringComparison.Ordinal))
+
+    let newlineWordSource =
+        """fn flow2.newline-expression() -> Int {
+    let answer = int.abs(
+        match option.some<Int>(2) {
+            some value => if true {
+                add(value,
+                    3)
+            } else {
+                0
+            }
+            none => 1
+        }
+    )
+    answer
+}"""
+    let newlineWord = parseWordV2 newlineWordSource
+    let canonicalWord = FlowSource.renderWord newlineWord
+    equal "multiline nested calls, if expressions, and bare match arms format idempotently" canonicalWord
+        (canonicalWord |> parseWordV2 |> FlowSource.renderWord)
+    let compiledNewlineWord = FlowLowering.compileWordWithCallBindings (loweringContext [] Map.empty) (WordId "flow2-newline-expression") newlineWord
+    let invocation =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins compiledNewlineWord.Context.CompilerContext compiledNewlineWord.Program "flow2-newline-invoke" []
+            [ Call("flow2.newline-expression", sourceSpan) ] compiledNewlineWord.Context.SourceOrigins
+    equal "newline-continuation and brace-free match arms lower and execute" [ IntValue 5L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "flow2-newline-expression" invocation)
+    let matchCaseLengths =
+        match newlineWord.Body with
+        | [ FlowStatement.Let("answer", FlowExpression.Call(_, [ FlowArgument.Positional(FlowExpression.MatchOption(_, someCase, noneCase, _)) ], _), _)
+            FlowStatement.Evaluate _ ] -> Some(someCase.Statements.Length, noneCase.Statements.Length)
+        | _ -> None
+    equal "the nested simple match remains inside its multiline call argument" (Some(1, 1)) matchCaseLengths
+
+    let nestedLetSource =
+        """fn flow2.nested-let() -> Int {
+    let answer = if true {
+        if false {
+            1
+        } else {
+            2
+        }
+    } else {
+        3
+    }
+    answer
+}"""
+    let nestedLetCanonical = FlowSource.renderWord (parseWordV2 nestedLetSource)
+    check "nested multiline let initializers indent continuation blocks relative to the binding"
+        (nestedLetCanonical.Contains("    let answer = if true {\n        if false {\n            1\n        } else {\n            2\n        }\n    } else {\n        3\n    }", StringComparison.Ordinal))
+    equal "nested multiline let initializer formats idempotently" nestedLetCanonical
+        (nestedLetCanonical |> parseWordV2 |> FlowSource.renderWord)
+
+    let matchFixtures =
+        [ "match option.some<Int>(7) {\n    some value => value\n    none => 0\n}", [ IntValue 7L ]
+          "match result.ok<String, Int>(\"ok\") {\n    ok value => value\n    error problem => \"bad\"\n}", [ StringValue "ok" ] ]
+    for source, expected in matchFixtures do
+        let expression = parseExpressionV2 source
+        let canonical = FlowSource.renderExpressionWithVersion 2 expression
+        equal ("bare Option/Result match renders and reparses: " + source) canonical
+            (canonical |> parseExpressionV2 |> FlowSource.renderExpressionWithVersion 2)
+        let compiled = FlowLowering.compileExpressionWithVersion 2 (loweringContext [] Map.empty) expression
+        equal ("bare Option/Result match arms lower and execute: " + source) expected
+            (IrInterpreter.executeBody (host (ResizeArray())) "flow2-bare-match" compiled.Body)
+
+    let countTestSource =
+        """test flow2.newline/counts {
+    1
+    => 1 effects {
+        fs.read: 1
+        fs.write: 0
+    }
+}"""
+    let countTest =
+        FlowParser.parseTestWithVersion 2 "<flow2-counts>" countTestSource
+        |> Result.defaultWith (Diagnostics.render >> failwith)
+    equal "newline-separated effect-count entries retain exact counts"
+        (Map.ofList [ "fs.read", 1; "fs.write", 0 ]) countTest.EffectAssertion.Value.Counts
+    let canonicalCountTest = FlowSource.renderTest countTest
+    equal "newline-separated effect-count tests render idempotently" canonicalCountTest
+        (canonicalCountTest
+         |> fun source -> FlowParser.parseTestWithVersion 2 "<flow2-counts>" source
+         |> Result.map FlowSource.renderTest
+         |> Result.defaultWith (Diagnostics.render >> failwith))
+
+    let expectParseFailure label parse source =
+        match parse source with
+        | Error _ -> check label true
+        | Ok _ -> failwith $"{label}: source was unexpectedly accepted"
+    expectParseFailure "same-line Flow statements still require semicolons"
+        (FlowParser.parseWordWithVersion 2 "<same-line-statements>")
+        "fn flow2.same-line() -> Int { let first = 1 let second = 2 second }"
+    expectParseFailure "same-line record fields still require semicolons"
+        (FlowParser.parseDocumentWithVersion 2 "<same-line-record>")
+        "record SameLine { field first: Int field second: Int }"
+    expectParseFailure "same-line enum cases still require semicolons"
+        (FlowParser.parseDocumentWithVersion 2 "<same-line-enum>")
+        "enum SameLine { case first case second }"
+    expectError "same-line effect counts still require semicolons" "FLOW_EFFECT_ASSERTION_SEPARATOR"
+        (FlowParser.parseTestWithVersion 2 "<same-line-counts>" "test flow2.newline/counts { 1 => 1 effects { fs.read: 1 fs.write: 0 } }") |> ignore
+    let sameLineSemicolons =
+        FlowParser.parseDocumentWithVersion 2 "<same-line-semicolons>"
+            "record SameLine { field first: Int; field second: Int; } enum SameLineCases { case first; case second; }"
+        |> Result.defaultWith (Diagnostics.render >> failwith)
+    equal "explicit semicolons still separate same-line declarations" 2 sameLineSemicolons.Records.Head.Fields.Length
+    equal "explicit semicolons still separate same-line enum cases" [ "first"; "second" ] sameLineSemicolons.Enums.Head.Cases
+    let closingDelimiter = parseWordV2 "fn flow2.close() -> Int { 1 }"
+    equal "a closing delimiter can terminate its final same-line statement" 1 closingDelimiter.Body.Length
+
 let private testEffectCountAssertionsFrontend () =
     let parseTestV2 source =
         match FlowParser.parseTestWithVersion 2 "<effect-assertion>" source with
@@ -719,7 +1118,7 @@ let private testEffectCountAssertionsFrontend () =
         assertion.Span
     let canonical = FlowSource.renderTest parsed
     check "effect assertion renderer emits a canonical suffix"
-        (canonical.EndsWith("=> 1 effects { clock.read: 0; console.write: 3; fs.read: 2; fs.write: 0; }\n}", StringComparison.Ordinal))
+        (canonical.EndsWith("    effects {\n        clock.read: 0\n        console.write: 3\n        fs.read: 2\n        fs.write: 0\n    }\n}", StringComparison.Ordinal))
     equal "effect assertion parse/render round-trips canonically" canonical
         (canonical |> parseTestV2 |> FlowSource.renderTest)
     equal "effect assertion round-trip preserves exact category counts" expectedCounts
@@ -842,9 +1241,9 @@ let private testEffectCountAssertionsFrontend () =
 let private testFlow2PayloadFreeEnums () =
     let enumSource =
         """enum RenewalState {
-    case pending;
-    case renewed;
-    case cancelled;
+    case pending
+    case renewed
+    case cancelled
 }"""
     let definition =
         match FlowParser.parseDocumentWithVersion 2 "<flow2-enum>" enumSource with
@@ -881,15 +1280,15 @@ let private testFlow2PayloadFreeEnums () =
         """fn renewal.describe(state: RenewalState) -> String {
     match state {
         pending => {
-            renewal::echo(RenewalState::pending());
+            renewal.echo(RenewalState.pending())
             "pending"
         }
         renewed => {
-            renewal::echo(RenewalState::renewed());
+            renewal.echo(RenewalState.renewed())
             "renewed"
         }
         cancelled => {
-            renewal::echo(RenewalState::cancelled());
+            renewal.echo(RenewalState.cancelled())
             "cancelled"
         }
     }
@@ -900,6 +1299,37 @@ let private testFlow2PayloadFreeEnums () =
     let validWord = parseWord validWordSource
     equal "enum match word source round-trips in authored case order" validWordSource
         (FlowSource.renderWord validWord |> fun source -> source |> parseWord |> FlowSource.renderWord)
+
+    let simpleMatchSource =
+        """fn renewal.describe-simple(state: RenewalState) -> String {
+    match state {
+        pending => "pending"
+        renewed => string.concat("renewed", "!")
+        cancelled => {
+            let label = "cancelled"
+            label
+        }
+    }
+}"""
+    let simpleMatchWord = parseWord simpleMatchSource
+    let simpleCanonical = FlowSource.renderWord simpleMatchWord
+    equal "bare and multi-statement enum arms render and reparse deterministically" simpleCanonical
+        (simpleCanonical |> parseWord |> FlowSource.renderWord)
+    match simpleMatchWord.Body with
+    | [ FlowStatement.Evaluate(FlowExpression.MatchEnum(_, [ pending; renewed; cancelled ], _)) ] ->
+        equal "simple enum arm remains one case statement" 1 pending.Statements.Length
+        equal "call expression enum arm remains one case statement" 1 renewed.Statements.Length
+        equal "braced multi-statement enum arm retains both statements" 2 cancelled.Statements.Length
+    | other -> failwithf "Expected a three-arm simple match, got %A" other
+    let simpleCompiled = FlowLowering.compileWordWithCallBindings enumContext (WordId "flow2-renewal-simple") simpleMatchWord
+    let simpleInvocation =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins simpleCompiled.Context.CompilerContext simpleCompiled.Program "renewal-simple-invoke" []
+            [ Call("RenewalState.renewed", sourceSpan); Call("renewal.describe-simple", sourceSpan) ] simpleCompiled.Context.SourceOrigins
+    equal "enum bare and braced arms lower to the existing case-statement model" [ StringValue "renewed!" ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "renewal-simple-match" simpleInvocation)
+    let simpleCoverage = (VerifiedIrProgram.inspect simpleCompiled.Program).CoverageByWord[WordId "flow2-renewal-simple"]
+    equal "simple enum arms retain every declared coverage label" [ "pending"; "renewed"; "cancelled" ]
+        (simpleCoverage.BranchOutcomes |> Map.toList |> List.collect snd)
 
     let compiled = FlowLowering.compileWordWithCallBindings enumContext (WordId "flow2-renewal-describe") validWord
     let enumCall = compiled.CallSites |> List.find (fun site -> site.RequestedName = "RenewalState.pending")
@@ -1087,6 +1517,8 @@ let private testFlowSourceCanonicalRoundTrip () =
     let rendered = FlowSource.renderWord parsed
     let renderedAgain = rendered |> parseWord |> FlowSource.renderWord
     equal "Flow word has deterministic parse/render source" rendered renderedAgain
+    check "Flow/1 rendering preserves nonterminal statement semicolons"
+        (rendered.Contains("    let doubled = add(value, value);", StringComparison.Ordinal))
     check "canonical source keeps explicit parameter names" (rendered.Contains("choose(value: Int)", StringComparison.Ordinal))
     check "canonical source keeps namespace qualification" ((parseExpression "math::add(1, 2)") |> FlowSource.renderExpression |> fun text -> text.StartsWith("math::add(", StringComparison.Ordinal))
     for nested in [ "add(if true { 10 } else { 20 }, 5)"; "if false { 1 } else { 2 }.add(3)" ] do
@@ -1309,6 +1741,10 @@ let private testStaticListCallbacks () =
     let customerMap =
         wordEntry "customer.map" [ TNamed "Customer"; TInt ] [ TString ] Set.empty
             [ Call("drop", sourceSpan); Call("drop", sourceSpan); Push(LString "ordinary-stage", sourceSpan) ]
+    let customerActive =
+        wordEntry "customer.active?" [ TNamed "Customer" ] [ TBool ] Set.empty
+            [ Call("drop", sourceSpan); Push(LBool true, sourceSpan) ]
+    let identity = wordEntry "identity" [ TInt ] [ TInt ] Set.empty []
     let sameShortInt = wordEntry "one.select" [ TInt ] [ TInt ] Set.empty [ Call("int.abs", sourceSpan) ]
     let sameShortBool = wordEntry "two.select" [ TInt ] [ TBool ] Set.empty [ Push(LInt 2L, sourceSpan); Call("equals", sourceSpan) ]
     let sameShortOtherInput =
@@ -1317,7 +1753,7 @@ let private testStaticListCallbacks () =
     let multiOutput = wordEntry "bad.multi" [ TInt ] [ TInt; TInt ] Set.empty [ Call("dup", sourceSpan) ]
     let twoInputs = wordEntry "bad.two-inputs" [ TInt; TInt ] [ TInt ] Set.empty [ Call("add", sourceSpan) ]
     let stringInput = wordEntry "bad.string-input" [ TString ] [ TInt ] Set.empty [ Call("string.length", sourceSpan) ]
-    let context = richTypeContext [ increment; isTwo; emit; customerMap; sameShortInt; sameShortBool; sameShortOtherInput; multiOutput; twoInputs; stringInput ]
+    let context = richTypeContext [ increment; isTwo; emit; customerMap; customerActive; identity; sameShortInt; sameShortBool; sameShortOtherInput; multiOutput; twoInputs; stringInput ]
     let compile source = FlowLowering.compileExpression context (parseExpression source)
     let evaluate source = IrInterpreter.executeBody (host (ResizeArray())) source (compile source).Body
 
@@ -1328,6 +1764,31 @@ let private testStaticListCallbacks () =
           "list::empty<Int>().each(effects::emit)" ] do
         let canonical = source |> parseExpression |> FlowSource.renderExpression
         equal ("static callback source round-trips: " + source) canonical (canonical |> parseExpression |> FlowSource.renderExpression)
+
+    for source in [ "list.empty<Customer>().map(customer.active?)"; "list.empty<Int>().map(.identity)" ] do
+        let expression =
+            FlowParser.parseExpressionWithVersion 2 "<callback-dot>" source
+            |> Result.defaultWith (Diagnostics.render >> failwith)
+        let canonical = FlowSource.renderExpressionWithVersion 2 expression
+        equal ("Flow/2 dotted static callback round-trips: " + source) canonical
+            (canonical
+             |> fun rendered -> FlowParser.parseExpressionWithVersion 2 "<callback-dot>" rendered
+             |> Result.map (FlowSource.renderExpressionWithVersion 2)
+             |> Result.defaultWith (Diagnostics.render >> failwith))
+        let compiled = FlowLowering.compileExpressionWithVersion 2 context expression
+        check ("Flow/2 dotted static callback typechecks: " + source) (not (String.IsNullOrWhiteSpace compiled.Lowered.SourceText))
+    let dottedCustomerCallback =
+        FlowParser.parseExpressionWithVersion 2 "<callback-dot>" "list.empty<Customer>().map(customer.active?)"
+        |> Result.defaultWith (Diagnostics.render >> failwith)
+    let dottedCustomerCallbackCompiled = FlowLowering.compileExpressionWithVersion 2 context dottedCustomerCallback
+    equal "dotted static callback keeps the receiver list's element type" [ ListValue(TBool, []) ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "dotted-customer-callback" dottedCustomerCallbackCompiled.Body)
+    let rootCallback =
+        FlowParser.parseExpressionWithVersion 2 "<callback-dot>" "list.empty<Int>().map(.identity)"
+        |> Result.defaultWith (Diagnostics.render >> failwith)
+    let rootCallbackCompiled = FlowLowering.compileExpressionWithVersion 2 context rootCallback
+    equal "leading-dot static callback binds the exact unqualified identity word" [ ListValue(TInt, []) ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "root-identity-callback" rootCallbackCompiled.Body)
 
     match parseExpression "1.map(value)" with
     | FlowExpression.DotCall(_, "map", [ FlowArgument.Positional(FlowExpression.Local("value", _)) ], _) ->
@@ -5051,6 +5512,7 @@ let main _ =
     testParserLocationsAndQualification ()
     testIterativeAstDepthLimit ()
     testFlow2Frontend ()
+    testFlow2DottedCallsAndNewlineSeparators ()
     testEffectCountAssertionsFrontend ()
     testFlow2PayloadFreeEnums ()
     testFlow2CheckedRatioPrimitive ()

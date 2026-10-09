@@ -639,7 +639,7 @@ end
         equal 2 definition.SyntaxVersion "Flow/2 word retains its syntax version"
         equal false definition.EffectsDeclared "omitted Flow/2 effects remain distinguishable from an explicit declaration"
         let formatted = FlowSource.renderDocument parsed
-        check (formatted.StartsWith("record Customer {\n    field email: String;\n}", StringComparison.Ordinal)) "Flow/2 formatter emits canonical record source"
+        check (formatted.StartsWith("record Customer {\n    field email: String\n}", StringComparison.Ordinal)) "Flow/2 formatter emits newline-separated canonical record source"
         check (formatted.Contains("fn customer.has-email(value: Customer) -> Bool", StringComparison.Ordinal)) "Flow/2 formatter retains the fn declaration"
         check (formatted.Contains("value.email == \"a@example.com\"", StringComparison.Ordinal)) "Flow/2 formatter retains property access and equality"
         check (not (formatted.Contains("effects ", StringComparison.Ordinal))) "Flow/2 formatter does not invent an undeclared effects line"

@@ -278,47 +278,44 @@ module Program =
             let node = contextWord name
             equal name (node["name"].GetValue<string>()) $"context preserves dictionary key {name}"
             equal expected (node["flowReference"].GetValue<string>()) $"context exposes exact Flow call reference for {name}"
+            equal 2 (node["flowReferenceSyntaxVersion"].GetValue<int>()) $"context reports Flow/2 call reference syntax for {name}"
             check (isNull node["flowReferenceUnavailableReason"]) $"callable context entry {name} has no unavailable reason"
             equal (Some expected, None) (FlowParser.describeCallReference name) $"shared resolver accepts {name}"
+            let parsed =
+                FlowParser.parseExpressionWithVersion 2 "<discovery-flow-reference>" (expected + "()")
+                |> Result.defaultWith (Diagnostics.render >> failwith)
+            let parsedTarget =
+                match parsed with
+                | FlowExpression.Call(target, _, _) -> target
+                | FlowExpression.RootCall(target, _, _) -> target.Name
+                | _ -> failwith $"Flow reference for {name} did not parse as an exact call."
+            equal name parsedTarget $"Flow/2 exact reference parses to dictionary key {name}"
 
-        expectReference "root" "::root"
-        expectReference "advance" "::advance"
-        expectReference "math.advance" "math::advance"
-        expectReference "tools.math.advance" "tools::math::advance"
-        expectReference "Advance" "::Advance"
-        expectReference "Math.Advance" "Math::Advance"
-        expectReference "Email.new" "Email::new"
-        expectReference "email.new" "email::new"
+        expectReference "root" ".root"
+        expectReference "advance" ".advance"
+        expectReference "math.advance" ".math.advance"
+        expectReference "tools.math.advance" ".tools.math.advance"
+        expectReference "Advance" ".Advance"
+        expectReference "Math.Advance" ".Math.Advance"
+        expectReference "Email.new" ".Email.new"
+        expectReference "email.new" ".email.new"
 
         for prefix in [ "if"; "match"; "true"; "false"; "unit" ] do
             let name = prefix + ".target"
-            let node = contextWord name
-            let expectedReason = $"The '{prefix}' prefix is reserved for Flow syntax."
-            check (isNull node["flowReference"]) $"context omits reserved Flow reference for {name}"
-            equal expectedReason (node["flowReferenceUnavailableReason"].GetValue<string>()) $"context explains reserved Flow prefix for {name}"
-            equal (None, Some expectedReason) (FlowParser.describeCallReference name) $"shared resolver rejects reserved prefix {name}"
+            expectReference name ("." + name)
 
-        let malformedConstructor = contextWord "list.empty"
-        check (isNull malformedConstructor["flowReference"]) "context omits an incomplete container constructor reference"
-        equal
-            "The candidate is not a valid ordinary Flow call (FLOW_CONSTRUCTOR_TYPE_ARGUMENTS_REQUIRED)."
-            (malformedConstructor["flowReferenceUnavailableReason"].GetValue<string>())
-            "context preserves the parser diagnostic for a generic constructor without type arguments"
-        equal
-            (None, Some "The candidate is not a valid ordinary Flow call (FLOW_CONSTRUCTOR_TYPE_ARGUMENTS_REQUIRED).")
-            (FlowParser.describeCallReference "list.empty")
-            "shared resolver preserves invalid constructor classification"
+        expectReference "list.empty" ".list.empty"
 
         let intercepted = contextWord "list.empty<Int>"
         check (isNull intercepted["flowReference"]) "context omits a typed constructor key intercepted by container syntax"
         equal
-            "The candidate is intercepted by Flow syntax instead of an ordinary call."
+            "The candidate is not a valid ordinary Flow call (FLOW_ROOT_CALL_REQUIRES_ARGUMENTS)."
             (intercepted["flowReferenceUnavailableReason"].GetValue<string>())
-            "context explains a syntax-intercepted dictionary key"
+            "context explains a typed suffix that cannot be called as a Flow dictionary reference"
         equal
-            (None, Some "The candidate is intercepted by Flow syntax instead of an ordinary call.")
+            (None, Some "The candidate is not a valid ordinary Flow call (FLOW_ROOT_CALL_REQUIRES_ARGUMENTS).")
             (FlowParser.describeCallReference "list.empty<Int>")
-            "shared resolver preserves syntax-interception classification"
+            "shared resolver preserves parser-proof rejection for typed malformed references"
 
     [<EntryPoint>]
     let main _ =

@@ -22,6 +22,12 @@ design over compatibility layers and routine version proliferation. Update
 affected code, examples and tests together; retain historical experiment
 evidence without requiring the current runtime to support old contracts.
 
+The current authoring change uses dotted qualified calls, newline separators,
+and unbraced single-expression match arms in Flow/2. See the
+[current syntax guide](CURRENT-SYNTAX.md) and
+[implementation and validation report](../reports/155-dot-calls-and-newline-syntax.md).
+This is a usability revision; it does not establish an agent-efficacy advantage.
+
 Priority update: an efficacy report comes first; efficient LLVM execution with
 interpreter/JIT/AOT and a chosen memory design comes second. See
 [report 101](../reports/101-approach-efficacy-review.md). Flow/2 is complete (report 100), and the guided repair comparison (report 102)

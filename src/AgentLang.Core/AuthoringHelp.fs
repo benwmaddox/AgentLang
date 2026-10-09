@@ -200,14 +200,15 @@ example tutorial.sign/negative { tutorial::sign(-2) => -1 }"""
     let private tutorialSourceV2 =
         """fn tutorial.sign(value: Int) -> Int {
     doc "Returns -1 for negative integers and 1 for zero or positive integers."
-    if int::less-than(value, 0) { -1 } else { 1 }
+
+    if int.less-than(value, 0) { -1 } else { 1 }
 }
 
-test tutorial.sign/negative { tutorial::sign(-2) => -1 }
-test tutorial.sign/zero { tutorial::sign(0) => 1 }
-test tutorial.sign/positive { tutorial::sign(2) => 1 }
+test tutorial.sign/negative { tutorial.sign(-2) => -1 }
+test tutorial.sign/zero { tutorial.sign(0) => 1 }
+test tutorial.sign/positive { tutorial.sign(2) => 1 }
 
-example tutorial.sign/negative { tutorial::sign(-2) => -1 }"""
+example tutorial.sign/negative { tutorial.sign(-2) => -1 }"""
 
     let private tutorialWordSource =
         """word tutorial.sign(value: Int) -> Int {
@@ -219,36 +220,37 @@ example tutorial.sign/negative { tutorial::sign(-2) => -1 }"""
     let private tutorialWordSourceV2 =
         """fn tutorial.sign(value: Int) -> Int {
     doc "Returns -1 for negative integers and 1 for zero or positive integers."
-    if int::less-than(value, 0) { -1 } else { 1 }
+
+    if int.less-than(value, 0) { -1 } else { 1 }
 }"""
 
     let private tutorialSpanTypeSourceV2 =
         """record TutorialSpan {
-    field start: Int;
-    field finish: Int;
-    validate tutorialSpan::valid?;
+    field start: Int
+    field finish: Int
+    validate tutorialSpan.valid?
 }"""
 
     let private tutorialSpanValidatorSourceV2 =
         """fn tutorialSpan.valid?(value: TutorialSpan) -> Bool {
     doc "A span is ordered when its finish is not before its start."
 
-    int::less-or-equal(value.start, value.finish)
+    int.less-or-equal(value.start, value.finish)
 }"""
 
     let private tutorialSpanTestsSourceV2 =
         """test tutorialSpan.valid?/ordered {
-    tutorialSpan::valid?(tutorialSpan::new(start = 1, finish = 3))
+    tutorialSpan.valid?(tutorialSpan.new(start = 1, finish = 3))
     => true
 }
 
 test tutorialSpan.valid?/equal {
-    tutorialSpan::valid?(tutorialSpan::new(start = 3, finish = 3))
+    tutorialSpan.valid?(tutorialSpan.new(start = 3, finish = 3))
     => true
 }
 
 test tutorialSpan.valid?/reversed {
-    tutorialSpan::new(start = 3, finish = 1)
+    tutorialSpan.new(start = 3, finish = 1)
     => error RECORD_VALIDATION_FAILED
 }"""
 
@@ -257,23 +259,23 @@ test tutorialSpan.valid?/reversed {
 
     let private tutorialListFoldSourceV2 =
         """fn tutorial.fold-step(acc: Int, item: Int) -> Int {
-    add(acc, item)
+    .add(acc, item)
 }
 
 fn tutorial.fold-sum(items: List<Int>) -> Int {
-    items.fold(0, tutorial::fold-step)
+    items.fold(0, tutorial.fold-step)
 }
 
-test tutorial.fold-step/add { tutorial::fold-step(2, 3) => 5 }
+test tutorial.fold-step/add { tutorial.fold-step(2, 3) => 5 }
 
-test tutorial.fold-sum/empty { tutorial::fold-sum(list::empty<Int>()) => 0 }
+test tutorial.fold-sum/empty { tutorial.fold-sum(list.empty<Int>()) => 0 }
 
-test tutorial.fold-sum/multiple { tutorial::fold-sum(list::append(list::append(list::singleton<Int>(1), 2), 3)) => 6 }
+test tutorial.fold-sum/multiple { tutorial.fold-sum(list.append(list.append(list.singleton<Int>(1), 2), 3)) => 6 }
 
-example tutorial.fold-sum/multiple { tutorial::fold-sum(list::append(list::append(list::singleton<Int>(1), 2), 3)) => 6 }"""
+example tutorial.fold-sum/multiple { tutorial.fold-sum(list.append(list.append(list.singleton<Int>(1), 2), 3)) => 6 }"""
 
     let private tutorialListFoldExampleV2 =
-        "example tutorial.fold-sum/multiple { tutorial::fold-sum(list::append(list::append(list::singleton<Int>(1), 2), 3)) => 6 }"
+        "example tutorial.fold-sum/multiple { tutorial.fold-sum(list.append(list.append(list.singleton<Int>(1), 2), 3)) => 6 }"
 
     let private text value = Text value
     let private textField name value = name, text value
@@ -327,13 +329,13 @@ example tutorial.fold-sum/multiple { tutorial::fold-sum(list::append(list::appen
             Fields =
                 [ textField "frontend" "flow"
                   "syntaxVersion", Integer 2
-                  textField "code" "tutorial::fold-sum(list::append(list::append(list::singleton<Int>(1), 2), 3))" ] } ]
+                  textField "code" "tutorial.fold-sum(list.append(list.append(list.singleton<Int>(1), 2), 3))" ] } ]
 
     let private tutorialSpanRequestExamples =
         [ { Name = "eval-tutorial-sign-v2"
             Description = "Evaluate compact Flow/2 code through eval's code field."
             Operation = "eval"
-            Fields = [ textField "frontend" "flow"; "syntaxVersion", Integer 2; textField "code" "tutorial::sign(-2)" ] }
+            Fields = [ textField "frontend" "flow"; "syntaxVersion", Integer 2; textField "code" "tutorial.sign(-2)" ] }
           { Name = "define-tutorial-span-validator"
             Description = "Define the complete Flow/2 record, predicate, and its own tests."
             Operation = "define"
@@ -359,7 +361,7 @@ example tutorial.fold-sum/multiple { tutorial::fold-sum(list::append(list::appen
         [ Topic.Authoring,
             { Title = "Authoring through the runtime"
               Documentation =
-                "Use one JSON object per JSONL request. Flow is the default frontend for define and eval. Select Flow syntax with syntaxVersion (version 1 is the default); use format to request canonical source without changing the project, then submit an explicit define request to stage an edit. Discover before editing: words with compact=true returns names only; search matches names, documentation, and signatures; describe shows full signatures and exact flowReference call spelling; context gives a bounded view of a known word and its reachable dependencies and types. Use transitive-dependencies to inspect its full dependency closure. Protocol queries use dictionary names with dots. Help returns instructions only; the active host still controls which operations it allows."
+                "Use one JSON object per JSONL request. Flow is the default frontend for define and eval. Select Flow syntax with syntaxVersion (version 1 is the default); use format to request canonical source without changing the project, then submit an explicit define request to stage an edit. Discover before editing: words with compact=true returns names only; search matches names, documentation, and signatures; describe shows full signatures and exact flowReference call spelling with its flowReferenceSyntaxVersion; context gives a bounded view of a known word and its reachable dependencies and types, with the syntax version for its references. Follow the reported version when copying a reference: Flow/2 references use shadow-safe leading-dot roots, even when the active source is Flow/1. Use transitive-dependencies to inspect the full dependency closure. Protocol queries use dictionary names with dots. Help returns instructions only; the active host still controls which operations it allows."
               AllowedFlowDefineFields = []
               SourceExamples = []
               RequestExamples =
@@ -389,7 +391,7 @@ example tutorial.fold-sum/multiple { tutorial::fold-sum(list::append(list::appen
           Topic.Define,
             { Title = "Define Flow source"
               Documentation =
-                "A Flow define request takes source and the optional fields listed below. Omit frontend to select Flow and syntaxVersion to select Flow/1; use syntaxVersion 2 for Flow/2. Put documentation in the word body as `doc \"...\"`; doc and documentation are not request fields. A local binding stays inside one invocation. Declare effects in the word source, using `effects none` when there are no effects. For one-word declarations, attach tests and examples inline or through their source arrays. Multi-declaration project documents are add-only and must keep cases inline. An attachment-only document must keep cases inline and name exactly one existing Flow owner. Adding a new attachment-only case captures the current owner revision; replacing a case or removing one requires replace=true with the current expectedRevision, and removals also require its current expected source hash. Each case owner is the dictionary name before the slash. Define stages a candidate or temporary word and does not persist it. The format operation returns canonical Flow text without changing the project; submit the result through define when you want to stage that edit. A Flow record may declare `validate namespace::predicate;`; the predicate must be pure with the exact record-type-to-Bool signature. A false result raises `RECORD_VALIDATION_FAILED`. Test rejection with an attached expected-error case; the validator's completed false return remains observable. The generated constructor's validator dependency is available through introspection. Library words may call only trusted primitives, generated type operations, or authored dependencies committed as library words. Qualify each helper with its own passing tests and complete coverage; a group library commit may qualify selected candidates together when every selected library word passes its own gate."
+                "A Flow define request takes source and the optional fields listed below. Omit frontend to select Flow and syntaxVersion to select Flow/1; use syntaxVersion 2 for Flow/2. Put documentation in the word body as `doc \"...\"`; doc and documentation are not request fields. A local binding stays inside one invocation. Declare effects in the word source, using `effects none` when there are no effects. For one-word declarations, attach tests and examples inline or through their source arrays. Multi-declaration project documents are add-only and must keep cases inline. An attachment-only document must keep cases inline and name exactly one existing Flow owner. Adding a new attachment-only case captures the current owner revision; replacing a case or removing one requires replace=true with the current expectedRevision, and removals also require its current expected source hash. Each case owner is the dictionary name before the slash. Define stages a candidate or temporary word and does not persist it. The format operation returns canonical Flow text without changing the project; submit the result through define when you want to stage that edit. A record validator must be pure with the exact record-type-to-Bool signature; write `validate namespace::predicate;` in Flow/1 and `validate namespace.predicate;` in Flow/2. A false result raises `RECORD_VALIDATION_FAILED`. Test rejection with an attached expected-error case; the validator's completed false return remains observable. The generated constructor's validator dependency is available through introspection. Library words may call only trusted primitives, generated type operations, or authored dependencies committed as library words. Qualify each helper with its own passing tests and complete coverage; a group library commit may qualify selected candidates together when every selected library word passes its own gate."
               AllowedFlowDefineFields = flowDefineFields
               SourceExamples = [ tutorialSourceExample ]
               RequestExamples =
@@ -492,10 +494,6 @@ example tutorial.fold-sum/multiple { tutorial::fold-sum(list::append(list::appen
         let original = topicContent[topic]
         if syntaxVersion = 1 then original
         else
-            let versionedSource =
-                match topic with
-                | Topic.Define -> Some tutorialSourceV2
-                | _ -> None
             let requestExamples =
                 original.RequestExamples
                 |> List.map (fun example ->
@@ -529,23 +527,42 @@ example tutorial.fold-sum/multiple { tutorial::fold-sum(list::append(list::appen
                     original.Documentation
                     + " This help response is selected for Flow/2; write function declarations with `fn`."
                     + (if topic = Topic.Define then
+                           " Use dots for namespace calls and constructors, for example `file.read(path)`, `option.some<Int>(value)`, and `result.ok<Int, String>(value)`. A local record root reads declared properties such as `customer.email`; a bound-root call such as `customer.read-balance()` passes that record as the function's first argument. In call and property expressions, a local name wins over the same namespace root, and a failed local-root lookup does not fall back to the namespace. Use a leading dot to choose an exact dictionary root despite a shadowing local, as in `.customer.read-balance(customer)` or `.identity(value)`. Static callback references such as `values.map(customer.active?)` name dictionary functions and cannot capture caller-local values. Keep postfix dots on the same line as their receiver; a dot at the start of a new line, including inside grouping, begins a separate exact-root call. Argument lists can span lines. Existing Flow/2 `::` spellings remain readable for compatibility; formatting writes dotted calls. Newlines separate statements, record fields, validators, enum cases, and effect-count entries. Same-line entries require semicolons, while the final entry before a closing delimiter may omit one; the formatter omits optional semicolons. Effects and documentation precede executable code and are followed by a blank line; omitted function effects mean pure. A one-expression match arm may be written without a block, such as `pending => \"Pending\"`; an arm with multiple statements keeps its block."
+                       elif topic = Topic.Authoring then
+                           " Flow/2 uses `fn`, dotted calls, and newline-separated statements; omitted function effects mean pure. Select `syntaxVersion: 2` for Flow/2, and see the Define help topic for its call and separator rules."
+                       else "")
+                    + (if topic = Topic.Define then
                            " Use eval with the compact `code` field for expressions; define uses `source` for complete declarations. Use source with `word` to read authored word text and with `type` to read the exact type declaration. Static list callbacks use receiver forms such as `items.map(callback)`, `items.filter(callback)`, `items.each(callback)`, and `items.fold(seed, callback)`; callback must be a statically named word reference and cannot capture caller locals. A record validator sees the complete unchecked construction candidate and must not assume the invariant already holds. Put valid and expected-error constructor tests on the validator itself: its completed false return is observed before RECORD_VALIDATION_FAILED, while caller-owned tests do not qualify the callee and generated constructors cannot own authored Flow tests for it."
                        else "")
                     + (if topic = Topic.Examples then
-                           " Define the `tutorial-list-fold` source before running its attached tests or example. Its callback is a statically named word reference and cannot capture caller locals. Flow/2 tests may add `effects { fs.read: 2; fs.write: 0; }` after the value or error expectation. This asserts exact counts of provider calls made while the attached user word is active, including nested helpers; omitted categories are zero. The observable categories are fs.read, fs.write, clock.read, and console.write. Other effect categories are unsupported, and examples cannot use this test-only suffix."
+                           " Define the `tutorial-list-fold` source before running its attached tests or example. Its callback is a statically named word reference and cannot capture caller locals. Flow/2 tests may add `effects { fs.read: 2; fs.write: 0 }` after the value or error expectation. This asserts exact counts of provider calls made while the attached user word is active, including nested helpers; omitted categories are zero. The observable categories are fs.read, fs.write, clock.read, and console.write. Other effect categories are unsupported, and examples cannot use this test-only suffix."
                        else "")
                 SourceExamples =
                     let examples =
-                        match versionedSource, original.SourceExamples with
-                        | Some source, example :: rest -> { example with Source = source } :: rest
-                        | _ -> original.SourceExamples
+                        original.SourceExamples
+                        |> List.map (fun example ->
+                            let source =
+                                match topic, example.Name with
+                                | Topic.Define, "tutorial-sign" -> Some tutorialSourceV2
+                                | Topic.Examples, "tutorial-sign-test" ->
+                                    Some "test tutorial.sign/negative { tutorial.sign(-2) => -1 }"
+                                | Topic.Examples, "value-expression-test-expectation" ->
+                                    Some "test tutorial.sign/value-expression { tutorial.sign(2) => value .add(0, 1) }"
+                                | Topic.Examples, "runtime-error-test-expectation" ->
+                                    Some "test tutorial.sign/divide-by-zero { .divide(tutorial.sign(2), 0) => error RUNTIME_DIVIDE_BY_ZERO }"
+                                | Topic.Examples, "tutorial-sign-example" ->
+                                    Some "example tutorial.sign/negative { tutorial.sign(-2) => -1 }"
+                                | _ -> None
+                            match source with
+                            | Some source -> { example with Source = source }
+                            | None -> example)
                     if topic = Topic.Define then
                         examples @ [ tutorialSpanSourceExample; tutorialListFoldSourceExample ]
                     elif topic = Topic.Examples then
                         examples
                         @ [ { Name = "effect-count-test-v2"
                               Description = "Flow/2 test with exact provider counts for the attached user word and its nested helper calls."
-                              Source = "test tutorial.queue/reads-once { tutorial::queue() => \"queued\" effects { fs.read: 2; fs.write: 0; } }" }
+                              Source = "test tutorial.queue/reads-once {\n    tutorial.queue()\n    => \"queued\" effects {\n        fs.read: 2\n        fs.write: 0\n    }\n}" }
                             tutorialListFoldSourceExample
                             tutorialListFoldCaseExample ]
                     else examples

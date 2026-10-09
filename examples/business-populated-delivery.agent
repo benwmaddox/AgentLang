@@ -2,184 +2,131 @@
 # The original Flow/1 business fixture remains unchanged.
 
 record PopulatedEmailDeliveryPlan {
-    field first: EmailMessage;
-    field remaining: List<EmailMessage>;
+    field first: EmailMessage
+    field remaining: List<EmailMessage>
 }
 
 fn email.populated-delivery-plan(outbox: List<EmailMessage>) -> Option<PopulatedEmailDeliveryPlan> {
     doc "Build a populated FIFO delivery plan from a nonempty outbox, preserving every later message in order."
 
-    match list::get(outbox, 0) {
-        some first => {
-            option::some<PopulatedEmailDeliveryPlan>(populatedEmailDeliveryPlan::new(
-                first = first,
-                remaining = list::tail(outbox)))
-        }
-        none => { option::none<PopulatedEmailDeliveryPlan>() }
+    match list.get(outbox, 0) {
+        some first => option.some<PopulatedEmailDeliveryPlan>(populatedEmailDeliveryPlan.new(first = first, remaining = list.tail(outbox)))
+        none => option.none<PopulatedEmailDeliveryPlan>()
     }
 }
 
 fn email.apply-delivery-result-populated(store: Store, outcome: Result<Unit, BusinessError>) -> Result<Store, BusinessError> {
-    doc "Apply an outcome for this Store snapshot's FIFO head; retain raw provider error detail. This pure transition does not send or correlate provider requests. Empty outboxes take precedence and failures leave Store unchanged."
+    doc "Apply an outcome for this Store snapshot\u0027s FIFO head; retain raw provider error detail. This pure transition does not send or correlate provider requests. Empty outboxes take precedence and failures leave Store unchanged."
 
-    match email::populated-delivery-plan(store.email-outbox) {
-        none => {
-            result::error<Store, BusinessError>(businessError::new(
-                code = "NO_PENDING_EMAIL",
-                message = "There is no queued email to deliver."))
-        }
+    match email.populated-delivery-plan(store.email-outbox) {
         some plan => {
             match outcome {
-                error provider-error => {
-                    result::error<Store, BusinessError>(businessError::new(
-                        code = "EMAIL_PROVIDER_FAILURE",
-                        message = provider-error.message))
-                }
                 ok delivered => {
-                    let sent = list::append(store.sent-emails, plan.first);
-                    let updated = store::with-email-state(store, plan.remaining, sent);
-                    result::ok<Store, BusinessError>(updated)
+                    let sent = list.append(store.sent-emails, plan.first)
+                    let updated = .store.with-email-state(store, plan.remaining, sent)
+                    result.ok<Store, BusinessError>(updated)
                 }
+                error provider-error => result.error<Store, BusinessError>(businessError.new(code = "EMAIL_PROVIDER_FAILURE", message = provider-error.message))
             }
         }
+        none => result.error<Store, BusinessError>(businessError.new(code = "NO_PENDING_EMAIL", message = "There is no queued email to deliver."))
     }
 }
 
 test email.populated-delivery-plan/empty-outbox {
-    email::populated-delivery-plan(list::empty<EmailMessage>())
-    => value option::none<PopulatedEmailDeliveryPlan>()
+    email.populated-delivery-plan(list.empty<EmailMessage>())
+    => value option.none<PopulatedEmailDeliveryPlan>()
 }
 
 test email.populated-delivery-plan/singleton-outbox {
-    let first = emailMessage::new(to = Email::new("first@example.test"), subject = "First", body = "First body");
-    match email::populated-delivery-plan(list::singleton<EmailMessage>(first)) {
-        some plan => {
-            bool::and(
-                plan.first == first,
-                plan.remaining == list::empty<EmailMessage>())
-        }
-        none => { false }
+    let first = emailMessage.new(to = Email.new("first@example.test"), subject = "First", body = "First body")
+    match email.populated-delivery-plan(list.singleton<EmailMessage>(first)) {
+        some plan => bool.and(plan.first == first, plan.remaining == list.empty<EmailMessage>())
+        none => false
     }
     => true
 }
 
 test email.populated-delivery-plan/preserves-duplicate-positions {
-    let first = emailMessage::new(to = Email::new("first@example.test"), subject = "First", body = "First body");
-    let later = emailMessage::new(to = Email::new("later@example.test"), subject = "Later", body = "Later body");
-    let outbox = list::append(list::append(list::singleton<EmailMessage>(first), first), later);
-    match email::populated-delivery-plan(outbox) {
-        some plan => {
-            bool::and(
-                plan.first == first,
-                plan.remaining == list::append(list::singleton<EmailMessage>(first), later))
-        }
-        none => { false }
+    let first = emailMessage.new(to = Email.new("first@example.test"), subject = "First", body = "First body")
+    let later = emailMessage.new(to = Email.new("later@example.test"), subject = "Later", body = "Later body")
+    let outbox = list.append(list.append(list.singleton<EmailMessage>(first), first), later)
+    match email.populated-delivery-plan(outbox) {
+        some plan => bool.and(plan.first == first, plan.remaining == list.append(list.singleton<EmailMessage>(first), later))
+        none => false
     }
     => true
 }
 
 test email.apply-delivery-result-populated/empty-outbox-precedes-provider-error {
-    let failure = businessError::new(code = "DECLINED", message = "mail rejected");
-    match email::apply-delivery-result-populated(
-        store::empty(unit),
-        result::error<Unit, BusinessError>(failure)) {
-        error problem => { problem.code == "NO_PENDING_EMAIL" }
-        ok updated => { false }
+    let failure = businessError.new(code = "DECLINED", message = "mail rejected")
+    match email.apply-delivery-result-populated(store.empty(unit), result.error<Unit, BusinessError>(failure)) {
+        ok updated => false
+        error problem => problem.code == "NO_PENDING_EMAIL"
     }
     => true
 }
 
 test email.apply-delivery-result-populated/provider-failure-retains-input-state {
-    let first = emailMessage::new(to = Email::new("first@example.test"), subject = "First", body = "First body");
-    let later = emailMessage::new(to = Email::new("later@example.test"), subject = "Later", body = "Later body");
-    let prior-sent = emailMessage::new(to = Email::new("sent@example.test"), subject = "Sent", body = "Sent body");
-    let outbox = list::append(list::append(list::singleton<EmailMessage>(first), first), later);
-    let sent = list::singleton<EmailMessage>(prior-sent);
-    let initial = store::with-email-state(store::empty(unit), outbox, sent);
-    match email::apply-delivery-result-populated(
-        initial,
-        result::error<Unit, BusinessError>(businessError::new(code = "TEMPORARY", message = "mail gateway unavailable"))) {
-        error problem => {
-            bool::and(
-                problem.code == "EMAIL_PROVIDER_FAILURE",
-                bool::and(
-                    problem.message == "mail gateway unavailable",
-                    bool::and(initial.email-outbox == outbox, initial.sent-emails == sent)))
-        }
-        ok updated => { false }
+    let first = emailMessage.new(to = Email.new("first@example.test"), subject = "First", body = "First body")
+    let later = emailMessage.new(to = Email.new("later@example.test"), subject = "Later", body = "Later body")
+    let prior-sent = emailMessage.new(to = Email.new("sent@example.test"), subject = "Sent", body = "Sent body")
+    let outbox = list.append(list.append(list.singleton<EmailMessage>(first), first), later)
+    let sent = list.singleton<EmailMessage>(prior-sent)
+    let initial = store.with-email-state(store.empty(unit), outbox, sent)
+    match email.apply-delivery-result-populated(initial, result.error<Unit, BusinessError>(businessError.new(code = "TEMPORARY", message = "mail gateway unavailable"))) {
+        ok updated => false
+        error problem => bool.and(problem.code == "EMAIL_PROVIDER_FAILURE", bool.and(problem.message == "mail gateway unavailable", bool.and(initial.email-outbox == outbox, initial.sent-emails == sent)))
     }
     => true
 }
 
 test email.apply-delivery-result-populated/success-singleton-outbox {
-    let first = emailMessage::new(to = Email::new("first@example.test"), subject = "First", body = "First body");
-    let prior-sent = emailMessage::new(to = Email::new("sent@example.test"), subject = "Sent", body = "Sent body");
-    let initial = store::with-email-state(
-        store::empty(unit),
-        list::singleton<EmailMessage>(first),
-        list::singleton<EmailMessage>(prior-sent));
-    match email::apply-delivery-result-populated(initial, result::ok<Unit, BusinessError>(unit)) {
-        error problem => { false }
-        ok updated => {
-            bool::and(
-                updated.email-outbox == list::empty<EmailMessage>(),
-                updated.sent-emails == list::append(list::singleton<EmailMessage>(prior-sent), first))
-        }
+    let first = emailMessage.new(to = Email.new("first@example.test"), subject = "First", body = "First body")
+    let prior-sent = emailMessage.new(to = Email.new("sent@example.test"), subject = "Sent", body = "Sent body")
+    let initial = store.with-email-state(store.empty(unit), list.singleton<EmailMessage>(first), list.singleton<EmailMessage>(prior-sent))
+    match email.apply-delivery-result-populated(initial, result.ok<Unit, BusinessError>(unit)) {
+        ok updated => bool.and(updated.email-outbox == list.empty<EmailMessage>(), updated.sent-emails == list.append(list.singleton<EmailMessage>(prior-sent), first))
+        error problem => false
     }
     => true
 }
 
 test email.apply-delivery-result-populated/success-preserves-fifo-duplicates-and-store {
-    let first = emailMessage::new(to = Email::new("first@example.test"), subject = "First", body = "First body");
-    let later = emailMessage::new(to = Email::new("later@example.test"), subject = "Later", body = "Later body");
-    let prior-sent = emailMessage::new(to = Email::new("sent@example.test"), subject = "Sent", body = "Sent body");
-    let outbox = list::append(list::append(list::append(list::singleton<EmailMessage>(first), first), later), first);
-    let sent = list::singleton<EmailMessage>(prior-sent);
-    let initial = store::with-email-state(business::seed(unit), outbox, sent);
-    match email::apply-delivery-result-populated(initial, result::ok<Unit, BusinessError>(unit)) {
-        error problem => { false }
-        ok updated => {
-            bool::and(
-                updated.email-outbox == list::append(list::append(list::singleton<EmailMessage>(first), later), first),
-                bool::and(
-                    updated.sent-emails == list::append(list::singleton<EmailMessage>(prior-sent), first),
-                    bool::and(
-                        updated.customers == initial.customers,
-                        bool::and(
-                            updated.products == initial.products,
-                            bool::and(
-                                updated.subscriptions == initial.subscriptions,
-                                bool::and(updated.invoices == initial.invoices, updated.payments == initial.payments))))))
-        }
+    let first = emailMessage.new(to = Email.new("first@example.test"), subject = "First", body = "First body")
+    let later = emailMessage.new(to = Email.new("later@example.test"), subject = "Later", body = "Later body")
+    let prior-sent = emailMessage.new(to = Email.new("sent@example.test"), subject = "Sent", body = "Sent body")
+    let outbox = list.append(list.append(list.append(list.singleton<EmailMessage>(first), first), later), first)
+    let sent = list.singleton<EmailMessage>(prior-sent)
+    let initial = store.with-email-state(business.seed(unit), outbox, sent)
+    match email.apply-delivery-result-populated(initial, result.ok<Unit, BusinessError>(unit)) {
+        ok updated => bool.and(updated.email-outbox == list.append(list.append(list.singleton<EmailMessage>(first), later), first), bool.and(updated.sent-emails == list.append(list.singleton<EmailMessage>(prior-sent), first), bool.and(updated.customers == initial.customers, bool.and(updated.products == initial.products, bool.and(updated.subscriptions == initial.subscriptions, bool.and(updated.invoices == initial.invoices, updated.payments == initial.payments))))))
+        error problem => false
     }
     => true
 }
 
 example email.populated-delivery-plan/empty-outbox {
-    match email::populated-delivery-plan(list::empty<EmailMessage>()) {
-        none => { true }
-        some plan => { false }
+    match email.populated-delivery-plan(list.empty<EmailMessage>()) {
+        some plan => false
+        none => true
     }
     => true
 }
 
 example email.apply-delivery-result-populated/empty-outbox {
-    match email::apply-delivery-result-populated(
-        store::empty(unit),
-        result::ok<Unit, BusinessError>(unit)) {
-        error problem => { problem.code }
-        ok updated => { "unexpected" }
+    match email.apply-delivery-result-populated(store.empty(unit), result.ok<Unit, BusinessError>(unit)) {
+        ok updated => "unexpected"
+        error problem => problem.code
     }
     => "NO_PENDING_EMAIL"
 }
 
 example email.apply-delivery-result-populated/success-singleton {
-    let first = emailMessage::new(to = Email::new("first@example.test"), subject = "First", body = "First body");
-    match email::apply-delivery-result-populated(
-        store::with-email-state(store::empty(unit), list::singleton<EmailMessage>(first), list::empty<EmailMessage>()),
-        result::ok<Unit, BusinessError>(unit)) {
-        error problem => { false }
-        ok updated => { updated.sent-emails.count() == 1 }
+    let first = emailMessage.new(to = Email.new("first@example.test"), subject = "First", body = "First body")
+    match email.apply-delivery-result-populated(store.with-email-state(store.empty(unit), list.singleton<EmailMessage>(first), list.empty<EmailMessage>()), result.ok<Unit, BusinessError>(unit)) {
+        ok updated => updated.sent-emails.count() == 1
+        error problem => false
     }
     => true
 }

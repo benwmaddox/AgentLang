@@ -10,6 +10,10 @@ Library quality and definition lifetime are separate decisions. A temporary word
 
 Tests run with fresh deterministic effect providers. Tests for a word measure that word's own body; a caller's tests cannot substitute for the reusable callee's attached tests. Stale test results are invalidated when definitions change or reload. A gate runs the current tests again before accepting the revision.
 
+For a runnable I/O example, see [testing library functions without real I/O](LIBRARY-IO-TESTING.md).
+It demonstrates passing promotion, a coverage rejection, and an effect-count
+rejection using the isolated virtual filesystem.
+
 Persistence gates run against the exact durable project projection. A scoped commit includes candidate dependencies used only by its selected tests or examples, including explicit nominal container types; newly included helper words need their own passing tests. Temporary metadata dependencies must be promoted or removed before commit. Selected tests and examples cannot be silently discarded, and unrelated staged metadata remains staged. Replacement gates also check affected transitive persistent callers.
 
 The initial conditional coverage gate requires both `if` outcomes, including the empty outcome of a conditional without `else`. Coverage reports identify uncovered source locations so an agent can add a specific missing case. Typed container support extends the gate to both Option/Result cases, empty/nonempty list iteration, and retained/rejected elements for filtering. The container milestone report records which of these gates have been validated.

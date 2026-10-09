@@ -1,201 +1,201 @@
+type UnitBasisPoints : Int {
+    validate unit-basis-points.valid?
+}
+
 fn unit-basis-points.valid?(value: Int) -> Bool {
     doc "Accept only the inclusive basis-point range from zero through ten thousand."
 
-    let nonnegative = int::greater-or-equal(value, 0);
-    let within-limit = int::less-or-equal(value, 10000);
-    bool::and(nonnegative, within-limit)
-}
-
-type UnitBasisPoints : Int {
-    validate unit-basis-points::valid?;
+    let nonnegative = int.greater-or-equal(value, 0)
+    let within-limit = int.less-or-equal(value, 10000)
+    bool.and(nonnegative, within-limit)
 }
 
 fn money.scale-basis-points-toward-zero(amount: Money, rate: UnitBasisPoints) -> Money {
     doc "Scale signed minor units by a validated basis-point rate using exact quotient and remainder decomposition."
 
-    let amount-value = Money::value(amount);
-    let rate-value = UnitBasisPoints::value(rate);
-    let quotient = divide(amount-value, 10000);
-    let remainder = subtract(amount-value, multiply(quotient, 10000));
-    let whole = multiply(quotient, rate-value);
-    let fractional = divide(multiply(remainder, rate-value), 10000);
-    Money::new(add(whole, fractional))
+    let amount-value = Money.value(amount)
+    let rate-value = UnitBasisPoints.value(rate)
+    let quotient = divide(amount-value, 10000)
+    let remainder = subtract(amount-value, multiply(quotient, 10000))
+    let whole = multiply(quotient, rate-value)
+    let fractional = divide(multiply(remainder, rate-value), 10000)
+    Money.new(add(whole, fractional))
 }
 
 fn money.scale-by-90-percent(amount: Money) -> Money {
     doc "Scale signed minor units by a fixed validated rate of nine thousand basis points."
 
-    money::scale-basis-points-toward-zero(amount, UnitBasisPoints::new(9000))
+    money.scale-basis-points-toward-zero(amount, UnitBasisPoints.new(9000))
 }
 
 fn money.scale-ratio-toward-zero(amount: Money, numerator: Int, denominator: Int) -> Result<Money, String> {
     doc "Scale signed minor units by an exact rational factor, truncating the quotient toward zero."
 
-    let scaled = int::scale-ratio-toward-zero(Money::value(amount), numerator, denominator);
+    let scaled = int.scale-ratio-toward-zero(Money.value(amount), numerator, denominator)
     match scaled {
-        ok value => { result::ok<Money, String>(Money::new(value)) }
-        error code => { result::error<Money, String>(code) }
+        ok value => result.ok<Money, String>(Money.new(value))
+        error code => result.error<Money, String>(code)
     }
 }
 
 test unit-basis-points.valid?/minimum {
-    unit-basis-points::valid?(0)
+    unit-basis-points.valid?(0)
     => true
 }
 
 test unit-basis-points.valid?/maximum {
-    unit-basis-points::valid?(10000)
+    unit-basis-points.valid?(10000)
     => true
 }
 
 test unit-basis-points.valid?/below-zero {
-    unit-basis-points::valid?(-1)
+    unit-basis-points.valid?(-1)
     => false
 }
 
 test unit-basis-points.valid?/above-maximum {
-    unit-basis-points::valid?(10001)
+    unit-basis-points.valid?(10001)
     => false
 }
 
 test unit-basis-points.valid?/constructor-rejects-below-zero {
-    UnitBasisPoints::new(-1)
+    UnitBasisPoints.new(-1)
     => error REFINEMENT_FAILED
 }
 
 test unit-basis-points.valid?/constructor-rejects-above-maximum {
-    UnitBasisPoints::new(10001)
+    UnitBasisPoints.new(10001)
     => error REFINEMENT_FAILED
 }
 
 test unit-basis-points.valid?/constructor-rejects-int64-minimum {
-    UnitBasisPoints::new(-9223372036854775808)
+    UnitBasisPoints.new(-9223372036854775808)
     => error REFINEMENT_FAILED
 }
 
 test unit-basis-points.valid?/constructor-rejects-int64-maximum {
-    UnitBasisPoints::new(9223372036854775807)
+    UnitBasisPoints.new(9223372036854775807)
     => error REFINEMENT_FAILED
 }
 
 test money.scale-basis-points-toward-zero/zero-rate-maximum {
-    int::to-string(Money::value(money::scale-basis-points-toward-zero(Money::new(9223372036854775807), UnitBasisPoints::new(0))))
+    int.to-string(Money.value(money.scale-basis-points-toward-zero(Money.new(9223372036854775807), UnitBasisPoints.new(0))))
     => "0"
 }
 
 test money.scale-basis-points-toward-zero/zero-rate-minimum {
-    int::to-string(Money::value(money::scale-basis-points-toward-zero(Money::new(-9223372036854775808), UnitBasisPoints::new(0))))
+    int.to-string(Money.value(money.scale-basis-points-toward-zero(Money.new(-9223372036854775808), UnitBasisPoints.new(0))))
     => "0"
 }
 
 test money.scale-basis-points-toward-zero/full-rate-maximum {
-    int::to-string(Money::value(money::scale-basis-points-toward-zero(Money::new(9223372036854775807), UnitBasisPoints::new(10000))))
+    int.to-string(Money.value(money.scale-basis-points-toward-zero(Money.new(9223372036854775807), UnitBasisPoints.new(10000))))
     => "9223372036854775807"
 }
 
 test money.scale-basis-points-toward-zero/full-rate-minimum {
-    int::to-string(Money::value(money::scale-basis-points-toward-zero(Money::new(-9223372036854775808), UnitBasisPoints::new(10000))))
+    int.to-string(Money.value(money.scale-basis-points-toward-zero(Money.new(-9223372036854775808), UnitBasisPoints.new(10000))))
     => "-9223372036854775808"
 }
 
 test money.scale-basis-points-toward-zero/positive-fraction {
-    int::to-string(Money::value(money::scale-basis-points-toward-zero(Money::new(7), UnitBasisPoints::new(5000))))
+    int.to-string(Money.value(money.scale-basis-points-toward-zero(Money.new(7), UnitBasisPoints.new(5000))))
     => "3"
 }
 
 test money.scale-basis-points-toward-zero/negative-fraction {
-    int::to-string(Money::value(money::scale-basis-points-toward-zero(Money::new(-7), UnitBasisPoints::new(5000))))
+    int.to-string(Money.value(money.scale-basis-points-toward-zero(Money.new(-7), UnitBasisPoints.new(5000))))
     => "-3"
 }
 
 test money.scale-basis-points-toward-zero/small-positive-fraction {
-    int::to-string(Money::value(money::scale-basis-points-toward-zero(Money::new(1), UnitBasisPoints::new(1))))
+    int.to-string(Money.value(money.scale-basis-points-toward-zero(Money.new(1), UnitBasisPoints.new(1))))
     => "0"
 }
 
 test money.scale-basis-points-toward-zero/small-negative-fraction {
-    int::to-string(Money::value(money::scale-basis-points-toward-zero(Money::new(-1), UnitBasisPoints::new(1))))
+    int.to-string(Money.value(money.scale-basis-points-toward-zero(Money.new(-1), UnitBasisPoints.new(1))))
     => "0"
 }
 
 test money.scale-basis-points-toward-zero/nine-tenths {
-    int::to-string(Money::value(money::scale-basis-points-toward-zero(Money::new(12345), UnitBasisPoints::new(9000))))
+    int.to-string(Money.value(money.scale-basis-points-toward-zero(Money.new(12345), UnitBasisPoints.new(9000))))
     => "11110"
 }
 
 test money.scale-by-90-percent/fixed-rate {
-    int::to-string(Money::value(money::scale-by-90-percent(Money::new(10000))))
+    int.to-string(Money.value(money.scale-by-90-percent(Money.new(10000))))
     => "9000"
 }
 
 test money.scale-ratio-toward-zero/positive-fraction {
-    match money::scale-ratio-toward-zero(denominator = 2, numerator = 1, amount = Money::new(7)) {
-        ok total => { int::to-string(Money::value(total)) }
-        error code => { code }
+    match money.scale-ratio-toward-zero(denominator = 2, numerator = 1, amount = Money.new(7)) {
+        ok total => int.to-string(Money.value(total))
+        error code => code
     }
     => "3"
 }
 
 test money.scale-ratio-toward-zero/negative-fraction {
-    match money::scale-ratio-toward-zero(Money::new(-7), 1, 2) {
-        ok total => { int::to-string(Money::value(total)) }
-        error code => { code }
+    match money.scale-ratio-toward-zero(Money.new(-7), 1, 2) {
+        ok total => int.to-string(Money.value(total))
+        error code => code
     }
     => "-3"
 }
 
 test money.scale-ratio-toward-zero/negative-numerator-and-denominator {
-    match money::scale-ratio-toward-zero(Money::new(7), -1, -2) {
-        ok total => { int::to-string(Money::value(total)) }
-        error code => { code }
+    match money.scale-ratio-toward-zero(Money.new(7), -1, -2) {
+        ok total => int.to-string(Money.value(total))
+        error code => code
     }
     => "3"
 }
 
 test money.scale-ratio-toward-zero/small-positive-fraction {
-    match money::scale-ratio-toward-zero(Money::new(1), 1, 2) {
-        ok total => { int::to-string(Money::value(total)) }
-        error code => { code }
+    match money.scale-ratio-toward-zero(Money.new(1), 1, 2) {
+        ok total => int.to-string(Money.value(total))
+        error code => code
     }
     => "0"
 }
 
 test money.scale-ratio-toward-zero/small-negative-fraction {
-    match money::scale-ratio-toward-zero(Money::new(-1), 1, 2) {
-        ok total => { int::to-string(Money::value(total)) }
-        error code => { code }
+    match money.scale-ratio-toward-zero(Money.new(-1), 1, 2) {
+        ok total => int.to-string(Money.value(total))
+        error code => code
     }
     => "0"
 }
 
 test money.scale-ratio-toward-zero/zero-denominator {
-    match money::scale-ratio-toward-zero(Money::new(5), 0, 0) {
-        ok total => { int::to-string(Money::value(total)) }
-        error code => { code }
+    match money.scale-ratio-toward-zero(Money.new(5), 0, 0) {
+        ok total => int.to-string(Money.value(total))
+        error code => code
     }
     => "DIVIDE_BY_ZERO"
 }
 
 test money.scale-ratio-toward-zero/wide-product-representable-quotient {
-    match money::scale-ratio-toward-zero(Money::new(9223372036854775807), 2, 2) {
-        ok total => { int::to-string(Money::value(total)) }
-        error code => { code }
+    match money.scale-ratio-toward-zero(Money.new(9223372036854775807), 2, 2) {
+        ok total => int.to-string(Money.value(total))
+        error code => code
     }
     => "9223372036854775807"
 }
 
 test money.scale-ratio-toward-zero/final-overflow {
-    match money::scale-ratio-toward-zero(Money::new(9223372036854775807), 2, 1) {
-        ok total => { int::to-string(Money::value(total)) }
-        error code => { code }
+    match money.scale-ratio-toward-zero(Money.new(9223372036854775807), 2, 1) {
+        ok total => int.to-string(Money.value(total))
+        error code => code
     }
     => "INT_OVERFLOW"
 }
 
 test money.scale-ratio-toward-zero/minimum-quotient {
-    match money::scale-ratio-toward-zero(Money::new(-9223372036854775808), -1, -1) {
-        ok total => { int::to-string(Money::value(total)) }
-        error code => { code }
+    match money.scale-ratio-toward-zero(Money.new(-9223372036854775808), -1, -1) {
+        ok total => int.to-string(Money.value(total))
+        error code => code
     }
     => "-9223372036854775808"
 }

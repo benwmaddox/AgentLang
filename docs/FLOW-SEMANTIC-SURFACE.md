@@ -1,5 +1,8 @@
 # Flow stage-2 semantic surface
 
+This retains the original semantic implementation plan and its source forms.
+For current Flow/2 spelling, see [the current syntax guide](CURRENT-SYNTAX.md).
+
 Status: semantic surface, durable Flow integration and default authoring passed the complete local 27-check Release gate, 2026-10-06 (report 052). Focused Flow acceptance has 981 assertions; Runtime has 18 groups / 578 assertions; process-level CLI has 7 groups / 80 assertions. This document retains the original staged implementation plan below. Controlled external-subagent comparisons remain pending.
 
 ## Current boundary

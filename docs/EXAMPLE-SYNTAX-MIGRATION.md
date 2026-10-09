@@ -1,5 +1,9 @@
 # Examples for the revised function syntax
 
+This records the initial Flow/2 migration. Use [the current syntax guide](CURRENT-SYNTAX.md)
+and the formatted files in `examples/` for the subsequent dot-call,
+newline-separator and expression-match-arm refinement.
+
 Status: Flow/2 implementation; select `syntaxVersion: 2` or CLI `--syntax-version 2`.
 The implementation boundary is described in [report 085](../reports/085-frontend-library-revision-plan.md).
 The customer, refined-types and containers teaching files in `examples/` use

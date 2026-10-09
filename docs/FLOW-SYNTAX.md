@@ -1,5 +1,8 @@
 # Flow syntax foundation
 
+Historical Flow/1 foundation. For current Flow/2 dot calls, newline separators,
+and expression match arms, use [the current syntax guide](CURRENT-SYNTAX.md).
+
 This document describes the first, opt-in authoring frontend. It lowers into
 the existing checked expression tree and verified IR; it does not add a second
 runtime. The legacy stack parser and Runtime protocol remain unchanged in this

@@ -2,6 +2,8 @@
 
 Flow/2 tests can assert exact counts for the currently observable virtual
 providers. The implementation is described in [report 113](../reports/113-effect-count-assertions.md).
+The examples use current dotted calls and newline-separated statements. See
+[current Flow/2 syntax](CURRENT-SYNTAX.md) for separator and formatting rules.
 
 A test can assert the target function's returned value and its attempted virtual
 provider calls:
@@ -11,13 +13,16 @@ fn marker.read(path: String) -> String {
     effects fs.read
     doc "Reads the stored marker contents."
 
-    file::read(path)
+    file.read(path)
 }
 
 test marker.read/existing {
-    file::write("example/marker", "held");
-    marker::read("example/marker")
-    => "held" effects { fs.read: 1; fs.write: 0; }
+    file.write("example/marker", "held")
+    marker.read("example/marker")
+    => "held" effects {
+        fs.read: 1
+        fs.write: 0
+    }
 }
 ```
 
@@ -63,21 +68,24 @@ fn configuration.publish(source: String, destination: String) -> Unit {
     effects fs.read, fs.write
     doc "Copies source contents to the destination."
 
-    let contents = file::read(source)
-    file::write(destination, contents)
+    let contents = file.read(source)
+    file.write(destination, contents)
 }
 
 test configuration.publish/known-final-state {
-    file::write("config/source.cfg", "candidate-v2")
-    file::write("config/destination.cfg", "stale")
-    file::write("config/sentinel.cfg", "sentinel-safe")
-    configuration::publish("config/source.cfg", "config/destination.cfg")
-    let sourceAfter = file::read("config/source.cfg")
-    let destinationAfter = file::read("config/destination.cfg")
-    let sentinelAfter = file::read("config/sentinel.cfg")
-    let withDestination = string::concat(sourceAfter, string::concat("|", destinationAfter))
-    string::concat(withDestination, string::concat("|", sentinelAfter))
-    => "candidate-v2|candidate-v2|sentinel-safe" effects { fs.read: 1; fs.write: 1; }
+    file.write("config/source.cfg", "candidate-v2")
+    file.write("config/destination.cfg", "stale")
+    file.write("config/sentinel.cfg", "sentinel-safe")
+    configuration.publish("config/source.cfg", "config/destination.cfg")
+    let sourceAfter = file.read("config/source.cfg")
+    let destinationAfter = file.read("config/destination.cfg")
+    let sentinelAfter = file.read("config/sentinel.cfg")
+    let withDestination = string.concat(sourceAfter, string.concat("|", destinationAfter))
+    string.concat(withDestination, string.concat("|", sentinelAfter))
+    => "candidate-v2|candidate-v2|sentinel-safe" effects {
+        fs.read: 1
+        fs.write: 1
+    }
 }
 ```
 

@@ -783,18 +783,18 @@ module Runtime =
                 if item.Status = Persistent then
                     match (state.TypeSources.TryFind name |> Option.defaultValue (defaultTypeSource state name)).SourceFormat with
                     | { Frontend = SourceFrontend.Stack; Version = 1 } -> addSection "stack" 1 (Source.renderRecord item.Definition)
-                    | { Frontend = SourceFrontend.Flow; Version = version } when version = 1 || version = 2 -> addSection "flow" version (FlowSource.renderRecord item.Definition)
+                    | { Frontend = SourceFrontend.Flow; Version = version } when version = 1 || version = 2 -> addSection "flow" version (FlowSource.renderRecordWithVersion version item.Definition)
                     | format -> error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Type '{name}' uses unsupported source format {format.Frontend}/{format.Version}." (Some name) None [ "Stack/1"; "Flow/1"; "Flow/2" ] [ $"{format.Frontend}/{format.Version}" ]
             for name, item in state.Scalars |> Map.toSeq |> Seq.sortBy fst do
                 if item.Status = Persistent then
                     match (state.TypeSources.TryFind name |> Option.defaultValue (defaultTypeSource state name)).SourceFormat with
                     | { Frontend = SourceFrontend.Stack; Version = 1 } -> addSection "stack" 1 (Source.renderScalar item.Definition)
-                    | { Frontend = SourceFrontend.Flow; Version = version } when version = 1 || version = 2 -> addSection "flow" version (FlowSource.renderScalar item.Definition)
+                    | { Frontend = SourceFrontend.Flow; Version = version } when version = 1 || version = 2 -> addSection "flow" version (FlowSource.renderScalarWithVersion version item.Definition)
                     | format -> error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Type '{name}' uses unsupported source format {format.Frontend}/{format.Version}." (Some name) None [ "Stack/1"; "Flow/1"; "Flow/2" ] [ $"{format.Frontend}/{format.Version}" ]
             for name, item in state.Enums |> Map.toSeq |> Seq.sortBy fst do
                 if item.Status = Persistent then
                     match (state.TypeSources.TryFind name |> Option.defaultValue (defaultTypeSource state name)).SourceFormat with
-                    | { Frontend = SourceFrontend.Flow; Version = 2 } -> addSection "flow" 2 (FlowSource.renderEnum item.Definition)
+                    | { Frontend = SourceFrontend.Flow; Version = 2 } -> addSection "flow" 2 (FlowSource.renderEnumWithVersion 2 item.Definition)
                     | format -> error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Enum type '{name}' uses unsupported source format {format.Frontend}/{format.Version}." (Some name) None [ "Flow/2" ] [ $"{format.Frontend}/{format.Version}" ]
             for word in topologicalWords state do
                 if not (stackWordNames.Contains word.Definition.Name) then addSection "stack" 1 (Source.renderWord true word.Definition)
@@ -2043,11 +2043,11 @@ module Runtime =
                     let authored = stackState.TypeSources[typeSource.Name]
                     let expected =
                         match stackState.Records.TryFind typeSource.Name, stackState.Scalars.TryFind typeSource.Name, stackState.Enums.TryFind typeSource.Name with
-                        | Some record, _, _ when typeSource.SourceFormat.Frontend = SourceFrontend.Flow -> FlowSource.renderRecord record.Definition
+                        | Some record, _, _ when typeSource.SourceFormat.Frontend = SourceFrontend.Flow -> FlowSource.renderRecordWithVersion typeSource.SourceFormat.Version record.Definition
                         | Some record, _, _ -> Source.renderRecord record.Definition
-                        | _, Some scalar, _ when typeSource.SourceFormat.Frontend = SourceFrontend.Flow -> FlowSource.renderScalar scalar.Definition
+                        | _, Some scalar, _ when typeSource.SourceFormat.Frontend = SourceFrontend.Flow -> FlowSource.renderScalarWithVersion typeSource.SourceFormat.Version scalar.Definition
                         | _, Some scalar, _ -> Source.renderScalar scalar.Definition
-                        | _, _, Some enumEntry -> FlowSource.renderEnum enumEntry.Definition
+                        | _, _, Some enumEntry -> FlowSource.renderEnumWithVersion typeSource.SourceFormat.Version enumEntry.Definition
                         | _ -> mismatch $"Manifest type '{typeSource.Name}' is not present in the loaded type source objects." (Some typeSource.Name)
                     if authored.Reference <> typeSource.Definition
                        || authored.SourceFormat <> typeSource.SourceFormat
@@ -2062,9 +2062,9 @@ module Runtime =
                                 | Ok document -> document
                                 | Error diagnostic -> raise (LanguageException diagnostic)
                             match parsed.Records, parsed.Scalars, parsed.Enums with
-                            | [ record ], [], [] -> FlowSource.renderRecord record
-                            | [], [ scalar ], [] -> FlowSource.renderScalar scalar
-                            | [], [], [ enumDefinition ] when typeSource.SourceFormat.Version = 2 -> FlowSource.renderEnum enumDefinition
+                            | [ record ], [], [] -> FlowSource.renderRecordWithVersion typeSource.SourceFormat.Version record
+                            | [], [ scalar ], [] -> FlowSource.renderScalarWithVersion typeSource.SourceFormat.Version scalar
+                            | [], [], [ enumDefinition ] when typeSource.SourceFormat.Version = 2 -> FlowSource.renderEnumWithVersion typeSource.SourceFormat.Version enumDefinition
                             | _ -> mismatch $"Manifest Flow type object '{typeSource.Name}' does not contain exactly that type." (Some typeSource.Name)
                         | SourceFrontend.Stack ->
                             let parsed = parseProjectSource ($"<type:{typeSource.Name}>") authored.Content
@@ -2642,6 +2642,7 @@ module Runtime =
                 let obj = JsonObject()
                 obj["name"] <- jstr name
                 let flowReference, flowReferenceUnavailableReason = FlowParser.describeCallReference name
+                obj["flowReferenceSyntaxVersion"] <- jint 2
                 match flowReference, flowReferenceUnavailableReason with
                 | Some reference, _ ->
                     obj["flowReference"] <- jstr reference

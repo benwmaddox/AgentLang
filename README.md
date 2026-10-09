@@ -6,10 +6,11 @@ AI agents are external coding tools that use the language. The language runtime 
 
 This repository implements a prototype slice. The compiler checks and lowers source into verified typed semantic IR; the public runtime executes that IR through the interpreter, with no AST execution fallback. Effectful language primitives use virtual providers only; there is no host filesystem, network, or database access from language programs. An optional external experiment harness and a conventional business foundation are included. The [repeated external-agent comparison](reports/064-repeat-agent-purpose-review.md) observes tested vocabulary reuse; an overall efficiency advantage remains unproven. The Customer demo uses binary floating point and is not suitable for exact money. The Email validator below demonstrates a modest local policy and does not claim conformance with the full Internet email standard.
 
-The latest [rental vocabulary comparison](reports/145-rental-vocabulary-reuse.md)
-completed four isolated agent trials: all passed the independent behavior checks,
-but neither retained-start agent used the interval helper after inspecting it.
-This task establishes no reliability or retained-vocabulary advantage over F#.
+The [efficacy checkpoint](reports/151-efficacy-checkpoint.md) records successful
+discovery, composition and shared maintenance alongside failures of reuse and
+coverage. No comparative reliability advantage over F# is established. The
+[latest I/O testing probe](reports/154-provider-state-assertion-probe.md) shows
+one fresh agent adding state and effect assertions that reject three defects.
 
 The default Flow authoring cutover passed the complete 27-check Release gate in
 [report 052](reports/052-default-flow-authoring.md). Flow uses named typed inputs,
@@ -23,8 +24,10 @@ The decisions and scope live in [docs/PRD.md](docs/PRD.md) and [docs/DECISIONS.m
 The [current roadmap](docs/ROADMAP.md) distinguishes implemented features,
 active agent validation and approved future work.
 
-Flow/2 uses `fn`, plain record properties and `==`, with
-omitted effects meaning `none`. See the [revised customer example](docs/EXAMPLE-SYNTAX-MIGRATION.md).
+Flow/2 uses `fn`, plain record properties, dotted qualified calls and `==`, with
+omitted effects meaning `none`. Newlines normally separate statements and
+declarations; simple match arms omit braces. See the
+[current syntax guide](docs/CURRENT-SYNTAX.md) and [customer example](examples/customer.agent).
 Select `syntaxVersion: 2` in JSON requests or `--syntax-version 2` in the human
 CLI. Omitted version selectors retain Flow/1 for compatibility with existing
 clients. Stored source always retains its declared frontend version.
@@ -32,7 +35,8 @@ clients. Stored source always retains its declared frontend version.
 Flow/2 also supports [closed nominal enums](docs/CLOSED-ENUMS.md) and exhaustive
 matching in project functions. Finite input and return qualification for library
 functions is implemented and validated locally;
-native enum execution remains unavailable.
+the owning native backend also supports payload-free enums, as recorded in
+[report 153](reports/153-owning-native-enums.md).
 
 [Authoring through the runtime](docs/AUTHORING.md) explains inline documentation,
 attached tests/examples, library coverage and revision-checked replacements.

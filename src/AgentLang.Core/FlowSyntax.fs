@@ -26,7 +26,7 @@ type FlowWordReferenceQualification =
 
 type FlowRootTarget =
     { Name: string
-      /// Authored span of the leading `::` and its unqualified name.
+      /// Authored span of the exact-root marker and its unqualified name.
       Span: SourceSpan }
 
 /// Stable structural positions for binding records. Paths distinguish authored
@@ -232,9 +232,9 @@ module FlowStructure =
 
     let private validateRootTarget (target: FlowRootTarget) =
         if not (isIdentifierName target.Name) then
-            Diagnostics.raiseError "FLOW_ROOT_TARGET_INVALID" "An absolute-root call must name one unqualified dictionary key." (Some target.Name) (Some target.Span) [ "::identifier" ] [ target.Name ]
-        if target.Span.Length < target.Name.Length + 2 then
-            Diagnostics.raiseError "FLOW_ROOT_TARGET_SPAN_INVALID" "An absolute-root target span must cover its leading `::` and identifier." (Some target.Name) (Some target.Span) [ string (target.Name.Length + 2) ] [ string target.Span.Length ]
+            Diagnostics.raiseError "FLOW_ROOT_TARGET_INVALID" "An exact-root call must name one unqualified dictionary key." (Some target.Name) (Some target.Span) [ ".identifier"; "::identifier" ] [ target.Name ]
+        if target.Span.Length < target.Name.Length + 1 then
+            Diagnostics.raiseError "FLOW_ROOT_TARGET_SPAN_INVALID" "An exact-root target span must cover its leading root marker and identifier." (Some target.Name) (Some target.Span) [ string (target.Name.Length + 1) ] [ string target.Span.Length ]
 
     let private validateWordReference (reference: FlowWordReference) =
         let pieces = if System.String.IsNullOrEmpty reference.Name then [||] else reference.Name.Split('.')
@@ -248,8 +248,8 @@ module FlowStructure =
             let expected =
                 match reference.Qualification with
                 | FlowWordReferenceQualification.ExplicitShort -> "word shortName"
-                | FlowWordReferenceQualification.NamespaceQualified -> "namespace::word"
-                | FlowWordReferenceQualification.AbsoluteRoot -> "::rootName"
+                | FlowWordReferenceQualification.NamespaceQualified -> "namespace.word"
+                | FlowWordReferenceQualification.AbsoluteRoot -> ".rootName"
             Diagnostics.raiseError "FLOW_CALLBACK_REFERENCE_SHAPE" "Static callback references must preserve a valid qualification kind and matching name shape." None (Some reference.Span) [ expected ] [ reference.Name ]
 
     let private validateCaseHeader kind word caseName span =
@@ -460,14 +460,31 @@ module FlowStructure =
 module FlowSource =
     open System.Text.Json
 
-    let private renderLiteral literal =
+    let private renderLiteral syntaxVersion literal =
         match literal with
+        | LFloat value when syntaxVersion = 2 ->
+            let text = value.ToString("R", System.Globalization.CultureInfo.InvariantCulture)
+            if text.Contains('.') || text.Contains('e') || text.Contains('E') then text else text + ".0"
         | LInt _ | LFloat _ | LBool _ | LUnit -> Types.formatValue (Types.literalValue literal)
         | LString value -> JsonSerializer.Serialize(value)
 
     let private indent depth = String.replicate (depth * 4) " "
 
-    let private renderQualifiedName (name: string) = name.Replace(".", "::")
+    let private indentContinuationLines depth (text: string) =
+        if depth = 0 || not (text.Contains('\n')) then text
+        else
+            text.Split([| '\n' |], System.StringSplitOptions.None)
+            |> Array.mapi (fun index line -> if index = 0 then line else indent depth + line)
+            |> String.concat "\n"
+
+    let private renderQualifiedName syntaxVersion (name: string) =
+        if syntaxVersion = 2 then name else name.Replace(".", "::")
+
+    let private isShadowedQualifiedName syntaxVersion (locals: Set<string>) (name: string) =
+        if syntaxVersion <> 2 then false
+        else
+            let separator = name.IndexOf('.')
+            separator > 0 && locals.Contains(name.Substring(0, separator))
 
     let private requireSupportedVersion syntaxVersion owner span =
         if syntaxVersion <> 1 && syntaxVersion <> 2 then
@@ -477,132 +494,167 @@ module FlowSource =
         if syntaxVersion <> 2 then
             Diagnostics.raiseError "FLOW_SYNTAX_VERSION" $"{feature} requires Flow/2 syntax." owner span [ "Flow/2" ] [ $"Flow/{syntaxVersion}" ]
 
-    let rec private renderExpressionAt syntaxVersion depth expression =
+    let rec private renderExpressionAt syntaxVersion locals depth expression =
         let prefix = indent depth
         match expression with
-        | FlowExpression.Literal(value, _) -> prefix + renderLiteral value
+        | FlowExpression.Literal(value, _) -> prefix + renderLiteral syntaxVersion value
         | FlowExpression.Local(name, _) -> prefix + name
         | FlowExpression.Call(name, arguments, _) ->
-            let shownName = renderQualifiedName name
-            prefix + shownName + "(" + (arguments |> List.map (renderArgument syntaxVersion) |> String.concat ", ") + ")"
+            let shownName = renderQualifiedName syntaxVersion name
+            let escape = if isShadowedQualifiedName syntaxVersion locals name then "." else ""
+            prefix + escape + shownName + "(" + (arguments |> List.map (renderArgument syntaxVersion locals >> indentContinuationLines depth) |> String.concat ", ") + ")"
         | FlowExpression.RootCall(target, arguments, _) ->
-            prefix + "::" + target.Name + "(" + (arguments |> List.map (renderArgument syntaxVersion) |> String.concat ", ") + ")"
+            prefix + (if syntaxVersion = 2 then "." else "::") + target.Name + "(" + (arguments |> List.map (renderArgument syntaxVersion locals >> indentContinuationLines depth) |> String.concat ", ") + ")"
         | FlowExpression.DotCall(receiver, stage, arguments, _) ->
-            prefix + renderPostfixReceiver syntaxVersion receiver + "." + stage + "(" + (arguments |> List.map (renderArgument syntaxVersion) |> String.concat ", ") + ")"
+            prefix + indentContinuationLines depth (renderPostfixReceiver syntaxVersion locals receiver) + "." + stage + "(" + (arguments |> List.map (renderArgument syntaxVersion locals >> indentContinuationLines depth) |> String.concat ", ") + ")"
         | FlowExpression.Property(receiver, field, span) ->
             requireFlow2 syntaxVersion None (Some span) "Record property access"
-            prefix + renderPostfixReceiver syntaxVersion receiver + "." + field
+            prefix + indentContinuationLines depth (renderPostfixReceiver syntaxVersion locals receiver) + "." + field
         | FlowExpression.Equality(left, right, span) ->
             requireFlow2 syntaxVersion None (Some span) "Equality operator"
-            prefix + renderEqualityOperand syntaxVersion left + " == " + renderEqualityOperand syntaxVersion right
+            prefix + indentContinuationLines depth (renderEqualityOperand syntaxVersion locals left) + " == " + indentContinuationLines depth (renderEqualityOperand syntaxVersion locals right)
         | FlowExpression.Container(kind, typeArguments, payload, _) ->
-            prefix + renderContainer syntaxVersion kind typeArguments payload
+            prefix + indentContinuationLines depth (renderContainer syntaxVersion locals kind typeArguments payload)
         | FlowExpression.If(condition, thenBranch, elseBranch, _) ->
             let lines = ResizeArray<string>()
-            lines.Add(prefix + "if " + renderInlineExpression syntaxVersion condition + " {")
-            renderStatements syntaxVersion (depth + 1) thenBranch |> List.iter lines.Add
+            lines.Add(prefix + "if " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals condition) + " {")
+            renderStatements syntaxVersion locals (depth + 1) thenBranch |> fst |> List.iter lines.Add
             lines.Add(prefix + "} else {")
-            renderStatements syntaxVersion (depth + 1) elseBranch |> List.iter lines.Add
+            renderStatements syntaxVersion locals (depth + 1) elseBranch |> fst |> List.iter lines.Add
             lines.Add(prefix + "}")
             String.concat "\n" lines
         | FlowExpression.MatchOption(scrutinee, someCase, noneCase, _) ->
-            renderMatchBlock syntaxVersion depth scrutinee
-                (renderMatchCase syntaxVersion (depth + 1) ("some " + someCase.Name) someCase.Statements
-                 @ renderMatchCase syntaxVersion (depth + 1) "none" noneCase.Statements)
+            renderMatchBlock syntaxVersion locals depth scrutinee
+                (renderMatchCase syntaxVersion (depth + 1) ("some " + someCase.Name) (Set.add someCase.Name locals) someCase.Statements
+                 @ renderMatchCase syntaxVersion (depth + 1) "none" locals noneCase.Statements)
         | FlowExpression.MatchResult(scrutinee, okCase, errorCase, _) ->
-            renderMatchBlock syntaxVersion depth scrutinee
-                (renderMatchCase syntaxVersion (depth + 1) ("ok " + okCase.Name) okCase.Statements
-                 @ renderMatchCase syntaxVersion (depth + 1) ("error " + errorCase.Name) errorCase.Statements)
+            renderMatchBlock syntaxVersion locals depth scrutinee
+                (renderMatchCase syntaxVersion (depth + 1) ("ok " + okCase.Name) (Set.add okCase.Name locals) okCase.Statements
+                 @ renderMatchCase syntaxVersion (depth + 1) ("error " + errorCase.Name) (Set.add errorCase.Name locals) errorCase.Statements)
         | FlowExpression.MatchEnum(scrutinee, cases, span) ->
             requireFlow2 syntaxVersion None (Some span) "Enum matching"
-            renderMatchBlock syntaxVersion depth scrutinee
-                (cases |> List.collect (fun caseValue -> renderMatchCase syntaxVersion (depth + 1) caseValue.Name caseValue.Statements))
-    and private renderInlineExpression syntaxVersion expression =
+            renderMatchBlock syntaxVersion locals depth scrutinee
+                (cases |> List.collect (fun caseValue -> renderMatchCase syntaxVersion (depth + 1) caseValue.Name locals caseValue.Statements))
+    and private renderInlineExpression syntaxVersion locals expression =
         match expression with
-        | FlowExpression.Literal(value, _) -> renderLiteral value
+        | FlowExpression.Literal(value, _) -> renderLiteral syntaxVersion value
         | FlowExpression.Local(name, _) -> name
-        | FlowExpression.Container(kind, typeArguments, payload, _) -> renderContainer syntaxVersion kind typeArguments payload
+        | FlowExpression.Container(kind, typeArguments, payload, _) -> renderContainer syntaxVersion locals kind typeArguments payload
         | FlowExpression.Call(name, arguments, _) ->
-            let shownName = renderQualifiedName name
-            shownName + "(" + (arguments |> List.map (renderArgument syntaxVersion) |> String.concat ", ") + ")"
+            let shownName = renderQualifiedName syntaxVersion name
+            let escape = if isShadowedQualifiedName syntaxVersion locals name then "." else ""
+            escape + shownName + "(" + (arguments |> List.map (renderArgument syntaxVersion locals) |> String.concat ", ") + ")"
         | FlowExpression.RootCall(target, arguments, _) ->
-            "::" + target.Name + "(" + (arguments |> List.map (renderArgument syntaxVersion) |> String.concat ", ") + ")"
+            (if syntaxVersion = 2 then "." else "::") + target.Name + "(" + (arguments |> List.map (renderArgument syntaxVersion locals) |> String.concat ", ") + ")"
         | FlowExpression.DotCall(receiver, stage, arguments, _) ->
-            renderPostfixReceiver syntaxVersion receiver + "." + stage + "(" + (arguments |> List.map (renderArgument syntaxVersion) |> String.concat ", ") + ")"
+            renderPostfixReceiver syntaxVersion locals receiver + "." + stage + "(" + (arguments |> List.map (renderArgument syntaxVersion locals) |> String.concat ", ") + ")"
         | FlowExpression.Property(receiver, field, span) ->
             requireFlow2 syntaxVersion None (Some span) "Record property access"
-            renderPostfixReceiver syntaxVersion receiver + "." + field
+            renderPostfixReceiver syntaxVersion locals receiver + "." + field
         | FlowExpression.Equality(left, right, span) ->
             requireFlow2 syntaxVersion None (Some span) "Equality operator"
-            renderEqualityOperand syntaxVersion left + " == " + renderEqualityOperand syntaxVersion right
-        | FlowExpression.If _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ | FlowExpression.MatchEnum _ -> renderExpressionAt syntaxVersion 0 expression
-    and private renderEqualityOperand syntaxVersion expression =
+            renderEqualityOperand syntaxVersion locals left + " == " + renderEqualityOperand syntaxVersion locals right
+        | FlowExpression.If _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ | FlowExpression.MatchEnum _ -> renderExpressionAt syntaxVersion locals 0 expression
+    and private renderEqualityOperand syntaxVersion locals expression =
         match expression with
-        | FlowExpression.Equality _ -> "(" + renderInlineExpression syntaxVersion expression + ")"
-        | _ -> renderInlineExpression syntaxVersion expression
-    and private renderPostfixReceiver syntaxVersion expression =
+        | FlowExpression.Equality _ -> "(" + renderInlineExpression syntaxVersion locals expression + ")"
+        | _ -> renderInlineExpression syntaxVersion locals expression
+    and private renderPostfixReceiver syntaxVersion locals expression =
         if syntaxVersion = 2 then
             match expression with
             | FlowExpression.Equality _
             | FlowExpression.If _
             | FlowExpression.MatchOption _
             | FlowExpression.MatchResult _
-            | FlowExpression.MatchEnum _ -> "(" + renderInlineExpression syntaxVersion expression + ")"
-            | _ -> renderInlineExpression syntaxVersion expression
-        else renderInlineExpression syntaxVersion expression
-    and private renderArgument syntaxVersion = function
-        | FlowArgument.Positional expression -> renderInlineExpression syntaxVersion expression
-        | FlowArgument.Named(name, expression, _) -> name + " = " + renderInlineExpression syntaxVersion expression
+            | FlowExpression.MatchEnum _ -> "(" + renderInlineExpression syntaxVersion locals expression + ")"
+            | _ -> renderInlineExpression syntaxVersion locals expression
+        else renderInlineExpression syntaxVersion locals expression
+    and private renderArgument syntaxVersion locals = function
+        | FlowArgument.Positional expression -> renderInlineExpression syntaxVersion locals expression
+        | FlowArgument.Named(name, expression, _) -> name + " = " + renderInlineExpression syntaxVersion locals expression
         | FlowArgument.WordReference reference ->
-            let name = renderQualifiedName reference.Name
+            let name = renderQualifiedName syntaxVersion reference.Name
             match reference.Qualification with
             | FlowWordReferenceQualification.ExplicitShort -> "word " + name
             | FlowWordReferenceQualification.NamespaceQualified -> name
-            | FlowWordReferenceQualification.AbsoluteRoot -> "::" + name
-    and private renderStatements syntaxVersion depth statements =
-        statements
-        |> List.mapi (fun index statement ->
-            let suffix = if index < statements.Length - 1 then ";" else ""
-            match statement with
-            | FlowStatement.Let(name, value, _) -> indent depth + "let " + name + " = " + renderInlineExpression syntaxVersion value + suffix
-            | FlowStatement.LetMany(bindings, value, _) ->
-                let names = bindings |> List.map fst |> String.concat ", "
-                indent depth + "let (" + names + ") = " + renderInlineExpression syntaxVersion value + suffix
-            | FlowStatement.Evaluate value -> renderExpressionAt syntaxVersion depth value + suffix
-            | FlowStatement.Return(values, _) ->
-                indent depth + "return (" + (values |> List.map (renderInlineExpression syntaxVersion) |> String.concat ", ") + ")" + suffix)
+            | FlowWordReferenceQualification.AbsoluteRoot -> (if syntaxVersion = 2 then "." else "::") + name
+    and private renderStatements syntaxVersion initialLocals depth statements =
+        let mutable locals = initialLocals
+        let lines =
+            statements
+            |> List.mapi (fun index statement ->
+                let rendered =
+                    match statement with
+                    | FlowStatement.Let(name, value, _) ->
+                        indent depth + "let " + name + " = " + indentContinuationLines (if syntaxVersion = 2 then depth else 0) (renderInlineExpression syntaxVersion locals value)
+                    | FlowStatement.LetMany(bindings, value, _) ->
+                        let names = bindings |> List.map fst |> String.concat ", "
+                        indent depth + "let (" + names + ") = " + indentContinuationLines (if syntaxVersion = 2 then depth else 0) (renderInlineExpression syntaxVersion locals value)
+                    | FlowStatement.Evaluate value -> renderExpressionAt syntaxVersion locals depth value
+                    | FlowStatement.Return(values, _) ->
+                        let renderedValues =
+                            values
+                            |> List.map (renderInlineExpression syntaxVersion locals >> indentContinuationLines (if syntaxVersion = 2 then depth else 0))
+                            |> String.concat ", "
+                        indent depth + "return (" + renderedValues + ")"
+                match statement with
+                | FlowStatement.Let(name, _, _) -> locals <- Set.add name locals
+                | FlowStatement.LetMany(bindings, _, _) -> locals <- Set.union (bindings |> List.map fst |> Set.ofList) locals
+                | _ -> ()
+                let suffix = if syntaxVersion = 1 && index < statements.Length - 1 then ";" else ""
+                rendered + suffix)
+        lines, locals
 
-    and private renderContainer syntaxVersion kind typeArguments payload =
+    and private renderContainer syntaxVersion locals kind typeArguments payload =
+        let separator = if syntaxVersion = 2 then "." else "::"
         let name =
             match kind with
-            | FlowContainerConstructor.ListEmpty -> "list::empty"
-            | FlowContainerConstructor.ListSingleton -> "list::singleton"
-            | FlowContainerConstructor.OptionNone -> "option::none"
-            | FlowContainerConstructor.OptionSome -> "option::some"
-            | FlowContainerConstructor.ResultOk -> "result::ok"
-            | FlowContainerConstructor.ResultError -> "result::error"
+            | FlowContainerConstructor.ListEmpty -> "list" + separator + "empty"
+            | FlowContainerConstructor.ListSingleton -> "list" + separator + "singleton"
+            | FlowContainerConstructor.OptionNone -> "option" + separator + "none"
+            | FlowContainerConstructor.OptionSome -> "option" + separator + "some"
+            | FlowContainerConstructor.ResultOk -> "result" + separator + "ok"
+            | FlowContainerConstructor.ResultError -> "result" + separator + "error"
         let genericArguments = typeArguments |> List.map (fun argument -> Types.format argument.Type) |> String.concat ", "
-        let argument = payload |> Option.map (renderInlineExpression syntaxVersion) |> Option.defaultValue ""
+        let argument = payload |> Option.map (renderInlineExpression syntaxVersion locals) |> Option.defaultValue ""
         name + "<" + genericArguments + ">(" + argument + ")"
 
-    and private renderMatchBlock syntaxVersion depth scrutinee lines =
+    and private renderMatchBlock syntaxVersion locals depth scrutinee lines =
         let prefix = indent depth
-        prefix + "match " + renderInlineExpression syntaxVersion scrutinee + " {\n" + String.concat "\n" lines + "\n" + prefix + "}"
+        prefix + "match " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals scrutinee) + " {\n" + String.concat "\n" lines + "\n" + prefix + "}"
 
-    and private renderMatchCase syntaxVersion depth header statements =
-        [ indent depth + header + " => {" ]
-        @ renderStatements syntaxVersion (depth + 1) statements
-        @ [ indent depth + "}" ]
+    and private safeBareArmArgument = function
+        | FlowArgument.Positional expression | FlowArgument.Named(_, expression, _) -> safeBareArmExpression expression
+        | FlowArgument.WordReference _ -> true
+
+    and private safeBareArmExpression expression =
+        match expression with
+        | FlowExpression.Literal _ | FlowExpression.Local _ | FlowExpression.RootCall _ -> true
+        | FlowExpression.Call(_, arguments, _) -> List.forall safeBareArmArgument arguments
+        | FlowExpression.DotCall(receiver, _, arguments, _) -> safeBareArmExpression receiver && List.forall safeBareArmArgument arguments
+        | FlowExpression.Property(receiver, _, _) -> safeBareArmExpression receiver
+        | FlowExpression.Equality(left, right, _) -> safeBareArmExpression left && safeBareArmExpression right
+        | FlowExpression.Container(_, _, payload, _) -> payload |> Option.forall safeBareArmExpression
+        | FlowExpression.If _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ | FlowExpression.MatchEnum _ -> false
+
+    and private renderMatchCase syntaxVersion depth header caseLocals statements =
+        match statements with
+        | [ FlowStatement.Evaluate expression ] when syntaxVersion = 2 && safeBareArmExpression expression ->
+            [ indent depth + header + " => " + renderInlineExpression syntaxVersion caseLocals expression ]
+        | _ ->
+            [ indent depth + header + " => {" ]
+            @ (renderStatements syntaxVersion caseLocals (depth + 1) statements |> fst)
+            @ [ indent depth + "}" ]
 
     let renderExpression expression =
         FlowStructure.validateExpressionNesting [ expression ]
         requireSupportedVersion 1 None None
-        renderExpressionAt 1 0 expression
+        renderExpressionAt 1 Set.empty 0 expression
 
     let renderExpressionWithVersion syntaxVersion expression =
         FlowStructure.validateExpressionNestingWithVersion syntaxVersion [ expression ]
         requireSupportedVersion syntaxVersion None None
-        renderExpressionAt syntaxVersion 0 expression
+        renderExpressionAt syntaxVersion Set.empty 0 expression
 
     let renderWord (definition: FlowWordDefinition) =
         FlowStructure.validateWordNesting definition
@@ -626,14 +678,15 @@ module FlowSource =
         if not (System.String.IsNullOrEmpty definition.Documentation) then metadata.Add("    doc " + JsonSerializer.Serialize(definition.Documentation))
         metadata |> Seq.iter lines.Add
         if definition.SyntaxVersion = 2 && metadata.Count > 0 then lines.Add("")
-        renderStatements definition.SyntaxVersion 1 definition.Body |> List.iter lines.Add
+        let parameterLocals = definition.Parameters |> List.map (fun parameter -> parameter.Name) |> Set.ofList
+        renderStatements definition.SyntaxVersion parameterLocals 1 definition.Body |> fst |> List.iter lines.Add
         lines.Add("}")
         String.concat "\n" lines
 
-    let private renderExpectation syntaxVersion = function
-        | FlowTestExpectation.Literal(literal, _) -> renderLiteral literal
+    let private renderExpectation syntaxVersion locals = function
+        | FlowTestExpectation.Literal(literal, _) -> renderLiteral syntaxVersion literal
         | FlowTestExpectation.RuntimeError(code, _) -> "error " + code
-        | FlowTestExpectation.Expression expression -> "value " + renderInlineExpression syntaxVersion expression
+        | FlowTestExpectation.Expression expression -> "value " + renderInlineExpression syntaxVersion locals expression
 
     let renderTest (definition: FlowTestDefinition) =
         FlowStructure.validateTestNesting definition
@@ -644,18 +697,16 @@ module FlowSource =
         | _ -> ()
         let lines = ResizeArray<string>()
         lines.Add($"test {definition.Word}/{definition.CaseName} {{")
-        renderStatements definition.SyntaxVersion 1 definition.Body |> List.iter lines.Add
-        let suffix =
-            definition.EffectAssertion
-            |> Option.map (fun assertion ->
-                let counts =
-                    assertion.Counts
-                    |> Map.toList
-                    |> List.map (fun (name, count) -> $"{name}: {count};")
-                    |> String.concat " "
-                " effects {" + (if counts = "" then "" else " " + counts + " ") + "}")
-            |> Option.defaultValue ""
-        lines.Add("    => " + renderExpectation definition.SyntaxVersion definition.Expected + suffix)
+        let bodyLines, bodyLocals = renderStatements definition.SyntaxVersion Set.empty 1 definition.Body
+        bodyLines |> List.iter lines.Add
+        lines.Add("    => " + renderExpectation definition.SyntaxVersion bodyLocals definition.Expected)
+        definition.EffectAssertion
+        |> Option.iter (fun assertion ->
+            lines.Add("    effects {")
+            assertion.Counts
+            |> Map.toList
+            |> List.iter (fun (name, count) -> lines.Add($"        {name}: {count}"))
+            lines.Add("    }"))
         lines.Add("}")
         String.concat "\n" lines
 
@@ -664,8 +715,8 @@ module FlowSource =
         requireSupportedVersion definition.SyntaxVersion (Some definition.Word) (Some definition.Span)
         let lines = ResizeArray<string>()
         lines.Add($"example {definition.Word}/{definition.CaseName} {{")
-        renderStatements definition.SyntaxVersion 1 definition.Body |> List.iter lines.Add
-        lines.Add("    => " + renderLiteral definition.Expected)
+        renderStatements definition.SyntaxVersion Set.empty 1 definition.Body |> fst |> List.iter lines.Add
+        lines.Add("    => " + renderLiteral definition.SyntaxVersion definition.Expected)
         lines.Add("}")
         String.concat "\n" lines
 
@@ -707,7 +758,8 @@ module FlowSource =
     let private validateClosedType name span typeValue =
         validateTypeShape name span true typeValue
 
-    let renderRecord (definition: RecordDefinition) =
+    let renderRecordWithVersion syntaxVersion (definition: RecordDefinition) =
+        requireSupportedVersion syntaxVersion (Some definition.Name) (Some definition.Span)
         if not (validTypeName definition.Name) then
             Diagnostics.raiseError "FLOW_TYPE_NAME_INVALID" "Record names must be identifiers and cannot shadow built-in types or reserved type variables." (Some definition.Name) (Some definition.Span) [ "non-reserved type identifier" ] [ definition.Name ]
         if List.isEmpty definition.Fields then
@@ -719,9 +771,10 @@ module FlowSource =
             if not (seen.Add field.Name) then
                 Diagnostics.raiseError "FLOW_RECORD_DUPLICATE_FIELD" $"Record field '{field.Name}' is repeated." (Some definition.Name) (Some definition.Span) [] [ field.Name ]
             validateClosedType definition.Name definition.Span field.Type
+        let semicolon = if syntaxVersion = 1 then ";" else ""
         let fields =
             definition.Fields
-            |> List.map (fun field -> "    field " + field.Name + ": " + Types.format field.Type + ";")
+            |> List.map (fun field -> "    field " + field.Name + ": " + Types.format field.Type + semicolon)
         let validatorLine =
             match definition.Validator with
             | None -> []
@@ -732,12 +785,18 @@ module FlowSource =
                     && (System.Char.IsLetter segment[0] || segment[0] = '_')
                     && (segment |> Seq.skip 1 |> Seq.forall (fun value -> System.Char.IsLetterOrDigit value || value = '_' || value = '-' || value = '?' || value = '!'))
                 if segments.Length = 0 || (segments |> Array.exists (validSegment >> not)) then
-                    Diagnostics.raiseError "FLOW_RECORD_VALIDATOR_REFERENCE" "A record validator must name one exact dictionary word using a root or namespace-qualified reference." (Some definition.Name) (Some definition.Span) [ "::word"; "namespace::word" ] [ name ]
-                let qualified = if segments.Length = 1 then "::" + segments[0] else String.concat "::" segments
-                [ "    validate " + qualified + ";" ]
+                    let expected = if syntaxVersion = 2 then [ ".word"; "namespace.word" ] else [ "::word"; "namespace::word" ]
+                    Diagnostics.raiseError "FLOW_RECORD_VALIDATOR_REFERENCE" "A record validator must name one exact dictionary word using a root or namespace-qualified reference." (Some definition.Name) (Some definition.Span) expected [ name ]
+                let qualified =
+                    if segments.Length = 1 then (if syntaxVersion = 2 then "." else "::") + segments[0]
+                    else String.concat (if syntaxVersion = 2 then "." else "::") segments
+                [ "    validate " + qualified + semicolon ]
         String.concat "\n" ([ "record " + definition.Name + " {" ] @ fields @ validatorLine @ [ "}" ])
 
-    let renderScalar (definition: ScalarTypeDefinition) =
+    let renderRecord definition = renderRecordWithVersion 1 definition
+
+    let renderScalarWithVersion syntaxVersion (definition: ScalarTypeDefinition) =
+        requireSupportedVersion syntaxVersion (Some definition.Name) (Some definition.Span)
         if not (validTypeName definition.Name) then
             Diagnostics.raiseError "FLOW_TYPE_NAME_INVALID" "Scalar type names must be identifiers and cannot shadow built-in types or reserved type variables." (Some definition.Name) (Some definition.Span) [ "non-reserved type identifier" ] [ definition.Name ]
         // Scalar diagnostics format unsupported host-built types below. Bound
@@ -760,14 +819,20 @@ module FlowSource =
                     && (System.Char.IsLetter segment[0] || segment[0] = '_')
                     && (segment |> Seq.skip 1 |> Seq.forall (fun value -> System.Char.IsLetterOrDigit value || value = '_' || value = '-' || value = '?' || value = '!'))
                 if segments.Length = 0 || (segments |> Array.exists (validSegment >> not)) then
-                    Diagnostics.raiseError "FLOW_SCALAR_VALIDATOR_REFERENCE" "A scalar validator must name one exact dictionary word using a root or namespace-qualified reference." (Some definition.Name) (Some definition.Span) [ "::word"; "namespace::word" ] [ name ]
+                    let expected = if syntaxVersion = 2 then [ ".word"; "namespace.word" ] else [ "::word"; "namespace::word" ]
+                    Diagnostics.raiseError "FLOW_SCALAR_VALIDATOR_REFERENCE" "A scalar validator must name one exact dictionary word using a root or namespace-qualified reference." (Some definition.Name) (Some definition.Span) expected [ name ]
                 let qualified =
-                    if segments.Length = 1 then "::" + segments[0]
-                    else String.concat "::" segments
-                [ "    validate " + qualified + ";" ]
+                    if segments.Length = 1 then (if syntaxVersion = 2 then "." else "::") + segments[0]
+                    else String.concat (if syntaxVersion = 2 then "." else "::") segments
+                let semicolon = if syntaxVersion = 1 then ";" else ""
+                [ "    validate " + qualified + semicolon ]
         String.concat "\n" ([ "type " + definition.Name + " : " + Types.format definition.BaseType + " {" ] @ validatorLine @ [ "}" ])
 
-    let renderEnum (definition: EnumDefinition) =
+    let renderScalar definition = renderScalarWithVersion 1 definition
+
+    let renderEnumWithVersion syntaxVersion (definition: EnumDefinition) =
+        requireSupportedVersion syntaxVersion (Some definition.Name) (Some definition.Span)
+        requireFlow2 syntaxVersion (Some definition.Name) (Some definition.Span) "Enum declarations"
         if not (validTypeName definition.Name) then
             Diagnostics.raiseError "FLOW_TYPE_NAME_INVALID" "Enum names must be identifiers and cannot shadow built-in types or reserved type variables." (Some definition.Name) (Some definition.Span) [ "non-reserved type identifier" ] [ definition.Name ]
         if List.isEmpty definition.Cases then
@@ -783,7 +848,9 @@ module FlowSource =
                     Diagnostics.raiseError "FLOW_ENUM_DUPLICATE_CASE" $"Enum case '{caseName}' is repeated." (Some definition.Name) (Some definition.Span) [] [ caseName ]
             else
                 Diagnostics.raiseError "FLOW_ENUM_CASE_NAME_INVALID" "Enum cases must use non-reserved identifiers." (Some definition.Name) (Some definition.Span) [ "case-name" ] [ caseName ]
-        String.concat "\n" ([ "enum " + definition.Name + " {" ] @ (definition.Cases |> List.map (fun caseName -> "    case " + caseName + ";")) @ [ "}" ])
+        String.concat "\n" ([ "enum " + definition.Name + " {" ] @ (definition.Cases |> List.map (fun caseName -> "    case " + caseName)) @ [ "}" ])
+
+    let renderEnum definition = renderEnumWithVersion 2 definition
 
     let renderDocument (document: FlowProjectDocument) =
         requireSupportedVersion document.SyntaxVersion None None
@@ -808,9 +875,9 @@ module FlowSource =
         match duplicateType with
         | Some(name, _) -> Diagnostics.raiseError "FLOW_PROJECT_DUPLICATE_TYPE" $"Type name '{name}' is declared more than once in the Flow project." (Some name) None [] [ name ]
         | None -> ()
-        [ yield! document.Records |> List.map renderRecord
-          yield! document.Scalars |> List.map renderScalar
-          yield! document.Enums |> List.map renderEnum
+        [ yield! document.Records |> List.map (renderRecordWithVersion document.SyntaxVersion)
+          yield! document.Scalars |> List.map (renderScalarWithVersion document.SyntaxVersion)
+          yield! document.Enums |> List.map (renderEnumWithVersion document.SyntaxVersion)
           yield! document.Words |> List.map renderWord
           yield! document.Tests |> List.map renderTest
           yield! document.Examples |> List.map renderExample ]

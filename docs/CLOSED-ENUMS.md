@@ -1,67 +1,73 @@
 # Closed enums in Flow/2
 
-Closed enums describe a finite set of nominal alternatives. They are suitable
-for internal domain states whose possibilities are known at definition time.
-This first slice supports cases without payloads:
+Closed enums represent a finite set of nominal alternatives. This slice
+supports cases without payloads:
 
 ```flow
 enum RenewalState {
-    case pending;
-    case renewed;
-    case cancelled;
+    case pending
+    case renewed
+    case cancelled
 }
 
 fn renewal.label(state: RenewalState) -> String {
-    doc "Returns the display label for a renewal state."
-
     match state {
-        pending => { "Pending" }
-        renewed => { "Renewed" }
-        cancelled => { "Cancelled" }
+        pending => "Pending"
+        renewed => {
+            let label = "Renewed"
+            label
+        }
+        cancelled => "Cancelled"
     }
+}
+
+test renewal.label/pending {
+    renewal.label(RenewalState.pending())
+    => "Pending"
+}
+
+test renewal.label/renewed {
+    renewal.label(RenewalState.renewed())
+    => "Renewed"
+}
+
+test renewal.label/cancelled {
+    renewal.label(RenewalState.cancelled())
+    => "Cancelled"
 }
 ```
 
-Create a value with `RenewalState::pending()`. Cases of different enum types
-remain different types even when they share a label. Equality compares values
-of the same nominal type. There is no implicit conversion from a String.
-External strings need an explicit decoder with an invalid-value result.
+Construct cases with `RenewalState.pending()`. Cases with the same label in
+different enum types remain distinct, and equality does not convert strings or
+other nominal types. A match must name each case exactly once. One-expression
+arms can be written directly after `=>`; an arm with multiple statements keeps
+a braced block. Missing, unknown, and duplicate cases fail before execution.
 
-Every match must name each declared case exactly once. Missing, unknown and
-duplicate cases are rejected before execution. All arms must produce compatible
-output vectors, and their effects contribute to the function's checked effects.
-Every function containing an enum match receives these compiler checks.
+An enum must contain at least one case, and its labels must be unique. The
+reserved labels `some`, `none`, `ok`, and `error` belong to Option and Result
+matches. Payload cases, wildcard arms, and case-set migration are not
+supported. Committed type definitions remain immutable. Flow/1 does not accept
+enum declarations or enum-specific call bindings.
 
-The case set must be nonempty and labels unique. This slice reserves `some`,
-`none`, `ok` and `error` for the existing Option/Result match forms. There are no
-payload cases, wildcard arms or case-set migration operations. Committed type
-definitions remain immutable.
-
-The authoritative IR retains enum identity, ordered case tables, construction
-and exhaustive matching. Its verifier checks these independently of parsing.
-Interpreter coverage records the actual named match outcomes. Durable Flow/2
-source and call bindings retain constructors and calls nested inside match arms.
-Flow/1 does not accept the new declarations or enum-specific binding paths.
-
-Library qualification now checks each direct enum input parameter for every
-declared case and checks supported finite return domains, in addition to the
-function's own instruction and branch coverage. An enum-bearing authored helper
-reached by a library function must itself be independently qualified as a
-library function; a wrapper cannot inherit that evidence. Unprovable or
-oversized finite domains fail closed with `LIBRARY_FINITE_DOMAIN_UNSUPPORTED`,
+Enum identity and ordered case tables are retained in the verified IR. Match
+effects contribute to the function's checked effects, and interpreter
+coverage records the case actually reached. Library qualification checks each
+direct enum parameter position for every declared case and also checks
+supported finite return domains. Enum-bearing authored helpers must be
+independently qualified; a wrapper cannot inherit their evidence. Unsupported
+or oversized domains fail closed with `LIBRARY_FINITE_DOMAIN_UNSUPPORTED`,
 and missing cases fail with `LIBRARY_FINITE_COVERAGE_INCOMPLETE`. See the
-[finite coverage contract](FINITE-COVERAGE.md). All 37 local validation checks pass; passing every match arm alone does not establish the complete
-library contract.
+[finite coverage contract](FINITE-COVERAGE.md).
 
-The selected owning-stack LLVM backend supports payload-free enums as inline
-eight-byte ordinals with nominal type identity and layout ABI 2 case counts.
-Construction, exhaustive matching, equality and enum-bearing records pass
+The owning-stack LLVM backend supports payload-free enums as inline eight-byte
+ordinals with nominal type identity and layout ABI 2 case counts. Construction,
+exhaustive matching, equality, and enum-bearing records pass
 interpreter/native O0/O2 conformance; malformed external tags and extents are
-rejected. See [report 153](../reports/153-owning-native-enums.md) for scope and
-validation evidence. The older graph-backed `LlvmAot` backend still rejects
-enum operations with `IR_LLVM_ENUM_UNSUPPORTED`. Neither interpreter support
-nor semantic conformance establishes a performance advantage.
+rejected. The older graph-backed `LlvmAot` backend still rejects enum
+operations with `IR_LLVM_ENUM_UNSUPPORTED`. Neither interpreter support nor
+semantic conformance establishes a performance advantage. See
+[report 153](../reports/153-owning-native-enums.md) for backend scope.
 
 The [persistence regression fixture](../examples/closed-renewal-state.agent)
-includes identity calls in its scrutinee and arms to exercise durable call paths,
-plus attached tests for every label outcome.
+retains identity calls in its scrutinee and arms, plus attached cases for every
+label outcome.

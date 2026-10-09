@@ -1,0 +1,7 @@
+{
+  "archive": "evidence.zip",
+  "entries": 201,
+  "bytes": 2104641,
+  "sha256": "8e4c5ac21f0b61426b2728f1f8021eb3c39d64ea2c1b87defd2c8522890ed530",
+  "note": "Contains failed attempts, aborted first gate, passing final gate, review and plan, example roundtrips, library I/O qualification controls, source hashes and implementation diff. Temporary test directories and binaries omitted. Validation ran on a dirty working tree based on c131d11203282704a896e44bf4ea8abeb8cfb631."
+}

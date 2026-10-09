@@ -2454,7 +2454,8 @@ end
             |> expectOk "context for generated scalar constructor"
         let emailConstructorWord = (emailConstructorContext["data"]["words"]).AsArray() |> Seq.exactlyOne
         equal "Email.new" (emailConstructorWord["name"].GetValue<string>()) "generated context retains constructor dictionary name"
-        equal "Email::new" (emailConstructorWord["flowReference"].GetValue<string>()) "generated context exposes exact constructor call target"
+        equal ".Email.new" (emailConstructorWord["flowReference"].GetValue<string>()) "generated context exposes exact Flow/2 constructor call target"
+        equal 2 (emailConstructorWord["flowReferenceSyntaxVersion"].GetValue<int>()) "generated context reports the call reference syntax version"
         let filterReference =
             contextWords
             |> Seq.find (fun item -> item["name"].GetValue<string>() = "email.filter")
@@ -2463,7 +2464,8 @@ end
         let composedFlow =
             dispatch runtime "eval"
                 [ "frontend", jsonString "flow"
-                  "code", jsonString $"{filterReference}(list::singleton<Email>({constructorReference}(\"context@example.com\")))" ]
+                  "syntaxVersion", JsonValue.Create(2) :> JsonNode
+                  "code", jsonString $"{filterReference}(list.singleton<Email>({constructorReference}(\"context@example.com\")))" ]
             |> expectOk "compose a typed Flow call from compact context references"
         equal "List<Email>" (stackType composedFlow 0) "context references compose with the declared nominal type"
         let allWords = dispatch runtime "words" [] |> expectOk "inspect whole dictionary for comparison" |> fun result -> (result["data"]["words"]).AsArray()

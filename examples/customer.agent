@@ -1,7 +1,7 @@
 # A small typed customer vocabulary for demonstrating the AgentLang workflow.
 record Customer {
-    field kind: String;
-    field balance: Float;
+    field kind: String
+    field balance: Float
 }
 
 fn customer.premium?(customer: Customer) -> Bool {
@@ -13,35 +13,35 @@ fn customer.premium?(customer: Customer) -> Bool {
 fn customer.discounted-balance(customer: Customer) -> Float {
     doc "Apply a 10% discount to premium customers."
 
-    let balance = customer.balance;
+    let balance = customer.balance
     if customer.premium?() {
-        float::multiply(balance, 0.9)
+        float.multiply(balance, 0.9)
     } else {
         balance
     }
 }
 
 test customer.premium?/premium {
-    customer::premium?(customer::new(kind = "premium", balance = 100.0))
+    customer.premium?(customer.new(kind = "premium", balance = 100.0))
     => true
 }
 
 test customer.premium?/regular {
-    customer::premium?(customer::new(kind = "regular", balance = 100.0))
+    customer.premium?(customer.new(kind = "regular", balance = 100.0))
     => false
 }
 
 test customer.discounted-balance/premium {
-    customer::discounted-balance(customer::new(kind = "premium", balance = 100.0))
+    customer.discounted-balance(customer.new(kind = "premium", balance = 100.0))
     => 90.0
 }
 
 test customer.discounted-balance/regular {
-    customer::discounted-balance(customer::new(kind = "regular", balance = 100.0))
+    customer.discounted-balance(customer.new(kind = "regular", balance = 100.0))
     => 100.0
 }
 
 example customer.discounted-balance/premium {
-    customer::discounted-balance(customer::new(kind = "premium", balance = 100.0))
+    customer.discounted-balance(customer.new(kind = "premium", balance = 100.0))
     => 90.0
 }

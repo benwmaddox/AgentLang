@@ -20,7 +20,18 @@ audit for the solution build and child verification processes; report this
 limitation. Both options are opt-in, and the evidence records the options and
 exact build arguments. `Verify-NativeDispatch.ps1` accepts the same options.
 
-Current efficacy comparison: [143 — Subscription overlap](143-subscription-overlap-comparison.md)
+Current authoring work: [155 — Dot calls and newline-first source](155-dot-calls-and-newline-syntax.md)
+records the syntax revision, formatter/persistence checks, and a runnable library
+I/O testing demonstration. See that report for current validation status.
+
+Current efficacy checkpoint: [151 — Efficacy checkpoint](151-efficacy-checkpoint.md)
+consolidates the recent composition and maintenance trials; no comparative
+reliability advantage over F# is established.
+[154 — Provider-state assertion probe](154-provider-state-assertion-probe.md)
+records a fresh agent adding virtual-state and effect assertions that reject
+three mutations. It is a bounded language-only result.
+
+Earlier efficacy comparison: [143 — Subscription overlap](143-subscription-overlap-comparison.md)
 scores four fresh submissions: one language submission passes 18/19 cases; the
 other language submission and both F# submissions pass 19/19. All own suites and
 boundary mutation checks pass, exposing a remaining limit of coverage gates.

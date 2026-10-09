@@ -1,62 +1,59 @@
 # This small policy is illustrative and deliberately does not implement the full
 # Internet email standard.
-fn email.valid?(address: String) -> Bool {
-
-    let contains-at = string::contains(address, "@");
-    let contains-dot = string::contains(address, ".");
-    let contains-space = string::contains(address, " ");
-    let starts-with-at = string::starts-with(address, "@");
-    let ends-with-at = string::ends-with(address, "@");
-    let has-required-parts = bool::and(contains-at, contains-dot);
-    let has-no-space = bool::not(contains-space);
-    let has-no-leading-at = bool::not(starts-with-at);
-    let has-no-trailing-at = bool::not(ends-with-at);
-    bool::and(
-        bool::and(
-            bool::and(has-required-parts, has-no-space),
-            has-no-leading-at),
-        has-no-trailing-at)
-}
-
 type Email : String {
-    validate email::valid?;
+    validate email.valid?
 }
 
-type MetersPerSecond : Float { }
+type MetersPerSecond : Float {
+}
 
-type KilometersPerHour : Float { }
+type KilometersPerHour : Float {
+}
+
+fn email.valid?(address: String) -> Bool {
+    let contains-at = string.contains(address, "@")
+    let contains-dot = string.contains(address, ".")
+    let contains-space = string.contains(address, " ")
+    let starts-with-at = string.starts-with(address, "@")
+    let ends-with-at = string.ends-with(address, "@")
+    let has-required-parts = bool.and(contains-at, contains-dot)
+    let has-no-space = bool.not(contains-space)
+    let has-no-leading-at = bool.not(starts-with-at)
+    let has-no-trailing-at = bool.not(ends-with-at)
+    bool.and(bool.and(bool.and(has-required-parts, has-no-space), has-no-leading-at), has-no-trailing-at)
+}
 
 test email.valid?/valid {
-    email::valid?("dev@example.com")
+    email.valid?("dev@example.com")
     => true
 }
 
 test email.valid?/missing-at {
-    email::valid?("dev.example.com")
+    email.valid?("dev.example.com")
     => false
 }
 
 test email.valid?/missing-dot {
-    email::valid?("dev@examplecom")
+    email.valid?("dev@examplecom")
     => false
 }
 
 test email.valid?/spaces {
-    email::valid?("dev @example.com")
+    email.valid?("dev @example.com")
     => false
 }
 
 test email.valid?/leading-at {
-    email::valid?("@dev.example")
+    email.valid?("@dev.example")
     => false
 }
 
 test email.valid?/trailing-at {
-    email::valid?("dev.example@")
+    email.valid?("dev.example@")
     => false
 }
 
 example email.valid?/accepted-shape {
-    email::valid?("dev@example.com")
+    email.valid?("dev@example.com")
     => true
 }

@@ -1,5 +1,8 @@
 # Early migration to explicit data-flow source
 
+This retains the historical frontend migration plan. Current authoring forms
+are documented in [the current syntax guide](CURRENT-SYNTAX.md).
+
 Status: default Flow authoring passed the complete 27-check local Release gate, 2026-10-06 (report 052). Named typed inputs, immutable locals, ordinary/named/dot calls, conditionals, containers, cases, output vectors, typed project documents and durable frontend metadata are implemented. Runtime/protocol, human REPL and one-shot authoring default to Flow; explicit Stack and metadata-selected historical loading remain. Clean committed-source CI is recorded separately. Controlled external-subagent comparisons remain pending.
 
 ## Architecture and target syntax

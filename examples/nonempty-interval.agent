@@ -1,82 +1,76 @@
 record Interval {
-    field start: Int;
-    field finish: Int;
-    validate interval::valid?;
+    field start: Int
+    field finish: Int
+    validate interval.valid?
 }
 
 fn interval.valid?(value: Interval) -> Bool {
     doc "Accept exactly nonempty half-open intervals whose start precedes their finish."
 
-    int::less-than(value.start, value.finish)
+    int.less-than(value.start, value.finish)
 }
 
 fn interval.try-create(start: Int, finish: Int) -> Option<Interval> {
     doc "Return a validated interval when start precedes finish; otherwise return none."
 
-    if int::less-than(start, finish) {
-        option::some<Interval>(interval::new(start = start, finish = finish))
+    if int.less-than(start, finish) {
+        option.some<Interval>(interval.new(start = start, finish = finish))
     } else {
-        option::none<Interval>()
+        option.none<Interval>()
     }
 }
 
 fn interval.overlaps?(left: Interval, right: Interval) -> Bool {
     doc "Whether two nonempty half-open intervals share any points."
 
-    bool::and(
-        int::less-than(left.start, right.finish),
-        int::less-than(right.start, left.finish))
+    bool.and(int.less-than(left.start, right.finish), int.less-than(right.start, left.finish))
 }
 
 test interval.valid?/valid {
-    interval::valid?(interval::new(start = 1, finish = 2))
+    interval.valid?(interval.new(start = 1, finish = 2))
     => true
 }
 
 test interval.valid?/empty-rejected {
-    interval::new(start = 2, finish = 2)
+    interval.new(start = 2, finish = 2)
     => error RECORD_VALIDATION_FAILED
 }
 
 test interval.valid?/reversed-rejected {
-    interval::new(start = 3, finish = 2)
+    interval.new(start = 3, finish = 2)
     => error RECORD_VALIDATION_FAILED
 }
 
 test interval.try-create/returns-some {
-    match interval::try-create(1, 4) {
-        some value => { bool::and(value.start == 1, value.finish == 4) }
-        none => { false }
+    match interval.try-create(1, 4) {
+        some value => bool.and(value.start == 1, value.finish == 4)
+        none => false
     }
     => true
 }
 
 test interval.try-create/empty-is-none {
-    match interval::try-create(2, 2) {
-        some value => { false }
-        none => { true }
+    match interval.try-create(2, 2) {
+        some value => false
+        none => true
     }
     => true
 }
 
 test interval.try-create/reversed-is-none {
-    match interval::try-create(3, 2) {
-        some value => { false }
-        none => { true }
+    match interval.try-create(3, 2) {
+        some value => false
+        none => true
     }
     => true
 }
 
 test interval.overlaps?/overlap {
-    interval::overlaps?(
-        interval::new(start = 1, finish = 5),
-        interval::new(start = 3, finish = 7))
+    interval.overlaps?(interval.new(start = 1, finish = 5), interval.new(start = 3, finish = 7))
     => true
 }
 
 test interval.overlaps?/touching-is-not-overlap {
-    bool::not(interval::overlaps?(
-        interval::new(start = 1, finish = 3),
-        interval::new(start = 3, finish = 5)))
+    bool.not(interval.overlaps?(interval.new(start = 1, finish = 3), interval.new(start = 3, finish = 5)))
     => true
 }

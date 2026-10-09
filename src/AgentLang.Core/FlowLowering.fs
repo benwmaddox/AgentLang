@@ -540,7 +540,7 @@ module FlowLowering =
             | FlowWordReferenceQualification.AbsoluteRoot -> pieces.Length = 1
             | FlowWordReferenceQualification.NamespaceQualified -> pieces.Length >= 2
         if not hasValidSegments || not validQualification then
-            fail "FLOW_CALLBACK_REFERENCE_SHAPE" "Static callback reference qualification does not match its name shape." None (Some reference.Span) [ "namespace::word"; "word shortName"; "::rootName" ] [ reference.Name ]
+            fail "FLOW_CALLBACK_REFERENCE_SHAPE" "Static callback reference qualification does not match its name shape." None (Some reference.Span) [ "namespace.word"; "word shortName"; ".rootName"; "namespace::word"; "::rootName" ] [ reference.Name ]
         rememberSpan state reference.Span
 
     let private callbackCandidates (state: LoweringState) (reference: FlowWordReference) =
@@ -925,7 +925,8 @@ module FlowLowering =
         | [] when receiverType.IsSome -> fail "FLOW_NO_MATCHING_DOT_STAGE" $"No '{requestedName}' stage accepts this receiver and its arguments." None (Some callSpan) (receiverType |> Option.map Types.format |> Option.toList) (candidates |> List.map (fun candidate -> candidate.Name))
         | [] -> fail "FLOW_NO_MATCHING_CALL" $"No overload of '{requestedName}' accepts these arguments." None (Some callSpan) [] (candidates |> List.map (fun candidate -> candidate.Name))
         | _ when receiverType.IsSome -> fail "FLOW_AMBIGUOUS_DOT_STAGE" $"Dot stage '{requestedName}' has more than one applicable first-input word; qualify the call explicitly." None (Some callSpan) [] (successful |> List.map (fun (candidate, _, _) -> candidate.Name))
-        | _ -> fail "FLOW_AMBIGUOUS_CALL" $"Call '{requestedName}' matches more than one word; use namespace::word qualification." None (Some callSpan) [] (successful |> List.map (fun (candidate, _, _) -> candidate.Name))
+        | _ ->
+            fail "FLOW_AMBIGUOUS_CALL" $"Call '{requestedName}' matches more than one word; provide an explicit exact call reference." None (Some callSpan) [] (successful |> List.map (fun (candidate, _, _) -> candidate.Name))
 
     and private selectRootCallOutputs context state environment (target: FlowRootTarget) arguments callSpan =
         let candidate =
