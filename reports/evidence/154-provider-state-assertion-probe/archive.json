@@ -1,0 +1,7 @@
+{
+  "archive": "evidence.zip",
+  "entries": 317,
+  "bytes": 352268,
+  "sha256": "c1fdd9603b34941d6ea1ada594c6b1c37fd52447138f77a261ddf20a4db5b634",
+  "note": "Contains preparation attempts, frozen inputs, protocol trace, submitted project, scoring copies and raw results. Runtime binaries omitted; their manifests and hashes retained. Source runtime commit b413326."
+}

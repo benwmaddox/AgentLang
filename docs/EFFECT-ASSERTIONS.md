@@ -52,3 +52,41 @@ This checks operation counts, not final provider contents, event order, external
 IO, or every possible input. Keep independent state and domain acceptance tests.
 Report 111's scripted extra-write control is the regression case: unchanged
 return values must no longer hide an unwanted write from an opted-in test.
+
+## Checking final virtual-file state
+
+Use ordinary provider reads after the target call to observe known paths. Put
+those reads in the actual test body; the expected value must remain pure.
+
+```flow
+fn configuration.publish(source: String, destination: String) -> Unit {
+    effects fs.read, fs.write
+    doc "Copies source contents to the destination."
+
+    let contents = file::read(source)
+    file::write(destination, contents)
+}
+
+test configuration.publish/known-final-state {
+    file::write("config/source.cfg", "candidate-v2")
+    file::write("config/destination.cfg", "stale")
+    file::write("config/sentinel.cfg", "sentinel-safe")
+    configuration::publish("config/source.cfg", "config/destination.cfg")
+    let sourceAfter = file::read("config/source.cfg")
+    let destinationAfter = file::read("config/destination.cfg")
+    let sentinelAfter = file::read("config/sentinel.cfg")
+    let withDestination = string::concat(sourceAfter, string::concat("|", destinationAfter))
+    string::concat(withDestination, string::concat("|", sentinelAfter))
+    => "candidate-v2|candidate-v2|sentinel-safe" effects { fs.read: 1; fs.write: 1; }
+}
+```
+
+The three setup writes and three observation reads are outside the target, so
+its expected counts remain one read and one write. Incorrect destination
+contents can fail the value assertion even when those counts match. Writing the
+correct contents twice can pass the value assertion while failing the count
+assertion. These complementary controls are recorded in
+[report 154](../reports/154-provider-state-assertion-probe.md).
+
+This observes the named paths, not the entire provider map. It uses each test's
+isolated virtual filesystem; it does not inspect production filesystem state.

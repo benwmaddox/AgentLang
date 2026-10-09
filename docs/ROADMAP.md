@@ -57,6 +57,13 @@ case count. The tests exposed and now cover a short-input scanner status defect.
 This remains separate from choosing actor versus specialized-mailbox semantics;
 Option/Result native payload layouts remain subsequent work.
 
+[Report 154](../reports/154-provider-state-assertion-probe.md) tests an I/O repair
+with a fresh agent. Its submission passes three independent cases; its own added
+known-path state and exact effect-count assertions reject wrong destination,
+wrong contents and redundant writes. This is one guided usability result using
+the existing core, not a comparative reliability or retention result. Keep
+independent behavior checks: the weak starting test also met library coverage.
+
 The interpreter, typed semantic IR, dictionary, task transactions, introspection,
 Flow/1 authoring and existing library coverage gates are implemented. Earlier
 external-agent comparisons observed reuse; they did not establish a general
@@ -579,7 +586,12 @@ help topic in the primer, keeping runtime, seed and oracle fixed. The fresh acto
 used effect assertions; its three relevant tests rejected the restored write and
 blocked library replacement. This establishes bounded usability, not comparative
 reliability or a causal estimate from two actors. Keep help examples version-matched
-in future trials. Explicit provider-state assertions remain pending.
+in future trials. [Report 154](../reports/154-provider-state-assertion-probe.md)
+tests the existing known-path readback mechanism: test bodies can inspect virtual
+files after the target call and compare their contents while separately asserting
+target effect counts. No additional assertion syntax is needed for that case.
+Whole-provider-map equality, event ordering and other provider-state assertion
+surfaces remain separate work; known-path observations do not establish them.
 
 [Report 142](../reports/142-library-dependency-qualification.md) implements the
 all-authored library dependency closure, including collection callbacks. Library
