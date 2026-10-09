@@ -25,6 +25,10 @@ scores four fresh submissions: one language submission passes 18/19 cases; the
 other language submission and both F# submissions pass 19/19. All own suites and
 boundary mutation checks pass, exposing a remaining limit of coverage gates.
 
+Supporting prototype: [144 — Nonempty interval vocabulary](144-nonempty-interval-prototype.md)
+implements the invariant using the current core and compares an equivalent F#
+private-record API. It is coordinator validation, not a new agent-efficacy result.
+
 Latest library-contract checkpoint: [142 — Library dependency qualification](142-library-dependency-qualification.md)
 extends qualification to all authored dependencies. A fresh guided subagent
 preserves the two-function composition and adds effective helper regression

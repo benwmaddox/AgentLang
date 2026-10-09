@@ -113,6 +113,9 @@ Next actions:
    missing empty-interval guard. No language reliability advantage is established.
    A bounded follow-up can compare discovery/reuse of a validated nonempty-period
    abstraction in both environments; do not add mailbox infrastructure as a prerequisite.
+   The existing-core prototype is validated in [report 144](../reports/144-nonempty-interval-prototype.md):
+   both implementations pass a shared 125-case bounded grid. Later-agent adoption
+   and subscription/Instant integration remain untested.
 
 Acceptance is an evidence-backed review of the declared conditions, including
 their limitations. Completing a language feature or passing actor-written tests
