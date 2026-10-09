@@ -70,6 +70,17 @@ wrong contents and redundant writes. This is one guided usability result using
 the existing core, not a comparative reliability or retention result. Keep
 independent behavior checks: the weak starting test also met library coverage.
 
+[Report 156](../reports/156-state-sensitive-io-maintenance.md) completes a fresh
+matched state-sensitive I/O maintenance pair. Both saved implementations pass
+nine independent cases; neither reuses the two-operation publisher helper.
+AgentLang completes library publication and task commit, with full body/branch
+and enum-return coverage. F# participant validation is blocked by NuGet audit
+availability; separate coordinator validation passes. No reliability or reuse
+advantage is established. Before another comparison, pin offline validation and
+address observed enum/test-constructor and UTF-8 transport friction. Keep the
+deferred broad retention study deferred; continue native Option/Result
+conformance as the separate secondary track.
+
 The interpreter, typed semantic IR, dictionary, task transactions, introspection,
 Flow/1 authoring and existing library coverage gates are implemented. Earlier
 external-agent comparisons observed reuse; they did not establish a general

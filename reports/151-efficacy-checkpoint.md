@@ -109,3 +109,17 @@ The [independent synthesis notes](evidence/151-efficacy-checkpoint/review-notes.
 and [final review](evidence/151-efficacy-checkpoint/final-review.md) are preserved.
 The final review's three wording/link corrections are incorporated here; execution
 evidence remains in the individual trial reports and their verified archives.
+
+## Subsequent I/O maintenance evidence
+
+[Report 156](156-state-sensitive-io-maintenance.md) adds a materially different
+state-sensitive I/O task with collateral checks. Both fresh participants pass
+nine independent cases. AgentLang publishes a function meeting all own-body
+library coverage requirements, but neither participant reuses the existing small
+publisher helper. AgentLang uses 37 broker exchanges versus 19 for F#; F#'s two
+validation attempts are environmentally blocked and coordinator validation is
+reported separately. This supports feasibility without changing the checkpoint's
+conclusion: comparative reliability and accumulated-vocabulary benefits remain
+unproven. Fix offline validation and enum/test-constructor discovery friction
+before another comparison; do not expand the deferred retention study merely
+to collect more easy successes.

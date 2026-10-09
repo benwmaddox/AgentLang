@@ -1,0 +1,1080 @@
+{
+  "archive": "evidence.zip",
+  "entries": 268,
+  "bytes": 4118355,
+  "sha256": "f31eb0e9cb1ec78edcc60e0b597a3cae2a7293ac8bce82ce4f65746fec4b3f2c",
+  "files": [
+    {
+      "path": "actors/conventional/AgentLang.IoMaintenance156.Conventional.fsproj",
+      "sha256": "0f62bb110ccdc16c69b570e75a76584f2d78a7f9e0ed0600410cd825815cc314"
+    },
+    {
+      "path": "actors/conventional/Domain.fs",
+      "sha256": "8d201f3182e29ba2601506bb5f0131edccaa5b67f199b68a4a3f0e542f316d64"
+    },
+    {
+      "path": "actors/conventional/Operations.fs",
+      "sha256": "bed060e340a785328fcc8d5dd22ab6536e9a9bb3998639f9536ef77d497b1310"
+    },
+    {
+      "path": "actors/conventional/Program.fs",
+      "sha256": "a498fad04cb28adf0be37d5afcef60b435ed24df791e8ae090d1878039a81cfd"
+    },
+    {
+      "path": "actors/conventional/Publisher.fs",
+      "sha256": "33601718cc2006e354258a0bf9885a485ba80a9631cc2b86cffb654e51db5591"
+    },
+    {
+      "path": "actors/conventional/SelfTests.fs",
+      "sha256": "b157faa56dcac8cd0cbe9e575d4bfbf3094d0a3ae33c92e9e2ded2defcf9ece8"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/CURRENT",
+      "sha256": "dc402a9e93c6cc6a2fbd1781d3f6265552c2e1d1f60518c27e4a2a650f25f51e"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/manifests/3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4.json",
+      "sha256": "3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/manifests/4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76.json",
+      "sha256": "4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617.agent",
+      "sha256": "116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645.agent",
+      "sha256": "1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510.agent",
+      "sha256": "21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5.agent",
+      "sha256": "30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609.agent",
+      "sha256": "30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2.agent",
+      "sha256": "36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9.agent",
+      "sha256": "441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b.agent",
+      "sha256": "5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895.agent",
+      "sha256": "617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245.agent",
+      "sha256": "77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43.agent",
+      "sha256": "82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080.agent",
+      "sha256": "b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32.agent",
+      "sha256": "d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2.agent",
+      "sha256": "e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/objects/eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c.agent",
+      "sha256": "eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c"
+    },
+    {
+      "path": "actors/flow/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "actors/flow/dictionary.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "actors/flow/history/task-0001.json",
+      "sha256": "ac0dc1f896b259fae30c7477501956d376d4eed48e255523664be363b06b0463"
+    },
+    {
+      "path": "audit-traces.py",
+      "sha256": "683246501595f92e20faadb0067457416e632c3af5c387ff3d64bd07c5734f75"
+    },
+    {
+      "path": "dispatch-001/manifest.json",
+      "sha256": "8ffb7535113e8ad13e244aacc05605179137b45e5f957262eebf3a9dc94ec79c"
+    },
+    {
+      "path": "dispatch-001/prompt-conventional.md",
+      "sha256": "524c4b0e27f57543fcdc6dc1bab3bc581b49fdfcbbdf14b817f6718499f486b7"
+    },
+    {
+      "path": "dispatch-001/prompt-flow.md",
+      "sha256": "7b0ddc335c3cc5a37515e23cd156077b4a6838acc0ef7bbf87fb410acebcbac5"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/AgentLang.Conventional.Cli.deps.json",
+      "sha256": "286c223538b469e3a5a6364bebc0d68051682db3c80cd6bb043def2b7b33eace"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/AgentLang.Conventional.Cli.dll",
+      "sha256": "37bae3a9c75dcaccc5f1aa23cd9fd097b6e8d7720401c07b60dd08e511ec3a83"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/AgentLang.Conventional.Cli.exe",
+      "sha256": "6297fb85e7d93ec35ceb1763e1e3fa919d4c9f5f11b92bc549c047a3373e72c5"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/AgentLang.Conventional.Cli.pdb",
+      "sha256": "11b24f24288f2f1325d7ab88922ef52f0ce9069f189448ee4fb75ff59df9710f"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/AgentLang.Conventional.Cli.runtimeconfig.json",
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/AgentLang.Conventional.dll",
+      "sha256": "5ceb17910e71d442b97b78ac436c0e5a97ccc2d9e610ca07b0ec32186090185c"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/AgentLang.Conventional.pdb",
+      "sha256": "c7e61bfb3497769986e7a8f3ed1e94103ad5489a9dde1c17ba3f3e31bf292803"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/AgentLang.Conventional.xml",
+      "sha256": "621b5c7c93c495c1dfc83279858dbb31ecd999f56d5237070bf05c59159b81eb"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/cs/FSharp.Core.resources.dll",
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/de/FSharp.Core.resources.dll",
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/es/FSharp.Core.resources.dll",
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/fr/FSharp.Core.resources.dll",
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/FSharp.Core.dll",
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/it/FSharp.Core.resources.dll",
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/ja/FSharp.Core.resources.dll",
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/ko/FSharp.Core.resources.dll",
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/pl/FSharp.Core.resources.dll",
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/pt-BR/FSharp.Core.resources.dll",
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/ru/FSharp.Core.resources.dll",
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/tr/FSharp.Core.resources.dll",
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/zh-Hans/FSharp.Core.resources.dll",
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "path": "dispatch-001/runtime/conventional/zh-Hant/FSharp.Core.resources.dll",
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/AgentLang.Cli.deps.json",
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/AgentLang.Cli.dll",
+      "sha256": "3901e980b31eb0b37fcc88238e88923983757ece4f9230fcd6db03438c57dd4b"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/AgentLang.Cli.exe",
+      "sha256": "4dae79e2c639790f62c41e5f0bdc48fa86af8197722e18f3004e176318d0a128"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/AgentLang.Cli.pdb",
+      "sha256": "cfb3d9c047724e66bb957cb3593ab8e497c3ed988c7da6e665798b8778332a07"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/AgentLang.Cli.runtimeconfig.json",
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/AgentLang.Core.dll",
+      "sha256": "e2c6bdb441b6cf915b7b37276972e0b1dfe6a6fcc301484f654edf34f96487eb"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/AgentLang.Core.pdb",
+      "sha256": "15a5603a8335dfa6467764666d6c989da9dba29d8edd61c51d0ce1e579154a61"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/AgentLang.Core.xml",
+      "sha256": "6e16a91e3788a33a213cefd8ee882d292ddf045c83f2869f0e0e32d437db8d77"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/cs/FSharp.Core.resources.dll",
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/de/FSharp.Core.resources.dll",
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/es/FSharp.Core.resources.dll",
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/fr/FSharp.Core.resources.dll",
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/FSharp.Core.dll",
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/it/FSharp.Core.resources.dll",
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/ja/FSharp.Core.resources.dll",
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/ko/FSharp.Core.resources.dll",
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/pl/FSharp.Core.resources.dll",
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/pt-BR/FSharp.Core.resources.dll",
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/ru/FSharp.Core.resources.dll",
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/tr/FSharp.Core.resources.dll",
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/zh-Hans/FSharp.Core.resources.dll",
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "path": "dispatch-001/runtime/flow/zh-Hant/FSharp.Core.resources.dll",
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    },
+    {
+      "path": "dispatch-001/seeds/conventional/AgentLang.IoMaintenance156.Conventional.fsproj",
+      "sha256": "0f62bb110ccdc16c69b570e75a76584f2d78a7f9e0ed0600410cd825815cc314"
+    },
+    {
+      "path": "dispatch-001/seeds/conventional/Domain.fs",
+      "sha256": "8d201f3182e29ba2601506bb5f0131edccaa5b67f199b68a4a3f0e542f316d64"
+    },
+    {
+      "path": "dispatch-001/seeds/conventional/Operations.fs",
+      "sha256": "854d2c7cc9d8a3afdd5eb6200fb6e4aa191b0dcaecf9cae7f3c4af2f0428fba6"
+    },
+    {
+      "path": "dispatch-001/seeds/conventional/Program.fs",
+      "sha256": "a498fad04cb28adf0be37d5afcef60b435ed24df791e8ae090d1878039a81cfd"
+    },
+    {
+      "path": "dispatch-001/seeds/conventional/Publisher.fs",
+      "sha256": "33601718cc2006e354258a0bf9885a485ba80a9631cc2b86cffb654e51db5591"
+    },
+    {
+      "path": "dispatch-001/seeds/conventional/SelfTests.fs",
+      "sha256": "db5a1e4766bc70a4cad81de526312738f1560deb34af1cb7756c91769511aac4"
+    },
+    {
+      "path": "dispatch-001/seeds/flow/.agentlang/store/CURRENT",
+      "sha256": "1b73858f9b1ca143d3a8b9a6cc3662cd70a779bd2dba6f4c9f8ebc3a52c6b228"
+    },
+    {
+      "path": "dispatch-001/seeds/flow/.agentlang/store/manifests/4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76.json",
+      "sha256": "4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76"
+    },
+    {
+      "path": "dispatch-001/seeds/flow/.agentlang/store/objects/1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645.agent",
+      "sha256": "1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645"
+    },
+    {
+      "path": "dispatch-001/seeds/flow/.agentlang/store/objects/30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5.agent",
+      "sha256": "30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5"
+    },
+    {
+      "path": "dispatch-001/seeds/flow/.agentlang/store/objects/30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609.agent",
+      "sha256": "30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609"
+    },
+    {
+      "path": "dispatch-001/seeds/flow/.agentlang/store/objects/36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2.agent",
+      "sha256": "36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2"
+    },
+    {
+      "path": "dispatch-001/seeds/flow/.agentlang/store/objects/82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43.agent",
+      "sha256": "82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43"
+    },
+    {
+      "path": "dispatch-001/seeds/flow/.agentlang/store/objects/b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080.agent",
+      "sha256": "b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080"
+    },
+    {
+      "path": "dispatch-001/seeds/flow/.agentlang/store/objects/bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "dispatch-001/seeds/flow/.agentlang/store/objects/eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c.agent",
+      "sha256": "eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c"
+    },
+    {
+      "path": "dispatch-001/seeds/flow/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dispatch-001/seeds/flow/dictionary.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "dispatch-001/trace-conventional.jsonl",
+      "sha256": "c67ebd38b9495da99b75e94622e468a9502a927638388f091c55f95e8d5e8fc1"
+    },
+    {
+      "path": "dispatch-001/trace-flow.jsonl",
+      "sha256": "eecb63538a2685a0e6bd2ecc1c1a516cdf9123f707281f293e37b3f0496955a0"
+    },
+    {
+      "path": "final-verification.json",
+      "sha256": "9a9b4a22f52c1df710cb33ee9891c6bf966e363c80d61919a2494083dc34d3e2"
+    },
+    {
+      "path": "flow-oracle/controls/mutant-conflict-write.agent",
+      "sha256": "3da2d6079abe72820583c5ab4e0763508291e8e889a1cddd5ec693ddc4a9c881"
+    },
+    {
+      "path": "flow-oracle/controls/mutant-unchanged-write.agent",
+      "sha256": "f25833772e58820adc43f46680d9cac404c6641dc70f5d6e7d888bd98050bd28"
+    },
+    {
+      "path": "flow-oracle/controls/mutant-wrong-outcome.agent",
+      "sha256": "5e4db4a229ca981781f5ee571f4ddd6718568d88b6083cacfb6c5819bfcd15ee"
+    },
+    {
+      "path": "flow-oracle/controls/positive.agent",
+      "sha256": "31eff1910aaf07994ff223bc9168a398b065cf8b38722cad3078d34ba7978b5d"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-conflict-write/.agentlang/store/CURRENT",
+      "sha256": "1b73858f9b1ca143d3a8b9a6cc3662cd70a779bd2dba6f4c9f8ebc3a52c6b228"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-conflict-write/.agentlang/store/manifests/4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76.json",
+      "sha256": "4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-conflict-write/.agentlang/store/objects/1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645.agent",
+      "sha256": "1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-conflict-write/.agentlang/store/objects/30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5.agent",
+      "sha256": "30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-conflict-write/.agentlang/store/objects/30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609.agent",
+      "sha256": "30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-conflict-write/.agentlang/store/objects/36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2.agent",
+      "sha256": "36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-conflict-write/.agentlang/store/objects/82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43.agent",
+      "sha256": "82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-conflict-write/.agentlang/store/objects/b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080.agent",
+      "sha256": "b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-conflict-write/.agentlang/store/objects/bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-conflict-write/.agentlang/store/objects/eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c.agent",
+      "sha256": "eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-conflict-write/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-conflict-write/control.agent",
+      "sha256": "3da2d6079abe72820583c5ab4e0763508291e8e889a1cddd5ec693ddc4a9c881"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-conflict-write/dictionary.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-unchanged-write/.agentlang/store/CURRENT",
+      "sha256": "1b73858f9b1ca143d3a8b9a6cc3662cd70a779bd2dba6f4c9f8ebc3a52c6b228"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-unchanged-write/.agentlang/store/manifests/4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76.json",
+      "sha256": "4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-unchanged-write/.agentlang/store/objects/1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645.agent",
+      "sha256": "1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-unchanged-write/.agentlang/store/objects/30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5.agent",
+      "sha256": "30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-unchanged-write/.agentlang/store/objects/30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609.agent",
+      "sha256": "30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-unchanged-write/.agentlang/store/objects/36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2.agent",
+      "sha256": "36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-unchanged-write/.agentlang/store/objects/82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43.agent",
+      "sha256": "82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-unchanged-write/.agentlang/store/objects/b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080.agent",
+      "sha256": "b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-unchanged-write/.agentlang/store/objects/bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-unchanged-write/.agentlang/store/objects/eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c.agent",
+      "sha256": "eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-unchanged-write/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-unchanged-write/control.agent",
+      "sha256": "f25833772e58820adc43f46680d9cac404c6641dc70f5d6e7d888bd98050bd28"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-unchanged-write/dictionary.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-wrong-outcome/.agentlang/store/CURRENT",
+      "sha256": "1b73858f9b1ca143d3a8b9a6cc3662cd70a779bd2dba6f4c9f8ebc3a52c6b228"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-wrong-outcome/.agentlang/store/manifests/4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76.json",
+      "sha256": "4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-wrong-outcome/.agentlang/store/objects/1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645.agent",
+      "sha256": "1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-wrong-outcome/.agentlang/store/objects/30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5.agent",
+      "sha256": "30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-wrong-outcome/.agentlang/store/objects/30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609.agent",
+      "sha256": "30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-wrong-outcome/.agentlang/store/objects/36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2.agent",
+      "sha256": "36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-wrong-outcome/.agentlang/store/objects/82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43.agent",
+      "sha256": "82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-wrong-outcome/.agentlang/store/objects/b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080.agent",
+      "sha256": "b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-wrong-outcome/.agentlang/store/objects/bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-wrong-outcome/.agentlang/store/objects/eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c.agent",
+      "sha256": "eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-wrong-outcome/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-wrong-outcome/control.agent",
+      "sha256": "5e4db4a229ca981781f5ee571f4ddd6718568d88b6083cacfb6c5819bfcd15ee"
+    },
+    {
+      "path": "flow-oracle/controls/projects/mutant-wrong-outcome/dictionary.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "flow-oracle/controls/projects/positive/.agentlang/store/CURRENT",
+      "sha256": "1b73858f9b1ca143d3a8b9a6cc3662cd70a779bd2dba6f4c9f8ebc3a52c6b228"
+    },
+    {
+      "path": "flow-oracle/controls/projects/positive/.agentlang/store/manifests/4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76.json",
+      "sha256": "4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76"
+    },
+    {
+      "path": "flow-oracle/controls/projects/positive/.agentlang/store/objects/1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645.agent",
+      "sha256": "1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645"
+    },
+    {
+      "path": "flow-oracle/controls/projects/positive/.agentlang/store/objects/30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5.agent",
+      "sha256": "30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5"
+    },
+    {
+      "path": "flow-oracle/controls/projects/positive/.agentlang/store/objects/30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609.agent",
+      "sha256": "30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609"
+    },
+    {
+      "path": "flow-oracle/controls/projects/positive/.agentlang/store/objects/36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2.agent",
+      "sha256": "36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2"
+    },
+    {
+      "path": "flow-oracle/controls/projects/positive/.agentlang/store/objects/82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43.agent",
+      "sha256": "82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43"
+    },
+    {
+      "path": "flow-oracle/controls/projects/positive/.agentlang/store/objects/b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080.agent",
+      "sha256": "b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080"
+    },
+    {
+      "path": "flow-oracle/controls/projects/positive/.agentlang/store/objects/bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "flow-oracle/controls/projects/positive/.agentlang/store/objects/eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c.agent",
+      "sha256": "eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c"
+    },
+    {
+      "path": "flow-oracle/controls/projects/positive/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "flow-oracle/controls/projects/positive/control.agent",
+      "sha256": "31eff1910aaf07994ff223bc9168a398b065cf8b38722cad3078d34ba7978b5d"
+    },
+    {
+      "path": "flow-oracle/controls/projects/positive/dictionary.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "flow-oracle/discarded-unicode-preflight.json",
+      "sha256": "04705dab122fecd0925a4ad8b5cc98bf7f7fb1f6c43a40be499d47a0e68f7378"
+    },
+    {
+      "path": "flow-oracle/mutant-conflict-write-final-validation.json",
+      "sha256": "d01f4969cceff405a28727de0837124729afe97191607ec7d88a138fac927c33"
+    },
+    {
+      "path": "flow-oracle/mutant-unchanged-write-final-validation.json",
+      "sha256": "08f1f5107250e34211d6b74a6d3aeed57c03fc89db25d70dbc3849b900c3ea1c"
+    },
+    {
+      "path": "flow-oracle/mutant-wrong-outcome-final-validation.json",
+      "sha256": "fbfafc7bb45ca552bd15cd1b6258c1b120c27b37bca97abddd83af502d9a4f7d"
+    },
+    {
+      "path": "flow-oracle/positive-final-validation.json",
+      "sha256": "9ebd811156a2873dba5efaf35ee32d1b9b585d0bea6001c718b908ae4bfeaef1"
+    },
+    {
+      "path": "flow-oracle/preflight-attempts.json",
+      "sha256": "c1c7a4b46b38cd7f6f705289cf5597a24d8837a6400769d1d0691f961fa93efd"
+    },
+    {
+      "path": "flow-oracle/run_oracle.py",
+      "sha256": "f8668ba27ab44f07cde9c2a6950509c89d914b9f2c4eb66d06e63af52f1ac30b"
+    },
+    {
+      "path": "flow-oracle/tests.agent",
+      "sha256": "da4f1a8a43714e67664441d012ad34577fedb9708f31c245e4d109618a56753b"
+    },
+    {
+      "path": "flow-oracle/validation.json",
+      "sha256": "1cd16073b50d9adcca7245483a1a615d78cc9f07cef562edf02508c843a4f973"
+    },
+    {
+      "path": "language-seed.agent",
+      "sha256": "548763de158f5389220599c65e225a6586daebe4af6751b2f77afcae817afbe1"
+    },
+    {
+      "path": "oracle/cases.json",
+      "sha256": "c31b6c3437ce5525aa00c9b45393e55b163cded7f470113253bd8decf2861c82"
+    },
+    {
+      "path": "oracle/oracle_runner.py",
+      "sha256": "4b427ff1bcdbdacdbf92f0e2e0e3443c2b6da3e0fbbe957d5e9a46d310b5b22a"
+    },
+    {
+      "path": "oracle/validate_oracle.py",
+      "sha256": "83d5a95f6bdd7854a16752d80d0b54fdb53b5418ad591daa53228be8409f6187"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/evidence.json",
+      "sha256": "ec1d4bf834dc99abec2bc93df978a28ace0c8ac2a09e11e238cbb29fb711d0f3"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_conflict_overwrite/AgentLang.IoMaintenance156.Conventional.fsproj",
+      "sha256": "0f62bb110ccdc16c69b570e75a76584f2d78a7f9e0ed0600410cd825815cc314"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_conflict_overwrite/build.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_conflict_overwrite/build.stdout.txt",
+      "sha256": "2da727771ae19508b644e5fe91090b107d363d88ebc402e0f4c06ba7623eb111"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_conflict_overwrite/Domain.fs",
+      "sha256": "8d201f3182e29ba2601506bb5f0131edccaa5b67f199b68a4a3f0e542f316d64"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_conflict_overwrite/Operations.fs",
+      "sha256": "e70368a1e97929777430d05819e0eac12834949944aa6778ef7b1d7aa48e03a0"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_conflict_overwrite/oracle.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_conflict_overwrite/oracle.stdout.json",
+      "sha256": "64c66b0d38da3040a574526939f359fc466db4d36dba95a619366fa7af059131"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_conflict_overwrite/Program.fs",
+      "sha256": "a498fad04cb28adf0be37d5afcef60b435ed24df791e8ae090d1878039a81cfd"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_conflict_overwrite/Publisher.fs",
+      "sha256": "33601718cc2006e354258a0bf9885a485ba80a9631cc2b86cffb654e51db5591"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_conflict_overwrite/SelfTests.fs",
+      "sha256": "db5a1e4766bc70a4cad81de526312738f1560deb34af1cb7756c91769511aac4"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_unnecessary_unchanged_write/AgentLang.IoMaintenance156.Conventional.fsproj",
+      "sha256": "0f62bb110ccdc16c69b570e75a76584f2d78a7f9e0ed0600410cd825815cc314"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_unnecessary_unchanged_write/build.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_unnecessary_unchanged_write/build.stdout.txt",
+      "sha256": "76d9b2a4735b32414ada8440238584445132d448b893648c8ce119aadf8dd0ef"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_unnecessary_unchanged_write/Domain.fs",
+      "sha256": "8d201f3182e29ba2601506bb5f0131edccaa5b67f199b68a4a3f0e542f316d64"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_unnecessary_unchanged_write/Operations.fs",
+      "sha256": "598e7a4af007a9294a56900d7dd1478787b09b158a50057ca4908f4339656190"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_unnecessary_unchanged_write/oracle.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_unnecessary_unchanged_write/oracle.stdout.json",
+      "sha256": "2c80dc644ef005030c1ab358cd50938fda4f79d5aa45d0255059c168c00a7167"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_unnecessary_unchanged_write/Program.fs",
+      "sha256": "a498fad04cb28adf0be37d5afcef60b435ed24df791e8ae090d1878039a81cfd"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_unnecessary_unchanged_write/Publisher.fs",
+      "sha256": "33601718cc2006e354258a0bf9885a485ba80a9631cc2b86cffb654e51db5591"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_unnecessary_unchanged_write/SelfTests.fs",
+      "sha256": "db5a1e4766bc70a4cad81de526312738f1560deb34af1cb7756c91769511aac4"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_wrong_returned_outcome/AgentLang.IoMaintenance156.Conventional.fsproj",
+      "sha256": "0f62bb110ccdc16c69b570e75a76584f2d78a7f9e0ed0600410cd825815cc314"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_wrong_returned_outcome/build.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_wrong_returned_outcome/build.stdout.txt",
+      "sha256": "dfa0adb27c0c4ed0ec66ee9a7597ac184b4019c3088c6d8f8541d95b01607ee1"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_wrong_returned_outcome/Domain.fs",
+      "sha256": "8d201f3182e29ba2601506bb5f0131edccaa5b67f199b68a4a3f0e542f316d64"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_wrong_returned_outcome/Operations.fs",
+      "sha256": "a967601d7ccea9f1d8adf35d76a3a6c79e1ba95fddb8205360d337583dbc9b28"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_wrong_returned_outcome/oracle.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_wrong_returned_outcome/oracle.stdout.json",
+      "sha256": "722e892e14b5d6f69a69d9b350bfddb78ac37e0eb5cc84ade7b73f41bcc51590"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_wrong_returned_outcome/Program.fs",
+      "sha256": "a498fad04cb28adf0be37d5afcef60b435ed24df791e8ae090d1878039a81cfd"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_wrong_returned_outcome/Publisher.fs",
+      "sha256": "33601718cc2006e354258a0bf9885a485ba80a9631cc2b86cffb654e51db5591"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/mutant_wrong_returned_outcome/SelfTests.fs",
+      "sha256": "db5a1e4766bc70a4cad81de526312738f1560deb34af1cb7756c91769511aac4"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/positive_control/AgentLang.IoMaintenance156.Conventional.fsproj",
+      "sha256": "0f62bb110ccdc16c69b570e75a76584f2d78a7f9e0ed0600410cd825815cc314"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/positive_control/build.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/positive_control/build.stdout.txt",
+      "sha256": "43a3427437cb3ff31f53ec0409ff7ee9c70219d29233178f150553d51c79f017"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/positive_control/Domain.fs",
+      "sha256": "8d201f3182e29ba2601506bb5f0131edccaa5b67f199b68a4a3f0e542f316d64"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/positive_control/Operations.fs",
+      "sha256": "f5620d32c35a73eb184577298b36afb836379f74a9c180f0c124407d625277f9"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/positive_control/oracle.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/positive_control/oracle.stdout.json",
+      "sha256": "4956e867c43689b910c3ddb26fcf8b3606a7cbaf2d97c870c11a3e90216db714"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/positive_control/Program.fs",
+      "sha256": "a498fad04cb28adf0be37d5afcef60b435ed24df791e8ae090d1878039a81cfd"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/positive_control/Publisher.fs",
+      "sha256": "33601718cc2006e354258a0bf9885a485ba80a9631cc2b86cffb654e51db5591"
+    },
+    {
+      "path": "oracle/validation/20261009T133405Z-b5d81dac/positive_control/SelfTests.fs",
+      "sha256": "db5a1e4766bc70a4cad81de526312738f1560deb34af1cb7756c91769511aac4"
+    },
+    {
+      "path": "oracle/validation/evidence.json",
+      "sha256": "ec1d4bf834dc99abec2bc93df978a28ace0c8ac2a09e11e238cbb29fb711d0f3"
+    },
+    {
+      "path": "oracle/validation/findings.md",
+      "sha256": "cc1da11ae3355f949eff59a6bc6a1fb18ad0f507de4214c562fb81e6cae443c4"
+    },
+    {
+      "path": "package-evidence.py",
+      "sha256": "cd3f9dbb1986db78e8b2f3e2bd3a27f6d6d5fbd434b22996712c82adbcec3f3f"
+    },
+    {
+      "path": "participant-results.json",
+      "sha256": "729514bffc8b5279bdb045b343fdc18ec8170726ab193097ff269da7ca558692"
+    },
+    {
+      "path": "prepare-dispatch.py",
+      "sha256": "298ed684ec0b548a9f2f9dbb36336736f727c1379f7840a4c92b940458ff9a44"
+    },
+    {
+      "path": "prepare-language.py",
+      "sha256": "e30e810a9b77a111bedeb2da5f486f797299ee0f9850999ce437dc56f5a07566"
+    },
+    {
+      "path": "score-conventional.py",
+      "sha256": "7b3253f71e31d3a5d90122e664e26df0d4d32833439427205b2e78aac5d36e2a"
+    },
+    {
+      "path": "scoring/conventional/AgentLang.IoMaintenance156.Conventional.fsproj",
+      "sha256": "0f62bb110ccdc16c69b570e75a76584f2d78a7f9e0ed0600410cd825815cc314"
+    },
+    {
+      "path": "scoring/conventional/Domain.fs",
+      "sha256": "8d201f3182e29ba2601506bb5f0131edccaa5b67f199b68a4a3f0e542f316d64"
+    },
+    {
+      "path": "scoring/conventional/Operations.fs",
+      "sha256": "bed060e340a785328fcc8d5dd22ab6536e9a9bb3998639f9536ef77d497b1310"
+    },
+    {
+      "path": "scoring/conventional/Program.fs",
+      "sha256": "a498fad04cb28adf0be37d5afcef60b435ed24df791e8ae090d1878039a81cfd"
+    },
+    {
+      "path": "scoring/conventional/Publisher.fs",
+      "sha256": "33601718cc2006e354258a0bf9885a485ba80a9631cc2b86cffb654e51db5591"
+    },
+    {
+      "path": "scoring/conventional/SelfTests.fs",
+      "sha256": "b157faa56dcac8cd0cbe9e575d4bfbf3094d0a3ae33c92e9e2ded2defcf9ece8"
+    },
+    {
+      "path": "scoring/conventional-oracle.json",
+      "sha256": "4956e867c43689b910c3ddb26fcf8b3606a7cbaf2d97c870c11a3e90216db714"
+    },
+    {
+      "path": "scoring/conventional-oracle.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scoring/conventional-selftests.json",
+      "sha256": "8461652db1a224f4c75e2960b2c6bbe960e112d27f4fb58675a9fc49c0d6b998"
+    },
+    {
+      "path": "scoring/flow-final-verification.json",
+      "sha256": "5ecc11ae54eb72d311f184f59d2d20ddc1f5726657c6953b2ff3037b767e38f0"
+    },
+    {
+      "path": "scoring/flow-oracle.json",
+      "sha256": "7b9fda0d2d01426a7a4ee377fc56e15e457362071d9ae11e7463d6a3a34c2fc3"
+    },
+    {
+      "path": "scoring/flow-oracle.stdout.json",
+      "sha256": "7b9fda0d2d01426a7a4ee377fc56e15e457362071d9ae11e7463d6a3a34c2fc3"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/CURRENT",
+      "sha256": "dc402a9e93c6cc6a2fbd1781d3f6265552c2e1d1f60518c27e4a2a650f25f51e"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/manifests/3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4.json",
+      "sha256": "3c4fde66b0a409cdef43285981ed919ff775718748053a2bd66e8ce7c15b90a4"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/manifests/4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76.json",
+      "sha256": "4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617.agent",
+      "sha256": "116e6bbcaefe0cff263b574df07c66b4409ec293a4a343bf9b15769162bf9617"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645.agent",
+      "sha256": "1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510.agent",
+      "sha256": "21fc776c5c6e2b508bfc8d4b9e1d6cd15739695c4acefb80c865c85d0e582510"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5.agent",
+      "sha256": "30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609.agent",
+      "sha256": "30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2.agent",
+      "sha256": "36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9.agent",
+      "sha256": "441b17254400fd5cbc8f91c34abcb1f39240ffc6b79d5c02fc394c988b05c2b9"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b.agent",
+      "sha256": "5f4435cbc5a3cab09bdad74ef37c429915c50dcbcd25a2d70690a9617f1e212b"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895.agent",
+      "sha256": "617a9a04bbcfe41c77ce63af0f3a9ce28390cd533965797f082eeb8934efa895"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245.agent",
+      "sha256": "77a17491fe92bea447f92cd0ee5f94406a52089626f9e258f3724472f2a92245"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43.agent",
+      "sha256": "82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080.agent",
+      "sha256": "b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32.agent",
+      "sha256": "d7740c81b6b2723e0bdd1693675641f9d289447690418911a54591841ea96a32"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2.agent",
+      "sha256": "e2036e1809a93f1ac4aafede8645e54cc20be89743092a308bec25b5682a0de2"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/objects/eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c.agent",
+      "sha256": "eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c"
+    },
+    {
+      "path": "scoring/flow-verification/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scoring/flow-verification/dictionary.agent",
+      "sha256": "158cebcb3230a11a3ac21b631f8562a0087e12f97b27f478eda8373b2948f64d"
+    },
+    {
+      "path": "scoring/flow-verification/history/task-0001.json",
+      "sha256": "ac0dc1f896b259fae30c7477501956d376d4eed48e255523664be363b06b0463"
+    },
+    {
+      "path": "seed-requests.jsonl",
+      "sha256": "a19d58e615ed8b6b4d4ef9afd84f3d6b5ed4a1bc7397e7430ec8d9f399fb39d9"
+    },
+    {
+      "path": "seed-responses.jsonl",
+      "sha256": "931bfc39bfcac8264989e1a5c44a707470eca2e4bb97098e2cbee7c80b433f3f"
+    },
+    {
+      "path": "seed-stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/CURRENT",
+      "sha256": "1b73858f9b1ca143d3a8b9a6cc3662cd70a779bd2dba6f4c9f8ebc3a52c6b228"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/manifests/4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76.json",
+      "sha256": "4150deb26312a9114bc3409013195f5f0e9e9fd58e63782f2ed1dcf08e2e3c76"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645.agent",
+      "sha256": "1846724546d7e4d2c3478e2e9b3c682898b0a00591907543c4a18f4389c31645"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5.agent",
+      "sha256": "30b4fa6363648d860f8cb592601283bb433e52d32ed64ee25b50c67798b821b5"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609.agent",
+      "sha256": "30bb7d88fbffddb260e869c0b6f6a36b9eb2feb693772b402b6e1144aca34609"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2.agent",
+      "sha256": "36ad7a9d702d16a23bc648c14fa2403d3612cadc29df332ae65fbc20c3e146a2"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43.agent",
+      "sha256": "82f5a60065bf2988f58e348f7194041945fd2d1b54b15a425bd5be6615817d43"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080.agent",
+      "sha256": "b46138a8a9bd2fc7260cb2e546b592eca0eaed1772a89d3554982e74ba7fb080"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/objects/eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c.agent",
+      "sha256": "eb3fd0498fb349187fc69f74103caabef793d53daea731c0fb2e00e916a0c22c"
+    },
+    {
+      "path": "seeds/flow/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "seeds/flow/dictionary.agent",
+      "sha256": "bd522c44640a1a3cf58d3ebb47bf6ba959b25384fdb814cba091add3daa49534"
+    },
+    {
+      "path": "trace-audit.json",
+      "sha256": "d39a2adc1f611d818f3bdd5874fa2948435b1c21f0c5bf94b4b92f871e67ee8a"
+    },
+    {
+      "path": "trace-audit.stdout.json",
+      "sha256": "d39a2adc1f611d818f3bdd5874fa2948435b1c21f0c5bf94b4b92f871e67ee8a"
+    },
+    {
+      "path": "verify-final.py",
+      "sha256": "53cb806c20e1db6f323c4cc2a60af5eab5da757f9969d5a7bee25a17088da773"
+    }
+  ]
+}

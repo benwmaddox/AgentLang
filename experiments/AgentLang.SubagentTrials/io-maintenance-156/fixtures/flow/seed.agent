@@ -1,0 +1,53 @@
+enum PublishOutcome {
+    case created
+    case unchanged
+    case conflict
+}
+
+fn configuration.publish(source: String, destination: String) -> Unit {
+    effects fs.read, fs.write
+    doc "Copies a source file to a destination without changing its text."
+
+    let contents = file.read(source)
+    file.write(destination, contents)
+}
+
+fn configuration.refresh(source: String, destination: String) -> Unit {
+    effects fs.read, fs.write
+    doc "Refreshes a destination using the unconditional configuration publisher."
+
+    configuration.publish(source, destination)
+}
+
+test configuration.publish/empty-preserves-files {
+    file.write("publish-empty-source.txt", "")
+    file.write("publish-empty-destination.txt", "stale")
+    file.write("publish-empty-unrelated.txt", "untouched")
+    configuration.publish("publish-empty-source.txt", "publish-empty-destination.txt")
+    string.concat(file.read("publish-empty-destination.txt"), string.concat(file.read("publish-empty-source.txt"), file.read("publish-empty-unrelated.txt")))
+    => "untouched" effects { fs.read: 1; fs.write: 1 }
+}
+
+test configuration.publish/returns-unit {
+    file.write("seed/source.cfg", "seed-value")
+    file.write("seed/destination.cfg", "old-value")
+    file.write("seed/unrelated.cfg", "keep-seed")
+    configuration.publish("seed/source.cfg", "seed/destination.cfg")
+    => unit
+}
+
+test configuration.publish/unicode-and-line-breaks-preserve-files {
+    file.write("publish-text-source.txt", "first\r\nsecond\n\u03A9")
+    file.write("publish-text-destination.txt", "stale")
+    file.write("publish-text-unrelated.txt", "untouched")
+    configuration.publish("publish-text-source.txt", "publish-text-destination.txt")
+    string.concat(file.read("publish-text-destination.txt"), string.concat(file.read("publish-text-source.txt"), file.read("publish-text-unrelated.txt")))
+    => "first\r\nsecond\n\u03A9first\r\nsecond\n\u03A9untouched" effects { fs.read: 1; fs.write: 1 }
+}
+
+test configuration.refresh/returns-unit {
+    file.write("refresh-source", "current")
+    file.write("refresh-destination", "stale")
+    configuration.refresh("refresh-source", "refresh-destination")
+    => unit effects { fs.read: 1; fs.write: 1 }
+}
