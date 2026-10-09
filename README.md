@@ -12,6 +12,12 @@ coverage. No comparative reliability advantage over F# is established. The
 [latest I/O testing probe](reports/154-provider-state-assertion-probe.md) shows
 one fresh agent adding state and effect assertions that reject three defects.
 
+The [atomic handoff comparison](reports/163-atomic-subscription-handoff.md) adds
+one fresh pair: both submissions pass 33 independent cases and reuse retained
+subscription transitions. AgentLang completes library publication and task
+finalization, with every existing definition preserved. F# also succeeds and has
+a shorter broker session; this does not establish a comparative reliability lead.
+
 The default Flow authoring cutover passed the complete 27-check Release gate in
 [report 052](reports/052-default-flow-authoring.md). Flow uses named typed inputs,
 immutable locals, ordinary calls and static first-input dot chaining. Words

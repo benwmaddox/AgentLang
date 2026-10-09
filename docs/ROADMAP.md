@@ -54,6 +54,18 @@ The occupied-period integration and its validation are tracked in
 [report 152](../reports/152-occupied-period-domain.md); do not count this
 coordinator-designed domain improvement as a new independent agent efficacy trial.
 
+[Report 163](../reports/163-atomic-subscription-handoff.md) completes the next
+fresh composition comparison. Both agents discover/reuse the retained
+subscription transitions and pass 33 independent cases, including 26 common
+valid-reference cases and seven separately classified orphan-reference checks.
+AgentLang publishes one library function and finalizes its task; F# also succeeds
+with a shorter broker session. Existing implementations are preserved in both
+arms. This supports feasibility and voluntary reuse on this task, not a
+comparative correctness advantage. Next efficacy work should change or maintain
+an existing abstraction and callers under restricted context. Improve returned
+Result test examples, keep independent behavior checks and source-access parity,
+and avoid more easy composition variants. LLVM/arena work remains secondary.
+
 [Report 153](../reports/153-owning-native-enums.md) implements closed,
 payload-free enums in `OwningStackAot`, using inline values and the selected
 stable arena policy. Focused O0/O2 conformance, malformed-input rejection and

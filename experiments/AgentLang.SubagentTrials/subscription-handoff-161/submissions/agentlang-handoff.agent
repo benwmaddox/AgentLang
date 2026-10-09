@@ -1,0 +1,180 @@
+fn subscription.handoff(store: Store, oldId: SubscriptionId, replacementId: SubscriptionId, term: String, handoffAt: Instant, expiresAt: Instant) -> Result<Store, BusinessError> {
+    doc "Cancel the old subscription and start its replacement atomically at the handoff instant."
+
+    match .store.subscription(oldId, store) {
+        some oldSubscription => {
+            match .subscription.cancel(store, oldId, handoffAt) {
+                ok cancelledStore => .subscription.start(cancelledStore, replacementId, oldSubscription.customer-id, oldSubscription.product-id, term, handoffAt, expiresAt)
+                error cancellationError => result.error<Store, BusinessError>(cancellationError)
+            }
+        }
+        none => .subscription.cancel(store, oldId, handoffAt)
+    }
+}
+
+test subscription.handoff/success {
+    let store = business.seed(unit)
+    let oldId = SubscriptionId.new("30000000-0000-0000-0000-000000000001")
+    let replacementId = SubscriptionId.new("40000000-0000-0000-0000-000000000001")
+    let handoffAt = Instant.new("2026-01-15T12:00:00.0000000+00:00")
+    let expiresAt = Instant.new("2026-02-15T12:00:00.0000000+00:00")
+    let original = .store.subscription(oldId, store)
+    let output = .subscription.handoff(store, oldId, replacementId, "  annual  ", handoffAt, expiresAt)
+
+    match output {
+        ok updated => {
+            match original {
+                some before => {
+                    match .store.subscription(oldId, updated) {
+                        some old => {
+                            match .store.subscription(replacementId, updated) {
+                                some replacement => bool.and(
+                                    .equals(before.status, SubscriptionStatus.new("active")),
+                                    bool.and(
+                                        .equals(before.cancelled-at, option.none<Instant>()),
+                                        bool.and(
+                                            .equals(old.id, before.id),
+                                            bool.and(
+                                                .equals(old.customer-id, before.customer-id),
+                                                bool.and(
+                                                    .equals(old.product-id, before.product-id),
+                                                    bool.and(
+                                                        .equals(old.term, before.term),
+                                                        bool.and(
+                                                            .equals(old.started-at, before.started-at),
+                                                            bool.and(
+                                                                .equals(old.expires-at, before.expires-at),
+                                                                bool.and(
+                                                                    .equals(old.status, SubscriptionStatus.new("cancelled")),
+                                                                    bool.and(
+                                                                        .equals(old.cancelled-at, option.some<Instant>(handoffAt)),
+                                                                        bool.and(
+                                                                            .equals(replacement.id, replacementId),
+                                                                            bool.and(
+                                                                                .equals(replacement.customer-id, before.customer-id),
+                                                                                bool.and(
+                                                                                    .equals(replacement.product-id, before.product-id),
+                                                                                    bool.and(
+                                                                                        .equals(replacement.term, "annual"),
+                                                                                        bool.and(
+                                                                                            .equals(replacement.started-at, handoffAt),
+                                                                                            bool.and(
+                                                                                                .equals(replacement.expires-at, expiresAt),
+                                                                                                bool.and(
+                                                                                                    .equals(replacement.status, SubscriptionStatus.new("active")),
+                                                                                                    bool.and(
+                                                                                                        .equals(replacement.cancelled-at, option.none<Instant>()),
+                                                                                                        bool.and(
+                                                                                                            .equals(updated.customers, store.customers),
+                                                                                                            bool.and(
+                                                                                                                .equals(updated.products, store.products),
+                                                                                                                bool.and(
+                                                                                                                    .equals(updated.invoices, store.invoices),
+                                                                                                                    bool.and(
+                                                                                                                        .equals(updated.payments, store.payments),
+                                                                                                                        bool.and(
+                                                                                                                            .equals(updated.email-outbox, store.email-outbox),
+                                                                                                                            .equals(updated.sent-emails, store.sent-emails)
+                                                                                                                        )
+                                                                                                                    )
+                                                                                                                )
+                                                                                                            )
+                                                                                                        )
+                                                                                                    )
+                                                                                                )
+                                                                                            )
+                                                                                        )
+                                                                                    )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                                none => false
+                            }
+                        }
+                        none => false
+                    }
+                }
+                none => false
+            }
+        }
+        error failure => false
+    }
+    => true
+}
+
+test subscription.handoff/missing-old-precedes-creation {
+    let store = business.seed(unit)
+    match .subscription.handoff(
+        store,
+        SubscriptionId.new("39999999-0000-0000-0000-000000000001"),
+        SubscriptionId.new("30000000-0000-0000-0000-000000000001"),
+        "",
+        Instant.new("2026-01-01T12:00:00.0000000+00:00"),
+        Instant.new("2025-12-31T12:00:00.0000000+00:00")
+    ) {
+        ok _ => "UNEXPECTED_OK"
+        error failure => failure.code
+    }
+    => "SUBSCRIPTION_NOT_FOUND"
+}
+
+test subscription.handoff/cancellation-rules-precede-creation {
+    let store = business.seed(unit)
+    let oldId = SubscriptionId.new("30000000-0000-0000-0000-000000000001")
+    match .subscription.handoff(
+        store,
+        oldId,
+        oldId,
+        "",
+        Instant.new("2026-01-01T12:00:00.0000000+00:00"),
+        Instant.new("2025-12-31T12:00:00.0000000+00:00")
+    ) {
+        ok _ => "UNEXPECTED_OK"
+        error failure => failure.code
+    }
+    => "CANCEL_BEFORE_START"
+}
+
+test subscription.handoff/creation-rules-follow-cancellation {
+    let store = business.seed(unit)
+    let oldId = SubscriptionId.new("30000000-0000-0000-0000-000000000001")
+    match .subscription.handoff(
+        store,
+        oldId,
+        oldId,
+        "  ",
+        Instant.new("2026-01-15T12:00:00.0000000+00:00"),
+        Instant.new("2026-02-15T12:00:00.0000000+00:00")
+    ) {
+        ok _ => "UNEXPECTED_OK"
+        error failure => failure.code
+    }
+    => "DUPLICATE_SUBSCRIPTION"
+}
+
+test subscription.handoff/blank-term-after-cancellation {
+    let store = business.seed(unit)
+    let oldId = SubscriptionId.new("30000000-0000-0000-0000-000000000001")
+    match .subscription.handoff(
+        store,
+        oldId,
+        SubscriptionId.new("40000000-0000-0000-0000-000000000001"),
+        "  ",
+        Instant.new("2026-01-15T12:00:00.0000000+00:00"),
+        Instant.new("2026-02-15T12:00:00.0000000+00:00")
+    ) {
+        ok _ => "UNEXPECTED_OK"
+        error failure => failure.code
+    }
+    => "INVALID_SUBSCRIPTION_TERM"
+}

@@ -1,0 +1,11 @@
+# Subscription handoff seed preparation
+
+The two baseline seeds are prepared under `.agentlang/subscription-handoff-161/seeds/`. The preparation is provisional because the runtime source will change before the trial. Rebuild and rerun the commands in the setup notes after that change; no runtime is frozen or hash-pinned here.
+
+The AgentLang seed is the durable project at `.agentlang/subscription-handoff-161/seeds/agentlang-project/`. Its source inputs are copies of the current `business-values.agent`, `business-store.agent`, `business-state.agent`, and `business-subscriptions.agent` examples. The definitions and their tests were committed with library maturity. A fresh CLI process reported 214 library words, all 137 attached tests passing, and the expected `store.subscription`, `subscription.occupied-period`, `occupied-period.overlaps?`, `subscription.start`, and `subscription.cancel` definitions. It contains no `subscription.handoff` definition.
+
+The conventional seed is `.agentlang/subscription-handoff-161/seeds/conventional/`. It keeps the existing immutable `AgentLang.Business.Domain.Store`, IDs, errors, and `Subscription.start`/`Subscription.cancel` behavior behind an editable `Operations.fs` facade. Its fixture uses the same customer, product, active subscription, and UTC dates as the current `business.seed`. The project builds with zero warnings and errors, its six grouped baseline checks pass, and the conventional broker's configured `validate` operation also passes on a disposable copy. `Operations.fs` has no handoff implementation.
+
+An initial language bootstrap used the wrong dependency order and omitted Flow/2 for the subscriptions source. The failed request/response evidence remains under `.agentlang/subscription-handoff-161/setup/`; the completed seed was then verified in a fresh process with 137/137 tests passing. The first conventional build also exposed a missing `open System`; that compile output is retained in `tmp/conventional-build-attempt-01.log`, and the corrected build passes.
+
+The current runtime artifact and source inventories, exact build commands, seed verification commands, and broker entry points are in [setup notes](../../../../.agentlang/subscription-handoff-161/setup/README.md) and [inventory](inventory.json). No participants were dispatched and no prompts or task hints were created.

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "studyId": "subscription-handoff-161",
+  "status": "provisional; runtime source will change before the trial",
+  "observedAtRevision": "b097347cb2162fc5d5546898811f31702ac432e6",
+  "runtimeFrozen": false,
+  "runtimeHashesRecorded": false,
+  "languageSeed": {
+    "projectPath": ".agentlang/subscription-handoff-161/seeds/agentlang-project",
+    "sourcePath": ".agentlang/subscription-handoff-161/seeds/agentlang/fixtures",
+    "sourceFiles": [
+      { "path": "business-values.agent", "bytes": 26707, "attachedTests": 53, "syntaxVersion": 1 },
+      { "path": "business-store.agent", "bytes": 39633, "attachedTests": 32, "syntaxVersion": 1 },
+      { "path": "business-state.agent", "bytes": 15078, "attachedTests": 5, "syntaxVersion": 1 },
+      { "path": "business-subscriptions.agent", "bytes": 50360, "attachedTests": 47, "syntaxVersion": 2 }
+    ],
+    "freshProcessWords": 214,
+    "libraryWords": 214,
+    "freshProcessTestsPassed": 137,
+    "freshProcessTestsFailed": 0,
+    "requiredLibraryWords": [
+      "store.subscription",
+      "subscription.occupied-period",
+      "occupied-period.overlaps?",
+      "subscription.start",
+      "subscription.cancel"
+    ],
+    "subscriptionHandoffPresent": false
+  },
+  "conventionalSeed": {
+    "projectPath": ".agentlang/subscription-handoff-161/seeds/conventional",
+    "editableOperationPath": "Operations.fs",
+    "files": [
+      "Domain.fs",
+      "Operations.fs",
+      "Fixtures.fs",
+      "SelfTests.fs",
+      "Program.fs",
+      "SubscriptionHandoff.Conventional.fsproj",
+      "lib/AgentLang.Business.dll"
+    ],
+    "baselineChecksPassed": 6,
+    "brokerValidationPassed": true,
+    "subscriptionHandoffPresent": false,
+    "fixtureMatchesLanguageBusinessSeed": true
+  },
+  "runtimeInventory": {
+    "dotnetSdk": "9.0.308",
+    "cli": ".agentlang/subscription-handoff-161/runtime/cli-artifacts/bin/AgentLang.Cli/release/AgentLang.Cli.dll",
+    "conventionalCli": ".agentlang/subscription-handoff-161/runtime/conventional-cli-artifacts/bin/AgentLang.Conventional.Cli/release/AgentLang.Conventional.Cli.dll",
+    "business": ".agentlang/subscription-handoff-161/runtime/business-artifacts/bin/AgentLang.Business/release/AgentLang.Business.dll",
+    "conventionalSeedExecutable": ".agentlang/subscription-handoff-161/runtime/conventional-artifacts/bin/SubscriptionHandoff.Conventional/release/SubscriptionHandoff.Conventional.dll"
+  },
+  "participantsDispatched": false,
+  "taskPromptsCreated": false
+}

@@ -1,0 +1,94 @@
+{
+  "status": "model-only; runtime control evidence recorded separately",
+  "cases": 33,
+  "expectedSuccesses": 10,
+  "fixturePopulations": {
+    "public-valid-reference": {
+      "count": 26,
+      "caseIds": [
+        "mid-period-boundary",
+        "at-original-start",
+        "at-original-expiry",
+        "after-original-expiry",
+        "third-party-overlap",
+        "touching-future-boundary",
+        "touching-past-boundary",
+        "other-customer-not-conflict",
+        "other-product-not-conflict",
+        "cancelled-third-ends-at-boundary",
+        "empty-third-occupancy",
+        "replacement-id-is-old",
+        "replacement-id-exists",
+        "blank-term",
+        "empty-replacement-period",
+        "reversed-replacement-period",
+        "missing-old",
+        "already-cancelled-old",
+        "already-cancelled-before-start",
+        "before-original-start",
+        "missing-old-precedes-duplicate",
+        "cancelled-old-precedes-duplicate",
+        "before-start-precedes-duplicate",
+        "duplicate-precedes-blank-term",
+        "blank-term-precedes-bad-period",
+        "bad-period-precedes-overlap"
+      ]
+    },
+    "adversarial-orphan-reference": {
+      "count": 7,
+      "caseIds": [
+        "old-customer-missing",
+        "old-product-missing",
+        "old-customer-and-product-missing",
+        "blank-term-precedes-missing-customer",
+        "bad-period-precedes-missing-customer",
+        "missing-product-precedes-overlap",
+        "duplicate-precedes-missing-customer"
+      ]
+    }
+  },
+  "mutationDiscrimination": {
+    "duplicate-before-cancel": [
+      "missing-old-precedes-duplicate",
+      "cancelled-old-precedes-duplicate",
+      "before-start-precedes-duplicate"
+    ],
+    "leak-intermediate": [
+      "third-party-overlap",
+      "replacement-id-is-old",
+      "replacement-id-exists",
+      "blank-term",
+      "empty-replacement-period",
+      "reversed-replacement-period",
+      "duplicate-precedes-blank-term",
+      "blank-term-precedes-bad-period",
+      "bad-period-precedes-overlap",
+      "old-customer-missing",
+      "old-product-missing",
+      "old-customer-and-product-missing",
+      "blank-term-precedes-missing-customer",
+      "bad-period-precedes-missing-customer",
+      "missing-product-precedes-overlap",
+      "duplicate-precedes-missing-customer"
+    ],
+    "start-before-cancel": [
+      "mid-period-boundary",
+      "at-original-start",
+      "touching-future-boundary",
+      "touching-past-boundary",
+      "other-customer-not-conflict",
+      "other-product-not-conflict",
+      "cancelled-third-ends-at-boundary",
+      "empty-third-occupancy"
+    ],
+    "ignore-overlap": [
+      "third-party-overlap"
+    ],
+    "customer-only": [
+      "other-product-not-conflict"
+    ],
+    "product-only": [
+      "other-customer-not-conflict"
+    ]
+  }
+}
