@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "status": "draft-pre-dispatch",
+  "target": "customer.remaining-lifetime-allowance",
+  "semantics": {
+    "amounts": "Signed Int64 minor units.",
+    "result": "max(0, cap - paidTotal) using exact mathematical subtraction; a positive result outside Int64 returns MONEY_OVERFLOW.",
+    "errorPriority": "Return the existing paid-total BusinessError unchanged before evaluating cap arithmetic, including for cap zero and negative cap.",
+    "normalPaymentInvariant": "Normal business workflows record positive full payments, but the nominal Payment record accepts signed Money. The signed-payment cases directly construct Payment records and are outside normal workflow invariants; the public task requires behavior for every well-typed Store.",
+    "store": "The complete Store value is unchanged.",
+    "referenceOracle": "R09 direct paid-total values are independently checked against the frozen R09 oracle and reference fixture before the composition result is scored."
+  },
+  "cases": [
+    {"id":"paid-375-cap-500","fixtureCase":"owned-and-foreign","query":"c1","capMinorUnits":"500","expected":{"ok":"125"}},
+    {"id":"paid-375-cap-300","fixtureCase":"owned-and-foreign","query":"c1","capMinorUnits":"300","expected":{"ok":"0"}},
+    {"id":"paid-375-cap-375","fixtureCase":"owned-and-foreign","query":"c1","capMinorUnits":"375","expected":{"ok":"0"}},
+    {"id":"paid-375-cap-zero","fixtureCase":"owned-and-foreign","query":"c1","capMinorUnits":"0","expected":{"ok":"0"}},
+    {"id":"known-empty-cap-100","fixtureCase":"known-no-invoices","query":"c1","capMinorUnits":"100","expected":{"ok":"100"}},
+    {"id":"known-empty-cap-max","fixtureCase":"known-no-invoices","query":"c1","capMinorUnits":"9223372036854775807","expected":{"ok":"9223372036854775807"}},
+    {"id":"unknown-customer-cap-zero","fixtureCase":"unknown-customer","query":"c9","capMinorUnits":"0","expected":{"error":"CUSTOMER_NOT_FOUND"}},
+    {"id":"paid-total-overflow-cap-zero","fixtureCase":"one-customer-overflow","query":"c1","capMinorUnits":"0","expected":{"error":"MONEY_OVERFLOW"}},
+    {"id":"paid-total-overflow-cap-max","fixtureCase":"one-customer-overflow","query":"c1","capMinorUnits":"9223372036854775807","expected":{"error":"MONEY_OVERFLOW"}},
+    {"id":"negative-cap-clamps","fixtureCase":"owned-and-foreign","query":"c1","capMinorUnits":"-1","expected":{"ok":"0"}},
+    {"id":"maximum-paid-at-maximum-cap","fixtureCase":"maximum-single-payment","query":"c1","capMinorUnits":"9223372036854775807","expected":{"ok":"0"}},
+    {"id":"defensive-signed-paid-negative-five","fixtureCase":"maximum-single-payment","query":"c1","capMinorUnits":"10","paymentAmountOverride":"-5","defensiveOutOfInvariant":true,"expected":{"ok":"15"}},
+    {"id":"defensive-minimum-paid-cap-minus-one","fixtureCase":"maximum-single-payment","query":"c1","capMinorUnits":"-1","paymentAmountOverride":"-9223372036854775808","defensiveOutOfInvariant":true,"expected":{"ok":"9223372036854775807"}},
+    {"id":"defensive-minimum-paid-overflows-positive-difference","fixtureCase":"maximum-single-payment","query":"c1","capMinorUnits":"0","paymentAmountOverride":"-9223372036854775808","defensiveOutOfInvariant":true,"expected":{"error":"MONEY_OVERFLOW"}}
+  ]
+}

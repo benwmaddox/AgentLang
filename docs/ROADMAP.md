@@ -90,8 +90,12 @@ Next actions:
    refactor. This small study establishes no comparative reliability advantage.
    Default help now exposes existing compact inventory, targeted search and
    bounded context ([report 136](../reports/136-discovery-help-exposure.md)).
-   The next efficacy step is a held-out task using this guidance and explicit
-   structural acceptance; do not repeat this same case. Dependency reachability
+   A fresh guided composition task now passes 14/14 independent cases and
+   171/171 project tests, with inherited definitions preserved and actual helper
+   reuse ([report 137](../reports/137-guided-discovery-composition.md)). It has
+   no old-help or F# control and establishes no comparative improvement. Do not
+   repeat this case; the next comparative study must target an unresolved
+   reliability failure rather than collect more feasibility wins. Dependency reachability
    is supporting evidence, not proof that duplicated logic has been removed.
    Native runtime throughput remains separate evidence.
 

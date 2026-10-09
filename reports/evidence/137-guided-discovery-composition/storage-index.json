@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "study": "discovery-composition-137",
+  "createdUtc": "2026-10-09T01:17:48.0186211Z",
+  "repositoryRevision": "4e135493d9d377c5092d8c35cc4a0459a22d7e91",
+  "archivePath": "reports/evidence/137-guided-discovery-composition/137-guided-discovery-composition.zip",
+  "archiveBytes": 8069004,
+  "archiveSha256": "7a8012fbc3d24be2a83c4b4cb306e9bdc1effc284477a6586e98bc4ff60cb9a4",
+  "zipSha256Sidecar": "reports/evidence/137-guided-discovery-composition/zip.sha256",
+  "archiveEntryCount": 3067,
+  "payloadEntryCount": 3067,
+  "payloadManifestPath": "reports/evidence/137-guided-discovery-composition/payload-sha256-manifest.json",
+  "payloadManifestSha256": "ac0f91335f2c39c6732daf5fd9ebc0b23cf3d61f4cd13fde97a9a3810ae3d1d4",
+  "payloadManifestBytes": 1012182,
+  "sourceIntegrityBeforePath": "archive-metadata/source-integrity-before.json",
+  "sourceIntegrityAfterPath": "archive-metadata/source-integrity-after.json",
+  "sourceIntegrityBeforeFileCount": 3065,
+  "sourceIntegrityAfterFileCount": 3065,
+  "sourceBytesBefore": 109965407,
+  "sourceBytesAfter": 109965407,
+  "payload": {
+    "sourceIntegrityBeforeAfterMatched": true,
+    "verifiedPayloadEntries": 3067,
+    "uncompressedBytes": 111989208,
+    "missingEntries": [],
+    "extraEntries": [],
+    "hashOrLengthMismatches": [],
+    "verified": true,
+    "excludedBuildCacheFileCount": 70,
+    "excludedBuildCacheBytes": 13964323,
+    "compiledRuntimeBinariesIncluded": false
+  },
+  "seedArchiveReference": {
+    "path": "reports/evidence/134-r09-discovery-seed/134-r09-discovery-seed.zip",
+    "sha256": "7129e1adf07340fd312db802df75d5c2f086c2d6b38ac6ae46940243bee75283",
+    "committedInHead": true,
+    "gitTreeRecord": "100644 blob 2b6a21e93e40eaedd092c4e2faee1bbccb66293a 15478529\treports/evidence/134-r09-discovery-seed/134-r09-discovery-seed.zip",
+    "duplicatedInThisArchive": false
+  },
+  "finalActorEvidence": {
+    "scorePath": ".agentlang/discovery-composition-137/participant-evidence/score.json",
+    "scoreSha256": "288eb0eec0663ee6bf756e8eda8e582aa34b018d3b513c98a096179529174ad5",
+    "auditPath": ".agentlang/discovery-composition-137/participant-evidence/audit.json",
+    "auditSha256": "289b24625ad98fa49da16072e1dbc612fb1f6e8fe0aa6b704479435cc0ca5641",
+    "actorTracePath": ".agentlang/discovery-composition-137/participant-evidence/actor.trace.jsonl",
+    "finalProjectPath": ".agentlang/discovery-composition-137/participant-evidence/final-project"
+  },
+  "sourceGroups": [
+    "study freeze, dispatch record, actor project/trace/outcome and final scoring evidence",
+    "both failed scorer preflight attempts and final correct/wrong controls with requests, responses and logs",
+    "frozen prompt, task, oracle, scorer source, broker host source, reference fixtures and runtime build command",
+    "final report snapshot and embedded source-integrity inventories"
+  ],
+  "exclusions": [
+    "study runtime-artifacts, temp, and archive working/output trees",
+    "bin/obj/cache trees and compiled/runtime binaries or package outputs",
+    "credential-named files and private-key containers",
+    "accepted seed archive 134 payload, referenced by committed path and verified SHA-256"
+  ]
+}

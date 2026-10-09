@@ -54,8 +54,11 @@ has 13/13 public behavior scenarios in all six submissions, while only three
 meet the frozen full-acceptance rubric. The other outcomes expose a finalization
 failure, an undisclosed private helper-signature constraint, and a public
 structural refactor failure. The study does not establish comparative reliability
-superiority; the next efficacy step is better discovery/default help and explicit
-structural validation on a held-out task.
+superiority. After default-help improvements, a fresh
+[guided composition trial](reports/137-guided-discovery-composition.md) passes
+14/14 independent cases and 171/171 project tests, composing the earlier
+agent-created helper without changing inherited definitions. This single
+language-only trial supports feasibility, not a comparative reliability lead.
 
 The implementation targets .NET 9 and uses no external test framework or model API key.
 

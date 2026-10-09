@@ -180,6 +180,20 @@ and report process memory separately from arena reservations. Use externally
 scheduled arrivals, bounded queues/buffers and predeclared memory, latency and
 error limits; fewer copies alone do not select a winner.
 
+The next reset-path change should be bounded: add an opt-in profile that removes
+capacity-sized payload poisoning at scratch checkout and release, while retaining
+the diagnostic default and all existing boundary, initialized-range, token and
+cancellation checks. Keep the context ABI and compiler rewind decisions unchanged.
+Validate both profiles against the same policy and real-I/O state/status oracles,
+including failed publication, retry and pending KEEP ownership. Track actual
+reset writes separately: `turn_reset_bytes` currently measures cursor extent,
+not all poisoning and bitmap writes. If initialization tracking still clears or
+scans a live prefix, describe that cost explicitly; this intermediate profile is
+not yet a constant-time pointer-only reset. Removing that tracking requires a
+separate justification for trusted generated code and external input boundaries.
+The instrumented correctness driver must not become the performance baseline
+merely by turning off one class of writes.
+
 ### Refinement: suspend and resume the same mailbox
 
 The user proposed keeping all data that survives an async suspension in the
