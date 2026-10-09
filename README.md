@@ -48,8 +48,14 @@ task finalization. Behavioral correctness and workflow completion are separate.
 The [R09-inspired seed trial](reports/134-r09-discovery-study.md) adds an
 agent-created checked customer payment total: 13/13 hidden cases, 163/163 attached
 tests and completed task finalization. Its two functions are library-qualified;
-prompt-delivery and property-style deviations are recorded. The subsequent
-multi-function reuse comparison is still pending.
+prompt-delivery and property-style deviations are recorded. The completed
+[six-agent shared-summary comparison](reports/135-r09-shared-summary-comparison.md)
+has 13/13 public behavior scenarios in all six submissions, while only three
+meet the frozen full-acceptance rubric. The other outcomes expose a finalization
+failure, an undisclosed private helper-signature constraint, and a public
+structural refactor failure. The study does not establish comparative reliability
+superiority; the next efficacy step is better discovery/default help and explicit
+structural validation on a held-out task.
 
 The implementation targets .NET 9 and uses no external test framework or model API key.
 

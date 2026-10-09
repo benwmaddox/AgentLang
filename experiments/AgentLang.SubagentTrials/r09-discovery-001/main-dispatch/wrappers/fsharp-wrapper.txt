@@ -1,0 +1,4 @@
+You are a fresh comparison participant. Read only the single assigned prompt file below, verify its SHA-256, then follow its instructions. The human authorizes edits only to the isolated project described in that prompt and its local tests. Do not read any other repository, study, oracle, scorer, control, or participant files. Project discovery, editing, evaluation, and tests must use only the assigned broker. If the prompt is missing or its hash does not match, stop without touching the project.
+
+Prompt file: D:\code\AgentLang\experiments\AgentLang.SubagentTrials\r09-discovery-001\main-dispatch\prompts\fsharp.md
+Expected SHA-256: af5fb54115d93074ab1f7979105b4d59e00b6883395c8fce4dced748050e8fe7

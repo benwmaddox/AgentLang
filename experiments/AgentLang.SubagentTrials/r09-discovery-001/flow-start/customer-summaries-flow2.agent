@@ -1,0 +1,638 @@
+# Initially correct duplicated Flow/2 baseline for the two summary refactor task.
+# The account and dashboard each own a separate customer-payment aggregation.
+
+record CustomerAccountSummary {
+    field customer: Customer;
+    field paid-total: Money;
+}
+
+record StoreCustomerMetrics {
+    field customers: Int;
+    field products: Int;
+    field subscriptions: Int;
+    field invoices: Int;
+    field payments: Int;
+    field pending-emails: Int;
+    field sent-emails: Int;
+    field paid-total: Money;
+}
+
+record AccountSummaryPaymentAccumulator {
+    field target: CustomerId;
+    field store: Store;
+    field outcome: Result<Money, BusinessError>;
+}
+
+record MetricsPaymentAccumulator {
+    field target: CustomerId;
+    field store: Store;
+    field outcome: Result<Money, BusinessError>;
+}
+
+record MetricsCustomerAccumulator {
+    field store: Store;
+    field outcome: Result<StoreCustomerMetrics, BusinessError>;
+}
+
+fn customer.account-summary-payment-step(accumulator: AccountSummaryPaymentAccumulator, payment: Payment) -> AccountSummaryPaymentAccumulator {
+    doc "Add an account payment only when its invoice belongs to the requested customer, preserving checked errors."
+
+    match accumulator.outcome {
+        error prior => { accumulator }
+        ok subtotal => {
+            match store::invoice(payment.invoice-id, accumulator.store) {
+                none => { accumulator }
+                some invoice => {
+                    if invoice.customer-id == accumulator.target {
+                        accountSummaryPaymentAccumulator::new(
+                            target = accumulator.target,
+                            store = accumulator.store,
+                            outcome = money::add(subtotal, payment.amount))
+                    } else {
+                        accumulator
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn store.customer-metrics-payment-step(accumulator: MetricsPaymentAccumulator, payment: Payment) -> MetricsPaymentAccumulator {
+    doc "Add a dashboard customer's payment only when its invoice belongs to that customer, preserving checked errors."
+
+    match accumulator.outcome {
+        error prior => { accumulator }
+        ok subtotal => {
+            match store::invoice(payment.invoice-id, accumulator.store) {
+                none => { accumulator }
+                some invoice => {
+                    if invoice.customer-id == accumulator.target {
+                        metricsPaymentAccumulator::new(
+                            target = accumulator.target,
+                            store = accumulator.store,
+                            outcome = money::add(subtotal, payment.amount))
+                    } else {
+                        accumulator
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn store.customer-metrics-customer-step(accumulator: MetricsCustomerAccumulator, customer: Customer) -> MetricsCustomerAccumulator {
+    doc "Add one customer's checked payment subtotal to the dashboard, preserving an earlier error."
+
+    match accumulator.outcome {
+        error prior => { accumulator }
+        ok metrics => {
+            let initial = metricsPaymentAccumulator::new(
+                target = customer.id,
+                store = accumulator.store,
+                outcome = result::ok<Money, BusinessError>(Money::new(0)));
+            match accumulator.store.payments.fold(initial, store::customer-metrics-payment-step).outcome {
+                error problem => {
+                    metricsCustomerAccumulator::new(
+                        store = accumulator.store,
+                        outcome = result::error<StoreCustomerMetrics, BusinessError>(problem))
+                }
+                ok subtotal => {
+                    match money::add(metrics.paid-total, subtotal) {
+                        error problem => {
+                            metricsCustomerAccumulator::new(
+                                store = accumulator.store,
+                                outcome = result::error<StoreCustomerMetrics, BusinessError>(problem))
+                        }
+                        ok total => {
+                            let updated = storeCustomerMetrics::new(
+                                customers = metrics.customers,
+                                products = metrics.products,
+                                subscriptions = metrics.subscriptions,
+                                invoices = metrics.invoices,
+                                payments = metrics.payments,
+                                pending-emails = metrics.pending-emails,
+                                sent-emails = metrics.sent-emails,
+                                paid-total = total);
+                            metricsCustomerAccumulator::new(
+                                store = accumulator.store,
+                                outcome = result::ok<StoreCustomerMetrics, BusinessError>(updated))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn customer.account-summary(store: Store, customer-id: CustomerId) -> Result<CustomerAccountSummary, BusinessError> {
+    doc "Return the complete original customer and that customer's checked paid total."
+
+    match store::customer(customer-id, store) {
+        none => {
+            result::error<CustomerAccountSummary, BusinessError>(businessError::new(
+                code = "CUSTOMER_NOT_FOUND",
+                message = "The customer does not exist."))
+        }
+        some customer => {
+            let initial = accountSummaryPaymentAccumulator::new(
+                target = customer.id,
+                store = store,
+                outcome = result::ok<Money, BusinessError>(Money::new(0)));
+            match store.payments.fold(initial, customer::account-summary-payment-step).outcome {
+                error problem => {
+                    result::error<CustomerAccountSummary, BusinessError>(problem)
+                }
+                ok total => {
+                    result::ok<CustomerAccountSummary, BusinessError>(customerAccountSummary::new(
+                        customer = customer,
+                        paid-total = total))
+                }
+            }
+        }
+    }
+}
+
+fn store.customer-metrics(store: Store) -> Result<StoreCustomerMetrics, BusinessError> {
+    doc "Return all seven Store counts and the checked sum of customer payment totals."
+
+    let initial-metrics = storeCustomerMetrics::new(
+        customers = store.customers.count(),
+        products = store.products.count(),
+        subscriptions = store.subscriptions.count(),
+        invoices = store.invoices.count(),
+        payments = store.payments.count(),
+        pending-emails = store.email-outbox.count(),
+        sent-emails = store.sent-emails.count(),
+        paid-total = Money::new(0));
+    let initial = metricsCustomerAccumulator::new(
+        store = store,
+        outcome = result::ok<StoreCustomerMetrics, BusinessError>(initial-metrics));
+    store.customers.fold(initial, store::customer-metrics-customer-step).outcome
+}
+
+test customer.account-summary-payment-step/adds-owned-payment {
+    let target = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let invoice-id = InvoiceId::new("20000000-0000-0000-0000-000000000001");
+    let invoice = invoice::new(
+        id = invoice-id,
+        customer-id = target,
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(250),
+        created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"),
+        status = InvoiceStatus::new("paid"));
+    let payment = payment::new(
+        id = PaymentId::new("30000000-0000-0000-0000-000000000001"),
+        invoice-id = invoice-id,
+        amount = Money::new(250),
+        provider-reference = "summary-control-payment-001",
+        paid-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"));
+    let initial = accountSummaryPaymentAccumulator::new(
+        target = target,
+        store = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice)),
+        outcome = result::ok<Money, BusinessError>(Money::new(0)));
+    match customer::account-summary-payment-step(initial, payment).outcome {
+        ok total => { total == Money::new(250) }
+        error problem => { false }
+    }
+    => true
+}
+
+test customer.account-summary-payment-step/foreign-owner-is-ignored {
+    let target = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let foreign = CustomerId::new("10000000-0000-0000-0000-000000000002");
+    let invoice-id = InvoiceId::new("20000000-0000-0000-0000-000000000002");
+    let invoice = invoice::new(
+        id = invoice-id,
+        customer-id = foreign,
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(900),
+        created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"),
+        status = InvoiceStatus::new("paid"));
+    let payment = payment::new(
+        id = PaymentId::new("30000000-0000-0000-0000-000000000002"),
+        invoice-id = invoice-id,
+        amount = Money::new(900),
+        provider-reference = "summary-control-payment-002",
+        paid-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"));
+    let initial = accountSummaryPaymentAccumulator::new(
+        target = target,
+        store = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice)),
+        outcome = result::ok<Money, BusinessError>(Money::new(25)));
+    match customer::account-summary-payment-step(initial, payment).outcome {
+        ok total => { total == Money::new(25) }
+        error problem => { false }
+    }
+    => true
+}
+
+test customer.account-summary-payment-step/earlier-error-remains-sticky-defensively {
+    let target = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let payment = payment::new(
+        id = PaymentId::new("30000000-0000-0000-0000-000000000004"),
+        invoice-id = InvoiceId::new("20000000-0000-0000-0000-000000000004"),
+        amount = Money::new(1), provider-reference = "account-defensive-001",
+        paid-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"));
+    let initial = accountSummaryPaymentAccumulator::new(
+        target = target, store = store::empty(unit),
+        outcome = result::error<Money, BusinessError>(businessError::new(code = "MONEY_OVERFLOW", message = "earlier error")));
+    match customer::account-summary-payment-step(initial, payment).outcome {
+        ok total => { false }
+        error problem => { problem.code == "MONEY_OVERFLOW" }
+    }
+    => true
+}
+
+test customer.account-summary-payment-step/missing-invoice-is-ignored-defensively {
+    let target = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let payment = payment::new(
+        id = PaymentId::new("30000000-0000-0000-0000-000000000005"),
+        invoice-id = InvoiceId::new("20000000-0000-0000-0000-000000000005"),
+        amount = Money::new(10), provider-reference = "account-defensive-002",
+        paid-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"));
+    let initial = accountSummaryPaymentAccumulator::new(
+        target = target, store = store::empty(unit),
+        outcome = result::ok<Money, BusinessError>(Money::new(25)));
+    match customer::account-summary-payment-step(initial, payment).outcome {
+        ok total => { total == Money::new(25) }
+        error problem => { false }
+    }
+    => true
+}
+
+test customer.account-summary-payment-step/checked-addition-overflow {
+    let target = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let invoice = invoice::new(
+        id = InvoiceId::new("20000000-0000-0000-0000-000000000006"), customer-id = target,
+        lines = list::empty<InvoiceLine>(), total = Money::new(1),
+        created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let payment = payment::new(
+        id = PaymentId::new("30000000-0000-0000-0000-000000000006"), invoice-id = invoice.id,
+        amount = Money::new(1), provider-reference = "account-overflow-step", paid-at = invoice.created-at);
+    let initial = accountSummaryPaymentAccumulator::new(
+        target = target, store = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice)),
+        outcome = result::ok<Money, BusinessError>(Money::new(9223372036854775807)));
+    match customer::account-summary-payment-step(initial, payment).outcome {
+        ok total => { false }
+        error problem => { problem.code == "MONEY_OVERFLOW" }
+    }
+    => true
+}
+
+test store.customer-metrics-payment-step/foreign-owner-is-ignored {
+    let target = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let foreign = CustomerId::new("10000000-0000-0000-0000-000000000002");
+    let invoice-id = InvoiceId::new("20000000-0000-0000-0000-000000000003");
+    let invoice = invoice::new(
+        id = invoice-id,
+        customer-id = foreign,
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(900),
+        created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"),
+        status = InvoiceStatus::new("paid"));
+    let payment = payment::new(
+        id = PaymentId::new("30000000-0000-0000-0000-000000000003"),
+        invoice-id = invoice-id,
+        amount = Money::new(900),
+        provider-reference = "summary-control-payment-003",
+        paid-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"));
+    let initial = metricsPaymentAccumulator::new(
+        target = target,
+        store = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice)),
+        outcome = result::ok<Money, BusinessError>(Money::new(25)));
+    match store::customer-metrics-payment-step(initial, payment).outcome {
+        ok total => { total == Money::new(25) }
+        error problem => { false }
+    }
+    => true
+}
+
+test store.customer-metrics-payment-step/adds-owned-payment {
+    let target = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let invoice = invoice::new(
+        id = InvoiceId::new("20000000-0000-0000-0000-000000000007"), customer-id = target,
+        lines = list::empty<InvoiceLine>(), total = Money::new(250),
+        created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let payment = payment::new(
+        id = PaymentId::new("30000000-0000-0000-0000-000000000007"), invoice-id = invoice.id,
+        amount = Money::new(250), provider-reference = "metrics-payment-owned", paid-at = invoice.created-at);
+    let initial = metricsPaymentAccumulator::new(
+        target = target, store = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice)),
+        outcome = result::ok<Money, BusinessError>(Money::new(0)));
+    match store::customer-metrics-payment-step(initial, payment).outcome {
+        ok total => { total == Money::new(250) }
+        error problem => { false }
+    }
+    => true
+}
+
+test store.customer-metrics-payment-step/earlier-error-remains-sticky-defensively {
+    let target = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let payment = payment::new(
+        id = PaymentId::new("30000000-0000-0000-0000-000000000008"),
+        invoice-id = InvoiceId::new("20000000-0000-0000-0000-000000000008"),
+        amount = Money::new(1), provider-reference = "metrics-defensive-001",
+        paid-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"));
+    let initial = metricsPaymentAccumulator::new(
+        target = target, store = store::empty(unit),
+        outcome = result::error<Money, BusinessError>(businessError::new(code = "MONEY_OVERFLOW", message = "earlier error")));
+    match store::customer-metrics-payment-step(initial, payment).outcome {
+        ok total => { false }
+        error problem => { problem.code == "MONEY_OVERFLOW" }
+    }
+    => true
+}
+
+test store.customer-metrics-payment-step/missing-invoice-is-ignored-defensively {
+    let target = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let payment = payment::new(
+        id = PaymentId::new("30000000-0000-0000-0000-000000000009"),
+        invoice-id = InvoiceId::new("20000000-0000-0000-0000-000000000009"),
+        amount = Money::new(10), provider-reference = "metrics-defensive-002",
+        paid-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"));
+    let initial = metricsPaymentAccumulator::new(
+        target = target, store = store::empty(unit),
+        outcome = result::ok<Money, BusinessError>(Money::new(25)));
+    match store::customer-metrics-payment-step(initial, payment).outcome {
+        ok total => { total == Money::new(25) }
+        error problem => { false }
+    }
+    => true
+}
+
+test store.customer-metrics-payment-step/checked-addition-overflow {
+    let target = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let invoice = invoice::new(
+        id = InvoiceId::new("20000000-0000-0000-0000-000000000010"), customer-id = target,
+        lines = list::empty<InvoiceLine>(), total = Money::new(1),
+        created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let payment = payment::new(
+        id = PaymentId::new("30000000-0000-0000-0000-000000000010"), invoice-id = invoice.id,
+        amount = Money::new(1), provider-reference = "metrics-overflow-step", paid-at = invoice.created-at);
+    let initial = metricsPaymentAccumulator::new(
+        target = target, store = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice)),
+        outcome = result::ok<Money, BusinessError>(Money::new(9223372036854775807)));
+    match store::customer-metrics-payment-step(initial, payment).outcome {
+        ok total => { false }
+        error problem => { problem.code == "MONEY_OVERFLOW" }
+    }
+    => true
+}
+
+test store.customer-metrics-customer-step/preserves-prior-error {
+    let customer = customer::new(
+        id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        email = Email::new("c1@example.test"),
+        kind = "standard",
+        balance = Money::new(0),
+        created-at = Instant::new("2000-01-01T00:00:00.0000000+00:00"));
+    let metrics = storeCustomerMetrics::new(
+        customers = 1, products = 0, subscriptions = 0, invoices = 0,
+        payments = 0, pending-emails = 0, sent-emails = 0, paid-total = Money::new(0));
+    let initial = metricsCustomerAccumulator::new(
+        store = store::new(
+            customers = list::singleton<Customer>(customer),
+            products = list::empty<Product>(), subscriptions = list::empty<Subscription>(),
+            invoices = list::empty<Invoice>(), payments = list::empty<Payment>(),
+            email-outbox = list::empty<EmailMessage>(), sent-emails = list::empty<EmailMessage>()),
+        outcome = result::error<StoreCustomerMetrics, BusinessError>(businessError::new(
+            code = "MONEY_OVERFLOW", message = "previous overflow")));
+    match store::customer-metrics-customer-step(initial, customer).outcome {
+        ok value => { false }
+        error problem => { problem.code == "MONEY_OVERFLOW" }
+    }
+    => true
+}
+
+test customer.account-summary/preserves-customer-and-sums-only-owned-payments {
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let foreign-id = CustomerId::new("10000000-0000-0000-0000-000000000002");
+    let customer = customer::new(
+        id = customer-id, email = Email::new("custom@example.test"), kind = "premium",
+        balance = Money::new(17), created-at = Instant::new("2001-02-03T00:00:00.0000000+00:00"));
+    let foreign = customer::new(
+        id = foreign-id, email = Email::new("c2@example.test"), kind = "standard",
+        balance = Money::new(0), created-at = Instant::new("2000-01-01T00:00:00.0000000+00:00"));
+    let owned-first = invoice::new(
+        id = InvoiceId::new("20000000-0000-0000-0000-000000000001"), customer-id = customer-id,
+        lines = list::empty<InvoiceLine>(), total = Money::new(250), created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let foreign-invoice = invoice::new(
+        id = InvoiceId::new("20000000-0000-0000-0000-000000000002"), customer-id = foreign-id,
+        lines = list::empty<InvoiceLine>(), total = Money::new(900), created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let owned-second = invoice::new(
+        id = InvoiceId::new("20000000-0000-0000-0000-000000000003"), customer-id = customer-id,
+        lines = list::empty<InvoiceLine>(), total = Money::new(125), created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let pay-first = payment::new(id = PaymentId::new("30000000-0000-0000-0000-000000000001"), invoice-id = owned-first.id, amount = Money::new(250), provider-reference = "account-001", paid-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"));
+    let pay-foreign = payment::new(id = PaymentId::new("30000000-0000-0000-0000-000000000002"), invoice-id = foreign-invoice.id, amount = Money::new(900), provider-reference = "account-002", paid-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"));
+    let pay-second = payment::new(id = PaymentId::new("30000000-0000-0000-0000-000000000003"), invoice-id = owned-second.id, amount = Money::new(125), provider-reference = "account-003", paid-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"));
+    let store = store::new(
+        customers = list::append(list::singleton<Customer>(customer), foreign),
+        products = list::empty<Product>(), subscriptions = list::empty<Subscription>(),
+        invoices = list::append(list::append(list::singleton<Invoice>(owned-first), foreign-invoice), owned-second),
+        payments = list::append(list::append(list::singleton<Payment>(pay-first), pay-foreign), pay-second),
+        email-outbox = list::empty<EmailMessage>(), sent-emails = list::empty<EmailMessage>());
+    match customer::account-summary(store, customer-id) {
+        ok summary => { bool::and(summary.customer == customer, summary.paid-total == Money::new(375)) }
+        error problem => { false }
+    }
+    => true
+}
+
+test customer.account-summary/unknown-customer-precedes-overflow {
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let known = customer::new(
+        id = customer-id, email = Email::new("c1@example.test"), kind = "standard",
+        balance = Money::new(0), created-at = Instant::new("2000-01-01T00:00:00.0000000+00:00"));
+    let max-invoice = invoice::new(id = InvoiceId::new("20000000-0000-0000-0000-000000000001"), customer-id = customer-id, lines = list::empty<InvoiceLine>(), total = Money::new(9223372036854775807), created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let plus-one-invoice = invoice::new(id = InvoiceId::new("20000000-0000-0000-0000-000000000002"), customer-id = customer-id, lines = list::empty<InvoiceLine>(), total = Money::new(1), created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let first = payment::new(id = PaymentId::new("30000000-0000-0000-0000-000000000001"), invoice-id = max-invoice.id, amount = max-invoice.total, provider-reference = "account-overflow-001", paid-at = max-invoice.created-at);
+    let second = payment::new(id = PaymentId::new("30000000-0000-0000-0000-000000000002"), invoice-id = plus-one-invoice.id, amount = plus-one-invoice.total, provider-reference = "account-overflow-002", paid-at = plus-one-invoice.created-at);
+    let store = store::new(
+        customers = list::singleton<Customer>(known), products = list::empty<Product>(), subscriptions = list::empty<Subscription>(),
+        invoices = list::append(list::singleton<Invoice>(max-invoice), plus-one-invoice), payments = list::append(list::singleton<Payment>(first), second),
+        email-outbox = list::empty<EmailMessage>(), sent-emails = list::empty<EmailMessage>());
+    match customer::account-summary(store, CustomerId::new("10000000-0000-0000-0000-000000000009")) {
+        ok summary => { false }
+        error problem => { problem.code == "CUSTOMER_NOT_FOUND" }
+    }
+    => true
+}
+
+test customer.account-summary/owned-total-overflow-is-an-error {
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let customer = customer::new(id = customer-id, email = Email::new("c1@example.test"), kind = "standard", balance = Money::new(0), created-at = Instant::new("2000-01-01T00:00:00.0000000+00:00"));
+    let first-invoice = invoice::new(id = InvoiceId::new("20000000-0000-0000-0000-000000000001"), customer-id = customer-id, lines = list::empty<InvoiceLine>(), total = Money::new(9223372036854775807), created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let second-invoice = invoice::new(id = InvoiceId::new("20000000-0000-0000-0000-000000000002"), customer-id = customer-id, lines = list::empty<InvoiceLine>(), total = Money::new(1), created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let first = payment::new(id = PaymentId::new("30000000-0000-0000-0000-000000000001"), invoice-id = first-invoice.id, amount = first-invoice.total, provider-reference = "account-overflow-003", paid-at = first-invoice.created-at);
+    let second = payment::new(id = PaymentId::new("30000000-0000-0000-0000-000000000002"), invoice-id = second-invoice.id, amount = second-invoice.total, provider-reference = "account-overflow-004", paid-at = second-invoice.created-at);
+    let store = store::new(customers = list::singleton<Customer>(customer), products = list::empty<Product>(), subscriptions = list::empty<Subscription>(), invoices = list::append(list::singleton<Invoice>(first-invoice), second-invoice), payments = list::append(list::singleton<Payment>(first), second), email-outbox = list::empty<EmailMessage>(), sent-emails = list::empty<EmailMessage>());
+    match customer::account-summary(store, customer-id) {
+        ok summary => { false }
+        error problem => { problem.code == "MONEY_OVERFLOW" }
+    }
+    => true
+}
+
+test store.customer-metrics-customer-step/adds-customer-subtotal {
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let customer = customer::new(id = customer-id, email = Email::new("c1@example.test"), kind = "standard", balance = Money::new(0), created-at = Instant::new("2000-01-01T00:00:00.0000000+00:00"));
+    let invoice = invoice::new(id = InvoiceId::new("20000000-0000-0000-0000-000000000001"), customer-id = customer-id, lines = list::empty<InvoiceLine>(), total = Money::new(25), created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let payment = payment::new(id = PaymentId::new("30000000-0000-0000-0000-000000000001"), invoice-id = invoice.id, amount = Money::new(25), provider-reference = "metrics-customer-001", paid-at = invoice.created-at);
+    let store = store::new(customers = list::singleton<Customer>(customer), products = list::empty<Product>(), subscriptions = list::empty<Subscription>(), invoices = list::singleton<Invoice>(invoice), payments = list::singleton<Payment>(payment), email-outbox = list::empty<EmailMessage>(), sent-emails = list::empty<EmailMessage>());
+    let metrics = storeCustomerMetrics::new(customers = 1, products = 0, subscriptions = 0, invoices = 1, payments = 1, pending-emails = 0, sent-emails = 0, paid-total = Money::new(10));
+    let initial = metricsCustomerAccumulator::new(store = store, outcome = result::ok<StoreCustomerMetrics, BusinessError>(metrics));
+    match store::customer-metrics-customer-step(initial, customer).outcome {
+        ok updated => { bool::and(updated.customers == 1, bool::and(updated.invoices == 1, updated.paid-total == Money::new(35))) }
+        error problem => { false }
+    }
+    => true
+}
+
+test store.customer-metrics/all-counts-and-owned-total {
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let product-id = ProductId::new("40000000-0000-0000-0000-000000000001");
+    let customer = customer::new(id = customer-id, email = Email::new("c1@example.test"), kind = "standard", balance = Money::new(17), created-at = Instant::new("2000-01-01T00:00:00.0000000+00:00"));
+    let product = product::new(id = product-id, name = "Reference product", unit-price = Money::new(250));
+    let line = invoiceLine::new(product-id = product-id, description = "Reference product", quantity = 1, unit-price = Money::new(250), line-total = Money::new(250));
+    let invoice = invoice::new(id = InvoiceId::new("20000000-0000-0000-0000-000000000001"), customer-id = customer-id, lines = list::singleton<InvoiceLine>(line), total = Money::new(250), created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let payment = payment::new(id = PaymentId::new("30000000-0000-0000-0000-000000000001"), invoice-id = invoice.id, amount = Money::new(250), provider-reference = "metrics-001", paid-at = invoice.created-at);
+    let subscription = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"), customer-id = customer-id, product-id = product-id, term = "annual", started-at = Instant::new("2001-02-03T00:00:00.0000000+00:00"), expires-at = Instant::new("2002-02-03T00:00:00.0000000+00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let pending = emailMessage::new(to = customer.email, subject = "Pending", body = "Message pending.");
+    let sent = emailMessage::new(to = customer.email, subject = "Sent", body = "Message sent.");
+    let store = store::new(customers = list::singleton<Customer>(customer), products = list::singleton<Product>(product), subscriptions = list::singleton<Subscription>(subscription), invoices = list::singleton<Invoice>(invoice), payments = list::singleton<Payment>(payment), email-outbox = list::singleton<EmailMessage>(pending), sent-emails = list::singleton<EmailMessage>(sent));
+    match store::customer-metrics(store) {
+        ok metrics => {
+            bool::and(metrics.customers == 1, bool::and(metrics.products == 1, bool::and(metrics.subscriptions == 1, bool::and(metrics.invoices == 1, bool::and(metrics.payments == 1, bool::and(metrics.pending-emails == 1, bool::and(metrics.sent-emails == 1, metrics.paid-total == Money::new(250))))))))
+        }
+        error problem => { false }
+    }
+    => true
+}
+
+test store.customer-metrics/empty-store-is-zero {
+    match store::customer-metrics(store::empty(unit)) {
+        ok metrics => { bool::and(metrics.customers == 0, bool::and(metrics.products == 0, bool::and(metrics.subscriptions == 0, bool::and(metrics.invoices == 0, bool::and(metrics.payments == 0, bool::and(metrics.pending-emails == 0, bool::and(metrics.sent-emails == 0, metrics.paid-total == Money::new(0)))))))) }
+        error problem => { false }
+    }
+    => true
+}
+
+test store.customer-metrics/dashboard-overflow-is-checked {
+    let first-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let second-id = CustomerId::new("10000000-0000-0000-0000-000000000002");
+    let first = customer::new(id = first-id, email = Email::new("c1@example.test"), kind = "standard", balance = Money::new(0), created-at = Instant::new("2000-01-01T00:00:00.0000000+00:00"));
+    let second = customer::new(id = second-id, email = Email::new("c2@example.test"), kind = "standard", balance = Money::new(0), created-at = Instant::new("2000-01-01T00:00:00.0000000+00:00"));
+    let first-invoice = invoice::new(id = InvoiceId::new("20000000-0000-0000-0000-000000000001"), customer-id = first-id, lines = list::empty<InvoiceLine>(), total = Money::new(9223372036854775807), created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let second-invoice = invoice::new(id = InvoiceId::new("20000000-0000-0000-0000-000000000002"), customer-id = second-id, lines = list::empty<InvoiceLine>(), total = Money::new(1), created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let first-payment = payment::new(id = PaymentId::new("30000000-0000-0000-0000-000000000001"), invoice-id = first-invoice.id, amount = first-invoice.total, provider-reference = "metrics-overflow-001", paid-at = first-invoice.created-at);
+    let second-payment = payment::new(id = PaymentId::new("30000000-0000-0000-0000-000000000002"), invoice-id = second-invoice.id, amount = second-invoice.total, provider-reference = "metrics-overflow-002", paid-at = second-invoice.created-at);
+    let store = store::new(customers = list::append(list::singleton<Customer>(first), second), products = list::empty<Product>(), subscriptions = list::empty<Subscription>(), invoices = list::append(list::singleton<Invoice>(first-invoice), second-invoice), payments = list::append(list::singleton<Payment>(first-payment), second-payment), email-outbox = list::empty<EmailMessage>(), sent-emails = list::empty<EmailMessage>());
+    match store::customer-metrics(store) {
+        ok metrics => { false }
+        error problem => { problem.code == "MONEY_OVERFLOW" }
+    }
+    => true
+}
+
+test customer.account-summary/known-customer-without-payments-has-zero {
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let customer = customer::new(
+        id = customer-id, email = Email::new("empty@example.test"), kind = "standard",
+        balance = Money::new(0), created-at = Instant::new("2000-01-01T00:00:00.0000000+00:00"));
+    let store = store::new(
+        customers = list::singleton<Customer>(customer), products = list::empty<Product>(),
+        subscriptions = list::empty<Subscription>(), invoices = list::empty<Invoice>(),
+        payments = list::empty<Payment>(), email-outbox = list::empty<EmailMessage>(),
+        sent-emails = list::empty<EmailMessage>());
+    match customer::account-summary(store, customer-id) {
+        ok summary => { bool::and(summary.customer == customer, summary.paid-total == Money::new(0)) }
+        error problem => { false }
+    }
+    => true
+}
+
+test store.customer-metrics-customer-step/empty-payment-list-preserves-total {
+    let customer = customer::new(
+        id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        email = Email::new("c1@example.test"), kind = "standard", balance = Money::new(0),
+        created-at = Instant::new("2000-01-01T00:00:00.0000000+00:00"));
+    let store = store::new(
+        customers = list::singleton<Customer>(customer), products = list::empty<Product>(),
+        subscriptions = list::empty<Subscription>(), invoices = list::empty<Invoice>(),
+        payments = list::empty<Payment>(), email-outbox = list::empty<EmailMessage>(),
+        sent-emails = list::empty<EmailMessage>());
+    let metrics = storeCustomerMetrics::new(
+        customers = 1, products = 0, subscriptions = 0, invoices = 0, payments = 0,
+        pending-emails = 0, sent-emails = 0, paid-total = Money::new(10));
+    let initial = metricsCustomerAccumulator::new(
+        store = store, outcome = result::ok<StoreCustomerMetrics, BusinessError>(metrics));
+    match store::customer-metrics-customer-step(initial, customer).outcome {
+        ok updated => { updated.paid-total == Money::new(10) }
+        error problem => { false }
+    }
+    => true
+}
+
+test store.customer-metrics-customer-step/customer-overflow-propagates {
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let customer = customer::new(
+        id = customer-id, email = Email::new("c1@example.test"), kind = "standard",
+        balance = Money::new(0), created-at = Instant::new("2000-01-01T00:00:00.0000000+00:00"));
+    let first-invoice = invoice::new(
+        id = InvoiceId::new("20000000-0000-0000-0000-000000000011"), customer-id = customer-id,
+        lines = list::empty<InvoiceLine>(), total = Money::new(9223372036854775807),
+        created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let second-invoice = invoice::new(
+        id = InvoiceId::new("20000000-0000-0000-0000-000000000012"), customer-id = customer-id,
+        lines = list::empty<InvoiceLine>(), total = Money::new(1),
+        created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let first-payment = payment::new(
+        id = PaymentId::new("30000000-0000-0000-0000-000000000011"), invoice-id = first-invoice.id,
+        amount = first-invoice.total, provider-reference = "metrics-customer-overflow-001", paid-at = first-invoice.created-at);
+    let second-payment = payment::new(
+        id = PaymentId::new("30000000-0000-0000-0000-000000000012"), invoice-id = second-invoice.id,
+        amount = second-invoice.total, provider-reference = "metrics-customer-overflow-002", paid-at = second-invoice.created-at);
+    let store = store::new(
+        customers = list::singleton<Customer>(customer), products = list::empty<Product>(),
+        subscriptions = list::empty<Subscription>(), invoices = list::append(list::singleton<Invoice>(first-invoice), second-invoice),
+        payments = list::append(list::singleton<Payment>(first-payment), second-payment),
+        email-outbox = list::empty<EmailMessage>(), sent-emails = list::empty<EmailMessage>());
+    let metrics = storeCustomerMetrics::new(
+        customers = 1, products = 0, subscriptions = 0, invoices = 2, payments = 2,
+        pending-emails = 0, sent-emails = 0, paid-total = Money::new(0));
+    let initial = metricsCustomerAccumulator::new(
+        store = store, outcome = result::ok<StoreCustomerMetrics, BusinessError>(metrics));
+    match store::customer-metrics-customer-step(initial, customer).outcome {
+        ok updated => { false }
+        error problem => { problem.code == "MONEY_OVERFLOW" }
+    }
+    => true
+}
+
+test store.customer-metrics-customer-step/dashboard-addition-overflow-propagates {
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let customer = customer::new(
+        id = customer-id, email = Email::new("c1@example.test"), kind = "standard",
+        balance = Money::new(0), created-at = Instant::new("2000-01-01T00:00:00.0000000+00:00"));
+    let invoice = invoice::new(
+        id = InvoiceId::new("20000000-0000-0000-0000-000000000013"), customer-id = customer-id,
+        lines = list::empty<InvoiceLine>(), total = Money::new(1),
+        created-at = Instant::new("2001-02-03T04:05:06.0000000+00:00"), status = InvoiceStatus::new("paid"));
+    let payment = payment::new(
+        id = PaymentId::new("30000000-0000-0000-0000-000000000013"), invoice-id = invoice.id,
+        amount = Money::new(1), provider-reference = "metrics-dashboard-overflow", paid-at = invoice.created-at);
+    let store = store::new(
+        customers = list::singleton<Customer>(customer), products = list::empty<Product>(),
+        subscriptions = list::empty<Subscription>(), invoices = list::singleton<Invoice>(invoice),
+        payments = list::singleton<Payment>(payment), email-outbox = list::empty<EmailMessage>(),
+        sent-emails = list::empty<EmailMessage>());
+    let metrics = storeCustomerMetrics::new(
+        customers = 1, products = 0, subscriptions = 0, invoices = 1, payments = 1,
+        pending-emails = 0, sent-emails = 0, paid-total = Money::new(9223372036854775807));
+    let initial = metricsCustomerAccumulator::new(
+        store = store, outcome = result::ok<StoreCustomerMetrics, BusinessError>(metrics));
+    match store::customer-metrics-customer-step(initial, customer).outcome {
+        ok updated => { false }
+        error problem => { problem.code == "MONEY_OVERFLOW" }
+    }
+    => true
+}

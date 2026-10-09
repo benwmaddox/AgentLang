@@ -86,8 +86,16 @@ program is behaviorally correct.
 
 ## Pilot stopping rule
 
-Use the rule already declared in plan.md: one fresh actor per arm first; if all
-three pass behavior and preservation, stop as a ceiling/feasibility result even
-if structure or workflow differs. Otherwise run one additional fresh replica per
-arm from the same frozen starts. Report all dimensions, all attempts and this
-outcome-dependent replication rule. Do not claim statistical superiority.
+Predispatch clarification for the main comparison: run one fresh actor per arm
+first. If all three satisfy full acceptance (including shared structure and task
+finalization), stop as a ceiling/feasibility result. Otherwise run one additional
+fresh replica per arm from the same frozen starts. Report all dimensions, all
+attempts and this outcome-dependent replication rule. Do not claim statistical
+superiority.
+
+This supersedes the provisional behavior-and-preservation-only stopping rule in
+plan.md for the main comparison, before any main participant is dispatched. Both
+initial summaries are already behaviorally correct: a no-op could otherwise
+trigger a misleading ceiling conclusion without completing the refactor. The
+published seed plan and seed scoring are unchanged. The final main freeze must
+record this clarification explicitly.

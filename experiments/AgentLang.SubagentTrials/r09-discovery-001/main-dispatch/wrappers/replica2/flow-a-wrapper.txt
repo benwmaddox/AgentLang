@@ -1,0 +1,4 @@
+You are a fresh comparison participant. Read only the single assigned prompt file below, verify its SHA-256, then follow its instructions. The human authorizes edits only to the isolated project described in that prompt and its local tests. Do not read any other repository, study, oracle, scorer, control, or participant files. Project discovery, editing, evaluation, and tests must use only the assigned broker. If the prompt is missing or its hash does not match, stop without touching the project.
+
+Prompt file: D:\code\AgentLang\experiments\AgentLang.SubagentTrials\r09-discovery-001\main-dispatch\prompts\replica2\flow-a.md
+Expected SHA-256: 45a5082118e5c0285ce182869d24e0664865789c3b3834dc0ce10c90b63a17bd

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "study": "r09-discovery-001",
+  "milestone": "shared-summary comparison complete",
+  "createdUtc": "2026-10-09T00:19:24.1867330Z",
+  "repositoryRevision": "f749264073553729c43e3d2e5097e73620515c03",
+  "archivePath": "reports/evidence/135-r09-shared-summary-comparison/135-r09-shared-summary-comparison.zip",
+  "archiveBytes": 49767540,
+  "archiveSha256": "54105021e11527036ab041e1a4f021bf554f63a3a34eb76f4d7fe0c4dc766e51",
+  "zipSha256Sidecar": "reports/evidence/135-r09-shared-summary-comparison/zip.sha256",
+  "archiveEntryCount": 19093,
+  "payloadEntryCount": 19093,
+  "payloadManifestPath": "reports/evidence/135-r09-shared-summary-comparison/payload-sha256-manifest.json",
+  "payloadManifestSha256": "32daafc2b0efad20cc6390ff54f940a4d792dc35d5917e177c2204b4cd53c769",
+  "payloadManifestBytes": 6251915,
+  "sourceIntegrityBefore": "reports/evidence/135-r09-shared-summary-comparison/source-integrity-before.json",
+  "sourceIntegrityAfter": "reports/evidence/135-r09-shared-summary-comparison/source-integrity-after.json",
+  "payload": {
+    "selectedFileCount": 19093,
+    "uncompressedBytes": 711868293,
+    "excludedBuildCacheFileCount": 4453,
+    "excludedBuildCacheBytes": 302255996,
+    "compiledRuntimeBinariesIncluded": false,
+    "sourceIntegrityBeforeAfterMatched": true,
+    "verifiedPayloadEntries": 19093,
+    "missingEntries": [],
+    "extraEntries": [],
+    "hashOrLengthMismatches": [],
+    "verified": true
+  },
+  "seedArchiveReference": {
+    "path": "reports/evidence/134-r09-discovery-seed/134-r09-discovery-seed.zip",
+    "sha256": "7129e1adf07340fd312db802df75d5c2f086c2d6b38ac6ae46940243bee75283",
+    "committedInHead": true,
+    "gitTreeRecord": "100644 blob 2b6a21e93e40eaedd092c4e2faee1bbccb66293a 15478529\treports/evidence/134-r09-discovery-seed/134-r09-discovery-seed.zip",
+    "duplicatedInThisArchive": false
+  },
+  "sourceGroups": [
+    "both rounds of frozen starts, prompts, wrappers and dispatch/input-freeze records",
+    "six terminal participant projects, traces, final responses, audits and source inventories",
+    "all comparison score attempts, score logs, raw requests/responses and final scores",
+    "flow and conventional predispatch scorer sources, controls, candidate snapshots and procedural logs",
+    "study protocol, acceptance criteria, oracle, public reference fixtures, runtime pin and broker source",
+    "report 135 snapshot and archive packaging procedure"
+  ],
+  "exclusions": [
+    "compiled assemblies and symbols, package files, cache files, and bin/obj build trees",
+    "private-key containers and credential-named files",
+    "seed archive 134 payload, referenced by committed path and verified SHA-256"
+  ],
+  "packagingHistory": [
+    {
+      "attempt": 1,
+      "status": "storage-index assembly failed after ZIP creation; source hashes matched",
+      "evidencePath": ".agentlang/r09-discovery-001/archive-135/attempt-001/package-attempt.json",
+      "partialArchiveSha256": "25fa90d7a4001293271cb1a7f37ded84453408a8b0daac13e421b243f9e6837d",
+      "partialArchiveBytes": 49766293,
+      "retainedPartialArtifactsPath": ".agentlang/r09-discovery-001/archive-135/attempt-001/"
+    }
+  ]
+}
