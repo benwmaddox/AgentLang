@@ -1,7 +1,11 @@
 # Rental query: discovering retained interval vocabulary
 
-Status: preflight verified and frozen; four independent participants dispatched.
-No participant efficacy results have been graded yet.
+Status: all four independent participants completed and graded.
+
+All four submissions pass the 17 independent cases and their own suites. Neither
+retained-start agent calls the interval vocabulary. This task supplies no observed
+correctness or reuse advantage for AgentLang over F#, and no observed reuse benefit
+from retaining this particular abstraction.
 
 ## Question and design
 
@@ -92,7 +96,7 @@ separate executable runs provide start-suite evidence. Participant suites will
 also be executed as programs, not inferred from `dotnet test` exit status.
 These coordinator corrections are not participant failures.
 
-## Frozen evidence and next result
+## Frozen preflight evidence
 
 The 161 hashed inputs include the task, prepared project inventories, prompts,
 oracle and both frozen runtime artifacts. All four start copies match their
@@ -106,4 +110,91 @@ no conversation history, and only its assigned broker/project access.
 `30773bc9b6d7197c69887824dd767bb11835419304ea0c77feb5d38db93fef5b`.
 Raw materials are retained under `.agentlang/reuse-145/`. The archived
 prepared-not-dispatched status describes the freeze checkpoint; dispatch occurred
-afterward. Final submissions, independent grading and actual reuse remain pending.
+afterward. The final results follow below.
+
+## Participant outcomes
+
+| Participant | Condition | Independent cases | Own suite | Broker exchanges | Error responses |
+| --- | --- | --- | --- | --- | --- |
+| flow-a | Retained interval | 17/17 | 33/33 tests | 19 | 0 |
+| flow-b | Flat | 17/17 | 29/29 tests | 28 | 2 |
+| fsharp-a | Flat | 17/17 | 37 checks | 23 | 6 |
+| fsharp-b | Retained interval | 17/17 | 36 baseline/billing + 7 interval checks | 26 | 9 |
+
+Own-suite counts use different units and are not comparable measures of coverage.
+All four traces pass the existing terminal audit with explicit host.close and
+host/runtime exits 0/0. Both AgentLang tasks commit normally. The root reran each
+submission on an isolated copy, preserved the originals, and verified all 64
+immutable frozen protocol/runtime inputs after the trials.
+
+Both language queries are persistent library functions. Fresh-process inspection
+and attached test execution show 37/37 authored instructions, 6/6 branch outcomes,
+and both Result alternatives covered for each. The retained submission has nine
+own tests; the flat submission has thirteen. Their Rental record inputs do not
+receive exhaustive finite-input coverage, as declared before dispatch.
+
+All four production functions use the same basic strategy: reject an invalid
+window, bound occupancy by cancellation and finish, clip both endpoints, and
+subtract only for a positive overlap. Both AgentLang queries reuse the existing
+rental error builder and generated field accessors. Neither calls interval
+construction or overlap functions. Both F# functions likewise avoid the Interval
+module. This is non-use of the retained interval abstraction, not zero reuse of
+all existing project or standard-library functionality.
+
+Discovery differs from execution. The retained AgentLang agent lists the
+dictionary and reads the source of interval.overlaps? (exchange 11); it does not
+separately inspect interval.try-create. The retained F# agent reads INTERVAL.md,
+Interval.fs and IntervalTests.fs (exchanges 10, 13 and 15). Both inspect retained
+helper details but still implement the query directly. Reading a helper or
+carrying its tests forward is not production reuse. No participant
+creates an additional production helper or type.
+
+The language dictionary diffs only add the query and attached tests. Existing
+types, functions, tests and interval definitions remain unchanged. F# diffs add
+the query and billing assertions without removing inherited checks or changing
+project configuration; the retained participant also updates the README's stale
+starting-project note. That documentation change is within task scope.
+
+## Recovery and limits
+
+The flat language agent encounters one discovery argument error and one syntax
+error from writing a named integer call with dot notation; it fixes both. The
+F# agents encounter broker argument/path/hash or ambiguous patch-anchor errors
+(six and nine respectively). These are protocol/editing failures, not evidence
+of weaker F# type checking. Both brokers ultimately execute their configured
+assertion programs successfully; root separately reruns the F# executables in
+Release on isolated copies. No NuGet audit outage is involved in these trials.
+
+The broker counts describe these four runs only. One participant per cell,
+different suite sizes, and protocol-learning costs prevent a defensible claim
+about token savings or efficiency. No full LLM token measurements were obtained.
+The conventional broker's argument and path discoverability deserve improvement
+before treating its interaction count as representative of normal repository work.
+
+This is a small, explicitly specified query. The public contract warns about empty
+occupancy and overflow. Passing it does not show that agents independently discover
+those hazards in an underspecified application, and does not repair or invalidate
+the earlier report-143 defect. The interval helper offers construction/overlap,
+not intersection length; bypassing it can be an appropriate design choice.
+
+The evidence supports a narrower result: agents can implement and publish this
+typed query in the current environment, and the strict library gate works for
+its declared coverage obligations. It does not establish that retained vocabulary
+improves reliability. Further efficacy work should test accumulated domain rules
+that actually fit a later task, preserve an equally capable F# baseline, and keep
+reuse optional. Expanding mailbox infrastructure is not a prerequisite for that
+research.
+
+## Results archive
+
+[Results archive](evidence/145-rental-vocabulary-reuse/results.zip) and
+[entry index](evidence/145-rental-vocabulary-reuse/results-index.json): 392 entries,
+506,394 bytes, SHA-256
+`f1e8e6b6a3c564422edd344aa3f25cbb989ffebd2f1e0f7f4d3c9cfd46198c83`.
+Every entry was checked against its original bytes and indexed size/hash. The
+archive includes participant traces and final projects, grader outputs, isolated
+suite runs, scope diffs, fresh library inspection, the independent review and
+post-grading integrity evidence. All 127 final source files remain unchanged
+since grading. Build outputs and lock files are excluded. No runtime/compiler
+source changed in this milestone; validation is the local frozen comparison and
+its documented controls, not a claim of a fresh full implementation gate.

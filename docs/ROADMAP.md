@@ -116,13 +116,17 @@ Next actions:
    The existing-core prototype is validated in [report 144](../reports/144-nonempty-interval-prototype.md):
    both implementations pass a shared 125-case bounded grid. Later-agent adoption
    and subscription/Instant integration remain untested.
-   [Report 145](../reports/145-rental-vocabulary-reuse.md) prepares the four-cell
-   rental query comparison (preflight frozen; four agents dispatched): each language with and without retained interval
-   vocabulary. Score correctness and actual reuse separately; do not require
-   helper use. The query can qualify without changing the runtime, while the
-   validated Rental-returning fixture builders remain project-level because
-   finite-projection qualification is unsupported. Record that limitation;
-   do not remove the record invariant to bypass it.
+   [Report 145](../reports/145-rental-vocabulary-reuse.md) completes the four-cell
+   rental query comparison: all submissions pass 17/17 independent cases and
+   their own suites. Neither retained-start agent calls the interval helper;
+   both retained agents inspect helper details but use direct arithmetic. No
+   reliability or retained-vocabulary advantage is established by this task.
+   Both language queries qualify as libraries; validated Rental-returning
+   fixture builders remain project-level because finite-projection qualification
+   is unsupported. Keep that limit explicit. Further efficacy work should test
+   retained domain rules that fit later tasks and improve conventional broker
+   discoverability before comparing tool counts; no new mailbox infrastructure
+   is required for this research.
 
 Acceptance is an evidence-backed review of the declared conditions, including
 their limitations. Completing a language feature or passing actor-written tests

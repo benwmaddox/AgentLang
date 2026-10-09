@@ -6,6 +6,11 @@ AI agents are external coding tools that use the language. The language runtime 
 
 This repository implements a prototype slice. The compiler checks and lowers source into verified typed semantic IR; the public runtime executes that IR through the interpreter, with no AST execution fallback. Effectful language primitives use virtual providers only; there is no host filesystem, network, or database access from language programs. An optional external experiment harness and a conventional business foundation are included. The [repeated external-agent comparison](reports/064-repeat-agent-purpose-review.md) observes tested vocabulary reuse; an overall efficiency advantage remains unproven. The Customer demo uses binary floating point and is not suitable for exact money. The Email validator below demonstrates a modest local policy and does not claim conformance with the full Internet email standard.
 
+The latest [rental vocabulary comparison](reports/145-rental-vocabulary-reuse.md)
+completed four isolated agent trials: all passed the independent behavior checks,
+but neither retained-start agent used the interval helper after inspecting it.
+This task establishes no reliability or retained-vocabulary advantage over F#.
+
 The default Flow authoring cutover passed the complete 27-check Release gate in
 [report 052](reports/052-default-flow-authoring.md). Flow uses named typed inputs,
 immutable locals, ordinary calls and static first-input dot chaining. Words
