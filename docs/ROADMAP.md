@@ -63,6 +63,15 @@ case count. The tests exposed and now cover a short-input scanner status defect.
 This remains separate from choosing actor versus specialized-mailbox semantics;
 Option/Result native payload layouts remain subsequent work.
 
+[Report 160](../reports/160-native-option-result.md) tracks that implementation
+with focused conformance validated: inline Option/Result payloads, layout ABI 3,
+conservative compiler rewinds and isolated malformed-input checks. The full LLVM
+regression suite, owning sum parity, mailbox integration/policy and local I/O
+regressions and all 37 full Release checks pass. A coherent malformed
+None descriptor exposed a missing sentinel rule,
+now repaired with before/after evidence. This engineering milestone does not
+change the efficacy conclusions below or select the final mailbox memory policy.
+
 [Report 154](../reports/154-provider-state-assertion-probe.md) tests an I/O repair
 with a fresh agent. Its submission passes three independent cases; its own added
 known-path state and exact effect-count assertions reject wrong destination,

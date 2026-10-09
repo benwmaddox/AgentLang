@@ -28,7 +28,7 @@
   "abiHeader": "src/AgentLang.Llvm/native/owning_mailbox_abi.h",
   "moduleAbiVersion": 1,
   "manifestFormatVersion": 1,
-  "layoutAbiVersion": 2,
+  "layoutAbiVersion": 3,
   "typeDescriptorSizeBytes": 36,
   "moduleStructSizeBytes": 144,
   "associatedResumePointerOffsetBytes": 136,

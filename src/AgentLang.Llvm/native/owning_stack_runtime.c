@@ -679,9 +679,16 @@ static int32_t al_owning_validate_type_descriptor(
        type->kind != AL_OWNING_TYPE_UNIT &&
        type->kind != AL_OWNING_TYPE_RECORD &&
        type->kind != AL_OWNING_TYPE_STRING &&
-       type->kind != AL_OWNING_TYPE_ENUM) ||
-      (type->kind == AL_OWNING_TYPE_ENUM ? type->case_count == 0u
-                                         : type->case_count != 0u) ||
+       type->kind != AL_OWNING_TYPE_ENUM &&
+       type->kind != AL_OWNING_TYPE_OPTION &&
+       type->kind != AL_OWNING_TYPE_RESULT) ||
+      (type->kind == AL_OWNING_TYPE_ENUM && type->case_count == 0u) ||
+      ((type->kind == AL_OWNING_TYPE_OPTION ||
+        type->kind == AL_OWNING_TYPE_RESULT) &&
+       (type->case_count != 2u || type->field_count != 2u)) ||
+      (type->kind != AL_OWNING_TYPE_ENUM &&
+       type->kind != AL_OWNING_TYPE_OPTION &&
+       type->kind != AL_OWNING_TYPE_RESULT && type->case_count != 0u) ||
       type->minimum_extent_bytes < type->minimum_payload_bytes ||
       (!payload_dynamic &&
        (type->minimum_payload_bytes != type->fixed_payload_bytes ||
@@ -703,6 +710,18 @@ static int32_t al_owning_validate_type_descriptor(
   if (type->kind == AL_OWNING_TYPE_STRING &&
       (type->field_count != 0u || !payload_dynamic ||
        type->minimum_payload_bytes != 8u || type->minimum_extent_bytes != 8u)) {
+    al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL, view->error_id,
+                          type_index, layout->type_count);
+    return 0;
+  }
+  if ((type->kind == AL_OWNING_TYPE_OPTION ||
+       type->kind == AL_OWNING_TYPE_RESULT) &&
+      (type->minimum_payload_bytes < 8u ||
+       type->minimum_extent_bytes < 8u ||
+       (type->fixed_extent_bytes != AL_OWNING_LAYOUT_DYNAMIC_U32 &&
+        (type->fixed_payload_bytes < 8u || type->fixed_extent_bytes < 8u ||
+         (type->fixed_extent_bytes & 7u) != 0u)) ||
+       (type->minimum_extent_bytes & 7u) != 0u)) {
     al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL, view->error_id,
                           type_index, layout->type_count);
     return 0;
@@ -753,6 +772,115 @@ static int32_t al_owning_validate_type_graph_inner(
   if (!al_owning_validate_type_descriptor(view, layout, type_index, &type))
     return 0;
   state[type_index] = 1u;
+  if (type->kind == AL_OWNING_TYPE_OPTION ||
+      type->kind == AL_OWNING_TYPE_RESULT) {
+    uint64_t minimum_case_payload = UINT64_MAX;
+    uint64_t minimum_case_extent = UINT64_MAX;
+    uint64_t fixed_case_payload = 0u;
+    uint64_t fixed_case_extent = 0u;
+    int32_t all_cases_fixed = 1;
+    int32_t have_fixed_case = 0;
+    for (index = 0u; index < 2u; ++index) {
+      const al_owning_field_descriptor *field =
+          &layout->fields[type->first_field + index];
+      uint64_t case_minimum_payload;
+      uint64_t case_minimum_extent;
+      if (field->fixed_offset_bytes != 8u || field->flags != 0u ||
+          field->reserved != 0u ||
+          (type->kind == AL_OWNING_TYPE_OPTION && index == 1u &&
+           field->child_type_index != AL_OWNING_LAYOUT_DYNAMIC_U32) ||
+          (field->child_type_index == AL_OWNING_LAYOUT_DYNAMIC_U32 &&
+           (type->kind != AL_OWNING_TYPE_OPTION || index != 1u))) {
+        al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL,
+                              view->error_id, field->child_type_index,
+                              layout->type_count);
+        return 0;
+      }
+      if (field->child_type_index == AL_OWNING_LAYOUT_DYNAMIC_U32) {
+        case_minimum_payload = 8u;
+        case_minimum_extent = 8u;
+        if (!have_fixed_case) {
+          fixed_case_payload = 8u;
+          fixed_case_extent = 8u;
+          have_fixed_case = 1;
+        } else if (fixed_case_payload != 8u || fixed_case_extent != 8u) {
+          all_cases_fixed = 0;
+        }
+      } else {
+        const al_owning_type_descriptor *child;
+        uint64_t case_fixed_payload;
+        uint64_t case_fixed_extent;
+        if (field->child_type_index >= layout->type_count) {
+          al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL,
+                                view->error_id, field->child_type_index,
+                                layout->type_count);
+          return 0;
+        }
+        if (*visited_fields >= AL_OWNING_LAYOUT_MAX_FIELDS) {
+          al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL,
+                                view->error_id, *visited_fields + 1u,
+                                AL_OWNING_LAYOUT_MAX_FIELDS);
+          return 0;
+        }
+        ++*visited_fields;
+        if (!al_owning_validate_type_graph_inner(
+                view, layout, field->child_type_index, depth + 1u, state,
+                height, visited_fields))
+          return 0;
+        if ((uint32_t)height[field->child_type_index] > child_height_max)
+          child_height_max = (uint32_t)height[field->child_type_index];
+        child = &layout->types[field->child_type_index];
+        case_minimum_payload = 8u + child->minimum_payload_bytes;
+        case_minimum_extent = 8u + child->minimum_extent_bytes;
+        if (child->fixed_extent_bytes == AL_OWNING_LAYOUT_DYNAMIC_U32) {
+          all_cases_fixed = 0;
+        } else {
+          case_fixed_payload = 8u + child->fixed_payload_bytes;
+          case_fixed_extent = 8u + child->fixed_extent_bytes;
+          if (!have_fixed_case) {
+            fixed_case_payload = case_fixed_payload;
+            fixed_case_extent = case_fixed_extent;
+            have_fixed_case = 1;
+          } else if (fixed_case_payload != case_fixed_payload ||
+                     fixed_case_extent != case_fixed_extent) {
+            all_cases_fixed = 0;
+          }
+        }
+      }
+      if (case_minimum_payload < minimum_case_payload)
+        minimum_case_payload = case_minimum_payload;
+      if (case_minimum_extent < minimum_case_extent)
+        minimum_case_extent = case_minimum_extent;
+      if (case_minimum_payload > UINT32_MAX ||
+          case_minimum_extent > UINT32_MAX ||
+          fixed_case_payload > UINT32_MAX || fixed_case_extent > UINT32_MAX) {
+        al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL,
+                              view->error_id, UINT32_MAX, 0u);
+        return 0;
+      }
+    }
+    if ((all_cases_fixed && !have_fixed_case) ||
+        minimum_case_payload != type->minimum_payload_bytes ||
+        minimum_case_extent != type->minimum_extent_bytes ||
+        (all_cases_fixed
+             ? (type->fixed_payload_bytes != (uint32_t)fixed_case_payload ||
+                type->fixed_extent_bytes != (uint32_t)fixed_case_extent)
+             : type->fixed_payload_bytes != AL_OWNING_LAYOUT_DYNAMIC_U32)) {
+      al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL, view->error_id,
+                            type_index, layout->type_count);
+      return 0;
+    }
+    computed_height = child_height_max + 1u;
+    if (computed_height > AL_OWNING_LAYOUT_MAX_DEPTH - depth) {
+      al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL,
+                            view->error_id, depth + computed_height,
+                            AL_OWNING_LAYOUT_MAX_DEPTH);
+      return 0;
+    }
+    height[type_index] = (uint8_t)computed_height;
+    state[type_index] = 2u;
+    return 1;
+  }
   if (type->kind != AL_OWNING_TYPE_RECORD) {
     height[type_index] = 1u;
     state[type_index] = 2u;
@@ -985,7 +1113,71 @@ static int32_t al_owning_scan_value(al_owning_scan_view *view,
     al_owning_scan_failure(view, offset, containing_owner_end);
     return 0;
   }
-  if (type->kind == AL_OWNING_TYPE_STRING) {
+  if (type->kind == AL_OWNING_TYPE_OPTION ||
+      type->kind == AL_OWNING_TYPE_RESULT) {
+    uint64_t tag;
+    const al_owning_field_descriptor *case_field;
+    uint32_t child_payload = 0u;
+    uint32_t child_extent = 0u;
+    uint64_t payload_wide;
+    uint64_t extent_wide;
+    if (!al_owning_scan_readable_in_owner(view, offset,
+                                          containing_owner_end, 8u))
+      return 0;
+    tag = al_owning_read_u64_le(view->bytes, offset);
+    if (tag > 1u) {
+      al_owning_scan_failure(view, tag > UINT32_MAX ? UINT32_MAX
+                                                    : (uint32_t)tag,
+                             2u);
+      return 0;
+    }
+    case_field = &layout->fields[type->first_field + (uint32_t)tag];
+    if (case_field->child_type_index == AL_OWNING_LAYOUT_DYNAMIC_U32) {
+      if (type->kind != AL_OWNING_TYPE_OPTION || tag != 1u) {
+        al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL,
+                              view->error_id, case_field->child_type_index,
+                              layout->type_count);
+        return 0;
+      }
+      payload = 8u;
+      extent = 8u;
+    } else {
+      uint32_t child_offset;
+      if (case_field->child_type_index >= layout->type_count ||
+          containing_owner_end - offset < 8u || offset > UINT32_MAX - 8u) {
+        al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL,
+                              view->error_id, case_field->child_type_index,
+                              layout->type_count);
+        return 0;
+      }
+      child_offset = offset + 8u;
+      if (!al_owning_scan_value(view, layout, case_field->child_type_index,
+                                child_offset, containing_owner_end, depth + 1u,
+                                &child_payload, &child_extent, target))
+        return 0;
+      payload_wide = 8ull + child_payload;
+      extent_wide = 8ull + child_extent;
+      if (payload_wide > UINT32_MAX || extent_wide > UINT32_MAX ||
+          extent_wide > containing_owner_end - offset) {
+        al_owning_scan_failure(
+            view, extent_wide > UINT32_MAX ? UINT32_MAX : (uint32_t)extent_wide,
+            containing_owner_end - offset);
+        return 0;
+      }
+      payload = (uint32_t)payload_wide;
+      extent = (uint32_t)extent_wide;
+    }
+    if (payload < type->minimum_payload_bytes ||
+        extent < type->minimum_extent_bytes ||
+        (type->fixed_payload_bytes != AL_OWNING_LAYOUT_DYNAMIC_U32 &&
+         (payload != type->fixed_payload_bytes ||
+          extent != type->fixed_extent_bytes))) {
+      al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL,
+                            view->error_id, extent,
+                            type->fixed_extent_bytes);
+      return 0;
+    }
+  } else if (type->kind == AL_OWNING_TYPE_STRING) {
     uint32_t code_units;
     if (!al_owning_scan_string(view, offset, containing_owner_end, &code_units,
                                &payload, &extent))
@@ -1321,6 +1513,72 @@ int32_t al_owning_locate_field(al_owning_stack_context *ctx,
     return 1;
   }
   *out_field_location = measured_location;
+  return 0;
+}
+
+int32_t al_owning_locate_sum_case(
+    al_owning_stack_context *ctx, const al_owning_layout *layout,
+    uint32_t sum_type_index, uint32_t sum_offset, uint32_t sum_extent_bytes,
+    uint32_t error_id, uint32_t *out_case_index,
+    al_owning_field_location *out_case_location) {
+  al_owning_scan_view view;
+  const al_owning_type_descriptor *sum_type;
+  al_owning_field_location measured_location;
+  uint32_t measured_payload;
+  uint32_t measured_extent;
+  uint32_t sum_end;
+  uint32_t case_index;
+  const al_owning_field_descriptor *case_field;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (out_case_index == 0 || out_case_location == 0 ||
+      !al_owning_validate_layout_header(ctx, layout, error_id)) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
+    return 1;
+  }
+  view.ctx = ctx;
+  view.bytes = ctx->stack_data;
+  view.length = ctx->stack_capacity_bytes;
+  view.error_id = error_id;
+  view.external = 0;
+  if (!al_owning_validate_type_descriptor(&view, layout, sum_type_index,
+                                          &sum_type) ||
+      (sum_type->kind != AL_OWNING_TYPE_OPTION &&
+       sum_type->kind != AL_OWNING_TYPE_RESULT) ||
+      sum_offset > ctx->cursor_bytes ||
+      sum_offset > ctx->stack_capacity_bytes ||
+      sum_extent_bytes > ctx->cursor_bytes - sum_offset ||
+      sum_extent_bytes > ctx->stack_capacity_bytes - sum_offset ||
+      sum_extent_bytes > UINT32_MAX - sum_offset) {
+    if (ctx->status == AL_OWNING_STATUS_OK)
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                            sum_extent_bytes, ctx->cursor_bytes);
+    return 1;
+  }
+  sum_end = sum_offset + sum_extent_bytes;
+  view.length = sum_end;
+  if (!al_owning_validate_type_graph(&view, layout, sum_type_index) ||
+      !al_owning_scan_value(&view, layout, sum_type_index, sum_offset, sum_end,
+                            0u, &measured_payload, &measured_extent, 0))
+    return 1;
+  if (measured_extent != sum_extent_bytes) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          measured_extent, sum_extent_bytes);
+    return 1;
+  }
+  case_index = (uint32_t)al_owning_read_u64_le(ctx->stack_data, sum_offset);
+  case_field = &layout->fields[sum_type->first_field + case_index];
+  if (case_field->child_type_index == AL_OWNING_LAYOUT_DYNAMIC_U32) {
+    measured_location.offset_bytes = sum_offset + 8u;
+    measured_location.payload_bytes = 0u;
+    measured_location.extent_bytes = 0u;
+  } else {
+    measured_location.offset_bytes = sum_offset + 8u;
+    measured_location.payload_bytes = measured_payload - 8u;
+    measured_location.extent_bytes = measured_extent - 8u;
+  }
+  *out_case_index = case_index;
+  *out_case_location = measured_location;
   return 0;
 }
 

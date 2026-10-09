@@ -21,6 +21,18 @@ type OwningStackFieldLayout =
       MinimumPayloadBytes: int
       MinimumExtentBytes: int }
 
+[<Struct>]
+type OwningStackCaseLayout =
+    { CaseName: string
+      Tag: int
+      PayloadType: IrType option
+      OffsetBytes: int
+      PayloadBytes: int
+      ExtentBytes: int
+      IsDynamic: bool
+      MinimumPayloadBytes: int
+      MinimumExtentBytes: int }
+
 type OwningStackTypeLayout =
     { Type: IrType
       TypeName: string
@@ -29,7 +41,8 @@ type OwningStackTypeLayout =
       IsDynamic: bool
       MinimumPayloadBytes: int
       MinimumExtentBytes: int
-      Fields: OwningStackFieldLayout list }
+      Fields: OwningStackFieldLayout list
+      Cases: OwningStackCaseLayout list }
 
 type OwningStackLayoutEvent =
     { Kind: string
@@ -237,7 +250,8 @@ type internal OwningTypeInfo =
       MinimumPayloadBytes: int
       MinimumExtentBytes: int
       LayoutDepth: int
-      Fields: (string * IrType * int) list }
+      Fields: (string * IrType * int) list
+      Cases: (string * IrType option * int) list }
 
 type internal OwningProgramInfo =
     { Program: IrProgram
@@ -479,7 +493,7 @@ type OwningStackCompiledProgram internal
             if writtenBytes > 0 then Array.Copy(resultBytes, 0, retainedOutput, 0, writtenBytes)
             let committedMetrics = { metrics with HostRetainedCommitBytes = writtenBytes }
             { Values = values
-              LayoutSchemaVersion = 2
+              LayoutSchemaVersion = 3
               Metrics = committedMetrics
               RetainedBytesWritten = writtenBytes
               RetainedOutputBytes = resultBytes
@@ -518,7 +532,7 @@ type OwningStackCompiledProgram internal
 [<RequireQualifiedAccess>]
 module OwningStackAot =
     let private unsupported code message owner actual =
-        Diagnostics.raiseError code message (Some owner) None [ "Int | Bool | Unit | String | payload-free enum | acyclic inline record" ] [ actual ]
+        Diagnostics.raiseError code message (Some owner) None [ "Int | Bool | Unit | String | payload-free enum | acyclic inline record | Option<T> | Result<T, E>" ] [ actual ]
 
     let private enumDefinition (program: IrProgram) ty =
         match ty with
@@ -531,12 +545,14 @@ module OwningStackAot =
     let private typeIdFor (ids: Map<IrType, uint32>) ty =
         ids.TryFind ty |> Option.defaultWith (fun () -> invalidOp $"Owning-stack type id missing for {IrTypes.format ty}.")
 
-    let private typeName program ty =
+    let rec private typeName program ty =
         match ty with
         | IrInt -> "Int"
         | IrBool -> "Bool"
         | IrUnit -> "Unit"
         | IrString -> "String"
+        | IrOption item -> $"Option<{typeName program item}>"
+        | IrResult(okType, errorType) -> $"Result<{typeName program okType}, {typeName program errorType}>"
         | IrNominal key ->
             match program.NominalTypesByKey.TryFind key with
             | Some(IrRecordDefinition record) -> record.TypeName
@@ -544,6 +560,16 @@ module OwningStackAot =
             | Some(IrEnumDefinition enumDefinition) -> enumDefinition.TypeName
             | None -> sprintf "%A" key
         | other -> IrTypes.format other
+
+    let rec private langTypeFor (program: IrProgram) = function
+        | IrInt -> TInt
+        | IrBool -> TBool
+        | IrUnit -> TUnit
+        | IrString -> TString
+        | IrOption item -> TOption(langTypeFor program item)
+        | IrResult(okType, errorType) -> TResult(langTypeFor program okType, langTypeFor program errorType)
+        | IrNominal key -> TNamed(typeName program (IrNominal key))
+        | other -> invalidOp $"Unsupported host value type reached owning-stack conversion: {IrTypes.format other}."
 
     let private extent payload = max 8 payload
 
@@ -572,11 +598,22 @@ module OwningStackAot =
             program.NominalTypesByKey
             |> Map.toList
             |> List.mapi (fun index (key, _) -> IrNominal key, uint32 (index + 4))
-        let typeIds =
+        let mutable typeIds =
             ([ IrInt, 1u; IrBool, 2u; IrUnit, 3u ]
              @ nominalTypeIds
              @ [ IrString, uint32 (nominalTypeIds.Length + 4) ])
             |> Map.ofList
+        let mutable nextCompoundTypeId = uint32 (nominalTypeIds.Length + 5)
+        let ensureCompoundTypeId ty =
+            match typeIds.TryFind ty with
+            | Some value -> value
+            | None ->
+                let value = nextCompoundTypeId
+                if value = UInt32.MaxValue then
+                    unsupported "IR_OWNING_STACK_LAYOUT_TYPE_COUNT" "Owning-stack type IDs exceed the bounded descriptor range." body.BodyName (IrTypes.format ty)
+                nextCompoundTypeId <- value + 1u
+                typeIds <- Map.add ty value typeIds
+                value
         let mutable typeInfos = Map.empty<IrType, OwningTypeInfo>
         let active = HashSet<IrType>()
         let rec buildType owner depth ty =
@@ -600,7 +637,8 @@ module OwningStackAot =
                           MinimumPayloadBytes = 8
                           MinimumExtentBytes = 8
                           LayoutDepth = 1
-                          Fields = [] }
+                          Fields = []
+                          Cases = [] }
                     typeInfos <- Map.add ty value typeInfos
                     value
                 | IrString ->
@@ -614,9 +652,14 @@ module OwningStackAot =
                           MinimumPayloadBytes = 8
                           MinimumExtentBytes = 8
                           LayoutDepth = 1
-                          Fields = [] }
+                          Fields = []
+                          Cases = [] }
                     typeInfos <- Map.add ty value typeInfos
                     value
+                | IrOption itemType ->
+                    buildSum owner depth ty [ "Some", Some itemType; "None", None ]
+                | IrResult(okType, errorType) ->
+                    buildSum owner depth ty [ "Ok", Some okType; "Error", Some errorType ]
                 | IrNominal _ when Option.isSome (enumDefinition program ty) ->
                     let definition = enumDefinition program ty |> Option.get
                     let value =
@@ -629,7 +672,8 @@ module OwningStackAot =
                           MinimumPayloadBytes = 8
                           MinimumExtentBytes = 8
                           LayoutDepth = 1
-                          Fields = [] }
+                          Fields = []
+                          Cases = [] }
                     typeInfos <- Map.add ty value typeInfos
                     value
                 | IrNominal key ->
@@ -690,7 +734,8 @@ module OwningStackAot =
                                   MinimumPayloadBytes = int minimumPayload
                                   MinimumExtentBytes = minimumRecordExtent
                                   LayoutDepth = layoutDepth
-                                  Fields = fields }
+                                  Fields = fields
+                                  Cases = [] }
                             typeInfos <- Map.add ty value typeInfos
                             value
                         | Some(IrScalarDefinition scalar) ->
@@ -701,6 +746,66 @@ module OwningStackAot =
                     finally
                         active.Remove ty |> ignore
                 | other -> unsupported "IR_OWNING_STACK_TYPE_UNSUPPORTED" "Owning-stack backend does not support this verified value type." owner (IrTypes.format other)
+
+        and buildSum owner depth ty caseDefinitions =
+            if depth >= 64 then
+                unsupported "IR_OWNING_STACK_LAYOUT_DEPTH" "Owning sum layout exceeds the bounded 64-level descriptor depth." owner (IrTypes.format ty)
+            ensureCompoundTypeId ty |> ignore
+            let cases =
+                caseDefinitions
+                |> List.map (fun (caseName, payloadType) ->
+                    let payloadInfo = payloadType |> Option.map (buildType owner (depth + 1))
+                    caseName, payloadType, payloadInfo)
+            let caseMetrics =
+                cases
+                |> List.map (fun (_, _, payloadInfo) ->
+                    match payloadInfo with
+                    | None -> Some(8, 8), 8, 8, 1
+                    | Some child ->
+                        let fixedPair =
+                            if child.IsDynamic then None
+                            else Some(checkedHostAdd owner 8 child.PayloadBytes, checkedHostAdd owner 8 child.ExtentBytes)
+                        fixedPair,
+                        checkedHostAdd owner 8 child.MinimumPayloadBytes,
+                        checkedHostAdd owner 8 child.MinimumExtentBytes,
+                        child.LayoutDepth + 1)
+            let fixedPairs = caseMetrics |> List.map (fun (fixedPair, _, _, _) -> fixedPair)
+            let fixedLayout =
+                match fixedPairs with
+                | Some first :: remaining when List.forall (fun candidate -> candidate = Some first) remaining -> Some first
+                | _ -> None
+            let minimumPayload = caseMetrics |> List.map (fun (_, payload, _, _) -> payload) |> List.min
+            let minimumExtent = caseMetrics |> List.map (fun (_, _, extent, _) -> extent) |> List.min
+            if minimumPayload > Int32.MaxValue || minimumExtent > Int32.MaxValue then
+                unsupported "IR_OWNING_STACK_LAYOUT_TOO_LARGE" "Inline sum minimum layout exceeds the bounded runtime range." owner (IrTypes.format ty)
+            let layoutDepth = caseMetrics |> List.map (fun (_, _, _, childDepth) -> childDepth) |> List.max
+            let caseRows =
+                cases
+                |> List.map (fun (caseName, payloadType, _) -> caseName, payloadType, 8)
+            let payloadBytes, extentBytes =
+                match fixedLayout with
+                | Some(payload, extentBytes) -> payload, extentBytes
+                | None -> -1, -1
+            let value =
+                { Type = ty
+                  TypeId = typeIdFor typeIds ty
+                  Name = typeName program ty
+                  PayloadBytes = payloadBytes
+                  ExtentBytes = extentBytes
+                  IsDynamic = fixedLayout.IsNone
+                  MinimumPayloadBytes = minimumPayload
+                  MinimumExtentBytes = minimumExtent
+                  LayoutDepth = layoutDepth
+                  Fields = []
+                  Cases = caseRows }
+            typeInfos <- Map.add ty value typeInfos
+            value
+
+        and checkedHostAdd owner left right =
+            let total = int64 left + int64 right
+            if left < 0 || right < 0 || total > int64 Int32.MaxValue then
+                unsupported "IR_OWNING_STACK_LAYOUT_TOO_LARGE" "Inline sum layout exceeds the bounded runtime range." owner (string total)
+            int total
 
         let rec checkType owner ty = buildType owner 0 ty |> ignore
         let supportedPrimitives =
@@ -778,6 +883,27 @@ module OwningStackAot =
                 | IrOperation.MakeEnumCase(call, key, caseIndex) ->
                     checkType owner (IrNominal key)
                     validateEnumCall owner span call key caseIndex
+                | IrOperation.OptionNone itemType
+                | IrOperation.OptionSome itemType -> checkType owner (IrOption itemType)
+                | IrOperation.ResultOk(okType, errorType)
+                | IrOperation.ResultError(okType, errorType) -> checkType owner (IrResult(okType, errorType))
+                | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
+                    let itemType =
+                        someBlock.EntryShape.LocalTypes.TryFind someLocal
+                        |> Option.defaultWith (fun () -> invalidOp "Verified Option match omitted its Some payload local.")
+                    checkType owner (IrOption itemType)
+                    validateBlock owner someBlock
+                    validateBlock owner noneBlock
+                | IrOperation.MatchResult(okLocal, errorLocal, okBlock, errorBlock) ->
+                    let okType =
+                        okBlock.EntryShape.LocalTypes.TryFind okLocal
+                        |> Option.defaultWith (fun () -> invalidOp "Verified Result match omitted its Ok payload local.")
+                    let errorType =
+                        errorBlock.EntryShape.LocalTypes.TryFind errorLocal
+                        |> Option.defaultWith (fun () -> invalidOp "Verified Result match omitted its Error payload local.")
+                    checkType owner (IrResult(okType, errorType))
+                    validateBlock owner okBlock
+                    validateBlock owner errorBlock
                 | IrOperation.MatchEnum(key, caseBlocks) ->
                     checkType owner (IrNominal key)
                     let expectedCases =
@@ -795,8 +921,8 @@ module OwningStackAot =
                 | IrOperation.If(thenBlock, elseBlock) -> validateBlock owner thenBlock; validateBlock owner elseBlock
                 | operation ->
                     Diagnostics.raiseError "IR_OWNING_STACK_OPERATION_UNSUPPORTED"
-                        "Owning-stack backend supports constants, calls, records, payload-free enums, locals, Scope, If, and exhaustive enum matches."
-                        (Some owner) span [ "Constant"; "Call"; "MakeRecord"; "GetRecordField"; "MakeEnumCase"; "MatchEnum"; "StoreLocal"; "LoadLocal"; "Scope"; "If" ]
+                        "Owning-stack backend supports constants, calls, records, payload-free enums, Option/Result values, locals, Scope, If, and exhaustive matches."
+                        (Some owner) span [ "Constant"; "Call"; "MakeRecord"; "GetRecordField"; "MakeEnumCase"; "OptionNone"; "OptionSome"; "ResultOk"; "ResultError"; "MatchOption"; "MatchResult"; "MatchEnum"; "StoreLocal"; "LoadLocal"; "Scope"; "If" ]
                         [ sprintf "%A" operation ]
 
         and validateRecordCall owner span (call: IrResolvedCall) key =
@@ -859,6 +985,8 @@ module OwningStackAot =
                 | IrOperation.Scope inner -> inspectCalls owner inner
                 | IrOperation.If(left, right) -> inspectCalls owner left; inspectCalls owner right
                 | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> inspectCalls owner)
+                | IrOperation.MatchOption(_, someBlock, noneBlock) -> inspectCalls owner someBlock; inspectCalls owner noneBlock
+                | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> inspectCalls owner okBlock; inspectCalls owner errorBlock
                 | _ -> ()
         and checkFunction (fn: IrFunction) =
             requireEffectFree fn.FunctionName fn.FunctionDeclaredEffects
@@ -873,11 +1001,11 @@ module OwningStackAot =
             Diagnostics.raiseError "IR_OWNING_STACK_LAYOUT_TYPE_COUNT"
                 "Owning-stack layout descriptors are limited to 4096 reachable value types."
                 (Some body.BodyName) None [ "at most 4096 reachable value types" ] [ string typeInfos.Count ]
-        let layoutFieldCount = typeInfos |> Map.toSeq |> Seq.sumBy (fun (_, typeInfo) -> typeInfo.Fields.Length)
+        let layoutFieldCount = typeInfos |> Map.toSeq |> Seq.sumBy (fun (_, typeInfo) -> typeInfo.Fields.Length + typeInfo.Cases.Length)
         if layoutFieldCount > 65536 then
             Diagnostics.raiseError "IR_OWNING_STACK_LAYOUT_FIELD_COUNT"
-                "Owning-stack layout descriptors are limited to 65536 reachable record fields."
-                (Some body.BodyName) None [ "at most 65536 reachable record fields" ] [ string layoutFieldCount ]
+                "Owning-stack layout descriptors are limited to 65536 reachable record fields and sum-case rows."
+                (Some body.BodyName) None [ "at most 65536 reachable record fields and sum-case rows" ] [ string layoutFieldCount ]
         let typeLayouts =
             typeInfos
             |> Map.toList
@@ -902,7 +1030,32 @@ module OwningStackAot =
                           IsOffsetDynamic = offset < 0
                           IsDynamic = field.IsDynamic
                           MinimumPayloadBytes = if inlineZeroWidth then 0 else field.MinimumPayloadBytes
-                          MinimumExtentBytes = if inlineZeroWidth then 0 else field.MinimumExtentBytes }) })
+                          MinimumExtentBytes = if inlineZeroWidth then 0 else field.MinimumExtentBytes })
+                  Cases =
+                    info.Cases
+                    |> List.mapi (fun tag (caseName, payloadType, offset) ->
+                        match payloadType with
+                        | None ->
+                            { CaseName = caseName
+                              Tag = tag
+                              PayloadType = None
+                              OffsetBytes = offset
+                              PayloadBytes = 0
+                              ExtentBytes = 0
+                              IsDynamic = false
+                              MinimumPayloadBytes = 0
+                              MinimumExtentBytes = 0 }
+                        | Some childType ->
+                            let child = typeInfos[childType]
+                            { CaseName = caseName
+                              Tag = tag
+                              PayloadType = Some childType
+                              OffsetBytes = offset
+                              PayloadBytes = if child.IsDynamic then -1 else child.PayloadBytes
+                              ExtentBytes = if child.IsDynamic then -1 else child.ExtentBytes
+                              IsDynamic = child.IsDynamic
+                              MinimumPayloadBytes = child.MinimumPayloadBytes
+                              MinimumExtentBytes = child.MinimumExtentBytes }) })
             |> List.sortBy (fun layout -> typeIdFor typeIds layout.Type)
         let reachableFunctions =
             program.FunctionsById
@@ -964,6 +1117,23 @@ module OwningStackAot =
                     invalidArg (nameof values) "Owning-stack String payload exceeds the bounded 32-bit runtime range."
                 let payload = int payload64
                 payload, alignedExtent payload
+            | IrOption itemType, OptionValue(declaredType, option) when declaredType = langTypeFor info.Program itemType ->
+                match option with
+                | None -> 8, 8
+                | Some item ->
+                    let childPayload, childExtent = measure false itemType item
+                    checkedHostAdd (nameof values) 8 childPayload, checkedHostAdd (nameof values) 8 childExtent
+            | IrResult(okType, errorType), ResultValue(declaredOk, declaredError, result)
+                when declaredOk = langTypeFor info.Program okType && declaredError = langTypeFor info.Program errorType ->
+                if isNull (box result) then
+                    invalidArg (nameof values) "Owning-stack Result inputs must contain an Ok or Error case."
+                match result with
+                | Ok item ->
+                    let childPayload, childExtent = measure false okType item
+                    checkedHostAdd (nameof values) 8 childPayload, checkedHostAdd (nameof values) 8 childExtent
+                | Error item ->
+                    let childPayload, childExtent = measure false errorType item
+                    checkedHostAdd (nameof values) 8 childPayload, checkedHostAdd (nameof values) 8 childExtent
             | IrNominal key, EnumValue(actualName, caseName) ->
                 match info.Program.NominalTypesByKey.TryFind key with
                 | Some(IrEnumDefinition definition) when actualName = definition.TypeName ->
@@ -1050,6 +1220,25 @@ module OwningStackAot =
                     bytes[offset + 8 + index * 2] <- byte codeUnit
                     bytes[offset + 9 + index * 2] <- byte (codeUnit >>> 8)
                 alignedExtent (8 + text.Length * 2)
+            | IrOption itemType, OptionValue(declaredType, option) when declaredType = langTypeFor info.Program itemType ->
+                match option with
+                | None ->
+                    writeInt64 bytes offset 1L
+                    8
+                | Some item ->
+                    writeInt64 bytes offset 0L
+                    checkedHostAdd (nameof values) 8 (encode false (offset + 8) itemType item)
+            | IrResult(okType, errorType), ResultValue(declaredOk, declaredError, result)
+                when declaredOk = langTypeFor info.Program okType && declaredError = langTypeFor info.Program errorType ->
+                if isNull (box result) then
+                    invalidArg (nameof values) "Owning-stack Result inputs must contain an Ok or Error case."
+                match result with
+                | Ok item ->
+                    writeInt64 bytes offset 0L
+                    checkedHostAdd (nameof values) 8 (encode false (offset + 8) okType item)
+                | Error item ->
+                    writeInt64 bytes offset 1L
+                    checkedHostAdd (nameof values) 8 (encode false (offset + 8) errorType item)
             | IrNominal key, EnumValue(actualName, caseName) ->
                 match info.Program.NominalTypesByKey.TryFind key with
                 | Some(IrEnumDefinition definition) when actualName = definition.TypeName ->
@@ -1086,16 +1275,33 @@ module OwningStackAot =
             let mutable bits = 0u
             for index in 0 .. 3 do bits <- bits ||| (uint32 bytes[offset + index] <<< (index * 8))
             bits
+        let ensureRange offset length description =
+            if offset < 0 || length < 0 || offset > bytes.Length - length then
+                raise (InvalidDataException($"Owning-stack {description} is truncated."))
+        let checkedDecodedAdd left right description =
+            let total = int64 left + int64 right
+            if left < 0 || right < 0 || total > int64 Int32.MaxValue then
+                raise (InvalidDataException($"Owning-stack {description} exceeds the bounded native range."))
+            int total
+        let alignedDecodedExtent payload description =
+            let padded = (int64 payload + 7L) &&& ~~~7L
+            if payload < 0 || padded > int64 Int32.MaxValue then
+                raise (InvalidDataException($"Owning-stack {description} exceeds the bounded native range."))
+            int padded
         let rec decode nested offset ty =
             let layout = infoFor info ty
             match ty with
-            | IrInt -> IntValue(readInt64 bytes offset), 8, 8
+            | IrInt ->
+                ensureRange offset 8 "Int value"
+                IntValue(readInt64 bytes offset), 8, 8
             | IrBool ->
+                ensureRange offset 8 "Bool value"
                 match readInt64 bytes offset with
                 | 0L -> BoolValue false, 8, 8
                 | 1L -> BoolValue true, 8, 8
                 | value -> raise (InvalidDataException($"Owning-stack Bool was not encoded as 0 or 1: {value}."))
             | IrUnit ->
+                ensureRange offset 8 "Unit token"
                 if readInt64 bytes offset <> 0L then raise (InvalidDataException("Owning-stack Unit token was not zeroed."))
                 UnitValue, 8, 8
             | IrString ->
@@ -1105,7 +1311,7 @@ module OwningStackAot =
                 let payload64 = 8L + int64 count * 2L
                 if payload64 > int64 Int32.MaxValue then raise (InvalidDataException("Owning-stack String payload exceeds the bounded range."))
                 let payload = int payload64
-                let extentBytes = alignedExtent payload
+                let extentBytes = alignedDecodedExtent payload "String extent"
                 if offset > bytes.Length - extentBytes then raise (InvalidDataException("Owning-stack String extent is truncated."))
                 let chars = Array.zeroCreate<char> (int count)
                 for index in 0 .. chars.Length - 1 do
@@ -1115,8 +1321,36 @@ module OwningStackAot =
                 for pad in payload .. extentBytes - 1 do
                     if bytes[offset + pad] <> 0uy then raise (InvalidDataException("Owning-stack String padding is nonzero."))
                 StringValue(String(chars)), extentBytes, payload
+            | IrOption itemType ->
+                if offset < 0 || offset > bytes.Length - 8 then raise (InvalidDataException("Owning-stack Option tag is truncated."))
+                match readInt64 bytes offset with
+                | 1L -> OptionValue(langTypeFor info.Program itemType, None), 8, 8
+                | 0L ->
+                    let item, childExtent, childPayload = decode false (offset + 8) itemType
+                    let extentBytes = checkedDecodedAdd 8 childExtent "Option extent"
+                    let payloadBytes = checkedDecodedAdd 8 childPayload "Option payload"
+                    if offset > bytes.Length - extentBytes then raise (InvalidDataException("Owning-stack Option Some payload is truncated."))
+                    OptionValue(langTypeFor info.Program itemType, Some item), extentBytes, payloadBytes
+                | tag -> raise (InvalidDataException($"Owning-stack Option tag {tag} is outside the verified case table."))
+            | IrResult(okType, errorType) ->
+                if offset < 0 || offset > bytes.Length - 8 then raise (InvalidDataException("Owning-stack Result tag is truncated."))
+                match readInt64 bytes offset with
+                | 0L ->
+                    let item, childExtent, childPayload = decode false (offset + 8) okType
+                    let extentBytes = checkedDecodedAdd 8 childExtent "Result extent"
+                    let payloadBytes = checkedDecodedAdd 8 childPayload "Result payload"
+                    if offset > bytes.Length - extentBytes then raise (InvalidDataException("Owning-stack Result Ok payload is truncated."))
+                    ResultValue(langTypeFor info.Program okType, langTypeFor info.Program errorType, Ok item), extentBytes, payloadBytes
+                | 1L ->
+                    let item, childExtent, childPayload = decode false (offset + 8) errorType
+                    let extentBytes = checkedDecodedAdd 8 childExtent "Result extent"
+                    let payloadBytes = checkedDecodedAdd 8 childPayload "Result payload"
+                    if offset > bytes.Length - extentBytes then raise (InvalidDataException("Owning-stack Result Error payload is truncated."))
+                    ResultValue(langTypeFor info.Program okType, langTypeFor info.Program errorType, Error item), extentBytes, payloadBytes
+                | tag -> raise (InvalidDataException($"Owning-stack Result tag {tag} is outside the verified case table."))
             | IrNominal key when Option.isSome (enumDefinition info.Program (IrNominal key)) ->
                 let definition = enumDefinition info.Program (IrNominal key) |> Option.get
+                ensureRange offset 8 "enum ordinal"
                 if offset < 0 || offset > bytes.Length - 8 then raise (InvalidDataException("Owning-stack enum ordinal is truncated."))
                 let ordinal = readInt64 bytes offset
                 if ordinal < 0L || ordinal >= int64 definition.Cases.Length then
@@ -1233,6 +1467,10 @@ module OwningStackAot =
 
     let private blockStores (block: IrBlock) =
         let values = Dictionary<LocalSlot, ResizeArray<IrType>>()
+        let addStore slot ty =
+            match values.TryGetValue slot with
+            | true, seen -> seen.Add ty
+            | false, _ -> values.Add(slot, ResizeArray([ ty ]))
         let rec visit (current: IrBlock) =
             let mutable stack = current.EntryShape.StackTypes
             let mutable locals = current.EntryShape.LocalTypes
@@ -1255,12 +1493,18 @@ module OwningStackAot =
                 | IrOperation.MakeEnumCase(call, _, _) ->
                     let _, prefix = pop call.InputTypes.Length
                     stack <- prefix @ call.OutputTypes
+                | IrOperation.OptionNone itemType -> stack <- stack @ [ IrOption itemType ]
+                | IrOperation.OptionSome itemType ->
+                    let _, prefix = pop 1
+                    stack <- prefix @ [ IrOption itemType ]
+                | IrOperation.ResultOk(okType, errorType)
+                | IrOperation.ResultError(okType, errorType) ->
+                    let _, prefix = pop 1
+                    stack <- prefix @ [ IrResult(okType, errorType) ]
                 | IrOperation.StoreLocal slot ->
                     match List.rev stack with
                     | ty :: rest ->
-                        match values.TryGetValue slot with
-                        | true, seen -> seen.Add ty
-                        | false, _ -> values.Add(slot, ResizeArray([ ty ]))
+                        addStore slot ty
                         stack <- List.rev rest
                         locals <- Map.add slot ty locals
                     | [] -> invalidOp "Verified StoreLocal has no stack operand during local planning."
@@ -1289,6 +1533,35 @@ module OwningStackAot =
                         if remaining |> List.exists (fun (_, branch) -> branch.ExitShape.StackTypes <> stack || branch.ExitShape.LocalTypes <> locals) then
                             invalidOp "Verified enum-match branches diverged while planning local storage."
                     | [] -> invalidOp "Verified enum match has no branches while planning local storage."
+                | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
+                    let matched, prefix = pop 1
+                    let itemType =
+                        match matched with
+                        | [ IrOption item ] -> item
+                        | _ -> invalidOp "Verified Option match has a non-Option scrutinee while planning local storage."
+                    addStore someLocal itemType
+                    visit someBlock
+                    visit noneBlock
+                    stack <- someBlock.ExitShape.StackTypes
+                    locals <- Map.remove someLocal someBlock.ExitShape.LocalTypes
+                    if stack <> noneBlock.ExitShape.StackTypes || locals <> noneBlock.ExitShape.LocalTypes then
+                        invalidOp "Verified Option-match branches diverged while planning local storage."
+                    ignore prefix
+                | IrOperation.MatchResult(okLocal, errorLocal, okBlock, errorBlock) ->
+                    let matched, _ = pop 1
+                    let okType, errorType =
+                        match matched with
+                        | [ IrResult(ok, error) ] -> ok, error
+                        | _ -> invalidOp "Verified Result match has a non-Result scrutinee while planning local storage."
+                    addStore okLocal okType
+                    addStore errorLocal errorType
+                    visit okBlock
+                    visit errorBlock
+                    stack <- okBlock.ExitShape.StackTypes
+                    locals <- Map.remove okLocal okBlock.ExitShape.LocalTypes
+                    let errorLocals = Map.remove errorLocal errorBlock.ExitShape.LocalTypes
+                    if stack <> errorBlock.ExitShape.StackTypes || locals <> errorLocals then
+                        invalidOp "Verified Result-match branches diverged while planning local storage."
                 | _ -> invalidOp "Unsupported operation reached owning local-storage planning after validation."
         visit block
         values
@@ -1303,6 +1576,8 @@ module OwningStackAot =
                 | IrOperation.Scope inner -> found.Add(instruction.Site, inner)
                 | IrOperation.If(left, right) -> visit left; visit right
                 | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> visit)
+                | IrOperation.MatchOption(_, someBlock, noneBlock) -> visit someBlock; visit noneBlock
+                | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> visit okBlock; visit errorBlock
                 | _ -> ()
         visit block
         List.ofSeq found
@@ -2228,15 +2503,20 @@ module OwningStackAot =
             | IrBool -> 2u
             | IrUnit -> 3u
             | IrString -> 5u
+            | IrOption _ -> 7u
+            | IrResult _ -> 8u
             | IrNominal _ as ty ->
                 match enumDefinition info.Program ty with
                 | Some _ -> 6u
                 | None -> 4u
             | ty -> invalidOp $"Unsupported dynamic descriptor type {IrTypes.format ty}."
         let typeCaseCount ty =
-            enumDefinition info.Program ty
-            |> Option.map (fun definition -> uint32 definition.Cases.Length)
-            |> Option.defaultValue 0u
+            match ty with
+            | IrOption _ | IrResult _ -> uint32 (typeInfo ty).Cases.Length
+            | _ ->
+                enumDefinition info.Program ty
+                |> Option.map (fun definition -> uint32 definition.Cases.Length)
+                |> Option.defaultValue 0u
         let entryRoles = [ "initialize"; "begin"; "resume" ]
         let entryFrameSymbols =
             if mailboxMode then entryRoles |> List.map (fun role -> $"@agentlang_mailbox_{role}_frame")
@@ -2255,6 +2535,8 @@ module OwningStackAot =
                 | IrOperation.Scope inner -> collectStrings inner
                 | IrOperation.If(thenBlock, elseBlock) -> collectStrings thenBlock; collectStrings elseBlock
                 | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> collectStrings)
+                | IrOperation.MatchOption(_, someBlock, noneBlock) -> collectStrings someBlock; collectStrings noneBlock
+                | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collectStrings okBlock; collectStrings errorBlock
                 | _ -> ()
         for _, block in allBlocks do collectStrings block
         let stringIndexes = stringValues |> Seq.mapi (fun index value -> value, index) |> Map.ofSeq
@@ -2275,14 +2557,20 @@ module OwningStackAot =
         let descriptorFields = ResizeArray<uint32 * uint32 * uint32 * uint32>()
         for item in typeInfos do
             firstFields[item.Type] <- descriptorFields.Count
-            for _, childType, fixedOffset in item.Fields do
-                let child = typeInfo childType
-                let isZeroWidth = not child.IsDynamic && child.PayloadBytes = 0
-                descriptorFields.Add(
-                    typeIndex childType,
-                    (if fixedOffset < 0 then UInt32.MaxValue else uint32 fixedOffset),
-                    (if isZeroWidth then 1u else 0u),
-                    0u)
+            if not item.Cases.IsEmpty then
+                for _, payloadType, fixedOffset in item.Cases do
+                    match payloadType with
+                    | None -> descriptorFields.Add(UInt32.MaxValue, uint32 fixedOffset, 0u, 0u)
+                    | Some childType -> descriptorFields.Add(typeIndex childType, uint32 fixedOffset, 0u, 0u)
+            else
+                for _, childType, fixedOffset in item.Fields do
+                    let child = typeInfo childType
+                    let isZeroWidth = not child.IsDynamic && child.PayloadBytes = 0
+                    descriptorFields.Add(
+                        typeIndex childType,
+                        (if fixedOffset < 0 then UInt32.MaxValue else uint32 fixedOffset),
+                        (if isZeroWidth then 1u else 0u),
+                        0u)
 
         let writer = OwningLlvmWriter()
         writer.Line("%AlOwningContext = type { i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, ptr, ptr, ptr, ptr, i64, i64, i64, i64 }")
@@ -2300,7 +2588,7 @@ module OwningStackAot =
             typeInfos
             |> List.map (fun item ->
                 let first = firstFields[item.Type]
-                let fieldCount = item.Fields.Length
+                let fieldCount = if item.Cases.IsEmpty then item.Fields.Length else item.Cases.Length
                 let fixedPayload = if item.IsDynamic then UInt32.MaxValue else uint32 item.PayloadBytes
                 let fixedExtent = if item.IsDynamic then UInt32.MaxValue else uint32 item.ExtentBytes
                 $"%%AlOwningTypeDescriptor {{ i32 {typeKind item.Type}, i32 {item.TypeId}, i32 {first}, i32 {fieldCount}, i32 {fixedPayload}, i32 {fixedExtent}, i32 {item.MinimumPayloadBytes}, i32 {item.MinimumExtentBytes}, i32 {typeCaseCount item.Type} }}")
@@ -2314,7 +2602,7 @@ module OwningStackAot =
         writer.Line($"@al_owning_types = private constant [{typeInfos.Length} x %%AlOwningTypeDescriptor] [{renderedTypeDescriptors}], align 4")
         writer.Line($"@al_owning_fields = private constant [{fieldArraySize} x %%AlOwningFieldDescriptor] [{renderedFields}], align 4")
         let layoutLinkage = if mailboxMode then "" else "private "
-        writer.Line($"{layoutSymbol} = {layoutLinkage}constant %%AlOwningLayout {{ i32 2, ptr @al_owning_types, i32 {typeInfos.Length}, ptr @al_owning_fields, i32 {descriptorFields.Count} }}, align 8")
+        writer.Line($"{layoutSymbol} = {layoutLinkage}constant %%AlOwningLayout {{ i32 3, ptr @al_owning_types, i32 {typeInfos.Length}, ptr @al_owning_fields, i32 {descriptorFields.Count} }}, align 8")
         for value in stringValues do
             let bytes, _, _ = encodeLiteral value
             writer.Line($"{stringGlobal value} = private unnamed_addr constant [{bytes.Length} x i8] c\"{llvmByteString bytes}\", align 8")
@@ -2335,6 +2623,7 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_measure_external_value(ptr, ptr, i32, ptr, i32, i32, i32, ptr, ptr)")
         writer.Line("declare i32 @al_owning_check_initialized(ptr, i32, i32)")
         writer.Line("declare i32 @al_owning_locate_field(ptr, ptr, i32, i32, i32, i32, i32, ptr)")
+        writer.Line("declare i32 @al_owning_locate_sum_case(ptr, ptr, i32, i32, i32, i32, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_length(ptr, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_plan(ptr, i32, i32, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32)")
@@ -2665,6 +2954,21 @@ module OwningStackAot =
                     let entry = entries[index]
                     w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 3, i32 {typeId entry.Type}, i32 {entry.Offset}, i32 {entry.Extent}, i32 {entry.Payload}, i32 0, i32 0)")
                     emitRuntimeStatus w "%ctx" failBody
+                let emitSumPayloadConstruction sumType caseTag prefix (child: OwningDynamicStackEntry) instructionSpan =
+                    let cursor = emitContextLoad w "%ctx" 2
+                    let sumExtent = emitOffset w "8" child.Extent
+                    let sumPayload = emitOffset w "8" child.Payload
+                    let next = emitOffset w cursor sumExtent
+                    let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve an inline Option/Result payload." currentOwner instructionSpan [] []
+                    emitReserve w next reserveError failBody
+                    w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 {caseTag}, i32 {typeId sumType})")
+                    emitRuntimeStatus w "%ctx" failBody
+                    let childDestination = emitOffset w cursor "8"
+                    emitCopyRange w childDestination child.Offset child.Extent child.Payload (typeId child.Type) failBody
+                    emitUpdateLive w "8" "0" failBody
+                    w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId sumType}, i32 {cursor}, i32 {sumExtent}, i32 {sumPayload}, i32 {child.Offset}, i32 {child.Extent})")
+                    emitRuntimeStatus w "%ctx" failBody
+                    push prefix sumType cursor sumExtent sumPayload next
                 let entryAt entries index = entries[index]
                 for instruction in current.Code do
                     let instructionSpan = frameSourceMap.TryFind instruction.Site |> Option.map (fun source -> source.SiteSpan)
@@ -2713,6 +3017,30 @@ module OwningStackAot =
                         emitRuntimeStatus w "%ctx" failBody
                         emitUpdateLive w "8" "0" failBody
                         stack <- push stack ty cursor "8" "8" next
+                    | IrOperation.OptionNone itemType ->
+                        let sumType = IrOption itemType
+                        let cursor = emitContextLoad w "%ctx" 2
+                        let next = emitOffset w cursor "8"
+                        let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve an Option None value." currentOwner instructionSpan [] []
+                        emitReserve w next reserveError failBody
+                        w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 1, i32 {typeId sumType})")
+                        emitRuntimeStatus w "%ctx" failBody
+                        emitUpdateLive w "8" "0" failBody
+                        w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId sumType}, i32 {cursor}, i32 8, i32 8, i32 0, i32 0)")
+                        emitRuntimeStatus w "%ctx" failBody
+                        stack <- push stack sumType cursor "8" "8" next
+                    | IrOperation.OptionSome itemType ->
+                        let values, prefix = pop 1
+                        let child = List.head values
+                        stack <- emitSumPayloadConstruction (IrOption itemType) 0 prefix child instructionSpan
+                    | IrOperation.ResultOk(okType, errorType) ->
+                        let values, prefix = pop 1
+                        let child = List.head values
+                        stack <- emitSumPayloadConstruction (IrResult(okType, errorType)) 0 prefix child instructionSpan
+                    | IrOperation.ResultError(okType, errorType) ->
+                        let values, prefix = pop 1
+                        let child = List.head values
+                        stack <- emitSumPayloadConstruction (IrResult(okType, errorType)) 1 prefix child instructionSpan
                     | IrOperation.StoreLocal slot ->
                         let values, prefix = pop 1
                         let source = List.head values
@@ -2790,6 +3118,169 @@ module OwningStackAot =
                                   OwnerEnd = phi (fun value -> value.OwnerEnd) "if.value.owner.end" })
                         locals <- currentLocals
                         localTypes <- thenBlock.ExitShape.LocalTypes
+                    | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
+                        let values, prefix = pop 1
+                        let scrutinee = List.head values
+                        let itemType =
+                            match scrutinee.Type with
+                            | IrOption item -> item
+                            | _ -> invalidOp "Verified dynamic Option match has a non-Option scrutinee."
+                        let caseIndexPointer = w.Fresh "option.case.index.pointer"
+                        let location = w.Fresh "option.case.location"
+                        w.Inst($"{caseIndexPointer} = alloca i32, align 4")
+                        w.Inst($"{location} = alloca %%AlOwningFieldLocation, align 4")
+                        let locateError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to locate the checked active Option payload." currentOwner instructionSpan [] []
+                        let locateStatus = w.Fresh "option.case.location.status"
+                        w.Inst($"{locateStatus} = call i32 @al_owning_locate_sum_case(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex scrutinee.Type}, i32 {scrutinee.Offset}, i32 {scrutinee.Extent}, i32 {locateError}, ptr {caseIndexPointer}, ptr {location})")
+                        emitStatusResult w locateStatus failBody
+                        let caseIndex = w.Fresh "option.case.index"
+                        w.Inst($"{caseIndex} = load i32, ptr {caseIndexPointer}, align 4")
+                        let loadCaseLocation index name =
+                            let pointer = w.Fresh $"option.{name}.pointer"
+                            let value = w.Fresh $"option.{name}"
+                            w.Inst($"{pointer} = getelementptr inbounds %%AlOwningFieldLocation, ptr {location}, i32 0, i32 {index}")
+                            w.Inst($"{value} = load i32, ptr {pointer}, align 4")
+                            value
+                        let payloadOffset = loadCaseLocation 0 "payload.offset"
+                        let payloadBytes = loadCaseLocation 1 "payload.bytes"
+                        let payloadExtent = loadCaseLocation 2 "payload.extent"
+                        emitDropEntry stack (stack.Length - 1)
+                        stack <- prefix
+                        let someLabel = w.Label "option.some"
+                        let noneLabel = w.Label "option.none"
+                        let invalidLabel = w.Label "option.invalid-tag"
+                        let joinLabel = w.Label "option.join"
+                        w.Inst($"switch i32 {caseIndex}, label %%{invalidLabel} [ i32 0, label %%{someLabel} i32 1, label %%{noneLabel} ]")
+                        w.Line($"{invalidLabel}:")
+                        w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {locateError}, i32 {caseIndex}, i32 2)")
+                        w.Inst($"br label %%{failBody}")
+                        let someBinding = localBinding someLocal locals
+                        w.Line($"{someLabel}:")
+                        removeLocal someBinding.FlagId
+                        let somePayload =
+                            { Type = itemType
+                              Offset = payloadOffset
+                              Extent = payloadExtent
+                              Payload = payloadBytes
+                              OwnerEnd = scrutinee.OwnerEnd }
+                        emitDescriptorBounds w somePayload (Some(string (typeId itemType))) failBody
+                        emitStoreLocal someBinding somePayload
+                        let someStack = emitBlock currentOwner env prefix locals someBlock
+                        removeLocal someBinding.FlagId
+                        let somePredecessor = w.CurrentBlock
+                        w.Inst($"br label %%{joinLabel}")
+                        w.Line($"{noneLabel}:")
+                        removeLocal someBinding.FlagId
+                        let noneStack = emitBlock currentOwner env prefix locals noneBlock
+                        let nonePredecessor = w.CurrentBlock
+                        w.Inst($"br label %%{joinLabel}")
+                        w.Line($"{joinLabel}:")
+                        let someLocals = Map.remove someLocal someBlock.ExitShape.LocalTypes
+                        if someLocals <> noneBlock.ExitShape.LocalTypes ||
+                           (someStack |> List.map (fun item -> item.Type)) <> (noneStack |> List.map (fun item -> item.Type)) then
+                            invalidOp "Verified dynamic Option-match branches diverged."
+                        stack <-
+                            List.zip someStack noneStack
+                            |> List.map (fun (left, right) ->
+                                let phi field prefix =
+                                    let merged = w.Fresh prefix
+                                    w.Inst($"{merged} = phi i32 [ {field left}, %%{somePredecessor} ], [ {field right}, %%{nonePredecessor} ]")
+                                    merged
+                                { Type = left.Type
+                                  Offset = phi (fun value -> value.Offset) "option.value.offset"
+                                  Extent = phi (fun value -> value.Extent) "option.value.extent"
+                                  Payload = phi (fun value -> value.Payload) "option.value.payload"
+                                  OwnerEnd = phi (fun value -> value.OwnerEnd) "option.value.owner.end" })
+                        locals <- currentLocals
+                        localTypes <- someLocals
+                    | IrOperation.MatchResult(okLocal, errorLocal, okBlock, errorBlock) ->
+                        let values, prefix = pop 1
+                        let scrutinee = List.head values
+                        let okType, errorType =
+                            match scrutinee.Type with
+                            | IrResult(ok, error) -> ok, error
+                            | _ -> invalidOp "Verified dynamic Result match has a non-Result scrutinee."
+                        let caseIndexPointer = w.Fresh "result.case.index.pointer"
+                        let location = w.Fresh "result.case.location"
+                        w.Inst($"{caseIndexPointer} = alloca i32, align 4")
+                        w.Inst($"{location} = alloca %%AlOwningFieldLocation, align 4")
+                        let locateError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to locate the checked active Result payload." currentOwner instructionSpan [] []
+                        let locateStatus = w.Fresh "result.case.location.status"
+                        w.Inst($"{locateStatus} = call i32 @al_owning_locate_sum_case(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex scrutinee.Type}, i32 {scrutinee.Offset}, i32 {scrutinee.Extent}, i32 {locateError}, ptr {caseIndexPointer}, ptr {location})")
+                        emitStatusResult w locateStatus failBody
+                        let caseIndex = w.Fresh "result.case.index"
+                        w.Inst($"{caseIndex} = load i32, ptr {caseIndexPointer}, align 4")
+                        let loadCaseLocation index name =
+                            let pointer = w.Fresh $"result.{name}.pointer"
+                            let value = w.Fresh $"result.{name}"
+                            w.Inst($"{pointer} = getelementptr inbounds %%AlOwningFieldLocation, ptr {location}, i32 0, i32 {index}")
+                            w.Inst($"{value} = load i32, ptr {pointer}, align 4")
+                            value
+                        let payloadOffset = loadCaseLocation 0 "payload.offset"
+                        let payloadBytes = loadCaseLocation 1 "payload.bytes"
+                        let payloadExtent = loadCaseLocation 2 "payload.extent"
+                        emitDropEntry stack (stack.Length - 1)
+                        stack <- prefix
+                        let okLabel = w.Label "result.ok"
+                        let errorLabel = w.Label "result.error"
+                        let invalidLabel = w.Label "result.invalid-tag"
+                        let joinLabel = w.Label "result.join"
+                        w.Inst($"switch i32 {caseIndex}, label %%{invalidLabel} [ i32 0, label %%{okLabel} i32 1, label %%{errorLabel} ]")
+                        w.Line($"{invalidLabel}:")
+                        w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {locateError}, i32 {caseIndex}, i32 2)")
+                        w.Inst($"br label %%{failBody}")
+                        let okBinding = localBinding okLocal locals
+                        let errorBinding = localBinding errorLocal locals
+                        w.Line($"{okLabel}:")
+                        removeLocal okBinding.FlagId
+                        removeLocal errorBinding.FlagId
+                        let okPayload =
+                            { Type = okType
+                              Offset = payloadOffset
+                              Extent = payloadExtent
+                              Payload = payloadBytes
+                              OwnerEnd = scrutinee.OwnerEnd }
+                        emitDescriptorBounds w okPayload (Some(string (typeId okType))) failBody
+                        emitStoreLocal okBinding okPayload
+                        let okStack = emitBlock currentOwner env prefix locals okBlock
+                        removeLocal okBinding.FlagId
+                        let okPredecessor = w.CurrentBlock
+                        w.Inst($"br label %%{joinLabel}")
+                        w.Line($"{errorLabel}:")
+                        removeLocal okBinding.FlagId
+                        removeLocal errorBinding.FlagId
+                        let errorPayload =
+                            { Type = errorType
+                              Offset = payloadOffset
+                              Extent = payloadExtent
+                              Payload = payloadBytes
+                              OwnerEnd = scrutinee.OwnerEnd }
+                        emitDescriptorBounds w errorPayload (Some(string (typeId errorType))) failBody
+                        emitStoreLocal errorBinding errorPayload
+                        let errorStack = emitBlock currentOwner env prefix locals errorBlock
+                        removeLocal errorBinding.FlagId
+                        let errorPredecessor = w.CurrentBlock
+                        w.Inst($"br label %%{joinLabel}")
+                        w.Line($"{joinLabel}:")
+                        let okLocals = Map.remove okLocal okBlock.ExitShape.LocalTypes
+                        let errorLocals = Map.remove errorLocal errorBlock.ExitShape.LocalTypes
+                        if okLocals <> errorLocals ||
+                           (okStack |> List.map (fun item -> item.Type)) <> (errorStack |> List.map (fun item -> item.Type)) then
+                            invalidOp "Verified dynamic Result-match branches diverged."
+                        stack <-
+                            List.zip okStack errorStack
+                            |> List.map (fun (left, right) ->
+                                let phi field prefix =
+                                    let merged = w.Fresh prefix
+                                    w.Inst($"{merged} = phi i32 [ {field left}, %%{okPredecessor} ], [ {field right}, %%{errorPredecessor} ]")
+                                    merged
+                                { Type = left.Type
+                                  Offset = phi (fun value -> value.Offset) "result.value.offset"
+                                  Extent = phi (fun value -> value.Extent) "result.value.extent"
+                                  Payload = phi (fun value -> value.Payload) "result.value.payload"
+                                  OwnerEnd = phi (fun value -> value.OwnerEnd) "result.value.owner.end" })
+                        locals <- currentLocals
+                        localTypes <- okLocals
                     | IrOperation.MatchEnum(key, caseBlocks) ->
                         let values, prefix = pop 1
                         let scrutinee = List.head values
@@ -4403,16 +4894,36 @@ module OwningStackAot =
                      | IrBool -> "Bool"
                      | IrUnit -> "Unit"
                      | IrString -> "String"
+                     | IrOption _ -> "Option"
+                     | IrResult _ -> "Result"
                      | IrNominal _ as ty when Option.isSome (enumDefinition programInfo.Program ty) -> "Enum"
                      | IrNominal _ -> "Record"
                      | other -> IrTypes.format other)
                    name = item.TypeName
-                   caseCount = enumDefinition programInfo.Program item.Type |> Option.map (fun definition -> definition.Cases.Length) |> Option.defaultValue 0
+                   caseCount =
+                    if not item.Cases.IsEmpty then item.Cases.Length
+                    else enumDefinition programInfo.Program item.Type |> Option.map (fun definition -> definition.Cases.Length) |> Option.defaultValue 0
                    payloadBytes = item.PayloadBytes
                    extentBytes = item.ExtentBytes
                    isDynamic = item.IsDynamic
                    minimumPayloadBytes = item.MinimumPayloadBytes
                    minimumExtentBytes = item.MinimumExtentBytes
+                   cases =
+                    item.Cases
+                    |> List.map (fun case ->
+                        let payloadType = case.PayloadType
+                        {| name = case.CaseName
+                           tag = case.Tag
+                           hasPayload = payloadType.IsSome
+                           typeName = payloadType |> Option.map (typeName programInfo.Program) |> Option.defaultValue ""
+                           typeIndex = payloadType |> Option.map typeIndex |> Option.defaultValue UInt32.MaxValue
+                           typeId = payloadType |> Option.map (typeIdFor programInfo.TypeIds) |> Option.defaultValue 0u
+                           offsetBytes = case.OffsetBytes
+                           payloadBytes = case.PayloadBytes
+                           extentBytes = case.ExtentBytes
+                           isDynamic = case.IsDynamic
+                           minimumPayloadBytes = case.MinimumPayloadBytes
+                           minimumExtentBytes = case.MinimumExtentBytes |})
                    fields =
                     item.Fields
                     |> List.map (fun field ->
@@ -4479,7 +4990,7 @@ module OwningStackAot =
         let manifestCore =
             {| formatVersion = 1
                abiVersion = 1
-               layoutAbiVersion = 2
+               layoutAbiVersion = 3
                typeDescriptorSizeBytes = 36
                optimization = optimizationName
                runtimeProfile = runtimeProfileName

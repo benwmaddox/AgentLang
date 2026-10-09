@@ -13,7 +13,7 @@
 
 #define AL_OWNING_STACK_ABI_VERSION 1u
 
-#define AL_OWNING_LAYOUT_ABI_VERSION 2u
+#define AL_OWNING_LAYOUT_ABI_VERSION 3u
 #define AL_OWNING_LAYOUT_DYNAMIC_U32 UINT32_MAX
 #define AL_OWNING_LAYOUT_MAX_DEPTH 64u
 #define AL_OWNING_LAYOUT_MAX_TYPES 4096u
@@ -25,7 +25,9 @@ enum {
   AL_OWNING_TYPE_UNIT = 3u,
   AL_OWNING_TYPE_RECORD = 4u,
   AL_OWNING_TYPE_STRING = 5u,
-  AL_OWNING_TYPE_ENUM = 6u
+  AL_OWNING_TYPE_ENUM = 6u,
+  AL_OWNING_TYPE_OPTION = 7u,
+  AL_OWNING_TYPE_RESULT = 8u
 };
 
 enum { AL_OWNING_FIELD_ZERO_WIDTH = 1u };
@@ -196,6 +198,11 @@ int32_t al_owning_locate_field(al_owning_stack_context *ctx,
                                uint32_t parent_offset, uint32_t parent_extent,
                                uint32_t field_index, uint32_t error_id,
                                al_owning_field_location *out_field_location);
+int32_t al_owning_locate_sum_case(
+    al_owning_stack_context *ctx, const al_owning_layout *layout,
+    uint32_t sum_type_index, uint32_t sum_offset, uint32_t sum_extent_bytes,
+    uint32_t error_id, uint32_t *out_case_index,
+    al_owning_field_location *out_case_location);
 int32_t al_owning_string_length(al_owning_stack_context *ctx, uint32_t offset,
                                 uint32_t extent_bytes, uint32_t error_id,
                                 uint32_t *out_code_units);

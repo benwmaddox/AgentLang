@@ -434,6 +434,243 @@ static void test_generic_mailbox_enum_preflight(void) {
   assert(al_mailbox_dispose(runtime) == AL_MAILBOX_OK);
 }
 
+enum {
+  TEST_SUM_STRING_TYPE_ID = 310u,
+  TEST_SUM_INT_TYPE_ID = 311u,
+  TEST_SUM_OPTION_TYPE_ID = 312u,
+  TEST_SUM_STATE_TYPE_ID = 313u,
+  TEST_SUM_CONTINUATION_TYPE_ID = 314u
+};
+
+static const al_owning_type_descriptor test_sum_mailbox_types[] = {
+    {AL_OWNING_TYPE_STRING, TEST_SUM_STRING_TYPE_ID, 0u, 0u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_I64, TEST_SUM_INT_TYPE_ID, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_OPTION, TEST_SUM_OPTION_TYPE_ID, 0u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 2u},
+    {AL_OWNING_TYPE_RECORD, TEST_SUM_STATE_TYPE_ID, 2u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u,
+     0u},
+    {AL_OWNING_TYPE_RECORD, TEST_SUM_CONTINUATION_TYPE_ID, 4u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u,
+     0u}};
+
+static const al_owning_field_descriptor test_sum_mailbox_fields[] = {
+    {0u, 8u, 0u, 0u},
+    {AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 0u, 0u},
+    {2u, 0u, 0u, 0u},
+    {1u, AL_OWNING_LAYOUT_DYNAMIC_U32, 0u, 0u},
+    {2u, 0u, 0u, 0u},
+    {1u, AL_OWNING_LAYOUT_DYNAMIC_U32, 0u, 0u}};
+
+static const al_owning_layout test_sum_mailbox_layout = {
+    AL_OWNING_LAYOUT_ABI_VERSION, test_sum_mailbox_types, 5u,
+    test_sum_mailbox_fields, 6u};
+
+static uint32_t test_sum_mailbox_begin_handler_calls;
+
+static int32_t test_sum_mailbox_import_text(
+    al_owning_stack_context *context, const al_owning_external_slice *input,
+    uint32_t *out_units) {
+  uint32_t payload_bytes;
+  uint32_t extent_bytes;
+  uint32_t offset = context->cursor_bytes;
+  if (input == NULL || input->type_index != 0u || input->bytes == NULL ||
+      al_owning_measure_external_value(
+          context, &test_sum_mailbox_layout, input->type_index, input->bytes,
+          input->extent_bytes, 0u, 20u, &payload_bytes, &extent_bytes) != 0 ||
+      extent_bytes != input->extent_bytes || payload_bytes < 8u ||
+      offset > UINT32_MAX - extent_bytes)
+    return AL_OWNING_STATUS_INVALID_REQUEST;
+  if (al_owning_reserve_to(context, offset + extent_bytes, 20u) != 0 ||
+      al_owning_copy_external_bounded(
+          context, offset, input->bytes, input->extent_bytes, 0u,
+          payload_bytes, extent_bytes, TEST_SUM_STRING_TYPE_ID, 20u) != 0)
+    return (int32_t)context->status;
+  *out_units = test_read_u32(input->bytes);
+  return AL_OWNING_STATUS_OK;
+}
+
+static int32_t test_sum_mailbox_build_state(
+    al_owning_stack_context *context, const al_owning_external_slice *input,
+    al_owning_bank_stack_slice *output) {
+  uint32_t offset = context->cursor_bytes;
+  uint32_t units;
+  int32_t status;
+  if (offset > UINT32_MAX - 8u ||
+      al_owning_reserve_to(context, offset + 8u, 20u) != 0)
+    return (int32_t)context->status;
+  al_owning_store_i64(context, offset, 0, TEST_SUM_OPTION_TYPE_ID);
+  status = test_sum_mailbox_import_text(context, input, &units);
+  if (status != AL_OWNING_STATUS_OK)
+    return status;
+  if (context->cursor_bytes > UINT32_MAX - 8u ||
+      al_owning_reserve_to(context, context->cursor_bytes + 8u, 20u) != 0)
+    return (int32_t)context->status;
+  al_owning_store_i64(context, context->cursor_bytes - 8u,
+                      (int64_t)units, TEST_SUM_INT_TYPE_ID);
+  if (context->status != AL_OWNING_STATUS_OK)
+    return (int32_t)context->status;
+  *output = (al_owning_bank_stack_slice){
+      3u, offset, context->cursor_bytes, 0u};
+  return AL_OWNING_STATUS_OK;
+}
+
+static int32_t test_sum_mailbox_build_continuation(
+    al_owning_stack_context *context, int64_t units,
+    al_owning_bank_stack_slice *output) {
+  uint32_t offset = context->cursor_bytes;
+  if (offset > UINT32_MAX - 16u ||
+      al_owning_reserve_to(context, offset + 16u, 21u) != 0)
+    return (int32_t)context->status;
+  al_owning_store_i64(context, offset, 1, TEST_SUM_OPTION_TYPE_ID);
+  al_owning_store_i64(context, offset + 8u, units, TEST_SUM_INT_TYPE_ID);
+  if (context->status != AL_OWNING_STATUS_OK)
+    return (int32_t)context->status;
+  *output = (al_owning_bank_stack_slice){
+      4u, offset, offset + 16u, 0u};
+  return AL_OWNING_STATUS_OK;
+}
+
+static int32_t test_sum_mailbox_initialize(
+    al_owning_stack_context *context, const al_owning_external_slice *inputs,
+    uint32_t input_count, al_owning_bank_stack_slice *outputs,
+    uint32_t output_capacity) {
+  if (input_count != 1u || output_capacity != 1u)
+    return AL_OWNING_STATUS_INVALID_REQUEST;
+  return test_sum_mailbox_build_state(context, &inputs[0], &outputs[0]);
+}
+
+static int32_t test_sum_mailbox_begin(
+    al_owning_stack_context *context, const al_owning_external_slice *inputs,
+    uint32_t input_count, al_owning_bank_stack_slice *outputs,
+    uint32_t output_capacity) {
+  uint32_t units;
+  int32_t status;
+  if (input_count != 2u || output_capacity != 2u ||
+      inputs[0].type_index != 3u || inputs[1].type_index != 0u)
+    return AL_OWNING_STATUS_INVALID_REQUEST;
+  ++test_sum_mailbox_begin_handler_calls;
+  status = test_sum_mailbox_build_state(context, &inputs[1], &outputs[0]);
+  if (status != AL_OWNING_STATUS_OK)
+    return status;
+  units = test_read_u32(inputs[1].bytes);
+  return test_sum_mailbox_build_continuation(
+      context, (int64_t)units, &outputs[1]);
+}
+
+static int32_t test_sum_mailbox_resume(
+    al_owning_stack_context *context, const al_owning_external_slice *inputs,
+    uint32_t input_count, al_owning_bank_stack_slice *outputs,
+    uint32_t output_capacity) {
+  if (input_count != 3u || output_capacity != 1u ||
+      inputs[0].type_index != 3u || inputs[1].type_index != 4u ||
+      inputs[2].type_index != 0u)
+    return AL_OWNING_STATUS_INVALID_REQUEST;
+  return test_sum_mailbox_build_state(context, &inputs[2], &outputs[0]);
+}
+
+static int32_t test_sum_mailbox_associated_resume(
+    al_owning_stack_context *context,
+    const al_owning_bank_stack_slice *retained_inputs,
+    uint32_t retained_count, const al_owning_external_slice *completion,
+    uint32_t protected_cursor_bytes, al_owning_bank_stack_slice *outputs,
+    uint32_t output_capacity) {
+  if (retained_inputs == NULL || retained_count != 2u || completion == NULL ||
+      output_capacity != 1u || context->cursor_bytes != protected_cursor_bytes)
+    return AL_OWNING_STATUS_INVALID_REQUEST;
+  return test_sum_mailbox_build_state(context, completion, &outputs[0]);
+}
+
+static const al_owning_mailbox_module test_sum_mailbox_module = {
+    AL_OWNING_MAILBOX_ABI_VERSION,
+    sizeof(al_owning_mailbox_module),
+    &test_sum_mailbox_layout,
+    {{1u, 1u, {0u, 0u, 0u}, {3u, 0u}, test_sum_mailbox_initialize},
+     {2u, 2u, {3u, 0u, 0u}, {3u, 4u}, test_sum_mailbox_begin},
+     {3u, 1u, {3u, 4u, 0u}, {3u, 0u}, test_sum_mailbox_resume}},
+    test_sum_mailbox_associated_resume};
+
+static void test_generic_mailbox_nested_sum_roots(void) {
+  static _Alignas(8) uint8_t sum_storage[8192];
+  al_mailbox_owning_config config = {
+      AL_MAILBOX_CONTROL_ABI_VERSION, sizeof(al_mailbox_owning_config),
+      1u, 128u, 128u, 64u, 1u, AL_MAILBOX_OWNING_POLICY_RETURN};
+  al_mailbox_runtime *runtime = NULL;
+  al_mailbox_owning_state_view view;
+  al_mailbox_token token;
+  const uint8_t initial[] = {'A'};
+  const uint8_t begin[] = {'B', 'C'};
+
+  {
+    al_owning_type_descriptor bad_types[5];
+    al_owning_field_descriptor bad_fields[6];
+    al_owning_layout bad_layout = test_sum_mailbox_layout;
+    al_owning_mailbox_module bad_module = test_sum_mailbox_module;
+    (void)memcpy(bad_types, test_sum_mailbox_types, sizeof(bad_types));
+    (void)memcpy(bad_fields, test_sum_mailbox_fields, sizeof(bad_fields));
+    bad_fields[1u].child_type_index = 1u;
+    bad_types[2u].fixed_payload_bytes = 16u;
+    bad_types[2u].fixed_extent_bytes = 16u;
+    bad_types[2u].minimum_payload_bytes = 16u;
+    bad_types[2u].minimum_extent_bytes = 16u;
+    bad_types[3u].minimum_payload_bytes = 24u;
+    bad_types[3u].minimum_extent_bytes = 24u;
+    bad_types[4u].minimum_payload_bytes = 24u;
+    bad_types[4u].minimum_extent_bytes = 24u;
+    bad_layout.types = bad_types;
+    bad_layout.fields = bad_fields;
+    bad_module.layout = &bad_layout;
+    assert(al_mailbox_runtime_init_owning(
+               &bad_module, &config, sum_storage, sizeof(sum_storage),
+               &runtime) == AL_MAILBOX_INVALID_MODULE);
+    assert(runtime == NULL);
+  }
+
+  test_sum_mailbox_begin_handler_calls = 0u;
+  assert(al_mailbox_runtime_init_owning(
+             &test_sum_mailbox_module, &config, sum_storage,
+             sizeof(sum_storage), &runtime) == AL_MAILBOX_OK);
+  assert(al_mailbox_init_text(runtime, 0u, initial, sizeof(initial), NULL) ==
+         AL_MAILBOX_OK);
+  assert(al_mailbox_get_owning_state_view(runtime, 0u, &view) ==
+         AL_MAILBOX_OK);
+  assert(view.bank->root_count == 1u && view.bank->used_bytes == 32u &&
+         view.bank->roots[0].type_id == TEST_SUM_STATE_TYPE_ID &&
+         view.bank->roots[0].payload_bytes == 26u &&
+         view.bank->roots[0].extent_bytes == 32u &&
+         test_read_u32(view.bank->bytes + 8u) == 1u &&
+         view.bank->bytes[16u] == (uint8_t)'A' &&
+         test_read_i64(view.bank->bytes + 24u) == 1);
+
+  test_write_u64_le((uint8_t *)(uintptr_t)view.bank->bytes, 0u, 2u);
+  assert(al_mailbox_begin_text(runtime, 0u, begin, sizeof(begin), &token,
+                               NULL) == AL_MAILBOX_INVALID_REFERENCE);
+  assert(test_sum_mailbox_begin_handler_calls == 0u);
+  assert(al_mailbox_get_owning_state_view(runtime, 0u, &view) ==
+         AL_MAILBOX_OK);
+  assert(view.pending == 0u && view.bank->root_count == 1u &&
+         test_read_i64(view.bank->bytes) == 2);
+  test_write_u64_le((uint8_t *)(uintptr_t)view.bank->bytes, 0u, 0u);
+
+  assert(al_mailbox_begin_text(runtime, 0u, begin, sizeof(begin), &token,
+                               NULL) == AL_MAILBOX_OK);
+  assert(test_sum_mailbox_begin_handler_calls == 1u);
+  assert(al_mailbox_get_owning_state_view(runtime, 0u, &view) ==
+         AL_MAILBOX_OK);
+  assert(view.pending == 1u && view.bank->root_count == 2u &&
+         view.bank->used_bytes == 48u &&
+         view.bank->roots[0].type_id == TEST_SUM_STATE_TYPE_ID &&
+         view.bank->roots[0].extent_bytes == 32u &&
+         view.bank->roots[1].type_id == TEST_SUM_CONTINUATION_TYPE_ID &&
+         view.bank->roots[1].offset_bytes == 32u &&
+         view.bank->roots[1].extent_bytes == 16u &&
+         test_read_i64(view.bank->bytes + 32u) == 1 &&
+         test_read_i64(view.bank->bytes + 40u) == 2);
+  assert(al_mailbox_cancel_text(runtime, 0u, &token) == AL_MAILBOX_OK);
+  assert(al_mailbox_dispose(runtime) == AL_MAILBOX_OK);
+}
+
 static const al_owning_type_descriptor test_text_state_types[] = {
     {AL_OWNING_TYPE_STRING, TEST_STRING_TYPE_ID, 0u, 0u,
      AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
@@ -1312,6 +1549,7 @@ int main(void) {
          stats.live_retained_roots == 0u && stats.pending_mailboxes == 0u);
   assert(al_mailbox_dispose(runtime) == AL_MAILBOX_OK);
   test_generic_mailbox_enum_preflight();
+  test_generic_mailbox_nested_sum_roots();
   test_keep_associated_policy();
   test_return_cancellation();
   test_keep_cancellation();

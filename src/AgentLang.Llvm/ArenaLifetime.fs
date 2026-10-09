@@ -194,21 +194,64 @@ module internal ArenaLifetime =
                 else
                     let prefix, inputs = pop 1 state.Stack
                     { state with Stack = prefix @ [ inputs.Head ] }
+            | IrOperation.OptionNone _ ->
+                // A sum is stored inline in the current arena region, even
+                // when its active case has no payload.
+                { state with Stack = state.Stack @ [ Set.singleton currentRegion ] }
+            | IrOperation.OptionSome _
+            | IrOperation.ResultOk _
+            | IrOperation.ResultError _ ->
+                let prefix, payloads = pop 1 state.Stack
+                // Construction creates one inline sum owner and copies the
+                // payload into it. Keep the payload's origins as well so this
+                // proof remains conservative for nested/aliased values.
+                let sumOrigins = Set.add currentRegion payloads.Head
+                { state with Stack = prefix @ [ sumOrigins ] }
+            | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
+                let prefix, sums = pop 1 state.Stack
+                let sumOrigins = sums.Head
+                // The selected payload is a view into the inline sum owner;
+                // keeping the whole origin set alive also keeps any payload
+                // storage represented by the sum alive.
+                let someEntry =
+                    { state with
+                        Stack = prefix
+                        Locals = Map.add someLocal sumOrigins state.Locals }
+                let noneEntry = { state with Stack = prefix }
+                let someExit =
+                    analyzeBlock scopePath someBlock someEntry
+                    |> fun exit -> { exit with Locals = Map.remove someLocal exit.Locals }
+                let noneExit = analyzeBlock scopePath noneBlock noneEntry
+                // Verified match arms have matching stack and outer-local
+                // shapes after the case-local is removed.
+                combineStates someExit noneExit
+            | IrOperation.MatchResult(okLocal, errorLocal, okBlock, errorBlock) ->
+                let prefix, sums = pop 1 state.Stack
+                let sumOrigins = sums.Head
+                let okEntry =
+                    { state with
+                        Stack = prefix
+                        Locals = Map.add okLocal sumOrigins state.Locals }
+                let errorEntry =
+                    { state with
+                        Stack = prefix
+                        Locals = Map.add errorLocal sumOrigins state.Locals }
+                let okExit =
+                    analyzeBlock scopePath okBlock okEntry
+                    |> fun exit -> { exit with Locals = Map.remove okLocal exit.Locals }
+                let errorExit =
+                    analyzeBlock scopePath errorBlock errorEntry
+                    |> fun exit -> { exit with Locals = Map.remove errorLocal exit.Locals }
+                combineStates okExit errorExit
             | IrOperation.WrapScalar _
             | IrOperation.UnwrapScalar _
             | IrOperation.MakeEnumCase _ -> unmodeled ()
             | IrOperation.ListEmpty _
             | IrOperation.ListSingleton _
-            | IrOperation.OptionNone _
-            | IrOperation.OptionSome _
-            | IrOperation.ResultOk _
-            | IrOperation.ResultError _
             | IrOperation.ListMap _
             | IrOperation.ListFilter _
             | IrOperation.ListEach _
             | IrOperation.ListFold _
-            | IrOperation.MatchOption _
-            | IrOperation.MatchResult _
             | IrOperation.MatchEnum _ -> unmodeled ()
 
         and analyzeUnmodeled (scopePath: SourceSiteId list) (state: AbstractState) (instruction: IrInstruction) =

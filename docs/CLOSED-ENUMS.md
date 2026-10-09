@@ -60,7 +60,8 @@ and missing cases fail with `LIBRARY_FINITE_COVERAGE_INCOMPLETE`. See the
 [finite coverage contract](FINITE-COVERAGE.md).
 
 The owning-stack LLVM backend supports payload-free enums as inline eight-byte
-ordinals with nominal type identity and layout ABI 2 case counts. Construction,
+ordinals with nominal type identity and layout ABI 3 case counts (introduced
+in ABI 2). Construction,
 exhaustive matching, equality, and enum-bearing records pass
 interpreter/native O0/O2 conformance; malformed external tags and extents are
 rejected. The older graph-backed `LlvmAot` backend still rejects enum

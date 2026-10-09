@@ -355,7 +355,7 @@ try {
         $runnerAssembly, $fixturePath, $nativeOutputDirectory, $experimentEvidencePath
     ) $repo
     $report.experimentRun = $experiment
-    Require-ProcessSuccess $experiment 'fixed interpreter/ABI3/owning controls and String interpreter/owning O0/O2 experiment passed'
+    Require-ProcessSuccess $experiment 'fixed interpreter/older sharedgraph ABI3 controls plus String and Option/Result interpreter/owning O0/O2 experiments passed'
     Add-Check 'experiment evidence file exists' (Test-Path -LiteralPath $experimentEvidencePath -PathType Leaf) $experimentEvidencePath
     $experimentEvidence = Read-JsonFile $experimentEvidencePath
     Add-Check 'experiment evidence reports success' ([bool]$experimentEvidence.passed) ([ordered]@{ failureCount = $experimentEvidence.failureCount; failure = $experimentEvidence.failure })
@@ -385,9 +385,50 @@ try {
         incompleteRunCount = $enumRunsMissingCoverage
         actualRuns = $enumRuns
     })
+    $sumOracle = (Read-JsonFile $fixturePath).sumConformance
+    $sumRuns = @($experimentEvidence.sumRuns)
+    $sumCaseCount = @($sumOracle.cases).Count
+    $sumEqualityCaseCount = @($sumOracle.equalityCases).Count
+    $sumMatchCaseCount = @($sumOracle.matches.Keys).Count
+    $sumInvalidTagCount = @($sumOracle.rawNativeEntry.invalidTags).Count
+    $sumMalformedInputCount = @($sumOracle.rawNativeEntry.malformedInputs).Count
+    $sumRawInputCount = $sumInvalidTagCount + $sumMalformedInputCount
+    $sumBranchJoinCaseCount = @($sumOracle.branchJoinCases).Count
+    $sumOptimizationNames = @($sumRuns | ForEach-Object { $_.optimization } | Sort-Object) -join ','
+    $sumRunsMissingCoverage = @($sumRuns | Where-Object {
+        $_.caseCount -ne $sumCaseCount -or
+        $_.equalityCaseCount -ne $sumEqualityCaseCount -or
+        $_.matchCaseCount -ne $sumMatchCaseCount -or
+        $_.invalidTagCount -ne $sumInvalidTagCount -or
+        $_.malformedInputCount -ne $sumMalformedInputCount -or
+        $_.rawInputCount -ne $sumRawInputCount -or
+        $_.hostInputCount -ne $sumCaseCount -or
+        $_.localCallCount -ne $sumCaseCount -or
+        $_.retainedShortCount -ne $sumCaseCount -or
+        $_.branchJoinCaseCount -ne $sumBranchJoinCaseCount -or
+        $_.stackCapacityCaseCount -ne 1 -or
+        $_.unwindCaseCount -ne 1
+    }).Count
+    $sumCoveragePassed = $sumRuns.Count -eq 2 -and
+        $sumOptimizationNames -ceq 'O0,O2' -and
+        $sumRunsMissingCoverage -eq 0
+    Add-Check 'Option/Result parity covers every pinned case, equality, match, host input, capacity boundary, and raw-entry rejection at owning O0/O2' $sumCoveragePassed ([ordered]@{
+        expectedOptimizations = @('O0', 'O2')
+        expectedCaseCount = $sumCaseCount
+        expectedEqualityCaseCount = $sumEqualityCaseCount
+        expectedMatchCaseCount = $sumMatchCaseCount
+        expectedInvalidTagCount = $sumInvalidTagCount
+        expectedMalformedInputCount = $sumMalformedInputCount
+        expectedRawInputCount = $sumRawInputCount
+        expectedBranchJoinCaseCount = $sumBranchJoinCaseCount
+        actualOptimizationNames = $sumOptimizationNames
+        incompleteRunCount = $sumRunsMissingCoverage
+        actualRuns = $sumRuns
+    })
     Add-Check 'fixed three-way controls share one compiler-authorized program instance' ([bool]$experimentEvidence.fixedControlVerifiedProgramInstance) $experimentEvidence.backendScope
     Add-Check 'String interpreter and owning O0/O2 share one compiler-authorized program instance' ([bool]$experimentEvidence.stringVerifiedProgramInstance -and $experimentEvidence.stringBackendScope -match 'ABI3 String parity is unavailable') $experimentEvidence.stringBackendScope
     Add-Check 'String comparison records nested runtime Value input and no ABI3 String claim' ($experimentEvidence.stringBackendScope -match 'runtime Value input' -and $experimentEvidence.stringBackendScope -match 'ABI3 String parity is unavailable') $experimentEvidence.stringBackendScope
+    Add-Check 'Option/Result parity is scoped to owning layout ABI3 and excludes older sharedgraph ABI3' ([bool]$experimentEvidence.sumVerifiedProgramInstance -and $experimentEvidence.sumBackendScope -match 'owning-stack physical layout contract' -and $experimentEvidence.sumBackendScope -match 'older LlvmAot sharedgraph ABI3' -and $experimentEvidence.sumBackendScope -match 'does not claim Option/Result support') $experimentEvidence.sumBackendScope
     Add-Check 'two-turn retained publication boundary is accurately scoped' ($experimentEvidence.turnBoundaryScope -match 'not a persistent native controller') $experimentEvidence.turnBoundaryScope
     Add-Check 'fixture declares no final memory-policy or throughput conclusion' (@($experimentEvidence.limitations | Where-Object { $_ -match 'No final memory-policy|throughput' }).Count -ge 1) $experimentEvidence.limitations
 

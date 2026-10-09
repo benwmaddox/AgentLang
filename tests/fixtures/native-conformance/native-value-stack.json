@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "kind": "native-owning-value-stack",
   "source": {
     "fixture": "experiments/AgentLang.NativeValueStack/value-stack.flow",
@@ -131,11 +131,368 @@
         { "name": "truncated-enum-bytes", "body": "enum", "inputCount": 1, "inputExtentsBytes": [8], "inputBytesHex": "00000000000000" },
         { "name": "short-dynamic-record-extent", "body": "dynamicRecord", "inputCount": 1, "inputExtentsBytes": [24], "inputBytesHex": "0100000000000000780000000000000000000000000000006300000000000000" }
       ]
+    }
+  },
+  "sumConformance": {
+    "layoutAbiVersion": 3,
+    "layoutSchemaVersion": 3,
+    "cases": [
+      {
+        "name": "option-none-int",
+        "type": "Option<Int>",
+        "identityBody": "sums.option-int-identity",
+        "expected": { "type": "Option<Int>", "case": "none" },
+        "retainedBytesHex": "0100000000000000"
+      },
+      {
+        "name": "option-some-int",
+        "type": "Option<Int>",
+        "identityBody": "sums.option-int-identity",
+        "expected": { "type": "Option<Int>", "case": "some", "payload": { "type": "Int", "value": 42 } },
+        "retainedBytesHex": "00000000000000002a00000000000000"
+      },
+      {
+        "name": "option-some-int-other",
+        "type": "Option<Int>",
+        "identityBody": "sums.option-int-identity",
+        "expected": { "type": "Option<Int>", "case": "some", "payload": { "type": "Int", "value": 43 } },
+        "retainedBytesHex": "00000000000000002b00000000000000"
+      },
+      {
+        "name": "option-some-bool",
+        "type": "Option<Bool>",
+        "identityBody": "sums.option-bool-identity",
+        "expected": { "type": "Option<Bool>", "case": "some", "payload": { "type": "Bool", "value": true } },
+        "retainedBytesHex": "00000000000000000100000000000000"
+      },
+      {
+        "name": "option-none-bool",
+        "type": "Option<Bool>",
+        "identityBody": "sums.option-bool-identity",
+        "expected": { "type": "Option<Bool>", "case": "none" },
+        "retainedBytesHex": "0100000000000000"
+      },
+      {
+        "name": "option-some-enum",
+        "type": "Option<SumSignal>",
+        "identityBody": "sums.option-signal-identity",
+        "expected": { "type": "Option<SumSignal>", "case": "some", "payload": { "type": "SumSignal", "case": "ready" } },
+        "retainedBytesHex": "00000000000000000000000000000000"
+      },
+      {
+        "name": "option-none-enum",
+        "type": "Option<SumSignal>",
+        "identityBody": "sums.option-signal-identity",
+        "expected": { "type": "Option<SumSignal>", "case": "none" },
+        "retainedBytesHex": "0100000000000000"
+      },
+      {
+        "name": "result-ok-int",
+        "type": "Result<Int,String>",
+        "identityBody": "sums.result-int-string-identity",
+        "expected": { "type": "Result<Int,String>", "case": "ok", "payload": { "type": "Int", "value": 7 } },
+        "retainedBytesHex": "00000000000000000700000000000000"
+      },
+      {
+        "name": "result-ok-int-other",
+        "type": "Result<Int,String>",
+        "identityBody": "sums.result-int-string-identity",
+        "expected": { "type": "Result<Int,String>", "case": "ok", "payload": { "type": "Int", "value": 8 } },
+        "retainedBytesHex": "00000000000000000800000000000000"
+      },
+      {
+        "name": "result-error-string",
+        "type": "Result<Int,String>",
+        "identityBody": "sums.result-int-string-identity",
+        "expected": { "type": "Result<Int,String>", "case": "error", "payload": { "type": "String", "codeUnitsHex": "6e006f00" } },
+        "retainedBytesHex": "010000000000000002000000000000006e006f0000000000"
+      },
+      {
+        "name": "result-error-string-other",
+        "type": "Result<Int,String>",
+        "identityBody": "sums.result-int-string-identity",
+        "expected": { "type": "Result<Int,String>", "case": "error", "payload": { "type": "String", "codeUnitsHex": "6e006f0070006500" } },
+        "retainedBytesHex": "010000000000000004000000000000006e006f0070006500"
+      },
+      {
+        "name": "result-error-int",
+        "type": "Result<String,Int>",
+        "identityBody": "sums.result-string-int-identity",
+        "expected": { "type": "Result<String,Int>", "case": "error", "payload": { "type": "Int", "value": 11 } },
+        "retainedBytesHex": "01000000000000000b00000000000000"
+      },
+      {
+        "name": "result-ok-unit",
+        "type": "Result<Unit,Bool>",
+        "identityBody": "sums.result-unit-bool-identity",
+        "expected": { "type": "Result<Unit,Bool>", "case": "ok", "payload": { "type": "Unit" } },
+        "retainedBytesHex": "00000000000000000000000000000000"
+      },
+      {
+        "name": "result-error-bool",
+        "type": "Result<Unit,Bool>",
+        "identityBody": "sums.result-unit-bool-identity",
+        "expected": { "type": "Result<Unit,Bool>", "case": "error", "payload": { "type": "Bool", "value": true } },
+        "retainedBytesHex": "01000000000000000100000000000000"
+      },
+      {
+        "name": "result-ok-string",
+        "type": "Result<String,Int>",
+        "identityBody": "sums.result-string-int-identity",
+        "expected": { "type": "Result<String,Int>", "case": "ok", "payload": { "type": "String", "codeUnitsHex": "6f006b00" } },
+        "retainedBytesHex": "000000000000000002000000000000006f006b0000000000"
+      },
+      {
+        "name": "result-error-empty",
+        "type": "Result<Empty,Empty>",
+        "identityBody": "sums.result-empty-identity",
+        "expected": { "type": "Result<Empty,Empty>", "case": "error", "payload": { "type": "Empty", "fields": {} } },
+        "retainedBytesHex": "01000000000000000000000000000000"
+      },
+      {
+        "name": "result-ok-empty",
+        "type": "Result<Empty,Empty>",
+        "identityBody": "sums.result-empty-identity",
+        "expected": { "type": "Result<Empty,Empty>", "case": "ok", "payload": { "type": "Empty", "fields": {} } },
+        "retainedBytesHex": "00000000000000000000000000000000"
+      },
+      {
+        "name": "option-some-empty-record",
+        "type": "Option<Empty>",
+        "identityBody": "sums.option-empty-identity",
+        "expected": { "type": "Option<Empty>", "case": "some", "payload": { "type": "Empty", "fields": {} } },
+        "retainedBytesHex": "00000000000000000000000000000000"
+      },
+      {
+        "name": "nested-option-result-error-int",
+        "type": "Option<Result<String,Int>>",
+        "identityBody": "sums.nested-option-result-identity",
+        "expected": { "type": "Option<Result<String,Int>>", "case": "some", "payload": { "type": "Result<String,Int>", "case": "error", "payload": { "type": "Int", "value": 9 } } },
+        "retainedBytesHex": "000000000000000001000000000000000900000000000000"
+      },
+      {
+        "name": "nested-option-result-ok-string",
+        "type": "Option<Result<String,Int>>",
+        "identityBody": "sums.nested-option-result-identity",
+        "expected": { "type": "Option<Result<String,Int>>", "case": "some", "payload": { "type": "Result<String,Int>", "case": "ok", "payload": { "type": "String", "codeUnitsHex": "6f006b00" } } },
+        "retainedBytesHex": "0000000000000000000000000000000002000000000000006f006b0000000000"
+      },
+      {
+        "name": "nested-option-none",
+        "type": "Option<Result<String,Int>>",
+        "identityBody": "sums.nested-option-result-identity",
+        "expected": { "type": "Option<Result<String,Int>>", "case": "none" },
+        "retainedBytesHex": "0100000000000000"
+      },
+      {
+        "name": "option-some-embedded-nul",
+        "type": "Option<String>",
+        "identityBody": "sums.option-string-identity",
+        "expected": { "type": "Option<String>", "case": "some", "payload": { "type": "String", "codeUnitsHex": "410000004200" } },
+        "retainedBytesHex": "000000000000000003000000000000004100000042000000"
+      },
+      {
+        "name": "option-some-embedded-nul-other",
+        "type": "Option<String>",
+        "identityBody": "sums.option-string-identity",
+        "expected": { "type": "Option<String>", "case": "some", "payload": { "type": "String", "codeUnitsHex": "410000004300" } },
+        "retainedBytesHex": "000000000000000003000000000000004100000043000000"
+      },
+      {
+        "name": "option-some-isolated-high-surrogate",
+        "type": "Option<String>",
+        "identityBody": "sums.option-string-identity",
+        "expected": { "type": "Option<String>", "case": "some", "payload": { "type": "String", "codeUnitsHex": "3ed8" } },
+        "retainedBytesHex": "000000000000000001000000000000003ed8000000000000"
+      },
+      {
+        "name": "option-none-string",
+        "type": "Option<String>",
+        "identityBody": "sums.option-string-identity",
+        "expected": { "type": "Option<String>", "case": "none" },
+        "retainedBytesHex": "0100000000000000"
+      },
+      {
+        "name": "sum-text-tail",
+        "type": "SumTextTail",
+        "identityBody": "sums.text-tail-identity",
+        "expected": { "type": "SumTextTail", "fields": { "choice": { "type": "Option<String>", "case": "some", "payload": { "type": "String", "codeUnitsHex": "410000004200" } }, "tail": { "type": "Int", "value": 99 } } },
+        "retainedBytesHex": "0000000000000000030000000000000041000000420000006300000000000000",
+        "fieldOffsetsBytes": { "choice": 0, "tail": 24 },
+        "choiceRetainedBytesHex": "000000000000000003000000000000004100000042000000",
+        "tailRetainedBytesHex": "6300000000000000"
+      }
+    ],
+    "equalityCases": [
+      { "left": "option-none-int", "right": "option-none-int", "expected": true, "retainedBytesHex": "0100000000000000" },
+      { "left": "option-some-int", "right": "option-some-int", "expected": true, "retainedBytesHex": "0100000000000000" },
+      { "left": "option-some-int", "right": "option-some-int-other", "expected": false, "retainedBytesHex": "0000000000000000" },
+      { "left": "option-none-int", "right": "option-some-int", "expected": false, "retainedBytesHex": "0000000000000000" },
+      { "left": "result-ok-int", "right": "result-ok-int", "expected": true, "retainedBytesHex": "0100000000000000" },
+      { "left": "result-ok-int", "right": "result-ok-int-other", "expected": false, "retainedBytesHex": "0000000000000000" },
+      { "left": "result-error-string", "right": "result-error-string", "expected": true, "retainedBytesHex": "0100000000000000" },
+      { "left": "result-error-string", "right": "result-error-string-other", "expected": false, "retainedBytesHex": "0000000000000000" },
+      { "left": "result-ok-int", "right": "result-error-string", "expected": false, "retainedBytesHex": "0000000000000000" },
+      { "left": "option-some-embedded-nul", "right": "option-some-embedded-nul", "expected": true, "retainedBytesHex": "0100000000000000" },
+      { "left": "option-some-embedded-nul", "right": "option-some-embedded-nul-other", "expected": false, "retainedBytesHex": "0000000000000000" },
+      { "left": "result-ok-string", "right": "result-ok-string", "expected": true, "retainedBytesHex": "0100000000000000" }
+    ],
+    "layouts": {
+      "Option<Int>": {
+        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
+        "minimumPayloadBytes": 8, "minimumExtentBytes": 8,
+        "cases": [
+          { "name": "Some", "tag": 0, "typeName": "Int", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
+          { "name": "None", "tag": 1, "typeName": null, "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 0, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 0 }
+        ]
+      },
+      "Option<Bool>": {
+        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
+        "minimumPayloadBytes": 8, "minimumExtentBytes": 8,
+        "cases": [
+          { "name": "Some", "tag": 0, "typeName": "Bool", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
+          { "name": "None", "tag": 1, "typeName": null, "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 0, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 0 }
+        ]
+      },
+      "Option<SumSignal>": {
+        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
+        "minimumPayloadBytes": 8, "minimumExtentBytes": 8,
+        "cases": [
+          { "name": "Some", "tag": 0, "typeName": "SumSignal", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
+          { "name": "None", "tag": 1, "typeName": null, "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 0, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 0 }
+        ]
+      },
+      "Option<String>": {
+        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
+        "minimumPayloadBytes": 8, "minimumExtentBytes": 8,
+        "cases": [
+          { "name": "Some", "tag": 0, "typeName": "String", "offsetBytes": 8, "payloadBytes": -1, "extentBytes": -1, "isDynamic": true, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
+          { "name": "None", "tag": 1, "typeName": null, "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 0, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 0 }
+        ]
+      },
+      "Result<Int, String>": {
+        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
+        "minimumPayloadBytes": 16, "minimumExtentBytes": 16,
+        "cases": [
+          { "name": "Ok", "tag": 0, "typeName": "Int", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
+          { "name": "Error", "tag": 1, "typeName": "String", "offsetBytes": 8, "payloadBytes": -1, "extentBytes": -1, "isDynamic": true, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 }
+        ]
+      },
+      "Result<String, Int>": {
+        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
+        "minimumPayloadBytes": 16, "minimumExtentBytes": 16,
+        "cases": [
+          { "name": "Ok", "tag": 0, "typeName": "String", "offsetBytes": 8, "payloadBytes": -1, "extentBytes": -1, "isDynamic": true, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
+          { "name": "Error", "tag": 1, "typeName": "Int", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 }
+        ]
+      },
+      "Result<Unit, Bool>": {
+        "payloadBytes": 16, "extentBytes": 16, "isDynamic": false,
+        "minimumPayloadBytes": 16, "minimumExtentBytes": 16,
+        "cases": [
+          { "name": "Ok", "tag": 0, "typeName": "Unit", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
+          { "name": "Error", "tag": 1, "typeName": "Bool", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 }
+        ]
+      },
+      "Option<Result<String, Int>>": {
+        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
+        "minimumPayloadBytes": 8, "minimumExtentBytes": 8,
+        "cases": [
+          { "name": "Some", "tag": 0, "typeName": "Result<String, Int>", "offsetBytes": 8, "payloadBytes": -1, "extentBytes": -1, "isDynamic": true, "minimumPayloadBytes": 16, "minimumExtentBytes": 16 },
+          { "name": "None", "tag": 1, "typeName": null, "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 0, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 0 }
+        ]
+      },
+      "Option<Empty>": {
+        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
+        "minimumPayloadBytes": 8, "minimumExtentBytes": 8,
+        "cases": [
+          { "name": "Some", "tag": 0, "typeName": "Empty", "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 8 },
+          { "name": "None", "tag": 1, "typeName": null, "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 0, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 0 }
+        ]
+      },
+      "Result<Empty, Empty>": {
+        "payloadBytes": 8, "extentBytes": 16, "isDynamic": false,
+        "minimumPayloadBytes": 8, "minimumExtentBytes": 16,
+        "cases": [
+          { "name": "Ok", "tag": 0, "typeName": "Empty", "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 8 },
+          { "name": "Error", "tag": 1, "typeName": "Empty", "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 8 }
+        ]
+      },
+      "SumTextTail": {
+        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
+        "minimumPayloadBytes": 16, "minimumExtentBytes": 16,
+        "fields": [
+          { "name": "choice", "offsetBytes": 0, "payloadBytes": -1, "extentBytes": -1, "isOffsetDynamic": false, "isDynamic": true, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
+          { "name": "tail", "offsetBytes": -1, "payloadBytes": 8, "extentBytes": 8, "isOffsetDynamic": true, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 }
+        ],
+        "cases": []
+      }
     },
-    "unsupportedSumTypes": {
-      "diagnosticCode": "IR_OWNING_STACK_TYPE_UNSUPPORTED",
-      "option": "Option<Int>",
-      "result": "Result<Int, String>"
+    "matches": {
+      "optionIntSome": { "inputCase": "option-some-int", "expected": { "type": "Int", "value": 42 }, "retainedBytesHex": "2a00000000000000", "expectedDeepCopyBytes": 0 },
+      "optionIntNone": { "inputCase": "option-none-int", "expected": { "type": "Int", "value": -1 }, "retainedBytesHex": "ffffffffffffffff", "expectedDeepCopyBytes": 0 },
+      "resultOk": { "inputCase": "result-ok-int", "expected": { "type": "String", "codeUnitsHex": "6f006b00" }, "retainedBytesHex": "02000000000000006f006b0000000000", "expectedDeepCopyBytes": 16, "expectedLiteralCodeUnitsHex": "6f006b00" },
+      "resultError": { "inputCase": "result-error-string", "expected": { "type": "String", "codeUnitsHex": "6e006f00" }, "retainedBytesHex": "02000000000000006e006f0000000000", "expectedDeepCopyBytes": 0 },
+      "nestedError": { "inputCase": "nested-option-result-error-int", "expected": { "type": "String", "codeUnitsHex": "6500720072006f007200" }, "retainedBytesHex": "05000000000000006500720072006f007200000000000000", "expectedDeepCopyBytes": 24, "expectedLiteralCodeUnitsHex": "6500720072006f007200" },
+      "nestedOk": { "inputCase": "nested-option-result-ok-string", "expected": { "type": "String", "codeUnitsHex": "6f006b00" }, "retainedBytesHex": "02000000000000006f006b0000000000", "expectedDeepCopyBytes": 0 },
+      "nestedNone": { "inputCase": "nested-option-none", "expected": { "type": "String", "codeUnitsHex": "6e006f006e006500" }, "retainedBytesHex": "04000000000000006e006f006e006500", "expectedDeepCopyBytes": 16, "expectedLiteralCodeUnitsHex": "6e006f006e006500" },
+      "resultStringError": { "inputCase": "result-error-int", "expected": { "type": "String", "codeUnitsHex": "6500720072006f007200" }, "retainedBytesHex": "05000000000000006500720072006f007200000000000000", "expectedDeepCopyBytes": 24, "expectedLiteralCodeUnitsHex": "6500720072006f007200" },
+      "resultErrorInt": { "inputCase": "result-error-int", "expected": { "type": "Int", "value": 11 }, "retainedBytesHex": "0b00000000000000", "expectedDeepCopyBytes": 0 },
+      "optionStringNone": { "inputCase": "option-none-string", "expected": { "type": "String", "codeUnitsHex": "" }, "retainedBytesHex": "0000000000000000", "expectedDeepCopyBytes": 8, "expectedLiteralCodeUnitsHex": "" },
+      "nestedErrorInt": { "inputCase": "nested-option-result-error-int", "expected": { "type": "Int", "value": 9 }, "retainedBytesHex": "0900000000000000", "expectedDeepCopyBytes": 0 },
+      "optionStringEmbeddedNul": { "inputCase": "option-some-embedded-nul", "expected": { "type": "String", "codeUnitsHex": "410000004200" }, "retainedBytesHex": "03000000000000004100000042000000", "expectedDeepCopyBytes": 0 }
+    },
+    "branchJoinCases": [
+      { "name": "some-arm", "chooseSome": true, "expected": { "type": "Option<Int>", "case": "some", "payload": { "type": "Int", "value": 42 } }, "retainedBytesHex": "00000000000000002a00000000000000" },
+      { "name": "none-arm", "chooseSome": false, "expected": { "type": "Option<Int>", "case": "none" }, "retainedBytesHex": "0100000000000000" }
+    ],
+    "dupDrop": {
+      "inputCase": "option-some-embedded-nul",
+      "retainedBytesHex": "000000000000000003000000000000004100000042000000",
+      "duplicateExtentBytes": 24
+    },
+    "hostValueRejections": {
+      "mismatchedOptionType": { "expectedRejected": true, "expectedRetainedBytesUnchanged": true }
+    },
+    "rawNativeEntry": {
+      "sentinelBytesHex": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5",
+      "expectedInvalidRequestStatus": 4,
+      "invalidTags": [
+        { "name": "option-tag-two", "body": "optionInt", "inputCount": 1, "inputExtentsBytes": [8], "inputBytesHex": "0200000000000000" },
+        { "name": "result-tag-two", "body": "resultIntString", "inputCount": 1, "inputExtentsBytes": [8], "inputBytesHex": "0200000000000000" }
+      ],
+      "malformedInputs": [
+        { "name": "truncated-option-tag", "body": "optionInt", "inputCount": 1, "inputExtentsBytes": [7], "inputBytesHex": "00000000000000" },
+        { "name": "truncated-option-active-int", "body": "optionInt", "inputCount": 1, "inputExtentsBytes": [8], "inputBytesHex": "0000000000000000" },
+        { "name": "truncated-result-active-string", "body": "resultIntString", "inputCount": 1, "inputExtentsBytes": [16], "inputBytesHex": "01000000000000000100000000000000" },
+        { "name": "nonzero-result-string-padding", "body": "resultIntString", "inputCount": 1, "inputExtentsBytes": [24], "inputBytesHex": "010000000000000001000000000000007800000000000001" },
+        { "name": "nested-invalid-result-tag", "body": "nestedOptionResult", "inputCount": 1, "inputExtentsBytes": [16], "inputBytesHex": "00000000000000000200000000000000" }
+      ]
+    },
+    "descriptorGraphRejections": [
+      "Option.None payload child must use UINT32_MAX; a payload child index is forbidden.",
+      "Option.Some and both Result rows require in-range child type indexes, including inactive alternatives."
+    ],
+    "copyAndTransferOracle": {
+      "constructionMayInlineCopySelectedPayloadOnce": true,
+      "matchBindingPayloadCopyBytes": 0,
+      "ordinaryReadLocalCallReturnAndBranchJoinMoveBytes": 0,
+      "arenaCompaction": false
+    },
+    "capacityOracle": {
+      "retainedOutputExactCapacitySucceeds": true,
+      "retainedOutputOneByteShortPreservesBuffer": true,
+      "stackConstructionCase": "option-some-embedded-nul",
+      "stackExactBytes": 40,
+      "stackOneByteShortBytes": 39,
+      "stackCapacityFormula": "String literal extent 16 + Option tag 8 + child String extent 16 = 40.",
+      "stackCapacityOneByteShortUnwindsCursor": true,
+      "failureAfterSumPayloadAllocationPreservesBuffer": true
+    },
+    "graphAbi3Scope": {
+      "backend": "LlvmAot shared graph ABI 3",
+      "optionResultParity": "unsupported and kept outside this owning-layout ABI 3 conformance suite",
+      "fixedOnlyControlRemainsSeparate": true
     }
   },
   "programScopes": {
@@ -750,8 +1107,8 @@
   },
   "storageRuntimeTestOracle": {
     "suite": "owning_stack_runtime_storage_v2",
-    "cases": 49,
-    "checks": 572,
+    "cases": 50,
+    "checks": 612,
     "rawFrameBoundary": {
       "successfulHelperEnters": 66,
       "nextEnterDiagnosticDepth": 66,
@@ -768,7 +1125,7 @@
       "peakCursorBytes": 56,
       "maxStackCapacityBytes": 64
     },
-    "dynamicCases": { "cases": 33, "checks": 383 },
+    "dynamicCases": { "cases": 34, "checks": 423 },
     "abi": {
       "eventSizeBytes": 40,
       "eventChecksumOffsetBytes": 32,
@@ -783,7 +1140,7 @@
         "input_copy_bytes": 152,
         "retained_copy_bytes": 160
       },
-      "layoutAbiVersion": 2,
+      "layoutAbiVersion": 3,
       "layoutSizeBytes": 40,
       "layoutOffsetsBytes": { "types": 8, "type_count": 16, "fields": 24, "field_count": 32 },
       "typeDescriptorSizeBytes": 36,

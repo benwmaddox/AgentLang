@@ -282,6 +282,145 @@ let run () =
     check "nested result blocks its own rewind" (not (scopeDecision nestedConsumed nestedConsumedAnalysis "nested.inner-scope.agent").AllowRewind)
     check "outer scope rewinds after consuming nested result" (scopeDecision nestedConsumed nestedConsumedAnalysis "nested.outer-scope.agent").AllowRewind
 
+    let deadNoneSum =
+        compileBody emptyContext "arena-dead-option-none" [] [
+            Scope(
+                [ ConstructContainer(OptionNone, [ TString ], span "sum-none.make.agent" 1)
+                  Call("drop", span "sum-none.drop.agent" 1) ],
+                span "sum-none.scope.agent" 1)
+        ]
+    check "a consumed None sum permits rewind" (scopeDecision deadNoneSum (ArenaLifetime.analyzeBody deadNoneSum) "sum-none.scope.agent").AllowRewind
+
+    let escapingNoneSum =
+        compileBody emptyContext "arena-escaping-option-none" [] [
+            Scope(
+                [ ConstructContainer(OptionNone, [ TInt ], span "sum-none-escape.make.agent" 1) ],
+                span "sum-none-escape.scope.agent" 1)
+        ]
+    check "an escaping None sum retains its inline owner" (not (scopeDecision escapingNoneSum (ArenaLifetime.analyzeBody escapingNoneSum) "sum-none-escape.scope.agent").AllowRewind)
+
+    let escapingOptionPayload =
+        compileBody emptyContext "arena-escaping-option-payload" [] [
+            Scope(
+                [ Push(LString "payload", span "sum-payload.value.agent" 1)
+                  ConstructContainer(OptionSome, [ TString ], span "sum-payload.make.agent" 1)
+                  MatchOption(
+                      "payload",
+                      [ Load("payload", span "sum-payload.some-load.agent" 1) ],
+                      [ Push(LString "none", span "sum-payload.none-value.agent" 1) ],
+                      span "sum-payload.match.agent" 1) ],
+                span "sum-payload.scope.agent" 1)
+        ]
+    check "an escaping matched payload retains its inline sum owner" (not (scopeDecision escapingOptionPayload (ArenaLifetime.analyzeBody escapingOptionPayload) "sum-payload.scope.agent").AllowRewind)
+
+    let deadOptionMatch =
+        compileBody emptyContext "arena-dead-option-match" [] [
+            Scope(
+                [ Push(LString "payload", span "sum-dead-match.value.agent" 1)
+                  ConstructContainer(OptionSome, [ TString ], span "sum-dead-match.make.agent" 1)
+                  MatchOption(
+                      "payload",
+                      [ Load("payload", span "sum-dead-match.some-load.agent" 1)
+                        Call("drop", span "sum-dead-match.some-drop.agent" 1) ],
+                      [],
+                      span "sum-dead-match.match.agent" 1) ],
+                span "sum-dead-match.scope.agent" 1)
+        ]
+    check "both dead Option match arms permit rewind" (scopeDecision deadOptionMatch (ArenaLifetime.analyzeBody deadOptionMatch) "sum-dead-match.scope.agent").AllowRewind
+
+    let oneOptionArmEscapes =
+        compileBody emptyContext "arena-option-one-arm-escapes" [ TInt ] [
+            Let("seed", span "sum-one-arm.seed-let.agent" 1)
+            Scope(
+                [ Push(LInt 7L, span "sum-one-arm.payload.agent" 1)
+                  ConstructContainer(OptionSome, [ TInt ], span "sum-one-arm.make.agent" 1)
+                  MatchOption(
+                      "payload",
+                      [ Load("payload", span "sum-one-arm.some-load.agent" 1) ],
+                      [ Load("seed", span "sum-one-arm.none-load.agent" 1) ],
+                      span "sum-one-arm.match.agent" 1) ],
+                span "sum-one-arm.scope.agent" 1)
+        ]
+    check "one escaping Option arm blocks the shared scope rewind" (not (scopeDecision oneOptionArmEscapes (ArenaLifetime.analyzeBody oneOptionArmEscapes) "sum-one-arm.scope.agent").AllowRewind)
+
+    let localSumEscapes =
+        compileBody emptyContext "arena-local-sum-escapes" [] [
+            Scope(
+                [ ConstructContainer(OptionNone, [ TString ], span "sum-local.make.agent" 1)
+                  Let("sum", span "sum-local.store.agent" 1)
+                  Load("sum", span "sum-local.load.agent" 1) ],
+                span "sum-local.scope.agent" 1)
+        ]
+    check "local storage preserves an escaping sum owner" (not (scopeDecision localSumEscapes (ArenaLifetime.analyzeBody localSumEscapes) "sum-local.scope.agent").AllowRewind)
+
+    let deadResultMatch =
+        compileBody emptyContext "arena-dead-result-match" [] [
+            Scope(
+                [ Push(LString "error", span "result-dead.error.agent" 1)
+                  ConstructContainer(ResultError, [ TInt; TString ], span "result-dead.make.agent" 1)
+                  MatchResult(
+                      "ok",
+                      "error",
+                      [ Load("ok", span "result-dead.ok-load.agent" 1)
+                        Call("drop", span "result-dead.ok-drop.agent" 1) ],
+                      [ Load("error", span "result-dead.error-load.agent" 1)
+                        Call("drop", span "result-dead.error-drop.agent" 1) ],
+                      span "result-dead.match.agent" 1) ],
+                span "result-dead.scope.agent" 1)
+        ]
+    check "both dead Result match arms permit rewind" (scopeDecision deadResultMatch (ArenaLifetime.analyzeBody deadResultMatch) "result-dead.scope.agent").AllowRewind
+
+    let deadOkResult =
+        compileBody emptyContext "arena-dead-result-ok" [] [
+            Scope(
+                [ Push(LInt 4L, span "result-ok.value.agent" 1)
+                  ConstructContainer(ResultOk, [ TInt; TString ], span "result-ok.make.agent" 1)
+                  MatchResult(
+                      "ok",
+                      "error",
+                      [ Load("ok", span "result-ok.load.agent" 1)
+                        Call("drop", span "result-ok.drop.agent" 1) ],
+                      [],
+                      span "result-ok.match.agent" 1) ],
+                span "result-ok.scope.agent" 1)
+        ]
+    check "a consumed Ok sum permits rewind" (scopeDecision deadOkResult (ArenaLifetime.analyzeBody deadOkResult) "result-ok.scope.agent").AllowRewind
+
+    let escapingResultPayload =
+        compileBody emptyContext "arena-escaping-result-payload" [] [
+            Scope(
+                [ Push(LString "error", span "result-payload.error.agent" 1)
+                  ConstructContainer(ResultError, [ TInt; TString ], span "result-payload.make.agent" 1)
+                  MatchResult(
+                      "ok",
+                      "error",
+                      [ Push(LString "ok", span "result-payload.ok-value.agent" 1) ],
+                      [ Load("error", span "result-payload.error-load.agent" 1) ],
+                      span "result-payload.match.agent" 1) ],
+                span "result-payload.scope.agent" 1)
+        ]
+    check "an escaping Result payload retains its inline sum owner" (not (scopeDecision escapingResultPayload (ArenaLifetime.analyzeBody escapingResultPayload) "result-payload.scope.agent").AllowRewind)
+
+    let nestedSumEscapes =
+        compileBody emptyContext "arena-nested-sum-escapes" [] [
+            Scope(
+                [ Push(LString "nested", span "sum-nested.value.agent" 1)
+                  ConstructContainer(OptionSome, [ TString ], span "sum-nested.inner.agent" 1)
+                  ConstructContainer(OptionSome, [ TOption TString ], span "sum-nested.outer.agent" 1) ],
+                span "sum-nested.scope.agent" 1)
+        ]
+    check "nested inline sums preserve escaping owners" (not (scopeDecision nestedSumEscapes (ArenaLifetime.analyzeBody nestedSumEscapes) "sum-nested.scope.agent").AllowRewind)
+
+    let sumIdentity = wordEntry "user-sum-identity" [ TOption TString ] [ TOption TString ] Set.empty []
+    let sumCallContext = contextWith [ sumIdentity ] []
+    let unavailableSumCall =
+        compileBody sumCallContext "arena-sum-call-provenance" [ TOption TString ] [
+            Scope(
+                [ Call("user-sum-identity", span "sum-call.invoke.agent" 1) ],
+                span "sum-call.scope.agent" 1)
+        ]
+    check "an escaping user-call sum with unavailable provenance stays conservative" (not (scopeDecision unavailableSumCall (ArenaLifetime.analyzeBody unavailableSumCall) "sum-call.scope.agent").AllowRewind)
+
     let returnsInput = compileBody emptyContext "arena-return-input" [ TString ] []
     let returnsFresh = compileBody emptyContext "arena-return-fresh" [] [ Push(LString "fresh", span "return-fresh.agent" 1) ]
     check "function exit can rewind when returning only an input" (ArenaLifetime.analyzeBody returnsInput).FunctionExit.AllowRewind

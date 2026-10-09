@@ -9,10 +9,18 @@ enum {
   TEST_LAYOUT_STRING = 1u,
   TEST_LAYOUT_RECORD = 2u,
   TEST_LAYOUT_EMPTY = 3u,
+  TEST_LAYOUT_OPTION_INT = 4u,
+  TEST_LAYOUT_RESULT_INT_STRING = 5u,
+  TEST_LAYOUT_OPTION_STRING = 6u,
+  TEST_LAYOUT_SUM_RECORD = 7u,
   TEST_TYPE_INT = 100u,
   TEST_TYPE_STRING = 101u,
   TEST_TYPE_RECORD = 102u,
   TEST_TYPE_EMPTY = 103u,
+  TEST_TYPE_OPTION_INT = 104u,
+  TEST_TYPE_RESULT_INT_STRING = 105u,
+  TEST_TYPE_OPTION_STRING = 106u,
+  TEST_TYPE_SUM_RECORD = 107u,
   TEST_STACK_CAPACITY = 128u,
   TEST_BITMAP_BYTES = TEST_STACK_CAPACITY / 8u,
   TEST_BANK_CAPACITY = 64u
@@ -24,13 +32,31 @@ static const al_owning_type_descriptor test_types[] = {
      AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
     {AL_OWNING_TYPE_RECORD, TEST_TYPE_RECORD, 0u, 3u,
      AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u, 0u},
-    {AL_OWNING_TYPE_RECORD, TEST_TYPE_EMPTY, 3u, 0u, 0u, 8u, 0u, 8u, 0u}};
+    {AL_OWNING_TYPE_RECORD, TEST_TYPE_EMPTY, 3u, 0u, 0u, 8u, 0u, 8u, 0u},
+    {AL_OWNING_TYPE_OPTION, TEST_TYPE_OPTION_INT, 3u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 2u},
+    {AL_OWNING_TYPE_RESULT, TEST_TYPE_RESULT_INT_STRING, 5u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u,
+     2u},
+    {AL_OWNING_TYPE_OPTION, TEST_TYPE_OPTION_STRING, 7u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 2u},
+    {AL_OWNING_TYPE_RECORD, TEST_TYPE_SUM_RECORD, 9u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u,
+     0u}};
 
 static const al_owning_field_descriptor test_fields[] = {
     {TEST_LAYOUT_INT, 0u, 0u, 0u},
     {TEST_LAYOUT_STRING, 8u, 0u, 0u},
     {TEST_LAYOUT_EMPTY, AL_OWNING_LAYOUT_DYNAMIC_U32,
-     AL_OWNING_FIELD_ZERO_WIDTH, 0u}};
+     AL_OWNING_FIELD_ZERO_WIDTH, 0u},
+    {TEST_LAYOUT_INT, 8u, 0u, 0u},
+    {AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 0u, 0u},
+    {TEST_LAYOUT_INT, 8u, 0u, 0u},
+    {TEST_LAYOUT_STRING, 8u, 0u, 0u},
+    {TEST_LAYOUT_STRING, 8u, 0u, 0u},
+    {AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 0u, 0u},
+    {TEST_LAYOUT_OPTION_STRING, 0u, 0u, 0u},
+    {TEST_LAYOUT_INT, AL_OWNING_LAYOUT_DYNAMIC_U32, 0u, 0u}};
 
 static const al_owning_layout test_layout = {
     AL_OWNING_LAYOUT_ABI_VERSION,
@@ -111,9 +137,10 @@ static int context_load(test_context_storage *storage, const uint8_t *bytes,
                         uint32_t type_id) {
   if (al_owning_reserve_to(&storage->context, extent_bytes, 0u) != 0)
     return 0;
-  al_owning_copy_external(&storage->context, 0u, bytes, payload_bytes,
-                          extent_bytes, type_id);
-  return storage->context.status == AL_OWNING_STATUS_OK;
+  return al_owning_copy_external_bounded(
+             &storage->context, 0u, bytes, extent_bytes, 0u, payload_bytes,
+             extent_bytes, type_id, 0u) == 0 &&
+         storage->context.status == AL_OWNING_STATUS_OK;
 }
 
 static int store_init(test_bank_storage *storage, uint32_t byte_capacity,
@@ -347,6 +374,103 @@ static void test_empty_publication_boundary(void) {
             al_owning_byte_store_abort(&storage.store) == AL_OWNING_BANK_OK);
 }
 
+static void test_sum_roots_and_malformed_rollback(void) {
+  test_bank_storage storage;
+  test_context_storage source_storage;
+  uint8_t source[64] = {0u};
+  uint8_t nested_record[32] = {0u};
+  uint8_t malformed_result[16] = {0u};
+  uint8_t active_before[TEST_BANK_CAPACITY];
+  uint8_t staging_before[TEST_BANK_CAPACITY];
+  al_owning_bank_stack_slice slices[2];
+  const al_owning_byte_bank *active;
+
+  write_u64_le(source, 0u, 1u); /* Option<Int>.None */
+  write_u64_le(source, 8u, 1u); /* Result<Int,String>.Error */
+  write_u32_le(source, 16u, 1u);
+  source[24u] = 0x41u; /* UTF-16 'A'. */
+  write_u64_le(nested_record, 0u, 0u); /* Some(String) */
+  write_u32_le(nested_record, 8u, 1u);
+  nested_record[16u] = 0x5au; /* UTF-16 'Z'. */
+  write_u64_le(nested_record, 24u, UINT64_C(0x8877665544332211));
+  write_u64_le(malformed_result, 0u, 1u); /* Error(String) */
+  write_u32_le(malformed_result, 8u, 1u); /* Truncated child extent. */
+
+  CHECK("sum bank and source contexts initialize",
+        store_init(&storage, TEST_BANK_CAPACITY, 2u) &&
+            context_init(&source_storage) &&
+            context_load(&source_storage, source, 26u, 32u,
+                         TEST_TYPE_RESULT_INT_STRING) &&
+            al_owning_byte_store_begin(&storage.store) == AL_OWNING_BANK_OK);
+  slices[0] = (al_owning_bank_stack_slice){
+      TEST_LAYOUT_OPTION_INT, 0u, 8u, 0u};
+  slices[1] = (al_owning_bank_stack_slice){
+      TEST_LAYOUT_RESULT_INT_STRING, 8u, 32u, 0u};
+  CHECK("None and Error(String) stage as complete independently measured roots",
+        al_owning_byte_store_stage_stack_values(
+            &storage.store, &source_storage.context, &test_layout, slices, 2u,
+            0u) == AL_OWNING_BANK_OK &&
+            storage.store.banks[1].used_bytes == 32u &&
+            storage.store.banks[1].root_count == 2u &&
+            storage.store.banks[1].roots[0].type_id == TEST_TYPE_OPTION_INT &&
+            storage.store.banks[1].roots[0].payload_bytes == 8u &&
+            storage.store.banks[1].roots[0].extent_bytes == 8u &&
+            storage.store.banks[1].roots[1].type_id ==
+                TEST_TYPE_RESULT_INT_STRING &&
+            storage.store.banks[1].roots[1].offset_bytes == 8u &&
+            storage.store.banks[1].roots[1].payload_bytes == 18u &&
+            storage.store.banks[1].roots[1].extent_bytes == 24u &&
+            memcmp(storage.bank1_bytes, source, 32u) == 0 &&
+            al_owning_byte_store_commit(&storage.store) == AL_OWNING_BANK_OK);
+
+  CHECK("nested Option<String> record is admitted as a record root",
+        context_init(&source_storage) &&
+            context_load(&source_storage, nested_record, 26u,
+                         sizeof(nested_record), TEST_TYPE_SUM_RECORD) &&
+            al_owning_byte_store_begin(&storage.store) == AL_OWNING_BANK_OK);
+  slices[0] = (al_owning_bank_stack_slice){
+      TEST_LAYOUT_SUM_RECORD, 0u, sizeof(nested_record), 0u};
+  CHECK("record containing a dynamic sum stages its checked tail offset",
+        al_owning_byte_store_stage_stack_values(
+            &storage.store, &source_storage.context, &test_layout, slices, 1u,
+            0u) == AL_OWNING_BANK_OK &&
+            storage.store.banks[0].used_bytes == sizeof(nested_record) &&
+            storage.store.banks[0].root_count == 1u &&
+            storage.store.banks[0].roots[0].payload_bytes == 26u &&
+            storage.store.banks[0].roots[0].extent_bytes ==
+                sizeof(nested_record) &&
+            memcmp(storage.bank0_bytes, nested_record,
+                   sizeof(nested_record)) == 0 &&
+            al_owning_byte_store_commit(&storage.store) == AL_OWNING_BANK_OK);
+
+  active = al_owning_byte_store_active(&storage.store);
+  memcpy(active_before, active->bytes, active->used_bytes);
+  CHECK("malformed nested payload transaction begins without touching active root",
+        context_init(&source_storage) &&
+            context_load(&source_storage, malformed_result, 8u,
+                         sizeof(malformed_result), TEST_TYPE_RESULT_INT_STRING) &&
+            al_owning_byte_store_begin(&storage.store) == AL_OWNING_BANK_OK);
+  memset(storage.bank1_bytes, 0x6du, sizeof(storage.bank1_bytes));
+  memcpy(staging_before, storage.bank1_bytes, sizeof(staging_before));
+  slices[0] = (al_owning_bank_stack_slice){
+      TEST_LAYOUT_RESULT_INT_STRING, 0u, sizeof(malformed_result), 0u};
+  CHECK("truncated Error(String) rejects before staging bytes or roots",
+        al_owning_byte_store_stage_stack_values(
+            &storage.store, &source_storage.context, &test_layout, slices, 1u,
+            0u) == AL_OWNING_BANK_INVALID_VALUE &&
+            storage.store.banks[1].used_bytes == 0u &&
+            storage.store.banks[1].root_count == 0u &&
+            memcmp(storage.bank1_bytes, staging_before,
+                   sizeof(staging_before)) == 0);
+  CHECK("malformed sum abort preserves the complete active record bytes",
+        al_owning_byte_store_active(&storage.store) == active &&
+            active->used_bytes == sizeof(nested_record) &&
+            active->root_count == 1u &&
+            memcmp(active->bytes, active_before,
+                   sizeof(nested_record)) == 0 &&
+            al_owning_byte_store_abort(&storage.store) == AL_OWNING_BANK_OK);
+}
+
 static void test_prevalidation_and_abort(void) {
   test_bank_storage storage;
   test_context_storage source_storage;
@@ -560,6 +684,7 @@ int main(void) {
   test_layout_overlap_rejected();
   test_success_and_source_reset();
   test_empty_publication_boundary();
+  test_sum_roots_and_malformed_rollback();
   test_prevalidation_and_abort();
   test_capacity_failures();
   test_slice_overlap_and_transaction_state();

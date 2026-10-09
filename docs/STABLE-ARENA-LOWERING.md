@@ -6,6 +6,12 @@ This replaces the packed placement policy measured in
 [report 129](../reports/129-variable-owning-values.md). The semantic IR, immutable
 source values and inline record layout remain authoritative.
 
+[Report 160](../reports/160-native-option-result.md) extends this policy to
+inline Option/Result payloads. Matching carries a view of the backing sum owner;
+escaping payloads retain that owner, and branch exits merge provenance
+conservatively. Focused O0/O2 conformance and lifetime tests pass. This adds no
+source references, runtime liveness analysis or automatic compaction.
+
 ## Allocation and lifetime
 
 Allocate payloads sequentially in bounded arena storage. Ordinary binding,

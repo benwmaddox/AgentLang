@@ -34,13 +34,13 @@ _Static_assert(sizeof(al_owning_stack_event) == 40u,
 _Static_assert(offsetof(al_owning_stack_event, checksum) == 32u,
                "ABI 1 event checksum offset changed");
 _Static_assert(sizeof(al_owning_type_descriptor) == 36u,
-               "Layout ABI 2 type descriptor size changed");
+               "Layout ABI 3 type descriptor size changed");
 _Static_assert(sizeof(al_owning_field_descriptor) == 16u,
-               "Layout ABI 2 field descriptor size changed");
+               "Layout ABI 3 field descriptor size changed");
 _Static_assert(sizeof(al_owning_value_size) == 8u,
-               "Layout ABI 2 value size result changed");
+               "Layout ABI 3 value size result changed");
 _Static_assert(sizeof(al_owning_field_location) == 12u,
-               "Layout ABI 2 field location result changed");
+               "Layout ABI 3 field location result changed");
 _Static_assert(
     offsetof(al_owning_type_descriptor, kind) == 0u &&
         offsetof(al_owning_type_descriptor, type_id) == 4u &&
@@ -51,20 +51,20 @@ _Static_assert(
         offsetof(al_owning_type_descriptor, minimum_payload_bytes) == 24u &&
         offsetof(al_owning_type_descriptor, minimum_extent_bytes) == 28u &&
         offsetof(al_owning_type_descriptor, case_count) == 32u,
-    "Layout ABI 2 type descriptor offsets changed");
+    "Layout ABI 3 type descriptor offsets changed");
 _Static_assert(offsetof(al_owning_field_descriptor, child_type_index) == 0u &&
                    offsetof(al_owning_field_descriptor, fixed_offset_bytes) ==
                        4u &&
                    offsetof(al_owning_field_descriptor, flags) == 8u &&
                    offsetof(al_owning_field_descriptor, reserved) == 12u,
-               "Layout ABI 2 field descriptor offsets changed");
+               "Layout ABI 3 field descriptor offsets changed");
 _Static_assert(offsetof(al_owning_value_size, payload_bytes) == 0u &&
                    offsetof(al_owning_value_size, extent_bytes) == 4u,
-               "Layout ABI 2 value size offsets changed");
+               "Layout ABI 3 value size offsets changed");
 _Static_assert(offsetof(al_owning_field_location, offset_bytes) == 0u &&
                    offsetof(al_owning_field_location, payload_bytes) == 4u &&
                    offsetof(al_owning_field_location, extent_bytes) == 8u,
-               "Layout ABI 2 field location offsets changed");
+               "Layout ABI 3 field location offsets changed");
 _Static_assert(AL_OWNING_LAYOUT_MAX_TYPES == 4096u,
                "Layout ABI type descriptor ceiling changed");
 _Static_assert(AL_OWNING_LAYOUT_MAX_FIELDS == 65536u,
@@ -73,17 +73,17 @@ _Static_assert(AL_OWNING_LAYOUT_MAX_FIELDS == 65536u,
 _Static_assert(sizeof(al_owning_stack_context) == 168u,
                "ABI 1 64-bit context size changed");
 _Static_assert(sizeof(al_owning_layout) == 40u,
-               "Layout ABI 2 layout descriptor size changed");
+               "Layout ABI 3 layout descriptor size changed");
 _Static_assert(offsetof(al_owning_layout, abi_version) == 0u,
-               "Layout ABI 2 version offset changed");
+               "Layout ABI 3 version offset changed");
 _Static_assert(offsetof(al_owning_layout, types) == 8u,
-               "Layout ABI 2 type pointer offset changed");
+               "Layout ABI 3 type pointer offset changed");
 _Static_assert(offsetof(al_owning_layout, type_count) == 16u,
-               "Layout ABI 2 type count offset changed");
+               "Layout ABI 3 type count offset changed");
 _Static_assert(offsetof(al_owning_layout, fields) == 24u,
-               "Layout ABI 2 field pointer offset changed");
+               "Layout ABI 3 field pointer offset changed");
 _Static_assert(offsetof(al_owning_layout, field_count) == 32u,
-               "Layout ABI 2 field count offset changed");
+               "Layout ABI 3 field count offset changed");
 _Static_assert(offsetof(al_owning_stack_context, stack_data) == 104u,
                "ABI 1 stack pointer offset changed");
 _Static_assert(offsetof(al_owning_stack_context, init_bitmap) == 112u,
@@ -193,6 +193,69 @@ static const al_owning_layout al_test_enum_layout = {
     al_test_enum_fields,
     (uint32_t)(sizeof(al_test_enum_fields) /
                sizeof(al_test_enum_fields[0]))};
+
+enum {
+  AL_TEST_SUM_INT = 0u,
+  AL_TEST_SUM_STRING = 1u,
+  AL_TEST_SUM_EMPTY = 2u,
+  AL_TEST_SUM_OPTION_INT = 3u,
+  AL_TEST_SUM_RESULT_INT_INT = 4u,
+  AL_TEST_SUM_RESULT_INT_STRING = 5u,
+  AL_TEST_SUM_OPTION_STRING = 6u,
+  AL_TEST_SUM_OPTION_NESTED_RESULT = 7u,
+  AL_TEST_SUM_OPTION_EMPTY = 8u,
+  AL_TEST_SUM_RESULT_EMPTY_EMPTY = 9u,
+  AL_TEST_SUM_OPTION_STRING_RECORD = 10u,
+  AL_TEST_SUM_LAYOUT_TYPE_COUNT = 11u
+};
+
+static const al_owning_type_descriptor al_test_sum_types[] = {
+    {AL_OWNING_TYPE_I64, 401u, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_STRING, 402u, 0u, 0u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_RECORD, 403u, 0u, 0u, 0u, 8u, 0u, 8u, 0u},
+    {AL_OWNING_TYPE_OPTION, 404u, 0u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 2u},
+    {AL_OWNING_TYPE_RESULT, 405u, 2u, 2u, 16u, 16u, 16u, 16u, 2u},
+    {AL_OWNING_TYPE_RESULT, 406u, 4u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u,
+     2u},
+    {AL_OWNING_TYPE_OPTION, 407u, 6u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 2u},
+    {AL_OWNING_TYPE_OPTION, 408u, 8u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 2u},
+    {AL_OWNING_TYPE_OPTION, 409u, 10u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 2u},
+    {AL_OWNING_TYPE_RESULT, 410u, 12u, 2u, 8u, 16u, 8u, 16u, 2u},
+    {AL_OWNING_TYPE_RECORD, 411u, 14u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u,
+     0u}};
+
+static const al_owning_field_descriptor al_test_sum_fields[] = {
+    {AL_TEST_SUM_INT, 8u, 0u, 0u},
+    {AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 0u, 0u},
+    {AL_TEST_SUM_INT, 8u, 0u, 0u},
+    {AL_TEST_SUM_INT, 8u, 0u, 0u},
+    {AL_TEST_SUM_INT, 8u, 0u, 0u},
+    {AL_TEST_SUM_STRING, 8u, 0u, 0u},
+    {AL_TEST_SUM_STRING, 8u, 0u, 0u},
+    {AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 0u, 0u},
+    {AL_TEST_SUM_RESULT_INT_STRING, 8u, 0u, 0u},
+    {AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 0u, 0u},
+    {AL_TEST_SUM_EMPTY, 8u, 0u, 0u},
+    {AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 0u, 0u},
+    {AL_TEST_SUM_EMPTY, 8u, 0u, 0u},
+    {AL_TEST_SUM_EMPTY, 8u, 0u, 0u},
+    {AL_TEST_SUM_OPTION_STRING, 0u, 0u, 0u},
+    {AL_TEST_SUM_INT, AL_OWNING_LAYOUT_DYNAMIC_U32, 0u, 0u}};
+
+static const al_owning_layout al_test_sum_layout = {
+    AL_OWNING_LAYOUT_ABI_VERSION,
+    al_test_sum_types,
+    AL_TEST_SUM_LAYOUT_TYPE_COUNT,
+    al_test_sum_fields,
+    (uint32_t)(sizeof(al_test_sum_fields) /
+               sizeof(al_test_sum_fields[0]))};
 
 typedef struct al_test_fixture {
   uint8_t raw[AL_TEST_DYNAMIC_STACK_CAPACITY + 2u * AL_TEST_GUARD_BYTES];
@@ -2023,21 +2086,334 @@ failed:
   return 0;
 }
 
-static int al_test_closed_enum_abi1_rejected(void) {
+static int al_test_closed_enum_abi2_rejected(void) {
   al_test_fixture fixture;
   al_owning_layout stale_layout = al_test_enum_layout;
   uint8_t enum_bytes[8] = {0u};
   uint32_t payload;
   uint32_t extent;
   al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
-  AL_CHECK(al_test_case_begin("closed_enum_abi1_rejected", &fixture));
-  stale_layout.abi_version = 1u;
+  AL_CHECK(al_test_case_begin("closed_enum_abi2_rejected", &fixture));
+  stale_layout.abi_version = 2u;
   AL_CHECK(al_owning_measure_external_value(
                &fixture.ctx, &stale_layout, AL_TEST_ENUM_LAYOUT_TAG,
                enum_bytes, sizeof(enum_bytes), 0u, AL_TEST_DYNAMIC_ERROR_ID,
                &payload, &extent) != 0 &&
            fixture.ctx.status == AL_OWNING_STATUS_INTERNAL &&
            fixture.ctx.cursor_bytes == 0u);
+  return 1;
+failed:
+  return 0;
+}
+
+static int al_test_sum_external_rejected(const al_owning_layout *layout,
+                                        uint32_t type_index,
+                                        const uint8_t *bytes,
+                                        uint32_t byte_count) {
+  al_test_fixture fixture;
+  uint32_t payload = UINT32_C(0xAABBCCDD);
+  uint32_t extent = UINT32_C(0x11223344);
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  return al_owning_measure_external_value(
+             &fixture.ctx, layout, type_index, bytes, byte_count, 0u,
+             AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) != 0 &&
+         fixture.ctx.status != AL_OWNING_STATUS_OK &&
+         payload == UINT32_C(0xAABBCCDD) && extent == UINT32_C(0x11223344);
+}
+
+static int al_test_sum_descriptor_rejected(
+    const al_owning_type_descriptor *types,
+    const al_owning_field_descriptor *fields, uint32_t type_index,
+    const uint8_t *bytes, uint32_t byte_count) {
+  al_test_fixture fixture;
+  al_owning_layout layout = al_test_sum_layout;
+  uint32_t payload = 0u;
+  uint32_t extent = 0u;
+  layout.types = types;
+  layout.fields = fields;
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  return al_owning_measure_external_value(
+             &fixture.ctx, &layout, type_index, bytes, byte_count, 0u,
+             AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) != 0 &&
+         fixture.ctx.status == AL_OWNING_STATUS_INTERNAL;
+}
+
+static int al_test_option_result_layout_and_scanner(void) {
+  al_test_fixture fixture;
+  al_owning_stack_context *ctx;
+  al_owning_value_size measured = {UINT32_C(0xAABBCCDD),
+                                   UINT32_C(0x11223344)};
+  al_owning_field_location location = {UINT32_C(0xAABBCCDD),
+                                       UINT32_C(0x11223344),
+                                       UINT32_C(0x55667788)};
+  al_owning_field_location unchanged_location = location;
+  al_owning_type_descriptor bad_types[AL_TEST_SUM_LAYOUT_TYPE_COUNT];
+  al_owning_field_descriptor bad_fields[
+      sizeof(al_test_sum_fields) / sizeof(al_test_sum_fields[0])];
+  uint8_t none_int[8] = {0u};
+  uint8_t none_with_payload[16] = {0u};
+  uint8_t some_int[16] = {0u};
+  uint8_t ok_int[16] = {0u};
+  uint8_t error_string[24] = {0u};
+  uint8_t error_empty_string[16] = {0u};
+  uint8_t some_empty[16] = {0u};
+  uint8_t result_empty[16] = {0u};
+  uint8_t nested_string[32] = {0u};
+  uint8_t option_string_record[32] = {0u};
+  uint8_t malformed[32] = {0u};
+  uint8_t original_stack[AL_TEST_STACK_CAPACITY];
+  uint32_t payload = UINT32_C(0xAABBCCDD);
+  uint32_t extent = UINT32_C(0x11223344);
+  uint32_t case_index = UINT32_C(0x55667788);
+  uint64_t copy_bytes_before;
+
+  al_test_write_u64_le(some_int, 0u, 0u);
+  al_test_write_u64_le(none_int, 0u, 1u);
+  al_test_write_u64_le(none_with_payload, 0u, 1u);
+  al_test_write_u64_le(none_with_payload, 8u,
+                       UINT64_C(0x2122232425262728));
+  al_test_write_u64_le(some_int, 8u, UINT64_C(0x0102030405060708));
+  al_test_write_u64_le(ok_int, 0u, 0u);
+  al_test_write_u64_le(ok_int, 8u, UINT64_C(0x1112131415161718));
+  al_test_write_u64_le(error_string, 0u, 1u);
+  al_test_write_u32_le(error_string, 8u, 1u);
+  error_string[16u] = 0x41u;
+  al_test_write_u64_le(error_empty_string, 0u, 1u);
+  al_test_write_u64_le(some_empty, 0u, 0u);
+  al_test_write_u64_le(result_empty, 0u, 0u);
+  al_test_write_u64_le(nested_string, 0u, 0u);
+  al_test_write_u64_le(nested_string, 8u, 1u);
+  al_test_write_u32_le(nested_string, 16u, 1u);
+  nested_string[24u] = 0x5au;
+  al_test_write_u64_le(option_string_record, 0u, 0u);
+  al_test_write_u32_le(option_string_record, 8u, 1u);
+  option_string_record[16u] = 0x41u;
+  al_test_write_u64_le(option_string_record, 24u,
+                       UINT64_C(0x8877665544332211));
+
+  al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_sum_layout, AL_TEST_SUM_OPTION_INT, none_int,
+               sizeof(none_int), 0u, AL_TEST_DYNAMIC_ERROR_ID, &payload,
+               &extent) == 0 &&
+           payload == 8u && extent == 8u);
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_sum_layout, AL_TEST_SUM_OPTION_INT, some_int,
+               sizeof(some_int), 0u, AL_TEST_DYNAMIC_ERROR_ID, &payload,
+               &extent) == 0 &&
+           payload == 16u && extent == 16u);
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_sum_layout, AL_TEST_SUM_RESULT_INT_INT, ok_int,
+               sizeof(ok_int), 0u, AL_TEST_DYNAMIC_ERROR_ID, &payload,
+               &extent) == 0 &&
+           payload == 16u && extent == 16u);
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_sum_layout, AL_TEST_SUM_RESULT_INT_STRING,
+               error_string, sizeof(error_string), 0u,
+               AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) == 0 &&
+           payload == 18u && extent == 24u);
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_sum_layout, AL_TEST_SUM_RESULT_INT_STRING,
+               error_empty_string, sizeof(error_empty_string), 0u,
+               AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) == 0 &&
+           payload == 16u && extent == 16u);
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_sum_layout, AL_TEST_SUM_OPTION_EMPTY, some_empty,
+               sizeof(some_empty), 0u, AL_TEST_DYNAMIC_ERROR_ID, &payload,
+               &extent) == 0 &&
+           payload == 8u && extent == 16u);
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_sum_layout, AL_TEST_SUM_RESULT_EMPTY_EMPTY,
+               result_empty, sizeof(result_empty), 0u,
+               AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) == 0 &&
+           payload == 8u && extent == 16u);
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_sum_layout, AL_TEST_SUM_OPTION_NESTED_RESULT,
+               nested_string, sizeof(nested_string), 0u,
+               AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) == 0 &&
+           payload == 26u && extent == 32u);
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_sum_layout, AL_TEST_SUM_OPTION_STRING_RECORD,
+               option_string_record, sizeof(option_string_record), 0u,
+               AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) == 0 &&
+           payload == 26u && extent == 32u);
+
+  AL_CHECK(al_owning_reserve_to(ctx, sizeof(error_string),
+                                AL_TEST_DYNAMIC_ERROR_ID) == 0);
+  al_owning_copy_external(ctx, 0u, error_string, 18u, sizeof(error_string),
+                          406u);
+  AL_CHECK(ctx->status == AL_OWNING_STATUS_OK &&
+           al_owning_measure_value(ctx, &al_test_sum_layout,
+                                   AL_TEST_SUM_RESULT_INT_STRING, 0u,
+                                   sizeof(error_string),
+                                   AL_TEST_DYNAMIC_ERROR_ID, &measured) == 0 &&
+           measured.payload_bytes == 18u && measured.extent_bytes == 24u);
+  (void)memcpy(original_stack, ctx->stack_data, sizeof(error_string));
+  copy_bytes_before = ctx->deep_copy_bytes;
+  AL_CHECK(al_owning_locate_sum_case(
+               ctx, &al_test_sum_layout, AL_TEST_SUM_RESULT_INT_STRING, 0u,
+               sizeof(error_string), AL_TEST_DYNAMIC_ERROR_ID, &case_index,
+               &location) == 0 &&
+           case_index == 1u && location.offset_bytes == 8u &&
+           location.payload_bytes == 10u && location.extent_bytes == 16u);
+  AL_CHECK(ctx->deep_copy_bytes == copy_bytes_before &&
+           memcmp(original_stack, ctx->stack_data, sizeof(error_string)) ==
+               0);
+  ctx->stack_data[0] = 2u;
+  case_index = UINT32_C(0x55667788);
+  location = unchanged_location;
+  AL_CHECK(al_owning_locate_sum_case(
+               ctx, &al_test_sum_layout, AL_TEST_SUM_RESULT_INT_STRING, 0u,
+               sizeof(error_string), AL_TEST_DYNAMIC_ERROR_ID, &case_index,
+               &location) != 0 &&
+           case_index == UINT32_C(0x55667788) &&
+           memcmp(&location, &unchanged_location, sizeof(location)) == 0);
+  /* Use a fresh fixture for the record with a dynamic sum before its tail. */
+  al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  AL_CHECK(al_owning_reserve_to(ctx, sizeof(option_string_record),
+                                AL_TEST_DYNAMIC_ERROR_ID) == 0);
+  AL_CHECK(al_owning_copy_external_bounded(
+               ctx, 0u, option_string_record, sizeof(option_string_record),
+               0u, 26u, sizeof(option_string_record), 411u,
+               AL_TEST_DYNAMIC_ERROR_ID) == 0);
+  AL_CHECK(al_owning_locate_field(
+               ctx, &al_test_sum_layout, AL_TEST_SUM_OPTION_STRING_RECORD,
+               0u, sizeof(option_string_record), 1u,
+               AL_TEST_DYNAMIC_ERROR_ID, &location) == 0 &&
+           location.offset_bytes == 24u && location.payload_bytes == 8u &&
+           location.extent_bytes == 8u);
+  AL_CHECK(al_owning_locate_field(
+               ctx, &al_test_sum_layout, AL_TEST_SUM_OPTION_STRING_RECORD,
+               0u, sizeof(option_string_record), 0u,
+               AL_TEST_DYNAMIC_ERROR_ID, &location) == 0 &&
+           location.offset_bytes == 0u && location.payload_bytes == 18u &&
+           location.extent_bytes == 24u);
+  al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  AL_CHECK(al_owning_reserve_to(ctx, sizeof(none_int),
+                                AL_TEST_DYNAMIC_ERROR_ID) == 0);
+  al_owning_copy_external(ctx, 0u, none_int, 8u, sizeof(none_int), 404u);
+  AL_CHECK(al_owning_locate_sum_case(
+               ctx, &al_test_sum_layout, AL_TEST_SUM_OPTION_INT, 0u,
+               sizeof(none_int), AL_TEST_DYNAMIC_ERROR_ID, &case_index,
+               &location) == 0 &&
+           case_index == 1u && location.offset_bytes == 8u &&
+           location.payload_bytes == 0u && location.extent_bytes == 0u);
+
+  al_test_write_u64_le(malformed, 0u, 2u);
+  AL_CHECK(al_test_sum_external_rejected(&al_test_sum_layout,
+                                        AL_TEST_SUM_OPTION_INT, malformed,
+                                        8u));
+  AL_CHECK(al_test_sum_external_rejected(&al_test_sum_layout,
+                                        AL_TEST_SUM_OPTION_INT, malformed,
+                                        7u));
+  al_test_write_u64_le(malformed, 0u, 0u);
+  AL_CHECK(al_test_sum_external_rejected(&al_test_sum_layout,
+                                        AL_TEST_SUM_OPTION_INT, malformed,
+                                        8u));
+  (void)memcpy(malformed, error_string, sizeof(error_string));
+  malformed[18u] = 0x7fu;
+  AL_CHECK(al_test_sum_external_rejected(&al_test_sum_layout,
+                                        AL_TEST_SUM_RESULT_INT_STRING,
+                                        malformed, sizeof(error_string)));
+  (void)memcpy(malformed, nested_string, sizeof(nested_string));
+  al_test_write_u64_le(malformed, 8u, 2u);
+  AL_CHECK(al_test_sum_external_rejected(
+      &al_test_sum_layout, AL_TEST_SUM_OPTION_NESTED_RESULT, malformed,
+      sizeof(nested_string)));
+
+  (void)memcpy(bad_types, al_test_sum_types, sizeof(bad_types));
+  bad_types[AL_TEST_SUM_OPTION_INT].case_count = 1u;
+  AL_CHECK(al_test_sum_descriptor_rejected(
+      bad_types, al_test_sum_fields, AL_TEST_SUM_OPTION_INT, some_int,
+      sizeof(some_int)));
+  (void)memcpy(bad_types, al_test_sum_types, sizeof(bad_types));
+  bad_types[AL_TEST_SUM_OPTION_INT].field_count = 1u;
+  AL_CHECK(al_test_sum_descriptor_rejected(
+      bad_types, al_test_sum_fields, AL_TEST_SUM_OPTION_INT, some_int,
+      sizeof(some_int)));
+  (void)memcpy(bad_fields, al_test_sum_fields, sizeof(bad_fields));
+  bad_fields[0].fixed_offset_bytes = 16u;
+  AL_CHECK(al_test_sum_descriptor_rejected(
+      al_test_sum_types, bad_fields, AL_TEST_SUM_OPTION_INT, some_int,
+      sizeof(some_int)));
+  (void)memcpy(bad_fields, al_test_sum_fields, sizeof(bad_fields));
+  bad_fields[0].flags = AL_OWNING_FIELD_ZERO_WIDTH;
+  AL_CHECK(al_test_sum_descriptor_rejected(
+      al_test_sum_types, bad_fields, AL_TEST_SUM_OPTION_INT, some_int,
+      sizeof(some_int)));
+  (void)memcpy(bad_fields, al_test_sum_fields, sizeof(bad_fields));
+  bad_fields[0].reserved = 1u;
+  AL_CHECK(al_test_sum_descriptor_rejected(
+      al_test_sum_types, bad_fields, AL_TEST_SUM_OPTION_INT, some_int,
+      sizeof(some_int)));
+  (void)memcpy(bad_fields, al_test_sum_fields, sizeof(bad_fields));
+  bad_fields[0].child_type_index = AL_OWNING_LAYOUT_DYNAMIC_U32;
+  AL_CHECK(al_test_sum_descriptor_rejected(
+      al_test_sum_types, bad_fields, AL_TEST_SUM_OPTION_INT, none_int,
+      sizeof(none_int)));
+  (void)memcpy(bad_fields, al_test_sum_fields, sizeof(bad_fields));
+  bad_fields[1].child_type_index = AL_TEST_SUM_INT;
+  AL_CHECK(al_test_sum_descriptor_rejected(
+      al_test_sum_types, bad_fields, AL_TEST_SUM_OPTION_INT, none_int,
+      sizeof(none_int)));
+  (void)memcpy(bad_fields, al_test_sum_fields, sizeof(bad_fields));
+  bad_fields[3].child_type_index = AL_OWNING_LAYOUT_DYNAMIC_U32;
+  AL_CHECK(al_test_sum_descriptor_rejected(
+      al_test_sum_types, bad_fields, AL_TEST_SUM_RESULT_INT_INT, ok_int,
+      sizeof(ok_int)));
+  (void)memcpy(bad_fields, al_test_sum_fields, sizeof(bad_fields));
+  bad_fields[5].child_type_index = AL_TEST_SUM_LAYOUT_TYPE_COUNT;
+  AL_CHECK(al_test_sum_descriptor_rejected(
+      al_test_sum_types, bad_fields, AL_TEST_SUM_RESULT_INT_STRING, ok_int,
+      sizeof(ok_int)));
+  (void)memcpy(bad_types, al_test_sum_types, sizeof(bad_types));
+  (void)memcpy(bad_fields, al_test_sum_fields, sizeof(bad_fields));
+  bad_fields[0].child_type_index = AL_TEST_SUM_OPTION_INT;
+  AL_CHECK(al_test_sum_descriptor_rejected(
+      bad_types, bad_fields, AL_TEST_SUM_OPTION_INT, some_int,
+      sizeof(some_int)));
+
+  /* A None row is always absent; coherent metadata cannot turn it into a
+   * second payload-bearing case. */
+  (void)memcpy(bad_types, al_test_sum_types, sizeof(bad_types));
+  (void)memcpy(bad_fields, al_test_sum_fields, sizeof(bad_fields));
+  bad_fields[1].child_type_index = AL_TEST_SUM_INT;
+  bad_types[AL_TEST_SUM_OPTION_INT].fixed_payload_bytes = 16u;
+  bad_types[AL_TEST_SUM_OPTION_INT].fixed_extent_bytes = 16u;
+  bad_types[AL_TEST_SUM_OPTION_INT].minimum_payload_bytes = 16u;
+  bad_types[AL_TEST_SUM_OPTION_INT].minimum_extent_bytes = 16u;
+  AL_CHECK(al_test_sum_descriptor_rejected(
+      bad_types, bad_fields, AL_TEST_SUM_OPTION_INT, none_with_payload,
+      sizeof(none_with_payload)));
+
+  {
+    al_owning_layout bad_layout = al_test_sum_layout;
+    bad_layout.types = bad_types;
+    bad_layout.fields = bad_fields;
+    al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+    ctx = &fixture.ctx;
+    AL_CHECK(al_owning_reserve_to(ctx, sizeof(none_with_payload),
+                                  AL_TEST_DYNAMIC_ERROR_ID) == 0);
+    (void)memcpy(ctx->stack_data, none_with_payload,
+                 sizeof(none_with_payload));
+    case_index = UINT32_C(0x55667788);
+    location = unchanged_location;
+    AL_CHECK(al_owning_locate_sum_case(
+                 ctx, &bad_layout, AL_TEST_SUM_OPTION_INT, 0u,
+                 sizeof(none_with_payload), AL_TEST_DYNAMIC_ERROR_ID,
+                 &case_index, &location) != 0 &&
+             case_index == UINT32_C(0x55667788) &&
+             memcmp(&location, &unchanged_location, sizeof(location)) == 0);
+  }
+
+  AL_CHECK(unchanged_location.offset_bytes == UINT32_C(0xAABBCCDD) &&
+           unchanged_location.payload_bytes == UINT32_C(0x11223344) &&
+           unchanged_location.extent_bytes == UINT32_C(0x55667788));
+  al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+  AL_CHECK(al_test_case_begin("option_result_layout_scanner", &fixture));
   return 1;
 failed:
   return 0;
@@ -2138,7 +2514,8 @@ int main(void) {
       !al_test_closed_enum_invalid_nested_tags() ||
       !al_test_closed_enum_short_extents() ||
       !al_test_closed_enum_descriptor_validation() ||
-      !al_test_closed_enum_abi1_rejected() ||
+      !al_test_closed_enum_abi2_rejected() ||
+      !al_test_option_result_layout_and_scanner() ||
       !al_test_record_copy_preserves_source()) {
     return 1;
   }

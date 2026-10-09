@@ -71,6 +71,28 @@ type private EnumEntryBodies =
       IgnoreFixedRecord: VerifiedIrBody
       IgnoreDynamicRecord: VerifiedIrBody }
 
+type private SumEntryBodies =
+    { Program: VerifiedIrProgram
+      CompilerContext: Compiler.IrLoweringContext
+      SourceOrigins: Map<SourceSpan, SourceSpan>
+      Cases: Map<string, VerifiedIrBody>
+      IdentityBodies: Map<string, VerifiedIrBody>
+      LocalCallBodies: Map<string, VerifiedIrBody>
+      Equalities: Map<int, VerifiedIrBody>
+      OptionIntMatch: VerifiedIrBody
+      ResultIntStringMatch: VerifiedIrBody
+      ResultStringIntMatch: VerifiedIrBody
+      ResultStringIntErrorMatch: VerifiedIrBody
+      OptionStringMatch: VerifiedIrBody
+      NestedMatch: VerifiedIrBody
+      NestedErrorIntMatch: VerifiedIrBody
+      BranchJoin: VerifiedIrBody
+      DuplicateDrop: VerifiedIrBody
+      TailChoice: VerifiedIrBody
+      TailProjection: VerifiedIrBody
+      RawIgnoreBodies: Map<string, VerifiedIrBody>
+      FailAfterSumAllocation: VerifiedIrBody }
+
 [<Struct; StructLayout(LayoutKind.Sequential, Pack = 8)>]
 type private RawOwningStackContext =
     val mutable AbiVersion: uint32
@@ -897,6 +919,373 @@ let private bytesHex (bytes: byte array) = Convert.ToHexString(bytes).ToLowerInv
 
 let private bytesFromHex (value: string) = Convert.FromHexString value
 
+let private sumStringFromCodeUnitsHex (hex: string) =
+    let bytes = bytesFromHex hex
+    if bytes.Length % 2 <> 0 then invalidArg (nameof hex) "Sum fixture UTF-16 hex must contain complete code units."
+    String(Array.init (bytes.Length / 2) (fun index -> char (uint16 bytes[index * 2] ||| (uint16 bytes[index * 2 + 1] <<< 8))))
+
+let rec private parseSumLangType (typeName: string) =
+    let typeName = typeName.Trim()
+    if String.Equals(typeName, "Int", StringComparison.Ordinal) then TInt
+    elif String.Equals(typeName, "Bool", StringComparison.Ordinal) then TBool
+    elif String.Equals(typeName, "String", StringComparison.Ordinal) then TString
+    elif String.Equals(typeName, "Unit", StringComparison.Ordinal) then TUnit
+    elif typeName.StartsWith("Option<", StringComparison.Ordinal) && typeName.EndsWith(">", StringComparison.Ordinal) then
+        let inner = typeName.Substring(7, typeName.Length - 8)
+        TOption(parseSumLangType inner)
+    elif typeName.StartsWith("Result<", StringComparison.Ordinal) && typeName.EndsWith(">", StringComparison.Ordinal) then
+        let inner = typeName.Substring(7, typeName.Length - 8)
+        let mutable depth = 0
+        let mutable separator = -1
+        for index in 0 .. inner.Length - 1 do
+            match inner[index] with
+            | '<' -> depth <- depth + 1
+            | '>' -> depth <- depth - 1
+            | ',' when depth = 0 && separator < 0 -> separator <- index
+            | _ -> ()
+        if separator < 0 then invalidOp $"Fixture Result type '{typeName}' has no top-level type separator."
+        TResult(parseSumLangType (inner.Substring(0, separator)), parseSumLangType (inner.Substring(separator + 1)))
+    else TNamed typeName
+
+let rec private parseSumFixtureValue (element: JsonElement) =
+    let declaredType = parseSumLangType (element.GetProperty("type").GetString())
+    let parsePayload expectedType =
+        let payload = element.GetProperty("payload")
+        let actualType = parseSumLangType (payload.GetProperty("type").GetString())
+        if actualType <> expectedType then
+            invalidOp (sprintf "Fixture payload type %A does not match its declared sum payload type %A." actualType expectedType)
+        parseSumFixtureValue payload
+    match declaredType with
+    | TInt -> IntValue(element.GetProperty("value").GetInt64())
+    | TBool -> BoolValue(element.GetProperty("value").GetBoolean())
+    | TString -> StringValue(sumStringFromCodeUnitsHex (element.GetProperty("codeUnitsHex").GetString()))
+    | TUnit -> UnitValue
+    | TOption itemType ->
+        match element.GetProperty("case").GetString() with
+        | "none" -> OptionValue(itemType, None)
+        | "some" -> OptionValue(itemType, Some(parsePayload itemType))
+        | caseName -> invalidOp $"Unknown Option fixture case '{caseName}'."
+    | TResult(okType, errorType) ->
+        match element.GetProperty("case").GetString() with
+        | "ok" -> ResultValue(okType, errorType, Ok(parsePayload okType))
+        | "error" -> ResultValue(okType, errorType, Error(parsePayload errorType))
+        | caseName -> invalidOp $"Unknown Result fixture case '{caseName}'."
+    | TNamed name ->
+        let mutable enumCase = Unchecked.defaultof<JsonElement>
+        if element.TryGetProperty("case", &enumCase) then
+            EnumValue(name, enumCase.GetString())
+        else
+            let fields =
+                element.GetProperty("fields").EnumerateObject()
+                |> Seq.map (fun field -> field.Name, parseSumFixtureValue field.Value)
+                |> Map.ofSeq
+            RecordValue(name, fields)
+    | other -> invalidOp (sprintf "Unsupported type in sum fixture value: %A." other)
+
+let rec private sumValueExpressions
+    (compilerContext: Compiler.IrLoweringContext)
+    (spanForColumn: int -> SourceSpan)
+    (column: int)
+    (value: Value) =
+    let construct kind types = [ ConstructContainer(kind, types, spanForColumn column) ]
+    match value with
+    | IntValue number -> [ Push(LInt number, spanForColumn column) ]
+    | BoolValue boolean -> [ Push(LBool boolean, spanForColumn column) ]
+    | StringValue text -> [ Push(LString text, spanForColumn column) ]
+    | UnitValue -> [ Push(LUnit, spanForColumn column) ]
+    | EnumValue(name, caseName) -> [ Call(name + "." + caseName, spanForColumn column) ]
+    | OptionValue(itemType, None) -> construct OptionNone [ itemType ]
+    | OptionValue(itemType, Some item) ->
+        sumValueExpressions compilerContext spanForColumn (column + 1) item
+        @ construct OptionSome [ itemType ]
+    | ResultValue(okType, errorType, Ok item) ->
+        sumValueExpressions compilerContext spanForColumn (column + 1) item
+        @ construct ResultOk [ okType; errorType ]
+    | ResultValue(okType, errorType, Error item) ->
+        sumValueExpressions compilerContext spanForColumn (column + 1) item
+        @ construct ResultError [ okType; errorType ]
+    | RecordValue(name, fields) ->
+        let definition =
+            compilerContext.Records.TryFind name
+            |> Option.defaultWith (fun () -> invalidOp $"Sum fixture refers to record '{name}' missing from the VerifiedIrProgram context.")
+        let arguments =
+            definition.Fields
+            |> List.collect (fun field ->
+                let fieldValue =
+                    fields.TryFind field.Name
+                    |> Option.defaultWith (fun () -> invalidOp $"Sum fixture value omits {name}.{field.Name}.")
+                sumValueExpressions compilerContext spanForColumn (column + 1) fieldValue)
+        arguments @ [ Call(lowerFirst name + ".new", spanForColumn column) ]
+    | other -> invalidOp $"Unsupported value in sum fixture constructor: {Types.formatValue other}."
+
+let private compileSumEntries (fixture: JsonElement) =
+    let source =
+        """enum SumSignal {
+    case ready;
+    case failed;
+}
+
+record SumTextTail {
+    field choice: Option<String>;
+    field tail: Int;
+}
+
+fn sums.option-int-identity(value: Option<Int>) -> Option<Int> {
+    effects none
+    value
+}
+
+fn sums.option-string-identity(value: Option<String>) -> Option<String> {
+    effects none
+    value
+}
+
+fn sums.option-bool-identity(value: Option<Bool>) -> Option<Bool> {
+    effects none
+    value
+}
+
+fn sums.option-signal-identity(value: Option<SumSignal>) -> Option<SumSignal> {
+    effects none
+    value
+}
+
+fn sums.result-int-string-identity(value: Result<Int, String>) -> Result<Int, String> {
+    effects none
+    value
+}
+
+fn sums.result-string-int-identity(value: Result<String, Int>) -> Result<String, Int> {
+    effects none
+    value
+}
+
+fn sums.result-unit-bool-identity(value: Result<Unit, Bool>) -> Result<Unit, Bool> {
+    effects none
+    value
+}
+
+fn sums.option-empty-identity(value: Option<Empty>) -> Option<Empty> {
+    effects none
+    value
+}
+
+fn sums.result-empty-identity(value: Result<Empty, Empty>) -> Result<Empty, Empty> {
+    effects none
+    value
+}
+
+fn sums.nested-option-result-identity(value: Option<Result<String, Int>>) -> Option<Result<String, Int>> {
+    effects none
+    value
+}
+
+fn sums.text-tail-identity(value: SumTextTail) -> SumTextTail {
+    effects none
+    value
+}"""
+    let compiled = compileFlowProgram source
+    let site name column = span ("<native-value-stack-sum-" + name + ">") column
+    let compileBody name inputTypes expressions =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+            compiled.Context.CompilerContext
+            compiled.Program
+            name
+            inputTypes
+            expressions
+            compiled.Context.SourceOrigins
+    let oracle = fixture.GetProperty("sumConformance")
+    let caseElements = oracle.GetProperty("cases").EnumerateArray() |> Seq.toArray
+    let caseValues =
+        caseElements
+        |> Array.map (fun item -> item.GetProperty("name").GetString(), parseSumFixtureValue (item.GetProperty("expected")))
+        |> Map.ofArray
+    let caseBodies =
+        caseElements
+        |> Array.map (fun item ->
+            let name = item.GetProperty("name").GetString()
+            let expectedValue = caseValues[name]
+            let body =
+                compileBody
+                    ("native-value-stack-sum-construct-" + name)
+                    []
+                    (sumValueExpressions compiled.Context.CompilerContext (site name) 1 expectedValue)
+            name, body)
+        |> Map.ofArray
+    let identityTargets =
+        caseElements
+        |> Array.map (fun item -> item.GetProperty("identityBody").GetString(), item.GetProperty("type").GetString())
+        |> Array.distinctBy fst
+        |> Array.toList
+    let identityBodies, localCallBodies =
+        identityTargets
+        |> List.mapi (fun index (target, typeName) ->
+            let ty = parseSumLangType typeName
+            let identity = compileBody ("native-value-stack-sum-host-round-trip-" + string index) [ ty ] [ Call(target, site "host-round-trip" 1) ]
+            let localCall =
+                compileBody ("native-value-stack-sum-local-call-" + string index) [ ty ]
+                    [ Let("sum_saved", site "local-store" 1)
+                      Load("sum_saved", site "local-load" 2)
+                      Call(target, site "user-call" 3) ]
+            target, identity, localCall)
+        |> List.fold (fun (identityMap, localMap) (target, identity, localCall) ->
+            Map.add target identity identityMap, Map.add target localCall localMap) (Map.empty, Map.empty)
+    let equalityBodies =
+        oracle.GetProperty("equalityCases").EnumerateArray()
+        |> Seq.mapi (fun index equalityCase ->
+            let leftName = equalityCase.GetProperty("left").GetString()
+            let rightName = equalityCase.GetProperty("right").GetString()
+            let leftValue = caseValues[leftName]
+            let rightValue = caseValues[rightName]
+            let leftType = parseSumLangType (caseElements |> Array.find (fun item -> item.GetProperty("name").GetString() = leftName) |> fun item -> item.GetProperty("type").GetString())
+            let rightType = parseSumLangType (caseElements |> Array.find (fun item -> item.GetProperty("name").GetString() = rightName) |> fun item -> item.GetProperty("type").GetString())
+            if leftType <> rightType then invalidOp (sprintf "Sum equality fixture compares unlike types %A and %A." leftType rightType)
+            let body =
+                compileBody ($"native-value-stack-sum-equals-{index}") []
+                    (sumValueExpressions compiled.Context.CompilerContext (site "equality-left") 1 leftValue
+                     @ sumValueExpressions compiled.Context.CompilerContext (site "equality-right") 1 rightValue
+                     @ [ Call("equals", site "equality-call" 3) ])
+            index, body)
+        |> Map.ofSeq
+    let optionIntMatch =
+        compileBody "native-value-stack-sum-match-option-int" [ TOption TInt ]
+            [ MatchOption(
+                "sum_option_payload",
+                [ Load("sum_option_payload", site "option-some-payload" 1) ],
+                [ Push(LInt -1L, site "option-none-result" 2) ],
+                site "option-match" 3) ]
+    let resultIntStringMatch =
+        compileBody "native-value-stack-sum-match-result-int-string" [ TResult(TInt, TString) ]
+            [ MatchResult(
+                "sum_result_ok",
+                "sum_result_error",
+                [ Push(LString "ok", site "result-ok-result" 1) ],
+                [ Load("sum_result_error", site "result-error-payload" 2) ],
+                site "result-match" 3) ]
+    let resultStringIntMatch =
+        compileBody "native-value-stack-sum-match-result-string-int" [ TResult(TString, TInt) ]
+            [ MatchResult(
+                "sum_string_ok",
+                "sum_int_error",
+                [ Load("sum_string_ok", site "result-ok-payload" 1) ],
+                [ Push(LString "error", site "result-error-result" 2) ],
+                site "result-string-match" 3) ]
+    let resultStringIntErrorMatch =
+        compileBody "native-value-stack-sum-match-result-string-int-error-payload" [ TResult(TString, TInt) ]
+            [ MatchResult(
+                "sum_string_ok_unused",
+                "sum_int_error_payload",
+                [ Push(LInt -1L, site "result-error-int-ok-sentinel" 1) ],
+                [ Load("sum_int_error_payload", site "result-error-int-payload" 2) ],
+                site "result-error-int-match" 3) ]
+    let optionStringMatch =
+        compileBody "native-value-stack-sum-match-option-string" [ TOption TString ]
+            [ MatchOption(
+                "sum_text_payload",
+                [ Load("sum_text_payload", site "option-string-payload" 1) ],
+                [ Push(LString "", site "option-string-none" 2) ],
+                site "option-string-match" 3) ]
+    let nestedMatch =
+        compileBody "native-value-stack-sum-match-nested-option-result" [ TOption(TResult(TString, TInt)) ]
+            [ MatchOption(
+                "sum_nested_result",
+                [ Load("sum_nested_result", site "nested-result-load" 1)
+                  MatchResult(
+                      "sum_nested_ok",
+                      "sum_nested_error",
+                      [ Load("sum_nested_ok", site "nested-ok-payload" 2) ],
+                      [ Push(LString "error", site "nested-error-result" 3) ],
+                      site "nested-result-match" 4) ],
+                [ Push(LString "none", site "nested-option-none" 5) ],
+                site "nested-option-match" 6) ]
+    let nestedErrorIntMatch =
+        compileBody "native-value-stack-sum-match-nested-error-int-payload" [ TOption(TResult(TString, TInt)) ]
+            [ MatchOption(
+                "sum_nested_error_result",
+                [ Load("sum_nested_error_result", site "nested-error-result-load" 1)
+                  MatchResult(
+                      "sum_nested_error_ok_unused",
+                      "sum_nested_error_payload",
+                      [ Push(LInt -1L, site "nested-error-ok-sentinel" 2) ],
+                      [ Load("sum_nested_error_payload", site "nested-error-int-payload" 3) ],
+                      site "nested-error-result-int-match" 4) ],
+                [ Push(LInt -1L, site "nested-error-none-sentinel" 5) ],
+                site "nested-error-option-match" 6) ]
+    let branchJoin =
+        compileBody "native-value-stack-sum-branch-join-option-int" [ TBool ]
+            [ If(
+                [ Push(LInt 42L, site "branch-some-payload" 1)
+                  ConstructContainer(OptionSome, [ TInt ], site "branch-some" 2) ],
+                [ ConstructContainer(OptionNone, [ TInt ], site "branch-none" 3) ],
+                site "branch-join" 4) ]
+    let duplicateDrop =
+        compileBody "native-value-stack-sum-direct-dup-drop" [ TOption TString ]
+            [ Call("dup", site "sum-dup" 1); Call("drop", site "sum-drop" 2) ]
+    let tailChoice =
+        compileBody "native-value-stack-sum-tail-choice-projection" [ TNamed "SumTextTail" ]
+            [ Call("sumTextTail.choice", site "tail-choice" 1) ]
+    let tailProjection =
+        compileBody "native-value-stack-sum-tail-int-projection" [ TNamed "SumTextTail" ]
+            [ Call("sumTextTail.tail", site "tail-int" 1) ]
+    let rawIgnoreBodies =
+        [ "optionInt", TOption TInt
+          "resultIntString", TResult(TInt, TString)
+          "nestedOptionResult", TOption(TResult(TString, TInt)) ]
+        |> List.map (fun (name, ty) ->
+            name,
+            compileBody ("native-value-stack-sum-raw-ignore-" + name) [ ty ]
+                [ Call("drop", site ("raw-drop-" + name) 1)
+                  Push(LInt 5L, site ("raw-result-" + name) 2) ])
+        |> Map.ofList
+    let failAfterSumAllocation =
+        compileBody "native-value-stack-sum-failure-after-allocation" []
+            [ Push(LString "sum-before-failure", site "failure-payload" 1)
+              ConstructContainer(OptionSome, [ TString ], site "failure-sum" 2)
+              Push(LInt 1L, site "failure-dividend" 3)
+              Push(LInt 0L, site "failure-divisor" 4)
+              Call("divide", site "failure-divide" 5) ]
+    let bodies =
+        [ yield! caseBodies |> Map.toList |> List.map snd
+          yield! identityBodies |> Map.toList |> List.map snd
+          yield! localCallBodies |> Map.toList |> List.map snd
+          yield! equalityBodies |> Map.toList |> List.map snd
+          yield optionIntMatch
+          yield resultIntStringMatch
+          yield resultStringIntMatch
+          yield resultStringIntErrorMatch
+          yield optionStringMatch
+          yield nestedMatch
+          yield nestedErrorIntMatch
+          yield branchJoin
+          yield duplicateDrop
+          yield tailChoice
+          yield tailProjection
+          yield! rawIgnoreBodies |> Map.toList |> List.map snd
+          yield failAfterSumAllocation ]
+    if not (VerifiedIrProgram.isBackendExecutable compiled.Program)
+       || bodies |> List.exists (fun body -> not (Object.ReferenceEquals(VerifiedIrBody.program body, compiled.Program))) then
+        invalidOp "Every sum conformance comparison must share one backend-authorized VerifiedIrProgram instance."
+    { Program = compiled.Program
+      CompilerContext = compiled.Context.CompilerContext
+      SourceOrigins = compiled.Context.SourceOrigins
+      Cases = caseBodies
+      IdentityBodies = identityBodies
+      LocalCallBodies = localCallBodies
+      Equalities = equalityBodies
+      OptionIntMatch = optionIntMatch
+      ResultIntStringMatch = resultIntStringMatch
+      ResultStringIntMatch = resultStringIntMatch
+      ResultStringIntErrorMatch = resultStringIntErrorMatch
+      OptionStringMatch = optionStringMatch
+      NestedMatch = nestedMatch
+      NestedErrorIntMatch = nestedErrorIntMatch
+      BranchJoin = branchJoin
+      DuplicateDrop = duplicateDrop
+      TailChoice = tailChoice
+      TailProjection = tailProjection
+      RawIgnoreBodies = rawIgnoreBodies
+      FailAfterSumAllocation = failAfterSumAllocation }
+
 let private inspectRawOwningContextAbi (abiOracle: JsonElement) =
     let expectedSize = abiOracle.GetProperty("contextSizeBytes").GetInt32()
     let actualSize = Marshal.SizeOf<RawOwningStackContext>()
@@ -1276,6 +1665,165 @@ let private validateEnumTypeLayouts (fixture: JsonElement) (layouts: OwningStack
                 "extentBytes", box layout.ExtentBytes
                 "minimumPayloadBytes", box layout.MinimumPayloadBytes
                 "minimumExtentBytes", box layout.MinimumExtentBytes
+                "fields", box (layout.Fields |> List.map (fun field -> jsonObject [ "name", box field.FieldName; "offsetBytes", box field.OffsetBytes; "payloadBytes", box field.PayloadBytes; "extentBytes", box field.ExtentBytes; "isOffsetDynamic", box field.IsOffsetDynamic ])) ]))
+        |> List.toArray
+    checks.ToArray(), failures.ToArray(), summary
+
+let private validateSumTypeLayouts (fixture: JsonElement) (layouts: OwningStackTypeLayout list) =
+    let checks = ResizeArray<obj>()
+    let failures = ResizeArray<string>()
+    let oracle = fixture.GetProperty("sumConformance").GetProperty("layouts")
+    let typeNameFor (ty: IrType) =
+        layouts
+        |> List.tryFind (fun layout -> layout.Type = ty)
+        |> Option.map (fun layout -> layout.TypeName)
+        |> Option.defaultValue (IrTypes.format ty)
+    for expectedType in oracle.EnumerateObject() do
+        let typeName = expectedType.Name
+        match layouts |> List.tryFind (fun layout -> String.Equals(layout.TypeName, typeName, StringComparison.Ordinal)) with
+        | None ->
+            checks.Add(box (jsonObject [ "type", box typeName; "present", box false ]))
+            failures.Add($"Sum oracle type layout is missing for {typeName}.")
+        | Some layout ->
+            let expected = expectedType.Value
+            let expectedPayload = expected.GetProperty("payloadBytes").GetInt32()
+            let expectedExtent = expected.GetProperty("extentBytes").GetInt32()
+            let expectedDynamic = expected.GetProperty("isDynamic").GetBoolean()
+            let expectedMinimumPayload = expected.GetProperty("minimumPayloadBytes").GetInt32()
+            let expectedMinimumExtent = expected.GetProperty("minimumExtentBytes").GetInt32()
+            let typePassed =
+                layout.PayloadBytes = expectedPayload
+                && layout.ExtentBytes = expectedExtent
+                && layout.IsDynamic = expectedDynamic
+                && layout.MinimumPayloadBytes = expectedMinimumPayload
+                && layout.MinimumExtentBytes = expectedMinimumExtent
+            checks.Add(box (jsonObject [
+                "type", box typeName
+                "payloadBytesExpected", box expectedPayload
+                "payloadBytesActual", box layout.PayloadBytes
+                "extentBytesExpected", box expectedExtent
+                "extentBytesActual", box layout.ExtentBytes
+                "dynamicExpected", box expectedDynamic
+                "dynamicActual", box layout.IsDynamic
+                "minimumPayloadBytesExpected", box expectedMinimumPayload
+                "minimumPayloadBytesActual", box layout.MinimumPayloadBytes
+                "minimumExtentBytesExpected", box expectedMinimumExtent
+                "minimumExtentBytesActual", box layout.MinimumExtentBytes ]))
+            if not typePassed then failures.Add($"Sum oracle type layout does not match {typeName}.")
+            let mutable expectedCasesElement = Unchecked.defaultof<JsonElement>
+            let expectedCases =
+                if expected.TryGetProperty("cases", &expectedCasesElement) then expectedCasesElement.EnumerateArray() |> Seq.toArray
+                else [||]
+            if layout.Cases.Length <> expectedCases.Length then
+                failures.Add($"{typeName} expected {expectedCases.Length} sum case row(s), got {layout.Cases.Length}.")
+            for index in 0 .. min (layout.Cases.Length - 1) (expectedCases.Length - 1) do
+                let expectedCase = expectedCases[index]
+                let actualCase = layout.Cases[index]
+                let expectedCaseName = expectedCase.GetProperty("name").GetString()
+                let expectedTag = expectedCase.GetProperty("tag").GetInt32()
+                let expectedPayloadType =
+                    let mutable typeNameElement = Unchecked.defaultof<JsonElement>
+                    if expectedCase.TryGetProperty("typeName", &typeNameElement) && typeNameElement.ValueKind <> JsonValueKind.Null then
+                        Some(typeNameElement.GetString())
+                    else None
+                let actualPayloadType = actualCase.PayloadType |> Option.map typeNameFor
+                let expectedOffset = expectedCase.GetProperty("offsetBytes").GetInt32()
+                let expectedCasePayload = expectedCase.GetProperty("payloadBytes").GetInt32()
+                let expectedCaseExtent = expectedCase.GetProperty("extentBytes").GetInt32()
+                let expectedCaseDynamic = expectedCase.GetProperty("isDynamic").GetBoolean()
+                let expectedCaseMinimumPayload = expectedCase.GetProperty("minimumPayloadBytes").GetInt32()
+                let expectedCaseMinimumExtent = expectedCase.GetProperty("minimumExtentBytes").GetInt32()
+                let casePassed =
+                    actualCase.CaseName = expectedCaseName
+                    && actualCase.Tag = expectedTag
+                    && actualPayloadType = expectedPayloadType
+                    && actualCase.OffsetBytes = expectedOffset
+                    && actualCase.PayloadBytes = expectedCasePayload
+                    && actualCase.ExtentBytes = expectedCaseExtent
+                    && actualCase.IsDynamic = expectedCaseDynamic
+                    && actualCase.MinimumPayloadBytes = expectedCaseMinimumPayload
+                    && actualCase.MinimumExtentBytes = expectedCaseMinimumExtent
+                checks.Add(box (jsonObject [
+                    "type", box typeName
+                    "case", box actualCase.CaseName
+                    "caseExpected", box expectedCaseName
+                    "tag", box actualCase.Tag
+                    "tagExpected", box expectedTag
+                    "payloadType", box (actualPayloadType |> Option.map box |> Option.defaultValue null)
+                    "payloadTypeExpected", box (expectedPayloadType |> Option.map box |> Option.defaultValue null)
+                    "offsetBytes", box actualCase.OffsetBytes
+                    "offsetBytesExpected", box expectedOffset
+                    "payloadBytes", box actualCase.PayloadBytes
+                    "payloadBytesExpected", box expectedCasePayload
+                    "extentBytes", box actualCase.ExtentBytes
+                    "extentBytesExpected", box expectedCaseExtent
+                    "isDynamic", box actualCase.IsDynamic
+                    "isDynamicExpected", box expectedCaseDynamic
+                    "minimumPayloadBytes", box actualCase.MinimumPayloadBytes
+                    "minimumPayloadBytesExpected", box expectedCaseMinimumPayload
+                    "minimumExtentBytes", box actualCase.MinimumExtentBytes
+                    "minimumExtentBytesExpected", box expectedCaseMinimumExtent ]))
+                if not casePassed then failures.Add($"Sum oracle case layout does not match {typeName}.{expectedCaseName}.")
+            let mutable expectedFieldsElement = Unchecked.defaultof<JsonElement>
+            let expectedFields =
+                if expected.TryGetProperty("fields", &expectedFieldsElement) then expectedFieldsElement.EnumerateArray() |> Seq.toArray
+                else [||]
+            if layout.Fields.Length <> expectedFields.Length then
+                failures.Add($"{typeName} expected {expectedFields.Length} sum-layout record field(s), got {layout.Fields.Length}.")
+            for expectedField in expectedFields do
+                let fieldName = expectedField.GetProperty("name").GetString()
+                match layout.Fields |> List.tryFind (fun field -> field.FieldName = fieldName) with
+                | None ->
+                    checks.Add(box (jsonObject [ "type", box typeName; "field", box fieldName; "present", box false ]))
+                    failures.Add($"Sum oracle record field {typeName}.{fieldName} is missing.")
+                | Some field ->
+                    let expectedFieldOffset = expectedField.GetProperty("offsetBytes").GetInt32()
+                    let expectedFieldPayload = expectedField.GetProperty("payloadBytes").GetInt32()
+                    let expectedFieldExtent = expectedField.GetProperty("extentBytes").GetInt32()
+                    let expectedFieldOffsetDynamic = expectedField.GetProperty("isOffsetDynamic").GetBoolean()
+                    let expectedFieldDynamic = expectedField.GetProperty("isDynamic").GetBoolean()
+                    let expectedFieldMinimumPayload = expectedField.GetProperty("minimumPayloadBytes").GetInt32()
+                    let expectedFieldMinimumExtent = expectedField.GetProperty("minimumExtentBytes").GetInt32()
+                    let fieldPassed =
+                        field.OffsetBytes = expectedFieldOffset
+                        && field.PayloadBytes = expectedFieldPayload
+                        && field.ExtentBytes = expectedFieldExtent
+                        && field.IsOffsetDynamic = expectedFieldOffsetDynamic
+                        && field.IsDynamic = expectedFieldDynamic
+                        && field.MinimumPayloadBytes = expectedFieldMinimumPayload
+                        && field.MinimumExtentBytes = expectedFieldMinimumExtent
+                    checks.Add(box (jsonObject [
+                        "type", box typeName
+                        "field", box fieldName
+                        "offsetBytes", box field.OffsetBytes
+                        "offsetBytesExpected", box expectedFieldOffset
+                        "payloadBytes", box field.PayloadBytes
+                        "payloadBytesExpected", box expectedFieldPayload
+                        "extentBytes", box field.ExtentBytes
+                        "extentBytesExpected", box expectedFieldExtent
+                        "isOffsetDynamic", box field.IsOffsetDynamic
+                        "isOffsetDynamicExpected", box expectedFieldOffsetDynamic
+                        "isDynamic", box field.IsDynamic
+                        "isDynamicExpected", box expectedFieldDynamic
+                        "minimumPayloadBytes", box field.MinimumPayloadBytes
+                        "minimumPayloadBytesExpected", box expectedFieldMinimumPayload
+                        "minimumExtentBytes", box field.MinimumExtentBytes
+                        "minimumExtentBytesExpected", box expectedFieldMinimumExtent ]))
+                    if not fieldPassed then failures.Add($"Sum oracle record field layout does not match {typeName}.{fieldName}.")
+    let summary =
+        layouts
+        |> List.filter (fun layout ->
+            let mutable ignored = Unchecked.defaultof<JsonElement>
+            oracle.TryGetProperty(layout.TypeName, &ignored))
+        |> List.map (fun layout ->
+            box (jsonObject [
+                "type", box layout.TypeName
+                "payloadBytes", box layout.PayloadBytes
+                "extentBytes", box layout.ExtentBytes
+                "isDynamic", box layout.IsDynamic
+                "minimumPayloadBytes", box layout.MinimumPayloadBytes
+                "minimumExtentBytes", box layout.MinimumExtentBytes
+                "cases", box (layout.Cases |> List.map (fun item -> jsonObject [ "name", box item.CaseName; "tag", box item.Tag; "typeName", box (item.PayloadType |> Option.map typeNameFor |> Option.defaultValue ""); "offsetBytes", box item.OffsetBytes; "payloadBytes", box item.PayloadBytes; "extentBytes", box item.ExtentBytes ]))
                 "fields", box (layout.Fields |> List.map (fun field -> jsonObject [ "name", box field.FieldName; "offsetBytes", box field.OffsetBytes; "payloadBytes", box field.PayloadBytes; "extentBytes", box field.ExtentBytes; "isOffsetDynamic", box field.IsOffsetDynamic ])) ]))
         |> List.toArray
     checks.ToArray(), failures.ToArray(), summary
@@ -3161,7 +3709,7 @@ let private runStringWorkload
             "metrics", jsonNode options (metricSummary metrics)
             "layoutEvents", jsonNode options (layoutEventDetails events) ]))
 
-    recordCheck checks failures $"owning-stack/{optimizationName}/String/layout-schema-v2" (layoutSchemaVersion = 2L) (jsonObject [ "expected", box 2; "actual", box layoutSchemaVersion ])
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/layout-schema-v3" (layoutSchemaVersion = 3L) (jsonObject [ "expected", box 3; "actual", box layoutSchemaVersion ])
     let dynamicLayoutChecks, dynamicLayoutFailures, dynamicLayoutSummary =
         validateDynamicTypeLayouts [ "String"; "TextLeaf"; "TextEnvelope"; "TextState" ] fixture dynamicLayouts
     for details in dynamicLayoutChecks do checks.Add details
@@ -4521,42 +5069,587 @@ let private runEnumConformance
         let inputCount = uint32 (malformed.GetProperty("inputCount").GetInt32())
         checkRawRejected ("malformed-" + name) (rawProgramForBody bodyName) inputBytes inputExtents inputCount
 
-    let unsupportedOracle = oracle.GetProperty("unsupportedSumTypes")
-    let expectedUnsupportedCode = unsupportedOracle.GetProperty("diagnosticCode").GetString()
-    let optionSpan = span "<native-value-stack-option-negative>" 1
-    let optionBody =
-        Compiler.compileIrBodyAgainstProgramWithSourceOrigins
-            entries.CompilerContext entries.Program "native-value-stack-option-rejected" []
-            [ Push(LInt 7L, optionSpan)
-              ConstructContainer(OptionSome, [ TInt ], optionSpan) ]
-            entries.SourceOrigins
-    let resultSpan = span "<native-value-stack-result-negative>" 1
-    let resultBody =
-        Compiler.compileIrBodyAgainstProgramWithSourceOrigins
-            entries.CompilerContext entries.Program "native-value-stack-result-rejected" []
-            [ Push(LInt 7L, resultSpan)
-              ConstructContainer(ResultOk, [ TInt; TString ], resultSpan) ]
-            entries.SourceOrigins
-    for sumName, body in [ "Option", optionBody; "Result", resultBody ] do
-        let code, errorText =
-            try
-                use _unexpected = compile ("unsupported-" + sumName.ToLowerInvariant()) body
-                "unexpected-success", ""
-            with error -> diagnosticCode error, error.Message
-        recordCheck checks failures $"enum/{optimizationName}/unsupported-{sumName.ToLowerInvariant()}-remains-rejected"
-            (code = expectedUnsupportedCode)
-            (jsonObject [
-                "expectedDiagnosticCode", box expectedUnsupportedCode
-                "actualDiagnosticCode", box code
-                "typeOracle", box (unsupportedOracle.GetProperty(sumName.ToLowerInvariant()).GetString())
-                "diagnostic", box errorText ])
-
     jsonObject [
         "optimization", box optimizationName
         "caseCount", box caseNames.Length
         "equalityCaseCount", box (oracle.GetProperty("equalityCases").GetArrayLength())
         "invalidOrdinalCount", box (rawOracle.GetProperty("invalidOrdinals").GetArrayLength())
         "malformedInputCount", box (rawOracle.GetProperty("malformedInputs").GetArrayLength()) ]
+
+let private runSumConformance
+    (checks: ResizeArray<obj>)
+    (failures: ResizeArray<string>)
+    (fixture: JsonElement)
+    (artifactRoot: string)
+    (optimization: LlvmOptimization)
+    (optimizationName: string)
+    (entries: SumEntryBodies) =
+    let oracle = fixture.GetProperty("sumConformance")
+    let contextAbiOracle = fixture.GetProperty("storageRuntimeTestOracle").GetProperty("abi")
+    let caseElements = oracle.GetProperty("cases").EnumerateArray() |> Seq.toArray
+    let caseValues =
+        caseElements
+        |> Array.map (fun item -> item.GetProperty("name").GetString(), parseSumFixtureValue (item.GetProperty("expected")))
+        |> Map.ofArray
+    let caseByName name =
+        caseElements
+        |> Array.find (fun item -> String.Equals(item.GetProperty("name").GetString(), name, StringComparison.Ordinal))
+    let caseNames = caseElements |> Array.map (fun item -> item.GetProperty("name").GetString())
+    let interpreterHost = noOpHost (NativeDiagnosticSources.fromLoweringContext entries.CompilerContext)
+    let toolchain = LlvmToolchain.discover ()
+    let observedLayouts = ResizeArray<OwningStackTypeLayout>()
+    let compile (name: string) (body: VerifiedIrBody) =
+        let program = OwningStackAot.compile toolchain optimization (Path.Combine(artifactRoot, "owning-stack", "sums", optimizationName, name)) body
+        observedLayouts.AddRange program.Layouts
+        program
+    let interpreterBody (body: VerifiedIrBody) =
+        use result = IrInterpreter.executeBodyWithInputs interpreterHost (VerifiedIrBody.inspect body).BodyName body None []
+        result.Decode()
+    let executeInterpreterWithCaseRoot (body: VerifiedIrBody) (inputCaseName: string) =
+        use root = IrInterpreter.executeBodyWithInputs interpreterHost (VerifiedIrBody.inspect entries.Cases[inputCaseName]).BodyName entries.Cases[inputCaseName] None []
+        use result = IrInterpreter.executeBodyWithInputs interpreterHost (VerifiedIrBody.inspect body).BodyName body (Some root) [ IrEntryArgument.RetainedRoot 0 ]
+        result.Decode()
+    let outputBuffer bytes = Array.create bytes 0xA5uy
+    let sumConstructionCount =
+        let rec count value =
+            match value with
+            | OptionValue(_, None) -> 1
+            | OptionValue(_, Some nested) -> 1 + count nested
+            | ResultValue(_, _, Ok nested)
+            | ResultValue(_, _, Error nested) -> 1 + count nested
+            | RecordValue(_, fields) -> fields |> Map.toList |> List.sumBy (snd >> count)
+            | _ -> 0
+        count
+    let noPayloadRelocation (result: OwningStackExecutionResult) =
+        result.Metrics.MoveBytes = 0UL
+        && (result.LayoutEvents |> List.forall (fun event -> event.Kind <> "local-compact" && event.Kind <> "call-input-move" && event.Kind <> "call-return-move"))
+    let expectedLayoutAbi = oracle.GetProperty("layoutAbiVersion").GetInt32()
+    let nativeLayoutAbi = contextAbiOracle.GetProperty("layoutAbiVersion").GetInt32()
+    recordCheck checks failures $"sum/{optimizationName}/owning-layout-abi-v3"
+        (expectedLayoutAbi = 3 && nativeLayoutAbi = expectedLayoutAbi)
+        (jsonObject [ "fixtureLayoutAbiVersion", box expectedLayoutAbi; "nativeLayoutAbiVersion", box nativeLayoutAbi ])
+    let mutable schemaChecked = false
+    for caseName in caseNames do
+        let caseOracle = caseByName caseName
+        let expectedValue = caseValues[caseName]
+        let expectedBytes = bytesFromHex (caseOracle.GetProperty("retainedBytesHex").GetString())
+        let constructorBody = entries.Cases[caseName]
+        use constructorProgram = compile ("construct-" + caseName) constructorBody
+        let interpretedConstructor = interpreterBody constructorBody
+        let constructorOutput = outputBuffer expectedBytes.Length
+        let constructorResult = constructorProgram.ExecuteInto([], 4096, constructorOutput)
+        let constructorNoMoves = noPayloadRelocation constructorResult
+        let recordBuildEvents = constructorResult.LayoutEvents |> List.filter (fun event -> event.Kind = "record-build")
+        let sumLayoutEvents =
+            recordBuildEvents
+            |> List.filter (fun event ->
+                match event.SourceExtentBytes with
+                | Some sourceExtent -> event.ExtentBytes = sourceExtent + 8
+                | None -> event.ExtentBytes = 8 && event.PayloadBytes = 8)
+        let expectedSumNodes = sumConstructionCount expectedValue
+        let sumCopiesPairedExactlyOnce =
+            sumLayoutEvents
+            |> List.forall (fun sumEvent ->
+                match sumEvent.SourceOffsetBytes, sumEvent.SourceExtentBytes with
+                | Some sourceOffset, Some sourceExtent ->
+                    recordBuildEvents
+                    |> List.filter (fun copyEvent ->
+                        copyEvent.SourceOffsetBytes = Some sourceOffset
+                        && copyEvent.SourceExtentBytes = Some sourceExtent
+                        && copyEvent.ExtentBytes = sourceExtent)
+                    |> List.length = 1
+                | None, None -> sumEvent.ExtentBytes = 8 && sumEvent.PayloadBytes = 8
+                | _ -> false)
+        let sumConstructionEventsExactlyMatchValue = sumLayoutEvents.Length = expectedSumNodes
+        let constructionPassed =
+            interpretedConstructor = [ expectedValue ]
+            && constructorResult.Values = interpretedConstructor
+            && constructorOutput = expectedBytes
+            && constructorResult.RetainedOutputBytes = expectedBytes
+            && constructorResult.RetainedBytesWritten = expectedBytes.Length
+            && constructorNoMoves
+            && sumConstructionEventsExactlyMatchValue
+            && sumCopiesPairedExactlyOnce
+        recordCheck checks failures $"sum/{optimizationName}/{caseName}/same-verified-body-literal-bytes-and-single-inline-copies"
+            constructionPassed (jsonObject [
+                "expected", box (codeUnitSafeValuesData [ expectedValue ])
+                "interpreterValues", box (codeUnitSafeValuesData interpretedConstructor)
+                "owningValues", box (codeUnitSafeValuesData constructorResult.Values)
+                "expectedRetainedBytes", box (bytesHex expectedBytes)
+                "actualRetainedBytes", box (bytesHex constructorOutput)
+                "sumConstructionCountExpected", box expectedSumNodes
+                "sumConstructionEventCount", box sumLayoutEvents.Length
+                "sumActivePayloadCopyPairedExactlyOnce", box sumCopiesPairedExactlyOnce
+                "moveBytes", box constructorResult.Metrics.MoveBytes
+                "layoutEvents", box (layoutEventDetails constructorResult.LayoutEvents) ])
+        if not schemaChecked then
+            let actualSchema = constructorResult.LayoutSchemaVersion
+            let expectedSchema = oracle.GetProperty("layoutSchemaVersion").GetInt32()
+            recordCheck checks failures $"sum/{optimizationName}/independent-layout-oracle-and-schema-v3"
+                (expectedSchema = 3 && actualSchema = expectedSchema)
+                (jsonObject [
+                    "expectedSchemaVersion", box expectedSchema
+                    "actualSchemaVersion", box actualSchema ])
+            schemaChecked <- true
+
+        let identityName = caseOracle.GetProperty("identityBody").GetString()
+        let identityBody = entries.IdentityBodies[identityName]
+        let localCallBody = entries.LocalCallBodies[identityName]
+        use identityProgram = compile ("host-round-trip-" + caseName) identityBody
+        use localCallProgram = compile ("local-call-round-trip-" + caseName) localCallBody
+        use interpreterRoot = IrInterpreter.executeBodyWithInputs interpreterHost (VerifiedIrBody.inspect constructorBody).BodyName constructorBody None []
+        use interpretedIdentity = IrInterpreter.executeBodyWithInputs interpreterHost (VerifiedIrBody.inspect identityBody).BodyName identityBody (Some interpreterRoot) [ IrEntryArgument.RetainedRoot 0 ]
+        let identityInterpreterValues = interpretedIdentity.Decode()
+        let identityOutput = outputBuffer expectedBytes.Length
+        let identityResult = identityProgram.ExecuteInto([ expectedValue ], 4096, identityOutput)
+        let identityInputMetrics = identityResult.Metrics
+        let identityPassed =
+            identityInterpreterValues = [ expectedValue ]
+            && identityResult.Values = identityInterpreterValues
+            && identityOutput = expectedBytes
+            && identityResult.RetainedOutputBytes = expectedBytes
+            && identityResult.RetainedBytesWritten = expectedBytes.Length
+            && int64 identityInputMetrics.InputBytes = int64 expectedBytes.Length
+            && int64 identityInputMetrics.InputCopyBytes = int64 expectedBytes.Length
+            && int64 identityInputMetrics.RetainedCopyBytes = int64 expectedBytes.Length
+            && identityInputMetrics.DeepCopyBytes = 0UL
+            && noPayloadRelocation identityResult
+        recordCheck checks failures $"sum/{optimizationName}/{caseName}/host-input-decode-and-user-call-return"
+            identityPassed (jsonObject [
+                "interpreterValues", box (codeUnitSafeValuesData identityInterpreterValues)
+                "owningValues", box (codeUnitSafeValuesData identityResult.Values)
+                "expectedRetainedBytes", box (bytesHex expectedBytes)
+                "actualRetainedBytes", box (bytesHex identityOutput)
+                "inputBytes", box identityInputMetrics.InputBytes
+                "inputCopyBytes", box identityInputMetrics.InputCopyBytes
+                "deepCopyBytes", box identityInputMetrics.DeepCopyBytes
+                "moveBytes", box identityInputMetrics.MoveBytes
+                "retainedCopyBytes", box identityInputMetrics.RetainedCopyBytes ])
+        use interpretedLocalCall = IrInterpreter.executeBodyWithInputs interpreterHost (VerifiedIrBody.inspect localCallBody).BodyName localCallBody (Some interpreterRoot) [ IrEntryArgument.RetainedRoot 0 ]
+        let localCallInterpreterValues = interpretedLocalCall.Decode()
+        let localCallOutput = outputBuffer expectedBytes.Length
+        let localCallResult = localCallProgram.ExecuteInto([ expectedValue ], 4096, localCallOutput)
+        let localCallPassed =
+            localCallInterpreterValues = [ expectedValue ]
+            && localCallResult.Values = localCallInterpreterValues
+            && localCallOutput = expectedBytes
+            && localCallResult.RetainedOutputBytes = expectedBytes
+            && localCallResult.RetainedBytesWritten = expectedBytes.Length
+            && localCallResult.Metrics.DeepCopyBytes = 0UL
+            && noPayloadRelocation localCallResult
+        recordCheck checks failures $"sum/{optimizationName}/{caseName}/local-store-load-call-return-descriptor-transfer"
+            localCallPassed (jsonObject [
+                "interpreterValues", box (codeUnitSafeValuesData localCallInterpreterValues)
+                "owningValues", box (codeUnitSafeValuesData localCallResult.Values)
+                "expectedRetainedBytes", box (bytesHex expectedBytes)
+                "actualRetainedBytes", box (bytesHex localCallOutput)
+                "deepCopyBytes", box localCallResult.Metrics.DeepCopyBytes
+                "moveBytes", box localCallResult.Metrics.MoveBytes
+                "layoutEvents", box (layoutEventDetails localCallResult.LayoutEvents) ])
+
+        let shortOutput = outputBuffer expectedBytes.Length
+        let shortOutputBefore = Array.copy shortOutput
+        let shortCapacityError =
+            try
+                identityProgram.ExecuteInto([ expectedValue ], 4096, shortOutput, expectedBytes.Length - 1) |> ignore
+                None
+            with error -> Some error
+        match shortCapacityError with
+        | Some error ->
+            let errorMetrics = getProperty error "Metrics"
+            let requiredBytes = int64Property error "RequiredBytes"
+            let availableBytes = int64Property error "AvailableBytes"
+            let finalCursorBytes = int64Property errorMetrics "FinalCursorBytes"
+            let shortPassed =
+                (getProperty error "Code" |> string) = "OWNING_RETAINED_CAPACITY"
+                && (getProperty error "Boundary" |> string) = "retained-output"
+                && requiredBytes = int64 expectedBytes.Length
+                && availableBytes = int64 (expectedBytes.Length - 1)
+                && finalCursorBytes = 0L
+                && shortOutput = shortOutputBefore
+            recordCheck checks failures $"sum/{optimizationName}/{caseName}/retained-output-one-byte-short-is-atomic" shortPassed (jsonObject [
+                "exception", box (resourceExceptionDetails error)
+                "requiredBytes", box requiredBytes
+                "availableBytes", box availableBytes
+                "finalCursorBytes", box finalCursorBytes
+                "retainedOutputUnchanged", box (shortOutput = shortOutputBefore) ])
+        | None ->
+            recordCheck checks failures $"sum/{optimizationName}/{caseName}/retained-output-one-byte-short-is-atomic" false "One byte below the exact retained-output extent unexpectedly succeeded."
+
+    for equalityIndex, equalityCase in oracle.GetProperty("equalityCases").EnumerateArray() |> Seq.indexed do
+        let leftName = equalityCase.GetProperty("left").GetString()
+        let rightName = equalityCase.GetProperty("right").GetString()
+        let expected = equalityCase.GetProperty("expected").GetBoolean()
+        let expectedBytes = bytesFromHex (equalityCase.GetProperty("retainedBytesHex").GetString())
+        let body = entries.Equalities[equalityIndex]
+        use equalityProgram = compile ($"equals-{equalityIndex}-{leftName}-{rightName}") body
+        let interpreted = interpreterBody body
+        let output = outputBuffer expectedBytes.Length
+        let native = equalityProgram.ExecuteInto([], 4096, output)
+        let booleanBytes = bytesFromInt64s [ if expected then 1L else 0L ]
+        recordCheck checks failures $"sum/{optimizationName}/equals-{leftName}-{rightName}-active-tag-payload"
+            (expectedBytes = booleanBytes && interpreted = [ BoolValue expected ] && native.Values = interpreted && output = expectedBytes && noPayloadRelocation native)
+            (jsonObject [
+                "expected", box expected
+                "interpreterValues", box (codeUnitSafeValuesData interpreted)
+                "owningValues", box (codeUnitSafeValuesData native.Values)
+                "fixtureBooleanBytesMatch", box (expectedBytes = booleanBytes)
+                "expectedRetainedBytes", box (bytesHex expectedBytes)
+                "actualRetainedBytes", box (bytesHex output)
+                "deepCopyBytes", box native.Metrics.DeepCopyBytes
+                "moveBytes", box native.Metrics.MoveBytes ])
+
+    let matchBodies =
+        [ "optionIntSome", entries.OptionIntMatch
+          "optionIntNone", entries.OptionIntMatch
+          "resultOk", entries.ResultIntStringMatch
+          "resultError", entries.ResultIntStringMatch
+          "resultStringError", entries.ResultStringIntMatch
+          "resultErrorInt", entries.ResultStringIntErrorMatch
+          "optionStringNone", entries.OptionStringMatch
+          "optionStringEmbeddedNul", entries.OptionStringMatch
+          "nestedError", entries.NestedMatch
+          "nestedOk", entries.NestedMatch
+          "nestedNone", entries.NestedMatch
+          "nestedErrorInt", entries.NestedErrorIntMatch ] |> Map.ofList
+    for matchOracle in oracle.GetProperty("matches").EnumerateObject() do
+        let matchName = matchOracle.Name
+        let details = matchOracle.Value
+        let inputCaseName = details.GetProperty("inputCase").GetString()
+        let expectedValue = parseSumFixtureValue (details.GetProperty("expected"))
+        let expectedValues = [ expectedValue ]
+        let expectedBytes = bytesFromHex (details.GetProperty("retainedBytesHex").GetString())
+        let body = matchBodies[matchName]
+        use matchProgram = compile ("match-" + matchName) body
+        let interpreted = executeInterpreterWithCaseRoot body inputCaseName
+        let output = outputBuffer expectedBytes.Length
+        let native = matchProgram.ExecuteInto([ caseValues[inputCaseName] ], 4096, output)
+        let expectedDeepCopyBytes = uint64 (details.GetProperty("expectedDeepCopyBytes").GetInt32())
+        let mutable literalCodeUnitsElement = Unchecked.defaultof<JsonElement>
+        let mutable expectedLiteralPayloadBytes = 0
+        let mutable expectedLiteralExtentBytes = 0
+        let mutable literalStoreCallFound = false
+        let expectedLiteralCopyMatchesExtent =
+            if details.TryGetProperty("expectedLiteralCodeUnitsHex", &literalCodeUnitsElement) then
+                let literalCodeUnitsHex = literalCodeUnitsElement.GetString()
+                let literalCodeUnitBytes = bytesFromHex literalCodeUnitsHex
+                let literalBytes = stringBytesFromCodeUnitsHex literalCodeUnitsHex
+                expectedLiteralPayloadBytes <- 8 + literalCodeUnitBytes.Length
+                expectedLiteralExtentBytes <- literalBytes.Length
+                let llvmLines = matchProgram.LlvmIr.Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
+                let encodedLiteralBytes =
+                    literalBytes
+                    |> Array.map (fun value -> "\\" + value.ToString("X2", CultureInfo.InvariantCulture))
+                    |> String.concat ""
+                let expectedGlobalDeclaration =
+                    $"private unnamed_addr constant [{expectedLiteralExtentBytes} x i8] c\"{encodedLiteralBytes}\", align 8"
+                let literalGlobal =
+                    llvmLines
+                    |> Array.tryFind (fun line -> line.Contains(expectedGlobalDeclaration, StringComparison.Ordinal))
+                literalStoreCallFound <-
+                    match literalGlobal with
+                    | Some globalLine ->
+                        let nameEnd = globalLine.IndexOf(" = ", StringComparison.Ordinal)
+                        if nameEnd <= 0 then false
+                        else
+                            let globalName = globalLine.Substring(0, nameEnd)
+                            let expectedStoreArguments =
+                                $"ptr getelementptr inbounds ([{expectedLiteralExtentBytes} x i8], ptr {globalName}, i64 0, i64 0), i32 {expectedLiteralExtentBytes}, i32 {expectedLiteralPayloadBytes}, i32 {expectedLiteralExtentBytes}"
+                            llvmLines
+                            |> Array.exists (fun line ->
+                                line.Contains("@al_owning_copy_constant(", StringComparison.Ordinal)
+                                && line.Contains(expectedStoreArguments, StringComparison.Ordinal))
+                    | None -> false
+                expectedValue = StringValue(stringFromCodeUnitsHex literalCodeUnitsHex)
+                && expectedDeepCopyBytes = uint64 expectedLiteralExtentBytes
+                && literalStoreCallFound
+            else expectedDeepCopyBytes = 0UL
+        let payloadExtractionCase =
+            [ "optionIntSome"; "resultError"; "optionStringEmbeddedNul"; "nestedOk"; "resultErrorInt"; "nestedErrorInt" ]
+            |> List.contains matchName
+        let noMatchCopy =
+            expectedLiteralCopyMatchesExtent
+            && native.Metrics.DeepCopyBytes = expectedDeepCopyBytes
+            && (not payloadExtractionCase || expectedDeepCopyBytes = 0UL)
+        recordCheck checks failures $"sum/{optimizationName}/match-{matchName}-both-arms-and-payload-binding"
+            (interpreted = expectedValues && native.Values = interpreted && output = expectedBytes && native.RetainedOutputBytes = expectedBytes && native.RetainedBytesWritten = expectedBytes.Length && noPayloadRelocation native && noMatchCopy)
+            (jsonObject [
+                "inputCase", box inputCaseName
+                "interpreterValues", box (codeUnitSafeValuesData interpreted)
+                "owningValues", box (codeUnitSafeValuesData native.Values)
+                "expectedRetainedBytes", box (bytesHex expectedBytes)
+                "actualRetainedBytes", box (bytesHex output)
+                "payloadExtractionRequiresNoDeepCopy", box (not payloadExtractionCase || native.Metrics.DeepCopyBytes = 0UL)
+                "expectedDeepCopyBytes", box expectedDeepCopyBytes
+                "literalStoreMatchesIndependentCodeUnitsAndExtent", box expectedLiteralCopyMatchesExtent
+                "literalStoreCallFound", box literalStoreCallFound
+                "expectedLiteralPayloadBytes", box expectedLiteralPayloadBytes
+                "expectedLiteralExtentBytes", box expectedLiteralExtentBytes
+                "deepCopyBytes", box native.Metrics.DeepCopyBytes
+                "moveBytes", box native.Metrics.MoveBytes
+                "layoutEvents", box (layoutEventDetails native.LayoutEvents) ])
+
+    let branchOracle = oracle.GetProperty("branchJoinCases").EnumerateArray() |> Seq.toArray
+    for branchCase in branchOracle do
+        let name = branchCase.GetProperty("name").GetString()
+        let chooseSome = branchCase.GetProperty("chooseSome").GetBoolean()
+        let expectedValue = parseSumFixtureValue (branchCase.GetProperty("expected"))
+        let expectedBytes = bytesFromHex (branchCase.GetProperty("retainedBytesHex").GetString())
+        let body = entries.BranchJoin
+        use branchProgram = compile ("branch-join-" + name) body
+        use interpretedResult = IrInterpreter.executeBodyWithInputs interpreterHost (VerifiedIrBody.inspect body).BodyName body None [ IrEntryArgument.BoolArgument chooseSome ]
+        let interpreted = interpretedResult.Decode()
+        let output = outputBuffer expectedBytes.Length
+        let native = branchProgram.ExecuteInto([ BoolValue chooseSome ], 4096, output)
+        recordCheck checks failures $"sum/{optimizationName}/branch-join-{name}-interpreter-owning"
+            (interpreted = [ expectedValue ] && native.Values = interpreted && output = expectedBytes && native.RetainedOutputBytes = expectedBytes && noPayloadRelocation native)
+            (jsonObject [
+                "chooseSome", box chooseSome
+                "interpreterValues", box (codeUnitSafeValuesData interpreted)
+                "owningValues", box (codeUnitSafeValuesData native.Values)
+                "expectedRetainedBytes", box (bytesHex expectedBytes)
+                "actualRetainedBytes", box (bytesHex output)
+                "moveBytes", box native.Metrics.MoveBytes ])
+
+    let duplicateOracle = oracle.GetProperty("dupDrop")
+    let duplicateInputCase = duplicateOracle.GetProperty("inputCase").GetString()
+    let duplicateExpected = caseValues[duplicateInputCase]
+    let duplicateExpectedBytes = bytesFromHex (duplicateOracle.GetProperty("retainedBytesHex").GetString())
+    use duplicateProgram = compile "dup-drop-option-string" entries.DuplicateDrop
+    let duplicateInterpreted = executeInterpreterWithCaseRoot entries.DuplicateDrop duplicateInputCase
+    let duplicateOutput = outputBuffer duplicateExpectedBytes.Length
+    let duplicateResult = duplicateProgram.ExecuteInto([ duplicateExpected ], 4096, duplicateOutput)
+    let duplicateEvent = duplicateResult.LayoutEvents |> List.filter (fun event -> event.Kind = "duplicate")
+    let duplicateDropEvent = duplicateResult.LayoutEvents |> List.filter (fun event -> event.Kind = "drop")
+    let duplicateRangesDisjoint =
+        match duplicateEvent with
+        | [ duplicate ] ->
+            match duplicate.SourceOffsetBytes, duplicate.SourceExtentBytes with
+            | Some sourceOffset, Some sourceExtent ->
+                duplicate.ExtentBytes = duplicateOracle.GetProperty("duplicateExtentBytes").GetInt32()
+                && (duplicate.OffsetBytes + duplicate.ExtentBytes <= sourceOffset || sourceOffset + sourceExtent <= duplicate.OffsetBytes)
+                && (duplicateDropEvent |> List.exists (fun dropped -> dropped.OffsetBytes = duplicate.OffsetBytes && dropped.ExtentBytes = duplicate.ExtentBytes))
+            | _ -> false
+        | _ -> false
+    recordCheck checks failures $"sum/{optimizationName}/dup-drop-preserves-survivor-with-one-explicit-copy"
+        (duplicateInterpreted = [ duplicateExpected ] && duplicateResult.Values = duplicateInterpreted && duplicateOutput = duplicateExpectedBytes && duplicateResult.Metrics.DeepCopyBytes = uint64 (duplicateOracle.GetProperty("duplicateExtentBytes").GetInt32()) && duplicateResult.Metrics.MoveBytes = 0UL && duplicateRangesDisjoint)
+        (jsonObject [
+            "interpreterValues", box (codeUnitSafeValuesData duplicateInterpreted)
+            "owningValues", box (codeUnitSafeValuesData duplicateResult.Values)
+            "expectedRetainedBytes", box (bytesHex duplicateExpectedBytes)
+            "actualRetainedBytes", box (bytesHex duplicateOutput)
+            "duplicateExtentBytes", box (duplicateOracle.GetProperty("duplicateExtentBytes").GetInt32())
+            "deepCopyBytes", box duplicateResult.Metrics.DeepCopyBytes
+            "moveBytes", box duplicateResult.Metrics.MoveBytes
+            "duplicateRangesDisjoint", box duplicateRangesDisjoint
+            "events", box (layoutEventDetails duplicateResult.LayoutEvents) ])
+
+    let tailCase = caseByName "sum-text-tail"
+    let tailValue = caseValues["sum-text-tail"]
+    let tailExpectedChoice = parseSumFixtureValue (tailCase.GetProperty("expected").GetProperty("fields").GetProperty("choice"))
+    let tailExpectedChoiceBytes = bytesFromHex (tailCase.GetProperty("choiceRetainedBytesHex").GetString())
+    use tailChoiceProgram = compile "project-dynamic-option-before-tail-choice" entries.TailChoice
+    let tailChoiceInterpreter = executeInterpreterWithCaseRoot entries.TailChoice "sum-text-tail"
+    let tailChoiceOutput = outputBuffer tailExpectedChoiceBytes.Length
+    let tailChoiceNative = tailChoiceProgram.ExecuteInto([ tailValue ], 4096, tailChoiceOutput)
+    let tailChoiceFieldEvents = tailChoiceNative.LayoutEvents |> List.filter (fun event -> event.Kind = "field-extract")
+    recordCheck checks failures $"sum/{optimizationName}/dynamic-record-sum-field-extract-before-tail"
+        (tailChoiceInterpreter = [ tailExpectedChoice ] && tailChoiceNative.Values = tailChoiceInterpreter && tailChoiceOutput = tailExpectedChoiceBytes && tailChoiceNative.RetainedOutputBytes = tailExpectedChoiceBytes && tailChoiceFieldEvents.Length = 1 && noPayloadRelocation tailChoiceNative)
+        (jsonObject [
+            "expectedFieldOffsetBytes", box (tailCase.GetProperty("fieldOffsetsBytes").GetProperty("choice").GetInt32())
+            "interpreterValues", box (codeUnitSafeValuesData tailChoiceInterpreter)
+            "owningValues", box (codeUnitSafeValuesData tailChoiceNative.Values)
+            "expectedRetainedBytes", box (bytesHex tailExpectedChoiceBytes)
+            "actualRetainedBytes", box (bytesHex tailChoiceOutput)
+            "moveBytes", box tailChoiceNative.Metrics.MoveBytes
+            "fieldEvents", box (layoutEventDetails tailChoiceFieldEvents) ])
+    let tailExpectedValue = parseSumFixtureValue (tailCase.GetProperty("expected").GetProperty("fields").GetProperty("tail"))
+    let tailExpectedBytes = bytesFromHex (tailCase.GetProperty("tailRetainedBytesHex").GetString())
+    use tailProjectionProgram = compile "project-dynamic-int-tail-after-option-string" entries.TailProjection
+    let tailInterpreter = executeInterpreterWithCaseRoot entries.TailProjection "sum-text-tail"
+    let tailOutput = outputBuffer tailExpectedBytes.Length
+    let tailNative = tailProjectionProgram.ExecuteInto([ tailValue ], 4096, tailOutput)
+    let tailFieldEvents = tailNative.LayoutEvents |> List.filter (fun event -> event.Kind = "field-extract")
+    let expectedTailOffset = tailCase.GetProperty("fieldOffsetsBytes").GetProperty("tail").GetInt32()
+    let actualTailOffset = tailFieldEvents |> List.tryHead |> Option.map (fun event -> event.SourceOffsetBytes |> Option.defaultValue -1) |> Option.defaultValue -1
+    recordCheck checks failures $"sum/{optimizationName}/dynamic-record-fixed-tail-offset-after-variable-sum"
+        (tailInterpreter = [ tailExpectedValue ] && tailNative.Values = tailInterpreter && tailOutput = tailExpectedBytes && tailNative.RetainedOutputBytes = tailExpectedBytes && tailFieldEvents.Length = 1 && actualTailOffset = expectedTailOffset && noPayloadRelocation tailNative)
+        (jsonObject [
+            "expectedDynamicTailOffsetBytes", box expectedTailOffset
+            "actualDynamicTailOffsetBytes", box actualTailOffset
+            "interpreterValues", box (codeUnitSafeValuesData tailInterpreter)
+            "owningValues", box (codeUnitSafeValuesData tailNative.Values)
+            "expectedRetainedBytes", box (bytesHex tailExpectedBytes)
+            "actualRetainedBytes", box (bytesHex tailOutput)
+            "moveBytes", box tailNative.Metrics.MoveBytes
+            "fieldEvents", box (layoutEventDetails tailFieldEvents) ])
+
+    let hostRejectedOracle = oracle.GetProperty("hostValueRejections")
+    let mismatchSentinel = bytesFromHex (oracle.GetProperty("rawNativeEntry").GetProperty("sentinelBytesHex").GetString())
+    use mismatchProgram = compile "reject-mismatched-option-host-value" entries.IdentityBodies["sums.option-int-identity"]
+    let mismatchValue = OptionValue(TString, Some(StringValue "wrong"))
+    let mismatchOutput = Array.copy mismatchSentinel
+    let mismatchOutputBefore = Array.copy mismatchOutput
+    let mutable mismatchRejected = false
+    let mutable mismatchCode = ""
+    try mismatchProgram.ExecuteInto([ mismatchValue ], 4096, mismatchOutput) |> ignore
+    with error ->
+        mismatchRejected <- true
+        mismatchCode <- exceptionCode error
+    let mismatchCase = hostRejectedOracle.GetProperty("mismatchedOptionType")
+    let expectedMismatch = mismatchCase.GetProperty("expectedRejected").GetBoolean()
+    let expectedMismatchOutputUnchanged = mismatchCase.GetProperty("expectedRetainedBytesUnchanged").GetBoolean()
+    recordCheck checks failures $"sum/{optimizationName}/host-rejects-mismatched-option-input-without-publishing"
+        (mismatchRejected = expectedMismatch
+         && expectedMismatchOutputUnchanged
+         && mismatchOutput = mismatchOutputBefore)
+        (jsonObject [
+            "rejected", box mismatchRejected
+            "expectedRetainedOutputUnchanged", box expectedMismatchOutputUnchanged
+            "diagnosticCode", box mismatchCode
+            "retainedOutputUnchanged", box (mismatchOutput = mismatchOutputBefore)
+            "retainedOutputHex", box (bytesHex mismatchOutput) ])
+
+    let rawOracle = oracle.GetProperty("rawNativeEntry")
+    let contextAbiPassed, contextAbiDetails = inspectRawOwningContextAbi contextAbiOracle
+    recordCheck checks failures $"sum/{optimizationName}/raw-context-mirror-matches-independent-abi-oracle" contextAbiPassed contextAbiDetails
+    if not contextAbiPassed then invalidOp "Raw sum native-entry checks require the independent context ABI oracle."
+    let expectedInvalidStatus = uint32 (rawOracle.GetProperty("expectedInvalidRequestStatus").GetInt32())
+    let rawSentinel = bytesFromHex (rawOracle.GetProperty("sentinelBytesHex").GetString())
+    let rawProgramForBody = function
+        | "optionInt" -> compile "raw-ignore-option-int" entries.RawIgnoreBodies["optionInt"]
+        | "resultIntString" -> compile "raw-ignore-result-int-string" entries.RawIgnoreBodies["resultIntString"]
+        | "nestedOptionResult" -> compile "raw-ignore-nested-option-result" entries.RawIgnoreBodies["nestedOptionResult"]
+        | other -> invalidOp $"Unknown raw sum conformance body '{other}'."
+    let checkRawRejected name (program: OwningStackCompiledProgram) bytes extents count =
+        let result = invokeRawOwningEntry program contextAbiOracle bytes extents count rawSentinel
+        let unchanged = result.RetainedOutput = rawSentinel
+        let passed = result.NativeStatus = int32 expectedInvalidStatus && result.ContextStatus = expectedInvalidStatus && unchanged
+        recordCheck checks failures $"sum/{optimizationName}/raw-native-entry/{name}" passed (jsonObject [
+            "expectedInvalidRequestStatus", box expectedInvalidStatus
+            "nativeStatus", box result.NativeStatus
+            "contextStatus", box result.ContextStatus
+            "inputBytes", box (bytesHex bytes)
+            "inputExtentsBytes", box extents
+            "inputCount", box count
+            "retainedOutputUnchanged", box unchanged
+            "retainedOutputBeforeAndAfterHex", box (bytesHex result.RetainedOutput) ])
+    let rawInvalidTags = rawOracle.GetProperty("invalidTags").EnumerateArray() |> Seq.toArray
+    let rawMalformedInputs = rawOracle.GetProperty("malformedInputs").EnumerateArray() |> Seq.toArray
+    for invalidTag in rawInvalidTags do
+        let name = invalidTag.GetProperty("name").GetString()
+        let bodyName = invalidTag.GetProperty("body").GetString()
+        let bytes = bytesFromHex (invalidTag.GetProperty("inputBytesHex").GetString())
+        let extents = invalidTag.GetProperty("inputExtentsBytes").EnumerateArray() |> Seq.map (fun item -> uint32 (item.GetInt32())) |> Seq.toArray
+        let inputCount = invalidTag.GetProperty("inputCount").GetInt32()
+        let count = uint32 inputCount
+        use rawProgram = rawProgramForBody bodyName
+        checkRawRejected ("invalid-tag-" + name) rawProgram bytes extents count
+    for malformed in rawMalformedInputs do
+        let name = malformed.GetProperty("name").GetString()
+        let bodyName = malformed.GetProperty("body").GetString()
+        let bytes = bytesFromHex (malformed.GetProperty("inputBytesHex").GetString())
+        let extents = malformed.GetProperty("inputExtentsBytes").EnumerateArray() |> Seq.map (fun item -> uint32 (item.GetInt32())) |> Seq.toArray
+        let count = uint32 (malformed.GetProperty("inputCount").GetInt32())
+        use rawProgram = rawProgramForBody bodyName
+        checkRawRejected ("malformed-" + name) rawProgram bytes extents count
+
+    let stackOracle = oracle.GetProperty("capacityOracle")
+    let stackCaseName = stackOracle.GetProperty("stackConstructionCase").GetString()
+    let stackCaseValue = caseValues[stackCaseName]
+    let stackExpectedBytes = bytesFromHex ((caseByName stackCaseName).GetProperty("retainedBytesHex").GetString())
+    let stackExactCapacity = stackOracle.GetProperty("stackExactBytes").GetInt32()
+    let stackShortCapacity = stackOracle.GetProperty("stackOneByteShortBytes").GetInt32()
+    use stackCapacityProgram = compile "sum-stack-capacity-boundary" entries.Cases[stackCaseName]
+    let exactStackOutput = outputBuffer stackExpectedBytes.Length
+    let exactStackResult = stackCapacityProgram.ExecuteInto([], stackExactCapacity, exactStackOutput)
+    let stackShortOutput = outputBuffer stackExpectedBytes.Length
+    let stackShortOutputBefore = Array.copy stackShortOutput
+    let stackShortError =
+        try
+            stackCapacityProgram.ExecuteInto([], stackShortCapacity, stackShortOutput) |> ignore
+            None
+        with error -> Some error
+    match stackShortError with
+    | Some error ->
+        let metrics = getProperty error "Metrics"
+        let finalCursor = int64Property metrics "FinalCursorBytes"
+        let stackPassed =
+            stackExactCapacity = stackShortCapacity + 1
+            && exactStackResult.Values = [ stackCaseValue ]
+            && exactStackOutput = stackExpectedBytes
+            && exactStackResult.Metrics.StackCapacityBytes = stackExactCapacity
+            && (getProperty error "Code" |> string) = "OWNING_STACK_CAPACITY"
+            && (getProperty error "Boundary" |> string) = "program-data-stack"
+            && int64Property error "RequiredBytes" = int64 stackExactCapacity
+            && int64Property error "AvailableBytes" = int64 stackShortCapacity
+            && finalCursor = 0L
+            && stackShortOutput = stackShortOutputBefore
+        recordCheck checks failures $"sum/{optimizationName}/stack-exact-and-one-byte-short-unwinds"
+            stackPassed (jsonObject [
+                "stackConstructionCase", box stackCaseName
+                "exactCapacityBytes", box stackExactCapacity
+                "oneByteShortCapacityBytes", box stackShortCapacity
+                "exactResultBytes", box (bytesHex exactStackOutput)
+                "shortFailure", box (resourceExceptionDetails error)
+                "finalCursorBytes", box finalCursor
+                "retainedOutputUnchanged", box (stackShortOutput = stackShortOutputBefore) ])
+    | None ->
+        recordCheck checks failures $"sum/{optimizationName}/stack-exact-and-one-byte-short-unwinds" false "One byte below the pinned sum construction stack capacity unexpectedly succeeded."
+
+    use failProgram = compile "sum-failure-after-payload-allocation" entries.FailAfterSumAllocation
+    let interpretedFailure =
+        try
+            interpreterBody entries.FailAfterSumAllocation |> ignore
+            "unexpected-success"
+        with error -> diagnosticCode error
+    let failureSentinel = Array.copy rawSentinel
+    let failureBefore = Array.copy failureSentinel
+    let mutable nativeFailureCode = ""
+    let mutable nativeFailureMetrics: obj = null
+    try failProgram.ExecuteInto([], 4096, failureSentinel) |> ignore
+    with error ->
+        nativeFailureCode <- diagnosticCode error
+        nativeFailureMetrics <- getProperty error "Metrics"
+    let failureFinalCursor = if isNull nativeFailureMetrics then -1L else int64Property nativeFailureMetrics "FinalCursorBytes"
+    let failureDeepCopy = if isNull nativeFailureMetrics then -1L else int64Property nativeFailureMetrics "DeepCopyBytes"
+    let failureMoves = if isNull nativeFailureMetrics then -1L else int64Property nativeFailureMetrics "MoveBytes"
+    let failurePassed =
+        interpretedFailure = nativeFailureCode
+        && nativeFailureCode = "RUNTIME_DIVIDE_BY_ZERO"
+        && failureFinalCursor = 0L
+        && failureDeepCopy > 0L
+        && failureMoves = 0L
+        && failureSentinel = failureBefore
+    recordCheck checks failures $"sum/{optimizationName}/failure-after-inline-payload-allocation-unwinds-without-publishing" failurePassed (jsonObject [
+        "interpreterDiagnosticCode", box interpretedFailure
+        "owningDiagnosticCode", box nativeFailureCode
+        "deepCopyBytesBeforeFailure", box failureDeepCopy
+        "moveBytesBeforeFailure", box failureMoves
+        "finalCursorBytes", box failureFinalCursor
+        "retainedOutputUnchanged", box (failureSentinel = failureBefore) ])
+
+    let layouts = observedLayouts |> Seq.toList |> List.distinctBy (fun layout -> layout.TypeName)
+    let layoutChecks, layoutFailures, layoutSummary = validateSumTypeLayouts fixture layouts
+    recordCheck checks failures $"sum/{optimizationName}/independent-case-and-field-layout-oracle"
+        (layoutFailures.Length = 0)
+        (jsonObject [ "checks", box layoutChecks; "failures", box layoutFailures; "layouts", box layoutSummary ])
+
+    jsonObject [
+        "optimization", box optimizationName
+        "caseCount", box caseNames.Length
+        "equalityCaseCount", box (oracle.GetProperty("equalityCases").GetArrayLength())
+        "matchCaseCount", box (oracle.GetProperty("matches").EnumerateObject() |> Seq.length)
+        "invalidTagCount", box rawInvalidTags.Length
+        "malformedInputCount", box rawMalformedInputs.Length
+        "rawInputCount", box (rawInvalidTags.Length + rawMalformedInputs.Length)
+        "hostInputCount", box caseNames.Length
+        "localCallCount", box caseNames.Length
+        "retainedShortCount", box caseNames.Length
+        "branchJoinCaseCount", box branchOracle.Length
+        "stackCapacityCaseCount", box 1
+        "unwindCaseCount", box 1
+        "descriptorGraphRejectionCount", box (oracle.GetProperty("descriptorGraphRejections").GetArrayLength()) ]
 
 [<EntryPoint>]
 let main argv =
@@ -4578,8 +5671,8 @@ let main argv =
         let sourceHash = hashFile sourcePath
         use fixtureDocument = JsonDocument.Parse(File.ReadAllText fixturePath)
         let fixture = fixtureDocument.RootElement
-        if fixture.GetProperty("schemaVersion").GetInt32() <> 2 then
-            invalidOp "The current native-value-stack fixture must use schemaVersion 2."
+        if fixture.GetProperty("schemaVersion").GetInt32() <> 3 then
+            invalidOp "The current native-value-stack fixture must use schemaVersion 3."
         let expectedSourceHash = fixture.GetProperty("source").GetProperty("sha256").GetString()
         recordCheck checks failures "fixture/source-hash" (String.Equals(sourceHash, expectedSourceHash, StringComparison.Ordinal)) (jsonObject [ "expected", box expectedSourceHash; "actual", box sourceHash ])
         let repetitions = fixture.GetProperty("repetitions").EnumerateArray() |> Seq.map (fun item -> item.GetInt32()) |> Seq.toArray
@@ -4659,7 +5752,7 @@ let main argv =
         recordCheck checks failures "verified-ir/dynamic-scope-shadow-same-local-slot" dynamicScopeShadowPassed dynamicScopeShadowDetails
         report["stringScopeShadowIr"] <- dynamicScopeShadowDetails
         report["stringVerifiedProgramInstance"] <- box true
-        report["stringBackendScope"] <- box "String cases share one compiler-authorized VerifiedIrProgram and exact VerifiedIrBody between interpreter and owning LLVM O0/O2. ABI3 String parity is unavailable because its closed native type registry rejects String and string.concat; fixed controls remain the three-way comparison. Interpreter fixture inputs are produced by compiler-verified literal factory bodies because its entry API accepts only Int/Bool/Unit arguments, while owning execution receives each varying nested TextState as a runtime Value input."
+        report["stringBackendScope"] <- box "String cases share one compiler-authorized VerifiedIrProgram and exact VerifiedIrBody between interpreter and owning LLVM O0/O2. The older LlvmAot sharedgraph ABI3 String parity is unavailable because its closed native type registry rejects String and string.concat; fixed controls remain the three-way comparison. Interpreter fixture inputs are produced by compiler-verified literal factory bodies because its entry API accepts only Int/Bool/Unit arguments, while owning execution receives each varying nested TextState as a runtime Value input."
         let stringRuns = ResizeArray<obj>()
         let layoutDepthRuns = ResizeArray<obj>()
         for optimization, optimizationName in optimizationPairs do
@@ -4674,6 +5767,13 @@ let main argv =
         for optimization, optimizationName in optimizationPairs do
             enumRuns.Add(box (runEnumConformance checks failures fixture artifactsRoot optimization optimizationName enumEntries))
         report["enumRuns"] <- enumRuns.ToArray()
+        let sumEntries = compileSumEntries fixture
+        report["sumVerifiedProgramInstance"] <- box true
+        report["sumBackendScope"] <- box "The same compiler-authorized VerifiedIrProgram and exact VerifiedIrBody instances run through the interpreter and owning-stack LLVM at O0/O2, including runtime Value input encoding and output decoding. Layout ABI3 here is the owning-stack physical layout contract. The older LlvmAot sharedgraph ABI3 path remains a separate fixed-only control and does not claim Option/Result support."
+        let sumRuns = ResizeArray<obj>()
+        for optimization, optimizationName in optimizationPairs do
+            sumRuns.Add(box (runSumConformance checks failures fixture artifactsRoot optimization optimizationName sumEntries))
+        report["sumRuns"] <- sumRuns.ToArray()
     with error ->
         let exceptionDetails =
             [ "Diagnostic"; "Metrics"; "RequiredBytes"; "AvailableBytes"; "Boundary" ]

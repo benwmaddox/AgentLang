@@ -1,0 +1,49 @@
+{
+  "archive": "evidence.zip",
+  "entries": 1339,
+  "bytes": 12062926,
+  "sha256": "3b4535c9956da285a764d5bfb5666260490cf5a8f415303380b0f391621ef076",
+  "sourceBaseHead": "a86a944b4acae67aaa51d721a7c4dd8c45f27707",
+  "sourceFiles": [
+    "docs/CLOSED-ENUMS.md",
+    "docs/NATIVE-SUMS-IMPLEMENTATION.md",
+    "docs/ROADMAP.md",
+    "docs/STABLE-ARENA-LOWERING.md",
+    "experiments/AgentLang.NativeValueStack/Program.fs",
+    "scripts/Verify-NativeValueStack.ps1",
+    "src/AgentLang.Llvm/ArenaLifetime.fs",
+    "src/AgentLang.Llvm/OwningStackAot.fs",
+    "src/AgentLang.Llvm/native/mailbox_runtime.c",
+    "src/AgentLang.Llvm/native/owning_bank_test.c",
+    "src/AgentLang.Llvm/native/owning_mailbox_test.c",
+    "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+    "src/AgentLang.Llvm/native/owning_stack_runtime.h",
+    "src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+    "tests/AgentLang.Llvm.Tests/ArenaLifetimeTests.fs",
+    "tests/fixtures/native-conformance/native-value-stack.json",
+    "tests/fixtures/native-conformance/owning-mailbox.json"
+  ],
+  "evidenceRoots": [
+    ".agentlang/native-sums-160",
+    ".agentlang/owning-stack-003/verification-95d1e0c631574f71849dd61778645537",
+    ".agentlang/owning-stack-003/verification-0f4c8b465f664e8192e2941ba379a903",
+    ".agentlang/owning-stack-003/verification-900122a625c241a1b07962802c5f43df",
+    ".agentlang/owning-stack-003/verification-11963132e28746f49187e6208d1a0006",
+    ".agentlang/owning-stack-003/verification-f3266bdfe37845ccb96476bc986bf77b",
+    ".agentlang/owning-stack-003/verification-30423812e1744c90b1546400a237049f",
+    ".agentlang/owning-stack-003/verification-75c5b5b58292487eb16e059f2de8dc2f",
+    ".agentlang/owning-mailbox-001/integration-run-b147ea62f4cd4c8d8876674c20819f79",
+    ".agentlang/owning-mailbox-001/integration-run-89b34080693044e88b37006eed016863",
+    ".agentlang/owning-mailbox-002/policy-run-410f3b453cba422689b7a3c666d99401",
+    ".agentlang/owning-mailbox-003/io-run-c7c1c9602c184f67ab36efaebbbf2532",
+    ".agentlang/owning-mailbox-003/io-run-01bdb24ec8664fb1952813aea6d98f32"
+  ],
+  "acceptedReports": [
+    ".agentlang/owning-stack-003/verification-75c5b5b58292487eb16e059f2de8dc2f/verification-evidence.json",
+    ".agentlang/owning-mailbox-001/integration-run-89b34080693044e88b37006eed016863/integration-evidence.json",
+    ".agentlang/owning-mailbox-002/policy-run-410f3b453cba422689b7a3c666d99401/policy-evidence.json",
+    ".agentlang/owning-mailbox-003/io-run-01bdb24ec8664fb1952813aea6d98f32/io-evidence.json",
+    ".agentlang/native-sums-160/full-validation-001.json"
+  ],
+  "scope": "Failed and accepted reports, logs, modified source, scanner reproducers, and accepted sum LLVM IR; build binaries excluded."
+}
