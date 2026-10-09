@@ -468,6 +468,14 @@ from an earlier agent; the conventional equivalent was supplied. This tests
 maintenance of existing vocabulary, not identical prior authorship or a causal
 language advantage. Reuse the harness and leave historical submissions untouched.
 
+[Report 141](../reports/141-paid-invoice-maintenance.md) records preparation of
+this four-participant maintenance study. Historical starts match the archived
+report 135 sources, fresh baseline suites pass, and both scorers' positive and
+negative controls pass. Equivalent test-only import fixtures expose defensive
+ledger states in both environments. Inputs are frozen and four fresh participants
+are dispatched. Participant results remain pending;
+do not treat scorer preflight as evidence of agent efficacy.
+
 Report 111's extra-write control passed full library coverage but violated the
 IO contract. Make provider-state and effect-count assertions straightforward in
 authored tests, and require that control to fail under the stronger tests.

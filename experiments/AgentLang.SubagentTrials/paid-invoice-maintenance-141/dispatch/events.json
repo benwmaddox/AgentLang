@@ -1,0 +1,47 @@
+{
+  "recordedUtc": "2026-10-09T04:07:42.8693930Z",
+  "status": "all four spawned; results pending",
+  "inputFreezeSha256": "221544802b6440ba78675620592243c0c80f503ce2a3ea9006775a5f5635931e",
+  "dispatchOrder": [
+    {
+      "id": "flow-retained-1",
+      "agent": "/root/maintenance141_flow1",
+      "model": "gpt-6-luna",
+      "reasoning": "max",
+      "forkTurns": "none",
+      "prompt": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\paid-invoice-maintenance-141\\dispatch\\flow-retained-1.prompt.md",
+      "promptSha256": "a1354440779feddac3bfef6d1059ee3adb1896b5ff5c16273c51d80fb6ce97a7",
+      "wrapperSha256": "3d3f7b5b528fc3305f5b9f5c616ac6005525fc0bb04d9d35db30aeeee3f48638"
+    },
+    {
+      "id": "fsharp-1",
+      "agent": "/root/maintenance141_fsharp1",
+      "model": "gpt-6-luna",
+      "reasoning": "max",
+      "forkTurns": "none",
+      "prompt": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\paid-invoice-maintenance-141\\dispatch\\fsharp-1.prompt.md",
+      "promptSha256": "afaa599651ff1e89d47eeb877fa2b9269578f3c819bdfa113851e096056c201f",
+      "wrapperSha256": "9323fa0a00f4afb2f0403bc450c5127c0ce9138ded22aa48b0c00a535ad12fc1"
+    },
+    {
+      "id": "flow-retained-2",
+      "agent": "/root/maintenance141_flow2",
+      "model": "gpt-6-luna",
+      "reasoning": "max",
+      "forkTurns": "none",
+      "prompt": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\paid-invoice-maintenance-141\\dispatch\\flow-retained-2.prompt.md",
+      "promptSha256": "2a79e9e38ffdc522e413dea0f1adb56b19b1db05207c94c00150268f8003c9ac",
+      "wrapperSha256": "82b6afbe6f27b3c75c7fd6c8bb52c3d8ba5cdae0e3fde99c4802556380f636fb"
+    },
+    {
+      "id": "fsharp-2",
+      "agent": "/root/maintenance141_fsharp2",
+      "model": "gpt-6-luna",
+      "reasoning": "max",
+      "forkTurns": "none",
+      "prompt": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\paid-invoice-maintenance-141\\dispatch\\fsharp-2.prompt.md",
+      "promptSha256": "824189b562d8f7930309b4f9566960d700b16333f48eda02bc9f14e042e2665a",
+      "wrapperSha256": "aea097ca0ebcc6f4fd36f6d02e8e0d7f2a483fb58f910327c6f1623ed28252a7"
+    }
+  ]
+}

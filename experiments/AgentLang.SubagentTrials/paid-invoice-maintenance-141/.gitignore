@@ -1,0 +1,4 @@
+# Exact generated starts are retained in the study evidence archive.
+starts/
+artifacts/
+scoring/flow/last-result.json

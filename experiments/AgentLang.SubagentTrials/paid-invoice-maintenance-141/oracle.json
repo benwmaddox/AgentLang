@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "status": "prepared-before-dispatch",
+  "task": "A customer total counts only payments whose linked invoice exists, belongs to that customer, and is Paid. Paid linked rows retain signed checked Int64 addition.",
+  "fixtures": {
+    "customerIds": {
+      "c1": "10000000-0000-0000-0000-000000000001",
+      "c2": "10000000-0000-0000-0000-000000000002",
+      "c9": "10000000-0000-0000-0000-000000000009"
+    },
+    "invoiceIds": {
+      "i1": "20000000-0000-0000-0000-000000000001",
+      "i2": "20000000-0000-0000-0000-000000000002",
+      "i3": "20000000-0000-0000-0000-000000000003",
+      "i4": "20000000-0000-0000-0000-000000000004",
+      "i5": "20000000-0000-0000-0000-000000000005",
+      "i6": "20000000-0000-0000-0000-000000000006",
+      "i7": "20000000-0000-0000-0000-000000000007",
+      "i8": "20000000-0000-0000-0000-000000000008"
+    },
+    "paymentIds": {
+      "p1": "30000000-0000-0000-0000-000000000001",
+      "p2": "30000000-0000-0000-0000-000000000002",
+      "p3": "30000000-0000-0000-0000-000000000003",
+      "p4": "30000000-0000-0000-0000-000000000004",
+      "p5": "30000000-0000-0000-0000-000000000005",
+      "p6": "30000000-0000-0000-0000-000000000006",
+      "p7": "30000000-0000-0000-0000-000000000007",
+      "p8": "30000000-0000-0000-0000-000000000008"
+    },
+    "signedAmountsAreDecimalStrings": true,
+    "timestamps": "2001-02-03T04:05:06.0000000+00:00",
+    "allUnspecifiedStoreCollections": "empty"
+  },
+  "cases": [
+    {
+      "id": "paid-signed-open-and-missing",
+      "customers": ["c1", "c2"],
+      "query": "c1",
+      "customerOverrides": {
+        "c1":{"email":"c1@example.test","kind":"premium","balance":"17","createdAt":"2001-02-03T04:05:06.0000000Z"}
+      },
+      "invoices": [
+        {"id":"i1","owner":"c1","status":"Paid"},
+        {"id":"i2","owner":"c1","status":"Paid"},
+        {"id":"i3","owner":"c1","status":"Open"},
+        {"id":"i5","owner":"c2","status":"Paid"}
+      ],
+      "payments": [
+        {"id":"p1","invoice":"i1","amount":"100"},
+        {"id":"p2","invoice":"i2","amount":"-30"},
+        {"id":"p3","invoice":"i3","amount":"9"},
+        {"id":"p4","invoice":"i4","amount":"7","invoiceRecord":"missing"},
+        {"id":"p5","invoice":"i5","amount":"13"}
+      ],
+      "defensiveRows": ["signed paid amount", "payment on Open invoice", "payment whose invoice is missing"],
+      "expected": {
+        "shared":{"ok":"70"},
+        "account":{"ok":"70","customer":{"id":"c1","email":"c1@example.test","kind":"premium","balance":"17","createdAt":"2001-02-03T04:05:06.0000000Z"}},
+        "metrics":{"ok":"83","counts":[2,0,0,4,5,0,0]}
+      }
+    },
+    {
+      "id": "open-payment-does-not-overflow",
+      "customers": ["c1"],
+      "query": "c1",
+      "customerOverrides": {
+        "c1":{"email":"c1@example.test","kind":"standard","balance":"0","createdAt":"2001-02-03T04:05:06.0000000Z"}
+      },
+      "invoices": [
+        {"id":"i6","owner":"c1","status":"Paid"},
+        {"id":"i7","owner":"c1","status":"Open"}
+      ],
+      "payments": [
+        {"id":"p6","invoice":"i6","amount":"9223372036854775807"},
+        {"id":"p7","invoice":"i7","amount":"1"}
+      ],
+      "defensiveRows": ["payment on Open invoice"],
+      "expected": {
+        "shared":{"ok":"9223372036854775807"},
+        "account":{"ok":"9223372036854775807","customer":{"id":"c1","email":"c1@example.test","kind":"standard","balance":"0","createdAt":"2001-02-03T04:05:06.0000000Z"}},
+        "metrics":{"ok":"9223372036854775807","counts":[1,0,0,2,2,0,0]}
+      }
+    },
+    {
+      "id": "paid-overflow-stays-checked",
+      "customers": ["c1"],
+      "query": "c1",
+      "customerOverrides": {
+        "c1":{"email":"c1@example.test","kind":"standard","balance":"0","createdAt":"2001-02-03T04:05:06.0000000Z"}
+      },
+      "invoices": [
+        {"id":"i6","owner":"c1","status":"Paid"},
+        {"id":"i7","owner":"c1","status":"Paid"},
+        {"id":"i8","owner":"c1","status":"Paid"}
+      ],
+      "payments": [
+        {"id":"p6","invoice":"i6","amount":"9223372036854775807"},
+        {"id":"p7","invoice":"i7","amount":"1"},
+        {"id":"p8","invoice":"i8","amount":"10"}
+      ],
+      "defensiveRows": [],
+      "expected": {
+        "shared":{"error":"MONEY_OVERFLOW"},
+        "account":{"error":"MONEY_OVERFLOW"},
+        "metrics":{"error":"MONEY_OVERFLOW"}
+      }
+    },
+    {
+      "id": "unknown-customer-precedes-other-total-overflow",
+      "customers": ["c1"],
+      "query": "c9",
+      "customerOverrides": {
+        "c1":{"email":"c1@example.test","kind":"standard","balance":"0","createdAt":"2001-02-03T04:05:06.0000000Z"}
+      },
+      "invoices": [
+        {"id":"i6","owner":"c1","status":"Paid"},
+        {"id":"i7","owner":"c1","status":"Paid"}
+      ],
+      "payments": [
+        {"id":"p6","invoice":"i6","amount":"9223372036854775807"},
+        {"id":"p7","invoice":"i7","amount":"1"}
+      ],
+      "defensiveRows": [],
+      "expected": {
+        "shared":{"error":"CUSTOMER_NOT_FOUND"},
+        "account":{"error":"CUSTOMER_NOT_FOUND"},
+        "metrics":{"error":"MONEY_OVERFLOW"}
+      }
+    }
+  ]
+}

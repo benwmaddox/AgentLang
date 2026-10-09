@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "project": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\paid-invoice-maintenance-141\\starts\\flow-retained\\project",
+  "oracleSha256": "f4b0bf619f34d2bd7fb76309a2001fdfe207857448345232d6b424b0e8a1d15c",
+  "passed": 6,
+  "total": 12,
+  "results": [
+    {
+      "case": "paid-signed-open-and-missing/shared",
+      "passed": false,
+      "actual": {
+        "ok": "79"
+      },
+      "error": null,
+      "errorText": null
+    },
+    {
+      "case": "paid-signed-open-and-missing/account",
+      "passed": false,
+      "actual": {
+        "ok": {
+          "customer": {
+            "id": "10000000-0000-0000-0000-000000000001",
+            "email": "c1@example.test",
+            "kind": "premium",
+            "balance": "17",
+            "created-at": "2001-02-03T04:05:06.0000000+00:00"
+          },
+          "paid-total": "79"
+        }
+      },
+      "error": null,
+      "errorText": null
+    },
+    {
+      "case": "paid-signed-open-and-missing/metrics",
+      "passed": false,
+      "actual": {
+        "ok": {
+          "customers": 2,
+          "products": 0,
+          "subscriptions": 0,
+          "invoices": 4,
+          "payments": 5,
+          "pending-emails": 0,
+          "sent-emails": 0,
+          "paid-total": "92"
+        }
+      },
+      "error": null,
+      "errorText": null
+    },
+    {
+      "case": "open-payment-does-not-overflow/shared",
+      "passed": false,
+      "actual": {
+        "error": "MONEY_OVERFLOW"
+      },
+      "error": null,
+      "errorText": null
+    },
+    {
+      "case": "open-payment-does-not-overflow/account",
+      "passed": false,
+      "actual": {
+        "error": "MONEY_OVERFLOW"
+      },
+      "error": null,
+      "errorText": null
+    },
+    {
+      "case": "open-payment-does-not-overflow/metrics",
+      "passed": false,
+      "actual": {
+        "error": "MONEY_OVERFLOW"
+      },
+      "error": null,
+      "errorText": null
+    },
+    {
+      "case": "paid-overflow-stays-checked/shared",
+      "passed": true,
+      "actual": {
+        "error": "MONEY_OVERFLOW"
+      },
+      "error": null,
+      "errorText": null
+    },
+    {
+      "case": "paid-overflow-stays-checked/account",
+      "passed": true,
+      "actual": {
+        "error": "MONEY_OVERFLOW"
+      },
+      "error": null,
+      "errorText": null
+    },
+    {
+      "case": "paid-overflow-stays-checked/metrics",
+      "passed": true,
+      "actual": {
+        "error": "MONEY_OVERFLOW"
+      },
+      "error": null,
+      "errorText": null
+    },
+    {
+      "case": "unknown-customer-precedes-other-total-overflow/shared",
+      "passed": true,
+      "actual": {
+        "error": "CUSTOMER_NOT_FOUND"
+      },
+      "error": null,
+      "errorText": null
+    },
+    {
+      "case": "unknown-customer-precedes-other-total-overflow/account",
+      "passed": true,
+      "actual": {
+        "error": "CUSTOMER_NOT_FOUND"
+      },
+      "error": null,
+      "errorText": null
+    },
+    {
+      "case": "unknown-customer-precedes-other-total-overflow/metrics",
+      "passed": true,
+      "actual": {
+        "error": "MONEY_OVERFLOW"
+      },
+      "error": null,
+      "errorText": null
+    }
+  ]
+}

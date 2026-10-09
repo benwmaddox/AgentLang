@@ -59,6 +59,11 @@ superiority. After default-help improvements, a fresh
 14/14 independent cases and 171/171 project tests, composing the earlier
 agent-created helper without changing inherited definitions. This single
 language-only trial supports feasibility, not a comparative reliability lead.
+The [shared-rule maintenance study](reports/141-paid-invoice-maintenance.md)
+now has frozen inputs, passing scorer controls and four fresh participants
+dispatched. Results are pending. Its incorrect language control passes all 191
+attached tests but fails independent acceptance, reinforcing the distinction
+between test coverage and correct business expectations.
 
 The implementation targets .NET 9 and uses no external test framework or model API key.
 

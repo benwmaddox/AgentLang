@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "sourceReport": "135-r09-shared-summary-comparison.md",
+  "sourceReplica": "accepted replica two",
+  "fixtureHelpers": {
+    "flow": {
+      "function": "maintenance141.fixture-import-payment",
+      "usage": "test-only"
+    },
+    "fsharp": {
+      "function": "Store.Maintenance141Fixture.importPayment",
+      "usage": "test-only"
+    }
+  },
+  "arms": [
+    {
+      "arm": "flow-retained",
+      "acceptedSource": "D:\\code\\AgentLang\\.agentlang\\r09-discovery-001\\comparison\\participant-work\\replica2\\flow-retained\\project",
+      "studyStart": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\paid-invoice-maintenance-141\\starts\\flow-retained\\project",
+      "files": [
+        {
+          "path": "dictionary.agent",
+          "acceptedSha256": "ef29e62d0a8d0ad3973e0f39089ad3e0daf179a1aaed57bf236d86a09fd3cba9",
+          "studySha256": "f7a8f0344d557be34e7b2f30468ac99d7023a51ef9739374db423ae11237f052"
+        }
+      ]
+    },
+    {
+      "arm": "fsharp",
+      "acceptedSource": "D:\\code\\AgentLang\\.agentlang\\r09-discovery-001\\comparison\\participant-work\\replica2\\fsharp\\project",
+      "studyStart": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\paid-invoice-maintenance-141\\starts\\fsharp\\project",
+      "files": [
+        {
+          "path": "business/Business.fs",
+          "acceptedSha256": "abe1ca41c0e20b6fa3d89f871295a72352446bdd22d4fbff1ba60e95dbad03f6",
+          "studySha256": "fef9e58c08adcb533fb164b9299703687ed866e1a32543a1cd27b328366f8a69"
+        },
+        {
+          "path": "tests/Program.fs",
+          "acceptedSha256": "d428cccceaffab367c9f8a297c8087d87ae04adb13c48e946e9fe282205c64a7",
+          "studySha256": "d428cccceaffab367c9f8a297c8087d87ae04adb13c48e946e9fe282205c64a7"
+        }
+      ]
+    }
+  ]
+}
