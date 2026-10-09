@@ -88,8 +88,11 @@ Next actions:
    acceptance. The other outcomes separate workflow completion, a private
    helper-signature constraint omitted from the task, and an incomplete shared
    refactor. This small study establishes no comparative reliability advantage.
-   The next efficacy step is a held-out task that improves discovery/default
-   help and explicitly validates shared structure; do not repeat this same case.
+   Default help now exposes existing compact inventory, targeted search and
+   bounded context ([report 136](../reports/136-discovery-help-exposure.md)).
+   The next efficacy step is a held-out task using this guidance and explicit
+   structural acceptance; do not repeat this same case. Dependency reachability
+   is supporting evidence, not proof that duplicated logic has been removed.
    Native runtime throughput remains separate evidence.
 
 Acceptance is an evidence-backed review of the declared conditions, including

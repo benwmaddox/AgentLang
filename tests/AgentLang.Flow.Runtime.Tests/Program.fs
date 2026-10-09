@@ -187,9 +187,52 @@ module Program =
         (indexData.AsObject()).["documentation"] <- jstr "caller mutation"
         let freshIndex = dispatch engine "help" [] |> expectOk "read fresh default help after caller mutation"
         check (stringValue freshIndex.["data"].["documentation"] <> "caller mutation") "one response cannot mutate later help payloads"
+        let discoveryGuidance = stringValue freshIndex.["data"].["documentation"]
+        for guidance in [ "compact=true"; "search"; "describe"; "flowReference"; "context"; "transitive-dependencies"; "dictionary names with dots" ] do
+            check (discoveryGuidance.Contains(guidance, StringComparison.Ordinal)) $"default help explains discovery with {guidance}"
         equal [ "authoring"; "define"; "replacement"; "examples" ]
             (freshIndex.["data"].["topicInstructions"].AsArray() |> Seq.map (fun item -> stringValue item.["topic"]) |> Seq.toList)
             "index includes one instruction per help topic"
+
+        let discoveryExampleNames = [ "compact-words"; "search-add"; "context-add" ]
+        let findRequestExample (helpData: JsonNode) name =
+            helpData.["requestExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = name)
+            |> fun item -> item.["request"]
+        for versionLabel, helpData in
+            [ "Flow/1", freshIndex.["data"]
+              "Flow/2", (dispatch engine "help" [ "syntaxVersion", jint 2 ] |> expectOk "read Flow/2 discovery help").["data"] ] do
+            let documentation = stringValue helpData.["documentation"]
+            for guidance in [ "compact=true"; "search"; "context"; "transitive-dependencies" ] do
+                check (documentation.Contains(guidance, StringComparison.Ordinal)) $"{versionLabel} help exposes discovery guidance for {guidance}"
+            for exampleName in discoveryExampleNames do
+                check
+                    (helpData.["requestExamples"].AsArray()
+                     |> Seq.exists (fun item -> stringValue item.["name"] = exampleName))
+                    $"{versionLabel} help exposes the {exampleName} request"
+
+            let dispatchHelpRequest name =
+                Protocol.dispatchLine engine ((findRequestExample helpData name).ToJsonString())
+                |> expectOk $"execute {versionLabel} help example {name} through JSONL protocol"
+            let compactWords = dispatchHelpRequest "compact-words"
+            equal "words" (stringValue compactWords.["kind"]) $"{versionLabel} compact inventory request kind"
+            check (boolValue compactWords.["data"].["compact"]) $"{versionLabel} compact inventory request selects names-only shape"
+            check
+                (jsonArrayStrings compactWords.["data"].["words"] |> List.contains "add")
+                $"{versionLabel} compact inventory contains the add primitive"
+            check (compactWords.["data"].["constructs"].AsArray().Count > 0) $"{versionLabel} compact inventory includes syntax constructs"
+
+            let search = dispatchHelpRequest "search-add"
+            equal "search" (stringValue search.["kind"]) $"{versionLabel} focused search request kind"
+            check (jsonArrayStrings search.["data"] |> List.contains "add") $"{versionLabel} focused search finds add"
+
+            let context = dispatchHelpRequest "context-add"
+            equal "context" (stringValue context.["kind"]) $"{versionLabel} context request kind"
+            let contextData = context.["data"]
+            let contextWords = contextData.["words"].AsArray()
+            equal "add" (stringValue contextWords[0].["name"]) $"{versionLabel} context keeps its requested root first"
+            check (contextWords.Count <= 6) $"{versionLabel} context respects its word limit"
+            check (contextData["utf8Bytes"].GetValue<int>() <= 4096) $"{versionLabel} context respects its byte limit"
 
         let defineHelp = dispatch engine "help" [ "topic", jstr "define" ] |> expectOk "read Flow define help"
         let defineData = defineHelp.["data"]

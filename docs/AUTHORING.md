@@ -16,10 +16,22 @@ Effects and documentation form the metadata block, followed by a blank line.
 `format` returns canonical source without committing a change; accept formatted
 source through the ordinary definition and revision checks.
 
-Start with a compact inventory or search, then describe the relevant words.
-Names in protocol queries use dots; ordinary Flow calls use the parser-verified
-`flowReference` returned by `describe`. Nominal types stay distinct: a Money
-value is not an Int, and Email is not String.
+Start discovery before editing. Use a names-only inventory, search for a focused
+term, then inspect a known word with a bounded context:
+
+```json
+{"op":"words","compact":true}
+{"op":"search","query":"add"}
+{"op":"context","word":"add","maxDepth":2,"maxWords":6,"maxUtf8Bytes":4096}
+```
+
+`search` matches names, documentation and signatures; use `search-type`,
+`search-output`, `search-effect` or `search-dependency` for structural queries.
+`context` includes reachable word and type summaries within its limits; use
+`transitive-dependencies` to inspect the full dependency closure. Use `describe`
+to inspect signatures and the exact `flowReference` call spelling before
+composing source. Names in protocol queries use dots; nominal types stay
+distinct: a Money value is not an Int, and Email is not String.
 
 Ask the runtime for authoring instructions through the same JSONL session:
 

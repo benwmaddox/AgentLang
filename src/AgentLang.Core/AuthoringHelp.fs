@@ -304,7 +304,7 @@ test tutorialSpan.valid?/reversed {
         [ Topic.Authoring,
             { Title = "Authoring through the runtime"
               Documentation =
-                "Use one JSON object per JSONL request. Flow is the default frontend for define and eval. Select Flow syntax with syntaxVersion (version 1 is the default); use format to request canonical source without changing the project, then submit an explicit define request to stage an edit. Inspect a word with describe, then ask for help on define, replacement, or examples. Help returns instructions only; the active host still controls which operations it allows."
+                "Use one JSON object per JSONL request. Flow is the default frontend for define and eval. Select Flow syntax with syntaxVersion (version 1 is the default); use format to request canonical source without changing the project, then submit an explicit define request to stage an edit. Discover before editing: words with compact=true returns names only; search matches names, documentation, and signatures; describe shows full signatures and exact flowReference call spelling; context gives a bounded view of a known word and its reachable dependencies and types. Use transitive-dependencies to inspect its full dependency closure. Protocol queries use dictionary names with dots. Help returns instructions only; the active host still controls which operations it allows."
               AllowedFlowDefineFields = []
               SourceExamples = []
               RequestExamples =
@@ -312,6 +312,22 @@ test tutorialSpan.valid?/reversed {
                     Description = "Return the concise authoring index."
                     Operation = "help"
                     Fields = [] }
+                  { Name = "compact-words"
+                    Description = "List only word and syntax-construct names."
+                    Operation = "words"
+                    Fields = [ "compact", Boolean true ] }
+                  { Name = "search-add"
+                    Description = "Find words and constructs matching the focused term add."
+                    Operation = "search"
+                    Fields = [ textField "query" "add" ] }
+                  { Name = "context-add"
+                    Description = "Inspect a bounded dependency and type context rooted at add."
+                    Operation = "context"
+                    Fields =
+                        [ textField "word" "add"
+                          "maxDepth", Integer 2
+                          "maxWords", Integer 6
+                          "maxUtf8Bytes", Integer 4096 ] }
                   helpRequestExample "define"
                   helpRequestExample "replacement"
                   helpRequestExample "examples" ] }

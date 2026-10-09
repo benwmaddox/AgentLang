@@ -1,0 +1,42 @@
+{
+  "startingRevision": "1908bdb08a11cda09151e279be702da67a56689b",
+  "checks": [
+    {
+      "project": "AgentLang.Flow.Runtime.Tests",
+      "command": "dotnet run --configuration Release --project tests/AgentLang.Flow.Runtime.Tests -p:NuGetAudit=false -p:BuildInParallel=false -m:1",
+      "exitCode": 0,
+      "log": "flow-runtime-workspace-temp.txt",
+      "sha256": "6e9acfe12afe1f1287b25b62f7f787a39eb2596be38f5dd917b87de86c5bea5b"
+    },
+    {
+      "project": "AgentLang.Acceptance",
+      "command": "dotnet run --configuration Release --project tests/AgentLang.Acceptance -p:NuGetAudit=false -p:BuildInParallel=false -m:1",
+      "exitCode": 0,
+      "log": "AgentLang.Acceptance.txt",
+      "sha256": "433e872469f8ff908ca1ed53d13beb4f7c6fdbb1046c5f755664ecd0ddbedbd9"
+    },
+    {
+      "project": "AgentLang.Discovery.Tests",
+      "command": "dotnet run --configuration Release --project tests/AgentLang.Discovery.Tests -p:NuGetAudit=false -p:BuildInParallel=false -m:1",
+      "exitCode": 0,
+      "log": "AgentLang.Discovery.Tests.txt",
+      "sha256": "3200bff9d804d72a9bcd4c7578f52b45e03713b1a6503b0c7a23f7f9ae407aa6"
+    }
+  ],
+  "tempDirectory": "D:\\code\\AgentLang\\.agentlang\\discovery-help-136\\temp",
+  "sourceHashes": [
+    {
+      "path": "src/AgentLang.Core/AuthoringHelp.fs",
+      "sha256": "3047c94aad8f5e797e88cce62aa638dcb2d2074717c6014895ac1d9d77398646"
+    },
+    {
+      "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "sha256": "6047fc6dabfecf040b233dedc53f59383d64b1128802a23acd4d333568ba2271"
+    }
+  ],
+  "scope": "Focused local validation; no agent outcome or full Release/LLVM result",
+  "priorFailures": [
+    "Nonserial build exited1 before compilation; serial build succeeded",
+    "Initial fresh Flow runtime execution failed STORAGE_ACCESS_DENIED in sandbox TEMP; writable workspace TEMP succeeded"
+  ]
+}
