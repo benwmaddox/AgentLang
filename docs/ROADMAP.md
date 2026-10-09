@@ -150,9 +150,14 @@ Next actions:
    discovery: descriptors retain Stack syntax and separately expose Flow/2
    receiver forms; help includes an executable named-callback fold example.
    Focused runtime/CLI suites and the unchanged billing control pass locally.
-   A single fresh participant is testing the same retained batch task under
-   explicit no-collaboration rules; its outcome remains pending. This is a
-   discovery follow-up, not a replacement for report147 or a retention estimate.
+   A single fresh participant passes the same retained batch task's 18 oracle
+   cases and publishes two qualified library functions. It initially calls the
+   retained query, sees an uncovered post-fold error branch, then replaces reuse
+   with duplicated arithmetic and qualifies the result. The guidance obstacle
+   is overcome; retained production reuse is not demonstrated. Next investigate
+   validated-input API shapes that avoid redundant error paths without weakening
+   coverage. This is a discovery follow-up, not a replacement for report147 or
+   a retention estimate.
 
 Acceptance is an evidence-backed review of the declared conditions, including
 their limitations. Completing a language feature or passing actor-written tests

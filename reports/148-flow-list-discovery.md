@@ -1,7 +1,9 @@
 # Flow list discovery: correct the advertised call forms
 
-Status: implementation and local validation complete; one fresh-agent follow-up
-is running. No follow-up efficacy outcome is claimed yet.
+Status: implementation, local validation and the single-participant follow-up
+are complete. The submission passes 18/18 oracle cases and its 36 own tests.
+It uses the supported fold syntax but duplicates the retained billing calculation
+instead of leaving a production call to the earlier function.
 
 Report147's AgentLang participants could not discover the supported fold form.
 The syntax descriptor advertised Stack's `list.fold <word>` while Flow/2 expects
@@ -44,7 +46,7 @@ contract and retained starting dictionary, with 100 broker exchanges. The oracle
 is copied unchanged and the prompt gives no fold syntax or implementation hint.
 The runtime and inputs are frozen before dispatch. Correctness, library status,
 inherited tests, production calls to retained vocabulary, errors and normal broker
-closure will be assessed separately.
+closure are assessed separately below.
 
 The prompt explicitly prohibits listing, inspecting or messaging other agents,
 delegation, and out-of-broker project work. Only one participant runs. The available
@@ -58,6 +60,60 @@ contaminated report147 observations or a new four-cell comparison. Even a correc
 submission would establish only bounded feasibility after correcting guidance;
 one retained participant cannot measure a general retention benefit.
 
+## Fresh-agent result
+
+The participant completes in 35 broker exchanges with four error responses:
+three source-syntax errors and one callback accumulator-type mismatch. It finds
+the supported receiver fold form, publishes the batch query and accumulator
+helper as libraries, and finishes with normal task commit and host close,
+host/runtime exits 0/0. It reports no other tool or information use beyond prompt
+verification and the broker. No cross-participant exchange was observed or reported.
+
+The two required help responses total 20,672 UTF-8 payload bytes, versus 15,311
+for report147's retained participant: the additional guidance costs 5,361 bytes
+at that step. These are measured broker payloads, not LLM tokens or total context.
+
+The unchanged independent oracle passes all 18 cases and confirms the input
+project was not changed by scoring. The final own suite has 36 passing tests:
+29 inherited and seven new. The target covers 20/20 instructions, 4/4 branches
+and both Result alternatives; its helper covers 43/43 instructions and 4/4
+branches. These are executed coverage obligations, not proofs over all inputs.
+
+The final source adds one accumulator record and two library functions. The
+earlier `rental.billable-days` remains unchanged, but is absent from the final
+query's production dependency closure. The new helper repeats its clipping
+calculation. An abandoned candidate helper was discarded before task commit.
+
+## Attempted reuse and coverage interaction
+
+This participant initially does reuse `rental.billable-days`. The staged batch
+query's transitive dependencies at exchange18 include it; the callback's three
+tests and query's four tests pass. The same describe response reports only 5/6
+query branches and 23/25 instructions: the post-fold error case was not executed.
+The outer function rejects invalid windows before the fold, so the retained
+query's invalid-window error cannot be reached on that path.
+
+The participant then replaces the callback with direct arithmetic, eliminates
+the Result accumulator, and qualifies the revised functions with full coverage.
+The trace establishes that sequence, not the participant's private reasoning.
+It is consistent with coverage requirements influencing the move away from reuse.
+No failed library commit was necessary: the coverage gap was visible before
+publication. The final implementation preserves early invalid-window rejection.
+
+The report147 coordinator demonstrated another legal solution: seed the fold
+with an error and traverse the list while propagating it. Therefore the gate
+does not make reuse impossible, but the examples expose a composition cost.
+The correct conclusion is narrower than a vocabulary success: the discovery
+obstacle was overcome, a correct tested change was produced, and attempted
+reuse did not survive into the final implementation.
+
+A useful next research question is whether strongly typed validated inputs let
+domain calculations compose without repeatedly returning errors that the caller
+has already ruled out. Compare that API shape while preserving library coverage
+requirements, rather than counting this duplication as reuse or loosening gates
+to obtain a passing experiment. One successful follow-up does not establish a
+causal improvement rate from the help change.
+
 ## Evidence
 
 The [preflight archive](evidence/148-flow-list-discovery/preflight.zip) and
@@ -65,3 +121,12 @@ The [preflight archive](evidence/148-flow-list-discovery/preflight.zip) and
 entries, including changed sources, executable tests, runtime binaries, help
 review, frozen prompt/start, oracle and control results. Size: 2,769,819 bytes.
 SHA-256: `231fe3f982558d48b6a9f09b618e881a78e256ddae469f1a7a5be9e843453ef7`.
+
+The [results archive](evidence/148-flow-list-discovery/results.zip) and
+[index](evidence/148-flow-list-discovery/results-index.json) preserve 163 verified
+entries, including the final project, broker trace, scorer output, library and
+dependency inspection, terminal audit, tool-use disclosure and read-only review.
+Size: 258,562 bytes. SHA-256:
+`dab867981bc5484dc62584d03868e4f61ba10c08b64c2a34231be9fc975308fb`.
+Frozen non-project inputs and final sources were hash-checked before packaging;
+the final source state matches the one graded.
