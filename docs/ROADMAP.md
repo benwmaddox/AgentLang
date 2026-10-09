@@ -31,14 +31,14 @@ not wait for every optional feature or proof of a comparative advantage.
 
 ## 1. Finish the bounded vocabulary-retention review
 
-[Report 149](../reports/149-validated-window-reuse.md) validates a typed
-BillingWindow API in both languages: unchanged singleton oracles pass 17/17
-and separately composed batch controls pass 18/18. AgentLang retains full
-library gates while validating once and reusing the total calculation. Fresh,
-sequential agent trials are next; these coordinator-prepared controls are not
-agent-efficacy results. Keep the mailbox model open while this comparison runs:
-specialized typed mailboxes/dataflow boundaries are a candidate, not a decision
-to build a full actor framework.
+[Report 149](../reports/149-validated-window-reuse.md) completes the validated
+BillingWindow comparison: both fresh agents pass 18/18 hidden cases and reuse
+the calculation. AgentLang meets unchanged library gates in 21 exchanges with
+two syntax errors; F# uses 11 exchanges without errors. This supports the API
+shape, not a language reliability lead. Next, test a shared-rule maintenance
+change against both singleton and batch consumers of these resulting projects.
+Keep the mailbox model open: specialized typed mailboxes/dataflow boundaries
+are a candidate, not a decision to build a full actor framework.
 
 The interpreter, typed semantic IR, dictionary, task transactions, introspection,
 Flow/1 authoring and existing library coverage gates are implemented. Earlier
