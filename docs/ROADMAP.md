@@ -35,8 +35,10 @@ not wait for every optional feature or proof of a comparative advantage.
 BillingWindow comparison: both fresh agents pass 18/18 hidden cases and reuse
 the calculation. AgentLang meets unchanged library gates in 21 exchanges with
 two syntax errors; F# uses 11 exchanges without errors. This supports the API
-shape, not a language reliability lead. Next, test a shared-rule maintenance
-change against both singleton and batch consumers of these resulting projects.
+shape, not a language reliability lead. [Report 150](../reports/150-shared-rule-maintenance.md) prepares that next
+shared-rule maintenance test: 48 acceptance cases across all three APIs pass
+for both correct controls, with executed negative cases for old and partially
+updated policies. Fresh-agent outcomes remain pending.
 Keep the mailbox model open: specialized typed mailboxes/dataflow boundaries
 are a candidate, not a decision to build a full actor framework.
 
