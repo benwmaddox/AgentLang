@@ -226,7 +226,12 @@ Suggested foundation vocabulary (grouped words, not a claim that all words alrea
 
 - Value policy: `money.add`, `money.multiply-by-quantity`, `money.nonnegative?`, `instant.normalize`, and status/Email constructors. Checked integer primitives back money calculations; no Float word participates in billing.
 - Store: `store.empty`, `store.customer`, `store.product`, `store.invoice`, `store.add-customer`, `store.add-product`, and typed add/find/update-step callbacks. Store collections are immutable lists.
-- Subscription: `subscription.start`, `subscription.cancel`, and lookup/update words. These enforce foreign-key existence, duplicate IDs, nonblank term, expiry after start, active-to-cancelled transition, and cancellation time not before start. They do not decide renewal eligibility.
+- Subscription: `subscription.start`, `subscription.cancel`, and lookup/update words. These enforce foreign-key existence, duplicate IDs, nonblank term, expiry after start, active-to-cancelled transition, and cancellation time not before start. Starts also reject overlapping occupancy for the same customer and product, after the existing validation checks. A validated `OccupiedPeriod` represents only nonempty half-open periods; cancellation at start yields no occupied period, cancellation after expiry does not extend occupancy, and adjacent periods remain valid. These functions do not decide renewal eligibility.
+
+The subscription fixture uses Flow/2 (`fn`, record properties, default pure effects).
+Load it with `syntaxVersion: 2`; the other business fixture files currently use
+Flow/1. The transition acceptance runner loads each file with its authored version
+in dependency order. No persisted Store fields change for occupied-period checks.
 - Invoice: `invoice.create`, `invoice.line`, `invoice.sum-lines`, and supporting fold callbacks. The existing generated `invoice.total : Invoice -> Money` accessor retains its name. Input cart is `List<CartLine>`; creation rejects an empty cart, unknown product, nonpositive quantity, negative price, and any checked overflow. Product descriptions and prices are copied into lines.
 - Payment: `payment.apply-result` takes an explicit `Result<PaymentReceipt, BusinessError>` alongside the pure Store/request data. An Error leaves the Store unchanged; an Ok receipt must match a positive full invoice balance before recording Payment and setting status Paid.
 - Email: `email.queue` appends a validated message. `email.apply-delivery-result` takes an explicit `Result<Unit, BusinessError>`; error retains the head of the outbox, success moves it to sent messages. No SMTP or network word is present.

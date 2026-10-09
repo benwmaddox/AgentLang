@@ -41,6 +41,20 @@ domain gap using validated nonempty periods and explicit absence, while retainin
 independent behavior checks and library gates. Resume native conformance as a
 separate secondary track. Keep the mailbox model open: specialized typed
 mailboxes/dataflow boundaries are a candidate, not a full actor-framework decision.
+Smalltalk-inspired live inspection and scoped dictionary replacement are separate
+from adopting an actor object model. Evaluate whether awaiting I/O keeps a mailbox
+logically occupied separately from whether its transient arena is retained.
+The occupied-period integration and its validation are tracked in
+[report 152](../reports/152-occupied-period-domain.md); do not count this
+coordinator-designed domain improvement as a new independent agent efficacy trial.
+
+The next native conformance slice targets closed, payload-free enums in
+`OwningStackAot`, using inline values and the selected stable arena policy.
+Reject invalid enum tags at native entry, including ignored inputs and nested
+record fields. Audit the layout metadata contract and test both fixed-size and
+String-bearing record paths against the interpreter at O0/O2. This is separate
+from choosing actor versus specialized-mailbox semantics; Option/Result native
+payload layouts remain subsequent work.
 
 The interpreter, typed semantic IR, dictionary, task transactions, introspection,
 Flow/1 authoring and existing library coverage gates are implemented. Earlier

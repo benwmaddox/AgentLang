@@ -37,6 +37,7 @@ module Domain =
         | DuplicateCustomer of CustomerId
         | DuplicateProduct of ProductId
         | DuplicateSubscription of SubscriptionId
+        | SubscriptionOverlap
         | DuplicateInvoice of InvoiceId
         | DuplicatePayment of PaymentId
         | CustomerNotFound of CustomerId
@@ -68,6 +69,7 @@ module Domain =
             | DuplicateCustomer _ -> "DUPLICATE_CUSTOMER"
             | DuplicateProduct _ -> "DUPLICATE_PRODUCT"
             | DuplicateSubscription _ -> "DUPLICATE_SUBSCRIPTION"
+            | SubscriptionOverlap -> "SUBSCRIPTION_OVERLAP"
             | DuplicateInvoice _ -> "DUPLICATE_INVOICE"
             | DuplicatePayment _ -> "DUPLICATE_PAYMENT"
             | CustomerNotFound _ -> "CUSTOMER_NOT_FOUND"
@@ -98,6 +100,7 @@ module Domain =
             | DuplicateCustomer _ -> "A customer with this identifier already exists."
             | DuplicateProduct _ -> "A product with this identifier already exists."
             | DuplicateSubscription _ -> "A subscription with this identifier already exists."
+            | SubscriptionOverlap -> "A customer cannot have overlapping subscriptions for the same product."
             | DuplicateInvoice _ -> "An invoice with this identifier already exists."
             | DuplicatePayment _ -> "A payment with this identifier already exists."
             | CustomerNotFound _ -> "The customer does not exist."
@@ -181,6 +184,26 @@ module Domain =
         let sum amounts =
             amounts
             |> List.fold (fun state value -> state |> Result.bind (fun total -> add total value)) (Ok zero)
+
+    type OccupiedPeriod = private {
+        Start: DateTimeOffset
+        Finish: DateTimeOffset
+    }
+
+    module OccupiedPeriod =
+        let tryCreate (start: DateTimeOffset) (finish: DateTimeOffset) =
+            let startUtc = start.ToUniversalTime()
+            let finishUtc = finish.ToUniversalTime()
+            if startUtc >= finishUtc then
+                None
+            else
+                Some { Start = startUtc; Finish = finishUtc }
+
+        let start (period: OccupiedPeriod) = period.Start
+        let finish (period: OccupiedPeriod) = period.Finish
+
+        let overlaps (left: OccupiedPeriod) (right: OccupiedPeriod) =
+            left.Start < right.Finish && right.Start < left.Finish
 
     type Customer = private {
         Id: CustomerId
@@ -393,30 +416,51 @@ module Domain =
         let status (subscription: Subscription) = subscription.Status
         let cancelledAt (subscription: Subscription) = subscription.CancelledAt
 
+        let occupiedPeriod (subscription: Subscription) =
+            match subscription.Status, subscription.CancelledAt with
+            | Active, _ -> OccupiedPeriod.tryCreate subscription.StartedAt subscription.ExpiresAt
+            | Cancelled, Some cancelledAt ->
+                let finish = min subscription.ExpiresAt cancelledAt
+                OccupiedPeriod.tryCreate subscription.StartedAt finish
+            | Cancelled, None -> None
+
         let start (store: Store) (id: SubscriptionId) (customerId: CustomerId) (productId: ProductId) (term: string) (startedAt: DateTimeOffset) (expiresAt: DateTimeOffset) =
             if Map.containsKey id store.SubscriptionsById then
                 Error(DuplicateSubscription id)
             elif String.IsNullOrWhiteSpace term then
                 Error InvalidSubscriptionTerm
-            elif expiresAt.ToUniversalTime() <= startedAt.ToUniversalTime() then
-                Error SubscriptionExpiryMustFollowStart
-            elif not (Map.containsKey customerId store.CustomersById) then
-                Error(CustomerNotFound customerId)
-            elif not (Map.containsKey productId store.ProductsById) then
-                Error(ProductNotFound productId)
             else
-                let subscription = {
-                    Id = id
-                    CustomerId = customerId
-                    ProductId = productId
-                    Term = term.Trim()
-                    StartedAt = startedAt.ToUniversalTime()
-                    ExpiresAt = expiresAt.ToUniversalTime()
-                    Status = Active
-                    CancelledAt = None
-                }
-                let updated = { store with SubscriptionsById = Map.add id subscription store.SubscriptionsById }
-                Ok(updated, subscription)
+                match OccupiedPeriod.tryCreate startedAt expiresAt with
+                | None -> Error SubscriptionExpiryMustFollowStart
+                | Some requestedPeriod ->
+                    if not (Map.containsKey customerId store.CustomersById) then
+                        Error(CustomerNotFound customerId)
+                    elif not (Map.containsKey productId store.ProductsById) then
+                        Error(ProductNotFound productId)
+                    else
+                        let hasOverlap =
+                            store.SubscriptionsById
+                            |> Map.exists (fun _ existing ->
+                                existing.CustomerId = customerId
+                                && existing.ProductId = productId
+                                && (occupiedPeriod existing
+                                    |> Option.exists (OccupiedPeriod.overlaps requestedPeriod)))
+
+                        if hasOverlap then
+                            Error SubscriptionOverlap
+                        else
+                            let subscription = {
+                                Id = id
+                                CustomerId = customerId
+                                ProductId = productId
+                                Term = term.Trim()
+                                StartedAt = startedAt.ToUniversalTime()
+                                ExpiresAt = expiresAt.ToUniversalTime()
+                                Status = Active
+                                CancelledAt = None
+                            }
+                            let updated = { store with SubscriptionsById = Map.add id subscription store.SubscriptionsById }
+                            Ok(updated, subscription)
 
         let cancel (store: Store) (id: SubscriptionId) (cancelledAt: DateTimeOffset) =
             match Map.tryFind id store.SubscriptionsById with

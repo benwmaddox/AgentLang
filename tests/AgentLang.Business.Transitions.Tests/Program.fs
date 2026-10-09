@@ -15,6 +15,14 @@ module Program =
         { Store: Domain.Store
           Known: KnownEntityIds }
 
+    // A summary of separately parsed files, not a mixed-version source document.
+    type private BusinessFixture =
+        { Records: RecordDefinition list
+          Scalars: ScalarTypeDefinition list
+          Words: FlowWordDefinition list
+          Tests: FlowTestDefinition list
+          Examples: FlowExampleDefinition list }
+
     let mutable private assertions = 0
     let mutable private groups = 0
     let mutable private totalWords = 0
@@ -486,6 +494,101 @@ module Program =
             | Error problem -> Error problem
             | Ok(cancelledStore, _) -> Domain.Subscription.cancel cancelledStore baseSubscription (instant secondCancelText) |> Result.map fst
         compareStoreResult "subscription.cancel already-cancelled precedence" (eval engine "conformance::cancel-twice(business::seed(unit))" |> outputValue) secondCancelExpected oracle.Known |> ignore
+
+    let private testOccupiedPeriods (engine: Runtime.Engine) =
+        // The oracle enumerates 100 ns cells, independently of endpoint comparisons.
+        let origin = instant "2026-01-02T12:00:00.0000000+00:00"
+        let at (tick: int) = origin.AddTicks(int64 tick)
+        let text tick = (at tick).ToString("O", CultureInfo.InvariantCulture)
+        let expression tick = instantExpr (text tick)
+        let cells first finish = Set.ofList [ first .. finish - 1 ]
+        let endpoints period =
+            int ((Domain.OccupiedPeriod.start period).UtcTicks - origin.UtcTicks),
+            int ((Domain.OccupiedPeriod.finish period).UtcTicks - origin.UtcTicks)
+        let languageEndpoints node =
+            int ((instant (fieldScalar node "start")).UtcTicks - origin.UtcTicks),
+            int ((instant (fieldScalar node "finish")).UtcTicks - origin.UtcTicks)
+        for first in 0 .. 4 do
+            for finish in 0 .. 4 do
+                let occupied = cells first finish
+                let expected = if Set.isEmpty occupied then None else Some(first, finish)
+                let actual =
+                    eval engine $"occupied-period::try-create({expression first}, {expression finish})"
+                    |> outputValue |> optionValue languageEndpoints
+                equal expected actual $"Flow occupied period ({first},{finish})"
+                equal expected (Domain.OccupiedPeriod.tryCreate (at first) (at finish) |> Option.map endpoints) $"F# occupied period ({first},{finish})"
+                if Set.isEmpty occupied then
+                    let rejection = evalFailure engine $"occupiedPeriod::new(start = {expression first}, finish = {expression finish})"
+                    equal "RECORD_VALIDATION_FAILED" (stringValue rejection.["error"].["code"]) "invalid period cannot be directly constructed"
+        let intervals = [ for first in 0 .. 3 do for finish in first + 1 .. 4 do yield first, finish ]
+        for leftStart, leftFinish in intervals do
+            for rightStart, rightFinish in intervals do
+                let expected = not (Set.isEmpty (Set.intersect (cells leftStart leftFinish) (cells rightStart rightFinish)))
+                let left = Domain.OccupiedPeriod.tryCreate (at leftStart) (at leftFinish) |> Option.get
+                let right = Domain.OccupiedPeriod.tryCreate (at rightStart) (at rightFinish) |> Option.get
+                equal expected (Domain.OccupiedPeriod.overlaps left right) "F# period set intersection"
+                let code = $"occupied-period::overlaps?(occupiedPeriod::new(start = {expression leftStart}, finish = {expression leftFinish}), occupiedPeriod::new(start = {expression rightStart}, finish = {expression rightFinish}))"
+                let value = eval engine code |> outputValue
+                equal expected (boolValue value.["value"]) "Flow period set intersection"
+
+        let oracle, _ = seedOracle ()
+        let existingId = oracle.Known.Subscriptions.Head
+        let customer = oracle.Known.Customers.Head
+        let product = oracle.Known.Products.Head
+        let customerKey = Domain.CustomerId.toString customer
+        let productKey = Domain.ProductId.toString product
+        let existingKey = Domain.SubscriptionId.toString existingId
+        let requestKey = "30000000-0000-0000-0000-000000000099"
+        let requestId = subscriptionId requestKey
+        let unchangedProbe =
+            "word conformance.occupancy-unchanged(original: Store, first: Instant, finish: Instant) -> Store {\n"
+            + "  effects none\n"
+            + $"  let attempt = subscription::start(original, {subscriptionIdExpr requestKey}, {customerIdExpr customerKey}, {productIdExpr productKey}, \"monthly\", first, finish);\n"
+            + "  original\n}"
+        defineTemporary engine "define occupancy rejection state probe" unchangedProbe |> ignore
+        let emptyStore =
+            Domain.Store.empty
+            |> Domain.Store.addCustomer (Domain.Store.customer customer oracle.Store |> Option.get)
+            |> Result.bind (Domain.Store.addProduct (Domain.Store.product product oracle.Store |> Option.get))
+            |> oracleOk "create occupancy grid's empty store"
+        for cancellation in [ None; Some 0; Some 1; Some 4; Some 5 ] do
+            let startedStore, started =
+                Domain.Subscription.start emptyStore existingId customer product "monthly" (at 0) (at 4)
+                |> oracleOk "start occupancy grid subscription"
+            let store, subscription =
+                match cancellation with
+                | None -> startedStore, started
+                | Some tick -> Domain.Subscription.cancel startedStore existingId (at tick) |> oracleOk "cancel occupancy grid subscription"
+            let occupied = cells 0 4 |> Set.filter (fun tick -> cancellation |> Option.forall (fun stop -> tick < stop))
+            let expectedPeriod = if Set.isEmpty occupied then None else Some(Set.minElement occupied, Set.maxElement occupied + 1)
+            equal expectedPeriod (Domain.Subscription.occupiedPeriod subscription |> Option.map endpoints) "F# subscription occupancy"
+            let status, cancelledAt =
+                match cancellation with
+                | None -> "active", "option::none<Instant>()"
+                | Some tick -> "cancelled", $"option::some<Instant>({expression tick})"
+            let subscriptionExpression =
+                $"subscription::new(id = {subscriptionIdExpr existingKey}, customer-id = {customerIdExpr customerKey}, product-id = {productIdExpr productKey}, term = \"monthly\", started-at = {expression 0}, expires-at = {expression 4}, status = SubscriptionStatus::new(\"{status}\"), cancelled-at = {cancelledAt})"
+            let flowPeriod = eval engine $"subscription::occupied-period({subscriptionExpression})" |> outputValue |> optionValue languageEndpoints
+            equal expectedPeriod flowPeriod "Flow subscription occupancy"
+            let storeExpression = $"store::with-subscriptions(business::seed(unit), list::singleton<Subscription>({subscriptionExpression}))"
+            let requests = [ -1, 0; 0, 1; 1, 2; 3, 4; 4, 5; -1, 5 ]
+            for first, finish in requests do
+                let expectedOverlap = not (Set.isEmpty (Set.intersect occupied (cells first finish)))
+                let label = $"occupancy cancellation={cancellation}, request=({first},{finish})"
+                let expected = Domain.Subscription.start store requestId customer product "monthly" (at first) (at finish) |> Result.map fst
+                match expected with
+                | Error problem ->
+                    check expectedOverlap $"{label}: reference rejects only independently overlapping cells"
+                    equal "SUBSCRIPTION_OVERLAP" (Domain.DomainError.code problem) $"{label}: reference overlap code"
+                | Ok _ -> check (not expectedOverlap) $"{label}: reference accepts only independently disjoint cells"
+                let call = $"subscription::start({storeExpression}, {subscriptionIdExpr requestKey}, {customerIdExpr customerKey}, {productIdExpr productKey}, \"monthly\", {expression first}, {expression finish})"
+                let result = eval engine call |> outputValue
+                equal (if expectedOverlap then "error" else "ok") (resultCase result) $"{label}: Flow independent occupancy result"
+                compareStoreResult label result expected (addKnownSubscription requestId oracle.Known) |> ignore
+                if expectedOverlap then
+                    let unchanged = eval engine $"conformance::occupancy-unchanged({storeExpression}, {expression first}, {expression finish})" |> outputValue |> readLanguageStore
+                    let before = Contract.Projection.store store oracle.Known |> contractOk "project occupancy grid pre-state"
+                    equal before unchanged $"{label}: rejected start preserves input state"
 
     let private invoiceLineExpr product description (quantity: int64) (unitPrice: int64) (lineTotal: int64) =
         $"invoiceLine::new(product-id = {productIdExpr product}, description = {flowString description}, quantity = {quantity.ToString(CultureInfo.InvariantCulture)}, unit-price = {moneyExpr unitPrice}, line-total = {moneyExpr lineTotal})"
@@ -1071,7 +1174,7 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
             let effects = dispatch engine "effects" [ "word", jstr word ] |> expectOk $"query transition effects of {word}" |> fun response -> response.["data"] |> jsonStrings
             equal [] effects $"{word} models provider outcomes as pure values with no host effects"
 
-    let private testLibraryPersistence (engine: Runtime.Engine) projectPath (document: FlowProjectDocument) =
+    let private testLibraryPersistence (engine: Runtime.Engine) projectPath (document: BusinessFixture) =
         let names = document.Words |> List.map _.Name |> List.sort
         let typeNames = (document.Records |> List.map _.Name) @ (document.Scalars |> List.map _.Name) |> List.sort
         totalWords <- names.Length
@@ -1859,13 +1962,15 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
 
     [<EntryPoint>]
     let main argv =
-        let evidencePath, command =
+        let evidencePath =
             match argv |> Array.toList with
-            | [] -> None, "dotnet run --project tests/AgentLang.Business.Transitions.Tests/AgentLang.Business.Transitions.Tests.fsproj --configuration Debug"
-            | [ "--evidence"; path ] ->
-                Some path,
-                $"dotnet run --project tests/AgentLang.Business.Transitions.Tests/AgentLang.Business.Transitions.Tests.fsproj --configuration Debug -- --evidence {path}"
+            | [] -> None
+            | [ "--evidence"; path ] -> Some path
             | _ -> failwith "Usage: AgentLang.Business.Transitions.Tests [--evidence <relative-or-absolute-path>]"
+        let command =
+            Environment.GetCommandLineArgs()
+            |> Array.map (fun argument -> System.Text.Json.JsonSerializer.Serialize(argument))
+            |> String.concat " "
 
         let root = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", ".."))
         let fixtureFiles =
@@ -1875,20 +1980,28 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
               "business-subscriptions.agent"
               "business-invoices.agent"
               "business-payments-email.agent" ]
-        let source =
-            fixtureFiles
-            |> List.map (fun name -> Path.Combine(root, "examples", name) |> File.ReadAllText)
-            |> String.concat Environment.NewLine
-        let document =
-            FlowParser.parseDocument "<business-transitions>" source
-            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+        let fixtures =
+            fixtureFiles |> List.map (fun name ->
+                let source = Path.Combine(root, "examples", name) |> File.ReadAllText
+                let version = if name = "business-subscriptions.agent" then 2 else 1
+                let parsed =
+                    FlowParser.parseDocumentWithVersion version name source
+                    |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+                name, version, source, parsed)
+        let documents = fixtures |> List.map (fun (_, _, _, parsed) -> parsed)
+        let document: BusinessFixture =
+            { Records = documents |> List.collect _.Records
+              Scalars = documents |> List.collect _.Scalars
+              Words = documents |> List.collect _.Words
+              Tests = documents |> List.collect _.Tests
+              Examples = documents |> List.collect _.Examples }
         check (not (List.isEmpty document.Words)) "joined fixture declares business words"
         check (not (List.isEmpty document.Tests)) "joined fixture includes attached tests"
         check (not (List.isEmpty document.Examples)) "joined fixture includes examples"
-        equal 53 document.Words.Length "all expected authored business words are present"
-        equal 31 (document.Records.Length + document.Scalars.Length) "all expected nominal business types are present"
-        equal 154 document.Tests.Length "all expected attached business test cases are present"
-        equal 44 document.Examples.Length "all expected business examples are present"
+        equal 59 document.Words.Length "all expected authored business words are present"
+        equal 33 (document.Records.Length + document.Scalars.Length) "all expected nominal business types are present"
+        equal 184 document.Tests.Length "all expected attached business test cases are present"
+        equal 47 document.Examples.Length "all expected business examples are present"
 
         let projectPath = Path.Combine(Path.GetTempPath(), $"agentlang-business-transitions-{Guid.NewGuid():N}")
         Directory.CreateDirectory projectPath |> ignore
@@ -1901,11 +2014,19 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
         let mutable populatedDeliveryReloadedEngine: Runtime.Engine option = None
         try
           try
-            let definition = dispatch engine "define" [ "frontend", jstr "flow"; "source", jstr source ] |> expectOk "define all six business fixture files in one Engine request"
-            let definedWords = definition.["data"].["words"].AsArray()
-            let definedTypes = definition.["data"].["types"].AsArray()
-            equal document.Words.Length definedWords.Count "one atomic definition stages every authored word"
-            equal (document.Records.Length + document.Scalars.Length) definedTypes.Count "one atomic definition stages every nominal type"
+            let mutable definedWords = 0
+            let mutable definedTypes = 0
+            for name, version, source, _ in fixtures do
+                let definition =
+                    dispatch engine "define"
+                        [ "frontend", jstr "flow"
+                          "syntaxVersion", JsonValue.Create(version) :> JsonNode
+                          "source", jstr source ]
+                    |> expectOk $"define {name} with its authored syntax version"
+                definedWords <- definedWords + definition.["data"].["words"].AsArray().Count
+                definedTypes <- definedTypes + definition.["data"].["types"].AsArray().Count
+            equal document.Words.Length definedWords "file definitions stage every authored word"
+            equal (document.Records.Length + document.Scalars.Length) definedTypes "file definitions stage every nominal type"
 
             runGroup "fixture tests and examples" (fun () ->
                 runResultTests engine document.Tests.Length |> ignore
@@ -1914,6 +2035,7 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
                 totalExamples <- count)
             runGroup "deterministic seed, full-state projection, and strong types" (fun () -> testSeedAndTypedBoundaries engine)
             runGroup "subscription start, cancel, and error precedence" (fun () -> testSubscriptions engine)
+            runGroup "validated occupied periods and independent tick occupancy" (fun () -> testOccupiedPeriods engine)
             runGroup "invoice lines, totals, and creation" (fun () -> testInvoiceTransitions engine)
             runGroup "payment and email transition contracts" (fun () -> testPayments engine; testEmailTransitions engine)
             runGroup "stateful renewal, billing, payment, and FIFO retry" (fun () -> testEndToEndState engine)

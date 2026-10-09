@@ -1,0 +1,15 @@
+{
+  "archive": "evidence.zip",
+  "entries": 105,
+  "bytes": 2059633,
+  "sha256": "310558629262dac445ca65bfe042deec9039a422c1855a6a6d5823b299c5bb31",
+  "sourceFiles": [
+    "examples/business-subscriptions.agent",
+    "experiments/AgentLang.Business/Business.fs",
+    "tests/AgentLang.Business.Tests/Program.fs",
+    "tests/AgentLang.Business.Transitions.Tests/Program.fs",
+    "scripts/Prepare-BusinessPolicyTrial.ps1",
+    "docs/BUSINESS-LANGUAGE-PLAN.md",
+    "docs/ROADMAP.md"
+  ]
+}

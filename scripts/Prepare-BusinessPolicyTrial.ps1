@@ -361,11 +361,11 @@ function Test-ExistingSeed([string]$SeedRoot, [string]$Mode, [object[]]$Expected
     }
     if ($Mode -eq 'growing') {
         $expectedCounts = [ordered]@{
-            authoredWords = 53
-            types = 31
-            tests = 154
-            examples = 44
-            libraryWords = 51
+            authoredWords = 59
+            types = 33
+            tests = 184
+            examples = 47
+            libraryWords = 57
             projectWords = 2
         }
         foreach ($countName in $expectedCounts.Keys) {
@@ -409,17 +409,17 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
     $projectNames = @('email.delivery-fold-step', 'email.apply-delivery-result')
     $libraryNames = @()
     if ($Growing) {
-        $wordNames = Get-FlowNames $InputPaths '^\s*word\s+([A-Za-z0-9_.?!-]+)\s*\('
+        $wordNames = Get-FlowNames $InputPaths '^\s*(?:word|fn)\s+([A-Za-z0-9_.?!-]+)\s*\('
         $typeNames = Get-FlowNames $InputPaths '^\s*(?:type|record)\s+([A-Za-z][A-Za-z0-9_]*)\b'
         $testNames = Get-FlowNames $InputPaths '^\s*test\s+([A-Za-z0-9_./?!-]+)\s*\{'
         $exampleNames = Get-FlowNames $InputPaths '^\s*example\s+([A-Za-z0-9_./?!-]+)\s*\{'
         if ($sourceInputs.Count -ne 6) {
             throw 'Growing seed must comprise exactly the six frozen business Flow documents.'
         }
-        if ($wordNames.Count -ne 53 -or $typeNames.Count -ne 31 -or $testNames.Count -ne 154 -or $exampleNames.Count -ne 44) {
-            throw "Growing source inventory drifted: expected 53 words, 31 types, 154 tests, and 44 examples; found $($wordNames.Count), $($typeNames.Count), $($testNames.Count), and $($exampleNames.Count)."
+        if ($wordNames.Count -ne 59 -or $typeNames.Count -ne 33 -or $testNames.Count -ne 184 -or $exampleNames.Count -ne 47) {
+            throw "Growing source inventory drifted: expected 59 words, 33 types, 184 tests, and 47 examples; found $($wordNames.Count), $($typeNames.Count), $($testNames.Count), and $($exampleNames.Count)."
         }
-        if (@($wordNames | Sort-Object -Unique).Count -ne 53 -or @($typeNames | Sort-Object -Unique).Count -ne 31) {
+        if (@($wordNames | Sort-Object -Unique).Count -ne 59 -or @($typeNames | Sort-Object -Unique).Count -ne 33) {
             throw 'Growing source inventory contains duplicate word or type names.'
         }
         foreach ($name in $projectNames) {
@@ -428,8 +428,8 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
             }
         }
         $libraryNames = @($wordNames | Where-Object { $projectNames -cnotcontains $_ })
-        if ($libraryNames.Count -ne 51) {
-            throw "Growing seed expected 51 library functions after maturity split; found $($libraryNames.Count)."
+        if ($libraryNames.Count -ne 57) {
+            throw "Growing seed expected 57 library functions after maturity split; found $($libraryNames.Count)."
         }
         $forbiddenWords = @($wordNames | Where-Object { $_ -match '^customer\.(premium\?|discount-basis-points|discounted-balance)$' })
         if ($forbiddenWords.Count -gt 0) {
@@ -441,7 +441,11 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
     [System.IO.Directory]::CreateDirectory($SeedRoot) | Out-Null
     $projectOnlySource = $null
     if ($Growing) {
-        $projectOnlySource = Invoke-FlowOwnedSourceExtractor $InputPaths $projectNames $CliPath $SeedRoot
+        $projectOwnerInputPaths = @($InputPaths | Where-Object { [System.IO.Path]::GetFileName($_) -ceq 'business-payments-email.agent' })
+        if ($projectOwnerInputPaths.Count -ne 1) {
+            throw 'Growing seed source extraction requires business-payments-email.agent as the project-only owner document.'
+        }
+        $projectOnlySource = Invoke-FlowOwnedSourceExtractor $projectOwnerInputPaths $projectNames $CliPath $SeedRoot
         $actualOwners = @($projectOnlySource.words | Sort-Object -CaseSensitive)
         $expectedOwners = @($projectNames | Sort-Object -CaseSensitive)
         if (($actualOwners -join "`n") -cne ($expectedOwners -join "`n")) {
@@ -477,8 +481,8 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
         if (($actualProjectExamples -join "`n") -cne ($expectedProjectExamplesSorted -join "`n")) {
             throw 'Parsed project-only example attachments differ from the current source inventory.'
         }
-        if ((154 - $projectOnlySource.tests.Count) -ne 149) {
-            throw "Expected the project-only functions to own five of the 154 seed tests; found $($projectOnlySource.tests.Count)."
+        if ((184 - $projectOnlySource.tests.Count) -ne 179) {
+            throw "Expected the project-only functions to own five of the 184 seed tests; found $($projectOnlySource.tests.Count)."
         }
     }
     $projectPath = Join-Path $SeedRoot 'project'
@@ -488,11 +492,13 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
     $requests = [System.Collections.Generic.List[object]]::new()
     foreach ($inputPath in $InputPaths) {
         $name = [System.IO.Path]::GetFileName($inputPath)
+        $syntaxVersion = if ($name -ceq 'business-subscriptions.agent') { 2 } else { 1 }
         $fixturePath = Join-Path $fixtureDirectory $name
         [System.IO.File]::Copy($inputPath, $fixturePath, $false)
         $requests.Add([ordered]@{
             op = 'define'
             frontend = 'flow'
+            syntaxVersion = $syntaxVersion
             source = [System.IO.File]::ReadAllText($inputPath)
         })
     }
@@ -514,7 +520,7 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
         $libraryWordsIndex = $requests.Count
         $requests.Add([ordered]@{ op = 'words' })
         $restoreSourceIndex = $requests.Count
-        $requests.Add([ordered]@{ op = 'define'; frontend = 'flow'; source = $projectOnlySource.source })
+        $requests.Add([ordered]@{ op = 'define'; frontend = 'flow'; syntaxVersion = 1; source = $projectOnlySource.source })
         $restoredTestsIndex = $requests.Count
         $requests.Add([ordered]@{ op = 'test-all' })
         $projectCommitIndex = $requests.Count
@@ -528,12 +534,12 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
     }
     $responses = Invoke-AgentJsonl $projectPath $requests.ToArray() $CliPath
     if ($Growing) {
-        Assert-TestResults $responses[$initialTestsIndex] 154 'Growing full-source seed test-all'
+        Assert-TestResults $responses[$initialTestsIndex] 184 'Growing full-source seed test-all'
         Assert-WordInventory $responses[$beforeDiscardWordsIndex] $wordNames 'candidate' @() 'Growing full staged-word inventory'
         if ($responses[$discardCallerIndex].kind -cne 'discard' -or $responses[$discardHelperIndex].kind -cne 'discard') {
             throw 'Expected to discard the two finite-domain project-only functions before the aggregate library commit.'
         }
-        Assert-TestResults $responses[$remainingTestsIndex] 149 'Growing library-only test-all after project-only discard'
+        Assert-TestResults $responses[$remainingTestsIndex] 179 'Growing library-only test-all after project-only discard'
         Assert-WordInventory $responses[$remainingWordsIndex] $libraryNames 'candidate' @() 'Growing library-only staged-word inventory'
         if ($responses[$libraryCommitIndex].kind -cne 'commit') {
             throw 'Expected one aggregate commit for the complete library-eligible vocabulary.'
@@ -542,7 +548,7 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
         if ($responses[$restoreSourceIndex].kind -cne 'defined') {
             throw 'Expected the parsed project-only source declarations and attachments to be restored as candidates.'
         }
-        Assert-TestResults $responses[$restoredTestsIndex] 154 'Growing restored full-source test-all'
+        Assert-TestResults $responses[$restoredTestsIndex] 184 'Growing restored full-source test-all'
         if ($responses[$projectCommitIndex].kind -cne 'commit') {
             throw 'Expected the two finite-domain project-only functions to commit together as project vocabulary.'
         }
@@ -572,7 +578,7 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
     }
     $freshResponses = Invoke-AgentJsonl $projectPath $verifyRequests.ToArray() $CliPath
     if ($Growing) {
-        Assert-TestResults $freshResponses[1] 154 'Growing fresh-process test-all'
+        Assert-TestResults $freshResponses[1] 184 'Growing fresh-process test-all'
         Assert-WordInventory $freshResponses[0] ($libraryNames + $projectNames) 'persistent' $libraryNames 'Growing fresh-process inventory'
         $inventory = @($freshResponses[0].data.words)
         foreach ($wordName in $wordNames) {
@@ -597,8 +603,8 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
         }
         $durableTests = @($wordNames | ForEach-Object { $freshResponses[$describeIndexes[$_]].data.testCount } | Measure-Object -Sum).Sum
         $durableExamples = @($wordNames | ForEach-Object { $freshResponses[$describeIndexes[$_]].data.exampleCount } | Measure-Object -Sum).Sum
-        if ($durableTests -ne 154 -or $durableExamples -ne 44) {
-            throw "Fresh process metadata inventory drifted: expected 154 tests and 44 examples; found $durableTests and $durableExamples."
+        if ($durableTests -ne 184 -or $durableExamples -ne 47) {
+            throw "Fresh process metadata inventory drifted: expected 184 tests and 47 examples; found $durableTests and $durableExamples."
         }
         foreach ($typeName in $allTypes) {
             if ($freshResponses[$typeSourceIndexes[$typeName]].kind -cne 'source') {
@@ -620,7 +626,7 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
         sourceInputs = $sourceInputs
         sourceExtraction = if ($Growing) {
             [pscustomobject]@{
-                parser = 'AgentLang.Core.FlowParser.parseDocumentWithVersion'
+                parser = 'AgentLang.Core.FlowParser.parseDocumentWithVersion (Flow/1 project-only owner documents)'
                 owners = @($projectNames)
                 sourceSha256 = $projectOnlySource.sourceSha256
                 words = @($projectOnlySource.words)
@@ -634,11 +640,11 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
             files = $projectInventory
         }
         counts = [pscustomobject]@{
-            authoredWords = if ($Growing) { 53 } else { 0 }
-            types = if ($Growing) { 31 } else { $allTypes.Count }
-            tests = if ($Growing) { 154 } else { 0 }
-            examples = if ($Growing) { 44 } else { 0 }
-            libraryWords = if ($Growing) { 51 } else { 0 }
+            authoredWords = if ($Growing) { 59 } else { 0 }
+            types = if ($Growing) { 33 } else { $allTypes.Count }
+            tests = if ($Growing) { 184 } else { 0 }
+            examples = if ($Growing) { 47 } else { 0 }
+            libraryWords = if ($Growing) { 57 } else { 0 }
             projectWords = if ($Growing) { 2 } else { 0 }
         }
     }

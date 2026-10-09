@@ -152,6 +152,125 @@ module Program =
         errorCode "SUBSCRIPTION_ALREADY_CANCELLED" "cannot cancel twice" (Subscription.cancel cancelledStore sid (timestamp 5))
         equal Cancelled (Store.subscription sid cancelledStore |> Option.map Subscription.status |> Option.defaultValue Active) "stored lifecycle state remains cancelled"
 
+    let private testOccupiedPeriodsAndSubscriptionOverlap () =
+        let period start finish label =
+            match OccupiedPeriod.tryCreate start finish with
+            | Some value -> value
+            | None -> failwith $"{label}: expected a nonempty occupied period"
+
+        let baseTime = timestamp 1
+        let fromDay day = baseTime.AddDays(float day)
+        let fromTick tick = baseTime.AddTicks(int64 tick)
+
+        check (OccupiedPeriod.tryCreate baseTime baseTime |> Option.isNone) "occupied period rejects equal endpoints"
+        check (OccupiedPeriod.tryCreate (baseTime.AddTicks 1L) baseTime |> Option.isNone) "occupied period rejects reversed endpoints"
+
+        let offsetStart = DateTimeOffset(2026, 1, 1, 7, 0, 0, TimeSpan.FromHours(-5.0))
+        let offsetFinish = DateTimeOffset(2026, 1, 1, 18, 0, 0, TimeSpan.FromHours(4.0))
+        let offsetPeriod = period offsetStart offsetFinish "offset period"
+        equal baseTime (OccupiedPeriod.start offsetPeriod) "occupied period normalizes its start to UTC"
+        equal (baseTime.AddHours 2.0) (OccupiedPeriod.finish offsetPeriod) "occupied period normalizes its finish to UTC"
+        equal TimeSpan.Zero (OccupiedPeriod.start offsetPeriod).Offset "occupied start exposes a zero offset"
+        equal TimeSpan.Zero (OccupiedPeriod.finish offsetPeriod).Offset "occupied finish exposes a zero offset"
+
+        // A finite discrete-day oracle independently checks every pair of
+        // intervals whose boundaries lie in this bounded day range.
+        for leftStart in 0 .. 4 do
+            for leftFinish in leftStart + 1 .. 5 do
+                let left = period (fromDay leftStart) (fromDay leftFinish) "day interval"
+                let leftDays = [ leftStart .. leftFinish - 1 ] |> Set.ofList
+                for rightStart in 0 .. 4 do
+                    for rightFinish in rightStart + 1 .. 5 do
+                        let right = period (fromDay rightStart) (fromDay rightFinish) "day interval"
+                        let rightDays = [ rightStart .. rightFinish - 1 ] |> Set.ofList
+                        let expected = not (Set.intersect leftDays rightDays |> Set.isEmpty)
+                        equal expected (OccupiedPeriod.overlaps left right) "day-set oracle matches half-open overlap"
+
+        // The same oracle at 100 ns precision covers single-tick intervals
+        // and boundaries that differ by exactly one tick.
+        for leftStart in 0 .. 5 do
+            for leftFinish in leftStart + 1 .. 6 do
+                let left = period (fromTick leftStart) (fromTick leftFinish) "tick interval"
+                let leftTicks = [ leftStart .. leftFinish - 1 ] |> Set.ofList
+                for rightStart in 0 .. 5 do
+                    for rightFinish in rightStart + 1 .. 6 do
+                        let right = period (fromTick rightStart) (fromTick rightFinish) "tick interval"
+                        let rightTicks = [ rightStart .. rightFinish - 1 ] |> Set.ofList
+                        let expected = not (Set.intersect leftTicks rightTicks |> Set.isEmpty)
+                        equal expected (OccupiedPeriod.overlaps left right) "tick-set oracle matches half-open overlap"
+
+        let store = baseStore ()
+        let firstId = subscriptionId "30000000-0000-0000-0000-000000000010"
+        let firstStart = timestamp 2
+        let firstFinish = timestamp 4
+        let occupiedStore, active =
+            Subscription.start store firstId primaryCustomerId primaryProductId "monthly" firstStart firstFinish
+            |> ok "start first occupied subscription"
+        let activePeriod = Subscription.occupiedPeriod active |> Option.defaultWith (fun () -> failwith "active subscription has no occupied period")
+        equal firstStart (OccupiedPeriod.start activePeriod) "active subscription occupies its start"
+        equal firstFinish (OccupiedPeriod.finish activePeriod) "active subscription occupies through expiry"
+
+        let offsetOverlapStart = firstStart.ToOffset(TimeSpan.FromHours(-5.0))
+        let offsetOverlapFinish = firstFinish.ToOffset(TimeSpan.FromHours(4.0))
+        errorCode "SUBSCRIPTION_OVERLAP" "offset-equivalent interval overlaps" (Subscription.start occupiedStore (subscriptionId "30000000-0000-0000-0000-000000000011") primaryCustomerId primaryProductId "monthly" offsetOverlapStart offsetOverlapFinish)
+        errorCode "SUBSCRIPTION_OVERLAP" "interior interval overlaps" (Subscription.start occupiedStore (subscriptionId "30000000-0000-0000-0000-000000000012") primaryCustomerId primaryProductId "monthly" (timestamp 3) (timestamp 5))
+        errorCode "SUBSCRIPTION_OVERLAP" "interval beginning one tick before finish overlaps" (Subscription.start occupiedStore (subscriptionId "30000000-0000-0000-0000-000000000013") primaryCustomerId primaryProductId "monthly" (firstFinish.AddTicks(-1L)) (timestamp 5))
+        equal 1 (Store.summary occupiedStore).Subscriptions "rejected overlap leaves the input store unchanged"
+
+        let _, adjacent =
+            Subscription.start occupiedStore (subscriptionId "30000000-0000-0000-0000-000000000014") primaryCustomerId primaryProductId "monthly" firstFinish (timestamp 6)
+            |> ok "adjacent subscription"
+        equal firstFinish (Subscription.occupiedPeriod adjacent |> Option.map OccupiedPeriod.start |> Option.defaultValue baseTime) "adjacent subscription starts at the prior exclusive finish"
+
+        errorCode "DUPLICATE_SUBSCRIPTION" "duplicate id remains first on overlap" (Subscription.start occupiedStore firstId primaryCustomerId primaryProductId "monthly" (timestamp 3) (timestamp 5))
+        errorCode "INVALID_SUBSCRIPTION_TERM" "term validation precedes overlap" (Subscription.start occupiedStore (subscriptionId "30000000-0000-0000-0000-000000000015") primaryCustomerId primaryProductId " " (timestamp 3) (timestamp 5))
+        errorCode "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START" "date validation precedes overlap" (Subscription.start occupiedStore (subscriptionId "30000000-0000-0000-0000-000000000016") primaryCustomerId primaryProductId "monthly" (timestamp 3) (timestamp 3))
+
+        let cancelledNextDayStore, cancelledNextDay = Subscription.cancel occupiedStore firstId (timestamp 3) |> ok "cancel on next day"
+        let truncated = Subscription.occupiedPeriod cancelledNextDay |> Option.defaultWith (fun () -> failwith "next-day cancellation has no occupied period")
+        equal (timestamp 3) (OccupiedPeriod.finish truncated) "cancellation truncates occupancy at cancellation time"
+        check (Subscription.occupiedPeriod active |> Option.isSome) "cancelling a stored copy leaves the original active value unchanged"
+        let _, afterNextDay =
+            Subscription.start cancelledNextDayStore (subscriptionId "30000000-0000-0000-0000-000000000017") primaryCustomerId primaryProductId "monthly" (timestamp 3) (timestamp 5)
+            |> ok "subscription adjacent to next-day cancellation"
+        equal (timestamp 5) (Subscription.occupiedPeriod afterNextDay |> Option.map OccupiedPeriod.finish |> Option.defaultValue baseTime) "subscription after cancellation keeps its requested expiry"
+
+        let atStartId = subscriptionId "30000000-0000-0000-0000-000000000018"
+        let atStartStore, atStart = Subscription.start store atStartId primaryCustomerId primaryProductId "monthly" (timestamp 8) (timestamp 10) |> ok "start cancellation-at-start subscription"
+        let atStartCancelledStore, atStartCancelled = Subscription.cancel atStartStore atStartId (timestamp 8) |> ok "cancel exactly at start"
+        check (Subscription.occupiedPeriod atStartCancelled |> Option.isNone) "cancellation at subscription start produces no occupied period"
+        let _, startsAtSameInstant =
+            Subscription.start atStartCancelledStore (subscriptionId "30000000-0000-0000-0000-000000000019") primaryCustomerId primaryProductId "monthly" (timestamp 8) (timestamp 10)
+            |> ok "start after zero-length cancellation"
+        equal (Some(timestamp 8)) (Subscription.occupiedPeriod startsAtSameInstant |> Option.map OccupiedPeriod.start) "zero-length cancellation does not block a new subscription"
+
+        let afterExpiryId = subscriptionId "30000000-0000-0000-0000-000000000020"
+        let afterExpiryStore, _ = Subscription.start store afterExpiryId primaryCustomerId primaryProductId "monthly" (timestamp 12) (timestamp 14) |> ok "start subscription for late cancellation"
+        let afterExpiryStore, afterExpiry = Subscription.cancel afterExpiryStore afterExpiryId (timestamp 20) |> ok "cancel after expiry"
+        let clippedToExpiry = Subscription.occupiedPeriod afterExpiry |> Option.defaultWith (fun () -> failwith "late cancellation has no occupied period")
+        equal (timestamp 14) (OccupiedPeriod.finish clippedToExpiry) "cancellation after expiry leaves the original expiry"
+        let _, afterExpiryAdjacent =
+            Subscription.start afterExpiryStore (subscriptionId "30000000-0000-0000-0000-000000000021") primaryCustomerId primaryProductId "monthly" (timestamp 14) (timestamp 16)
+            |> ok "start adjacent to expiry after late cancellation"
+        equal (timestamp 14) (Subscription.occupiedPeriod afterExpiryAdjacent |> Option.map OccupiedPeriod.start |> Option.defaultValue baseTime) "late cancellation period ends at expiry"
+
+        let secondProductId = productId "20000000-0000-0000-0000-000000000002"
+        let secondProduct = Product.create secondProductId "Another plan" (Money.ofMinorUnits 100L) |> ok "another product"
+        let withSecondProduct = Store.addProduct secondProduct occupiedStore |> ok "add another product"
+        let _, otherProductSubscription =
+            Subscription.start withSecondProduct (subscriptionId "30000000-0000-0000-0000-000000000022") primaryCustomerId secondProductId "monthly" (timestamp 3) (timestamp 5)
+            |> ok "same customer can overlap on another product"
+        equal secondProductId (Subscription.productId otherProductSubscription) "overlap scope includes the product"
+
+        let secondCustomerId = customerId "10000000-0000-0000-0000-000000000002"
+        let secondEmail = Email.create "grace@example.test" |> ok "second customer email"
+        let secondCustomer = Customer.create secondCustomerId secondEmail "regular" Money.zero (timestamp 1) |> ok "second customer"
+        let withSecondCustomer = Store.addCustomer secondCustomer occupiedStore |> ok "add another customer"
+        let _, otherCustomerSubscription =
+            Subscription.start withSecondCustomer (subscriptionId "30000000-0000-0000-0000-000000000023") secondCustomerId primaryProductId "monthly" (timestamp 3) (timestamp 5)
+            |> ok "another customer can overlap on the same product"
+        equal secondCustomerId (Subscription.customerId otherCustomerSubscription) "overlap scope includes the customer"
+
     let private testInvoiceTotalsAndValidation () =
         let store = baseStore ()
         let secondProductId = productId "20000000-0000-0000-0000-000000000002"
@@ -276,6 +395,7 @@ module Program =
             group "checked minor-unit arithmetic and price invariants" testMoneyArithmeticAndPriceInvariants
             group "immutable store and lookup" testImmutableStoreAndCustomerLookup
             group "subscription lifecycle" testSubscriptionLifecycle
+            group "occupied periods and subscription overlap" testOccupiedPeriodsAndSubscriptionOverlap
             group "invoice totals and validation" testInvoiceTotalsAndValidation
             group "payment provider boundary and receipt" testPaymentProviderBoundaryAndReceipt
             group "email outbox and provider isolation" testEmailOutboxAndProviderIsolation
