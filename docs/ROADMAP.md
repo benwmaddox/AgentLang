@@ -1,6 +1,6 @@
 # Current delivery roadmap
 
-Updated 2026-10-08. This is a delivery order and status map, not a replacement
+Updated 2026-10-09. This is a delivery order and status map, not a replacement
 for the [PRD](PRD.md). Reliable agent edits, discovery and reuse of accumulated
 typed vocabulary remain the primary research question. Runtime performance and
 development cost are separate measurements.
@@ -30,6 +30,15 @@ superiority established. Native conformance and arena selection should
 not wait for every optional feature or proof of a comparative advantage.
 
 ## 1. Finish the bounded vocabulary-retention review
+
+[Report 149](../reports/149-validated-window-reuse.md) validates a typed
+BillingWindow API in both languages: unchanged singleton oracles pass 17/17
+and separately composed batch controls pass 18/18. AgentLang retains full
+library gates while validating once and reusing the total calculation. Fresh,
+sequential agent trials are next; these coordinator-prepared controls are not
+agent-efficacy results. Keep the mailbox model open while this comparison runs:
+specialized typed mailboxes/dataflow boundaries are a candidate, not a decision
+to build a full actor framework.
 
 The interpreter, typed semantic IR, dictionary, task transactions, introspection,
 Flow/1 authoring and existing library coverage gates are implemented. Earlier
