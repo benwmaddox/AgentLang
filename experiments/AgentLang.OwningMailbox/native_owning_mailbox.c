@@ -573,7 +573,10 @@ static int initialize_module_module(const al_owning_mailbox_module *module) {
       layout->types[EXPECTED_STRING_INDEX].type_id != EXPECTED_STRING_TYPE_ID ||
       layout->types[EXPECTED_CONTINUATION_INDEX].kind != AL_OWNING_TYPE_RECORD ||
       layout->types[EXPECTED_STATE_INDEX].kind != AL_OWNING_TYPE_RECORD ||
-      layout->types[EXPECTED_STRING_INDEX].kind != AL_OWNING_TYPE_STRING)
+      layout->types[EXPECTED_STRING_INDEX].kind != AL_OWNING_TYPE_STRING ||
+      layout->types[EXPECTED_CONTINUATION_INDEX].case_count != 0u ||
+      layout->types[EXPECTED_STATE_INDEX].case_count != 0u ||
+      layout->types[EXPECTED_STRING_INDEX].case_count != 0u)
     return 0;
   return initialize->input_count == 1u && initialize->output_count == 1u &&
          initialize->input_type_indexes[0] == EXPECTED_STRING_INDEX &&

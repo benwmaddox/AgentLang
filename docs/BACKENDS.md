@@ -1,6 +1,6 @@
 # Shared semantic IR and later native backends
 
-This is the architecture contract. Source lowering, IR verification, a standalone interpreter, and structured inspection are implemented. The public Runtime now executes verified IR through the interpreter; cutover validation is recorded in report 010. An optional LLVM AOT backend for scalars and fixed-layout records is locally validated; see [report 126](../reports/126-native-mailbox-dispatch.md). JIT and general native release support remain future work.
+This is the architecture contract. Source lowering, IR verification, a standalone interpreter, and structured inspection are implemented. The public Runtime executes verified IR through the interpreter; cutover validation is recorded in report 010. Native prototypes include the earlier graph-backed `LlvmAot` and the selected stable-arena `OwningStackAot` direction. Follow [stable arena lowering](STABLE-ARENA-LOWERING.md) for current memory semantics. JIT and general native release support remain future work.
 
 Source → parsed AST → resolved/type-and-effect-checked definitions → typed semantic IR → interpreter.
 
@@ -42,9 +42,9 @@ experiment. Per-turn scratch with explicit retained mailbox state is the main
 candidate; compare whole-request arenas before adopting it. General native
 release support still requires complete semantics and checked lifetime/ABI rules.
 
-The proposed allocation direction includes [scoped arenas](MEMORY-REGIONS.md) for phase-oriented values and a distinct retained-data strategy. Define escape/promotion and old-generation retention before resetting a region. Bulk reclamation must not invalidate returned values, snapshots or active code, and does not replace resource cleanup. The managed interpreter and eventual native backends share value/lifetime semantics without a promise of identical physical allocation. A standalone native arena/mailbox experiment measured bounded memory behavior in [report 104](../reports/104-native-arena-mailbox-feasibility.md); native record execution now has an invocation-scratch and retained-output boundary ([report 106](../reports/106-native-record-ownership.md)). Source-defined suspension handlers first ran under a managed experiment host ([report 108](../reports/108-native-mailbox-suspension.md)); the bounded native controller and module boundary are described in [report 126](../reports/126-native-mailbox-dispatch.md). Real provider I/O and cancellation lifetimes remain unimplemented.
+Early native experiments used [scoped arenas](MEMORY-REGIONS.md) for phase-oriented values and a distinct retained-data strategy. The selected owning backend now follows the stable-arena contract linked above. Define escape/promotion and old-generation retention before resetting a region. Bulk reclamation must not invalidate returned values, snapshots or active code, and does not replace resource cleanup. The managed interpreter and eventual native backends share value/lifetime semantics without a promise of identical physical allocation. A standalone native arena/mailbox experiment measured bounded memory behavior in [report 104](../reports/104-native-arena-mailbox-feasibility.md); native record execution now has an invocation-scratch and retained-output boundary ([report 106](../reports/106-native-record-ownership.md)). Source-defined suspension handlers first ran under a managed experiment host ([report 108](../reports/108-native-mailbox-suspension.md)); the bounded native controller and module boundary are described in [report 126](../reports/126-native-mailbox-dispatch.md). The later owning backend tests real I/O and cancellation in [report 133](../reports/133-real-io-mailbox-correctness.md); that bounded result is not general release certification.
 
-Later syntax research may introduce a frontend with named inputs, expression notation, or pipelines while retaining local flow through recently produced values. All frontends must lower to this same typed semantic IR and preserve evaluation order, diagnostics, effects, and source-level coverage obligations. Source notation and backend memory behavior are separate experiments. LLVM is an execution/code-generation backend, not necessarily a replacement for the F# host/compiler implementation; lower memory usage requires measured allocation and value-layout choices. See [the late syntax research item](PRD.md#late-research-syntax-and-stack-locality).
+Flow/2 already provides named inputs, expression notation and receiver-style composition. Further syntax research can evaluate how well those forms preserve local data flow. All frontends must lower to this same typed semantic IR and preserve evaluation order, diagnostics, effects, and source-level coverage obligations. Source notation and backend memory behavior are separate experiments. LLVM is an execution/code-generation backend, not necessarily a replacement for the F# host/compiler implementation; lower memory usage requires measured allocation and value-layout choices. See [the late syntax research item](PRD.md#late-research-syntax-and-stack-locality).
 
 Implementation-language flexibility (2026-10-07): F# is the current host, not a
 required architecture choice. Prefer the implementation that is correct,
@@ -54,7 +54,34 @@ managed runtime. Select the later native runtime language on explicit allocator,
 mailbox, interoperability and maintenance needs while preserving semantic and
 ABI conformance. No full host rewrite is required by the native target.
 
-## Native value API boundary
+## Selected owning backend
+
+`OwningStackAot` keeps values inline in bump-allocated arenas and uses compiler
+provenance to authorize rewinds. Ordinary local access, projection and same-arena
+calls transfer location metadata; they do not relocate payloads. Uncertain
+lifetimes retain storage until a later safe boundary. This is the target for
+new native structural-type support; the graph API below is an earlier prototype.
+
+The closed-enum extension is tracked in [report 153](../reports/153-owning-native-enums.md).
+Enums use an eight-byte ordinal and an existing nominal type identity. Layout
+ABI 2 appends a case count to each type descriptor (36 bytes); Stack ABI 1,
+context/event layouts and the 40-byte layout struct remain unchanged. Native
+ingress checks every input, including ignored values and nested enum fields.
+Existing conservative lifetime analysis may retain more space around enum
+operations; no new runtime liveness decision is introduced.
+
+The active stable-arena emitter handles both fixed-size and String-bearing
+layouts. The historical fixed emitter is inactive. Native Option/Result payload
+layouts remain a separate extension. Generic mailbox/bank layout consumers use
+the shared validator, while handwritten application hosts enforce their schemas.
+
+Mailbox manifest format 1 permits additive inspection fields. It now exposes
+`layoutAbiVersion` and `typeDescriptorSizeBytes`, plus per-type `caseCount`.
+Module callback ABI 1 and managed execution-result schema 2 are separate,
+unchanged contracts. Consumers must check the physical layout ABI before reading
+native descriptors; the old 32-byte layout cannot be interpreted as ABI 2.
+
+## Earlier graph-backed native value API boundary
 
 `AgentLang.Llvm` compiles a typed `VerifiedIrBody` and its reachable
 verified dictionary snapshot. The initial target is Windows x64 with Int, Bool

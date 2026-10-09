@@ -13,7 +13,7 @@
 
 #define AL_OWNING_STACK_ABI_VERSION 1u
 
-#define AL_OWNING_LAYOUT_ABI_VERSION 1u
+#define AL_OWNING_LAYOUT_ABI_VERSION 2u
 #define AL_OWNING_LAYOUT_DYNAMIC_U32 UINT32_MAX
 #define AL_OWNING_LAYOUT_MAX_DEPTH 64u
 #define AL_OWNING_LAYOUT_MAX_TYPES 4096u
@@ -24,7 +24,8 @@ enum {
   AL_OWNING_TYPE_BOOL = 2u,
   AL_OWNING_TYPE_UNIT = 3u,
   AL_OWNING_TYPE_RECORD = 4u,
-  AL_OWNING_TYPE_STRING = 5u
+  AL_OWNING_TYPE_STRING = 5u,
+  AL_OWNING_TYPE_ENUM = 6u
 };
 
 enum { AL_OWNING_FIELD_ZERO_WIDTH = 1u };
@@ -38,6 +39,7 @@ typedef struct al_owning_type_descriptor {
   uint32_t fixed_extent_bytes;
   uint32_t minimum_payload_bytes;
   uint32_t minimum_extent_bytes;
+  uint32_t case_count;
 } al_owning_type_descriptor;
 
 typedef struct al_owning_field_descriptor {

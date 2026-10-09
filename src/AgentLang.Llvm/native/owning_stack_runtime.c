@@ -571,10 +571,35 @@ static int32_t al_owning_scan_readable(al_owning_scan_view *view,
   return 1;
 }
 
+static int32_t al_owning_scan_readable_in_owner(
+    al_owning_scan_view *view, uint32_t offset, uint32_t containing_owner_end,
+    uint32_t byte_count) {
+  uint32_t available;
+  if (offset > containing_owner_end || containing_owner_end > view->length) {
+    uint32_t readable_end = containing_owner_end;
+    if (readable_end > view->length)
+      readable_end = view->length;
+    available = offset <= readable_end ? readable_end - offset : 0u;
+    al_owning_scan_failure(view, byte_count, available);
+    return 0;
+  }
+  available = containing_owner_end - offset;
+  if (byte_count > available) {
+    al_owning_scan_failure(view, byte_count, available);
+    return 0;
+  }
+  return al_owning_scan_readable(view, offset, byte_count);
+}
+
 static uint32_t al_owning_read_u32_le(const uint8_t *bytes, uint32_t offset) {
   return (uint32_t)bytes[offset] | ((uint32_t)bytes[offset + 1u] << 8u) |
          ((uint32_t)bytes[offset + 2u] << 16u) |
          ((uint32_t)bytes[offset + 3u] << 24u);
+}
+
+static uint64_t al_owning_read_u64_le(const uint8_t *bytes, uint32_t offset) {
+  return (uint64_t)al_owning_read_u32_le(bytes, offset) |
+         ((uint64_t)al_owning_read_u32_le(bytes, offset + 4u) << 32u);
 }
 
 static void al_owning_write_u32_le(uint8_t *bytes, uint32_t offset,
@@ -653,7 +678,10 @@ static int32_t al_owning_validate_type_descriptor(
       (type->kind != AL_OWNING_TYPE_I64 && type->kind != AL_OWNING_TYPE_BOOL &&
        type->kind != AL_OWNING_TYPE_UNIT &&
        type->kind != AL_OWNING_TYPE_RECORD &&
-       type->kind != AL_OWNING_TYPE_STRING) ||
+       type->kind != AL_OWNING_TYPE_STRING &&
+       type->kind != AL_OWNING_TYPE_ENUM) ||
+      (type->kind == AL_OWNING_TYPE_ENUM ? type->case_count == 0u
+                                         : type->case_count != 0u) ||
       type->minimum_extent_bytes < type->minimum_payload_bytes ||
       (!payload_dynamic &&
        (type->minimum_payload_bytes != type->fixed_payload_bytes ||
@@ -663,9 +691,11 @@ static int32_t al_owning_validate_type_descriptor(
     return 0;
   }
   if ((type->kind == AL_OWNING_TYPE_I64 || type->kind == AL_OWNING_TYPE_BOOL ||
-       type->kind == AL_OWNING_TYPE_UNIT) &&
+       type->kind == AL_OWNING_TYPE_UNIT ||
+       type->kind == AL_OWNING_TYPE_ENUM) &&
       (type->field_count != 0u || payload_dynamic ||
-       type->fixed_payload_bytes != 8u || type->fixed_extent_bytes != 8u)) {
+       type->fixed_payload_bytes != 8u || type->fixed_extent_bytes != 8u ||
+       type->minimum_payload_bytes != 8u || type->minimum_extent_bytes != 8u)) {
     al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL, view->error_id,
                           type_index, layout->type_count);
     return 0;
@@ -961,11 +991,25 @@ static int32_t al_owning_scan_value(al_owning_scan_view *view,
                                &payload, &extent))
       return 0;
     (void)code_units;
+  } else if (type->kind == AL_OWNING_TYPE_ENUM) {
+    uint64_t ordinal;
+    uint32_t required;
+    if (!al_owning_scan_readable_in_owner(view, offset,
+                                          containing_owner_end, 8u))
+      return 0;
+    ordinal = al_owning_read_u64_le(view->bytes, offset);
+    if (ordinal >= (uint64_t)type->case_count) {
+      required = ordinal > UINT32_MAX ? UINT32_MAX : (uint32_t)ordinal;
+      al_owning_scan_failure(view, required, type->case_count);
+      return 0;
+    }
+    payload = 8u;
+    extent = 8u;
   } else if (type->kind == AL_OWNING_TYPE_I64 ||
              type->kind == AL_OWNING_TYPE_BOOL ||
              type->kind == AL_OWNING_TYPE_UNIT) {
-    if (containing_owner_end - offset < 8u ||
-        !al_owning_scan_readable(view, offset, 8u))
+    if (!al_owning_scan_readable_in_owner(view, offset,
+                                          containing_owner_end, 8u))
       return 0;
     payload = 8u;
     extent = 8u;
@@ -1098,8 +1142,8 @@ static int32_t al_owning_scan_value(al_owning_scan_view *view,
       }
     }
     if (payload_wide == 0u) {
-      if (containing_owner_end - offset < 8u ||
-          !al_owning_scan_readable(view, offset, 8u))
+      if (!al_owning_scan_readable_in_owner(view, offset,
+                                            containing_owner_end, 8u))
         return 0;
       for (index = 0u; index < 8u; ++index) {
         if (view->bytes[offset + index] != 0u) {

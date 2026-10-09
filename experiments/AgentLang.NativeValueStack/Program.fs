@@ -5,6 +5,7 @@ open System.Collections.Generic
 open System.Globalization
 open System.IO
 open System.Security.Cryptography
+open System.Runtime.InteropServices
 open System.Text
 open System.Text.Json
 open System.Text.Json.Nodes
@@ -53,6 +54,67 @@ type private StringEntryBodies =
       StableBindingRoundTrip: VerifiedIrBody
       StableUncertainCallScope: VerifiedIrBody }
 
+type private EnumEntryBodies =
+    { Program: VerifiedIrProgram
+      CompilerContext: Compiler.IrLoweringContext
+      SourceOrigins: Map<SourceSpan, SourceSpan>
+      Cases: string list
+      Constructors: Map<string, VerifiedIrBody>
+      Matches: Map<string, VerifiedIrBody>
+      Equalities: Map<string * string, VerifiedIrBody>
+      LocalCallRoundTrip: VerifiedIrBody
+      MakeFixedRecord: VerifiedIrBody
+      ProjectFixedRecord: VerifiedIrBody
+      MakeDynamicRecords: Map<string, VerifiedIrBody>
+      ProjectDynamicRecord: VerifiedIrBody
+      IgnoreEnum: VerifiedIrBody
+      IgnoreFixedRecord: VerifiedIrBody
+      IgnoreDynamicRecord: VerifiedIrBody }
+
+[<Struct; StructLayout(LayoutKind.Sequential, Pack = 8)>]
+type private RawOwningStackContext =
+    val mutable AbiVersion: uint32
+    val mutable StackCapacityBytes: uint32
+    val mutable CursorBytes: uint32
+    val mutable PeakCursorBytes: uint32
+    val mutable LivePayloadBytes: uint32
+    val mutable PeakLivePayloadBytes: uint32
+    val mutable ActiveLocalReservedBytes: uint32
+    val mutable PeakLocalReservedBytes: uint32
+    val mutable LiveLocalPayloadBytes: uint32
+    val mutable PeakLiveLocalPayloadBytes: uint32
+    val mutable StepsConsumed: uint32
+    val mutable TraceEventCount: uint32
+    val mutable TraceEventCapacity: uint32
+    val mutable TraceTruncated: uint32
+    val mutable DuplicateDisjointChecks: uint32
+    val mutable DropSurvivorChecks: uint32
+    val mutable PoisonReuseChecks: uint32
+    val mutable CursorInvariantChecks: uint32
+    val mutable FrameReturnCount: uint32
+    val mutable Status: uint32
+    val mutable ErrorId: uint32
+    val mutable RequiredBytes: uint32
+    val mutable AvailableBytes: uint32
+    val mutable InitBitmapBytes: uint32
+    val mutable CallDepth: uint32
+    val mutable StackData: nativeint
+    val mutable InitBitmap: nativeint
+    val mutable PoisonBitmap: nativeint
+    val mutable TraceEvents: nativeint
+    val mutable DeepCopyBytes: uint64
+    val mutable MoveBytes: uint64
+    val mutable InputCopyBytes: uint64
+    val mutable RetainedCopyBytes: uint64
+
+[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+type private RawOwningExecuteDelegate = delegate of nativeint * nativeint * uint32 * nativeint * uint32 * nativeint * uint32 -> int32
+
+type private RawOwningInvocation =
+    { NativeStatus: int32
+      ContextStatus: uint32
+      RetainedOutput: byte array }
+
 type private LayoutDepthCase =
     { Program: VerifiedIrProgram
       Body: VerifiedIrBody
@@ -100,6 +162,30 @@ let private generatedRecordEntries (records: Map<string, RecordDefinition>) =
                 entry (RecordAccessor(name, field.Name)) (prefix + "." + field.Name) [ TNamed name ] [ field.Type ])
         constructor :: accessors)
 
+let private generatedEnumEntries (enums: Map<string, EnumDefinition>) =
+    enums
+    |> Map.toList
+    |> List.collect (fun (name, definition) ->
+        definition.Cases
+        |> List.map (fun caseName ->
+            let wordName = name + "." + caseName
+            let wordDefinition =
+                { Name = wordName
+                  Inputs = []
+                  Outputs = [ TNamed name ]
+                  Effects = Set.empty
+                  Maturity = LibraryWord
+                  Revision = 1
+                  Documentation = "Generated enum case constructor."
+                  Body = []
+                  SourceText = ""
+                  Span = span "<generated-native-value-stack-enum>" 1 }
+            { Definition = wordDefinition
+              Builtin = Some(EnumCaseConstructor(name, caseName))
+              Status = Persistent
+              Maturity = LibraryWord
+              Revision = 1 }))
+
 let private turnSource repetition =
     let repeatedCalls =
         [ 1 .. repetition ]
@@ -139,8 +225,9 @@ let private compileFlowProgram (source: string) =
               Validator = None
               SourceText = "host-built conformance record; Flow source syntax rejects empty records"
               Span = span "<native-value-stack-empty-record>" 1 }
+    let enums = document.Enums |> List.map (fun definition -> definition.Name, definition) |> Map.ofList
     let words =
-        (generatedRecordEntries records)
+        (generatedRecordEntries records @ generatedEnumEntries enums)
         |> List.fold (fun current entry -> Map.add entry.Definition.Name entry current) Compiler.primitives
     let wordIds =
         words
@@ -157,7 +244,7 @@ let private compileFlowProgram (source: string) =
         { Words = words
           Records = records
           Scalars = Map.empty
-          Enums = Map.empty
+          Enums = enums
           WordIds = wordIds }
     let context: FlowLowering.Context =
         { CompilerContext = compilerContext
@@ -307,6 +394,137 @@ let private compileEntries (source: string) =
     if bodies |> List.exists (fun body -> not (Object.ReferenceEquals(VerifiedIrBody.program body, entries.Program))) then
         invalidOp "Every comparison body must share the exact VerifiedIrProgram instance."
     entries
+
+let private compileEnumEntries () =
+    let source =
+        """enum Signal {
+    case off;
+    case on;
+    case alarm;
+}
+
+record SignalPacket {
+    field signal: Signal;
+    field sequence: Int;
+}
+
+record TextSignalPacket {
+    field note: String;
+    field signal: Signal;
+    field sequence: Int;
+}
+
+fn signal.identity(value: Signal) -> Signal {
+    effects none
+    value
+}
+
+fn signal.describe(value: Signal) -> Int {
+    effects none
+    match value {
+        off => { 10 }
+        on => { 20 }
+        alarm => { 30 }
+    }
+}"""
+    let compiled = compileFlowProgram source
+    let site name column = span ("<native-value-stack-enum-" + name + ">") column
+    let compileBody name inputTypes expressions =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+            compiled.Context.CompilerContext
+            compiled.Program
+            name
+            inputTypes
+            expressions
+            compiled.Context.SourceOrigins
+    let enumDefinition = compiled.Context.CompilerContext.Enums["Signal"]
+    let cases = enumDefinition.Cases
+    let constructors =
+        cases
+        |> List.map (fun caseName ->
+            caseName,
+            compileBody ("native-value-stack-enum-construct-" + caseName) []
+                [ Call("Signal." + caseName, site ("construct-" + caseName) 1) ])
+        |> Map.ofList
+    let matches =
+        cases
+        |> List.map (fun caseName ->
+            caseName,
+            compileBody ("native-value-stack-enum-match-" + caseName) []
+                [ Call("Signal." + caseName, site ("match-construct-" + caseName) 1)
+                  Call("signal.describe", site ("match-call-" + caseName) 2) ])
+        |> Map.ofList
+    let equalities =
+        [ for left in cases do
+              for right in cases do
+                  let body =
+                      compileBody ($"native-value-stack-enum-equals-{left}-{right}") []
+                          [ Call("Signal." + left, site ("equals-left-" + left + "-" + right) 1)
+                            Call("Signal." + right, site ("equals-right-" + left + "-" + right) 2)
+                            Call("equals", site ("equals-" + left + "-" + right) 3) ]
+                  yield (left, right), body ]
+        |> Map.ofList
+    let dynamicConstructors =
+        cases
+        |> List.map (fun caseName ->
+            caseName,
+            compileBody ("native-value-stack-text-signal-construct-" + caseName) []
+                [ Push(LString "x", site ("text-" + caseName) 1)
+                  Call("Signal." + caseName, site ("text-case-" + caseName) 2)
+                  Push(LInt 99L, site ("text-sequence-" + caseName) 3)
+                  Call("textSignalPacket.new", site ("text-record-" + caseName) 4) ])
+        |> Map.ofList
+    let bodies =
+        { Program = compiled.Program
+          CompilerContext = compiled.Context.CompilerContext
+          SourceOrigins = compiled.Context.SourceOrigins
+          Cases = cases
+          Constructors = constructors
+          Matches = matches
+          Equalities = equalities
+          LocalCallRoundTrip =
+            compileBody "native-value-stack-enum-local-call-round-trip" [ TNamed "Signal" ]
+                [ Let("saved", site "local-store" 1)
+                  Load("saved", site "local-load" 2)
+                  Call("signal.identity", site "identity-call" 3) ]
+          MakeFixedRecord =
+            compileBody "native-value-stack-enum-fixed-record-construction" [ TNamed "Signal"; TInt ]
+                [ Call("signalPacket.new", site "fixed-record-construction" 1) ]
+          ProjectFixedRecord =
+            compileBody "native-value-stack-enum-fixed-record-projection" [ TNamed "SignalPacket" ]
+                [ Call("signalPacket.signal", site "fixed-record-projection" 1) ]
+          MakeDynamicRecords = dynamicConstructors
+          ProjectDynamicRecord =
+            compileBody "native-value-stack-enum-dynamic-record-projection" [ TNamed "TextSignalPacket" ]
+                [ Call("textSignalPacket.signal", site "dynamic-record-projection" 1) ]
+          IgnoreEnum =
+            compileBody "native-value-stack-enum-unused-input" [ TNamed "Signal" ]
+                [ Call("drop", site "unused-enum-drop" 1)
+                  Push(LInt 5L, site "unused-enum-result" 2) ]
+          IgnoreFixedRecord =
+            compileBody "native-value-stack-enum-unused-fixed-record-input" [ TNamed "SignalPacket" ]
+                [ Call("drop", site "unused-fixed-drop" 1)
+                  Push(LInt 5L, site "unused-fixed-result" 2) ]
+          IgnoreDynamicRecord =
+            compileBody "native-value-stack-enum-unused-dynamic-record-input" [ TNamed "TextSignalPacket" ]
+                [ Call("drop", site "unused-dynamic-drop" 1)
+                  Push(LInt 5L, site "unused-dynamic-result" 2) ] }
+    let bodiesToCheck =
+        [ yield! constructors |> Map.toList |> List.map snd
+          yield! matches |> Map.toList |> List.map snd
+          yield! equalities |> Map.toList |> List.map snd
+          yield! dynamicConstructors |> Map.toList |> List.map snd
+          yield bodies.LocalCallRoundTrip
+          yield bodies.MakeFixedRecord
+          yield bodies.ProjectFixedRecord
+          yield bodies.ProjectDynamicRecord
+          yield bodies.IgnoreEnum
+          yield bodies.IgnoreFixedRecord
+          yield bodies.IgnoreDynamicRecord ]
+    if not (VerifiedIrProgram.isBackendExecutable bodies.Program)
+       || bodiesToCheck |> List.exists (fun body -> not (Object.ReferenceEquals(VerifiedIrBody.program body, bodies.Program))) then
+        invalidOp "Every enum conformance comparison must share one backend-authorized VerifiedIrProgram instance."
+    bodies
 
 let private compileStringEntries (source: string) =
     let flowCompiled = compileFlowProgram source
@@ -679,6 +897,120 @@ let private bytesHex (bytes: byte array) = Convert.ToHexString(bytes).ToLowerInv
 
 let private bytesFromHex (value: string) = Convert.FromHexString value
 
+let private inspectRawOwningContextAbi (abiOracle: JsonElement) =
+    let expectedSize = abiOracle.GetProperty("contextSizeBytes").GetInt32()
+    let actualSize = Marshal.SizeOf<RawOwningStackContext>()
+    let expectedOffsets = abiOracle.GetProperty("contextOffsetsBytes")
+    let checks = ResizeArray<obj>()
+    let mutable passed = actualSize = expectedSize
+    checks.Add(box (jsonObject [
+        "member", box "context-size"
+        "expectedBytes", box expectedSize
+        "actualBytes", box actualSize ]))
+    let contextFields = [
+        "stack_data", "StackData"
+        "init_bitmap", "InitBitmap"
+        "poison_bitmap", "PoisonBitmap"
+        "trace_events", "TraceEvents"
+        "deep_copy_bytes", "DeepCopyBytes"
+        "move_bytes", "MoveBytes"
+        "input_copy_bytes", "InputCopyBytes"
+        "retained_copy_bytes", "RetainedCopyBytes" ]
+    for oracleName, fieldName in contextFields do
+        let expected = expectedOffsets.GetProperty(oracleName).GetInt32()
+        let actual = Marshal.OffsetOf<RawOwningStackContext>(fieldName).ToInt32()
+        let fieldPassed = actual = expected
+        passed <- passed && fieldPassed
+        checks.Add(box (jsonObject [
+            "member", box oracleName
+            "expectedOffsetBytes", box expected
+            "actualOffsetBytes", box actual ]))
+    passed, jsonObject [ "checks", box (checks.ToArray()) ]
+
+let private invokeRawOwningEntry
+    (program: OwningStackCompiledProgram)
+    (abiOracle: JsonElement)
+    (inputBytes: byte array)
+    (inputExtents: uint32 array)
+    (inputCount: uint32)
+    (retainedOutput: byte array) =
+    let contextAbiPassed, _ = inspectRawOwningContextAbi abiOracle
+    if not contextAbiPassed then
+        invalidOp "Raw owning-entry tests require the context layout pinned by the independent ABI oracle."
+    let stackCapacity = 512
+    let bitmapBytes = stackCapacity / 8
+    let traceCapacity = 64
+    let allocate byteCount = Marshal.AllocHGlobal(max 1 byteCount)
+    let mutable libraryHandle = IntPtr.Zero
+    let mutable contextPointer = IntPtr.Zero
+    let mutable stackPointer = IntPtr.Zero
+    let mutable initBitmapPointer = IntPtr.Zero
+    let mutable poisonBitmapPointer = IntPtr.Zero
+    let mutable tracePointer = IntPtr.Zero
+    let mutable inputPointer = IntPtr.Zero
+    let mutable extentsPointer = IntPtr.Zero
+    let mutable outputPointer = IntPtr.Zero
+    try
+        libraryHandle <- NativeLibrary.Load(program.LibraryPath)
+        let address = NativeLibrary.GetExport(libraryHandle, "agentlang_owning_execute")
+        let execute = Marshal.GetDelegateForFunctionPointer<RawOwningExecuteDelegate>(address)
+        contextPointer <- allocate (Marshal.SizeOf<RawOwningStackContext>())
+        stackPointer <- allocate stackCapacity
+        initBitmapPointer <- allocate bitmapBytes
+        poisonBitmapPointer <- allocate bitmapBytes
+        tracePointer <- allocate (traceCapacity * 40)
+        inputPointer <- allocate inputBytes.Length
+        let extentSlots = max inputExtents.Length (int inputCount)
+        extentsPointer <- allocate (extentSlots * sizeof<uint32>)
+        outputPointer <- allocate retainedOutput.Length
+        let clearPointer pointer count =
+            if count > 0 then Marshal.Copy(Array.zeroCreate<byte> count, 0, pointer, count)
+        clearPointer stackPointer stackCapacity
+        clearPointer initBitmapPointer bitmapBytes
+        clearPointer poisonBitmapPointer bitmapBytes
+        clearPointer tracePointer (traceCapacity * 40)
+        clearPointer inputPointer inputBytes.Length
+        clearPointer extentsPointer (extentSlots * sizeof<uint32>)
+        if inputBytes.Length > 0 then Marshal.Copy(inputBytes, 0, inputPointer, inputBytes.Length)
+        for index, extent in inputExtents |> Array.indexed do
+            Marshal.WriteInt32(extentsPointer, index * sizeof<uint32>, int extent)
+        Marshal.Copy(retainedOutput, 0, outputPointer, retainedOutput.Length)
+        let mutable context = Unchecked.defaultof<RawOwningStackContext>
+        context.AbiVersion <- 1u
+        context.StackCapacityBytes <- uint32 stackCapacity
+        context.TraceEventCapacity <- uint32 traceCapacity
+        context.InitBitmapBytes <- uint32 bitmapBytes
+        context.StackData <- stackPointer
+        context.InitBitmap <- initBitmapPointer
+        context.PoisonBitmap <- poisonBitmapPointer
+        context.TraceEvents <- tracePointer
+        Marshal.StructureToPtr(context, contextPointer, false)
+        let status =
+            execute.Invoke(
+                contextPointer,
+                inputPointer,
+                uint32 inputBytes.Length,
+                extentsPointer,
+                inputCount,
+                outputPointer,
+                uint32 retainedOutput.Length)
+        let returnedContext = Marshal.PtrToStructure<RawOwningStackContext>(contextPointer)
+        let outputAfter = Array.zeroCreate<byte> retainedOutput.Length
+        if outputAfter.Length > 0 then Marshal.Copy(outputPointer, outputAfter, 0, outputAfter.Length)
+        { NativeStatus = status
+          ContextStatus = returnedContext.Status
+          RetainedOutput = outputAfter }
+    finally
+        if outputPointer <> IntPtr.Zero then Marshal.FreeHGlobal outputPointer
+        if extentsPointer <> IntPtr.Zero then Marshal.FreeHGlobal extentsPointer
+        if inputPointer <> IntPtr.Zero then Marshal.FreeHGlobal inputPointer
+        if tracePointer <> IntPtr.Zero then Marshal.FreeHGlobal tracePointer
+        if poisonBitmapPointer <> IntPtr.Zero then Marshal.FreeHGlobal poisonBitmapPointer
+        if initBitmapPointer <> IntPtr.Zero then Marshal.FreeHGlobal initBitmapPointer
+        if stackPointer <> IntPtr.Zero then Marshal.FreeHGlobal stackPointer
+        if contextPointer <> IntPtr.Zero then Marshal.FreeHGlobal contextPointer
+        if libraryHandle <> IntPtr.Zero then NativeLibrary.Free libraryHandle
+
 let private codeUnitsHexFromString (value: string) =
     let bytes = Array.zeroCreate<byte> (value.Length * 2)
     for index in 0 .. value.Length - 1 do
@@ -850,6 +1182,101 @@ let private validateTypeLayouts (fixture: JsonElement) (typeNames: string list) 
                 "payloadBytes", box layout.PayloadBytes
                 "extentBytes", box layout.ExtentBytes
                 "fields", box (layout.Fields |> List.map (fun field -> jsonObject [ "name", box field.FieldName; "offsetBytes", box field.OffsetBytes; "payloadBytes", box field.PayloadBytes; "extentBytes", box field.ExtentBytes ])) ]))
+        |> List.toArray
+    checks.ToArray(), failures.ToArray(), summary
+
+let private validateEnumTypeLayouts (fixture: JsonElement) (layouts: OwningStackTypeLayout list) =
+    let checks = ResizeArray<obj>()
+    let failures = ResizeArray<string>()
+    let oracle = fixture.GetProperty("enumConformance").GetProperty("layouts")
+    for expectedType in oracle.EnumerateObject() do
+        let typeName = expectedType.Name
+        match layouts |> List.tryFind (fun layout -> String.Equals(layout.TypeName, typeName, StringComparison.Ordinal)) with
+        | None ->
+            checks.Add(box (jsonObject [ "type", box typeName; "present", box false ]))
+            failures.Add($"Enum oracle type layout is missing for {typeName}.")
+        | Some layout ->
+            let expected = expectedType.Value
+            let expectedPayload = expected.GetProperty("payloadBytes").GetInt32()
+            let expectedExtent = expected.GetProperty("extentBytes").GetInt32()
+            let expectedDynamic = expected.GetProperty("isDynamic").GetBoolean()
+            let expectedMinimumPayload = expected.GetProperty("minimumPayloadBytes").GetInt32()
+            let expectedMinimumExtent = expected.GetProperty("minimumExtentBytes").GetInt32()
+            let typePassed =
+                layout.PayloadBytes = expectedPayload
+                && layout.ExtentBytes = expectedExtent
+                && layout.IsDynamic = expectedDynamic
+                && layout.MinimumPayloadBytes = expectedMinimumPayload
+                && layout.MinimumExtentBytes = expectedMinimumExtent
+            checks.Add(box (jsonObject [
+                "type", box typeName
+                "payloadBytesExpected", box expectedPayload
+                "payloadBytesActual", box layout.PayloadBytes
+                "extentBytesExpected", box expectedExtent
+                "extentBytesActual", box layout.ExtentBytes
+                "dynamicExpected", box expectedDynamic
+                "dynamicActual", box layout.IsDynamic
+                "minimumPayloadBytesExpected", box expectedMinimumPayload
+                "minimumPayloadBytesActual", box layout.MinimumPayloadBytes
+                "minimumExtentBytesExpected", box expectedMinimumExtent
+                "minimumExtentBytesActual", box layout.MinimumExtentBytes ]))
+            if not typePassed then failures.Add($"Enum oracle type layout does not match {typeName}.")
+            let expectedFields = expected.GetProperty("fields").EnumerateArray() |> Seq.toArray
+            if layout.Fields.Length <> expectedFields.Length then
+                failures.Add($"{typeName} expected {expectedFields.Length} enum-layout field(s), got {layout.Fields.Length}.")
+            for expectedField in expectedFields do
+                let fieldName = expectedField.GetProperty("name").GetString()
+                match layout.Fields |> List.tryFind (fun field -> String.Equals(field.FieldName, fieldName, StringComparison.Ordinal)) with
+                | None ->
+                    checks.Add(box (jsonObject [ "type", box typeName; "field", box fieldName; "present", box false ]))
+                    failures.Add($"Enum oracle field {typeName}.{fieldName} is missing.")
+                | Some field ->
+                    let expectedOffset = expectedField.GetProperty("offsetBytes").GetInt32()
+                    let expectedFieldPayload = expectedField.GetProperty("payloadBytes").GetInt32()
+                    let expectedFieldExtent = expectedField.GetProperty("extentBytes").GetInt32()
+                    let expectedOffsetDynamic = expectedField.GetProperty("isOffsetDynamic").GetBoolean()
+                    let expectedFieldDynamic = expectedField.GetProperty("isDynamic").GetBoolean()
+                    let expectedFieldMinimumPayload = expectedField.GetProperty("minimumPayloadBytes").GetInt32()
+                    let expectedFieldMinimumExtent = expectedField.GetProperty("minimumExtentBytes").GetInt32()
+                    let passed =
+                        field.OffsetBytes = expectedOffset
+                        && field.PayloadBytes = expectedFieldPayload
+                        && field.ExtentBytes = expectedFieldExtent
+                        && field.IsOffsetDynamic = expectedOffsetDynamic
+                        && field.IsDynamic = expectedFieldDynamic
+                        && field.MinimumPayloadBytes = expectedFieldMinimumPayload
+                        && field.MinimumExtentBytes = expectedFieldMinimumExtent
+                    checks.Add(box (jsonObject [
+                        "type", box typeName
+                        "field", box fieldName
+                        "offsetBytesExpected", box expectedOffset
+                        "offsetBytesActual", box field.OffsetBytes
+                        "payloadBytesExpected", box expectedFieldPayload
+                        "payloadBytesActual", box field.PayloadBytes
+                        "extentBytesExpected", box expectedFieldExtent
+                        "extentBytesActual", box field.ExtentBytes
+                        "offsetDynamicExpected", box expectedOffsetDynamic
+                        "offsetDynamicActual", box field.IsOffsetDynamic
+                        "dynamicExpected", box expectedFieldDynamic
+                        "dynamicActual", box field.IsDynamic
+                        "minimumPayloadBytesExpected", box expectedFieldMinimumPayload
+                        "minimumPayloadBytesActual", box field.MinimumPayloadBytes
+                        "minimumExtentBytesExpected", box expectedFieldMinimumExtent
+                        "minimumExtentBytesActual", box field.MinimumExtentBytes ]))
+                    if not passed then failures.Add($"Enum oracle field layout does not match {typeName}.{fieldName}.")
+    let summary =
+        layouts
+        |> List.filter (fun layout ->
+            let mutable ignored = Unchecked.defaultof<JsonElement>
+            oracle.TryGetProperty(layout.TypeName, &ignored))
+        |> List.map (fun layout ->
+            box (jsonObject [
+                "type", box layout.TypeName
+                "payloadBytes", box layout.PayloadBytes
+                "extentBytes", box layout.ExtentBytes
+                "minimumPayloadBytes", box layout.MinimumPayloadBytes
+                "minimumExtentBytes", box layout.MinimumExtentBytes
+                "fields", box (layout.Fields |> List.map (fun field -> jsonObject [ "name", box field.FieldName; "offsetBytes", box field.OffsetBytes; "payloadBytes", box field.PayloadBytes; "extentBytes", box field.ExtentBytes; "isOffsetDynamic", box field.IsOffsetDynamic ])) ]))
         |> List.toArray
     checks.ToArray(), failures.ToArray(), summary
 
@@ -3785,6 +4212,352 @@ let private runLayoutDepthCases
         "rejectedRecordLevels", box rejectedRecordLevels
         "rejectedDiagnosticCode", box rejectedCode ]
 
+let private runEnumConformance
+    (checks: ResizeArray<obj>)
+    (failures: ResizeArray<string>)
+    (fixture: JsonElement)
+    (artifactRoot: string)
+    (optimization: LlvmOptimization)
+    (optimizationName: string)
+    (entries: EnumEntryBodies) =
+    let oracle = fixture.GetProperty("enumConformance")
+    let contextAbiOracle = fixture.GetProperty("storageRuntimeTestOracle").GetProperty("abi")
+    let enumType = oracle.GetProperty("enumType").GetString()
+    let fixedRecordType = oracle.GetProperty("fixedRecordType").GetString()
+    let dynamicRecordType = oracle.GetProperty("dynamicRecordType").GetString()
+    let caseElements = oracle.GetProperty("cases").EnumerateArray() |> Seq.toArray
+    let caseNames = caseElements |> Array.map (fun item -> item.GetProperty("name").GetString()) |> Array.toList
+    recordCheck checks failures $"enum/{optimizationName}/verified-case-order" (entries.Cases = caseNames) (jsonObject [
+        "fixtureCaseOrder", box caseNames
+        "verifiedCaseOrder", box entries.Cases ])
+    let layoutChecked = ref false
+    let interpreterHost = noOpHost (NativeDiagnosticSources.fromLoweringContext entries.CompilerContext)
+    let toolchain = LlvmToolchain.discover ()
+    let compile (name: string) (body: VerifiedIrBody) =
+        OwningStackAot.compile toolchain optimization (Path.Combine(artifactRoot, "owning-stack", "enums", optimizationName, name)) body
+    let valueForCase caseName = EnumValue(enumType, caseName)
+    let sequence = oracle.GetProperty("fixedRecord").GetProperty("sequence").GetInt64()
+    let textOracle = oracle.GetProperty("dynamicRecord")
+    let text = textOracle.GetProperty("note").GetString()
+    let dynamicSequence = textOracle.GetProperty("sequence").GetInt64()
+    let fixedRecord caseValue =
+        RecordValue(fixedRecordType, Map.ofList [ "signal", caseValue; "sequence", IntValue sequence ])
+    let dynamicRecord caseValue =
+        RecordValue(dynamicRecordType, Map.ofList [ "note", StringValue text; "signal", caseValue; "sequence", IntValue dynamicSequence ])
+    let interpreterBody (body: VerifiedIrBody) =
+        IrInterpreter.executeBody interpreterHost (VerifiedIrBody.inspect body).BodyName body
+    let interpreterWithRoot (body: VerifiedIrBody) (root: IrInterpreterResult option) (arguments: IrEntryArgument list) =
+        use result = IrInterpreter.executeBodyWithInputs interpreterHost (VerifiedIrBody.inspect body).BodyName body root arguments
+        result.Decode()
+    let outputBuffer bytes = Array.create bytes 0xA5uy
+    let getCaseElement caseName =
+        caseElements
+        |> Array.find (fun item -> String.Equals(item.GetProperty("name").GetString(), caseName, StringComparison.Ordinal))
+    for caseIndex, caseName in caseNames |> List.indexed do
+        let caseOracle = getCaseElement caseName
+        let ordinal = caseOracle.GetProperty("ordinal").GetInt64()
+        let expectedValue = valueForCase caseName
+        let expectedBytes = bytesFromHex (caseOracle.GetProperty("retainedBytesHex").GetString())
+        let ordinalBytesMatch = bytesFromInt64s [ ordinal ] = expectedBytes
+        recordCheck checks failures $"enum/{optimizationName}/{caseName}/fixture-ordinal-bytes" ordinalBytesMatch (jsonObject [
+            "caseOrdinal", box ordinal
+            "expectedLiteralBytes", box (bytesHex expectedBytes)
+            "bytesFromPinnedOrdinal", box (bytesHex (bytesFromInt64s [ ordinal ])) ])
+
+        use constructorProgram = compile ("construct-" + caseName) entries.Constructors[caseName]
+        let constructorInterpreter = interpreterBody entries.Constructors[caseName]
+        let constructorOutput = outputBuffer expectedBytes.Length
+        let constructorResult = constructorProgram.ExecuteInto([], 128, constructorOutput)
+        recordCheck checks failures $"enum/{optimizationName}/{caseName}/constructor-interpreter-owning-and-retained-bytes"
+            (constructorInterpreter = [ expectedValue ]
+             && constructorResult.Values = constructorInterpreter
+             && constructorOutput = expectedBytes
+             && constructorResult.RetainedOutputBytes = expectedBytes
+             && constructorResult.RetainedBytesWritten = expectedBytes.Length)
+            (jsonObject [
+                "interpreterValues", box (ValueInspection.toJson entries.Program constructorInterpreter)
+                "owningValues", box (ValueInspection.toJson entries.Program constructorResult.Values)
+                "expectedRetainedBytes", box (bytesHex expectedBytes)
+                "actualRetainedBytes", box (bytesHex constructorOutput) ])
+
+        use matchProgram = compile ("match-" + caseName) entries.Matches[caseName]
+        let matchInterpreter = interpreterBody entries.Matches[caseName]
+        let matchValue = caseOracle.GetProperty("matchResult").GetInt64()
+        let matchExpected = [ IntValue matchValue ]
+        let matchBytes = bytesFromHex (caseOracle.GetProperty("matchRetainedBytesHex").GetString())
+        let matchBytesMatchOracle = bytesFromInt64s [ matchValue ] = matchBytes
+        let matchOutput = outputBuffer matchBytes.Length
+        let matchResult = matchProgram.ExecuteInto([], 128, matchOutput)
+        recordCheck checks failures $"enum/{optimizationName}/{caseName}/exhaustive-match-interpreter-owning"
+            (matchBytesMatchOracle
+             && matchInterpreter = matchExpected
+             && matchResult.Values = matchInterpreter
+             && matchOutput = matchBytes)
+            (jsonObject [
+                "expectedMatchValue", box matchValue
+                "interpreterValues", box (ValueInspection.toJson entries.Program matchInterpreter)
+                "owningValues", box (ValueInspection.toJson entries.Program matchResult.Values)
+                "fixtureRetainedBytesMatchLiteralMatchValue", box matchBytesMatchOracle
+                "expectedRetainedBytes", box (bytesHex matchBytes)
+                "actualRetainedBytes", box (bytesHex matchOutput) ])
+
+        use localCallProgram = compile ("local-call-" + caseName) entries.LocalCallRoundTrip
+        use enumRoot = IrInterpreter.executeBodyWithInputs interpreterHost ("enum-root-" + caseName) entries.Constructors[caseName] None []
+        let localCallInterpreter = interpreterWithRoot entries.LocalCallRoundTrip (Some enumRoot) [ IrEntryArgument.RetainedRoot 0 ]
+        let localCallOutput = outputBuffer expectedBytes.Length
+        let localCallResult = localCallProgram.ExecuteInto([ expectedValue ], 128, localCallOutput)
+        let localCallMetrics = box localCallResult.Metrics
+        let localCallNoMoves = int64Property localCallMetrics "MoveBytes" = 0L
+        recordCheck checks failures $"enum/{optimizationName}/{caseName}/local-call-round-trip-stays-in-place"
+            (localCallInterpreter = [ expectedValue ]
+             && localCallResult.Values = localCallInterpreter
+             && localCallOutput = expectedBytes
+             && localCallNoMoves)
+            (jsonObject [
+                "interpreterValues", box (ValueInspection.toJson entries.Program localCallInterpreter)
+                "owningValues", box (ValueInspection.toJson entries.Program localCallResult.Values)
+                "retainedBytes", box (bytesHex localCallOutput)
+                "moveBytes", box (int64Property localCallMetrics "MoveBytes")
+                "descriptorTransferCount", box localCallResult.Metrics.DescriptorTransferCount ])
+
+        use fixedProgram = compile ("fixed-record-" + caseName) entries.MakeFixedRecord
+        let fixedInputArguments = [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.IntArgument sequence ]
+        use fixedInterpreterResult =
+            IrInterpreter.executeBodyWithInputs interpreterHost ("enum-fixed-record-" + caseName) entries.MakeFixedRecord (Some enumRoot) fixedInputArguments
+        let fixedInterpreterValues = fixedInterpreterResult.Decode()
+        let fixedExpectedValue = fixedRecord expectedValue
+        let fixedExpectedBytes = bytesFromHex (oracle.GetProperty("fixedRecord").GetProperty("retainedBytesByCase").GetProperty(caseName).GetString())
+        let fixedOutput = outputBuffer fixedExpectedBytes.Length
+        let fixedResult = fixedProgram.ExecuteInto([ expectedValue; IntValue sequence ], 256, fixedOutput)
+        recordCheck checks failures $"enum/{optimizationName}/{caseName}/fixed-record-layout-and-construction"
+            (fixedInterpreterValues = [ fixedExpectedValue ]
+             && fixedResult.Values = fixedInterpreterValues
+             && fixedOutput = fixedExpectedBytes
+            && fixedResult.RetainedBytesWritten = fixedExpectedBytes.Length)
+            (jsonObject [
+                "expectedFieldOffsets", box (oracle.GetProperty("fixedRecord").GetProperty("fieldOffsetsBytes").ToString())
+                "expectedValue", box (ValueInspection.toJson entries.Program [ fixedExpectedValue ])
+                "interpreterValues", box (ValueInspection.toJson entries.Program fixedInterpreterValues)
+                "owningValues", box (ValueInspection.toJson entries.Program fixedResult.Values)
+                "expectedRetainedBytes", box (bytesHex fixedExpectedBytes)
+                "actualRetainedBytes", box (bytesHex fixedOutput) ])
+
+        use fixedProjectionProgram = compile ("fixed-projection-" + caseName) entries.ProjectFixedRecord
+        let fixedProjectionInterpreter = interpreterWithRoot entries.ProjectFixedRecord (Some fixedInterpreterResult) [ IrEntryArgument.RetainedRoot 0 ]
+        let fixedProjectionOutput = outputBuffer expectedBytes.Length
+        let fixedProjectionResult = fixedProjectionProgram.ExecuteInto([ fixedExpectedValue ], 256, fixedProjectionOutput)
+        let fixedProjectionHasFieldEvent = fixedProjectionResult.LayoutEvents |> List.exists (fun event -> event.Kind = "field-extract")
+        let fixedProjectionNoMoves = fixedProjectionResult.Metrics.MoveBytes = 0UL
+        recordCheck checks failures $"enum/{optimizationName}/{caseName}/fixed-record-enum-projection-no-payload-move"
+            (fixedProjectionInterpreter = [ expectedValue ]
+             && fixedProjectionResult.Values = fixedProjectionInterpreter
+             && fixedProjectionOutput = expectedBytes
+             && fixedProjectionHasFieldEvent
+             && fixedProjectionNoMoves)
+            (jsonObject [
+                "interpreterValues", box (ValueInspection.toJson entries.Program fixedProjectionInterpreter)
+                "owningValues", box (ValueInspection.toJson entries.Program fixedProjectionResult.Values)
+                "retainedBytes", box (bytesHex fixedProjectionOutput)
+                "fieldExtractEventFound", box fixedProjectionHasFieldEvent
+                "moveBytes", box fixedProjectionResult.Metrics.MoveBytes
+                "events", box (layoutEventDetails fixedProjectionResult.LayoutEvents) ])
+
+        use dynamicProgram = compile ("dynamic-record-" + caseName) entries.MakeDynamicRecords[caseName]
+        use dynamicInterpreterResult = IrInterpreter.executeBodyWithInputs interpreterHost ("enum-dynamic-record-" + caseName) entries.MakeDynamicRecords[caseName] None []
+        let dynamicInterpreterValues = dynamicInterpreterResult.Decode()
+        let dynamicExpectedValue = dynamicRecord expectedValue
+        let dynamicExpectedBytes = bytesFromHex (textOracle.GetProperty("retainedBytesByCase").GetProperty(caseName).GetString())
+        let dynamicRawInputBytes = bytesFromHex (textOracle.GetProperty("rawInputBytesByCase").GetProperty(caseName).GetString())
+        let dynamicOutput = outputBuffer dynamicExpectedBytes.Length
+        let dynamicResult = dynamicProgram.ExecuteInto([], 256, dynamicOutput)
+        let dynamicFixtureGeometry =
+            let stringBytes = stringBytesFromCodeUnitsHex (codeUnitsHexFromString text)
+            let offsets = textOracle.GetProperty("fieldOffsetsBytesForNoteX")
+            stringBytes.Length = offsets.GetProperty("signal").GetInt32()
+            && offsets.GetProperty("note").GetInt32() = 0
+            && offsets.GetProperty("sequence").GetInt32() = offsets.GetProperty("signal").GetInt32() + 8
+            && bytesFromInt64s [ ordinal ] = Array.sub dynamicExpectedBytes (offsets.GetProperty("signal").GetInt32()) 8
+            && dynamicRawInputBytes = dynamicExpectedBytes
+        recordCheck checks failures $"enum/{optimizationName}/{caseName}/dynamic-record-enum-offset-and-construction"
+            (dynamicFixtureGeometry
+             && dynamicInterpreterValues = [ dynamicExpectedValue ]
+             && dynamicResult.Values = dynamicInterpreterValues
+             && dynamicOutput = dynamicExpectedBytes
+             && dynamicResult.RetainedBytesWritten = dynamicExpectedBytes.Length)
+            (jsonObject [
+                "expectedFieldOffsets", box (textOracle.GetProperty("fieldOffsetsBytesForNoteX").ToString())
+                "expectedValue", box (ValueInspection.toJson entries.Program [ dynamicExpectedValue ])
+                "interpreterValues", box (ValueInspection.toJson entries.Program dynamicInterpreterValues)
+                "owningValues", box (ValueInspection.toJson entries.Program dynamicResult.Values)
+                "fixtureGeometryMatchesLiteralOffsets", box dynamicFixtureGeometry
+                "expectedRetainedBytes", box (bytesHex dynamicExpectedBytes)
+                "actualRetainedBytes", box (bytesHex dynamicOutput) ])
+
+        use dynamicProjectionProgram = compile ("dynamic-projection-" + caseName) entries.ProjectDynamicRecord
+        let dynamicProjectionInterpreter = interpreterWithRoot entries.ProjectDynamicRecord (Some dynamicInterpreterResult) [ IrEntryArgument.RetainedRoot 0 ]
+        let dynamicProjectionOutput = outputBuffer expectedBytes.Length
+        let dynamicProjectionResult = dynamicProjectionProgram.ExecuteInto([ dynamicExpectedValue ], 256, dynamicProjectionOutput)
+        let dynamicProjectionHasFieldEvent = dynamicProjectionResult.LayoutEvents |> List.exists (fun event -> event.Kind = "field-extract")
+        let dynamicProjectionNoMoves = dynamicProjectionResult.Metrics.MoveBytes = 0UL
+        recordCheck checks failures $"enum/{optimizationName}/{caseName}/dynamic-record-enum-projection-no-payload-move"
+            (dynamicProjectionInterpreter = [ expectedValue ]
+             && dynamicProjectionResult.Values = dynamicProjectionInterpreter
+             && dynamicProjectionOutput = expectedBytes
+             && dynamicProjectionHasFieldEvent
+             && dynamicProjectionNoMoves)
+            (jsonObject [
+                "interpreterValues", box (ValueInspection.toJson entries.Program dynamicProjectionInterpreter)
+                "owningValues", box (ValueInspection.toJson entries.Program dynamicProjectionResult.Values)
+                "retainedBytes", box (bytesHex dynamicProjectionOutput)
+                "fieldExtractEventFound", box dynamicProjectionHasFieldEvent
+                "moveBytes", box dynamicProjectionResult.Metrics.MoveBytes
+                "events", box (layoutEventDetails dynamicProjectionResult.LayoutEvents) ])
+
+        if caseIndex = 0 && not !layoutChecked then
+            let layouts =
+                constructorProgram.Layouts @ fixedProgram.Layouts @ dynamicProgram.Layouts
+                |> List.distinctBy (fun layout -> layout.TypeName)
+            let layoutChecks, layoutFailures, layoutSummary = validateEnumTypeLayouts fixture layouts
+            recordCheck checks failures $"enum/{optimizationName}/independent-layout-oracle" (layoutFailures.Length = 0) (jsonObject [
+                "checks", box layoutChecks
+                "failures", box layoutFailures
+                "layouts", box layoutSummary ])
+            layoutChecked := true
+
+        if caseIndex = 0 then
+            let sentinel = bytesFromHex (oracle.GetProperty("rawNativeEntry").GetProperty("sentinelBytesHex").GetString())
+            let checkHostRejected label invalidValue =
+                let output = Array.copy sentinel
+                let before = Array.copy output
+                let mutable rejected = false
+                let mutable errorCode = ""
+                try localCallProgram.ExecuteInto([ invalidValue ], 128, output) |> ignore
+                with error ->
+                    rejected <- true
+                    errorCode <- diagnosticCode error
+                recordCheck checks failures $"enum/{optimizationName}/host-rejects-{label}-without-publishing"
+                    (rejected && output = before)
+                    (jsonObject [
+                        "rejected", box rejected
+                        "diagnosticCode", box errorCode
+                        "retainedBufferUnchanged", box (output = before)
+                        "retainedBytes", box (bytesHex output) ])
+            checkHostRejected "mismatched-nominal-type" (EnumValue("OtherSignal", "off"))
+            checkHostRejected "unknown-case" (EnumValue(enumType, "unknown"))
+
+    for equalityCase in oracle.GetProperty("equalityCases").EnumerateArray() do
+        let left = equalityCase.GetProperty("left").GetString()
+        let right = equalityCase.GetProperty("right").GetString()
+        let expected = equalityCase.GetProperty("expected").GetBoolean()
+        let expectedValues = [ BoolValue expected ]
+        let expectedBytes = bytesFromHex (equalityCase.GetProperty("retainedBytesHex").GetString())
+        let equalityBytesMatchOracle = bytesFromInt64s [ if expected then 1L else 0L ] = expectedBytes
+        let body = entries.Equalities[(left, right)]
+        use equalityProgram = compile ($"equals-{left}-{right}") body
+        let interpreted = interpreterBody body
+        let output = outputBuffer expectedBytes.Length
+        let native = equalityProgram.ExecuteInto([], 128, output)
+        recordCheck checks failures $"enum/{optimizationName}/equals-{left}-{right}-interpreter-owning"
+            (equalityBytesMatchOracle && interpreted = expectedValues && native.Values = interpreted && output = expectedBytes)
+            (jsonObject [
+                "expected", box expected
+                "fixtureRetainedBytesMatchLiteralBoolean", box equalityBytesMatchOracle
+                "interpreterValues", box (ValueInspection.toJson entries.Program interpreted)
+                "owningValues", box (ValueInspection.toJson entries.Program native.Values)
+                "expectedRetainedBytes", box (bytesHex expectedBytes)
+                "actualRetainedBytes", box (bytesHex output) ])
+
+    use rawEnumProgram = compile "raw-unused-enum-input" entries.IgnoreEnum
+    use rawFixedProgram = compile "raw-unused-fixed-record-input" entries.IgnoreFixedRecord
+    use rawDynamicProgram = compile "raw-unused-dynamic-record-input" entries.IgnoreDynamicRecord
+    let rawOracle = oracle.GetProperty("rawNativeEntry")
+    let contextAbiPassed, contextAbiDetails = inspectRawOwningContextAbi contextAbiOracle
+    recordCheck checks failures $"enum/{optimizationName}/raw-context-mirror-matches-independent-abi-oracle"
+        contextAbiPassed contextAbiDetails
+    if not contextAbiPassed then invalidOp "Raw native-entry checks cannot run because the context mirror differs from the independent ABI oracle."
+    let expectedInvalidStatus = uint32 (rawOracle.GetProperty("expectedInvalidRequestStatus").GetInt32())
+    let sentinel = bytesFromHex (rawOracle.GetProperty("sentinelBytesHex").GetString())
+    let rawProgramForBody = function
+        | "enum" -> rawEnumProgram
+        | "fixedRecord" -> rawFixedProgram
+        | "dynamicRecord" -> rawDynamicProgram
+        | other -> invalidOp $"Unknown raw enum conformance body '{other}'."
+    let dynamicOffBytes = bytesFromHex (textOracle.GetProperty("rawInputBytesByCase").GetProperty("off").GetString())
+    let dynamicEnumOffset = textOracle.GetProperty("fieldOffsetsBytesForNoteX").GetProperty("signal").GetInt32()
+    let rawBytes kind ordinal =
+        match kind with
+        | "enum" -> bytesFromInt64s [ ordinal ]
+        | "fixedRecord" -> bytesFromInt64s [ ordinal; sequence ]
+        | "dynamicRecord" ->
+            let bytes = Array.copy dynamicOffBytes
+            Array.Copy(BitConverter.GetBytes(ordinal), 0, bytes, dynamicEnumOffset, 8)
+            bytes
+        | other -> invalidOp $"Unknown raw enum input shape '{other}'."
+    let checkRawRejected name program bytes extents count =
+        let result = invokeRawOwningEntry program contextAbiOracle bytes extents count sentinel
+        let unchanged = result.RetainedOutput = sentinel
+        let passed = result.NativeStatus = int32 expectedInvalidStatus && result.ContextStatus = expectedInvalidStatus && unchanged
+        recordCheck checks failures $"enum/{optimizationName}/raw-native-entry/{name}" passed (jsonObject [
+            "expectedInvalidRequestStatus", box expectedInvalidStatus
+            "nativeStatusExpected", box (int32 expectedInvalidStatus)
+            "nativeStatus", box result.NativeStatus
+            "contextStatus", box result.ContextStatus
+            "inputBytes", box (bytesHex bytes)
+            "inputExtentsBytes", box extents
+            "inputCount", box count
+            "retainedOutputUnchanged", box unchanged
+            "retainedOutputBeforeAndAfterHex", box (bytesHex result.RetainedOutput) ])
+    for invalidOrdinal in rawOracle.GetProperty("invalidOrdinals").EnumerateArray() do
+        let scenarioName = invalidOrdinal.GetProperty("name").GetString()
+        let ordinal = invalidOrdinal.GetProperty("value").GetInt64()
+        for inputKind, bodyName in [ "enum", "enum"; "fixedRecord", "fixed-record"; "dynamicRecord", "dynamic-record" ] do
+            let bytes = rawBytes inputKind ordinal
+            checkRawRejected ($"{scenarioName}-{bodyName}-unused-input") (rawProgramForBody inputKind) bytes [| uint32 bytes.Length |] 1u
+    for malformed in rawOracle.GetProperty("malformedInputs").EnumerateArray() do
+        let name = malformed.GetProperty("name").GetString()
+        let bodyName = malformed.GetProperty("body").GetString()
+        let inputBytes = bytesFromHex (malformed.GetProperty("inputBytesHex").GetString())
+        let inputExtents = malformed.GetProperty("inputExtentsBytes").EnumerateArray() |> Seq.map (fun item -> uint32 (item.GetInt32())) |> Seq.toArray
+        let inputCount = uint32 (malformed.GetProperty("inputCount").GetInt32())
+        checkRawRejected ("malformed-" + name) (rawProgramForBody bodyName) inputBytes inputExtents inputCount
+
+    let unsupportedOracle = oracle.GetProperty("unsupportedSumTypes")
+    let expectedUnsupportedCode = unsupportedOracle.GetProperty("diagnosticCode").GetString()
+    let optionSpan = span "<native-value-stack-option-negative>" 1
+    let optionBody =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+            entries.CompilerContext entries.Program "native-value-stack-option-rejected" []
+            [ Push(LInt 7L, optionSpan)
+              ConstructContainer(OptionSome, [ TInt ], optionSpan) ]
+            entries.SourceOrigins
+    let resultSpan = span "<native-value-stack-result-negative>" 1
+    let resultBody =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+            entries.CompilerContext entries.Program "native-value-stack-result-rejected" []
+            [ Push(LInt 7L, resultSpan)
+              ConstructContainer(ResultOk, [ TInt; TString ], resultSpan) ]
+            entries.SourceOrigins
+    for sumName, body in [ "Option", optionBody; "Result", resultBody ] do
+        let code, errorText =
+            try
+                use _unexpected = compile ("unsupported-" + sumName.ToLowerInvariant()) body
+                "unexpected-success", ""
+            with error -> diagnosticCode error, error.Message
+        recordCheck checks failures $"enum/{optimizationName}/unsupported-{sumName.ToLowerInvariant()}-remains-rejected"
+            (code = expectedUnsupportedCode)
+            (jsonObject [
+                "expectedDiagnosticCode", box expectedUnsupportedCode
+                "actualDiagnosticCode", box code
+                "typeOracle", box (unsupportedOracle.GetProperty(sumName.ToLowerInvariant()).GetString())
+                "diagnostic", box errorText ])
+
+    jsonObject [
+        "optimization", box optimizationName
+        "caseCount", box caseNames.Length
+        "equalityCaseCount", box (oracle.GetProperty("equalityCases").GetArrayLength())
+        "invalidOrdinalCount", box (rawOracle.GetProperty("invalidOrdinals").GetArrayLength())
+        "malformedInputCount", box (rawOracle.GetProperty("malformedInputs").GetArrayLength()) ]
+
 [<EntryPoint>]
 let main argv =
     let reportPath =
@@ -3894,6 +4667,13 @@ let main argv =
             layoutDepthRuns.Add(box (runLayoutDepthCases checks failures options fixture artifactsRoot optimization optimizationName))
         report["stringRuns"] <- stringRuns.ToArray()
         report["layoutDepthRuns"] <- layoutDepthRuns.ToArray()
+        let enumEntries = compileEnumEntries ()
+        report["enumVerifiedProgramInstance"] <- box true
+        report["enumBackendScope"] <- box "The same verified enum program and bodies run through the interpreter and owning O0/O2. Closed enums use literal ordinal bytes in the independent fixture; fixed and String-bearing records pin inline field placement."
+        let enumRuns = ResizeArray<obj>()
+        for optimization, optimizationName in optimizationPairs do
+            enumRuns.Add(box (runEnumConformance checks failures fixture artifactsRoot optimization optimizationName enumEntries))
+        report["enumRuns"] <- enumRuns.ToArray()
     with error ->
         let exceptionDetails =
             [ "Diagnostic"; "Metrics"; "RequiredBytes"; "AvailableBytes"; "Boundary" ]

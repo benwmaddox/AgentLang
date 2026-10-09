@@ -33,14 +33,14 @@ _Static_assert(sizeof(al_owning_stack_event) == 40u,
                "ABI 1 event size changed");
 _Static_assert(offsetof(al_owning_stack_event, checksum) == 32u,
                "ABI 1 event checksum offset changed");
-_Static_assert(sizeof(al_owning_type_descriptor) == 32u,
-               "Layout ABI 1 type descriptor size changed");
+_Static_assert(sizeof(al_owning_type_descriptor) == 36u,
+               "Layout ABI 2 type descriptor size changed");
 _Static_assert(sizeof(al_owning_field_descriptor) == 16u,
-               "Layout ABI 1 field descriptor size changed");
+               "Layout ABI 2 field descriptor size changed");
 _Static_assert(sizeof(al_owning_value_size) == 8u,
-               "Layout ABI 1 value size result changed");
+               "Layout ABI 2 value size result changed");
 _Static_assert(sizeof(al_owning_field_location) == 12u,
-               "Layout ABI 1 field location result changed");
+               "Layout ABI 2 field location result changed");
 _Static_assert(
     offsetof(al_owning_type_descriptor, kind) == 0u &&
         offsetof(al_owning_type_descriptor, type_id) == 4u &&
@@ -49,21 +49,22 @@ _Static_assert(
         offsetof(al_owning_type_descriptor, fixed_payload_bytes) == 16u &&
         offsetof(al_owning_type_descriptor, fixed_extent_bytes) == 20u &&
         offsetof(al_owning_type_descriptor, minimum_payload_bytes) == 24u &&
-        offsetof(al_owning_type_descriptor, minimum_extent_bytes) == 28u,
-    "Layout ABI 1 type descriptor offsets changed");
+        offsetof(al_owning_type_descriptor, minimum_extent_bytes) == 28u &&
+        offsetof(al_owning_type_descriptor, case_count) == 32u,
+    "Layout ABI 2 type descriptor offsets changed");
 _Static_assert(offsetof(al_owning_field_descriptor, child_type_index) == 0u &&
                    offsetof(al_owning_field_descriptor, fixed_offset_bytes) ==
                        4u &&
                    offsetof(al_owning_field_descriptor, flags) == 8u &&
                    offsetof(al_owning_field_descriptor, reserved) == 12u,
-               "Layout ABI 1 field descriptor offsets changed");
+               "Layout ABI 2 field descriptor offsets changed");
 _Static_assert(offsetof(al_owning_value_size, payload_bytes) == 0u &&
                    offsetof(al_owning_value_size, extent_bytes) == 4u,
-               "Layout ABI 1 value size offsets changed");
+               "Layout ABI 2 value size offsets changed");
 _Static_assert(offsetof(al_owning_field_location, offset_bytes) == 0u &&
                    offsetof(al_owning_field_location, payload_bytes) == 4u &&
                    offsetof(al_owning_field_location, extent_bytes) == 8u,
-               "Layout ABI 1 field location offsets changed");
+               "Layout ABI 2 field location offsets changed");
 _Static_assert(AL_OWNING_LAYOUT_MAX_TYPES == 4096u,
                "Layout ABI type descriptor ceiling changed");
 _Static_assert(AL_OWNING_LAYOUT_MAX_FIELDS == 65536u,
@@ -72,17 +73,17 @@ _Static_assert(AL_OWNING_LAYOUT_MAX_FIELDS == 65536u,
 _Static_assert(sizeof(al_owning_stack_context) == 168u,
                "ABI 1 64-bit context size changed");
 _Static_assert(sizeof(al_owning_layout) == 40u,
-               "Layout ABI 1 layout descriptor size changed");
+               "Layout ABI 2 layout descriptor size changed");
 _Static_assert(offsetof(al_owning_layout, abi_version) == 0u,
-               "Layout ABI 1 version offset changed");
+               "Layout ABI 2 version offset changed");
 _Static_assert(offsetof(al_owning_layout, types) == 8u,
-               "Layout ABI 1 type pointer offset changed");
+               "Layout ABI 2 type pointer offset changed");
 _Static_assert(offsetof(al_owning_layout, type_count) == 16u,
-               "Layout ABI 1 type count offset changed");
+               "Layout ABI 2 type count offset changed");
 _Static_assert(offsetof(al_owning_layout, fields) == 24u,
-               "Layout ABI 1 field pointer offset changed");
+               "Layout ABI 2 field pointer offset changed");
 _Static_assert(offsetof(al_owning_layout, field_count) == 32u,
-               "Layout ABI 1 field count offset changed");
+               "Layout ABI 2 field count offset changed");
 _Static_assert(offsetof(al_owning_stack_context, stack_data) == 104u,
                "ABI 1 stack pointer offset changed");
 _Static_assert(offsetof(al_owning_stack_context, init_bitmap) == 112u,
@@ -115,20 +116,20 @@ enum {
 };
 
 static const al_owning_type_descriptor al_test_dynamic_types[] = {
-    {AL_OWNING_TYPE_I64, AL_TEST_TYPE_INT, 0u, 0u, 8u, 8u, 8u, 8u},
-    {AL_OWNING_TYPE_BOOL, AL_TEST_TYPE_BOOL, 0u, 0u, 8u, 8u, 8u, 8u},
-    {AL_OWNING_TYPE_UNIT, AL_TEST_TYPE_UNIT, 0u, 0u, 8u, 8u, 8u, 8u},
+    {AL_OWNING_TYPE_I64, AL_TEST_TYPE_INT, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_BOOL, AL_TEST_TYPE_BOOL, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_UNIT, AL_TEST_TYPE_UNIT, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
     {AL_OWNING_TYPE_STRING, AL_TEST_TYPE_STRING, 0u, 0u,
-     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u},
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
     {AL_OWNING_TYPE_RECORD, AL_TEST_TYPE_TEXT_LEAF, 0u, 2u,
-     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u},
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u, 0u},
     {AL_OWNING_TYPE_RECORD, AL_TEST_TYPE_TEXT_ENVELOPE, 2u, 2u,
-     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 24u, 24u},
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 24u, 24u, 0u},
     {AL_OWNING_TYPE_RECORD, AL_TEST_TYPE_TEXT_STATE, 4u, 2u,
-     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 32u, 32u},
-    {AL_OWNING_TYPE_RECORD, AL_TEST_TYPE_EMPTY_RECORD, 6u, 0u, 0u, 8u, 0u, 8u},
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 32u, 32u, 0u},
+    {AL_OWNING_TYPE_RECORD, AL_TEST_TYPE_EMPTY_RECORD, 6u, 0u, 0u, 8u, 0u, 8u, 0u},
     {AL_OWNING_TYPE_RECORD, AL_TEST_TYPE_EMPTY_WRAPPER, 6u, 1u, 0u, 8u, 0u,
-     8u}};
+     8u, 0u}};
 
 static const al_owning_field_descriptor al_test_dynamic_fields[] = {
     {AL_TEST_LAYOUT_STRING, 0u, 0u, 0u},
@@ -144,6 +145,54 @@ static const al_owning_layout al_test_dynamic_layout = {
     AL_TEST_LAYOUT_TYPE_COUNT, al_test_dynamic_fields,
     (uint32_t)(sizeof(al_test_dynamic_fields) /
                sizeof(al_test_dynamic_fields[0]))};
+
+enum {
+  AL_TEST_ENUM_LAYOUT_TAG = 0u,
+  AL_TEST_ENUM_LAYOUT_INT = 1u,
+  AL_TEST_ENUM_LAYOUT_STRING = 2u,
+  AL_TEST_ENUM_LAYOUT_FIXED_RECORD = 3u,
+  AL_TEST_ENUM_LAYOUT_NESTED_FIXED = 4u,
+  AL_TEST_ENUM_LAYOUT_TEXT_RECORD = 5u,
+  AL_TEST_ENUM_LAYOUT_NESTED_TEXT = 6u,
+  AL_TEST_ENUM_LAYOUT_DYNAMIC_TAIL_RECORD = 7u,
+  AL_TEST_ENUM_LAYOUT_TYPE_COUNT = 8u
+};
+
+static const al_owning_type_descriptor al_test_enum_types[] = {
+    {AL_OWNING_TYPE_ENUM, 301u, 0u, 0u, 8u, 8u, 8u, 8u, 3u},
+    {AL_OWNING_TYPE_I64, 302u, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_STRING, 303u, 0u, 0u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_RECORD, 304u, 0u, 2u, 16u, 16u, 16u, 16u, 0u},
+    {AL_OWNING_TYPE_RECORD, 305u, 2u, 1u, 16u, 16u, 16u, 16u, 0u},
+    {AL_OWNING_TYPE_RECORD, 306u, 3u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u,
+     0u},
+    {AL_OWNING_TYPE_RECORD, 307u, 5u, 1u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u,
+     0u},
+    {AL_OWNING_TYPE_RECORD, 308u, 6u, 3u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 24u, 24u,
+     0u}};
+
+static const al_owning_field_descriptor al_test_enum_fields[] = {
+    {AL_TEST_ENUM_LAYOUT_TAG, 0u, 0u, 0u},
+    {AL_TEST_ENUM_LAYOUT_INT, 8u, 0u, 0u},
+    {AL_TEST_ENUM_LAYOUT_FIXED_RECORD, 0u, 0u, 0u},
+    {AL_TEST_ENUM_LAYOUT_STRING, 0u, 0u, 0u},
+    {AL_TEST_ENUM_LAYOUT_TAG, AL_OWNING_LAYOUT_DYNAMIC_U32, 0u, 0u},
+    {AL_TEST_ENUM_LAYOUT_TEXT_RECORD, 0u, 0u, 0u},
+    {AL_TEST_ENUM_LAYOUT_STRING, 0u, 0u, 0u},
+    {AL_TEST_ENUM_LAYOUT_TAG, AL_OWNING_LAYOUT_DYNAMIC_U32, 0u, 0u},
+    {AL_TEST_ENUM_LAYOUT_INT, AL_OWNING_LAYOUT_DYNAMIC_U32, 0u, 0u}};
+
+static const al_owning_layout al_test_enum_layout = {
+    AL_OWNING_LAYOUT_ABI_VERSION,
+    al_test_enum_types,
+    AL_TEST_ENUM_LAYOUT_TYPE_COUNT,
+    al_test_enum_fields,
+    (uint32_t)(sizeof(al_test_enum_fields) /
+               sizeof(al_test_enum_fields[0]))};
 
 typedef struct al_test_fixture {
   uint8_t raw[AL_TEST_DYNAMIC_STACK_CAPACITY + 2u * AL_TEST_GUARD_BYTES];
@@ -1035,7 +1084,8 @@ static int al_test_dynamic_descriptor_validation(void) {
                                     0u,
                                     8u,
                                     0u,
-                                    8u};
+                                    8u,
+                                    0u};
     if (index != 0u) {
       fields[2u * (index - 1u)] = (al_owning_field_descriptor){
           index - 1u, 0u, AL_OWNING_FIELD_ZERO_WIDTH, 0u};
@@ -1080,7 +1130,8 @@ static int al_test_dynamic_descriptor_validation(void) {
                                       0u,
                                       8u,
                                       0u,
-                                      8u};
+                                      8u,
+                                      0u};
       if (index != 0u)
         too_deep_fields[index - 1u] = (al_owning_field_descriptor){
             index - 1u, 0u, AL_OWNING_FIELD_ZERO_WIDTH, 0u};
@@ -1102,8 +1153,8 @@ static int al_test_dynamic_descriptor_validation(void) {
   /* A two-node record cycle is rejected by the tri-color check. */
   {
     al_owning_type_descriptor cycle_types[2] = {
-        {AL_OWNING_TYPE_RECORD, 3000u, 0u, 1u, 8u, 8u, 8u, 8u},
-        {AL_OWNING_TYPE_RECORD, 3001u, 1u, 1u, 8u, 8u, 8u, 8u}};
+        {AL_OWNING_TYPE_RECORD, 3000u, 0u, 1u, 8u, 8u, 8u, 8u, 0u},
+        {AL_OWNING_TYPE_RECORD, 3001u, 1u, 1u, 8u, 8u, 8u, 8u, 0u}};
     al_owning_field_descriptor cycle_fields[2] = {{1u, 0u, 0u, 0u},
                                                   {0u, 0u, 0u, 0u}};
     al_owning_layout cycle_layout = {AL_OWNING_LAYOUT_ABI_VERSION, cycle_types,
@@ -1695,6 +1746,303 @@ failed:
   return 0;
 }
 
+static int al_test_closed_enum_valid_values(void) {
+  al_test_fixture fixture;
+  al_owning_stack_context *ctx;
+  uint8_t enum_bytes[8] = {0u};
+  uint8_t fixed_record[16] = {0u};
+  uint8_t dynamic_record[24] = {0u};
+  const uint8_t string_data[] = {0x41u, 0x00u};
+  uint32_t payload;
+  uint32_t extent;
+  uint32_t ordinal;
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  AL_CHECK(al_test_case_begin("closed_enum_valid_values", &fixture));
+  for (ordinal = 0u; ordinal < 3u; ++ordinal) {
+    al_test_write_u64_le(enum_bytes, 0u, ordinal);
+    AL_CHECK(al_owning_measure_external_value(
+                 ctx, &al_test_enum_layout, AL_TEST_ENUM_LAYOUT_TAG,
+                 enum_bytes, sizeof(enum_bytes), 0u, AL_TEST_DYNAMIC_ERROR_ID,
+                 &payload, &extent) == 0);
+    AL_CHECK(payload == 8u && extent == 8u);
+  }
+
+  al_test_write_u64_le(fixed_record, 0u, 2u);
+  al_test_write_u64_le(fixed_record, 8u, 77u);
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_enum_layout, AL_TEST_ENUM_LAYOUT_FIXED_RECORD,
+               fixed_record, sizeof(fixed_record), 0u,
+               AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) == 0);
+  AL_CHECK(payload == 16u && extent == 16u);
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_enum_layout, AL_TEST_ENUM_LAYOUT_NESTED_FIXED,
+               fixed_record, sizeof(fixed_record), 0u,
+               AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) == 0);
+  AL_CHECK(payload == 16u && extent == 16u);
+
+  al_test_build_string(dynamic_record, 1u, string_data);
+  al_test_write_u64_le(dynamic_record, 16u, 1u);
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_enum_layout, AL_TEST_ENUM_LAYOUT_TEXT_RECORD,
+               dynamic_record, sizeof(dynamic_record), 0u,
+               AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) == 0);
+  AL_CHECK(payload == 18u && extent == 24u);
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_enum_layout, AL_TEST_ENUM_LAYOUT_NESTED_TEXT,
+               dynamic_record, sizeof(dynamic_record), 0u,
+               AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) == 0);
+  AL_CHECK(payload == 18u && extent == 24u);
+  return 1;
+failed:
+  return 0;
+}
+
+static int al_test_closed_enum_invalid_root_tags(void) {
+  static const uint64_t invalid_tags[] = {3u, UINT64_MAX};
+  al_test_fixture fixture;
+  al_owning_stack_context *ctx;
+  uint8_t enum_bytes[8];
+  uint8_t retained[8];
+  uint8_t retained_before[8];
+  uint8_t stack_before[16];
+  uint32_t payload;
+  uint32_t extent;
+  uint32_t index;
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  AL_CHECK(al_test_case_begin("closed_enum_invalid_root_tags", &fixture));
+  for (index = 0u;
+       index < (uint32_t)(sizeof(invalid_tags) / sizeof(invalid_tags[0]));
+       ++index) {
+    al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+    ctx = &fixture.ctx;
+    al_test_write_u64_le(enum_bytes, 0u, invalid_tags[index]);
+    (void)memset(retained, 0x6bu, sizeof(retained));
+    (void)memcpy(retained_before, retained, sizeof(retained));
+    (void)memcpy(stack_before, ctx->stack_data, sizeof(stack_before));
+    payload = UINT32_C(0xDEADBEEF);
+    extent = UINT32_C(0xC0FFEE00);
+    AL_CHECK(al_owning_measure_external_value(
+                 ctx, &al_test_enum_layout, AL_TEST_ENUM_LAYOUT_TAG,
+                 enum_bytes, sizeof(enum_bytes), 0u, AL_TEST_DYNAMIC_ERROR_ID,
+                 &payload, &extent) != 0);
+    AL_CHECK(ctx->status == AL_OWNING_STATUS_INVALID_REQUEST &&
+             ctx->cursor_bytes == 0u);
+    AL_CHECK(payload == UINT32_C(0xDEADBEEF) &&
+             extent == UINT32_C(0xC0FFEE00));
+    AL_CHECK(memcmp(ctx->stack_data, stack_before, sizeof(stack_before)) == 0);
+    AL_CHECK(memcmp(retained, retained_before, sizeof(retained)) == 0);
+  }
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  AL_CHECK(al_owning_reserve_to(ctx, 8u, AL_TEST_DYNAMIC_ERROR_ID) == 0);
+  al_owning_store_i64(ctx, 0u, 3, 301u);
+  AL_CHECK(ctx->status == AL_OWNING_STATUS_OK);
+  {
+    al_owning_value_size value_size;
+    AL_CHECK(al_owning_measure_value(
+                 ctx, &al_test_enum_layout, AL_TEST_ENUM_LAYOUT_TAG, 0u, 8u,
+                 AL_TEST_DYNAMIC_ERROR_ID, &value_size) != 0);
+  }
+  AL_CHECK(ctx->status == AL_OWNING_STATUS_INTERNAL &&
+           ctx->error_id == AL_TEST_DYNAMIC_ERROR_ID);
+  return 1;
+failed:
+  return 0;
+}
+
+static int al_test_closed_enum_invalid_nested_tags(void) {
+  static const uint32_t type_indexes[] = {
+      AL_TEST_ENUM_LAYOUT_FIXED_RECORD, AL_TEST_ENUM_LAYOUT_NESTED_FIXED,
+      AL_TEST_ENUM_LAYOUT_TEXT_RECORD, AL_TEST_ENUM_LAYOUT_NESTED_TEXT};
+  static const uint32_t source_lengths[] = {16u, 16u, 24u, 24u};
+  al_test_fixture fixture;
+  al_owning_stack_context *ctx;
+  uint8_t fixed_record[16] = {0u};
+  uint8_t dynamic_record[24] = {0u};
+  uint8_t retained[8];
+  uint8_t retained_before[8];
+  uint8_t stack_before[16];
+  const uint8_t string_data[] = {0x42u, 0x00u};
+  const uint8_t *sources[4] = {fixed_record, fixed_record, dynamic_record,
+                               dynamic_record};
+  uint32_t payload;
+  uint32_t extent;
+  uint32_t index;
+
+  al_test_write_u64_le(fixed_record, 0u, 3u);
+  al_test_write_u64_le(fixed_record, 8u, 77u);
+  al_test_build_string(dynamic_record, 1u, string_data);
+  al_test_write_u64_le(dynamic_record, 16u, 3u);
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  AL_CHECK(al_test_case_begin("closed_enum_invalid_nested_tags", &fixture));
+  for (index = 0u; index < 4u; ++index) {
+    al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+    ctx = &fixture.ctx;
+    (void)memset(retained, 0x39u, sizeof(retained));
+    (void)memcpy(retained_before, retained, sizeof(retained));
+    (void)memcpy(stack_before, ctx->stack_data, sizeof(stack_before));
+    payload = UINT32_C(0xDEADBEEF);
+    extent = UINT32_C(0xC0FFEE00);
+    AL_CHECK(al_owning_measure_external_value(
+                 ctx, &al_test_enum_layout, type_indexes[index], sources[index],
+                 source_lengths[index], 0u, AL_TEST_DYNAMIC_ERROR_ID, &payload,
+                 &extent) != 0);
+    AL_CHECK(ctx->status == AL_OWNING_STATUS_INVALID_REQUEST &&
+             ctx->cursor_bytes == 0u);
+    AL_CHECK(payload == UINT32_C(0xDEADBEEF) &&
+             extent == UINT32_C(0xC0FFEE00));
+    AL_CHECK(memcmp(ctx->stack_data, stack_before, sizeof(stack_before)) == 0);
+    AL_CHECK(memcmp(retained, retained_before, sizeof(retained)) == 0);
+  }
+  return 1;
+failed:
+  return 0;
+}
+
+static int al_test_short_external_value_rejected(
+    const al_owning_layout *layout, uint32_t type_index,
+    const uint8_t *source, uint32_t source_length) {
+  al_test_fixture fixture;
+  uint8_t stack_before[16];
+  uint32_t payload = UINT32_C(0xDEADBEEF);
+  uint32_t extent = UINT32_C(0xC0FFEE00);
+  int32_t result;
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  (void)memset(fixture.ctx.stack_data, 0xA7, sizeof(stack_before));
+  (void)memcpy(stack_before, fixture.ctx.stack_data, sizeof(stack_before));
+  result = al_owning_measure_external_value(
+      &fixture.ctx, layout, type_index, source, source_length,
+      0u, AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent);
+  return result != 0 &&
+         fixture.ctx.status == AL_OWNING_STATUS_INVALID_REQUEST &&
+         fixture.ctx.cursor_bytes == 0u &&
+         payload == UINT32_C(0xDEADBEEF) &&
+         extent == UINT32_C(0xC0FFEE00) &&
+         memcmp(fixture.ctx.stack_data, stack_before, sizeof(stack_before)) ==
+             0;
+}
+
+static int al_test_short_internal_enum_rejected(void) {
+  al_test_fixture fixture;
+  al_owning_value_size value_size = {UINT32_C(0xDEADBEEF),
+                                     UINT32_C(0xC0FFEE00)};
+  int32_t result;
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  if (al_owning_reserve_to(&fixture.ctx, 8u, AL_TEST_DYNAMIC_ERROR_ID) != 0)
+    return 0;
+  al_owning_store_i64(&fixture.ctx, 0u, 0, 301u);
+  if (fixture.ctx.status != AL_OWNING_STATUS_OK)
+    return 0;
+  result = al_owning_measure_value(
+      &fixture.ctx, &al_test_enum_layout, AL_TEST_ENUM_LAYOUT_TAG, 0u, 4u,
+      AL_TEST_DYNAMIC_ERROR_ID, &value_size);
+  return result != 0 && fixture.ctx.status == AL_OWNING_STATUS_INTERNAL &&
+         fixture.ctx.cursor_bytes == 8u &&
+         value_size.payload_bytes == UINT32_C(0xDEADBEEF) &&
+         value_size.extent_bytes == UINT32_C(0xC0FFEE00);
+}
+
+static int al_test_closed_enum_short_extents(void) {
+  al_test_fixture fixture;
+  uint8_t short_enum[8] = {0u};
+  uint8_t short_scalar[8] = {0u};
+  uint8_t short_empty_record[8] = {0u};
+  uint8_t dynamic_record[32] = {0u};
+  const uint8_t string_data[] = {0x43u, 0x00u};
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  AL_CHECK(al_test_case_begin("closed_enum_short_extents", &fixture));
+
+  AL_CHECK(al_test_short_external_value_rejected(
+      &al_test_enum_layout, AL_TEST_ENUM_LAYOUT_TAG, short_enum, 4u));
+  AL_CHECK(al_test_short_external_value_rejected(
+      &al_test_enum_layout, AL_TEST_ENUM_LAYOUT_INT, short_scalar, 4u));
+
+  al_test_build_string(dynamic_record, 1u, string_data);
+  al_test_write_u64_le(dynamic_record, 16u, 1u);
+  AL_CHECK(al_test_short_external_value_rejected(
+      &al_test_enum_layout, AL_TEST_ENUM_LAYOUT_TEXT_RECORD, dynamic_record,
+      20u));
+
+  al_test_write_u64_le(dynamic_record, 24u, 99u);
+  AL_CHECK(al_test_short_external_value_rejected(
+      &al_test_enum_layout, AL_TEST_ENUM_LAYOUT_DYNAMIC_TAIL_RECORD,
+      dynamic_record, 24u));
+  AL_CHECK(al_test_short_external_value_rejected(
+      &al_test_dynamic_layout, AL_TEST_LAYOUT_EMPTY, short_empty_record,
+      4u));
+  AL_CHECK(al_test_short_internal_enum_rejected());
+  return 1;
+failed:
+  return 0;
+}
+
+static int al_test_enum_descriptor_rejected(
+    const al_owning_type_descriptor *types, uint32_t type_index) {
+  al_test_fixture fixture;
+  al_owning_layout layout = al_test_enum_layout;
+  uint8_t enum_bytes[8] = {0u};
+  uint32_t payload;
+  uint32_t extent;
+  layout.types = types;
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  return al_owning_measure_external_value(
+             &fixture.ctx, &layout, type_index, enum_bytes,
+             sizeof(enum_bytes), 0u, AL_TEST_DYNAMIC_ERROR_ID, &payload,
+             &extent) != 0 &&
+         fixture.ctx.status == AL_OWNING_STATUS_INTERNAL;
+}
+
+static int al_test_closed_enum_descriptor_validation(void) {
+  al_test_fixture fixture;
+  al_owning_type_descriptor types[AL_TEST_ENUM_LAYOUT_TYPE_COUNT];
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  AL_CHECK(al_test_case_begin("closed_enum_descriptor_validation", &fixture));
+
+  (void)memcpy(types, al_test_enum_types, sizeof(types));
+  types[AL_TEST_ENUM_LAYOUT_TAG].case_count = 0u;
+  AL_CHECK(al_test_enum_descriptor_rejected(types, AL_TEST_ENUM_LAYOUT_TAG));
+  (void)memcpy(types, al_test_enum_types, sizeof(types));
+  types[AL_TEST_ENUM_LAYOUT_INT].case_count = 1u;
+  AL_CHECK(al_test_enum_descriptor_rejected(types, AL_TEST_ENUM_LAYOUT_INT));
+  (void)memcpy(types, al_test_enum_types, sizeof(types));
+  types[AL_TEST_ENUM_LAYOUT_TAG].fixed_payload_bytes = 16u;
+  types[AL_TEST_ENUM_LAYOUT_TAG].fixed_extent_bytes = 16u;
+  types[AL_TEST_ENUM_LAYOUT_TAG].minimum_payload_bytes = 16u;
+  types[AL_TEST_ENUM_LAYOUT_TAG].minimum_extent_bytes = 16u;
+  AL_CHECK(al_test_enum_descriptor_rejected(types, AL_TEST_ENUM_LAYOUT_TAG));
+  (void)memcpy(types, al_test_enum_types, sizeof(types));
+  types[AL_TEST_ENUM_LAYOUT_TAG].field_count = 1u;
+  AL_CHECK(al_test_enum_descriptor_rejected(types, AL_TEST_ENUM_LAYOUT_TAG));
+  return 1;
+failed:
+  return 0;
+}
+
+static int al_test_closed_enum_abi1_rejected(void) {
+  al_test_fixture fixture;
+  al_owning_layout stale_layout = al_test_enum_layout;
+  uint8_t enum_bytes[8] = {0u};
+  uint32_t payload;
+  uint32_t extent;
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  AL_CHECK(al_test_case_begin("closed_enum_abi1_rejected", &fixture));
+  stale_layout.abi_version = 1u;
+  AL_CHECK(al_owning_measure_external_value(
+               &fixture.ctx, &stale_layout, AL_TEST_ENUM_LAYOUT_TAG,
+               enum_bytes, sizeof(enum_bytes), 0u, AL_TEST_DYNAMIC_ERROR_ID,
+               &payload, &extent) != 0 &&
+           fixture.ctx.status == AL_OWNING_STATUS_INTERNAL &&
+           fixture.ctx.cursor_bytes == 0u);
+  return 1;
+failed:
+  return 0;
+}
+
 static int al_test_record_copy_preserves_source(void) {
   al_test_fixture fixture;
   al_owning_stack_context *ctx = &fixture.ctx;
@@ -1785,6 +2133,12 @@ int main(void) {
       !al_test_dynamic_return_larger_than_arguments() ||
       !al_test_dynamic_constant_copy() ||
       !al_test_dynamic_malformed_external_values() ||
+      !al_test_closed_enum_valid_values() ||
+      !al_test_closed_enum_invalid_root_tags() ||
+      !al_test_closed_enum_invalid_nested_tags() ||
+      !al_test_closed_enum_short_extents() ||
+      !al_test_closed_enum_descriptor_validation() ||
+      !al_test_closed_enum_abi1_rejected() ||
       !al_test_record_copy_preserves_source()) {
     return 1;
   }

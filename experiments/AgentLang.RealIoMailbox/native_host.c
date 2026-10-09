@@ -277,6 +277,7 @@ static int validate_module(const al_owning_mailbox_module *module,
   uint32_t string_index;
   uint32_t state_index;
   uint32_t continuation_index;
+  uint32_t type_index;
   if (module == NULL || roles == NULL ||
       module->abi_version != AL_OWNING_MAILBOX_ABI_VERSION ||
       module->struct_size != sizeof(*module) || module->layout == NULL ||
@@ -288,6 +289,12 @@ static int validate_module(const al_owning_mailbox_module *module,
       (module->layout->field_count != 0u && module->layout->fields == NULL))
     return 0;
   layout = module->layout;
+  for (type_index = 0u; type_index < layout->type_count; ++type_index) {
+    const al_owning_type_descriptor *type = &layout->types[type_index];
+    if (type->kind < AL_OWNING_TYPE_I64 ||
+        type->kind > AL_OWNING_TYPE_STRING || type->case_count != 0u)
+      return 0;
+  }
   initialize = &module->entries[0];
   begin = &module->entries[1];
   resume = &module->entries[2];

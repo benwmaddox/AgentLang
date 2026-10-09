@@ -531,7 +531,9 @@ static al_mailbox_result al_validate_owning_module(
   for (index = 0u; index < layout->type_count; ++index) {
     const al_owning_type_descriptor *type = &layout->types[index];
     uint32_t prior;
-    if (type->kind < AL_OWNING_TYPE_I64 || type->kind > AL_OWNING_TYPE_STRING ||
+    if (type->kind < AL_OWNING_TYPE_I64 || type->kind > AL_OWNING_TYPE_ENUM ||
+        (type->kind == AL_OWNING_TYPE_ENUM ? type->case_count == 0u
+                                           : type->case_count != 0u) ||
         type->first_field > layout->field_count ||
         type->field_count > layout->field_count - type->first_field)
       return AL_MAILBOX_INVALID_MODULE;

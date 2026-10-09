@@ -527,6 +527,14 @@ try {
         }
         $manifest = Read-JsonFile $manifestPath
         $moduleInfo = Get-Field $manifest 'moduleInfo'
+        Add-Check "$moduleLabel manifest separates module and layout contracts" (
+            [int](Get-Field $moduleInfo 'formatVersion') -eq [int](Get-Field $fixture 'manifestFormatVersion') -and
+            [int](Get-Field $moduleInfo 'layoutAbiVersion') -eq [int](Get-Field $fixture 'layoutAbiVersion') -and
+            [int](Get-Field $moduleInfo 'typeDescriptorSizeBytes') -eq [int](Get-Field $fixture 'typeDescriptorSizeBytes')) ([ordered]@{
+                formatVersion = Get-Field $moduleInfo 'formatVersion'
+                layoutAbiVersion = Get-Field $moduleInfo 'layoutAbiVersion'
+                typeDescriptorSizeBytes = Get-Field $moduleInfo 'typeDescriptorSizeBytes'
+            })
         Add-Check "$moduleLabel manifest records the selected runtime profile" ([string](Get-Field $moduleInfo 'runtimeProfile') -ceq $runtimeProfile) ([ordered]@{ expected = $runtimeProfile; actual = Get-Field $moduleInfo 'runtimeProfile' })
         $associatedResume = Get-Field $moduleInfo 'associatedResume'
         $resumeEntry = @(Get-Field $moduleInfo 'entries' | Where-Object { [string](Get-Field $_ 'role') -ceq 'resume' })

@@ -1,0 +1,41 @@
+{
+  "archive": "evidence.zip",
+  "entries": 561,
+  "bytes": 5023023,
+  "sha256": "a811fd7000cd3eef0081f863c41c8fe683e1f16b782a1e9c6cf7330232a81e2b",
+  "sourceFiles": [
+    "docs/BACKENDS.md",
+    "docs/CLOSED-ENUMS.md",
+    "docs/ROADMAP.md",
+    "experiments/AgentLang.MailboxLoad/load_host.c",
+    "experiments/AgentLang.NativeValueStack/Program.fs",
+    "experiments/AgentLang.OwningMailbox/native_owning_mailbox.c",
+    "experiments/AgentLang.RealIoMailbox/native_host.c",
+    "scripts/Verify-NativeValueStack.ps1",
+    "scripts/Verify-OwningMailbox.ps1",
+    "src/AgentLang.Llvm/OwningStackAot.fs",
+    "src/AgentLang.Llvm/native/mailbox_runtime.c",
+    "src/AgentLang.Llvm/native/owning_bank_test.c",
+    "src/AgentLang.Llvm/native/owning_mailbox_release_test.c",
+    "src/AgentLang.Llvm/native/owning_mailbox_test.c",
+    "src/AgentLang.Llvm/native/owning_release_runtime_test.c",
+    "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+    "src/AgentLang.Llvm/native/owning_stack_runtime.h",
+    "src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+    "tests/fixtures/native-conformance/native-value-stack.json",
+    "tests/fixtures/native-conformance/owning-mailbox.json"
+  ],
+  "evidenceRoots": [
+    ".agentlang/native-enums-153",
+    ".agentlang/owning-stack-003/verification-54f9954e3512498cb689b4f89d86426c",
+    ".agentlang/owning-stack-003/verification-1620d6264dc04edebb3e3b5306ad5d76",
+    ".agentlang/owning-stack-003/verification-c9929f1642a64de3b631349aead9f640",
+    ".agentlang/owning-mailbox-001/integration-run-d3549fd5ec834b27aea0da218c90913e",
+    ".agentlang/owning-mailbox-001/integration-run-58a42ac52faf42d18f1ae271d16e7281",
+    ".agentlang/owning-mailbox-001/integration-run-b0f05ed417cc48f386d070c10b49e115",
+    ".agentlang/owning-mailbox-002/policy-run-7a665e6d31f0464588d5f071753ba3e5",
+    ".agentlang/owning-mailbox-002/policy-run-107a81cf7a6a4235b99131179a456e4a",
+    ".agentlang/owning-mailbox-003/io-run-a648e943d483495c80b9f431e8687724",
+    ".agentlang/owning-mailbox-003/io-run-aefa9615d956424bbbb56a672809e36b"
+  ]
+}

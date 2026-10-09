@@ -359,6 +359,32 @@ try {
     Add-Check 'experiment evidence file exists' (Test-Path -LiteralPath $experimentEvidencePath -PathType Leaf) $experimentEvidencePath
     $experimentEvidence = Read-JsonFile $experimentEvidencePath
     Add-Check 'experiment evidence reports success' ([bool]$experimentEvidence.passed) ([ordered]@{ failureCount = $experimentEvidence.failureCount; failure = $experimentEvidence.failure })
+    $enumOracle = (Read-JsonFile $fixturePath).enumConformance
+    $enumRuns = @($experimentEvidence.enumRuns)
+    $enumCaseCount = @($enumOracle.cases).Count
+    $enumEqualityCaseCount = @($enumOracle.equalityCases).Count
+    $enumInvalidOrdinalCount = @($enumOracle.rawNativeEntry.invalidOrdinals).Count
+    $enumMalformedInputCount = @($enumOracle.rawNativeEntry.malformedInputs).Count
+    $enumOptimizationNames = @($enumRuns | ForEach-Object { $_.optimization } | Sort-Object) -join ','
+    $enumRunsMissingCoverage = @($enumRuns | Where-Object {
+        $_.caseCount -ne $enumCaseCount -or
+        $_.equalityCaseCount -ne $enumEqualityCaseCount -or
+        $_.invalidOrdinalCount -ne $enumInvalidOrdinalCount -or
+        $_.malformedInputCount -ne $enumMalformedInputCount
+    }).Count
+    $enumCoveragePassed = $enumRuns.Count -eq 2 -and
+        $enumOptimizationNames -ceq 'O0,O2' -and
+        $enumRunsMissingCoverage -eq 0
+    Add-Check 'closed enum parity covers every fixture case, equality pair, and raw-entry rejection at O0/O2' $enumCoveragePassed ([ordered]@{
+        expectedOptimizations = @('O0', 'O2')
+        expectedCaseCount = $enumCaseCount
+        expectedEqualityCaseCount = $enumEqualityCaseCount
+        expectedInvalidOrdinalCount = $enumInvalidOrdinalCount
+        expectedMalformedInputCount = $enumMalformedInputCount
+        actualOptimizationNames = $enumOptimizationNames
+        incompleteRunCount = $enumRunsMissingCoverage
+        actualRuns = $enumRuns
+    })
     Add-Check 'fixed three-way controls share one compiler-authorized program instance' ([bool]$experimentEvidence.fixedControlVerifiedProgramInstance) $experimentEvidence.backendScope
     Add-Check 'String interpreter and owning O0/O2 share one compiler-authorized program instance' ([bool]$experimentEvidence.stringVerifiedProgramInstance -and $experimentEvidence.stringBackendScope -match 'ABI3 String parity is unavailable') $experimentEvidence.stringBackendScope
     Add-Check 'String comparison records nested runtime Value input and no ABI3 String claim' ($experimentEvidence.stringBackendScope -match 'runtime Value input' -and $experimentEvidence.stringBackendScope -match 'ABI3 String parity is unavailable') $experimentEvidence.stringBackendScope

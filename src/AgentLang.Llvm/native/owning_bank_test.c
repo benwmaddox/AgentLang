@@ -19,12 +19,12 @@ enum {
 };
 
 static const al_owning_type_descriptor test_types[] = {
-    {AL_OWNING_TYPE_I64, TEST_TYPE_INT, 0u, 0u, 8u, 8u, 8u, 8u},
+    {AL_OWNING_TYPE_I64, TEST_TYPE_INT, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
     {AL_OWNING_TYPE_STRING, TEST_TYPE_STRING, 0u, 0u,
-     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u},
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
     {AL_OWNING_TYPE_RECORD, TEST_TYPE_RECORD, 0u, 3u,
-     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u},
-    {AL_OWNING_TYPE_RECORD, TEST_TYPE_EMPTY, 3u, 0u, 0u, 8u, 0u, 8u}};
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u, 0u},
+    {AL_OWNING_TYPE_RECORD, TEST_TYPE_EMPTY, 3u, 0u, 0u, 8u, 0u, 8u, 0u}};
 
 static const al_owning_field_descriptor test_fields[] = {
     {TEST_LAYOUT_INT, 0u, 0u, 0u},

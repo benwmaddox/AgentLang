@@ -53,9 +53,14 @@ and missing cases fail with `LIBRARY_FINITE_COVERAGE_INCOMPLETE`. See the
 [finite coverage contract](FINITE-COVERAGE.md). All 37 local validation checks pass; passing every match arm alone does not establish the complete
 library contract.
 
-LLVM execution of enums is not implemented in this slice and fails with
-`IR_LLVM_ENUM_UNSUPPORTED`.
-Interpreter support is not evidence of native enum performance or memory layout.
+The selected owning-stack LLVM backend supports payload-free enums as inline
+eight-byte ordinals with nominal type identity and layout ABI 2 case counts.
+Construction, exhaustive matching, equality and enum-bearing records pass
+interpreter/native O0/O2 conformance; malformed external tags and extents are
+rejected. See [report 153](../reports/153-owning-native-enums.md) for scope and
+validation evidence. The older graph-backed `LlvmAot` backend still rejects
+enum operations with `IR_LLVM_ENUM_UNSUPPORTED`. Neither interpreter support
+nor semantic conformance establishes a performance advantage.
 
 The [persistence regression fixture](../examples/closed-renewal-state.agent)
 includes identity calls in its scrutinee and arms to exercise durable call paths,

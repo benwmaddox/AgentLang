@@ -48,13 +48,14 @@ The occupied-period integration and its validation are tracked in
 [report 152](../reports/152-occupied-period-domain.md); do not count this
 coordinator-designed domain improvement as a new independent agent efficacy trial.
 
-The next native conformance slice targets closed, payload-free enums in
-`OwningStackAot`, using inline values and the selected stable arena policy.
-Reject invalid enum tags at native entry, including ignored inputs and nested
-record fields. Audit the layout metadata contract and test both fixed-size and
-String-bearing record paths against the interpreter at O0/O2. This is separate
-from choosing actor versus specialized-mailbox semantics; Option/Result native
-payload layouts remain subsequent work.
+[Report 153](../reports/153-owning-native-enums.md) implements closed,
+payload-free enums in `OwningStackAot`, using inline values and the selected
+stable arena policy. Focused O0/O2 conformance, malformed-input rejection and
+mailbox/real-I/O gates pass, including ignored inputs and nested record fields;
+all 37 full local Release checks also pass. Layout ABI 2 adds the explicit enum
+case count. The tests exposed and now cover a short-input scanner status defect.
+This remains separate from choosing actor versus specialized-mailbox semantics;
+Option/Result native payload layouts remain subsequent work.
 
 The interpreter, typed semantic IR, dictionary, task transactions, introspection,
 Flow/1 authoring and existing library coverage gates are implemented. Earlier
@@ -537,9 +538,10 @@ module closure and scoped overrides remain approved work, not prerequisites to
 completing all future comparisons. Separately assess
 whether unchecked construction inputs need a distinct type or field-based
 validation contract; report 120 exposes this reasoning tension but does not
-settle the design. Provider-state assertions,
-broader module/library closure, test-local overrides and native enums remain
-pending. Use new fixtures and preserve historical research inputs.
+settle the design. Provider-state assertions, explicit module boundaries and
+test-local overrides remain pending. Authored library dependency closure is
+covered by report 142; owning-backend native enums are covered by report 153.
+Use new fixtures and preserve historical research inputs.
 
 After the bounded report 140 runtime comparison, prioritize a small maintenance
 comparison using the accepted retained-language and conventional outputs from

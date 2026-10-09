@@ -47,6 +47,97 @@
     "inline-owning-stack/O0",
     "inline-owning-stack/O2"
   ],
+  "enumConformance": {
+    "enumType": "Signal",
+    "fixedRecordType": "SignalPacket",
+    "dynamicRecordType": "TextSignalPacket",
+    "cases": [
+      { "name": "off", "ordinal": 0, "matchResult": 10, "matchRetainedBytesHex": "0a00000000000000", "retainedBytesHex": "0000000000000000" },
+      { "name": "on", "ordinal": 1, "matchResult": 20, "matchRetainedBytesHex": "1400000000000000", "retainedBytesHex": "0100000000000000" },
+      { "name": "alarm", "ordinal": 2, "matchResult": 30, "matchRetainedBytesHex": "1e00000000000000", "retainedBytesHex": "0200000000000000" }
+    ],
+    "equalityCases": [
+      { "left": "off", "right": "off", "expected": true, "retainedBytesHex": "0100000000000000" },
+      { "left": "off", "right": "on", "expected": false, "retainedBytesHex": "0000000000000000" },
+      { "left": "off", "right": "alarm", "expected": false, "retainedBytesHex": "0000000000000000" },
+      { "left": "on", "right": "off", "expected": false, "retainedBytesHex": "0000000000000000" },
+      { "left": "on", "right": "on", "expected": true, "retainedBytesHex": "0100000000000000" },
+      { "left": "on", "right": "alarm", "expected": false, "retainedBytesHex": "0000000000000000" },
+      { "left": "alarm", "right": "off", "expected": false, "retainedBytesHex": "0000000000000000" },
+      { "left": "alarm", "right": "on", "expected": false, "retainedBytesHex": "0000000000000000" },
+      { "left": "alarm", "right": "alarm", "expected": true, "retainedBytesHex": "0100000000000000" }
+    ],
+    "fixedRecord": {
+      "sequence": 99,
+      "fieldOffsetsBytes": { "signal": 0, "sequence": 8 },
+      "retainedBytesByCase": {
+        "off": "00000000000000006300000000000000",
+        "on": "01000000000000006300000000000000",
+        "alarm": "02000000000000006300000000000000"
+      }
+    },
+    "dynamicRecord": {
+      "note": "x",
+      "sequence": 99,
+      "fieldOffsetsBytesForNoteX": { "note": 0, "signal": 16, "sequence": 24 },
+      "minimumPayloadBytes": 24,
+      "minimumExtentBytes": 24,
+      "retainedBytesByCase": {
+        "off": "0100000000000000780000000000000000000000000000006300000000000000",
+        "on": "0100000000000000780000000000000001000000000000006300000000000000",
+        "alarm": "0100000000000000780000000000000002000000000000006300000000000000"
+      },
+      "rawInputBytesByCase": {
+        "off": "0100000000000000780000000000000000000000000000006300000000000000",
+        "on": "0100000000000000780000000000000001000000000000006300000000000000",
+        "alarm": "0100000000000000780000000000000002000000000000006300000000000000"
+      }
+    },
+    "layouts": {
+      "Signal": {
+        "payloadBytes": 8, "extentBytes": 8, "isDynamic": false,
+        "minimumPayloadBytes": 8, "minimumExtentBytes": 8,
+        "fields": []
+      },
+      "SignalPacket": {
+        "payloadBytes": 16, "extentBytes": 16, "isDynamic": false,
+        "minimumPayloadBytes": 16, "minimumExtentBytes": 16,
+        "fields": [
+          { "name": "signal", "offsetBytes": 0, "payloadBytes": 8, "extentBytes": 8, "isOffsetDynamic": false, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
+          { "name": "sequence", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isOffsetDynamic": false, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 }
+        ]
+      },
+      "TextSignalPacket": {
+        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
+        "minimumPayloadBytes": 24, "minimumExtentBytes": 24,
+        "fields": [
+          { "name": "note", "offsetBytes": 0, "payloadBytes": -1, "extentBytes": -1, "isOffsetDynamic": false, "isDynamic": true, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
+          { "name": "signal", "offsetBytes": -1, "payloadBytes": 8, "extentBytes": 8, "isOffsetDynamic": true, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
+          { "name": "sequence", "offsetBytes": -1, "payloadBytes": 8, "extentBytes": 8, "isOffsetDynamic": true, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 }
+        ]
+      }
+    },
+    "rawNativeEntry": {
+      "invalidOrdinals": [
+        { "name": "unknown-positive", "value": 3 },
+        { "name": "negative", "value": -1 }
+      ],
+      "sentinelBytesHex": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5",
+      "expectedInvalidRequestStatus": 4,
+      "malformedInputs": [
+        { "name": "missing-root-count", "body": "enum", "inputCount": 0, "inputExtentsBytes": [8], "inputBytesHex": "0000000000000000" },
+        { "name": "extra-root-count", "body": "enum", "inputCount": 2, "inputExtentsBytes": [8, 8], "inputBytesHex": "0000000000000000" },
+        { "name": "wrong-enum-extent", "body": "enum", "inputCount": 1, "inputExtentsBytes": [4], "inputBytesHex": "0000000000000000" },
+        { "name": "truncated-enum-bytes", "body": "enum", "inputCount": 1, "inputExtentsBytes": [8], "inputBytesHex": "00000000000000" },
+        { "name": "short-dynamic-record-extent", "body": "dynamicRecord", "inputCount": 1, "inputExtentsBytes": [24], "inputBytesHex": "0100000000000000780000000000000000000000000000006300000000000000" }
+      ]
+    },
+    "unsupportedSumTypes": {
+      "diagnosticCode": "IR_OWNING_STACK_TYPE_UNSUPPORTED",
+      "option": "Option<Int>",
+      "result": "Result<Int, String>"
+    }
+  },
   "programScopes": {
     "fixedControl": "The original Leaf/Envelope/State program runs through interpreter, ABI3 O0/O2, and owning O0/O2.",
     "stringControl": "A separate VerifiedIrProgram containing Text* types runs through interpreter and owning O0/O2; every such comparison shares the same exact program/body instance.",
@@ -659,8 +750,8 @@
   },
   "storageRuntimeTestOracle": {
     "suite": "owning_stack_runtime_storage_v2",
-    "cases": 43,
-    "checks": 507,
+    "cases": 49,
+    "checks": 572,
     "rawFrameBoundary": {
       "successfulHelperEnters": 66,
       "nextEnterDiagnosticDepth": 66,
@@ -677,7 +768,7 @@
       "peakCursorBytes": 56,
       "maxStackCapacityBytes": 64
     },
-    "dynamicCases": { "cases": 27, "checks": 318 },
+    "dynamicCases": { "cases": 33, "checks": 383 },
     "abi": {
       "eventSizeBytes": 40,
       "eventChecksumOffsetBytes": 32,
@@ -692,10 +783,10 @@
         "input_copy_bytes": 152,
         "retained_copy_bytes": 160
       },
-      "layoutAbiVersion": 1,
+      "layoutAbiVersion": 2,
       "layoutSizeBytes": 40,
       "layoutOffsetsBytes": { "types": 8, "type_count": 16, "fields": 24, "field_count": 32 },
-      "typeDescriptorSizeBytes": 32,
+      "typeDescriptorSizeBytes": 36,
       "fieldDescriptorSizeBytes": 16,
       "valueSizeBytes": 8,
       "fieldLocationSizeBytes": 12

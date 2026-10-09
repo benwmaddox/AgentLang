@@ -31,8 +31,8 @@ _Static_assert(offsetof(al_owning_stack_context, trace_events) == 128u,
                "ABI 1 trace pointer offset changed");
 
 static const al_owning_type_descriptor al_test_types[] = {
-    {AL_OWNING_TYPE_RECORD, AL_TEST_TYPE_EMPTY, 0u, 0u, 0u, 8u, 0u, 8u},
-    {AL_OWNING_TYPE_I64, AL_TEST_TYPE_VALUE, 0u, 0u, 8u, 8u, 8u, 8u},
+    {AL_OWNING_TYPE_RECORD, AL_TEST_TYPE_EMPTY, 0u, 0u, 0u, 8u, 0u, 8u, 0u},
+    {AL_OWNING_TYPE_I64, AL_TEST_TYPE_VALUE, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
     {AL_OWNING_TYPE_STRING,
      AL_TEST_TYPE_STRING,
      0u,
@@ -40,8 +40,9 @@ static const al_owning_type_descriptor al_test_types[] = {
      AL_OWNING_LAYOUT_DYNAMIC_U32,
      AL_OWNING_LAYOUT_DYNAMIC_U32,
      8u,
-     8u},
-    {AL_OWNING_TYPE_RECORD, AL_TEST_TYPE_RECORD, 0u, 2u, 8u, 8u, 8u, 8u}};
+     8u,
+     0u},
+    {AL_OWNING_TYPE_RECORD, AL_TEST_TYPE_RECORD, 0u, 2u, 8u, 8u, 8u, 8u, 0u}};
 
 static const al_owning_field_descriptor al_test_fields[] = {
     {1u, 0u, 0u, 0u},

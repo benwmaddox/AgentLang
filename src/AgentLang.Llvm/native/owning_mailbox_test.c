@@ -17,6 +17,13 @@ enum {
 
 static uint32_t test_fail_next_resume;
 
+static void test_write_u64_le(uint8_t *bytes, uint32_t offset,
+                              uint64_t value) {
+  uint32_t index;
+  for (index = 0u; index < 8u; ++index)
+    bytes[offset + index] = (uint8_t)(value >> (index * 8u));
+}
+
 typedef struct test_cancel_thread_call {
   al_mailbox_runtime *runtime;
   uint32_t mailbox_id;
@@ -47,11 +54,11 @@ static DWORD WINAPI test_get_reset_stats_from_worker_thread(LPVOID parameter) {
 
 static const al_owning_type_descriptor test_types[] = {
     {AL_OWNING_TYPE_STRING, TEST_STRING_TYPE_ID, 0u, 0u,
-     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u},
-    {AL_OWNING_TYPE_RECORD, TEST_STATE_TYPE_ID, 0u, 1u, 8u, 8u, 8u, 8u},
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_RECORD, TEST_STATE_TYPE_ID, 0u, 1u, 8u, 8u, 8u, 8u, 0u},
     {AL_OWNING_TYPE_RECORD, TEST_CONTINUATION_TYPE_ID, 1u, 1u, 8u, 8u, 8u,
-     8u},
-    {AL_OWNING_TYPE_I64, TEST_I64_TYPE_ID, 0u, 0u, 8u, 8u, 8u, 8u}};
+     8u, 0u},
+    {AL_OWNING_TYPE_I64, TEST_I64_TYPE_ID, 0u, 0u, 8u, 8u, 8u, 8u, 0u}};
 
 static const al_owning_field_descriptor test_fields[] = {
     {3u, 0u, 0u, 0u}, {3u, 0u, 0u, 0u}};
@@ -238,14 +245,203 @@ static const al_owning_mailbox_module test_module = {
      {3u, 1u, {1u, 2u, 0u}, {1u, 0u}, test_resume}},
     test_associated_resume};
 
+enum {
+  TEST_ENUM_STRING_TYPE_ID = 210u,
+  TEST_ENUM_TAG_TYPE_ID = 211u,
+  TEST_ENUM_VALUE_TYPE_ID = 212u,
+  TEST_ENUM_STATE_TYPE_ID = 213u,
+  TEST_ENUM_CONTINUATION_TYPE_ID = 214u
+};
+
+static const al_owning_type_descriptor test_enum_types[] = {
+    {AL_OWNING_TYPE_STRING, TEST_ENUM_STRING_TYPE_ID, 0u, 0u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_ENUM, TEST_ENUM_TAG_TYPE_ID, 0u, 0u, 8u, 8u, 8u, 8u,
+     3u},
+    {AL_OWNING_TYPE_I64, TEST_ENUM_VALUE_TYPE_ID, 0u, 0u, 8u, 8u, 8u, 8u,
+     0u},
+    {AL_OWNING_TYPE_RECORD, TEST_ENUM_STATE_TYPE_ID, 0u, 2u, 16u, 16u, 16u,
+     16u, 0u},
+    {AL_OWNING_TYPE_RECORD, TEST_ENUM_CONTINUATION_TYPE_ID, 2u, 0u, 0u, 8u,
+     0u, 8u, 0u}};
+
+static const al_owning_field_descriptor test_enum_fields[] = {
+    {2u, 0u, 0u, 0u}, {1u, 8u, 0u, 0u}};
+
+static const al_owning_layout test_enum_layout = {
+    AL_OWNING_LAYOUT_ABI_VERSION, test_enum_types, 5u, test_enum_fields, 2u};
+
+static uint32_t test_enum_begin_handler_calls;
+
+static int32_t test_enum_initialize(
+    al_owning_stack_context *context, const al_owning_external_slice *inputs,
+    uint32_t input_count, al_owning_bank_stack_slice *outputs,
+    uint32_t output_capacity) {
+  uint32_t offset;
+  if (input_count != 1u || output_capacity != 1u || inputs[0].type_index != 0u)
+    return AL_OWNING_STATUS_INVALID_REQUEST;
+  offset = context->cursor_bytes;
+  if (offset > UINT32_MAX - 16u) {
+    al_owning_set_failure(context, AL_OWNING_STATUS_INTERNAL, 1u, UINT32_MAX,
+                          context->cursor_bytes);
+    return (int32_t)context->status;
+  }
+  if (al_owning_reserve_to(context, offset + 16u, 1u) != 0)
+    return (int32_t)context->status;
+  al_owning_store_i64(context, offset, 5, TEST_ENUM_VALUE_TYPE_ID);
+  al_owning_store_i64(context, offset + 8u, 1, TEST_ENUM_TAG_TYPE_ID);
+  if (context->status != AL_OWNING_STATUS_OK)
+    return (int32_t)context->status;
+  outputs[0] = (al_owning_bank_stack_slice){3u, offset, offset + 16u, 0u};
+  return AL_OWNING_STATUS_OK;
+}
+
+static int32_t test_enum_begin(
+    al_owning_stack_context *context, const al_owning_external_slice *inputs,
+    uint32_t input_count, al_owning_bank_stack_slice *outputs,
+    uint32_t output_capacity) {
+  uint32_t state_offset;
+  uint32_t continuation_offset;
+  if (input_count != 2u || output_capacity != 2u ||
+      inputs[0].type_index != 3u || inputs[1].type_index != 0u)
+    return AL_OWNING_STATUS_INVALID_REQUEST;
+  ++test_enum_begin_handler_calls;
+  state_offset = context->cursor_bytes;
+  if (state_offset > UINT32_MAX - 16u) {
+    al_owning_set_failure(context, AL_OWNING_STATUS_INTERNAL, 2u, UINT32_MAX,
+                          context->cursor_bytes);
+    return (int32_t)context->status;
+  }
+  if (al_owning_reserve_to(context, state_offset + 16u, 2u) != 0 ||
+      al_owning_copy_external_bounded(
+          context, state_offset, inputs[0].bytes, inputs[0].extent_bytes, 0u,
+          16u, 16u, TEST_ENUM_STATE_TYPE_ID, 2u) != 0)
+    return (int32_t)context->status;
+  outputs[0] = (al_owning_bank_stack_slice){
+      3u, state_offset, state_offset + 16u, 0u};
+  continuation_offset = context->cursor_bytes;
+  if (continuation_offset > UINT32_MAX - 8u) {
+    al_owning_set_failure(context, AL_OWNING_STATUS_INTERNAL, 2u, UINT32_MAX,
+                          context->cursor_bytes);
+    return (int32_t)context->status;
+  }
+  if (al_owning_reserve_to(context, continuation_offset + 8u, 2u) != 0)
+    return (int32_t)context->status;
+  al_owning_store_token(context, continuation_offset,
+                        TEST_ENUM_CONTINUATION_TYPE_ID);
+  if (context->status != AL_OWNING_STATUS_OK)
+    return (int32_t)context->status;
+  outputs[1] = (al_owning_bank_stack_slice){
+      4u, continuation_offset, continuation_offset + 8u, 0u};
+  return AL_OWNING_STATUS_OK;
+}
+
+static int32_t test_enum_resume(
+    al_owning_stack_context *context, const al_owning_external_slice *inputs,
+    uint32_t input_count, al_owning_bank_stack_slice *outputs,
+    uint32_t output_capacity) {
+  (void)context;
+  (void)inputs;
+  (void)input_count;
+  (void)outputs;
+  (void)output_capacity;
+  return AL_OWNING_STATUS_INVALID_REQUEST;
+}
+
+static int32_t test_enum_associated_resume(
+    al_owning_stack_context *context,
+    const al_owning_bank_stack_slice *retained_inputs,
+    uint32_t retained_count, const al_owning_external_slice *completion,
+    uint32_t protected_cursor_bytes, al_owning_bank_stack_slice *outputs,
+    uint32_t output_capacity) {
+  (void)context;
+  (void)retained_inputs;
+  (void)retained_count;
+  (void)completion;
+  (void)protected_cursor_bytes;
+  (void)outputs;
+  (void)output_capacity;
+  return AL_OWNING_STATUS_INVALID_REQUEST;
+}
+
+static const al_owning_mailbox_module test_enum_module = {
+    AL_OWNING_MAILBOX_ABI_VERSION,
+    sizeof(al_owning_mailbox_module),
+    &test_enum_layout,
+    {{1u, 1u, {0u, 0u, 0u}, {3u, 0u}, test_enum_initialize},
+     {2u, 2u, {3u, 0u, 0u}, {3u, 4u}, test_enum_begin},
+     {3u, 1u, {3u, 4u, 0u}, {3u, 0u}, test_enum_resume}},
+    test_enum_associated_resume};
+
+static void test_generic_mailbox_enum_preflight(void) {
+  static _Alignas(8) uint8_t enum_storage[8192];
+  al_mailbox_owning_config config = {
+      AL_MAILBOX_CONTROL_ABI_VERSION, sizeof(al_mailbox_owning_config),
+      1u, 64u, 64u, 64u, 1u, AL_MAILBOX_OWNING_POLICY_RETURN};
+  al_mailbox_owning_storage_requirements requirements;
+  al_mailbox_runtime *runtime = NULL;
+  al_mailbox_call_info call_info;
+  al_mailbox_owning_state_view view;
+  al_mailbox_owning_stats before_stats;
+  al_mailbox_owning_stats after_stats;
+  al_mailbox_token token;
+  uint8_t active_before[16];
+  uint8_t *state_bytes;
+  const uint8_t input[] = {'x'};
+
+  test_enum_begin_handler_calls = 0u;
+  assert(al_mailbox_get_owning_storage_requirements(
+             &test_enum_module, &config, &requirements) == AL_MAILBOX_OK);
+  assert(requirements.storage_bytes <= sizeof(enum_storage));
+  assert(al_mailbox_runtime_init_owning(
+             &test_enum_module, &config, enum_storage, sizeof(enum_storage),
+             &runtime) == AL_MAILBOX_OK);
+  assert(al_mailbox_init_text(runtime, 0u, input, sizeof(input), &call_info) ==
+         AL_MAILBOX_OK);
+  assert(al_mailbox_get_owning_state_view(runtime, 0u, &view) ==
+         AL_MAILBOX_OK);
+  assert(view.bank->root_count == 1u && view.bank->used_bytes == 16u &&
+         view.bank->roots[0].type_id == TEST_ENUM_STATE_TYPE_ID);
+  state_bytes = (uint8_t *)(uintptr_t)(
+      view.bank->bytes + view.bank->roots[0].offset_bytes);
+  test_write_u64_le(state_bytes, 8u, 3u);
+  memcpy(active_before, state_bytes, sizeof(active_before));
+  assert(al_mailbox_get_owning_stats(runtime, &before_stats) == AL_MAILBOX_OK);
+  memset(&token, 0x5a, sizeof(token));
+  assert(al_mailbox_begin_text(runtime, 0u, input, sizeof(input), &token,
+                               &call_info) == AL_MAILBOX_INVALID_REFERENCE);
+  assert(al_mailbox_get_owning_stats(runtime, &after_stats) == AL_MAILBOX_OK);
+  assert(after_stats.handler_invocations == before_stats.handler_invocations &&
+         test_enum_begin_handler_calls == 0u);
+  assert(al_mailbox_get_owning_state_view(runtime, 0u, &view) ==
+         AL_MAILBOX_OK);
+  assert(view.pending == 0u && view.bank->root_count == 1u &&
+         view.bank->used_bytes == 16u &&
+         memcmp(view.bank->bytes, active_before, sizeof(active_before)) == 0);
+  assert(token.opaque[0] == UINT64_C(0x5a5a5a5a5a5a5a5a) &&
+         token.opaque[1] == UINT64_C(0x5a5a5a5a5a5a5a5a) &&
+         token.opaque[2] == UINT64_C(0x5a5a5a5a5a5a5a5a));
+
+  test_write_u64_le(state_bytes, 8u, 1u);
+  assert(al_mailbox_begin_text(runtime, 0u, input, sizeof(input), &token,
+                               &call_info) == AL_MAILBOX_OK);
+  assert(test_enum_begin_handler_calls == 1u);
+  assert(al_mailbox_get_owning_state_view(runtime, 0u, &view) ==
+         AL_MAILBOX_OK);
+  assert(view.pending != 0u && view.bank->root_count == 2u &&
+         view.bank->roots[0].type_id == TEST_ENUM_STATE_TYPE_ID &&
+         view.bank->roots[1].type_id == TEST_ENUM_CONTINUATION_TYPE_ID);
+  assert(al_mailbox_dispose(runtime) == AL_MAILBOX_OK);
+}
+
 static const al_owning_type_descriptor test_text_state_types[] = {
     {AL_OWNING_TYPE_STRING, TEST_STRING_TYPE_ID, 0u, 0u,
-     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u},
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
     {AL_OWNING_TYPE_RECORD, TEST_STATE_TYPE_ID, 0u, 1u,
-     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u},
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
     {AL_OWNING_TYPE_RECORD, TEST_CONTINUATION_TYPE_ID, 1u, 1u, 8u, 8u, 8u,
-     8u},
-    {AL_OWNING_TYPE_I64, TEST_I64_TYPE_ID, 0u, 0u, 8u, 8u, 8u, 8u}};
+     8u, 0u},
+    {AL_OWNING_TYPE_I64, TEST_I64_TYPE_ID, 0u, 0u, 8u, 8u, 8u, 8u, 0u}};
 
 static const al_owning_field_descriptor test_text_state_fields[] = {
     {0u, 0u, 0u, 0u}, {3u, 0u, 0u, 0u}};
@@ -1115,6 +1311,7 @@ int main(void) {
   assert(stats.initialized_mailboxes == 0u && stats.live_retained_bytes == 0u &&
          stats.live_retained_roots == 0u && stats.pending_mailboxes == 0u);
   assert(al_mailbox_dispose(runtime) == AL_MAILBOX_OK);
+  test_generic_mailbox_enum_preflight();
   test_keep_associated_policy();
   test_return_cancellation();
   test_keep_cancellation();
