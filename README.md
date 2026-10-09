@@ -60,10 +60,12 @@ superiority. After default-help improvements, a fresh
 agent-created helper without changing inherited definitions. This single
 language-only trial supports feasibility, not a comparative reliability lead.
 The [shared-rule maintenance study](reports/141-paid-invoice-maintenance.md)
-now has frozen inputs, passing scorer controls and four fresh participants
-dispatched. Results are pending. Its incorrect language control passes all 191
-attached tests but fails independent acceptance, reinforcing the distinction
-between test coverage and correct business expectations.
+is complete: both language and both F# participants pass all four independent
+behavior scenarios and preserve the shared aggregation. Three fail the separate
+requirement to author new overflow/precedence tests despite retaining passing
+inherited coverage. This supports feasibility, not a language reliability lead.
+Its incorrect language control passes all 191 attached tests but fails independent
+acceptance, reinforcing the distinction between coverage and correct expectations.
 
 The implementation targets .NET 9 and uses no external test framework or model API key.
 

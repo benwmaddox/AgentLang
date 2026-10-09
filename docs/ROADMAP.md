@@ -468,13 +468,17 @@ from an earlier agent; the conventional equivalent was supplied. This tests
 maintenance of existing vocabulary, not identical prior authorship or a causal
 language advantage. Reuse the harness and leave historical submissions untouched.
 
-[Report 141](../reports/141-paid-invoice-maintenance.md) records preparation of
-this four-participant maintenance study. Historical starts match the archived
-report 135 sources, fresh baseline suites pass, and both scorers' positive and
-negative controls pass. Equivalent test-only import fixtures expose defensive
-ledger states in both environments. Inputs are frozen and four fresh participants
-are dispatched. Participant results remain pending;
-do not treat scorer preflight as evidence of agent efficacy.
+[Report 141](../reports/141-paid-invoice-maintenance.md) completes this
+four-participant maintenance study. All four pass the independent behavioral
+oracle and preserve shared structure; both language participants and one F#
+participant fail the literal requirement for newly authored overflow/precedence
+tests, while inherited coverage remains passing. Strict acceptance is 0/2
+language and 1/2 F#; behavioral acceptance is 2/2 in each arm. This small defensive
+import-state task does not establish a reliability advantage. Future tasks
+should assess the resulting suite rather than require duplicate regressions,
+and target normal reachable application behavior where effects, module boundaries
+or domain types can catch a concrete mistake. No additional mailbox infrastructure
+is required before the next agent comparison.
 
 Report 111's extra-write control passed full library coverage but violated the
 IO contract. Make provider-state and effect-count assertions straightforward in

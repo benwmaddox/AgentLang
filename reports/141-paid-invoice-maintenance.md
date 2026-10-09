@@ -1,13 +1,13 @@
 # 141 — Maintenance of shared payment vocabulary
 
-Status: preflight passed; four fresh participants dispatched, results pending.
+Status: all four submissions independently scored; behavior passes in both arms.
 Starting revision: `aff6a84`.
 
 This study returns to the primary question of reliable later edits to discovered,
 reusable vocabulary. It follows the runtime comparison in report 140 without
 treating native performance as evidence about agent editing quality.
 
-The planned comparison uses two fresh agents per environment, starting from the
+The comparison uses two fresh agents per environment, starting from the
 accepted retained-language and F# second submissions in report 135. Both account
 and dashboard summaries already share a customer payment-total operation. The
 maintenance task adds a paid-invoice status requirement while preserving customer
@@ -27,6 +27,67 @@ already couples a successful payment with a paid invoice. The supplied builders
 deliberately bypass those construction invariants for both arms. Keep that
 limitation visible when interpreting the result; this is a small shared-rule
 maintenance task, not a broad application-correctness benchmark.
+
+## Participant results
+
+All four terminal submissions have been independently scored. Each passes
+all four frozen scenarios, evaluated at the direct helper and both summaries
+(12 observations per participant). Fresh full-suite runs also pass. These are
+observations from one small maintenance task, not evidence of a general language
+reliability advantage.
+
+| Participant | Independent scenarios | Fresh attached suite | Shared structure / preservation | New-test requirement | Broker exchanges / error responses |
+| --- | --- | --- | --- | --- | --- |
+| Language 1 | 4/4 | 195/195 tests | Pass / pass | Fail | 71 / 10 |
+| Language 2 | 4/4 | 197/197 tests | Pass / pass | Fail | 98 / 12 |
+| F# 1 | 4/4 | 19 groups / 174 assertions | Pass / pass | Pass | 36 / 7 |
+| F# 2 | 4/4 | 19 groups / 163 assertions | Pass / pass | Fail | 25 / 3 |
+
+The failing new-test dimension is literal compliance with the frozen task:
+Both language participants and F# 2 added signed-payment, Open/missing-invoice and
+summary regressions, but relied on inherited tests for paid overflow and unknown
+customer precedence. The task explicitly required those behaviors in **new**
+tests. Their combined suites and independent behavior checks pass; the omission
+must not be described as an observed production correctness defect. Conversely,
+passing behavior does not erase the separate frozen acceptance failure. F# 1
+newly tests those cases as requested.
+
+This requirement was unnecessarily prescriptive for ordinary maintenance, where
+retaining suitable existing regressions is reasonable. Future studies should
+assess adequacy of the resulting suite rather than demand duplicate assertions.
+The present criterion is retained unchanged; it was not relaxed after results.
+
+All four agents kept the shared aggregation path. F# submissions
+modify `Store.customerPaidTotalStep`; both language submissions modify
+`customer.paid-total-step`. The public helpers check customer existence first,
+both summaries reuse them, signed additions remain checked, and earlier errors
+remain sticky. Types, public contracts, fixture implementations and inherited
+tests are preserved. Other language revisions attach tests and, in Language 2,
+clarify the existing helper documentation; other executable behavior is unchanged.
+Fresh reloads report no active task and current library coverage, including
+38/38 instructions and 8/8 branch outcomes for each changed step. All four
+broker sessions close with host/runtime exit 0. Both language tasks commit.
+
+Exchange counts measure broker requests, not agent turns or LLM tokens. The
+first language participant's 10 error responses include syntax/discovery and publication mistakes;
+two additional failed draft-test attempts return successful protocol envelopes
+and are counted separately. F# 1's seven include two failed build validations;
+Language 2's 12 include discovery, refinement, syntax and publication probes;
+its attached test runs pass. F# 2's three concern inspection arguments and patch hashes. Participants recover
+before submission. Interfaces and payload granularity differ, so these counts
+do not establish relative reasoning cost. No controlled latency or token claim
+is made. Overall strict acceptance is 0/2 language and 1/2 F# because of the
+new-test criterion; behavioral acceptance is 2/2 in each arm. Do not conflate
+those outcomes or infer population success rates from these four agents.
+
+The bounded conclusion is that agents can discover and maintain shared vocabulary
+in both environments. The language's dictionary and library gates work in this
+case, but do not establish better edits than conventional typed functions.
+The language participants also needed more broker interactions here. The next
+efficacy question should concern a normal reachable application change where
+effects, module boundaries or reusable domain types can prevent a concrete
+mistake, with resulting regression coverage assessed independently. More mailbox
+or compiler infrastructure is not a prerequisite for that comparison.
 
 ## Preparation evidence
 
@@ -96,5 +157,22 @@ verified by size and SHA-256 against the
 [index](evidence/141-paid-invoice-maintenance/preflight-index.json).
 The archive is 6,433,611 bytes, SHA-256
 `3cc65fd3cede92742656ad769049429be48ea18c6371252a03e0fc874c9cc18c`.
-Participant projects and live traces are deliberately excluded from this
-preflight package; their outcomes will be retained after completion.
+Participant projects and live traces are excluded from this preflight package.
+
+The separate [results archive](evidence/141-paid-invoice-maintenance/results.zip)
+contains final projects, terminal raw broker traces, source reviews, fresh test
+logs, independent scorer outputs, the acceptance matrix and audit tools. Its
+[index](evidence/141-paid-invoice-maintenance/results-index.json) records all 862
+entries with byte lengths and SHA-256. The archive is 5,490,495 bytes, SHA-256
+`9247137cd42c22e509777296ee8356ee59a1704d5fcc2cee377be1464582e01c`.
+Build artifact directories are excluded. All 116 frozen-input, build-source,
+runtime-artifact and post-grading project/trace checks pass; grading did not
+change any participant source. Archive entries are verified against the index.
+
+Coordinator metadata retries are retained separately: the first Language 2
+reload passes 197 tests but sends five invalid `describe` requests using `name`
+instead of `word`. Corrected descriptions in a separate process report coverage
+as not-run because coverage is process-local. A final fresh process executes
+the full suite and corrected descriptions together: 197/197 tests, five current
+library coverage records with complete finite coverage, and no active task.
+These coordinator errors are excluded from participant exchange/error counts.
