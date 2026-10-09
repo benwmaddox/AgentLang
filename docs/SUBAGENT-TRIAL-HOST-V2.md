@@ -8,6 +8,28 @@ The broker is a transport wrapper, not an operating-system sandbox: an external
 subagent can still have other host tools unless its surrounding platform limits
 them.
 
+## Participant isolation
+
+Each participant receives a fresh context, its own project copy, pinned prompt
+and runtime, and a separate broker trace. Its prompt must explicitly prohibit
+listing other agents, reading their status or messages, contacting siblings,
+delegating work, and using another participant's findings. All project discovery,
+edits and tests go through its assigned broker. The coordinator must not supply
+solution hints during an active trial.
+
+Where the surrounding platform supports it, remove collaboration and unrelated
+filesystem tools from the participant's available tools. The broker itself cannot
+enforce these restrictions on external tools. Prompt compliance alone is not
+proof of enforced isolation. Use a single active participant for a focused
+discovery follow-up when concurrent participants are unnecessary.
+
+Record any observed or reported out-of-band communication, including exact
+messages and coordinator replies where available. Mark affected runs as
+non-independent, preserve their results, and identify any repeat as a separate
+trial. Ask the participant to disclose non-broker tool use at completion. Do not
+silently replace contaminated observations with cleaner ones. Report147's fold
+discovery trial demonstrates why these restrictions need to be explicit.
+
 The current wrapper uses a Windows Job Object with kill-on-close and is
 intentionally x64-only. At startup it checks the `Marshal.SizeOf` and
 `Marshal.OffsetOf` layout used by `JOBOBJECT_EXTENDED_LIMIT_INFORMATION`:

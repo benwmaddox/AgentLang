@@ -146,6 +146,13 @@ Next actions:
    The feasibility probe also records a library-coverage tradeoff:
    carrying invalid-window errors through a fold makes every branch testable
    but traverses the input even for invalid windows.
+   [Report 148](../reports/148-flow-list-discovery.md) corrects list-callback
+   discovery: descriptors retain Stack syntax and separately expose Flow/2
+   receiver forms; help includes an executable named-callback fold example.
+   Focused runtime/CLI suites and the unchanged billing control pass locally.
+   A single fresh participant is testing the same retained batch task under
+   explicit no-collaboration rules; its outcome remains pending. This is a
+   discovery follow-up, not a replacement for report147 or a retention estimate.
 
 Acceptance is an evidence-backed review of the declared conditions, including
 their limitations. Completing a language feature or passing actor-written tests

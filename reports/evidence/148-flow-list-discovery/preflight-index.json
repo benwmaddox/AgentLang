@@ -1,0 +1,868 @@
+{
+  "archive": "preflight.zip",
+  "bytes": 2769819,
+  "sha256": "231fe3f982558d48b6a9f09b618e881a78e256ddae469f1a7a5be9e843453ef7",
+  "entryCount": 172,
+  "files": [
+    {
+      "path": ".agentlang/fold-discovery-148/cli-tests.log",
+      "bytes": 650,
+      "sha256": "6c717c418fe18bd519d294f91f67379b8806a26494197c503b7265761a00a587"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/acceptance.json",
+      "bytes": 8528,
+      "sha256": "12d99dd8c02028b6110ae22ee3e7960ddfdea9823848985eec6494e7e91327b2"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/cases.json",
+      "bytes": 2853,
+      "sha256": "7c6d6e942e8f7344553e37e842cc1915c1200d0f10a2b48cc266fdd84551c866"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/exit-code.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/requests.jsonl",
+      "bytes": 59667,
+      "sha256": "5866cbed2233df9c2bcf8cf28b92aef0ce11192c4060db469533961a90b1d153"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/source-hashes.after.json",
+      "bytes": 10693,
+      "sha256": "0603a09289cd72076a1c82a22ff9ad335d83d15a8eddac5d055cf22551228e37"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/source-hashes.before.json",
+      "bytes": 10693,
+      "sha256": "0603a09289cd72076a1c82a22ff9ad335d83d15a8eddac5d055cf22551228e37"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/stdout.txt",
+      "bytes": 18011,
+      "sha256": "20203ec1f192333bcb8a8f0079d7429cb5ed866d6a66d8408a6c80497995fbac"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "70e1275f2630c137eb5c391a4cf0ee3acc2a6a600158f733d0acb1293746095d"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/manifests/160390fa1c541b53f7a33f5dd328503b6dcdae234e7f74c56f94f07df03e5d1a.json",
+      "bytes": 102641,
+      "sha256": "160390fa1c541b53f7a33f5dd328503b6dcdae234e7f74c56f94f07df03e5d1a"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/manifests/42db9d8206507b007c1f2402771c7612e2d614b3a41e1a60986190b66182f203.json",
+      "bytes": 48397,
+      "sha256": "42db9d8206507b007c1f2402771c7612e2d614b3a41e1a60986190b66182f203"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/manifests/54a641136da82344a04f255bed6b2f8bad562ad3a0cb8b00bef88f7488de1bcc.json",
+      "bytes": 12261,
+      "sha256": "54a641136da82344a04f255bed6b2f8bad562ad3a0cb8b00bef88f7488de1bcc"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/manifests/7f60b66d94fcb78b58a1766130a508dfd23bffc93e82f98ae6dee08081bf3bd4.json",
+      "bytes": 29526,
+      "sha256": "7f60b66d94fcb78b58a1766130a508dfd23bffc93e82f98ae6dee08081bf3bd4"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/manifests/cb8ad44ab2a776eb6b0c862dfeb24fdc532f7d8809d0161e0a0807d5c1edf65c.json",
+      "bytes": 82135,
+      "sha256": "cb8ad44ab2a776eb6b0c862dfeb24fdc532f7d8809d0161e0a0807d5c1edf65c"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/manifests/e9ca5688aa9ab075de17af289c18891f5b9ba43704cde51835e69b9dd9d483b2.json",
+      "bytes": 15911,
+      "sha256": "e9ca5688aa9ab075de17af289c18891f5b9ba43704cde51835e69b9dd9d483b2"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/manifests/f4a215bf61a18232f1226761bfe093e53fef208218d82dfccb2176ea80dc9bd9.json",
+      "bytes": 68887,
+      "sha256": "f4a215bf61a18232f1226761bfe093e53fef208218d82dfccb2176ea80dc9bd9"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/119ca35bab3c996397004efc4b3c9677de97eaa49862c381351fadc0f9a13bb8.agent",
+      "bytes": 169,
+      "sha256": "119ca35bab3c996397004efc4b3c9677de97eaa49862c381351fadc0f9a13bb8"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/1b15d947805cb67b4594d8aa7717c4b12de911e17b54f396c49376b98e9d0e04.agent",
+      "bytes": 858,
+      "sha256": "1b15d947805cb67b4594d8aa7717c4b12de911e17b54f396c49376b98e9d0e04"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/1e3bcab8af40ed166d56a4957cb0e8a81e7e3f8939ac14024eaf7f62c1183c39.agent",
+      "bytes": 164,
+      "sha256": "1e3bcab8af40ed166d56a4957cb0e8a81e7e3f8939ac14024eaf7f62c1183c39"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/1f373cbe26e8478eb96f3cfb2544058e18e940ab25e62cb2bc67feb052b1bcf6.agent",
+      "bytes": 593,
+      "sha256": "1f373cbe26e8478eb96f3cfb2544058e18e940ab25e62cb2bc67feb052b1bcf6"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/2610940f87d05740d611612f58b5d974a2b31b7060687cf4f5f64853dca5797a.agent",
+      "bytes": 688,
+      "sha256": "2610940f87d05740d611612f58b5d974a2b31b7060687cf4f5f64853dca5797a"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/2851a4d335eabed2ccf686a043324abd2a9ec91f4e8656d834bd715e775a0e42.agent",
+      "bytes": 188,
+      "sha256": "2851a4d335eabed2ccf686a043324abd2a9ec91f4e8656d834bd715e775a0e42"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/28fd31b1fa7d5f27faa53bbde32066bc56e0ebd811770fd1e5f43459aa732744.agent",
+      "bytes": 941,
+      "sha256": "28fd31b1fa7d5f27faa53bbde32066bc56e0ebd811770fd1e5f43459aa732744"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/2a07a496b041fc8f328303d16d77959681c9c814f4416a62af87f5d5a0438048.agent",
+      "bytes": 499,
+      "sha256": "2a07a496b041fc8f328303d16d77959681c9c814f4416a62af87f5d5a0438048"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/2b6a36af0a047b94492e7be574c39475590ba6b74bb562579bfcd9ddb87966d5.agent",
+      "bytes": 336,
+      "sha256": "2b6a36af0a047b94492e7be574c39475590ba6b74bb562579bfcd9ddb87966d5"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/2ebd08b75606cc47f7287d8d4cd57364859cbef660dfe02027a245c5bc60e03c.agent",
+      "bytes": 73,
+      "sha256": "2ebd08b75606cc47f7287d8d4cd57364859cbef660dfe02027a245c5bc60e03c"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/394c20b5f731c8175e356b25c6f4aeeb6027141304133e513ae8db12f8fb91ff.agent",
+      "bytes": 204,
+      "sha256": "394c20b5f731c8175e356b25c6f4aeeb6027141304133e513ae8db12f8fb91ff"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/420490b549af799b2b7215d8f7d4cbda132449e8264a5ffd9e126e0ca79f206a.agent",
+      "bytes": 444,
+      "sha256": "420490b549af799b2b7215d8f7d4cbda132449e8264a5ffd9e126e0ca79f206a"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/436a37f68b9c41c3024954f94705b4bdcd11d1038a3d2ae709fa89b6a2c64205.agent",
+      "bytes": 878,
+      "sha256": "436a37f68b9c41c3024954f94705b4bdcd11d1038a3d2ae709fa89b6a2c64205"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/47773d60333bb2bb2cf1afa05a3cb842dbe801d388b579bc27f2850f65b76ce7.agent",
+      "bytes": 261,
+      "sha256": "47773d60333bb2bb2cf1afa05a3cb842dbe801d388b579bc27f2850f65b76ce7"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/49aa7280ee5341f6780edbaec9feb4448e3e6b6a9a21cebc05657e6215d5e1b1.agent",
+      "bytes": 292,
+      "sha256": "49aa7280ee5341f6780edbaec9feb4448e3e6b6a9a21cebc05657e6215d5e1b1"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/52aac3348a9d59e7e41280f71fbedbb0c98cf20b5a1c0c99a265f65678094b68.agent",
+      "bytes": 4439,
+      "sha256": "52aac3348a9d59e7e41280f71fbedbb0c98cf20b5a1c0c99a265f65678094b68"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/537877c25ad1028c1cf4735c9bc4893a414ac0afd6cb9932955298421dc4cad2.agent",
+      "bytes": 279,
+      "sha256": "537877c25ad1028c1cf4735c9bc4893a414ac0afd6cb9932955298421dc4cad2"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/55c7de2fc10422b21adfea6e55ec225ff86945648d37e853edccfd38fa6e88f3.agent",
+      "bytes": 194,
+      "sha256": "55c7de2fc10422b21adfea6e55ec225ff86945648d37e853edccfd38fa6e88f3"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/6f7ec217f5a4fc216f9287d42bf708cdd925050a2dbd8a255eb44eebd8a915e4.agent",
+      "bytes": 281,
+      "sha256": "6f7ec217f5a4fc216f9287d42bf708cdd925050a2dbd8a255eb44eebd8a915e4"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/709f0230bcd2689807a90846aad20889ce615a52870dff4bb0342d02db0967af.agent",
+      "bytes": 12996,
+      "sha256": "709f0230bcd2689807a90846aad20889ce615a52870dff4bb0342d02db0967af"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/7985f190bb51df338942d51289aaa3abed1aeba1eb9775e87540ab8d884b7817.agent",
+      "bytes": 18327,
+      "sha256": "7985f190bb51df338942d51289aaa3abed1aeba1eb9775e87540ab8d884b7817"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/7f47065f8288a3091b99456f7a0d592ca9c8acd6ca08e8995ead1ca3007c0bee.agent",
+      "bytes": 167,
+      "sha256": "7f47065f8288a3091b99456f7a0d592ca9c8acd6ca08e8995ead1ca3007c0bee"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/7f9feee69ed04f627768bd7f3c84e75a18abf705a370cee393c8574073104ec7.agent",
+      "bytes": 270,
+      "sha256": "7f9feee69ed04f627768bd7f3c84e75a18abf705a370cee393c8574073104ec7"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/80aa6cb49e747b6ea74910bf636e7bc7c4e91e12a2d831328a8ad8a3481a1c9b.agent",
+      "bytes": 359,
+      "sha256": "80aa6cb49e747b6ea74910bf636e7bc7c4e91e12a2d831328a8ad8a3481a1c9b"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/8dc84ef6a154783ee75a4a9a4b5feffedc4084657badfafc1d701cf5631c6e74.agent",
+      "bytes": 190,
+      "sha256": "8dc84ef6a154783ee75a4a9a4b5feffedc4084657badfafc1d701cf5631c6e74"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/943e17320f0919a22b48c25bc48f58f8ba77158b9a20c22796d00b4109215d43.agent",
+      "bytes": 137,
+      "sha256": "943e17320f0919a22b48c25bc48f58f8ba77158b9a20c22796d00b4109215d43"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/95bd384c9e14b8da8fef59549aa5b2e30bd630d1fb55fc42f085a50bf1869afd.agent",
+      "bytes": 408,
+      "sha256": "95bd384c9e14b8da8fef59549aa5b2e30bd630d1fb55fc42f085a50bf1869afd"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/a44623499dd4cfecb7fd5749da2cf143d65d1167e1946cd9c5306544b10f75d5.agent",
+      "bytes": 411,
+      "sha256": "a44623499dd4cfecb7fd5749da2cf143d65d1167e1946cd9c5306544b10f75d5"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/abe5a4292fb8a6184fbf6dfede02e0f12a7ccd703cabd02d98c0270d06b9a033.agent",
+      "bytes": 176,
+      "sha256": "abe5a4292fb8a6184fbf6dfede02e0f12a7ccd703cabd02d98c0270d06b9a033"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/ac069558b30fb316db36aa4953a69f94133b1e38e1aea5a7de2613efa04bf338.agent",
+      "bytes": 15451,
+      "sha256": "ac069558b30fb316db36aa4953a69f94133b1e38e1aea5a7de2613efa04bf338"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/aed0b99a2605615a59500b4a636c589860c6e89c6992530dc1d00fc8dd26d9b8.agent",
+      "bytes": 350,
+      "sha256": "aed0b99a2605615a59500b4a636c589860c6e89c6992530dc1d00fc8dd26d9b8"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/b15b71926953aa9126fe5b2153a541919cd801e262b25d29ed872f116c27170f.agent",
+      "bytes": 205,
+      "sha256": "b15b71926953aa9126fe5b2153a541919cd801e262b25d29ed872f116c27170f"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/b2142a9316c190304b6bba2c131f6d4ad08e450b2ad1df47655c9414fd3a32f0.agent",
+      "bytes": 180,
+      "sha256": "b2142a9316c190304b6bba2c131f6d4ad08e450b2ad1df47655c9414fd3a32f0"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/b528d530214f6d44e735cd398cc5660c99ae7235263cc665c8d7db2b1bf72c41.agent",
+      "bytes": 102,
+      "sha256": "b528d530214f6d44e735cd398cc5660c99ae7235263cc665c8d7db2b1bf72c41"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/b8047edde3a8aafb3664d86f350fd7bcbdaf1672ab08220d387b9a2244a1c664.agent",
+      "bytes": 985,
+      "sha256": "b8047edde3a8aafb3664d86f350fd7bcbdaf1672ab08220d387b9a2244a1c664"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/ba5b268d7a59a601867b495bdbaf57c2c78112bad11d2f54a80bbc7d996ca6ba.agent",
+      "bytes": 493,
+      "sha256": "ba5b268d7a59a601867b495bdbaf57c2c78112bad11d2f54a80bbc7d996ca6ba"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/bcd5e552a81fbb36b36fb5b8693d30cc32ad68a34d0280583895850def90b5f2.agent",
+      "bytes": 7710,
+      "sha256": "bcd5e552a81fbb36b36fb5b8693d30cc32ad68a34d0280583895850def90b5f2"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/c4c9893eda8e1a134a094424e27c336434dee7b35b58de0a6300f12535d8dbe4.agent",
+      "bytes": 219,
+      "sha256": "c4c9893eda8e1a134a094424e27c336434dee7b35b58de0a6300f12535d8dbe4"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/c71865598b144d855b032ec861e22bb52b9b959378dc3d82ecd769e4a6e9362f.agent",
+      "bytes": 197,
+      "sha256": "c71865598b144d855b032ec861e22bb52b9b959378dc3d82ecd769e4a6e9362f"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/cc5b95590f4c14cf0078817b699ae9655c648d16db3ba95a53d231f92e66faad.agent",
+      "bytes": 606,
+      "sha256": "cc5b95590f4c14cf0078817b699ae9655c648d16db3ba95a53d231f92e66faad"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/d4063d4c4c5f08a0855f2aeaa487b7097e0a98c35ac0250711673a78f6b2bc3a.agent",
+      "bytes": 267,
+      "sha256": "d4063d4c4c5f08a0855f2aeaa487b7097e0a98c35ac0250711673a78f6b2bc3a"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/d5be4936fa3a6fb8a8f225a9fd998ff30561dfc6d6ff9eeb679ddf9279cfb64f.agent",
+      "bytes": 203,
+      "sha256": "d5be4936fa3a6fb8a8f225a9fd998ff30561dfc6d6ff9eeb679ddf9279cfb64f"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/d76fcd52a68852462cea282141cbbf343b25e2696f39bbb205e77b42100463d3.agent",
+      "bytes": 937,
+      "sha256": "d76fcd52a68852462cea282141cbbf343b25e2696f39bbb205e77b42100463d3"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/df6031ded0d76dcdf6aa4e055a677e82f5b9f1eef24d57ad0dadd965f8ab7914.agent",
+      "bytes": 333,
+      "sha256": "df6031ded0d76dcdf6aa4e055a677e82f5b9f1eef24d57ad0dadd965f8ab7914"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/e091eb89778222d629656cc1a250d6c3fb65e6d9c64e4bee035eb19d2c62a720.agent",
+      "bytes": 2638,
+      "sha256": "e091eb89778222d629656cc1a250d6c3fb65e6d9c64e4bee035eb19d2c62a720"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/e6564382a5d4f1aa6d677961255cfba0bc7aec3b3fe1099959757814946d925a.agent",
+      "bytes": 421,
+      "sha256": "e6564382a5d4f1aa6d677961255cfba0bc7aec3b3fe1099959757814946d925a"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/eb9f473a8a5a16656b67ab1861c10845df8c461f23835b48d81377da3de3ffc4.agent",
+      "bytes": 273,
+      "sha256": "eb9f473a8a5a16656b67ab1861c10845df8c461f23835b48d81377da3de3ffc4"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/ed2d6ed4627441cd9cdddad5352d145ce5dad1538df78260a500f2ea12c9938b.agent",
+      "bytes": 313,
+      "sha256": "ed2d6ed4627441cd9cdddad5352d145ce5dad1538df78260a500f2ea12c9938b"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/ee1498cf76b0c9721a30d1767d628b75188a116aa6aba0e766c7affd16f0cd84.agent",
+      "bytes": 269,
+      "sha256": "ee1498cf76b0c9721a30d1767d628b75188a116aa6aba0e766c7affd16f0cd84"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/f36e12fb4d86ec85b21785a3c3296cbd27b09a0ee8598a9e12be7463991b30b6.agent",
+      "bytes": 273,
+      "sha256": "f36e12fb4d86ec85b21785a3c3296cbd27b09a0ee8598a9e12be7463991b30b6"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/f6276765001d8681df37d734696ee015622c49dd673e855b59caa966fe4ff619.agent",
+      "bytes": 270,
+      "sha256": "f6276765001d8681df37d734696ee015622c49dd673e855b59caa966fe4ff619"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/f78419b9d8fea876356e4ecd7aa004b28bb473fd89a4a8358d659631855cdf1f.agent",
+      "bytes": 418,
+      "sha256": "f78419b9d8fea876356e4ecd7aa004b28bb473fd89a4a8358d659631855cdf1f"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/.agentlang/store/objects/ffc29325e7be8817fca313d66b754326912405b087ea8bce0e259b74894c8f39.agent",
+      "bytes": 2103,
+      "sha256": "ffc29325e7be8817fca313d66b754326912405b087ea8bce0e259b74894c8f39"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/dictionary.agent",
+      "bytes": 18327,
+      "sha256": "7985f190bb51df338942d51289aaa3abed1aeba1eb9775e87540ab8d884b7817"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/history/task-0001.json",
+      "bytes": 2413,
+      "sha256": "084e90b231c3c01bd18ed5566a793a5c9a458071f00f283b6807bf65172b8c95"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/history/task-0002.json",
+      "bytes": 2779,
+      "sha256": "30bdb6624c3a80b1da99030fe05781265f9a3e1011399c48d4ba0e9b16ef4b06"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/controls/correct/working-project/history/task-0003.json",
+      "bytes": 985,
+      "sha256": "a04f6d3de111106086a9dceffe691aed196e8eeb7f0c434f9796950874b49c07"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/freeze-preflight.py",
+      "bytes": 2452,
+      "sha256": "1441f4b64d1e30584ec30f423d203f39bc7a08b5b0ade8c12dcaf0b39f0da48b"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/freeze.json",
+      "bytes": 44641,
+      "sha256": "de9bc3ee4a8ed4f0bd976e0ec7307e07ada7cb624d462f9ba0ccd11f03ea739c"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/implementation/build-release-attempt2.log",
+      "bytes": 4644,
+      "sha256": "cc4fcf0463277a8e4e02e9b12d194279c8e0da448a15a23012b38a51d397abad"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/implementation/build-release-attempt3.log",
+      "bytes": 4644,
+      "sha256": "dd9f558251e1a3c4ab6519e735076d1edd6974c13748684ff32c8969bf906be1"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/implementation/build-release.log",
+      "bytes": 2442,
+      "sha256": "38a62ca4433681a07ab007280615cb736e0f008b1905b386731d86d0db5e5a0e"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/implementation/clean-release.log",
+      "bytes": 146556,
+      "sha256": "af49d5a8f2dde7df7368fd103ff471fbdad2cbb4cd446c8530d1985bdd9ebf8b"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/implementation/flow-runtime-release-attempt2.log",
+      "bytes": 577,
+      "sha256": "848a77e5113a6f2c9a3af217bfb73efa60751580c79b569db8197c8fd4d8e020"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/implementation/flow-runtime-release-attempt3.log",
+      "bytes": 56,
+      "sha256": "7668a9125e7c1f2e7e7d328fa16f40e7114a9f3727142e45136d32f78e77f956"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/implementation/report.md",
+      "bytes": 1657,
+      "sha256": "680540a903c76cb15b4ceae45ba866c6b6d0706f1f5ff77593970bc5b45561f3"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/oracle/cases.json",
+      "bytes": 2853,
+      "sha256": "7c6d6e942e8f7344553e37e842cc1915c1200d0f10a2b48cc266fdd84551c866"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/oracle/fsharp/Program.fs",
+      "bytes": 8439,
+      "sha256": "1025314a00a777250376392cb9857f2bd486203b626afa4c96b5229dcb659c98"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/oracle/README.md",
+      "bytes": 1583,
+      "sha256": "9b6af433b9579ab1c6831459e922d0a7da538e2f643877022bb24a52306b0f9d"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/oracle/score.py",
+      "bytes": 31871,
+      "sha256": "8994061f3f4ef66c6404e8ddd82360b9d480e40a29a6a46b92b01e02742e1846"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "e7cb0698df811fe56273bfffb313711fbf10f66748d845ed65fb1cce40656d44"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/manifests/42db9d8206507b007c1f2402771c7612e2d614b3a41e1a60986190b66182f203.json",
+      "bytes": 48397,
+      "sha256": "42db9d8206507b007c1f2402771c7612e2d614b3a41e1a60986190b66182f203"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/manifests/54a641136da82344a04f255bed6b2f8bad562ad3a0cb8b00bef88f7488de1bcc.json",
+      "bytes": 12261,
+      "sha256": "54a641136da82344a04f255bed6b2f8bad562ad3a0cb8b00bef88f7488de1bcc"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/manifests/7f60b66d94fcb78b58a1766130a508dfd23bffc93e82f98ae6dee08081bf3bd4.json",
+      "bytes": 29526,
+      "sha256": "7f60b66d94fcb78b58a1766130a508dfd23bffc93e82f98ae6dee08081bf3bd4"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/manifests/e9ca5688aa9ab075de17af289c18891f5b9ba43704cde51835e69b9dd9d483b2.json",
+      "bytes": 15911,
+      "sha256": "e9ca5688aa9ab075de17af289c18891f5b9ba43704cde51835e69b9dd9d483b2"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/manifests/f4a215bf61a18232f1226761bfe093e53fef208218d82dfccb2176ea80dc9bd9.json",
+      "bytes": 68887,
+      "sha256": "f4a215bf61a18232f1226761bfe093e53fef208218d82dfccb2176ea80dc9bd9"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/119ca35bab3c996397004efc4b3c9677de97eaa49862c381351fadc0f9a13bb8.agent",
+      "bytes": 169,
+      "sha256": "119ca35bab3c996397004efc4b3c9677de97eaa49862c381351fadc0f9a13bb8"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/1e3bcab8af40ed166d56a4957cb0e8a81e7e3f8939ac14024eaf7f62c1183c39.agent",
+      "bytes": 164,
+      "sha256": "1e3bcab8af40ed166d56a4957cb0e8a81e7e3f8939ac14024eaf7f62c1183c39"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/1f373cbe26e8478eb96f3cfb2544058e18e940ab25e62cb2bc67feb052b1bcf6.agent",
+      "bytes": 593,
+      "sha256": "1f373cbe26e8478eb96f3cfb2544058e18e940ab25e62cb2bc67feb052b1bcf6"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/2610940f87d05740d611612f58b5d974a2b31b7060687cf4f5f64853dca5797a.agent",
+      "bytes": 688,
+      "sha256": "2610940f87d05740d611612f58b5d974a2b31b7060687cf4f5f64853dca5797a"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/2851a4d335eabed2ccf686a043324abd2a9ec91f4e8656d834bd715e775a0e42.agent",
+      "bytes": 188,
+      "sha256": "2851a4d335eabed2ccf686a043324abd2a9ec91f4e8656d834bd715e775a0e42"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/2a07a496b041fc8f328303d16d77959681c9c814f4416a62af87f5d5a0438048.agent",
+      "bytes": 499,
+      "sha256": "2a07a496b041fc8f328303d16d77959681c9c814f4416a62af87f5d5a0438048"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/2b6a36af0a047b94492e7be574c39475590ba6b74bb562579bfcd9ddb87966d5.agent",
+      "bytes": 336,
+      "sha256": "2b6a36af0a047b94492e7be574c39475590ba6b74bb562579bfcd9ddb87966d5"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/2ebd08b75606cc47f7287d8d4cd57364859cbef660dfe02027a245c5bc60e03c.agent",
+      "bytes": 73,
+      "sha256": "2ebd08b75606cc47f7287d8d4cd57364859cbef660dfe02027a245c5bc60e03c"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/394c20b5f731c8175e356b25c6f4aeeb6027141304133e513ae8db12f8fb91ff.agent",
+      "bytes": 204,
+      "sha256": "394c20b5f731c8175e356b25c6f4aeeb6027141304133e513ae8db12f8fb91ff"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/436a37f68b9c41c3024954f94705b4bdcd11d1038a3d2ae709fa89b6a2c64205.agent",
+      "bytes": 878,
+      "sha256": "436a37f68b9c41c3024954f94705b4bdcd11d1038a3d2ae709fa89b6a2c64205"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/49aa7280ee5341f6780edbaec9feb4448e3e6b6a9a21cebc05657e6215d5e1b1.agent",
+      "bytes": 292,
+      "sha256": "49aa7280ee5341f6780edbaec9feb4448e3e6b6a9a21cebc05657e6215d5e1b1"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/52aac3348a9d59e7e41280f71fbedbb0c98cf20b5a1c0c99a265f65678094b68.agent",
+      "bytes": 4439,
+      "sha256": "52aac3348a9d59e7e41280f71fbedbb0c98cf20b5a1c0c99a265f65678094b68"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/537877c25ad1028c1cf4735c9bc4893a414ac0afd6cb9932955298421dc4cad2.agent",
+      "bytes": 279,
+      "sha256": "537877c25ad1028c1cf4735c9bc4893a414ac0afd6cb9932955298421dc4cad2"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/55c7de2fc10422b21adfea6e55ec225ff86945648d37e853edccfd38fa6e88f3.agent",
+      "bytes": 194,
+      "sha256": "55c7de2fc10422b21adfea6e55ec225ff86945648d37e853edccfd38fa6e88f3"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/6f7ec217f5a4fc216f9287d42bf708cdd925050a2dbd8a255eb44eebd8a915e4.agent",
+      "bytes": 281,
+      "sha256": "6f7ec217f5a4fc216f9287d42bf708cdd925050a2dbd8a255eb44eebd8a915e4"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/709f0230bcd2689807a90846aad20889ce615a52870dff4bb0342d02db0967af.agent",
+      "bytes": 12996,
+      "sha256": "709f0230bcd2689807a90846aad20889ce615a52870dff4bb0342d02db0967af"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/7f47065f8288a3091b99456f7a0d592ca9c8acd6ca08e8995ead1ca3007c0bee.agent",
+      "bytes": 167,
+      "sha256": "7f47065f8288a3091b99456f7a0d592ca9c8acd6ca08e8995ead1ca3007c0bee"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/7f9feee69ed04f627768bd7f3c84e75a18abf705a370cee393c8574073104ec7.agent",
+      "bytes": 270,
+      "sha256": "7f9feee69ed04f627768bd7f3c84e75a18abf705a370cee393c8574073104ec7"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/80aa6cb49e747b6ea74910bf636e7bc7c4e91e12a2d831328a8ad8a3481a1c9b.agent",
+      "bytes": 359,
+      "sha256": "80aa6cb49e747b6ea74910bf636e7bc7c4e91e12a2d831328a8ad8a3481a1c9b"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/8dc84ef6a154783ee75a4a9a4b5feffedc4084657badfafc1d701cf5631c6e74.agent",
+      "bytes": 190,
+      "sha256": "8dc84ef6a154783ee75a4a9a4b5feffedc4084657badfafc1d701cf5631c6e74"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/943e17320f0919a22b48c25bc48f58f8ba77158b9a20c22796d00b4109215d43.agent",
+      "bytes": 137,
+      "sha256": "943e17320f0919a22b48c25bc48f58f8ba77158b9a20c22796d00b4109215d43"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/95bd384c9e14b8da8fef59549aa5b2e30bd630d1fb55fc42f085a50bf1869afd.agent",
+      "bytes": 408,
+      "sha256": "95bd384c9e14b8da8fef59549aa5b2e30bd630d1fb55fc42f085a50bf1869afd"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/abe5a4292fb8a6184fbf6dfede02e0f12a7ccd703cabd02d98c0270d06b9a033.agent",
+      "bytes": 176,
+      "sha256": "abe5a4292fb8a6184fbf6dfede02e0f12a7ccd703cabd02d98c0270d06b9a033"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/aed0b99a2605615a59500b4a636c589860c6e89c6992530dc1d00fc8dd26d9b8.agent",
+      "bytes": 350,
+      "sha256": "aed0b99a2605615a59500b4a636c589860c6e89c6992530dc1d00fc8dd26d9b8"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/b15b71926953aa9126fe5b2153a541919cd801e262b25d29ed872f116c27170f.agent",
+      "bytes": 205,
+      "sha256": "b15b71926953aa9126fe5b2153a541919cd801e262b25d29ed872f116c27170f"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/b2142a9316c190304b6bba2c131f6d4ad08e450b2ad1df47655c9414fd3a32f0.agent",
+      "bytes": 180,
+      "sha256": "b2142a9316c190304b6bba2c131f6d4ad08e450b2ad1df47655c9414fd3a32f0"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/ba5b268d7a59a601867b495bdbaf57c2c78112bad11d2f54a80bbc7d996ca6ba.agent",
+      "bytes": 493,
+      "sha256": "ba5b268d7a59a601867b495bdbaf57c2c78112bad11d2f54a80bbc7d996ca6ba"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/bcd5e552a81fbb36b36fb5b8693d30cc32ad68a34d0280583895850def90b5f2.agent",
+      "bytes": 7710,
+      "sha256": "bcd5e552a81fbb36b36fb5b8693d30cc32ad68a34d0280583895850def90b5f2"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/c71865598b144d855b032ec861e22bb52b9b959378dc3d82ecd769e4a6e9362f.agent",
+      "bytes": 197,
+      "sha256": "c71865598b144d855b032ec861e22bb52b9b959378dc3d82ecd769e4a6e9362f"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/cc5b95590f4c14cf0078817b699ae9655c648d16db3ba95a53d231f92e66faad.agent",
+      "bytes": 606,
+      "sha256": "cc5b95590f4c14cf0078817b699ae9655c648d16db3ba95a53d231f92e66faad"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/d4063d4c4c5f08a0855f2aeaa487b7097e0a98c35ac0250711673a78f6b2bc3a.agent",
+      "bytes": 267,
+      "sha256": "d4063d4c4c5f08a0855f2aeaa487b7097e0a98c35ac0250711673a78f6b2bc3a"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/d5be4936fa3a6fb8a8f225a9fd998ff30561dfc6d6ff9eeb679ddf9279cfb64f.agent",
+      "bytes": 203,
+      "sha256": "d5be4936fa3a6fb8a8f225a9fd998ff30561dfc6d6ff9eeb679ddf9279cfb64f"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/d76fcd52a68852462cea282141cbbf343b25e2696f39bbb205e77b42100463d3.agent",
+      "bytes": 937,
+      "sha256": "d76fcd52a68852462cea282141cbbf343b25e2696f39bbb205e77b42100463d3"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/df6031ded0d76dcdf6aa4e055a677e82f5b9f1eef24d57ad0dadd965f8ab7914.agent",
+      "bytes": 333,
+      "sha256": "df6031ded0d76dcdf6aa4e055a677e82f5b9f1eef24d57ad0dadd965f8ab7914"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/e091eb89778222d629656cc1a250d6c3fb65e6d9c64e4bee035eb19d2c62a720.agent",
+      "bytes": 2638,
+      "sha256": "e091eb89778222d629656cc1a250d6c3fb65e6d9c64e4bee035eb19d2c62a720"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/eb9f473a8a5a16656b67ab1861c10845df8c461f23835b48d81377da3de3ffc4.agent",
+      "bytes": 273,
+      "sha256": "eb9f473a8a5a16656b67ab1861c10845df8c461f23835b48d81377da3de3ffc4"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/ed2d6ed4627441cd9cdddad5352d145ce5dad1538df78260a500f2ea12c9938b.agent",
+      "bytes": 313,
+      "sha256": "ed2d6ed4627441cd9cdddad5352d145ce5dad1538df78260a500f2ea12c9938b"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/ee1498cf76b0c9721a30d1767d628b75188a116aa6aba0e766c7affd16f0cd84.agent",
+      "bytes": 269,
+      "sha256": "ee1498cf76b0c9721a30d1767d628b75188a116aa6aba0e766c7affd16f0cd84"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/f36e12fb4d86ec85b21785a3c3296cbd27b09a0ee8598a9e12be7463991b30b6.agent",
+      "bytes": 273,
+      "sha256": "f36e12fb4d86ec85b21785a3c3296cbd27b09a0ee8598a9e12be7463991b30b6"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/f6276765001d8681df37d734696ee015622c49dd673e855b59caa966fe4ff619.agent",
+      "bytes": 270,
+      "sha256": "f6276765001d8681df37d734696ee015622c49dd673e855b59caa966fe4ff619"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/.agentlang/store/objects/ffc29325e7be8817fca313d66b754326912405b087ea8bce0e259b74894c8f39.agent",
+      "bytes": 2103,
+      "sha256": "ffc29325e7be8817fca313d66b754326912405b087ea8bce0e259b74894c8f39"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/dictionary.agent",
+      "bytes": 12996,
+      "sha256": "709f0230bcd2689807a90846aad20889ce615a52870dff4bb0342d02db0967af"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/project/history/task-0001.json",
+      "bytes": 2413,
+      "sha256": "084e90b231c3c01bd18ed5566a793a5c9a458071f00f283b6807bf65172b8c95"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/prompt.md",
+      "bytes": 5068,
+      "sha256": "32b17df39c860eee48b46e0a743fb1e8441b88ad051d69dbbea6d3228c0a234e"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/start-inventory.json",
+      "bytes": 11400,
+      "sha256": "fdd7af99bcbde5580ef0d9efb81e2b152434dc9ddfd7b4c9cad7741fc4c1b408"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/participant/wrapper.txt",
+      "bytes": 468,
+      "sha256": "d70b254e25ba1bf74a21dabb56f1d5d3efc1c372d5a77a3b9b4eaf36ddd18b57"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/plan.md",
+      "bytes": 1898,
+      "sha256": "4b454e6f2d4205d93694139663b303a4a118bd3db67ed60e786826d76a3ac719"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/preparation.json",
+      "bytes": 955,
+      "sha256": "93acf7a0941d3629e8d4a1922d87518379c487c405e702198e79e1d6035bf6e3"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/prepare-trial.py",
+      "bytes": 3432,
+      "sha256": "8e7a0f908415f50ce1db39d43f692898c0bcd743f6204e5bcb30a995e77476ff"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/review/runtime-help-review.md",
+      "bytes": 1499,
+      "sha256": "38981bd868ae019dc2aa24be1a82498c14f2fcbb4ddfe7286b2925b3bc51ecaa"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/AgentLang.Cli.dll",
+      "bytes": 40448,
+      "sha256": "810cbe7157b1948fd94ad954cfff5c387cf72f2af7babb8d279ecc9812bb155a"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/AgentLang.Cli.exe",
+      "bytes": 156160,
+      "sha256": "31a1799441b216d0967e94991473c689421bd44d42ee1fdf1f7c201c57821f5c"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/AgentLang.Cli.pdb",
+      "bytes": 10692,
+      "sha256": "a77a96c27e530492dad464e964d20c903a6763dad78a79e5308446a0ef0055b3"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/AgentLang.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/AgentLang.Core.dll",
+      "bytes": 2409984,
+      "sha256": "cba078bc15a626c12cfc4e37fabb7def3fa9c73477246c1b5e42fba2785149dc"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/AgentLang.Core.pdb",
+      "bytes": 634608,
+      "sha256": "d0f29e6ec6c698e51191673aa9a4875b7f53cd7a3911d9d06b484ac7c80b4eb3"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/AgentLang.Core.xml",
+      "bytes": 37131,
+      "sha256": "09ac15a5f53b3d6fd39e721bb9e7eda22f7b2269a7676f95866f822c9bccbe7a"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/cs/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/de/FSharp.Core.resources.dll",
+      "bytes": 35592,
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/es/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/fr/FSharp.Core.resources.dll",
+      "bytes": 35128,
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/it/FSharp.Core.resources.dll",
+      "bytes": 34576,
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/ja/FSharp.Core.resources.dll",
+      "bytes": 37160,
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/ko/FSharp.Core.resources.dll",
+      "bytes": 36104,
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/pl/FSharp.Core.resources.dll",
+      "bytes": 35632,
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/pt-BR/FSharp.Core.resources.dll",
+      "bytes": 34096,
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/ru/FSharp.Core.resources.dll",
+      "bytes": 41232,
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/tr/FSharp.Core.resources.dll",
+      "bytes": 34072,
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/zh-Hans/FSharp.Core.resources.dll",
+      "bytes": 32552,
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime/bin/AgentLang.Cli/release/zh-Hant/FSharp.Core.resources.dll",
+      "bytes": 32032,
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    },
+    {
+      "path": ".agentlang/fold-discovery-148/runtime-build.log",
+      "bytes": 529,
+      "sha256": "8dc4388336642da8c4845dbd611b171c05900c39846ee593ecf80d9623af27ec"
+    },
+    {
+      "path": "docs/SUBAGENT-TRIAL-HOST-V2.md",
+      "bytes": 13559,
+      "sha256": "d2f1a5d94d84422332deadf01ec512b89485fa4b113baaba8b455455914933a1"
+    },
+    {
+      "path": "scripts/Audit-SubagentTrialTerminationV2.ps1",
+      "bytes": 15874,
+      "sha256": "870ff9b9a1843c0a104d2185688486c7ed1e85399df6c554f9ee890c4dcf4a10"
+    },
+    {
+      "path": "scripts/Start-SubagentTrialHostV2.ps1",
+      "bytes": 81288,
+      "sha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b"
+    },
+    {
+      "path": "src/AgentLang.Core/AuthoringHelp.fs",
+      "bytes": 33831,
+      "sha256": "25e8773a3ffbfb7c01bf6575a2fb2d0286e17fbc0cbe6444d9f776c0747cb5f0"
+    },
+    {
+      "path": "src/AgentLang.Core/Runtime.fs",
+      "bytes": 386333,
+      "sha256": "50c97a012a905ad02c36305c7f6dce3330368e69dea7c4042b1bc963702eea6e"
+    },
+    {
+      "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "bytes": 327508,
+      "sha256": "d60b70c9f2672978e78f193ac44f4f09cc2bcd94d5daa63f35a5ecf9647e607c"
+    }
+  ]
+}

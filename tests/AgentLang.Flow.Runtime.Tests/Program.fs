@@ -190,6 +190,24 @@ module Program =
         let discoveryGuidance = stringValue freshIndex.["data"].["documentation"]
         for guidance in [ "compact=true"; "search"; "describe"; "flowReference"; "context"; "transitive-dependencies"; "dictionary names with dots" ] do
             check (discoveryGuidance.Contains(guidance, StringComparison.Ordinal)) $"default help explains discovery with {guidance}"
+
+        for name, stackSyntax, flow2Syntax in
+            [ "list.map", "list.map <word>", "items.map(callback)"
+              "list.filter", "list.filter <word>", "items.filter(callback)"
+              "list.each", "list.each <word>", "items.each(callback)"
+              "list.fold", "list.fold <word>", "items.fold(seed, callback)" ] do
+            let descriptor =
+                dispatch engine "describe" [ "word", jstr name ]
+                |> expectOk $"describe {name} syntax metadata"
+                |> fun response -> response.["data"]
+            equal stackSyntax (stringValue descriptor.["syntax"]) $"{name} keeps its Stack syntax spelling"
+            equal flow2Syntax (stringValue descriptor.["flow2Syntax"]) $"{name} exposes its Flow/2 receiver spelling"
+            let flow2Name = flow2Syntax.Split('(')[0]
+            let search =
+                dispatch engine "search" [ "query", jstr flow2Name ]
+                |> expectOk $"search Flow/2 syntax for {name}"
+            check (jsonArrayStrings search.["data"] |> List.contains name) $"search finds the Flow/2 form for {name}"
+
         equal [ "authoring"; "define"; "replacement"; "examples" ]
             (freshIndex.["data"].["topicInstructions"].AsArray() |> Seq.map (fun item -> stringValue item.["topic"]) |> Seq.toList)
             "index includes one instruction per help topic"
@@ -263,9 +281,9 @@ module Program =
         check ((stringValue (defineHelpDataV2.["documentation"])).Contains("Flow/2", StringComparison.Ordinal)) "Flow/2 help identifies its selected syntax"
         for guidance in [ "eval"; "`code`"; "define uses `source`"; "`word`"; "`type`"; "unchecked construction candidate"; "completed false return"; "caller-owned tests do not qualify the callee"; "generated constructors cannot own authored Flow tests"; "authored dependencies committed as library words" ] do
             check ((stringValue defineHelpDataV2.["documentation"]).Contains(guidance, StringComparison.Ordinal)) $"Flow/2 Define help explains {guidance}"
-        equal [ "tutorial-sign"; "tutorial-span-validator" ]
+        equal [ "tutorial-sign"; "tutorial-span-validator"; "tutorial-list-fold" ]
             (defineHelpDataV2.["sourceExamples"].AsArray() |> Seq.map (fun item -> stringValue item.["name"]) |> Seq.toList)
-            "Flow/2 help retains tutorial sign and appends the record-validator source"
+            "Flow/2 help retains prior source examples and adds the static fold"
         let sourceExampleV2 = (defineHelpDataV2.["sourceExamples"]).AsArray() |> Seq.head |> fun item -> stringValue (item.["source"])
         check (sourceExampleV2.StartsWith("fn tutorial.sign", StringComparison.Ordinal)) "Flow/2 help returns an fn source example"
         check (not (sourceExampleV2.Contains("effects ", StringComparison.Ordinal))) "Flow/2 help preserves omitted effects metadata"
@@ -321,6 +339,62 @@ module Program =
         let tutorialSpanObservedReturns = jsonArrayStrings tutorialSpanCoverage.["returns"].[0].["observed"]
         check (tutorialSpanObservedReturns |> List.contains "true") "ordered/equal constructor tests observe the predicate's true return"
         check (tutorialSpanObservedReturns |> List.contains "false") "predicate-owned expected-error constructor test retains its completed false return"
+
+        let foldSourceExampleV2 =
+            defineHelpDataV2.["sourceExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "tutorial-list-fold")
+            |> fun item -> stringValue item.["source"]
+        check (foldSourceExampleV2.StartsWith("fn tutorial.fold-step", StringComparison.Ordinal)) "Flow/2 fold help uses fn declarations"
+        check (foldSourceExampleV2.Contains("items.fold(0, tutorial::fold-step)", StringComparison.Ordinal)) "Flow/2 fold help uses a named receiver callback"
+        check (foldSourceExampleV2.Contains("test tutorial.fold-sum/empty", StringComparison.Ordinal)) "Flow/2 fold source includes attached executable tests"
+        check (foldSourceExampleV2.Contains("example tutorial.fold-sum/multiple", StringComparison.Ordinal)) "Flow/2 fold source includes an executable example"
+
+        let foldDefineRequest = requestExampleV2 "define-tutorial-list-fold"
+        equal foldSourceExampleV2 (stringValue foldDefineRequest.["source"]) "Flow/2 fold source exactly matches its define request"
+        equal 2 (foldDefineRequest.["syntaxVersion"].GetValue<int>()) "Flow/2 fold define request selects syntax version 2"
+        Protocol.dispatchLine flow2HelpEngine (foldDefineRequest.ToJsonString())
+        |> expectOk "define the help-returned named callback fold source"
+        |> ignore
+        let foldStepTests =
+            requestExampleV2 "test-tutorial-fold-step"
+            |> fun request -> Protocol.dispatchLine flow2HelpEngine (request.ToJsonString())
+            |> expectOk "run the help-returned fold callback test request"
+        assertAllPassed 1 foldStepTests
+        let foldSumTests =
+            requestExampleV2 "test-tutorial-fold-sum"
+            |> fun request -> Protocol.dispatchLine flow2HelpEngine (request.ToJsonString())
+            |> expectOk "run the help-returned fold owner test request"
+        assertAllPassed 2 foldSumTests
+
+        let examplesHelpV2 =
+            dispatch flow2HelpEngine "help" [ "topic", jstr "examples"; "syntaxVersion", jint 2 ]
+            |> expectOk "read Flow/2 examples help"
+            |> fun response -> response.["data"]
+        check
+            ((stringValue examplesHelpV2.["documentation"]).Contains("tutorial-list-fold", StringComparison.Ordinal))
+            "Flow/2 examples help explains how to define its fold example"
+        let foldSourceExampleInExamplesV2 =
+            examplesHelpV2.["sourceExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "tutorial-list-fold")
+            |> fun item -> stringValue item.["source"]
+        equal foldSourceExampleV2 foldSourceExampleInExamplesV2 "Flow/2 examples help also exposes the executable named callback source"
+        let foldCaseExampleV2 =
+            examplesHelpV2.["sourceExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "tutorial-list-fold-example")
+            |> fun item -> stringValue item.["source"]
+        check (foldCaseExampleV2.Contains("tutorial::fold-sum", StringComparison.Ordinal)) "Flow/2 examples help includes the executable fold case"
+        let exampleRequest =
+            examplesHelpV2.["requestExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "run-tutorial-list-fold-example")
+            |> fun item -> item.["request"]
+        let exampleResult = Protocol.dispatchLine flow2HelpEngine (exampleRequest.ToJsonString()) |> expectOk "run the help-returned fold example request"
+        equal "1/1 example(s) passed." (stringValue exampleResult.["text"]) "the help-returned fold example passes through the runtime"
+        let evalRequest =
+            examplesHelpV2.["requestExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "eval-tutorial-list-fold")
+            |> fun item -> item.["request"]
+        let evaluatedFold = Protocol.dispatchLine flow2HelpEngine (evalRequest.ToJsonString()) |> expectOk "evaluate the help-returned Flow/2 fold request"
+        equal "6" (stringValue evaluatedFold.["data"].["stack"].[0]) "the help-returned Flow/2 fold evaluates to the sum"
 
         let tutorialSpanCommitRequest = requestExampleV2 "commit-tutorial-span-validator-as-library"
         equal "commit" (stringValue tutorialSpanCommitRequest.["op"]) "predicate library example uses commit"
@@ -3358,6 +3432,26 @@ fn renewal.dependent(state: RenewalState) -> String {
         expectError "CAPABILITY_DENIED" (evalFlow denied "io::fold-path(list::empty<Int>())")
         |> ignore
 
+    let private testFlow2StaticListCallbacks root =
+        let project = Path.Combine(root, "flow2-static-list-callbacks")
+        let engine = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z")
+        let source =
+            "fn callbacks.increment(value: Int) -> Int { add(value, 1) }\n\n"
+            + "fn callbacks.is-positive(value: Int) -> Bool { int::greater-than(value, 0) }\n\n"
+            + "fn callbacks.visit-item(value: Int) -> Unit { unit }\n\n"
+            + "fn callbacks.map-values(items: List<Int>) -> List<Int> { items.map(callbacks::increment) }\n\n"
+            + "fn callbacks.filter-positive(items: List<Int>) -> List<Int> { items.filter(callbacks::is-positive) }\n\n"
+            + "fn callbacks.visit-all(items: List<Int>) -> Unit { items.each(callbacks::visit-item) }\n\n"
+            + "test callbacks.map-values/single { callbacks::map-values(list::singleton<Int>(4)) => value list::singleton<Int>(5) }\n\n"
+            + "test callbacks.filter-positive/mixed { callbacks::filter-positive(list::append(list::singleton<Int>(-1), 2)) => value list::singleton<Int>(2) }\n\n"
+            + "test callbacks.visit-all/populated { callbacks::visit-all(list::append(list::singleton<Int>(1), 2)) => unit }"
+        defineFlowProject engine source [ "syntaxVersion", jint 2 ]
+        |> expectOk "define and typecheck Flow/2 map, filter, and each receiver callbacks"
+        |> ignore
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "callbacks.map-values" ] |> expectOk "run Flow/2 map receiver callback")
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "callbacks.filter-positive" ] |> expectOk "run Flow/2 filter receiver callback")
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "callbacks.visit-all" ] |> expectOk "run Flow/2 each receiver callback")
+
     let private testFlowValidatorCannotBeRenamedAfterTypeCommit root =
         let project = Path.Combine(root, "flow-validator-frozen")
         let engine = Runtime.Engine(project, Set.empty, "2034-05-06T07:08:09Z")
@@ -4192,11 +4286,12 @@ test persist.read/exact-count {
             testFlowMaintenanceRejectsUntouchedRebind root
             testFlowMaintenanceFailureAndLibraryCoverage root
             testFlowStaticListFold root
+            testFlow2StaticListCallbacks root
             testFlowValidatorCannotBeRenamedAfterTypeCommit root
             testFlowProjectDocumentTypesCommitAndReload root
             testRecordValidatorRuntimeAndPersistence root
             testEffectCountAssertions root
-            printfn $"Flow Runtime tests passed: 31 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 32 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

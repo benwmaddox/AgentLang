@@ -255,6 +255,26 @@ test tutorialSpan.valid?/reversed {
     let private tutorialSpanSourceV2 =
         String.concat "\n\n" [ tutorialSpanTypeSourceV2; tutorialSpanValidatorSourceV2; tutorialSpanTestsSourceV2 ]
 
+    let private tutorialListFoldSourceV2 =
+        """fn tutorial.fold-step(acc: Int, item: Int) -> Int {
+    add(acc, item)
+}
+
+fn tutorial.fold-sum(items: List<Int>) -> Int {
+    items.fold(0, tutorial::fold-step)
+}
+
+test tutorial.fold-step/add { tutorial::fold-step(2, 3) => 5 }
+
+test tutorial.fold-sum/empty { tutorial::fold-sum(list::empty<Int>()) => 0 }
+
+test tutorial.fold-sum/multiple { tutorial::fold-sum(list::append(list::append(list::singleton<Int>(1), 2), 3)) => 6 }
+
+example tutorial.fold-sum/multiple { tutorial::fold-sum(list::append(list::append(list::singleton<Int>(1), 2), 3)) => 6 }"""
+
+    let private tutorialListFoldExampleV2 =
+        "example tutorial.fold-sum/multiple { tutorial::fold-sum(list::append(list::append(list::singleton<Int>(1), 2), 3)) => 6 }"
+
     let private text value = Text value
     let private textField name value = name, text value
 
@@ -273,6 +293,41 @@ test tutorialSpan.valid?/reversed {
         { Name = "tutorial-span-validator"
           Description = "Complete Flow/2 record, pure predicate, predicate-owned valid and expected-error tests."
           Source = tutorialSpanSourceV2 }
+
+    let private tutorialListFoldSourceExample =
+        { Name = "tutorial-list-fold"
+          Description = "Compact Flow/2 fold with a statically named callback and attached tests and example."
+          Source = tutorialListFoldSourceV2 }
+
+    let private tutorialListFoldCaseExample =
+        { Name = "tutorial-list-fold-example"
+          Description = "Flow/2 example that calls the named fold word after defining tutorial-list-fold."
+          Source = tutorialListFoldExampleV2 }
+
+    let private tutorialListFoldRequestExamples =
+        [ { Name = "define-tutorial-list-fold"
+            Description = "Define the Flow/2 fold source with its named callback, tests, and example."
+            Operation = "define"
+            Fields = [ textField "source" tutorialListFoldSourceV2; "syntaxVersion", Integer 2 ] }
+          { Name = "test-tutorial-fold-step"
+            Description = "Run the named fold callback's own test."
+            Operation = "test"
+            Fields = [ textField "word" "tutorial.fold-step" ] }
+          { Name = "test-tutorial-fold-sum"
+            Description = "Run the empty and multi-item fold tests."
+            Operation = "test"
+            Fields = [ textField "word" "tutorial.fold-sum" ] }
+          { Name = "run-tutorial-list-fold-example"
+            Description = "Run the fold example attached to tutorial.fold-sum."
+            Operation = "example"
+            Fields = [ textField "word" "tutorial.fold-sum" ] }
+          { Name = "eval-tutorial-list-fold"
+            Description = "Evaluate a Flow/2 call to the fold word with three items."
+            Operation = "eval"
+            Fields =
+                [ textField "frontend" "flow"
+                  "syntaxVersion", Integer 2
+                  textField "code" "tutorial::fold-sum(list::append(list::append(list::singleton<Int>(1), 2), 3))" ] } ]
 
     let private tutorialSpanRequestExamples =
         [ { Name = "eval-tutorial-sign-v2"
@@ -466,17 +521,18 @@ test tutorialSpan.valid?/reversed {
                         else fields
                     { example with Fields = fields })
             let requestExamples =
-                if topic = Topic.Define then requestExamples @ tutorialSpanRequestExamples
+                if topic = Topic.Define then requestExamples @ tutorialSpanRequestExamples @ tutorialListFoldRequestExamples
+                elif topic = Topic.Examples then requestExamples @ tutorialListFoldRequestExamples
                 else requestExamples
             { original with
                 Documentation =
                     original.Documentation
                     + " This help response is selected for Flow/2; write function declarations with `fn`."
                     + (if topic = Topic.Define then
-                           " Use eval with the compact `code` field for expressions; define uses `source` for complete declarations. Use source with `word` to read authored word text and with `type` to read the exact type declaration. A record validator sees the complete unchecked construction candidate and must not assume the invariant already holds. Put valid and expected-error constructor tests on the validator itself: its completed false return is observed before RECORD_VALIDATION_FAILED, while caller-owned tests do not qualify the callee and generated constructors cannot own authored Flow tests for it."
+                           " Use eval with the compact `code` field for expressions; define uses `source` for complete declarations. Use source with `word` to read authored word text and with `type` to read the exact type declaration. Static list callbacks use receiver forms such as `items.map(callback)`, `items.filter(callback)`, `items.each(callback)`, and `items.fold(seed, callback)`; callback must be a statically named word reference and cannot capture caller locals. A record validator sees the complete unchecked construction candidate and must not assume the invariant already holds. Put valid and expected-error constructor tests on the validator itself: its completed false return is observed before RECORD_VALIDATION_FAILED, while caller-owned tests do not qualify the callee and generated constructors cannot own authored Flow tests for it."
                        else "")
                     + (if topic = Topic.Examples then
-                           " Flow/2 tests may add `effects { fs.read: 2; fs.write: 0; }` after the value or error expectation. This asserts exact counts of provider calls made while the attached user word is active, including nested helpers; omitted categories are zero. The observable categories are fs.read, fs.write, clock.read, and console.write. Other effect categories are unsupported, and examples cannot use this test-only suffix."
+                           " Define the `tutorial-list-fold` source before running its attached tests or example. Its callback is a statically named word reference and cannot capture caller locals. Flow/2 tests may add `effects { fs.read: 2; fs.write: 0; }` after the value or error expectation. This asserts exact counts of provider calls made while the attached user word is active, including nested helpers; omitted categories are zero. The observable categories are fs.read, fs.write, clock.read, and console.write. Other effect categories are unsupported, and examples cannot use this test-only suffix."
                        else "")
                 SourceExamples =
                     let examples =
@@ -484,12 +540,14 @@ test tutorialSpan.valid?/reversed {
                         | Some source, example :: rest -> { example with Source = source } :: rest
                         | _ -> original.SourceExamples
                     if topic = Topic.Define then
-                        examples @ [ tutorialSpanSourceExample ]
+                        examples @ [ tutorialSpanSourceExample; tutorialListFoldSourceExample ]
                     elif topic = Topic.Examples then
                         examples
                         @ [ { Name = "effect-count-test-v2"
                               Description = "Flow/2 test with exact provider counts for the attached user word and its nested helper calls."
-                              Source = "test tutorial.queue/reads-once { tutorial::queue() => \"queued\" effects { fs.read: 2; fs.write: 0; } }" } ]
+                              Source = "test tutorial.queue/reads-once { tutorial::queue() => \"queued\" effects { fs.read: 2; fs.write: 0; } }" }
+                            tutorialListFoldSourceExample
+                            tutorialListFoldCaseExample ]
                     else examples
                 RequestExamples = requestExamples }
 
