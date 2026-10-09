@@ -1298,7 +1298,7 @@ module Runner =
                 lineageMarkerPersisted <- priorLineage.IsSome
                 let hasPriorTaskHistory = config.Mode = Growing && not (List.isEmpty (taskHistory config.ProjectDirectory))
                 writeJson initialStatePath (stateManifestWithAudit (stateNode preSeedState) baselineAudit)
-                let engine = Runtime.Engine(config.ProjectDirectory, Set.empty, "2000-01-01T00:00:00Z")
+                let engine = Runtime.Engine(config.ProjectDirectory, Set.empty, "2000-01-01T00:00:00Z", fileSystemMode = FileSystemMode.Virtual)
                 engineInstance <- Some engine
                 let seedBytes = readSeedSourceBytes config.SeedDictionarySource
                 let seedHash = seedBytes |> Option.map hashBytes

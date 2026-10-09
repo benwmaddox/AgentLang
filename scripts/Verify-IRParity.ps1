@@ -302,8 +302,9 @@ function Invoke-CliSession {
     $requests = [Collections.Generic.List[object]]::new()
     foreach ($requestSpec in $SessionSpec.requests) {
         if (-not ($requestSpec -is [System.Collections.IDictionary])) { throw "Fixture '$FixtureName' has a malformed request specification." }
+        $request = New-ExpandedRequest -RequestSpec $requestSpec -FixtureName $FixtureName
         $requests.Add([ordered]@{
-            request = New-ExpandedRequest -RequestSpec $requestSpec -FixtureName $FixtureName
+            request = $request
             expect = $requestSpec.expect
         })
     }
@@ -325,6 +326,8 @@ function Invoke-CliSession {
     $arguments.Add($cliPath)
     $arguments.Add('--project')
     $arguments.Add($ProjectPath)
+    $arguments.Add('--filesystem')
+    $arguments.Add('virtual')
     $arguments.Add('--jsonl')
     if ($capabilities.Count -gt 0) {
         $arguments.Add('--allow')

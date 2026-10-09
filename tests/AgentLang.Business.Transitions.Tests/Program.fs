@@ -1397,7 +1397,7 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
             equal 0 (coverage.["uncoveredInstructions"].AsArray().Count) $"{name} has no uncovered instructions"
             equal 0 (coverage.["uncoveredBranchOutcomes"].AsArray().Count) $"{name} has no uncovered branch outcomes"
 
-        let fresh = Runtime.Engine(projectPath, Set.empty, "2026-01-01T00:00:00.0000000+00:00")
+        let fresh = Runtime.Engine(projectPath, Set.empty, "2026-01-01T00:00:00.0000000+00:00", fileSystemMode = FileSystemMode.Virtual)
         let idsAfter = wordIds fresh names
         equal idsBefore idsAfter "all committed transition words keep stable IDs after reload"
         for name, source in wordSourcesBefore do equal source (sourceForWord fresh name) $"exact source reloads for {name}"
@@ -1684,7 +1684,7 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
             equal oldSource (sourceForWord engine name) $"original source remains unchanged for {name}"
         equal oldPlanSource (sourceForType engine "EmailDeliveryPlan") "the original Option plan type remains unchanged"
 
-        let fresh = Runtime.Engine(projectPath, Set.empty, "2026-01-01T00:00:00.0000000+00:00")
+        let fresh = Runtime.Engine(projectPath, Set.empty, "2026-01-01T00:00:00.0000000+00:00", fileSystemMode = FileSystemMode.Virtual)
         equal newWordIds (wordIds fresh names) "both extension word identities persist across reload"
         equal oldWordIds (wordIds fresh oldWordNames) "both original word identities persist across extension reload"
         for name, expectedSource in newWordSources do
@@ -1883,7 +1883,7 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
         equal "persistent" (stringValue committed.["status"]) "lookup.valid? is committed rather than a candidate"
         equal "library" (stringValue committed.["maturity"]) "lookup.valid? is recorded as library maturity"
 
-        let fresh = Runtime.Engine(projectPath, Set.empty, "2026-01-01T00:00:00.0000000+00:00")
+        let fresh = Runtime.Engine(projectPath, Set.empty, "2026-01-01T00:00:00.0000000+00:00", fileSystemMode = FileSystemMode.Virtual)
         equal wordIdsBefore (wordIds fresh names) "lookup.valid? retains its stable identity after reload"
         for name, expectedSource in wordSourcesBefore do
             equal expectedSource (sourceForWord fresh name) $"lookup predicate source reloads exactly for {name}"
@@ -2005,7 +2005,7 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
 
         let projectPath = Path.Combine(Path.GetTempPath(), $"agentlang-business-transitions-{Guid.NewGuid():N}")
         Directory.CreateDirectory projectPath |> ignore
-        let engine = Runtime.Engine(projectPath, Set.empty, "2026-01-01T00:00:00.0000000+00:00")
+        let engine = Runtime.Engine(projectPath, Set.empty, "2026-01-01T00:00:00.0000000+00:00", fileSystemMode = FileSystemMode.Virtual)
         let resolvedProjectPath = Path.GetFullPath projectPath
         let resolvedTempRoot =
             Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)

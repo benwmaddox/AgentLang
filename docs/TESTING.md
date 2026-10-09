@@ -10,6 +10,12 @@ Library quality and definition lifetime are separate decisions. A temporary word
 
 Tests run with fresh deterministic effect providers. Tests for a word measure that word's own body; a caller's tests cannot substitute for the reusable callee's attached tests. Stale test results are invalidated when definitions change or reload. A gate runs the current tests again before accepting the revision.
 
+Normal filesystem execution is real; attached tests always use fresh virtual
+files. Providers do not grant permissions. The CLI's `--test-allow` can explicitly
+give isolated tests grants separate from production `--allow`; without it, tests
+inherit the production grants. Test grants never authorize normal execution.
+Reloading a library reruns its qualification with the configured test grants.
+
 For a runnable I/O example, see [testing library functions without real I/O](LIBRARY-IO-TESTING.md).
 It demonstrates passing promotion, a coverage rejection, and an effect-count
 rejection using the isolated virtual filesystem.

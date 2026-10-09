@@ -689,7 +689,7 @@ module Program =
             equal 0 (coverage.["uncoveredInstructions"].AsArray().Count) $"{name} has no uncovered instructions"
             equal 0 (coverage.["uncoveredBranchOutcomes"].AsArray().Count) $"{name} has no uncovered branch outcomes"
 
-        let fresh = Runtime.Engine(projectPath, Set.empty, "2024-02-29T12:00:00.0000000+00:00")
+        let fresh = Runtime.Engine(projectPath, Set.empty, "2024-02-29T12:00:00.0000000+00:00", fileSystemMode = FileSystemMode.Virtual)
         let idsAfter = wordIds fresh names
         equal idsBefore idsAfter "every authored word retains its stable identity after reload"
         let reloadedWordEntries = dispatch fresh "words" [] |> expectOk "inspect reloaded dictionary" |> fun response -> response.["data"].["words"].AsArray()
@@ -805,7 +805,7 @@ module Program =
             equal "library" (stringValue item.["maturity"]) $"{name} is library-qualified"
         runAttachedTests engine |> ignore
 
-        let fresh = Runtime.Engine(projectPath, Set.empty, "2024-02-29T12:00:00.0000000+00:00")
+        let fresh = Runtime.Engine(projectPath, Set.empty, "2024-02-29T12:00:00.0000000+00:00", fileSystemMode = FileSystemMode.Virtual)
         for name, source in sourcesBefore do
             equal source (sourceForWord fresh name) $"Flow/2 source reloads exactly for {name}"
         equal typeSourceBefore (sourceForType fresh "UnitBasisPoints") "the validated scalar source reloads exactly"
@@ -900,7 +900,7 @@ module Program =
 
         let projectPath = Path.Combine(Path.GetTempPath(), $"agentlang-business-language-{Guid.NewGuid():N}")
         Directory.CreateDirectory projectPath |> ignore
-        let engine = Runtime.Engine(projectPath, Set.empty, "2024-02-29T12:00:00.0000000+00:00")
+        let engine = Runtime.Engine(projectPath, Set.empty, "2024-02-29T12:00:00.0000000+00:00", fileSystemMode = FileSystemMode.Virtual)
         try
             let definition = dispatch engine "define" [ "frontend", jstr "flow"; "source", jstr source ] |> expectOk "define both business fixture files in one Engine request"
             let definedWords = definition.["data"].["words"].AsArray()
@@ -921,7 +921,7 @@ module Program =
             runGroup "library/type commit, source and metadata persistence, and fresh reload" (fun () -> testLibraryCommitAndReload engine projectPath document |> ignore)
             // Reopen the now-committed base in the same project so the Flow/2 extension can
             // depend on the persisted Money nominal type without changing the base fixture.
-            let fresh = Runtime.Engine(projectPath, Set.empty, "2024-02-29T12:00:00.0000000+00:00")
+            let fresh = Runtime.Engine(projectPath, Set.empty, "2024-02-29T12:00:00.0000000+00:00", fileSystemMode = FileSystemMode.Virtual)
             runGroup "Flow/2 Money ratio wrapper, independent oracle, and fresh reload" (fun () -> testMoneyRatioExtension fresh projectPath ratioSource ratioDocument)
 
             printfn "PASS %d groups, %d assertions; %d attached tests; %d examples; %d words and %d types persisted and reloaded." groups assertions totalTests totalExamples wordsCommitted typesCommitted

@@ -1,12 +1,13 @@
 # Testing library functions without real I/O
 
-This is an executable example of the current Flow/2 interpreter behavior.
-Language `file.*` operations use a virtual filesystem, and each attached test
-starts with a fresh isolated provider state. They do not access host files.
+Normal `file.*` calls use real files in the project directory. Every attached
+test uses a fresh isolated in-memory filesystem instead, including test setup
+and tests rerun during library publication. Test file operations do not access
+host files, even when the surrounding session uses real I/O.
 The CLI may still write dictionary/project metadata when committing; that is
 host tooling, separate from the language function's I/O.
 
-The real function body executes. Only its external dependency is simulated.
+The real function body executes. Its filesystem provider is simulated in tests.
 The `effects fs.read` declaration and host capability checks still apply.
 
 ```flow
@@ -71,8 +72,15 @@ Send `define` with the source above and `syntaxVersion: 2`, then:
 {"op":"commit","word":"settings.enabled?","library":true}
 ```
 
-The host must allow `fs.read` and `fs.write` for the test and its setup. Those
-permissions still select virtual providers in the current interpreter.
+The host must allow `fs.read` and `fs.write` for the test and its setup. A test's
+isolated provider does not grant capabilities. Normal CLI execution uses real
+files by default; `--filesystem virtual` explicitly simulates an entire session
+when needed for experiments. That option is unnecessary for attached tests.
+
+Use `--allow fs.read --test-allow fs.read,fs.write` when production should only
+read, but the isolated tests need to write fixture files. The test grants cannot
+authorize a real write. Without `--test-allow`, tests use the normal grants.
+Library requalification on project reload also uses these explicit test grants.
 
 The gate reruns the attached tests against the proposed dictionary. This
 example exercises both branches, every executable instruction, both values of

@@ -103,7 +103,7 @@ module Program =
 
     let private responseOk (line: string) =
         let response = JsonNode.Parse(line)
-        response["ok"].GetValue<bool>()
+        (response.["ok"]).GetValue<bool>()
 
     let private responseErrorCode (line: string) =
         let response = JsonNode.Parse(line)
@@ -258,7 +258,7 @@ module Program =
             let jsonLines = responseLines jsonLinesCompact.StandardOutput
             equal 1 jsonLines.Length "JSONL emits one compact words response"
             let response = JsonNode.Parse(jsonLines.Head)
-            check (response["ok"].GetValue<bool>()) "JSONL compact words request succeeds"
+            check ((response.["ok"]).GetValue<bool>()) "JSONL compact words request succeeds"
             assertCompactData "JSONL compact words request" response["data"])
 
     let private testFlowInteractiveBuffering () =
@@ -570,6 +570,118 @@ module Program =
             let absent = runCli project [ "--syntax-version"; "2"; "--eval"; "sample(1)" ] [] 10000
             expectExit 1 absent "formatter does not install a function")
 
+    let private testFileSystemBoundary () =
+        withProject (fun project ->
+            let hostPath = Path.Combine(project, "shared.txt")
+            let hostContents = "HOST Ω 🌿\r\n"
+            File.WriteAllText(hostPath, hostContents, UTF8Encoding(false))
+            let request (operation: string) (fields: (string * JsonNode) list) =
+                let node = JsonObject()
+                node["op"] <- JsonValue.Create(operation: string)
+                node["frontend"] <- JsonValue.Create("flow")
+                node["syntaxVersion"] <- JsonValue.Create(2)
+                for name, value in fields do node[name] <- value
+                node.ToJsonString()
+            let eval code = request "eval" [ "code", JsonValue.Create(code: string) :> JsonNode ]
+            let checkedResponses label (result: Invocation) =
+                expectExit 0 result label
+                responseLines result.StandardOutput |> List.map JsonNode.Parse
+            let real =
+                runCli project [ "--allow"; "fs.read,fs.write"; "--jsonl" ]
+                    [ eval "file.read(\"shared.txt\")"
+                      eval "file.write(\"actual.txt\", \"real Ω\")" ] 15000
+                |> checkedResponses "normal execution uses real files"
+            equal 2 real.Length "both real I/O requests return"
+            for response in real do check ((response.["ok"]).GetValue<bool>()) "real I/O succeeds"
+            let rendered = (real[0].["data"].["stack"].[0]).GetValue<string>()
+            equal hostContents (JsonSerializer.Deserialize<string>(rendered)) "default read observes exact host contents"
+            equal "real Ω" (File.ReadAllText(Path.Combine(project, "actual.txt"))) "default write reaches host filesystem"
+            let presence =
+                runCli project [ "--allow"; "fs.read"; "--jsonl" ]
+                    [ eval "file.exists?(\"shared.txt\")"
+                      eval "file.exists?(\"absent.txt\")"
+                      eval "file.read(\"absent.txt\")" ] 15000
+                |> checkedResponses "real existence and missing-read behavior"
+            equal "true" ((presence[0].["data"].["stack"].[0]).GetValue<string>()) "real file existence is observed"
+            equal "false" ((presence[1].["data"].["stack"].[0]).GetValue<string>()) "absent real file returns false"
+            equal "EFFECT_FILE_NOT_FOUND" ((presence[2].["error"].["code"]).GetValue<string>()) "absent real read returns a structured error"
+
+            let simulated =
+                runCli project [ "--filesystem"; "virtual"; "--allow"; "fs.read,fs.write"; "--jsonl" ]
+                    [ eval "file.write(\"simulated.txt\", \"fake\")"
+                      eval "file.read(\"simulated.txt\")" ] 15000
+                |> checkedResponses "explicit virtual session"
+            for response in simulated do check ((response.["ok"]).GetValue<bool>()) "simulated I/O succeeds"
+            check (not (File.Exists(Path.Combine(project, "simulated.txt")))) "simulation writes no physical file"
+
+            let source = """fn fixture.read(path: String) -> String {
+    effects fs.read
+    doc "Read through the selected file provider."
+
+    file.read(path)
+}
+test fixture.read/virtual-setup {
+    file.write("shared.txt", "virtual-one")
+    fixture.read("shared.txt")
+    => "virtual-one"
+}
+test fixture.read/fresh-state {
+    fixture.read("shared.txt")
+    => error EFFECT_FILE_NOT_FOUND
+}
+"""
+            let tested =
+                runCli project [ "--allow"; "fs.read,fs.write"; "--jsonl" ]
+                    [ request "define" [ "source", JsonValue.Create(source) :> JsonNode ]
+                      request "test" [ "word", JsonValue.Create("fixture.read") :> JsonNode ]
+                      request "commit" [ "word", JsonValue.Create("fixture.read") :> JsonNode
+                                         "library", JsonValue.Create(true) :> JsonNode ]
+                      eval "fixture.read(\"shared.txt\")" ] 20000
+                |> checkedResponses "tests and library commit isolate I/O in a real session"
+            equal 4 tested.Length "define, test, publication and normal invocation return"
+            for response in tested do check ((response.["ok"]).GetValue<bool>()) "isolated tests and library publication pass"
+            contains "2/2" ((tested[1].["text"]).GetValue<string>()) "both isolated test cases pass"
+            equal hostContents (File.ReadAllText hostPath) "test setup and publication leave real file unchanged"
+            let productionValue = (tested[3].["data"].["stack"].[0]).GetValue<string>()
+            equal hostContents (JsonSerializer.Deserialize<string>(productionValue)) "production binding resumes actual file reads"
+
+            let readOnly =
+                runCli project [ "--allow"; "fs.read"; "--test-allow"; "fs.read,fs.write"; "--jsonl" ]
+                    [ request "test" [ "word", JsonValue.Create("fixture.read") :> JsonNode ]
+                      eval "fixture.read(\"shared.txt\")"
+                      eval "file.write(\"read-only-denied.txt\", \"blocked\")" ] 15000
+                |> checkedResponses "isolated test grants are independent of real execution grants"
+            check ((readOnly[0].["ok"]).GetValue<bool>()) "virtual setup can write with explicit test grants"
+            check ((readOnly[1].["ok"]).GetValue<bool>()) "read-only production call succeeds after reload"
+            check (not ((readOnly[2].["ok"]).GetValue<bool>())) "test write grant cannot authorize production write"
+            equal "CAPABILITY_DENIED" ((readOnly[2].["error"].["code"]).GetValue<string>()) "production permission stays read-only"
+            check (not (File.Exists(Path.Combine(project, "read-only-denied.txt")))) "test grant causes no real write"
+
+            File.WriteAllBytes(Path.Combine(project, "invalid-utf8.txt"), [| 0xffuy |])
+            let invalidIo =
+                runCli project [ "--allow"; "fs.read,fs.write"; "--jsonl" ]
+                    [ eval "file.read(\"invalid-utf8.txt\")"
+                      eval "file.write(\"../escaped.txt\", \"blocked\")"
+                      eval "file.write(\"shared.txt\", \"\\uD800\")" ] 15000
+                |> checkedResponses "invalid paths and encodings fail structurally"
+            equal "EFFECT_FILE_ENCODING" ((invalidIo[0].["error"].["code"]).GetValue<string>()) "invalid UTF-8 read fails"
+            equal "EFFECT_FILE_PATH_INVALID" ((invalidIo[1].["error"].["code"]).GetValue<string>()) "relative escape is rejected"
+            equal "FLOW_INVALID_STRING" ((invalidIo[2].["error"].["code"]).GetValue<string>()) "invalid Unicode is rejected before file writing"
+            equal hostContents (File.ReadAllText hostPath) "invalid text never truncates an existing file"
+
+            let deniedProject = Path.Combine(project, "denied-session")
+            Directory.CreateDirectory(deniedProject) |> ignore
+            let denied = runCli deniedProject [ "--jsonl" ] [ eval "file.write(\"denied.txt\", \"blocked\")" ] 10000
+            contains "CAPABILITY_DENIED" denied.StandardOutput "normal I/O requires host capability"
+            check (not (File.Exists(Path.Combine(deniedProject, "denied.txt")))) "denied effect performs no write"
+            let deniedTest = runCli deniedProject [ "--jsonl" ]
+                                 [ request "define" [ "source", JsonValue.Create(source) :> JsonNode ]
+                                   request "test" [ "word", JsonValue.Create("fixture.read") :> JsonNode ] ] 15000
+            contains "CAPABILITY_DENIED" (deniedTest.StandardOutput + deniedTest.StandardError) "test mode does not grant I/O capabilities"
+            equal hostContents (File.ReadAllText hostPath) "denied tests preserve host files"
+            let invalid = runCli project [ "--filesystem"; "unknown" ] [] 10000
+            expectExit 2 invalid "unknown filesystem mode is rejected")
+
     [<EntryPoint>]
     let main _ =
         try
@@ -584,6 +696,7 @@ module Program =
             group "explicit Stack REPL retains end blocks" testExplicitStackEndBlocks
             group "Flow/2 CLI selection, properties, temporary functions and reload" testFlow2Cli
             group "Flow/2 human formatting is an explicit nonmutating operation" testFlow2Formatting
+            group "real filesystem default and isolated test providers" testFileSystemBoundary
             printfn "PASS %d groups, %d assertions" groups assertions
             0
         with ex ->

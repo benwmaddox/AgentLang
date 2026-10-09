@@ -43,7 +43,7 @@ function Invoke-Language([string]$Project, [object[]]$Requests) {
         if ($request.op -in @('define', 'eval') -and -not $request.Contains('frontend')) { $request.frontend = 'stack' }
     }
     $lines = @($Requests | ForEach-Object { ConvertTo-Json -InputObject $_ -Depth 12 -Compress })
-    $output = @($lines | & dotnet $cli --project $Project --jsonl)
+    $output = @($lines | & dotnet $cli --project $Project --filesystem virtual --jsonl)
     $exit = $LASTEXITCODE
     Assert-Check 'language process exit' ($exit -eq 0)
     Assert-Check 'one language response per request' ($output.Count -eq $Requests.Count)

@@ -53,7 +53,7 @@ module Program =
         response
 
     let private engine path capabilities =
-        Runtime.Engine(path, (Set.ofList capabilities))
+        Runtime.Engine(path, (Set.ofList capabilities), fileSystemMode = FileSystemMode.Virtual)
 
     let private define (runtime: Runtime.Engine) source =
         dispatch runtime "define" [ "source", jsonString source ]
@@ -1759,7 +1759,7 @@ end
         let projectPath = makeProject root "named-snapshot"
         let capabilities = Set.ofList [ "fs.read"; "fs.write"; "clock.read" ]
         let savedClock = "2025-12-31T23:59:58Z"
-        let runtime = Runtime.Engine(projectPath, capabilities, ?clockValue = Some savedClock)
+        let runtime = Runtime.Engine(projectPath, capabilities, ?clockValue = Some savedClock, fileSystemMode = FileSystemMode.Virtual)
         let baseline =
             """word snapshot.base : Int -> Int
     effects none
@@ -1802,7 +1802,7 @@ end
         evaluate runtime "\"snapshot-file\" \"later-value\" file.write" |> expectOk "mutate virtual file after snapshot" |> ignore
 
         let laterClock = "2026-01-02T03:04:05Z"
-        let reloaded = Runtime.Engine(projectPath, capabilities, ?clockValue = Some laterClock)
+        let reloaded = Runtime.Engine(projectPath, capabilities, ?clockValue = Some laterClock, fileSystemMode = FileSystemMode.Virtual)
         let loaded = dispatch reloaded "snapshot.load" [ "name", jsonString "baseline" ] |> expectOk "restore named snapshot"
         let restoredClock = loaded["data"]["clockValue"]
         equal savedClock (restoredClock.GetValue<string>()) "snapshot clock state is restored"
@@ -2081,7 +2081,7 @@ end
 """
         File.WriteAllText(Path.Combine(reloadCollisionPath, "dictionary.agent"), collisionDictionary)
         let mutable reloadCollisionCode = ""
-        try Runtime.Engine(reloadCollisionPath, Set.empty) |> ignore
+        try Runtime.Engine(reloadCollisionPath, Set.empty, fileSystemMode = FileSystemMode.Virtual) |> ignore
         with LanguageException diagnostic -> reloadCollisionCode <- diagnostic.Code
         equal "NAME_GENERATED_COLLISION" reloadCollisionCode "dictionary reload rejects generated/user word collision"
 

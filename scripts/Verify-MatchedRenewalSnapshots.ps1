@@ -28,7 +28,7 @@ try {
         $restore = ($restoreText -join "`n") | ConvertFrom-Json
         $requests = @(@{op='snapshot.load';args=@{name=$meta.snapshot}},@{op='words'},@{op='test-all'})
         $lines = @($requests | ForEach-Object { ConvertTo-Json -InputObject $_ -Depth 8 -Compress })
-        $output = @($lines | & dotnet $cli --project $project --jsonl)
+        $output = @($lines | & dotnet $cli --project $project --filesystem virtual --jsonl)
         $exitCode = $LASTEXITCODE
         Assert-Check "$profile process exit" ($exitCode -eq 0)
         Assert-Check "$profile response count" ($output.Count -eq $requests.Count)

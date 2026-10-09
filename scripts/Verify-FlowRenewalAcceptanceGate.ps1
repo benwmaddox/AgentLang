@@ -46,7 +46,7 @@ function Invoke-CliSession {
     )
 
     $lines = @($Requests | ForEach-Object { ConvertTo-Json -InputObject $_ -Depth 24 -Compress })
-    $rawResponses = @($lines | & dotnet $script:cli --project $ProjectPath --jsonl)
+    $rawResponses = @($lines | & dotnet $script:cli --project $ProjectPath --filesystem virtual --jsonl)
     $exitCode = $LASTEXITCODE
     $responses = [Collections.Generic.List[object]]::new()
     $parseErrors = [Collections.Generic.List[object]]::new()

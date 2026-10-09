@@ -428,7 +428,14 @@ switch (mode)
     case "inspect-args":
         var hasClock = args.Contains("--clock", StringComparer.Ordinal);
         var hasAllow = args.Contains("--allow", StringComparer.Ordinal);
-        Console.WriteLine(JsonSerializer.Serialize(new { ok = !hasClock && !hasAllow, hasClock, hasAllow, args }));
+        var hasFilesystem = args.Contains("--filesystem", StringComparer.Ordinal);
+        var hasTestAllow = args.Contains("--test-allow", StringComparer.Ordinal);
+        var filesystemIndex = Array.IndexOf(args, "--filesystem");
+        var filesystemMode = filesystemIndex >= 0 && filesystemIndex + 1 < args.Length ? args[filesystemIndex + 1] : null;
+        var profileFlagsValid = hasClock
+            ? hasFilesystem && filesystemMode == "virtual" && !hasTestAllow
+            : !hasFilesystem && !hasTestAllow && !hasAllow;
+        Console.WriteLine(JsonSerializer.Serialize(new { ok = profileFlagsValid, hasClock, hasAllow, hasFilesystem, hasTestAllow, filesystemMode, args }));
         Console.Out.Flush();
         return 0;
     case "spam":
@@ -698,8 +705,19 @@ end
     Assert-Check -Name 'conventional profile omits AgentLang-only clock and capability flags' -Passed (
         $conventional.process.exitCode -eq 0 -and $conventional.responses[0].ok -and
         $conventional.responses[0].hasClock -eq $false -and $conventional.responses[0].hasAllow -eq $false -and
+        $conventional.responses[0].hasFilesystem -eq $false -and $conventional.responses[0].hasTestAllow -eq $false -and
         $conventional.traceEvents[0].profile -eq 'conventional' -and $conventional.traceEvents[0].additionalCliArguments[0] -eq '--fake-mode=inspect-args'
     ) -Detail ($conventional.responses[0] | ConvertTo-Json -Compress)
+
+    $agentlangProfile = Invoke-TrialHost -Name 'agentlang-profile-virtual-filesystem' -RuntimeDll $fakeDll -Requests @($fakeRequest) `
+        -AllowedOperations @('fake.echo') -Profile agentlang -AdditionalCliArguments @('--fake-mode=inspect-args')
+    Assert-Check -Name 'agentlang profile pins virtual filesystem mode without changing test or normal capabilities' -Passed (
+        $agentlangProfile.process.exitCode -eq 0 -and $agentlangProfile.responses[0].ok -eq $true -and
+        $agentlangProfile.responses[0].hasFilesystem -eq $true -and $agentlangProfile.responses[0].filesystemMode -ceq 'virtual' -and
+        $agentlangProfile.responses[0].hasClock -eq $true -and $agentlangProfile.responses[0].hasAllow -eq $false -and
+        $agentlangProfile.responses[0].hasTestAllow -eq $false -and
+        $agentlangProfile.traceEvents[0].profile -eq 'agentlang' -and $agentlangProfile.traceEvents[0].additionalCliArguments[0] -eq '--fake-mode=inspect-args'
+    ) -Detail ($agentlangProfile.responses[0] | ConvertTo-Json -Compress)
 
     $smallRaw = '{"ok":true}'
     $smallBytes = $utf8.GetByteCount($smallRaw)

@@ -222,6 +222,8 @@ function Invoke-JsonlSession([string]$Project, [object[]]$Requests, [string]$Lab
     $start.ArgumentList.Add($resolvedCli)
     $start.ArgumentList.Add('--project')
     $start.ArgumentList.Add($Project)
+    $start.ArgumentList.Add('--filesystem')
+    $start.ArgumentList.Add('virtual')
     $start.ArgumentList.Add('--jsonl')
     $process = [Diagnostics.Process]::new()
     $process.StartInfo = $start

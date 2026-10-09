@@ -123,7 +123,9 @@ module Runtime =
           mutable TargetEffects: Map<string, int>
           mutable Console: string list
           CoverageTarget: string option
-          Isolated: bool }
+          FileSystemMode: FileSystemMode
+          IsTest: bool
+          SuppressTaskEffects: bool }
 
     let rec private namedTypeReferences = function
         | TNamed name -> Set.singleton name
@@ -295,7 +297,7 @@ module Runtime =
 
     let private newWordIdentity () = "word_" + Guid.NewGuid().ToString("N")
 
-    type Engine(projectDirectory: string, capabilities: Set<string>, ?clockValue: string) =
+    type Engine(projectDirectory: string, capabilities: Set<string>, ?clockValue: string, ?fileSystemMode: FileSystemMode, ?testCapabilities: Set<string>) =
         let projectRoot = if String.IsNullOrWhiteSpace projectDirectory then None else Some(Path.GetFullPath projectDirectory)
         let store = projectRoot |> Option.map Storage.create
         let mutable storageGeneration = 0L
@@ -304,6 +306,8 @@ module Runtime =
         let mutable currentManifestHash: string option = None
         let mutable lastExportWarning: StorageError option = None
         let mutable fixedClock = defaultArg clockValue "2000-01-01T00:00:00Z"
+        let engineFileSystemMode = defaultArg fileSystemMode FileSystemMode.Real
+        let engineTestCapabilities = defaultArg testCapabilities capabilities
         let syntaxDescriptors =
             [ { Name = "list.empty"; Syntax = "list.empty<T>"; Flow2Syntax = None; Inputs = []; Outputs = [ "List<T>" ]; TypeParameters = [ "T" ]; Effects = []; EffectRule = "none"; Documentation = "Constructs an empty List<T>. T must be a declared closed type."; Coverage = [] }
               { Name = "list.singleton"; Syntax = "T list.singleton<T>"; Flow2Syntax = None; Inputs = [ "T" ]; Outputs = [ "List<T>" ]; TypeParameters = [ "T" ]; Effects = []; EffectRule = "none"; Documentation = "Constructs a one-element List<T> after checking the payload against the explicit T."; Coverage = [] }
@@ -631,8 +635,8 @@ module Runtime =
             trace.Effects <- Map.change name (fun count -> Some(defaultArg count 0 + 1)) trace.Effects
             if trace.TargetDepth > 0 then
                 trace.TargetEffects <- Map.change name (fun count -> Some(defaultArg count 0 + 1)) trace.TargetEffects
-            // Test effects run against isolated virtual providers and are not task effects.
-            if not trace.Isolated then log "effect" name
+            // Test and example effects are trace-local and are not task effects.
+            if not trace.IsTest && not trace.SuppressTaskEffects then log "effect" name
 
         let countInstruction (trace: Trace) (currentWord: string) (site: SourceSiteId) (span: SourceSpan) (isAuthoredSite: bool) =
             trace.Steps <- trace.Steps + 1
@@ -644,7 +648,7 @@ module Runtime =
             if trace.CoverageTarget = Some currentWord && isAuthoredSite then
                 trace.CoverageBranches <- Set.add (site, outcome) trace.CoverageBranches
 
-        let createTrace coverageTarget fileSystem =
+        let createTrace coverageTarget traceFileSystemMode isTest suppressTaskEffects fileSystem =
             { Steps = 0
               CoverageInstructions = Set.empty
               CoverageBranches = Set.empty
@@ -658,7 +662,9 @@ module Runtime =
               TargetEffects = Map.empty
               Console = []
               CoverageTarget = coverageTarget
-              Isolated = coverageTarget.IsSome }
+              FileSystemMode = traceFileSystemMode
+              IsTest = isTest
+              SuppressTaskEffects = suppressTaskEffects }
 
         let topologicalWords (state: DictionaryState) : WordEntry list =
             let words = userWords state |> Map.filter (fun _ value -> value.Status = Persistent)
@@ -1645,8 +1651,9 @@ module Runtime =
                 snapshot.Words.TryFind name |> Option.map (fun entry -> entry.Definition.Span)
             { PreflightEffects = fun effects word _ ->
                   let effectNames = IrEffects.names effects
-                  let missing = Set.difference (Set.ofList effectNames) capabilities
-                  if not trace.Isolated && not (Set.isEmpty missing) then
+                  let grantedCapabilities = if trace.IsTest then engineTestCapabilities else capabilities
+                  let missing = Set.difference (Set.ofList effectNames) grantedCapabilities
+                  if not (Set.isEmpty missing) then
                       let expected = effectNames
                       let message, failureWord, failureSpan =
                           match word with
@@ -1654,7 +1661,7 @@ module Runtime =
                               let names = String.concat ", " (missing |> Set.toList)
                               $"Execution requires capabilities not granted by the host: {names}.", Some name, definitionSpan name
                           | None -> "The expression requires effects not granted by the host.", None, None
-                      error "CAPABILITY_DENIED" message failureWord failureSpan expected (capabilities |> Set.toList)
+                      error "CAPABILITY_DENIED" message failureWord failureSpan expected (grantedCapabilities |> Set.toList)
               ChargeInstruction = fun currentWord site ->
                   let sourceInfo = source site
                   countInstruction trace currentWord site sourceInfo.SiteSpan (isAuthoredCoverageSite sourceInfo)
@@ -1664,18 +1671,35 @@ module Runtime =
               RecordUse = fun name -> log "use" name
               InvokeEffect = fun command ->
                   match command with
-                  | ReadVirtualFile(operation, path) ->
+                  | ReadFile(operation, path) ->
                       mutateEffect trace "fs.read"
-                      match trace.FileSystem.TryFind path with
-                      | Some contents -> EffectString contents
-                      | None -> error "EFFECT_FILE_NOT_FOUND" $"Virtual file '{path}' does not exist." (Some operation) None [] [ path ]
-                  | VirtualFileExists(_, path) ->
+                      match trace.FileSystemMode with
+                      | FileSystemMode.Virtual ->
+                          match trace.FileSystem.TryFind path with
+                          | Some contents -> EffectString contents
+                          | None -> error "EFFECT_FILE_NOT_FOUND" $"Virtual file '{path}' does not exist." (Some operation) None [] [ path ]
+                      | FileSystemMode.Real ->
+                          match FileSystem.readText projectRoot operation path with
+                          | Ok contents -> EffectString contents
+                          | Error failure -> error failure.Code failure.Message (Some operation) None failure.Expected failure.Actual
+                  | FileExists(operation, path) ->
                       mutateEffect trace "fs.read"
-                      EffectBool(trace.FileSystem.ContainsKey path)
-                  | WriteVirtualFile(_, path, contents) ->
+                      match trace.FileSystemMode with
+                      | FileSystemMode.Virtual -> EffectBool(trace.FileSystem.ContainsKey path)
+                      | FileSystemMode.Real ->
+                          match FileSystem.fileExists projectRoot operation path with
+                          | Ok exists -> EffectBool exists
+                          | Error failure -> error failure.Code failure.Message (Some operation) None failure.Expected failure.Actual
+                  | WriteFile(operation, path, contents) ->
                       mutateEffect trace "fs.write"
-                      trace.FileSystem <- Map.add path contents trace.FileSystem
-                      EffectUnit
+                      match trace.FileSystemMode with
+                      | FileSystemMode.Virtual ->
+                          trace.FileSystem <- Map.add path contents trace.FileSystem
+                          EffectUnit
+                      | FileSystemMode.Real ->
+                          match FileSystem.writeText projectRoot operation path contents with
+                          | Ok () -> EffectUnit
+                          | Error failure -> error failure.Code failure.Message (Some operation) None failure.Expected failure.Actual
                   | ReadFixedClock _ -> mutateEffect trace "clock.read"; EffectString fixedClock
                   | WriteVirtualConsole(_, contents) ->
                       mutateEffect trace "console.write"
@@ -1703,11 +1727,11 @@ module Runtime =
             let host = interpreterHost snapshot trace (Some body)
             IrInterpreter.executeBody host executionName body
 
-        let executeExpression (snapshot: RuntimeSnapshot) (coverageTarget: string option) (fileSystem: Map<string, string>) (expressions: Expr list) =
+        let executeExpression (snapshot: RuntimeSnapshot) (coverageTarget: string option) (traceFileSystemMode: FileSystemMode) (fileSystem: Map<string, string>) (expressions: Expr list) =
             Compiler.checkExpression (knownTypes snapshot.State) snapshot.Words expressions |> ignore
             let sourceOrigins = snapshot.FlowContext |> Option.map (fun flowContext -> flowContext.SourceOrigins) |> Option.defaultValue Map.empty
             let body = Compiler.compileIrBodyAgainstProgramWithSourceOrigins snapshot.Context snapshot.Program "<eval>" [] expressions sourceOrigins
-            let trace = createTrace coverageTarget fileSystem
+            let trace = createTrace coverageTarget traceFileSystemMode false false fileSystem
             let stack = executeIRBody snapshot "<eval>" trace body
             stack, trace
 
@@ -2177,7 +2201,7 @@ module Runtime =
 
         let checkedByTest (snapshot: RuntimeSnapshot) (test: TestDefinition) =
             let sites, branches = coverageObligations snapshot test.Word
-            let trace = createTrace (Some test.Word) Map.empty
+            let trace = createTrace (Some test.Word) FileSystemMode.Virtual true false Map.empty
             let bodyKey = $"{test.Word}/{test.Name}"
             let body =
                 snapshot.TestBodies.TryFind bodyKey
@@ -2234,7 +2258,7 @@ module Runtime =
                             snapshot.TestExpectationBodies.TryFind bodyKey
                             |> Option.defaultWith (fun () ->
                                 error "IR_TEST_EXPECTATION_BODY_MISSING" "Compiled test expectation is absent from its exact executable snapshot." (Some test.Word) (Some test.Span) [] [ bodyKey ])
-                        let expectedTrace = { createTrace None Map.empty with Isolated = true }
+                        let expectedTrace = createTrace None FileSystemMode.Virtual true false Map.empty
                         try
                             let expectedStack = executeIRBody snapshot "<test-expectation>" expectedTrace expectedBody
                             match expectedStack with
@@ -2428,7 +2452,7 @@ module Runtime =
                     let body =
                         snapshot.ExampleBodies.TryFind key
                         |> Option.defaultWith (fun () -> error "EXAMPLE_BODY_MISSING" "The example has no body compiled against the active verified program." (Some key) (Some example.Span) [] [])
-                    let trace = createTrace (Some example.Word) virtualFiles
+                    let trace = createTrace (Some example.Word) engineFileSystemMode false true virtualFiles
                     let actual = executeIRBody snapshot key trace body
                     let passed = actual = [ Types.literalValue example.Expected ]
                     result["passed"] <- jbool passed
@@ -4082,6 +4106,8 @@ module Runtime =
 
         member _.ProjectDirectory = projectRoot
         member _.Capabilities = capabilities
+        member _.TestCapabilities = engineTestCapabilities
+        member _.FileSystemMode = engineFileSystemMode
 
         member _.Dispatch(operation: string, args: JsonObject) =
             try
@@ -4100,7 +4126,7 @@ module Runtime =
                             let flowContext = snapshot.FlowContext |> Option.defaultWith (fun () -> error "FLOW_RUNTIME_CONTEXT_MISSING" "The active runtime snapshot has no Flow context." None None [] [])
                             let compiled = FlowLowering.compileExpressionWithVersion syntaxVersion flowContext expression
                             let evalSnapshot = { snapshot with Program = compiled.Program }
-                            let trace = createTrace None virtualFiles
+                            let trace = createTrace None engineFileSystemMode false false virtualFiles
                             let result = executeIRBody evalSnapshot "<flow-eval>" trace compiled.Body
                             let structuredStack = if structured then Some(ValueInspection.toData compiled.Program result) else None
                             virtualFiles <- trace.FileSystem
@@ -4123,7 +4149,7 @@ module Runtime =
                             | Error diagnostic -> response false "error" (Diagnostics.render diagnostic) None (Some diagnostic)
                             | Ok body ->
                                 let snapshot = currentSnapshot ()
-                                let result, trace = executeExpression snapshot None virtualFiles body
+                                let result, trace = executeExpression snapshot None engineFileSystemMode virtualFiles body
                                 let structuredStack =
                                     if structured then Some(ValueInspection.toData snapshot.Program result)
                                     else None

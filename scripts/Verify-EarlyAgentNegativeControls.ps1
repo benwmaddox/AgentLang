@@ -61,7 +61,7 @@ test $($target.word)/constant {
         }
         $results.Add($taskResult)
         $lines=@($requests | ForEach-Object { ConvertTo-Json $_ -Depth 12 -Compress })
-        $output=@($lines | & dotnet $cli --project $project --jsonl)
+        $output=@($lines | & dotnet $cli --project $project --filesystem virtual --jsonl)
         $taskResult.setupRawOutput=@($output)
         if ($LASTEXITCODE -ne 0 -or $output.Count -ne $requests.Count) {
             throw "Wrong-solution setup process failed for task $($target.number); exit=$LASTEXITCODE, responses=$($output.Count)/$($requests.Count)."

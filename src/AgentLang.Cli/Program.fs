@@ -26,6 +26,13 @@ Usage:
   agentlang [--project DIR] [--frontend flow|stack] [--syntax-version 1|2] --eval CODE
   agentlang [--project DIR] [--request JSON]
 
+File operations use the real filesystem by default, relative to the project.
+Select --filesystem virtual for an explicitly simulated session. Attached tests
+always use fresh virtual files, independently of this setting. Both modes require
+the corresponding --allow capabilities.
+Use --test-allow effect,... to grant isolated tests their own permissions without
+granting those effects to normal execution. Without it, tests use --allow grants.
+
 The human REPL and --eval default to Flow. Select --frontend stack to use the
 legacy Stack syntax. --request and --jsonl honor request-level frontend fields
 and preserve the runtime default when a request omits one.
@@ -468,6 +475,9 @@ Human REPL commands:
         Console.OutputEncoding <- UTF8Encoding(false)
         let mutable projectDirectory = Environment.CurrentDirectory
         let mutable capabilities = Set.empty<string>
+        let mutable testCapabilities: Set<string> option = None
+        let mutable fileSystemMode = FileSystemMode.Real
+        let mutable fileSystemSpecified = false
         let mutable clockValue: string option = None
         let mutable jsonLines = false
         let mutable frontend = "flow"
@@ -501,6 +511,25 @@ Human REPL commands:
                         |> Array.filter (String.IsNullOrWhiteSpace >> not)
                         |> Set.ofArray
                     capabilities <- Set.union capabilities granted
+                | None -> ()
+            | "--filesystem" ->
+                if fileSystemSpecified then problem <- Some("--filesystem may only be specified once.")
+                else
+                    fileSystemSpecified <- true
+                    match requireValue "--filesystem" with
+                    | Some "real" -> fileSystemMode <- FileSystemMode.Real
+                    | Some "virtual" -> fileSystemMode <- FileSystemMode.Virtual
+                    | Some value -> problem <- Some($"--filesystem must be 'real' or 'virtual', not '{value}'.")
+                    | None -> ()
+            | "--test-allow" ->
+                match requireValue "--test-allow" with
+                | Some value ->
+                    let granted =
+                        value.Split([| ',' |], StringSplitOptions.RemoveEmptyEntries)
+                        |> Array.map (fun item -> item.Trim())
+                        |> Array.filter (String.IsNullOrWhiteSpace >> not)
+                        |> Set.ofArray
+                    testCapabilities <- Some(Set.union (defaultArg testCapabilities Set.empty) granted)
                 | None -> ()
             | "--clock" -> clockValue <- requireValue "--clock"
             | "--frontend" ->
@@ -555,7 +584,7 @@ Human REPL commands:
             Console.Error.WriteLine("The Stack frontend supports only --syntax-version 1.")
             2
         | None ->
-            let engine = Runtime.Engine(projectDirectory, capabilities, ?clockValue = clockValue)
+            let engine = Runtime.Engine(projectDirectory, capabilities, ?clockValue = clockValue, fileSystemMode = fileSystemMode, ?testCapabilities = testCapabilities)
             if jsonLines then
                 Protocol.serveJsonLines engine Console.In Console.Out
                 0

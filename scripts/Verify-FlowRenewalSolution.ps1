@@ -44,7 +44,7 @@ foreach ($case in $oracle.cases) {
 }
 try {
     $lines = @($requests | ForEach-Object { ConvertTo-Json -InputObject $_ -Depth 12 -Compress })
-    $output = @($lines | & dotnet $cli --project $project --jsonl)
+    $output = @($lines | & dotnet $cli --project $project --filesystem virtual --jsonl)
     $exitCode = $LASTEXITCODE
     Assert-Check 'fresh process exit' ($exitCode -eq 0)
     Assert-Check 'one response per request' ($output.Count -eq $requests.Count)

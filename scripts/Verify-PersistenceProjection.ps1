@@ -243,7 +243,7 @@ function Invoke-CliSession {
     $inputBytes = [Text.Encoding]::UTF8.GetByteCount($inputText)
     if ($inputBytes -gt 1MB) { throw "Request batch exceeds the 1 MiB input limit for session '$Name'." }
 
-    $arguments = @($cliPath, '--project', $ProjectPath, '--jsonl')
+    $arguments = @($cliPath, '--project', $ProjectPath, '--filesystem', 'virtual', '--jsonl')
     $processResult = [AgentLangProjectionVerifier.ProcessRunner]::Run(
         'dotnet', $arguments, $inputText, $TimeoutSeconds * 1000, [int]$maxOutputBytes)
 

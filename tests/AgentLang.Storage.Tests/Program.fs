@@ -1100,7 +1100,7 @@ module Program =
 
     let private testRuntimePublishesV2ForExplicitStackFrontend root =
         let stackProject = Path.Combine(root, "runtime-stack-v2")
-        let engine = Runtime.Engine(stackProject, Set.empty, "2030-01-02T03:04:05Z")
+        let engine = Runtime.Engine(stackProject, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         let defineArgs = JsonObject()
         let runtimeSource =
             String.concat "\n"

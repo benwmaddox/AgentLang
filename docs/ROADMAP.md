@@ -72,6 +72,14 @@ None descriptor exposed a missing sentinel rule,
 now repaired with before/after evidence. This engineering milestone does not
 change the efficacy conclusions below or select the final mailbox memory policy.
 
+[Report 161](../reports/161-real-files-and-test-isolation.md) tracks real
+project-rooted filesystem execution and automatic virtual providers for attached
+tests. Focused runtime, CLI and broker checks and all 37 full local Release checks
+pass. Source-defined replacements scoped to test files remain the next
+implementation step: retain shared source context, route nested calls and
+callbacks through typed temporary overlays, and exclude fake execution from
+original-function library coverage. This is distinct from provider simulation.
+
 [Report 154](../reports/154-provider-state-assertion-probe.md) tests an I/O repair
 with a fresh agent. Its submission passes three independent cases; its own added
 known-path state and exact effect-count assertions reject wrong destination,

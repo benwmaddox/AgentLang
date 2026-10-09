@@ -267,6 +267,7 @@ function New-HostArguments {
         [string]$TracePath,
         [string[]]$AllowedOperations,
         [string[]]$AdditionalCliArguments = @(),
+        [string]$Profile = 'conventional',
         [int]$ExchangeTimeoutMilliseconds = 1500,
         [int]$MaxRequestBytes = 262144,
         [int]$MaxResponseBytes = 524288,
@@ -275,7 +276,7 @@ function New-HostArguments {
     $arguments = [Collections.Generic.List[string]]::new()
     foreach ($item in @('-NoLogo', '-NoProfile', '-NonInteractive', '-File', $startScript,
         '-CliDll', $RuntimeDll, '-ProjectPath', $ProjectPath, '-TracePath', $TracePath,
-        '-AllowedOperations', ($AllowedOperations -join ','), '-Profile', 'conventional',
+        '-AllowedOperations', ($AllowedOperations -join ','), '-Profile', $Profile,
         '-ExchangeTimeoutMilliseconds', $ExchangeTimeoutMilliseconds.ToString(),
         '-MaxRequestBytes', $MaxRequestBytes.ToString(), '-MaxResponseBytes', $MaxResponseBytes.ToString(),
         '-MaxExchanges', $MaxExchanges.ToString())) {
@@ -295,6 +296,7 @@ function Invoke-HostRun {
         [Parameter(Mandatory)][AllowEmptyCollection()][string[]]$Requests,
         [string[]]$AllowedOperations = @('fake.echo'),
         [string[]]$AdditionalCliArguments = @(),
+        [string]$Profile = 'conventional',
         [string]$ProjectPath,
         [int]$ExchangeTimeoutMilliseconds = 1500,
         [int]$MaxRequestBytes = 262144,
@@ -317,6 +319,7 @@ function Invoke-HostRun {
     if ($PSBoundParameters.ContainsKey('InputBytesOverride')) { $inputBytes = $InputBytesOverride }
     $arguments = New-HostArguments -RuntimeDll $RuntimeDll -ProjectPath $ProjectPath -TracePath $tracePath `
         -AllowedOperations $AllowedOperations -AdditionalCliArguments $AdditionalCliArguments `
+        -Profile $Profile `
         -ExchangeTimeoutMilliseconds $ExchangeTimeoutMilliseconds -MaxRequestBytes $MaxRequestBytes `
         -MaxResponseBytes $MaxResponseBytes -MaxExchanges $MaxExchanges
     $process = Invoke-BoundedProcess -FileName $pwsh -Arguments $arguments -InputBytes $inputBytes `
@@ -364,6 +367,8 @@ using System.Text;
 Console.OutputEncoding = new UTF8Encoding(false);
 var mode = args.FirstOrDefault(value => value.StartsWith("--fake-mode=", StringComparison.Ordinal))?.Substring("--fake-mode=".Length) ?? "echo";
 var logPath = args.FirstOrDefault(value => value.StartsWith("--fake-log-path=", StringComparison.Ordinal))?.Substring("--fake-log-path=".Length);
+var argumentLogPath = args.FirstOrDefault(value => value.StartsWith("--fake-args-log-path=", StringComparison.Ordinal))?.Substring("--fake-args-log-path=".Length);
+if (argumentLogPath is not null) File.WriteAllLines(argumentLogPath, args, new UTF8Encoding(false));
 string? line;
 while ((line = Console.ReadLine()) is not null)
 {
@@ -491,6 +496,48 @@ try {
         $reservedWhitelist.process.exitCode -ne 0 -and $reservedWhitelist.traceEvents.Count -eq 0 -and
         -not (Test-Path -LiteralPath $guardLog) -and $reservedDiagnosticMatched
     ) -Detail "exit=$($reservedWhitelist.process.exitCode); traceEvents=$($reservedWhitelist.traceEvents.Count); childStarted=$(Test-Path -LiteralPath $guardLog); expectedDiagnostic='$reservedDiagnostic'; diagnosticMatched=$reservedDiagnosticMatched; output=$($reservedOutput.Trim())"
+
+    foreach ($reservedCliOption in @('--filesystem', '--filesystem=real', '--test-allow', '--test-allow=fs.write')) {
+        $reservedName = ($reservedCliOption -replace '[^A-Za-z0-9]+', '-')
+        $reservedArgsPath = Join-Path $artifactRoot "reserved-cli-option-$reservedName-args.txt"
+        $reservedArguments = [Collections.Generic.List[string]]::new()
+        $reservedArguments.Add('--fake-args-log-path=' + $reservedArgsPath)
+        $reservedArguments.Add($reservedCliOption)
+        $reservedCliOptionRun = Invoke-HostRun -Name "reserved-cli-option-$reservedName" -RuntimeDll $fakeDll -Requests @() `
+            -Profile agentlang -AdditionalCliArguments $reservedArguments.ToArray() -AllowedOperations @('fake.echo')
+        $reservedCliOptionOutput = [string]$reservedCliOptionRun.process.stdout + [string]$reservedCliOptionRun.process.stderr
+        $reservedCliOptionRejected = $reservedCliOptionRun.process.exitCode -ne 0 -and
+            -not (Test-Path -LiteralPath $reservedArgsPath) -and
+            $reservedCliOptionOutput.IndexOf('cannot override wrapper-owned project, protocol, capability, or clock settings', [StringComparison]::Ordinal) -ge 0
+        Assert-Check -Name "startup reserves $reservedCliOption for broker-owned filesystem and test capabilities" -Passed $reservedCliOptionRejected `
+            -Detail "exit=$($reservedCliOptionRun.process.exitCode); childStarted=$(Test-Path -LiteralPath $reservedArgsPath); output=$($reservedCliOptionOutput.Trim())"
+    }
+
+    $agentlangArgsPath = Join-Path $artifactRoot 'agentlang-profile-runtime-arguments.txt'
+    $agentlangProfile = Invoke-HostRun -Name 'agentlang-profile-virtual-filesystem' -RuntimeDll $fakeDll -Requests @('{"op":"fake.echo"}') `
+        -Profile agentlang -AdditionalCliArguments @('--fake-args-log-path=' + $agentlangArgsPath) -AllowedOperations @('fake.echo')
+    $agentlangRuntimeArgs = @(Get-Content -LiteralPath $agentlangArgsPath)
+    $filesystemPairCount = 0
+    for ($index = 0; $index -lt ($agentlangRuntimeArgs.Count - 1); $index++) {
+        if ($agentlangRuntimeArgs[$index] -ceq '--filesystem' -and $agentlangRuntimeArgs[$index + 1] -ceq 'virtual') { $filesystemPairCount++ }
+    }
+    Assert-Check -Name 'agentlang broker profile pins the virtual filesystem and leaves test capabilities at their defaults' -Passed (
+        $agentlangProfile.process.exitCode -eq 0 -and $filesystemPairCount -eq 1 -and
+        $agentlangRuntimeArgs -ccontains '--clock' -and -not ($agentlangRuntimeArgs -ccontains '--test-allow') -and
+        -not ($agentlangRuntimeArgs -ccontains '--allow')
+    ) -Detail "exit=$($agentlangProfile.process.exitCode); args=$($agentlangRuntimeArgs -join ' ')"
+
+    $conventionalArgsPath = Join-Path $artifactRoot 'conventional-profile-runtime-arguments.txt'
+    $conventionalProfile = Invoke-HostRun -Name 'conventional-profile-arguments' -RuntimeDll $fakeDll -Requests @('{"op":"fake.echo"}') `
+        -AdditionalCliArguments @('--fake-args-log-path=' + $conventionalArgsPath) -AllowedOperations @('fake.echo')
+    $conventionalRuntimeArgs = @(Get-Content -LiteralPath $conventionalArgsPath)
+    Assert-Check -Name 'conventional broker profile receives neither filesystem nor AgentLang capability flags' -Passed (
+        $conventionalProfile.process.exitCode -eq 0 -and
+        -not ($conventionalRuntimeArgs -ccontains '--filesystem') -and
+        -not ($conventionalRuntimeArgs -ccontains '--test-allow') -and
+        -not ($conventionalRuntimeArgs -ccontains '--allow') -and
+        -not ($conventionalRuntimeArgs -ccontains '--clock')
+    ) -Detail "exit=$($conventionalProfile.process.exitCode); args=$($conventionalRuntimeArgs -join ' ')"
 
     $successSource = @'
 word trial.success : Int -> Int

@@ -274,11 +274,22 @@ unrelated callers, and bind successful qualification to the tested revision
 and dependency identities. The R02 result shows why complete structural
 coverage and self-authored passing expectations alone cannot prove behavior.
 
+Normal filesystem primitives must read and write real project-rooted files.
+Attached tests, including setup, expectation evaluation, publication gates and
+reload qualification, must use isolated virtual files and never perform language
+filesystem I/O against host files. Test grants may be configured separately from
+production grants; neither provider simulation nor replacement grants permission.
+Real external writes are not reverted by dictionary task rollback. Host tooling
+may still persist dictionary metadata. See [report 161](../reports/161-real-files-and-test-isolation.md)
+for implementation and validation status.
+
 Tests must also support scoped dictionary function redefinition, including for
-functions that perform IO. A test can install a temporary replacement under the
-same function identity, execute its target so nested calls see the replacement,
-and automatically discard it when the test ends. This is a typed dictionary
-overlay for one test, not a persistent replacement or only a host-provider mock.
+functions that perform IO. Replacement declarations belong to test files, never
+production source. Tests in a file share those declarations, while each test
+gets a fresh temporary dictionary overlay and simulated provider state. Nested
+calls see the replacement, which is automatically discarded when the test ends.
+Retain the shared file context through save/reload and source editing. This is
+a typed dictionary overlay, not a persistent replacement or only a provider mock.
 Require the same input/output signature and an explicit compatible effect
 contract; retain the original caller's declared effects and capability checks.
 Never modify the persistent dictionary, history or production bindings.

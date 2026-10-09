@@ -8,6 +8,11 @@ test parity.coverage-positive?/basic
     => true
 end
 
+test parity.coverage-positive?/zero
+    0 parity.coverage-positive?
+    => false
+end
+
 word parity.library-filter-count : List<Int> -> Int
     effects none
     list.filter parity.coverage-positive?

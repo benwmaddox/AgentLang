@@ -247,6 +247,8 @@ function Invoke-AgentJsonl([string]$Project, [object[]]$Requests, [string]$Runti
     $startInfo.ArgumentList.Add((Get-FullPath $RuntimeDll))
     $startInfo.ArgumentList.Add('--project')
     $startInfo.ArgumentList.Add((Get-FullPath $Project))
+    $startInfo.ArgumentList.Add('--filesystem')
+    $startInfo.ArgumentList.Add('virtual')
     $startInfo.ArgumentList.Add('--jsonl')
 
     $process = [System.Diagnostics.Process]::new()

@@ -413,7 +413,7 @@
               "expect": { "subset": { "ok": true, "kind": "defined" } }
             },
             {
-              "request": { "op": "commit", "word": "parity.library-filter-count", "library": true },
+              "request": { "op": "commit", "library": true },
               "expect": {
                 "subset": {
                   "ok": false,
@@ -449,7 +449,7 @@
               }
             },
             {
-              "request": { "op": "commit", "word": "parity.library-filter-count", "library": true },
+              "request": { "op": "commit", "library": true },
               "expect": { "subset": { "ok": true, "kind": "commit" } }
             }
           ]

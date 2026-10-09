@@ -886,7 +886,7 @@ namespace AgentLang.SubagentTrialHostV2
                 if (argument == null || argument.Length > 4096 || argument.Any(Char.IsControl))
                     throw new ArgumentException("Additional CLI arguments must be bounded strings without control characters.");
                 string optionName = argument.Split(new char[] { '=' }, 2)[0];
-                if (new string[] { "--project", "--jsonl", "--allow", "--clock" }.Contains(optionName, StringComparer.Ordinal))
+                if (new string[] { "--project", "--jsonl", "--allow", "--clock", "--filesystem", "--test-allow" }.Contains(optionName, StringComparer.Ordinal))
                     throw new ArgumentException("Additional CLI arguments cannot override wrapper-owned project, protocol, capability, or clock settings.");
             }
             if (capabilities == null) throw new ArgumentException("Capabilities cannot be null.");
@@ -910,6 +910,8 @@ namespace AgentLang.SubagentTrialHostV2
             arguments.Add("--jsonl");
             if (profile == "agentlang")
             {
+                arguments.Add("--filesystem");
+                arguments.Add("virtual");
                 arguments.Add("--clock");
                 arguments.Add(clockValue);
                 if (capabilities.Length > 0)

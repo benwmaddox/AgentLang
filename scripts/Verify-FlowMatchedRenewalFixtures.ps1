@@ -42,7 +42,7 @@ function Invoke-Language([string]$Project, [string]$Profile, [object[]]$Requests
         if ($request.op -in @('define', 'eval')) { $request.frontend = 'flow' }
     }
     $lines = @($Requests | ForEach-Object { ConvertTo-Json -InputObject $_ -Depth 24 -Compress })
-    $output = @($lines | & dotnet $cli --project $Project --jsonl)
+    $output = @($lines | & dotnet $cli --project $Project --filesystem virtual --jsonl)
     $exit = $LASTEXITCODE
     Assert-Check "$Profile language process exit" ($exit -eq 0) "exit=$exit"
     Assert-Check "$Profile response count" ($output.Count -eq $Requests.Count) "requests=$($Requests.Count), responses=$($output.Count)"

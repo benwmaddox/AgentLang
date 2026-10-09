@@ -152,7 +152,7 @@ function Get-StructuredJsonlResponses([string]$Project,[object[]]$Requests,[stri
     $start.StandardErrorEncoding = $utf8NoBom
     $start.Environment['DOTNET_CLI_TELEMETRY_OPTOUT']='1'
     $start.Environment['DOTNET_NOLOGO']='1'
-    foreach ($argument in @($CliDll,'--project',$Project,'--jsonl')) { $start.ArgumentList.Add([string]$argument) }
+    foreach ($argument in @($CliDll,'--project',$Project,'--filesystem','virtual','--jsonl')) { $start.ArgumentList.Add([string]$argument) }
     $process = [Diagnostics.Process]::new()
     $process.StartInfo = $start
     $clock = [Diagnostics.Stopwatch]::StartNew()
@@ -182,7 +182,7 @@ function Get-StructuredJsonlResponses([string]$Project,[object[]]$Requests,[stri
         catch { $parseErrors.Add($_.Exception.Message) }
     }
     $processRuns.Add([ordered]@{
-        label=$Label;arguments=@($CliDll,'--project',$Project,'--jsonl');requestCount=$Requests.Count
+        label=$Label;arguments=@($CliDll,'--project',$Project,'--filesystem','virtual','--jsonl');requestCount=$Requests.Count
         requests=@($requestLines);responseCount=$responseLines.Count;responses=@($responses)
         parseErrors=@($parseErrors);exitCode=$(if ($finished) { $process.ExitCode } else { $null })
         timedOut=(-not $finished);durationMs=$clock.ElapsedMilliseconds;stderr=$stderr

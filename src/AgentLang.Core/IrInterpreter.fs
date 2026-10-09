@@ -6,13 +6,13 @@ open System.Globalization
 open System.Runtime.CompilerServices
 open System.Text
 
-/// Operations that cross from the interpreter into Engine-owned virtual providers.
+/// Operations that cross from the interpreter into Engine-owned effect providers.
 /// Payloads deliberately contain only primitive values; nominal values never cross
 /// this boundary.
 type IrEffectCommand =
-    | ReadVirtualFile of operation: string * path: string
-    | VirtualFileExists of operation: string * path: string
-    | WriteVirtualFile of operation: string * path: string * contents: string
+    | ReadFile of operation: string * path: string
+    | FileExists of operation: string * path: string
+    | WriteFile of operation: string * path: string * contents: string
     | ReadFixedClock of operation: string
     | WriteVirtualConsole of operation: string * contents: string
 
@@ -666,17 +666,17 @@ module IrInterpreter =
             | "list.get", [ RuntimeList(itemType, _); RuntimeInt _ ] -> [ RuntimeOption(itemType, None) ]
             | "list.is-empty?", [ RuntimeList(_, values) ] -> [ RuntimeBool(List.isEmpty values) ]
             | "file.read", [ RuntimeString path ] ->
-                match host.InvokeEffect(ReadVirtualFile(operation, path)) with
+                match host.InvokeEffect(ReadFile(operation, path)) with
                 | EffectString contents -> [ RuntimeString contents ]
-                | _ -> fail "IR_BACKEND_EFFECT_RESULT" "Virtual file read returned an invalid primitive result." (Some operation) None [ "String" ] []
+                | _ -> fail "IR_BACKEND_EFFECT_RESULT" "File read returned an invalid primitive result." (Some operation) None [ "String" ] []
             | "file.exists?", [ RuntimeString path ] ->
-                match host.InvokeEffect(VirtualFileExists(operation, path)) with
+                match host.InvokeEffect(FileExists(operation, path)) with
                 | EffectBool exists -> [ RuntimeBool exists ]
-                | _ -> fail "IR_BACKEND_EFFECT_RESULT" "Virtual file existence check returned an invalid primitive result." (Some operation) None [ "Bool" ] []
+                | _ -> fail "IR_BACKEND_EFFECT_RESULT" "File existence check returned an invalid primitive result." (Some operation) None [ "Bool" ] []
             | "file.write", [ RuntimeString path; RuntimeString contents ] ->
-                match host.InvokeEffect(WriteVirtualFile(operation, path, contents)) with
+                match host.InvokeEffect(WriteFile(operation, path, contents)) with
                 | EffectUnit -> [ RuntimeUnit ]
-                | _ -> fail "IR_BACKEND_EFFECT_RESULT" "Virtual file write returned an invalid primitive result." (Some operation) None [ "Unit" ] []
+                | _ -> fail "IR_BACKEND_EFFECT_RESULT" "File write returned an invalid primitive result." (Some operation) None [ "Unit" ] []
             | "clock.now", [] ->
                 match host.InvokeEffect(ReadFixedClock operation) with
                 | EffectString value -> [ RuntimeString value ]

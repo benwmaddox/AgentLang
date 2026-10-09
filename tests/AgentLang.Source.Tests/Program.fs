@@ -558,8 +558,8 @@ end
                         let rewritten = { definition with Body = Source.renameReferences "old.adjust" "new.adjust" definition.Body }
                         { rewritten with SourceText = Source.renderWord false rewritten })
             let rewrittenSource = renamedWords |> List.map (Source.renderWord false) |> String.concat "\n\n"
-            let original = Runtime.Engine(oldPath, Set.empty)
-            let changed = Runtime.Engine(newPath, Set.empty)
+            let original = Runtime.Engine(oldPath, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+            let changed = Runtime.Engine(newPath, Set.empty, fileSystemMode = FileSystemMode.Virtual)
             define original source
             define changed rewrittenSource
             equal [ "11" ] (evaluate original "10 caller") "original direct-call behavior"

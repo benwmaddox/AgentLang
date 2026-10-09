@@ -319,7 +319,7 @@ module Program =
 
     let private testManifestInventoryUsesCurrentMixedFrontendHeads root =
         let settings = config root Growing "inventory-current-heads" [ step "test-all" (JsonObject()) None None (Some 3) ]
-        let engine = Runtime.Engine(settings.ProjectDirectory, Set.empty, "2030-01-02T03:04:05Z")
+        let engine = Runtime.Engine(settings.ProjectDirectory, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         let request (operation: string) (fields: (string * JsonNode) list) =
             let args = JsonObject()
             for name, value in fields do args[name] <- value
@@ -609,7 +609,7 @@ end
         check result.Success "library definition passes the independent tests after full branch coverage"
         let describeArgs = JsonObject()
         describeArgs["word"] <- JsonValue.Create("library.flag")
-        let engine = AgentLang.Runtime.Engine(settings.ProjectDirectory, Set.empty, "2000-01-01T00:00:00Z")
+        let engine = AgentLang.Runtime.Engine(settings.ProjectDirectory, Set.empty, "2000-01-01T00:00:00Z", fileSystemMode = FileSystemMode.Virtual)
         let described = engine.Dispatch("describe", describeArgs)
         equal "library" (Json.propertyString described["data"] "maturity" "") "tool quality selection retains library maturity"
         let firstCommitResult =
@@ -901,7 +901,7 @@ end
         equal (Some "BASELINE_PROFILE_MISMATCH") switched.FailureCode $"Growing lineage refuses a baseline profile switch ({switchFailureMessage})"
         equal 0 switchedProvider.ResponsesConsumed "profile-switch refusal happens before provider invocation"
 
-        let external = AgentLang.Runtime.Engine(growingOne.ProjectDirectory, Set.empty, "2000-01-01T00:00:00Z")
+        let external = AgentLang.Runtime.Engine(growingOne.ProjectDirectory, Set.empty, "2000-01-01T00:00:00Z", fileSystemMode = FileSystemMode.Virtual)
         let externalSource = """word external.change : Int -> Int
     effects none
     2 add

@@ -85,7 +85,7 @@ example customer.discounted-balance/premium { Money::value(customer::discounted-
         [ordered]@{ op='commit'; library=$true }
     )
     $lines = @($requests | ForEach-Object { ConvertTo-Json -InputObject $_ -Depth 30 -Compress })
-    $output = @($lines | & dotnet $cli --project $Project --jsonl)
+    $output = @($lines | & dotnet $cli --project $Project --filesystem virtual --jsonl)
     Check "$Mutation control CLI exit" ($LASTEXITCODE -eq 0)
     Check "$Mutation control one response per request" ($output.Count -eq $requests.Count)
     $responses = @($output | ForEach-Object { ConvertFrom-Json -InputObject $_ -Depth 100 })

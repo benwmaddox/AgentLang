@@ -49,7 +49,7 @@ foreach ($case in $target.cases) {
 }
 try {
     $lines = @($requests | ForEach-Object { ConvertTo-Json -InputObject $_ -Depth 12 -Compress })
-    $output = @($lines | & dotnet $cli --project $project --jsonl)
+    $output = @($lines | & dotnet $cli --project $project --filesystem virtual --jsonl)
     Check 'fresh process exit' ($LASTEXITCODE -eq 0)
     Check 'one response per request' ($output.Count -eq $requests.Count)
     $responses = @($output | ForEach-Object { ConvertFrom-Json -InputObject $_ -Depth 64 })

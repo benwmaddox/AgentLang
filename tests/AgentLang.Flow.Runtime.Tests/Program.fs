@@ -174,7 +174,7 @@ module Program =
 
     let private testAuthoringHelpAndCanonicalLibrarySource root =
         let project = Path.Combine(root, "authoring-help-canonical")
-        let engine = Runtime.Engine(project, Set.empty, "2041-02-03T04:05:06Z")
+        let engine = Runtime.Engine(project, Set.empty, "2041-02-03T04:05:06Z", fileSystemMode = FileSystemMode.Virtual)
         let index = dispatch engine "help" [] |> expectOk "read the default authoring-help index"
         equal "help" (stringValue index.["kind"]) "help is a JSONL operation"
         let indexData = index.["data"]
@@ -272,7 +272,7 @@ module Program =
              |> Seq.forall (fun item -> stringValue item.["name"] <> "define-tutorial-span-validator"))
             "default Flow/1 define help does not advertise Flow/2 record source"
 
-        let flow2HelpEngine = Runtime.Engine(Path.Combine(root, "authoring-help-flow2"), Set.empty, "2041-02-03T04:05:06Z")
+        let flow2HelpEngine = Runtime.Engine(Path.Combine(root, "authoring-help-flow2"), Set.empty, "2041-02-03T04:05:06Z", fileSystemMode = FileSystemMode.Virtual)
         let defineHelpV2 =
             dispatch flow2HelpEngine "help" [ "topic", jstr "define"; "syntaxVersion", jint 2 ]
             |> expectOk "read Flow/2 define help"
@@ -413,7 +413,7 @@ module Program =
         equal "library" (stringValue classified.["data"].["maturity"]) "enum help classifier qualifies as library"
         let enumTests = dispatch flow2HelpEngine "test" [ "word", jstr "tutorial.classify" ] |> expectOk "rerun committed enum help tests"
         equal "3/3 test(s) passed." (stringValue enumTests.["text"]) "enum constructor expectations pass after publication"
-        let reloadEnum = Runtime.Engine(Path.Combine(root, "authoring-help-flow2"), Set.empty, "2041-02-03T04:05:06Z")
+        let reloadEnum = Runtime.Engine(Path.Combine(root, "authoring-help-flow2"), Set.empty, "2041-02-03T04:05:06Z", fileSystemMode = FileSystemMode.Virtual)
         dispatch reloadEnum "test" [ "word", jstr "tutorial.classify" ] |> expectOk "reload published enum help tests" |> ignore
 
         let tutorialSpanCommitRequest = requestExampleV2 "commit-tutorial-span-validator-as-library"
@@ -430,7 +430,7 @@ module Program =
             |> fun response -> jsonArrayStrings response.["data"]
         equal [] tutorialSpanEffects "TutorialSpan predicate has an empty effect set"
 
-        let tutorialSpanReloaded = Runtime.Engine(Path.Combine(root, "authoring-help-flow2"), Set.empty, "2041-02-03T04:05:06Z")
+        let tutorialSpanReloaded = Runtime.Engine(Path.Combine(root, "authoring-help-flow2"), Set.empty, "2041-02-03T04:05:06Z", fileSystemMode = FileSystemMode.Virtual)
         let tutorialSpanAfterReload =
             dispatch tutorialSpanReloaded "describe" [ "word", jstr "tutorialSpan.valid?" ]
             |> expectOk "inspect predicate after fresh reload"
@@ -547,7 +547,7 @@ module Program =
         equal [ "divide-by-zero"; "negative"; "positive"; "value-expression"; "zero" ] (jsonArrayStrings beforeReload.["data"].["tests"]) "inline and help-provided Flow tests remain inspectable"
         equal [ "negative" ] (jsonArrayStrings beforeReload.["data"].["examples"]) "inline Flow examples remain inspectable"
 
-        let reloaded = Runtime.Engine(project, Set.empty, "2041-02-03T04:05:06Z")
+        let reloaded = Runtime.Engine(project, Set.empty, "2041-02-03T04:05:06Z", fileSystemMode = FileSystemMode.Virtual)
         let reloadedBeforeTests = dispatch reloaded "describe" [ "word", jstr "tutorial.sign" ] |> expectOk "describe word after fresh Engine reload"
         equal "library" (stringValue reloadedBeforeTests.["data"].["maturity"]) "library maturity survives reload"
         equal "not-run" (stringValue reloadedBeforeTests.["data"].["coverage"].["status"]) "fresh reload has no current coverage observations"
@@ -577,7 +577,7 @@ module Program =
         equal [ "authoring"; "define"; "replacement"; "examples" ] (jsonArrayStrings recoveredHelp.["data"].["topics"]) "help recovers after invalid requests"
 
     let private testCandidateCasThenNormalCommit root =
-        let engine = Runtime.Engine(Path.Combine(root, "authoring-help-candidate-cas"), Set.empty)
+        let engine = Runtime.Engine(Path.Combine(root, "authoring-help-candidate-cas"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let firstSource =
             "word draft.bump(value: Int) -> Int {\n"
             + "    effects none\n"
@@ -615,7 +615,7 @@ module Program =
 
     let private testCommittedReplacementCallerGate root =
         let project = Path.Combine(root, "authoring-help-caller-gate")
-        let engine = Runtime.Engine(project, Set.empty)
+        let engine = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let bumpSource =
             "word durable.bump(value: Int) -> Int {\n"
             + "    effects none\n"
@@ -651,7 +651,7 @@ module Program =
         check (failedCases |> List.contains "durable.forward/basic") "persistent replacement gate reports the failing caller case"
         let afterRejected = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
         equal before.ManifestHash afterRejected.ManifestHash "failing caller gate leaves durable authority unchanged"
-        let freshAfterRejected = Runtime.Engine(project, Set.empty)
+        let freshAfterRejected = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         equal "6" (evalFlow freshAfterRejected "durable::bump(5)" |> expectOk "evaluate durable owner after caller gate rejection" |> fun response -> stringValue response.["data"].["stack"].[0]) "rejected persistent replacement leaves the committed body executable"
         equal ownerId (getWordId engine "durable.bump") "staged replacement preserves the owner's stable identity"
         dispatch engine "discard" [ "word", jstr "durable.bump" ] |> expectOk "discard rejected replacement candidate" |> ignore
@@ -671,7 +671,7 @@ module Program =
 
     let private testFlowUnknownArgumentsAndExpectationGuidance root =
         let project = Path.Combine(root, "authoring-help-unknown-fields")
-        let engine = Runtime.Engine(project, Set.ofList [ "fs.read"; "fs.write" ])
+        let engine = Runtime.Engine(project, Set.ofList [ "fs.read"; "fs.write" ], fileSystemMode = FileSystemMode.Virtual)
         let canonicalSource =
             "word tutorial.sign(value: Int) -> Int {\n"
             + "    effects none\n"
@@ -751,7 +751,7 @@ module Program =
         let providerAfter = evalStack engine "\"authoring-help-sentinel\" file.read" |> expectOk "read virtual file provider sentinel after unknown Flow fields"
         equal "\"stable\"" (stringValue providerAfter.["data"].["stack"].[0]) "unknown Flow fields leave virtual file provider state unchanged"
 
-        let invalidExpectationEngine = Runtime.Engine("", Set.empty)
+        let invalidExpectationEngine = Runtime.Engine("", Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let invalidExpectationSource =
             "word tutorial.echo(value: Int) -> Int {\n    effects none\n    value\n}\n"
             + "test tutorial.echo/nominal { tutorial::echo(1) => Money::new(1) }"
@@ -767,7 +767,7 @@ module Program =
 
     let private testExplicitFrontendAndDurableReload root =
         let project = Path.Combine(root, "durable-reload")
-        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
+        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         let defined = defineFlow engine flowWordSource [ flowTestSource ] [ flowExampleSource ] []
         expectOk "define an explicit Flow word with authored attachments" defined |> ignore
         equal "flow" (stringValue (defined.["data"].["frontend"])) "definition reports selected frontend"
@@ -830,7 +830,7 @@ module Program =
         check (File.ReadAllText(Path.Combine(project, "dictionary.agent")).Contains("// frontend: flow/1", StringComparison.Ordinal)) "mixed-language export marks the Flow source block"
         check (File.ReadAllText(Path.Combine(project, "dictionary.agent")).Contains(flowWordSource, StringComparison.Ordinal)) "export contains authored Flow instead of lowered RPN"
 
-        let reloaded = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
+        let reloaded = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         equal wordId (getWordId reloaded "durable.increment") "fresh Engine reload preserves WordId"
         let source = dispatch reloaded "source" [ "word", jstr "durable.increment" ] |> expectOk "source after reload"
         equal flowWordSource (stringValue (source.["data"])) "source query exposes exact authored Flow definition text"
@@ -854,7 +854,7 @@ module Program =
         equal "10" (stringValue (stackWrapperValue.["data"].["stack"].[0])) "fresh Engine reload executes the Stack caller against Flow"
 
     let private testExplicitFrontendCannotFallBack root =
-        let engine = Runtime.Engine(Path.Combine(root, "frontend-selector"), Set.empty)
+        let engine = Runtime.Engine(Path.Combine(root, "frontend-selector"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let flow = dispatch engine "eval" [ "code", jstr "add(10, 20)" ] |> expectOk "omitted frontend selects Flow evaluation"
         equal "30" (stringValue (flow.["data"].["stack"].[0])) "Flow is the default expression frontend"
         let stack = evalStack engine "10 20 add" |> expectOk "explicit Stack frontend keeps RPN evaluation"
@@ -871,7 +871,7 @@ module Program =
         let defaultDefined = dispatch engine "define" [ "source", jstr defaultDefinition ] |> expectOk "omitted frontend selects Flow definition"
         equal "flow" (stringValue (defaultDefined.["data"].["frontend"])) "default definition reports Flow"
         equal "10" (stringValue (dispatch engine "eval" [ "code", jstr "default::increment(9)" ] |> expectOk "evaluate omitted-frontend Flow word" |> fun response -> response.["data"].["stack"].[0])) "omitted-frontend Flow word is executable"
-        let freshFlowEngine = Runtime.Engine(Path.Combine(root, "flow-expression-without-words"), Set.empty)
+        let freshFlowEngine = Runtime.Engine(Path.Combine(root, "flow-expression-without-words"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let primitiveOnly = evalFlow freshFlowEngine "add(1, 2)" |> expectOk "evaluate a Flow primitive with no user Flow words"
         equal "3" (stringValue (primitiveOnly.["data"].["stack"].[0])) "explicit Flow expression resolves primitives in a fresh empty Engine"
         let unknown = dispatch engine "eval" [ "frontend", jstr "flow2"; "code", jstr "10 20 add" ]
@@ -896,7 +896,7 @@ module Program =
 
     let private testFlow2FormatDefinePersistReloadAndRewrite root =
         let project = Path.Combine(root, "flow2-persistence")
-        let engine = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z")
+        let engine = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
         let source =
             "record Customer { field email: String; }\n\n"
             + "fn customer.has-email(value: Customer) -> Bool {\n"
@@ -1003,7 +1003,7 @@ module Program =
         let renamedText = Storage.readSource store renamedRevision.Definition |> Result.defaultWith (fun problem -> failwith problem.Message)
         check (renamedText.StartsWith("fn customer.matches-email", StringComparison.Ordinal)) "rename rewrites the Flow/2 fn owner and preserves source syntax"
         check (not (renamedText.Contains("effects ", StringComparison.Ordinal))) "rename preserves omitted Flow/2 effect declaration"
-        let reloaded = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z")
+        let reloaded = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
         assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "customer.matches-email" ] |> expectOk "run the rewritten Flow/2 case after fresh reload")
         let reloadedValue = evalFlow reloaded "customer::matches-email(customer::new(email = \"a@example.com\"))" |> expectOk "evaluate the rewritten Flow/2 word after fresh reload"
         let reloadedStack = (reloadedValue["data"]["stack"]).AsArray()
@@ -1021,7 +1021,7 @@ module Program =
         equal [ "pending"; "renewed"; "cancelled" ] enumDefinition.Cases "fixture keeps a frozen declaration-order case table"
 
         let project = Path.Combine(root, "flow2-enum-durable")
-        let engine = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z")
+        let engine = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
         let staged = defineFlowProject engine canonical [ "syntaxVersion", jint 2 ] |> expectOk "stage the payload-free Flow/2 enum project"
         equal [ "RenewalState" ] (jsonArrayStrings staged.["data"].["types"]) "project introspection exposes the enum type"
         assertAllPassed 4 (dispatch engine "test-all" [] |> expectOk "run enum project cases before commit")
@@ -1085,7 +1085,7 @@ module Program =
         check (renamedHelperBindings |> List.exists (fun binding -> match binding.Path with FlowAstPath.FlowAstPath path -> List.contains FlowAstPathSegment.EnumScrutinee path)) "rename rewrites the enum scrutinee binding without flattening its path"
         check (renamedHelperBindings |> List.exists (fun binding -> match binding.Path with FlowAstPath.FlowAstPath path -> List.exists (function | FlowAstPathSegment.EnumCaseStatement _ -> true | _ -> false) path)) "rename rewrites helper calls nested in enum arms"
 
-        let reloaded = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z")
+        let reloaded = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
         assertAllPassed 4 (dispatch reloaded "test-all" [] |> expectOk "run enum tests after fresh Engine reload and rename")
         equal "\"Renewed\""
             (evalEnum reloaded "renewal::describe(RenewalState::renewed())" false
@@ -1123,7 +1123,7 @@ module Program =
             |> Result.defaultWith (fun problem -> failwith $"well-shaped enum binding tamper should store for runtime attestation: {problem.Code}: {problem.Message}")
             |> ignore
             try
-                Runtime.Engine(candidateProject, Set.empty) |> ignore
+                Runtime.Engine(candidateProject, Set.empty, fileSystemMode = FileSystemMode.Virtual) |> ignore
                 failwith $"fresh Engine trusted a forged enum binding {label}"
             with
             | LanguageException diagnostic -> equal "FLOW_RUNTIME_BINDING_MISMATCH" diagnostic.Code $"fresh Engine rejects enum binding {label} tamper"
@@ -1135,7 +1135,7 @@ module Program =
 
     let private testLibraryDependencyQualification root =
         let directProject = Path.Combine(root, "library-dependency-direct")
-        let directEngine = Runtime.Engine(directProject, Set.empty)
+        let directEngine = Runtime.Engine(directProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let directSource =
             "fn direct.helper(value: Int) -> Int { add(value, 1) }\n\n"
             + "fn direct.wrapper(value: Int) -> Int { direct::helper(value) }\n\n"
@@ -1153,7 +1153,7 @@ module Program =
         equal "candidate" (stringValue ((findWord (dispatch directEngine "words" [] |> expectOk "inspect direct rejection state") "direct.wrapper").["status"])) "direct dependency rejection leaves the wrapper staged"
 
         let callbackProject = Path.Combine(root, "library-dependency-callback")
-        let callbackEngine = Runtime.Engine(callbackProject, Set.empty)
+        let callbackEngine = Runtime.Engine(callbackProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let callbackSource =
             "fn callback.helper(value: Int) -> Int { add(value, 1) }\n\n"
             + "fn callback.owner(values: List<Int>) -> Int { list::count(values.map(callback::helper)) }\n\n"
@@ -1170,7 +1170,7 @@ module Program =
         equal beforeCallbackReject.ManifestHash (Storage.load (Storage.create callbackProject) |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.ManifestHash) "callback dependency rejection leaves the manifest unchanged"
 
         let ordinaryProject = Path.Combine(root, "library-dependency-ordinary-composition")
-        let ordinaryEngine = Runtime.Engine(ordinaryProject, Set.empty)
+        let ordinaryEngine = Runtime.Engine(ordinaryProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let ordinarySource =
             "fn z.leaf(value: Int) -> Int { add(value, 1) }\n\n"
             + "fn z.middle(value: Int) -> Int { z::leaf(value) }\n\n"
@@ -1206,7 +1206,7 @@ module Program =
         |> ignore
         let transitiveDiagnostic =
             try
-                Runtime.Engine(forgedProject, Set.empty) |> ignore
+                Runtime.Engine(forgedProject, Set.empty, fileSystemMode = FileSystemMode.Virtual) |> ignore
                 failwith "fresh Engine accepted a persisted transitive library dependency on a project word"
             with
             | LanguageException diagnostic -> diagnostic
@@ -1215,7 +1215,7 @@ module Program =
         equal [ "z.leaf" ] transitiveDiagnostic.Actual "transitive dependency diagnostic names the first unqualified leaf"
 
         let groupProject = Path.Combine(root, "library-dependency-group")
-        let groupEngine = Runtime.Engine(groupProject, Set.empty)
+        let groupEngine = Runtime.Engine(groupProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let groupSource =
             "enum GroupState { case ready; }\n\n"
             + "fn group.helper(value: Int) -> Int { add(value, 1) }\n\n"
@@ -1228,7 +1228,7 @@ module Program =
         commit groupEngine "commit" "" [ "library", jbool true ] |> expectOk "qualify the selected acyclic library group atomically" |> ignore
         for name in [ "group.helper"; "group.wrapper"; "group.generated" ] do
             equal "library" (stringValue (dispatch groupEngine "describe" [ "word", jstr name ] |> expectOk "inspect group library maturity" |> fun response -> response.["data"].["maturity"])) $"group commit qualifies {name}"
-        let groupReload = Runtime.Engine(groupProject, Set.empty)
+        let groupReload = Runtime.Engine(groupProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         assertAllPassed 1 (dispatch groupReload "test" [ "word", jstr "group.wrapper" ] |> expectOk "reload the qualified group")
         equal "2" (stringValue (evalFlow groupReload "group::wrapper(1)" |> expectOk "execute reloaded qualified composition" |> fun response -> response.["data"].["stack"].[0])) "qualified helper composition survives reload"
 
@@ -1248,7 +1248,7 @@ module Program =
         equal "3" (stringValue (evalFlow groupEngine "group::wrapper(1)" |> expectOk "evaluate the replaced qualified group" |> fun response -> response.["data"].["stack"].[0])) "staged library candidates can be qualified together after all own gates pass"
 
         let replacementProject = Path.Combine(root, "library-dependency-replacement")
-        let mutable replacementEngine = Runtime.Engine(replacementProject, Set.empty)
+        let mutable replacementEngine = Runtime.Engine(replacementProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let replacementSource =
             "fn replace.helper(value: Int) -> Int { add(value, 1) }\n\n"
             + "fn replace.caller(value: Int) -> Int { replace::helper(value) }\n\n"
@@ -1281,7 +1281,7 @@ module Program =
         let rejectedAffectedCaller = commit replacementEngine "commit" "replace.helper" [] |> expectError "COMMIT_TESTS_FAILED"
         check (jsonArrayStrings rejectedAffectedCaller.["error"].["actual"] |> List.contains "replace.caller/basic") "publishing the helper alone tests the durable caller even when its passing staged replacement removes that edge"
         equal beforeUnsafeReplacement.ManifestHash (Storage.load replacementStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.ManifestHash) "failed affected-caller replacement leaves the old manifest authoritative"
-        replacementEngine <- Runtime.Engine(replacementProject, Set.empty)
+        replacementEngine <- Runtime.Engine(replacementProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let durableCallerSource = dispatch replacementEngine "source" [ "word", jstr "replace.caller" ] |> expectOk "read the caller restored from durable state" |> fun response -> stringValue response.["data"]
         check (durableCallerSource.Contains("replace::helper", StringComparison.Ordinal)) "fresh reload retains the durable caller edge after failed staged replacements"
         let helperRevision =
@@ -1292,7 +1292,7 @@ module Program =
         |> expectError "LIBRARY_DEPENDENCY_NOT_QUALIFIED"
         |> ignore
         equal beforeUnsafeReplacement.ManifestHash (Storage.load replacementStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.ManifestHash) "unsafe library helper replacement leaves the old manifest authoritative"
-        let replacementReload = Runtime.Engine(replacementProject, Set.empty)
+        let replacementReload = Runtime.Engine(replacementProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         assertAllPassed 1 (dispatch replacementReload "test" [ "word", jstr "replace.caller" ] |> expectOk "requalify the preserved affected caller on reload")
         equal "2" (stringValue (evalFlow replacementReload "replace::caller(1)" |> expectOk "evaluate preserved caller after rejected helper replacement" |> fun response -> response.["data"].["stack"].[0])) "fresh reload retains the previous qualified helper and caller"
 
@@ -1341,7 +1341,7 @@ module Program =
             + "test public.container-use/basic { public::container-use(8) => 8 }\n"
             + "test public.construct-use/basic { public::construct-use(9) => 9 }"
         let project = Path.Combine(root, "enum-library-qualification")
-        let engine = Runtime.Engine(project, Set.empty)
+        let engine = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         defineFlowProject engine enumAndHelpers [ "syntaxVersion", jint 2 ] |> expectOk "stage enum-bearing helper and primitive-signature library candidates" |> ignore
         commit engine "commit" "internal.match-state" [ "library", jbool true ]
         |> expectOk "qualify an enum-taking match after tests cover every input and match arm"
@@ -1402,7 +1402,7 @@ module Program =
         equal currentRevision durablePure.CurrentRevision "failed enum replacement does not advance the durable library revision"
 
         let discardProject = Path.Combine(root, "enum-discard-dependency")
-        let discardEngine = Runtime.Engine(discardProject, Set.empty)
+        let discardEngine = Runtime.Engine(discardProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let dependentSource =
             """enum RenewalState {
     case pending;
@@ -1425,7 +1425,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         dispatch discardEngine "discard" [ "word", jstr "RenewalState" ] |> expectOk "discard the enum after its dependent word" |> ignore
 
     let private testDescribeFlowReferences root =
-        let engine = Runtime.Engine(Path.Combine(root, "describe-flow-references"), Set.empty)
+        let engine = Runtime.Engine(Path.Combine(root, "describe-flow-references"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let stackSource =
             "record Cart\n"
             + "    field value Int\n"
@@ -1518,7 +1518,7 @@ fn renewal.dependent(state: RenewalState) -> String {
 
     let private testGeneratedRecordCasesPersistBesideFlow root =
         let project = Path.Combine(root, "flow-generated-record-cases")
-        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
+        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         defineFlow engine flowWordSource [ flowTestSource ] [ flowExampleSource ] []
         |> expectOk "define Flow authority beside a generated record type"
         |> ignore
@@ -1576,7 +1576,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         check (export.Contains(canonicalTest, StringComparison.Ordinal)) "aggregate export contains the canonical generated accessor test"
         check (export.Contains(canonicalExample, StringComparison.Ordinal)) "aggregate export contains the canonical generated accessor example"
 
-        let reloaded = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
+        let reloaded = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         equal [ "read" ]
             (dispatch reloaded "tests" [ "word", jstr "receipt.amount" ] |> expectOk "inspect generated accessor tests after reload" |> fun response -> jsonArrayStrings response.["data"])
             "generated accessor test survives fresh Engine reload"
@@ -1591,7 +1591,7 @@ fn renewal.dependent(state: RenewalState) -> String {
 
     let private testStackGeneratedCasesSurviveV1Manifest root =
         let project = Path.Combine(root, "stack-generated-cases-v1")
-        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
+        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         let source =
             "record Receipt\n"
             + "    field amount Int\n"
@@ -1657,7 +1657,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         equal manifest.Revisions convertedManifest.Revisions "v1 conversion keeps the exact Stack revisions and empty binding metadata"
         equal export (converted.ProjectSource |> Option.defaultWith (fun () -> failwith "converted project export is missing")) "v1 conversion keeps the identical aggregate source"
 
-        let reloaded = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
+        let reloaded = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         equal [ "read" ]
             (dispatch reloaded "tests" [ "word", jstr "receipt.amount" ] |> expectOk "inspect generated accessor tests from v1" |> fun response -> jsonArrayStrings response.["data"])
             "v1 aggregate loading retains the generated accessor test"
@@ -1672,7 +1672,7 @@ fn renewal.dependent(state: RenewalState) -> String {
 
     let private testStackOwnerMigrationToFlow root =
         let project = Path.Combine(root, "stack-to-flow-migration")
-        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
+        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         let stackDefinition =
             "word migration.increment : Int -> Int\n"
             + "    effects none\n"
@@ -1744,7 +1744,7 @@ fn renewal.dependent(state: RenewalState) -> String {
             dispatch engine "discard" [ "word", jstr "migration.increment" ]
             |> expectOk "discard rejected mixed-frontend Flow candidate"
             |> ignore
-        let stillStack = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
+        let stillStack = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         let oldEvaluation = evalStack stillStack "1 migration.increment" |> expectOk "reload Stack owner after rejected migration"
         equal "2" (stringValue (oldEvaluation.["data"].["stack"].[0])) "failed migration leaves the Stack implementation executable"
         assertAllPassed 1 (dispatch stillStack "test" [ "word", jstr "migration.increment" ] |> expectOk "rerun Stack case after rejected migration")
@@ -1775,7 +1775,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         equal [ flowTest ] (flowRevision.Tests |> List.map (fun reference -> Storage.readSource store reference |> Result.defaultWith (fun problem -> failwith problem.Message))) "all current tests are Flow-authored"
         equal [ flowExample ] (flowRevision.Examples |> List.map (fun reference -> Storage.readSource store reference |> Result.defaultWith (fun problem -> failwith problem.Message))) "all current examples are Flow-authored"
 
-        let reloaded = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
+        let reloaded = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         equal flowDefinition (dispatch reloaded "source" [ "word", jstr "migration.increment" ] |> expectOk "read migrated source after reload" |> fun response -> stringValue (response.["data"])) "fresh Engine loads the Flow owner"
         assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "migration.increment" ] |> expectOk "run migrated Flow test after reload")
         let example = dispatch reloaded "example" [ "word", jstr "migration.increment"; "caseName", jstr "basic" ] |> expectOk "run migrated Flow example after reload"
@@ -1784,7 +1784,7 @@ fn renewal.dependent(state: RenewalState) -> String {
 
     let private testReplacementCasAndRollback root =
         let project = Path.Combine(root, "replacement-cas")
-        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
+        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         defineFlow engine flowWordSource [ flowTestSource ] [ flowExampleSource ] []
         |> expectOk "define initial replacement target"
         |> ignore
@@ -1836,7 +1836,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         check (not (succeeded failingCommit)) "a replacement with a failing authored case is rejected"
         let afterFailure = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
         equal replaced.ManifestHash afterFailure.ManifestHash "failed replacement leaves the manifest authority unchanged"
-        let freshAfterFailure = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
+        let freshAfterFailure = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         equal "10" (evalFlow freshAfterFailure "durable::increment(9)" |> expectOk "evaluate durable word after rejected replacement" |> fun response -> stringValue (response.["data"].["stack"].[0])) "failed replacement is not reachable after a fresh Engine reload"
         dispatch engine "discard" [ "word", jstr "durable.increment" ] |> expectOk "discard failed replacement candidate" |> ignore
         equal "10" (evalFlow engine "durable::increment(9)" |> expectOk "evaluate after discarding rejected replacement" |> fun response -> stringValue (response.["data"].["stack"].[0])) "discard restores the live pre-replacement body"
@@ -1907,7 +1907,7 @@ fn renewal.dependent(state: RenewalState) -> String {
 
     let private testFlowAttachmentOnlyDocuments root =
         let project = Path.Combine(root, "flow-attachment-only-document")
-        let engine = Runtime.Engine(project, Set.empty, "2032-03-04T05:06:07Z")
+        let engine = Runtime.Engine(project, Set.empty, "2032-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
         let store = Storage.create project
         let recordSource =
             "record CaseItem {\n"
@@ -2087,10 +2087,10 @@ fn renewal.dependent(state: RenewalState) -> String {
         equal beforeTask.ManifestHash afterTask.ManifestHash "task abort restores exact authority after a case-only revision"
         equal ((beforeTaskTests.["data"]).ToJsonString()) (((dispatch engine "tests" [ "word", jstr "caseitem.describe" ] |> expectOk "read restored cases after task abort").["data"]).ToJsonString()) "task abort restores exact pre-edit test sources and names"
         equal originalSource (stringValue (dispatch engine "source" [ "word", jstr "caseitem.describe" ] |> expectOk "read restored body after task abort" |> fun response -> response.["data"])) "task abort restores the exact Flow definition bytes"
-        equal ownerId (getWordId (Runtime.Engine(project, Set.empty, "2032-03-04T05:06:07Z")) "caseitem.describe") "fresh Engine after abort reloads the same owner identity"
+        equal ownerId (getWordId (Runtime.Engine(project, Set.empty, "2032-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)) "caseitem.describe") "fresh Engine after abort reloads the same owner identity"
 
         let candidateProject = Path.Combine(root, "flow-attachment-only-candidate-gate")
-        let candidateEngine = Runtime.Engine(candidateProject, Set.empty)
+        let candidateEngine = Runtime.Engine(candidateProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let candidateWord =
             "word candidate.bump(value: Int) -> Int {\n"
             + "    effects none\n"
@@ -2114,7 +2114,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         check ((Storage.load (Storage.create candidateProject) |> Result.defaultWith (fun problem -> failwith problem.Message)).Manifest.IsNone) "a failing candidate case-only edit cannot create durable authority"
 
         let libraryProject = Path.Combine(root, "flow-attachment-only-library-gate")
-        let libraryEngine = Runtime.Engine(libraryProject, Set.empty)
+        let libraryEngine = Runtime.Engine(libraryProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let libraryWord =
             "word library.case_only(value: Bool) -> Int {\n"
             + "    effects none\n"
@@ -2150,7 +2150,7 @@ fn renewal.dependent(state: RenewalState) -> String {
 
     let private testFlowAttachmentOnlyPreservesTemporaryLifetime root =
         let project = Path.Combine(root, "flow-attachment-only-temporary")
-        let engine = Runtime.Engine(project, Set.empty)
+        let engine = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let temporaryWord =
             "word temporary.echo(value: Int) -> Int {\n"
             + "    effects none\n"
@@ -2194,7 +2194,7 @@ fn renewal.dependent(state: RenewalState) -> String {
 
     let private testTemporaryPromotionAndTaskAbort root =
         let project = Path.Combine(root, "temporary-promotion")
-        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
+        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         let discardedSource =
             "word temporary.discarded(value: Int) -> Int {\n    effects none\n    add(value, 1)\n}"
         let discardedTest =
@@ -2226,7 +2226,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         check (discardedId <> promotedId) "distinct temporary definitions receive distinct IDs"
 
         let cleanupProject = Path.Combine(root, "task-commit-flow-temporaries")
-        let cleanupEngine = Runtime.Engine(cleanupProject, Set.empty, "2030-01-02T03:04:05Z")
+        let cleanupEngine = Runtime.Engine(cleanupProject, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         let priorSource =
             "word temporary.prior(value: Int) -> Int {\n    effects none\n    add(value, 1)\n}"
         let priorTest =
@@ -2265,12 +2265,12 @@ fn renewal.dependent(state: RenewalState) -> String {
         let objectRoot = Path.Combine(cleanupProject, ".agentlang", "store", "objects")
         let objectCount = if Directory.Exists objectRoot then Directory.GetFiles(objectRoot, "*", SearchOption.AllDirectories).Length else 0
         equal 0 objectCount "task.commit leaves no durable orphan source objects for Flow temporaries"
-        let freshCleanupEngine = Runtime.Engine(cleanupProject, Set.empty, "2030-01-02T03:04:05Z")
+        let freshCleanupEngine = Runtime.Engine(cleanupProject, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         expectError "NAME_UNKNOWN_WORD" (dispatch freshCleanupEngine "source" [ "word", jstr "temporary.prior" ]) |> ignore
         expectError "NAME_UNKNOWN_WORD" (dispatch freshCleanupEngine "source" [ "word", jstr "temporary.task_only" ]) |> ignore
 
         let emptyTaskProject = Path.Combine(root, "task-abort-empty-authority")
-        let emptyTaskEngine = Runtime.Engine(emptyTaskProject, Set.empty, "2030-01-02T03:04:05Z")
+        let emptyTaskEngine = Runtime.Engine(emptyTaskProject, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         let emptyTaskStore = Storage.create emptyTaskProject
         let emptyBefore = Storage.load emptyTaskStore |> Result.defaultWith (fun problem -> failwith problem.Message)
         check emptyBefore.Manifest.IsNone "empty task rollback begins without a manifest"
@@ -2312,13 +2312,13 @@ fn renewal.dependent(state: RenewalState) -> String {
             check (expected.AsSpan().SequenceEqual(File.ReadAllBytes(emptyExportPath).AsSpan())) "empty-authority abort restores exact export bytes"
         | None -> check (not (File.Exists emptyExportPath)) "empty-authority abort restores absence of a prior export"
         check (not (String.IsNullOrWhiteSpace committedTaskId)) "the Flow owner had a concrete ID before rollback"
-        let freshEmptyTaskEngine = Runtime.Engine(emptyTaskProject, Set.empty, "2030-01-02T03:04:05Z")
+        let freshEmptyTaskEngine = Runtime.Engine(emptyTaskProject, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         let freshEmptyInventory = dispatch freshEmptyTaskEngine "words" [] |> expectOk "fresh-load empty task authority"
         equal emptyBaselineInventory ((freshEmptyInventory.["data"].["words"]).ToJsonString()) "fresh Engine exposes the same restored builtin word inventory and IDs"
         expectError "NAME_UNKNOWN_WORD" (dispatch freshEmptyTaskEngine "source" [ "word", jstr "task.empty_abort" ]) |> ignore
 
         let rollbackProject = Path.Combine(root, "task-abort-flow")
-        let rollbackEngine = Runtime.Engine(rollbackProject, Set.empty, "2030-01-02T03:04:05Z")
+        let rollbackEngine = Runtime.Engine(rollbackProject, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         defineFlow rollbackEngine flowWordSource [ flowTestSource ] [ flowExampleSource ] []
         |> expectOk "define Flow baseline for task rollback"
         |> ignore
@@ -2349,7 +2349,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         let project = Path.Combine(root, "snapshot-flow")
         let savedClock = "2031-02-03T04:05:06Z"
         let capabilities = Set.ofList [ "fs.read"; "fs.write" ]
-        let engine = Runtime.Engine(project, capabilities, savedClock)
+        let engine = Runtime.Engine(project, capabilities, savedClock, fileSystemMode = FileSystemMode.Virtual)
         defineFlow engine flowWordSource [ flowTestSource ] [ flowExampleSource ] []
         |> expectOk "define snapshot Flow word"
         |> ignore
@@ -2369,7 +2369,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         |> expectOk "mutate virtual provider state after snapshot"
         |> ignore
 
-        let reloaded = Runtime.Engine(project, capabilities, "2040-01-01T00:00:00Z")
+        let reloaded = Runtime.Engine(project, capabilities, "2040-01-01T00:00:00Z", fileSystemMode = FileSystemMode.Virtual)
         let loaded = dispatch reloaded "snapshot.load" [ "name", jstr "flow-baseline" ] |> expectOk "load named Flow/provider snapshot"
         equal savedClock (stringValue (loaded.["data"].["clockValue"])) "named snapshot restores its saved clock value"
         let restored = Storage.load (Storage.create project) |> Result.defaultWith (fun problem -> failwith problem.Message)
@@ -2381,7 +2381,7 @@ fn renewal.dependent(state: RenewalState) -> String {
 
     let private testPersistedBindingsAreVerified root =
         let project = Path.Combine(root, "persisted-binding-tamper")
-        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
+        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         defineFlow engine flowWordSource [ flowTestSource ] [ flowExampleSource ] []
         |> expectOk "define Flow source before persisted binding tamper"
         |> ignore
@@ -2424,7 +2424,7 @@ fn renewal.dependent(state: RenewalState) -> String {
 
         let diagnostic =
             try
-                Runtime.Engine(project, Set.empty) |> ignore
+                Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual) |> ignore
                 None
             with
             | LanguageException problem -> Some problem
@@ -2435,7 +2435,7 @@ fn renewal.dependent(state: RenewalState) -> String {
 
     let private testRetainedDotBindingAcrossReplacement root =
         let project = Path.Combine(root, "retained-dot-binding")
-        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
+        let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         let bumpSource =
             "word math.bump(value: Int, amount: Int) -> Int {\n"
             + "    effects none\n"
@@ -2523,7 +2523,7 @@ fn renewal.dependent(state: RenewalState) -> String {
               + "}" ]
 
         let missingBranchProject = Path.Combine(root, "expected-branch-not-coverage")
-        let missingBranchEngine = Runtime.Engine(missingBranchProject, Set.empty, "2030-01-02T03:04:05Z")
+        let missingBranchEngine = Runtime.Engine(missingBranchProject, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         defineFlow missingBranchEngine word [ oppositeExpectation ] [] []
         |> expectOk "define library Flow word with opposite pure expectation"
         |> ignore
@@ -2534,7 +2534,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         dispatch missingBranchEngine "discard" [ "word", jstr "coverage.same" ] |> expectOk "discard incomplete library candidate" |> ignore
 
         let completeProject = Path.Combine(root, "actual-both-branches")
-        let completeEngine = Runtime.Engine(completeProject, Set.empty, "2030-01-02T03:04:05Z")
+        let completeEngine = Runtime.Engine(completeProject, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
         defineFlow completeEngine word bothActualBranches [] []
         |> expectOk "define library Flow word with tests that execute both actual branches"
         |> ignore
@@ -2553,13 +2553,13 @@ fn renewal.dependent(state: RenewalState) -> String {
             + "    => 5\n"
             + "end"
         let unrelatedProject = Path.Combine(root, "finite-coverage-unrelated-test")
-        let unrelatedEngine = Runtime.Engine(unrelatedProject, Set.empty)
+        let unrelatedEngine = Runtime.Engine(unrelatedProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         defineStack unrelatedEngine identitySource [] |> expectOk "define a zero-instruction Int identity and an unrelated passing owner test" |> ignore
         let uninvoked = commit unrelatedEngine "commit" "coverage.identity" [ "library", jbool true ] |> expectError "LIBRARY_FINITE_COVERAGE_INCOMPLETE"
         equal [ "targetInvocations=0" ] (jsonArrayStrings uninvoked.["error"].["actual"]) "a branchless open-domain identity still requires an actual target invocation"
 
         let invokedProject = Path.Combine(root, "finite-coverage-identity-invoked")
-        let invokedEngine = Runtime.Engine(invokedProject, Set.empty)
+        let invokedEngine = Runtime.Engine(invokedProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let invokedSource =
             "word coverage.identity : Int -> Int\n"
             + "    effects none\n"
@@ -2574,7 +2574,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         |> ignore
 
         let boolProject = Path.Combine(root, "finite-coverage-error-return")
-        let boolEngine = Runtime.Engine(boolProject, Set.empty)
+        let boolEngine = Runtime.Engine(boolProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let boolWord =
             "fn coverage.bool-result(value: Bool) -> Bool {\n"
             + "    if value { true } else { false }\n"
@@ -2596,7 +2596,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         |> ignore
 
         let throwingProject = Path.Combine(root, "finite-coverage-throw-before-return")
-        let throwingEngine = Runtime.Engine(throwingProject, Set.empty)
+        let throwingEngine = Runtime.Engine(throwingProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let throwingSource =
             "fn coverage.bool-before-throw(value: Bool) -> Bool {\n"
             + "    if value { ::divide(1, 0); true } else { false }\n"
@@ -2619,7 +2619,7 @@ fn renewal.dependent(state: RenewalState) -> String {
             "the real missing instruction or branch still blocks publication"
 
         let failedProject = Path.Combine(root, "finite-coverage-failed-assertion-control")
-        let failedEngine = Runtime.Engine(failedProject, Set.empty)
+        let failedEngine = Runtime.Engine(failedProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let failedSource =
             "fn coverage.failed-assertion(value: Bool) -> Bool { if value { true } else { false } }\n\n"
             + "test coverage.failed-assertion/wrong-value { coverage::failed-assertion(false) => true }\n"
@@ -2645,7 +2645,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         |> ignore
 
         let refinedProject = Path.Combine(root, "finite-coverage-refined-string-result")
-        let refinedEngine = Runtime.Engine(refinedProject, Set.empty)
+        let refinedEngine = Runtime.Engine(refinedProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let refinedSource =
             "type Email : String { validate email::valid?; }\n\n"
             + "fn email.valid?(value: String) -> Bool { string::contains(value, \"@\") }\n\n"
@@ -2680,7 +2680,7 @@ fn renewal.dependent(state: RenewalState) -> String {
     let private testFlowMaintenanceRenameDeprecateAndRestore root =
         let project = Path.Combine(root, "flow-maintenance-mixed-rename")
         let capabilities = Set.ofList [ "console.write" ]
-        let engine = Runtime.Engine(project, capabilities, "2034-05-06T07:08:09Z")
+        let engine = Runtime.Engine(project, capabilities, "2034-05-06T07:08:09Z", fileSystemMode = FileSystemMode.Virtual)
         let store = Storage.create project
         let defineAndCommitFlow name source tests examples =
             defineFlow engine source tests examples []
@@ -3141,7 +3141,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         equal oldLegacyExampleText (sourceOf beforeLegacy.Examples.Head) "Stack-target rename retains the prior Stack target example bytes"
         let legacyHistory = history engine "legacy.advance"
         equal (sourceOf beforeLegacy.Definition) (stringValue (legacyHistory.[0].["source"])) "Stack target rename preserves its exact historical definition text"
-        let freshCurrent = Runtime.Engine(project, capabilities, "2034-05-06T07:08:09Z")
+        let freshCurrent = Runtime.Engine(project, capabilities, "2034-05-06T07:08:09Z", fileSystemMode = FileSystemMode.Virtual)
         equal bumpId (getWordId freshCurrent "advance") "fresh Engine reload preserves renamed Flow target identity"
         equal stepId (getWordId freshCurrent "stepped") "fresh Engine reload preserves renamed callback identity"
         equal legacyId (getWordId freshCurrent "legacy.advance") "fresh Engine reload preserves renamed Stack target identity"
@@ -3188,11 +3188,11 @@ fn renewal.dependent(state: RenewalState) -> String {
         |> ignore
         equal beforeIdempotentDeprecation (loadSnapshot ()).ManifestHash "repeated Flow deprecation does not create another revision"
         equal 3 (history engine "stepped").Count "repeated Flow deprecation leaves history length unchanged"
-        let freshDeprecated = Runtime.Engine(project, capabilities, "2040-02-02T00:00:00Z")
+        let freshDeprecated = Runtime.Engine(project, capabilities, "2040-02-02T00:00:00Z", fileSystemMode = FileSystemMode.Virtual)
         check (boolValue ((dispatch freshDeprecated "describe" [ "word", jstr "stepped" ] |> expectOk "reload deprecated Flow metadata").["data"].["deprecated"])) "Flow deprecation metadata reloads from durable authority"
         equal "5" (stringValue (evalFlow freshDeprecated "::stepped(4)" |> expectOk "invoke deprecated word after fresh reload" |> fun response -> response.["data"].["stack"].[0])) "fresh Engine keeps the deprecated Flow word callable"
 
-        let restoredEngine = Runtime.Engine(project, capabilities, "2044-01-01T00:00:00Z")
+        let restoredEngine = Runtime.Engine(project, capabilities, "2044-01-01T00:00:00Z", fileSystemMode = FileSystemMode.Virtual)
         dispatch restoredEngine "snapshot.load" [ "name", jstr "before-flow-maintenance" ]
         |> expectOk "restore the exact pre-maintenance named snapshot"
         |> ignore
@@ -3211,7 +3211,7 @@ fn renewal.dependent(state: RenewalState) -> String {
 
     let private testFlowMaintenanceRejectsUntouchedRebind root =
         let project = Path.Combine(root, "flow-maintenance-untouched-rebind")
-        let engine = Runtime.Engine(project, Set.empty, "2034-05-06T07:08:09Z")
+        let engine = Runtime.Engine(project, Set.empty, "2034-05-06T07:08:09Z", fileSystemMode = FileSystemMode.Virtual)
         let store = Storage.create project
         let bumpSource = "word bump(value: Int, first: Int, second: Int) -> Int {\n    effects none\n    add(add(value, first), second)\n}"
         let bumpTest = "test bump/basic {\n    bump(5, 1, 2)\n    => 8\n}"
@@ -3262,7 +3262,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         let capabilities = Set.singleton "clock.read"
         let savedClock = "2034-05-06T07:08:09Z"
         let changedClock = "2040-01-02T03:04:05Z"
-        let failingEngine = Runtime.Engine(failingProject, capabilities, savedClock)
+        let failingEngine = Runtime.Engine(failingProject, capabilities, savedClock, fileSystemMode = FileSystemMode.Virtual)
         let guardedSource =
             "word guarded.answer() -> String {\n"
             + "    effects clock.read\n"
@@ -3281,7 +3281,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         let beforeFailure = Storage.load failingStore |> Result.defaultWith (fun problem -> failwith problem.Message)
         let beforeGuardRevision = beforeFailure.Manifest.Value.Revisions |> List.find (fun item -> item.Name = "guarded.answer")
         let beforeGuardHistory = dispatch failingEngine "history" [ "word", jstr "guarded.answer" ] |> expectOk "capture guard history before deprecation"
-        let changedClockEngine = Runtime.Engine(failingProject, capabilities, changedClock)
+        let changedClockEngine = Runtime.Engine(failingProject, capabilities, changedClock, fileSystemMode = FileSystemMode.Virtual)
         expectError "DEPRECATE_TESTS_FAILED" (dispatch changedClockEngine "deprecate" [ "word", jstr "guarded.answer"; "actor", jstr "client" ])
         |> ignore
         let afterFailure = Storage.load failingStore |> Result.defaultWith (fun problem -> failwith problem.Message)
@@ -3293,7 +3293,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         equal ("\"" + changedClock + "\"") (stringValue (evalFlow changedClockEngine "guarded::answer()" |> expectOk "execute word after failed deprecation" |> fun response -> response.["data"].["stack"].[0])) "failed deprecation leaves the persisted implementation callable under the new clock"
 
         let libraryProject = Path.Combine(root, "flow-maintenance-library-coverage")
-        let libraryEngine = Runtime.Engine(libraryProject, capabilities, savedClock)
+        let libraryEngine = Runtime.Engine(libraryProject, capabilities, savedClock, fileSystemMode = FileSystemMode.Virtual)
         let librarySource =
             "word coverage.branch(value: String) -> Int {\n"
             + "    effects clock.read\n"
@@ -3320,7 +3320,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         let beforeChangedClockReload = Storage.load libraryStore |> Result.defaultWith (fun problem -> failwith problem.Message)
         let beforeLibraryExport = File.ReadAllBytes(Path.Combine(libraryProject, "dictionary.agent"))
         try
-            Runtime.Engine(libraryProject, capabilities, changedClock) |> ignore
+            Runtime.Engine(libraryProject, capabilities, changedClock, fileSystemMode = FileSystemMode.Virtual) |> ignore
             failwith "durable library with stale finite branch evidence loaded under a changed clock"
         with
         | LanguageException diagnostic -> equal "LIBRARY_COVERAGE_INCOMPLETE" diagnostic.Code "durable library reload requalifies actual branch coverage under the current provider"
@@ -3331,7 +3331,7 @@ fn renewal.dependent(state: RenewalState) -> String {
     let private testFlowStaticListFold root =
         let project = Path.Combine(root, "flow-static-list-fold")
         let capabilities = Set.ofList [ "fs.read"; "fs.write" ]
-        let engine = Runtime.Engine(project, capabilities, "2034-05-06T07:08:09Z")
+        let engine = Runtime.Engine(project, capabilities, "2034-05-06T07:08:09Z", fileSystemMode = FileSystemMode.Virtual)
         let foldOwnerSource =
             "word domain.fold-number(items: List<Int>) -> Int {\n"
             + "    effects none\n"
@@ -3417,7 +3417,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         | FlowAstPath.FlowAstPath segments ->
             check (segments |> List.contains (FlowAstPathSegment.DotArgument 1)) "persisted callback binding points to DotArgument 1"
             check (not (segments |> List.contains (FlowAstPathSegment.DotArgument 0))) "persisted seed expression remains distinct from the callback"
-        let reloaded = Runtime.Engine(project, capabilities, "2034-05-06T07:08:09Z")
+        let reloaded = Runtime.Engine(project, capabilities, "2034-05-06T07:08:09Z", fileSystemMode = FileSystemMode.Virtual)
         equal ownerId (getWordId reloaded "domain.fold-number") "fresh Engine reload preserves the fold owner identity"
         equal callbackId (getWordId reloaded "domain.fold-step") "fresh Engine reload preserves the callback identity"
         assertAllPassed 2 (dispatch reloaded "test" [ "word", jstr "domain.fold-number" ] |> expectOk "run persisted empty/nonempty fold tests")
@@ -3450,7 +3450,7 @@ fn renewal.dependent(state: RenewalState) -> String {
         equal "123" (stringValue (evalFlow reloaded "domain::fold-number(list::append(list::append(list::singleton<Int>(1), 2), 3))" |> expectOk "execute fold after callback replacement" |> fun response -> response["data"].["stack"].[0])) "replacement preserves fold behavior"
 
         let deniedProject = Path.Combine(root, "flow-fold-effect-denial")
-        let denied = Runtime.Engine(deniedProject, Set.empty, "2034-05-06T07:08:09Z")
+        let denied = Runtime.Engine(deniedProject, Set.empty, "2034-05-06T07:08:09Z", fileSystemMode = FileSystemMode.Virtual)
         let effectSource =
             "word io.read-step(acc: String, item: Int) -> String {\n effects fs.read\n file::read(acc)\n }\n\n"
             + "word io.fold-path(items: List<Int>) -> String {\n effects fs.read\n items.fold(\"/missing\", io::read-step)\n }"
@@ -3460,7 +3460,7 @@ fn renewal.dependent(state: RenewalState) -> String {
 
     let private testFlow2StaticListCallbacks root =
         let project = Path.Combine(root, "flow2-static-list-callbacks")
-        let engine = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z")
+        let engine = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
         let source =
             "fn callbacks.increment(value: Int) -> Int { add(value, 1) }\n\n"
             + "fn callbacks.is-positive(value: Int) -> Bool { int::greater-than(value, 0) }\n\n"
@@ -3487,7 +3487,7 @@ fn renewal.dependent(state: RenewalState) -> String {
 
     let private testFlow2DottedCallsAndRename root =
         let project = Path.Combine(root, "flow2-dotted-calls")
-        let engine = Runtime.Engine(project, Set.ofList [ "fs.read"; "fs.write" ], "2042-03-04T05:06:07Z")
+        let engine = Runtime.Engine(project, Set.ofList [ "fs.read"; "fs.write" ], "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
         let source =
             """record Customer {
     field email: String
@@ -3617,7 +3617,7 @@ test owner.read-bound/local-receiver {
         let legacyBefore = revision "owner.legacy"
         let legacyBeforeSource = Storage.readSource store legacyBefore.Definition |> Result.defaultWith (fun problem -> failwith problem.Message)
         check (legacyBeforeSource.Contains("customer::balance(7)", StringComparison.Ordinal)) "the committed Flow/2 legacy caller retains its authored double-colon bytes"
-        let legacyReloaded = Runtime.Engine(project, Set.ofList [ "fs.read"; "fs.write" ], "2042-03-04T05:06:07Z")
+        let legacyReloaded = Runtime.Engine(project, Set.ofList [ "fs.read"; "fs.write" ], "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
         let legacyReloadedSource =
             dispatch legacyReloaded "source" [ "word", jstr "owner.legacy" ]
             |> expectOk "read persisted Flow/2 legacy caller after a fresh Engine reload"
@@ -3645,14 +3645,14 @@ test owner.read-bound/local-receiver {
         let localAfterBinding = localAfter.CallBindings |> List.find (fun binding -> binding.Target = StoredCallTarget.UserWord balanceId)
         equal (StoredCallTarget.UserWord balanceId) localAfterBinding.Target "renamed receiver call retains its exact target identity"
 
-        let reloaded = Runtime.Engine(project, Set.ofList [ "fs.read"; "fs.write" ], "2042-03-04T05:06:07Z")
+        let reloaded = Runtime.Engine(project, Set.ofList [ "fs.read"; "fs.write" ], "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
         assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "owner.local" ] |> expectOk "run the renamed receiver call after reload")
         assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "owner.exact" ] |> expectOk "run the renamed exact call after reload")
         assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "owner.legacy" ] |> expectOk "run the rewritten legacy caller after reload")
 
     let private testFlowValidatorCannotBeRenamedAfterTypeCommit root =
         let project = Path.Combine(root, "flow-validator-frozen")
-        let engine = Runtime.Engine(project, Set.empty, "2034-05-06T07:08:09Z")
+        let engine = Runtime.Engine(project, Set.empty, "2034-05-06T07:08:09Z", fileSystemMode = FileSystemMode.Virtual)
         let store = Storage.create project
         let validatorSource =
             "word email.valid?(value: String) -> Bool {\n"
@@ -3728,7 +3728,7 @@ test owner.read-bound/local-receiver {
 
     let private testFlowProjectDocumentTypesCommitAndReload root =
         let project = Path.Combine(root, "flow-project-document")
-        let engine = Runtime.Engine(project, Set.empty, "2038-04-05T06:07:08Z")
+        let engine = Runtime.Engine(project, Set.empty, "2038-04-05T06:07:08Z", fileSystemMode = FileSystemMode.Virtual)
         let store = Storage.create project
         let recordSource =
             "record Customer {\n"
@@ -3898,7 +3898,7 @@ test owner.read-bound/local-receiver {
         check (aggregate.Contains(FlowSource.renderScalar (FlowParser.parseDocument "<type>" emailTypeSource |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))).Scalars.Head, StringComparison.Ordinal)) "canonical aggregate export renders the Flow scalar declaration"
         check (aggregate <> document) "canonical aggregate export is separate from the original whole-document input"
 
-        let reloaded = Runtime.Engine(project, Set.empty, "2038-04-05T06:07:08Z")
+        let reloaded = Runtime.Engine(project, Set.empty, "2038-04-05T06:07:08Z", fileSystemMode = FileSystemMode.Virtual)
         equal validatorId (getWordId reloaded "email.valid?") "reload preserves scalar validator stable identity"
         equal emailTypeSource (stringValue (sourceType reloaded "Email" |> expectOk "read authored Flow scalar source after reload" |> fun response -> response.["data"])) "source(type) returns the exact authored scalar declaration"
         equal recordSource (stringValue (sourceType reloaded "Customer" |> expectOk "read authored Flow record source after reload" |> fun response -> response.["data"])) "source(type) returns the exact authored record declaration"
@@ -3922,7 +3922,7 @@ test owner.read-bound/local-receiver {
             equal before (wordInventory target) $"{label} leaves no partial words, generated words, or type vocabulary"
             response
 
-        let lateFailureEngine = Runtime.Engine(Path.Combine(root, "flow-project-late-failure"), Set.empty)
+        let lateFailureEngine = Runtime.Engine(Path.Combine(root, "flow-project-late-failure"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let lateFailureDocument =
             "type EarlyType : String { }\n\n"
             + "word early.good(value: Int) -> Int {\n"
@@ -3939,7 +3939,7 @@ test owner.read-bound/local-receiver {
             + "}"
         assertRejectedWithoutPartialStage "a later invalid project word" lateFailureEngine lateFailureDocument [] |> ignore
 
-        let wrongPayloadEngine = Runtime.Engine(Path.Combine(root, "flow-project-wrong-nominal-payload"), Set.empty)
+        let wrongPayloadEngine = Runtime.Engine(Path.Combine(root, "flow-project-wrong-nominal-payload"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let wrongPayloadDocument =
             "type MetersPerSecond : Float { }\n\n"
             + "word speed.invalid(value: Int) -> MetersPerSecond {\n"
@@ -3949,7 +3949,7 @@ test owner.read-bound/local-receiver {
         let wrongPayload = assertRejectedWithoutPartialStage "a primitive payload passed to the nominal constructor" wrongPayloadEngine wrongPayloadDocument []
         equal "FLOW_ARGUMENT_TYPE" (errorCode wrongPayload) "nominal constructor rejects Int where its Float payload is required"
 
-        let badSignatureEngine = Runtime.Engine(Path.Combine(root, "flow-project-bad-validator-signature"), Set.empty)
+        let badSignatureEngine = Runtime.Engine(Path.Combine(root, "flow-project-bad-validator-signature"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let badSignatureDocument =
             "type Email : String { validate email::valid?; }\n\n"
             + "word email.valid?(value: String) -> Int {\n"
@@ -3959,7 +3959,7 @@ test owner.read-bound/local-receiver {
         let badSignature = assertRejectedWithoutPartialStage "a non-Bool scalar validator" badSignatureEngine badSignatureDocument []
         equal "TYPE_VALIDATOR_SIGNATURE" (errorCode badSignature) "validator must have the base-to-Bool signature"
 
-        let effectfulValidatorEngine = Runtime.Engine(Path.Combine(root, "flow-project-effectful-validator"), Set.empty, "2038-04-05T06:07:08Z")
+        let effectfulValidatorEngine = Runtime.Engine(Path.Combine(root, "flow-project-effectful-validator"), Set.empty, "2038-04-05T06:07:08Z", fileSystemMode = FileSystemMode.Virtual)
         let effectfulValidatorDocument =
             "type Email : String { validate email::valid?; }\n\n"
             + "word email.valid?(value: String) -> Bool {\n"
@@ -3969,12 +3969,12 @@ test owner.read-bound/local-receiver {
         let effectfulValidator = assertRejectedWithoutPartialStage "an effectful scalar validator" effectfulValidatorEngine effectfulValidatorDocument []
         equal "TYPE_VALIDATOR_EFFECT" (errorCode effectfulValidator) "effectful scalar validator is rejected by the purity guard"
 
-        let temporaryEngine = Runtime.Engine(Path.Combine(root, "flow-project-temporary-types"), Set.empty)
+        let temporaryEngine = Runtime.Engine(Path.Combine(root, "flow-project-temporary-types"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let temporaryDocument = "type TemporaryEmail : String { }"
         assertRejectedWithoutPartialStage "a temporary project containing types" temporaryEngine temporaryDocument [ "temporary", jbool true ] |> ignore
 
         let discardProject = Path.Combine(root, "flow-project-discard")
-        let discardEngine = Runtime.Engine(discardProject, Set.empty)
+        let discardEngine = Runtime.Engine(discardProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let discardDocument =
             "type Ephemeral : String { }\n\n"
             + "word ephemeral.echo(value: Ephemeral) -> Ephemeral {\n"
@@ -3989,7 +3989,7 @@ test owner.read-bound/local-receiver {
         dispatch discardEngine "discard" [ "word", jstr "ephemeral.echo" ] |> expectOk "discard the dependent Flow word before its type" |> ignore
         dispatch discardEngine "discard" [ "word", jstr "Ephemeral" ] |> expectOk "discard the candidate scalar type" |> ignore
         assertStructuredFailure "discarded Flow type source" (sourceType discardEngine "Ephemeral")
-        let discardReload = Runtime.Engine(discardProject, Set.empty)
+        let discardReload = Runtime.Engine(discardProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         assertStructuredFailure "discarded Flow type after fresh reload" (sourceType discardReload "Ephemeral")
 
         let beforeTask = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
@@ -4009,7 +4009,7 @@ test owner.read-bound/local-receiver {
         commit reloaded "commit" "SnapshotOnly" [] |> expectOk "commit a Flow type after snapshot" |> ignore
         let snapshotChanged = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
         check (snapshotChanged.ManifestHash <> snapshotBaseline.ManifestHash) "committing another Flow type advances durable authority after snapshot"
-        let snapshotReload = Runtime.Engine(project, Set.empty, "2040-01-01T00:00:00Z")
+        let snapshotReload = Runtime.Engine(project, Set.empty, "2040-01-01T00:00:00Z", fileSystemMode = FileSystemMode.Virtual)
         dispatch snapshotReload "snapshot.load" [ "name", jstr "flow-type-baseline" ] |> expectOk "restore named Flow type snapshot" |> ignore
         let afterSnapshot = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
         equal snapshotBaseline.ManifestHash afterSnapshot.ManifestHash "snapshot restore reinstates exact Flow type authority"
@@ -4018,7 +4018,7 @@ test owner.read-bound/local-receiver {
 
     let private testRecordValidatorRuntimeAndPersistence root =
         let project = Path.Combine(root, "flow-record-validator-runtime")
-        let engine = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z")
+        let engine = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
         let store = Storage.create project
         let targetId = "10000000-0000-0000-0000-000000000031"
         let matchingCustomer =
@@ -4108,7 +4108,7 @@ test owner.read-bound/local-receiver {
             |> fun response -> jsonArrayStrings response.["data"].["callers"]
         check (transitiveCallers |> List.contains "validatedCustomerLookup.new") "Discovery exposes the generated constructor as a validator caller"
 
-        let reloaded = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z")
+        let reloaded = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
         equal validatorId (getWordId reloaded "customer.lookup-valid?") "record validator target WordId survives a fresh Engine load"
         equal recordSource (stringValue (dispatch reloaded "source" [ "type", jstr "ValidatedCustomerLookup" ] |> expectOk "read validated record source after reload" |> fun response -> response.["data"]))
             "fresh load retains the exact validated record source"
@@ -4134,7 +4134,7 @@ test owner.read-bound/local-receiver {
         |> ignore
 
         let rejectedFlow label expectedCode document : JsonObject =
-            let invalidEngine = Runtime.Engine(Path.Combine(root, "flow-record-validator-" + label), Set.empty)
+            let invalidEngine = Runtime.Engine(Path.Combine(root, "flow-record-validator-" + label), Set.empty, fileSystemMode = FileSystemMode.Virtual)
             let response = defineFlowProject invalidEngine document [ "syntaxVersion", jint 2 ]
             equal expectedCode (errorCode response) $"{label} record validator is rejected"
             response
@@ -4174,7 +4174,7 @@ test owner.read-bound/local-receiver {
         assertCycleContext "indirect" indirectCycleResponse
 
         let stackProject = Path.Combine(root, "stack-record-validator-target")
-        let stackEngine = Runtime.Engine(stackProject, Set.empty, "2042-03-04T05:06:07Z")
+        let stackEngine = Runtime.Engine(stackProject, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
         let stackSource =
             "record CheckedNumber\n"
             + "    validate checkedNumber.valid?\n"
@@ -4222,7 +4222,7 @@ test owner.read-bound/local-receiver {
             |> Result.defaultWith (fun problem -> failwith $"store well-shaped {label} target metadata: {problem.Code}: {problem.Message}")
             |> ignore
             try
-                Runtime.Engine(candidateProject, Set.empty, "2042-03-04T05:06:07Z") |> ignore
+                Runtime.Engine(candidateProject, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual) |> ignore
                 failwith $"fresh Engine accepted {label} record-validator metadata"
             with
             | LanguageException diagnostic -> equal expectedCode diagnostic.Code $"fresh Engine rejects {label} record-validator metadata"
@@ -4230,7 +4230,7 @@ test owner.read-bound/local-receiver {
         rejectStackMetadata "mismatched" "TYPE_VALIDATOR_TARGET_MISMATCH" (Some(StoredCallTarget.GeneratedWord "generated-forged-validator-target"))
 
         let intervalProject = Path.Combine(root, "flow-record-validator-interval-smoke")
-        let intervalEngine = Runtime.Engine(intervalProject, Set.empty, "2042-03-04T05:06:07Z")
+        let intervalEngine = Runtime.Engine(intervalProject, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
         let intervalSource =
             "record Interval { field start: Int; field finish: Int; validate interval::valid?; }\n\n"
             + "fn interval.valid?(value: Interval) -> Bool {\n"
@@ -4246,7 +4246,8 @@ test owner.read-bound/local-receiver {
 
     let private testEffectCountAssertions root =
         let project = Path.Combine(root, "effect-count-assertions")
-        let engine = Runtime.Engine(project, Set.empty, "2041-02-03T04:05:06Z")
+        let capabilities = Set.ofList [ "fs.read"; "fs.write" ]
+        let engine = Runtime.Engine(project, capabilities, "2041-02-03T04:05:06Z", fileSystemMode = FileSystemMode.Virtual)
         let source =
             """fn marker.ensure(path: String) -> String {
     effects fs.read, fs.write
@@ -4370,7 +4371,7 @@ test marker.mutant/value-and-effect-failures {
         equal 1 (bothFailures.["effectAssertion"].["actual"].["fs.write"].GetValue<int>()) "extra write appears in structured actual counts"
 
         let persistenceProject = Path.Combine(root, "effect-count-persist-rewrite")
-        let persistenceEngine = Runtime.Engine(persistenceProject, Set.empty, "2041-02-03T04:05:06Z")
+        let persistenceEngine = Runtime.Engine(persistenceProject, capabilities, "2041-02-03T04:05:06Z", fileSystemMode = FileSystemMode.Virtual)
         let persistenceSource =
             """fn persist.read(path: String) -> String {
     effects fs.read
@@ -4406,7 +4407,7 @@ test persist.read/exact-count {
         let afterRevision = afterManifest.Revisions |> List.find (fun item -> item.WordId = afterHead.WordId && item.Revision = afterHead.CurrentRevision)
         let rewrittenTest = afterRevision.Tests |> List.map (Storage.readSource persistenceStore >> Result.defaultWith (fun problem -> failwith problem.Message)) |> List.exactlyOne
         check (rewrittenTest.Contains("effects {\n        fs.read: 1\n        fs.write: 0\n    }", StringComparison.Ordinal)) "rename preserves exact effect counts in canonical newline syntax"
-        let reloaded = Runtime.Engine(persistenceProject, Set.empty, "2041-02-03T04:05:06Z")
+        let reloaded = Runtime.Engine(persistenceProject, capabilities, "2041-02-03T04:05:06Z", fileSystemMode = FileSystemMode.Virtual)
         let reloadedPersistent = testResult reloaded "persist.load" "exact-count"
         check (boolValue reloadedPersistent.["passed"]) "fresh reload reparses the renamed effect-count test"
         equal 1 (reloadedPersistent.["effectAssertion"].["actual"].["fs.read"].GetValue<int>()) "renamed reload retains exact count behavior"
@@ -4426,7 +4427,7 @@ test persist.read/exact-count {
 
         let runReplacementControl projectName withAssertion =
             let replacementProject = Path.Combine(root, projectName)
-            let runtime = Runtime.Engine(replacementProject, Set.empty, "2041-02-03T04:05:06Z")
+            let runtime = Runtime.Engine(replacementProject, capabilities, "2041-02-03T04:05:06Z", fileSystemMode = FileSystemMode.Virtual)
             let suffix = if withAssertion then " effects { fs.read: 1; fs.write: 0; }" else ""
             defineFlowProject runtime (gateSource suffix false) [ "syntaxVersion", jint 2 ]
             |> expectOk "stage baseline Flow/2 library test"
