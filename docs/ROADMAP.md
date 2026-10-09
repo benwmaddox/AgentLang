@@ -127,6 +127,11 @@ Next actions:
    retained domain rules that fit later tasks and improve conventional broker
    discoverability before comparing tool counts; no new mailbox infrastructure
    is required for this research.
+   [Report 146](../reports/146-conventional-project-discovery.md) adds conventional
+   `inspect()` discovery with bounded file paths and typed operation schemas.
+   Focused suites and host inspection-budget checks pass; use the new bootstrap
+   in future frozen trials, without revising historical interaction counts or
+   claiming an unmeasured reduction in agent errors.
 
 Acceptance is an evidence-backed review of the declared conditions, including
 their limitations. Completing a language feature or passing actor-written tests

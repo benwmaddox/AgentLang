@@ -72,6 +72,10 @@ module Program =
     let private searchRequest query =
         JsonSerializer.Serialize {| op = "search"; query = query |}
 
+    let private emptyInspectRequest = """{"op":"inspect"}"""
+
+    let private emptyNestedInspectRequest = """{"op":"inspect","args":{}}"""
+
     let private replaceRequest expectedSha256 content =
         JsonSerializer.Serialize
             {| op = "replace"
@@ -192,6 +196,35 @@ module Program =
             check (responseSucceeded lines[2]) "nested args patch is accepted after an error"
             equal originalText (File.ReadAllText(target)) "nested patch can restore the exact original contents after recovery")
 
+    let private testNoArgumentInspectOverviewJsonl () =
+        withScratchProject (fun projectRoot _ _ _ ->
+            let invocation = runCli (baseArguments projectRoot) [ emptyInspectRequest; emptyNestedInspectRequest ]
+            equal 0 invocation.ExitCode $"no-argument inspect is available over JSONL; stderr={invocation.StandardError}"
+            let lines = responseLines invocation
+            equal 2 lines.Length "each no-argument inspect request receives a JSONL response"
+            check (responseSucceeded lines[0]) "top-level no-argument inspect succeeds"
+            check (responseSucceeded lines[1]) "empty nested args inspect succeeds"
+
+            use first = JsonDocument.Parse(lines[0])
+            use second = JsonDocument.Parse(lines[1])
+            let firstData = first.RootElement.GetProperty("data")
+            let secondData = second.RootElement.GetProperty("data")
+            let firstDataJson = firstData.GetRawText()
+            let secondDataJson = secondData.GetRawText()
+            equal firstDataJson secondDataJson "no-argument overview is deterministic across JSONL encodings"
+            equal "Project overview. Send op and fields from one argument set at the top level; extra fields are rejected." (first.RootElement.GetProperty("text").GetString()) "overview response teaches the canonical wire shape"
+            equal "Validation.fsproj" (firstData.GetProperty("validationProject").GetString()) "overview exposes the configured relative validation target"
+            let paths = firstData.GetProperty("files").EnumerateArray() |> Seq.map (fun path -> path.GetString()) |> Seq.toList
+            equal [ "Target.fs"; "Validation.fsproj" ] paths "overview exposes bounded supported-source paths"
+            equal 6 (firstData.GetProperty("operations").GetArrayLength()) "overview exposes all six operation schemas"
+            let schemas = firstData.GetProperty("operations").EnumerateArray() |> Seq.toArray
+            equal "inspect" (schemas[0].GetProperty("op").GetString()) "inspect is the first documented operation"
+            equal "[[],[{\"name\":\"path\",\"type\":\"string\",\"required\":true}]]" (schemas[0].GetProperty("argumentSets").GetRawText()) "inspect schema documents both no-argument and top-level path forms"
+            equal "[[{\"name\":\"path\",\"type\":\"string\",\"required\":true},{\"name\":\"expectedSha256\",\"type\":\"string\",\"required\":true},{\"name\":\"oldText\",\"type\":\"string\",\"required\":true},{\"name\":\"newText\",\"type\":\"string\",\"required\":true}]]" (schemas[4].GetProperty("argumentSets").GetRawText()) "patch schema documents typed canonical top-level fields"
+            let mutable content = Unchecked.defaultof<JsonElement>
+            check (not (firstData.TryGetProperty("content", &content))) "overview response has no source-content field"
+            check (not (firstData.GetProperty("truncated").GetBoolean())) "small fixture overview is complete")
+
     let private testPatchRespectsRequestLimit () =
         withScratchProject (fun projectRoot target originalText _ ->
             let patch = patchRequest (fileHash target) "marker = 7" "marker = 8"
@@ -260,6 +293,7 @@ module Program =
         group "default and custom exact limits" testDefaultAndCustomExactLimits
         group "excess mutation rejected before dispatch" testExcessMutationIsRejected
         group "top-level and nested patch JSONL recovery" testPatchTopLevelAndNestedJsonlRecovery
+        group "no-argument inspect overview JSONL" testNoArgumentInspectOverviewJsonl
         group "patch respects the request limit" testPatchRespectsRequestLimit
         group "malformed lines consume request budget" testMalformedLineConsumesBudget
         group "default 100 request boundary" testDefaultCapBoundaries

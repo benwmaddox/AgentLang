@@ -158,6 +158,11 @@ type ConventionalDispatcher
             fail "FILE_FORMAT_UNSUPPORTED" $"File format '{extension}' is not supported by repository tools."
         full, relative
 
+    let validationProjectRelative =
+        lazy
+            (let _, relative = resolveSourceFile validationCommand.ProjectFile true
+             relative)
+
     let readBytes (path: string) =
         if File.Exists path && isReparsePoint path then fail "PATH_REPARSE_POINT" "Reading through a reparse point or symbolic link is not allowed."
         use stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 8192, FileOptions.SequentialScan)
@@ -211,51 +216,21 @@ type ConventionalDispatcher
         let content = decodeUtf8 relative bytes
         Responses.success "inspect" $"Inspected {relative}." (Some(fileInfoData full relative bytes content :> JsonNode))
 
-    let read (relativePath: string) =
-        let full, relative = resolveSourceFile relativePath true
-        let bytes = readBytes full
-        let content = decodeUtf8 relative bytes
-        let data = fileInfoData full relative bytes content
-        data["content"] <- Json.text content
-        Responses.success "read" $"Read {relative}." (Some(data :> JsonNode))
-
-    let search (query: string) =
-        if String.IsNullOrWhiteSpace query then fail "QUERY_REQUIRED" "Search requires a non-empty literal query."
-        if query.Length > 512 then fail "QUERY_TOO_LONG" "Search queries are limited to 512 characters."
-        let matches = ResizeArray<JsonNode>()
-        let mutable scanned = 0
-        let mutable skippedLarge = 0
+    /// Visit supported source paths in the same bounded, deterministic DFS order used by search.
+    /// The callback returns false to stop after observing its own excess candidate.
+    let traverseSupportedFiles (maximumFiles: int) (visitFile: string -> string -> bool) =
+        let mutable filesVisited = 0
+        let mutable entriesVisited = 0
         let mutable truncated = false
         let mutable stopped = false
-        let mutable entriesVisited = 0
+
         let processFile full relative =
-            if scanned >= searchFileLimit then
+            if filesVisited >= maximumFiles then
                 truncated <- true
                 stopped <- true
             else
-                scanned <- scanned + 1
-                try
-                    let content = readBytes full |> decodeUtf8 relative
-                    let lines = content.Split('\n')
-                    let mutable lineIndex = 0
-                    while lineIndex < lines.Length && not stopped do
-                        let line = lines[lineIndex].TrimEnd('\r')
-                        if line.Contains(query, StringComparison.OrdinalIgnoreCase) then
-                            if matches.Count >= searchResultLimit then
-                                truncated <- true
-                                stopped <- true
-                            else
-                                let preview, lineTruncated =
-                                    if line.Length <= 512 then line, false
-                                    else line.Substring(0, 512), true
-                                let item = JsonObject()
-                                item["path"] <- Json.text relative
-                                item["line"] <- Json.integer (lineIndex + 1)
-                                item["text"] <- Json.text preview
-                                item["lineTruncated"] <- Json.boolean lineTruncated
-                                matches.Add(item :> JsonNode)
-                        lineIndex <- lineIndex + 1
-                with DispatcherError("FILE_TOO_LARGE", _) -> skippedLarge <- skippedLarge + 1
+                filesVisited <- filesVisited + 1
+                if not (visitFile full relative) then stopped <- true
 
         let rec visitDirectory depth directory =
             if not stopped then
@@ -286,6 +261,101 @@ type ConventionalDispatcher
                                     processFile entry (Path.GetRelativePath(root, entry).Replace(Path.DirectorySeparatorChar, '/'))
 
         visitDirectory 0 root
+        filesVisited, truncated
+
+    let overview () =
+        let paths = JsonArray()
+        let mutable resultLimitReached = false
+        let _, traversalTruncated =
+            traverseSupportedFiles searchFileLimit (fun _ relative ->
+                if paths.Count >= searchResultLimit then
+                    resultLimitReached <- true
+                    false
+                else
+                    paths.Add(Json.text relative)
+                    true)
+
+        let field name =
+            let item = JsonObject()
+            item["name"] <- Json.text name
+            item["type"] <- Json.text "string"
+            item["required"] <- Json.boolean true
+            item :> JsonNode
+        let argumentSet fields =
+            let fieldArray = JsonArray()
+            fields |> List.iter (field >> fieldArray.Add)
+            fieldArray :> JsonNode
+        let operationSchemas = JsonArray()
+        let schemas =
+            [ "inspect", [ []; [ "path" ] ]
+              "read", [ [ "path" ] ]
+              "search", [ [ "query" ] ]
+              "replace", [ [ "path"; "expectedSha256"; "content" ] ]
+              "patch", [ [ "path"; "expectedSha256"; "oldText"; "newText" ] ]
+              "validate", [ [] ] ]
+        for operation, argumentSets in schemas do
+            let schema = JsonObject()
+            schema["op"] <- Json.text operation
+            let supportedSets = JsonArray()
+            argumentSets |> List.iter (argumentSet >> supportedSets.Add)
+            schema["argumentSets"] <- supportedSets
+            operationSchemas.Add(schema)
+
+        let data = JsonObject()
+        data["operations"] <- operationSchemas
+        data["validationProject"] <- Json.text validationProjectRelative.Value
+        data["files"] <- paths
+        data["truncated"] <- Json.boolean (traversalTruncated || resultLimitReached)
+        Responses.success
+            "inspect"
+            "Project overview. Send op and fields from one argument set at the top level; extra fields are rejected."
+            (Some(data :> JsonNode))
+
+    let read (relativePath: string) =
+        let full, relative = resolveSourceFile relativePath true
+        let bytes = readBytes full
+        let content = decodeUtf8 relative bytes
+        let data = fileInfoData full relative bytes content
+        data["content"] <- Json.text content
+        Responses.success "read" $"Read {relative}." (Some(data :> JsonNode))
+
+    let search (query: string) =
+        if String.IsNullOrWhiteSpace query then fail "QUERY_REQUIRED" "Search requires a non-empty literal query."
+        if query.Length > 512 then fail "QUERY_TOO_LONG" "Search queries are limited to 512 characters."
+        let matches = ResizeArray<JsonNode>()
+        let mutable skippedLarge = 0
+        let mutable resultLimitReached = false
+        let scanned, traversalTruncated =
+            traverseSupportedFiles searchFileLimit (fun full relative ->
+                let content =
+                    try Some(readBytes full |> decodeUtf8 relative)
+                    with DispatcherError("FILE_TOO_LARGE", _) ->
+                        skippedLarge <- skippedLarge + 1
+                        None
+                match content with
+                | None -> true
+                | Some text ->
+                    let lines = text.Split('\n')
+                    let mutable lineIndex = 0
+                    let mutable keepScanning = true
+                    while lineIndex < lines.Length && keepScanning do
+                        let line = lines[lineIndex].TrimEnd('\r')
+                        if line.Contains(query, StringComparison.OrdinalIgnoreCase) then
+                            if matches.Count >= searchResultLimit then
+                                resultLimitReached <- true
+                                keepScanning <- false
+                            else
+                                let preview, lineTruncated =
+                                    if line.Length <= 512 then line, false
+                                    else line.Substring(0, 512), true
+                                let item = JsonObject()
+                                item["path"] <- Json.text relative
+                                item["line"] <- Json.integer (lineIndex + 1)
+                                item["text"] <- Json.text preview
+                                item["lineTruncated"] <- Json.boolean lineTruncated
+                                matches.Add(item :> JsonNode)
+                        lineIndex <- lineIndex + 1
+                    keepScanning)
         let matchArray = JsonArray()
         matches |> Seq.iter matchArray.Add
         let data = JsonObject()
@@ -293,7 +363,7 @@ type ConventionalDispatcher
         data["matches"] <- matchArray
         data["filesScanned"] <- Json.integer scanned
         data["largeFilesSkipped"] <- Json.integer skippedLarge
-        data["truncated"] <- Json.boolean truncated
+        data["truncated"] <- Json.boolean (traversalTruncated || resultLimitReached)
         Responses.success "search" $"Found {matches.Count} match(es)." (Some(data :> JsonNode))
 
     let replace (relativePath: string) (expectedHash: string) (content: string) =
@@ -467,8 +537,7 @@ type ConventionalDispatcher
         if validationCommand.TimeoutMilliseconds > 600_000 then invalidArg (nameof validationCommand.TimeoutMilliseconds) "Validation timeout cannot exceed ten minutes."
         if validationCommand.MaximumOutputCharactersPerStream <= 0 then invalidArg (nameof validationCommand.MaximumOutputCharactersPerStream) "Validation output limit must be positive."
         if validationCommand.MaximumOutputCharactersPerStream > 1_000_000 then invalidArg (nameof validationCommand.MaximumOutputCharactersPerStream) "Validation output cannot exceed one million characters per stream."
-        resolveSourceFile validationCommand.ProjectFile true |> ignore
-        let configuredProject = Path.GetExtension(validationCommand.ProjectFile).ToLowerInvariant()
+        let configuredProject = Path.GetExtension(validationProjectRelative.Value).ToLowerInvariant()
         if configuredProject <> ".fsproj" && configuredProject <> ".csproj" then
             invalidArg (nameof validationCommand.ProjectFile) "The configured validation target must be an F# or C# project file."
 
@@ -488,8 +557,11 @@ type ConventionalDispatcher
                     checkRoot ()
                     match operation with
                     | "inspect" ->
-                        exactArguments arguments [ "path" ]
-                        inspect (requiredString arguments "path")
+                        if not (isNull arguments) && arguments.Count = 0 then
+                            overview ()
+                        else
+                            exactArguments arguments [ "path" ]
+                            inspect (requiredString arguments "path")
                     | "read" ->
                         exactArguments arguments [ "path" ]
                         read (requiredString arguments "path")

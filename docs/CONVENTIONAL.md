@@ -6,18 +6,37 @@ to give an external coding agent familiar repository-style tools while keeping
 the benchmark's acceptance oracle outside the agent-editable project root.
 It is separate from the language runtime and has no model-provider dependency.
 
-The dispatcher exposes six closed operations: `inspect(path)`, `read(path)`,
+The dispatcher exposes six closed operations: `inspect`, `read(path)`,
 `search(query)`, `replace(path, expectedSha256, content)`,
-`patch(path, expectedSha256, oldText, newText)`, and `validate()`.
-Each takes a JSON object with exactly the documented fields and returns a
-structured JSON result. Unsupported operations and extra or malformed fields
-return structured errors. Each call is appended to an ordered metadata-only
-operation log; the log omits source contents, environment values, and process
-output.
+`patch(path, expectedSha256, oldText, newText)`, and `validate()`. Requests use
+canonical top-level fields alongside `op`, for example
+`{"op":"read","path":"src/main.fs"}`. Each operation accepts exactly the
+documented field set and returns a structured JSON result. Unsupported
+operations and extra or malformed fields return structured errors. Each call
+is appended to an ordered metadata-only operation log; the log omits source
+contents, environment values, and process output.
 
-`inspect` returns path, extension, byte and line counts, and a SHA-256 content
-hash. `read` also returns the UTF-8 source text. `replace` is a definition-level
-whole-file replacement: callers must provide the hash from a recent read. A
+`{"op":"inspect"}` returns a deterministic project overview. Its `operations`
+array describes all six operations with `op` and `argumentSets`; each argument
+set lists the accepted top-level fields with their names, string types, and
+required status. `inspect` accepts either an empty argument set or a `path`
+string, so callers can discover the project or inspect one file. The overview
+also returns the configured relative `validationProject`, a bounded `files`
+array of supported source paths, and `truncated`. It enumerates paths using
+search's deterministic DFS and generated-directory skips, but does not read or
+hash source files. The result and file caps use the configured search limits;
+entry and depth limits also apply. `truncated` is set only when traversal
+observes a path or bound candidate beyond the returned set. A directory with
+more than the per-directory entry limit returns `SEARCH_DIRECTORY_LIMIT`.
+
+`{"op":"inspect","path":"src/main.fs"}` preserves file inspection and
+returns path, extension, byte and line counts, and a SHA-256 content hash.
+`read` also returns the UTF-8 source text. The JSONL CLI continues to accept its
+existing nested `args` object for compatibility, while the overview documents
+the canonical top-level request fields.
+
+`replace` is a definition-level whole-file replacement: callers must provide
+the hash from a recent read. A
 stale hash leaves the file unchanged. The replacement is written to a bounded,
 temporary file, flushed, and moved over the target atomically. Use a fresh read
 after replacement to verify the saved text and hash.

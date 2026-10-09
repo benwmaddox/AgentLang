@@ -90,6 +90,21 @@ module Program =
               MaximumOutputCharactersPerStream = 2048 }
         new ConventionalDispatcher(root, command, maximumFileBytes = fileByteLimit)
 
+    let private makeConfiguredDispatcher root fileByteLimit searchResults searchFiles searchEntries searchDepth =
+        let command =
+            { Action = ValidationAction.Build
+              ProjectFile = "Synthetic.fsproj"
+              TimeoutMilliseconds = 10_000
+              MaximumOutputCharactersPerStream = 2048 }
+        new ConventionalDispatcher(
+            root,
+            command,
+            maximumFileBytes = fileByteLimit,
+            maximumSearchResults = searchResults,
+            maximumSearchFiles = searchFiles,
+            maximumSearchEntries = searchEntries,
+            maximumSearchDepth = searchDepth)
+
     let private hashBytes (bytes: byte array) =
         SHA256.HashData(bytes)
         |> Convert.ToHexString
@@ -125,12 +140,14 @@ module Program =
         if linkCreated then
             expectError "PATH_REPARSE_POINT" (call dispatcher "read" [ "path", text "linked/outside.fs" ]) "symbolic-link traversal"
             expectError "PATH_REPARSE_POINT" (call dispatcher "search" [ "query", text "marker" ]) "search over symbolic links"
+            expectError "PATH_REPARSE_POINT" (call dispatcher "inspect" []) "overview over symbolic links"
 
             let movedRoot = project + ".physical"
             Directory.Move(project, movedRoot)
             try
                 Directory.CreateSymbolicLink(project, movedRoot) |> ignore
                 expectError "PATH_REPARSE_POINT" (call dispatcher "search" [ "query", text "marker" ]) "root replacement by symbolic link"
+                expectError "PATH_REPARSE_POINT" (call dispatcher "inspect" []) "overview with root replaced by symbolic link"
             finally
                 if Directory.Exists project && (File.GetAttributes(project) &&& FileAttributes.ReparsePoint) <> enum<FileAttributes> 0 then
                     Directory.Delete project
@@ -141,6 +158,119 @@ module Program =
         File.WriteAllText(Path.Combine(project, "unsupported.bin"), "data")
         expectError "FILE_FORMAT_UNSUPPORTED" (call dispatcher "read" [ "path", text "unsupported.bin" ]) "unsupported file format"
         expectError "ARGUMENTS_INVALID" (call dispatcher "read" [ "path", text "safe.fs"; "unexpected", text "extra" ]) "extra read argument"
+
+    let private testDeterministicOverviewAndInspectCompatibility root =
+        let project = makeProject root "overview"
+        Directory.CreateDirectory(Path.Combine(project, "src")) |> ignore
+        Directory.CreateDirectory(Path.Combine(project, "bin")) |> ignore
+        Directory.CreateDirectory(Path.Combine(project, "obj")) |> ignore
+        File.WriteAllBytes(Path.Combine(project, "bad.fs"), [| 0xFFuy; 0xFEuy; 0xFDuy |])
+        File.WriteAllText(Path.Combine(project, "src", "answer.fs"), "module Answer\nlet value = 42\n")
+        File.WriteAllText(Path.Combine(project, "ignored.txt"), "not a supported source")
+        File.WriteAllText(Path.Combine(project, "bin", "generated.fs"), "generated")
+        File.WriteAllText(Path.Combine(project, "obj", "generated.fs"), "generated")
+
+        // The tiny byte limit and invalid UTF-8 source prove that discovery only enumerates paths.
+        let overviewDispatcher = makeConfiguredDispatcher project 1L 20 20 100 10
+        let overview = call overviewDispatcher "inspect" []
+        check (isOk overview) "empty inspect returns a project overview without reading source bytes"
+        let data = overview["data"]
+        equal "Synthetic.fsproj" (propertyString data "validationProject" "") "overview returns the configured relative validation target"
+        let paths = data["files"].AsArray() |> Seq.map (fun path -> path.GetValue<string>()) |> Seq.toList
+        equal [ "Synthetic.fsproj"; "bad.fs"; "src/answer.fs" ] paths "overview returns deterministic supported-source paths and skips generated directories"
+        equal 6 (data["operations"].AsArray().Count) "overview documents all six operations"
+        let schemas = data["operations"].AsArray()
+        equal "inspect" (propertyString schemas[0] "op" "") "overview documents inspect first"
+        let inspectSchema = schemas[0]
+        let replaceSchema = schemas[3]
+        let patchSchema = schemas[4]
+        let inspectArguments = inspectSchema["argumentSets"].ToJsonString()
+        let replaceArguments = replaceSchema["argumentSets"].ToJsonString()
+        let patchArguments = patchSchema["argumentSets"].ToJsonString()
+        equal "[[],[{\"name\":\"path\",\"type\":\"string\",\"required\":true}]]" inspectArguments "inspect schema exposes both empty and path forms with a top-level string field"
+        equal "[[{\"name\":\"path\",\"type\":\"string\",\"required\":true},{\"name\":\"expectedSha256\",\"type\":\"string\",\"required\":true},{\"name\":\"content\",\"type\":\"string\",\"required\":true}]]" replaceArguments "replace schema lists typed required fields"
+        equal "[[{\"name\":\"path\",\"type\":\"string\",\"required\":true},{\"name\":\"expectedSha256\",\"type\":\"string\",\"required\":true},{\"name\":\"oldText\",\"type\":\"string\",\"required\":true},{\"name\":\"newText\",\"type\":\"string\",\"required\":true}]]" patchArguments "patch schema lists typed required fields"
+        check (not (data["truncated"].GetValue<bool>())) "complete overview is not marked truncated"
+        check (not (data.AsObject().ContainsKey("sha256"))) "overview omits content hashes"
+        check (not (data.AsObject().ContainsKey("content"))) "overview omits source contents"
+
+        let ordinaryDispatcher = defaultDispatcher project ValidationAction.Build 10_000 2048
+        let inspected = call ordinaryDispatcher "inspect" [ "path", text "src/answer.fs" ]
+        check (isOk inspected) "inspect(path) remains available"
+        equal "src/answer.fs" (propertyString inspected["data"] "path" "") "inspect(path) returns the normalized path"
+        check ((propertyString inspected["data"] "sha256" "").Length = 64) "inspect(path) retains its content hash"
+        expectError "ARGUMENTS_INVALID" (call ordinaryDispatcher "inspect" [ "path", text "src/answer.fs"; "unexpected", text "extra" ]) "extra inspect argument"
+        expectError "ARGUMENT_INVALID" (call ordinaryDispatcher "inspect" [ "path", JsonValue.Create(42) ]) "malformed inspect path"
+        expectError "ARGUMENTS_INVALID" (call ordinaryDispatcher "inspect" [ "unexpected", text "extra" ]) "unexpected inspect argument without path"
+
+    let private testOverviewAndSearchTraversalLimits root =
+        let resultProject = makeProject root "overview-result-limit"
+        File.WriteAllText(Path.Combine(resultProject, "a.fs"), "module A\n")
+        File.WriteAllText(Path.Combine(resultProject, "b.fs"), "module B\n")
+        let resultLimited = makeConfiguredDispatcher resultProject 4096L 1 20 100 10
+        let limitedOverview = call resultLimited "inspect" []
+        check (isOk limitedOverview) "overview succeeds at its result cap"
+        let limitedOverviewData = limitedOverview["data"]
+        equal 1 (limitedOverviewData["files"].AsArray().Count) "overview caps returned file paths"
+        check (limitedOverviewData["truncated"].GetValue<bool>()) "overview marks truncation after observing an excess file path"
+
+        let exactResultLimit = makeConfiguredDispatcher resultProject 4096L 3 20 100 10
+        let exactOverview = call exactResultLimit "inspect" []
+        let exactOverviewData = exactOverview["data"]
+        equal 3 (exactOverviewData["files"].AsArray().Count) "overview returns all paths at the exact result cap"
+        check (not (exactOverviewData["truncated"].GetValue<bool>())) "overview is not truncated when no excess path exists"
+
+        let fileProject = makeProject root "overview-file-limit"
+        File.WriteAllText(Path.Combine(fileProject, "a.fs"), "module A\n")
+        let fileLimited = makeConfiguredDispatcher fileProject 4096L 10 2 100 10
+        let exactFileOverview = call fileLimited "inspect" []
+        let exactFileOverviewData = exactFileOverview["data"]
+        equal 2 (exactFileOverviewData["files"].AsArray().Count) "overview lists the exact file cap"
+        check (not (exactFileOverviewData["truncated"].GetValue<bool>())) "overview does not mark an exact file cap without another supported file"
+        let exactFileSearch = call fileLimited "search" [ "query", text "absent" ]
+        let exactFileSearchData = exactFileSearch["data"]
+        check (not (exactFileSearchData["truncated"].GetValue<bool>())) "search does not mark an exact file cap without an excess candidate"
+        equal 2 (exactFileSearchData["filesScanned"].GetValue<int>()) "search scans no more than its file cap"
+        File.WriteAllText(Path.Combine(fileProject, "b.fs"), "module B\n")
+        let excessFileOverview = call fileLimited "inspect" []
+        let excessFileOverviewData = excessFileOverview["data"]
+        equal 2 (excessFileOverviewData["files"].AsArray().Count) "overview remains bounded after an additional file appears"
+        check (excessFileOverviewData["truncated"].GetValue<bool>()) "overview marks truncation after observing an excess supported file"
+        let excessFileSearch = call fileLimited "search" [ "query", text "absent" ]
+        let excessFileSearchData = excessFileSearch["data"]
+        check (excessFileSearchData["truncated"].GetValue<bool>()) "search marks truncation after observing an excess supported file"
+        equal 2 (excessFileSearchData["filesScanned"].GetValue<int>()) "search stops at its file cap"
+
+        let entryProject = makeProject root "overview-entry-limit"
+        for name in [ "a.fs"; "b.fs"; "c.fs" ] do File.WriteAllText(Path.Combine(entryProject, name), "module Entry\n")
+        let entryLimited = makeConfiguredDispatcher entryProject 4096L 10 20 3 10
+        expectError "SEARCH_DIRECTORY_LIMIT" (call entryLimited "inspect" []) "overview per-directory limit plus one"
+        expectError "SEARCH_DIRECTORY_LIMIT" (call entryLimited "search" [ "query", text "absent" ]) "search per-directory limit plus one"
+
+        let globalEntryProject = makeProject root "overview-global-entry-limit"
+        Directory.CreateDirectory(Path.Combine(globalEntryProject, "src")) |> ignore
+        File.WriteAllText(Path.Combine(globalEntryProject, "src", "a.fs"), "module A\n")
+        File.WriteAllText(Path.Combine(globalEntryProject, "src", "b.fs"), "module B\n")
+        let globalEntryLimited = makeConfiguredDispatcher globalEntryProject 4096L 10 20 3 10
+        let globalEntryOverview = call globalEntryLimited "inspect" []
+        check (isOk globalEntryOverview) "global entry budget truncates after enumerating small directories"
+        let globalEntryOverviewData = globalEntryOverview["data"]
+        check (globalEntryOverviewData["truncated"].GetValue<bool>()) "overview reports its global entry budget"
+        let globalEntrySearch = call globalEntryLimited "search" [ "query", text "absent" ]
+        check (isOk globalEntrySearch) "search global entry budget returns a bounded partial result"
+        let globalEntrySearchData = globalEntrySearch["data"]
+        check (globalEntrySearchData["truncated"].GetValue<bool>()) "search reports its global entry budget"
+
+        let depthProject = makeProject root "overview-depth-limit"
+        Directory.CreateDirectory(Path.Combine(depthProject, "src", "deep")) |> ignore
+        File.WriteAllText(Path.Combine(depthProject, "src", "deep", "leaf.fs"), "module Leaf\n")
+        let depthLimited = makeConfiguredDispatcher depthProject 4096L 10 20 100 1
+        let depthOverview = call depthLimited "inspect" []
+        let depthOverviewData = depthOverview["data"]
+        check (depthOverviewData["truncated"].GetValue<bool>()) "overview reports traversal depth truncation"
+        let depthSearch = call depthLimited "search" [ "query", text "absent" ]
+        let depthSearchData = depthSearch["data"]
+        check (depthSearchData["truncated"].GetValue<bool>()) "search reports traversal depth truncation"
 
     let private testDeterministicBoundedSearch root =
         let project = makeProject root "search"
@@ -170,11 +300,19 @@ module Program =
         equal 2 (limitedData["matches"].AsArray().Count) "search result count is capped"
         check (limitedData["truncated"].GetValue<bool>()) "search reports truncated results"
 
+        let exactResultLimit = makeDispatcher project ValidationAction.Build 10_000 2048 5 20_000 64
+        let exactResults = call exactResultLimit "search" [ "query", text "needle" ]
+        let exactResultData = exactResults["data"]
+        check (not (exactResultData["truncated"].GetValue<bool>())) "search does not mark an exact result cap without an excess match"
+
         let entryLimited = makeDispatcher project ValidationAction.Build 10_000 2048 200 4 64
         let bounded = call entryLimited "search" [ "query", text "needle" ]
         let boundedData = bounded["data"]
         check (boundedData["truncated"].GetValue<bool>()) "filesystem traversal stops at its entry cap"
         check (boundedData["filesScanned"].GetValue<int>() <= 4) "entry cap bounds file reads"
+        let boundedOverview = call (makeConfiguredDispatcher project 4096L 200 5000 4 64) "inspect" []
+        let boundedOverviewData = boundedOverview["data"]
+        check (boundedOverviewData["truncated"].GetValue<bool>()) "overview reports global traversal entry truncation"
 
     let private testCompareAndSwapAtomicReplacement root =
         let project = makeProject root "edit"
@@ -410,6 +548,8 @@ let main _ =
         let root = makeRoot ()
         try
             testPathConfinementAndWindowsAliases root
+            testDeterministicOverviewAndInspectCompatibility root
+            testOverviewAndSearchTraversalLimits root
             testDeterministicBoundedSearch root
             testCompareAndSwapAtomicReplacement root
             testExactCompareAndSwapPatch root

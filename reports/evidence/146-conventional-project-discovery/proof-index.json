@@ -1,0 +1,259 @@
+{
+  "archive": "proof.zip",
+  "bytes": 1269048,
+  "sha256": "29e6b84d764fd5e0cbb1c3eb7a406cc09cc5a580844199617d9af7a78ceaf538",
+  "entryCount": 50,
+  "verifiedAgainstSourcesAndArchive": true,
+  "files": [
+    {
+      "path": ".agentlang/conventional-discovery-146/historical-input-audit.json",
+      "bytes": 62,
+      "sha256": "899129692606e6caef905de5b2e93a10713d0cf6f92537771347c90046417d21"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/impl-validation/cli-build.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/impl-validation/cli-build.stdout.log",
+      "bytes": 584,
+      "sha256": "805e338add736dc4d533903605495dca9e7320014267f4a3b67b721088a80c30"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/impl-validation/cli-clean.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/impl-validation/cli-clean.stdout.log",
+      "bytes": 12307,
+      "sha256": "a1202574d0359785711dc11b488057526f64229eafd1521a337787a7a9a43bcd"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/impl-validation/cli-run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/impl-validation/cli-run.stdout.log",
+      "bytes": 374,
+      "sha256": "a952dd2e695242067474b1d7ff8b2e40463610d43895e6a9c0b8ed1e7d715a29"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/impl-validation/conventional-build.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/impl-validation/conventional-build.stdout.log",
+      "bytes": 432,
+      "sha256": "5297d2c3afdb34bb24f6a61f9159ca37d29350b222190799d05f6c1041155285"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/impl-validation/conventional-clean.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/impl-validation/conventional-clean.stdout.log",
+      "bytes": 6744,
+      "sha256": "83eb0bcb4c75a86fcd696f7be2d7ee6d49c45213880ab565a00ec4155033a0ea"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/impl-validation/conventional-run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/impl-validation/conventional-run.stdout.log",
+      "bytes": 40,
+      "sha256": "11c3f85e4c36d666129b5c37f6e92567335b688e36f06e4238c8085acd575733"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/impl-validation/final-summary.txt",
+      "bytes": 1224,
+      "sha256": "3207d337fe82728419e3f83a54756f8aff55b971624a62cb03d7e92ca602cc01"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/impl-validation/initial-failures.txt",
+      "bytes": 1053,
+      "sha256": "c28bc316673be04e281b87e03accd741a4533fe35b016192065194cb8a2ebc82"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/plan.md",
+      "bytes": 1463,
+      "sha256": "af3d26e99335f7586084b9ce4a62a1c472def509acecf77383f10d245b4a12bd"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/root-artifacts/bin/AgentLang.Conventional.Cli/release/AgentLang.Conventional.Cli.deps.json",
+      "bytes": 2974,
+      "sha256": "286c223538b469e3a5a6364bebc0d68051682db3c80cd6bb043def2b7b33eace"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/root-artifacts/bin/AgentLang.Conventional.Cli/release/AgentLang.Conventional.Cli.dll",
+      "bytes": 17920,
+      "sha256": "9cb72cd8216743a0594393b9b72dacdf3f3bf513b30389c161b9fcfbc4d22110"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/root-artifacts/bin/AgentLang.Conventional.Cli/release/AgentLang.Conventional.Cli.exe",
+      "bytes": 156160,
+      "sha256": "d345464d1948ada0723321c21efcb93a5c2d48abccbd8da649187c2125e0f243"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/root-artifacts/bin/AgentLang.Conventional.Cli/release/AgentLang.Conventional.Cli.pdb",
+      "bytes": 4872,
+      "sha256": "9eb7dc4684e8ce0343a6bd0d17323b43066567cb8de6f424187b24279eeee0a0"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/root-artifacts/bin/AgentLang.Conventional.Cli/release/AgentLang.Conventional.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/root-artifacts/bin/AgentLang.Conventional.Cli/release/AgentLang.Conventional.dll",
+      "bytes": 56320,
+      "sha256": "37dfe417efa8c56c4a6ecd0eabdc3e3658ec3dcc2867237feac416c34f395a44"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/root-artifacts/bin/AgentLang.Conventional.Cli/release/AgentLang.Conventional.pdb",
+      "bytes": 13952,
+      "sha256": "eae4ba475de72f7ae108b436fe911db39414fbebbce710abd2efc15f96180708"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/root-artifacts/bin/AgentLang.Conventional.Cli/release/AgentLang.Conventional.xml",
+      "bytes": 1055,
+      "sha256": "621b5c7c93c495c1dfc83279858dbb31ecd999f56d5237070bf05c59159b81eb"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/root-artifacts/bin/AgentLang.Conventional.Cli/release/FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/root-verification.md",
+      "bytes": 1375,
+      "sha256": "d1d5f5b5921e9c93ca548f3fb941c08d411c31ea94f3de10beab16509a4953a3"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/budget-denial/audit.txt",
+      "bytes": 92,
+      "sha256": "cf54942e4943f2356e392900a0ee57efd076630079c2f42167c3ae3209760b23"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/budget-denial/command.json",
+      "bytes": 727,
+      "sha256": "0051e852d83f8d084101a4fdf775d98c3c2df41bcc9db7c27d14a140cfe881a4"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/budget-denial/exit.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/budget-denial/requests.jsonl",
+      "bytes": 39,
+      "sha256": "647eb6c3c2dbb3bcbb901f0b61ef4d80e6988de422f4d2239950676e39259505"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/budget-denial/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/budget-denial/stdout.txt",
+      "bytes": 338,
+      "sha256": "ee63ea57e36f504923d306a2cd106034621e3bf802d877683a3b1da924498ee2"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/budget-denial/trace.jsonl",
+      "bytes": 13119,
+      "sha256": "c09598d0fc0b7c27c0f6886b08500bb12ecafd45b65834e7115bf1f10fc0f572"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/overview/audit.txt",
+      "bytes": 92,
+      "sha256": "cf54942e4943f2356e392900a0ee57efd076630079c2f42167c3ae3209760b23"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/overview/command.json",
+      "bytes": 726,
+      "sha256": "a1743b03083786aa836f67e5dde3cd0ee4f0c0af8b2236b072dc7e90f5aa1868"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/overview/exit.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/overview/requests.jsonl",
+      "bytes": 39,
+      "sha256": "647eb6c3c2dbb3bcbb901f0b61ef4d80e6988de422f4d2239950676e39259505"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/overview/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/overview/stdout.txt",
+      "bytes": 994,
+      "sha256": "4ff3f4744948169b7772a16870d5bdc21a9cb89efc60723ab0d6ab42234230a5"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/overview/trace.jsonl",
+      "bytes": 16598,
+      "sha256": "59f60d242c90815e97b3cd636913da035fea10d1b28c2293f98b669cbedaf99c"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/project/Demo.fsproj",
+      "bytes": 237,
+      "sha256": "c29c0b7b37742be92468de29116bca677b641644c1187e5df07283f9346206fa"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/project/Program.fs",
+      "bytes": 60,
+      "sha256": "5a568c248bab7e39d78345b5ca8449454a8037f453786d8bacdc509137e4cf43"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/smoke/run.py",
+      "bytes": 2219,
+      "sha256": "da123230777c3b3408adb993efb61a8f8dffd0107564e9b191fa394cf87ef2e1"
+    },
+    {
+      "path": ".agentlang/conventional-discovery-146/validate.py",
+      "bytes": 1371,
+      "sha256": "518b2b3c8bdeef8ee7e5cc40b038090fb4efed3d60c9b79f2a09655bef8edfe7"
+    },
+    {
+      "path": "docs/CONVENTIONAL.md",
+      "bytes": 6483,
+      "sha256": "721b7f3ed87b89947e523f59a3019acc2e1cd440015485d1af0752726ae8e377"
+    },
+    {
+      "path": "experiments/AgentLang.Conventional/Dispatcher.fs",
+      "bytes": 34925,
+      "sha256": "e8ed31dee64cf78fba3f85784c7a6557578d70bfb47c6409674dee58dd5478fc"
+    },
+    {
+      "path": "scripts/Audit-SubagentTrialTerminationV2.ps1",
+      "bytes": 15874,
+      "sha256": "870ff9b9a1843c0a104d2185688486c7ed1e85399df6c554f9ee890c4dcf4a10"
+    },
+    {
+      "path": "scripts/Start-SubagentTrialHostV2.ps1",
+      "bytes": 81288,
+      "sha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b"
+    },
+    {
+      "path": "tests/AgentLang.Conventional.Cli.Tests/Program.fs",
+      "bytes": 17265,
+      "sha256": "10eff7386254c046c9416164f6585fa2f905e1e96d855e96a07a93813ea4d1e1"
+    },
+    {
+      "path": "tests/AgentLang.Conventional.Tests/Program.fs",
+      "bytes": 37517,
+      "sha256": "60812f81b9834999005d97579f660ef94a45808eeb0796ffdbd709da45620d9a"
+    }
+  ]
+}
