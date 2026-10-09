@@ -70,6 +70,11 @@ pass its CLI DLL with `-CliDll` and keep its companion files beside it.
 The operation list is a comma-delimited host setting, not agent input. Each
 request remains one JSON object on one UTF-8 JSONL line. The wrapper relays a
 valid, allowed request unchanged and returns its single runtime response line.
+The broker and both CLI entry points select UTF-8 explicitly, including when
+the Windows terminal starts with a legacy code page. Valid non-ASCII text must
+survive exactly; malformed UTF-8 bytes receive `TRIAL_INVALID_UTF8` without
+being forwarded. A subsequent valid request can still execute. See
+[report 158](../reports/158-utf8-trial-transport.md) for terminal and pipe checks.
 Malformed JSON and non-whitelisted operation names receive structured host
 errors and are never forwarded. The host exits when the request limit is
 exceeded, the exchange limit is reached, the runtime stops responding, or the

@@ -464,6 +464,8 @@ Human REPL commands:
 
     [<EntryPoint>]
     let main argv =
+        Console.InputEncoding <- UTF8Encoding(false)
+        Console.OutputEncoding <- UTF8Encoding(false)
         let mutable projectDirectory = Environment.CurrentDirectory
         let mutable capabilities = Set.empty<string>
         let mutable clockValue: string option = None

@@ -1434,6 +1434,11 @@ try {
     }
     if (@($Capabilities | Sort-Object -Unique).Count -ne $Capabilities.Count) { throw 'Capabilities must be unique.' }
     Add-Type -TypeDefinition $hostSource -Language CSharp
+    # Console-backed stdin translates key events using the active input code
+    # page before OpenStandardInput sees bytes. Pin UTF-8 so non-ASCII JSON is
+    # not converted to legacy OEM bytes; redirected byte streams remain strict.
+    [Console]::InputEncoding = [Text.UTF8Encoding]::new($false)
+    [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
     $exitCode = [AgentLang.SubagentTrialHostV2.TrialHost]::Run(
         $CliDll, $ProjectPath, $TracePath, $allowed, $Profile, $AdditionalCliArguments, $Capabilities, $ClockValue,
         $MaxRequestBytes, $MaxResponseBytes, $MaxInspectionResponseBytes, $ExchangeTimeoutMilliseconds, $MaxExchanges)

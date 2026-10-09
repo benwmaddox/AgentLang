@@ -3,6 +3,8 @@ namespace AgentLang.Cli.Tests
 open System
 open System.Diagnostics
 open System.IO
+open System.Text
+open System.Text.Json
 open System.Text.Json.Nodes
 open System.Text.RegularExpressions
 open System.Threading.Tasks
@@ -54,6 +56,9 @@ module Program =
         startInfo.RedirectStandardInput <- true
         startInfo.RedirectStandardOutput <- true
         startInfo.RedirectStandardError <- true
+        startInfo.StandardInputEncoding <- UTF8Encoding(false)
+        startInfo.StandardOutputEncoding <- UTF8Encoding(false)
+        startInfo.StandardErrorEncoding <- UTF8Encoding(false)
         startInfo.ArgumentList.Add(cliAssembly ())
         startInfo.ArgumentList.Add("--project")
         startInfo.ArgumentList.Add(projectDirectory)
@@ -527,6 +532,20 @@ module Program =
             contains "2/2 test(s) passed" result.StandardOutput "Flow/2 attached tests run"
             contains "selected candidates committed." result.StandardOutput "Flow/2 library commit passes"
             contains "42" result.StandardOutput "temporary fn is evaluated in the session"
+
+            let unicodeValue = "Ω π 🌿 配置"
+            let unicodeRequest = """{"op":"eval","syntaxVersion":2,"code":"\"Ω π 🌿 配置\""}"""
+            let unicodeResult = runCli project [ "--jsonl" ] [ unicodeRequest ] 10000
+            expectExit 0 unicodeResult "Flow/2 JSONL eval with a raw Unicode string literal"
+            let unicodeLines = responseLines unicodeResult.StandardOutput
+            equal 1 unicodeLines.Length "Unicode JSONL request receives one response"
+            let unicodeResponse = JsonNode.Parse(unicodeLines.Head)
+            check (unicodeResponse["ok"].GetValue<bool>()) "Unicode JSONL request succeeds"
+            let unicodeStack = unicodeResponse.["data"].["stack"].AsArray()
+            let renderedString = unicodeStack.[0].GetValue<string>()
+            let exactValue = JsonSerializer.Deserialize<string>(renderedString)
+            equal unicodeValue exactValue "Flow/2 string survives UTF-8 stdin and response rendering exactly"
+
             let reload = runCli project [ "--syntax-version"; "2"; "--eval"; "flag::active?(flag::new(active = false))" ] [] 15000
             expectExit 0 reload "Flow/2 committed function reload"
             contains "false" reload.StandardOutput "reloaded property function returns false"

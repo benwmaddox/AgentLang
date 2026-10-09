@@ -175,8 +175,7 @@ module Program =
             let validationPath = validationProject |> Option.defaultWith (fun () -> invalidArg "--validation-project" "Option --validation-project is required.")
             Some(Path.GetFullPath(projectRoot), validationPath, maximumRequests |> Option.defaultValue defaultMaximumRequests)
 
-    [<EntryPoint>]
-    let main arguments =
+    let run arguments =
         try
             match parseArguments arguments with
             | None -> Console.WriteLine(usage); 0
@@ -194,3 +193,9 @@ module Program =
             Console.Error.WriteLine($"Host configuration error: {ex.Message}")
             Console.Error.WriteLine(usage)
             64
+
+    [<EntryPoint>]
+    let main arguments =
+        Console.InputEncoding <- UTF8Encoding(false)
+        Console.OutputEncoding <- UTF8Encoding(false)
+        run arguments

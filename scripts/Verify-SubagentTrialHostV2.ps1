@@ -301,6 +301,7 @@ function Invoke-HostRun {
         [int]$MaxResponseBytes = 524288,
         [int]$MaxExchanges = 100,
         [int]$OuterTimeoutMilliseconds = 15000,
+        [byte[]]$InputBytesOverride,
         [switch]$NoFinalLf
     )
     if ([string]::IsNullOrWhiteSpace($ProjectPath)) {
@@ -313,6 +314,7 @@ function Invoke-HostRun {
     $inputText = if ($Requests.Count -gt 0) { $Requests -join "`n" } else { '' }
     if ($Requests.Count -gt 0 -and -not $NoFinalLf) { $inputText += "`n" }
     $inputBytes = $utf8.GetBytes($inputText)
+    if ($PSBoundParameters.ContainsKey('InputBytesOverride')) { $inputBytes = $InputBytesOverride }
     $arguments = New-HostArguments -RuntimeDll $RuntimeDll -ProjectPath $ProjectPath -TracePath $tracePath `
         -AllowedOperations $AllowedOperations -AdditionalCliArguments $AdditionalCliArguments `
         -ExchangeTimeoutMilliseconds $ExchangeTimeoutMilliseconds -MaxRequestBytes $MaxRequestBytes `
@@ -555,6 +557,32 @@ end
 
     $auditReal = Invoke-Audit -Name 'real-cli-write-trace' -Path $realWrite.tracePath
     Assert-Check -Name 'generic termination audit accepts real CLI close trace' -Passed ($auditReal.exitCode -eq 0) -Detail ($auditReal.stdout + $auditReal.stderr)
+
+    $unicodeValue = 'Ω π 🌿 配置'
+    $unicodeRequest = New-JsonLine ([ordered]@{ op='eval'; frontend='flow'; syntaxVersion=2; code=('"' + $unicodeValue + '"') })
+    $unicodeRun = Invoke-HostRun -Name 'real-cli-unicode' -RuntimeDll $CliDll `
+        -Requests @($unicodeRequest, '{"op":"host.close"}') -AllowedOperations @('eval') `
+        -ExchangeTimeoutMilliseconds 15000 -OuterTimeoutMilliseconds 60000
+    $decodedValue = $null
+    if ($unicodeRun.responses.Count -eq 1 -and $unicodeRun.responses[0].ok) {
+        $decodedValue = ConvertFrom-Json -InputObject $unicodeRun.responses[0].data.stack[0] -NoEnumerate
+    }
+    Assert-Check -Name 'raw UTF-8 request preserves exact non-ASCII value through real CLI' -Passed (
+        $unicodeRun.process.exitCode -eq 0 -and $unicodeRun.responses.Count -eq 1 -and
+        $unicodeRun.responses[0].ok -and $decodedValue -ceq $unicodeValue -and
+        (Get-Termination $unicodeRun) -eq 'host-close'
+    ) -Detail "decoded='$decodedValue'"
+
+    $recoveryInput = [byte[]](@(255, 10) + @($utf8.GetBytes('{"op":"eval","frontend":"flow","syntaxVersion":2,"code":"42"}' + "`n" + '{"op":"host.close"}' + "`n")))
+    $invalidUtf8Run = Invoke-HostRun -Name 'invalid-utf8-recovery' -RuntimeDll $CliDll `
+        -Requests @() -InputBytesOverride $recoveryInput -AllowedOperations @('eval') `
+        -ExchangeTimeoutMilliseconds 15000 -OuterTimeoutMilliseconds 60000
+    Assert-Check -Name 'malformed UTF-8 is rejected and next valid request still executes' -Passed (
+        $invalidUtf8Run.process.exitCode -eq 0 -and $invalidUtf8Run.responses.Count -eq 2 -and
+        $invalidUtf8Run.responses[0].error.code -ceq 'TRIAL_INVALID_UTF8' -and
+        $invalidUtf8Run.responses[1].ok -and $invalidUtf8Run.responses[1].data.stack[0] -ceq '42' -and
+        (Get-Termination $invalidUtf8Run) -eq 'host-close'
+    ) -Detail "responses=$($invalidUtf8Run.responses.Count)"
 
     $maxLog = Join-Path $artifactRoot 'max-exchange-forwarded.jsonl'
     $maxRequests = @((New-JsonLine ([ordered]@{ op='fake.echo'; n=1 })), (New-JsonLine ([ordered]@{ op='fake.echo'; n=2 })),

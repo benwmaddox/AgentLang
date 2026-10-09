@@ -88,6 +88,12 @@ harness checks pass. This is a tooling follow-up, not another participant trial;
 UTF-8 transport friction remains separate. Original report-156 outcomes remain
 unchanged.
 
+[Report 158](../reports/158-utf8-trial-transport.md) addresses the UTF-8 transport
+friction with explicit broker/CLI encoding and exact-value regression checks.
+This removes a known comparison confound; it is not a new agent trial and does
+not change report 156's findings. Continue with a bounded efficacy comparison
+using the corrected tooling; keep broad retention preparation deferred.
+
 The interpreter, typed semantic IR, dictionary, task transactions, introspection,
 Flow/1 authoring and existing library coverage gates are implemented. Earlier
 external-agent comparisons observed reuse; they did not establish a general

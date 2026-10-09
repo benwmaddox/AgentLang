@@ -2,10 +2,12 @@ namespace AgentLang.Conventional.Cli.Tests
 
 open System
 open System.Globalization
+open System.Diagnostics
 open System.IO
 open System.Security.Cryptography
 open System.Text
 open System.Text.Json
+open System.Threading.Tasks
 
 module Program =
     type private Invocation =
@@ -43,7 +45,7 @@ module Program =
                 Console.SetIn input
                 Console.SetOut output
                 Console.SetError error
-                let exitCode = AgentLang.Conventional.Cli.Program.main arguments
+                let exitCode = AgentLang.Conventional.Cli.Program.run arguments
                 { ExitCode = exitCode
                   StandardOutput = output.ToString()
                   StandardError = error.ToString() }
@@ -56,6 +58,58 @@ module Program =
         check (Object.ReferenceEquals(previousOutput, Console.Out)) "CLI restores Console.Out"
         check (Object.ReferenceEquals(previousError, Console.Error)) "CLI restores Console.Error"
         invocation
+
+    let private conventionalCliAssembly () =
+        let outputDirectory = DirectoryInfo(AppContext.BaseDirectory.TrimEnd([| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |]))
+        let configuration = outputDirectory.Parent.Name
+        let assembly =
+            Path.GetFullPath(
+                Path.Combine(
+                    __SOURCE_DIRECTORY__,
+                    "..",
+                    "..",
+                    "experiments",
+                    "AgentLang.Conventional.Cli",
+                    "bin",
+                    configuration,
+                    "net9.0",
+                    "AgentLang.Conventional.Cli.dll"))
+        if not (File.Exists assembly) then failwith $"Conventional CLI assembly was not built: {assembly}"
+        assembly
+
+    let private runCliWithUtf8Stdin arguments (inputLines: string list) =
+        let startInfo = ProcessStartInfo("dotnet")
+        startInfo.UseShellExecute <- false
+        startInfo.RedirectStandardInput <- true
+        startInfo.RedirectStandardOutput <- true
+        startInfo.RedirectStandardError <- true
+        startInfo.StandardInputEncoding <- UTF8Encoding(false)
+        startInfo.StandardOutputEncoding <- UTF8Encoding(false)
+        startInfo.StandardErrorEncoding <- UTF8Encoding(false)
+        startInfo.ArgumentList.Add(conventionalCliAssembly ())
+        for argument in arguments do startInfo.ArgumentList.Add(argument)
+
+        use child = new Process(StartInfo = startInfo)
+        if not (child.Start()) then failwith "Could not start the Conventional CLI process."
+        let stdout: Task<string> = child.StandardOutput.ReadToEndAsync()
+        let stderr: Task<string> = child.StandardError.ReadToEndAsync()
+        let outputTasks: Task array = [| stdout :> Task; stderr :> Task |]
+        let outputDiagnostic (task: Task<string>) =
+            if task.IsCompletedSuccessfully then task.Result
+            elif task.IsFaulted then task.Exception.ToString()
+            else "<stream read did not complete>"
+        for line in inputLines do child.StandardInput.WriteLine(line)
+        child.StandardInput.Close()
+        if not (child.WaitForExit 30000) then
+            child.Kill(true)
+            child.WaitForExit()
+            let streamsDrained = Task.WaitAll(outputTasks, 10000)
+            failwith $"Conventional CLI did not exit within 30000 ms. Output reads drained: {streamsDrained}. stdout: {outputDiagnostic stdout}; stderr: {outputDiagnostic stderr}"
+        if not (Task.WaitAll(outputTasks, 10000)) then
+            failwith $"Conventional CLI exited, but output reads did not complete within 10000 ms. Exit code: {child.ExitCode}. stdout: {outputDiagnostic stdout}; stderr: {outputDiagnostic stderr}"
+        { ExitCode = child.ExitCode
+          StandardOutput = stdout.Result
+          StandardError = stderr.Result }
 
     let private responseLines (invocation: Invocation) =
         invocation.StandardOutput.Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
@@ -225,6 +279,23 @@ module Program =
             check (not (firstData.TryGetProperty("content", &content))) "overview response has no source-content field"
             check (not (firstData.GetProperty("truncated").GetBoolean())) "small fixture overview is complete")
 
+    let private testUtf8ReadPathAndContent () =
+        withScratchProject (fun projectRoot _ _ _ ->
+            let relativePath = "配置 Ω 🌿.fs"
+            let expectedContent = "module Fixture\nlet greeting = \"Ω π 🌿 配置\"\n"
+            File.WriteAllText(Path.Combine(projectRoot, relativePath), expectedContent, UTF8Encoding(false))
+
+            let request = """{"op":"read","path":"配置 Ω 🌿.fs"}"""
+            let invocation = runCliWithUtf8Stdin (baseArguments projectRoot) [ request ]
+            equal 0 invocation.ExitCode $"UTF-8 JSONL read request; stderr={invocation.StandardError}; stdout={invocation.StandardOutput}"
+            let lines = responseLines invocation
+            equal 1 lines.Length "Unicode read request receives one JSONL response"
+            use response = JsonDocument.Parse(lines.Head)
+            check (response.RootElement.GetProperty("ok").GetBoolean()) "Unicode read request succeeds"
+            let data = response.RootElement.GetProperty("data")
+            equal relativePath (data.GetProperty("path").GetString()) "literal Unicode request path selects the matching file"
+            equal expectedContent (data.GetProperty("content").GetString()) "read response preserves the Unicode file contents exactly")
+
     let private testPatchRespectsRequestLimit () =
         withScratchProject (fun projectRoot target originalText _ ->
             let patch = patchRequest (fileHash target) "marker = 7" "marker = 8"
@@ -294,6 +365,7 @@ module Program =
         group "excess mutation rejected before dispatch" testExcessMutationIsRejected
         group "top-level and nested patch JSONL recovery" testPatchTopLevelAndNestedJsonlRecovery
         group "no-argument inspect overview JSONL" testNoArgumentInspectOverviewJsonl
+        group "raw UTF-8 JSONL read path and content" testUtf8ReadPathAndContent
         group "patch respects the request limit" testPatchRespectsRequestLimit
         group "malformed lines consume request budget" testMalformedLineConsumesBudget
         group "default 100 request boundary" testDefaultCapBoundaries
