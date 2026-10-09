@@ -67,6 +67,13 @@ inherited coverage. This supports feasibility, not a language reliability lead.
 Its incorrect language control passes all 191 attached tests but fails independent
 acceptance, reinforcing the distinction between coverage and correct expectations.
 
+The [library dependency qualification probe](reports/142-library-dependency-qualification.md)
+adds enforcement that authored library dependencies must also qualify. A fresh
+subagent preserves the two-function composition, qualifies both functions, and
+adds a helper test that rejects a controlled defect. This single guided probe
+supports usability, not comparative reliability. Local validation passed after
+repairing a legacy test fixture; the report retains the failed run and repair.
+
 The implementation targets .NET 9 and uses no external test framework or model API key.
 
 ## Build and acceptance checks

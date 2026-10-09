@@ -1,0 +1,1314 @@
+{
+  "archive": {
+    "byteLength": 1837008,
+    "file": "results.zip",
+    "sha256": "c8d2c1f72505a6235472a78297ded17c727aec57b13d25fa212df1491532d649"
+  },
+  "entries": [
+    {
+      "byteLength": 1398,
+      "path": ".agentlang/library-closure-142/acceptance-fix/acceptance-final.log",
+      "sha256": "433e872469f8ff908ca1ed53d13beb4f7c6fdbb1046c5f755664ecd0ddbedbd9"
+    },
+    {
+      "byteLength": 2415,
+      "path": ".agentlang/library-closure-142/acceptance-fix/acceptance.log",
+      "sha256": "cc9a2430c877552f20f4e2da550e7e049e29f7afeeaba68fb52fcdb117258447"
+    },
+    {
+      "byteLength": 660,
+      "path": ".agentlang/library-closure-142/acceptance-fix/build-command-error.log",
+      "sha256": "d04755906ad1b63cb0ff7347e3dceb0823001a67a419c36b12032fd59e2b8302"
+    },
+    {
+      "byteLength": 376,
+      "path": ".agentlang/library-closure-142/acceptance-fix/build-final.log",
+      "sha256": "a65a9b872c9aa3636c6284c0d54fdba32e90e1da33f71aca49335b9511d32520"
+    },
+    {
+      "byteLength": 376,
+      "path": ".agentlang/library-closure-142/acceptance-fix/build.log",
+      "sha256": "138e7674ee3d9018b56f1b0d3d738be4ff1135d9fd55034d657a1972cd6d2cdf"
+    },
+    {
+      "byteLength": 134,
+      "path": ".agentlang/library-closure-142/baseline-corrected/project/.agentlang/store/CURRENT",
+      "sha256": "2b8ddb46d96de6bed959f13a3b5804dfe3bb9a1608ad53c020c9490c3ccf4e9f"
+    },
+    {
+      "byteLength": 1509,
+      "path": ".agentlang/library-closure-142/baseline-corrected/project/.agentlang/store/manifests/1b7b514d61ffab0923ba6b01d8572fe53ef3e5f5612e81d06c262d07150513e6.json",
+      "sha256": "1b7b514d61ffab0923ba6b01d8572fe53ef3e5f5612e81d06c262d07150513e6"
+    },
+    {
+      "byteLength": 2887,
+      "path": ".agentlang/library-closure-142/baseline-corrected/project/.agentlang/store/manifests/a9b6ff92185cfc847b1ad64e55056ea413c9f468538252e223e8fa857c5a9922.json",
+      "sha256": "a9b6ff92185cfc847b1ad64e55056ea413c9f468538252e223e8fa857c5a9922"
+    },
+    {
+      "byteLength": 59,
+      "path": ".agentlang/library-closure-142/baseline-corrected/project/.agentlang/store/objects/3308c76cb410e51af782465bbd7d9314e26340eb9d5fc1326b4fae5ef54accae.agent",
+      "sha256": "3308c76cb410e51af782465bbd7d9314e26340eb9d5fc1326b4fae5ef54accae"
+    },
+    {
+      "byteLength": 67,
+      "path": ".agentlang/library-closure-142/baseline-corrected/project/.agentlang/store/objects/6deee4274d400bb60482491ee17e24250cbc275c0fff7a65ef97c2fc0b9f0b27.agent",
+      "sha256": "6deee4274d400bb60482491ee17e24250cbc275c0fff7a65ef97c2fc0b9f0b27"
+    },
+    {
+      "byteLength": 63,
+      "path": ".agentlang/library-closure-142/baseline-corrected/project/.agentlang/store/objects/b218892b898935d714211eb05842f48caf5f0ac77bd3f77f927c1f671e741a17.agent",
+      "sha256": "b218892b898935d714211eb05842f48caf5f0ac77bd3f77f927c1f671e741a17"
+    },
+    {
+      "byteLength": 59,
+      "path": ".agentlang/library-closure-142/baseline-corrected/project/.agentlang/store/objects/ba252ab9e206a971b0da0467686111d78aa03abc312c5c8a34da2eeb5f443432.agent",
+      "sha256": "ba252ab9e206a971b0da0467686111d78aa03abc312c5c8a34da2eeb5f443432"
+    },
+    {
+      "byteLength": 339,
+      "path": ".agentlang/library-closure-142/baseline-corrected/project/.agentlang/store/objects/dfbcc052675c9d5d8550d65f305c69f99d569064eefa35e4e5aaa2ef7ddc0b1b.agent",
+      "sha256": "dfbcc052675c9d5d8550d65f305c69f99d569064eefa35e4e5aaa2ef7ddc0b1b"
+    },
+    {
+      "byteLength": 167,
+      "path": ".agentlang/library-closure-142/baseline-corrected/project/.agentlang/store/objects/f8b04f4ba7c512a98159f8a137e69a6b7042e7f706d23509298ab5dddc7ad676.agent",
+      "sha256": "f8b04f4ba7c512a98159f8a137e69a6b7042e7f706d23509298ab5dddc7ad676"
+    },
+    {
+      "byteLength": 339,
+      "path": ".agentlang/library-closure-142/baseline-corrected/project/dictionary.agent",
+      "sha256": "dfbcc052675c9d5d8550d65f305c69f99d569064eefa35e4e5aaa2ef7ddc0b1b"
+    },
+    {
+      "byteLength": 468,
+      "path": ".agentlang/library-closure-142/baseline-corrected/requests.jsonl",
+      "sha256": "aa5ccf9c026292304d74a6ecdda4dec701d00e81429699a0cd2e2d0c8d7fa5b2"
+    },
+    {
+      "byteLength": 1664,
+      "path": ".agentlang/library-closure-142/baseline-corrected/responses.jsonl",
+      "sha256": "588e099704af11fdfb5b07086d11423728390c9dd5c5c4d60ce066e20faff99e"
+    },
+    {
+      "byteLength": 430,
+      "path": ".agentlang/library-closure-142/baseline/requests.jsonl",
+      "sha256": "bf7ecc47a03b07e9c563f0c95de6c31c039332d04feff5ee1e5f527084eedc39"
+    },
+    {
+      "byteLength": 1236,
+      "path": ".agentlang/library-closure-142/baseline/responses.jsonl",
+      "sha256": "c8b557a26e47162cf669f05d989480d69062ca3243ea1fc0f8eb15ba727d4198"
+    },
+    {
+      "byteLength": 1881,
+      "path": ".agentlang/library-closure-142/checkpoint.txt",
+      "sha256": "754ebe52467d70284249f09cbe6ee57d5ad7b0b041d208bfa0ecae02c0bf6c5a"
+    },
+    {
+      "byteLength": 319,
+      "path": ".agentlang/library-closure-142/dispatch.json",
+      "sha256": "9a94a1af342ce3f02cc64f417788baabe592a645dd7a274b40442ecd413259b2"
+    },
+    {
+      "byteLength": 2599,
+      "path": ".agentlang/library-closure-142/final-validation-audit.json",
+      "sha256": "201a7b898d74e9958a0ce932856f7c474c6d8891a77dcd7926a5d231ec3906c1"
+    },
+    {
+      "byteLength": 6025,
+      "path": ".agentlang/library-closure-142/freeze.json",
+      "sha256": "56d95437737175fdab8ff129d226171d8e2d216b4f109b9b4f5148cf38021d49"
+    },
+    {
+      "byteLength": 14422320,
+      "path": ".agentlang/library-closure-142/full-validation.business-policy-preflight.json",
+      "sha256": "4671ff24ed264009af9bd5a03e22005e7bc66e97c5e36642ccd2b0badf3ef438"
+    },
+    {
+      "byteLength": 171520,
+      "path": ".agentlang/library-closure-142/full-validation.early-agent-negative.json",
+      "sha256": "bb0149c5032a91b0a62ceae622f7bf1868da12dcec5b7dcc3ff61ca935e6d0e9"
+    },
+    {
+      "byteLength": 228018,
+      "path": ".agentlang/library-closure-142/full-validation.flow-matched-fixtures.json",
+      "sha256": "2a035dc2a7998671a06ce0e70675601afe2f45409429c3c50ddf918fb030bc9b"
+    },
+    {
+      "byteLength": 31056,
+      "path": ".agentlang/library-closure-142/full-validation.json",
+      "sha256": "5bde72c66a17d864e25a4cfeaa95990a02cf825e4f212f73c57f4c8a3f638e8e"
+    },
+    {
+      "byteLength": 17959,
+      "path": ".agentlang/library-closure-142/full-validation.log",
+      "sha256": "d50df7e861b5eb50c3742718645698a784d07763a41bf8c6267c1e60f02afd89"
+    },
+    {
+      "byteLength": 98961,
+      "path": ".agentlang/library-closure-142/full-validation.matched-fixtures.json",
+      "sha256": "78b414e41305ab8b14748076fc67bd2e8ea5c8c9f0f00c1d107fc4bdc3616994"
+    },
+    {
+      "byteLength": 85030,
+      "path": ".agentlang/library-closure-142/full-validation.matched-snapshots.json",
+      "sha256": "518e1e9e3f0b99f2099b3a07d4d75cd30781d472b232b464448d6a00a8540ea7"
+    },
+    {
+      "byteLength": 3186,
+      "path": ".agentlang/library-closure-142/full-validation.parser-limits.json",
+      "sha256": "f8ea2bd4b918dcee0aea517d1ccd3c3c76f92f47790749f6f58643c3858fc347"
+    },
+    {
+      "byteLength": 123380,
+      "path": ".agentlang/library-closure-142/full-validation.projection.json",
+      "sha256": "6273687f25d8b22693bc2aef48b22f1ef72a4edf63616ba3881ab7f51e5d95b1"
+    },
+    {
+      "byteLength": 1014511,
+      "path": ".agentlang/library-closure-142/full-validation.renewal-acceptance-gate.json",
+      "sha256": "8a229d36657cd3f91af14b64bbb17a828a4985c4389992bb418d1e58b427e09c"
+    },
+    {
+      "byteLength": 303780,
+      "path": ".agentlang/library-closure-142/full-validation.renewal-replay.json",
+      "sha256": "9bad2299d4956a685b8ce04c2d520d6638b0f06d3c0503abde9f110ef35e346b"
+    },
+    {
+      "byteLength": 20880,
+      "path": ".agentlang/library-closure-142/full-validation.subagent-host-v2.json",
+      "sha256": "ee97e6019830336d5641f301f089f152cf05ef5f212567329d7fccb6bef65ae2"
+    },
+    {
+      "byteLength": 339947,
+      "path": ".agentlang/library-closure-142/full-validation.subagent-host.json",
+      "sha256": "1c4846b68e143bda8492a546aafd92ba97d65d1973e4a59a65dcda56a200547d"
+    },
+    {
+      "byteLength": 770,
+      "path": ".agentlang/library-closure-142/incomplete-coverage-control/requests.jsonl",
+      "sha256": "2f00bb0f4171163fa118cf4d2cb29409dc8c273f11187f3ccd664157cc20a12d"
+    },
+    {
+      "byteLength": 4200,
+      "path": ".agentlang/library-closure-142/incomplete-coverage-control/responses.jsonl",
+      "sha256": "482cfdecb6c2041968a8641e85aa1465c3a78e79d6f8b1c4c8c8891dfcf3350b"
+    },
+    {
+      "byteLength": 886,
+      "path": ".agentlang/library-closure-142/llvm-validation.log",
+      "sha256": "0cafa6b18d2276564ac07c94cd8b0bfd78319a0905944da63eed6e0eb52becf0"
+    },
+    {
+      "byteLength": 134,
+      "path": ".agentlang/library-closure-142/mutation-positive-control/project/.agentlang/store/CURRENT",
+      "sha256": "f7f37d45c614216572b0e8597fbd39e9a8cea5895859af4c1d6da8689005c8bd"
+    },
+    {
+      "byteLength": 3547,
+      "path": ".agentlang/library-closure-142/mutation-positive-control/project/.agentlang/store/manifests/c7683f4cc878fe3a0e762d421ac30ff2b8e290bdef8f53f8b928017ebfe2411f.json",
+      "sha256": "c7683f4cc878fe3a0e762d421ac30ff2b8e290bdef8f53f8b928017ebfe2411f"
+    },
+    {
+      "byteLength": 163,
+      "path": ".agentlang/library-closure-142/mutation-positive-control/project/.agentlang/store/objects/3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21.agent",
+      "sha256": "3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21"
+    },
+    {
+      "byteLength": 65,
+      "path": ".agentlang/library-closure-142/mutation-positive-control/project/.agentlang/store/objects/7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee.agent",
+      "sha256": "7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee"
+    },
+    {
+      "byteLength": 773,
+      "path": ".agentlang/library-closure-142/mutation-positive-control/project/.agentlang/store/objects/7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf.agent",
+      "sha256": "7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf"
+    },
+    {
+      "byteLength": 83,
+      "path": ".agentlang/library-closure-142/mutation-positive-control/project/.agentlang/store/objects/eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def.agent",
+      "sha256": "eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def"
+    },
+    {
+      "byteLength": 84,
+      "path": ".agentlang/library-closure-142/mutation-positive-control/project/.agentlang/store/objects/ef312264cb8f792ffe746811c1163a63ff8397d58a1f3f312a879b8679eb31bd.agent",
+      "sha256": "ef312264cb8f792ffe746811c1163a63ff8397d58a1f3f312a879b8679eb31bd"
+    },
+    {
+      "byteLength": 151,
+      "path": ".agentlang/library-closure-142/mutation-positive-control/project/.agentlang/store/objects/ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b.agent",
+      "sha256": "ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b"
+    },
+    {
+      "byteLength": 66,
+      "path": ".agentlang/library-closure-142/mutation-positive-control/project/.agentlang/store/objects/f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066.agent",
+      "sha256": "f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066"
+    },
+    {
+      "byteLength": 773,
+      "path": ".agentlang/library-closure-142/mutation-positive-control/project/dictionary.agent",
+      "sha256": "7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf"
+    },
+    {
+      "byteLength": 292,
+      "path": ".agentlang/library-closure-142/mutation-positive-control/requests.jsonl",
+      "sha256": "466e877a8fdd9cad4d81a54ee8d40a37efd1b58d8331a7601679eaff916bfad6"
+    },
+    {
+      "byteLength": 1107,
+      "path": ".agentlang/library-closure-142/mutation-positive-control/responses.jsonl",
+      "sha256": "54755dc8aa8419ab86335c812be1a78b76163fff96e903383feba01cec7eb00e"
+    },
+    {
+      "byteLength": 134,
+      "path": ".agentlang/library-closure-142/mutation-probe-seed/project/.agentlang/store/CURRENT",
+      "sha256": "be01bac771d0f97220db343e7ce7c3a478bc3adc5b484c5cb19be3524ca98b08"
+    },
+    {
+      "byteLength": 3065,
+      "path": ".agentlang/library-closure-142/mutation-probe-seed/project/.agentlang/store/manifests/7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959.json",
+      "sha256": "7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959"
+    },
+    {
+      "byteLength": 163,
+      "path": ".agentlang/library-closure-142/mutation-probe-seed/project/.agentlang/store/objects/3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21.agent",
+      "sha256": "3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21"
+    },
+    {
+      "byteLength": 65,
+      "path": ".agentlang/library-closure-142/mutation-probe-seed/project/.agentlang/store/objects/7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee.agent",
+      "sha256": "7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/mutation-probe-seed/project/.agentlang/store/objects/ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 83,
+      "path": ".agentlang/library-closure-142/mutation-probe-seed/project/.agentlang/store/objects/eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def.agent",
+      "sha256": "eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def"
+    },
+    {
+      "byteLength": 151,
+      "path": ".agentlang/library-closure-142/mutation-probe-seed/project/.agentlang/store/objects/ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b.agent",
+      "sha256": "ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b"
+    },
+    {
+      "byteLength": 66,
+      "path": ".agentlang/library-closure-142/mutation-probe-seed/project/.agentlang/store/objects/f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066.agent",
+      "sha256": "f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/mutation-probe-seed/project/dictionary.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 292,
+      "path": ".agentlang/library-closure-142/mutation-probe-seed/requests.jsonl",
+      "sha256": "466e877a8fdd9cad4d81a54ee8d40a37efd1b58d8331a7601679eaff916bfad6"
+    },
+    {
+      "byteLength": 1002,
+      "path": ".agentlang/library-closure-142/mutation-probe-seed/responses.jsonl",
+      "sha256": "8f8fec0b85f8babc7a8d24038c3c6ee3ce90ed1a7b30809490f11617340b3923"
+    },
+    {
+      "byteLength": 134,
+      "path": ".agentlang/library-closure-142/negative-control/project/.agentlang/store/CURRENT",
+      "sha256": "be01bac771d0f97220db343e7ce7c3a478bc3adc5b484c5cb19be3524ca98b08"
+    },
+    {
+      "byteLength": 3065,
+      "path": ".agentlang/library-closure-142/negative-control/project/.agentlang/store/manifests/7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959.json",
+      "sha256": "7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959"
+    },
+    {
+      "byteLength": 163,
+      "path": ".agentlang/library-closure-142/negative-control/project/.agentlang/store/objects/3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21.agent",
+      "sha256": "3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21"
+    },
+    {
+      "byteLength": 65,
+      "path": ".agentlang/library-closure-142/negative-control/project/.agentlang/store/objects/7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee.agent",
+      "sha256": "7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/negative-control/project/.agentlang/store/objects/ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 83,
+      "path": ".agentlang/library-closure-142/negative-control/project/.agentlang/store/objects/eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def.agent",
+      "sha256": "eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def"
+    },
+    {
+      "byteLength": 151,
+      "path": ".agentlang/library-closure-142/negative-control/project/.agentlang/store/objects/ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b.agent",
+      "sha256": "ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b"
+    },
+    {
+      "byteLength": 66,
+      "path": ".agentlang/library-closure-142/negative-control/project/.agentlang/store/objects/f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066.agent",
+      "sha256": "f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/negative-control/project/dictionary.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 412,
+      "path": ".agentlang/library-closure-142/negative-control/requests.jsonl",
+      "sha256": "f0ea658c95ce3e26cfc8adbc540f17ff46f77938c2a078757dfc6316b5e15b56"
+    },
+    {
+      "byteLength": 4041,
+      "path": ".agentlang/library-closure-142/negative-control/responses.jsonl",
+      "sha256": "d391b0be988d29485a756a62d10147e2c47ff5377ee1a4700746072844f731b4"
+    },
+    {
+      "byteLength": 11620,
+      "path": ".agentlang/library-closure-142/package-evidence.py",
+      "sha256": "8b3c77f3f1d1946434b4053b72ac8bccb7ebc7ab411d8c051fe7e6513490b372"
+    },
+    {
+      "byteLength": 25082,
+      "path": ".agentlang/library-closure-142/participant-audit.json",
+      "sha256": "7960c0ff131ab5acc999bf4f590ae80afd8af6c44bc5c8b1a870a959642d8271"
+    },
+    {
+      "byteLength": 3,
+      "path": ".agentlang/library-closure-142/participant-score/candidate-session/exit-code.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "byteLength": 526,
+      "path": ".agentlang/library-closure-142/participant-score/candidate-session/process.json",
+      "sha256": "80749b6c5fc4edcfd3dbec76b4183bdb58b78c2f2088773c2edf2adf8f11fd61"
+    },
+    {
+      "byteLength": 3602,
+      "path": ".agentlang/library-closure-142/participant-score/candidate-session/raw-responses.jsonl",
+      "sha256": "6f380662458c90eddd07ed3f739265984941f18b250d785e5e5ef93d8ebb35fc"
+    },
+    {
+      "byteLength": 542,
+      "path": ".agentlang/library-closure-142/participant-score/candidate-session/requests.jsonl",
+      "sha256": "8e604af42cc293e5323ada3960dbc62e24dc679f1114b7d0416470b0ba6ada30"
+    },
+    {
+      "byteLength": 0,
+      "path": ".agentlang/library-closure-142/participant-score/candidate-session/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "byteLength": 3602,
+      "path": ".agentlang/library-closure-142/participant-score/candidate-session/stdout.txt",
+      "sha256": "6f380662458c90eddd07ed3f739265984941f18b250d785e5e5ef93d8ebb35fc"
+    },
+    {
+      "byteLength": 134,
+      "path": ".agentlang/library-closure-142/participant-score/mutant/project/.agentlang/store/CURRENT",
+      "sha256": "8340928e1d0e5903d226972d8a562ec6fa0c69b36fb76997ec46987e318ebed8"
+    },
+    {
+      "byteLength": 4460,
+      "path": ".agentlang/library-closure-142/participant-score/mutant/project/.agentlang/store/manifests/5f398d99f4c9d4b2bb4ee4c061053583afdbb29167664847d76ebb4eb50331a9.json",
+      "sha256": "5f398d99f4c9d4b2bb4ee4c061053583afdbb29167664847d76ebb4eb50331a9"
+    },
+    {
+      "byteLength": 3065,
+      "path": ".agentlang/library-closure-142/participant-score/mutant/project/.agentlang/store/manifests/7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959.json",
+      "sha256": "7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959"
+    },
+    {
+      "byteLength": 6207,
+      "path": ".agentlang/library-closure-142/participant-score/mutant/project/.agentlang/store/manifests/f329559411e3536d6d98f7d5951e38eb4a9e66f03f698a8b31fa20d92bee5ffa.json",
+      "sha256": "f329559411e3536d6d98f7d5951e38eb4a9e66f03f698a8b31fa20d92bee5ffa"
+    },
+    {
+      "byteLength": 163,
+      "path": ".agentlang/library-closure-142/participant-score/mutant/project/.agentlang/store/objects/3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21.agent",
+      "sha256": "3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21"
+    },
+    {
+      "byteLength": 65,
+      "path": ".agentlang/library-closure-142/participant-score/mutant/project/.agentlang/store/objects/7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee.agent",
+      "sha256": "7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee"
+    },
+    {
+      "byteLength": 773,
+      "path": ".agentlang/library-closure-142/participant-score/mutant/project/.agentlang/store/objects/7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf.agent",
+      "sha256": "7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf"
+    },
+    {
+      "byteLength": 76,
+      "path": ".agentlang/library-closure-142/participant-score/mutant/project/.agentlang/store/objects/cd11c3fecaa14c7a7369ba8404d670247082c572104e87274e3fba3b81bc4dab.agent",
+      "sha256": "cd11c3fecaa14c7a7369ba8404d670247082c572104e87274e3fba3b81bc4dab"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/participant-score/mutant/project/.agentlang/store/objects/ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 83,
+      "path": ".agentlang/library-closure-142/participant-score/mutant/project/.agentlang/store/objects/eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def.agent",
+      "sha256": "eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def"
+    },
+    {
+      "byteLength": 151,
+      "path": ".agentlang/library-closure-142/participant-score/mutant/project/.agentlang/store/objects/ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b.agent",
+      "sha256": "ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b"
+    },
+    {
+      "byteLength": 66,
+      "path": ".agentlang/library-closure-142/participant-score/mutant/project/.agentlang/store/objects/f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066.agent",
+      "sha256": "f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066"
+    },
+    {
+      "byteLength": 773,
+      "path": ".agentlang/library-closure-142/participant-score/mutant/project/dictionary.agent",
+      "sha256": "7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf"
+    },
+    {
+      "byteLength": 1767,
+      "path": ".agentlang/library-closure-142/participant-score/mutant/project/history/task-0001.json",
+      "sha256": "5e218be72a361ee2db509119601861140d7e7ac5b2dc282633db69eb4699eaf8"
+    },
+    {
+      "byteLength": 3,
+      "path": ".agentlang/library-closure-142/participant-score/mutation-probe/exit-code.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "byteLength": 554,
+      "path": ".agentlang/library-closure-142/participant-score/mutation-probe/process.json",
+      "sha256": "0d8e030d83c49195fb43f117ee4762b27d372a7345f45d78c1ef02a55aa969d0"
+    },
+    {
+      "byteLength": 1107,
+      "path": ".agentlang/library-closure-142/participant-score/mutation-probe/raw-responses.jsonl",
+      "sha256": "a935b8f80699e1bd419ae8280d26d00011b8f28e3ae1b6e1c7d353ce462c41c4"
+    },
+    {
+      "byteLength": 303,
+      "path": ".agentlang/library-closure-142/participant-score/mutation-probe/requests.jsonl",
+      "sha256": "cb08e75a96634fa93b84a1ffdbc21f97043bdc72a0c3f524cb098d488594869a"
+    },
+    {
+      "byteLength": 0,
+      "path": ".agentlang/library-closure-142/participant-score/mutation-probe/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "byteLength": 1107,
+      "path": ".agentlang/library-closure-142/participant-score/mutation-probe/stdout.txt",
+      "sha256": "a935b8f80699e1bd419ae8280d26d00011b8f28e3ae1b6e1c7d353ce462c41c4"
+    },
+    {
+      "byteLength": 6858,
+      "path": ".agentlang/library-closure-142/participant-score/result.json",
+      "sha256": "13b535d932ee9fa223967376b67091010d4a055f39aa39d72b859843656e0d13"
+    },
+    {
+      "byteLength": 2698,
+      "path": ".agentlang/library-closure-142/participant.prompt.md",
+      "sha256": "de055343293a97b20593b5c1fde023ce72b2c2d1b85f408bb5a695315dff1eba"
+    },
+    {
+      "byteLength": 564,
+      "path": ".agentlang/library-closure-142/participant.wrapper.txt",
+      "sha256": "49c629850518f5e714ae70840183a50ab18982f5ff03ea2e7df305a11750e238"
+    },
+    {
+      "byteLength": 275704,
+      "path": ".agentlang/library-closure-142/participant/actor.trace.jsonl",
+      "sha256": "f6241d3b00558356001e5bf5e65042c056e22adec0c11cf478bed5400bae1ba3"
+    },
+    {
+      "byteLength": 134,
+      "path": ".agentlang/library-closure-142/participant/project/.agentlang/store/CURRENT",
+      "sha256": "8340928e1d0e5903d226972d8a562ec6fa0c69b36fb76997ec46987e318ebed8"
+    },
+    {
+      "byteLength": 4460,
+      "path": ".agentlang/library-closure-142/participant/project/.agentlang/store/manifests/5f398d99f4c9d4b2bb4ee4c061053583afdbb29167664847d76ebb4eb50331a9.json",
+      "sha256": "5f398d99f4c9d4b2bb4ee4c061053583afdbb29167664847d76ebb4eb50331a9"
+    },
+    {
+      "byteLength": 3065,
+      "path": ".agentlang/library-closure-142/participant/project/.agentlang/store/manifests/7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959.json",
+      "sha256": "7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959"
+    },
+    {
+      "byteLength": 6207,
+      "path": ".agentlang/library-closure-142/participant/project/.agentlang/store/manifests/f329559411e3536d6d98f7d5951e38eb4a9e66f03f698a8b31fa20d92bee5ffa.json",
+      "sha256": "f329559411e3536d6d98f7d5951e38eb4a9e66f03f698a8b31fa20d92bee5ffa"
+    },
+    {
+      "byteLength": 163,
+      "path": ".agentlang/library-closure-142/participant/project/.agentlang/store/objects/3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21.agent",
+      "sha256": "3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21"
+    },
+    {
+      "byteLength": 65,
+      "path": ".agentlang/library-closure-142/participant/project/.agentlang/store/objects/7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee.agent",
+      "sha256": "7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee"
+    },
+    {
+      "byteLength": 773,
+      "path": ".agentlang/library-closure-142/participant/project/.agentlang/store/objects/7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf.agent",
+      "sha256": "7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf"
+    },
+    {
+      "byteLength": 76,
+      "path": ".agentlang/library-closure-142/participant/project/.agentlang/store/objects/cd11c3fecaa14c7a7369ba8404d670247082c572104e87274e3fba3b81bc4dab.agent",
+      "sha256": "cd11c3fecaa14c7a7369ba8404d670247082c572104e87274e3fba3b81bc4dab"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/participant/project/.agentlang/store/objects/ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 83,
+      "path": ".agentlang/library-closure-142/participant/project/.agentlang/store/objects/eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def.agent",
+      "sha256": "eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def"
+    },
+    {
+      "byteLength": 151,
+      "path": ".agentlang/library-closure-142/participant/project/.agentlang/store/objects/ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b.agent",
+      "sha256": "ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b"
+    },
+    {
+      "byteLength": 66,
+      "path": ".agentlang/library-closure-142/participant/project/.agentlang/store/objects/f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066.agent",
+      "sha256": "f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066"
+    },
+    {
+      "byteLength": 773,
+      "path": ".agentlang/library-closure-142/participant/project/dictionary.agent",
+      "sha256": "7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf"
+    },
+    {
+      "byteLength": 1767,
+      "path": ".agentlang/library-closure-142/participant/project/history/task-0001.json",
+      "sha256": "5e218be72a361ee2db509119601861140d7e7ac5b2dc282633db69eb4699eaf8"
+    },
+    {
+      "byteLength": 93,
+      "path": ".agentlang/library-closure-142/participant/termination-audit.txt",
+      "sha256": "2b8691a50668d78b4f301857432b9e61f6b153b8b2d28d98d289018c0605f7b8"
+    },
+    {
+      "byteLength": 134,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/project/.agentlang/store/CURRENT",
+      "sha256": "078e3a39914c92c9fb77b517eba6698d2b1e59840fdb2fc3de5f0183c07b9aa6"
+    },
+    {
+      "byteLength": 3065,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/project/.agentlang/store/manifests/7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959.json",
+      "sha256": "7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959"
+    },
+    {
+      "byteLength": 6193,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/project/.agentlang/store/manifests/f0507a5beb665fccb3682abd9ce0d66117d1ac405133ab1001449df11d79bbb8.json",
+      "sha256": "f0507a5beb665fccb3682abd9ce0d66117d1ac405133ab1001449df11d79bbb8"
+    },
+    {
+      "byteLength": 164,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/project/.agentlang/store/objects/0fce55dca25566e1565a5187001428ad5a0090ade99709576a57fb592259419f.agent",
+      "sha256": "0fce55dca25566e1565a5187001428ad5a0090ade99709576a57fb592259419f"
+    },
+    {
+      "byteLength": 163,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/project/.agentlang/store/objects/3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21.agent",
+      "sha256": "3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21"
+    },
+    {
+      "byteLength": 75,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/project/.agentlang/store/objects/40a9030ebee13593223087c9f82b9c399f8ebe7f0cbfa26a9ddb7cc1abf5c812.agent",
+      "sha256": "40a9030ebee13593223087c9f82b9c399f8ebe7f0cbfa26a9ddb7cc1abf5c812"
+    },
+    {
+      "byteLength": 65,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/project/.agentlang/store/objects/7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee.agent",
+      "sha256": "7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee"
+    },
+    {
+      "byteLength": 773,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/project/.agentlang/store/objects/7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf.agent",
+      "sha256": "7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf"
+    },
+    {
+      "byteLength": 76,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/project/.agentlang/store/objects/cd11c3fecaa14c7a7369ba8404d670247082c572104e87274e3fba3b81bc4dab.agent",
+      "sha256": "cd11c3fecaa14c7a7369ba8404d670247082c572104e87274e3fba3b81bc4dab"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/project/.agentlang/store/objects/ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 83,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/project/.agentlang/store/objects/eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def.agent",
+      "sha256": "eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def"
+    },
+    {
+      "byteLength": 151,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/project/.agentlang/store/objects/ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b.agent",
+      "sha256": "ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b"
+    },
+    {
+      "byteLength": 66,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/project/.agentlang/store/objects/f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066.agent",
+      "sha256": "f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066"
+    },
+    {
+      "byteLength": 773,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/project/dictionary.agent",
+      "sha256": "7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf"
+    },
+    {
+      "byteLength": 748,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/requests.jsonl",
+      "sha256": "166b35b8f253077377228225d3b0a4a5ac080b94587cdb630abb102154842940"
+    },
+    {
+      "byteLength": 1229,
+      "path": ".agentlang/library-closure-142/positive-cloned-control/responses.jsonl",
+      "sha256": "970139f05a2d4c8206ae6c814c798cc5545002a4741d14668f04d3b92984c478"
+    },
+    {
+      "byteLength": 134,
+      "path": ".agentlang/library-closure-142/positive-control/project/.agentlang/store/CURRENT",
+      "sha256": "f7f37d45c614216572b0e8597fbd39e9a8cea5895859af4c1d6da8689005c8bd"
+    },
+    {
+      "byteLength": 3547,
+      "path": ".agentlang/library-closure-142/positive-control/project/.agentlang/store/manifests/c7683f4cc878fe3a0e762d421ac30ff2b8e290bdef8f53f8b928017ebfe2411f.json",
+      "sha256": "c7683f4cc878fe3a0e762d421ac30ff2b8e290bdef8f53f8b928017ebfe2411f"
+    },
+    {
+      "byteLength": 163,
+      "path": ".agentlang/library-closure-142/positive-control/project/.agentlang/store/objects/3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21.agent",
+      "sha256": "3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21"
+    },
+    {
+      "byteLength": 65,
+      "path": ".agentlang/library-closure-142/positive-control/project/.agentlang/store/objects/7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee.agent",
+      "sha256": "7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee"
+    },
+    {
+      "byteLength": 773,
+      "path": ".agentlang/library-closure-142/positive-control/project/.agentlang/store/objects/7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf.agent",
+      "sha256": "7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf"
+    },
+    {
+      "byteLength": 83,
+      "path": ".agentlang/library-closure-142/positive-control/project/.agentlang/store/objects/eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def.agent",
+      "sha256": "eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def"
+    },
+    {
+      "byteLength": 84,
+      "path": ".agentlang/library-closure-142/positive-control/project/.agentlang/store/objects/ef312264cb8f792ffe746811c1163a63ff8397d58a1f3f312a879b8679eb31bd.agent",
+      "sha256": "ef312264cb8f792ffe746811c1163a63ff8397d58a1f3f312a879b8679eb31bd"
+    },
+    {
+      "byteLength": 151,
+      "path": ".agentlang/library-closure-142/positive-control/project/.agentlang/store/objects/ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b.agent",
+      "sha256": "ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b"
+    },
+    {
+      "byteLength": 66,
+      "path": ".agentlang/library-closure-142/positive-control/project/.agentlang/store/objects/f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066.agent",
+      "sha256": "f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066"
+    },
+    {
+      "byteLength": 773,
+      "path": ".agentlang/library-closure-142/positive-control/project/dictionary.agent",
+      "sha256": "7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf"
+    },
+    {
+      "byteLength": 861,
+      "path": ".agentlang/library-closure-142/positive-control/requests.jsonl",
+      "sha256": "826c531afcab6621ee8853f01663e9a014a7067c6d50f14800488d25b80cfa06"
+    },
+    {
+      "byteLength": 3507,
+      "path": ".agentlang/library-closure-142/positive-control/responses.jsonl",
+      "sha256": "24baa621e4b41c7e99b32bd9531dfd81136ba0f6711ca5e22eb74a1552fc7827"
+    },
+    {
+      "byteLength": 134,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/project/.agentlang/store/CURRENT",
+      "sha256": "6c5bdc09a5c283723259c68cb4115fbe6e6b4c4a9dd6fe5db497648aa4a8b9fb"
+    },
+    {
+      "byteLength": 3065,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/project/.agentlang/store/manifests/7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959.json",
+      "sha256": "7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959"
+    },
+    {
+      "byteLength": 6193,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/project/.agentlang/store/manifests/9a8d5dfe66a9d389a660816710107d1523718e485a88a3b0b6de6f5ad79f5c94.json",
+      "sha256": "9a8d5dfe66a9d389a660816710107d1523718e485a88a3b0b6de6f5ad79f5c94"
+    },
+    {
+      "byteLength": 164,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/project/.agentlang/store/objects/0fce55dca25566e1565a5187001428ad5a0090ade99709576a57fb592259419f.agent",
+      "sha256": "0fce55dca25566e1565a5187001428ad5a0090ade99709576a57fb592259419f"
+    },
+    {
+      "byteLength": 163,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/project/.agentlang/store/objects/3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21.agent",
+      "sha256": "3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21"
+    },
+    {
+      "byteLength": 65,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/project/.agentlang/store/objects/7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee.agent",
+      "sha256": "7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee"
+    },
+    {
+      "byteLength": 773,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/project/.agentlang/store/objects/7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf.agent",
+      "sha256": "7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf"
+    },
+    {
+      "byteLength": 76,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/project/.agentlang/store/objects/cd11c3fecaa14c7a7369ba8404d670247082c572104e87274e3fba3b81bc4dab.agent",
+      "sha256": "cd11c3fecaa14c7a7369ba8404d670247082c572104e87274e3fba3b81bc4dab"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/project/.agentlang/store/objects/ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 83,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/project/.agentlang/store/objects/eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def.agent",
+      "sha256": "eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def"
+    },
+    {
+      "byteLength": 151,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/project/.agentlang/store/objects/ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b.agent",
+      "sha256": "ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b"
+    },
+    {
+      "byteLength": 66,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/project/.agentlang/store/objects/f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066.agent",
+      "sha256": "f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066"
+    },
+    {
+      "byteLength": 773,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/project/dictionary.agent",
+      "sha256": "7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf"
+    },
+    {
+      "byteLength": 670,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/requests.jsonl",
+      "sha256": "74e2070c151b82efce5d8b138c449b90aab9f11147c1c5520b3212eba1c482b1"
+    },
+    {
+      "byteLength": 1229,
+      "path": ".agentlang/library-closure-142/positive-qualified-control/responses.jsonl",
+      "sha256": "970139f05a2d4c8206ae6c814c798cc5545002a4741d14668f04d3b92984c478"
+    },
+    {
+      "byteLength": 2051,
+      "path": ".agentlang/library-closure-142/probe-acceptance.md",
+      "sha256": "2a4f129f68d0e2b3bfed2d9020422b2ae69f6f2be6884994ebdc0969ca70d587"
+    },
+    {
+      "byteLength": 412,
+      "path": ".agentlang/library-closure-142/probe-before/corrected.requests.jsonl",
+      "sha256": "f0ea658c95ce3e26cfc8adbc540f17ff46f77938c2a078757dfc6316b5e15b56"
+    },
+    {
+      "byteLength": 3169,
+      "path": ".agentlang/library-closure-142/probe-before/corrected.responses.jsonl",
+      "sha256": "b2412cd7077710b6e75fd01c683d61a5deb5f7d76516632fa3a3f1af1c1acf3e"
+    },
+    {
+      "byteLength": 134,
+      "path": ".agentlang/library-closure-142/probe-before/project/.agentlang/store/CURRENT",
+      "sha256": "9d555847334658c410fef937405b0f2120679639a99d2c2e3395c0dbfd929f5a"
+    },
+    {
+      "byteLength": 3065,
+      "path": ".agentlang/library-closure-142/probe-before/project/.agentlang/store/manifests/7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959.json",
+      "sha256": "7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959"
+    },
+    {
+      "byteLength": 4805,
+      "path": ".agentlang/library-closure-142/probe-before/project/.agentlang/store/manifests/ad9c5b425a8d48b216e5a8b93c89d28e0293bcfdca0428e1851c1211f6d5b003.json",
+      "sha256": "ad9c5b425a8d48b216e5a8b93c89d28e0293bcfdca0428e1851c1211f6d5b003"
+    },
+    {
+      "byteLength": 163,
+      "path": ".agentlang/library-closure-142/probe-before/project/.agentlang/store/objects/3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21.agent",
+      "sha256": "3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21"
+    },
+    {
+      "byteLength": 65,
+      "path": ".agentlang/library-closure-142/probe-before/project/.agentlang/store/objects/7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee.agent",
+      "sha256": "7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/probe-before/project/.agentlang/store/objects/ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 83,
+      "path": ".agentlang/library-closure-142/probe-before/project/.agentlang/store/objects/eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def.agent",
+      "sha256": "eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def"
+    },
+    {
+      "byteLength": 151,
+      "path": ".agentlang/library-closure-142/probe-before/project/.agentlang/store/objects/ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b.agent",
+      "sha256": "ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b"
+    },
+    {
+      "byteLength": 66,
+      "path": ".agentlang/library-closure-142/probe-before/project/.agentlang/store/objects/f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066.agent",
+      "sha256": "f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/probe-before/project/dictionary.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 376,
+      "path": ".agentlang/library-closure-142/probe-before/requests.jsonl",
+      "sha256": "0cd7c59d7680b341e47a9d11f2bb4d9a3b899e59b9c1af4f6359775cb382af26"
+    },
+    {
+      "byteLength": 4103,
+      "path": ".agentlang/library-closure-142/probe-before/responses.jsonl",
+      "sha256": "90b95291eac2fdb926a93b36b20b0fe5a8a5e404ca8a12c076e2c41c05fa6dbb"
+    },
+    {
+      "byteLength": 134,
+      "path": ".agentlang/library-closure-142/probe-seed/project/.agentlang/store/CURRENT",
+      "sha256": "be01bac771d0f97220db343e7ce7c3a478bc3adc5b484c5cb19be3524ca98b08"
+    },
+    {
+      "byteLength": 3065,
+      "path": ".agentlang/library-closure-142/probe-seed/project/.agentlang/store/manifests/7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959.json",
+      "sha256": "7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959"
+    },
+    {
+      "byteLength": 163,
+      "path": ".agentlang/library-closure-142/probe-seed/project/.agentlang/store/objects/3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21.agent",
+      "sha256": "3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21"
+    },
+    {
+      "byteLength": 65,
+      "path": ".agentlang/library-closure-142/probe-seed/project/.agentlang/store/objects/7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee.agent",
+      "sha256": "7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/probe-seed/project/.agentlang/store/objects/ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 83,
+      "path": ".agentlang/library-closure-142/probe-seed/project/.agentlang/store/objects/eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def.agent",
+      "sha256": "eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def"
+    },
+    {
+      "byteLength": 151,
+      "path": ".agentlang/library-closure-142/probe-seed/project/.agentlang/store/objects/ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b.agent",
+      "sha256": "ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b"
+    },
+    {
+      "byteLength": 66,
+      "path": ".agentlang/library-closure-142/probe-seed/project/.agentlang/store/objects/f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066.agent",
+      "sha256": "f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/probe-seed/project/dictionary.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 658,
+      "path": ".agentlang/library-closure-142/probe-seed/requests.jsonl",
+      "sha256": "32e0ca345fd5eced440bc705abb93522e5ccfe8114acb653e2fb29e6b471c166"
+    },
+    {
+      "byteLength": 899,
+      "path": ".agentlang/library-closure-142/probe-seed/responses.jsonl",
+      "sha256": "f5ff9e12ee7b22309c09201f9c4a872a6ac05929d03cc562d30300bfa4099857"
+    },
+    {
+      "byteLength": 534,
+      "path": ".agentlang/library-closure-142/probe-seed/source.agent",
+      "sha256": "dcf2665c3bff12af1db0f104a61e15093e08934bedef2987f918e58df2900e2f"
+    },
+    {
+      "byteLength": 524,
+      "path": ".agentlang/library-closure-142/probe-task.md",
+      "sha256": "3019531b12ceb83de1bca10251fab2bc90ca78da4ade432be59e16dbe00d1eaa"
+    },
+    {
+      "byteLength": 553,
+      "path": ".agentlang/library-closure-142/root-cli-build.log",
+      "sha256": "04d6fe3104002e70746b63a7e653a7d9c3fc3a0d4a1b014006daf47310b2e1e5"
+    },
+    {
+      "byteLength": 445,
+      "path": ".agentlang/library-closure-142/runtime-focused/cli-build.log",
+      "sha256": "d7bd864ab1e6393e0f0581e3d6c109d9f72022f303f91ad4c395cb5e2807edd3"
+    },
+    {
+      "byteLength": 56,
+      "path": ".agentlang/library-closure-142/runtime-focused/focused-runtime-final.log",
+      "sha256": "609405d80dfad817be686d2d9e17c2290f9336b5fd2da2304fede8285d055f7e"
+    },
+    {
+      "byteLength": 56,
+      "path": ".agentlang/library-closure-142/runtime-focused/focused-runtime-rerun.log",
+      "sha256": "5c4b630817e7ffd14ad03696a89bda7896e2b13d14123da3fd6bf6420d06d4f0"
+    },
+    {
+      "byteLength": 749,
+      "path": ".agentlang/library-closure-142/runtime-focused/focused-runtime.log",
+      "sha256": "40880074894c8143e06e39b6bd75c17e4e20b49694e5a99201a9721677f88892"
+    },
+    {
+      "byteLength": 13201,
+      "path": ".agentlang/library-closure-142/score-probe.py",
+      "sha256": "56ca7021b32c163c6accc1bec9f7c785bf3f6af1d50d9f022d7cd6609a541648"
+    },
+    {
+      "byteLength": 3,
+      "path": ".agentlang/library-closure-142/scoring-positive/candidate-session/exit-code.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "byteLength": 556,
+      "path": ".agentlang/library-closure-142/scoring-positive/candidate-session/process.json",
+      "sha256": "6a0d86b945d3b356c548cc2249e31b6e720f6b727c10dd6b856212ecfaf006ee"
+    },
+    {
+      "byteLength": 3602,
+      "path": ".agentlang/library-closure-142/scoring-positive/candidate-session/raw-responses.jsonl",
+      "sha256": "6f380662458c90eddd07ed3f739265984941f18b250d785e5e5ef93d8ebb35fc"
+    },
+    {
+      "byteLength": 542,
+      "path": ".agentlang/library-closure-142/scoring-positive/candidate-session/requests.jsonl",
+      "sha256": "8e604af42cc293e5323ada3960dbc62e24dc679f1114b7d0416470b0ba6ada30"
+    },
+    {
+      "byteLength": 0,
+      "path": ".agentlang/library-closure-142/scoring-positive/candidate-session/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "byteLength": 3602,
+      "path": ".agentlang/library-closure-142/scoring-positive/candidate-session/stdout.txt",
+      "sha256": "6f380662458c90eddd07ed3f739265984941f18b250d785e5e5ef93d8ebb35fc"
+    },
+    {
+      "byteLength": 134,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutant/project/.agentlang/store/CURRENT",
+      "sha256": "6c5bdc09a5c283723259c68cb4115fbe6e6b4c4a9dd6fe5db497648aa4a8b9fb"
+    },
+    {
+      "byteLength": 3065,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutant/project/.agentlang/store/manifests/7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959.json",
+      "sha256": "7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959"
+    },
+    {
+      "byteLength": 6193,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutant/project/.agentlang/store/manifests/9a8d5dfe66a9d389a660816710107d1523718e485a88a3b0b6de6f5ad79f5c94.json",
+      "sha256": "9a8d5dfe66a9d389a660816710107d1523718e485a88a3b0b6de6f5ad79f5c94"
+    },
+    {
+      "byteLength": 164,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutant/project/.agentlang/store/objects/0fce55dca25566e1565a5187001428ad5a0090ade99709576a57fb592259419f.agent",
+      "sha256": "0fce55dca25566e1565a5187001428ad5a0090ade99709576a57fb592259419f"
+    },
+    {
+      "byteLength": 163,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutant/project/.agentlang/store/objects/3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21.agent",
+      "sha256": "3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21"
+    },
+    {
+      "byteLength": 65,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutant/project/.agentlang/store/objects/7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee.agent",
+      "sha256": "7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee"
+    },
+    {
+      "byteLength": 773,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutant/project/.agentlang/store/objects/7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf.agent",
+      "sha256": "7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf"
+    },
+    {
+      "byteLength": 76,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutant/project/.agentlang/store/objects/cd11c3fecaa14c7a7369ba8404d670247082c572104e87274e3fba3b81bc4dab.agent",
+      "sha256": "cd11c3fecaa14c7a7369ba8404d670247082c572104e87274e3fba3b81bc4dab"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutant/project/.agentlang/store/objects/ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 83,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutant/project/.agentlang/store/objects/eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def.agent",
+      "sha256": "eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def"
+    },
+    {
+      "byteLength": 151,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutant/project/.agentlang/store/objects/ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b.agent",
+      "sha256": "ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b"
+    },
+    {
+      "byteLength": 66,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutant/project/.agentlang/store/objects/f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066.agent",
+      "sha256": "f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066"
+    },
+    {
+      "byteLength": 773,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutant/project/dictionary.agent",
+      "sha256": "7f0ec4e90e41602943d7697a48b0a53d4ed9878607846196928ff4ccc2cb1ddf"
+    },
+    {
+      "byteLength": 3,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutation-probe/exit-code.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "byteLength": 552,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutation-probe/process.json",
+      "sha256": "a3c4753c633a504ea8f1c4759f0a542297a3200870174617f801cacc1232da5b"
+    },
+    {
+      "byteLength": 1107,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutation-probe/raw-responses.jsonl",
+      "sha256": "a935b8f80699e1bd419ae8280d26d00011b8f28e3ae1b6e1c7d353ce462c41c4"
+    },
+    {
+      "byteLength": 303,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutation-probe/requests.jsonl",
+      "sha256": "cb08e75a96634fa93b84a1ffdbc21f97043bdc72a0c3f524cb098d488594869a"
+    },
+    {
+      "byteLength": 0,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutation-probe/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "byteLength": 1107,
+      "path": ".agentlang/library-closure-142/scoring-positive/mutation-probe/stdout.txt",
+      "sha256": "a935b8f80699e1bd419ae8280d26d00011b8f28e3ae1b6e1c7d353ce462c41c4"
+    },
+    {
+      "byteLength": 6901,
+      "path": ".agentlang/library-closure-142/scoring-positive/result.json",
+      "sha256": "e601143a11183866053cfb5d9d957567173e74397ec44f0264927718e21bf3cc"
+    },
+    {
+      "byteLength": 3,
+      "path": ".agentlang/library-closure-142/scoring-seed/candidate-session/exit-code.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "byteLength": 524,
+      "path": ".agentlang/library-closure-142/scoring-seed/candidate-session/process.json",
+      "sha256": "222dfdcdae366a5bfc9242505038d883141a9056e5ad8390d9002f0f35ddc2b6"
+    },
+    {
+      "byteLength": 3626,
+      "path": ".agentlang/library-closure-142/scoring-seed/candidate-session/raw-responses.jsonl",
+      "sha256": "6f3a50f9cdb3c44b69991bd831385e69f35b1d0bab31a57090ac03a4cb2ca9f7"
+    },
+    {
+      "byteLength": 542,
+      "path": ".agentlang/library-closure-142/scoring-seed/candidate-session/requests.jsonl",
+      "sha256": "8e604af42cc293e5323ada3960dbc62e24dc679f1114b7d0416470b0ba6ada30"
+    },
+    {
+      "byteLength": 0,
+      "path": ".agentlang/library-closure-142/scoring-seed/candidate-session/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "byteLength": 3626,
+      "path": ".agentlang/library-closure-142/scoring-seed/candidate-session/stdout.txt",
+      "sha256": "6f3a50f9cdb3c44b69991bd831385e69f35b1d0bab31a57090ac03a4cb2ca9f7"
+    },
+    {
+      "byteLength": 134,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutant/project/.agentlang/store/CURRENT",
+      "sha256": "be01bac771d0f97220db343e7ce7c3a478bc3adc5b484c5cb19be3524ca98b08"
+    },
+    {
+      "byteLength": 3065,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutant/project/.agentlang/store/manifests/7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959.json",
+      "sha256": "7e960554cfd2457d9efbda7bb3af8e96992e3ed2a5cf9b5d2a71aa2116da3959"
+    },
+    {
+      "byteLength": 163,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutant/project/.agentlang/store/objects/3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21.agent",
+      "sha256": "3760791fd5df8e77786051a584d39b502d70dcfac5d04a9e7677191c02588b21"
+    },
+    {
+      "byteLength": 65,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutant/project/.agentlang/store/objects/7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee.agent",
+      "sha256": "7e17b7c644a95aafa5b7bb14187a4fbb756c7a94680295c0fe1743c7db898cee"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutant/project/.agentlang/store/objects/ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 83,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutant/project/.agentlang/store/objects/eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def.agent",
+      "sha256": "eb6f6a224265d34f2a4b6e9f3cc863d08696c2af9a39fc6188272bb0cd8b7def"
+    },
+    {
+      "byteLength": 151,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutant/project/.agentlang/store/objects/ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b.agent",
+      "sha256": "ef3f82032244b762a0bb5fa135f2a2605484419aa19f380b07ec1c2215235b7b"
+    },
+    {
+      "byteLength": 66,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutant/project/.agentlang/store/objects/f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066.agent",
+      "sha256": "f6ddde0b8bdf1e14340745c71c0bab410a93d62fa10c5a16d947502ef3d0d066"
+    },
+    {
+      "byteLength": 666,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutant/project/dictionary.agent",
+      "sha256": "ce5436752beea79bc07e772d2970b968e6418d3cd3b85fd1d271a5c15733cced"
+    },
+    {
+      "byteLength": 3,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutation-probe/exit-code.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "byteLength": 544,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutation-probe/process.json",
+      "sha256": "f10bb436b3c164f0baca3f1be91c06119b2e1a7689adacf2693d613b58228819"
+    },
+    {
+      "byteLength": 1002,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutation-probe/raw-responses.jsonl",
+      "sha256": "8f8fec0b85f8babc7a8d24038c3c6ee3ce90ed1a7b30809490f11617340b3923"
+    },
+    {
+      "byteLength": 303,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutation-probe/requests.jsonl",
+      "sha256": "99815981039a4300076bfc65fe2cfc0a8d45fdbe294c215a2c6e576731413175"
+    },
+    {
+      "byteLength": 0,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutation-probe/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "byteLength": 1002,
+      "path": ".agentlang/library-closure-142/scoring-seed/mutation-probe/stdout.txt",
+      "sha256": "8f8fec0b85f8babc7a8d24038c3c6ee3ce90ed1a7b30809490f11617340b3923"
+    },
+    {
+      "byteLength": 6708,
+      "path": ".agentlang/library-closure-142/scoring-seed/result.json",
+      "sha256": "18febe19d5b565af6aa3245572beebe344d02812c9f0d4f5d9da27b56209c30e"
+    },
+    {
+      "byteLength": 1847,
+      "path": ".agentlang/library-closure-142/validation-rechecks.json",
+      "sha256": "66fd641a94df3724b70273892989338cbba8b67a6f49464eebb34c8150b42168"
+    },
+    {
+      "byteLength": 4069,
+      "path": "docs/LIBRARY-CLOSURE-VALIDATION.md",
+      "sha256": "96b9fbf6941f178ef52f27264162a86b9902fd0fd3695caa4019e1740a357b22"
+    },
+    {
+      "byteLength": 15874,
+      "path": "scripts/Audit-SubagentTrialTerminationV2.ps1",
+      "sha256": "870ff9b9a1843c0a104d2185688486c7ed1e85399df6c554f9ee890c4dcf4a10"
+    },
+    {
+      "byteLength": 81288,
+      "path": "scripts/Start-SubagentTrialHostV2.ps1",
+      "sha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b"
+    },
+    {
+      "byteLength": 49464,
+      "path": "scripts/Verify-SubagentTrialHostV2.ps1",
+      "sha256": "5b1c351b4e1917db0d6c0f2f7342e9e05cd3ff73f5237accda32359af9665041"
+    },
+    {
+      "byteLength": 30494,
+      "path": "src/AgentLang.Core/AuthoringHelp.fs",
+      "sha256": "87f388467bfa8c9bb754fe61235ddea479f2ee9667095016a7693a77eaf9c725"
+    },
+    {
+      "byteLength": 385478,
+      "path": "src/AgentLang.Core/Runtime.fs",
+      "sha256": "183e51c9814e21d7ffcaa4210fd75b3754e4d0f0a449598215178477f9242eb2"
+    },
+    {
+      "byteLength": 146473,
+      "path": "tests/AgentLang.Acceptance/Program.fs",
+      "sha256": "2fca03ad9a0029609f092c3fa7cff1ebb9add024f481104dc6ecb4f61a778348"
+    },
+    {
+      "byteLength": 320347,
+      "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "sha256": "cf909b7f7ce6ba1be79801c961b253d3914ac202aaa9eb1e968123521663cdfd"
+    }
+  ],
+  "exclusions": {
+    "directoryNames": [
+      "__pycache__",
+      "artifacts",
+      "bin",
+      "obj",
+      "root-cli-artifacts",
+      "temp",
+      "tmp"
+    ],
+    "fileNames": [
+      "write.lock",
+      "credential-named files",
+      ".env files"
+    ],
+    "fileSuffixes": [
+      ".a",
+      ".bin",
+      ".class",
+      ".dll",
+      ".dylib",
+      ".exe",
+      ".key",
+      ".o",
+      ".obj",
+      ".p12",
+      ".pdb",
+      ".pem",
+      ".pfx",
+      ".pyc",
+      ".pyo",
+      ".so"
+    ]
+  },
+  "schemaVersion": 1
+}

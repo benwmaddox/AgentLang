@@ -496,43 +496,7 @@ module Runtime =
             Map.fold (fun found name value ->
                 if value.Builtin.IsNone then Map.add name value found else found) withGenerated state.Words
 
-        let enumReferencesInOwnDefinition (state: DictionaryState) (words: Map<string, WordEntry>) (item: WordEntry) =
-            let referencesInType (typeValue: LangType) =
-                let rec visit = function
-                    | TNamed name when state.Enums.ContainsKey name -> Set.singleton name
-                    | TNamed name ->
-                        match state.Records.TryFind name, state.Scalars.TryFind name with
-                        | Some record, _ -> record.Definition.Fields |> List.map (fun field -> visit field.Type) |> Set.unionMany
-                        | None, Some scalar -> visit scalar.Definition.BaseType
-                        | _ -> Set.empty
-                    | TList nested | TOption nested -> visit nested
-                    | TResult(okType, errorType) -> Set.union (visit okType) (visit errorType)
-                    | _ -> Set.empty
-                visit typeValue
-            let signatures = item.Definition.Inputs @ item.Definition.Outputs |> List.map referencesInType |> Set.unionMany
-            let bodyTypes = expressionTypeReferences item.Definition.Body |> Set.toList |> List.map (TNamed >> referencesInType) |> Set.unionMany
-            let calledEnumConstructor =
-                item.Definition.Body
-                |> Compiler.dependencies
-                |> Set.toList
-                |> List.choose (fun dependency ->
-                    match words.TryFind dependency with
-                    | Some { Builtin = Some(EnumCaseConstructor(enumName, _)) } -> Some enumName
-                    | _ -> None)
-                |> Set.ofList
-            let rec hasEnumMatch expressions =
-                expressions
-                |> List.exists (function
-                    | MatchEnum _ -> true
-                    | If(thenBranch, elseBranch, _)
-                    | MatchOption(_, thenBranch, elseBranch, _) -> hasEnumMatch thenBranch || hasEnumMatch elseBranch
-                    | MatchResult(_, _, okBranch, errorBranch, _) -> hasEnumMatch okBranch || hasEnumMatch errorBranch
-                    | Scope(body, _) -> hasEnumMatch body
-                    | _ -> false)
-            let matchMarker = if hasEnumMatch item.Definition.Body then Set.singleton "<enum match>" else Set.empty
-            Set.unionMany [ signatures; bodyTypes; calledEnumConstructor; matchMarker ]
-
-        let rejectUncheckedEnumHelpers (state: DictionaryState) (words: Map<string, WordEntry>) (wordName: string) =
+        let rejectUnqualifiedLibraryDependencies (words: Map<string, WordEntry>) (wordName: string) =
             match words.TryFind wordName with
             | Some item when item.Maturity = LibraryWord && item.Builtin.IsNone ->
                 let pending = Compiler.dependencies item.Definition.Body |> Set.toList
@@ -542,17 +506,23 @@ module Runtime =
                     | name :: rest when seen.Contains name -> visit seen rest
                     | name :: rest ->
                         match words.TryFind name with
+                        | Some dependency when dependency.Builtin.IsNone && dependency.Status = Candidate ->
+                            // Candidate dependencies may be qualified together at commit.
+                            // Publication checks their final status and maturity after
+                            // the selected group has passed every own gate.
+                            visit (Set.add name seen) rest
                         | Some dependency when dependency.Builtin.IsNone ->
                             let seen = Set.add name seen
-                            let dependencyEnums = enumReferencesInOwnDefinition state words dependency
-                            if not dependencyEnums.IsEmpty && dependency.Maturity <> LibraryWord then
-                                Some(name, dependencyEnums)
+                            if dependency.Status <> Persistent || dependency.Maturity <> LibraryWord then
+                                Some name
                             else visit seen (rest @ (Compiler.dependencies dependency.Definition.Body |> Set.toList))
                         | _ -> visit (Set.add name seen) rest
                 match visit Set.empty pending with
-                | Some(name, references) ->
-                    error "LIBRARY_FINITE_DOMAIN_UNSUPPORTED" $"Library word '{wordName}' reaches enum implementation '{name}' before that helper has independently qualified finite coverage." (Some wordName) (Some item.Definition.Span)
-                        [ "enum-bearing helper committed as a library word with its own complete tests" ] (name :: Set.toList references)
+                | Some name ->
+                    error "LIBRARY_DEPENDENCY_NOT_QUALIFIED"
+                        $"Library word '{wordName}' depends on authored helper '{name}', which is not a persistent library word. Commit '{name}' as a library word with its own passing tests and complete coverage, then retry."
+                        (Some wordName) (Some item.Definition.Span)
+                        [ "every authored dependency committed as a library word" ] [ name ]
                 | None -> ()
             | _ -> ()
 
@@ -2412,7 +2382,7 @@ module Runtime =
             |> List.filter (fun (_, entry) -> entry.Builtin.IsNone && entry.Status = Persistent && entry.Maturity = LibraryWord)
             |> List.sortBy fst
             |> List.iter (fun (name, _) ->
-                rejectUncheckedEnumHelpers snapshot.State snapshot.Words name
+                rejectUnqualifiedLibraryDependencies snapshot.Words name
                 let tests = runTestsFor snapshot (Some name)
                 preflightStructuredTestResults snapshot.Program tests
                 let failed = tests |> List.filter (fun result -> not result.Passed)
@@ -2862,7 +2832,7 @@ module Runtime =
             let executable = compileRuntimeSnapshot proposed
             for definition in parsed.Words do
                 if old.Words.TryFind definition.Name |> Option.exists (fun prior -> prior.Maturity = LibraryWord) then
-                    rejectUncheckedEnumHelpers executable.State executable.Words definition.Name
+                    rejectUnqualifiedLibraryDependencies executable.Words definition.Name
             let frozen = frozenValidatorWords old (effectiveWords old)
             let changed = parsed.Words |> List.map (fun word -> word.Name) |> Set.ofList
             let conflict = Set.intersect frozen changed
@@ -3110,7 +3080,7 @@ module Runtime =
                     Enums = proposedEnums
                     Replacements = data.Replacements |> Map.filter (fun name _ -> not (selectedWords.Contains name)) }
             for name in selectedWords do
-                rejectUncheckedEnumHelpers proposed (effectiveWords proposed) name
+                rejectUnqualifiedLibraryDependencies (effectiveWords proposed) name
             compileRuntimeSnapshot proposed |> ignore
             for name in selectedWords do
                 let candidate = candidateWords[name]
@@ -3155,6 +3125,10 @@ module Runtime =
                 callers <- Set.union callers nextCallers
                 changedNames <- Set.union changedNames nextCallers
                 foundCallers <- not nextCallers.IsEmpty
+            for caller in callers do
+                if not (selectedWords.Contains caller)
+                   && (durableProposed.Words.TryFind caller |> Option.exists (fun entry -> entry.Maturity = LibraryWord)) then
+                    rejectUnqualifiedLibraryDependencies (effectiveWords durableProposed) caller
             let callerResults =
                 callers
                 |> Set.filter (fun caller -> not (selectedWords.Contains caller))
@@ -3893,7 +3867,7 @@ module Runtime =
                     Replacements = replacementBackups }
             let executable = compileRuntimeSnapshot proposed
             if maturity = LibraryWord then
-                rejectUncheckedEnumHelpers executable.State executable.Words parsedWord.Name
+                rejectUnqualifiedLibraryDependencies executable.Words parsedWord.Name
             let frozen = frozenValidatorWords old (effectiveWords old)
             if frozen.Contains parsedWord.Name then
                 error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{parsedWord.Name}' while a nominal type is persistent." (Some parsedWord.Name) (Some parsedWord.Span) [] [ parsedWord.Name ]
@@ -4815,7 +4789,7 @@ module Runtime =
                                 |> Set.ofList
                             let changedWordNames = Set.union changedStackOwnerNames changedFlowOwnerNames
                             for name in changedWordNames do
-                                rejectUncheckedEnumHelpers executable.State executable.Words name
+                                rejectUnqualifiedLibraryDependencies executable.Words name
                             let testOwnersToRun = Set.union changedWordNames changedStackAttachmentOwners
                             let results =
                                 testOwnersToRun
@@ -4958,7 +4932,7 @@ module Runtime =
                             let failed = tests |> List.filter (fun result -> not result.Passed)
                             if not (List.isEmpty failed) then error "DEPRECATE_TESTS_FAILED" "The word's attached tests must pass before deprecation." (Some name) None [] (failed |> List.map (fun result -> result.Name))
                             if item.Maturity = LibraryWord then
-                                rejectUncheckedEnumHelpers testSnapshot.State testSnapshot.Words name
+                                rejectUnqualifiedLibraryDependencies testSnapshot.Words name
                                 requireLibraryCoverage testSnapshot name tests
                             let history =
                                 let previous = data.History.TryFind name |> Option.defaultValue []

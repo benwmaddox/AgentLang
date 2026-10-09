@@ -2228,6 +2228,9 @@ test coverage.map-count/empty
 end
 """
         define runtime mapDefinitions |> expectOk "define map library word with empty test" |> ignore
+        dispatch runtime "commit" [ "word", jsonString "coverage.increment"; "library", jsonBool true ]
+        |> expectOk "qualify map callback before checking owner coverage"
+        |> ignore
         let mapCommit = [ "word", jsonString "coverage.map-count"; "library", jsonBool true ]
         let missingNonemptyMap = dispatch runtime "commit" mapCommit |> expectError "LIBRARY_COVERAGE_INCOMPLETE"
         check ((missingNonemptyMap["error"]["actual"]).ToJsonString().Contains("nonempty", StringComparison.Ordinal)) "map coverage reports nonempty iteration"
@@ -2250,6 +2253,11 @@ test coverage.negative?/negative
     => true
 end
 
+test coverage.negative?/nonnegative
+    0 coverage.negative?
+    => false
+end
+
 word coverage.negative-count : List<Int> -> Int
     effects none
     list.filter coverage.negative?
@@ -2262,6 +2270,9 @@ test coverage.negative-count/empty
 end
 """
         define runtime filterDefinitions |> expectOk "define filter library word with empty test" |> ignore
+        dispatch runtime "commit" [ "word", jsonString "coverage.negative?"; "library", jsonBool true ]
+        |> expectOk "qualify filter callback before checking owner coverage"
+        |> ignore
         let filterCommit = [ "word", jsonString "coverage.negative-count"; "library", jsonBool true ]
         let missingFilterOutcomes = dispatch runtime "commit" filterCommit |> expectError "LIBRARY_COVERAGE_INCOMPLETE"
         for outcome in [ "nonempty"; "keep"; "drop" ] do
@@ -2296,6 +2307,9 @@ test coverage.each/empty
 end
 """
         define runtime eachDefinitions |> expectOk "define each library word with empty test" |> ignore
+        dispatch runtime "commit" [ "word", jsonString "coverage.ignore"; "library", jsonBool true ]
+        |> expectOk "qualify each callback before checking owner coverage"
+        |> ignore
         let eachCommit = [ "word", jsonString "coverage.each"; "library", jsonBool true ]
         let missingEachIteration = dispatch runtime "commit" eachCommit |> expectError "LIBRARY_COVERAGE_INCOMPLETE"
         check ((missingEachIteration["error"]["actual"]).ToJsonString().Contains("nonempty", StringComparison.Ordinal)) "each coverage reports nonempty iteration"

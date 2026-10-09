@@ -20,6 +20,19 @@ audit for the solution build and child verification processes; report this
 limitation. Both options are opt-in, and the evidence records the options and
 exact build arguments. `Verify-NativeDispatch.ps1` accepts the same options.
 
+Latest library-contract checkpoint: [142 — Library dependency qualification](142-library-dependency-qualification.md)
+extends qualification to all authored dependencies. A fresh guided subagent
+preserves the two-function composition and adds effective helper regression
+coverage. Independent acceptance passes; this is one language-only usability
+probe, not comparative reliability evidence. Local validation completed after
+repairing a legacy callback fixture; the original failed gate and passing rerun
+are both retained.
+
+Latest matched comparison: [141 — Shared-rule maintenance](141-paid-invoice-maintenance.md)
+has correct behavior and shared structure in both language and both F# submissions.
+The separate newly-authored-test criterion fails in three submissions despite
+retained passing regressions. This does not establish a language reliability lead.
+
 Latest design research: [127 — Midori and Goose comparisons](127-memory-design-comparisons.md)
 records external architectural references and hypotheses for memory experiments.
 It is a documentation-only checkpoint preceding the native results below;
@@ -49,7 +62,7 @@ integration passes 353 checks, native conformance 476 assertions, and the full
 local Release gate all 37 checks. Real async I/O, throughput, JIT and general
 release certification remain pending; this is not new agent-efficacy evidence.
 
-Latest comparison: [125 — Matched pair repair](125-matched-pair-repair.md) records
+Earlier comparison: [125 — Matched pair repair](125-matched-pair-repair.md) records
 six fresh agents, each passing 12/12 frozen independent cases. Retained Flow and
 F# actors reuse their existing helper; no reliability advantage is established.
 One retained actor skips task.commit, so behavior and workflow completion are

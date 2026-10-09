@@ -494,11 +494,16 @@ blocked library replacement. This establishes bounded usability, not comparative
 reliability or a causal estimate from two actors. Keep help examples version-matched
 in future trials. Explicit provider-state assertions remain pending.
 
-Implement the remaining approved module boundaries and dependency-closure rules:
-cross-module authored calls require library qualification; library functions
-call only qualified authored library functions or trusted/generated operations.
-Qualification must become invalid when its bound dependency contracts change.
-These broader rules are distinct from the implemented finite input/return gate.
+[Report 142](../reports/142-library-dependency-qualification.md) implements the
+all-authored library dependency closure, including collection callbacks. Library
+publication and affected durable callers require qualified authored dependencies
+or trusted/generated operations; each library member retains its own test gate.
+A fresh guided subagent qualified a wrapper and helper and added a missing own
+test that rejects the controlled false-branch defect. This is bounded adoption
+evidence, not a matched reliability result. Local validation is complete after
+repairing the legacy callback test setup; original failure and rerun are retained.
+Explicit module membership and cross-module access enforcement remain pending.
+Do not infer modules from dotted names.
 Deterministic injectable effects retain capability and declared-effect
 enforcement.
 Add test-local typed dictionary overrides as well: nested calls can see a scoped

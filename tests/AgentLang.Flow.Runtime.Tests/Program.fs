@@ -245,6 +245,7 @@ module Program =
         check (not (fieldNames |> List.contains "code")) "Flow define help does not advertise a code alias"
         check ((stringValue defineData.["documentation"]).Contains("doc", StringComparison.Ordinal)) "define help explains inline word documentation"
         check ((stringValue defineData.["documentation"]).Contains("effects", StringComparison.Ordinal)) "define help explains effect declarations"
+        check ((stringValue defineData.["documentation"]).Contains("authored dependencies committed as library words", StringComparison.Ordinal)) "define help explains qualified library dependencies"
         equal [ "tutorial-sign" ]
             (defineData.["sourceExamples"].AsArray() |> Seq.map (fun item -> stringValue item.["name"]) |> Seq.toList)
             "default Flow/1 define help preserves its existing source-example inventory"
@@ -260,7 +261,7 @@ module Program =
         let defineHelpDataV2 = defineHelpV2.["data"]
         equal 2 ((defineHelpDataV2.["syntaxVersion"]).GetValue<int>()) "help response records selected syntaxVersion"
         check ((stringValue (defineHelpDataV2.["documentation"])).Contains("Flow/2", StringComparison.Ordinal)) "Flow/2 help identifies its selected syntax"
-        for guidance in [ "eval"; "`code`"; "define uses `source`"; "`word`"; "`type`"; "unchecked construction candidate"; "completed false return"; "caller-owned tests do not qualify the callee"; "generated constructors cannot own authored Flow tests" ] do
+        for guidance in [ "eval"; "`code`"; "define uses `source`"; "`word`"; "`type`"; "unchecked construction candidate"; "completed false return"; "caller-owned tests do not qualify the callee"; "generated constructors cannot own authored Flow tests"; "authored dependencies committed as library words" ] do
             check ((stringValue defineHelpDataV2.["documentation"]).Contains(guidance, StringComparison.Ordinal)) $"Flow/2 Define help explains {guidance}"
         equal [ "tutorial-sign"; "tutorial-span-validator" ]
             (defineHelpDataV2.["sourceExamples"].AsArray() |> Seq.map (fun item -> stringValue item.["name"]) |> Seq.toList)
@@ -1038,6 +1039,169 @@ module Program =
             | FlowAstPath.FlowAstPath path ->
                 { binding with Path = FlowAstPath.FlowAstPath(path |> List.map (function | FlowAstPathSegment.EnumCaseStatement(0, statement) -> FlowAstPathSegment.EnumCaseStatement(0, statement + 1) | segment -> segment)) })
 
+    let private testLibraryDependencyQualification root =
+        let directProject = Path.Combine(root, "library-dependency-direct")
+        let directEngine = Runtime.Engine(directProject, Set.empty)
+        let directSource =
+            "fn direct.helper(value: Int) -> Int { add(value, 1) }\n\n"
+            + "fn direct.wrapper(value: Int) -> Int { direct::helper(value) }\n\n"
+            + "test direct.helper/basic { direct::helper(1) => 2 }\n\n"
+            + "test direct.wrapper/basic { direct::wrapper(1) => 2 }"
+        defineFlowProject directEngine directSource [ "syntaxVersion", jint 2 ] |> expectOk "stage an ordinary helper and its wrapper" |> ignore
+        commit directEngine "commit" "direct.helper" [] |> expectOk "persist the ordinary direct helper" |> ignore
+        let directStore = Storage.create directProject
+        let beforeDirectReject = Storage.load directStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let directRejected = commit directEngine "commit" "direct.wrapper" [ "library", jbool true ] |> expectError "LIBRARY_DEPENDENCY_NOT_QUALIFIED"
+        let directDiagnostic = directRejected.["error"]
+        equal "direct.wrapper" (stringValue directDiagnostic.["word"]) "direct dependency diagnostic names the library target"
+        check ((stringValue directDiagnostic.["message"]).Contains("direct.helper", StringComparison.Ordinal)) "direct dependency diagnostic names the ordinary helper"
+        equal beforeDirectReject.ManifestHash (Storage.load directStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.ManifestHash) "direct dependency rejection leaves the manifest unchanged"
+        equal "candidate" (stringValue ((findWord (dispatch directEngine "words" [] |> expectOk "inspect direct rejection state") "direct.wrapper").["status"])) "direct dependency rejection leaves the wrapper staged"
+
+        let callbackProject = Path.Combine(root, "library-dependency-callback")
+        let callbackEngine = Runtime.Engine(callbackProject, Set.empty)
+        let callbackSource =
+            "fn callback.helper(value: Int) -> Int { add(value, 1) }\n\n"
+            + "fn callback.owner(values: List<Int>) -> Int { list::count(values.map(callback::helper)) }\n\n"
+            + "test callback.helper/basic { callback::helper(1) => 2 }\n\n"
+            + "test callback.owner/basic { callback::owner(list::singleton<Int>(1)) => 1 }"
+        defineFlowProject callbackEngine callbackSource [ "syntaxVersion", jint 2 ] |> expectOk "stage a static collection callback caller" |> ignore
+        let callbackDependencies = dispatch callbackEngine "dependencies" [ "word", jstr "callback.owner" ] |> expectOk "inspect the static callback dependency"
+        check (jsonArrayStrings callbackDependencies.["data"].["dependencies"] |> List.contains "callback.helper") "the collection callback is present in compiler dependencies"
+        commit callbackEngine "commit" "callback.helper" [] |> expectOk "persist the ordinary callback helper" |> ignore
+        let beforeCallbackReject = Storage.load (Storage.create callbackProject) |> Result.defaultWith (fun problem -> failwith problem.Message)
+        commit callbackEngine "commit" "callback.owner" [ "library", jbool true ]
+        |> expectError "LIBRARY_DEPENDENCY_NOT_QUALIFIED"
+        |> ignore
+        equal beforeCallbackReject.ManifestHash (Storage.load (Storage.create callbackProject) |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.ManifestHash) "callback dependency rejection leaves the manifest unchanged"
+
+        let ordinaryProject = Path.Combine(root, "library-dependency-ordinary-composition")
+        let ordinaryEngine = Runtime.Engine(ordinaryProject, Set.empty)
+        let ordinarySource =
+            "fn z.leaf(value: Int) -> Int { add(value, 1) }\n\n"
+            + "fn z.middle(value: Int) -> Int { z::leaf(value) }\n\n"
+            + "fn a.root(value: Int) -> Int { z::middle(value) }\n\n"
+            + "test z.leaf/basic { z::leaf(1) => 2 }\n\n"
+            + "test z.middle/basic { z::middle(1) => 2 }\n\n"
+            + "test a.root/basic { a::root(1) => 2 }"
+        defineFlowProject ordinaryEngine ordinarySource [ "syntaxVersion", jint 2 ] |> expectOk "stage a transitive ordinary composition" |> ignore
+        commit ordinaryEngine "commit" "" [] |> expectOk "commit the ordinary composition together" |> ignore
+        equal "2" (stringValue (evalFlow ordinaryEngine "a::root(1)" |> expectOk "evaluate ordinary-to-ordinary composition" |> fun response -> response.["data"].["stack"].[0])) "ordinary words may compose through ordinary dependencies"
+        for name in [ "a.root"; "z.middle"; "z.leaf" ] do
+            equal "project" (stringValue (dispatch ordinaryEngine "describe" [ "word", jstr name ] |> expectOk "inspect ordinary composition maturity" |> fun response -> response.["data"].["maturity"])) $"ordinary composition keeps {name} at project maturity"
+
+        let ordinaryStore = Storage.create ordinaryProject
+        let ordinaryManifest = (Storage.load ordinaryStore |> Result.defaultWith (fun problem -> failwith problem.Message)).Manifest |> Option.defaultWith (fun () -> failwith "ordinary composition did not persist")
+        let libraryNames = Set.ofList [ "a.root"; "z.middle" ]
+        let forgedManifest =
+            { ordinaryManifest with
+                Revisions = ordinaryManifest.Revisions |> List.map (fun revision -> if libraryNames.Contains revision.Name then { revision with Maturity = LibraryWord } else revision) }
+        let sourceReferences =
+            [ ordinaryManifest.ProjectSource ]
+            @ (ordinaryManifest.Types |> List.map (fun value -> value.Definition))
+            @ (ordinaryManifest.Revisions |> List.collect (fun revision -> [ revision.Definition ] @ revision.Tests @ revision.Examples))
+            |> List.distinct
+        let sourceObjects =
+            sourceReferences
+            |> List.map (fun reference ->
+                { Reference = reference
+                  Content = Storage.readSource ordinaryStore reference |> Result.defaultWith (fun problem -> failwith problem.Message) })
+        let forgedProject = Path.Combine(root, "library-dependency-forged-transitive")
+        Storage.commit (Storage.create forgedProject) 0L forgedManifest sourceObjects (File.ReadAllText(Path.Combine(ordinaryProject, "dictionary.agent")))
+        |> Result.defaultWith (fun problem -> failwith $"could not persist the exact-source transitive qualification fixture: {problem.Code}: {problem.Message}")
+        |> ignore
+        let transitiveDiagnostic =
+            try
+                Runtime.Engine(forgedProject, Set.empty) |> ignore
+                failwith "fresh Engine accepted a persisted transitive library dependency on a project word"
+            with
+            | LanguageException diagnostic -> diagnostic
+        equal "LIBRARY_DEPENDENCY_NOT_QUALIFIED" transitiveDiagnostic.Code "reload requalification uses the library dependency diagnostic"
+        equal (Some "a.root") transitiveDiagnostic.Word "transitive dependency diagnostic names the outer library target"
+        equal [ "z.leaf" ] transitiveDiagnostic.Actual "transitive dependency diagnostic names the first unqualified leaf"
+
+        let groupProject = Path.Combine(root, "library-dependency-group")
+        let groupEngine = Runtime.Engine(groupProject, Set.empty)
+        let groupSource =
+            "enum GroupState { case ready; }\n\n"
+            + "fn group.helper(value: Int) -> Int { add(value, 1) }\n\n"
+            + "fn group.wrapper(value: Int) -> Int { group::helper(value) }\n\n"
+            + "fn group.generated(value: Int) -> Int { GroupState::ready(); add(value, 1) }\n\n"
+            + "test group.helper/basic { group::helper(1) => 2 }\n\n"
+            + "test group.wrapper/basic { group::wrapper(1) => 2 }\n\n"
+            + "test group.generated/basic { group::generated(1) => 2 }"
+        defineFlowProject groupEngine groupSource [ "syntaxVersion", jint 2 ] |> expectOk "stage a mutually dependent library candidate group" |> ignore
+        commit groupEngine "commit" "" [ "library", jbool true ] |> expectOk "qualify the selected acyclic library group atomically" |> ignore
+        for name in [ "group.helper"; "group.wrapper"; "group.generated" ] do
+            equal "library" (stringValue (dispatch groupEngine "describe" [ "word", jstr name ] |> expectOk "inspect group library maturity" |> fun response -> response.["data"].["maturity"])) $"group commit qualifies {name}"
+        let groupReload = Runtime.Engine(groupProject, Set.empty)
+        assertAllPassed 1 (dispatch groupReload "test" [ "word", jstr "group.wrapper" ] |> expectOk "reload the qualified group")
+        equal "2" (stringValue (evalFlow groupReload "group::wrapper(1)" |> expectOk "execute reloaded qualified composition" |> fun response -> response.["data"].["stack"].[0])) "qualified helper composition survives reload"
+
+        let groupRevision name =
+            dispatch groupEngine "describe" [ "word", jstr name ]
+            |> expectOk $"inspect {name} before grouped replacement"
+            |> fun response -> response.["data"].["revision"].GetValue<int>()
+        let stageGroupReplacement name source testSource expectedRevision =
+            defineFlow groupEngine source [ testSource ] [] [ "replace", jbool true; "expectedRevision", jint expectedRevision; "syntaxVersion", jint 2 ]
+            |> expectOk $"stage grouped replacement for {name}"
+            |> ignore
+        let helperRevision = groupRevision "group.helper"
+        let wrapperRevision = groupRevision "group.wrapper"
+        stageGroupReplacement "group.helper" "fn group.helper(value: Int) -> Int { add(value, 2) }" "test group.helper/basic { group::helper(1) => 3 }" helperRevision
+        stageGroupReplacement "group.wrapper" "fn group.wrapper(value: Int) -> Int { group::helper(value) }" "test group.wrapper/basic { group::wrapper(1) => 3 }" wrapperRevision
+        commit groupEngine "commit" "" [ "library", jbool true ] |> expectOk "publish staged replacements as a fully gated library group" |> ignore
+        equal "3" (stringValue (evalFlow groupEngine "group::wrapper(1)" |> expectOk "evaluate the replaced qualified group" |> fun response -> response.["data"].["stack"].[0])) "staged library candidates can be qualified together after all own gates pass"
+
+        let replacementProject = Path.Combine(root, "library-dependency-replacement")
+        let mutable replacementEngine = Runtime.Engine(replacementProject, Set.empty)
+        let replacementSource =
+            "fn replace.helper(value: Int) -> Int { add(value, 1) }\n\n"
+            + "fn replace.caller(value: Int) -> Int { replace::helper(value) }\n\n"
+            + "test replace.helper/basic { replace::helper(1) => 2 }\n\n"
+            + "test replace.caller/basic { replace::caller(1) => 2 }"
+        defineFlowProject replacementEngine replacementSource [ "syntaxVersion", jint 2 ] |> expectOk "stage a library helper and affected caller" |> ignore
+        commit replacementEngine "commit" "replace.helper" [ "library", jbool true ] |> expectOk "qualify the replacement helper baseline" |> ignore
+        commit replacementEngine "commit" "replace.caller" [ "library", jbool true ] |> expectOk "qualify the persistent affected caller baseline" |> ignore
+        defineFlow replacementEngine "fn replace.ordinary(value: Int) -> Int { add(value, 9) }" [ "test replace.ordinary/basic { replace::ordinary(1) => 10 }" ] [] [ "syntaxVersion", jint 2 ]
+        |> expectOk "stage an ordinary helper for the attempted replacement"
+        |> ignore
+        commit replacementEngine "commit" "replace.ordinary" [] |> expectOk "persist the ordinary helper used by the unsafe replacement" |> ignore
+        let replacementStore = Storage.create replacementProject
+        let beforeUnsafeReplacement = Storage.load replacementStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let callerRevision =
+            dispatch replacementEngine "describe" [ "word", jstr "replace.caller" ]
+            |> expectOk "inspect the affected caller before its staged replacement"
+            |> fun response -> response.["data"].["revision"].GetValue<int>()
+        let helperRevisionForCallerCheck =
+            dispatch replacementEngine "describe" [ "word", jstr "replace.helper" ]
+            |> expectOk "inspect the helper before its staged replacement"
+            |> fun response -> response.["data"].["revision"].GetValue<int>()
+        defineFlow replacementEngine "fn replace.caller(value: Int) -> Int { add(value, 5) }" [ "test replace.caller/basic { replace::caller(1) => 6 }" ] [] [ "replace", jbool true; "expectedRevision", jint callerRevision; "syntaxVersion", jint 2 ]
+        |> expectOk "stage a passing caller replacement that removes its helper dependency"
+        |> ignore
+        defineFlow replacementEngine "fn replace.helper(value: Int) -> Int { add(value, 2) }" [ "test replace.helper/basic { replace::helper(1) => 3 }" ] [] [ "replace", jbool true; "expectedRevision", jint helperRevisionForCallerCheck; "syntaxVersion", jint 2 ]
+        |> expectOk "stage a helper replacement behind the affected caller"
+        |> ignore
+        assertAllPassed 1 (dispatch replacementEngine "test" [ "word", jstr "replace.caller" ] |> expectOk "run the passing staged caller replacement")
+        let rejectedAffectedCaller = commit replacementEngine "commit" "replace.helper" [] |> expectError "COMMIT_TESTS_FAILED"
+        check (jsonArrayStrings rejectedAffectedCaller.["error"].["actual"] |> List.contains "replace.caller/basic") "publishing the helper alone tests the durable caller even when its passing staged replacement removes that edge"
+        equal beforeUnsafeReplacement.ManifestHash (Storage.load replacementStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.ManifestHash) "failed affected-caller replacement leaves the old manifest authoritative"
+        replacementEngine <- Runtime.Engine(replacementProject, Set.empty)
+        let durableCallerSource = dispatch replacementEngine "source" [ "word", jstr "replace.caller" ] |> expectOk "read the caller restored from durable state" |> fun response -> stringValue response.["data"]
+        check (durableCallerSource.Contains("replace::helper", StringComparison.Ordinal)) "fresh reload retains the durable caller edge after failed staged replacements"
+        let helperRevision =
+            dispatch replacementEngine "describe" [ "word", jstr "replace.helper" ]
+            |> expectOk "inspect library helper before replacement"
+            |> fun response -> response.["data"].["revision"].GetValue<int>()
+        defineFlow replacementEngine "fn replace.helper(value: Int) -> Int { replace::ordinary(value) }" [ "test replace.helper/basic { replace::helper(1) => 10 }" ] [] [ "replace", jbool true; "expectedRevision", jint helperRevision; "syntaxVersion", jint 2 ]
+        |> expectError "LIBRARY_DEPENDENCY_NOT_QUALIFIED"
+        |> ignore
+        equal beforeUnsafeReplacement.ManifestHash (Storage.load replacementStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.ManifestHash) "unsafe library helper replacement leaves the old manifest authoritative"
+        let replacementReload = Runtime.Engine(replacementProject, Set.empty)
+        assertAllPassed 1 (dispatch replacementReload "test" [ "word", jstr "replace.caller" ] |> expectOk "requalify the preserved affected caller on reload")
+        equal "2" (stringValue (evalFlow replacementReload "replace::caller(1)" |> expectOk "evaluate preserved caller after rejected helper replacement" |> fun response -> response.["data"].["stack"].[0])) "fresh reload retains the previous qualified helper and caller"
+
     let private testEnumFiniteLibraryCoverage root =
         let enumAndHelpers =
             "enum RenewalState { case pending; case renewed; case cancelled; }\n\n"
@@ -1066,6 +1230,10 @@ module Program =
             + "fn public.pure(value: Int) -> Int {\n"
             + "    value\n"
             + "}\n\n"
+            + "test internal.record-state/basic {\n"
+            + "    internal::record-state(stateEnvelope::new(option::none<List<RenewalState>>()))\n"
+            + "    => 0\n"
+            + "}\n\n"
             + "test public.pure/basic {\n"
             + "    public::pure(7)\n"
             + "    => 7\n"
@@ -1093,8 +1261,18 @@ module Program =
         commit engine "commit" "public.construct-use" [ "library", jbool true ]
         |> expectOk "qualify a function that constructs and discards an enum value"
         |> ignore
+        commit engine "commit" "internal.record-state" []
+        |> expectOk "commit an ordinary helper that accepts a generated record"
+        |> ignore
         commit engine "commit" "public.record-use" [ "library", jbool true ]
-        |> expectError "LIBRARY_FINITE_DOMAIN_UNSUPPORTED"
+        |> expectError "LIBRARY_DEPENDENCY_NOT_QUALIFIED"
+        |> fun response ->
+            let diagnostic = response.["error"]
+            equal "public.record-use" (stringValue diagnostic.["word"]) "library dependency diagnostic names the rejected target"
+            let message = stringValue diagnostic.["message"]
+            check (message.Contains("internal.record-state", StringComparison.Ordinal)) "library dependency diagnostic names the unqualified helper"
+            check (message.Contains("own passing tests and complete coverage", StringComparison.Ordinal)) "library dependency diagnostic explains how to qualify the helper"
+            response
         |> ignore
 
         commit engine "commit" "public.pure" [ "library", jbool true ]
@@ -1105,7 +1283,7 @@ module Program =
         let store = Storage.load (Storage.create project) |> Result.defaultWith (fun problem -> failwith problem.Message)
         let beforeReplacement = store.Manifest |> Option.defaultWith (fun () -> failwith "enum-free qualification should publish a manifest")
         let beforeReplacementHash = store.ManifestHash
-        equal [ "internal.match-state"; "public.construct-use"; "public.container-use"; "public.delegate"; "public.pure" ] (beforeReplacement.Words |> List.map (fun item -> item.CurrentName) |> List.sort) "supported finite enum and local enum-use words persist while the unchecked helper caller does not"
+        equal [ "internal.match-state"; "internal.record-state"; "public.construct-use"; "public.container-use"; "public.delegate"; "public.pure" ] (beforeReplacement.Words |> List.map (fun item -> item.CurrentName) |> List.sort) "qualified enum words and the ordinary helper persist while its library caller does not"
         for name in [ "public.record-use" ] do
             check ((findWord (dispatch engine "words" [] |> expectOk "inspect candidates after enum library rejection") name).["status"].GetValue<string>() = "candidate") $"rejected library candidate {name} remains staged atomically"
 
@@ -3995,6 +4173,7 @@ test persist.read/exact-count {
             testExplicitFrontendCannotFallBack root
             testFlow2FormatDefinePersistReloadAndRewrite root
             testFlow2EnumsPersistReloadAndBindings root
+            testLibraryDependencyQualification root
             testEnumFiniteLibraryCoverage root
             testDescribeFlowReferences root
             testGeneratedRecordCasesPersistBesideFlow root
@@ -4017,7 +4196,7 @@ test persist.read/exact-count {
             testFlowProjectDocumentTypesCommitAndReload root
             testRecordValidatorRuntimeAndPersistence root
             testEffectCountAssertions root
-            printfn $"Flow Runtime tests passed: 30 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 31 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)
