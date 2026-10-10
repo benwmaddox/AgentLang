@@ -979,7 +979,7 @@ module Runtime =
             let sourceObjects = ResizeArray<SourceObject>()
             sourceObjects.Add projectObject
 
-            let manifestBase = currentManifest |> Option.defaultValue { FormatVersion = 2; ProjectSource = projectObject.Reference; Types = []; Words = []; Revisions = [] }
+            let manifestBase = currentManifest |> Option.defaultValue { FormatVersion = 2; ProjectSource = projectObject.Reference; Types = []; TypeRevisions = []; Words = []; Revisions = [] }
             let typeSources =
                 [ for KeyValue(name, item) in durable.Records do
                       let authored = durable.TypeSources.TryFind name |> Option.defaultValue (defaultTypeSource durable name)
@@ -1018,6 +1018,24 @@ module Runtime =
                       if authored.ValidatorTarget.IsSome then
                           error "TYPE_VALIDATOR_TARGET_INVALID" $"Enum type '{name}' cannot carry a scalar validator target." (Some name) None [] []
                       yield { Name = name; Definition = sourceObject.Reference; SourceFormat = authored.SourceFormat; ValidatorTarget = None } ]
+            let retainedTypeRevisions = ResizeArray<TypeSourceRevision>(manifestBase.TypeRevisions)
+            let currentTypesByName = typeSources |> List.map (fun item -> item.Name, item) |> Map.ofList
+            for previousHead in manifestBase.Types do
+                match currentTypesByName.TryFind previousHead.Name with
+                | Some nextHead when nextHead <> previousHead ->
+                    let revision =
+                        retainedTypeRevisions
+                        |> Seq.filter (fun item -> item.Name = previousHead.Name)
+                        |> Seq.length
+                        |> fun previousCount -> previousCount + 1
+                    retainedTypeRevisions.Add
+                        { Name = previousHead.Name
+                          Revision = revision
+                          Definition = previousHead.Definition
+                          SourceFormat = previousHead.SourceFormat
+                          ValidatorTarget = previousHead.ValidatorTarget }
+                | _ -> ()
+            let typeRevisions = retainedTypeRevisions |> Seq.sortBy (fun item -> item.Name, item.Revision) |> Seq.toList
             let manifestVersion =
                 let hasIndependentFlowAttachmentFormat =
                     let ownerVersion ownerId =
@@ -1029,7 +1047,8 @@ module Runtime =
                     (durable.FlowTests |> Map.exists (fun _ item -> differs item.Source.OwnerId item.Source.SyntaxVersion))
                     || (durable.FlowTestFiles |> Map.exists (fun _ item -> differs item.OwnerId item.SyntaxVersion))
                     || (durable.FlowExamples |> Map.exists (fun _ item -> differs item.Source.OwnerId item.Source.SyntaxVersion))
-                if manifestBase.FormatVersion >= 5 || hasIndependentFlowAttachmentFormat then 5
+                if manifestBase.FormatVersion >= 6 || not (List.isEmpty typeRevisions) then 6
+                elif manifestBase.FormatVersion >= 5 || hasIndependentFlowAttachmentFormat then 5
                 elif manifestBase.FormatVersion >= 4 || not (Map.isEmpty durable.FlowTestFiles) then 4
                 elif manifestBase.FormatVersion >= 3
                      || (typeSources |> List.exists (fun source -> source.SourceFormat.Frontend = SourceFrontend.Flow || source.ValidatorTarget.IsSome)) then 3
@@ -1276,6 +1295,7 @@ module Runtime =
                 { FormatVersion = manifestVersion
                   ProjectSource = projectObject.Reference
                   Types = typeSources
+                  TypeRevisions = typeRevisions
                   Words = heads
                   Revisions = List.ofSeq revisions }
             manifest, List.ofSeq sourceObjects, exportText
@@ -2372,9 +2392,10 @@ module Runtime =
                 // their revision objects and the final export comparison
                 // rejects any unreferenced user cases. This also preserves v1
                 // behavior, where the aggregate was the source of these cases.
+                let supportsGeneratedProjectCases version = version >= 1 && version <= 6
                 let generatedProjectCases =
                     match value.FormatVersion, projectSource with
-                    | version, Some exact when version = 1 || version = 2 || version = 3 || version = 4 || version = 5 ->
+                    | version, Some exact when supportsGeneratedProjectCases version ->
                         let stackSource =
                             if currentFlowWords.Count = 0
                                && (loadedTypeSources |> Seq.forall (fun (_, authored) -> authored.SourceFormat.Frontend = SourceFrontend.Stack)) then exact
@@ -5354,6 +5375,67 @@ module Runtime =
             | None ->
                 availableDescription (currentSnapshot ()) word
 
+        let sourceFormatJson (sourceFormat: SourceFormat) =
+            let payload = JsonObject()
+            payload["frontend"] <- jstr (match sourceFormat.Frontend with | SourceFrontend.Stack -> "stack" | SourceFrontend.Flow -> "flow")
+            payload["version"] <- jint sourceFormat.Version
+            payload :> JsonNode
+
+        let storedCallTargetJson (target: StoredCallTarget) =
+            let payload = JsonObject()
+            match target with
+            | StoredCallTarget.UserWord identity ->
+                payload["kind"] <- jstr "userWord"
+                payload["identity"] <- jstr identity
+            | StoredCallTarget.Primitive identity ->
+                payload["kind"] <- jstr "primitive"
+                payload["identity"] <- jstr identity
+            | StoredCallTarget.GeneratedWord identity ->
+                payload["kind"] <- jstr "generatedWord"
+                payload["identity"] <- jstr identity
+            payload :> JsonNode
+
+        let describeTypeJson typeName =
+            if not ((knownTypes data).Contains typeName) then
+                error "DISCOVERY_UNKNOWN_TYPE" $"Type source '{typeName}' is not defined." (Some typeName) None [ "declared record, scalar, or enum type" ] []
+            let typeStatus =
+                match data.Records.TryFind typeName, data.Scalars.TryFind typeName, data.Enums.TryFind typeName with
+                | Some item, _, _ -> Some item.Status
+                | _, Some item, _ -> Some item.Status
+                | _, _, Some item -> Some item.Status
+                | _ -> None
+            let authored = data.TypeSources.TryFind typeName |> Option.defaultValue (defaultTypeSource data typeName)
+            let effectiveValidatorTarget =
+                match data.Records.TryFind typeName, data.Scalars.TryFind typeName with
+                | Some record, _ -> resolvedRecordValidatorTarget data typeName record.Definition
+                | _, Some scalar -> resolvedValidatorTarget data typeName scalar.Definition
+                | _ -> authored.ValidatorTarget
+            let authored = { authored with ValidatorTarget = effectiveValidatorTarget }
+            let exactSource = Storage.sourceObject StorageObjectKind.TypeDefinition authored.Content
+            let expectedHead =
+                { Name = typeName
+                  Definition = exactSource.Reference
+                  SourceFormat = authored.SourceFormat
+                  ValidatorTarget = authored.ValidatorTarget }
+            let persistedRevision =
+                match typeStatus, currentManifest with
+                | Some Persistent, Some manifest ->
+                    manifest.Types
+                    |> List.tryFind (fun item -> item.Name = typeName && item = expectedHead)
+                    |> Option.map (fun _ ->
+                        (manifest.TypeRevisions |> List.filter (fun item -> item.Name = typeName) |> List.length) + 1)
+                | _ -> None
+            log "inspect" typeName
+            let payload = JsonObject()
+            payload["name"] <- jstr typeName
+            payload["kind"] <- jstr "type"
+            payload["status"] <- jstr (match typeStatus with | Some Candidate -> "candidate" | Some Persistent -> "persistent" | Some Temporary -> "temporary" | Some Primitive -> "primitive" | None -> "unknown")
+            payload["revision"] <- persistedRevision |> Option.map jint |> Option.defaultValue null
+            payload["sourceHash"] <- jstr exactSource.Reference.Hash
+            payload["sourceFormat"] <- sourceFormatJson authored.SourceFormat
+            payload["validatorTarget"] <- authored.ValidatorTarget |> Option.map storedCallTargetJson |> Option.defaultValue null
+            payload
+
         let resultList (snapshot: RuntimeSnapshot) (kind: string) (text: string) (results: TestCaseResult list) (target: string option) =
             let array = JsonArray()
             results |> List.iter (fun result -> array.Add(resultJson snapshot result))
@@ -5498,8 +5580,14 @@ module Runtime =
                         payload["constructs"] <- constructs
                         success "words" $"{entries.Length} word(s)." (Some payload)
                 | "describe" ->
-                    let name = readString args "word" ""
-                    success "describe" $"Description for {name}." (Some(describeJson name))
+                    if args.ContainsKey "type" then
+                        if args.ContainsKey "word" then
+                            error "TYPE_QUERY_AMBIGUOUS_SELECTOR" "Describe accepts exactly one of 'word' or 'type'." None None [ "one selector" ] [ "word and type" ]
+                        let typeName = requiredFlowString args "type"
+                        success "describe" $"Description for type {typeName}." (Some(describeTypeJson typeName))
+                    else
+                        let name = readString args "word" ""
+                        success "describe" $"Description for {name}." (Some(describeJson name))
                 | "type-of" ->
                     let name = requiredDiscoveryString args "word"
                     buildDiscoveryIndex () |> ignore
@@ -6637,50 +6725,80 @@ module Runtime =
                                     let warning = lastExportWarning |> Option.map (fun item -> $" Export warning: {item.Message}") |> Option.defaultValue ""
                                     success "snapshot.load" ($"Loaded committed snapshot '{name}'.{warning}") (Some payload)
                 | "history" ->
-                    let name = readString args "word" ""
-                    match store, currentManifest, currentManifestHash with
-                    | Some projectStore, Some manifest, Some manifestHash ->
-                        match manifest.Words |> List.tryFind (fun head -> head.CurrentName = name) with
-                        | None -> error "HISTORY_WORD_UNKNOWN" $"No durable history exists for '{name}'." (Some name) None [] []
-                        | Some head ->
-                            let revisions = manifest.Revisions |> List.filter (fun item -> item.WordId = head.WordId) |> List.sortBy (fun item -> item.Revision)
-                            let payload = JsonArray()
-                            for revision in revisions do
-                                match Storage.readRevision projectStore manifestHash head.WordId revision.Revision with
+                    if args.ContainsKey "type" && args.ContainsKey "word" then
+                        error "TYPE_QUERY_AMBIGUOUS_SELECTOR" "History accepts exactly one of 'word' or 'type'." None None [ "one selector" ] [ "word and type" ]
+                    elif args.ContainsKey "type" then
+                        let typeName = requiredFlowString args "type"
+                        if not ((knownTypes data).Contains typeName) then
+                            error "HISTORY_TYPE_UNKNOWN" $"No durable history exists for type '{typeName}'." (Some typeName) None [] []
+                        else
+                            match store, currentManifest, currentManifestHash with
+                            | Some projectStore, Some manifest, Some manifestHash when manifest.Types |> List.exists (fun item -> item.Name = typeName) ->
+                                log "inspect" typeName
+                                match Storage.readTypeHistory projectStore manifestHash typeName with
                                 | Error storageError -> raiseStorageError storageError
-                                | Ok content ->
-                                    let item = JsonObject()
-                                    item["id"] <- jstr head.WordId
-                                    item["name"] <- jstr revision.Name
-                                    item["revision"] <- jint revision.Revision
-                                    item["source"] <- jstr content.DefinitionSource
-                                    item["maturity"] <- jstr (if revision.Maturity = LibraryWord then "library" else "project")
-                                    item["actor"] <- jstr revision.Actor
-                                    item["task"] <- revision.TaskId |> Option.map jstr |> Option.defaultValue null
-                                    item["timestampUtc"] <- jstr (revision.TimestampUtc.ToString("O", CultureInfo.InvariantCulture))
-                                    item["deprecated"] <- jbool revision.Deprecated
-                                    item["tests"] <- jsonNode content.TestSources
-                                    item["examples"] <- jsonNode content.ExampleSources
-                                    payload.Add item
-                            success "history" $"{revisions.Length} durable revision(s) for {name}." (Some(payload :> JsonNode))
-                    | _ ->
-                        let flowRevisions =
-                            data.WordIds.TryFind name
-                            |> Option.bind (fun identity -> data.FlowHistory.TryFind identity)
-                            |> Option.defaultValue []
-                        match flowRevisions with
-                        | _ :: _ ->
-                            let payload =
-                                flowRevisions
-                                |> List.map (fun authored ->
-                                    {| revision = authored.Source.OwnerRevision
-                                       source = authored.Source.Content
-                                       maturity = if (data.Words.TryFind name |> Option.exists (fun word -> word.Maturity = LibraryWord)) then "library" else "project" |})
-                            success "history" $"{flowRevisions.Length} revision(s) for {name}." (Some(jsonNode payload))
-                        | [] ->
-                            let revisions = data.History.TryFind name |> Option.defaultValue []
-                            let payload = revisions |> List.map (fun definition -> {| revision = definition.Revision; source = Source.renderWord true definition |})
-                            success "history" $"{revisions.Length} revision(s) for {name}." (Some(jsonNode payload))
+                                | Ok revisions ->
+                                    let rows = JsonArray()
+                                    for content in revisions do
+                                        let row = JsonObject()
+                                        row["revision"] <- jint content.Revision.Revision
+                                        row["source"] <- jstr content.Source
+                                        row["sourceHash"] <- jstr content.Revision.Definition.Hash
+                                        row["sourceFormat"] <- sourceFormatJson content.Revision.SourceFormat
+                                        row["validatorTarget"] <- content.Revision.ValidatorTarget |> Option.map storedCallTargetJson |> Option.defaultValue null
+                                        row["current"] <- jbool content.IsCurrent
+                                        rows.Add row
+                                    let payload = JsonObject()
+                                    payload["type"] <- jstr typeName
+                                    payload["revisions"] <- rows
+                                    success "history" $"{revisions.Length} durable type-source revision(s) for {typeName}." (Some payload)
+                            | _ ->
+                                error "HISTORY_STORAGE_REQUIRED" $"Type history for '{typeName}' is available only after the type source is committed." (Some typeName) None [ "committed type source" ] []
+                    else
+                        let name = readString args "word" ""
+                        match store, currentManifest, currentManifestHash with
+                        | Some projectStore, Some manifest, Some manifestHash ->
+                            match manifest.Words |> List.tryFind (fun head -> head.CurrentName = name) with
+                            | None -> error "HISTORY_WORD_UNKNOWN" $"No durable history exists for '{name}'." (Some name) None [] []
+                            | Some head ->
+                                let revisions = manifest.Revisions |> List.filter (fun item -> item.WordId = head.WordId) |> List.sortBy (fun item -> item.Revision)
+                                let payload = JsonArray()
+                                for revision in revisions do
+                                    match Storage.readRevision projectStore manifestHash head.WordId revision.Revision with
+                                    | Error storageError -> raiseStorageError storageError
+                                    | Ok content ->
+                                        let item = JsonObject()
+                                        item["id"] <- jstr head.WordId
+                                        item["name"] <- jstr revision.Name
+                                        item["revision"] <- jint revision.Revision
+                                        item["source"] <- jstr content.DefinitionSource
+                                        item["maturity"] <- jstr (if revision.Maturity = LibraryWord then "library" else "project")
+                                        item["actor"] <- jstr revision.Actor
+                                        item["task"] <- revision.TaskId |> Option.map jstr |> Option.defaultValue null
+                                        item["timestampUtc"] <- jstr (revision.TimestampUtc.ToString("O", CultureInfo.InvariantCulture))
+                                        item["deprecated"] <- jbool revision.Deprecated
+                                        item["tests"] <- jsonNode content.TestSources
+                                        item["examples"] <- jsonNode content.ExampleSources
+                                        payload.Add item
+                                success "history" $"{revisions.Length} durable revision(s) for {name}." (Some(payload :> JsonNode))
+                        | _ ->
+                            let flowRevisions =
+                                data.WordIds.TryFind name
+                                |> Option.bind (fun identity -> data.FlowHistory.TryFind identity)
+                                |> Option.defaultValue []
+                            match flowRevisions with
+                            | _ :: _ ->
+                                let payload =
+                                    flowRevisions
+                                    |> List.map (fun authored ->
+                                        {| revision = authored.Source.OwnerRevision
+                                           source = authored.Source.Content
+                                           maturity = if (data.Words.TryFind name |> Option.exists (fun word -> word.Maturity = LibraryWord)) then "library" else "project" |})
+                                success "history" $"{flowRevisions.Length} revision(s) for {name}." (Some(jsonNode payload))
+                            | [] ->
+                                let revisions = data.History.TryFind name |> Option.defaultValue []
+                                let payload = revisions |> List.map (fun definition -> {| revision = definition.Revision; source = Source.renderWord true definition |})
+                                success "history" $"{revisions.Length} revision(s) for {name}." (Some(jsonNode payload))
                 | "diff" ->
                     let name = readString args "word" ""
                     let first = try args["from"].GetValue<int>() with _ -> -1

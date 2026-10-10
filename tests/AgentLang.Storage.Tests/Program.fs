@@ -173,6 +173,7 @@ module Program =
             { FormatVersion = 1
               ProjectSource = project.Reference
               Types = []
+              TypeRevisions = []
               Words =
                 [ { WordId = "word-stable-1"
                     CurrentName = $"sample.{suffix}"
@@ -1139,6 +1140,241 @@ module Program =
         Storage.load duplicateStore |> error "STORAGE_DUPLICATE_IDENTITY" |> ignore
         check (bytesEqual beforeDuplicateRead (File.ReadAllBytes(Path.Combine(storageRoot duplicateWireProject, "CURRENT")))) "duplicate v5 map row read leaves CURRENT bytes unchanged"
 
+    let private testManifestV6TypeHistory root =
+        let makeTransition suffix =
+            let project = Path.Combine(root, "v6-" + suffix)
+            let store = Storage.create project
+            let baseManifest, sources, projectText = flowV3Fixture suffix
+            let revisions =
+                baseManifest.Revisions
+                |> List.map (fun revision ->
+                    let formats =
+                        (revision.Tests @ revision.Examples)
+                        |> List.distinct
+                        |> List.map (fun reference -> reference, revision.SourceFormat)
+                        |> Map.ofList
+                    { revision with AttachmentSourceFormats = formats })
+            let v5Manifest = { baseManifest with FormatVersion = 5; Revisions = revisions; TypeRevisions = [] }
+            let committedV5 = Storage.commit store 0L v5Manifest sources projectText |> ok $"commit {suffix} v5 type source"
+            let oldHead = v5Manifest.Types |> List.find (fun item -> item.Name = $"{suffix}.Email")
+            let nextObject = source StorageObjectKind.TypeDefinition $"type {suffix}.Email : String {{}}\n// revision 2\n"
+            let v6Manifest =
+                { v5Manifest with
+                    FormatVersion = 6
+                    Types = v5Manifest.Types |> List.map (fun item -> if item.Name = oldHead.Name then { item with Definition = nextObject.Reference } else item)
+                    TypeRevisions =
+                        [ { Name = oldHead.Name
+                            Revision = 1
+                            Definition = oldHead.Definition
+                            SourceFormat = oldHead.SourceFormat
+                            ValidatorTarget = oldHead.ValidatorTarget } ] }
+            project, store, projectText, sources, v5Manifest, committedV5, oldHead, nextObject, v6Manifest
+
+        let project, store, projectText, sources, v5Manifest, committedV5, oldHead, nextObject, v6Manifest = makeTransition "history"
+        Storage.saveSnapshot store committedV5.Generation "types-v5" Map.empty None
+        |> ok "save v5 type-source snapshot"
+        |> ignore
+        let committedV6 = Storage.commit store committedV5.Generation v6Manifest [ nextObject ] projectText |> ok "commit v6 with prior type source"
+        Storage.saveSnapshot store committedV6.Generation "types-v6" Map.empty None
+        |> ok "save v6 type-source snapshot"
+        |> ignore
+        let loadedV6 = Storage.load store |> ok "reload v6 type source history"
+        equal 6 loadedV6.Manifest.Value.FormatVersion "type history selects manifest v6"
+        equal v6Manifest.TypeRevisions loadedV6.Manifest.Value.TypeRevisions "v6 prior rows retain exact source metadata"
+        let rawPath = Path.Combine(storageRoot project, "manifests", committedV6.ManifestHash.Value + ".json")
+        let raw = JsonNode.Parse(File.ReadAllText rawPath).AsObject()
+        let rawTypeRevisions = raw.["typeRevisions"].AsArray()
+        equal 1 rawTypeRevisions.Count "v6 prior-only history has exactly one displaced head"
+        let rawTypeRevision = rawTypeRevisions.[0].AsObject()
+        equal [ "definition"; "name"; "revision"; "sourceFormat"; "validatorTarget" ]
+            (rawTypeRevision |> Seq.map (fun pair -> pair.Key) |> Seq.sort |> Seq.toList)
+            "v6 history row wire fields are explicit and stable"
+        equal "flow" (rawTypeRevision.["sourceFormat"].["frontend"].GetValue<string>()) "v6 history retains Flow source format"
+        check (not (isNull rawTypeRevision.["validatorTarget"])) "v6 history retains validator identity metadata"
+
+        let history = Storage.readTypeHistory store committedV6.ManifestHash.Value oldHead.Name |> ok "read v6 type source history"
+        equal [ 1; 2 ] (history |> List.map (fun item -> item.Revision.Revision)) "type history ordinals include prior source and derived head"
+        equal [ false; true ] (history |> List.map _.IsCurrent) "only the derived head is current"
+        equal (Storage.readSource store oldHead.Definition |> ok "read v5 type source bytes") history.Head.Source "type history returns exact displaced source bytes"
+        equal oldHead.Definition.Hash history.Head.Revision.Definition.Hash "history source hash matches the v5 type ref"
+        equal (digest history.Head.Source) history.Head.Revision.Definition.Hash "history hash is SHA-256 of exact UTF-8 source bytes"
+        equal (Storage.readSource store nextObject.Reference |> ok "read v6 head source bytes") history[1].Source "type history returns exact current source bytes"
+        let firstType = Storage.readTypeHistory store committedV6.ManifestHash.Value "history.Record" |> ok "read a v6 type with no prior rows"
+        equal [ 1 ] (firstType |> List.map (fun item -> item.Revision.Revision)) "new v6 type heads begin at revision one without a stored row"
+
+        let reversedProject = Path.Combine(root, "v6-reversed-history")
+        let reversedStore = Storage.create reversedProject
+        let reversedManifest =
+            { v6Manifest with
+                Types = List.rev v6Manifest.Types
+                TypeRevisions = List.rev v6Manifest.TypeRevisions
+                Words = List.rev v6Manifest.Words
+                Revisions = List.rev v6Manifest.Revisions }
+        let reversedCommit = Storage.commit reversedStore 0L reversedManifest (sources @ [ nextObject ]) projectText |> ok "commit reverse-ordered v6 rows"
+        equal committedV6.ManifestHash reversedCommit.ManifestHash "v6 type history bytes are deterministic under input row reversal"
+
+        // A later unrelated project write keeps both the format and every prior row.
+        let unrelatedProject = source StorageObjectKind.ProjectSource (projectText + "// unrelated update\n")
+        let unrelatedManifest = { v6Manifest with ProjectSource = unrelatedProject.Reference }
+        let unrelatedCommit = Storage.commit store committedV6.Generation unrelatedManifest [ unrelatedProject ] (projectText + "// unrelated update\n") |> ok "commit an unrelated update after v6 history"
+        let unrelatedReload = Storage.load store |> ok "reload after unrelated v6 update"
+        equal 6 unrelatedReload.Manifest.Value.FormatVersion "unrelated writes do not downgrade a v6 manifest"
+        equal v6Manifest.TypeRevisions unrelatedReload.Manifest.Value.TypeRevisions "unrelated writes retain all prior type rows"
+        equal 2 (Storage.readTypeHistory store unrelatedCommit.ManifestHash.Value oldHead.Name |> ok "read retained history after unrelated write" |> List.length) "unrelated write preserves readable type history"
+
+        let v5Snapshot = Storage.readSnapshot store "types-v5" |> ok "read saved v5 type snapshot"
+        let restoredV5 = Storage.restoreSnapshot store unrelatedCommit.Generation v5Snapshot |> ok "restore v5 type snapshot"
+        equal committedV5.ManifestHash restoredV5.ManifestHash "v5 snapshot restore selects the exact v5 manifest"
+        let restoredV5History = Storage.readTypeHistory store restoredV5.ManifestHash.Value oldHead.Name |> ok "read implicit v5 type head"
+        equal [ 1 ] (restoredV5History |> List.map (fun item -> item.Revision.Revision)) "v5 current type heads load as implicit revision one"
+        equal true restoredV5History.Head.IsCurrent "implicit v5 type revision is the current head"
+        let v6Snapshot = Storage.readSnapshot store "types-v6" |> ok "read saved v6 type snapshot"
+        let restoredV6 = Storage.restoreSnapshot store restoredV5.Generation v6Snapshot |> ok "restore v6 type snapshot"
+        equal committedV6.ManifestHash restoredV6.ManifestHash "v6 snapshot restore selects the exact v6 manifest and history"
+        equal 2 (Storage.readTypeHistory store restoredV6.ManifestHash.Value oldHead.Name |> ok "read restored v6 history" |> List.length) "v6 snapshot restore recovers prior type history"
+
+        let failedProject, failedStore, failedText, failedSources, failedV5, failedV5Commit, _, failedNext, failedV6 = makeTransition "failed-pointer"
+        let failedPointerPath = Path.Combine(storageRoot failedProject, "CURRENT")
+        let failedPointerBefore = File.ReadAllBytes failedPointerPath
+        let failingStore =
+            Storage.createWithFailureInjector failedProject (fun point ->
+                if point = StorageFailurePoint.BeforePointerReplacement then failwith "injected v6 pre-pointer failure")
+        Storage.commit failingStore failedV5Commit.Generation failedV6 [ failedNext ] failedText
+        |> error "STORAGE_INJECTED_FAILURE"
+        |> ignore
+        let failedReload = Storage.load failedStore |> ok "reload after failed v6 pointer write"
+        equal failedV5Commit.ManifestHash failedReload.ManifestHash "failed v6 publication leaves v5 manifest authoritative"
+        equal failedV5Commit.Generation failedReload.Generation "failed v6 publication leaves the prior generation authoritative"
+        equal [] failedReload.Manifest.Value.TypeRevisions "failed v6 publication leaves v5 history empty"
+        check (bytesEqual failedPointerBefore (File.ReadAllBytes failedPointerPath)) "failed v6 publication preserves the exact prior CURRENT bytes"
+        ignore failedSources
+        ignore failedV5
+
+        let invalidCommit expectedCode label mutate =
+            let invalidProject = Path.Combine(root, "v6-invalid-" + label)
+            let invalidStore = Storage.create invalidProject
+            Storage.commit invalidStore 0L (mutate v6Manifest) [ nextObject ] projectText
+            |> error expectedCode
+            |> ignore
+            let after = Storage.load invalidStore |> ok $"load after rejecting v6 {label}"
+            equal EmptyAuthority after.Authority $"v6 {label} rejection leaves authority empty"
+            check (not (File.Exists(Path.Combine(storageRoot invalidProject, "CURRENT")))) $"v6 {label} rejection leaves CURRENT absent"
+        invalidCommit "STORAGE_DUPLICATE_IDENTITY" "duplicate-ordinal" (fun manifest -> { manifest with TypeRevisions = manifest.TypeRevisions @ [ manifest.TypeRevisions.Head ] })
+        invalidCommit "STORAGE_INVALID_MANIFEST" "gap" (fun manifest -> { manifest with TypeRevisions = [ { manifest.TypeRevisions.Head with Revision = 2 } ] })
+        invalidCommit "STORAGE_INVALID_MANIFEST" "zero-ordinal" (fun manifest -> { manifest with TypeRevisions = [ { manifest.TypeRevisions.Head with Revision = 0 } ] })
+        invalidCommit "STORAGE_INVALID_MANIFEST" "negative-ordinal" (fun manifest -> { manifest with TypeRevisions = [ { manifest.TypeRevisions.Head with Revision = -1 } ] })
+        invalidCommit "STORAGE_INVALID_MANIFEST" "max-ordinal" (fun manifest -> { manifest with TypeRevisions = [ { manifest.TypeRevisions.Head with Revision = Int32.MaxValue } ] })
+        invalidCommit "STORAGE_INVALID_MANIFEST" "orphan-owner" (fun manifest -> { manifest with TypeRevisions = [ { manifest.TypeRevisions.Head with Name = "MissingType" } ] })
+        invalidCommit "STORAGE_INVALID_MANIFEST" "wrong-kind" (fun manifest -> { manifest with TypeRevisions = [ { manifest.TypeRevisions.Head with Definition = { manifest.TypeRevisions.Head.Definition with Kind = StorageObjectKind.WordDefinition } } ] })
+        invalidCommit "STORAGE_UNSUPPORTED_VERSION" "unsupported-prior-source-format" (fun manifest -> { manifest with TypeRevisions = [ { manifest.TypeRevisions.Head with SourceFormat = { Frontend = SourceFrontend.Stack; Version = 2 } } ] })
+        invalidCommit "STORAGE_INVALID_MANIFEST" "malformed-prior-validator-identity" (fun manifest -> { manifest with TypeRevisions = [ { manifest.TypeRevisions.Head with ValidatorTarget = Some(StoredCallTarget.UserWord " ") } ] })
+
+        let rawReject label mutate expectedCode =
+            let rawProject = Path.Combine(root, "v6-raw-" + label)
+            let rawStore = Storage.create rawProject
+            let rawCommit = Storage.commit rawStore 0L v6Manifest (sources @ [ nextObject ]) projectText |> ok $"commit raw v6 base for {label}"
+            let path = Path.Combine(storageRoot rawProject, "manifests", rawCommit.ManifestHash.Value + ".json")
+            let rawNode = JsonNode.Parse(File.ReadAllText path).AsObject()
+            mutate rawNode
+            installedRawManifest rawProject (rawNode.ToJsonString()) |> ignore
+            let pointerPath = Path.Combine(storageRoot rawProject, "CURRENT")
+            let beforeRead = File.ReadAllBytes pointerPath
+            Storage.load rawStore |> error expectedCode |> ignore
+            check (bytesEqual beforeRead (File.ReadAllBytes pointerPath)) $"invalid v6 {label} read leaves CURRENT bytes unchanged"
+        rawReject "missing-rows" (fun raw -> raw.Remove "typeRevisions" |> ignore) "STORAGE_INVALID_JSON"
+        rawReject "null-rows" (fun raw -> raw["typeRevisions"] <- null) "STORAGE_INVALID_JSON"
+        rawReject "missing-format" (fun raw ->
+            let row = raw["typeRevisions"].AsArray().[0].AsObject()
+            row.Remove("sourceFormat") |> ignore) "STORAGE_INVALID_JSON"
+        rawReject "missing-validator" (fun raw ->
+            let row = raw["typeRevisions"].AsArray().[0].AsObject()
+            row.Remove("validatorTarget") |> ignore) "STORAGE_INVALID_JSON"
+        rawReject "unsupported-prior-source-format" (fun raw ->
+            let row = raw["typeRevisions"].AsArray().[0].AsObject()
+            row.["sourceFormat"].["version"] <- JsonValue.Create(77)) "STORAGE_UNSUPPORTED_VERSION"
+        rawReject "malformed-prior-validator-identity" (fun raw ->
+            let row = raw["typeRevisions"].AsArray().[0].AsObject()
+            row.["validatorTarget"].["identity"] <- JsonValue.Create(" ")) "STORAGE_INVALID_MANIFEST"
+        rawReject "malformed-prior-reference-hash" (fun raw ->
+            let row = raw["typeRevisions"].AsArray().[0].AsObject()
+            row.["definition"].["hash"] <- JsonValue.Create("not-a-sha256")) "STORAGE_INVALID_HASH"
+        rawReject "duplicate-prior-ordinal" (fun raw ->
+            let rows = raw["typeRevisions"].AsArray()
+            rows.Add(rows.[0].DeepClone())) "STORAGE_DUPLICATE_IDENTITY"
+        rawReject "orphan-prior-owner" (fun raw ->
+            let row = raw["typeRevisions"].AsArray().[0].AsObject()
+            row["name"] <- JsonValue.Create("MissingType")) "STORAGE_INVALID_MANIFEST"
+        rawReject "downgrade-with-history" (fun raw -> raw["formatVersion"] <- JsonValue.Create(5)) "STORAGE_INVALID_MANIFEST"
+
+        let verifyHistoricalObjectFailure label tamper expectedCode =
+            let failureProject, failureStore, failureText, failureSources, _, failureV5Commit, failureOld, failureNext, failureV6 = makeTransition ("object-" + label)
+            Storage.commit failureStore failureV5Commit.Generation failureV6 [ failureNext ] failureText |> ok $"commit v6 history for {label} object failure" |> ignore
+            let objectPath = Path.Combine(storageRoot failureProject, "objects", failureOld.Definition.Hash + ".agent")
+            if tamper then File.WriteAllText(objectPath, "tampered historical bytes", UTF8Encoding(false))
+            else File.Delete objectPath
+            let pointerPath = Path.Combine(storageRoot failureProject, "CURRENT")
+            let beforeRead = File.ReadAllBytes pointerPath
+            Storage.load failureStore |> error expectedCode |> ignore
+            check (bytesEqual beforeRead (File.ReadAllBytes pointerPath)) $"{label} historical source failure preserves CURRENT bytes"
+            ignore failureSources
+        verifyHistoricalObjectFailure "missing" false "STORAGE_OBJECT_MISSING"
+        verifyHistoricalObjectFailure "tampered" true "STORAGE_HASH_MISMATCH"
+
+        let boundaryProject = Path.Combine(root, "v6-reference-boundary")
+        let boundaryStore = Storage.create boundaryProject
+        let boundaryProjectObject = source StorageObjectKind.ProjectSource "project boundary\n"
+        let boundaryTypeObject = source StorageObjectKind.TypeDefinition "type Boundary = opaque\n"
+        let boundaryHead = typeSource "Boundary" boundaryTypeObject.Reference flowFormat None
+        let boundaryManifest count =
+            { FormatVersion = 6
+              ProjectSource = boundaryProjectObject.Reference
+              Types = [ boundaryHead ]
+              TypeRevisions =
+                [ for revision in 1 .. count do
+                      yield
+                          { Name = "Boundary"
+                            Revision = revision
+                            Definition = boundaryTypeObject.Reference
+                            SourceFormat = flowFormat
+                            ValidatorTarget = None } ]
+              Words = []
+              Revisions = [] }
+        Storage.commit boundaryStore 0L (boundaryManifest 19_998) [ boundaryProjectObject; boundaryTypeObject ] "project boundary\n"
+        |> ok "accept exactly MaxReferences including repeated historical refs"
+        |> ignore
+        let overBoundaryProject = Path.Combine(root, "v6-reference-over-boundary")
+        let overBoundaryStore = Storage.create overBoundaryProject
+        Storage.commit overBoundaryStore 0L (boundaryManifest 19_999) [ boundaryProjectObject; boundaryTypeObject ] "project boundary\n"
+        |> error "STORAGE_LIMIT_EXCEEDED"
+        |> ignore
+        check (not (File.Exists(Path.Combine(storageRoot overBoundaryProject, "CURRENT")))) "duplicate historical refs above MaxReferences fail before publication"
+
+        let budgetProject = Path.Combine(root, "v6-history-output-budget")
+        let budgetStore = Storage.create budgetProject
+        let budgetProjectObject = source StorageObjectKind.ProjectSource "project history budget\n"
+        let repeatedSource = source StorageObjectKind.TypeDefinition (String.replicate (3 * 1024 * 1024) "x")
+        let budgetType = typeSource "BoundedHistory" repeatedSource.Reference flowFormat None
+        let budgetManifest =
+            { FormatVersion = 6
+              ProjectSource = budgetProjectObject.Reference
+              Types = [ budgetType ]
+              TypeRevisions =
+                [ for revision in 1 .. 2 do
+                      yield
+                          { Name = "BoundedHistory"
+                            Revision = revision
+                            Definition = repeatedSource.Reference
+                            SourceFormat = flowFormat
+                            ValidatorTarget = None } ]
+              Words = []
+              Revisions = [] }
+        let budgetCommit =
+            Storage.commit budgetStore 0L budgetManifest [ budgetProjectObject; repeatedSource ] "project history budget\n"
+            |> ok "commit repeated type-history source within object and reference bounds"
+        Storage.readTypeHistory budgetStore budgetCommit.ManifestHash.Value "BoundedHistory"
+        |> error "STORAGE_LIMIT_EXCEEDED"
+        |> ignore
+
     let private testV1HistoryMigrationAndSnapshotRestore root =
         let project = Path.Combine(root, "history-migration")
         let store = Storage.create project
@@ -1744,6 +1980,7 @@ module Program =
             testManifestV3TypeSourceRoundTripAndValidation root
             testManifestV4SharedTestFileRoundTripAndValidation root
             testManifestV5AttachmentSourceFormats root
+            testManifestV6TypeHistory root
             testV1HistoryMigrationAndSnapshotRestore root
             testManifestV2ValidationAndLimits root
             testRuntimePublishesV2ForExplicitStackFrontend root
@@ -1755,7 +1992,7 @@ module Program =
             testTamperingUnsupportedVersionAndNoFallback root
             testTaskLogValidation root
             testReparsePointRefusal root
-            printfn $"Storage tests passed: 17 groups, {assertions} assertions."
+            printfn $"Storage tests passed: 18 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

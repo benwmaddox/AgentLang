@@ -100,12 +100,21 @@ type TypeSource =
       SourceFormat: SourceFormat
       ValidatorTarget: StoredCallTarget option }
 
+/// One immutable type source displaced by a later committed head.
+type TypeSourceRevision =
+    { Name: string
+      Revision: int
+      Definition: SourceRef
+      SourceFormat: SourceFormat
+      ValidatorTarget: StoredCallTarget option }
+
 /// Immutable metadata for one committed project state. Storage deliberately
 /// does not parse ProjectSource or validate its language-level meaning.
 type ProjectManifest =
     { FormatVersion: int
       ProjectSource: SourceRef
       Types: TypeSource list
+      TypeRevisions: TypeSourceRevision list
       Words: WordHead list
       Revisions: WordRevision list }
 
@@ -134,6 +143,11 @@ type RevisionContent =
       DefinitionSource: string
       TestSources: string list
       ExampleSources: string list }
+
+type TypeRevisionContent =
+    { Revision: TypeSourceRevision
+      Source: string
+      IsCurrent: bool }
 
 type StorageError =
     { Code: string
@@ -193,7 +207,7 @@ module Storage =
     // CURRENT and named snapshots remain version 1 independently from manifests.
     let private pointerSnapshotFormatVersion = 1
     let private minimumManifestFormatVersion = 1
-    let private maximumManifestFormatVersion = 5
+    let private maximumManifestFormatVersion = 6
     let private storeDirectoryName = ".agentlang"
     let private storeDirectory = "store"
     let private objectDirectory = "objects"
@@ -693,7 +707,7 @@ module Storage =
         let isDefaultSource = revision.SourceFormat = defaultSourceFormat && List.isEmpty revision.CallBindings
         if manifestVersion = 1 && not isDefaultSource then
             failure "STORAGE_INVALID_MANIFEST" "A version-1 manifest can only serialize Stack version 1 revisions with no call bindings." None
-        if manifestVersion < 1 || manifestVersion > 5 then
+        if manifestVersion < 1 || manifestVersion > maximumManifestFormatVersion then
             failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported." None
         let node = JsonObject()
         node["wordId"] <- jsonString revision.WordId
@@ -740,6 +754,15 @@ module Storage =
             node["validatorTarget"] <- item.ValidatorTarget |> Option.map storedCallTargetNode |> Option.defaultValue null
         node :> JsonNode
 
+    let private typeSourceRevisionNode (item: TypeSourceRevision) =
+        let node = JsonObject()
+        node["name"] <- jsonString item.Name
+        node["revision"] <- jsonInt item.Revision
+        node["definition"] <- sourceRefNode item.Definition
+        node["sourceFormat"] <- sourceFormatNode item.SourceFormat
+        node["validatorTarget"] <- item.ValidatorTarget |> Option.map storedCallTargetNode |> Option.defaultValue null
+        node :> JsonNode
+
     let private manifestNode (manifest: ProjectManifest) =
         if manifest.FormatVersion < minimumManifestFormatVersion || manifest.FormatVersion > maximumManifestFormatVersion then
             failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifest.FormatVersion} is not supported." None
@@ -750,6 +773,14 @@ module Storage =
         let types = JsonArray()
         manifest.Types |> List.sortBy (fun item -> item.Name) |> List.iter (typeSourceNode manifest.FormatVersion >> types.Add)
         node["types"] <- types
+        if manifest.FormatVersion >= 6 then
+            let typeRevisions = JsonArray()
+            manifest.TypeRevisions
+            |> List.sortBy (fun item -> item.Name, item.Revision)
+            |> List.iter (typeSourceRevisionNode >> typeRevisions.Add)
+            node["typeRevisions"] <- typeRevisions
+        elif not (List.isEmpty manifest.TypeRevisions) then
+            failure "STORAGE_INVALID_MANIFEST" $"Manifest version {manifest.FormatVersion} cannot serialize retained type-source history." None
         let words = JsonArray()
         manifest.Words |> List.sortBy (fun item -> item.WordId) |> List.iter (wordHeadNode >> words.Add)
         node["words"] <- words
@@ -782,7 +813,8 @@ module Storage =
             | 2
             | 3
             | 4
-            | 5 ->
+            | 5
+            | 6 ->
                 if not (value.ContainsKey "sourceFormat") then
                     failure "STORAGE_INVALID_JSON" $"Version-{manifestVersion} word revisions require sourceFormat." path
                 if not (value.ContainsKey "callBindings") then
@@ -794,7 +826,7 @@ module Storage =
         let attachmentSourceFormats =
             if manifestVersion >= 5 then
                 if not (value.ContainsKey "attachmentSourceFormats") then
-                    failure "STORAGE_INVALID_JSON" "Version-5 word revisions require attachmentSourceFormats." path
+                    failure "STORAGE_INVALID_JSON" $"Version-{manifestVersion} word revisions require attachmentSourceFormats." path
                 parseAttachmentSourceFormats path (Set.ofList (tests @ examples)) value["attachmentSourceFormats"]
             else
                 tests @ examples
@@ -845,7 +877,8 @@ module Storage =
                 sourceFormat, validatorTarget
             | 3
             | 4
-            | 5 ->
+            | 5
+            | 6 ->
                 if not (value.ContainsKey "sourceFormat") then
                     failure "STORAGE_INVALID_JSON" $"Version-{manifestVersion} type sources require sourceFormat." path
                 if not (value.ContainsKey "validatorTarget") then
@@ -858,6 +891,19 @@ module Storage =
           Definition = parseSourceRef path value["definition"]
           SourceFormat = sourceFormat
           ValidatorTarget = validatorTarget }
+
+    let private parseTypeSourceRevision path node =
+        let value = requireObject "type source revision" node
+        if not (value.ContainsKey "sourceFormat") then
+            failure "STORAGE_INVALID_JSON" "Version-6 type source revisions require sourceFormat." path
+        if not (value.ContainsKey "validatorTarget") then
+            failure "STORAGE_INVALID_JSON" "Version-6 type source revisions require validatorTarget (use null when no validator is declared)." path
+        let target = value["validatorTarget"]
+        { Name = requireString "type source revision name" value["name"]
+          Revision = requireInt "type source revision number" value["revision"]
+          Definition = parseSourceRef path value["definition"]
+          SourceFormat = parseSourceFormat path value["sourceFormat"]
+          ValidatorTarget = if isNull target then None else Some(parseTypeValidatorTarget path target) }
 
     let private preflightCallBindingWireBounds path (revisionNodes: JsonArray) =
         let mutable bindingCount = 0
@@ -884,12 +930,21 @@ module Storage =
         // version-specific revision fields so errors are stable and structured.
         let manifestVersion = requireInt "manifest format version" value["formatVersion"]
         if manifestVersion < minimumManifestFormatVersion || manifestVersion > maximumManifestFormatVersion then
-            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported (expected 1, 2, 3, 4, or 5)." path
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported (expected 1, 2, 3, 4, 5, or 6)." path
+        if manifestVersion < 6 && value.ContainsKey "typeRevisions" then
+            failure "STORAGE_INVALID_MANIFEST" $"Manifest version {manifestVersion} cannot declare typeRevisions." path
         let revisionNodes = requireArray "manifest revisions" value["revisions"]
         preflightCallBindingWireBounds path revisionNodes
+        let typeRevisions =
+            if manifestVersion >= 6 then
+                if not (value.ContainsKey "typeRevisions") then
+                    failure "STORAGE_INVALID_JSON" "Version-6 manifests require typeRevisions (use an empty array when there is no history)." path
+                parseArray "manifest type source revisions" (parseTypeSourceRevision path) value["typeRevisions"]
+            else []
         { FormatVersion = manifestVersion
           ProjectSource = parseSourceRef path value["projectSource"]
           Types = parseArray "manifest types" (parseTypeSource path manifestVersion) value["types"]
+          TypeRevisions = typeRevisions
           Words = parseArray "manifest words" parseWordHead value["words"]
           Revisions = parseArray "manifest revisions" (parseWordRevision path manifestVersion) (revisionNodes :> JsonNode) }
 
@@ -897,6 +952,7 @@ module Storage =
         seq {
             yield manifest.ProjectSource
             for item in manifest.Types do yield item.Definition
+            for revision in manifest.TypeRevisions do yield revision.Definition
             for revision in manifest.Revisions do
                 yield revision.Definition
                 yield! revision.Tests
@@ -918,10 +974,12 @@ module Storage =
 
     let private validateManifest (manifest: ProjectManifest) path =
         if manifest.FormatVersion < minimumManifestFormatVersion || manifest.FormatVersion > maximumManifestFormatVersion then
-            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifest.FormatVersion} is not supported (expected 1, 2, 3, 4, or 5)." path
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifest.FormatVersion} is not supported (expected 1, 2, 3, 4, 5, or 6)." path
         validateCallBindingBounds path manifest.Revisions
         if manifest.ProjectSource.Kind <> StorageObjectKind.ProjectSource then
             failure "STORAGE_INVALID_MANIFEST" "Manifest projectSource must reference a project-source object." path
+        if manifest.FormatVersion < 6 && not (List.isEmpty manifest.TypeRevisions) then
+            failure "STORAGE_INVALID_MANIFEST" $"Manifest version {manifest.FormatVersion} cannot retain type-source history." path
 
         let uniqueBy description key (values: 'T list) =
             let duplicate = values |> List.groupBy key |> List.tryFind (fun (_, entries) -> entries.Length > 1)
@@ -929,7 +987,7 @@ module Storage =
             | Some(value, _) -> failure "STORAGE_DUPLICATE_IDENTITY" $"Manifest has duplicate {description} '{value}'." path
             | None -> ()
 
-        uniqueBy "type name" (fun item -> item.Name) manifest.Types
+        uniqueBy "type name" (fun (item: TypeSource) -> item.Name) manifest.Types
         for item in manifest.Types do
             validMetadataText "Type name" 256 path item.Name
             if item.Definition.Kind <> StorageObjectKind.TypeDefinition then
@@ -944,6 +1002,31 @@ module Storage =
             | Some(StoredCallTarget.GeneratedWord identity) ->
                 validMetadataText "Type validator target identity" 128 path identity
             | None -> ()
+
+        uniqueBy "type source revision identity" (fun item -> item.Name, item.Revision) manifest.TypeRevisions
+        let currentTypeNames = manifest.Types |> List.map _.Name |> Set.ofList
+        let typeRevisionsByName = manifest.TypeRevisions |> List.groupBy _.Name
+        for revision in manifest.TypeRevisions do
+            validMetadataText "Type source revision name" 256 path revision.Name
+            if revision.Revision < 1 then
+                failure "STORAGE_INVALID_MANIFEST" "Type source revision number must be positive." path
+            if not (Set.contains revision.Name currentTypeNames) then
+                failure "STORAGE_INVALID_MANIFEST" $"Type source revision '{revision.Name}/{revision.Revision}' has no current type head." path
+            if revision.Definition.Kind <> StorageObjectKind.TypeDefinition then
+                failure "STORAGE_INVALID_MANIFEST" $"Type source revision '{revision.Name}/{revision.Revision}' must reference a type-definition object." path
+            if not (isSupportedSourceFormat revision.SourceFormat.Frontend revision.SourceFormat.Version) then
+                failure "STORAGE_UNSUPPORTED_VERSION" $"Type source revision syntax format {sourceFrontendName revision.SourceFormat.Frontend}/{revision.SourceFormat.Version} is not supported." path
+            match revision.ValidatorTarget with
+            | Some(StoredCallTarget.UserWord identity)
+            | Some(StoredCallTarget.Primitive identity)
+            | Some(StoredCallTarget.GeneratedWord identity) ->
+                validMetadataText "Type source revision validator target identity" 128 path identity
+            | None -> ()
+        for name, revisions in typeRevisionsByName do
+            let orderedOrdinals = revisions |> List.map _.Revision |> List.sort
+            for index, revision in orderedOrdinals |> List.indexed do
+                if revision <> index + 1 then
+                    failure "STORAGE_INVALID_MANIFEST" $"Type source revisions for '{name}' must be positive and contiguous before the current head." path
 
         uniqueBy "word ID" (fun item -> item.WordId) manifest.Words
         uniqueBy "current word name" (fun item -> item.CurrentName) manifest.Words
@@ -978,7 +1061,7 @@ module Storage =
             let mappedAttachmentReferences = revision.AttachmentSourceFormats |> Map.toSeq |> Seq.map fst |> Set.ofSeq
             if manifest.FormatVersion >= 5 then
                 if mappedAttachmentReferences <> attachmentReferences then
-                    failure "STORAGE_INVALID_MANIFEST" $"Version-5 word revision '{revision.Name}' must declare exactly one source format for each attached test and example reference." path
+                    failure "STORAGE_INVALID_MANIFEST" $"Version-{manifest.FormatVersion} word revision '{revision.Name}' must declare exactly one source format for each attached test and example reference." path
             elif not (Map.isEmpty revision.AttachmentSourceFormats)
                  && (mappedAttachmentReferences <> attachmentReferences
                      || revision.AttachmentSourceFormats |> Map.exists (fun _ sourceFormat -> sourceFormat <> revision.SourceFormat)) then
@@ -1335,7 +1418,8 @@ module Storage =
                     failure "STORAGE_DUPLICATE_OBJECT" "The provided source list contains conflicting content for one source reference." None
                 reference, first)
             |> Map.ofList
-        for reference in allSourceRefs manifest do
+        let references = allSourceRefs manifest
+        for reference in references |> List.distinct do
             match providedByRef.TryFind reference with
             | Some item -> sourceObjectBytes item |> ignore
             | None -> readSourceCore store reference |> ignore
@@ -1360,7 +1444,8 @@ module Storage =
         validateManifest manifest (Some path)
         let refs = allSourceRefs manifest
         let projectSource = readSourceCore store manifest.ProjectSource
-        for reference in refs do readSourceCore store reference |> ignore
+        for reference in refs |> List.distinct do
+            if reference <> manifest.ProjectSource then readSourceCore store reference |> ignore
         manifest, projectSource
 
     let private loadCore store =
@@ -1709,6 +1794,57 @@ module Storage =
                   DefinitionSource = readSourceCore store item.Definition
                   TestSources = item.Tests |> List.map (readSourceCore store)
                   ExampleSources = item.Examples |> List.map (readSourceCore store) })
+
+    /// Read type-source history from one exact manifest. Prior rows and the
+    /// current head are returned in ordinal order with their exact stored text.
+    /// Loading the manifest first verifies every referenced source object,
+    /// including historical objects not selected by this query.
+    let readTypeHistory
+        (store: Store)
+        (manifestHash: string)
+        (typeName: string)
+        : Result<TypeRevisionContent list, StorageError> =
+        catchStorage (fun () ->
+            ensureReadLayout store
+            let manifest, _ = loadManifestCore store manifestHash
+            match manifest.Types |> List.tryFind (fun item -> item.Name = typeName) with
+            | None -> failure "STORAGE_TYPE_SOURCE_NOT_FOUND" $"Type source '{typeName}' was not found in manifest {manifestHash}." None
+            | Some head ->
+                let prior =
+                    manifest.TypeRevisions
+                    |> List.filter (fun item -> item.Name = typeName)
+                    |> List.sortBy (fun item -> item.Revision)
+                let headRevision =
+                    { Name = head.Name
+                      Revision = prior.Length + 1
+                      Definition = head.Definition
+                      SourceFormat = head.SourceFormat
+                      ValidatorTarget = head.ValidatorTarget }
+                let sourceCache = Collections.Generic.Dictionary<SourceRef, string * int>()
+                let mutable returnedSourceBytes = 0
+                let readReturnedSource reference =
+                    let content, byteCount =
+                        match sourceCache.TryGetValue reference with
+                        | true, cached -> cached
+                        | false, _ ->
+                            let loaded = readSourceCore store reference
+                            let length = utf8.GetByteCount loaded
+                            let cached = loaded, length
+                            sourceCache.Add(reference, cached)
+                            cached
+                    if byteCount > StorageLimits.MaxMetadataBytes - returnedSourceBytes then
+                        failure "STORAGE_LIMIT_EXCEEDED" $"Type history source output exceeds the {StorageLimits.MaxMetadataBytes}-byte UTF-8 limit." None
+                    returnedSourceBytes <- returnedSourceBytes + byteCount
+                    content
+                [ for item in prior do
+                      yield
+                          { Revision = item
+                            Source = readReturnedSource item.Definition
+                            IsCurrent = false }
+                  yield
+                      { Revision = headRevision
+                        Source = readReturnedSource head.Definition
+                        IsCurrent = true } ])
 
     /// Persist a machine-readable task log under the project history directory.
     /// Task IDs are restricted to a filename-safe ASCII alphabet.

@@ -1,0 +1,203 @@
+{
+  "format": 1,
+  "report": "187-durable-type-source-history",
+  "baseRevision": "4e3ce580072df52079123c09c14ce543e930a2ec",
+  "testedWorkingSourcePins": [
+    {
+      "path": "docs/DISCOVERY.md",
+      "sha256": "9c23615d43f888e9bfb76e884aa904760385f0cf247f4bdd7ca295a111b696b0"
+    },
+    {
+      "path": "scripts/Validate.ps1",
+      "sha256": "1ae5d6539fe7ebe8c5629c50d201a6509a11a1dc5fe81782a1dcde8f40ce4ecd"
+    },
+    {
+      "path": "src/AgentLang.Core/Runtime.fs",
+      "sha256": "579d9448bc0ec15bf5f18a1a4776bcf9ce3277e64c6744a969f84b4230a2ae42"
+    },
+    {
+      "path": "src/AgentLang.Core/Storage.fs",
+      "sha256": "b5322215792397293e5adec2b3efd3705459bacdc0561996385a04ce7bbcf3ec"
+    },
+    {
+      "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "sha256": "93153b4283d2829cb22f14f6f7b1d4154c048732b19d4f62b311b1a3f0f05f4d"
+    },
+    {
+      "path": "tests/AgentLang.Storage.Tests/Program.fs",
+      "sha256": "307a5796b0341c638ef73e21ce712d1285a68fb1391187f7693e7dfad7099f10"
+    }
+  ],
+  "localValidation": {
+    "passed": true,
+    "checks": 37,
+    "terminalExitCode": 0,
+    "runtimeGroups": 42,
+    "runtimeAssertions": 1934,
+    "storageGroups": 18,
+    "storageAssertions": 572
+  },
+  "archive": {
+    "file": "evidence.zip",
+    "bytes": 1806162,
+    "sha256": "d15927b0614a7ab5c1177df57ae679d1cce6ceed0106f5012a1102ac0d8bd116"
+  },
+  "verification": {
+    "sourcePinsUnchanged": true,
+    "legacyGoldenPinsUnchanged": true,
+    "memberHashes": "passed",
+    "count": 30
+  },
+  "files": [
+    {
+      "path": "sources/docs/DISCOVERY.md",
+      "bytes": 10388,
+      "sha256": "9c23615d43f888e9bfb76e884aa904760385f0cf247f4bdd7ca295a111b696b0"
+    },
+    {
+      "path": "validation/run-full-validation.ps1",
+      "bytes": 1215,
+      "sha256": "4552ee076f06db23e7c7f7282fe8f2cfc9b832d63bb0f231fb30f09a5f01114c"
+    },
+    {
+      "path": "validation/package-evidence.ps1",
+      "bytes": 4413,
+      "sha256": "20a582fed05a836bd651d6b4dd77967f10eaeaeb64267dafb4820afc5ef5197f"
+    },
+    {
+      "path": "validation/legacy-golden-pins.json",
+      "bytes": 1378,
+      "sha256": "5db54de17f3f48ae21022d1eae896d163696f71b9f314a44360ce64437b0b911"
+    },
+    {
+      "path": "validation/interrupted-1-source-pins.json",
+      "bytes": 975,
+      "sha256": "68d543e3224b4c5247bc4325ae5b569fef83e81e33e192ae82ee9de42d81bacf"
+    },
+    {
+      "path": "validation/interrupted-1-full-validation.log",
+      "bytes": 8104,
+      "sha256": "7747d868fa3dc64b8d8de4c50c59e7ef3e83841854fcb4156fba94663f81c6dd"
+    },
+    {
+      "path": "validation/interrupted-1-full-validation-exit.json",
+      "bytes": 76,
+      "sha256": "fe1701a0a09d9077bb3390ff500122baf1dffdc2a8a2990bb7bffb359f06df03"
+    },
+    {
+      "path": "validation/full-validation.subagent-host.json",
+      "bytes": 348059,
+      "sha256": "07523c4fa324220e043f86324fd2ec1cb0f3db4a8803f3859239dab9ade54990"
+    },
+    {
+      "path": "validation/full-validation.subagent-host-v2.json",
+      "bytes": 25382,
+      "sha256": "9246c03cc53124a6859b5b7112e096cf548b48605711af302a9a6b1213e484ec"
+    },
+    {
+      "path": "validation/full-validation.renewal-replay.json",
+      "bytes": 307012,
+      "sha256": "c2aa4954a9dd746635da7c10d3b6d0f840752730886fb1a4135bb59d1e1a1980"
+    },
+    {
+      "path": "validation/full-validation.renewal-acceptance-gate.json",
+      "bytes": 1025134,
+      "sha256": "800476f9b7373951a1b40d10699f25a65be81a65eea9eb56f4e668f559bd2ac8"
+    },
+    {
+      "path": "validation/full-validation.projection.json",
+      "bytes": 123935,
+      "sha256": "cb4e8321b8826299095005c271a22d2eb3797c5dbdea001395e30af806a22245"
+    },
+    {
+      "path": "validation/full-validation.parser-limits.json",
+      "bytes": 3186,
+      "sha256": "355b60b156c4076fe26b9a957a733fe102d5b00c450ee0743acf2921288fd046"
+    },
+    {
+      "path": "validation/full-validation.matched-snapshots.json",
+      "bytes": 85956,
+      "sha256": "394283b39036b6ee528eeaa4ddb5e104d20b7d73f4a4b76d7c4e352ad6b5765c"
+    },
+    {
+      "path": "validation/full-validation.matched-fixtures.json",
+      "bytes": 99883,
+      "sha256": "c3fd93ddf404af719c703755de417b1a63c6acc8686d68cdbf6efc5df1896d8c"
+    },
+    {
+      "path": "validation/full-validation.log",
+      "bytes": 17115,
+      "sha256": "181ca2e39f1b348fa1359758ebc465d85b88980dae32776fa8dafe352a3ff7d2"
+    },
+    {
+      "path": "validation/full-validation.json",
+      "bytes": 29895,
+      "sha256": "39e777b94358d30f7215cc69c11d11359cae4a2c95faabe6fd7f06b4212ef425"
+    },
+    {
+      "path": "validation/full-validation.flow-matched-fixtures.json",
+      "bytes": 230020,
+      "sha256": "a8e9ff316c75f65d56648eb6273f1c79c999fd71e7c3dd26f0b1e38e4ae0fa88"
+    },
+    {
+      "path": "validation/full-validation.early-agent-negative.json",
+      "bytes": 172934,
+      "sha256": "6965c45e5974f84e0e3391ca492896a1d3d071aa7c4f8dc1f05e470987c2b205"
+    },
+    {
+      "path": "validation/full-validation.business-policy-preflight.json",
+      "bytes": 15483111,
+      "sha256": "e8609aaaa40baffb4c38561b10fa1147714f3aef9c9d08cf146ebb1068451bf6"
+    },
+    {
+      "path": "validation/full-validation-exit.json",
+      "bytes": 75,
+      "sha256": "6845f479d4ce2b82a389fd647f77dcef0eb3204ad4e96a4b62717690673d2493"
+    },
+    {
+      "path": "validation/final-review.md",
+      "bytes": 4698,
+      "sha256": "937ac5c519e9bf07c02c1a073c7d65fa5e914a660c549258f1e6a2a517a0b264"
+    },
+    {
+      "path": "validation/acceptance-review.md",
+      "bytes": 7746,
+      "sha256": "b5d7e0bc537cab0d0e8e8411b3480bc3418667f2a0bd48bbf77fbf821fb251b2"
+    },
+    {
+      "path": "sources/tests/AgentLang.Storage.Tests/Program.fs",
+      "bytes": 145173,
+      "sha256": "307a5796b0341c638ef73e21ce712d1285a68fb1391187f7693e7dfad7099f10"
+    },
+    {
+      "path": "sources/tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "bytes": 503880,
+      "sha256": "93153b4283d2829cb22f14f6f7b1d4154c048732b19d4f62b311b1a3f0f05f4d"
+    },
+    {
+      "path": "sources/src/AgentLang.Core/Storage.fs",
+      "bytes": 106195,
+      "sha256": "b5322215792397293e5adec2b3efd3705459bacdc0561996385a04ce7bbcf3ec"
+    },
+    {
+      "path": "sources/src/AgentLang.Core/Runtime.fs",
+      "bytes": 509918,
+      "sha256": "579d9448bc0ec15bf5f18a1a4776bcf9ce3277e64c6744a969f84b4230a2ae42"
+    },
+    {
+      "path": "sources/scripts/Validate.ps1",
+      "bytes": 10201,
+      "sha256": "1ae5d6539fe7ebe8c5629c50d201a6509a11a1dc5fe81782a1dcde8f40ce4ecd"
+    },
+    {
+      "path": "validation/source-pins.json",
+      "bytes": 975,
+      "sha256": "110ec2c2a43535127887095cdcdce5c263704925e9017e1ba741299afd93592d"
+    },
+    {
+      "path": "validation/validation-receipt.md",
+      "bytes": 1610,
+      "sha256": "426dd93a1f73c1f73e4270da54641f8d42d17e373bb283501583682470d9f53c"
+    }
+  ]
+}

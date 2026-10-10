@@ -55,7 +55,9 @@ The JSON-lines dispatcher and human REPL expose these commands:
 
 | Operation | Required arguments | Result |
 | --- | --- | --- |
+| `describe` | `word` or `type` | Word and syntax descriptors retain their existing payloads. A type selector returns its exact authored `sourceHash`, source format, validator target, status, and committed revision; a candidate type has `revision:null`. Both selectors are ambiguous. |
 | `source` | Exactly one of `word` or `type` | Retained source for that word or declared type. `{"op":"source","type":"Interval"}` inspects a type; do not put its name in `word`. |
+| `history` | `word` or `type` | Word history keeps its existing array payload. Type history returns retained exact source text and hashes in ordinal order; it requires a committed type source and never compiles historical declarations. Both selectors are ambiguous. |
 | `type-of` | `word` | The same word or syntax descriptor metadata returned by `describe`. |
 | `search-type` | `type` | `data.words` contains words whose input or output structurally contains the closed type. |
 | `search-output` | `type` | `data.words` contains words whose output structurally contains the closed type. |
@@ -67,6 +69,14 @@ The JSON-lines dispatcher and human REPL expose these commands:
 | `context` | `word`, optional `maxDepth`, `maxWords`, `maxUtf8Bytes` | One complete compact context document in `data`. |
 
 For example, JSON-lines requests may be `{"op":"search-type","type":"Option<List<Email>>"}`, `{"op":"graph","word":"customer.discounted-balance","maxDepth":5,"maxNodes":80}`, and `{"op":"context","word":"customer.discounted-balance","maxWords":12,"maxUtf8Bytes":10000}`. Human commands use the corresponding colon form, such as `:search-type Option<List<Email>>`, `:graph customer.discounted-balance --max-depth 5 --max-nodes 80`, and `:context customer.discounted-balance --max-words 12 --max-utf8-bytes 10000`.
+
+Type inspection and type history selectors are available through JSON-lines
+requests such as `{"op":"describe","type":"Interval"}` and
+`{"op":"history","type":"Interval"}`. A type history query requires a
+committed manifest; it returns only manifest-referenced source objects, in
+revision order, and limits the combined returned source text to 8 MiB of UTF-8
+bytes (repeated references count once per revision in the response). Supplying
+both `word` and `type` is an ambiguous selector.
 
 Type search inputs use the language's closed type syntax. The parser rejects malformed and open type-variable queries; every named type must match a declared record or scalar name exactly. For example, `Email` never matches `String`, and `Option<List<Email>>` is distinct from `Option<List<String>>`. Unknown roots, unknown dependency words, and undeclared nominal types return structured diagnostics. All query results are deterministically ordered.
 

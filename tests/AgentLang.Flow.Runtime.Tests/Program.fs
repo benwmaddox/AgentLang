@@ -2526,6 +2526,27 @@ test durable.v4-ready/basic {
         let v5Value = evalStack versionFiveReload "7 receipt.new receipt.amount" |> expectOk "evaluate generated accessor after v5 reload"
         equal "7" (stringValue (v5Value.["data"].["stack"].[0])) "generated type executable remains intact after v5 reload"
 
+        let receiptType = versionFive.Manifest.Value.Types |> List.find (fun item -> item.Name = "Receipt")
+        let versionSixManifest =
+            { versionFive.Manifest.Value with
+                FormatVersion = 6
+                TypeRevisions =
+                    [ { Name = receiptType.Name
+                        Revision = 1
+                        Definition = receiptType.Definition
+                        SourceFormat = receiptType.SourceFormat
+                        ValidatorTarget = receiptType.ValidatorTarget } ] }
+        let v5Export = versionFive.ProjectSource |> Option.defaultWith (fun () -> failwith "v5 project export is missing")
+        Storage.commit store versionFive.Generation versionSixManifest [] v5Export
+        |> Result.defaultWith (fun problem -> failwith $"upgrade mixed generated-type project to v6: {problem.Code}: {problem.Message}")
+        |> ignore
+        let versionSixReload = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
+        assertAllPassed 1 (dispatch versionSixReload "test" [ "word", jstr "receipt.amount" ] |> expectOk "run generated accessor test after v6 reload")
+        let v6Example = dispatch versionSixReload "example" [ "word", jstr "receipt.amount"; "caseName", jstr "read" ] |> expectOk "run generated accessor example after v6 reload"
+        check (boolValue (v6Example.["data"].["results"].[0].["passed"])) "generated accessor example survives v6 reload beside mixed Flow revisions"
+        let v6Value = evalStack versionSixReload "7 receipt.new receipt.amount" |> expectOk "evaluate generated accessor after v6 reload"
+        equal "7" (stringValue (v6Value.["data"].["stack"].[0])) "generated type executable remains intact after v6 reload"
+
     let private testStackGeneratedCasesSurviveV1Manifest root =
         let project = Path.Combine(root, "stack-generated-cases-v1")
         let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
@@ -5121,9 +5142,25 @@ test owner.read-bound/local-receiver {
         defineStack engine emailTypeSource []
         |> expectOk "stage a Stack scalar type whose validator is Flow-authored"
         |> ignore
+        let candidateEmailDescription =
+            dispatch engine "describe" [ "type", jstr "Email" ]
+            |> expectOk "inspect the staged Stack scalar with its resolved validator"
+            |> fun response -> response.["data"]
+        equal "candidate" (stringValue candidateEmailDescription.["status"]) "staged Stack scalar inspection reports candidate status"
+        check (isNull candidateEmailDescription.["revision"]) "staged Stack scalar inspection has no committed revision"
+        equal "userWord" (stringValue candidateEmailDescription.["validatorTarget"].["kind"]) "staged Stack scalar inspection resolves its validator target kind"
+        equal validatorId (stringValue candidateEmailDescription.["validatorTarget"].["identity"]) "staged Stack scalar inspection resolves the exact validator identity"
         dispatch engine "commit" []
         |> expectOk "commit the Flow validator closure and tested nominal constructor caller"
         |> ignore
+        let committedEmailDescription =
+            dispatch engine "describe" [ "type", jstr "Email" ]
+            |> expectOk "inspect the committed Stack scalar in the same Engine"
+            |> fun response -> response.["data"]
+        equal "persistent" (stringValue committedEmailDescription.["status"]) "same-Engine Stack scalar inspection reports persistent status after commit"
+        equal 1 (committedEmailDescription.["revision"].GetValue<int>()) "same-Engine Stack scalar inspection reports committed revision one"
+        equal (stringValue candidateEmailDescription.["sourceHash"]) (stringValue committedEmailDescription.["sourceHash"]) "Stack scalar source hash is stable across commit"
+        equal validatorId (stringValue committedEmailDescription.["validatorTarget"].["identity"]) "same-Engine Stack scalar inspection reports the committed validator identity"
         assertAllPassed 1 (dispatch engine "test" [ "word", jstr "email.roundtrip" ] |> expectOk "run committed nominal caller through Flow validator")
 
         let before = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
@@ -5154,6 +5191,12 @@ test owner.read-bound/local-receiver {
         equal before.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "case-only edit cannot bypass the frozen validator replacement guard"
         equal [ "invalid"; "valid" ] (jsonArrayStrings (dispatch engine "tests" [ "word", jstr "email.valid?" ] |> expectOk "inspect frozen validator cases after rejected addition" |> fun response -> response.["data"])) "frozen validator refusal does not activate an attachment edit"
         equal "\"a@b\"" (stringValue (evalStack engine "\"a@b\" Email.new Email.value" |> expectOk "construct nominal value through retained Flow validator" |> fun response -> response.["data"].["stack"].[0])) "committed Stack nominal type keeps its Flow validator callable"
+        let scalarReload = Runtime.Engine(project, Set.empty, "2034-05-06T07:08:09Z", fileSystemMode = FileSystemMode.Virtual)
+        let reloadedEmailDescription =
+            dispatch scalarReload "describe" [ "type", jstr "Email" ]
+            |> expectOk "inspect the committed Stack scalar after fresh reload"
+            |> fun response -> response.["data"]
+        equal (committedEmailDescription.ToJsonString()) (reloadedEmailDescription.ToJsonString()) "same-Engine and freshly reloaded Stack scalar validator inspection agree exactly"
 
     let private testFlowProjectDocumentTypesCommitAndReload root =
         let project = Path.Combine(root, "flow-project-document")
@@ -5252,6 +5295,13 @@ test owner.read-bound/local-receiver {
             |> Seq.sort
             |> Seq.toList
         equal [ "Customer"; "Email"; "MetersPerSecond" ] declaredTypes "project response identifies all authored types"
+        let candidateTypeDescription = dispatch engine "describe" [ "type", jstr "Email" ] |> expectOk "describe a staged type source"
+        equal "candidate" (stringValue candidateTypeDescription.["data"].["status"]) "candidate type inspection reports its staged status"
+        equal (digest emailTypeSource) (stringValue candidateTypeDescription.["data"].["sourceHash"]) "candidate type inspection hashes exact authored bytes"
+        check (isNull candidateTypeDescription.["data"].["revision"]) "candidate type inspection does not fabricate a committed revision"
+        expectError "HISTORY_STORAGE_REQUIRED" (dispatch engine "history" [ "type", jstr "Email" ]) |> ignore
+        expectError "TYPE_QUERY_AMBIGUOUS_SELECTOR" (dispatch engine "describe" [ "word", jstr "email.valid?"; "type", jstr "Email" ]) |> ignore
+        expectError "TYPE_QUERY_AMBIGUOUS_SELECTOR" (dispatch engine "history" [ "word", jstr "email.valid?"; "type", jstr "Email" ]) |> ignore
 
         // Existing names reject the whole incoming document, including its new members.
         let wordsBeforeTypeCollision = wordInventory engine
@@ -5329,6 +5379,16 @@ test owner.read-bound/local-receiver {
 
         let reloaded = Runtime.Engine(project, Set.empty, "2038-04-05T06:07:08Z", fileSystemMode = FileSystemMode.Virtual)
         equal validatorId (getWordId reloaded "email.valid?") "reload preserves scalar validator stable identity"
+        let typeDescription = dispatch reloaded "describe" [ "type", jstr "Email" ] |> expectOk "inspect the committed Flow type source after reload" |> fun response -> response.["data"]
+        equal "persistent" (stringValue typeDescription.["status"]) "committed type inspection reports persistent status"
+        equal 1 (typeDescription.["revision"].GetValue<int>()) "v3 type head is exposed as implicit committed revision one"
+        equal (digest emailTypeSource) (stringValue typeDescription.["sourceHash"]) "type inspection exposes the current exact source hash"
+        let typeHistory = dispatch reloaded "history" [ "type", jstr "Email" ] |> expectOk "read committed Flow type history after reload" |> fun response -> response.["data"]
+        equal "Email" (stringValue typeHistory.["type"]) "type history identifies the selected type"
+        equal 1 (typeHistory.["revisions"].AsArray().Count) "a v3 head without stored rows reads as one implicit initial revision"
+        equal emailTypeSource (stringValue typeHistory.["revisions"].[0].["source"]) "type history returns the exact current source text"
+        equal (digest emailTypeSource) (stringValue typeHistory.["revisions"].[0].["sourceHash"]) "type history hash matches exact current authored bytes"
+        check (boolValue typeHistory.["revisions"].[0].["current"]) "implicit initial type revision is marked current"
         equal emailTypeSource (stringValue (sourceType reloaded "Email" |> expectOk "read authored Flow scalar source after reload" |> fun response -> response.["data"])) "source(type) returns the exact authored scalar declaration"
         equal recordSource (stringValue (sourceType reloaded "Customer" |> expectOk "read authored Flow record source after reload" |> fun response -> response.["data"])) "source(type) returns the exact authored record declaration"
         equal "MetersPerSecond" (stringValue (evalFlow reloaded "speed::roundtrip(MetersPerSecond::new(1.0))" |> expectOk "evaluate a reloaded nominal Float wrapper" |> fun response -> response.["data"].["stackTypes"].[0])) "nominal wrapper remains distinct from its Float base after reload"
@@ -5341,6 +5401,42 @@ test owner.read-bound/local-receiver {
         check (boolValue (reloadedExample.["data"].["results"].[0].["passed"])) "reloaded example still executes against the nominal record"
         let cli = cliEval project "customer::accepts-email(customer::new(email = Email::new(\"a@b\")))" |> expectOk "fresh-process CLI loads the Flow project"
         equal "true" (stringValue (cli.["data"].["stack"].[0])) "fresh-process CLI resolves the Flow validator and generated record vocabulary"
+
+        // Historical type source is verified and returned as data without being parsed
+        // or activated. A subsequent unrelated runtime commit must retain that history.
+        let historyProject = Path.Combine(root, "flow-type-history-data-only")
+        let historyEngine = Runtime.Engine(historyProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        defineFlowProject historyEngine "type CurrentType : String { }" [] |> expectOk "define the current type for historical-source isolation" |> ignore
+        commit historyEngine "commit" "CurrentType" [] |> expectOk "commit the current type for historical-source isolation" |> ignore
+        let historyStore = Storage.create historyProject
+        let baseLoad = Storage.load historyStore |> Result.defaultWith (fun problem -> failwith $"load current type before adding history: {problem.Code}: {problem.Message}")
+        let baseManifest = baseLoad.Manifest |> Option.defaultWith (fun () -> failwith "current type manifest is missing")
+        let currentType = baseManifest.Types |> List.find (fun item -> item.Name = "CurrentType")
+        let invalidHistoricalSource = "this is not a valid Flow type declaration\n"
+        let invalidHistoricalObject = Storage.sourceObject StorageObjectKind.TypeDefinition invalidHistoricalSource
+        let historyV6Manifest =
+            { baseManifest with
+                FormatVersion = 6
+                TypeRevisions =
+                    [ { Name = currentType.Name
+                        Revision = 1
+                        Definition = invalidHistoricalObject.Reference
+                        SourceFormat = currentType.SourceFormat
+                        ValidatorTarget = currentType.ValidatorTarget } ] }
+        let exactProjectSource = baseLoad.ProjectSource |> Option.defaultWith (fun () -> failwith "project source is missing")
+        Storage.commit historyStore baseLoad.Generation historyV6Manifest [ invalidHistoricalObject ] exactProjectSource
+        |> Result.defaultWith (fun problem -> failwith $"publish invalid historical source as v6 data: {problem.Code}: {problem.Message}")
+        |> ignore
+        let historyReload = Runtime.Engine(historyProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let invalidHistory = dispatch historyReload "history" [ "type", jstr "CurrentType" ] |> expectOk "return hash-verified invalid historical type bytes as data" |> fun response -> response.["data"]
+        equal invalidHistoricalSource (stringValue invalidHistory.["revisions"].[0].["source"]) "historical source is returned byte-for-byte without parsing"
+        equal (digest invalidHistoricalSource) (stringValue invalidHistory.["revisions"].[0].["sourceHash"]) "historical source hash covers exact invalid syntax bytes"
+        equal "\"ok\"" (stringValue (evalFlow historyReload "CurrentType::value(CurrentType::new(\"ok\"))" |> expectOk "execute using only the valid current type head" |> fun response -> response.["data"].["stack"].[0])) "invalid historical syntax does not replace the active current type"
+        defineFlowProject historyReload "type Later : String { }" [] |> expectOk "stage an unrelated type after loading type history" |> ignore
+        commit historyReload "commit" "Later" [] |> expectOk "commit an unrelated type after loading type history" |> ignore
+        let afterUnrelatedHistoryWrite = Storage.load historyStore |> Result.defaultWith (fun problem -> failwith $"reload after unrelated runtime type write: {problem.Code}: {problem.Message}")
+        equal 6 afterUnrelatedHistoryWrite.Manifest.Value.FormatVersion "runtime unrelated type writes preserve manifest v6"
+        equal historyV6Manifest.TypeRevisions afterUnrelatedHistoryWrite.Manifest.Value.TypeRevisions "runtime unrelated type writes preserve historical source rows"
 
         // Failed later declarations, nominal payload mismatches, invalid validators,
         // and temporary typed documents all leave the candidate vocabulary intact.
@@ -5618,6 +5714,14 @@ test owner.read-bound/local-receiver {
             + "    expect true\n"
             + "end"
         defineStack stackEngine stackSource [] |> expectOk "define a Stack/1 validated record and its predicate" |> ignore
+        let candidateStackValidatorId = getWordId stackEngine "checkedNumber.valid?"
+        let candidateStackDescription =
+            dispatch stackEngine "describe" [ "type", jstr "CheckedNumber" ]
+            |> expectOk "inspect the staged validated Stack record"
+            |> fun response -> response.["data"]
+        equal "candidate" (stringValue candidateStackDescription.["status"]) "staged Stack record inspection reports candidate status"
+        check (isNull candidateStackDescription.["revision"]) "staged Stack record inspection has no committed revision"
+        equal candidateStackValidatorId (stringValue candidateStackDescription.["validatorTarget"].["identity"]) "staged Stack record inspection resolves its exact validator identity"
         commit stackEngine "commit" "CheckedNumber" [ "library", jbool true ]
         |> expectOk "commit Stack/1 record validator with stable target metadata"
         |> ignore
@@ -5626,9 +5730,23 @@ test owner.read-bound/local-receiver {
         let stackManifest = stackLoaded.Manifest.Value
         let stackType = stackManifest.Types |> List.find (fun item -> item.Name = "CheckedNumber")
         let stackValidatorId = getWordId stackEngine "checkedNumber.valid?"
+        let committedStackDescription =
+            dispatch stackEngine "describe" [ "type", jstr "CheckedNumber" ]
+            |> expectOk "inspect the committed Stack record in the same Engine"
+            |> fun response -> response.["data"]
         equal { Frontend = SourceFrontend.Stack; Version = 1 } stackType.SourceFormat "validated Stack record persists its frontend and version"
         equal (Some(StoredCallTarget.UserWord stackValidatorId)) stackType.ValidatorTarget "validated Stack record persists its exact stable validator target"
+        equal "persistent" (stringValue committedStackDescription.["status"]) "same-Engine Stack record inspection reports persistent status after commit"
+        equal 1 (committedStackDescription.["revision"].GetValue<int>()) "same-Engine Stack record inspection reports committed revision one"
+        equal (stringValue candidateStackDescription.["sourceHash"]) (stringValue committedStackDescription.["sourceHash"]) "Stack record source hash is stable across commit"
+        equal stackValidatorId (stringValue committedStackDescription.["validatorTarget"].["identity"]) "same-Engine Stack record inspection reports the committed validator identity"
         assertAllPassed 1 (dispatch stackEngine "test" [ "word", jstr "checkedNumber.valid?" ] |> expectOk "run Stack record validator after commit")
+        let stackReload = Runtime.Engine(stackProject, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
+        let reloadedStackDescription =
+            dispatch stackReload "describe" [ "type", jstr "CheckedNumber" ]
+            |> expectOk "inspect the committed Stack record after fresh reload"
+            |> fun response -> response.["data"]
+        equal (committedStackDescription.ToJsonString()) (reloadedStackDescription.ToJsonString()) "same-Engine and freshly reloaded Stack record validator inspection agree exactly"
 
         let stackReferences =
             [ stackManifest.ProjectSource ]
