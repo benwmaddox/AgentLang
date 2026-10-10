@@ -168,3 +168,11 @@ inspection, including the enclosing setup for test-file dependency replacements.
 This addresses observed discovery friction without rewriting the participants'
 saved outcomes. A fresh experiment is required before attributing any improved
 agent behavior to it.
+
+[Report 168](168-test-source-inspection-agent-probe.md) completes one fresh
+language follow-up. The agent discovers test-source inspection before editing,
+passes all 132 independent checks and 150 attached tests, and retains the
+competing-error scenario. It still removes two prior success-test pre-state
+assertions. Discovery is feasible; complete preservation and a comparative
+reliability advantage remain unproven. Close this bounded follow-up and continue
+native conformance as a separate engineering track.

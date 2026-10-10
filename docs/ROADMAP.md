@@ -91,8 +91,13 @@ queries do not execute tests or change coverage. Focused runtime and acceptance
 validation and all 37 full local checks pass; evidence is archived. A disposable
 copy of the actual maintenance seed exposes all five prior handoff cases without
 changing files or executing tests. This addresses demonstrated
-discovery friction, not a demonstrated cause of lost assertions. A fresh agent
-trial is still needed to assess whether the interface improves maintenance.
+discovery friction, not a demonstrated cause of lost assertions.
+[Report 168](../reports/168-test-source-inspection-agent-probe.md) completes one
+fresh follow-up: the agent discovers the source view and passes 132 independent
+checks and 150 attached tests, but still drops two prior pre-state assertions.
+Close this bounded probe without a comparative reliability claim. Resume native
+semantic conformance and arena work; keep collateral preservation explicit in
+future held-out efficacy tasks.
 
 [Report 153](../reports/153-owning-native-enums.md) implements closed,
 payload-free enums in `OwningStackAot`, using inline values and the selected
