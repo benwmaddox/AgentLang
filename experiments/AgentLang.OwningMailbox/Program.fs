@@ -158,6 +158,36 @@ let private interpreterOracle (bodies: MailboxBodies) seed chunk message =
        pendingJson = ValueInspection.toJson program (pending.Decode())
        completedJson = ValueInspection.toJson program (completed.Decode()) |}
 
+let private interpreterErrorRoundTrip (bodies: MailboxBodies) =
+    let context = bodies.CompilerContext
+    let program = bodies.Program
+    let host = interpreterHost context
+    let stringBody name value =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins context program name []
+            [ Push(LString value, sourceSpan ("<" + name + ">") 1) ]
+            bodies.SourceOrigins
+    let beginInputs name chunk =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins context program name [ TNamed "State" ]
+            [ Push(LString chunk, sourceSpan ("<" + name + ">") 1) ]
+            bodies.SourceOrigins
+    let resumeInputs name message =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins context program name [ TNamed "State"; TNamed "Continuation" ]
+            [ Push(LString message, sourceSpan ("<" + name + ">") 1) ]
+            bodies.SourceOrigins
+    use seed = IrInterpreter.executeBodyWithInputs host "owning-mailbox.error-round-trip.seed" (stringBody "error-round-trip-seed" "Z") None []
+    use initial = IrInterpreter.executeBodyWithInputs host "owning-mailbox.initialize" bodies.Initialize (Some seed) [ IrEntryArgument.RetainedRoot 0 ]
+    use firstBeginArguments = IrInterpreter.executeBodyWithInputs host "owning-mailbox.error-round-trip.first-begin-arguments" (beginInputs "error-round-trip-first-chunk" "") (Some initial) [ IrEntryArgument.RetainedRoot 0 ]
+    use firstPending = IrInterpreter.executeBodyWithInputs host "owning-mailbox.begin" bodies.Begin (Some firstBeginArguments) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    use firstResumeArguments = IrInterpreter.executeBodyWithInputs host "owning-mailbox.error-round-trip.first-resume-arguments" (resumeInputs "error-round-trip-error-message" "ERR") (Some firstPending) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    use errorState = IrInterpreter.executeBodyWithInputs host "owning-mailbox.resume" bodies.Resume (Some firstResumeArguments) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1; IrEntryArgument.RetainedRoot 2 ]
+    use followupBeginArguments = IrInterpreter.executeBodyWithInputs host "owning-mailbox.error-round-trip.followup-begin-arguments" (beginInputs "error-round-trip-followup-chunk" "") (Some errorState) [ IrEntryArgument.RetainedRoot 0 ]
+    use followupPending = IrInterpreter.executeBodyWithInputs host "owning-mailbox.begin" bodies.Begin (Some followupBeginArguments) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    use followupResumeArguments = IrInterpreter.executeBodyWithInputs host "owning-mailbox.error-round-trip.followup-resume-arguments" (resumeInputs "error-round-trip-followup-message" "") (Some followupPending) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    use completed = IrInterpreter.executeBodyWithInputs host "owning-mailbox.resume" bodies.Resume (Some followupResumeArguments) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1; IrEntryArgument.RetainedRoot 2 ]
+    {| errorStateJson = ValueInspection.toJson program (errorState.Decode())
+       followupPendingJson = ValueInspection.toJson program (followupPending.Decode())
+       completedJson = ValueInspection.toJson program (completed.Decode()) |}
+
 let private parseOptimization = function
     | "O0" -> LlvmOptimization.O0
     | "O2" -> LlvmOptimization.O2
@@ -199,14 +229,19 @@ let main argv =
             let compiledRuntimeProfile = runtimeProfileName artifact.RuntimeProfile
             let unicodeOracle = interpreterOracle bodies "A🙂" "δ" "\u0000🚀"
             let emptyOracle = interpreterOracle bodies "" "" "B"
+            let errorOracle = interpreterOracle bodies "Z" "" "ERR"
+            let errorRoundTripOracle = interpreterErrorRoundTrip bodies
             let controllerReservedStorageBytes =
                 artifact.ControllerReservedStorageBytes
                 |> Option.map box
                 |> Option.defaultValue null
             let sourceTypeIds =
-                dict [ "Continuation", Map.find "Continuation" bodies.SourceTypeIds
-                       "State", Map.find "State" bodies.SourceTypeIds
-                       "String", Map.find "String" bodies.SourceTypeIds ]
+                bodies.SourceTypeIds
+                |> Map.toList
+                |> List.filter (fun (name, _) ->
+                    name <> "Int" && name <> "Bool" && name <> "Unit")
+                |> List.map (fun (name, typeId) -> name, box typeId)
+                |> dict
             let entries =
                 artifact.Entries
                 |> List.map (fun entry ->
@@ -222,8 +257,9 @@ let main argv =
                        sourceIrPath = entry.SourceIrPath |})
             let layouts =
                 artifact.Layouts
-                |> List.map (fun layout ->
-                    {| typeName = layout.TypeName
+                |> List.mapi (fun layoutIndex layout ->
+                    {| layoutIndex = uint32 layoutIndex
+                       typeName = layout.TypeName
                        irType = IrTypes.format layout.Type
                        payloadBytes = layout.PayloadBytes
                        extentBytes = layout.ExtentBytes
@@ -281,7 +317,7 @@ let main argv =
                                       preflightSpanTableBytes = artifact.PreflightSpanTableBytes
                                       controllerReservedStorageBytes = controllerReservedStorageBytes |}
                    sourceDerivedTypeIds = {| typeIds = sourceTypeIds |}
-                   interpreterOracle = {| unicode = unicodeOracle; empty = emptyOracle |} |}
+                   interpreterOracle = {| unicode = unicodeOracle; empty = emptyOracle; error = errorOracle; errorRoundTrip = errorRoundTripOracle |} |}
             Console.WriteLine(JsonSerializer.Serialize(result))
             0
     with error ->

@@ -1,0 +1,76 @@
+record Chunk {
+    field text: String
+}
+
+record Continuation {
+    field pending: Option<Chunk>
+}
+
+record State {
+    field completion: Result<Chunk, String>
+}
+
+fn mailbox.completion-text(value: Result<Chunk, String>) -> String {
+    effects none
+    doc "Extracts either active completion payload through an ordinary user call."
+
+    match value {
+        ok completed => completed.text
+        error reason => reason
+    }
+}
+
+fn mailbox.pending-text(value: Option<Chunk>) -> String {
+    effects none
+    doc "Extracts an optional continuation payload through an ordinary user call."
+
+    match value {
+        some pending => pending.text
+        none => ""
+    }
+}
+
+fn mailbox.initialize(seed: String) -> State {
+    effects none
+    doc "Creates a retained Ok result whose payload is a nominal Chunk."
+
+    let initial = chunk.new(text = seed)
+    let completion = result.ok<Chunk, String>(initial)
+    .state.new(completion = completion)
+}
+
+fn mailbox.begin(state: State, chunk: String) -> (State, Continuation) {
+    effects none
+    doc "Suspends with a State root and Some or None continuation payload."
+
+    let pending = if chunk == "" {
+        option.none<Chunk>()
+    } else {
+        let value = .chunk.new(text = chunk)
+        option.some<Chunk>(value)
+    }
+    let continuation = continuation.new(pending = pending)
+    return (state, continuation)
+}
+
+fn mailbox.resume(state: State, continuation: Continuation, message: String) -> State {
+    effects none
+    doc "Matches both retained sums through user calls before guarding and publishing."
+
+    let base = mailbox.completion-text(state.completion)
+    let pending = mailbox.pending-text(continuation.pending)
+    let guard = if message == "FAIL" {
+        divide(1, 0)
+    } else {
+        0
+    }
+    let completion = if message == "ERR" {
+        result.error<Chunk, String>(message)
+    } else {
+        let combined = string.concat(base, pending)
+        let completed = string.concat(combined, message)
+        let chunk = .chunk.new(text = completed)
+        result.ok<Chunk, String>(chunk)
+    }
+    .state.new(completion = completion)
+}

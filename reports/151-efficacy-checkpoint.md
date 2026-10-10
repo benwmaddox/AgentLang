@@ -1,9 +1,9 @@
 # 151 — Efficacy checkpoint: typed vocabulary and reliable maintenance
 
-Status: evidence synthesis through report 150, 2026-10-09. This assesses the
-prototype; it does not establish PRD completion or comparative superiority.
-The subsequent sections record later evidence through report 166 without
-changing the original trials or their frozen outcomes.
+Status: initial synthesis through report 150, 2026-10-09; subsequent evidence
+updated through report 168, 2026-10-10. This assesses the prototype; it does not
+establish PRD completion or comparative superiority. Later sections preserve
+the original trials and their frozen outcomes.
 
 ## What is working
 

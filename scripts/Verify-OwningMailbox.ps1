@@ -15,15 +15,27 @@ $reportPath = Join-Path $runDirectory 'integration-evidence.json'
 $projectPath = Join-Path $repo 'experiments/AgentLang.OwningMailbox/AgentLang.OwningMailbox.fsproj'
 $programPath = Join-Path $repo 'experiments/AgentLang.OwningMailbox/Program.fs'
 $flowPath = Join-Path $repo 'experiments/AgentLang.OwningMailbox/owning-mailbox.flow'
+$sumsFlowPath = Join-Path $repo 'experiments/AgentLang.OwningMailbox/owning-mailbox-sums.flow'
 $runnerSourcePath = Join-Path $repo 'experiments/AgentLang.OwningMailbox/native_owning_mailbox.c'
+$sumsRunnerSourcePath = Join-Path $repo 'experiments/AgentLang.OwningMailbox/native_owning_mailbox_sums.c'
 $fixturePath = Join-Path $repo 'tests/fixtures/native-conformance/owning-mailbox.json'
+$sumsFixturePath = Join-Path $repo 'tests/fixtures/native-conformance/owning-mailbox-sums.json'
 $nativeDirectory = Join-Path $repo 'src/AgentLang.Llvm/native'
 $arenaRuntimePath = Join-Path $nativeDirectory 'arena_runtime.c'
 $mailboxRuntimePath = Join-Path $nativeDirectory 'mailbox_runtime.c'
 $owningStackPath = Join-Path $nativeDirectory 'owning_stack_runtime.c'
+$owningStackHeaderPath = Join-Path $nativeDirectory 'owning_stack_runtime.h'
 $owningBankPath = Join-Path $nativeDirectory 'owning_bank.c'
 $nativeSources = @(
     $runnerSourcePath,
+    $arenaRuntimePath,
+    $mailboxRuntimePath,
+    (Join-Path $nativeDirectory 'mailbox_runtime_windows.c'),
+    $owningStackPath,
+    $owningBankPath
+)
+$sumsNativeSources = @(
+    $sumsRunnerSourcePath,
     $arenaRuntimePath,
     $mailboxRuntimePath,
     (Join-Path $nativeDirectory 'mailbox_runtime_windows.c'),
@@ -44,6 +56,9 @@ $sourceInputPaths = @(
     $flowPath,
     $runnerSourcePath,
     $fixturePath,
+    $sumsFlowPath,
+    $sumsRunnerSourcePath,
+    $sumsFixturePath,
     (Join-Path $repo 'src/AgentLang.Llvm/AgentLang.Llvm.fsproj'),
     (Join-Path $repo 'src/AgentLang.Llvm/OwningStackAot.fs'),
     (Join-Path $repo 'src/AgentLang.Llvm/LlvmAot.fs'),
@@ -64,8 +79,11 @@ $sourceInputPaths = @(
 $checks = [Collections.Generic.List[object]]::new()
 $processes = [Collections.Generic.List[object]]::new()
 $moduleBuilds = [Collections.Generic.List[object]]::new()
+$sumModuleBuilds = [Collections.Generic.List[object]]::new()
 $nativeBuilds = [Collections.Generic.List[object]]::new()
+$sumNativeBuilds = [Collections.Generic.List[object]]::new()
 $nativeRuns = [Collections.Generic.List[object]]::new()
+$sumNativeRuns = [Collections.Generic.List[object]]::new()
 $errors = [Collections.Generic.List[string]]::new()
 $timeoutMilliseconds = 300000
 $utf8 = [Text.UTF8Encoding]::new($false)
@@ -101,6 +119,17 @@ function Get-Field($Object, [string]$Name) {
     $property = $Object.PSObject.Properties[$Name]
     if ($null -eq $property) { return $null }
     return $property.Value
+}
+
+function Has-Field($Object, [string]$Name) {
+    if ($null -eq $Object) { return $false }
+    if ($Object -is [Collections.IDictionary]) {
+        foreach ($key in $Object.Keys) {
+            if ([string]$key -ieq $Name) { return $true }
+        }
+        return $false
+    }
+    return $null -ne $Object.PSObject.Properties[$Name]
 }
 
 function Get-Hash([string]$Path) {
@@ -475,11 +504,289 @@ function Compare-NativeResetTelemetry($Diagnostic, $Fast, $Trusted, [string]$Lab
     Add-Check "$Label trusted reset skips payload and bitmap writes while retaining cursor extent" $trustedOkay ([ordered]@{ diagnostic = $diagnosticTelemetry; trusted = $trustedTelemetry })
 }
 
+function Resolve-SumLayoutIndexes($Bootstrap) {
+    $requiredTypes = @('State', 'Continuation', 'String', 'Chunk', 'Option<Chunk>', 'Result<Chunk, String>')
+    $layouts = @(Get-Field $Bootstrap 'layouts')
+    $indexes = [ordered]@{}
+    foreach ($typeName in $requiredTypes) {
+        $matches = @($layouts | Where-Object { [string](Get-Field $_ 'typeName') -ceq $typeName })
+        if ($matches.Count -ne 1 -or -not (Has-Field $matches[0] 'layoutIndex')) {
+            throw "Sum bootstrap must expose exactly one layout with typeName '$typeName' and a layoutIndex."
+        }
+        $indexes[$typeName] = [uint32](Get-Field $matches[0] 'layoutIndex')
+    }
+    if (@($indexes.Values | Select-Object -Unique).Count -ne $requiredTypes.Count) {
+        throw 'Sum bootstrap layout indexes must be unique for State, Continuation, String, Chunk, Option<Chunk>, and Result<Chunk, String>.'
+    }
+    return $indexes
+}
+
+function Resolve-SumTypeNamesByIrType($Bootstrap) {
+    $layouts = @(Get-Field $Bootstrap 'layouts')
+    $typeNamesByIrType = [Collections.Generic.Dictionary[string, string]]::new([StringComparer]::Ordinal)
+    $seenTypeNames = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($layout in $layouts) {
+        $irType = [string](Get-Field $layout 'irType')
+        $typeName = [string](Get-Field $layout 'typeName')
+        if ([string]::IsNullOrWhiteSpace($irType) -or [string]::IsNullOrWhiteSpace($typeName)) {
+            throw 'Every sum bootstrap layout must expose non-empty irType and typeName values.'
+        }
+        if ($typeNamesByIrType.ContainsKey($irType) -or -not $seenTypeNames.Add($typeName)) {
+            throw "Sum bootstrap layout IR type names must map one-to-one; duplicate '$irType' or '$typeName' was found."
+        }
+        $typeNamesByIrType.Add($irType, $typeName)
+    }
+    return $typeNamesByIrType
+}
+
+function Convert-SumIrTypeToSourceName([string]$IrType, $TypeNamesByIrType) {
+    $typeName = $IrType.Trim()
+    if ($TypeNamesByIrType.ContainsKey($typeName)) { return $TypeNamesByIrType[$typeName] }
+    return [regex]::Replace($typeName, '@type[0-9]+', {
+        param($match)
+        if (-not $TypeNamesByIrType.ContainsKey($match.Value)) {
+            throw "Sum bootstrap type '$typeName' refers to '$($match.Value)' without a unique layout typeName."
+        }
+        return $TypeNamesByIrType[$match.Value]
+    })
+}
+
+function Compare-SumBank {
+    param(
+        $Actual,
+        [bool]$Pending,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$ExpectedRoots,
+        [string]$Label,
+        $Fixture
+    )
+    $roots = @(Get-Field $Actual 'roots')
+    $okay = $null -ne $Actual -and
+        (Has-Field $Actual 'pending') -and (Has-Field $Actual 'rootCount') -and
+        (Has-Field $Actual 'usedBytes') -and (Has-Field $Actual 'roots') -and
+        [bool](Get-Field $Actual 'pending') -eq $Pending -and
+        [int](Get-Field $Actual 'rootCount') -eq $ExpectedRoots.Count -and
+        $roots.Count -eq $ExpectedRoots.Count
+    $typeIds = Get-Field (Get-Field $Fixture 'sourceDerivedTypeIds') 'typeIds'
+    $offset = [uint32]0
+    for ($index = 0; $index -lt [Math]::Min($roots.Count, $ExpectedRoots.Count); $index++) {
+        $observed = $roots[$index]
+        $expected = $ExpectedRoots[$index]
+        $expectedTypeName = [string](Get-Field $expected 'type')
+        $expectedTypeId = Get-Field $typeIds $expectedTypeName
+        $rootOkay = $null -ne $expectedTypeId -and
+            (Has-Field $observed 'typeId') -and (Has-Field $observed 'offsetBytes') -and
+            (Has-Field $observed 'extentBytes') -and (Has-Field $observed 'payloadBytes') -and
+            (Has-Field $observed 'ownerEndBytes') -and (Has-Field $observed 'serializedHex') -and
+            [uint32](Get-Field $observed 'typeId') -eq [uint32]$expectedTypeId -and
+            [uint32](Get-Field $observed 'offsetBytes') -eq $offset -and
+            [uint32](Get-Field $observed 'extentBytes') -eq [uint32](Get-Field $expected 'extentBytes') -and
+            [uint32](Get-Field $observed 'payloadBytes') -eq [uint32](Get-Field $expected 'payloadBytes') -and
+            [uint32](Get-Field $observed 'ownerEndBytes') -eq ($offset + [uint32](Get-Field $expected 'extentBytes')) -and
+            [string](Get-Field $observed 'serializedHex') -ceq [string](Get-Field $expected 'serializedHex')
+        Add-Check "$Label root $index matches independent type, logical payload, extent, owner range, and bytes" $rootOkay ([ordered]@{ expected = $expected; actual = $observed })
+        if (-not $rootOkay) { $okay = $false }
+        $offset += [uint32](Get-Field $expected 'extentBytes')
+    }
+    $okay = $okay -and [uint32](Get-Field $Actual 'usedBytes') -eq $offset
+    Add-Check "$Label bank pending state, root count, and used extent match the fixture" $okay ([ordered]@{ pending = Get-Field $Actual 'pending'; rootCount = Get-Field $Actual 'rootCount'; usedBytes = Get-Field $Actual 'usedBytes'; expectedUsedBytes = $offset; roots = $roots })
+}
+
+function Compare-SumStats($Actual, $Expected, [string]$PolicyLabel) {
+    $fields = @(
+        'utf8InputBytes', 'utf16StagingBytes', 'inputImportBytes',
+        'publicationCopyBytes', 'beginPublicationCopyBytes', 'resumeRootImportBytes',
+        'deepCopyBytes', 'moveBytes', 'returnedOutputDescriptors',
+        'handlerInvocations', 'handlerFailures'
+    )
+    foreach ($field in $fields) {
+        $hasActual = Has-Field $Actual $field
+        $hasExpected = Has-Field $Expected $field
+        $actualValue = if ($hasActual) { [uint64](Get-Field $Actual $field) } else { [uint64]::MaxValue }
+        $expectedValue = if ($hasExpected) { [uint64](Get-Field $Expected $field) } else { [uint64]::MaxValue }
+        Add-Check "$PolicyLabel $field equals independent fixture accounting" ($hasActual -and $hasExpected -and $actualValue -eq $expectedValue) ([ordered]@{ expected = if ($hasExpected) { Get-Field $Expected $field } else { $null }; actual = if ($hasActual) { Get-Field $Actual $field } else { $null } })
+    }
+    Add-Check "$PolicyLabel reports no payload movement" ((Has-Field $Actual 'moveBytes') -and [uint64](Get-Field $Actual 'moveBytes') -eq 0) $Actual
+}
+
+function Get-InspectedRecordField($Value, [string]$FieldName) {
+    $fields = @(Get-Field $Value 'fields')
+    $matches = @($fields | Where-Object { [string](Get-Field $_ 'name') -ceq $FieldName })
+    if ($matches.Count -ne 1) { return $null }
+    return Get-Field $matches[0] 'value'
+}
+
+function Check-SumInterpreterJson([string]$Json, [string]$Description, [int]$ExpectedRootCount, [string]$ExpectedResultCase, [string]$ExpectedResultText, [string]$ExpectedOptionCase, [string]$ExpectedOptionText) {
+    $tree = ConvertFrom-JsonText $Json $Description
+    $values = @(Get-Field $tree 'values')
+    $shapeOkay = (Get-Field $tree 'formatVersion') -eq 1 -and $values.Count -eq $ExpectedRootCount
+    Add-Check "$Description interpreter JSON contains the expected typed root count" $shapeOkay ([ordered]@{ expected = $ExpectedRootCount; actual = $values.Count })
+    if ($values.Count -lt 1) {
+        Add-Check "$Description interpreter State matches the expected Result case and text" $false
+        if ($ExpectedRootCount -eq 2) { Add-Check "$Description interpreter Continuation matches the expected Option case and text" $false }
+        return
+    }
+    $state = $values[0]
+    $completion = Get-InspectedRecordField $state 'completion'
+    $case = [string](Get-Field $completion 'case')
+    $payload = Get-Field $completion 'value'
+    if ($ExpectedResultCase -ceq 'ok') {
+        $text = Get-InspectedRecordField $payload 'text'
+        $payloadOkay = [string](Get-Field $payload 'name') -ceq 'Chunk'
+    } else {
+        $text = $payload
+        $payloadOkay = $true
+    }
+    $stateOkay = [string](Get-Field $state 'kind') -ceq 'record' -and
+        [string](Get-Field $state 'name') -ceq 'State' -and
+        [string](Get-Field $completion 'kind') -ceq 'result' -and
+        $case -ceq $ExpectedResultCase -and $payloadOkay -and
+        [string](Get-Field $text 'kind') -ceq 'string' -and
+        [string](Get-Field $text 'value') -ceq $ExpectedResultText
+    Add-Check "$Description interpreter State matches the expected Result case and text" $stateOkay ([ordered]@{ expectedCase = $ExpectedResultCase; expectedText = $ExpectedResultText; actual = $state })
+    if ($ExpectedRootCount -eq 2) {
+        $continuation = $values[1]
+        $pending = Get-InspectedRecordField $continuation 'pending'
+        $optionCase = [string](Get-Field $pending 'case')
+        $optionOkay = [string](Get-Field $continuation 'kind') -ceq 'record' -and
+            [string](Get-Field $continuation 'name') -ceq 'Continuation' -and
+            [string](Get-Field $pending 'kind') -ceq 'option' -and
+            $optionCase -ceq $ExpectedOptionCase
+        if ($ExpectedOptionCase -ceq 'some') {
+            $optionText = Get-InspectedRecordField (Get-Field $pending 'value') 'text'
+            $optionOkay = $optionOkay -and [string](Get-Field (Get-Field $pending 'value') 'name') -ceq 'Chunk' -and
+                [string](Get-Field $optionText 'kind') -ceq 'string' -and
+                [string](Get-Field $optionText 'value') -ceq $ExpectedOptionText
+        } else {
+            $optionOkay = $optionOkay -and -not (Has-Field $pending 'value')
+        }
+        Add-Check "$Description interpreter Continuation matches the expected Option case and text" $optionOkay ([ordered]@{ expectedCase = $ExpectedOptionCase; expectedText = $ExpectedOptionText; actual = $continuation })
+    }
+}
+
+function Check-SumInterpreterOracles($Bootstrap, $Fixture, [string]$Label) {
+    $oracle = Get-Field $Bootstrap 'interpreterOracle'
+    $unicodeFixture = Get-Field (Get-Field $Fixture 'scenarios') 'unicodeSomeOk'
+    $emptyFixture = Get-Field (Get-Field $Fixture 'scenarios') 'emptyNoneError'
+    $unicode = Get-Field $oracle 'unicode'
+    $empty = Get-Field $oracle 'empty'
+    $error = Get-Field $oracle 'error'
+    $errorRoundTrip = Get-Field $oracle 'errorRoundTrip'
+    Check-SumInterpreterJson ([string](Get-Field $unicode 'initializedJson')) "$Label interpreter Unicode initialize" 1 'ok' ([string](Get-Field $unicodeFixture 'initializeValue')) '' ''
+    Check-SumInterpreterJson ([string](Get-Field $unicode 'pendingJson')) "$Label interpreter Unicode pending" 2 'ok' ([string](Get-Field $unicodeFixture 'initializeValue')) 'some' ([string](Get-Field $unicodeFixture 'beginValue'))
+    Check-SumInterpreterJson ([string](Get-Field $unicode 'completedJson')) "$Label interpreter Unicode completion" 1 'ok' ([string](Get-Field $unicodeFixture 'completionValue')) '' ''
+    Check-SumInterpreterJson ([string](Get-Field $empty 'initializedJson')) "$Label interpreter empty initialize" 1 'ok' '' '' ''
+    Check-SumInterpreterJson ([string](Get-Field $empty 'pendingJson')) "$Label interpreter empty pending" 2 'ok' '' 'none' ''
+    Check-SumInterpreterJson ([string](Get-Field $empty 'completedJson')) "$Label interpreter empty completion" 1 'ok' 'B' '' ''
+    Check-SumInterpreterJson ([string](Get-Field $error 'initializedJson')) "$Label interpreter Z initialize" 1 'ok' ([string](Get-Field $emptyFixture 'initializeValue')) '' ''
+    Check-SumInterpreterJson ([string](Get-Field $error 'pendingJson')) "$Label interpreter Z with None pending" 2 'ok' ([string](Get-Field $emptyFixture 'initializeValue')) 'none' ''
+    Check-SumInterpreterJson ([string](Get-Field $error 'completedJson')) "$Label interpreter Z/None/Error completion" 1 'error' ([string](Get-Field $emptyFixture 'resumeValue')) '' ''
+    Check-SumInterpreterJson ([string](Get-Field $errorRoundTrip 'errorStateJson')) "$Label interpreter Error intermediate state" 1 'error' ([string](Get-Field $emptyFixture 'resumeValue')) '' ''
+    Check-SumInterpreterJson ([string](Get-Field $errorRoundTrip 'followupPendingJson')) "$Label interpreter Error with None pending" 2 'error' ([string](Get-Field $emptyFixture 'resumeValue')) 'none' ''
+    Check-SumInterpreterJson ([string](Get-Field $errorRoundTrip 'completedJson')) "$Label interpreter Error to Ok completion" 1 'ok' ([string](Get-Field $emptyFixture 'resumeValue')) '' ''
+}
+
+function Check-SumNativeEvidence($Native, $Fixture, [string]$Label) {
+    Add-Check "$Label sum runner reports success" ((Get-Field $Native 'passed') -eq $true -and [int](Get-Field $Native 'failureCount') -eq 0)
+    $expectedChecks = @(Get-Field $Fixture 'requiredChecks')
+    $nativeChecks = @(Get-Field $Native 'checks')
+    $names = @($nativeChecks | ForEach-Object { [string](Get-Field $_ 'name') })
+    $checkSetOkay = $expectedChecks.Count -gt 0 -and $nativeChecks.Count -eq $expectedChecks.Count
+    for ($index = 0; $index -lt [Math]::Min($expectedChecks.Count, $nativeChecks.Count); $index++) {
+        $checkSetOkay = $checkSetOkay -and -not [string]::IsNullOrWhiteSpace($names[$index]) -and
+            $names[$index] -ceq [string]$expectedChecks[$index] -and
+            (Get-Field $nativeChecks[$index] 'passed') -eq $true
+    }
+    $uniqueNames = @($names | Select-Object -Unique)
+    Add-Check "$Label emits every fixture-required native assertion exactly once, in order, with no empty or extra checks" ($checkSetOkay -and $uniqueNames.Count -eq $names.Count) ([ordered]@{ expectedCount = $expectedChecks.Count; actualCount = $nativeChecks.Count; names = $names; checks = $nativeChecks })
+
+    $expectedAbi = Get-Field $Fixture 'abi'
+    $actualAbi = Get-Field $Native 'abi'
+    foreach ($abiField in @('moduleAbiVersion', 'moduleStructSizeBytes', 'layoutAbiVersion', 'stackAbiVersion', 'typeDescriptorSizeBytes', 'fieldDescriptorSizeBytes', 'layoutDescriptorSizeBytes')) {
+        $present = (Has-Field $actualAbi $abiField) -and (Has-Field $expectedAbi $abiField)
+        $matches = $present -and [uint64](Get-Field $actualAbi $abiField) -eq [uint64](Get-Field $expectedAbi $abiField)
+        Add-Check "$Label ABI $abiField matches the independent ABI fixture" $matches ([ordered]@{ expected = Get-Field $expectedAbi $abiField; actual = Get-Field $actualAbi $abiField })
+    }
+
+    $policies = Get-Field $Native 'policies'
+    $policyNames = @('RETURN', 'KEEP_ASSOCIATED')
+    $policyKeys = if ($policies -is [Collections.IDictionary]) { @($policies.Keys | ForEach-Object { [string]$_ }) } else { @() }
+    Add-Check "$Label returns both suspension policy results" ($policyKeys.Count -eq 2 -and @($policyNames | Where-Object { $policyKeys -cnotcontains $_ }).Count -eq 0) ([ordered]@{ expected = $policyNames; actual = $policyKeys })
+
+    $scenarios = Get-Field $Fixture 'scenarios'
+    $unicode = Get-Field $scenarios 'unicodeSomeOk'
+    $empty = Get-Field $scenarios 'emptyNoneError'
+    $errorToOk = Get-Field $scenarios 'errorToOkAfterError'
+    $capacity = Get-Field $scenarios 'oneByteShortCapacity'
+    $expectedStatsByPolicy = Get-Field (Get-Field $Fixture 'copyAccounting') 'expectedStatsBySuspensionPolicy'
+    foreach ($policyName in $policyNames) {
+        $policy = Get-Field $policies $policyName
+        $policyFixture = Get-Field $expectedStatsByPolicy $policyName
+        Compare-SumStats (Get-Field $policy 'stats') $policyFixture "$Label $policyName"
+        $unicodeBankExpected = if ($policyName -ceq 'RETURN') { @(Get-Field $unicode 'beginRoots') } else { @((Get-Field $unicode 'initializeRoot')) }
+        $unicodeAssociatedExpected = @(if ($policyName -ceq 'RETURN') { @() } else { @(Get-Field $unicode 'beginRoots') })
+        $emptyBankExpected = if ($policyName -ceq 'RETURN') { @(Get-Field $empty 'beginRoots') } else { @((Get-Field $empty 'initializeRoot')) }
+        $emptyAssociatedExpected = @(if ($policyName -ceq 'RETURN') { @() } else { @(Get-Field $empty 'beginRoots') })
+        $errorToOkBankExpected = if ($policyName -ceq 'RETURN') { @(Get-Field $errorToOk 'beginRoots') } else { @((Get-Field $empty 'resumeRoot')) }
+        $errorToOkAssociatedExpected = @(if ($policyName -ceq 'RETURN') { @() } else { @(Get-Field $errorToOk 'beginRoots') })
+        $capacityRoots = @(Get-Field $capacity 'publishedRootsBeforeFailure')
+        $capacityBankExpected = if ($policyName -ceq 'RETURN') { $capacityRoots } else { @($capacityRoots[0]) }
+        $capacityAssociatedExpected = @(if ($policyName -ceq 'RETURN') { @() } else { $capacityRoots })
+
+        $unicodePolicy = Get-Field $policy 'unicode'
+        Compare-SumBank -Actual (Get-Field $unicodePolicy 'initialize') -Pending $false -ExpectedRoots @((Get-Field $unicode 'initializeRoot')) -Label "$Label $policyName Unicode initialize" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $unicodePolicy 'suspendedBank') -Pending $true -ExpectedRoots $unicodeBankExpected -Label "$Label $policyName Unicode suspended bank" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $unicodePolicy 'suspendedAssociated') -Pending $true -ExpectedRoots $unicodeAssociatedExpected -Label "$Label $policyName Unicode associated roots" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $unicodePolicy 'beforeFailure') -Pending $true -ExpectedRoots @(Get-Field $unicode 'beginRoots') -Label "$Label $policyName Unicode before FAIL" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $unicodePolicy 'afterFailure') -Pending $true -ExpectedRoots @(Get-Field $unicode 'beginRoots') -Label "$Label $policyName Unicode after FAIL" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $unicodePolicy 'final') -Pending $false -ExpectedRoots @((Get-Field $unicode 'resumeRoot')) -Label "$Label $policyName Unicode final" -Fixture $Fixture
+        Add-Check "$Label $policyName FAIL returns a failure status and preserves both active roots" ([uint32](Get-Field $unicodePolicy 'failStatus') -ne 0 -and (Get-Field $unicodePolicy 'failurePreserved') -eq $true) ([ordered]@{ status = Get-Field $unicodePolicy 'failStatus'; failurePreserved = Get-Field $unicodePolicy 'failurePreserved' })
+        Add-Check "$Label $policyName malformed active tag and payload are rejected" ((Get-Field $unicodePolicy 'malformedTagRejected') -eq $true -and (Get-Field $unicodePolicy 'malformedPayloadRejected') -eq $true) ([ordered]@{ tagRejected = Get-Field $unicodePolicy 'malformedTagRejected'; payloadRejected = Get-Field $unicodePolicy 'malformedPayloadRejected' })
+
+        $emptyPolicy = Get-Field $policy 'empty'
+        Compare-SumBank -Actual (Get-Field $emptyPolicy 'initialize') -Pending $false -ExpectedRoots @((Get-Field $empty 'initializeRoot')) -Label "$Label $policyName empty initialize" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $emptyPolicy 'beginBank') -Pending $true -ExpectedRoots $emptyBankExpected -Label "$Label $policyName empty begin bank" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $emptyPolicy 'beginAssociated') -Pending $true -ExpectedRoots $emptyAssociatedExpected -Label "$Label $policyName empty associated roots" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $emptyPolicy 'final') -Pending $false -ExpectedRoots @((Get-Field $empty 'resumeRoot')) -Label "$Label $policyName None/Error final" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $emptyPolicy 'errorRoot') -Pending $false -ExpectedRoots @((Get-Field $empty 'resumeRoot')) -Label "$Label $policyName Error intermediate root" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $emptyPolicy 'errorToOkBeginBank') -Pending $true -ExpectedRoots $errorToOkBankExpected -Label "$Label $policyName Error to Ok begin bank" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $emptyPolicy 'errorToOkBeginAssociated') -Pending $true -ExpectedRoots $errorToOkAssociatedExpected -Label "$Label $policyName Error to Ok associated roots" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $emptyPolicy 'errorToOkFinal') -Pending $false -ExpectedRoots @((Get-Field $errorToOk 'resumeRoot')) -Label "$Label $policyName Error to Ok final" -Fixture $Fixture
+        Add-Check "$Label $policyName Error completion resumes through the Ok arm" ((Get-Field $emptyPolicy 'errorRoundTripOk') -eq $true)
+
+        $capacityPolicy = Get-Field $policy 'capacity'
+        Compare-SumBank -Actual (Get-Field $capacityPolicy 'initialize') -Pending $false -ExpectedRoots @($capacityRoots[0]) -Label "$Label $policyName capacity initialize" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $capacityPolicy 'beginBank') -Pending $true -ExpectedRoots $capacityBankExpected -Label "$Label $policyName capacity begin bank" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $capacityPolicy 'beginAssociated') -Pending $true -ExpectedRoots $capacityAssociatedExpected -Label "$Label $policyName capacity associated roots" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $capacityPolicy 'beforeFailure') -Pending $true -ExpectedRoots $capacityRoots -Label "$Label $policyName before one-byte-short resume" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $capacityPolicy 'failure') -Pending $true -ExpectedRoots $capacityRoots -Label "$Label $policyName one-byte-short failure" -Fixture $Fixture
+        Compare-SumBank -Actual (Get-Field $capacityPolicy 'final') -Pending $false -ExpectedRoots @((Get-Field $capacity 'retryRoot')) -Label "$Label $policyName capacity retry final" -Fixture $Fixture
+        Add-Check "$Label $policyName one-byte-short resume fails and preserves both active roots" ([uint32](Get-Field $capacityPolicy 'failureResult') -ne 0 -and (Get-Field $capacityPolicy 'failurePreserved') -eq $true) ([ordered]@{ status = Get-Field $capacityPolicy 'failureResult'; failurePreserved = Get-Field $capacityPolicy 'failurePreserved' })
+    }
+}
+
+function Get-SumBehaviorProjection($Native) {
+    return [ordered]@{
+        passed = Get-Field $Native 'passed'
+        failureCount = Get-Field $Native 'failureCount'
+        abi = Get-Field $Native 'abi'
+        policies = Get-Field $Native 'policies'
+        checks = Get-Field $Native 'checks'
+    }
+}
+
+function Compare-SumBehavior($Left, $Right, [string]$Label) {
+    $leftJson = ConvertTo-Json -InputObject (Get-SumBehaviorProjection $Left) -Depth 90 -Compress
+    $rightJson = ConvertTo-Json -InputObject (Get-SumBehaviorProjection $Right) -Depth 90 -Compress
+    Add-Check $Label ([string]::Equals($leftJson, $rightJson, [StringComparison]::Ordinal))
+}
+
 try {
     [IO.Directory]::CreateDirectory($runDirectory) | Out-Null
     $script:tempDirectory = Join-Path $runDirectory 'repo-temp'
     [IO.Directory]::CreateDirectory($script:tempDirectory) | Out-Null
     $fixture = Read-JsonFile $fixturePath
+    $sumsFixture = Read-JsonFile $sumsFixturePath
+    $report.sumsFixture = $sumsFixturePath
     foreach ($inputPath in $sourceInputPaths) {
         if (-not (Test-Path -LiteralPath $inputPath -PathType Leaf)) { throw "Required acceptance input is missing: $inputPath" }
         $sourceInputBefore += [ordered]@{ path = [IO.Path]::GetFullPath($inputPath); sha256 = Get-Hash $inputPath }
@@ -495,6 +802,7 @@ try {
         clangSha256 = Get-Hash $clang
         tempDirectory = $script:tempDirectory
         nativeSources = @($nativeSources | ForEach-Object { [IO.Path]::GetFullPath($_) })
+        sumsNativeSources = @($sumsNativeSources | ForEach-Object { [IO.Path]::GetFullPath($_) })
     }
 
     $artifactsRoot = Join-Path $runDirectory 'dotnet-artifacts'
@@ -635,6 +943,98 @@ try {
         Add-Check "$moduleLabel interpreter executes empty lifecycle to B" (Contains-StringValue $emptyCompleted 'B')
     }
 
+    $expectedSumTypeIds = Get-Field (Get-Field $sumsFixture 'sourceDerivedTypeIds') 'typeIds'
+    $expectedSumRoles = Get-Field $sumsFixture 'roles'
+    foreach ($optimization in @('O0', 'O2')) {
+        foreach ($runtimeProfile in $runtimeProfiles) {
+            $moduleLabel = "$optimization/$runtimeProfile sums"
+            $moduleDirectory = Join-Path $runDirectory "module-sums-$optimization-$runtimeProfile"
+            [IO.Directory]::CreateDirectory($moduleDirectory) | Out-Null
+            $moduleArguments = @($assemblyPath, $optimization, $moduleDirectory, $sumsFlowPath)
+            if ($runtimeProfile -ceq 'trusted-generated') { $moduleArguments += @('--runtime-profile', 'trusted-generated') }
+            $moduleProcess = Invoke-CapturedProcess "compile-sums-module-$optimization-$runtimeProfile" $dotnet $moduleArguments $repo
+            Require-ProcessSuccess $moduleProcess "Fresh $moduleLabel module compile succeeded"
+            $bootstrap = ConvertFrom-JsonText $moduleProcess.stdout.Trim() "$moduleLabel module bootstrap"
+            $modulePath = [string](Get-Field $bootstrap 'modulePath')
+            $llvmIrPath = [string](Get-Field $bootstrap 'llvmIrPath')
+            $metadataPath = [string](Get-Field $bootstrap 'metadataSourcePath')
+            $manifestPath = [string](Get-Field $bootstrap 'manifestPath')
+            foreach ($path in @($modulePath, $llvmIrPath, $metadataPath, $manifestPath)) {
+                if ([string]::IsNullOrWhiteSpace($path) -or -not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "$moduleLabel generated artifact is missing: $path" }
+            }
+            $manifest = Read-JsonFile $manifestPath
+            $moduleInfo = Get-Field $manifest 'moduleInfo'
+            $expectedAbi = Get-Field $sumsFixture 'abi'
+            Add-Check "$moduleLabel manifest preserves module ABI 1, layout ABI 3, and type descriptor size" (
+                [int](Get-Field $moduleInfo 'abiVersion') -eq [int](Get-Field $expectedAbi 'moduleAbiVersion') -and
+                [int](Get-Field $moduleInfo 'layoutAbiVersion') -eq [int](Get-Field $expectedAbi 'layoutAbiVersion') -and
+                [int](Get-Field $moduleInfo 'typeDescriptorSizeBytes') -eq [int](Get-Field $expectedAbi 'typeDescriptorSizeBytes')) ([ordered]@{
+                    moduleAbiVersion = Get-Field $moduleInfo 'abiVersion'
+                    layoutAbiVersion = Get-Field $moduleInfo 'layoutAbiVersion'
+                    typeDescriptorSizeBytes = Get-Field $moduleInfo 'typeDescriptorSizeBytes'
+                })
+            Add-Check "$moduleLabel manifest records the selected runtime profile" ([string](Get-Field $moduleInfo 'runtimeProfile') -ceq $runtimeProfile) ([ordered]@{ expected = $runtimeProfile; actual = Get-Field $moduleInfo 'runtimeProfile' })
+            Add-Check "$moduleLabel bootstrap uses one verified three-role program" ((Get-Field $bootstrap 'sameVerifiedProgramInstance') -eq $true -and @(Get-Field $bootstrap 'entries').Count -eq 3)
+
+            $sourceIds = Get-Field (Get-Field $bootstrap 'sourceDerivedTypeIds') 'typeIds'
+            $idsMatch = $true
+            foreach ($typeName in $expectedSumTypeIds.Keys) {
+                if (-not (Has-Field $sourceIds ([string]$typeName)) -or [uint32](Get-Field $sourceIds ([string]$typeName)) -ne [uint32](Get-Field $expectedSumTypeIds ([string]$typeName))) { $idsMatch = $false }
+            }
+            Add-Check "$moduleLabel source-derived nominal TypeIds match the independent sum fixture" $idsMatch $sourceIds
+
+            $layoutIndexes = Resolve-SumLayoutIndexes $bootstrap
+            Add-Check "$moduleLabel sum and nominal layout names resolve uniquely to emitted layoutIndex values" ($layoutIndexes.Count -eq 6) $layoutIndexes
+            $typeNamesByIrType = Resolve-SumTypeNamesByIrType $bootstrap
+            Add-Check "$moduleLabel layout irType values map one-to-one to source-facing type names" ($typeNamesByIrType.Count -eq @(Get-Field $bootstrap 'layouts').Count) $typeNamesByIrType
+            $layoutFieldExpectations = @(
+                @{ typeName = 'Chunk'; fieldName = 'text'; fieldType = 'String' },
+                @{ typeName = 'Continuation'; fieldName = 'pending'; fieldType = [string](Get-Field $expectedSumRoles 'continuationField') },
+                @{ typeName = 'State'; fieldName = 'completion'; fieldType = [string](Get-Field $expectedSumRoles 'stateField') }
+            )
+            foreach ($fieldExpectation in $layoutFieldExpectations) {
+                $layout = @(Get-Field $bootstrap 'layouts' | Where-Object { [string](Get-Field $_ 'typeName') -ceq $fieldExpectation.typeName })
+                $fields = if ($layout.Count -eq 1) { @(Get-Field $layout[0] 'fields') } else { @() }
+                $field = @($fields | Where-Object { [string](Get-Field $_ 'fieldName') -ceq $fieldExpectation.fieldName })
+                $actualFieldType = if ($field.Count -eq 1) { Convert-SumIrTypeToSourceName ([string](Get-Field $field[0] 'fieldType')) $typeNamesByIrType } else { $null }
+                $fieldMatches = $field.Count -eq 1 -and $actualFieldType -ceq $fieldExpectation.fieldType
+                Add-Check "$moduleLabel $($fieldExpectation.typeName).$($fieldExpectation.fieldName) layout retains the fixture sum type" $fieldMatches ([ordered]@{ expected = $fieldExpectation; actual = if ($field.Count -eq 1) { $field[0] }; normalizedFieldType = $actualFieldType })
+            }
+            foreach ($roleName in @('initialize', 'begin', 'resume')) {
+                $roleFixture = Get-Field $expectedSumRoles $roleName
+                $roleEntries = @(Get-Field $bootstrap 'entries' | Where-Object { [string](Get-Field $_ 'role') -ceq $roleName })
+                $expectedInputs = @(Get-Field $roleFixture 'inputs' | ForEach-Object { [string]$_ })
+                $expectedOutputs = @(Get-Field $roleFixture 'outputs' | ForEach-Object { [string]$_ })
+                [object[]]$actualInputs = if ($roleEntries.Count -eq 1) { @(Get-Field $roleEntries[0] 'inputTypes' | ForEach-Object { Convert-SumIrTypeToSourceName ([string]$_) $typeNamesByIrType }) } else { @() }
+                [object[]]$actualOutputs = if ($roleEntries.Count -eq 1) { @(Get-Field $roleEntries[0] 'outputTypes' | ForEach-Object { Convert-SumIrTypeToSourceName ([string]$_) $typeNamesByIrType }) } else { @() }
+                $roleMatches = $roleEntries.Count -eq 1 -and ($actualInputs -join ',') -ceq ($expectedInputs -join ',') -and ($actualOutputs -join ',') -ceq ($expectedOutputs -join ',')
+                Add-Check "$moduleLabel $roleName role signature matches independent sum metadata" $roleMatches ([ordered]@{ expectedInputs = $expectedInputs; expectedOutputs = $expectedOutputs; actualEntryCount = $roleEntries.Count; actualInputs = $actualInputs; actualOutputs = $actualOutputs })
+            }
+
+            Check-SumInterpreterOracles $bootstrap $sumsFixture $moduleLabel
+            $artifactPaths = @($modulePath, $llvmIrPath, $metadataPath, $manifestPath)
+            $artifactHashes = @($artifactPaths | ForEach-Object { [ordered]@{ path = $_; bytes = (Get-Item -LiteralPath $_).Length; sha256 = Get-Hash $_ } })
+            $sumModuleBuilds.Add([ordered]@{
+                optimization = $optimization
+                runtimeProfile = $runtimeProfile
+                outputDirectory = $moduleDirectory
+                bootstrap = $bootstrap
+                manifest = $manifest
+                layoutIndexes = $layoutIndexes
+                artifacts = $artifactHashes
+                process = $moduleProcess
+            })
+        }
+    }
+
+    foreach ($runtimeProfile in $runtimeProfiles) {
+        $o0SumModule = $sumModuleBuilds | Where-Object { $_.optimization -ceq 'O0' -and $_.runtimeProfile -ceq $runtimeProfile } | Select-Object -First 1
+        $o2SumModule = $sumModuleBuilds | Where-Object { $_.optimization -ceq 'O2' -and $_.runtimeProfile -ceq $runtimeProfile } | Select-Object -First 1
+        $semanticO0 = [ordered]@{ entries = Get-Field $o0SumModule.bootstrap 'entries'; layouts = Get-Field $o0SumModule.bootstrap 'layouts'; sourceDerivedTypeIds = Get-Field $o0SumModule.bootstrap 'sourceDerivedTypeIds'; diagnostics = Get-Field $o0SumModule.bootstrap 'diagnostics'; interpreterOracle = Get-Field $o0SumModule.bootstrap 'interpreterOracle' }
+        $semanticO2 = [ordered]@{ entries = Get-Field $o2SumModule.bootstrap 'entries'; layouts = Get-Field $o2SumModule.bootstrap 'layouts'; sourceDerivedTypeIds = Get-Field $o2SumModule.bootstrap 'sourceDerivedTypeIds'; diagnostics = Get-Field $o2SumModule.bootstrap 'diagnostics'; interpreterOracle = Get-Field $o2SumModule.bootstrap 'interpreterOracle' }
+        Add-Check "$runtimeProfile O0 and O2 sum roles, layouts, type IDs, diagnostics, and interpreter oracles agree" ((ConvertTo-Json -InputObject $semanticO0 -Depth 80 -Compress) -ceq (ConvertTo-Json -InputObject $semanticO2 -Depth 80 -Compress))
+    }
+
     $clangVersion = Invoke-CapturedProcess 'clang-version' $clang @('--version') $runDirectory
     Require-ProcessSuccess $clangVersion 'Clang version query succeeded'
     foreach ($optimization in @('O0', 'O2')) {
@@ -673,6 +1073,75 @@ try {
         Compare-NativeResetTelemetry $diagnosticRun.result $fastRun.result $trustedRun.result $optimization
     }
 
+    $stackHeaderText = [IO.File]::ReadAllText($owningStackHeaderPath)
+    $stackAbiMatch = [regex]::Match($stackHeaderText, '(?m)^\s*#define\s+AL_OWNING_STACK_ABI_VERSION\s+([0-9]+)u\b')
+    $expectedStackAbi = [uint32](Get-Field (Get-Field $sumsFixture 'abi') 'stackAbiVersion')
+    $headerStackAbi = if ($stackAbiMatch.Success) { [uint32]$stackAbiMatch.Groups[1].Value } else { [uint32]::MaxValue }
+    Add-Check 'sum fixture stack ABI matches the owning runtime header' ($stackAbiMatch.Success -and $headerStackAbi -eq $expectedStackAbi) ([ordered]@{ expected = $expectedStackAbi; actual = if ($stackAbiMatch.Success) { $headerStackAbi } else { $null } })
+
+    foreach ($optimization in @('O0', 'O2')) {
+        foreach ($executionProfile in $executionProfiles) {
+            $profileName = [string]$executionProfile.name
+            $module = $sumModuleBuilds | Where-Object { $_.optimization -ceq $optimization -and $_.runtimeProfile -ceq $executionProfile.runtimeProfile } | Select-Object -First 1
+            if ($null -eq $module) { throw "No $optimization sums module was compiled for runtime profile $($executionProfile.runtimeProfile)." }
+            $moduleBootstrap = $module.bootstrap
+            $moduleManifestInfo = Get-Field $module.manifest 'moduleInfo'
+            $moduleLabel = "$optimization/$profileName sums"
+            $runnerDirectory = Join-Path $runDirectory "native-sums-$optimization-$profileName"
+            [IO.Directory]::CreateDirectory($runnerDirectory) | Out-Null
+            $runnerPath = Join-Path $runnerDirectory "native-owning-mailbox-sums-$optimization-$profileName.exe"
+            foreach ($source in $sumsNativeSources) {
+                if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Native owning-mailbox sums source is missing: $source" }
+            }
+            $compileArguments = @('--target=x86_64-pc-windows-msvc', '-std=c11', '-Wall', '-Wextra', '-Werror', "-$optimization", '-I', $nativeDirectory)
+            if ($null -ne $executionProfile.define) { $compileArguments += [string]$executionProfile.define }
+            $compileArguments += $sumsNativeSources + @('-o', $runnerPath)
+            $nativeBuild = Invoke-CapturedProcess "native-sums-runner-build-$moduleLabel" $clang $compileArguments $runnerDirectory
+            Require-ProcessSuccess $nativeBuild "$moduleLabel native sums runner build succeeded"
+            $sumNativeBuilds.Add([ordered]@{ optimization = $optimization; profile = $profileName; runtimeProfile = $executionProfile.runtimeProfile; resetProfile = $executionProfile.resetProfile; executable = $runnerPath; sha256 = Get-Hash $runnerPath; process = $nativeBuild })
+
+            $layoutIndexes = $module.layoutIndexes
+            $runArguments = @([string](Get-Field $moduleBootstrap 'modulePath'))
+            foreach ($typeName in @('State', 'Continuation', 'String', 'Chunk', 'Option<Chunk>', 'Result<Chunk, String>')) {
+                $layoutIndex = [uint32](Get-Field $layoutIndexes $typeName)
+                $runArguments += $layoutIndex.ToString([Globalization.CultureInfo]::InvariantCulture)
+            }
+            $nativeRun = Invoke-CapturedProcess "native-sums-runner-run-$moduleLabel" $runnerPath $runArguments $runnerDirectory
+            Require-ProcessSuccess $nativeRun "$moduleLabel native sums lifecycle and malformed-input suite passed"
+            $native = ConvertFrom-JsonText $nativeRun.stdout.Trim() "$moduleLabel native sums result"
+            Check-SumNativeEvidence $native $sumsFixture $moduleLabel
+            Add-Check "$moduleLabel runner uses the matching generated module runtime profile" ([string](Get-Field $moduleManifestInfo 'runtimeProfile') -ceq [string]$executionProfile.runtimeProfile) ([ordered]@{ expected = $executionProfile.runtimeProfile; actual = Get-Field $moduleManifestInfo 'runtimeProfile' })
+            $sumNativeRuns.Add([ordered]@{
+                optimization = $optimization
+                profile = $profileName
+                runtimeProfile = $executionProfile.runtimeProfile
+                resetProfile = $executionProfile.resetProfile
+                modulePath = Get-Field $moduleBootstrap 'modulePath'
+                layoutIndexes = $layoutIndexes
+                process = $nativeRun
+                result = $native
+            })
+        }
+
+        $diagnosticSumRun = $sumNativeRuns | Where-Object { $_.optimization -ceq $optimization -and $_.profile -ceq 'diagnostic' } | Select-Object -First 1
+        $fastSumRun = $sumNativeRuns | Where-Object { $_.optimization -ceq $optimization -and $_.profile -ceq 'fast-reset' } | Select-Object -First 1
+        $trustedSumRun = $sumNativeRuns | Where-Object { $_.optimization -ceq $optimization -and $_.profile -ceq 'trusted-generated' } | Select-Object -First 1
+        Compare-SumBehavior $diagnosticSumRun.result $fastSumRun.result "$optimization sums diagnostic and fast reset preserve both policy lifecycles, roots, statuses, and copy accounting"
+        Compare-SumBehavior $diagnosticSumRun.result $trustedSumRun.result "$optimization sums diagnostic and trusted-generated preserve both policy lifecycles, roots, statuses, and copy accounting"
+    }
+
+    $expectedSumMatrix = @('O0/diagnostic', 'O0/fast-reset', 'O0/trusted-generated', 'O2/diagnostic', 'O2/fast-reset', 'O2/trusted-generated')
+    $actualSumMatrix = @($sumNativeRuns | ForEach-Object { "$($_.optimization)/$($_.profile)" })
+    $sumMatrixOkay = $actualSumMatrix.Count -eq $expectedSumMatrix.Count -and
+        @($expectedSumMatrix | Where-Object { $actualSumMatrix -cnotcontains $_ }).Count -eq 0 -and
+        @($sumNativeRuns | Where-Object { $_.process.exitCode -ne 0 -or $_.process.timedOut -or (Get-Field $_.result 'passed') -ne $true }).Count -eq 0
+    Add-Check 'diagnostic, fast-reset, and trusted-generated host builds each run the sum lifecycle at O0 and O2' $sumMatrixOkay ([ordered]@{ expected = $expectedSumMatrix; actual = $actualSumMatrix })
+    foreach ($profileName in @('diagnostic', 'fast-reset', 'trusted-generated')) {
+        $o0Run = $sumNativeRuns | Where-Object { $_.optimization -ceq 'O0' -and $_.profile -ceq $profileName } | Select-Object -First 1
+        $o2Run = $sumNativeRuns | Where-Object { $_.optimization -ceq 'O2' -and $_.profile -ceq $profileName } | Select-Object -First 1
+        Compare-SumBehavior $o0Run.result $o2Run.result "$profileName O0 and O2 sum runner results agree for both suspension policies"
+    }
+
     $diagnosticO0Runner = $nativeBuilds | Where-Object { $_.optimization -ceq 'O0' -and $_.profile -ceq 'diagnostic' } | Select-Object -First 1
     $trustedO0Runner = $nativeBuilds | Where-Object { $_.optimization -ceq 'O0' -and $_.profile -ceq 'trusted-generated' } | Select-Object -First 1
     $diagnosticO0Module = $moduleBuilds | Where-Object { $_.optimization -ceq 'O0' -and $_.runtimeProfile -ceq 'diagnostic' } | Select-Object -First 1
@@ -707,8 +1176,8 @@ try {
     $readobj = Join-Path ([IO.Path]::GetDirectoryName($clang)) 'llvm-readobj.exe'
     $nm = Join-Path ([IO.Path]::GetDirectoryName($clang)) 'llvm-nm.exe'
     if (Test-Path -LiteralPath $readobj -PathType Leaf) {
-        $moduleFiles = @($moduleBuilds | ForEach-Object { [string](Get-Field $_.bootstrap 'modulePath') })
-        $runnerFiles = @($nativeBuilds | ForEach-Object { [string]$_.executable })
+        $moduleFiles = @($moduleBuilds | ForEach-Object { [string](Get-Field $_.bootstrap 'modulePath') }) + @($sumModuleBuilds | ForEach-Object { [string](Get-Field $_.bootstrap 'modulePath') })
+        $runnerFiles = @($nativeBuilds | ForEach-Object { [string]$_.executable }) + @($sumNativeBuilds | ForEach-Object { [string]$_.executable })
         $runnerAllocatorImports = [Collections.Generic.List[object]]::new()
         foreach ($file in $moduleFiles + $runnerFiles) {
             $imports = Invoke-CapturedProcess "pe-import-audit-$([IO.Path]::GetFileName($file))" $readobj @('--coff-imports', $file) $runDirectory
@@ -794,8 +1263,11 @@ try {
     $report.sourceInputHashes = [ordered]@{ before = @($sourceInputBefore); after = @($sourceInputAfter); unchanged = ($complete -and $changed.Count -eq 0) }
     $report.processes = @($processes)
     $report.moduleBuilds = @($moduleBuilds)
+    $report.sumModuleBuilds = @($sumModuleBuilds)
     $report.nativeBuilds = @($nativeBuilds)
+    $report.sumNativeBuilds = @($sumNativeBuilds)
     $report.nativeRuns = @($nativeRuns)
+    $report.sumNativeRuns = @($sumNativeRuns)
     $report.checks = @($checks)
     $report.passed = $checks.Count -gt 0 -and @($checks | Where-Object { -not $_.passed }).Count -eq 0
     if ($errors.Count -gt 0) { $report.errors = @($errors) }

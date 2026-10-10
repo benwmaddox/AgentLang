@@ -117,6 +117,30 @@ None descriptor exposed a missing sentinel rule,
 now repaired with before/after evidence. This engineering milestone does not
 change the efficacy conclusions below or select the final mailbox memory policy.
 
+[Report 169](../reports/169-native-mailbox-sum-lifecycle.md) tracks the bounded
+mailbox integration of nominal Option/Result payloads under RETURN and
+KEEP_ASSOCIATED. It exercises real publication/import/suspension/resume APIs,
+ordinary helper matches, Error-state re-entry, failure preservation and retry,
+and independent serialized-byte/copy oracles. This closes a gap between standalone
+sum conformance and the existing String mailbox fixture; it does not select a
+memory policy or establish service throughput. Keep native type expansion and
+JIT/release work separate from held-out agent maintenance experiments.
+
+The [next native typing plan](NATIVE-NOMINALS-IMPLEMENTATION.md) first preserves
+unvalidated nominal Int identity through owning execution, then adds a bounded
+predicate-bearing Int refinement before extending String/Email support. This
+is a delivery order, not a weakening of the strong-type requirement. Unsupported
+validators must remain explicit errors. Begin product edits after report 169's
+validation and publication; preserve a coherent source baseline for each gate.
+
+A development-load follow-up should measure fresh project activation separately
+from warm request latency. Report 169 records similar 23–25-second fresh CLI
+session times across very different request counts and a static-review candidate:
+the manifest loader currently compiles its snapshot twice. Consider reusing the
+already-validated immutable snapshot before adding caches; retain source/manifest
+validation, legacy loading, test-overlay identity and durable-library requalification.
+Measure before making a speed claim or skipping any validation.
+
 [Report 161](../reports/161-real-files-and-test-isolation.md) tracks real
 project-rooted filesystem execution and automatic virtual providers for attached
 tests. Focused runtime, CLI and broker checks and all 37 full local Release checks

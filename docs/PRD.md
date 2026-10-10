@@ -105,7 +105,7 @@ The full research domain remains a small-business backend: Customer, Subscriptio
 
 ### Values and stack signatures
 
-Use an explicit data-flow authoring model with named typed inputs, ordinary calls, immutable locals and dot chaining. Dot chains are statically resolved first-input calls with pipeline semantics, not OOP or .NET invocation. Words remain the named unit of composition. The verified semantic IR may retain stack operations internally. Flow expression/dot source is implemented through typed semantic IR with durable frontend-tagged sources. The default Flow authoring cutover passed the complete 27-check Release gate; explicit Stack/RPN compatibility remains. Controlled external-agent comparisons are the next research step; see [the migration contract and acceptance plan](FRONTEND-MIGRATION.md).
+Use an explicit data-flow authoring model with named typed inputs, ordinary calls, immutable locals and dot chaining. Dot chains are statically resolved first-input calls with pipeline semantics, not OOP or .NET invocation. Dictionary functions remain the named unit of composition. The verified semantic IR may retain stack operations internally. Flow expression/dot source is implemented through typed semantic IR with durable frontend-tagged sources; explicit Stack/RPN compatibility remains. The [current syntax guide](CURRENT-SYNTAX.md) describes Flow/2 authoring. Bounded external-agent comparisons are complete with mixed results; the [efficacy checkpoint](../reports/151-efficacy-checkpoint.md) separates demonstrated reuse and maintenance from comparative reliability. The [migration contract](FRONTEND-MIGRATION.md) retains earlier cutover evidence.
 
 Evaluation compiles the entire submitted expression before executing it. Type errors prevent every effect. Internal `Int Int -> Int` consumes two integers and produces one; new source supplies named parameters/call arguments without exposing anonymous stack positions.
 
@@ -263,8 +263,11 @@ Diagnostics should identify missing cases and their source spans. Library tests
 must still exercise their own branches and assert behavior: a statically handled
 case is not proof that its implementation is correct. The current Flow/2
 [closed-enum slice](CLOSED-ENUMS.md) supports payload-free enums and exhaustive
-matching for project functions. Enum library qualification remains blocked until
-finite input/output coverage is enforced; native enum execution is not yet supported.
+matching. Library qualification checks direct enum parameter positions and
+supported finite return domains under the [finite coverage contract](FINITE-COVERAGE.md).
+The owning-arena LLVM backend supports payload-free enums and bounded
+Option/Result layouts; [report 160](../reports/160-native-option-result.md)
+records the conformance evidence and unsupported native types.
 
 Tests must support injected deterministic effect providers for IO and other
 declared effects. Injection must preserve the function's effect contract and
@@ -327,37 +330,29 @@ their pinned source syntax and runtime rather than mixing frontend revisions.
 
 ### Source representation
 
-The current legacy syntax is line-oriented RPN. The example below records executable legacy syntax, not the new target. Expression/dot source now supports typed declarations, words, tests and examples with explicit syntax versions. Default Flow authoring, interactive input and harness selection passed the complete 27-check Release gate (report 052); exact committed-source CI is recorded separately from local dirty-tree evidence. Strings use quoted literals with documented escaping. Source locations contain file/source identifier, line, and column. The parser distinguishes incomplete interactive input from invalid complete input. Source/history/editing and coverage preserve the authored frontend.
+Current Flow/2 source uses `fn`, typed named inputs, record properties and dotted calls. Select syntax version 2 explicitly; version 1 remains the runtime default for existing stored programs and frozen experiments. Strings use quoted literals with documented escaping. Source locations contain file/source identifier, line, and column. The parser distinguishes incomplete interactive input from invalid complete input. Source/history/editing and coverage preserve the authored frontend. The small example below demonstrates current source spelling, with String as the illustrative customer classification; actual domain concepts should use stronger nominal or closed types as appropriate.
 
-```text
-record Customer
-    field kind String
-    field balance Float
-end
+```flow
+record Customer {
+    field kind: String
+}
 
-word customer.premium? : Customer -> Bool
+fn customer.premium?(customer: Customer) -> Bool {
     effects none
     doc "Whether this customer has premium status."
-    customer.kind
-    "premium"
-    equals
-end
 
-word customer.discounted-balance : Customer -> Float
-    effects none
-    let customer
-    $customer customer.balance
-    $customer customer.premium?
-    if
-        0.9 float.multiply
-    else
-    end
-end
+    customer.kind == "premium"
+}
 
-test customer.premium?/premium
-    "premium" 100.0 customer.new customer.premium?
+test customer.premium?/premium {
+    customer.premium?(customer.new(kind = "premium"))
     => true
-end
+}
+
+test customer.premium?/regular {
+    customer.premium?(customer.new(kind = "regular"))
+    => false
+}
 ```
 
 The implementation README is the authoritative executable syntax reference, including generated record-word names and primitive names. A syntax change must update examples and acceptance checks together. This specification's example illustrates the contract rather than fixing all identifiers permanently.
@@ -368,7 +363,7 @@ The implementation README is the authoritative executable syntax reference, incl
 
 Use F# discriminated unions for types, values, effects, AST nodes, diagnostics, and IR. Keep parser, compiler, runtime, and protocol concerns separate without requiring a separate assembly for every module. The initial usable slice historically interpreted a checked expression tree. The required executable boundary is now a verified typed semantic IR shared by the interpreter and any later native backend. Source ASTs remain authoring and diagnostic representations; runtime execution must not fall back to them.
 
-Compilation parses a versioned authoring AST, resolves names/arguments, checks types/effects, and lowers into verified semantic IR. The runtime executes that IR, not the AST. No JIT/native backend is required. Expose source, signatures, named inputs, effects, dependencies and IR through introspection; deeper compiler-stage queries remain planned.
+Compilation parses a versioned authoring AST, resolves names/arguments, checks types/effects, and lowers into verified semantic IR. The runtime executes that IR, not the AST. JIT/native execution was outside the initial interpreter milestone and is now a separate secondary delivery track. Expose source, signatures, named inputs, effects, dependencies and IR through introspection; deeper compiler-stage queries remain planned.
 
 The runtime must bound execution steps and call depth and return structured errors when limits are exceeded. Define division-by-zero, overflow, invalid conversion, and stack-underflow behavior. Runtime errors are not host stack traces.
 

@@ -1,0 +1,263 @@
+{
+  "schemaVersion": 1,
+  "kind": "owning-native-mailbox-sums",
+  "frozenBeforeNativeExecution": true,
+  "oracleProvenance": {
+    "basis": "Published layout ABI 3 and the source behavior in experiments/AgentLang.OwningMailbox/owning-mailbox-sums.flow.",
+    "derivation": "A String is an 8-byte header (UTF-16 unit count plus four reserved zero bytes), UTF-16LE content, and zero padding to an 8-byte extent. Chunk is a one-field record containing that standalone String encoding. Option and Result are an 8-byte little-endian tag followed by the active child's standalone encoding. State and Continuation are one-field records containing the complete inline sum encoding.",
+    "independentPreExecutionReview": "Before any native execution, root review corrected the Z lifecycle State payload from 22 to 18 bytes and added the None-match empty-string literal (8 copied bytes) to the ERR resume formula. A second accounting review traced the final sequence: thirteen handler-dispatched lifecycle API calls, including the expected FAIL and retained-capacity failures, stage 168 bytes total; two malformed active-root attempts reject before handler dispatch, adding 0 staging bytes under RETURN and 16 under KEEP_ASSOCIATED because that policy stages the empty completion String before attached-root validation. A further required Error-arm round trip adds the second empty begin and resume call, yielding deep-copy total 872 bytes per policy. No native output was used.",
+    "nativeOutputWasUsedToDeriveOrCorrectOracles": false,
+    "layoutIndexes": "The C runner receives layout indexes from the emitted bootstrap metadata, keyed by typeName and layoutIndex; the fixture contains no hardcoded descriptor index convention."
+  },
+  "abi": {
+    "moduleAbiVersion": 1,
+    "moduleStructSizeBytes": 144,
+    "layoutAbiVersion": 3,
+    "stackAbiVersion": 1,
+    "typeDescriptorSizeBytes": 36,
+    "fieldDescriptorSizeBytes": 16,
+    "layoutDescriptorSizeBytes": 40
+  },
+  "sourceDerivedTypeIds": {
+    "typeIdRule": "Int=1, Bool=2, Unit=3, nominal records sorted by source type name start at 4, String follows all nominal records.",
+    "nominalRecordOrder": ["Chunk", "Continuation", "State"],
+    "typeIds": { "Chunk": 4, "Continuation": 5, "State": 6, "String": 7 }
+  },
+  "roles": {
+    "initialize": { "inputs": ["String"], "outputs": ["State"] },
+    "begin": { "inputs": ["State", "String"], "outputs": ["State", "Continuation"] },
+    "resume": { "inputs": ["State", "Continuation", "String"], "outputs": ["State"] },
+    "sharedNominalTypes": ["Chunk", "Continuation", "State"],
+    "stateField": "Result<Chunk, String>",
+    "continuationField": "Option<Chunk>"
+  },
+  "malformedInputs": {
+    "activeResultTag": {
+      "root": "State",
+      "offsetBytes": 0,
+      "mutatedValueHex": "0200000000000000",
+      "reason": "Tag 2 is outside the two-case Result descriptor."
+    },
+    "activeOptionStringLength": {
+      "root": "Continuation",
+      "offsetBytes": 8,
+      "mutatedValueHex": "ffffffff",
+      "reason": "The Some payload begins with its nested String header at byte 8; UINT32_MAX UTF-16 units exceeds its bounded root extent."
+    }
+  },
+  "serializedValue": {
+    "string": {
+      "encoding": "UTF-16LE",
+      "headerBytes": 8,
+      "unitCountOffsetBytes": 0,
+      "reservedHeaderBytes": 4,
+      "payloadBytesFormula": "8 + 2*UTF16CodeUnits",
+      "extentBytesFormula": "align_up(payloadBytes, 8)",
+      "paddingBytesAreZero": true
+    },
+    "sum": {
+      "tagBytes": 8,
+      "tagEncoding": "little-endian u64",
+      "optionSomeTag": 0,
+      "optionNoneTag": 1,
+      "resultOkTag": 0,
+      "resultErrorTag": 1,
+      "activePayload": "complete standalone child encoding immediately after tag"
+    }
+  },
+  "scenarios": {
+    "unicodeSomeOk": {
+      "initializeUtf8Hex": "41f09f9982",
+      "initializeValue": "A🙂",
+      "initializeCodeUnitsHex": "0041d83dde42",
+      "beginUtf8Hex": "ceb4",
+      "beginValue": "δ",
+      "beginCodeUnitsHex": "03b4",
+      "resumeUtf8Hex": "00f09f9a80",
+      "resumeValue": "\u0000🚀",
+      "completionValue": "A🙂δ\u0000🚀",
+      "resumeInputCodeUnitsHex": "0000d83dde80",
+      "completionCodeUnitsHex": "0041d83dde4203b40000d83dde80",
+      "initializeRoot": {
+        "type": "State",
+        "payloadBytes": 22,
+        "extentBytes": 24,
+        "serializedHex": "0000000000000000030000000000000041003dd842de0000"
+      },
+      "beginRoots": [
+        {
+          "type": "State",
+          "payloadBytes": 22,
+          "extentBytes": 24,
+          "serializedHex": "0000000000000000030000000000000041003dd842de0000"
+        },
+        {
+          "type": "Continuation",
+          "payloadBytes": 18,
+          "extentBytes": 24,
+          "serializedHex": "00000000000000000100000000000000b403000000000000"
+        }
+      ],
+      "resumeRoot": {
+        "type": "State",
+        "payloadBytes": 30,
+        "extentBytes": 32,
+        "serializedHex": "0000000000000000070000000000000041003dd842deb40300003dd880de0000"
+      }
+    },
+    "emptyNoneError": {
+      "initializeUtf8Hex": "5a",
+      "initializeValue": "Z",
+      "beginUtf8Hex": "",
+      "resumeUtf8Hex": "455252",
+      "resumeValue": "ERR",
+      "initializeRoot": {
+        "type": "State",
+        "payloadBytes": 18,
+        "extentBytes": 24,
+        "serializedHex": "000000000000000001000000000000005a00000000000000"
+      },
+      "beginRoots": [
+        {
+          "type": "State",
+          "payloadBytes": 18,
+          "extentBytes": 24,
+          "serializedHex": "000000000000000001000000000000005a00000000000000"
+        },
+        {
+          "type": "Continuation",
+          "payloadBytes": 8,
+          "extentBytes": 8,
+          "serializedHex": "0100000000000000"
+        }
+      ],
+      "resumeRoot": {
+        "type": "State",
+        "payloadBytes": 22,
+        "extentBytes": 24,
+        "serializedHex": "010000000000000003000000000000004500520052000000"
+      }
+    },
+    "errorToOkAfterError": {
+      "beginUtf8Hex": "",
+      "resumeUtf8Hex": "",
+      "completionValueBeforeResume": "ERR",
+      "beginRoots": [
+        {
+          "type": "State",
+          "payloadBytes": 22,
+          "extentBytes": 24,
+          "serializedHex": "010000000000000003000000000000004500520052000000"
+        },
+        {
+          "type": "Continuation",
+          "payloadBytes": 8,
+          "extentBytes": 8,
+          "serializedHex": "0100000000000000"
+        }
+      ],
+      "resumeRoot": {
+        "type": "State",
+        "payloadBytes": 22,
+        "extentBytes": 24,
+        "serializedHex": "000000000000000003000000000000004500520052000000"
+      }
+    },
+    "oneByteShortCapacity": {
+      "retainedBankCapacityBytes": 31,
+      "initializeUtf8Hex": "",
+      "beginUtf8Hex": "",
+      "oversizedResumeUtf8Hex": "31323334353637",
+      "oversizedResumeCodeUnitsHex": "0031003200330034003500360037",
+      "oversizedExpectedRoot": {
+        "type": "State",
+        "payloadBytes": 30,
+        "extentBytes": 32,
+        "serializedHex": "0000000000000000070000000000000031003200330034003500360037000000"
+      },
+      "publishedRootsBeforeFailure": [
+        {
+          "type": "State",
+          "payloadBytes": 16,
+          "extentBytes": 16,
+          "serializedHex": "00000000000000000000000000000000"
+        },
+        {
+          "type": "Continuation",
+          "payloadBytes": 8,
+          "extentBytes": 8,
+          "serializedHex": "0100000000000000"
+        }
+      ],
+      "retryUtf8Hex": "",
+      "retryRoot": {
+        "type": "State",
+        "payloadBytes": 16,
+        "extentBytes": 16,
+        "serializedHex": "00000000000000000000000000000000"
+      }
+    }
+  },
+  "copyAccounting": {
+    "scope": "Exact API sequence per policy: Unicode init(A🙂), begin(δ), malformed active Result tag with empty completion, malformed active Option payload with empty completion, resume(FAIL), retry resume(NUL+🚀); Z init, begin(empty), resume(ERR), begin(empty) from Error(ERR), resume(empty) to exercise the Result.Error extraction arm; capacity init(empty), begin(empty), resume(1234567) rejected one byte short, retry resume(empty). The thirteen handler-dispatched lifecycle API calls, including expected FAIL and retained-capacity failures, stage 168 bytes. The two malformed-root attempts reject before handler dispatch: RETURN validates published bank roots before text staging, so totals 168; KEEP_ASSOCIATED stages the 8-byte empty completion before validating attached roots, totaling 184. Extraction, ordinary calls, descriptor transfer, and match views add no payload movement. Literal creation, explicit record/sum construction, and concatenation each contribute their full copied extent to deepCopyBytes.",
+    "formulaTerms": {
+      "stringExtent": "align_up(8 + 2*UTF16CodeUnits, 8)",
+      "initializeWithStringExtentT": "Chunk.new copies T + Result.Ok copies T + State.new copies (8 + T) = 3*T + 8",
+      "beginSomeWithStringExtentT": "empty-string condition literal 8 + Chunk.new T + Option.Some child copy T + Continuation.new copies (8 + T) = 3*T + 16",
+      "beginNone": "empty-string condition literal 8 + Option.None tag store 0 + Continuation.new copies 8 = 16",
+      "resumeOkUnicode": "FAIL literal 16 + ERR literal 16 + concat(base,pending) extent 16 + concat(combined,message) extent 24 + Chunk.new 24 + Result.Ok child copy 24 + State.new copies 32 = 152",
+      "resumeErrorErr": "None match empty-string literal 8 + FAIL literal 16 + ERR literal 16 + Result.Error copies message extent 16 + State.new copies result extent 24 = 80",
+      "resumeHandlerFailureSomeUnicode": "After Some extraction: FAIL comparison literal 16; execution stops before the ERR comparison or any output construction",
+      "beginNoneAfterError": "empty-string condition literal 8 + Option.None tag store 0 + Continuation.new copies 8 = 16",
+      "resumeOkFromErrorAndNone": "None match empty-string literal 8 + FAIL and ERR literals 32 + concat(ERR,empty) extent 16 + concat(ERR,empty) extent 16 + Chunk.new 16 + Result.Ok child copy 16 + State.new copies 24 = 128",
+      "capacityResumeSevenUnits": "None payload literal 8 + FAIL and ERR literals 32 + empty concat extent 8 + seven-unit concat extent 24 + Chunk.new 24 + Result.Ok child copy 24 + State.new copies 32 = 152",
+      "capacityRetryEmpty": "None payload literal 8 + FAIL and ERR literals 32 + two empty concat extents 16 + Chunk.new 8 + Result.Ok child copy 8 + State.new copies 16 = 88"
+    },
+    "expectedStatsBySuspensionPolicy": {
+      "RETURN": {
+        "utf8InputBytes": 27,
+        "utf16StagingBytes": 168,
+        "inputImportBytes": 464,
+        "publicationCopyBytes": 296,
+        "beginPublicationCopyBytes": 136,
+        "resumeRootImportBytes": 208,
+        "deepCopyBytes": 872,
+        "moveBytes": 0,
+        "returnedOutputDescriptors": 16,
+        "handlerInvocations": 13,
+        "handlerFailures": 2
+      },
+      "KEEP_ASSOCIATED": {
+        "utf8InputBytes": 27,
+        "utf16StagingBytes": 184,
+        "inputImportBytes": 256,
+        "publicationCopyBytes": 160,
+        "beginPublicationCopyBytes": 0,
+        "resumeRootImportBytes": 0,
+        "deepCopyBytes": 872,
+        "moveBytes": 0,
+        "returnedOutputDescriptors": 16,
+        "handlerInvocations": 13,
+        "handlerFailures": 2
+      }
+    }
+  },
+  "requiredChecks": [
+    "diagnostic, fast-reset, and trusted-generated host builds each run the sum lifecycle",
+    "RETURN and KEEP_ASSOCIATED both publish and resume nested nominal sum payloads",
+    "Some survives RETURN bank import and KEEP associated-root resume",
+    "Some/Ok, None/Error, Unicode, embedded NUL, and empty payload bytes match this fixture",
+    "the Error completion arm is extracted through an ordinary call on a second actual mailbox resume",
+    "FAIL occurs after both helper matches and preserves roots and pending token for retry",
+    "one-byte-short retained capacity preserves roots and pending token for retry",
+    "malformed active sum tag and active nested string payload are rejected with scanner output sentinels unchanged",
+    "malformed active tag and payload through mailbox APIs preserve pending roots and token in every profile",
+    "an invalid inactive Result alternative is rejected with scanner and controller output sentinels unchanged",
+    "ordinary calls and matches report zero payload moves",
+    "Layout ABI remains 3 and stack ABI remains 1"
+  ],
+  "limitations": [
+    "This is a bounded mailbox integration fixture for one nominal record payload closure, not new language or runtime architecture.",
+    "Copy counters report logical runtime-requested extents and are not hardware traffic measurements."
+  ]
+}

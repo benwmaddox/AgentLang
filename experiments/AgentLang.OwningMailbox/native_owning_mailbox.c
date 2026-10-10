@@ -10,6 +10,7 @@
 #include "mailbox_runtime.h"
 
 enum {
+  CHECK_NAME_BYTES = 128u,
   EXPECTED_CONTINUATION_TYPE_ID = 4u,
   EXPECTED_STATE_TYPE_ID = 5u,
   EXPECTED_STRING_TYPE_ID = 6u,
@@ -24,7 +25,7 @@ enum {
 };
 
 typedef struct named_check {
-  const char *name;
+  char name[CHECK_NAME_BYTES];
   int passed;
 } named_check;
 
@@ -101,14 +102,31 @@ static uint32_t reset_telemetry_has_value;
 static uint32_t reset_telemetry_valid = 1u;
 
 static void record_check(const char *name, int passed) {
+  static const char null_name[] = "<null-check-name>";
+  static const char long_name[] = "<check-name-too-long>";
+  const char *stored_name = name;
+  size_t name_length = 0u;
+  int name_valid = 1;
+  if (name == NULL) {
+    stored_name = null_name;
+    name_valid = 0;
+  } else {
+    while (name_length < CHECK_NAME_BYTES && name[name_length] != '\0')
+      ++name_length;
+    if (name_length == CHECK_NAME_BYTES) {
+      stored_name = long_name;
+      name_valid = 0;
+    }
+  }
   if (check_count < sizeof(checks) / sizeof(checks[0])) {
-    checks[check_count].name = name;
-    checks[check_count].passed = passed != 0;
+    size_t copy_length = name_valid ? name_length : strlen(stored_name);
+    memcpy(checks[check_count].name, stored_name, copy_length + 1u);
+    checks[check_count].passed = passed != 0 && name_valid;
     ++check_count;
   } else {
     ++failure_count;
   }
-  if (!passed)
+  if (!passed || !name_valid)
     ++failure_count;
 }
 
@@ -1488,15 +1506,23 @@ static void run_utf8_boundaries(const al_owning_mailbox_module *module) {
     return;
   for (index = 0u; index < 4u; ++index) {
     al_mailbox_call_info info;
-    char check_name[64];
+    char check_name[CHECK_NAME_BYTES];
+    int check_name_length;
+    int okay;
     initialize_call_info(&info);
-    (void)snprintf(check_name, sizeof(check_name),
-                   "valid UTF-8 width %u converts to exact UTF-16 root", index + 1u);
-    CHECK(check_name,
-          al_mailbox_init_text(fixture.runtime, index, inputs[index],
-                               input_lengths[index], &info) == AL_MAILBOX_OK &&
-              check_main_bank(fixture.runtime, index, 0u, 1u, units[index],
-                              unit_lengths[index], NULL, 0u));
+    check_name_length = snprintf(
+        check_name, sizeof(check_name),
+        "valid UTF-8 width %u converts to exact UTF-16 root", index + 1u);
+    okay = al_mailbox_init_text(fixture.runtime, index, inputs[index],
+                                input_lengths[index], &info) == AL_MAILBOX_OK &&
+           check_main_bank(fixture.runtime, index, 0u, 1u, units[index],
+                           unit_lengths[index], NULL, 0u);
+    if (check_name_length < 0 ||
+        (size_t)check_name_length >= sizeof(check_name)) {
+      CHECK("UTF-8 boundary check name fits its buffer", 0);
+    } else {
+      CHECK(check_name, okay);
+    }
   }
   {
     al_mailbox_owning_stats stats;
