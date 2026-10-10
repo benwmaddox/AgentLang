@@ -4,14 +4,14 @@
   "participant": "retained-1",
   "archive": {
     "file": "bundle.zip",
-    "bytes": 317522,
-    "sha256": "3b5a4ca807222f90848d02162df4f8ec6d0c16478440d642e1daa193dca5f657"
+    "bytes": 317519,
+    "sha256": "f6361d8b976b635aa5433845b68455178a197d91bc7669265960bb0b0ec82b02"
   },
   "archiveManifest": {
     "path": "bundle-manifest.json",
+    "location": "inside-archive",
     "bytes": 25700,
-    "sha256": "063478cfe80abc75903f655cda249dc4a72afe90b9d5f51892f57b8e4c588d53",
-    "location": "inside-archive"
+    "sha256": "3aa2289c5bb715eb174f5c5c933c141c3ffcae7a68ff944d10bbb44e6f17258a"
   },
   "includedFiles": [
     {
