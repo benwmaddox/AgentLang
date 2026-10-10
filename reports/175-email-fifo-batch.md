@@ -168,3 +168,10 @@ terminal traces, scoring, metrics and preservation review. Build trees, binaries
 temporary environments and credentials are excluded. Broker restrictions are
 workflow constraints, not an OS security sandbox; correctness results here are
 not a cybersecurity audit.
+
+Archive correction: the initial filter treated CURRENT as a plain manifest hash,
+but it is a JSON pointer. It therefore omitted unpinned final manifests. The
+verified [supplement index](evidence/175-email-fifo-batch/supplement.json) and
+[supplement archive](evidence/175-email-fifo-batch/supplement.zip) retain every
+CURRENT-referenced final manifest and pointer, including the scored candidate.
+The original archive, its hash, trial sources and results remain unchanged.

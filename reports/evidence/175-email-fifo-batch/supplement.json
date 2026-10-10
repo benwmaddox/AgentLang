@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "status": "verified",
+  "reason": "Original filter compared manifest stem with raw CURRENT text. CURRENT is a JSON pointer. Supplement retains every referenced final manifest and its pointer; original archive and outcomes are unchanged.",
+  "originalArchiveSha256": "b4fc55b0f008bd64c0d981019b9f4bf4bd6d91d18ac9c42045886ba70a0e7fcf",
+  "archive": {
+    "path": "supplement.zip",
+    "bytes": 1097653,
+    "sha256": "a8bd817ae8ef8ac9f94b07172fa3b79c5122a6977eda770d3857ec48fc940ea1"
+  },
+  "files": [
+    {
+      "path": ".agentlang/next-efficacy-175/coordinator/actors/flow/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "c667508c1feb7cdba7fba1ce73fb45537bfb363b7d0781f2894ea13331827ccd"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/coordinator/actors/flow/.agentlang/store/manifests/50980053b0beb77cf870b916ece66e268a3d2d206504a5164a03dff373ca804a.json",
+      "bytes": 1950524,
+      "sha256": "50980053b0beb77cf870b916ece66e268a3d2d206504a5164a03dff373ca804a"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/coordinator/broker-smoke/attempt-01/flow/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "29e85012f6580ed585fce09ac6d2a1b3e87ed416fad1d13c612f2f71beb571b1"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/coordinator/broker-smoke/attempt-01/flow/.agentlang/store/manifests/189e34ac39234465b4a1784c09d38f2b106a790aa806635162df03693b5ac3be.json",
+      "bytes": 1819383,
+      "sha256": "189e34ac39234465b4a1784c09d38f2b106a790aa806635162df03693b5ac3be"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/coordinator/broker-smoke/attempt-02/flow/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "29e85012f6580ed585fce09ac6d2a1b3e87ed416fad1d13c612f2f71beb571b1"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/coordinator/broker-smoke/attempt-02/flow/.agentlang/store/manifests/189e34ac39234465b4a1784c09d38f2b106a790aa806635162df03693b5ac3be.json",
+      "bytes": 1819383,
+      "sha256": "189e34ac39234465b4a1784c09d38f2b106a790aa806635162df03693b5ac3be"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/coordinator/supplement-manifests.py",
+      "bytes": 2414,
+      "sha256": "14c20ec0c9b79d8e0024e37d434195001ebcaf3691476a9b20893a9d90c13480"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/load-check/project/.agentlang/store/CURRENT",
+      "bytes": 135,
+      "sha256": "4cc8ade6b9585e7e1d97dd68bcf823505b10071ec4059c16ca5445387d73a461"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/load-check/project/.agentlang/store/manifests/1dd4e64db2cfb6370341bca9d2aa86a985e7ca329e75a526658c259c402ca871.json",
+      "bytes": 2428947,
+      "sha256": "1dd4e64db2cfb6370341bca9d2aa86a985e7ca329e75a526658c259c402ca871"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/continue-after-failure-final1/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "6757b178ce4bb8ba2b2cb37aa1e7fee2f464ebda77f850259806f68adb31c6af"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/continue-after-failure-final1/.agentlang/store/manifests/eb0ce777ce36b6394fc11761f6246716992f644e596aec83730ea092f14fad79.json",
+      "bytes": 1853780,
+      "sha256": "eb0ce777ce36b6394fc11761f6246716992f644e596aec83730ea092f14fad79"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/correct/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "29e85012f6580ed585fce09ac6d2a1b3e87ed416fad1d13c612f2f71beb571b1"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/correct/.agentlang/store/manifests/189e34ac39234465b4a1784c09d38f2b106a790aa806635162df03693b5ac3be.json",
+      "bytes": 1819383,
+      "sha256": "189e34ac39234465b4a1784c09d38f2b106a790aa806635162df03693b5ac3be"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/correct-checkedint/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "29e85012f6580ed585fce09ac6d2a1b3e87ed416fad1d13c612f2f71beb571b1"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/correct-checkedint/.agentlang/store/manifests/189e34ac39234465b4a1784c09d38f2b106a790aa806635162df03693b5ac3be.json",
+      "bytes": 1819383,
+      "sha256": "189e34ac39234465b4a1784c09d38f2b106a790aa806635162df03693b5ac3be"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/correct-grammarfix1/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "29e85012f6580ed585fce09ac6d2a1b3e87ed416fad1d13c612f2f71beb571b1"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/correct-grammarfix1/.agentlang/store/manifests/189e34ac39234465b4a1784c09d38f2b106a790aa806635162df03693b5ac3be.json",
+      "bytes": 1819383,
+      "sha256": "189e34ac39234465b4a1784c09d38f2b106a790aa806635162df03693b5ac3be"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/correct-tests1/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "eb34ccfc323f4fb2415cbd0a7a952d8ea685a808513ed603310359d29125e360"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/correct-tests1/.agentlang/store/manifests/9ac732a206fcb0803b64644cfd2edb78a043a512c32b4b83403e857706e51a00.json",
+      "bytes": 1843556,
+      "sha256": "9ac732a206fcb0803b64644cfd2edb78a043a512c32b4b83403e857706e51a00"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/drop-failed-final1/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "5a8d983bdb6dc842aced47901cee0b3af8f757c7d0d41cb208faf55475143243"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/drop-failed-final1/.agentlang/store/manifests/76b724dbb14b6ffeea663440d6a00f0266ed07a247947183f7d111344662fe01.json",
+      "bytes": 1848910,
+      "sha256": "76b724dbb14b6ffeea663440d6a00f0266ed07a247947183f7d111344662fe01"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/reverse-sent-final1/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "29e85012f6580ed585fce09ac6d2a1b3e87ed416fad1d13c612f2f71beb571b1"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/reverse-sent-final1/.agentlang/store/manifests/189e34ac39234465b4a1784c09d38f2b106a790aa806635162df03693b5ac3be.json",
+      "bytes": 1819383,
+      "sha256": "189e34ac39234465b4a1784c09d38f2b106a790aa806635162df03693b5ac3be"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/reverse-sent-final2/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "258ca40e8b1a27e05d8dfe40d19b719aa102231560440fc766c050e9c2a23f23"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/reverse-sent-final2/.agentlang/store/manifests/a30748133dab35fd18637e571239c747610d907ee90220e72c6fb6db522e95a2.json",
+      "bytes": 1851707,
+      "sha256": "a30748133dab35fd18637e571239c747610d907ee90220e72c6fb6db522e95a2"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/rollback-prefix-final1/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "062d8926d489400933b70a02aba59184724090f078562bd34be101cd0d7679f6"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/oracle/controls/flow/rollback-prefix-final1/.agentlang/store/manifests/090dbfd936f0bb7604537f0241d00f4ffb7cd0d69d204aa0f77ab29b74bc3660.json",
+      "bytes": 1842663,
+      "sha256": "090dbfd936f0bb7604537f0241d00f4ffb7cd0d69d204aa0f77ab29b74bc3660"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/seed-preparation/attempt-02/flow/project/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "a025f9e0284ccfdae3d5e9e80a18adb687cc4ad5fa83b16627aac805637e38f5"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/seed-preparation/attempt-02/flow/project/.agentlang/store/manifests/91b03ec0ef947eacaecc731233c224ed5a6127daec20ae6f200a399d03fe9322.json",
+      "bytes": 1806281,
+      "sha256": "91b03ec0ef947eacaecc731233c224ed5a6127daec20ae6f200a399d03fe9322"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/seed-preparation/attempt-03-completion/flow/project/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "a025f9e0284ccfdae3d5e9e80a18adb687cc4ad5fa83b16627aac805637e38f5"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/seed-preparation/attempt-03-completion/flow/project/.agentlang/store/manifests/91b03ec0ef947eacaecc731233c224ed5a6127daec20ae6f200a399d03fe9322.json",
+      "bytes": 1806281,
+      "sha256": "91b03ec0ef947eacaecc731233c224ed5a6127daec20ae6f200a399d03fe9322"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/seed-preparation/attempt-03-completion-validated/flow/project/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "29e85012f6580ed585fce09ac6d2a1b3e87ed416fad1d13c612f2f71beb571b1"
+    },
+    {
+      "path": ".agentlang/next-efficacy-175/seed-preparation/attempt-03-completion-validated/flow/project/.agentlang/store/manifests/189e34ac39234465b4a1784c09d38f2b106a790aa806635162df03693b5ac3be.json",
+      "bytes": 1819383,
+      "sha256": "189e34ac39234465b4a1784c09d38f2b106a790aa806635162df03693b5ac3be"
+    }
+  ]
+}
