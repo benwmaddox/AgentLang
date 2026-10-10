@@ -1,0 +1,16 @@
+{
+  "status": "pass",
+  "archiveSha256": "74feb1911fa3a27b54b5185e4af4a287ccf6ca5e052399f510fa06fb35dbc9b8",
+  "archiveBytes": 20319144,
+  "entries": 11064,
+  "zipCrc": "passed",
+  "archiveIndexAndZipLinks": "passed",
+  "allReportFileLinks": "passed",
+  "contentReviewSha256": "1e564e0771135a89da082cf3fe7a832544cfb8316da4ac588ed02b38ab3fc0be",
+  "closedReviewPendingItem": "Archive generated and report links verified",
+  "workingFileSha256": {
+    "reports/179-preview-repair-and-record-migration.md": "a2134bf6a1ec95062145b4d75c08d2e77cae807fa42104d985d577b827905fb4",
+    "docs/ROADMAP.md": "907682585b88c7b3a9dd84b7178dec8c9b76670669ff35f6af0dab4910911f44",
+    "experiments/AgentLang.SubagentTrials/preview-sequence-179/README.md": "84e3a61e0f51af89a1125fb38fa748434db46c091574d0adc81a17f067dc8e3d"
+  }
+}

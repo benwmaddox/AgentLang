@@ -37,23 +37,37 @@ not wait for every optional feature or proof of a comparative advantage.
 
 ## 1. Validate reliability beyond easy composition
 
-The [current efficacy checkpoint](../reports/177-reliability-and-vocabulary-checkpoint.md)
+The [efficacy checkpoint through 176](../reports/177-reliability-and-vocabulary-checkpoint.md)
 reviews evidence through report 176. Discovery and reuse are demonstrated on
 bounded tasks; a comparative reliability advantage remains unproven. Passing
-library checks have coexisted with lost assertions and changed examples. Next,
-use existing brokers for a predeclared repeated defect-repair and shared-rule
-maintenance sequence, comparing retained, reset-rich and conventional conditions.
-Freeze behavioral and collateral-preservation criteria separately, including
-allowed fixture changes. Avoid more easy composition variants or new harness
-infrastructure. Native LLVM/arena conformance remains the secondary track.
+library checks have coexisted with lost assertions and changed examples. This
+motivated the predeclared repeated repair/typed-result maintenance sequence
+below, using existing brokers and separate behavioral/collateral criteria with
+explicit fixture-change exceptions. Avoid more easy composition variants or
+new harness infrastructure. Native LLVM/arena conformance remains the secondary
+track.
+
+[Report 179](../reports/179-preview-repair-and-record-migration.md) completes
+the frozen repair and typed-result migration sequence with two external
+Luna/max participants per condition. All six sequences pass each 37-case
+projection and preserve inherited evidence. All finish local validation and
+normal publication/finalization. No comparative reliability advantage is
+observed; F# uses fewer broker exchanges, and protocol duration/volume do not
+measure native service performance or provider tokens. Both retained first-stage
+launches shorten their allowlists; derived proposed-state assertions also have
+documented weaknesses. Close this bounded sequence and resume native LLVM/arena
+conformance; preserve independent behavior and collateral checks in future
+maintenance research. Investigate strict-coverage pressure around compiler-proven
+unreachable paths or reusable typed error construction without relaxing this
+study's gate.
 
 [Report 178](../reports/178-preview-defect-control-calibration.md) calibrates the
 first defect-repair stage: three correct controls pass 37 independent cases,
 and three faulty controls fail the same eight cases despite passing their saved
 tests. Library coverage rejects the untested branch, then accepts it when a
 deliberately mistaken expectation covers it. No experimental participants have
-been dispatched. Freeze the distinct follow-up maintenance task and preservation
-exceptions before running the sequence; retain the existing brokers.
+been dispatched at that checkpoint. The follow-up task, prompts, preservation
+exceptions and controls were frozen for the completed sequence in report 179.
 
 [Report 149](../reports/149-validated-window-reuse.md) and
 [report 150](../reports/150-shared-rule-maintenance.md) complete the validated
