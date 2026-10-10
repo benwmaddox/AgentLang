@@ -1,0 +1,8 @@
+{
+  "archive": "166-handoff-signature-maintenance-agent-pair.zip",
+  "sha256": "95e883a7c9fae7194c9227665961d983da328e462b682249590febe72d54133a",
+  "bytes": 6134542,
+  "zipEntries": 884,
+  "verifiedPayloadEntries": 883,
+  "verification": "ZIP CRC and every manifest entry SHA-256 passed"
+}

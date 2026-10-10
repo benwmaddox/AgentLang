@@ -1,0 +1,21 @@
+// frontend: flow/2
+
+fn subscription.handoff(store: Store, oldId: SubscriptionId, replacementId: SubscriptionId, term: String, handoffAt: Instant, expiresAt: Instant, dryRun: Bool) -> Result<Store, BusinessError> {
+    doc "Fault control: a dry run skips replacement creation validation."
+
+    match .store.subscription(oldId, store) {
+        some oldSubscription => {
+            match subscription.cancel(store, oldId, handoffAt) {
+                error cancellationError => result.error<Store, BusinessError>(cancellationError)
+                ok cancelledStore => {
+                    if dryRun {
+                        result.ok<Store, BusinessError>(store)
+                    } else {
+                        subscription.start(cancelledStore, replacementId, oldSubscription.customer-id, oldSubscription.product-id, term, handoffAt, expiresAt)
+                    }
+                }
+            }
+        }
+        none => subscription.cancel(store, oldId, handoffAt)
+    }
+}

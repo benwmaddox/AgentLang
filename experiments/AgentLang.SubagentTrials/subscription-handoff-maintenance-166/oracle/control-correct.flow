@@ -1,0 +1,26 @@
+// frontend: flow/2
+
+fn subscription.handoff(store: Store, oldId: SubscriptionId, replacementId: SubscriptionId, term: String, handoffAt: Instant, expiresAt: Instant, dryRun: Bool) -> Result<Store, BusinessError> {
+    doc "Cancel the old subscription and validate its replacement atomically, optionally returning the original store."
+
+    match .store.subscription(oldId, store) {
+        some oldSubscription => {
+            match subscription.cancel(store, oldId, handoffAt) {
+                error cancellationError => result.error<Store, BusinessError>(cancellationError)
+                ok cancelledStore => {
+                    match subscription.start(cancelledStore, replacementId, oldSubscription.customer-id, oldSubscription.product-id, term, handoffAt, expiresAt) {
+                        error creationError => result.error<Store, BusinessError>(creationError)
+                        ok updatedStore => {
+                            if dryRun {
+                                result.ok<Store, BusinessError>(store)
+                            } else {
+                                result.ok<Store, BusinessError>(updatedStore)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        none => subscription.cancel(store, oldId, handoffAt)
+    }
+}

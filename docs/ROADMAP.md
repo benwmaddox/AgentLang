@@ -68,11 +68,21 @@ and avoid more easy composition variants. LLVM/arena work remains secondary.
 
 [Report 164](../reports/164-result-test-guidance.md) completes the returned-Result
 help improvement with executable examples that qualify as library vocabulary.
-It has not yet been evaluated by a fresh participant. Coordinated signature
-maintenance currently needs atomic multi-function staging: individual edits
-cannot type check against callers or callees that retain their old call shape.
-Add that bounded staging capability before the next maintenance comparison,
-preserving exact revision checks and all publication gates.
+Fresh participants have now used the updated help. The coordinated signature
+staging implementation is described in
+[report 165](../reports/165-atomic-function-replacement-staging.md): it checks the
+complete proposed dictionary while preserving identities, exact revision checks,
+attached cases and publication gates. Focused runtime validation and all 37 full
+local Release checks pass. The bounded comparison changes the actual
+retained handoff abstraction and two disclosed coordinator-created callers,
+with independent dry-run behavior checks in both environments.
+[Report 166](../reports/166-handoff-signature-maintenance-agent-pair.md) records
+the completed fresh pair: both saved implementations pass 132 independent checks.
+The language submission passes all 149 attached tests and library gates, but
+weakens two prior test scenarios; F# preserves its prior assertions. This is
+maintenance feasibility with no comparative reliability lead. Improve test-body
+discoverability before extending this sequence; preserve the distinction between
+coverage, behavior and test evidence. Reports and verified evidence archives are saved.
 
 [Report 153](../reports/153-owning-native-enums.md) implements closed,
 payload-free enums in `OwningStackAot`, using inline values and the selected
