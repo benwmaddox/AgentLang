@@ -718,10 +718,65 @@ let private testFlow2DottedCallsAndNewlineSeparators () =
     checkExpressionRoundTrip ".customer.balance(5)" "customer.balance(5)"
     checkExpressionRoundTrip "values.map(customer.active?)" "values.map(customer.active?)"
     checkExpressionRoundTrip "values.map(.identity)" "values.map(.identity)"
+    let namespaceRootCallback = parseExpressionV2 "values.fold(0, .email.deliver-batch-step)"
+    equal "a leading-dot namespace callback canonicalizes to its qualified dictionary name"
+        "values.fold(0, email.deliver-batch-step)"
+        (FlowSource.renderExpressionWithVersion 2 namespaceRootCallback)
+    match namespaceRootCallback with
+    | FlowExpression.DotCall(_, "fold", [ FlowArgument.Positional _; FlowArgument.WordReference reference ], _) ->
+        equal "leading-dot namespace callbacks use existing qualified callback semantics"
+            FlowWordReferenceQualification.NamespaceQualified reference.Qualification
+        equal "leading-dot namespace callback retains the exact dictionary identity"
+            "email.deliver-batch-step" reference.Name
+    | other -> failwithf "Expected a qualified static fold callback, got %A" other
+
     checkExpressionRoundTrip "option.some<Int>(5)" "option.some<Int>(5)"
     checkExpressionRoundTrip "result.ok<Int, String>(5)" "result.ok<Int, String>(5)"
     checkExpressionRoundTrip "State.ready()" "State.ready()"
     checkExpressionRoundTrip "1.25" "1.25"
+
+    let leadingDotContainerConstructors : (string * string * FlowContainerConstructor * string list * string option) list =
+        [ ".list.empty<Int>()", "list.empty<Int>()", FlowContainerConstructor.ListEmpty, [ "Int" ], None
+          ".list.singleton<Int>(5)", "list.singleton<Int>(5)", FlowContainerConstructor.ListSingleton, [ "Int" ], Some "5"
+          ".option.none<Int>()", "option.none<Int>()", FlowContainerConstructor.OptionNone, [ "Int" ], None
+          ".option.some<Int>(5)", "option.some<Int>(5)", FlowContainerConstructor.OptionSome, [ "Int" ], Some "5"
+          ".result.ok<Int, String>(5)", "result.ok<Int, String>(5)", FlowContainerConstructor.ResultOk, [ "Int"; "String" ], Some "5"
+          ".result.error<Int, String>(\"failure\")", "result.error<Int, String>(\"failure\")", FlowContainerConstructor.ResultError, [ "Int"; "String" ], Some "\"failure\"" ]
+    for source, canonical, expectedKind, expectedTypes, expectedPayload in leadingDotContainerConstructors do
+        let parsed = parseExpressionV2 source
+        match parsed with
+        | FlowExpression.Container(kind, typeArguments, payload, _) ->
+            equal ("leading-dot constructor kind for " + source) expectedKind kind
+            equal ("leading-dot constructor type arguments for " + source) expectedTypes
+                (typeArguments |> List.map (fun argument -> Types.format argument.Type))
+            equal ("leading-dot constructor payload for " + source) expectedPayload
+                (payload |> Option.map (FlowSource.renderExpressionWithVersion 2))
+        | other -> failwithf "Expected a container-constructor AST for %s, got %A" source other
+        equal ("leading-dot constructor canonical spelling for " + source) canonical
+            (FlowSource.renderExpressionWithVersion 2 parsed)
+        equal ("leading-dot constructor canonical round-trip for " + source) canonical
+            (canonical |> parseExpressionV2 |> FlowSource.renderExpressionWithVersion 2)
+
+    expectError "leading-dot zero-payload container constructors still require parentheses" "FLOW_CONSTRUCTOR_CALL_REQUIRED"
+        (FlowParser.parseExpressionWithVersion 2 "<leading-dot-empty-constructor>" ".option.none<Int>") |> ignore
+    expectError "unknown exact-root generic calls remain rejected" "FLOW_ROOT_CALL_REQUIRES_ARGUMENTS"
+        (FlowParser.parseExpressionWithVersion 2 "<exact-root-generic>" ".custom.value<Int>(5)") |> ignore
+    expectError "Flow/1 still rejects leading-dot container constructor syntax" "FLOW_SYNTAX_VERSION"
+        (FlowParser.parseExpressionWithVersion 1 "<flow1-leading-dot-constructor>" ".option.none<Int>()") |> ignore
+
+    match parseExpressionV2 ".identity(5)" with
+    | FlowExpression.RootCall(target, _, _) -> equal "one-segment leading-dot calls remain exact root calls" "identity" target.Name
+    | other -> failwithf "Expected a one-segment exact-root call, got %A" other
+
+    let expressionCallback =
+        parseWordV2
+            """fn flow2.callback-expression(items: List<Int>) -> List<Int> {
+    items.map(.customer.active?(1))
+}"""
+    match expressionCallback.Body with
+    | [ FlowStatement.Evaluate(FlowExpression.DotCall(_, "map", [ FlowArgument.Positional(FlowExpression.Call("customer.active?", _, _)) ], _)) ] ->
+        check "a called leading-dot function expression is not rewritten as a static callback" true
+    | other -> failwithf "Expected an ordinary call expression in the callback argument, got %A" other
 
     let untypedContainerReference, untypedContainerReason = FlowParser.describeCallReference "list.empty"
     equal "untyped container-named dictionary key has a valid Flow/2 exact spelling" (Some ".list.empty") untypedContainerReference
@@ -877,6 +932,17 @@ let private testFlow2DottedCallsAndNewlineSeparators () =
         (FlowLowering.FlowCallForm.StaticCallback("map", FlowWordReferenceQualification.NamespaceQualified)) callbackShadowSite.Form
     equal "a shadowed static callback binds its exact dictionary key"
         (FlowLowering.FlowCallTargetIdentity.UserWord(WordId "user-customer.active?")) callbackShadowSite.Target
+
+    let callbackLeadingDotAliasWord = parseWordV2 """fn flow2.callback-leading-dot-alias(customer: List<Int>) -> List<Bool> {
+    customer.map(.customer.active?)
+}"""
+    let callbackLeadingDotAliasCompiled =
+        FlowLowering.compileWordWithCallBindings callbackShadowContext (WordId "flow2-callback-leading-dot-alias") callbackLeadingDotAliasWord
+    let callbackLeadingDotAliasSite = callbackLeadingDotAliasCompiled.CallSites |> List.find (fun site -> site.RequestedName = "customer.active?")
+    equal "a leading-dot qualified callback keeps the existing static namespace form"
+        (FlowLowering.FlowCallForm.StaticCallback("map", FlowWordReferenceQualification.NamespaceQualified)) callbackLeadingDotAliasSite.Form
+    equal "a leading-dot qualified callback binds its exact target despite a local root shadow"
+        (FlowLowering.FlowCallTargetIdentity.UserWord(WordId "user-customer.active?")) callbackLeadingDotAliasSite.Target
 
     let timingContext =
         loweringContext

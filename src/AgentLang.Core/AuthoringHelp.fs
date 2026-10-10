@@ -638,7 +638,12 @@ test-file settings {
         |> Map.ofList
 
     let contentForVersion syntaxVersion (topic: Topic) =
-        let original = topicContent[topic]
+        let original =
+            let content = topicContent[topic]
+            if topic = Topic.Define || topic = Topic.Replacement then
+                { content with
+                    Documentation = content.Documentation + " The request's syntaxVersion applies to source supplied in that request. Existing tests, examples, and test-file wrappers omitted from a replacement retain their exact source and own syntax version; they are checked against the replacement signature without being translated." }
+            else content
         if syntaxVersion = 1 then original
         else
             let requestExamples =
@@ -677,6 +682,9 @@ test-file settings {
                            " Use dots for namespace calls and constructors, for example `file.read(path)`, `option.some<Int>(value)`, and `result.ok<Int, String>(value)`. A local record root reads declared properties such as `customer.email`; a bound-root call such as `customer.read-balance()` passes that record as the function's first argument. In call and property expressions, a local name wins over the same namespace root, and a failed local-root lookup does not fall back to the namespace. Use a leading dot to choose an exact dictionary root despite a shadowing local, as in `.customer.read-balance(customer)` or `.identity(value)`. Static callback references such as `values.map(customer.active?)` name dictionary functions and cannot capture caller-local values. Keep postfix dots on the same line as their receiver; a dot at the start of a new line, including inside grouping, begins a separate exact-root call. Argument lists can span lines. Existing Flow/2 `::` spellings remain readable for compatibility; formatting writes dotted calls. Newlines separate statements, record fields, validators, enum cases, and effect-count entries. Same-line entries require semicolons, while the final entry before a closing delimiter may omit one; the formatter omits optional semicolons. Effects and documentation precede executable code and are followed by a blank line; omitted function effects mean pure. A one-expression match arm may be written without a block, such as `pending => \"Pending\"`; an arm with multiple statements keeps its block."
                        elif topic = Topic.Authoring then
                            " Flow/2 uses `fn`, dotted calls, and newline-separated statements; omitted function effects mean pure. Select `syntaxVersion: 2` for Flow/2, and see the Define help topic for its call and separator rules."
+                       else "")
+                    + (if topic = Topic.Define then
+                           " Generic container constructors also accept an explicit leading dot, as in `.option.none<Int>()` or `.result.ok<Int, String>(value)`; formatting uses `option.none<Int>()` and `result.ok<Int, String>(value)`. Empty-payload constructors still require `()`. A namespace-qualified static callback may also use a leading dot, as in `items.fold(seed, .email.deliver-batch-step)`; formatting uses `email.deliver-batch-step`. These callback references select dictionary names and do not read local roots."
                        else "")
                     + (if topic = Topic.Define then
                             " Use eval with the compact `code` field for expressions; define uses `source` for complete declarations. Use source with `word` to read authored word text and with `type` to read the exact type declaration. Static list callbacks use receiver forms such as `items.map(callback)`, `items.filter(callback)`, `items.each(callback)`, and `items.fold(seed, callback)`; callback must be a statically named word reference and cannot capture caller locals. A record validator sees the complete unchecked construction candidate and must not assume the invariant already holds. Put valid and expected-error constructor tests on the validator itself: its completed false return is observed before RECORD_VALIDATION_FAILED, while caller-owned tests do not qualify the callee and generated constructors cannot own authored Flow tests for it."

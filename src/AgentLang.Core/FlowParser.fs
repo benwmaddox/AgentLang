@@ -364,10 +364,22 @@ module FlowParser =
             state.Index + 2 = state.Tokens.Length || isArgumentTerminator state (state.Index + 2)
         else false
 
+    let private leadingDotNamespaceReferenceAhead (state: State) =
+        if state.SyntaxVersion <> 2 || state.Index + 1 >= state.Tokens.Length || state.Tokens[state.Index].Text <> "." then false
+        else
+            let previousIndex = state.Index
+            state.Index <- previousIndex + 1
+            try
+                match dottedNameAhead state with
+                | Some(name, endIndex) when name.Contains('.') ->
+                    endIndex = state.Tokens.Length || isArgumentTerminator state endIndex
+                | _ -> false
+            finally state.Index <- previousIndex
+
     let private staticCallbackReferenceAheadAt (state: State) index =
         let previousIndex = state.Index
         state.Index <- index
-        try explicitShortReferenceAhead state || qualifiedReferenceAhead state || absoluteRootReferenceAhead state
+        try explicitShortReferenceAhead state || qualifiedReferenceAhead state || leadingDotNamespaceReferenceAhead state || absoluteRootReferenceAhead state
         finally state.Index <- previousIndex
 
     let private foldCallbackReferenceAheadAt (state: State) openIndex =
@@ -406,6 +418,8 @@ module FlowParser =
                 else
                     let target = parseRootTarget state
                     target.Name, target.Span
+            | FlowWordReferenceQualification.NamespaceQualified when peek state = Some "." ->
+                parseLeadingDotName state
             | FlowWordReferenceQualification.ExplicitShort
             | FlowWordReferenceQualification.NamespaceQualified ->
                 let name =
@@ -440,6 +454,8 @@ module FlowParser =
                     | _ when Option.isSome staticCallbackStage && explicitShortReferenceAhead state ->
                         values.Add(FlowArgument.WordReference(parseStaticWordReference state FlowWordReferenceQualification.ExplicitShort))
                     | _ when Option.isSome staticCallbackStage && qualifiedReferenceAhead state ->
+                        values.Add(FlowArgument.WordReference(parseStaticWordReference state FlowWordReferenceQualification.NamespaceQualified))
+                    | _ when Option.isSome staticCallbackStage && leadingDotNamespaceReferenceAhead state ->
                         values.Add(FlowArgument.WordReference(parseStaticWordReference state FlowWordReferenceQualification.NamespaceQualified))
                     | _ when Option.isSome staticCallbackStage && absoluteRootReferenceAhead state ->
                         values.Add(FlowArgument.WordReference(parseStaticWordReference state FlowWordReferenceQualification.AbsoluteRoot))
@@ -750,14 +766,18 @@ module FlowParser =
                     FlowExpression.RootCall(target, arguments, sourceSpan state.File first (previous state))
                 | Symbol, "." when state.SyntaxVersion = 2 ->
                     let name, targetSpan = parseLeadingDotName state
-                    if peek state <> Some "(" then
-                        fail state.File first.Line first.Column (previous state |> Option.map (fun token -> token.Offset + token.Text.Length - first.Offset) |> Option.defaultValue first.Text.Length)
-                            "FLOW_ROOT_CALL_REQUIRES_ARGUMENTS" "A leading-dot exact dictionary name must be called with parentheses."
-                    let arguments = parseArguments state None
-                    if name.Contains('.') then
-                        FlowExpression.Call(name, arguments, sourceSpan state.File first (previous state))
-                    else
-                        FlowExpression.RootCall({ Name = name; Span = targetSpan }, arguments, sourceSpan state.File first (previous state))
+                    let containerConstructor = if peek state = Some "<" then constructorKind name else None
+                    match containerConstructor with
+                    | Some kind -> parseConstructor state first kind
+                    | None ->
+                        if peek state <> Some "(" then
+                            fail state.File first.Line first.Column (previous state |> Option.map (fun token -> token.Offset + token.Text.Length - first.Offset) |> Option.defaultValue first.Text.Length)
+                                "FLOW_ROOT_CALL_REQUIRES_ARGUMENTS" "A leading-dot exact dictionary name must be called with parentheses."
+                        let arguments = parseArguments state None
+                        if name.Contains('.') then
+                            FlowExpression.Call(name, arguments, sourceSpan state.File first (previous state))
+                        else
+                            FlowExpression.RootCall({ Name = name; Span = targetSpan }, arguments, sourceSpan state.File first (previous state))
                 | Symbol, "." ->
                     fail state.File first.Line first.Column first.Text.Length "FLOW_SYNTAX_VERSION" "Leading-dot exact references require Flow/2 syntax."
                 | Identifier, _ ->

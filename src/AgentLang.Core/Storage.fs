@@ -85,6 +85,7 @@ type WordRevision =
       TimestampUtc: DateTimeOffset
       Deprecated: bool
       SourceFormat: SourceFormat
+      AttachmentSourceFormats: Map<SourceRef, SourceFormat>
       CallBindings: StoredCallBinding list }
 
 type WordHead =
@@ -192,7 +193,7 @@ module Storage =
     // CURRENT and named snapshots remain version 1 independently from manifests.
     let private pointerSnapshotFormatVersion = 1
     let private minimumManifestFormatVersion = 1
-    let private maximumManifestFormatVersion = 4
+    let private maximumManifestFormatVersion = 5
     let private storeDirectoryName = ".agentlang"
     let private storeDirectory = "store"
     let private objectDirectory = "objects"
@@ -380,6 +381,18 @@ module Storage =
         node["version"] <- jsonInt sourceFormat.Version
         node :> JsonNode
 
+    let private attachmentSourceFormatsNode (formats: Map<SourceRef, SourceFormat>) =
+        let rows = JsonArray()
+        formats
+        |> Map.toList
+        |> List.sortBy (fun (reference, _) -> kindName reference.Kind, reference.Hash)
+        |> List.iter (fun (reference, sourceFormat) ->
+            let row = JsonObject()
+            row["source"] <- sourceRefNode reference
+            row["sourceFormat"] <- sourceFormatNode sourceFormat
+            rows.Add row)
+        rows :> JsonNode
+
     let private parseSourceFormat path node =
         let value = requireObject "word revision source format" node
         let frontend = requireString "word revision source frontend" value["frontend"] |> parseSourceFrontend path
@@ -388,6 +401,22 @@ module Storage =
             failure "STORAGE_UNSUPPORTED_VERSION" $"Source syntax format {sourceFrontendName frontend}/{version} is not supported." path
         { Frontend = frontend
           Version = version }
+
+    let private parseAttachmentSourceFormats path (expectedReferences: Set<SourceRef>) node =
+        let values = requireArray "word revision attachment source formats" node
+        if values.Count <> expectedReferences.Count then
+            failure "STORAGE_INVALID_MANIFEST" "Version-5 attachment source formats must contain exactly one row for each attached test and example reference." path
+        let entries =
+            values
+            |> Seq.map (fun item ->
+                let value = requireObject "attachment source format" item
+                parseSourceRef path value["source"], parseSourceFormat path value["sourceFormat"])
+            |> Seq.toList
+        let duplicate = entries |> List.groupBy fst |> List.tryFind (fun (_, values) -> values.Length > 1)
+        match duplicate with
+        | Some(reference, _) ->
+            failure "STORAGE_DUPLICATE_IDENTITY" $"Attachment source formats contain duplicate source reference '{kindName reference.Kind}/{reference.Hash}'." path
+        | None -> Map.ofList entries
 
     let private storedCallBodyRoleName = function
         | StoredCallBodyRole.Definition -> "definition"
@@ -664,7 +693,7 @@ module Storage =
         let isDefaultSource = revision.SourceFormat = defaultSourceFormat && List.isEmpty revision.CallBindings
         if manifestVersion = 1 && not isDefaultSource then
             failure "STORAGE_INVALID_MANIFEST" "A version-1 manifest can only serialize Stack version 1 revisions with no call bindings." None
-        if manifestVersion < 1 || manifestVersion > 4 then
+        if manifestVersion < 1 || manifestVersion > 5 then
             failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported." None
         let node = JsonObject()
         node["wordId"] <- jsonString revision.WordId
@@ -687,6 +716,8 @@ module Storage =
             let bindings = JsonArray()
             revision.CallBindings |> List.sortBy storedCallBindingSortKey |> List.iter (storedCallBindingNode >> bindings.Add)
             node["callBindings"] <- bindings
+        if manifestVersion >= 5 then
+            node["attachmentSourceFormats"] <- attachmentSourceFormatsNode revision.AttachmentSourceFormats
         node :> JsonNode
 
     let private wordHeadNode (head: WordHead) =
@@ -750,7 +781,8 @@ module Storage =
                 sourceFormat, callBindings
             | 2
             | 3
-            | 4 ->
+            | 4
+            | 5 ->
                 if not (value.ContainsKey "sourceFormat") then
                     failure "STORAGE_INVALID_JSON" $"Version-{manifestVersion} word revisions require sourceFormat." path
                 if not (value.ContainsKey "callBindings") then
@@ -759,6 +791,16 @@ module Storage =
                 parseArray "word revision call bindings" (parseStoredCallBinding path) value["callBindings"]
             | version ->
                 failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {version} is not supported." path
+        let attachmentSourceFormats =
+            if manifestVersion >= 5 then
+                if not (value.ContainsKey "attachmentSourceFormats") then
+                    failure "STORAGE_INVALID_JSON" "Version-5 word revisions require attachmentSourceFormats." path
+                parseAttachmentSourceFormats path (Set.ofList (tests @ examples)) value["attachmentSourceFormats"]
+            else
+                tests @ examples
+                |> List.distinct
+                |> List.map (fun reference -> reference, sourceFormat)
+                |> Map.ofList
         let timestampText = requireString "word revision timestamp" value["timestampUtc"]
         let timestamp =
             match DateTimeOffset.TryParse(timestampText, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind) with
@@ -776,6 +818,7 @@ module Storage =
           TimestampUtc = timestamp
           Deprecated = requireBool "word revision deprecated flag" value["deprecated"]
           SourceFormat = sourceFormat
+          AttachmentSourceFormats = attachmentSourceFormats
           CallBindings = callBindings }
 
     let private parseWordHead node =
@@ -801,7 +844,8 @@ module Storage =
                     else None
                 sourceFormat, validatorTarget
             | 3
-            | 4 ->
+            | 4
+            | 5 ->
                 if not (value.ContainsKey "sourceFormat") then
                     failure "STORAGE_INVALID_JSON" $"Version-{manifestVersion} type sources require sourceFormat." path
                 if not (value.ContainsKey "validatorTarget") then
@@ -840,7 +884,7 @@ module Storage =
         // version-specific revision fields so errors are stable and structured.
         let manifestVersion = requireInt "manifest format version" value["formatVersion"]
         if manifestVersion < minimumManifestFormatVersion || manifestVersion > maximumManifestFormatVersion then
-            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported (expected 1, 2, 3, or 4)." path
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported (expected 1, 2, 3, 4, or 5)." path
         let revisionNodes = requireArray "manifest revisions" value["revisions"]
         preflightCallBindingWireBounds path revisionNodes
         { FormatVersion = manifestVersion
@@ -874,7 +918,7 @@ module Storage =
 
     let private validateManifest (manifest: ProjectManifest) path =
         if manifest.FormatVersion < minimumManifestFormatVersion || manifest.FormatVersion > maximumManifestFormatVersion then
-            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifest.FormatVersion} is not supported (expected 1, 2, 3, or 4)." path
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifest.FormatVersion} is not supported (expected 1, 2, 3, 4, or 5)." path
         validateCallBindingBounds path manifest.Revisions
         if manifest.ProjectSource.Kind <> StorageObjectKind.ProjectSource then
             failure "STORAGE_INVALID_MANIFEST" "Manifest projectSource must reference a project-source object." path
@@ -930,6 +974,20 @@ module Storage =
             if revision.Revision < 1 then failure "STORAGE_INVALID_MANIFEST" "Word revision number must be positive." path
             if not (isSupportedSourceFormat revision.SourceFormat.Frontend revision.SourceFormat.Version) then
                 failure "STORAGE_UNSUPPORTED_VERSION" $"Source syntax format {sourceFrontendName revision.SourceFormat.Frontend}/{revision.SourceFormat.Version} is not supported." path
+            let attachmentReferences = revision.Tests @ revision.Examples |> Set.ofList
+            let mappedAttachmentReferences = revision.AttachmentSourceFormats |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+            if manifest.FormatVersion >= 5 then
+                if mappedAttachmentReferences <> attachmentReferences then
+                    failure "STORAGE_INVALID_MANIFEST" $"Version-5 word revision '{revision.Name}' must declare exactly one source format for each attached test and example reference." path
+            elif not (Map.isEmpty revision.AttachmentSourceFormats)
+                 && (mappedAttachmentReferences <> attachmentReferences
+                     || revision.AttachmentSourceFormats |> Map.exists (fun _ sourceFormat -> sourceFormat <> revision.SourceFormat)) then
+                failure "STORAGE_INVALID_MANIFEST" $"Manifest version {manifest.FormatVersion} cannot serialize independent attachment source formats for word revision '{revision.Name}'." path
+            for KeyValue(reference, sourceFormat) in revision.AttachmentSourceFormats do
+                if not (isSupportedSourceFormat sourceFormat.Frontend sourceFormat.Version) then
+                    failure "STORAGE_UNSUPPORTED_VERSION" $"Attachment source syntax format {sourceFrontendName sourceFormat.Frontend}/{sourceFormat.Version} is not supported." path
+                if sourceFormat.Frontend <> revision.SourceFormat.Frontend then
+                    failure "STORAGE_INVALID_MANIFEST" $"Attachment source '{kindName reference.Kind}/{reference.Hash}' must use the same frontend as word revision '{revision.Name}'." path
             if manifest.FormatVersion = 1 && revision.SourceFormat <> defaultSourceFormat then
                 failure "STORAGE_INVALID_MANIFEST" "Version-1 manifests only support Stack version 1 source metadata." path
             match manifest.FormatVersion, revision.SourceFormat.Frontend with
@@ -956,7 +1014,18 @@ module Storage =
             for binding in revision.CallBindings do
                 validMetadataText "Call binding requested name" 256 path binding.RequestedName
                 validMetadataText "Call binding target identity" 128 path (match binding.Target with | StoredCallTarget.UserWord value | StoredCallTarget.Primitive value | StoredCallTarget.GeneratedWord value -> value)
-                if revision.SourceFormat = { Frontend = SourceFrontend.Flow; Version = 1 } then
+                let bindingSourceFormat =
+                    match binding.BodyRole with
+                    | StoredCallBodyRole.Definition -> revision.SourceFormat
+                    | StoredCallBodyRole.Actual
+                    | StoredCallBodyRole.ExpectedExpression
+                    | StoredCallBodyRole.TestOverride ->
+                        match revision.AttachmentSourceFormats.TryFind binding.Source with
+                        | Some sourceFormat -> sourceFormat
+                        | None when manifest.FormatVersion < 5 -> revision.SourceFormat
+                        | None ->
+                            failure "STORAGE_INVALID_MANIFEST" "An attachment call binding has no source-format metadata for its exact source reference." path
+                if bindingSourceFormat = { Frontend = SourceFrontend.Flow; Version = 1 } then
                     let (FlowAstPath.FlowAstPath pathSegments) = binding.Path
                     let hasFlow2Path =
                         pathSegments

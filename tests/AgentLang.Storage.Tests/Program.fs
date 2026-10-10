@@ -186,6 +186,7 @@ module Program =
                     Tests = [ test.Reference ]
                     Examples = [ example.Reference ]
                     SourceFormat = { Frontend = SourceFrontend.Stack; Version = 1 }
+                    AttachmentSourceFormats = Map.empty
                     CallBindings = []
                     Maturity = ProjectWord
                     Actor = "storage-test"
@@ -996,6 +997,148 @@ module Program =
             body["bodyRole"] <- JsonValue.Create("actual")
             body["caseName"] <- JsonValue.Create("settings.load/enabled"))
 
+    let private testManifestV5AttachmentSourceFormats root =
+        let baseManifest, sources, projectText = flowV2Fixture "v5-attachments"
+        let baseRevision = baseManifest.Revisions.Head
+        let testReference = baseRevision.Tests.Head
+        let exampleReference = baseRevision.Examples.Head
+        let attachmentFormats =
+            Map.ofList [ testReference, flowFormat; exampleReference, flow2Format ]
+        let flow2AttachmentBinding =
+            callBinding exampleReference (Some "basic") StoredCallBodyRole.Actual
+                [ FlowAstPathSegment.BlockStatement 0
+                  FlowAstPathSegment.EvaluateExpression
+                  FlowAstPathSegment.PropertyReceiver ]
+                (StoredCallForm.PropertyAccess "amount") "sample::amount" (StoredCallTarget.Primitive "int.add")
+        let mixedRevision =
+            { baseRevision with
+                SourceFormat = flowFormat
+                AttachmentSourceFormats = attachmentFormats
+                CallBindings = baseRevision.CallBindings @ [ flow2AttachmentBinding ] }
+        let mixedManifest = { baseManifest with FormatVersion = 5; Revisions = [ mixedRevision ] }
+        let project = Path.Combine(root, "v5-attachment-formats")
+        let store = Storage.create project
+        let committed = Storage.commit store 0L mixedManifest sources projectText |> ok "commit Flow/1 owner with independently authored Flow/2 example metadata"
+        let loaded = Storage.load store |> ok "reload mixed-version Flow attachments"
+        equal committed.ManifestHash loaded.ManifestHash "v5 attachment format reload preserves manifest identity"
+        equal 5 loaded.Manifest.Value.FormatVersion "independent Flow attachment formats select manifest v5"
+        let savedRevision = loaded.Manifest.Value.Revisions.Head
+        equal flowFormat savedRevision.SourceFormat "Flow/1 owner format stays independent from attachment formats"
+        equal attachmentFormats savedRevision.AttachmentSourceFormats "v5 exact SourceRef-to-format map round trips"
+        check (savedRevision.CallBindings |> List.contains flow2AttachmentBinding) "Flow/2 attachment binding paths are validated using attachment syntax under a Flow/1 owner"
+
+        let typedV3Manifest, typedSources, typedProjectText = flowV3Fixture "v5-type-reload"
+        let typedBaseRevision = typedV3Manifest.Revisions.Head
+        let typedAttachmentFormats =
+            (typedBaseRevision.Tests @ typedBaseRevision.Examples)
+            |> List.distinct
+            |> List.map (fun reference -> reference, typedBaseRevision.SourceFormat)
+            |> Map.ofList
+        let typedV5Manifest =
+            { typedV3Manifest with
+                FormatVersion = 5
+                Revisions = [ { typedBaseRevision with AttachmentSourceFormats = typedAttachmentFormats } ] }
+        let typedProject = Path.Combine(root, "v5-type-source-reload")
+        let typedStore = Storage.create typedProject
+        Storage.commit typedStore 0L typedV5Manifest typedSources typedProjectText
+        |> ok "commit v5 with typed source metadata"
+        |> ignore
+        let typedReload = Storage.load (Storage.create typedProject) |> ok "fresh-load v5 typed source metadata"
+        equal 5 typedReload.Manifest.Value.FormatVersion "fresh load accepts manifest v5 with typed sources"
+        equal (typedV3Manifest.Types |> List.sortBy (fun item -> item.Name)) typedReload.Manifest.Value.Types "fresh v5 load preserves every type source format and validator target"
+        equal typedAttachmentFormats typedReload.Manifest.Value.Revisions.Head.AttachmentSourceFormats "fresh v5 load preserves exact attachment source formats alongside typed sources"
+
+        let rawPath = Path.Combine(storageRoot project, "manifests", loaded.ManifestHash.Value + ".json")
+        let rawManifest = JsonNode.Parse(File.ReadAllText rawPath).AsObject()
+        let rawRevision = firstRevisionObject rawManifest
+        let rawFormats = rawRevision["attachmentSourceFormats"].AsArray()
+        equal 2 rawFormats.Count "v5 serializes exactly one row for each distinct test/example source reference"
+        let rawKeys =
+            rawFormats
+            |> Seq.cast<JsonNode>
+            |> Seq.map (fun row ->
+                let reference = row["source"].AsObject()
+                reference["kind"].GetValue<string>(), reference["hash"].GetValue<string>())
+            |> Seq.toList
+        equal (List.sort rawKeys) rawKeys "v5 attachment format rows serialize in deterministic source-reference order"
+        for row in rawFormats do
+            let row = row.AsObject()
+            equal [ "hash"; "kind" ] (row["source"].AsObject() |> Seq.map (fun pair -> pair.Key) |> Seq.sort |> Seq.toList) "v5 attachment map row stores the full exact SourceRef"
+            equal [ "frontend"; "version" ] (row["sourceFormat"].AsObject() |> Seq.map (fun pair -> pair.Key) |> Seq.sort |> Seq.toList) "v5 attachment map row stores an explicit frontend and version"
+
+        let rejectedWithoutDrift name expectedCode invalidRevision =
+            let invalidProject = Path.Combine(root, "v5-invalid-" + name)
+            let invalidStore = Storage.create invalidProject
+            let invalidManifest = { mixedManifest with Revisions = [ invalidRevision ] }
+            Storage.commit invalidStore 0L invalidManifest sources projectText |> error expectedCode |> ignore
+            let after = Storage.load invalidStore |> ok ("load after rejecting v5 " + name)
+            equal EmptyAuthority after.Authority $"v5 {name} rejection leaves authority empty"
+            equal 0L after.Generation $"v5 {name} rejection leaves generation unchanged"
+            check (not (File.Exists(Path.Combine(storageRoot invalidProject, "CURRENT")))) $"v5 {name} rejection does not create CURRENT"
+
+        let unknownTestReference = source StorageObjectKind.TestDefinition "unreferenced v5 test" |> fun item -> item.Reference
+        rejectedWithoutDrift "badref" "STORAGE_INVALID_MANIFEST"
+            { mixedRevision with AttachmentSourceFormats = Map.add unknownTestReference flowFormat attachmentFormats }
+        rejectedWithoutDrift "extra" "STORAGE_INVALID_MANIFEST"
+            { mixedRevision with AttachmentSourceFormats = Map.add mixedRevision.Definition flowFormat attachmentFormats }
+        rejectedWithoutDrift "missing-format" "STORAGE_INVALID_MANIFEST"
+            { mixedRevision with AttachmentSourceFormats = Map.remove exampleReference attachmentFormats }
+        rejectedWithoutDrift "cross-frontend" "STORAGE_INVALID_MANIFEST"
+            { mixedRevision with AttachmentSourceFormats = Map.add testReference stackFormat attachmentFormats }
+        rejectedWithoutDrift "unsupported-version" "STORAGE_UNSUPPORTED_VERSION"
+            { mixedRevision with AttachmentSourceFormats = Map.add testReference { Frontend = SourceFrontend.Flow; Version = 3 } attachmentFormats }
+
+        let downgradeProject = Path.Combine(root, "v5-downgrade-independent-format")
+        let downgradeStore = Storage.create downgradeProject
+        Storage.commit downgradeStore 0L { mixedManifest with FormatVersion = 4 } sources projectText
+        |> error "STORAGE_INVALID_MANIFEST"
+        |> ignore
+        let afterDowngrade = Storage.load downgradeStore |> ok "load after refusing v5 metadata downgrade"
+        equal EmptyAuthority afterDowngrade.Authority "v4 downgrade cannot erase independent attachment syntax"
+        equal 0L afterDowngrade.Generation "v4 downgrade rejection leaves generation unchanged"
+
+        let ownerFormats = Map.ofList [ testReference, flowFormat; exampleReference, flowFormat ]
+        let v4Project = Path.Combine(root, "v4-owner-format-map")
+        let v4Store = Storage.create v4Project
+        let v4Manifest =
+            { baseManifest with
+                FormatVersion = 4
+                Revisions = [ { baseRevision with AttachmentSourceFormats = ownerFormats } ] }
+        let v4Commit = Storage.commit v4Store 0L v4Manifest sources projectText |> ok "serialize a complete owner-format map with legacy v4 fields"
+        let v4Loaded = Storage.load v4Store |> ok "reload legacy v4 owner-format map"
+        equal ownerFormats v4Loaded.Manifest.Value.Revisions.Head.AttachmentSourceFormats "v1-v4 deserialization materializes owner format per attachment reference"
+        let v4Raw = JsonNode.Parse(File.ReadAllText(Path.Combine(storageRoot v4Project, "manifests", v4Commit.ManifestHash.Value + ".json"))).AsObject()
+        check (not ((firstRevisionObject v4Raw).ContainsKey "attachmentSourceFormats")) "v4 wire bytes omit the v5-only field"
+
+        let sourceWithoutMap = Path.Combine(root, "v5-missing-map-wire")
+        let wireStore = Storage.create sourceWithoutMap
+        Storage.commit wireStore 0L mixedManifest sources projectText |> ok "write a valid v5 manifest before removing its required map field" |> ignore
+        let validWireSnapshot = Storage.load wireStore |> ok "load valid v5 before raw field removal"
+        let validWirePath = Path.Combine(storageRoot sourceWithoutMap, "manifests", validWireSnapshot.ManifestHash.Value + ".json")
+        let missingMapWire = JsonNode.Parse(File.ReadAllText validWirePath).AsObject()
+        (firstRevisionObject missingMapWire).Remove "attachmentSourceFormats" |> ignore
+        let beforeRejectedRead = File.ReadAllBytes(Path.Combine(storageRoot sourceWithoutMap, "CURRENT"))
+        installedRawManifest sourceWithoutMap (missingMapWire.ToJsonString()) |> ignore
+        let malformedCurrent = File.ReadAllBytes(Path.Combine(storageRoot sourceWithoutMap, "CURRENT"))
+        Storage.load wireStore |> error "STORAGE_INVALID_JSON" |> ignore
+        check (bytesEqual malformedCurrent (File.ReadAllBytes(Path.Combine(storageRoot sourceWithoutMap, "CURRENT")))) "missing v5 format field read leaves CURRENT bytes unchanged"
+        check (not (bytesEqual beforeRejectedRead malformedCurrent)) "raw missing-field fixture points at the malformed manifest before the read"
+
+        let duplicateWireProject = Path.Combine(root, "v5-duplicate-map-row")
+        let duplicateStore = Storage.create duplicateWireProject
+        Storage.commit duplicateStore 0L mixedManifest sources projectText |> ok "write a valid v5 manifest before duplicating a map row" |> ignore
+        let duplicateSnapshot = Storage.load duplicateStore |> ok "load valid v5 before raw duplicate-row injection"
+        let duplicatePath = Path.Combine(storageRoot duplicateWireProject, "manifests", duplicateSnapshot.ManifestHash.Value + ".json")
+        let duplicateWire = JsonNode.Parse(File.ReadAllText duplicatePath).AsObject()
+        let duplicateFormats = ((firstRevisionObject duplicateWire)["attachmentSourceFormats"]).AsArray()
+        let duplicateRow = duplicateFormats[0].DeepClone()
+        duplicateFormats.RemoveAt(1)
+        duplicateFormats.Add duplicateRow
+        installedRawManifest duplicateWireProject (duplicateWire.ToJsonString()) |> ignore
+        let beforeDuplicateRead = File.ReadAllBytes(Path.Combine(storageRoot duplicateWireProject, "CURRENT"))
+        Storage.load duplicateStore |> error "STORAGE_DUPLICATE_IDENTITY" |> ignore
+        check (bytesEqual beforeDuplicateRead (File.ReadAllBytes(Path.Combine(storageRoot duplicateWireProject, "CURRENT")))) "duplicate v5 map row read leaves CURRENT bytes unchanged"
+
     let private testV1HistoryMigrationAndSnapshotRestore root =
         let project = Path.Combine(root, "history-migration")
         let store = Storage.create project
@@ -1022,10 +1165,16 @@ module Program =
         equal oldRevision manifest.Revisions.Head "migration preserves the complete v1 revision record"
         equal flowFormat manifest.Revisions.Tail.Head.SourceFormat "new revision records Flow/1 source format"
         let actualNewRevision = manifest.Revisions.Tail.Head
+        equal Map.empty newRevision.AttachmentSourceFormats "legacy migration input omits the v5-only attachment format map"
+        let materializedOwnerFormats =
+            (newRevision.Tests @ newRevision.Examples)
+            |> List.distinct
+            |> List.map (fun reference -> reference, newRevision.SourceFormat)
+            |> Map.ofList
         equal
-            { newRevision with CallBindings = [] }
+            { newRevision with CallBindings = []; AttachmentSourceFormats = materializedOwnerFormats }
             { actualNewRevision with CallBindings = [] }
-            "new Flow revision metadata remains intact apart from canonical binding order"
+            "new Flow revision metadata retains legacy owner-format normalization apart from canonical binding order"
         equal newRevision.CallBindings.Length actualNewRevision.CallBindings.Length "new Flow revision preserves binding count"
         equal (Set.ofList newRevision.CallBindings) (Set.ofList actualNewRevision.CallBindings) "new Flow revision retains every call-binding field"
         equal 2 manifest.Revisions.Length "both immutable revisions remain in history"
@@ -1354,6 +1503,7 @@ module Program =
                 Definition = renamedDefinition.Reference
                 Tests = [ renamedTest.Reference ]
                 Examples = [ renamedExample.Reference ]
+                AttachmentSourceFormats = Map.empty
                 TaskId = Some "rename"
                 TimestampUtc = oldRevision.TimestampUtc.AddMinutes 1.0 }
         let renamedManifest =
@@ -1593,6 +1743,7 @@ module Program =
             testFoldStaticCallbackBindingRoundTrip root
             testManifestV3TypeSourceRoundTripAndValidation root
             testManifestV4SharedTestFileRoundTripAndValidation root
+            testManifestV5AttachmentSourceFormats root
             testV1HistoryMigrationAndSnapshotRestore root
             testManifestV2ValidationAndLimits root
             testRuntimePublishesV2ForExplicitStackFrontend root
@@ -1604,7 +1755,7 @@ module Program =
             testTamperingUnsupportedVersionAndNoFallback root
             testTaskLogValidation root
             testReparsePointRefusal root
-            printfn $"Storage tests passed: 16 groups, {assertions} assertions."
+            printfn $"Storage tests passed: 17 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

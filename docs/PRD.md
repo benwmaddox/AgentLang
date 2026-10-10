@@ -342,6 +342,12 @@ operations. Preserve existing authored sources and frontend versions across
 reload, introspection and history; define compatibility and update executable
 examples, diagnostics and validation together. Frozen agent comparisons retain
 their pinned source syntax and runtime rather than mixing frontend revisions.
+Each retained test, example, or shared test-file source has its own declared
+frontend/syntax version. Replacing a function must not require translating those
+sources to its new syntax version. Recompile them against the proposed function
+while preserving their source bytes, expected values, ownership, and stable call
+targets. Persist source-format metadata per referenced attachment so reload
+preserves the same checks. One submitted source document still has one version.
 
 ### Source representation
 

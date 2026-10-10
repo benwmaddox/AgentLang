@@ -81,6 +81,30 @@ owner/name after parsing the shared source, verifies all retained identities,
 and rechecks replacement signatures and effects before constructing ephemeral
 dispatch. It retains v4 after selection, including historical wrapper revisions.
 
+V5 adds `attachmentSourceFormats` to each revision: a sorted array of
+`{source, sourceFormat}` entries keyed by the exact test/example source reference.
+The table covers every referenced source exactly once, including each shared
+test-file wrapper. Attachments use the owner's frontend but may retain a different
+supported syntax version. This lets a Flow/2 replacement keep its Flow/1 tests
+and examples unchanged. Wrapper source remains Flow/2 and every nested case
+uses the wrapper's version.
+
+Loading v1–v4 assigns the historical owner format to its attachments; it does
+not guess from source text. V5 requires explicit complete metadata, including
+historical revisions. Missing, extra, duplicate, unsupported or cross-frontend
+entries are invalid. Runtime selects v5 when independently versioned attachments
+require it and retains v5 thereafter. Older manifest serialization must reject
+format differences that it cannot represent. Pointer/snapshot and source object
+envelopes are unchanged.
+
+Call bindings remain attached to exact source hashes, structural paths and stable
+targets. Definition paths use the owner's source format; test, expectation and
+override paths use their attachment's source format. Reload reparses each source
+with its recorded version and verifies the complete candidate graph. Function
+replacement advances owner revision metadata without translating retained cases
+or changing their expected values. Type/effect checks, scoped test replacements,
+library coverage, CAS and source integrity remain required.
+
 ## Flow/2 closed enum extension
 
 Payload-free enums use the existing v3 type-source envelope with `flow`, version

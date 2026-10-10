@@ -2,8 +2,10 @@
 
 Select Flow/2 with `syntaxVersion: 2` in runtime requests or
 `--syntax-version 2` in the CLI. Flow/1 remains the default when the version is
-omitted. Keep the selected version consistent for definitions, tests, and
-replacements.
+omitted. The selected version applies to source supplied in that request.
+Retained tests and examples keep their own source version when a function is
+replaced; they are checked against the new function without translation. A
+submitted document still uses one selected syntax version throughout.
 
 Payload-free enum cases are constructor calls, including their empty argument
 list: `PublishOutcome.created()`. They are different from record properties such
@@ -64,9 +66,16 @@ Here `customer.email` and `customer.balance` read declared properties.
 argument. An unbound namespace call supplies its arguments explicitly, as in
 `file.read(path)`. Generic constructors use the same dotted form:
 `option.some<Int>(value)` and `result.ok<Int, String>(value)`.
+An explicit leading dot is accepted for the six built-in generic container
+constructors, for example `.option.none<Int>()` and `.list.singleton<Int>(1)`.
+They use the same typed constructor semantics; formatting removes the redundant
+leading dot. Empty-payload constructors require `()`.
 
 Static list callback references name dictionary functions, for example
 `values.map(customer.active?)`; they cannot capture caller-local values. In
+static callback position, `.customer.active?` selects the same dictionary name
+as `customer.active?`; formatting uses the latter spelling. The one-segment
+exact-root callback `.identity` retains its leading dot. In
 ordinary call and property expressions, a local root name takes precedence
 over the same namespace root. If resolution through that local fails, lookup
 does not fall back to the namespace. Prefix a dictionary root with a dot to

@@ -309,11 +309,11 @@ module Program =
         let intercepted = contextWord "list.empty<Int>"
         check (isNull intercepted["flowReference"]) "context omits a typed constructor key intercepted by container syntax"
         equal
-            "The candidate is not a valid ordinary Flow call (FLOW_ROOT_CALL_REQUIRES_ARGUMENTS)."
+            "The candidate is intercepted by Flow syntax instead of an ordinary call."
             (intercepted["flowReferenceUnavailableReason"].GetValue<string>())
             "context explains a typed suffix that cannot be called as a Flow dictionary reference"
         equal
-            (None, Some "The candidate is not a valid ordinary Flow call (FLOW_ROOT_CALL_REQUIRES_ARGUMENTS).")
+            (None, Some "The candidate is intercepted by Flow syntax instead of an ordinary call.")
             (FlowParser.describeCallReference "list.empty<Int>")
             "shared resolver preserves parser-proof rejection for typed malformed references"
 

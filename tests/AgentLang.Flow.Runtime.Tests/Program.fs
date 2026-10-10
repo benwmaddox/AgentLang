@@ -2255,13 +2255,110 @@ test durable.v4-ready/basic {
         |> expectOk "attach a test-file with no override declarations"
         |> ignore
         commit reloaded "commit" "durable.v4-ready" [] |> expectOk "commit a v4 shared test-file reference" |> ignore
+        let scopedOverrideWrapper =
+            """test-file scoped-override {
+    override fn durable.v4-ready() -> Bool {
+        effects none
+        false
+    }
+    test durable.v4-ready/overridden {
+        durable.v4-ready()
+        => false
+    }
+}"""
+        defineFlowProject reloaded scopedOverrideWrapper [ "syntaxVersion", jint 2 ]
+        |> expectOk "attach a separate test-file with a scoped override"
+        |> ignore
+        commit reloaded "commit" "durable.v4-ready" [] |> expectOk "commit the scoped-override test-file" |> ignore
         let versionFour = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
         equal 4 (versionFour.Manifest.Value.FormatVersion) "a wrapper with no overrides still selects manifest v4"
+        let v4ReadyHead = versionFour.Manifest.Value.Words |> List.find (fun head -> head.CurrentName = "durable.v4-ready")
+        let v4ReadyRevision =
+            versionFour.Manifest.Value.Revisions
+            |> List.find (fun revision -> revision.WordId = v4ReadyHead.WordId && revision.Revision = v4ReadyHead.CurrentRevision)
+        let retainedWrapperSources =
+            v4ReadyRevision.Tests
+            |> List.map (fun reference -> reference, Storage.readSource store reference |> Result.defaultWith (fun problem -> failwith problem.Message))
+            |> List.filter (fun (_, source) -> source.Contains("test-file no-overrides", StringComparison.Ordinal) || source.Contains("test-file scoped-override", StringComparison.Ordinal))
+            |> Map.ofList
+        equal 2 retainedWrapperSources.Count "v4 owner has separate no-override and scoped-override wrapper source entries"
+        let retainedWrapperReferences = retainedWrapperSources |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let retainedWrapperBindings = v4ReadyRevision.CallBindings |> List.filter (fun binding -> retainedWrapperReferences.Contains binding.Source)
+        let inspectV4ReadySources runtime =
+            dispatch runtime "tests" [ "word", jstr "durable.v4-ready"; "includeSource", jbool true ]
+            |> expectOk "inspect unrelated wrapper settings and cases"
+            |> fun response -> response.["data"].ToJsonString()
         let versionFourReload = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
-        assertAllPassed 2 (dispatch versionFourReload "test" [ "word", jstr "durable.v4-ready" ] |> expectOk "run standalone and empty-override wrapper cases after v4 reload")
+        let v4ReadySourceRows = inspectV4ReadySources versionFourReload
+        assertAllPassed 3 (dispatch versionFourReload "test" [ "word", jstr "durable.v4-ready" ] |> expectOk "run standalone and both wrapper cases after v4 reload")
         assertAllPassed 1 (dispatch versionFourReload "test" [ "word", jstr "receipt.amount" ] |> expectOk "retain generated-type cases beside v4 test files")
         let v4Value = evalStack versionFourReload "7 receipt.new receipt.amount" |> expectOk "evaluate generated accessor after v4 reload"
         equal "7" (stringValue (v4Value.["data"].["stack"].[0])) "generated type executable remains intact after v4 reload"
+        let v4ReadyRows =
+            dispatch versionFourReload "test" [ "word", jstr "durable.v4-ready" ]
+            |> expectOk "inspect scoped override results after v4 reload"
+            |> fun response -> (response.["data"].["results"]).AsArray()
+        let scopedOverrideResult = v4ReadyRows |> Seq.find (fun row -> stringValue row.["name"] = "overridden")
+        equal [ "durable.v4-ready" ] (jsonArrayStrings scopedOverrideResult.["activeOverrides"]) "unrelated wrapper activates its exact scoped override"
+
+        let durableHead = versionFour.Manifest.Value.Words |> List.find (fun head -> head.CurrentName = "durable.increment")
+        let flow1Revision =
+            versionFour.Manifest.Value.Revisions
+            |> List.find (fun revision -> revision.WordId = durableHead.WordId && revision.Revision = durableHead.CurrentRevision)
+        let retainedFlow1Test = flow1Revision.Tests |> List.exactlyOne
+        let retainedFlow1Example = flow1Revision.Examples |> List.exactlyOne
+        let flow2Test =
+            "test durable.increment/flow2-after-v4 {\n"
+            + "    durable::increment(11) == 12\n"
+            + "    => true\n"
+            + "}"
+        defineFlowProject versionFourReload flow2Test [ "syntaxVersion", jint 2 ]
+        |> expectOk "add a Flow/2 attachment to a Flow/1 owner while generated type cases exist"
+        |> ignore
+        equal v4ReadySourceRows (inspectV4ReadySources versionFourReload) "staging another owner's attachment preserves unrelated wrapper settings and case ownership"
+        commit versionFourReload "replace-word" "durable.increment" []
+        |> expectOk "commit mixed Flow attachment formats beside generated type cases"
+        |> ignore
+        equal v4ReadySourceRows (inspectV4ReadySources versionFourReload) "committing another owner's attachment preserves unrelated wrapper settings and case ownership"
+        let versionFive = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal 5 versionFive.Manifest.Value.FormatVersion "independent Flow attachment formats advance the generated-type project to manifest v5"
+        let durableV5Head = versionFive.Manifest.Value.Words |> List.find (fun head -> head.CurrentName = "durable.increment")
+        let durableV5Revision =
+            versionFive.Manifest.Value.Revisions
+            |> List.find (fun revision -> revision.WordId = durableV5Head.WordId && revision.Revision = durableV5Head.CurrentRevision)
+        let flow2TestReference = durableV5Revision.Tests |> List.find (fun reference -> reference <> retainedFlow1Test)
+        check (List.contains retainedFlow1Test durableV5Revision.Tests) "v5 attachment migration retains the exact Flow/1 test reference"
+        equal [ retainedFlow1Example ] durableV5Revision.Examples "v5 attachment migration retains the exact Flow/1 example reference"
+        equal flowTestSource (Storage.readSource store retainedFlow1Test |> Result.defaultWith (fun problem -> failwith problem.Message)) "v5 attachment migration preserves the Flow/1 test bytes"
+        equal flowExampleSource (Storage.readSource store retainedFlow1Example |> Result.defaultWith (fun problem -> failwith problem.Message)) "v5 attachment migration preserves the Flow/1 example bytes"
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } durableV5Revision.AttachmentSourceFormats[retainedFlow1Test] "v5 generated-type project retains Flow/1 test metadata"
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } durableV5Revision.AttachmentSourceFormats[retainedFlow1Example] "v5 generated-type project retains Flow/1 example metadata"
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } durableV5Revision.AttachmentSourceFormats[flow2TestReference] "v5 generated-type project records the independent Flow/2 test metadata"
+        let v5ReadyHead = versionFive.Manifest.Value.Words |> List.find (fun head -> head.CurrentName = "durable.v4-ready")
+        let v5ReadyRevision =
+            versionFive.Manifest.Value.Revisions
+            |> List.find (fun revision -> revision.WordId = v5ReadyHead.WordId && revision.Revision = v5ReadyHead.CurrentRevision)
+        equal v4ReadyRevision.Revision v5ReadyRevision.Revision "editing another owner's attachment does not advance the wrapper owner revision"
+        check (Set.isEmpty (Set.difference retainedWrapperReferences (Set.ofList v5ReadyRevision.Tests))) "editing another owner's attachment retains both exact wrapper source references"
+        let v5WrapperSources =
+            retainedWrapperReferences
+            |> Set.toList
+            |> List.map (fun reference -> reference, Storage.readSource store reference |> Result.defaultWith (fun problem -> failwith problem.Message))
+            |> Map.ofList
+        equal retainedWrapperSources v5WrapperSources "editing another owner's attachment preserves exact wrapper source bytes and settings"
+        for reference in retainedWrapperReferences do
+            equal { Frontend = SourceFrontend.Flow; Version = 2 } v5ReadyRevision.AttachmentSourceFormats[reference] "unrelated wrapper retains its Flow/2 syntax metadata"
+        equal retainedWrapperBindings (v5ReadyRevision.CallBindings |> List.filter (fun binding -> retainedWrapperReferences.Contains binding.Source)) "unrelated wrappers retain their exact call bindings"
+
+        let versionFiveReload = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
+        assertAllPassed 2 (dispatch versionFiveReload "test" [ "word", jstr "durable.increment" ] |> expectOk "run both Flow versions of the owner test after v5 reload")
+        assertAllPassed 1 (dispatch versionFiveReload "test" [ "word", jstr "receipt.amount" ] |> expectOk "recover generated-type tests beside v5 Flow attachments")
+        assertAllPassed 3 (dispatch versionFiveReload "test" [ "word", jstr "durable.v4-ready" ] |> expectOk "retain Flow/2 standalone and both wrappers after v5 reload")
+        equal v4ReadySourceRows (inspectV4ReadySources versionFiveReload) "fresh v5 reload preserves exact unrelated wrapper settings and case ownership"
+        let generatedExample = dispatch versionFiveReload "example" [ "word", jstr "receipt.amount"; "caseName", jstr "read" ] |> expectOk "run generated accessor example after v5 reload"
+        check (boolValue (generatedExample.["data"].["results"].[0].["passed"])) "generated accessor example survives v5 reload with independent Flow attachment formats"
+        let v5Value = evalStack versionFiveReload "7 receipt.new receipt.amount" |> expectOk "evaluate generated accessor after v5 reload"
+        equal "7" (stringValue (v5Value.["data"].["stack"].[0])) "generated type executable remains intact after v5 reload"
 
     let private testStackGeneratedCasesSurviveV1Manifest root =
         let project = Path.Combine(root, "stack-generated-cases-v1")
@@ -2578,6 +2675,331 @@ test durable.v4-ready/basic {
         let removalRevision = afterRemoval.Manifest.Value.Revisions |> List.find (fun item -> item.WordId = originalId && item.Revision = 4)
         equal [] removalRevision.Examples "successful CAS removes the requested authored example"
         equal [ "basic"; "extra" ] (jsonArrayStrings (dispatch engine "tests" [ "word", jstr "durable.increment" ] |> expectOk "test remains after example removal" |> fun response -> response.["data"])) "unmentioned attachments remain intact"
+
+    let private testMixedFlowAttachmentVersionsSurviveReplacement root =
+        let project = Path.Combine(root, "mixed-flow-attachment-versions")
+        let engine = Runtime.Engine(project, Set.empty, "2036-07-08T09:10:11Z", fileSystemMode = FileSystemMode.Virtual)
+        defineFlow engine flowWordSource [ flowTestSource ] [ flowExampleSource ] []
+        |> expectOk "define a Flow/1 owner with exact Flow/1 test and example sources"
+        |> ignore
+        let ownerId = getWordId engine "durable.increment"
+        commit engine "commit" "durable.increment" [] |> expectOk "persist the Flow/1 baseline" |> ignore
+
+        let store = Storage.create project
+        let load () = Storage.load store |> Result.defaultWith (fun problem -> failwith $"load mixed-version manifest: {problem.Code}: {problem.Message}")
+        let currentRevision snapshot =
+            let head = snapshot.Manifest.Value.Words |> List.find (fun item -> item.WordId = ownerId)
+            snapshot.Manifest.Value.Revisions |> List.find (fun item -> item.WordId = ownerId && item.Revision = head.CurrentRevision)
+        let baseline = load ()
+        let revision1 = currentRevision baseline
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } revision1.SourceFormat "baseline owner source is Flow/1"
+        let retainedTestReference = revision1.Tests |> List.exactlyOne
+        let retainedExampleReference = revision1.Examples |> List.exactlyOne
+        let retainedTestSource = Storage.readSource store retainedTestReference |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let retainedExampleSource = Storage.readSource store retainedExampleReference |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal flowTestSource retainedTestSource "baseline test bytes match the exact authored Flow/1 source"
+        equal flowExampleSource retainedExampleSource "baseline example bytes match the exact authored Flow/1 source"
+        let observe (runtime: Runtime.Engine) =
+            let testRows =
+                dispatch runtime "test" [ "word", jstr "durable.increment" ]
+                |> expectOk "run retained mixed-version tests"
+                |> fun response -> (response["data"]["results"]).AsArray()
+                |> Seq.map (fun row ->
+                    row["name"].GetValue<string>(), (row["actual"][0]).GetValue<string>(), row["passed"].GetValue<bool>())
+                |> Seq.toList
+            let exampleRow =
+                dispatch runtime "example" [ "word", jstr "durable.increment"; "caseName", jstr "one" ]
+                |> expectOk "run retained mixed-version example"
+                |> fun response -> (response["data"]["results"]).[0]
+            testRows,
+            ((exampleRow["actual"][0]).GetValue<string>(), exampleRow["passed"].GetValue<bool>(), exampleRow["source"].GetValue<string>())
+        let baselineValues = observe engine
+        equal ([ "basic", "42", true ], ("42", true, flowExampleSource)) baselineValues "baseline test and example produce their expected exact values"
+
+        let flow2OwnerSource =
+            "fn durable.increment(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    add(value, 1)\n"
+            + "}"
+        defineFlowProject engine flow2OwnerSource
+            [ "syntaxVersion", jint 2
+              "replace", jbool true
+              "expectedRevision", jint 1 ]
+        |> expectOk "replace the owner with Flow/2 while retaining the exact Flow/1 attachments"
+        |> ignore
+        commit engine "replace-word" "durable.increment" []
+        |> expectOk "commit independent Flow/1 attachment sources under a Flow/2 owner"
+        |> ignore
+        equal ownerId (getWordId engine "durable.increment") "Flow-version replacement preserves the stable owner ID"
+        let ownerOnlyRevision = currentRevision (load ())
+        equal 2 ownerOnlyRevision.Revision "Flow/2 owner replacement advances the owner revision once"
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } ownerOnlyRevision.SourceFormat "replacement definition stores its own Flow/2 format"
+        check (List.contains retainedTestReference ownerOnlyRevision.Tests) "Flow/2 owner retains the exact old Flow/1 test reference"
+        equal [ retainedExampleReference ] ownerOnlyRevision.Examples "Flow/2 owner retains the exact old Flow/1 example reference"
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } ownerOnlyRevision.AttachmentSourceFormats[retainedTestReference] "retained test source remains Flow/1 under Flow/2 owner"
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } ownerOnlyRevision.AttachmentSourceFormats[retainedExampleReference] "retained example remains Flow/1 under Flow/2 owner"
+        equal flowTestSource (Storage.readSource store retainedTestReference |> Result.defaultWith (fun problem -> failwith problem.Message)) "Flow/2 owner replacement does not rewrite retained Flow/1 test bytes"
+        equal flowExampleSource (Storage.readSource store retainedExampleReference |> Result.defaultWith (fun problem -> failwith problem.Message)) "Flow/2 owner replacement does not rewrite retained Flow/1 example bytes"
+        equal 5 (load ()).Manifest.Value.FormatVersion "independent source versions select manifest v5"
+
+        let flow2WrapperSource =
+            "test-file retained-v2-wrapper {\n"
+            + "    test durable.increment/wrapped {\n"
+            + "        durable::increment(8) == 9\n"
+            + "        => true\n"
+            + "    }\n"
+            + "    test durable.increment/wrapped-second {\n"
+            + "        durable::increment(12) == 13\n"
+            + "        => true\n"
+            + "    }\n"
+            + "}"
+        defineFlowProject engine flow2WrapperSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "add a Flow/2 wrapper to the Flow/2 owner after the independent definition replacement"
+        |> ignore
+        commit engine "replace-word" "durable.increment" []
+        |> expectOk "commit the Flow/2 test-file wrapper"
+        |> ignore
+        let afterFlow2 = load ()
+        equal 5 afterFlow2.Manifest.Value.FormatVersion "independent attachment versions select manifest v5"
+        let revision2 = currentRevision afterFlow2
+        equal 3 revision2.Revision "Flow/2 wrapper addition advances the owner revision once after replacement"
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } revision2.SourceFormat "replacement definition stores its own Flow/2 format"
+        check (List.contains retainedTestReference revision2.Tests) "Flow/2 owner retains the exact old Flow/1 test reference"
+        equal [ retainedExampleReference ] revision2.Examples "Flow/2 owner retains the exact old Flow/1 example reference"
+        equal retainedTestSource (Storage.readSource store retainedTestReference |> Result.defaultWith (fun problem -> failwith problem.Message)) "Flow/2 replacement does not rewrite retained Flow/1 test bytes"
+        equal retainedExampleSource (Storage.readSource store retainedExampleReference |> Result.defaultWith (fun problem -> failwith problem.Message)) "Flow/2 replacement does not rewrite retained Flow/1 example bytes"
+        equal flowTestSource (Storage.readSource store retainedTestReference |> Result.defaultWith (fun problem -> failwith problem.Message)) "retained test source remains byte-for-byte equal after commit"
+        equal flowExampleSource (Storage.readSource store retainedExampleReference |> Result.defaultWith (fun problem -> failwith problem.Message)) "retained example source remains byte-for-byte equal after commit"
+        check (digest retainedTestSource = retainedTestReference.Hash) "retained test reference still hashes its exact source"
+        check (digest retainedExampleSource = retainedExampleReference.Hash) "retained example reference still hashes its exact source"
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } revision2.AttachmentSourceFormats[retainedTestReference] "retained test source remains Flow/1 under Flow/2 owner"
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } revision2.AttachmentSourceFormats[retainedExampleReference] "retained example remains Flow/1 under Flow/2 owner"
+        let wrapperReference = revision2.Tests |> List.find (fun reference -> reference <> retainedTestReference)
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } revision2.AttachmentSourceFormats[wrapperReference] "shared test-file wrapper stores its own Flow/2 format"
+        let attachmentBindings revision references =
+            revision.CallBindings
+            |> List.filter (fun binding -> Set.contains binding.Source references)
+            |> List.sortBy (fun binding -> binding.Source.Kind, binding.Source.Hash, binding.CaseName, binding.BodyRole, binding.RequestedName)
+        let retainedReferences = Set.ofList [ retainedTestReference; retainedExampleReference ]
+        equal (attachmentBindings revision1 retainedReferences) (attachmentBindings revision2 retainedReferences) "retained test/example call-target identities survive owner replacement unchanged"
+        equal ([ "basic", "42", true; "wrapped", "true", true; "wrapped-second", "true", true ], ("42", true, flowExampleSource)) (observe engine) "committed Flow/2 owner preserves test/example values and runs both Flow/2 wrapper cases"
+
+        let freshFlow2 = Runtime.Engine(project, Set.empty, "2036-07-08T09:10:11Z", fileSystemMode = FileSystemMode.Virtual)
+        equal ([ "basic", "42", true; "wrapped", "true", true; "wrapped-second", "true", true ], ("42", true, flowExampleSource)) (observe freshFlow2) "fresh reload keeps the exact mixed-version test and example behavior"
+
+        let removeWrappedSecond = JsonObject()
+        removeWrappedSecond["kind"] <- jstr "test"
+        removeWrappedSecond["caseName"] <- jstr "wrapped-second"
+        removeWrappedSecond["expectedSourceHash"] <- jstr wrapperReference.Hash
+        let removals = JsonArray()
+        removals.Add removeWrappedSecond
+        defineFlow engine flowWordSource [] []
+            [ "syntaxVersion", jint 1
+              "replace", jbool true
+              "expectedRevision", jint 3
+              "removeAttachments", (removals :> JsonNode) ]
+        |> expectOk "replace the owner back to Flow/1 while retaining Flow/2 wrapper and exact Flow/1 cases"
+        |> ignore
+        commit engine "replace-word" "durable.increment" []
+        |> expectOk "commit the reverse Flow-version replacement"
+        |> ignore
+        let afterFlow1 = load ()
+        equal 5 afterFlow1.Manifest.Value.FormatVersion "manifest v5 remains selected after versions later match the owner"
+        let revision4 = currentRevision afterFlow1
+        equal 4 revision4.Revision "reverse replacement advances the owner revision once"
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } revision4.SourceFormat "reverse replacement definition stores its own Flow/1 format"
+        check (List.contains retainedTestReference revision4.Tests) "reverse replacement preserves the exact standalone Flow/1 test reference"
+        check (not (List.contains wrapperReference revision4.Tests)) "removing one wrapper case replaces its old full-file reference"
+        let remainingWrapperReference = revision4.Tests |> List.find (fun reference -> reference <> retainedTestReference)
+        check (remainingWrapperReference <> wrapperReference) "rewriting a shared wrapper creates a new content-addressed source reference"
+        let remainingWrapperSource = Storage.readSource store remainingWrapperReference |> Result.defaultWith (fun problem -> failwith problem.Message)
+        check (digest remainingWrapperSource = remainingWrapperReference.Hash) "rewritten wrapper reference hashes its exact source bytes"
+        check (not (remainingWrapperSource.Contains("wrapped-second", StringComparison.Ordinal))) "rewritten Flow/2 wrapper omits only the removed case"
+        equal revision2.Examples revision4.Examples "reverse replacement preserves the exact example reference inventory"
+        let retainedReferences = Set.ofList [ retainedTestReference; retainedExampleReference ]
+        equal (attachmentBindings revision2 retainedReferences) (attachmentBindings revision4 retainedReferences) "reverse replacement preserves retained standalone test and example call-target identities"
+        let wrapperBindingIdentity (revision: WordRevision) reference =
+            revision.CallBindings
+            |> List.filter (fun binding -> binding.Source = reference && binding.CaseName = Some "wrapped")
+            |> List.map (fun binding -> binding.CaseName, binding.BodyRole, binding.Path, binding.Form, binding.RequestedName, binding.Target)
+            |> List.sort
+        equal (wrapperBindingIdentity revision2 wrapperReference) (wrapperBindingIdentity revision4 remainingWrapperReference) "rewritten surviving wrapper case keeps its call paths, forms, and target identities"
+        check (revision4.CallBindings |> List.forall (fun binding -> binding.CaseName <> Some "wrapped-second")) "removed wrapper case has no retained call bindings"
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } revision4.AttachmentSourceFormats[remainingWrapperReference] "rewritten wrapper retains its own Flow/2 syntax under Flow/1 owner"
+        equal ([ "basic", "42", true; "wrapped", "true", true ], ("42", true, flowExampleSource)) (observe engine) "reverse Flow/1 replacement removes one wrapper case and preserves remaining attachment results"
+        let freshFlow1 = Runtime.Engine(project, Set.empty, "2036-07-08T09:10:11Z", fileSystemMode = FileSystemMode.Virtual)
+        equal ([ "basic", "42", true; "wrapped", "true", true ], ("42", true, flowExampleSource)) (observe freshFlow1) "fresh reload keeps the rewritten Flow/2 wrapper and retained Flow/1 attachments under Flow/1 owner"
+        let freshRevision4 = currentRevision (load ())
+        equal remainingWrapperReference (freshRevision4.Tests |> List.find (fun reference -> reference <> retainedTestReference)) "fresh reload retains the exact rewritten wrapper source hash"
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } freshRevision4.AttachmentSourceFormats[remainingWrapperReference] "fresh reload retains the wrapper's independent Flow/2 metadata"
+
+    let private testFlow2AttachmentsOnFlow1Owner root =
+        let project = Path.Combine(root, "flow2-attachments-on-flow1-owner")
+        let engine = Runtime.Engine(project, Set.empty, "2036-08-09T10:11:12Z", fileSystemMode = FileSystemMode.Virtual)
+        let store = Storage.create project
+        defineFlow engine flowWordSource [ flowTestSource ] [ flowExampleSource ] []
+        |> expectOk "define the Flow/1 owner and its original attachments"
+        |> ignore
+        commit engine "commit" "durable.increment" [] |> expectOk "persist Flow/1 attachment baseline" |> ignore
+
+        let load () = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let ownerId = getWordId engine "durable.increment"
+        let currentRevision () =
+            let snapshot = load ()
+            let head = snapshot.Manifest.Value.Words |> List.find (fun item -> item.WordId = ownerId)
+            snapshot.Manifest.Value.Revisions |> List.find (fun item -> item.WordId = ownerId && item.Revision = head.CurrentRevision)
+        let baseline = currentRevision ()
+        let retainedTestReference = baseline.Tests.Head
+        let retainedExampleReference = baseline.Examples.Head
+        let flow2Test =
+            "test durable.increment/flow2-only {\n"
+            + "    durable::increment(5) == 6\n"
+            + "    => true\n"
+            + "}"
+        let flow2Example =
+            "example durable.increment/flow2-example {\n"
+            + "    durable::increment(2) == 3\n"
+            + "    => true\n"
+            + "}"
+        defineFlowProject engine (flow2Test + "\n\n" + flow2Example) [ "syntaxVersion", jint 2 ]
+        |> expectOk "add Flow/2 standalone test and example to a Flow/1 owner"
+        |> ignore
+        commit engine "replace-word" "durable.increment" []
+        |> expectOk "commit independent Flow/2 standalone attachments"
+        |> ignore
+        let afterAdd = currentRevision ()
+        equal 2 afterAdd.Revision "independent Flow/2 attachment add advances the owner revision once"
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } afterAdd.SourceFormat "attachment-only edits retain the owner's Flow/1 definition format"
+        check (List.contains retainedTestReference afterAdd.Tests) "Flow/2 attachment add preserves the exact original Flow/1 test reference"
+        check (List.contains retainedExampleReference afterAdd.Examples) "Flow/2 attachment add preserves the exact original Flow/1 example reference"
+        let flow2TestReference = afterAdd.Tests |> List.find (fun reference -> reference <> retainedTestReference)
+        let flow2ExampleReference = afterAdd.Examples |> List.find (fun reference -> reference <> retainedExampleReference)
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } afterAdd.AttachmentSourceFormats[flow2TestReference] "new standalone Flow/2 test records its own syntax version"
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } afterAdd.AttachmentSourceFormats[flow2ExampleReference] "new standalone Flow/2 example records its own syntax version"
+        equal flow2Test (Storage.readSource store flow2TestReference |> Result.defaultWith (fun problem -> failwith problem.Message)) "Flow/2 standalone test source bytes remain exact"
+        equal flow2Example (Storage.readSource store flow2ExampleReference |> Result.defaultWith (fun problem -> failwith problem.Message)) "Flow/2 standalone example source bytes remain exact"
+        assertAllPassed 2 (dispatch engine "test" [ "word", jstr "durable.increment" ] |> expectOk "run Flow/1 and Flow/2 standalone tests")
+
+        let replacementTest =
+            "test durable.increment/flow2-only {\n"
+            + "    durable::increment(6) == 7\n"
+            + "    => true\n"
+            + "}"
+        let beforeStaleTest = load ()
+        defineFlowProject engine replacementTest
+            [ "syntaxVersion", jint 2; "replace", jbool true; "expectedRevision", jint 1 ]
+        |> expectError "FLOW_BATCH_STALE_REVISION"
+        |> ignore
+        let afterStaleTest = load ()
+        equal beforeStaleTest.ManifestHash afterStaleTest.ManifestHash "stale Flow/2 standalone replacement leaves manifest authority unchanged"
+        equal beforeStaleTest.Generation afterStaleTest.Generation "stale Flow/2 standalone replacement leaves storage generation unchanged"
+        defineFlowProject engine replacementTest
+            [ "syntaxVersion", jint 2; "replace", jbool true; "expectedRevision", jint afterAdd.Revision ]
+        |> expectOk "replace a Flow/2 standalone test under the Flow/1 owner"
+        |> ignore
+        commit engine "replace-word" "durable.increment" []
+        |> expectOk "commit Flow/2 standalone test replacement"
+        |> ignore
+        let afterTestReplace = currentRevision ()
+        equal 3 afterTestReplace.Revision "Flow/2 standalone replacement advances the owner revision once"
+        let replacedTestReference = afterTestReplace.Tests |> List.find (fun reference -> reference <> retainedTestReference)
+        check (replacedTestReference <> flow2TestReference) "standalone replacement changes only the test source reference"
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } afterTestReplace.AttachmentSourceFormats[replacedTestReference] "replaced standalone test remains Flow/2"
+        let replacementTestSource = Storage.readSource store replacedTestReference |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal replacementTest replacementTestSource "replaced Flow/2 test source bytes remain exact"
+        check (digest replacementTestSource = replacedTestReference.Hash) "replaced Flow/2 test source still matches its exact content hash"
+
+        let replacementExample =
+            "example durable.increment/flow2-example {\n"
+            + "    durable::increment(3) == 4\n"
+            + "    => true\n"
+            + "}"
+        defineFlowProject engine replacementExample
+            [ "syntaxVersion", jint 2; "replace", jbool true; "expectedRevision", jint afterTestReplace.Revision ]
+        |> expectOk "replace a Flow/2 standalone example under the Flow/1 owner"
+        |> ignore
+        commit engine "replace-word" "durable.increment" []
+        |> expectOk "commit Flow/2 standalone example replacement"
+        |> ignore
+        let afterExampleReplace = currentRevision ()
+        equal 4 afterExampleReplace.Revision "Flow/2 standalone example replacement advances the owner revision once"
+        let replacedExampleReference = afterExampleReplace.Examples |> List.find (fun reference -> reference <> retainedExampleReference)
+        check (replacedExampleReference <> flow2ExampleReference) "example replacement changes only its own source reference"
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } afterExampleReplace.AttachmentSourceFormats[replacedExampleReference] "replaced standalone example remains Flow/2"
+
+        let wrapperSource caseName value =
+            "test-file independent-flow2-wrapper {\n"
+            + $"    test durable.increment/{caseName} {{\n"
+            + $"        durable::increment({value}) == {value + 1}\n"
+            + "        => true\n"
+            + "    }\n"
+            + "}"
+        let originalWrapper = wrapperSource "wrapped" 8
+        defineFlowProject engine originalWrapper [ "syntaxVersion", jint 2 ]
+        |> expectOk "add a Flow/2 wrapper to the Flow/1 owner"
+        |> ignore
+        commit engine "replace-word" "durable.increment" []
+        |> expectOk "commit Flow/2 wrapper on Flow/1 owner"
+        |> ignore
+        let afterWrapperAdd = currentRevision ()
+        equal 5 afterWrapperAdd.Revision "Flow/2 wrapper addition advances the owner revision once"
+        let originalWrapperReference = afterWrapperAdd.Tests |> List.find (fun reference -> reference <> retainedTestReference && reference <> replacedTestReference)
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } afterWrapperAdd.AttachmentSourceFormats[originalWrapperReference] "new wrapper records its independent Flow/2 syntax"
+
+        let editedWrapper = wrapperSource "wrapped" 10
+        let beforeStaleWrapper = load ()
+        defineFlowProject engine editedWrapper
+            [ "syntaxVersion", jint 2; "replace", jbool true; "expectedRevision", jint (afterWrapperAdd.Revision - 1) ]
+        |> expectError "FLOW_BATCH_STALE_REVISION"
+        |> ignore
+        let afterStaleWrapper = load ()
+        equal beforeStaleWrapper.ManifestHash afterStaleWrapper.ManifestHash "stale Flow/2 wrapper edit leaves manifest authority unchanged"
+        equal beforeStaleWrapper.Generation afterStaleWrapper.Generation "stale Flow/2 wrapper edit leaves storage generation unchanged"
+
+        defineFlowProject engine editedWrapper
+            [ "syntaxVersion", jint 2; "replace", jbool true; "expectedRevision", jint afterWrapperAdd.Revision ]
+        |> expectOk "edit a Flow/2 wrapper without changing the Flow/1 owner source"
+        |> ignore
+        commit engine "replace-word" "durable.increment" []
+        |> expectOk "commit Flow/2 wrapper edit on Flow/1 owner"
+        |> ignore
+        let afterWrapperEdit = currentRevision ()
+        equal 6 afterWrapperEdit.Revision "Flow/2 wrapper edit advances the owner revision once"
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } afterWrapperEdit.SourceFormat "wrapper-only edit leaves the Flow/1 owner syntax unchanged"
+        equal baseline.Definition afterWrapperEdit.Definition "attachment-only edits preserve the exact Flow/1 owner source reference"
+        equal flowWordSource (Storage.readSource store afterWrapperEdit.Definition |> Result.defaultWith (fun problem -> failwith problem.Message)) "attachment-only edits preserve exact Flow/1 owner source bytes"
+        equal ownerId (getWordId engine "durable.increment") "Flow/2 attachment edits preserve the stable Flow/1 owner ID"
+        check (List.contains retainedTestReference afterWrapperEdit.Tests) "wrapper-only edit preserves the exact original Flow/1 test reference"
+        equal (Set.ofList [ retainedExampleReference; replacedExampleReference ]) (Set.ofList afterWrapperEdit.Examples) "wrapper-only edit preserves both Flow/1 and Flow/2 example references"
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } afterWrapperEdit.AttachmentSourceFormats[replacedTestReference] "standalone test retains Flow/2 metadata through wrapper edit"
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } afterWrapperEdit.AttachmentSourceFormats[replacedExampleReference] "standalone example retains Flow/2 metadata through wrapper edit"
+        let editedWrapperReference = afterWrapperEdit.Tests |> List.find (fun reference -> reference <> retainedTestReference && reference <> replacedTestReference)
+        check (editedWrapperReference <> originalWrapperReference) "wrapper edit stores the exact replacement source under its new hash"
+        equal editedWrapper (Storage.readSource store editedWrapperReference |> Result.defaultWith (fun problem -> failwith problem.Message)) "edited wrapper bytes remain exact"
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } afterWrapperEdit.AttachmentSourceFormats[editedWrapperReference] "edited wrapper retains Flow/2 syntax under a Flow/1 owner"
+
+        let summarizeTests (runtime: Runtime.Engine) =
+            let response = dispatch runtime "test" [ "word", jstr "durable.increment" ] |> expectOk "run independently versioned Flow attachments"
+            (response["data"]["results"]).AsArray()
+            |> Seq.map (fun row ->
+                let actual = (row["actual"]).AsArray() |> Seq.head |> fun value -> value.GetValue<string>()
+                (row["name"]).GetValue<string>(), actual, (row["passed"]).GetValue<bool>())
+            |> Seq.sortBy (fun (name, _, _) -> name)
+            |> Seq.toList
+        let expectedTests = [ "basic", "42", true; "flow2-only", "true", true; "wrapped", "true", true ]
+        equal expectedTests (summarizeTests engine) "Flow/2 test and wrapper execute against a Flow/1 owner after replacement"
+        let exampleResult =
+            dispatch engine "example" [ "word", jstr "durable.increment"; "caseName", jstr "flow2-example" ]
+            |> expectOk "run the Flow/2 example under Flow/1 owner"
+            |> fun response -> (response["data"]["results"]).[0]
+        equal "true" ((exampleResult["actual"][0]).GetValue<string>()) "Flow/2 example runs with its independently recorded syntax"
+        let reloaded = Runtime.Engine(project, Set.empty, "2036-08-09T10:11:12Z", fileSystemMode = FileSystemMode.Virtual)
+        equal expectedTests (summarizeTests reloaded) "fresh reload preserves Flow/2 tests and wrapper under a Flow/1 owner"
+        let reloadedExample =
+            dispatch reloaded "example" [ "word", jstr "durable.increment"; "caseName", jstr "flow2-example" ]
+            |> expectOk "run the reloaded Flow/2 example under Flow/1 owner"
+            |> fun response -> (response["data"]["results"]).[0]
+        equal "true" ((reloadedExample["actual"][0]).GetValue<string>()) "fresh reload preserves independently versioned Flow/2 example execution"
 
     let private testFlowAttachmentOnlyDocuments root =
         let project = Path.Combine(root, "flow-attachment-only-document")
@@ -5717,6 +6139,8 @@ test-file self {
             testStackGeneratedCasesSurviveV1Manifest root
             testStackOwnerMigrationToFlow root
             testReplacementCasAndRollback root
+            testMixedFlowAttachmentVersionsSurviveReplacement root
+            testFlow2AttachmentsOnFlow1Owner root
             testFlowAttachmentOnlyDocuments root
             testFlowAttachmentOnlyPreservesTemporaryLifetime root
             testTemporaryPromotionAndTaskAbort root
@@ -5738,7 +6162,7 @@ test-file self {
             testRecordValidatorRuntimeAndPersistence root
             testEffectCountAssertions root
             testFlowTestFileOverrides root
-            printfn $"Flow Runtime tests passed: 40 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 42 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

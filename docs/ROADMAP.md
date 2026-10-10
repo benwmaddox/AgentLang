@@ -95,6 +95,16 @@ qualified-call and attachment conversion friction; make inherited example output
 an explicit preservation contract before another distinct efficacy task. Close
 this batch task without more easy variants or new harness infrastructure.
 
+[Report 176](../reports/176-retained-attachment-source-versions.md) addresses that
+observed editing friction: retained tests/examples keep their exact source
+format across owner revisions, and Flow/2 accepts leading-dot container
+constructors and qualified static callbacks. Focused suites and an isolated
+replay of the original blocked request pass, including unchanged example output
+and all 191 saved tests after fresh reload. All 37 full local checks pass.
+This engineering replay does not establish a new agent reliability advantage.
+The next efficacy task should exercise maintenance of existing vocabulary with
+explicit collateral preservation, rather than repeat this batching task.
+
 [Report 164](../reports/164-result-test-guidance.md) completes the returned-Result
 help improvement with executable examples that qualify as library vocabulary.
 Fresh participants have now used the updated help. The coordinated signature
