@@ -66,6 +66,15 @@ an existing abstraction and callers under restricted context. Improve returned
 Result test examples, keep independent behavior checks and source-access parity,
 and avoid more easy composition variants. LLVM/arena work remains secondary.
 
+[Report 171](../reports/171-preview-vocabulary-retention.md) closes a small
+retained-versus-reset abstraction probe. Both fresh agents pass 33 independent
+cases, preserve all prior definitions/tests, and pass complete saved suites
+(141/145 tests respectively). The retained agent discovers the earlier handoff
+and writes a smaller wrapper; no reliability lead or context-budget advantage
+is established. Correct the shared help-primer request for future trials. Next
+efficacy work should stress shared-rule/caller maintenance rather than repeat
+this easy composition task. Native refinement work remains a separate track.
+
 [Report 164](../reports/164-result-test-guidance.md) completes the returned-Result
 help improvement with executable examples that qualify as library vocabulary.
 Fresh participants have now used the updated help. The coordinated signature

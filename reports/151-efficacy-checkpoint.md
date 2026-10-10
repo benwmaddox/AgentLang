@@ -176,3 +176,13 @@ competing-error scenario. It still removes two prior success-test pre-state
 assertions. Discovery is feasible; complete preservation and a comparative
 reliability advantage remain unproven. Close this bounded follow-up and continue
 native conformance as a separate engineering track.
+
+[Report 171](171-preview-vocabulary-retention.md) adds a bounded retention probe:
+two fresh agents implement unchanged-store preview validation, both pass 33
+independent cases and preserve every prior definition and test. The retained
+agent discovers and calls the earlier agent-created handoff, reducing its new
+function's own instructions/branches from 30/6 to 12/2. Both saved full suites
+pass. This supports discoverable reuse and a smaller new logic surface on this
+task, without establishing comparative reliability, token savings or reduced
+context requirements. Close the easy composition probe; further efficacy work
+should stress shared-rule maintenance and exact preservation of prior evidence.
