@@ -1,6 +1,9 @@
 # Native nominal scalar implementation plan
 
-2026-10-10. Next secondary backend slice after report 169 is published. This
+2026-10-10. The first nominal Int slice is complete and validated in
+[report 170](../reports/170-native-nominal-int.md): 521 LLVM assertions, 94
+independent nominal cases across O0/O2, mailbox regressions and all 37 full local
+Release checks pass. Predicate-bearing Int is the next secondary backend slice. This
 does not replace the requirement for validated refinements or claim native
 support for Email. The interpreter's verified semantic IR remains authoritative.
 
@@ -78,5 +81,6 @@ verification, `IrInterpreter.fs` wrap/unwrap execution, `LlvmAot.fs` existing
 scalar/validator lowering, `OwningStackAot.fs` program inspection, block validation,
 host codecs and selected dynamic descriptor emitter, and `ArenaLifetime.fs`
 conservative transfer handling. Existing LLVM tests cover nominal identities,
-PositiveId and frozen-validator replacement. No code or executable validation
-changed during this planning pass.
+PositiveId and frozen-validator replacement. The initial planning pass changed
+no executable code. Report 170 records the subsequent first-slice implementation,
+failed attempts, accepted validation and remaining boundaries.

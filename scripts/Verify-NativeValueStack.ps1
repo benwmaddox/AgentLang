@@ -425,6 +425,175 @@ try {
         incompleteRunCount = $sumRunsMissingCoverage
         actualRuns = $sumRuns
     })
+
+    $nativeFixture = Read-JsonFile $fixturePath
+    $nominalOracle = $nativeFixture['nominalIntConformance']
+    $nominalSignedExpected = @(
+        [ordered]@{ name = 'zero'; value = '0'; intBytesHex = '0000000000000000' }
+        [ordered]@{ name = 'negative'; value = '-42'; intBytesHex = 'd6ffffffffffffff' }
+        [ordered]@{ name = 'minimum'; value = '-9223372036854775808'; intBytesHex = '0000000000000080' }
+        [ordered]@{ name = 'maximum'; value = '9223372036854775807'; intBytesHex = 'ffffffffffffff7f' }
+    )
+    $nominalExpectedSignedNames = @($nominalSignedExpected | ForEach-Object { $_.name })
+    $nominalOraclePassed = $false
+    $nominalFixtureSignedNames = @()
+    $nominalOwnerBytes = $null
+    $nominalOwnerRange = $null
+    if ($null -ne $nominalOracle) {
+        $nominalSignedFixtures = @($nominalOracle['signedFixtures'])
+        $nominalFixtureSignedNames = @($nominalSignedFixtures | ForEach-Object { [string]$_['name'] })
+        $nominalSignedMap = @{}
+        foreach ($signedFixture in $nominalSignedFixtures) {
+            $nominalSignedMap[[string]$signedFixture['name']] = $signedFixture
+        }
+        $nominalSignedBytesPassed = $nominalSignedFixtures.Count -eq $nominalSignedExpected.Count
+        foreach ($expectedFixture in $nominalSignedExpected) {
+            $actualFixture = $nominalSignedMap[[string]$expectedFixture.name]
+            $expectedPairBytes = $expectedFixture.intBytesHex + $expectedFixture.intBytesHex
+            $casePassed = $null -ne $actualFixture -and
+                [string]$actualFixture['value'] -ceq $expectedFixture.value -and
+                [string]$actualFixture['intBytesHex'] -ceq $expectedFixture.intBytesHex -and
+                [string]$actualFixture['pairBytesHex'] -ceq $expectedPairBytes
+            $nominalSignedBytesPassed = $nominalSignedBytesPassed -and $casePassed
+        }
+        $nominalTypeIds = $nominalOracle['identityProgram']['typeIds']
+        $nominalIdentityIdsPassed = [int]$nominalTypeIds['Meters'] -eq 4 -and [int]$nominalTypeIds['OrderId'] -eq 5
+        $nominalOwner = $nominalOracle['ownerEnvelope']
+        $nominalOwnerBytes = [string]$nominalOwner['retainedBytesHex']
+        $nominalOwnerPassed = [string]$nominalOwner['ownerValue'] -ceq '-42' -and
+            [string]$nominalOwner['tail'] -ceq 'tail' -and
+            $nominalOwnerBytes -ceq 'd6ffffffffffffff04000000000000007400610069006c00' -and
+            [string]$nominalOwner['projectedOwnerBytesHex'] -ceq 'd6ffffffffffffff'
+        $nominalOwnerRange = $nominalOracle['ownerRangeTrace']['expectedDescriptorTransfer']
+        $nominalOwnerRangePassed = [int]$nominalOwnerRange['typeId'] -eq 1 -and
+            [int]$nominalOracle['ownerRangeTrace']['literalDeepCopyBytes'] -eq 80 -and
+            [int]$nominalOwnerRange['offsetBytes'] -eq 0 -and
+            [int]$nominalOwnerRange['sourceOffsetBytesOwnerEnd'] -eq 24 -and
+            [int]$nominalOwnerRange['sourceExtentBytesPayloadExtent'] -eq 8
+        $nominalAggregateBytesPassed =
+            [string]$nominalOracle['option']['someBytesHex'] -ceq '0000000000000000d6ffffffffffffff' -and
+            [string]$nominalOracle['option']['noneBytesHex'] -ceq '0100000000000000' -and
+            [string]$nominalOracle['result']['okBytesHex'] -ceq '0000000000000000d6ffffffffffffff' -and
+            [string]$nominalOracle['result']['errorBytesHex'] -ceq '0100000000000000d6ffffffffffffff' -and
+            [string]$nominalOracle['booleans']['trueBytesHex'] -ceq '0100000000000000' -and
+            [string]$nominalOracle['booleans']['falseBytesHex'] -ceq '0000000000000000' -and
+            [int]$nominalOracle['capacityAndFailure']['optionSomeExactStackCapacityBytes'] -eq 24
+        $nominalErrors = $nominalOracle['expectedErrors']
+        $nominalErrorsPassed = [string]$nominalErrors['hostInputExceptionType'] -ceq 'System.ArgumentException' -and
+            [string]$nominalErrors['hostInputParameterName'] -ceq 'values' -and
+            [string]$nominalErrors['wrongAccessorDiagnosticCode'] -ceq 'TYPE_STACK_MISMATCH'
+        $nominalOraclePassed = [int]$nativeFixture['schemaVersion'] -eq 3 -and
+            $nominalIdentityIdsPassed -and $nominalSignedBytesPassed -and
+            ($nominalFixtureSignedNames -join ',') -ceq ($nominalExpectedSignedNames -join ',') -and
+            $nominalOwnerPassed -and $nominalOwnerRangePassed -and $nominalAggregateBytesPassed -and $nominalErrorsPassed
+    }
+    Add-Check 'nominal Int fixture pins schema 3, distinct TypeIds, signed bytes, aggregate bytes, and owner-range oracle' $nominalOraclePassed ([ordered]@{
+        expectedSchemaVersion = 3
+        actualSchemaVersion = $nativeFixture['schemaVersion']
+        expectedTypeIds = [ordered]@{ Meters = 4; OrderId = 5 }
+        expectedSignedFixtures = $nominalSignedExpected
+        actualSignedFixtureNames = $nominalFixtureSignedNames
+        expectedOwnerBytesHex = 'd6ffffffffffffff04000000000000007400610069006c00'
+        actualOwnerBytesHex = $nominalOwnerBytes
+        expectedOwnerDescriptorTransfer = [ordered]@{ typeId = 1; offsetBytes = 0; sourceOffsetBytesOwnerEnd = 24; sourceExtentBytesPayloadExtent = 8 }
+        actualOwnerDescriptorTransfer = $nominalOwnerRange
+    })
+
+    $nominalRuns = @()
+    if ($null -ne $experimentEvidence['nominalIntRuns']) { $nominalRuns = @($experimentEvidence['nominalIntRuns']) }
+    $nominalRunOptimizationNames = @($nominalRuns | ForEach-Object { [string]$_['optimization'] } | Sort-Object) -join ','
+    $nominalExpectedOwnerEnd = 24
+    $nominalExpectedScalarExtent = 8
+    $nominalRunsMissingCoverage = @($nominalRuns | Where-Object {
+        $_['signedFixtureCount'] -ne $nominalExpectedSignedNames.Count -or
+        $_['unsupportedDefinitionCount'] -ne 4 -or
+        $_['ownerRangeTransferCount'] -lt 1 -or
+        $_['ownerEndBytes'] -ne $nominalExpectedOwnerEnd -or
+        $_['scalarPayloadExtentBytes'] -ne $nominalExpectedScalarExtent
+    }).Count
+    $nominalRunCoveragePassed = $nominalRuns.Count -eq 2 -and
+        $nominalRunOptimizationNames -ceq 'O0,O2' -and
+        $nominalRunsMissingCoverage -eq 0
+    Add-Check 'nominal Int report has complete O0/O2 signed, unsupported, and owner-range summaries' $nominalRunCoveragePassed ([ordered]@{
+        expectedOptimizations = @('O0', 'O2')
+        expectedSignedFixtureCount = $nominalExpectedSignedNames.Count
+        expectedUnsupportedDefinitionCount = 4
+        expectedOwnerEndBytes = $nominalExpectedOwnerEnd
+        expectedScalarPayloadExtentBytes = $nominalExpectedScalarExtent
+        actualOptimizationNames = $nominalRunOptimizationNames
+        incompleteRunCount = $nominalRunsMissingCoverage
+        actualRuns = $nominalRuns
+    })
+
+    $nominalCaseSuffixes = [Collections.Generic.List[string]]::new()
+    foreach ($suffix in @(
+        'isolated-type-ids',
+        'distinct-fixed-int-layouts',
+        'locals-and-calls-preserve-meters',
+        'locals-and-calls-preserve-order-id',
+        'reject-bare-int-for-meters-atomically',
+        'reject-wrong-nominal-for-meters-atomically',
+        'reject-same-name-record-for-meters-atomically',
+        'reject-wrong-nominal-for-order-id-atomically',
+        'wrong-accessor-rejected-by-verifier',
+        'record-construction-and-tail-bytes',
+        'record-host-roundtrip',
+        'scalar-first-record-preserves-full-owner-end',
+        'owner-range-trace-complete',
+        'record-equality-retains-nominal-field',
+        'option-some-construction',
+        'option-none-inactive-payload',
+        'option-some-host-roundtrip',
+        'option-none-host-roundtrip',
+        'option-some-match-payload',
+        'option-none-match-payload',
+        'option-equality-compares-wrapped-payload',
+        'result-ok-wraps-meters',
+        'result-error-wraps-order-id',
+        'result-ok-host-roundtrip',
+        'result-error-host-roundtrip',
+        'result-ok-match-retains-meter-identity',
+        'result-error-match-retains-meter-identity',
+        'result-equality-distinguishes-inactive-tag',
+        'option-capacity-one-byte-short-is-atomic',
+        'sum-retained-capacity-short-is-atomic',
+        'failure-after-nominal-sum-unwinds-without-publishing'
+    )) { $nominalCaseSuffixes.Add($suffix) }
+    foreach ($caseName in $nominalExpectedSignedNames) {
+        $nominalCaseSuffixes.Add("$caseName/host-nominal-identity")
+        $nominalCaseSuffixes.Add("$caseName/host-identity-trace")
+        $nominalCaseSuffixes.Add("$caseName/wrap-unwrap-retags")
+    }
+    foreach ($unsupportedName in @('PositiveId', 'BoolTag', 'TextTag', 'FloatTag')) {
+        $nominalCaseSuffixes.Add("unsupported-$unsupportedName-is-explicit")
+    }
+    $nominalExpectedCheckNames = [Collections.Generic.List[string]]::new()
+    foreach ($optimizationName in @('O0', 'O2')) {
+        foreach ($suffix in $nominalCaseSuffixes) {
+            $nominalExpectedCheckNames.Add("nominal-int/$optimizationName/$suffix")
+        }
+    }
+    $nominalEvidenceChecks = @()
+    if ($null -ne $experimentEvidence['checks']) {
+        $nominalEvidenceChecks = @($experimentEvidence['checks'] | Where-Object { [string]$_['name'] -like 'nominal-int/*' })
+    }
+    $nominalMissingChecks = [Collections.Generic.List[string]]::new()
+    $nominalFailingChecks = [Collections.Generic.List[string]]::new()
+    foreach ($expectedName in $nominalExpectedCheckNames) {
+        $matchingChecks = @($nominalEvidenceChecks | Where-Object { [string]$_['name'] -ceq $expectedName })
+        if ($matchingChecks.Count -ne 1) { $nominalMissingChecks.Add("$expectedName (count=$($matchingChecks.Count))") }
+        elseif (-not [bool]$matchingChecks[0]['passed']) { $nominalFailingChecks.Add($expectedName) }
+    }
+    $nominalCheckCoveragePassed = $nominalCaseSuffixes.Count -eq 47 -and
+        $nominalMissingChecks.Count -eq 0 -and $nominalFailingChecks.Count -eq 0
+    Add-Check 'nominal Int case checks cover every pinned O0/O2 identity, wrap, aggregate, owner, capacity, rejection, and unsupported case' $nominalCheckCoveragePassed ([ordered]@{
+        expectedCasesPerOptimization = $nominalCaseSuffixes.Count
+        expectedTotalCheckCount = $nominalExpectedCheckNames.Count
+        actualNominalCheckCount = $nominalEvidenceChecks.Count
+        missingOrDuplicateChecks = @($nominalMissingChecks)
+        failingChecks = @($nominalFailingChecks)
+    })
+
     Add-Check 'fixed three-way controls share one compiler-authorized program instance' ([bool]$experimentEvidence.fixedControlVerifiedProgramInstance) $experimentEvidence.backendScope
     Add-Check 'String interpreter and owning O0/O2 share one compiler-authorized program instance' ([bool]$experimentEvidence.stringVerifiedProgramInstance -and $experimentEvidence.stringBackendScope -match 'ABI3 String parity is unavailable') $experimentEvidence.stringBackendScope
     Add-Check 'String comparison records nested runtime Value input and no ABI3 String claim' ($experimentEvidence.stringBackendScope -match 'runtime Value input' -and $experimentEvidence.stringBackendScope -match 'ABI3 String parity is unavailable') $experimentEvidence.stringBackendScope

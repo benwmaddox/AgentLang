@@ -542,6 +542,22 @@ module OwningStackAot =
             | _ -> None
         | _ -> None
 
+    let private scalarDefinition (program: IrProgram) ty =
+        match ty with
+        | IrNominal key ->
+            match program.NominalTypesByKey.TryFind key with
+            | Some(IrScalarDefinition definition) -> Some definition
+            | _ -> None
+        | _ -> None
+
+    let private recordDefinition (program: IrProgram) ty =
+        match ty with
+        | IrNominal key ->
+            match program.NominalTypesByKey.TryFind key with
+            | Some(IrRecordDefinition definition) -> Some definition
+            | _ -> None
+        | _ -> None
+
     let private typeIdFor (ids: Map<IrType, uint32>) ty =
         ids.TryFind ty |> Option.defaultWith (fun () -> invalidOp $"Owning-stack type id missing for {IrTypes.format ty}.")
 
@@ -739,7 +755,26 @@ module OwningStackAot =
                             typeInfos <- Map.add ty value typeInfos
                             value
                         | Some(IrScalarDefinition scalar) ->
-                            unsupported "IR_OWNING_STACK_TYPE_UNSUPPORTED" "Nominal scalar wrappers are not part of this record-only slice." owner scalar.TypeName
+                            match scalar.BaseType, scalar.ValidatorCall with
+                            | IrInt, None ->
+                                let value =
+                                    { Type = ty
+                                      TypeId = typeIdFor typeIds ty
+                                      Name = scalar.TypeName
+                                      PayloadBytes = 8
+                                      ExtentBytes = 8
+                                      IsDynamic = false
+                                      MinimumPayloadBytes = 8
+                                      MinimumExtentBytes = 8
+                                      LayoutDepth = 1
+                                      Fields = []
+                                      Cases = [] }
+                                typeInfos <- Map.add ty value typeInfos
+                                value
+                            | _ ->
+                                Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
+                                    "Owning-stack supports only unvalidated nominal Int scalar wrappers."
+                                    (Some owner) None [ "unvalidated Int scalar" ] [ scalar.TypeName ]
                         | Some(IrEnumDefinition enumDefinition) ->
                             unsupported "IR_OWNING_STACK_TYPE_UNSUPPORTED" "Owning-stack could not build the verified payload-free enum layout." owner enumDefinition.TypeName
                         | None -> unsupported "IR_OWNING_STACK_TYPE_UNKNOWN" "Owning-stack type is absent from the verified nominal table." owner (IrTypes.format ty)
@@ -880,6 +915,16 @@ module OwningStackAot =
                 | IrOperation.GetRecordField(call, key, index) ->
                     checkType owner (IrNominal key)
                     validateAccessorCall owner span call key index
+                | IrOperation.WrapScalar(call, key, validator) ->
+                    checkType owner (IrNominal key)
+                    if validator.IsSome then
+                        Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
+                            "Owning-stack supports only unvalidated nominal Int scalar wrappers."
+                            (Some owner) span [ "unvalidated Int scalar" ] [ call.ResolvedName ]
+                    validateScalarCall owner span call key (WrapScalarOperation key) [ IrInt ] [ IrNominal key ]
+                | IrOperation.UnwrapScalar(call, key) ->
+                    checkType owner (IrNominal key)
+                    validateScalarCall owner span call key (UnwrapScalarOperation key) [ IrNominal key ] [ IrInt ]
                 | IrOperation.MakeEnumCase(call, key, caseIndex) ->
                     checkType owner (IrNominal key)
                     validateEnumCall owner span call key caseIndex
@@ -921,9 +966,40 @@ module OwningStackAot =
                 | IrOperation.If(thenBlock, elseBlock) -> validateBlock owner thenBlock; validateBlock owner elseBlock
                 | operation ->
                     Diagnostics.raiseError "IR_OWNING_STACK_OPERATION_UNSUPPORTED"
-                        "Owning-stack backend supports constants, calls, records, payload-free enums, Option/Result values, locals, Scope, If, and exhaustive matches."
-                        (Some owner) span [ "Constant"; "Call"; "MakeRecord"; "GetRecordField"; "MakeEnumCase"; "OptionNone"; "OptionSome"; "ResultOk"; "ResultError"; "MatchOption"; "MatchResult"; "MatchEnum"; "StoreLocal"; "LoadLocal"; "Scope"; "If" ]
+                        "Owning-stack backend supports constants, calls, records, unvalidated Int scalars, payload-free enums, Option/Result values, locals, Scope, If, and exhaustive matches."
+                        (Some owner) span [ "Constant"; "Call"; "MakeRecord"; "GetRecordField"; "WrapScalar"; "UnwrapScalar"; "MakeEnumCase"; "OptionNone"; "OptionSome"; "ResultOk"; "ResultError"; "MatchOption"; "MatchResult"; "MatchEnum"; "StoreLocal"; "LoadLocal"; "Scope"; "If" ]
                         [ sprintf "%A" operation ]
+
+        and validateScalarCall owner span (call: IrResolvedCall) key expectedOperation inputTypes outputTypes =
+            match program.NominalTypesByKey.TryFind key with
+            | Some(IrScalarDefinition scalar) when scalar.BaseType = IrInt && scalar.ValidatorCall.IsNone -> ()
+            | _ ->
+                Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
+                    "Owning-stack supports only unvalidated nominal Int scalar wrappers."
+                    (Some owner) span [ "unvalidated Int scalar" ] [ sprintf "%A" key ]
+            match call.ResolvedTarget with
+            | GeneratedWordTarget(id, revision) ->
+                match program.GeneratedTargetsById.TryFind id with
+                | Some target when target.TargetRevision = revision && target.Operation = expectedOperation ->
+                    requireEffectFree owner target.TargetDeclaredEffects
+                    requireEffectFree owner target.TargetEffects
+                    requireEffectFree owner call.ResolvedDeclaredEffects
+                    requireEffectFree owner call.ResolvedEffects
+                    if target.InputTypes <> inputTypes || target.OutputTypes <> outputTypes
+                       || call.InputTypes <> inputTypes || call.OutputTypes <> outputTypes then
+                        let expected = sprintf "%s -> %s" (String.concat " " (inputTypes |> List.map IrTypes.format)) (String.concat " " (outputTypes |> List.map IrTypes.format))
+                        let actual = sprintf "%s -> %s" (String.concat " " (call.InputTypes |> List.map IrTypes.format)) (String.concat " " (call.OutputTypes |> List.map IrTypes.format))
+                        Diagnostics.raiseError "IR_OWNING_STACK_SCALAR_SIGNATURE"
+                            "Generated scalar constructor/accessor does not match the exact Int and nominal types."
+                            (Some owner) span [ expected ] [ actual ]
+                | _ ->
+                    Diagnostics.raiseError "IR_OWNING_STACK_SCALAR_TARGET"
+                        "Scalar wrap/unwrap is not bound to its verified matching generated target and revision."
+                        (Some owner) span [ sprintf "%A" expectedOperation ] [ call.ResolvedName ]
+            | _ ->
+                Diagnostics.raiseError "IR_OWNING_STACK_SCALAR_TARGET"
+                    "Scalar wrap/unwrap requires its verified generated scalar target."
+                    (Some owner) span [ sprintf "%A" expectedOperation ] [ call.ResolvedName ]
 
         and validateRecordCall owner span (call: IrResolvedCall) key =
             match call.ResolvedTarget with
@@ -1144,7 +1220,11 @@ module OwningStackAot =
                     8, 8
                 | _ ->
                     invalidArg (nameof values) $"Input enum {Types.formatValue value} does not match verified type {IrTypes.format ty}."
-            | IrNominal _, RecordValue(name, fields) when name = layout.Name && Option.isNone (enumDefinition info.Program ty) ->
+            | IrNominal _, NamedValue(actualName, IntValue _) when
+                (scalarDefinition info.Program ty
+                 |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrInt && scalar.ValidatorCall.IsNone)) ->
+                8, 8
+            | IrNominal _, RecordValue(name, fields) when name = layout.Name && Option.isSome (recordDefinition info.Program ty) ->
                 let expectedNames = layout.Fields |> List.map (fun (fieldName, _, _) -> fieldName) |> Set.ofList
                 if fields |> Map.toSeq |> Seq.map fst |> Set.ofSeq <> expectedNames then
                     invalidArg (nameof values) $"Record input '{name}' has fields that differ from its verified layout."
@@ -1250,7 +1330,12 @@ module OwningStackAot =
                     8
                 | _ ->
                     invalidArg (nameof values) $"Input enum {Types.formatValue value} does not match verified type {IrTypes.format ty}."
-            | IrNominal _, RecordValue(name, fields) when name = layout.Name && Option.isNone (enumDefinition info.Program ty) ->
+            | IrNominal _, NamedValue(actualName, IntValue number) when
+                (scalarDefinition info.Program ty
+                 |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrInt && scalar.ValidatorCall.IsNone)) ->
+                writeInt64 bytes offset number
+                8
+            | IrNominal _, RecordValue(name, fields) when name = layout.Name && Option.isSome (recordDefinition info.Program ty) ->
                 let mutable childOffset = offset
                 let mutable payload = 0
                 for fieldName, fieldType, _ in layout.Fields do
@@ -1356,6 +1441,12 @@ module OwningStackAot =
                 if ordinal < 0L || ordinal >= int64 definition.Cases.Length then
                     raise (InvalidDataException($"Owning-stack enum ordinal {ordinal} is outside '{definition.TypeName}' case table."))
                 EnumValue(definition.TypeName, definition.Cases[int ordinal]), 8, 8
+            | IrNominal key when Option.isSome (scalarDefinition info.Program (IrNominal key)) ->
+                let definition = scalarDefinition info.Program (IrNominal key) |> Option.get
+                if definition.BaseType <> IrInt || definition.ValidatorCall.IsSome then
+                    invalidOp $"Unsupported nominal scalar reached owning-stack decode: {definition.TypeName}."
+                ensureRange offset 8 "nominal Int"
+                NamedValue(definition.TypeName, IntValue(readInt64 bytes offset)), 8, 8
             | IrNominal _ ->
                 let mutable childOffset = offset
                 let mutable payload = 0
@@ -1488,6 +1579,9 @@ module OwningStackAot =
                     let _, prefix = pop call.InputTypes.Length
                     stack <- prefix @ call.OutputTypes
                 | IrOperation.GetRecordField(call, _, _) ->
+                    let _, prefix = pop call.InputTypes.Length
+                    stack <- prefix @ call.OutputTypes
+                | IrOperation.WrapScalar(call, _, _) | IrOperation.UnwrapScalar(call, _) ->
                     let _, prefix = pop call.InputTypes.Length
                     stack <- prefix @ call.OutputTypes
                 | IrOperation.MakeEnumCase(call, _, _) ->
@@ -2506,9 +2600,13 @@ module OwningStackAot =
             | IrOption _ -> 7u
             | IrResult _ -> 8u
             | IrNominal _ as ty ->
-                match enumDefinition info.Program ty with
-                | Some _ -> 6u
-                | None -> 4u
+                match scalarDefinition info.Program ty with
+                | Some scalar when scalar.BaseType = IrInt && scalar.ValidatorCall.IsNone -> 1u
+                | Some _ -> invalidOp $"Unsupported nominal scalar reached owning descriptor emission: {IrTypes.format ty}."
+                | None ->
+                    match enumDefinition info.Program ty with
+                    | Some _ -> 6u
+                    | None -> 4u
             | ty -> invalidOp $"Unsupported dynamic descriptor type {IrTypes.format ty}."
         let typeCaseCount ty =
             match ty with
@@ -3370,6 +3468,15 @@ module OwningStackAot =
                         w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId recordType}, i32 {recordStart}, i32 {outputExtent}, i32 {recordPayload}, i32 0, i32 0)")
                         emitRuntimeStatus w "%ctx" failBody
                         stack <- push prefix recordType recordStart outputExtent recordPayload recordEnd
+                    | IrOperation.WrapScalar(_, key, _) ->
+                        let values, prefix = pop 1
+                        let input = List.head values
+                        stack <- push prefix (IrNominal key) input.Offset input.Extent input.Payload input.OwnerEnd
+                    | IrOperation.UnwrapScalar(_, key) ->
+                        let values, prefix = pop 1
+                        let input = List.head values
+                        let scalar = scalarDefinition info.Program (IrNominal key) |> Option.get
+                        stack <- push prefix scalar.BaseType input.Offset input.Extent input.Payload input.OwnerEnd
                     | IrOperation.GetRecordField(call, key, fieldIndex) ->
                         let values, prefix = pop 1
                         let parent = List.head values
@@ -4897,6 +5004,7 @@ module OwningStackAot =
                      | IrOption _ -> "Option"
                      | IrResult _ -> "Result"
                      | IrNominal _ as ty when Option.isSome (enumDefinition programInfo.Program ty) -> "Enum"
+                     | IrNominal _ as ty when Option.isSome (scalarDefinition programInfo.Program ty) -> "Int"
                      | IrNominal _ -> "Record"
                      | other -> IrTypes.format other)
                    name = item.TypeName

@@ -93,6 +93,38 @@ type private SumEntryBodies =
       RawIgnoreBodies: Map<string, VerifiedIrBody>
       FailAfterSumAllocation: VerifiedIrBody }
 
+type private NominalIntEntryBodies =
+    { CoreProgram: VerifiedIrProgram
+      CoreCompilerContext: Compiler.IrLoweringContext
+      MetersConstruct: VerifiedIrBody
+      OrderIdConstruct: VerifiedIrBody
+      HostIdentityPair: VerifiedIrBody
+      HostIdentityPairConstruct: VerifiedIrBody
+      MetersLocalCall: VerifiedIrBody
+      OrderIdLocalCall: VerifiedIrBody
+      WrapUnwrap: VerifiedIrBody
+      NestedProgram: VerifiedIrProgram
+      NestedCompilerContext: Compiler.IrLoweringContext
+      EnvelopeConstruct: VerifiedIrBody
+      EnvelopeIdentity: VerifiedIrBody
+      EnvelopeProjectOwner: VerifiedIrBody
+      EnvelopePairConstruct: VerifiedIrBody
+      EnvelopeEquals: VerifiedIrBody
+      OptionSomeConstruct: VerifiedIrBody
+      OptionNoneConstruct: VerifiedIrBody
+      OptionIdentity: VerifiedIrBody
+      OptionMatch: VerifiedIrBody
+      OptionSomePairConstruct: VerifiedIrBody
+      OptionEquals: VerifiedIrBody
+      ResultOkConstruct: VerifiedIrBody
+      ResultErrorConstruct: VerifiedIrBody
+      ResultIdentity: VerifiedIrBody
+      ResultMatch: VerifiedIrBody
+      ResultOkErrorPairConstruct: VerifiedIrBody
+      ResultEquals: VerifiedIrBody
+      FailAfterSumAllocation: VerifiedIrBody
+      UnsupportedCases: (string * VerifiedIrProgram * VerifiedIrBody) list }
+
 [<Struct; StructLayout(LayoutKind.Sequential, Pack = 8)>]
 type private RawOwningStackContext =
     val mutable AbiVersion: uint32
@@ -1285,6 +1317,320 @@ fn sums.text-tail-identity(value: SumTextTail) -> SumTextTail {
       TailProjection = tailProjection
       RawIgnoreBodies = rawIgnoreBodies
       FailAfterSumAllocation = failAfterSumAllocation }
+
+let private nominalIntWordEntry name inputs outputs body =
+    let sourceSpan = span ("<native-value-stack-nominal-int-" + name + ">") 1
+    let definition: WordDefinition =
+        { Name = name
+          Inputs = inputs
+          Outputs = outputs
+          Effects = Set.empty
+          Maturity = LibraryWord
+          Revision = 1
+          Documentation = "Compiler-minted nominal Int conformance helper."
+          Body = body
+          SourceText = "compiler-minted nominal Int conformance helper"
+          Span = sourceSpan }
+    { Definition = definition
+      Builtin = None
+      Status = Persistent
+      Maturity = LibraryWord
+      Revision = 1 }
+
+let private nominalIntScalarDefinition name baseType validator =
+    { Name = name
+      BaseType = baseType
+      Validator = validator
+      SourceText = "scalar " + name
+      Span = span ("<native-value-stack-scalar-" + name + ">") 1 }
+
+let private nominalIntCompilerContext
+    (extraWords: WordEntry list)
+    (records: RecordDefinition list)
+    (scalarDefinitions: (ScalarTypeDefinition * string * string) list) : Compiler.IrLoweringContext =
+    let recordMap = records |> List.map (fun record -> record.Name, record) |> Map.ofList
+    let generatedScalarWords =
+        scalarDefinitions
+        |> List.collect (fun (scalar, constructorName, accessorName) ->
+            let generatedEntry builtin wordName inputs outputs =
+                let sourceSpan = span ("<generated-native-value-stack-scalar-" + scalar.Name + ">") 1
+                let definition: WordDefinition =
+                    { Name = wordName
+                      Inputs = inputs
+                      Outputs = outputs
+                      Effects = Set.empty
+                      Maturity = LibraryWord
+                      Revision = 1
+                      Documentation = "Generated scalar operation."
+                      Body = []
+                      SourceText = "compiler-minted generated scalar operation"
+                      Span = sourceSpan }
+                { Definition = definition
+                  Builtin = Some builtin
+                  Status = Persistent
+                  Maturity = LibraryWord
+                  Revision = 1 }
+            [ generatedEntry (ScalarConstructor scalar.Name) constructorName [ scalar.BaseType ] [ TNamed scalar.Name ]
+              generatedEntry (ScalarAccessor scalar.Name) accessorName [ TNamed scalar.Name ] [ scalar.BaseType ] ])
+    let words =
+        extraWords @ generatedRecordEntries recordMap @ generatedScalarWords
+        |> List.fold (fun found entry -> Map.add entry.Definition.Name entry found) Compiler.primitives
+    let wordIds =
+        words
+        |> Map.toList
+        |> List.map (fun (name, entry) ->
+            let prefix =
+                match entry.Builtin with
+                | Some(BuiltinOp _) -> "primitive-"
+                | Some _ -> "generated-"
+                | None -> "user-"
+            name, WordId(prefix + name))
+        |> Map.ofList
+    let scalars = scalarDefinitions |> List.map (fun (scalar, _, _) -> scalar.Name, scalar) |> Map.ofList
+    { Words = words
+      Records = recordMap
+      Scalars = scalars
+      Enums = Map.empty
+      WordIds = wordIds }
+
+let private nominalIntProgramTypeIds (program: VerifiedIrProgram) =
+    let typeName = function
+        | IrRecordDefinition record -> record.TypeName
+        | IrScalarDefinition scalar -> scalar.TypeName
+        | IrEnumDefinition enumDefinition -> enumDefinition.TypeName
+    VerifiedIrProgram.inspect program
+    |> fun inspected -> inspected.NominalTypesByKey
+    |> Map.toList
+    |> List.mapi (fun index (ProgramTypeKey key, definition) ->
+        typeName definition, (key, uint32 (index + 4)))
+    |> Map.ofList
+
+let private compileNominalIntEntries () =
+    let site name column = span ("<native-value-stack-nominal-int-" + name + ">") column
+    let meters = nominalIntScalarDefinition "Meters" TInt None
+    let orderId = nominalIntScalarDefinition "OrderId" TInt None
+    let metersConstructor = "meters.new"
+    let metersAccessor = "meters.value"
+    let orderIdConstructor = "orderId.new"
+    let orderIdAccessor = "orderId.value"
+    let scalarDefinitions =
+        [ meters, metersConstructor, metersAccessor
+          orderId, orderIdConstructor, orderIdAccessor ]
+    let metersIdentity = nominalIntWordEntry "nominal.meters.identity" [ TNamed "Meters" ] [ TNamed "Meters" ] []
+    let orderIdIdentity = nominalIntWordEntry "nominal.order-id.identity" [ TNamed "OrderId" ] [ TNamed "OrderId" ] []
+    let coreContext = nominalIntCompilerContext [ metersIdentity; orderIdIdentity ] [] scalarDefinitions
+    let coreProgram = Compiler.compileIrProgramWithSourceOrigins coreContext Map.empty
+    let coreBody name inputs expressions =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins coreContext coreProgram name inputs expressions Map.empty
+    let metersConstruct = coreBody "native-value-stack-nominal-int-construct-meters" [ TInt ] [ Call(metersConstructor, site "construct-meters" 1) ]
+    let orderIdConstruct = coreBody "native-value-stack-nominal-int-construct-order-id" [ TInt ] [ Call(orderIdConstructor, site "construct-order-id" 1) ]
+    let hostIdentityPair =
+        coreBody "native-value-stack-nominal-int-host-identity-pair" [ TNamed "Meters"; TNamed "OrderId" ]
+            [ Call("nominal.order-id.identity", site "order-id-identity" 1)
+              Call("swap", site "identity-swap-left" 2)
+              Call("nominal.meters.identity", site "meters-identity" 3)
+              Call("swap", site "identity-swap-right" 4) ]
+    let metersLocalCall =
+        coreBody "native-value-stack-nominal-int-local-call" [ TNamed "Meters" ]
+            [ Let("nominal_meter_saved", site "local-store" 1)
+              Load("nominal_meter_saved", site "local-load" 2)
+              Call("nominal.meters.identity", site "ordinary-call" 3) ]
+    let orderIdLocalCall =
+        coreBody "native-value-stack-nominal-int-order-id-local-call" [ TNamed "OrderId" ]
+            [ Let("nominal_order_id_saved", site "order-id-local-store" 1)
+              Load("nominal_order_id_saved", site "order-id-local-load" 2)
+              Call("nominal.order-id.identity", site "order-id-ordinary-call" 3) ]
+    let wrapUnwrap =
+        coreBody "native-value-stack-nominal-int-wrap-unwrap" [ TInt ]
+            [ Call(metersConstructor, site "wrap" 1)
+              Call(metersAccessor, site "unwrap" 2) ]
+    let hostIdentityPairConstruct =
+        coreBody "native-value-stack-nominal-int-host-pair-construct" [ TInt; TInt ]
+            [ Let("nominal_order_id_raw", site "pair-order-id-save" 1)
+              Call(metersConstructor, site "pair-meters-wrap" 2)
+              Load("nominal_order_id_raw", site "pair-order-id-load" 3)
+              Call(orderIdConstructor, site "pair-order-id-wrap" 4) ]
+    let envelopeRecord: RecordDefinition =
+        { Name = "OwnerEnvelope"
+          Fields = [ { Name = "owner"; Type = TNamed "Meters" }; { Name = "tail"; Type = TString } ]
+          Validator = None
+          SourceText = "record OwnerEnvelope { owner: Meters; tail: String }"
+          Span = site "owner-envelope" 1 }
+    let envelopeIdentity = nominalIntWordEntry "nominal.envelope.identity" [ TNamed "OwnerEnvelope" ] [ TNamed "OwnerEnvelope" ] []
+    let optionIdentity = nominalIntWordEntry "nominal.option-identity" [ TOption(TNamed "Meters") ] [ TOption(TNamed "Meters") ] []
+    let resultIdentity = nominalIntWordEntry "nominal.result-identity" [ TResult(TNamed "Meters", TNamed "OrderId") ] [ TResult(TNamed "Meters", TNamed "OrderId") ] []
+    let rawIntIdentity = nominalIntWordEntry "nominal.raw-int.identity" [ TInt ] [ TInt ] []
+    let nestedContext =
+        nominalIntCompilerContext [ envelopeIdentity; optionIdentity; resultIdentity; rawIntIdentity ] [ envelopeRecord ] scalarDefinitions
+    let nestedProgram = Compiler.compileIrProgramWithSourceOrigins nestedContext Map.empty
+    let nestedBody name inputs expressions =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins nestedContext nestedProgram name inputs expressions Map.empty
+    let envelopeConstruct =
+        nestedBody "native-value-stack-nominal-int-envelope-construct" []
+            [ Scope(
+                [ Push(LInt -42L, site "envelope-owner-value" 1)
+                  Call(metersConstructor, site "envelope-wrap-owner" 2)
+                  Push(LString "tail", site "envelope-tail-value" 3)
+                  Call("ownerEnvelope.new", site "envelope-construct" 4) ],
+                site "envelope-escaping-scope" 5) ]
+    let envelopeIdentityBody = nestedBody "native-value-stack-nominal-int-envelope-identity" [ TNamed "OwnerEnvelope" ] [ Call("nominal.envelope.identity", site "envelope-identity" 1) ]
+    let envelopeProjectOwner =
+        nestedBody "native-value-stack-nominal-int-envelope-project-owner" [ TNamed "OwnerEnvelope" ]
+            [ Scope(
+                [ Call("ownerEnvelope.owner", site "envelope-owner" 1)
+                  Call(metersAccessor, site "envelope-owner-unwrap" 2)
+                  Call("nominal.raw-int.identity", site "envelope-owner-int-helper" 3)
+                  Push(LString "temporary-in-scope", site "envelope-scope-string" 4)
+                  Call("drop", site "envelope-scope-string-drop" 5) ],
+                site "envelope-owner-scope" 6)
+              Push(LString "after-scope", site "envelope-later-string" 7)
+              Call("drop", site "envelope-later-string-drop" 8) ]
+    let envelopePairConstruct =
+        nestedBody "native-value-stack-nominal-int-envelope-pair-construct" [ TInt; TInt ]
+            [ Let("nominal_envelope_right_raw", site "envelope-right-save" 1)
+              Call(metersConstructor, site "envelope-left-wrap" 2)
+              Push(LString "tail", site "envelope-left-tail" 3)
+              Call("ownerEnvelope.new", site "envelope-left-build" 4)
+              Load("nominal_envelope_right_raw", site "envelope-right-load" 5)
+              Call(metersConstructor, site "envelope-right-wrap" 6)
+              Push(LString "tail", site "envelope-right-tail" 7)
+              Call("ownerEnvelope.new", site "envelope-right-build" 8) ]
+    let envelopeEquals = nestedBody "native-value-stack-nominal-int-envelope-equals" [ TNamed "OwnerEnvelope"; TNamed "OwnerEnvelope" ] [ Call("equals", site "envelope-equals" 1) ]
+    let optionSomeConstruct =
+        nestedBody "native-value-stack-nominal-int-option-some-construct" [ TInt ]
+            [ Call(metersConstructor, site "option-some-wrap" 1)
+              ConstructContainer(OptionSome, [ TNamed "Meters" ], site "option-some-build" 2) ]
+    let optionNoneConstruct =
+        nestedBody "native-value-stack-nominal-int-option-none-construct" []
+            [ ConstructContainer(OptionNone, [ TNamed "Meters" ], site "option-none-build" 1) ]
+    let optionIdentityBody = nestedBody "native-value-stack-nominal-int-option-identity" [ TOption(TNamed "Meters") ] [ Call("nominal.option-identity", site "option-identity" 1) ]
+    let optionMatch =
+        nestedBody "native-value-stack-nominal-int-option-match" [ TOption(TNamed "Meters") ]
+            [ MatchOption(
+                "nominal_option_payload",
+                [ Load("nominal_option_payload", site "option-some-extract" 1) ],
+                [ Push(LInt 0L, site "option-none-default" 2)
+                  Call(metersConstructor, site "option-none-default-wrap" 3) ],
+                site "option-match" 4) ]
+    let optionSomePairConstruct =
+        nestedBody "native-value-stack-nominal-int-option-some-pair-construct" [ TInt; TInt ]
+            [ Let("nominal_option_right_raw", site "option-right-save" 1)
+              Call(metersConstructor, site "option-left-wrap" 2)
+              ConstructContainer(OptionSome, [ TNamed "Meters" ], site "option-left-build" 3)
+              Load("nominal_option_right_raw", site "option-right-load" 4)
+              Call(metersConstructor, site "option-right-wrap" 5)
+              ConstructContainer(OptionSome, [ TNamed "Meters" ], site "option-right-build" 6) ]
+    let optionEquals = nestedBody "native-value-stack-nominal-int-option-equals" [ TOption(TNamed "Meters"); TOption(TNamed "Meters") ] [ Call("equals", site "option-equals" 1) ]
+    let resultOkConstruct =
+        nestedBody "native-value-stack-nominal-int-result-ok-construct" [ TInt ]
+            [ Call(metersConstructor, site "result-ok-wrap" 1)
+              ConstructContainer(ResultOk, [ TNamed "Meters"; TNamed "OrderId" ], site "result-ok-build" 2) ]
+    let resultErrorConstruct =
+        nestedBody "native-value-stack-nominal-int-result-error-construct" [ TInt ]
+            [ Call(orderIdConstructor, site "result-error-wrap" 1)
+              ConstructContainer(ResultError, [ TNamed "Meters"; TNamed "OrderId" ], site "result-error-build" 2) ]
+    let resultIdentityBody = nestedBody "native-value-stack-nominal-int-result-identity" [ TResult(TNamed "Meters", TNamed "OrderId") ] [ Call("nominal.result-identity", site "result-identity" 1) ]
+    let resultMatch =
+        nestedBody "native-value-stack-nominal-int-result-match" [ TResult(TNamed "Meters", TNamed "OrderId") ]
+            [ MatchResult(
+                "nominal_result_ok",
+                "nominal_result_error",
+                [ Load("nominal_result_ok", site "result-ok-extract" 1) ],
+                [ Load("nominal_result_error", site "result-error-extract" 2)
+                  Call(orderIdAccessor, site "result-error-unwrap" 3)
+                  Call(metersConstructor, site "result-error-retag" 4) ],
+                site "result-match" 5) ]
+    let resultOkErrorPairConstruct =
+        nestedBody "native-value-stack-nominal-int-result-ok-error-pair-construct" [ TInt; TInt ]
+            [ Let("nominal_result_error_raw", site "result-error-save" 1)
+              Call(metersConstructor, site "result-ok-wrap" 2)
+              ConstructContainer(ResultOk, [ TNamed "Meters"; TNamed "OrderId" ], site "result-ok-pair-build" 3)
+              Load("nominal_result_error_raw", site "result-error-load" 4)
+              Call(orderIdConstructor, site "result-error-wrap" 5)
+              ConstructContainer(ResultError, [ TNamed "Meters"; TNamed "OrderId" ], site "result-error-pair-build" 6) ]
+    let resultEquals = nestedBody "native-value-stack-nominal-int-result-equals" [ TResult(TNamed "Meters", TNamed "OrderId"); TResult(TNamed "Meters", TNamed "OrderId") ] [ Call("equals", site "result-equals" 1) ]
+    let failAfterSumAllocation =
+        nestedBody "native-value-stack-nominal-int-failure-after-sum-allocation" []
+            [ Push(LInt -42L, site "failure-value" 1)
+              Call(metersConstructor, site "failure-wrap" 2)
+              ConstructContainer(OptionSome, [ TNamed "Meters" ], site "failure-sum-build" 3)
+              Call("drop", site "failure-drop" 4)
+              Push(LInt 1L, site "failure-dividend" 5)
+              Push(LInt 0L, site "failure-divisor" 6)
+              Call("divide", site "failure-divide" 7) ]
+
+    let positiveValidator =
+        nominalIntWordEntry "is-positive?" [ TInt ] [ TBool ]
+            [ Push(LInt 0L, site "positive-zero" 1)
+              Call("int.greater-than", site "positive-test" 2) ]
+    let unsupportedCase name baseType validator containerKind =
+        let scalar = nominalIntScalarDefinition name baseType validator
+        let contextWords = if validator.IsSome then [ positiveValidator ] else []
+        let context = nominalIntCompilerContext contextWords [] [ scalar, name + ".new", name + ".value" ]
+        let program = Compiler.compileIrProgramWithSourceOrigins context Map.empty
+        let bodyExpressions =
+            match containerKind with
+            | "option-none" -> [ ConstructContainer(OptionNone, [ TNamed name ], site (name + "-inactive-option") 1) ]
+            | "result-ok" ->
+                [ Push(LInt 1L, site (name + "-active-int") 1)
+                  ConstructContainer(ResultOk, [ TInt; TNamed name ], site (name + "-inactive-error") 2) ]
+            | "result-error" ->
+                [ Push(LInt 1L, site (name + "-active-int") 1)
+                  ConstructContainer(ResultError, [ TNamed name; TInt ], site (name + "-inactive-ok") 2) ]
+            | other -> invalidOp $"Unknown nominal Int unsupported case container '{other}'."
+        let body =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins context program ("native-value-stack-unsupported-" + name) [] bodyExpressions Map.empty
+        name, program, body
+    let unsupportedCases =
+        [ unsupportedCase "PositiveId" TInt (Some "is-positive?") "result-ok"
+          unsupportedCase "BoolTag" TBool None "option-none"
+          unsupportedCase "TextTag" TString None "result-ok"
+          unsupportedCase "FloatTag" TFloat None "result-error" ]
+
+    let coreBodies =
+        [ metersConstruct; orderIdConstruct; hostIdentityPair; hostIdentityPairConstruct
+          metersLocalCall; orderIdLocalCall; wrapUnwrap ]
+    let nestedBodies =
+        [ envelopeConstruct; envelopeIdentityBody; envelopeProjectOwner; envelopePairConstruct; envelopeEquals
+          optionSomeConstruct; optionNoneConstruct; optionIdentityBody; optionMatch; optionSomePairConstruct; optionEquals
+          resultOkConstruct; resultErrorConstruct; resultIdentityBody; resultMatch; resultOkErrorPairConstruct; resultEquals
+          failAfterSumAllocation ]
+    if not (VerifiedIrProgram.isBackendExecutable coreProgram)
+       || coreBodies |> List.exists (fun body -> not (Object.ReferenceEquals(VerifiedIrBody.program body, coreProgram)))
+       || not (VerifiedIrProgram.isBackendExecutable nestedProgram)
+       || nestedBodies |> List.exists (fun body -> not (Object.ReferenceEquals(VerifiedIrBody.program body, nestedProgram))) then
+        invalidOp "Nominal Int conformance bodies must share their compiler-authorized verified program instances."
+
+    { CoreProgram = coreProgram
+      CoreCompilerContext = coreContext
+      MetersConstruct = metersConstruct
+      OrderIdConstruct = orderIdConstruct
+      HostIdentityPair = hostIdentityPair
+      HostIdentityPairConstruct = hostIdentityPairConstruct
+      MetersLocalCall = metersLocalCall
+      OrderIdLocalCall = orderIdLocalCall
+      WrapUnwrap = wrapUnwrap
+      NestedProgram = nestedProgram
+      NestedCompilerContext = nestedContext
+      EnvelopeConstruct = envelopeConstruct
+      EnvelopeIdentity = envelopeIdentityBody
+      EnvelopeProjectOwner = envelopeProjectOwner
+      EnvelopePairConstruct = envelopePairConstruct
+      EnvelopeEquals = envelopeEquals
+      OptionSomeConstruct = optionSomeConstruct
+      OptionNoneConstruct = optionNoneConstruct
+      OptionIdentity = optionIdentityBody
+      OptionMatch = optionMatch
+      OptionSomePairConstruct = optionSomePairConstruct
+      OptionEquals = optionEquals
+      ResultOkConstruct = resultOkConstruct
+      ResultErrorConstruct = resultErrorConstruct
+      ResultIdentity = resultIdentityBody
+      ResultMatch = resultMatch
+      ResultOkErrorPairConstruct = resultOkErrorPairConstruct
+      ResultEquals = resultEquals
+      FailAfterSumAllocation = failAfterSumAllocation
+      UnsupportedCases = unsupportedCases }
 
 let private inspectRawOwningContextAbi (abiOracle: JsonElement) =
     let expectedSize = abiOracle.GetProperty("contextSizeBytes").GetInt32()
@@ -5651,6 +5997,425 @@ let private runSumConformance
         "unwindCaseCount", box 1
         "descriptorGraphRejectionCount", box (oracle.GetProperty("descriptorGraphRejections").GetArrayLength()) ]
 
+let private runNominalIntConformance
+    (checks: ResizeArray<obj>)
+    (failures: ResizeArray<string>)
+    (fixture: JsonElement)
+    (artifactRoot: string)
+    (optimization: LlvmOptimization)
+    (optimizationName: string)
+    (entries: NominalIntEntryBodies) =
+    let oracle = fixture.GetProperty("nominalIntConformance")
+    let toolchain = LlvmToolchain.discover ()
+    let compile name body =
+        OwningStackAot.compile toolchain optimization (Path.Combine(artifactRoot, "owning-stack", "nominal-int", optimizationName, name)) body
+    let coreHost = noOpHost (NativeDiagnosticSources.fromLoweringContext entries.CoreCompilerContext)
+    let nestedHost = noOpHost (NativeDiagnosticSources.fromLoweringContext entries.NestedCompilerContext)
+    let interpret host body root arguments =
+        use result = IrInterpreter.executeBodyWithInputs host (VerifiedIrBody.inspect body).BodyName body root arguments
+        result.Decode()
+    let interpretRoot host body arguments =
+        IrInterpreter.executeBodyWithInputs host (VerifiedIrBody.inspect body).BodyName body None arguments
+    let outputBuffer length = Array.create length 0xA5uy
+    let expectedCoreIds = oracle.GetProperty("identityProgram").GetProperty("typeIds")
+    let coreIds = nominalIntProgramTypeIds entries.CoreProgram
+    let metersKeyIndex, metersTypeId = coreIds["Meters"]
+    let orderIdKeyIndex, orderIdTypeId = coreIds["OrderId"]
+    let coreIdsPass =
+        metersKeyIndex = 0
+        && orderIdKeyIndex = 1
+        && int metersTypeId = expectedCoreIds.GetProperty("Meters").GetInt32()
+        && int orderIdTypeId = expectedCoreIds.GetProperty("OrderId").GetInt32()
+        && metersTypeId <> orderIdTypeId
+    recordCheck checks failures $"nominal-int/{optimizationName}/isolated-type-ids" coreIdsPass (jsonObject [
+        "metersProgramTypeKey", box metersKeyIndex
+        "orderIdProgramTypeKey", box orderIdKeyIndex
+        "metersTypeId", box metersTypeId
+        "expectedMetersTypeId", box (expectedCoreIds.GetProperty("Meters").GetInt32())
+        "orderIdTypeId", box orderIdTypeId
+        "expectedOrderIdTypeId", box (expectedCoreIds.GetProperty("OrderId").GetInt32()) ])
+    use hostIdentityProgram = compile "host-identity" entries.HostIdentityPair
+    use wrapUnwrapProgram = compile "wrap-unwrap" entries.WrapUnwrap
+    use metersLocalProgram = compile "meters-local-call" entries.MetersLocalCall
+    use orderIdLocalProgram = compile "order-id-local-call" entries.OrderIdLocalCall
+    let metersLayout = hostIdentityProgram.Layouts |> List.tryFind (fun layout -> layout.TypeName = "Meters")
+    let orderIdLayout = hostIdentityProgram.Layouts |> List.tryFind (fun layout -> layout.TypeName = "OrderId")
+    let scalarLayoutsPass =
+        [ metersLayout; orderIdLayout ]
+        |> List.forall (function
+            | Some layout ->
+                layout.PayloadBytes = 8 && layout.ExtentBytes = 8
+                && layout.MinimumPayloadBytes = 8 && layout.MinimumExtentBytes = 8
+                && not layout.IsDynamic
+            | None -> false)
+    recordCheck checks failures $"nominal-int/{optimizationName}/distinct-fixed-int-layouts" scalarLayoutsPass (jsonObject [
+        "meters", box (metersLayout |> Option.map (fun layout -> jsonObject [ "payloadBytes", box layout.PayloadBytes; "extentBytes", box layout.ExtentBytes; "isDynamic", box layout.IsDynamic ]) |> Option.defaultValue null)
+        "orderId", box (orderIdLayout |> Option.map (fun layout -> jsonObject [ "payloadBytes", box layout.PayloadBytes; "extentBytes", box layout.ExtentBytes; "isDynamic", box layout.IsDynamic ]) |> Option.defaultValue null) ])
+    for item in oracle.GetProperty("signedFixtures").EnumerateArray() do
+        let caseName = item.GetProperty("name").GetString()
+        let value = item.GetProperty("value").GetInt64()
+        let oneBytes = bytesFromHex (item.GetProperty("intBytesHex").GetString())
+        let pairBytes = bytesFromHex (item.GetProperty("pairBytesHex").GetString())
+        let expectedPair = [ NamedValue("Meters", IntValue value); NamedValue("OrderId", IntValue value) ]
+        use pairFactory = interpretRoot coreHost entries.HostIdentityPairConstruct [ IrEntryArgument.IntArgument value; IrEntryArgument.IntArgument value ]
+        let interpretedPair = interpret coreHost entries.HostIdentityPair (Some pairFactory) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+        let pairOutput = outputBuffer pairBytes.Length
+        let pairResult = hostIdentityProgram.ExecuteInto(expectedPair, 256, pairOutput)
+        let pairTypeIds =
+            pairResult.LayoutEvents
+            |> List.filter (fun event -> event.Kind = "descriptor-transfer")
+            |> List.map (fun event -> event.TypeId)
+            |> Set.ofList
+        let pairPass =
+            pairFactory.Decode() = expectedPair
+            && interpretedPair = expectedPair
+            && pairResult.Values = interpretedPair
+            && pairOutput = pairBytes
+            && pairTypeIds.Contains metersTypeId
+            && pairTypeIds.Contains orderIdTypeId
+            && int64Property (box pairResult.Metrics) "DeepCopyBytes" = 0L
+            && int64Property (box pairResult.Metrics) "MoveBytes" = 0L
+        recordCheck checks failures $"nominal-int/{optimizationName}/{caseName}/host-nominal-identity" pairPass (jsonObject [
+            "interpreterValues", box (ValueInspection.toJson entries.CoreProgram interpretedPair)
+            "owningValues", box (ValueInspection.toJson entries.CoreProgram pairResult.Values)
+            "expectedRetainedBytes", box (bytesHex pairBytes)
+            "actualRetainedBytes", box (bytesHex pairOutput)
+            "descriptorTypeIds", box (pairTypeIds |> Set.toList)
+            "metersTypeId", box metersTypeId
+            "orderIdTypeId", box orderIdTypeId
+            "deepCopyBytes", box pairResult.Metrics.DeepCopyBytes
+            "moveBytes", box pairResult.Metrics.MoveBytes ])
+        checkTraceUsable checks failures $"nominal-int/{optimizationName}/{caseName}/host-identity-trace" pairResult.Metrics pairResult.LayoutEvents |> ignore
+        use wrapRoot = interpretRoot coreHost entries.WrapUnwrap [ IrEntryArgument.IntArgument value ]
+        let interpretedWrap = wrapRoot.Decode()
+        let wrapOutput = outputBuffer oneBytes.Length
+        let wrapResult = wrapUnwrapProgram.ExecuteInto([ IntValue value ], 128, wrapOutput)
+        let wrapPass =
+            interpretedWrap = [ IntValue value ]
+            && wrapResult.Values = interpretedWrap
+            && wrapOutput = oneBytes
+            && int64Property (box wrapResult.Metrics) "DeepCopyBytes" = 0L
+            && int64Property (box wrapResult.Metrics) "MoveBytes" = 0L
+        recordCheck checks failures $"nominal-int/{optimizationName}/{caseName}/wrap-unwrap-retags" wrapPass (jsonObject [
+            "interpreterValues", box (ValueInspection.toJson entries.CoreProgram interpretedWrap)
+            "owningValues", box (ValueInspection.toJson entries.CoreProgram wrapResult.Values)
+            "expectedRetainedBytes", box (bytesHex oneBytes)
+            "actualRetainedBytes", box (bytesHex wrapOutput)
+            "deepCopyBytes", box wrapResult.Metrics.DeepCopyBytes
+            "moveBytes", box wrapResult.Metrics.MoveBytes ])
+    let negative = oracle.GetProperty("signedFixtures").EnumerateArray() |> Seq.find (fun item -> item.GetProperty("name").GetString() = "negative")
+    let negativeValue = negative.GetProperty("value").GetInt64()
+    let negativeBytes = bytesFromHex (negative.GetProperty("intBytesHex").GetString())
+    use metersRoot = interpretRoot coreHost entries.MetersConstruct [ IrEntryArgument.IntArgument negativeValue ]
+    let metersExpected = [ NamedValue("Meters", IntValue negativeValue) ]
+    let metersInterpreted = interpret coreHost entries.MetersLocalCall (Some metersRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let metersOutput = outputBuffer negativeBytes.Length
+    let metersResult = metersLocalProgram.ExecuteInto(metersExpected, 128, metersOutput)
+    recordCheck checks failures $"nominal-int/{optimizationName}/locals-and-calls-preserve-meters" (metersRoot.Decode() = metersExpected && metersInterpreted = metersExpected && metersResult.Values = metersInterpreted && metersOutput = negativeBytes && metersResult.Metrics.DeepCopyBytes = 0UL && metersResult.Metrics.MoveBytes = 0UL) (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.CoreProgram metersInterpreted)
+        "owningValues", box (ValueInspection.toJson entries.CoreProgram metersResult.Values)
+        "retainedBytes", box (bytesHex metersOutput)
+        "deepCopyBytes", box metersResult.Metrics.DeepCopyBytes
+        "moveBytes", box metersResult.Metrics.MoveBytes ])
+    use orderIdRoot = interpretRoot coreHost entries.OrderIdConstruct [ IrEntryArgument.IntArgument negativeValue ]
+    let orderIdExpected = [ NamedValue("OrderId", IntValue negativeValue) ]
+    let orderIdInterpreted = interpret coreHost entries.OrderIdLocalCall (Some orderIdRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let orderIdOutput = outputBuffer negativeBytes.Length
+    let orderIdResult = orderIdLocalProgram.ExecuteInto(orderIdExpected, 128, orderIdOutput)
+    recordCheck checks failures $"nominal-int/{optimizationName}/locals-and-calls-preserve-order-id" (orderIdRoot.Decode() = orderIdExpected && orderIdInterpreted = orderIdExpected && orderIdResult.Values = orderIdInterpreted && orderIdOutput = negativeBytes && orderIdResult.Metrics.DeepCopyBytes = 0UL && orderIdResult.Metrics.MoveBytes = 0UL) (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.CoreProgram orderIdInterpreted)
+        "owningValues", box (ValueInspection.toJson entries.CoreProgram orderIdResult.Values)
+        "retainedBytes", box (bytesHex orderIdOutput)
+        "deepCopyBytes", box orderIdResult.Metrics.DeepCopyBytes
+        "moveBytes", box orderIdResult.Metrics.MoveBytes ])
+    let badHostInputs = [
+        "bare-int-for-meters", metersLocalProgram, IntValue 0L
+        "wrong-nominal-for-meters", metersLocalProgram, NamedValue("OrderId", IntValue 0L)
+        "same-name-record-for-meters", metersLocalProgram, RecordValue("Meters", Map.empty)
+        "wrong-nominal-for-order-id", orderIdLocalProgram, NamedValue("Meters", IntValue 0L) ]
+    let expectedErrors = oracle.GetProperty("expectedErrors")
+    let expectedHostExceptionType = expectedErrors.GetProperty("hostInputExceptionType").GetString()
+    let expectedHostParameterName = expectedErrors.GetProperty("hostInputParameterName").GetString()
+    for label, program, value in badHostInputs do
+        let sentinel = outputBuffer 8
+        let before = Array.copy sentinel
+        let mutable exceptionType = ""
+        let mutable parameterName = ""
+        let mutable code = ""
+        try program.ExecuteInto([ value ], 128, sentinel) |> ignore
+        with error ->
+            exceptionType <- error.GetType().FullName
+            code <- exceptionCode error
+            match error with
+            | :? ArgumentException as argumentError -> parameterName <- Option.ofObj argumentError.ParamName |> Option.defaultValue ""
+            | _ -> ()
+        let expectedCodecRejection = exceptionType = expectedHostExceptionType && parameterName = expectedHostParameterName
+        recordCheck checks failures $"nominal-int/{optimizationName}/reject-{label}-atomically" (expectedCodecRejection && sentinel = before) (jsonObject [
+            "rejected", box expectedCodecRejection
+            "expectedExceptionType", box expectedHostExceptionType
+            "actualExceptionType", box exceptionType
+            "expectedParameterName", box expectedHostParameterName
+            "actualParameterName", box parameterName
+            "diagnosticCode", box code
+            "retainedBufferUnchanged", box (sentinel = before) ])
+    let wrongAccessorCode =
+        try
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                entries.CoreCompilerContext entries.CoreProgram "native-value-stack-nominal-int-wrong-accessor" [ TInt ]
+                [ Call("orderId.new", span "<wrong-order-id-wrap>" 1); Call("meters.value", span "<wrong-meters-accessor>" 2) ] Map.empty
+            |> ignore
+            ""
+        with error -> diagnosticCode error
+    let expectedWrongAccessorCode = expectedErrors.GetProperty("wrongAccessorDiagnosticCode").GetString()
+    recordCheck checks failures $"nominal-int/{optimizationName}/wrong-accessor-rejected-by-verifier" (wrongAccessorCode = expectedWrongAccessorCode) (jsonObject [
+        "calls", box [| "orderId.new"; "meters.value" |]
+        "expectedDiagnosticCode", box expectedWrongAccessorCode
+        "actualDiagnosticCode", box wrongAccessorCode
+        "diagnosticCode", box wrongAccessorCode ])
+
+    let ownerOracle = oracle.GetProperty("ownerEnvelope")
+    let ownerValue =
+        RecordValue("OwnerEnvelope", Map.ofList [
+            "owner", NamedValue("Meters", IntValue(ownerOracle.GetProperty("ownerValue").GetInt64()))
+            "tail", StringValue(ownerOracle.GetProperty("tail").GetString()) ])
+    let ownerBytes = bytesFromHex (ownerOracle.GetProperty("retainedBytesHex").GetString())
+    use envelopeConstructProgram = compile "owner-envelope-construct" entries.EnvelopeConstruct
+    use envelopeIdentityProgram = compile "owner-envelope-identity" entries.EnvelopeIdentity
+    use envelopeProjectProgram = compile "owner-envelope-project-owner" entries.EnvelopeProjectOwner
+    use envelopeEqualsProgram = compile "owner-envelope-equals" entries.EnvelopeEquals
+    use recordPairRoot = interpretRoot nestedHost entries.EnvelopePairConstruct [ IrEntryArgument.IntArgument(ownerOracle.GetProperty("ownerValue").GetInt64()); IrEntryArgument.IntArgument(ownerOracle.GetProperty("ownerValue").GetInt64()) ]
+    let envelopeFactoryInterpreter = interpret nestedHost entries.EnvelopeConstruct None []
+    let envelopeConstructionOutput = outputBuffer ownerBytes.Length
+    let envelopeConstruction = envelopeConstructProgram.ExecuteInto([], 512, envelopeConstructionOutput)
+    recordCheck checks failures $"nominal-int/{optimizationName}/record-construction-and-tail-bytes" (envelopeFactoryInterpreter = [ ownerValue ] && envelopeConstruction.Values = envelopeFactoryInterpreter && envelopeConstructionOutput = ownerBytes && envelopeConstruction.Metrics.MoveBytes = 0UL && envelopeConstruction.Metrics.DeepCopyBytes = uint64 (ownerOracle.GetProperty("constructionDeepCopyBytes").GetInt32())) (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.NestedProgram envelopeFactoryInterpreter)
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram envelopeConstruction.Values)
+        "expectedRetainedBytes", box (bytesHex ownerBytes)
+        "actualRetainedBytes", box (bytesHex envelopeConstructionOutput)
+        "deepCopyBytes", box envelopeConstruction.Metrics.DeepCopyBytes
+        "expectedDeepCopyBytes", box (ownerOracle.GetProperty("constructionDeepCopyBytes").GetInt32())
+        "moveBytes", box envelopeConstruction.Metrics.MoveBytes ])
+    use ownerRoot = interpretRoot nestedHost entries.EnvelopeConstruct []
+    let interpretedEnvelopeIdentity = interpret nestedHost entries.EnvelopeIdentity (Some ownerRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let envelopeIdentityOutput = outputBuffer ownerBytes.Length
+    let envelopeIdentity = envelopeIdentityProgram.ExecuteInto([ ownerValue ], 512, envelopeIdentityOutput)
+    recordCheck checks failures $"nominal-int/{optimizationName}/record-host-roundtrip" (interpretedEnvelopeIdentity = [ ownerValue ] && envelopeIdentity.Values = interpretedEnvelopeIdentity && envelopeIdentityOutput = ownerBytes) (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedEnvelopeIdentity)
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram envelopeIdentity.Values)
+        "retainedBytes", box (bytesHex envelopeIdentityOutput) ])
+    let ownerInputValue = ownerOracle.GetProperty("ownerValue").GetInt64()
+    let interpretedOwnerProjection = interpret nestedHost entries.EnvelopeProjectOwner (Some ownerRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let ownerProjectionOutput = outputBuffer 8
+    let ownerProjection = envelopeProjectProgram.ExecuteInto([ ownerValue ], 512, ownerProjectionOutput)
+    let rangeOracle = oracle.GetProperty("ownerRangeTrace").GetProperty("expectedDescriptorTransfer")
+    let indexedOwnerEvents = ownerProjection.LayoutEvents |> List.indexed |> List.toArray
+    let ownerTransfers =
+        indexedOwnerEvents
+        |> Array.filter (fun (_, event) ->
+            event.Kind = "descriptor-transfer"
+            && event.TypeId = uint32 (rangeOracle.GetProperty("typeId").GetInt32())
+            && event.OffsetBytes = rangeOracle.GetProperty("offsetBytes").GetInt32()
+            && event.SourceOffsetBytes = Some(rangeOracle.GetProperty("sourceOffsetBytesOwnerEnd").GetInt32())
+            && event.SourceExtentBytes = Some(rangeOracle.GetProperty("sourceExtentBytesPayloadExtent").GetInt32()))
+    let scopeAllocationExtent = (stringBytesFromCodeUnitsHex (codeUnitsHexFromString "temporary-in-scope")).Length
+    let laterAllocationExtent = (stringBytesFromCodeUnitsHex (codeUnitsHexFromString "after-scope")).Length
+    let scopeAllocation = indexedOwnerEvents |> Array.tryFind (fun (_, event) -> event.Kind = "allocate" && event.TypeId = 7u && event.ExtentBytes = scopeAllocationExtent)
+    let laterAllocation = indexedOwnerEvents |> Array.tryFind (fun (index, event) -> event.Kind = "allocate" && event.TypeId = 7u && event.ExtentBytes = laterAllocationExtent && (scopeAllocation |> Option.exists (fun (scopeIndex, _) -> index > scopeIndex)))
+    let lastOwnerTransfer = ownerTransfers |> Array.tryLast
+    let ownerRangePass =
+        interpretedOwnerProjection = [ IntValue ownerInputValue ]
+        && ownerProjection.Values = interpretedOwnerProjection
+        && ownerProjectionOutput = bytesFromHex (ownerOracle.GetProperty("projectedOwnerBytesHex").GetString())
+        && ownerTransfers.Length > 0
+        && scopeAllocation.IsSome
+        && laterAllocation.IsSome
+        && (lastOwnerTransfer |> Option.exists (fun (transferIndex, _) -> laterAllocation |> Option.exists (fun (laterIndex, _) -> transferIndex > laterIndex)))
+        && int64Property (box ownerProjection.Metrics) "DeepCopyBytes" = oracle.GetProperty("ownerRangeTrace").GetProperty("literalDeepCopyBytes").GetInt64()
+        && int64Property (box ownerProjection.Metrics) "MoveBytes" = 0L
+    recordCheck checks failures $"nominal-int/{optimizationName}/scalar-first-record-preserves-full-owner-end" ownerRangePass (jsonObject [
+        "expectedOwnerEndBytes", box (rangeOracle.GetProperty("sourceOffsetBytesOwnerEnd").GetInt32())
+        "scalarFieldExtentBytes", box (rangeOracle.GetProperty("sourceExtentBytesPayloadExtent").GetInt32())
+        "ownerTransfers", box (ownerTransfers |> Array.map (fun (_, event) -> layoutEventDetails [ event ]))
+        "scopeStringAllocationExtentBytes", box scopeAllocationExtent
+        "laterStringAllocationExtentBytes", box laterAllocationExtent
+        "expectedLiteralDeepCopyBytes", box (oracle.GetProperty("ownerRangeTrace").GetProperty("literalDeepCopyBytes").GetInt64())
+        "actualDeepCopyBytes", box ownerProjection.Metrics.DeepCopyBytes
+        "actualMoveBytes", box ownerProjection.Metrics.MoveBytes
+        "laterAllocationFollowsScopeAllocation", box (scopeAllocation.IsSome && laterAllocation.IsSome)
+        "outputTransferFollowsLaterAllocation", box (lastOwnerTransfer |> Option.exists (fun (transferIndex, _) -> laterAllocation |> Option.exists (fun (laterIndex, _) -> transferIndex > laterIndex)))
+        "expectedRetainedBytes", box (ownerOracle.GetProperty("projectedOwnerBytesHex").GetString())
+        "actualRetainedBytes", box (bytesHex ownerProjectionOutput)
+        "arenaRewinds", box (ownerProjection.LayoutEvents |> List.filter (fun event -> event.Kind = "arena-rewind") |> layoutEventDetails)
+        "events", box (layoutEventDetails ownerProjection.LayoutEvents) ])
+    checkTraceUsable checks failures $"nominal-int/{optimizationName}/owner-range-trace-complete" ownerProjection.Metrics ownerProjection.LayoutEvents |> ignore
+    let interpretedEnvelopeEquality = interpret nestedHost entries.EnvelopeEquals (Some recordPairRoot) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    let envelopeEqualityOutput = outputBuffer 8
+    let envelopeEquality = envelopeEqualsProgram.ExecuteInto([ ownerValue; ownerValue ], 512, envelopeEqualityOutput)
+    recordCheck checks failures $"nominal-int/{optimizationName}/record-equality-retains-nominal-field" (interpretedEnvelopeEquality = [ BoolValue true ] && envelopeEquality.Values = interpretedEnvelopeEquality && envelopeEqualityOutput = bytesFromHex (oracle.GetProperty("booleans").GetProperty("trueBytesHex").GetString())) (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedEnvelopeEquality)
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram envelopeEquality.Values)
+        "retainedBytes", box (bytesHex envelopeEqualityOutput) ])
+
+    use optionSomeProgram = compile "option-some-construct" entries.OptionSomeConstruct
+    use optionNoneProgram = compile "option-none-construct" entries.OptionNoneConstruct
+    use optionIdentityProgram = compile "option-identity" entries.OptionIdentity
+    use optionMatchProgram = compile "option-match" entries.OptionMatch
+    use optionEqualsProgram = compile "option-equals" entries.OptionEquals
+    use optionSomeRoot = interpretRoot nestedHost entries.OptionSomeConstruct [ IrEntryArgument.IntArgument ownerInputValue ]
+    use optionNoneRoot = interpretRoot nestedHost entries.OptionNoneConstruct []
+    let optionOracle = oracle.GetProperty("option")
+    let optionSome = OptionValue(TNamed "Meters", Some(NamedValue("Meters", IntValue ownerInputValue)))
+    let optionNone = OptionValue(TNamed "Meters", None)
+    let optionSomeBytes = bytesFromHex (optionOracle.GetProperty("someBytesHex").GetString())
+    let optionNoneBytes = bytesFromHex (optionOracle.GetProperty("noneBytesHex").GetString())
+    let optionSomeConstructOutput = outputBuffer optionSomeBytes.Length
+    let optionSomeConstructResult = optionSomeProgram.ExecuteInto([ IntValue ownerInputValue ], 128, optionSomeConstructOutput)
+    recordCheck checks failures $"nominal-int/{optimizationName}/option-some-construction" (optionSomeRoot.Decode() = [ optionSome ] && optionSomeConstructResult.Values = [ optionSome ] && optionSomeConstructOutput = optionSomeBytes && optionSomeConstructResult.Metrics.DeepCopyBytes = uint64 (optionOracle.GetProperty("constructionDeepCopyBytes").GetInt32()) && optionSomeConstructResult.Metrics.MoveBytes = 0UL) (jsonObject [ "expectedRetainedBytes", box (bytesHex optionSomeBytes); "actualRetainedBytes", box (bytesHex optionSomeConstructOutput); "deepCopyBytes", box optionSomeConstructResult.Metrics.DeepCopyBytes ])
+    let optionNoneConstructOutput = outputBuffer optionNoneBytes.Length
+    let optionNoneConstructResult = optionNoneProgram.ExecuteInto([], 64, optionNoneConstructOutput)
+    recordCheck checks failures $"nominal-int/{optimizationName}/option-none-inactive-payload" (optionNoneRoot.Decode() = [ optionNone ] && optionNoneConstructResult.Values = [ optionNone ] && optionNoneConstructOutput = optionNoneBytes) (jsonObject [ "expectedRetainedBytes", box (bytesHex optionNoneBytes); "actualRetainedBytes", box (bytesHex optionNoneConstructOutput) ])
+    for optionName, optionRoot, optionValue, optionBytes in [ "some", optionSomeRoot, optionSome, optionSomeBytes; "none", optionNoneRoot, optionNone, optionNoneBytes ] do
+        let interpretedIdentity = interpret nestedHost entries.OptionIdentity (Some optionRoot) [ IrEntryArgument.RetainedRoot 0 ]
+        let identityOutput = outputBuffer optionBytes.Length
+        let identityResult = optionIdentityProgram.ExecuteInto([ optionValue ], 128, identityOutput)
+        recordCheck checks failures $"nominal-int/{optimizationName}/option-{optionName}-host-roundtrip" (interpretedIdentity = [ optionValue ] && identityResult.Values = interpretedIdentity && identityOutput = optionBytes) (jsonObject [ "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedIdentity); "owningValues", box (ValueInspection.toJson entries.NestedProgram identityResult.Values); "retainedBytes", box (bytesHex identityOutput) ])
+        let interpretedMatch = interpret nestedHost entries.OptionMatch (Some optionRoot) [ IrEntryArgument.RetainedRoot 0 ]
+        let expectedMatch = if optionName = "some" then [ NamedValue("Meters", IntValue ownerInputValue) ] else [ NamedValue("Meters", IntValue 0L) ]
+        let expectedMatchBytes = if optionName = "some" then bytesFromHex (ownerOracle.GetProperty("projectedOwnerBytesHex").GetString()) else bytesFromHex (oracle.GetProperty("signedFixtures").EnumerateArray() |> Seq.find (fun item -> item.GetProperty("name").GetString() = "zero") |> fun item -> item.GetProperty("intBytesHex").GetString())
+        let matchOutput = outputBuffer expectedMatchBytes.Length
+        let matchResult = optionMatchProgram.ExecuteInto([ optionValue ], 128, matchOutput)
+        recordCheck checks failures $"nominal-int/{optimizationName}/option-{optionName}-match-payload" (interpretedMatch = expectedMatch && matchResult.Values = interpretedMatch && matchOutput = expectedMatchBytes) (jsonObject [ "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedMatch); "owningValues", box (ValueInspection.toJson entries.NestedProgram matchResult.Values); "retainedBytes", box (bytesHex matchOutput) ])
+    let optionEqualityExpectedBytes = bytesFromHex (oracle.GetProperty("booleans").GetProperty("trueBytesHex").GetString())
+    let optionPairRoot = interpretRoot nestedHost entries.OptionSomePairConstruct [ IrEntryArgument.IntArgument ownerInputValue; IrEntryArgument.IntArgument ownerInputValue ]
+    let interpretedOptionEquality = interpret nestedHost entries.OptionEquals (Some optionPairRoot) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    let optionEqualityOutput = outputBuffer 8
+    let optionEquality = optionEqualsProgram.ExecuteInto([ optionSome; optionSome ], 256, optionEqualityOutput)
+    recordCheck checks failures $"nominal-int/{optimizationName}/option-equality-compares-wrapped-payload" (interpretedOptionEquality = [ BoolValue true ] && optionEquality.Values = interpretedOptionEquality && optionEqualityOutput = optionEqualityExpectedBytes) (jsonObject [ "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedOptionEquality); "owningValues", box (ValueInspection.toJson entries.NestedProgram optionEquality.Values); "retainedBytes", box (bytesHex optionEqualityOutput) ])
+
+    use resultOkProgram = compile "result-ok-construct" entries.ResultOkConstruct
+    use resultErrorProgram = compile "result-error-construct" entries.ResultErrorConstruct
+    use resultIdentityProgram = compile "result-identity" entries.ResultIdentity
+    use resultMatchProgram = compile "result-match" entries.ResultMatch
+    use resultEqualsProgram = compile "result-equals" entries.ResultEquals
+    use resultOkRoot = interpretRoot nestedHost entries.ResultOkConstruct [ IrEntryArgument.IntArgument ownerInputValue ]
+    use resultErrorRoot = interpretRoot nestedHost entries.ResultErrorConstruct [ IrEntryArgument.IntArgument ownerInputValue ]
+    let resultOracle = oracle.GetProperty("result")
+    let resultOk = ResultValue(TNamed "Meters", TNamed "OrderId", Ok(NamedValue("Meters", IntValue ownerInputValue)))
+    let resultError = ResultValue(TNamed "Meters", TNamed "OrderId", Error(NamedValue("OrderId", IntValue ownerInputValue)))
+    let resultOkBytes = bytesFromHex (resultOracle.GetProperty("okBytesHex").GetString())
+    let resultErrorBytes = bytesFromHex (resultOracle.GetProperty("errorBytesHex").GetString())
+    let resultOkConstructOutput = outputBuffer resultOkBytes.Length
+    let resultOkConstructResult = resultOkProgram.ExecuteInto([ IntValue ownerInputValue ], 128, resultOkConstructOutput)
+    recordCheck checks failures $"nominal-int/{optimizationName}/result-ok-wraps-meters" (resultOkRoot.Decode() = [ resultOk ] && resultOkConstructResult.Values = [ resultOk ] && resultOkConstructOutput = resultOkBytes && resultOkConstructResult.Metrics.DeepCopyBytes = uint64 (resultOracle.GetProperty("constructionDeepCopyBytes").GetInt32()) && resultOkConstructResult.Metrics.MoveBytes = 0UL) (jsonObject [ "expectedRetainedBytes", box (bytesHex resultOkBytes); "actualRetainedBytes", box (bytesHex resultOkConstructOutput); "deepCopyBytes", box resultOkConstructResult.Metrics.DeepCopyBytes ])
+    let resultErrorConstructOutput = outputBuffer resultErrorBytes.Length
+    let resultErrorConstructResult = resultErrorProgram.ExecuteInto([ IntValue ownerInputValue ], 128, resultErrorConstructOutput)
+    recordCheck checks failures $"nominal-int/{optimizationName}/result-error-wraps-order-id" (resultErrorRoot.Decode() = [ resultError ] && resultErrorConstructResult.Values = [ resultError ] && resultErrorConstructOutput = resultErrorBytes && resultErrorConstructResult.Metrics.DeepCopyBytes = uint64 (resultOracle.GetProperty("constructionDeepCopyBytes").GetInt32()) && resultErrorConstructResult.Metrics.MoveBytes = 0UL) (jsonObject [ "expectedRetainedBytes", box (bytesHex resultErrorBytes); "actualRetainedBytes", box (bytesHex resultErrorConstructOutput); "deepCopyBytes", box resultErrorConstructResult.Metrics.DeepCopyBytes ])
+    for resultName, resultRoot, resultValue, resultBytes in [ "ok", resultOkRoot, resultOk, resultOkBytes; "error", resultErrorRoot, resultError, resultErrorBytes ] do
+        let interpretedIdentity = interpret nestedHost entries.ResultIdentity (Some resultRoot) [ IrEntryArgument.RetainedRoot 0 ]
+        let identityOutput = outputBuffer resultBytes.Length
+        let identityResult = resultIdentityProgram.ExecuteInto([ resultValue ], 128, identityOutput)
+        recordCheck checks failures $"nominal-int/{optimizationName}/result-{resultName}-host-roundtrip" (interpretedIdentity = [ resultValue ] && identityResult.Values = interpretedIdentity && identityOutput = resultBytes) (jsonObject [ "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedIdentity); "owningValues", box (ValueInspection.toJson entries.NestedProgram identityResult.Values); "retainedBytes", box (bytesHex identityOutput) ])
+        let interpretedMatch = interpret nestedHost entries.ResultMatch (Some resultRoot) [ IrEntryArgument.RetainedRoot 0 ]
+        let matchOutput = outputBuffer 8
+        let matchResult = resultMatchProgram.ExecuteInto([ resultValue ], 128, matchOutput)
+        let expectedMatch = [ NamedValue("Meters", IntValue ownerInputValue) ]
+        recordCheck checks failures $"nominal-int/{optimizationName}/result-{resultName}-match-retains-meter-identity" (interpretedMatch = expectedMatch && matchResult.Values = interpretedMatch && matchOutput = bytesFromHex (ownerOracle.GetProperty("projectedOwnerBytesHex").GetString())) (jsonObject [ "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedMatch); "owningValues", box (ValueInspection.toJson entries.NestedProgram matchResult.Values); "retainedBytes", box (bytesHex matchOutput) ])
+    let resultPairRoot = interpretRoot nestedHost entries.ResultOkErrorPairConstruct [ IrEntryArgument.IntArgument ownerInputValue; IrEntryArgument.IntArgument ownerInputValue ]
+    let interpretedResultEquality = interpret nestedHost entries.ResultEquals (Some resultPairRoot) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    let resultEqualityOutput = outputBuffer 8
+    let resultEquality = resultEqualsProgram.ExecuteInto([ resultOk; resultError ], 256, resultEqualityOutput)
+    recordCheck checks failures $"nominal-int/{optimizationName}/result-equality-distinguishes-inactive-tag" (interpretedResultEquality = [ BoolValue false ] && resultEquality.Values = interpretedResultEquality && resultEqualityOutput = bytesFromHex (oracle.GetProperty("booleans").GetProperty("falseBytesHex").GetString())) (jsonObject [ "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedResultEquality); "owningValues", box (ValueInspection.toJson entries.NestedProgram resultEquality.Values); "retainedBytes", box (bytesHex resultEqualityOutput) ])
+
+    let stackOracle = oracle.GetProperty("capacityAndFailure")
+    let exactStackBytes = stackOracle.GetProperty("optionSomeExactStackCapacityBytes").GetInt32()
+    let capacityOutput = outputBuffer optionSomeBytes.Length
+    let capacitySuccess = optionSomeProgram.ExecuteInto([ IntValue ownerInputValue ], exactStackBytes, capacityOutput)
+    let shortStackOutput = outputBuffer optionSomeBytes.Length
+    let shortStackBefore = Array.copy shortStackOutput
+    let shortStackFailure =
+        try optionSomeProgram.ExecuteInto([ IntValue ownerInputValue ], exactStackBytes - 1, shortStackOutput) |> ignore; None
+        with error -> Some error
+    let stackFailurePass =
+        match shortStackFailure with
+        | Some error ->
+            let metrics = getProperty error "Metrics"
+            capacitySuccess.Values = [ optionSome ]
+            && capacityOutput = optionSomeBytes
+            && exceptionCode error = "OWNING_STACK_CAPACITY"
+            && string (getProperty error "Boundary") = "program-data-stack"
+            && int64Property error "RequiredBytes" = int64 exactStackBytes
+            && int64Property error "AvailableBytes" = int64 (exactStackBytes - 1)
+            && int64Property metrics "FinalCursorBytes" = 0L
+            && shortStackOutput = shortStackBefore
+        | None -> false
+    recordCheck checks failures $"nominal-int/{optimizationName}/option-capacity-one-byte-short-is-atomic" stackFailurePass (jsonObject [
+        "exactCapacityBytes", box exactStackBytes
+        "oneByteShortBytes", box (exactStackBytes - 1)
+        "successBytes", box (bytesHex capacityOutput)
+        "shortFailure", box (shortStackFailure |> Option.map resourceExceptionDetails |> Option.defaultValue null)
+        "shortBufferUnchanged", box (shortStackOutput = shortStackBefore) ])
+    let retainedShort = outputBuffer optionSomeBytes.Length
+    let retainedShortBefore = Array.copy retainedShort
+    let retainedFailure =
+        try optionSomeProgram.ExecuteInto([ IntValue ownerInputValue ], 128, retainedShort, optionSomeBytes.Length - 1) |> ignore; None
+        with error -> Some error
+    let retainedFailurePass =
+        match retainedFailure with
+        | Some error ->
+            let metrics = getProperty error "Metrics"
+            exceptionCode error = "OWNING_RETAINED_CAPACITY"
+            && string (getProperty error "Boundary") = "retained-output"
+            && int64Property error "RequiredBytes" = int64 optionSomeBytes.Length
+            && int64Property error "AvailableBytes" = int64 (optionSomeBytes.Length - 1)
+            && int64Property metrics "FinalCursorBytes" = 0L
+            && retainedShort = retainedShortBefore
+        | None -> false
+    recordCheck checks failures $"nominal-int/{optimizationName}/sum-retained-capacity-short-is-atomic" retainedFailurePass (jsonObject [
+        "requiredBytes", box optionSomeBytes.Length
+        "availableBytes", box (optionSomeBytes.Length - 1)
+        "failure", box (retainedFailure |> Option.map resourceExceptionDetails |> Option.defaultValue null)
+        "callerBufferUnchanged", box (retainedShort = retainedShortBefore) ])
+    use failProgram = compile "failure-after-option-allocation" entries.FailAfterSumAllocation
+    let interpreterFailure =
+        try interpret nestedHost entries.FailAfterSumAllocation None [] |> ignore; ""
+        with error -> diagnosticCode error
+    let failureBuffer = outputBuffer 8
+    let failureBefore = Array.copy failureBuffer
+    let mutable failureCode = ""
+    let mutable failureMetrics: obj = null
+    try failProgram.ExecuteInto([], 512, failureBuffer) |> ignore
+    with error -> failureCode <- diagnosticCode error; failureMetrics <- getProperty error "Metrics"
+    let failurePass =
+        not (isNull failureMetrics)
+        && interpreterFailure = "RUNTIME_DIVIDE_BY_ZERO"
+        && failureCode = interpreterFailure
+        && int64Property failureMetrics "FinalCursorBytes" = 0L
+        && int64Property failureMetrics "DeepCopyBytes" > 0L
+        && int64Property failureMetrics "MoveBytes" = 0L
+        && failureBuffer = failureBefore
+    recordCheck checks failures $"nominal-int/{optimizationName}/failure-after-nominal-sum-unwinds-without-publishing" failurePass (jsonObject [
+        "interpreterDiagnosticCode", box interpreterFailure
+        "owningDiagnosticCode", box failureCode
+        "metrics", box (if isNull failureMetrics then null else metricSummary failureMetrics)
+        "callerBufferUnchanged", box (failureBuffer = failureBefore) ])
+    for unsupportedName, _, unsupportedBody in entries.UnsupportedCases do
+        let mutable rejected = false
+        let mutable unsupportedCode = ""
+        try
+            use _unsupportedProgram = compile ("unsupported-" + unsupportedName) unsupportedBody
+            ()
+        with error -> rejected <- true; unsupportedCode <- diagnosticCode error
+        recordCheck checks failures $"nominal-int/{optimizationName}/unsupported-{unsupportedName}-is-explicit" (rejected && unsupportedCode = "IR_OWNING_STACK_TYPE_UNSUPPORTED") (jsonObject [
+            "rejectedBeforeExecution", box rejected
+            "diagnosticCode", box unsupportedCode ])
+    jsonObject [
+        "optimization", box optimizationName
+        "signedFixtureCount", box (oracle.GetProperty("signedFixtures").GetArrayLength())
+        "unsupportedDefinitionCount", box entries.UnsupportedCases.Length
+        "ownerRangeTransferCount", box ownerTransfers.Length
+        "ownerEndBytes", box (rangeOracle.GetProperty("sourceOffsetBytesOwnerEnd").GetInt32())
+        "scalarPayloadExtentBytes", box (rangeOracle.GetProperty("sourceExtentBytesPayloadExtent").GetInt32()) ]
+
 [<EntryPoint>]
 let main argv =
     let reportPath =
@@ -5774,6 +6539,15 @@ let main argv =
         for optimization, optimizationName in optimizationPairs do
             sumRuns.Add(box (runSumConformance checks failures fixture artifactsRoot optimization optimizationName sumEntries))
         report["sumRuns"] <- sumRuns.ToArray()
+        let nominalIntEntries = compileNominalIntEntries ()
+        report["nominalIntVerifiedProgramInstances"] <- box (jsonObject [
+            "identity", box true
+            "nested", box true ])
+        report["nominalIntBackendScope"] <- box "Two compiler-authorized VerifiedIrProgram instances hold distinct Meters and OrderId identities. Their exact verified bodies run through the interpreter and owning-stack LLVM O0/O2; independent fixtures pin signed bytes, aggregate round trips, and the owner-range trace."
+        let nominalIntRuns = ResizeArray<obj>()
+        for optimization, optimizationName in optimizationPairs do
+            nominalIntRuns.Add(box (runNominalIntConformance checks failures fixture artifactsRoot optimization optimizationName nominalIntEntries))
+        report["nominalIntRuns"] <- nominalIntRuns.ToArray()
     with error ->
         let exceptionDetails =
             [ "Diagnostic"; "Metrics"; "RequiredBytes"; "AvailableBytes"; "Boundary" ]

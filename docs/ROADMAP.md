@@ -126,12 +126,16 @@ sum conformance and the existing String mailbox fixture; it does not select a
 memory policy or establish service throughput. Keep native type expansion and
 JIT/release work separate from held-out agent maintenance experiments.
 
-The [next native typing plan](NATIVE-NOMINALS-IMPLEMENTATION.md) first preserves
-unvalidated nominal Int identity through owning execution, then adds a bounded
-predicate-bearing Int refinement before extending String/Email support. This
-is a delivery order, not a weakening of the strong-type requirement. Unsupported
-validators must remain explicit errors. Begin product edits after report 169's
-validation and publication; preserve a coherent source baseline for each gate.
+[Report 170](../reports/170-native-nominal-int.md) completes unvalidated nominal
+Int identity in the selected owning backend. Exact host identities and frozen
+generated targets are checked; wrap/unwrap preserves payload and owner range
+without copying. The 521-assertion LLVM suite, 94 independent nominal cases at
+O0/O2, existing mailbox regressions and all 37 full local Release checks pass.
+This adds no new agent-efficacy or throughput result. The
+[native typing plan](NATIVE-NOMINALS-IMPLEMENTATION.md) next adds a bounded
+predicate-bearing Int refinement before extending String/Email support. This is
+a delivery order, not a weakening of the strong-type requirement. Unsupported
+validators must remain explicit errors; preserve a coherent baseline for each gate.
 
 A development-load follow-up should measure fresh project activation separately
 from warm request latency. Report 169 records similar 23–25-second fresh CLI

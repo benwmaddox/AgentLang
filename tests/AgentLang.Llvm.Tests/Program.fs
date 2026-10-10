@@ -204,6 +204,10 @@ let private compileBody context name expressions =
     let verifiedProgram = Compiler.compileIrProgram context
     Compiler.compileIrBodyAgainstProgram context verifiedProgram name [] expressions
 
+let private compileBodyWithInputs context name inputTypes expressions =
+    let verifiedProgram = Compiler.compileIrProgram context
+    Compiler.compileIrBodyAgainstProgram context verifiedProgram name inputTypes expressions
+
 let private noOpHost () : IrInterpreterHost =
     { PreflightEffects = fun _ _ _ -> ()
       ChargeInstruction = fun _ _ -> ()
@@ -274,6 +278,10 @@ let private compileNative (name: string) (optimization: LlvmOptimization) (body:
 let private compileNativeWithSources (name: string) (optimization: LlvmOptimization) (sources: NativeDiagnosticSources) (body: VerifiedIrBody) =
     let directory = Path.Combine(artifactRoot, name, string optimization)
     LlvmAot.compile (LlvmToolchain.discover()) optimization directory sources body
+
+let private compileOwningNative toolchain (name: string) (optimization: LlvmOptimization) (body: VerifiedIrBody) =
+    let directory = Path.Combine(artifactRoot, name, string optimization)
+    OwningStackAot.compile toolchain optimization directory body
 
 let private compareSuccessfulCase (fixtureName: string) (executionName: string) (body: VerifiedIrBody) (expected: Value list) =
     check (fixtureName + " independent expected result") (formatValues expected = fixtureValues fixtureName)
@@ -1088,6 +1096,196 @@ let private recordDefinition name fields =
 let private contextWithRecordDefinitions extraWords (records: RecordDefinition list) scalarDefinitions =
     let recordMap = records |> List.map (fun record -> record.Name, record) |> Map.ofList
     contextWithDefinitions extraWords recordMap scalarDefinitions
+
+let private testOwningNominalIntSlice () =
+    let scalarContext =
+        contextWithScalarDefinitions [] [
+            scalarDefinition "Meters" TInt None, "Meters.create", "Meters.raw"
+            scalarDefinition "OrderId" TInt None, "OrderId.create", "OrderId.raw"
+        ]
+    let metersType = IrNominal(ProgramTypeKey 0)
+    let orderIdType = IrNominal(ProgramTypeKey 1)
+    let identityBody = compileBodyWithInputs scalarContext "owning-nominal-identity" [ TNamed "Meters"; TNamed "OrderId" ] []
+    let wrapUnwrapBody = compileBodyWithInputs scalarContext "owning-nominal-wrap-unwrap" [ TInt ] [
+        Call("Meters.create", span "owning-nominal.agent" 1)
+        Call("Meters.raw", span "owning-nominal.agent" 2)
+    ]
+    let toolchain = LlvmToolchain.discover()
+    let fixtures = [
+        "zero", 0L, "0000000000000000"
+        "negative", -42L, "d6ffffffffffffff"
+        "minimum", Int64.MinValue, "0000000000000080"
+        "maximum", Int64.MaxValue, "ffffffffffffff7f"
+    ]
+
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use identity = compileOwningNative toolchain "owning-nominal-identity" optimization identityBody
+        let metersLayout = identity.Layouts |> List.find (fun layout -> layout.TypeName = "Meters")
+        let orderIdLayout = identity.Layouts |> List.find (fun layout -> layout.TypeName = "OrderId")
+        check ($"{optimization} Meters retains nominal key and fixed Int layout") (
+            metersLayout.Type = metersType
+            && metersLayout.PayloadBytes = 8 && metersLayout.ExtentBytes = 8
+            && metersLayout.MinimumPayloadBytes = 8 && metersLayout.MinimumExtentBytes = 8
+            && not metersLayout.IsDynamic)
+        check ($"{optimization} OrderId retains a distinct nominal key and fixed Int layout") (
+            orderIdLayout.Type = orderIdType
+            && orderIdLayout.PayloadBytes = 8 && orderIdLayout.ExtentBytes = 8
+            && orderIdLayout.MinimumPayloadBytes = 8 && orderIdLayout.MinimumExtentBytes = 8
+            && not orderIdLayout.IsDynamic
+            && metersLayout.Type <> orderIdLayout.Type)
+        check ($"{optimization} nominal Int descriptors keep Int kind and distinct TypeIds") (
+            identity.LlvmIr.Contains("i32 1, i32 4, i32 0, i32 0, i32 8, i32 8, i32 8, i32 8, i32 0", StringComparison.Ordinal)
+            && identity.LlvmIr.Contains("i32 1, i32 5, i32 0, i32 0, i32 8, i32 8, i32 8, i32 8, i32 0", StringComparison.Ordinal))
+        for label, number, rawBytes in fixtures do
+            let result =
+                identity.Execute(
+                    [ NamedValue("Meters", IntValue number); NamedValue("OrderId", IntValue number) ],
+                    4096,
+                    16)
+            check ($"{optimization} {label} exact nominal host roundtrip") (
+                result.Values = [ NamedValue("Meters", IntValue number); NamedValue("OrderId", IntValue number) ]
+                && result.LayoutSchemaVersion = 3
+                && result.RetainedBytesWritten = 16
+                && Convert.ToHexString(result.RetainedOutputBytes).ToLowerInvariant() = rawBytes + rawBytes)
+
+        use wrapUnwrap = compileOwningNative toolchain "owning-nominal-wrap-unwrap" optimization wrapUnwrapBody
+        for label, number, rawBytes in fixtures do
+            let result = wrapUnwrap.Execute([ IntValue number ], 4096, 8)
+            check ($"{optimization} {label} wrap/unwrap preserves the raw Int payload") (
+                result.Values = [ IntValue number ]
+                && Convert.ToHexString(result.RetainedOutputBytes).ToLowerInvariant() = rawBytes
+                && result.Metrics.DeepCopyBytes = 0UL
+                && result.Metrics.MoveBytes = 0UL)
+
+        let sentinel = Array.create 16 0xA5uy
+        let rejectsWithoutPublishing name invalidValue =
+            let mutable rejected = false
+            try
+                identity.ExecuteInto(
+                    [ invalidValue; NamedValue("OrderId", IntValue 0L) ],
+                    4096,
+                    sentinel)
+                |> ignore
+            with :? ArgumentException -> rejected <- true
+            check ($"{optimization} {name} is rejected by nominal host validation") rejected
+            check ($"{optimization} {name} rejection leaves retained output unchanged") (sentinel = Array.create 16 0xA5uy)
+        rejectsWithoutPublishing "bare Int" (IntValue 0L)
+        rejectsWithoutPublishing "wrong nominal" (NamedValue("OrderId", IntValue 0L))
+        rejectsWithoutPublishing "same-name RecordValue" (RecordValue("Meters", Map.empty))
+
+    let record = recordDefinition "ZEnvelope" [ recordField "owner" (TNamed "Meters") ]
+    let nestedContext =
+        contextWithRecordDefinitions [] [ record ] [
+            scalarDefinition "Meters" TInt None, "Meters.create", "Meters.raw"
+            scalarDefinition "OrderId" TInt None, "OrderId.create", "OrderId.raw"
+        ]
+    let nestedBody = compileBody nestedContext "owning-nominal-nested" [
+        Push(LInt -42L, span "owning-nested.agent" 1)
+        Call("Meters.create", span "owning-nested.agent" 2)
+        Call("zEnvelope.new", span "owning-nested.agent" 3)
+        Push(LInt -42L, span "owning-nested.agent" 4)
+        Call("Meters.create", span "owning-nested.agent" 5)
+        ConstructContainer(OptionSome, [ TNamed "Meters" ], span "owning-nested.agent" 6)
+        ConstructContainer(OptionNone, [ TNamed "Meters" ], span "owning-nested.agent" 7)
+        Push(LInt -42L, span "owning-nested.agent" 8)
+        Call("Meters.create", span "owning-nested.agent" 9)
+        ConstructContainer(ResultOk, [ TNamed "Meters"; TNamed "OrderId" ], span "owning-nested.agent" 10)
+        Push(LInt -42L, span "owning-nested.agent" 11)
+        Call("OrderId.create", span "owning-nested.agent" 12)
+        ConstructContainer(ResultError, [ TNamed "Meters"; TNamed "OrderId" ], span "owning-nested.agent" 13)
+    ]
+    let nestedExpected = [
+        RecordValue("ZEnvelope", Map.ofList [ "owner", NamedValue("Meters", IntValue -42L) ])
+        OptionValue(TNamed "Meters", Some(NamedValue("Meters", IntValue -42L)))
+        OptionValue(TNamed "Meters", None)
+        ResultValue(TNamed "Meters", TNamed "OrderId", Ok(NamedValue("Meters", IntValue -42L)))
+        ResultValue(TNamed "Meters", TNamed "OrderId", Error(NamedValue("OrderId", IntValue -42L)))
+    ]
+    let nestedBytes = "d6ffffffffffffff0000000000000000d6ffffffffffffff01000000000000000000000000000000d6ffffffffffffff0100000000000000d6ffffffffffffff"
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use nested = compileOwningNative toolchain "owning-nominal-nested" optimization nestedBody
+        let result = nested.Execute([], 4096, 64)
+        check ($"{optimization} scalar identity survives nested record, Option, and Result values") (
+            result.Values = nestedExpected
+            && result.RetainedBytesWritten = 64
+            && Convert.ToHexString(result.RetainedOutputBytes).ToLowerInvariant() = nestedBytes)
+        let metersLayout = nested.Layouts |> List.find (fun layout -> layout.TypeName = "Meters")
+        let orderIdLayout = nested.Layouts |> List.find (fun layout -> layout.TypeName = "OrderId")
+        let envelopeLayout = nested.Layouts |> List.find (fun layout -> layout.TypeName = "ZEnvelope")
+        check ($"{optimization} nested scalar descriptors retain separate identity") (
+            metersLayout.Type = IrNominal(ProgramTypeKey 0)
+            && orderIdLayout.Type = IrNominal(ProgramTypeKey 1)
+            && envelopeLayout.Type = IrNominal(ProgramTypeKey 2)
+            && metersLayout.Type <> orderIdLayout.Type
+            && (envelopeLayout.Fields |> List.exists (fun field -> field.FieldName = "owner" && field.FieldType = metersLayout.Type)))
+
+    let ownerProvenanceContext =
+        contextWithRecordDefinitions [] [
+            recordDefinition "OwnerEnvelope" [
+                recordField "owner" (TNamed "Meters")
+                recordField "tail" TString
+            ]
+        ] [
+            scalarDefinition "Meters" TInt None, "Meters.create", "Meters.raw"
+            scalarDefinition "OrderId" TInt None, "OrderId.create", "OrderId.raw"
+        ]
+    let ownerProvenanceBody = compileBodyWithInputs ownerProvenanceContext "owning-nominal-owner-provenance" [ TNamed "OwnerEnvelope" ] [
+        Call("ownerEnvelope.owner", span "owning-provenance.agent" 1)
+        Call("Meters.raw", span "owning-provenance.agent" 2)
+    ]
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use ownerProvenance = compileOwningNative toolchain "owning-nominal-owner-provenance" optimization ownerProvenanceBody
+        let result =
+            ownerProvenance.Execute(
+                [ RecordValue("OwnerEnvelope", Map.ofList [ "owner", NamedValue("Meters", IntValue -42L); "tail", StringValue "tail" ]) ],
+                4096,
+                8)
+        let preservesFullOwnerEnd =
+            result.LayoutEvents
+            |> List.exists (fun event ->
+                event.Kind = "descriptor-transfer"
+                && event.TypeId = 1u
+                && event.OffsetBytes = 0
+                && event.SourceOffsetBytes = Some 24
+                && event.SourceExtentBytes = Some 8
+                && 24 > event.OffsetBytes + 8)
+        check ($"{optimization} scalar unwrap descriptor retains the multi-field owner's end") (
+            result.Values = [ IntValue -42L ]
+            && Convert.ToHexString(result.RetainedOutputBytes).ToLowerInvariant() = "d6ffffffffffffff"
+            && result.Metrics.InputBytes = 24
+            && result.Metrics.HostEncodedInputBytes = 24
+            && result.Metrics.DeepCopyBytes = 0UL
+            && result.Metrics.MoveBytes = 0UL
+            && not result.Metrics.TraceTruncated
+            && preservesFullOwnerEnd)
+
+    let rejectScalar name baseType validator inputType =
+        let context = contextWithScalars [] [ scalarDefinition name baseType validator ]
+        let body = compileBodyWithInputs context ("unsupported-" + name) [ inputType ] []
+        let diagnostic = errorOf (fun () -> compileOwningNative toolchain ("unsupported-" + name) LlvmOptimization.O0 body |> ignore)
+        check ($"{name} remains outside the owning nominal Int slice") (
+            diagnostic.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
+            && diagnostic.Message.Contains("only unvalidated nominal Int scalar wrappers", StringComparison.OrdinalIgnoreCase))
+    let positiveValidator =
+        wordEntry "is-positive?" [ TInt ] [ TBool ] Set.empty [
+            Push(LInt 0L, span "owning-positive.agent" 1)
+            Call("int.greater-than", span "owning-positive.agent" 2)
+        ]
+    let refinedContext = contextWithScalars [ positiveValidator ] [ scalarDefinition "PositiveId" TInt (Some "is-positive?") ]
+    let refinedBody = compileBodyWithInputs refinedContext "unsupported-positive-id" [ TNamed "PositiveId" ] []
+    let refinedError = errorOf (fun () -> compileOwningNative toolchain "unsupported-positive-id" LlvmOptimization.O0 refinedBody |> ignore)
+    check "Int scalar predicates remain unsupported explicitly" (
+        refinedError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
+        && refinedError.Message.Contains("only unvalidated nominal Int scalar wrappers", StringComparison.OrdinalIgnoreCase))
+    rejectScalar "BoolTag" TBool None (TNamed "BoolTag")
+    rejectScalar "TextTag" TString None (TNamed "TextTag")
+    rejectScalar "FloatTag" TFloat None (TNamed "FloatTag")
+    let inactiveContext = contextWithScalars [] [ scalarDefinition "InactiveFloat" TFloat None ]
+    let inactiveBody = compileBodyWithInputs inactiveContext "unsupported-inactive-result-alternative" [ TResult(TInt, TNamed "InactiveFloat") ] []
+    let inactiveError = errorOf (fun () -> compileOwningNative toolchain "unsupported-inactive-result-alternative" LlvmOptimization.O0 inactiveBody |> ignore)
+    check "unsupported scalar is rejected in an inactive Result alternative" (
+        inactiveError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
+        && inactiveError.Message.Contains("only unvalidated nominal Int scalar wrappers", StringComparison.OrdinalIgnoreCase))
 
 let private compareRecordErrorCase (fixtureName: string) (executionName: string) (body: VerifiedIrBody) =
     let expectedFixture = recordFixtureError fixtureName
@@ -2715,6 +2913,8 @@ let private runFullSuite () =
         testLargeStackFrame ()
         printStage "nominal scalar support and limits"
         testNominalScalarSupport ()
+        printStage "owning backend nominal Int layouts and host codecs"
+        testOwningNominalIntSlice ()
         testNominalScalarDiagnosticsAndRejections ()
         testNominalScalarDepth ()
         printStage "record construction, accessors, aliases, and equality"

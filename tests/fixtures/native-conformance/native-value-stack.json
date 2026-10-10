@@ -1246,6 +1246,78 @@
       "capacitySelection": "one byte below the successful direct dup/drop body's observed high-water; report that value rather than treating it as an independent absolute peak oracle"
     }
   },
+  "nominalIntConformance": {
+    "identityProgram": {
+      "typeIds": {
+        "Meters": 4,
+        "OrderId": 5
+      }
+    },
+    "expectedErrors": {
+      "hostInputExceptionType": "System.ArgumentException",
+      "hostInputParameterName": "values",
+      "wrongAccessorDiagnosticCode": "TYPE_STACK_MISMATCH"
+    },
+    "signedFixtures": [
+      {
+        "name": "zero",
+        "value": 0,
+        "intBytesHex": "0000000000000000",
+        "pairBytesHex": "00000000000000000000000000000000"
+      },
+      {
+        "name": "negative",
+        "value": -42,
+        "intBytesHex": "d6ffffffffffffff",
+        "pairBytesHex": "d6ffffffffffffffd6ffffffffffffff"
+      },
+      {
+        "name": "minimum",
+        "value": -9223372036854775808,
+        "intBytesHex": "0000000000000080",
+        "pairBytesHex": "00000000000000800000000000000080"
+      },
+      {
+        "name": "maximum",
+        "value": 9223372036854775807,
+        "intBytesHex": "ffffffffffffff7f",
+        "pairBytesHex": "ffffffffffffff7fffffffffffffff7f"
+      }
+    ],
+    "ownerEnvelope": {
+      "ownerValue": -42,
+      "tail": "tail",
+      "retainedBytesHex": "d6ffffffffffffff04000000000000007400610069006c00",
+      "projectedOwnerBytesHex": "d6ffffffffffffff",
+      "constructionDeepCopyBytes": 40
+    },
+    "ownerRangeTrace": {
+      "literalDeepCopyBytes": 80,
+      "expectedDescriptorTransfer": {
+        "typeId": 1,
+        "offsetBytes": 0,
+        "sourceOffsetBytesOwnerEnd": 24,
+        "sourceExtentBytesPayloadExtent": 8
+      }
+    },
+    "option": {
+      "someBytesHex": "0000000000000000d6ffffffffffffff",
+      "noneBytesHex": "0100000000000000",
+      "constructionDeepCopyBytes": 8
+    },
+    "result": {
+      "okBytesHex": "0000000000000000d6ffffffffffffff",
+      "errorBytesHex": "0100000000000000d6ffffffffffffff",
+      "constructionDeepCopyBytes": 8
+    },
+    "booleans": {
+      "trueBytesHex": "0100000000000000",
+      "falseBytesHex": "0000000000000000"
+    },
+    "capacityAndFailure": {
+      "optionSomeExactStackCapacityBytes": 24
+    }
+  },
   "limits": [
     "Synchronous execution only; no async provider buffers or cancellation claims.",
     "Fixed-size Int, Bool, Unit, and acyclic nested records only.",
