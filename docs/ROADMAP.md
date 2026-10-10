@@ -75,16 +75,21 @@ is established. Correct the shared help-primer request for future trials. Next
 efficacy work should stress shared-rule/caller maintenance rather than repeat
 this easy composition task. Native refinement work remains a separate track.
 
-The next bounded maintenance candidate uses the runnable accepted report-166
-projects: require subscription handoff inside its half-open term window,
-preserving existing cancellation-error precedence and dry-run state behavior.
-Exercise the shared rule through both existing callers. Use an independent
-boundary/precedence oracle and baseline, correct, off-by-one and wrong-order
-controls before dispatch. Preserve inherited tests at the starting snapshot;
-report intentional contract updates separately from lost assertions. A seeded
-defect that prevents durable library reload is unsuitable for this comparison.
-Reuse the existing harness and score behavior, collateral edits, test quality
-and vocabulary reuse separately. This is a planned task, not an efficacy result.
+[Report 173](../reports/173-handoff-window-maintenance.md) completes the bounded
+half-open handoff maintenance comparison in ABBA order. Two fresh language
+participants and two fresh F# participants each pass 144 independent outcomes.
+Language submissions retain all inherited tests and pass 155/155 saved suites;
+F# submissions retain assertions with one disclosed expiry-overlap fixture
+adjustment. All reuse the shared policy; none creates a new domain helper.
+Different seed suites and supplied patch guards prevent a causal reliability
+interpretation. Close this boundary task without a comparative advantage claim.
+
+The next efficacy question should stress an established abstraction under a
+materially different stateful change, including partial failure and preservation
+of prior evidence. Use the existing harness, expose equivalent source/tests,
+calibrate independent acceptance controls and separate behavior, collateral
+changes, test quality and reuse. Do not repeat this same easy boundary task or
+add new benchmark infrastructure before a concrete comparison requires it.
 
 [Report 164](../reports/164-result-test-guidance.md) completes the returned-Result
 help improvement with executable examples that qualify as library vocabulary.

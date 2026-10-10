@@ -186,3 +186,15 @@ pass. This supports discoverable reuse and a smaller new logic surface on this
 task, without establishing comparative reliability, token savings or reduced
 context requirements. Close the easy composition probe; further efficacy work
 should stress shared-rule maintenance and exact preservation of prior evidence.
+
+[Report 173](173-handoff-window-maintenance.md) closes a four-participant shared
+policy-maintenance comparison: both fresh language participants and both fresh
+F# participants pass all 144 independent outcomes. Language submissions each
+retain every inherited test byte and pass 155/155 saved-project tests; F#
+submissions retain assertions while moving one inherited expiry-overlap fixture
+inside the new valid window. All reuse the existing shared policy without new
+domain helpers. Rejected text patch requests and one rejected test-owner request
+are recovered, but unequal seed suites and supplied broker guards prevent a
+causal reliability interpretation. No comparative advantage or token/context
+compression is established. Close this boundary-maintenance probe and stress
+reuse under a materially different change in the next efficacy task.
