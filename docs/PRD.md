@@ -587,6 +587,16 @@ work already underway and add capabilities only when trial requirements or
 observed failures justify them. This changes delivery order, not the remaining
 full-PRD requirements or the standard of evidence.
 
+Current efficacy decision, 2026-10-10: the [checkpoint through 181](../reports/182-efficacy-decision-checkpoint.md)
+includes six repeated repair/typed-result migration sequences. All participants
+pass independent behavior and preserve inherited evidence; no comparative
+reliability advantage is observed. Keep independent behavioral and collateral
+checks alongside strict library qualification. Resume native strong-type/arena
+conformance without waiting for proof of efficacy. Future studies should target
+held-out maintenance or another unresolved research question rather than repeat
+easy composition. The historical early-sequence decisions below remain evidence
+of delivery order, not the current next-task instruction.
+
 The first five-task sequence is now independently accepted in all three modes
 ([purpose review](../reports/057-early-agent-purpose-review.md)). Vocabulary reuse
 and smaller new definitions are observed; an overall agent-cost benefit remains

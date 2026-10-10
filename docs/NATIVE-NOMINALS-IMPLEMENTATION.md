@@ -124,9 +124,35 @@ revisions, independent bytes, active/inactive nested payloads and copy/predicate
 counts across O0/O2 and both arena policies. Keep ABI/layout versions unchanged
 and audit generated frame bounds. Unsupported validator forms remain explicit.
 
-This is an acceptance plan, not a completion or security certification. Fresh
-focused and full LLVM, native value-stack, mailbox/policy and applicable local
-I/O regression gates, plus the full local Release gate, precede publication.
+This slice is complete in [report 180](../reports/180-native-refined-mailbox.md).
+It is not a security certification. Fresh focused and full LLVM, native
+value-stack, mailbox/policy and applicable local I/O regression gates, plus the
+full local Release gate, passed before publication.
+
+## Next slice: unvalidated nominal String (planned after checkpoint 182)
+
+Permit a String-backed nominal wrapper without a predicate, such as TextTag.
+Validated String already uses dynamic UTF-16 payloads, exact nominal host names
+and distinct TypeIds. Reuse that representation and host codecs; do not erase
+identity or add a predicate to a type that declares none. The current owning
+scalar admission rejects this case explicitly. Removing that rejection requires
+conformance evidence, not treating it as already supported.
+
+At O0/O2, check exact-name host round trips, rejection of bare String and another
+wrapper without output mutation, nested records and active Option/Result cases,
+and UTF-16 bytes including embedded NUL and isolated surrogates. Wrap/unwrap must
+preserve owner ranges and introduce no payload movement or predicate invocation.
+Keep layout ABI 3 and stack ABI 1 unchanged. Because mailbox layout admission
+shares this path, include direct mailbox import/round-trip checks before claiming
+mailbox support; run fresh native, LLVM, mailbox and full local gates.
+
+Implementation ownership is `src/AgentLang.Llvm/OwningStackAot.fs` and
+`tests/AgentLang.Llvm.Tests/Program.fs`, with independent runner/mailbox fixtures
+if needed for the acceptance evidence. No allocator, source syntax or host
+capability change is planned. Bool wrappers need additional codec/descriptor
+work; Float requires broader numeric/ABI analysis, and List requires a larger
+representation/lifetime design. These remain explicit gaps, not silent base-type
+fallbacks. This is a bounded plan, not implementation completion.
 
 ## Investigation references
 

@@ -1,0 +1,941 @@
+{
+  "status": "passed",
+  "baseRevision": "b4ad8aea0fcabbb3403b4cfd12dcc3254069b8d6",
+  "inputPins": [
+    {
+      "path": "reports/177-reliability-and-vocabulary-checkpoint.md",
+      "sha256": "6f2dd97de7cb76db0912e36e18219a8dfcbb9497a649c0c095e7c1b01e58e64a",
+      "committedSha256": "6f2dd97de7cb76db0912e36e18219a8dfcbb9497a649c0c095e7c1b01e58e64a",
+      "gitBlob": "2dc29322e6e1a4d8febdece8818c97a438e06251"
+    },
+    {
+      "path": "reports/178-preview-defect-control-calibration.md",
+      "sha256": "0e48f16549d5b72ed6e5cab43cfa6e45784b1221daeace929d5db1f01671b226",
+      "committedSha256": "0e48f16549d5b72ed6e5cab43cfa6e45784b1221daeace929d5db1f01671b226",
+      "gitBlob": "11aaa4588627eb148d4d827b63c7966c895fe536"
+    },
+    {
+      "path": "reports/179-preview-repair-and-record-migration.md",
+      "sha256": "a2134bf6a1ec95062145b4d75c08d2e77cae807fa42104d985d577b827905fb4",
+      "committedSha256": "a2134bf6a1ec95062145b4d75c08d2e77cae807fa42104d985d577b827905fb4",
+      "gitBlob": "8eadb52b62684b43dcb8e9c3f93ab7c1a75396d2"
+    },
+    {
+      "path": "reports/180-native-refined-mailbox.md",
+      "sha256": "85cdcc36a312f6041e8f4b2d946a8ac749a4ef8d18f3f921752fd21180ad6bb9",
+      "committedSha256": "85cdcc36a312f6041e8f4b2d946a8ac749a4ef8d18f3f921752fd21180ad6bb9",
+      "gitBlob": "bb086ed161f5c8cd36193482d94cd5e9798ed953"
+    },
+    {
+      "path": "reports/181-validated-snapshot-reuse.md",
+      "sha256": "bb7071d8c7dd02af1701729a8f88936a19dd3cccd77dc76c102342adac1e46f2",
+      "committedSha256": "bb7071d8c7dd02af1701729a8f88936a19dd3cccd77dc76c102342adac1e46f2",
+      "gitBlob": "b5fa3c8c067e5848fb21a05ae6c7f4408ed630ea"
+    },
+    {
+      "path": "reports/evidence/179-preview-repair-and-record-migration/archive.json",
+      "sha256": "2e3988cb769844b7ba99fbca4a156887c74b98d525a1b1b2a665e58241d92341",
+      "committedSha256": "2e3988cb769844b7ba99fbca4a156887c74b98d525a1b1b2a665e58241d92341",
+      "gitBlob": "c07862bc6869d6fee0e81b47b18cb0746992d592"
+    },
+    {
+      "path": "reports/evidence/179-preview-repair-and-record-migration/evidence.zip",
+      "sha256": "74feb1911fa3a27b54b5185e4af4a287ccf6ca5e052399f510fa06fb35dbc9b8",
+      "committedSha256": "74feb1911fa3a27b54b5185e4af4a287ccf6ca5e052399f510fa06fb35dbc9b8",
+      "gitBlob": "6dea7665c07fd01aeafbd24d86b8da9ba969cfdd"
+    },
+    {
+      "path": "reports/evidence/181-validated-snapshot-reuse/archive.json",
+      "sha256": "ed514a0ab1f287f900d774e5c82dc54e71a60ab53d25103738aaaedc366ad9da",
+      "committedSha256": "7970ed2b34ff227f564425ae3ac23b028837b21af1380f15d388c98c9adf6e92",
+      "gitBlob": "83d7f6c322236cd87dd10b12a146a56e2b6c9f82"
+    },
+    {
+      "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+      "sha256": "cf98467cede722b819cd6de6ae8fa364330fb492fb46ec0a2e770eed4db3dc23",
+      "committedSha256": "cf98467cede722b819cd6de6ae8fa364330fb492fb46ec0a2e770eed4db3dc23",
+      "gitBlob": "40485e681700e95e70f7ba03d5a2f9ed87e502e7"
+    },
+    {
+      "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+      "sha256": "a4ffa7dfc57cd50113d47a7a2c113833938a982d6b9746433253dc270bd3d792",
+      "committedSha256": "a4ffa7dfc57cd50113d47a7a2c113833938a982d6b9746433253dc270bd3d792",
+      "gitBlob": "c66e86025357baedcf0d19f3f53ab05ee0352ab7"
+    },
+    {
+      "path": "src/AgentLang.Core/Runtime.fs",
+      "sha256": "06c19b436997c45700c4d58ad1b7240f663ec9412dde1cdd166f2c5fb0f971c2",
+      "committedSha256": "06c19b436997c45700c4d58ad1b7240f663ec9412dde1cdd166f2c5fb0f971c2",
+      "gitBlob": "6ab861061a1fc093b2a5f44aa9ced04542ff94f9"
+    },
+    {
+      "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "sha256": "608c45a3a253cc1e18e101eff1af9519bec5df7d94dcbba66f3b36b49c5b37c9",
+      "committedSha256": "608c45a3a253cc1e18e101eff1af9519bec5df7d94dcbba66f3b36b49c5b37c9",
+      "gitBlob": "18363f7e43c4de562747cdb178d9a2780d827c63"
+    }
+  ],
+  "outputPins": [
+    {
+      "path": "README.md",
+      "sha256": "9e11a9e6dbeab512c14f2a2190e98c05d13b1aeaa19e4a18624c2dfb88812cc4"
+    },
+    {
+      "path": "docs/PRD.md",
+      "sha256": "1549c2576fd88fac1806a88d499d3f282b1cce3b089ecab33c95edd7df5d95b2"
+    },
+    {
+      "path": "docs/ROADMAP.md",
+      "sha256": "b697ce994b87162798e8661cd2b8e560d116c79a30816b8e191be85ac8e8395a"
+    },
+    {
+      "path": "docs/NATIVE-NOMINALS-IMPLEMENTATION.md",
+      "sha256": "5897943265aa0bd93396a0b44cd07bffb7f79a67ad135a6be91365114207852d"
+    },
+    {
+      "path": "reports/182-efficacy-decision-checkpoint.md",
+      "sha256": "ba0f0709dae6d4a40310ad88220dad7b41477e9812f8b7e402f26c1fb739a09a"
+    },
+    {
+      "path": "reports/evidence/182-efficacy-decision-checkpoint/audit.md",
+      "sha256": "52de449f466db1d7789a989eba049c370ad909e83061064107ac83135fcbdd74"
+    },
+    {
+      "path": "reports/evidence/182-efficacy-decision-checkpoint/native-plan.md",
+      "sha256": "d870c9bc3f28006f486a6604a1c58a746fba4ecd08cf361bd748af77d10e4733"
+    }
+  ],
+  "localLinksChecked": [
+    {
+      "source": "README.md",
+      "target": "reports/064-repeat-agent-purpose-review.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/182-efficacy-decision-checkpoint.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/154-provider-state-assertion-probe.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/163-atomic-subscription-handoff.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/052-default-flow-authoring.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/PRD.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/DECISIONS.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/ROADMAP.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/CURRENT-SYNTAX.md"
+    },
+    {
+      "source": "README.md",
+      "target": "examples/customer.agent"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/CLOSED-ENUMS.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/153-owning-native-enums.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/AUTHORING.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/121-record-validation-guidance.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/123-versioned-record-help.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/124-efficacy-assessment.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/125-matched-pair-repair.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/134-r09-discovery-study.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/135-r09-shared-summary-comparison.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/137-guided-discovery-composition.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/141-paid-invoice-maintenance.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/142-library-dependency-qualification.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/103-llvm-architecture-and-native-slice.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/107-native-state-reentry.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/126-native-mailbox-dispatch.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/131-owning-native-mailboxes.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/132-associated-arena-comparison.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/133-real-io-mailbox-correctness.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/104-native-arena-mailbox-feasibility.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/FINITE-COVERAGE.md"
+    },
+    {
+      "source": "README.md",
+      "target": "examples/legacy"
+    },
+    {
+      "source": "README.md",
+      "target": "examples/refined-types.agent"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/TEST-FILE-DEPENDENCIES.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/FINITE-COVERAGE.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/TESTING.md"
+    },
+    {
+      "source": "README.md",
+      "target": "examples/containers.agent"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/DISCOVERY.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/HARNESS.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/BUSINESS.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/IR-MIGRATION.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/VOCABULARY-ANALYSIS.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/STORAGE.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/SOURCE.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/TEST-ERRORS.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/075-business-language-transitions.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/076-exact-money-agent-policy-study.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/CONVENTIONAL.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/HARNESS.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/REQUIREMENTS.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/README.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/108-native-mailbox-suspension.md"
+    },
+    {
+      "source": "README.md",
+      "target": "experiments/AgentLang.NativeMailbox/mailbox.flow"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/126-native-mailbox-dispatch.md"
+    },
+    {
+      "source": "README.md",
+      "target": "docs/ASYNC-ARENA-EVALUATION.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/138-native-reset-profile.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/139-trusted-generated-native-profile.md"
+    },
+    {
+      "source": "README.md",
+      "target": "reports/140-matched-mailbox-load.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/CURRENT-SYNTAX.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/151-efficacy-checkpoint.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/FRONTEND-MIGRATION.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/CURRENT-SYNTAX.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/FRONTEND-MIGRATION.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/CLOSED-ENUMS.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/FINITE-COVERAGE.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/160-native-option-result.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/174-native-refined-string.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/161-real-files-and-test-isolation.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/162-test-file-dependency-overlays.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/TEST-FILE-DEPENDENCIES.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/STACK-ONLY-RESEARCH.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/FRONTEND-MIGRATION.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/017-data-flow-syntax-review.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/FRONTEND-MIGRATION.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/182-efficacy-decision-checkpoint.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/057-early-agent-purpose-review.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/058-compact-discovery.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/059-repeat-comparison-preparation.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/064-repeat-agent-purpose-review.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/SELECTIVE-CONTEXT-PLAN.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/STABLE-ARENA-LOWERING.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/OWNING-STACK-DESIGN-REVIEW.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/130-stable-arena-rewinds.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/131-owning-native-mailboxes.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/132-associated-arena-comparison.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/133-real-io-mailbox-correctness.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/STACK-ONLY-RESEARCH.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/ASYNC-ARENA-EVALUATION.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/STACK-ONLY-RESEARCH.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/MEMORY-REGIONS.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/020-arena-allocation-assessment.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "reports/088-late-application-migration-research.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/CAMPFIRE-DISCUSSION-HISTORY.md"
+    },
+    {
+      "source": "docs/PRD.md",
+      "target": "docs/STRUCTURAL-CORRECTNESS.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/PRD.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/PRD.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/ASYNC-ARENA-EVALUATION.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/CURRENT-SYNTAX.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/155-dot-calls-and-newline-syntax.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/101-approach-efficacy-review.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/182-efficacy-decision-checkpoint.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/177-reliability-and-vocabulary-checkpoint.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/179-preview-repair-and-record-migration.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/178-preview-defect-control-calibration.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/149-validated-window-reuse.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/150-shared-rule-maintenance.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/151-efficacy-checkpoint.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/152-occupied-period-domain.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/163-atomic-subscription-handoff.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/171-preview-vocabulary-retention.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/173-handoff-window-maintenance.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/175-email-fifo-batch.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/176-retained-attachment-source-versions.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/164-result-test-guidance.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/165-atomic-function-replacement-staging.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/166-handoff-signature-maintenance-agent-pair.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/167-test-source-inspection.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/168-test-source-inspection-agent-probe.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/153-owning-native-enums.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/160-native-option-result.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/169-native-mailbox-sum-lifecycle.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/170-native-nominal-int.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/NATIVE-NOMINALS-IMPLEMENTATION.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/172-native-refined-int.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/174-native-refined-string.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/180-native-refined-mailbox.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/181-validated-snapshot-reuse.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/161-real-files-and-test-isolation.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/162-test-file-dependency-overlays.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/154-provider-state-assertion-probe.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/156-state-sensitive-io-maintenance.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/157-audit-independent-validation-and-enum-help.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/158-utf8-trial-transport.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/159-retained-io-vocabulary-follow-on.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/VOCABULARY-RETENTION-TRIAL-PLAN.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/089-retained-discount-harness-blocked.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/090-retained-discount-supplemental-scoring.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/099-quick-agent-comparison.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/109-location-unhinted-repair.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/125-matched-pair-repair.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/135-r09-shared-summary-comparison.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/134-r09-discovery-study.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/136-discovery-help-exposure.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/137-guided-discovery-composition.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/141-paid-invoice-maintenance.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/142-library-dependency-qualification.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/143-subscription-overlap-comparison.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/144-nonempty-interval-prototype.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/145-rental-vocabulary-reuse.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/146-conventional-project-discovery.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/147-agent-authored-batch-reuse.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/148-flow-list-discovery.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/EXAMPLE-SYNTAX-MIGRATION.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/085-frontend-library-revision-plan.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/103-llvm-architecture-and-native-slice.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/104-native-arena-mailbox-feasibility.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/105-native-refined-scalars.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/106-native-record-ownership.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/107-native-state-reentry.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/108-native-mailbox-suspension.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/126-native-mailbox-dispatch.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/128-owning-value-stack.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/129-variable-owning-values.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/130-stable-arena-rewinds.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/131-owning-native-mailboxes.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/132-associated-arena-comparison.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/133-real-io-mailbox-correctness.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/138-native-reset-profile.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/139-trusted-generated-native-profile.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/140-matched-mailbox-load.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/OWNING-STACK-DESIGN-REVIEW.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/STABLE-ARENA-LOWERING.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/STABLE-ARENA-LOWERING.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/MIDORI-RESEARCH.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/GOOSE-RESEARCH.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/OWNING-STACK-DESIGN-REVIEW.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/ASYNC-ARENA-EVALUATION.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/ASYNC-ARENA-EVALUATION.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/ASYNC-ARENA-EVALUATION.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/088-late-application-migration-research.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/STRUCTURAL-CORRECTNESS.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/112-closed-domain-states.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "docs/FINITE-COVERAGE.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/116-finite-library-coverage.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/117-finite-coverage-adoption.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/118-populated-delivery-contract.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/119-record-construction-invariants.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/120-record-validator-adoption.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/121-record-validation-guidance.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/122-record-validation-help-adoption.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/123-versioned-record-help.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/124-efficacy-assessment.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/125-matched-pair-repair.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/141-paid-invoice-maintenance.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/154-provider-state-assertion-probe.md"
+    },
+    {
+      "source": "docs/ROADMAP.md",
+      "target": "reports/142-library-dependency-qualification.md"
+    },
+    {
+      "source": "docs/NATIVE-NOMINALS-IMPLEMENTATION.md",
+      "target": "reports/170-native-nominal-int.md"
+    },
+    {
+      "source": "docs/NATIVE-NOMINALS-IMPLEMENTATION.md",
+      "target": "reports/172-native-refined-int.md"
+    },
+    {
+      "source": "docs/NATIVE-NOMINALS-IMPLEMENTATION.md",
+      "target": "reports/174-native-refined-string.md"
+    },
+    {
+      "source": "docs/NATIVE-NOMINALS-IMPLEMENTATION.md",
+      "target": "reports/180-native-refined-mailbox.md"
+    },
+    {
+      "source": "reports/182-efficacy-decision-checkpoint.md",
+      "target": "reports/177-reliability-and-vocabulary-checkpoint.md"
+    },
+    {
+      "source": "reports/182-efficacy-decision-checkpoint.md",
+      "target": "reports/179-preview-repair-and-record-migration.md"
+    },
+    {
+      "source": "reports/182-efficacy-decision-checkpoint.md",
+      "target": "reports/180-native-refined-mailbox.md"
+    },
+    {
+      "source": "reports/182-efficacy-decision-checkpoint.md",
+      "target": "reports/181-validated-snapshot-reuse.md"
+    },
+    {
+      "source": "reports/182-efficacy-decision-checkpoint.md",
+      "target": "reports/evidence/182-efficacy-decision-checkpoint/native-plan.md"
+    },
+    {
+      "source": "reports/182-efficacy-decision-checkpoint.md",
+      "target": "docs/NATIVE-NOMINALS-IMPLEMENTATION.md"
+    },
+    {
+      "source": "reports/182-efficacy-decision-checkpoint.md",
+      "target": "reports/evidence/182-efficacy-decision-checkpoint/audit.md"
+    },
+    {
+      "source": "reports/182-efficacy-decision-checkpoint.md",
+      "target": "reports/evidence/182-efficacy-decision-checkpoint/validation.json"
+    }
+  ],
+  "auditCopyCheckedAgainstRaw": true,
+  "identityMethod": "Working-file SHA-256 and committed SHA-256 recorded separately; Git-filtered object ID must match HEAD. An initial raw-byte check stopped on archive.json line-ending normalization.",
+  "scope": "Documentation links and unchanged committed evidence/source inputs; no runtime gate rerun or new participant trial."
+}

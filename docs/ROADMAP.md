@@ -37,8 +37,12 @@ not wait for every optional feature or proof of a comparative advantage.
 
 ## 1. Validate reliability beyond easy composition
 
-The [efficacy checkpoint through 176](../reports/177-reliability-and-vocabulary-checkpoint.md)
-reviews evidence through report 176. Discovery and reuse are demonstrated on
+The [current efficacy decision](../reports/182-efficacy-decision-checkpoint.md)
+incorporates the completed repeated maintenance sequence in report 179 and
+separates native conformance and activation work through 181 from agent outcomes.
+It retains the conclusion of the
+[checkpoint through 176](../reports/177-reliability-and-vocabulary-checkpoint.md):
+discovery and reuse are demonstrated on
 bounded tasks; a comparative reliability advantage remains unproven. Passing
 library checks have coexisted with lost assertions and changed examples. This
 motivated the predeclared repeated repair/typed-result maintenance sequence
@@ -50,8 +54,9 @@ track.
 [Report 179](../reports/179-preview-repair-and-record-migration.md) completes
 the frozen repair and typed-result migration sequence with two external
 Luna/max participants per condition. All six sequences pass each 37-case
-projection and preserve inherited evidence. All finish local validation and
-normal publication/finalization. No comparative reliability advantage is
+projection and preserve inherited evidence. All AgentLang stages publish through
+the library gate; all F# stages finish local validation. All brokers finalize
+normally. No comparative reliability advantage is
 observed; F# uses fewer broker exchanges, and protocol duration/volume do not
 measure native service performance or provider tokens. Both retained first-stage
 launches shorten their allowlists; derived proposed-state assertions also have

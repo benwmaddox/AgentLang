@@ -6,10 +6,12 @@ AI agents are external coding tools that use the language. The language runtime 
 
 This repository implements a prototype slice. The compiler checks and lowers source into verified typed semantic IR; the public runtime executes that IR through the interpreter, with no AST execution fallback. File primitives use real project-rooted files during normal execution and isolated virtual files in attached tests. Network and database access remain outside the current primitive set. An optional external experiment harness and a conventional business foundation are included. The [repeated external-agent comparison](reports/064-repeat-agent-purpose-review.md) observes tested vocabulary reuse; an overall efficiency advantage remains unproven. The Customer demo uses binary floating point and is not suitable for exact money. The Email validator below demonstrates a modest local policy and does not claim conformance with the full Internet email standard.
 
-The [efficacy checkpoint](reports/151-efficacy-checkpoint.md) records successful
-discovery, composition and shared maintenance alongside failures of reuse and
-coverage. No comparative reliability advantage over F# is established. The
-[latest I/O testing probe](reports/154-provider-state-assertion-probe.md) shows
+The [efficacy checkpoint](reports/182-efficacy-decision-checkpoint.md) records
+successful discovery/reuse and repeated repair and typed-result migration in
+retained, reset-rich and F# projects. All six sequences preserve inherited
+evidence; no comparative reliability advantage over F# is established. Earlier
+studies also record failures of reuse and evidence preservation. The
+[I/O testing probe](reports/154-provider-state-assertion-probe.md) shows
 one fresh agent adding state and effect assertions that reject three defects.
 
 The [atomic handoff comparison](reports/163-atomic-subscription-handoff.md) adds
