@@ -2773,6 +2773,52 @@ module Runtime =
                     result["message"] <- jstr diagnostic.Message
                 result)
 
+        let testSourceRows (snapshot: RuntimeSnapshot) (tests: TestDefinition list) =
+            let testSourceRow (test: TestDefinition) =
+                let flowAttachment =
+                    snapshot.State.WordIds.TryFind test.Word
+                    |> Option.map WordId
+                    |> Option.bind (fun ownerId -> snapshot.State.FlowTests.TryFind(flowAttachmentKey ownerId test.Name))
+                let frontend, syntaxVersion, source, testFile =
+                    match flowAttachment with
+                    | Some attachment ->
+                        let file = snapshot.State.FlowTestFiles.TryFind(flowTestFileKey attachment.Source.OwnerId attachment.Source.Reference)
+                        let source =
+                            match file with
+                            | Some authored ->
+                                authored.Settings.Tests
+                                |> List.tryFind (fun item -> item.CaseName = test.Name)
+                                |> Option.map (fun item -> item.SourceText)
+                                |> Option.defaultWith (fun () ->
+                                    error "FLOW_RUNTIME_TEST_SOURCE_MISSING" $"Flow test-file '{authored.Settings.ScopeName}' has no authored source for case '{test.Word}/{test.Name}'." (Some(test.Word + "/" + test.Name)) None
+                                        [ "matching nested test source" ] [ "missing" ])
+                            | None -> attachment.Source.Content
+                        "flow", attachment.Source.SyntaxVersion, source, file
+                    | None -> "stack", 1, test.SourceText, None
+                let row = JsonObject()
+                row["word"] <- jstr test.Word
+                row["name"] <- jstr test.Name
+                row["source"] <- jstr source
+                row["sourceHash"] <- jstr (Storage.sourceObject StorageObjectKind.TestDefinition source).Reference.Hash
+                row["frontend"] <- jstr frontend
+                row["syntaxVersion"] <- jint syntaxVersion
+                testFile
+                |> Option.iter (fun file ->
+                    let fileSource = file.Settings.SourceText
+                    let fileNode = JsonObject()
+                    fileNode["scope"] <- jstr file.Settings.ScopeName
+                    fileNode["source"] <- jstr fileSource
+                    fileNode["sourceHash"] <- jstr (Storage.sourceObject StorageObjectKind.TestDefinition fileSource).Reference.Hash
+                    fileNode["overrides"] <-
+                        jsonNode
+                            (file.Settings.Overrides
+                             |> List.map (fun item ->
+                                 {| name = item.Definition.Name
+                                    source = item.SourceText |}))
+                    row["testFile"] <- fileNode)
+                row
+            tests |> List.map testSourceRow
+
         let coverageJson (snapshot: RuntimeSnapshot) (word: string) (results: TestCaseResult list) =
             let requiredInstructions, requiredBranches = coverageObligations snapshot word
             let actualInstructions = results |> List.fold (fun found result -> Set.union found result.Instructions) Set.empty
@@ -5537,9 +5583,52 @@ module Runtime =
                             | _ -> "Verified executable IR"
                         success "ir" $"{label} for '{name}'." (Some formatted)
                 | "tests" ->
-                    let name = readString args "word" ""
-                    let tests = data.Tests |> Map.toList |> List.map snd |> List.filter (fun test -> test.Word = name) |> List.sortBy (fun test -> test.Name)
-                    success "tests" $"{tests.Length} attached test(s)." (Some(jsonNode (tests |> List.map (fun test -> test.Name))))
+                    let selectorError name expected actual =
+                        error "TESTS_INVALID_ARGUMENT" $"Tests argument '{name}' must be {expected}." None None [ expected ] [ actual ]
+                    let requiredSelector name =
+                        if not (args.ContainsKey name) then selectorError name "a nonempty string" "missing"
+                        match args[name] with
+                        | :? JsonValue as value ->
+                            let mutable selected = ""
+                            if value.TryGetValue<string>(&selected) && not (String.IsNullOrWhiteSpace selected) then selected
+                            else selectorError name "a nonempty string" (flowJsonKind (value :> JsonNode))
+                        | value -> selectorError name "a nonempty string" (flowJsonKind value)
+                    let optionalSelector name =
+                        if args.ContainsKey name then Some(requiredSelector name) else None
+                    let includeSource =
+                        if not (args.ContainsKey "includeSource") then false
+                        else
+                            match args["includeSource"] with
+                            | :? JsonValue as value ->
+                                let mutable selected = false
+                                if value.TryGetValue<bool>(&selected) then selected
+                                else selectorError "includeSource" "a boolean" (flowJsonKind (value :> JsonNode))
+                            | value -> selectorError "includeSource" "a boolean" (flowJsonKind value)
+                    let name = requiredSelector "word"
+                    let caseName = optionalSelector "caseName"
+                    let snapshot = currentSnapshot ()
+                    if not (snapshot.Words.ContainsKey name) then
+                        error "NAME_UNKNOWN_WORD" $"Word '{name}' is not defined." (Some name) None [] []
+                    let tests =
+                        snapshot.State.Tests
+                        |> Map.toList
+                        |> List.map snd
+                        |> List.filter (fun test -> test.Word = name)
+                        |> List.sortBy (fun test -> test.Name)
+                    let tests =
+                        match caseName with
+                        | None -> tests
+                        | Some selected ->
+                            match tests |> List.tryFind (fun test -> test.Name = selected) with
+                            | Some test -> [ test ]
+                            | None ->
+                                error "NAME_UNKNOWN_TEST" $"Test case '{name}/{selected}' is not attached to '{name}'." (Some name) None
+                                    (tests |> List.map (fun test -> test.Name)) [ selected ]
+                    let payload =
+                        if includeSource then jsonNode (testSourceRows snapshot tests)
+                        else jsonNode (tests |> List.map (fun test -> test.Name))
+                    if includeSource then log "inspect" name
+                    success "tests" $"{tests.Length} attached test(s)." (Some payload)
                 | "examples" ->
                     let name = readString args "word" ""
                     let examples = data.Examples |> Map.toList |> List.map snd |> List.filter (fun example -> example.Word = name) |> List.sortBy (fun example -> example.Name)

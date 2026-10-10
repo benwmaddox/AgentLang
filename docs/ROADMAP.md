@@ -1,6 +1,6 @@
 # Current delivery roadmap
 
-Updated 2026-10-09. This is a delivery order and status map, not a replacement
+Updated 2026-10-10. This is a delivery order and status map, not a replacement
 for the [PRD](PRD.md). Reliable agent edits, discovery and reuse of accumulated
 typed vocabulary remain the primary research question. Runtime performance and
 development cost are separate measurements.
@@ -83,6 +83,16 @@ weakens two prior test scenarios; F# preserves its prior assertions. This is
 maintenance feasibility with no comparative reliability lead. Improve test-body
 discoverability before extending this sequence; preserve the distinction between
 coverage, behavior and test evidence. Reports and verified evidence archives are saved.
+
+[Report 167](../reports/167-test-source-inspection.md) adds current test-body
+inspection to `tests`, including enclosing test-file source and scoped dependency
+replacements. Staged and temporary cases are inspectable before publication;
+queries do not execute tests or change coverage. Focused runtime and acceptance
+validation and all 37 full local checks pass; evidence is archived. A disposable
+copy of the actual maintenance seed exposes all five prior handoff cases without
+changing files or executing tests. This addresses demonstrated
+discovery friction, not a demonstrated cause of lost assertions. A fresh agent
+trial is still needed to assess whether the interface improves maintenance.
 
 [Report 153](../reports/153-owning-native-enums.md) implements closed,
 payload-free enums in `OwningStackAot`, using inline values and the selected

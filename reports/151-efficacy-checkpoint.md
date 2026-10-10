@@ -2,6 +2,8 @@
 
 Status: evidence synthesis through report 150, 2026-10-09. This assesses the
 prototype; it does not establish PRD completion or comparative superiority.
+The subsequent sections record later evidence through report 166 without
+changing the original trials or their frozen outcomes.
 
 ## What is working
 
@@ -135,3 +137,34 @@ failure. Four frozen control-output reports were replaced with compact copies
 after dispatch; unchanged code pins and passing reruns remain, but full original
 evidence provenance cannot be claimed. Close this I/O microsequence and continue
 the separate native conformance track instead of collecting similar successes.
+
+## Subsequent transition reuse and signature maintenance
+
+[Report 163](163-atomic-subscription-handoff.md) tests a different domain contract:
+an atomic handoff composed from retained cancellation and creation operations.
+Both fresh agents reuse those operations and pass all 33 independent cases.
+This is positive voluntary-reuse evidence in both environments; it does not
+erase the negative language-side reuse finding from report 159.
+
+[Report 166](166-handoff-signature-maintenance-agent-pair.md) then changes those
+actual saved implementations to add dry-run behavior and updates two disclosed
+coordinator-created callers. Both fresh agents pass 66 target and 66 caller
+checks. The language agent preserves stable identities and library qualification
+and passes all 149 attached tests after reload. However, it changes a prior
+multi-error input and drops explicit pre-state assertions from a prior success
+test. F# preserves its prior assertions. Independent behavioral acceptance and
+source-test preservation therefore yield different conclusions for the language
+submission. Coverage did not prevent the loss of earlier evidence.
+
+The engineering mechanism supports coordinated signature changes while checking
+the complete proposed dictionary before candidate activation; see
+[report 165](165-atomic-function-replacement-staging.md). Its full 37-check local
+gate passes. That mechanism and the maintenance pair establish feasibility,
+not comparative reliability. No fixed token context limit or authoritative LLM
+token comparison was used, and concurrent validation may confound latency.
+
+[Report 167](167-test-source-inspection.md) implements current test-body
+inspection, including the enclosing setup for test-file dependency replacements.
+This addresses observed discovery friction without rewriting the participants'
+saved outcomes. A fresh experiment is required before attributing any improved
+agent behavior to it.

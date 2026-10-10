@@ -348,8 +348,10 @@ end
         let examples = dispatch firstReload "examples" [ "word", jsonString "metadata-target" ] |> expectOk "inspect durable target example"
         equal "[\"helper-example\"]" (examples["data"].ToJsonString()) "target example depending on candidate helper survives reload"
         expectError "NAME_UNKNOWN_WORD" (dispatch firstReload "source" [ "word", jsonString "unrelated-candidate" ]) |> ignore
-        let unstoredTests = dispatch firstReload "tests" [ "word", jsonString "unrelated-candidate" ] |> expectOk "inspect unrelated tests in committed projection"
-        equal "[]" (unstoredTests["data"].ToJsonString()) "unrelated staged metadata is not included in target commit"
+        expectError "NAME_UNKNOWN_WORD" (dispatch firstReload "tests" [ "word", jsonString "unrelated-candidate" ]) |> ignore
+        dispatch firstReload "test-all" []
+        |> expectOk "inspect complete committed test projection"
+        |> assertAllTestsPassed "unrelated staged metadata is excluded" 2
         let stagedUnrelated = dispatch runtime "describe" [ "word", jsonString "unrelated-candidate" ] |> expectOk "inspect untouched unrelated candidate"
         equal "candidate" ((stagedUnrelated["data"]["status"]).GetValue<string>()) "unrelated candidate remains staged in the current engine"
         let stagedTests = dispatch runtime "tests" [ "word", jsonString "unrelated-candidate" ] |> expectOk "inspect staged unrelated test"
@@ -1615,8 +1617,10 @@ end
         dispatch runtime "task.abort" [] |> expectOk "abort task" |> ignore
 
         expectError "NAME_UNKNOWN_WORD" (dispatch runtime "describe" [ "word", jsonString "draft.increment" ]) |> ignore
-        let tests = dispatch runtime "tests" [ "word", jsonString "draft.increment" ] |> expectOk "test metadata rolled back"
-        equal "[]" (tests["data"].ToJsonString()) "attached test rolled back"
+        expectError "NAME_UNKNOWN_WORD" (dispatch runtime "tests" [ "word", jsonString "draft.increment" ]) |> ignore
+        dispatch runtime "test-all" []
+        |> expectOk "run complete test projection after task abort"
+        |> assertAllTestsPassed "aborted attached metadata is removed" 1
         let examples = dispatch runtime "examples" [ "word", jsonString "draft.increment" ] |> expectOk "example metadata rolled back"
         equal "[]" (examples["data"].ToJsonString()) "example rolled back"
         expectError "NAME_UNKNOWN_WORD" (evaluate runtime "1 DraftCount.new") |> ignore
@@ -1674,8 +1678,10 @@ end
         dispatch runtime "task.commit" [] |> expectOk "commit task without candidates" |> ignore
         equal "2" (stackValue (evaluate runtime "1 existing.session" |> expectOk "preserve preexisting session word") 0) "session word from before task remains"
         expectError "NAME_UNKNOWN_WORD" (evaluate runtime "1 task.only") |> ignore
-        let testNames = dispatch runtime "tests" [ "word", jsonString "task.only" ] |> expectOk "inspect cleared temporary tests"
-        equal "[]" (testNames["data"].ToJsonString()) "temporary tests are removed when task ends"
+        expectError "NAME_UNKNOWN_WORD" (dispatch runtime "tests" [ "word", jsonString "task.only" ]) |> ignore
+        dispatch runtime "test-all" []
+        |> expectOk "inspect complete test projection after temporary cleanup"
+        |> assertAllTestsPassed "temporary tests are removed when task ends" 0
 
         dispatch runtime "task.begin" [ "goal", jsonString "empty task" ] |> expectOk "begin empty task" |> ignore
         dispatch runtime "task.commit" [] |> expectOk "commit empty task" |> ignore

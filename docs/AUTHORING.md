@@ -95,6 +95,29 @@ existing attachments requires the replacement revision checks.
 {"op":"task.commit"}
 ```
 
+Before replacing a function or its tests, inspect the current test bodies:
+
+```json
+{"op":"tests","word":"tutorial.sign"}
+{"op":"tests","word":"tutorial.sign","includeSource":true}
+{"op":"tests","word":"tutorial.sign","includeSource":true,"caseName":"negative"}
+```
+
+The default is a sorted array of case names. `includeSource: true` returns
+records with `word`, `name`, `source`, `sourceHash`, `frontend` and `syntaxVersion`.
+`caseName` selects one existing case in either view. The source view reads current
+attachments, including staged and temporary cases; it does not need durable
+history. It does not execute tests, call effect providers or update coverage.
+
+For a case inside a `test-file`, the record also includes `testFile` with its
+scope, full source, source hash and dependency replacements. The case's `source`
+is only its own authored test. Read the enclosing source to understand which I/O
+functions are replaced and to preserve that setup when editing. The two hashes
+identify the exact UTF-8 text in their respective source fields; a nested case
+hash is not the enclosing wrapper's storage reference. Real execution and the
+isolated test provider remain separate, as described in
+[test dependency replacements](TEST-FILE-DEPENDENCIES.md).
+
 Library persistence requires passing attached own tests, complete supported
 own instruction/branch coverage, finite input and return evidence, and at least
 one actual call to that exact function revision from its own passing tests.

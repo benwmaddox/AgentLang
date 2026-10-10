@@ -1,0 +1,122 @@
+{
+  "status": "verified",
+  "fullGateChecks": 37,
+  "description": "Final full gate, focused validation, acceptance rerun and retained development failures; binaries and temporary projects excluded.",
+  "archive": {
+    "path": "evidence.zip",
+    "bytes": 1621419,
+    "sha256": "881295cf3fe46aa0bbb4dc3ef8edc88aef57990e764c4125cc52090399be6e25"
+  },
+  "files": [
+    {
+      "path": "full-validation-final.business-policy-preflight.json",
+      "bytes": 15483117,
+      "sha256": "8ce9a6840a9cea8d4d1480c0128485ee51f993dc8773e96575400231d795496c"
+    },
+    {
+      "path": "full-validation-final.early-agent-negative.json",
+      "bytes": 172934,
+      "sha256": "70904ca04c0ae07b035f677fad8aa90e56599be479223ad6b2ba6d4b2c571240"
+    },
+    {
+      "path": "full-validation-final.flow-matched-fixtures.json",
+      "bytes": 230020,
+      "sha256": "8fee3c3bfda3d05f183bdf9916d71b893495b99f311b8a9e21af30ff5b926bd9"
+    },
+    {
+      "path": "full-validation-final.json",
+      "bytes": 30504,
+      "sha256": "a67a624dcd754eadebbbe56b7de4a7fc1ca7053dd467bf2afd26cca34bd374fd"
+    },
+    {
+      "path": "full-validation-final.matched-fixtures.json",
+      "bytes": 99883,
+      "sha256": "1cf6fc82c7c2033f0f85235e0e9dfaf4fcbf1fc634331c773755010ebbc1ca82"
+    },
+    {
+      "path": "full-validation-final.matched-snapshots.json",
+      "bytes": 85956,
+      "sha256": "a08f788477404a98e3b1db4ba053f56a2fa1ec0f4c2dd2caa81509bb6299895c"
+    },
+    {
+      "path": "full-validation-final.parser-limits.json",
+      "bytes": 3186,
+      "sha256": "98e403752e77502756e8222996ba404bb67346d01359e2e30bf3fd9a21793608"
+    },
+    {
+      "path": "full-validation-final.projection.json",
+      "bytes": 123935,
+      "sha256": "e9ae15b327e39daef8ee2053bc98891a189939303c2d78b178fb8f5c0e0d3ed4"
+    },
+    {
+      "path": "full-validation-final.renewal-acceptance-gate.json",
+      "bytes": 1025134,
+      "sha256": "e8a48d8940de07503b9a6c0b796acb1da6144c70d77a467842905a498852c62b"
+    },
+    {
+      "path": "full-validation-final.renewal-replay.json",
+      "bytes": 307012,
+      "sha256": "41595d2284119457fd1bcda58f3d14619859da8a29cac1316d975e0ffa880e05"
+    },
+    {
+      "path": "full-validation-final.subagent-host-v2.json",
+      "bytes": 25382,
+      "sha256": "4e987b4515b112828773b6c7290230550a610c05bf20e087d8987197e2070539"
+    },
+    {
+      "path": "full-validation-final.subagent-host.json",
+      "bytes": 348085,
+      "sha256": "b546140a0407c19960004ef9963b0df9dedc28bda1909c9b6f074bd8f947dac8"
+    },
+    {
+      "path": "validation.txt",
+      "bytes": 5561,
+      "sha256": "2958cbe8d040b8c3664d3558bf63286271a69aef3dd63384ee7e35e11c53c858"
+    },
+    {
+      "path": "initial-full-validation-failure.txt",
+      "bytes": 970,
+      "sha256": "c1b599ff0f7906e1629fdc814b8ca5aac0c449e242d5c83c1a8a30f93b2567ca"
+    },
+    {
+      "path": "acceptance-validation.txt",
+      "bytes": 1398,
+      "sha256": "2c6ef0c3c2fdff691b9e9ff3cb3e32f13ab1f4fcb460f2d79c481d9afbbe7ef8"
+    },
+    {
+      "path": "post-build-source-pin.json",
+      "bytes": 869,
+      "sha256": "e044cb1acd47cd90675ee730840bbafa6945d4c5206d8cd28f0b779a6204967e"
+    },
+    {
+      "path": "archive-evidence.py",
+      "bytes": 2613,
+      "sha256": "8f963fbbea67bc9a9d60237bb4e757fa317098ad36f52dd9c183c49c88eb4c24"
+    },
+    {
+      "path": "historical-seed-smoke-requests.jsonl",
+      "bytes": 121,
+      "sha256": "7c7eb123360b647273c9a8c3d3ca0d6626b1e5bd4e92f23164f58173c8152228"
+    },
+    {
+      "path": "historical-seed-smoke-responses.jsonl",
+      "bytes": 12007,
+      "sha256": "f24e2eed577a1ea6de05da744fda603038ed0ea19151da5a491c03fe91d6effb"
+    },
+    {
+      "path": "historical-seed-smoke-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "historical-seed-smoke-summary.json",
+      "bytes": 467,
+      "sha256": "715d00c2e47cd0ed498a6f1f0488fafd3f7c70f8e63cce5799daad1f818d920d"
+    },
+    {
+      "path": "historical-seed-smoke.py",
+      "bytes": 2530,
+      "sha256": "8dc5da6179d37906f0bf5c851803af0b571f25c39b322b0bb9587e1402fbf3c8"
+    }
+  ]
+}

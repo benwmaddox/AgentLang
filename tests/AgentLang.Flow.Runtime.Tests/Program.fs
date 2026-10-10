@@ -1271,6 +1271,221 @@ module Program =
         let stackWrapperValue = evalStack reloaded "9 durable.stack_wrapper" |> expectOk "evaluate reloaded Stack caller"
         equal "10" (stringValue (stackWrapperValue.["data"].["stack"].[0])) "fresh Engine reload executes the Stack caller against Flow"
 
+    let private testTestSourceInspection root =
+        let project = Path.Combine(root, "test-source-inspection")
+        let capabilities = Set.ofList [ "fs.read"; "fs.write" ]
+        let engine = Runtime.Engine(project, capabilities, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
+        let source =
+            """fn inspection.read(path: String) -> String {
+    effects fs.read
+    file.read(path)
+}
+
+test inspection.read/standalone {
+    file.write("/source-inspection", "authored")
+    inspection.read("/source-inspection")
+    => "authored"
+}
+
+test-file scoped-io {
+    override fn inspection.read(path: String) -> String {
+        effects none
+        string.concat("fixture:", path)
+    }
+    test inspection.read/wrapped {
+        inspection.read("/mocked")
+        => "fixture:/mocked"
+    }
+}"""
+        let parsed =
+            FlowParser.parseDocumentWithVersion 2 "<test-source-inspection>" source
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+        let standaloneSource = parsed.Tests |> List.exactlyOne |> fun test -> test.SourceText
+        let file = parsed.TestFiles |> List.exactlyOne
+        let wrappedSource = file.Tests |> List.exactlyOne |> fun test -> test.SourceText
+        let wrapperSource = file.SourceText
+        let overrideSource = file.Overrides |> List.exactlyOne |> fun item -> item.SourceText
+
+        let inspectSources label (response: JsonObject) =
+            let rows = response.["data"].AsArray()
+            equal [ "standalone"; "wrapped" ] (rows |> Seq.map (fun row -> stringValue row.["name"]) |> Seq.toList) $"{label} source rows stay sorted"
+            let findRow caseName = rows |> Seq.find (fun row -> stringValue row.["name"] = caseName)
+            let standalone = findRow "standalone"
+            equal "inspection.read" (stringValue standalone.["word"]) $"{label} standalone source owner"
+            equal standaloneSource (stringValue standalone.["source"]) $"{label} standalone case uses its exact authored Flow source"
+            equal (digest standaloneSource) (stringValue standalone.["sourceHash"]) $"{label} standalone source hash covers its returned source bytes"
+            equal "flow" (stringValue standalone.["frontend"]) $"{label} standalone source frontend"
+            equal 2 (standalone.["syntaxVersion"].GetValue<int>()) $"{label} standalone source syntax version"
+            check (not (standalone.AsObject().ContainsKey "testFile")) $"{label} standalone case has no wrapper context"
+
+            let wrapped = findRow "wrapped"
+            equal wrappedSource (stringValue wrapped.["source"]) $"{label} wrapped case is the exact nested test source"
+            equal (digest wrappedSource) (stringValue wrapped.["sourceHash"]) $"{label} wrapped source hash covers its returned source bytes"
+            let testFile = wrapped.["testFile"]
+            equal "scoped-io" (stringValue testFile.["scope"]) $"{label} wrapper scope is present"
+            equal wrapperSource (stringValue testFile.["source"]) $"{label} wrapper context preserves its exact authored source"
+            equal (digest wrapperSource) (stringValue testFile.["sourceHash"]) $"{label} wrapper hash covers its returned source bytes"
+            let overrides = testFile.["overrides"].AsArray()
+            equal 1 overrides.Count $"{label} wrapper reports its scoped IO replacement"
+            equal "inspection.read" (stringValue overrides[0].["name"]) $"{label} override name is visible"
+            equal overrideSource (stringValue overrides[0].["source"]) $"{label} override source preserves the scoped mock"
+
+        dispatch engine "task.begin" [ "goal", jstr "inspect staged test source without running tests" ]
+        |> expectOk "begin source inspection task"
+        |> ignore
+        defineFlowProject engine source [ "syntaxVersion", jint 2; "temporary", jbool true ]
+        |> expectOk "stage temporary Flow tests and their shared IO override"
+        |> ignore
+        let stagedNames = dispatch engine "tests" [ "word", jstr "inspection.read" ] |> expectOk "list staged Flow test names"
+        equal [ "standalone"; "wrapped" ] (jsonArrayStrings stagedNames.["data"]) "tests keeps its default sorted case-name array"
+        let wordsBeforeInspection = dispatch engine "words" [] |> expectOk "capture staged dictionary definitions" |> fun response -> response.["data"].ToJsonString()
+        let descriptionBeforeInspection = dispatch engine "describe" [ "word", jstr "inspection.read" ] |> expectOk "capture staged test and coverage state" |> fun response -> response.["data"].ToJsonString()
+        let storageBeforeInspection = dispatch engine "storage.status" [] |> expectOk "capture staged storage state" |> fun response -> response.["data"].ToJsonString()
+        let stagedSources =
+            dispatch engine "tests" [ "word", jstr "inspection.read"; "includeSource", jbool true ]
+            |> expectOk "inspect active temporary test sources"
+        inspectSources "staged temporary" stagedSources
+        equal wordsBeforeInspection (dispatch engine "words" [] |> expectOk "check staged definitions after inspection" |> fun response -> response.["data"].ToJsonString()) "test source inspection does not change dictionary definitions"
+        equal descriptionBeforeInspection (dispatch engine "describe" [ "word", jstr "inspection.read" ] |> expectOk "check test and coverage state after inspection" |> fun response -> response.["data"].ToJsonString()) "test source inspection does not change test results or coverage"
+        equal storageBeforeInspection (dispatch engine "storage.status" [] |> expectOk "check storage after inspection" |> fun response -> response.["data"].ToJsonString()) "test source inspection does not publish staged definitions"
+        let stagedTaskStatus = dispatch engine "task.status" [] |> expectOk "check task counters after source inspection" |> fun response -> response.["data"]
+        equal 0 (stagedTaskStatus.["testsRun"].GetValue<int>()) "source inspection does not run tests"
+        equal 0 (stagedTaskStatus.["testsFailed"].GetValue<int>()) "source inspection does not change test failure counts"
+        equal 0 (stagedTaskStatus.["effects"].AsObject().Count) "source inspection does not perform effects"
+        check (jsonArrayStrings stagedTaskStatus.["wordsInspected"] |> List.contains "inspection.read") "source retrieval is recorded as a task inspection"
+        dispatch engine "task.abort" [] |> expectOk "abort temporary source inspection task" |> ignore
+        expectError "NAME_UNKNOWN_WORD" (dispatch engine "tests" [ "word", jstr "inspection.read"; "includeSource", jbool true ])
+        |> ignore
+
+        defineFlowProject engine source [ "syntaxVersion", jint 2 ]
+        |> expectOk "stage persistent Flow tests after temporary abort"
+        |> ignore
+        commit engine "commit" "inspection.read" []
+        |> expectOk "publish the owner after its authored IO and wrapper tests pass"
+        |> ignore
+        let reloaded = Runtime.Engine(project, capabilities, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
+        let reloadedNames = dispatch reloaded "tests" [ "word", jstr "inspection.read" ] |> expectOk "list reloaded test names"
+        equal [ "standalone"; "wrapped" ] (jsonArrayStrings reloadedNames.["data"]) "default names remain unchanged after reload"
+        let reloadedSources =
+            dispatch reloaded "tests" [ "word", jstr "inspection.read"; "includeSource", jbool true ]
+            |> expectOk "inspect exact tests after a fresh Engine reload"
+        inspectSources "reloaded" reloadedSources
+        let oneCase =
+            dispatch reloaded "tests" [ "word", jstr "inspection.read"; "caseName", jstr "wrapped" ]
+            |> expectOk "narrow the default test-name listing"
+        equal [ "wrapped" ] (jsonArrayStrings oneCase.["data"]) "caseName narrows the default listing"
+        let oneSource =
+            dispatch reloaded "tests" [ "word", jstr "inspection.read"; "caseName", jstr "wrapped"; "includeSource", jbool true ]
+            |> expectOk "narrow source inspection to one wrapper case"
+        equal 1 ((oneSource.["data"]).AsArray().Count) "caseName narrows source rows"
+        equal wrappedSource (stringValue oneSource.["data"].[0].["source"]) "single-case inspection preserves nested source"
+
+        let manifestBeforeReplacement = Storage.load (Storage.create project) |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let replacementWrapper =
+            """test-file scoped-io {
+    override fn inspection.read(path: String) -> String {
+        effects none
+        string.concat("replacement:", path)
+    }
+    test inspection.read/wrapped {
+        inspection.read("/replacement")
+        => "replacement:/replacement"
+    }
+}"""
+        let replacementFile =
+            FlowParser.parseDocumentWithVersion 2 "<test-source-inspection-replacement>" replacementWrapper
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+            |> fun document -> document.TestFiles |> List.exactlyOne
+        let replacementCase = replacementFile.Tests |> List.exactlyOne |> fun test -> test.SourceText
+        let replacementOverride = replacementFile.Overrides |> List.exactlyOne |> fun item -> item.SourceText
+        dispatch reloaded "task.begin" [ "goal", jstr "inspect and abort a persistent test-file replacement" ]
+        |> expectOk "begin persistent test-file source replacement task"
+        |> ignore
+        defineFlowProject reloaded replacementWrapper
+            [ "syntaxVersion", jint 2
+              "replace", jbool true
+              "expectedRevision", jint 1 ]
+        |> expectOk "stage a changed test-file wrapper against the persisted owner revision"
+        |> ignore
+        let replacementSources =
+            dispatch reloaded "tests" [ "word", jstr "inspection.read"; "includeSource", jbool true ]
+            |> expectOk "inspect the active persistent-wrapper replacement"
+        let replacementRows = replacementSources.["data"].AsArray()
+        let replacementWrapped = replacementRows |> Seq.find (fun row -> stringValue row.["name"] = "wrapped")
+        equal replacementCase (stringValue replacementWrapped.["source"]) "staged persistent replacement exposes its exact nested case"
+        equal (digest replacementCase) (stringValue replacementWrapped.["sourceHash"]) "replacement case hash covers its returned bytes"
+        equal replacementWrapper (stringValue replacementWrapped.["testFile"].["source"]) "staged replacement exposes the changed wrapper context"
+        equal (digest replacementWrapper) (stringValue replacementWrapped.["testFile"].["sourceHash"]) "replacement wrapper hash covers its returned bytes"
+        equal replacementOverride (stringValue replacementWrapped.["testFile"].["overrides"].[0].["source"]) "staged replacement exposes its changed IO mock"
+        let replacementTaskStatus = dispatch reloaded "task.status" [] |> expectOk "check persistent replacement task counters" |> fun response -> response.["data"]
+        equal 0 (replacementTaskStatus.["testsRun"].GetValue<int>()) "inspecting a persistent replacement does not run its tests"
+        dispatch reloaded "task.abort" [] |> expectOk "abort the staged persistent test-file replacement" |> ignore
+        let restoredSources =
+            dispatch reloaded "tests" [ "word", jstr "inspection.read"; "includeSource", jbool true ]
+            |> expectOk "inspect persisted original tests after abort"
+        equal (reloadedSources.["data"].ToJsonString()) (restoredSources.["data"].ToJsonString()) "task.abort restores original persisted case and wrapper source hashes"
+        let manifestAfterReplacement = Storage.load (Storage.create project) |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal manifestBeforeReplacement.ManifestHash manifestAfterReplacement.ManifestHash "aborted wrapper inspection preserves original manifest authority"
+
+        let examplesHelp = dispatch reloaded "help" [ "topic", jstr "examples" ] |> expectOk "read test source inspection help"
+        let helpData = examplesHelp.["data"]
+        for exampleName in [ "list-test-cases"; "inspect-test-sources"; "inspect-one-test-case" ] do
+            check
+                (helpData.["requestExamples"].AsArray() |> Seq.exists (fun item -> stringValue item.["name"] = exampleName))
+                $"test examples help shows {exampleName}"
+        let helpText = stringValue helpData.["documentation"]
+        for guidance in [ "includeSource"; "caseName"; "test-file"; "scoped mock behavior"; "without running tests"; "before editing" ] do
+            check (helpText.Contains(guidance, StringComparison.Ordinal)) $"test examples help explains {guidance}"
+
+        dispatch reloaded "task.begin" [ "goal", jstr "inspect reloaded tests without changing coverage" ]
+        |> expectOk "begin reloaded source inspection task"
+        |> ignore
+        let reloadedDescription = dispatch reloaded "describe" [ "word", jstr "inspection.read" ] |> expectOk "capture reloaded coverage before source query" |> fun response -> response.["data"].ToJsonString()
+        dispatch reloaded "tests" [ "word", jstr "inspection.read"; "includeSource", jbool true ]
+        |> expectOk "repeat source query while checking read-only behavior"
+        |> ignore
+        equal reloadedDescription (dispatch reloaded "describe" [ "word", jstr "inspection.read" ] |> expectOk "capture reloaded coverage after source query" |> fun response -> response.["data"].ToJsonString()) "reloaded inspection leaves result and coverage observations unchanged"
+        let reloadedTaskStatus = dispatch reloaded "task.status" [] |> expectOk "check reloaded task counters" |> fun response -> response.["data"]
+        equal 0 (reloadedTaskStatus.["testsRun"].GetValue<int>()) "reloaded source inspection does not run tests"
+        equal 0 (reloadedTaskStatus.["effects"].AsObject().Count) "reloaded source inspection does not perform effects"
+        dispatch reloaded "task.commit" [] |> expectOk "finish read-only source inspection task" |> ignore
+
+        expectError "TESTS_INVALID_ARGUMENT" (dispatch reloaded "tests" []) |> ignore
+        expectError "TESTS_INVALID_ARGUMENT" (dispatch reloaded "tests" [ "word", jstr " " ]) |> ignore
+        expectError "TESTS_INVALID_ARGUMENT" (dispatch reloaded "tests" [ "word", jint 7 ]) |> ignore
+        expectError "TESTS_INVALID_ARGUMENT" (dispatch reloaded "tests" [ "word", jstr "inspection.read"; "caseName", jstr "\t" ]) |> ignore
+        expectError "TESTS_INVALID_ARGUMENT" (dispatch reloaded "tests" [ "word", jstr "inspection.read"; "includeSource", jstr "true" ]) |> ignore
+        expectError "NAME_UNKNOWN_WORD" (dispatch reloaded "tests" [ "word", jstr "inspection.unknown" ]) |> ignore
+        expectError "NAME_UNKNOWN_TEST" (dispatch reloaded "tests" [ "word", jstr "inspection.read"; "caseName", jstr "missing" ]) |> ignore
+
+        let stackProject = Path.Combine(root, "test-source-inspection-stack")
+        let stackEngine = Runtime.Engine(stackProject, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
+        let stackSource =
+            "word inspection.stack : Int -> Int\n"
+            + "    effects none\n"
+            + "    1 add\n"
+            + "end\n\n"
+            + "test inspection.stack/basic\n"
+            + "    41   inspection.stack\n"
+            + "    => 42\n"
+            + "end\n"
+        let stackParsed =
+            Parser.parse "<stack-test-source-inspection>" stackSource
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+        let stackTest = stackParsed.Tests |> List.exactlyOne
+        let stackTestSource = stackTest.SourceText
+        check (stackTestSource <> Source.renderTest stackTest) "Stack fixture distinguishes authored source from canonical rendering"
+        defineStack stackEngine stackSource [] |> expectOk "stage a Stack test for source inspection" |> ignore
+        let stackTests =
+            dispatch stackEngine "tests" [ "word", jstr "inspection.stack"; "includeSource", jbool true ]
+            |> expectOk "inspect a Stack test authored source"
+        let stackRow = stackTests.["data"].[0]
+        equal "stack" (stringValue stackRow.["frontend"]) "Stack source row identifies its authored frontend"
+        equal 1 (stackRow.["syntaxVersion"].GetValue<int>()) "Stack source row records its syntax version"
+        equal stackTestSource (stringValue stackRow.["source"]) "Stack inspection returns its authored test SourceText"
+        equal (digest stackTestSource) (stringValue stackRow.["sourceHash"]) "Stack hash covers the returned authored text"
+        check (not (stackRow.AsObject().ContainsKey "testFile")) "Stack tests do not expose Flow wrapper metadata"
+
     let private testExplicitFrontendCannotFallBack root =
         let engine = Runtime.Engine(Path.Combine(root, "frontend-selector"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let flow = dispatch engine "eval" [ "code", jstr "add(10, 20)" ] |> expectOk "omitted frontend selects Flow evaluation"
@@ -5491,6 +5706,7 @@ test-file self {
             testAtomicMultiwordReplacementGates root
             testFlowUnknownArgumentsAndExpectationGuidance root
             testExplicitFrontendAndDurableReload root
+            testTestSourceInspection root
             testExplicitFrontendCannotFallBack root
             testFlow2FormatDefinePersistReloadAndRewrite root
             testFlow2EnumsPersistReloadAndBindings root
@@ -5522,7 +5738,7 @@ test-file self {
             testRecordValidatorRuntimeAndPersistence root
             testEffectCountAssertions root
             testFlowTestFileOverrides root
-            printfn $"Flow Runtime tests passed: 39 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 40 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

@@ -587,7 +587,7 @@ test-file settings {
           Topic.Examples,
             { Title = "Run tests and examples"
               Documentation =
-                "Use test with word to run one owner's attached tests; use test-all to run every attached test in the current dictionary. Test expectations support `=> <literal>`, `=> value <expression>`, and `=> error CODE`. A value-expression expectation runs in an isolated trace and does not count as coverage of the tested word. A returned Result error is a value; use a value-expression expectation to compare it. `=> error CODE` expects a structured runtime error raised while evaluating the test body. For a nominal result compared with an underlying literal, explicitly unwrap it with its accessor in the actual test body; a constructor call cannot follow a bare `=>`. Flow examples accept literal expectations only. Use example with word to run all of that owner's examples, or add caseName to select one. Examples are inspectable documentation metadata and are not a runtime commit gate by themselves. Effects are the declared effect names; inspect them with describe or effects. The latest test or test-all batch replaces the displayed coverage observations. After testing individual words, run test-all before inspecting coverage for several words together. Passing a test batch is not a proof of domain correctness. Library maturity requires every own instruction, branch, and supported iteration outcome; each Bool/enum option for each parameter position; every value in each supported finite return domain; and a dependency closure containing only trusted primitives, generated type operations, and authored library words. Only actual exact-revision calls from passing own tests count. Expected-expression evaluation is isolated, and unsupported finite domains fail closed."
+                "Use test with word to run one owner's attached tests; use test-all to run every attached test in the current dictionary. Use tests with a nonempty word to list sorted case names; set includeSource to true to inspect each exact authored case source, its SHA-256 source hash, frontend, and syntax version. Add caseName to narrow either response to one case. For a case inside a Flow test-file, the source response also includes its wrapper scope, exact source and hash, and override names and sources; those replacements explain the test's scoped mock behavior. This inspection reads active staged or temporary definitions and reloaded definitions without running tests or changing test results, effects, or coverage. Inspect attached cases before editing them. Test expectations support `=> <literal>`, `=> value <expression>`, and `=> error CODE`. A value-expression expectation runs in an isolated trace and does not count as coverage of the tested word. A returned Result error is a value; use a value-expression expectation to compare it. `=> error CODE` expects a structured runtime error raised while evaluating the test body. For a nominal result compared with an underlying literal, explicitly unwrap it with its accessor in the actual test body; a constructor call cannot follow a bare `=>`. Flow examples accept literal expectations only. Use example with word to run all of that owner's examples, or add caseName to select one. Examples are inspectable documentation metadata and are not a runtime commit gate by themselves. Effects are the declared effect names; inspect them with describe or effects. The latest test or test-all batch replaces the displayed coverage observations. After testing individual words, run test-all before inspecting coverage for several words together. Passing a test batch is not a proof of domain correctness. Library maturity requires every own instruction, branch, and supported iteration outcome; each Bool/enum option for each parameter position; every value in each supported finite return domain; and a dependency closure containing only trusted primitives, generated type operations, and authored library words. Only actual exact-revision calls from passing own tests count. Expected-expression evaluation is isolated, and unsupported finite domains fail closed."
               AllowedFlowDefineFields = []
               SourceExamples =
                 [ { Name = "tutorial-sign-test"
@@ -607,6 +607,18 @@ test-file settings {
                     Description = "Run tests for one word."
                     Operation = "test"
                     Fields = [ textField "word" "tutorial.sign" ] }
+                  { Name = "list-test-cases"
+                    Description = "List an owner's sorted attached test case names without running them."
+                    Operation = "tests"
+                    Fields = [ textField "word" "tutorial.sign" ] }
+                  { Name = "inspect-test-sources"
+                    Description = "Inspect exact case source and the enclosing wrapper and replacements when present."
+                    Operation = "tests"
+                    Fields = [ textField "word" "tutorial.sign"; "includeSource", Boolean true ] }
+                  { Name = "inspect-one-test-case"
+                    Description = "Inspect one case's exact source before editing it."
+                    Operation = "tests"
+                    Fields = [ textField "word" "tutorial.sign"; "caseName", Text "negative"; "includeSource", Boolean true ] }
                   { Name = "test-all"
                     Description = "Run attached tests across the current dictionary."
                     Operation = "test-all"
