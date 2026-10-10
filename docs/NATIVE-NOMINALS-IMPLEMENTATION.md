@@ -3,13 +3,15 @@
 2026-10-10. The first nominal Int slice is complete and validated in
 [report 170](../reports/170-native-nominal-int.md): 521 LLVM assertions, 94
 independent nominal cases across O0/O2, mailbox regressions and all 37 full local
-Release checks pass. Predicate-bearing Int is the next secondary backend slice. This
-does not replace the requirement for validated refinements or claim native
-support for Email. The interpreter's verified semantic IR remains authoritative.
+Release checks pass. Predicate-bearing Int also passes its independent native,
+mailbox-regression and full local gates in report 172. The bounded validated
+String scope below is tracked by report 174; general Email validation remains
+subsequent work. The verified semantic IR remains authoritative.
 
-The predicate-bearing Int implementation and local validation are in progress
-in [report 172](../reports/172-native-refined-int.md). Ordinary raw host inputs
-must run the frozen predicate over active nested values before executing the
+[Report 172](../reports/172-native-refined-int.md) completes ordinary owning
+predicate-bearing Int: 595 LLVM assertions, 44 independent native checks, 1,587
+mailbox regressions and all 37 full local Release checks pass. Ordinary raw host
+inputs run the frozen predicate over active nested values before executing the
 body. Refined mailbox layouts remain rejected until their own external ingress
 is validated. Nominal identity alone is not sufficient at either boundary.
 
@@ -22,7 +24,7 @@ its predicate support. A nominal name alone is not a value-validation rule.
 Unsupported refinements must continue to fail explicitly rather than executing
 as their base type with validation omitted.
 
-## First slice: nominal Int
+## First slice: nominal Int (completed in report 170)
 
 `IrScalarTypeDefinition` already stores a base type and optional frozen validator;
 IR verification checks exact generated wrap/unwrap targets and nominal identity.
@@ -58,13 +60,14 @@ in this slice.
   move bytes; explicit record/sum construction keeps its existing accounting.
 - Records, Option and Result retain wrapped payload identity through construction,
   extraction, equality, inactive alternatives and host round trips.
-- String/Bool/Float wrappers and predicate-bearing scalars remain explicit
-  unsupported errors, including inactive sum alternatives.
+- String/Bool/Float wrappers remain explicit unsupported errors, including
+  inactive sum alternatives. Predicate-bearing Int is covered separately by
+  report 172; unsupported validator forms still reject explicitly.
 - Lifetime escapes and short-capacity failures preserve outputs and cleanup.
 - Fresh native value-stack and applicable mailbox regression gates, plus the
   full local Release gate, pass before publication.
 
-## Next slice: predicate refinement
+## Predicate-bearing Int (completed in report 172)
 
 PositiveId must invoke the validator target frozen into the same verified IR.
 Discover validator-only dependencies as well as ordinary calls; use ordinary
@@ -79,6 +82,24 @@ Record validators, Float/List wrappers and general Email predicates are later
 work. This delivery order establishes partial native support while retaining
 the full strong-type requirement; it does not redefine that requirement as
 nominal naming alone.
+
+## Validated String (report 174 scope)
+
+Extend ordinary owning-native compilation to a String-backed refinement such as
+NonEmptyString, with a pure frozen String -> Bool validator. Reuse the existing
+dynamic UTF-16 String layout and descriptor kind; preserve distinct nominal
+TypeIds, exact host identities and owner ranges. Construction and raw external
+entry must validate active nested record, Option and Result payloads before the
+body or output publication. Wrap/unwrap must retag without payload copying.
+
+Independent O0/O2 acceptance must pin bytes, layout, recursive admission,
+frozen validator identity, atomic failures and ownership accounting. Layout
+schema 3, stack ABI 1 and module ABI 1 remain unchanged. Refined mailbox layouts,
+unvalidated String wrappers and Bool/Float refinements remain unsupported.
+This slice does not establish general Email validation or add native I/O. Run
+fresh LLVM, native value-stack, mailbox and full local gates before reporting
+completion. [Report 174](../reports/174-native-refined-string.md) records gate
+results and retained failed attempts; its status is the completion record.
 
 ## Investigation references
 

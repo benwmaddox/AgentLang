@@ -277,6 +277,12 @@ supported finite return domains under the [finite coverage contract](FINITE-COVE
 The owning-arena LLVM backend supports payload-free enums and bounded
 Option/Result layouts; [report 160](../reports/160-native-option-result.md)
 records the conformance evidence and unsupported native types.
+Ordinary owning-native compilation additionally preserves nominal Int and
+validated String scalar identities with frozen pure predicates; active nested
+payloads are checked at external entry. The bounded String slice is tracked in
+[report 174](../reports/174-native-refined-string.md). It does not establish
+general Email validation or refined mailbox ingress. Unsupported forms must
+continue to reject explicitly rather than erase their semantic type.
 
 Tests must support injected deterministic effect providers for IO and other
 declared effects. Injection must preserve the function's effect contract and

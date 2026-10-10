@@ -167,8 +167,17 @@ Int-backed refinement slice with frozen validator identity, constructor checks
 and recursive raw host-input validation before entry execution. Fresh gates
 pass: 595 LLVM assertions, 44 native checks, 1,587 mailbox checks and all 37 full
 local Release checks. Refined mailbox layouts remain rejected until that boundary
-has independent coverage. String/Email refinements remain later work. This
-engineering milestone adds no agent-efficacy or throughput result.
+has independent coverage. The bounded validated String slice is tracked below;
+general Email validation remains later work. This engineering milestone adds no
+agent-efficacy or throughput result.
+
+[Report 174](../reports/174-native-refined-string.md) extends ordinary owning
+compilation to validated String-backed nominal values. Exact frozen predicates
+run at construction and raw external entry over active nested payloads;
+wrap/unwrap preserves owner ranges without payload copying. Its scope and gate
+status are recorded in the report. Refined mailbox ingress, general Email
+validation, JIT and memory-policy selection remain separate work. This adds no
+agent-efficacy or service-throughput claim.
 
 A development-load follow-up should measure fresh project activation separately
 from warm request latency. Report 169 records similar 23–25-second fresh CLI

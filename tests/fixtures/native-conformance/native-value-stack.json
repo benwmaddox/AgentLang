@@ -1428,9 +1428,145 @@
     },
     "sentinelByteHex": "a5"
   },
+  "nonEmptyStringConformance": {
+    "encoding": "String payload is an eight-byte UTF-16 code-unit count and zero reserved word, followed by UTF-16LE data and zero padding to an eight-byte extent.",
+    "identityProgram": {
+      "typeIds": { "NonEmptyString": 4, "String": 5 },
+      "stringKind": 5,
+      "minimumPayloadBytes": 8,
+      "minimumExtentBytes": 8
+    },
+    "constructor": {
+      "success": {
+        "value": "ok",
+        "stringBytesHex": "02000000000000006f006b0000000000",
+        "payloadBytes": 12,
+        "extentBytes": 16
+      },
+      "empty": {
+        "value": "",
+        "bytesHex": "0000000000000000",
+        "diagnostic": {
+          "code": "REFINEMENT_FAILED",
+          "message": "Value does not satisfy NonEmptyString's refinement validator.",
+          "word": "NonEmptyString.construct",
+          "expected": ["validator returns true"],
+          "actual": ["false"],
+          "span": {
+            "file": "<native-value-stack-scalar-NonEmptyString>",
+            "line": 1,
+            "column": 1,
+            "length": 1
+          }
+        }
+      }
+    },
+    "hostFalseDiagnostic": {
+      "code": "REFINEMENT_FAILED",
+      "message": "Value does not satisfy NonEmptyString's refinement validator.",
+      "word": "NonEmptyString.construct",
+      "expected": ["validator returns true"],
+      "actual": ["false"],
+      "span": {
+        "file": "<native-value-stack-scalar-NonEmptyString>",
+        "line": 1,
+        "column": 1,
+        "length": 1
+      }
+    },
+    "hostInputs": {
+      "validValue": "ok",
+      "validStringBytesHex": "02000000000000006f006b0000000000",
+      "wrongNominalTypeName": "OtherString",
+      "utf16Cases": {
+        "supplementary": {
+          "value": "A\ud83d\ude00",
+          "codeUnitCount": 3,
+          "stringBytesHex": "030000000000000041003dd800de0000"
+        },
+        "embeddedNul": {
+          "value": "A\u0000B",
+          "codeUnitCount": 3,
+          "stringBytesHex": "03000000000000004100000042000000"
+        }
+      }
+    },
+    "hostShapeRejections": {
+      "exceptionType": "System.ArgumentException",
+      "parameterName": "values"
+    },
+    "rawEntry": {
+      "inputCount": 1,
+      "invalidEmptyBytesHex": "0000000000000000",
+      "invalidEmptyExtentBytes": 8,
+      "validBytesHex": "02000000000000006f006b0000000000",
+      "validExtentBytes": 16,
+      "expectedDiagnosticStatus": 1,
+      "sentinelBytesHex": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+    },
+    "nestedProgram": {
+      "typeIds": { "NonEmptyString": 4, "RefinedEnvelope": 5, "String": 6 },
+      "record": {
+        "ownerValue": "ok",
+        "tailValue": "z",
+        "bytesHex": "02000000000000006f006b000000000001000000000000007a00000000000000",
+        "payloadBytes": 22,
+        "extentBytes": 32
+      },
+      "envelopeLayout": {
+        "minimumPayloadBytes": 16,
+        "minimumExtentBytes": 16
+      },
+      "option": {
+        "someBytesHex": "000000000000000002000000000000006f006b0000000000",
+        "noneBytesHex": "0100000000000000"
+      },
+      "result": {
+        "okBytesHex": "000000000000000002000000000000006f006b0000000000",
+        "errorBytesHex": "010000000000000002000000000000006f006b0000000000",
+        "inactiveOkInt": {
+          "value": 7,
+          "bytesHex": "00000000000000000700000000000000"
+        }
+      }
+    },
+    "validatorReplacement": {
+      "originalRevision": 1,
+      "replacementRevision": 2
+    },
+    "runtimeValidatorFailure": {
+      "diagnostic": {
+        "code": "RUNTIME_DIVIDE_BY_ZERO",
+        "message": "Integer division by zero.",
+        "word": "divide",
+        "span": {
+          "file": "<native-value-stack-refined-string-runtime-validator-divide>",
+          "line": 1,
+          "column": 4,
+          "length": 1
+        }
+      }
+    },
+    "ownerRangeTrace": {
+      "literalDeepCopyBytes": 80,
+      "projectedOutputBytesHex": "02000000000000006f006b0000000000",
+      "expectedDescriptorTransfer": {
+        "typeId": 6,
+        "offsetBytes": 0,
+        "sourceOffsetBytesOwnerEnd": 32,
+        "sourceExtentBytesPayloadExtent": 16
+      }
+    },
+    "unsupportedUnvalidatedStringDiagnostic": {
+      "code": "IR_OWNING_STACK_TYPE_UNSUPPORTED",
+      "message": "Owning-stack requires String-backed nominal scalars to use a frozen pure String -> Bool validator; unvalidated String wrappers are unsupported."
+    },
+    "sentinelByteHex": "a5"
+  },
+
   "limits": [
     "Synchronous execution only; no async provider buffers or cancellation claims.",
-    "Fixed-size Int, Bool, Unit, and acyclic nested records only.",
+    "Fixture coverage is bounded to fixed Int/Bool/Unit workloads, selected enums and UTF-16 String cases, nominal/refined scalar cases, and selected acyclic nested record/Option/Result shapes; it does not establish general type or layout coverage.",
     "Call-depth boundary is checked with a generated static acyclic function chain because verified IR rejects recursive call graphs.",
     "Candidate Value input/output marshaling is host-owned and reported separately.",
     "No final memory-policy, cache-locality, or throughput claim."

@@ -146,3 +146,15 @@ test renewal.label/pending {
 See [closed enums](CLOSED-ENUMS.md) for exhaustiveness and enum construction,
 and [authored effect assertions](EFFECT-ASSERTIONS.md) for test-only effect
 counts.
+
+## Native refinement boundary
+
+The selected owning-native backend preserves distinct nominal identities for
+Int wrappers and validated String wrappers. A String-backed refinement uses its
+frozen pure String -> Bool validator at construction and external entry, also
+inside active record, Option and Result payloads. The bounded NonEmptyString
+example is not a general Email validator. Refined mailbox layouts and
+unvalidated String wrappers remain unsupported. This is a backend extension;
+the authoring syntax and library qualification rules are unchanged. See the
+[native typing scope](NATIVE-NOMINALS-IMPLEMENTATION.md) and
+[report 174](../reports/174-native-refined-string.md) for acceptance status.

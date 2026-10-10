@@ -39,6 +39,7 @@ $sourceInputPaths = @(
     $nativeRuntimeSource,
     $nativeTestSource,
     (Join-Path $repo 'docs/STACK-ONLY-RESEARCH.md'),
+    (Join-Path $repo 'docs/NATIVE-NOMINALS-IMPLEMENTATION.md'),
     (Join-Path $repo '.agentlang/owning-stack-003/implementation-plan.md'),
     (Join-Path $repo '.agentlang/owning-stack-003/acceptance-plan.md')
 )
@@ -564,7 +565,7 @@ try {
         $nominalCaseSuffixes.Add("$caseName/host-identity-trace")
         $nominalCaseSuffixes.Add("$caseName/wrap-unwrap-retags")
     }
-    foreach ($unsupportedName in @('BoolTag', 'TextTag', 'FloatTag')) {
+    foreach ($unsupportedName in @('BoolTag', 'UnvalidatedStringTag', 'FloatTag')) {
         $nominalCaseSuffixes.Add("unsupported-$unsupportedName-is-explicit")
     }
     $nominalExpectedCheckNames = [Collections.Generic.List[string]]::new()
@@ -756,6 +757,183 @@ try {
         unexpectedPositiveIdCheckCount = $positiveEvidenceChecks.Count - $positiveExpectedCheckNames.Count
         missingOrDuplicateChecks = @($positiveMissingChecks)
         failingChecks = @($positiveFailingChecks)
+    })
+
+    $refinedOracle = $nativeFixture['nonEmptyStringConformance']
+    $refinedIdentity = $refinedOracle['identityProgram']
+    $refinedIdentityIds = $refinedIdentity['typeIds']
+    $refinedSuccess = $refinedOracle['constructor']['success']
+    $refinedEmpty = $refinedOracle['constructor']['empty']
+    $refinedFalse = $refinedOracle['hostFalseDiagnostic']
+    $refinedFalseSpan = $refinedFalse['span']
+    $refinedHost = $refinedOracle['hostInputs']
+    $refinedRaw = $refinedOracle['rawEntry']
+    $refinedNested = $refinedOracle['nestedProgram']
+    $refinedNestedIds = $refinedNested['typeIds']
+    $refinedRecord = $refinedNested['record']
+    $refinedOption = $refinedNested['option']
+    $refinedResult = $refinedNested['result']
+    $refinedInactive = $refinedResult['inactiveOkInt']
+    $refinedRuntime = $refinedOracle['runtimeValidatorFailure']['diagnostic']
+    $refinedRuntimeSpan = $refinedRuntime['span']
+    $refinedUnsupportedString = $refinedOracle['unsupportedUnvalidatedStringDiagnostic']
+    $refinedOwner = $refinedOracle['ownerRangeTrace']
+    $refinedTransfer = $refinedOwner['expectedDescriptorTransfer']
+    $refinedUtf16 = $refinedHost['utf16Cases']
+    $refinedFixturePassed =
+        $null -ne $refinedOracle -and
+        [string]$refinedOracle['encoding'] -ceq 'String payload is an eight-byte UTF-16 code-unit count and zero reserved word, followed by UTF-16LE data and zero padding to an eight-byte extent.' -and
+        [int]$refinedIdentityIds['NonEmptyString'] -eq 4 -and [int]$refinedIdentityIds['String'] -eq 5 -and
+        [int]$refinedIdentity['stringKind'] -eq 5 -and
+        [int]$refinedIdentity['minimumPayloadBytes'] -eq 8 -and [int]$refinedIdentity['minimumExtentBytes'] -eq 8 -and
+        [string]$refinedSuccess['value'] -ceq 'ok' -and
+        [string]$refinedSuccess['stringBytesHex'] -ceq '02000000000000006f006b0000000000' -and
+        [int]$refinedSuccess['payloadBytes'] -eq 12 -and [int]$refinedSuccess['extentBytes'] -eq 16 -and
+        [string]$refinedEmpty['bytesHex'] -ceq '0000000000000000' -and
+        [string]$refinedFalse['code'] -ceq 'REFINEMENT_FAILED' -and
+        [string]$refinedFalse['message'] -ceq "Value does not satisfy NonEmptyString's refinement validator." -and
+        [string]$refinedFalse['word'] -ceq 'NonEmptyString.construct' -and
+        ([string[]]$refinedFalse['expected'] -join ',') -ceq 'validator returns true' -and
+        ([string[]]$refinedFalse['actual'] -join ',') -ceq 'false' -and
+        [string]$refinedFalseSpan['file'] -ceq '<native-value-stack-scalar-NonEmptyString>' -and
+        [int]$refinedFalseSpan['line'] -eq 1 -and [int]$refinedFalseSpan['column'] -eq 1 -and [int]$refinedFalseSpan['length'] -eq 1 -and
+        [string]$refinedHost['validStringBytesHex'] -ceq '02000000000000006f006b0000000000' -and
+        [string]$refinedHost['wrongNominalTypeName'] -ceq 'OtherString' -and
+        [string]$refinedOracle['hostShapeRejections']['exceptionType'] -ceq 'System.ArgumentException' -and
+        [string]$refinedOracle['hostShapeRejections']['parameterName'] -ceq 'values' -and
+        [int]$refinedRaw['inputCount'] -eq 1 -and
+        [string]$refinedRaw['invalidEmptyBytesHex'] -ceq '0000000000000000' -and [int]$refinedRaw['invalidEmptyExtentBytes'] -eq 8 -and
+        [string]$refinedRaw['validBytesHex'] -ceq '02000000000000006f006b0000000000' -and [int]$refinedRaw['validExtentBytes'] -eq 16 -and
+        [int]$refinedRaw['expectedDiagnosticStatus'] -eq 1 -and
+        [string]$refinedRaw['sentinelBytesHex'] -ceq (('a5' * 32) -join '') -and
+        [int]$refinedNestedIds['NonEmptyString'] -eq 4 -and [int]$refinedNestedIds['RefinedEnvelope'] -eq 5 -and [int]$refinedNestedIds['String'] -eq 6 -and
+        [string]$refinedRecord['bytesHex'] -ceq '02000000000000006f006b000000000001000000000000007a00000000000000' -and
+        [string]$refinedRecord['ownerValue'] -ceq 'ok' -and [string]$refinedRecord['tailValue'] -ceq 'z' -and
+        [int]$refinedRecord['payloadBytes'] -eq 22 -and [int]$refinedRecord['extentBytes'] -eq 32 -and
+        [int]$refinedNested['envelopeLayout']['minimumPayloadBytes'] -eq 16 -and
+        [int]$refinedNested['envelopeLayout']['minimumExtentBytes'] -eq 16 -and
+        [string]$refinedOption['someBytesHex'] -ceq '000000000000000002000000000000006f006b0000000000' -and
+        [string]$refinedOption['noneBytesHex'] -ceq '0100000000000000' -and
+        [string]$refinedResult['okBytesHex'] -ceq '000000000000000002000000000000006f006b0000000000' -and
+        [string]$refinedResult['errorBytesHex'] -ceq '010000000000000002000000000000006f006b0000000000' -and
+        [int]$refinedInactive['value'] -eq 7 -and
+        [string]$refinedInactive['bytesHex'] -ceq '00000000000000000700000000000000' -and
+        [int]$refinedOracle['validatorReplacement']['originalRevision'] -eq 1 -and
+        [int]$refinedOracle['validatorReplacement']['replacementRevision'] -eq 2 -and
+        [string]$refinedRuntime['code'] -ceq 'RUNTIME_DIVIDE_BY_ZERO' -and
+        [string]$refinedRuntime['message'] -ceq 'Integer division by zero.' -and [string]$refinedRuntime['word'] -ceq 'divide' -and
+        [string]$refinedRuntimeSpan['file'] -ceq '<native-value-stack-refined-string-runtime-validator-divide>' -and
+        [int]$refinedRuntimeSpan['line'] -eq 1 -and [int]$refinedRuntimeSpan['column'] -eq 4 -and [int]$refinedRuntimeSpan['length'] -eq 1 -and
+        [int]$refinedOwner['literalDeepCopyBytes'] -eq 80 -and
+        [string]$refinedOwner['projectedOutputBytesHex'] -ceq '02000000000000006f006b0000000000' -and
+        [int]$refinedTransfer['typeId'] -eq 6 -and [int]$refinedTransfer['offsetBytes'] -eq 0 -and
+        [int]$refinedTransfer['sourceOffsetBytesOwnerEnd'] -eq 32 -and
+        [int]$refinedTransfer['sourceExtentBytesPayloadExtent'] -eq 16 -and
+        [string]$refinedUnsupportedString['code'] -ceq 'IR_OWNING_STACK_TYPE_UNSUPPORTED' -and
+        [string]$refinedUnsupportedString['message'] -ceq 'Owning-stack requires String-backed nominal scalars to use a frozen pure String -> Bool validator; unvalidated String wrappers are unsupported.' -and
+        [string]$refinedUtf16['supplementary']['value'] -ceq ("A" + [char]0xD83D + [char]0xDE00) -and
+        [int]$refinedUtf16['supplementary']['codeUnitCount'] -eq 3 -and
+        [string]$refinedUtf16['supplementary']['stringBytesHex'] -ceq '030000000000000041003dd800de0000' -and
+        [string]$refinedUtf16['embeddedNul']['value'] -ceq ("A" + [char]0 + "B") -and
+        [int]$refinedUtf16['embeddedNul']['codeUnitCount'] -eq 3 -and
+        [string]$refinedUtf16['embeddedNul']['stringBytesHex'] -ceq '03000000000000004100000042000000'
+    Add-Check 'NonEmptyString fixture pins UTF-16 bytes, IDs, dynamic layout, raw atomicity, validator diagnostics, and OwnerEnd provenance' $refinedFixturePassed ([ordered]@{
+        expectedIdentityTypeIds = [ordered]@{ NonEmptyString = 4; String = 5 }
+        expectedNestedTypeIds = [ordered]@{ NonEmptyString = 4; RefinedEnvelope = 5; String = 6 }
+        expectedStringKind = 5
+        expectedOkBytesHex = '02000000000000006f006b0000000000'
+        expectedRecordBytesHex = '02000000000000006f006b000000000001000000000000007a00000000000000'
+        expectedOwnerEndBytes = 32
+        actualFixtureIdentityTypeIds = $refinedIdentityIds
+        actualFixtureNestedTypeIds = $refinedNestedIds
+    })
+
+    $refinedCaseSuffixes = @(
+        'type-identities-and-string-layout',
+        'constructor-success-and-utf16-bytes',
+        'constructor-reject-empty-parity-atomically',
+        'host-identity-input-only-validator-closure',
+        'host-identity-utf16-supplementary-roundtrip',
+        'host-identity-utf16-embedded-nul-roundtrip',
+        'base-string-type-id-and-kind-remain-distinct',
+        'host-shape-rejects-bare-string-atomically',
+        'host-shape-rejects-wrong-nominal-atomically',
+        'raw-empty-entry-preflight-before-body',
+        'recursive-record-layout-type-ids-and-dynamic-fields',
+        'record-field-validates-recursively',
+        'record-field-empty-rejected-atomically',
+        'option-some-validates-active-payload',
+        'option-some-empty-rejected-atomically',
+        'option-none-skips-inactive-validator',
+        'result-ok-validates-active-payload',
+        'result-ok-empty-rejected-atomically',
+        'result-error-validates-active-payload',
+        'result-error-empty-rejected-atomically',
+        'result-inactive-alternative-skips-validator',
+        'validator-only-dependency-freezes-target-after-same-name-replacement',
+        'validator-runtime-failure-preserves-classification',
+        'refined-field-owner-end-project-unwrap-no-extra-copy',
+        'owner-range-trace-complete',
+        'unsupported-UnvalidatedStringTag-is-explicit',
+        'unsupported-BoolTag-is-explicit',
+        'unsupported-FloatTag-is-explicit',
+        'unsupported-refined-string-mailbox-layout-is-explicit'
+    )
+    $refinedRuns = @()
+    if ($null -ne $experimentEvidence['refinedStringRuns']) { $refinedRuns = @($experimentEvidence['refinedStringRuns']) }
+    $refinedRunOptimizationNames = @($refinedRuns | ForEach-Object { [string]$_['optimization'] } | Sort-Object) -join ','
+    $refinedProvenanceCoverage = 'After projecting and unwrapping the NonEmptyString owner field, the returned base String (TypeId 6) descriptor transfer retains the outer OwnerEnd; projection and unwrap add no payload move or deep copy beyond the two pinned temporary literals.'
+    $refinedRunsMissingCoverage = @($refinedRuns | Where-Object {
+        $_['caseCount'] -ne $refinedCaseSuffixes.Count -or
+        $_['rawInvalidInputCount'] -ne 1 -or
+        $_['rawBodyFailureControlCount'] -ne 1 -or
+        $_['recursiveRecordInputCount'] -ne 2 -or
+        $_['activeSumValidationCaseCount'] -ne 4 -or
+        $_['nonEmptyStringTypeId'] -ne 4 -or $_['stringTypeId'] -ne 5 -or
+        $_['refinedEnvelopeTypeId'] -ne 5 -or $_['stringKind'] -ne 5 -or
+        $_['ownerEndBytes'] -ne 32 -or
+        $_['validatorRevision'] -ne 1 -or $_['replacementValidatorRevision'] -ne 2 -or
+        $_['provenanceCoverage'] -cne $refinedProvenanceCoverage
+    }).Count
+    $refinedRunCoveragePassed = $refinedRuns.Count -eq 2 -and
+        $refinedRunOptimizationNames -ceq 'O0,O2' -and $refinedRunsMissingCoverage -eq 0
+    Add-Check 'NonEmptyString report has complete O0/O2 construction, recursive ingress, raw preflight, and owner-range summaries' $refinedRunCoveragePassed ([ordered]@{
+        expectedOptimizations = @('O0', 'O2')
+        expectedCaseCountPerOptimization = $refinedCaseSuffixes.Count
+        expectedTypeIds = [ordered]@{ NonEmptyString = 4; String = 5; RefinedEnvelope = 5 }
+        expectedOwnerEndBytes = 32
+        actualOptimizationNames = $refinedRunOptimizationNames
+        incompleteRunCount = $refinedRunsMissingCoverage
+        actualRuns = $refinedRuns
+    })
+    $refinedExpectedCheckNames = [Collections.Generic.List[string]]::new()
+    foreach ($optimizationName in @('O0', 'O2')) {
+        foreach ($suffix in $refinedCaseSuffixes) {
+            $refinedExpectedCheckNames.Add("refined-string/$optimizationName/$suffix")
+        }
+    }
+    $refinedEvidenceChecks = @()
+    if ($null -ne $experimentEvidence['checks']) {
+        $refinedEvidenceChecks = @($experimentEvidence['checks'] | Where-Object { [string]$_['name'] -like 'refined-string/*' })
+    }
+    $refinedMissingChecks = [Collections.Generic.List[string]]::new()
+    $refinedFailingChecks = [Collections.Generic.List[string]]::new()
+    foreach ($expectedName in $refinedExpectedCheckNames) {
+        $matchingChecks = @($refinedEvidenceChecks | Where-Object { [string]$_['name'] -ceq $expectedName })
+        if ($matchingChecks.Count -ne 1) { $refinedMissingChecks.Add("$expectedName (count=$($matchingChecks.Count))") }
+        elseif (-not [bool]$matchingChecks[0]['passed']) { $refinedFailingChecks.Add($expectedName) }
+    }
+    $refinedCheckCoveragePassed = $refinedCaseSuffixes.Count -eq 29 -and
+        $refinedExpectedCheckNames.Count -eq 58 -and
+        $refinedEvidenceChecks.Count -eq $refinedExpectedCheckNames.Count -and
+        $refinedMissingChecks.Count -eq 0 -and $refinedFailingChecks.Count -eq 0
+    Add-Check 'NonEmptyString matrix has exactly one passing check per pinned O0/O2 case and no missing, duplicate, or unexpected cases' $refinedCheckCoveragePassed ([ordered]@{
+        expectedCasesPerOptimization = $refinedCaseSuffixes.Count
+        expectedTotalCheckCount = $refinedExpectedCheckNames.Count
+        actualRefinedStringCheckCount = $refinedEvidenceChecks.Count
+        unexpectedRefinedStringCheckCount = $refinedEvidenceChecks.Count - $refinedExpectedCheckNames.Count
+        missingOrDuplicateChecks = @($refinedMissingChecks)
+        failingChecks = @($refinedFailingChecks)
     })
 
     Add-Check 'fixed three-way controls share one compiler-authorized program instance' ([bool]$experimentEvidence.fixedControlVerifiedProgramInstance) $experimentEvidence.backendScope

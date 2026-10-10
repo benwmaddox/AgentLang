@@ -150,6 +150,35 @@ type private PositiveIdEntryBodies =
       OverflowConstructor: VerifiedIrBody
       OverflowIdentity: VerifiedIrBody }
 
+type private RefinedStringEntryBodies =
+    { CoreProgram: VerifiedIrProgram
+      CoreCompilerContext: Compiler.IrLoweringContext
+      Constructor: VerifiedIrBody
+      StringLiteralOk: VerifiedIrBody
+      StringLiteralEmpty: VerifiedIrBody
+      InputIdentity: VerifiedIrBody
+      BaseStringIdentity: VerifiedIrBody
+      InputFailure: VerifiedIrBody
+      NestedProgram: VerifiedIrProgram
+      NestedCompilerContext: Compiler.IrLoweringContext
+      EnvelopeConstruct: VerifiedIrBody
+      EnvelopeIdentity: VerifiedIrBody
+      EnvelopeProjectOwnerAndUnwrap: VerifiedIrBody
+      OptionSomeConstruct: VerifiedIrBody
+      OptionNoneConstruct: VerifiedIrBody
+      OptionIdentity: VerifiedIrBody
+      ResultOkConstruct: VerifiedIrBody
+      ResultErrorConstruct: VerifiedIrBody
+      ResultIdentity: VerifiedIrBody
+      InactiveResultIdentity: VerifiedIrBody
+      RuntimeFailureProgram: VerifiedIrProgram
+      RuntimeFailureCompilerContext: Compiler.IrLoweringContext
+      RuntimeFailureConstructor: VerifiedIrBody
+      ReplacementProgram: VerifiedIrProgram
+      ReplacementCompilerContext: Compiler.IrLoweringContext
+      ReplacementInputIdentity: VerifiedIrBody
+      MailboxBodies: VerifiedIrBody list }
+
 [<Struct; StructLayout(LayoutKind.Sequential, Pack = 8)>]
 type private RawOwningStackContext =
     val mutable AbiVersion: uint32
@@ -192,6 +221,7 @@ type private RawOwningExecuteDelegate = delegate of nativeint * nativeint * uint
 type private RawOwningInvocation =
     { NativeStatus: int32
       ContextStatus: uint32
+      ErrorId: uint32
       RetainedOutput: byte array }
 
 type private LayoutDepthCase =
@@ -1422,6 +1452,73 @@ let private nominalIntCompilerContext
       Enums = Map.empty
       WordIds = wordIds }
 
+let private refinedStringWordEntry name inputs outputs revision sourceName body =
+    let sourceSpan = span ($"<native-value-stack-refined-string-{sourceName}>") 1
+    let definition: WordDefinition =
+        { Name = name
+          Inputs = inputs
+          Outputs = outputs
+          Effects = Set.empty
+          Maturity = LibraryWord
+          Revision = revision
+          Documentation = "Compiler-minted refined String conformance helper."
+          Body = body
+          SourceText = "compiler-minted refined String conformance helper"
+          Span = sourceSpan }
+    { Definition = definition
+      Builtin = None
+      Status = Persistent
+      Maturity = LibraryWord
+      Revision = revision }
+
+let private refinedStringCompilerContext
+    (extraWords: WordEntry list)
+    (records: RecordDefinition list)
+    (scalarDefinitions: (ScalarTypeDefinition * string * string) list) : Compiler.IrLoweringContext =
+    let recordMap = records |> List.map (fun record -> record.Name, record) |> Map.ofList
+    let generatedScalarWords =
+        scalarDefinitions
+        |> List.collect (fun (scalar, constructorName, accessorName) ->
+            let generatedEntry builtin wordName inputs outputs =
+                let definition: WordDefinition =
+                    { Name = wordName
+                      Inputs = inputs
+                      Outputs = outputs
+                      Effects = Set.empty
+                      Maturity = LibraryWord
+                      Revision = 1
+                      Documentation = "Generated refined String scalar operation."
+                      Body = []
+                      SourceText = "compiler-minted generated scalar operation"
+                      Span = scalar.Span }
+                { Definition = definition
+                  Builtin = Some builtin
+                  Status = Persistent
+                  Maturity = LibraryWord
+                  Revision = 1 }
+            [ generatedEntry (ScalarConstructor scalar.Name) constructorName [ scalar.BaseType ] [ TNamed scalar.Name ]
+              generatedEntry (ScalarAccessor scalar.Name) accessorName [ TNamed scalar.Name ] [ scalar.BaseType ] ])
+    let words =
+        extraWords @ generatedRecordEntries recordMap @ generatedScalarWords
+        |> List.fold (fun found entry -> Map.add entry.Definition.Name entry found) Compiler.primitives
+    let wordIds =
+        words
+        |> Map.toList
+        |> List.map (fun (name, entry) ->
+            let prefix =
+                match entry.Builtin with
+                | Some(BuiltinOp _) -> "primitive-"
+                | Some _ -> "generated-"
+                | None -> "user-"
+            name, WordId(prefix + name))
+        |> Map.ofList
+    let scalars = scalarDefinitions |> List.map (fun (scalar, _, _) -> scalar.Name, scalar) |> Map.ofList
+    { Words = words
+      Records = recordMap
+      Scalars = scalars
+      Enums = Map.empty
+      WordIds = wordIds }
+
 let private nominalIntProgramTypeIds (program: VerifiedIrProgram) =
     let typeName = function
         | IrRecordDefinition record -> record.TypeName
@@ -1614,7 +1711,7 @@ let private compileNominalIntEntries () =
         name, program, body
     let unsupportedCases =
         [ unsupportedCase "BoolTag" TBool (Some "accept-bool?") "option-none"
-          unsupportedCase "TextTag" TString (Some "accept-text?") "result-ok"
+          unsupportedCase "UnvalidatedStringTag" TString None "result-ok"
           unsupportedCase "FloatTag" TFloat (Some "accept-float?") "result-error" ]
 
     let coreBodies =
@@ -1797,6 +1894,208 @@ let private compilePositiveIdEntries () =
       OverflowConstructor = overflowConstructor
       OverflowIdentity = overflowIdentity }
 
+let private compileRefinedStringEntries () =
+    let site name column = span ($"<native-value-stack-refined-string-{name}>") column
+    let scalar =
+        { Name = "NonEmptyString"
+          BaseType = TString
+          Validator = Some "is-non-empty?"
+          SourceText = "scalar NonEmptyString = String where is-non-empty?"
+          Span = span "<native-value-stack-scalar-NonEmptyString>" 1 }
+    let validator =
+        refinedStringWordEntry "is-non-empty?" [ TString ] [ TBool ] 1 "validator"
+            [ Call("string.length", site "validator-length" 1)
+              Push(LInt 0L, site "validator-zero" 2)
+              Call("int.greater-than", site "validator-positive" 3) ]
+    let coreContext =
+        refinedStringCompilerContext [ validator ] [] [ scalar, "NonEmptyString.construct", "NonEmptyString.unwrap" ]
+    let coreProgram = Compiler.compileIrProgramWithSourceOrigins coreContext Map.empty
+    let coreBody name inputs expressions =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins coreContext coreProgram name inputs expressions Map.empty
+    let constructor =
+        coreBody "native-value-stack-refined-string-constructor" [ TString ]
+            [ Call("NonEmptyString.construct", site "constructor" 1) ]
+    let stringLiteralOk =
+        coreBody "native-value-stack-refined-string-literal-ok" []
+            [ Push(LString "ok", site "literal-ok" 1) ]
+    let stringLiteralEmpty =
+        coreBody "native-value-stack-refined-string-literal-empty" []
+            [ Push(LString "", site "literal-empty" 1) ]
+    let inputIdentity = coreBody "native-value-stack-refined-string-input-only" [ TNamed "NonEmptyString" ] []
+    let baseStringIdentity = coreBody "native-value-stack-refined-string-base-identity" [ TString ] []
+    let inputFailure =
+        coreBody "native-value-stack-refined-string-input-preflight-before-body" [ TNamed "NonEmptyString" ]
+            [ Push(LInt 1L, site "body-failure-dividend" 1)
+              Push(LInt 0L, site "body-failure-divisor" 2)
+              Call("divide", site "body-failure-divide" 3)
+              Call("drop", site "body-failure-drop" 4) ]
+
+    let envelopeRecord: RecordDefinition =
+        { Name = "RefinedEnvelope"
+          Fields = [ { Name = "owner"; Type = TNamed "NonEmptyString" }; { Name = "tail"; Type = TString } ]
+          Validator = None
+          SourceText = "record RefinedEnvelope { owner: NonEmptyString; tail: String }"
+          Span = site "envelope-definition" 1 }
+    let nestedContext =
+        refinedStringCompilerContext [ validator ] [ envelopeRecord ]
+            [ scalar, "NonEmptyString.construct", "NonEmptyString.unwrap" ]
+    let nestedProgram = Compiler.compileIrProgramWithSourceOrigins nestedContext Map.empty
+    let nestedBody name inputs expressions =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins nestedContext nestedProgram name inputs expressions Map.empty
+    let envelopeConstruct =
+        nestedBody "native-value-stack-refined-envelope-constructor" []
+            [ Push(LString "ok", site "envelope-owner-value" 1)
+              Call("NonEmptyString.construct", site "envelope-owner-wrap" 2)
+              Push(LString "z", site "envelope-tail-value" 3)
+              Call("refinedEnvelope.new", site "envelope-construct" 4) ]
+    let envelopeIdentity = nestedBody "native-value-stack-refined-envelope-input-only" [ TNamed "RefinedEnvelope" ] []
+    let envelopeProjectOwnerAndUnwrap =
+        nestedBody "native-value-stack-refined-envelope-project-owner-and-unwrap" [ TNamed "RefinedEnvelope" ]
+            [ Scope(
+                [ Call("refinedEnvelope.owner", site "envelope-owner-project" 1)
+                  Call("NonEmptyString.unwrap", site "envelope-owner-unwrap" 2)
+                  Push(LString "temporary-in-scope", site "envelope-scope-string" 3)
+                  Call("drop", site "envelope-scope-string-drop" 4) ],
+                site "envelope-owner-scope" 5)
+              Push(LString "after-scope", site "envelope-later-string" 6)
+              Call("drop", site "envelope-later-string-drop" 7) ]
+    let optionSomeConstruct =
+        nestedBody "native-value-stack-refined-option-some-constructor" []
+            [ Push(LString "ok", site "option-some-value" 1)
+              Call("NonEmptyString.construct", site "option-some-wrap" 2)
+              ConstructContainer(OptionSome, [ TNamed "NonEmptyString" ], site "option-some-construct" 3) ]
+    let optionNoneConstruct =
+        nestedBody "native-value-stack-refined-option-none-constructor" []
+            [ ConstructContainer(OptionNone, [ TNamed "NonEmptyString" ], site "option-none-construct" 1) ]
+    let optionIdentity = nestedBody "native-value-stack-refined-option-input-only" [ TOption(TNamed "NonEmptyString") ] []
+    let resultOkConstruct =
+        nestedBody "native-value-stack-refined-result-ok-constructor" []
+            [ Push(LString "ok", site "result-ok-value" 1)
+              Call("NonEmptyString.construct", site "result-ok-wrap" 2)
+              ConstructContainer(ResultOk, [ TNamed "NonEmptyString"; TNamed "NonEmptyString" ], site "result-ok-construct" 3) ]
+    let resultErrorConstruct =
+        nestedBody "native-value-stack-refined-result-error-constructor" []
+            [ Push(LString "ok", site "result-error-value" 1)
+              Call("NonEmptyString.construct", site "result-error-wrap" 2)
+              ConstructContainer(ResultError, [ TNamed "NonEmptyString"; TNamed "NonEmptyString" ], site "result-error-construct" 3) ]
+    let resultIdentity =
+        nestedBody "native-value-stack-refined-result-input-only"
+            [ TResult(TNamed "NonEmptyString", TNamed "NonEmptyString") ] []
+    let inactiveResultIdentity =
+        nestedBody "native-value-stack-refined-inactive-result-input-only"
+            [ TResult(TInt, TNamed "NonEmptyString") ] []
+
+    let runtimeFailureValidator =
+        refinedStringWordEntry "string-runtime-failure?" [ TString ] [ TBool ] 1 "runtime-validator"
+            [ Call("drop", site "runtime-validator-discard-input" 1)
+              Push(LInt 1L, site "runtime-validator-dividend" 2)
+              Push(LInt 0L, site "runtime-validator-divisor" 3)
+              Call("divide", span "<native-value-stack-refined-string-runtime-validator-divide>" 4)
+              Call("drop", site "runtime-validator-drop" 5)
+              Push(LBool true, site "runtime-validator-result" 6) ]
+    let runtimeFailureScalar =
+        { scalar with Validator = Some "string-runtime-failure?" }
+    let runtimeFailureContext =
+        refinedStringCompilerContext [ runtimeFailureValidator ] []
+            [ runtimeFailureScalar, "NonEmptyString.construct", "NonEmptyString.unwrap" ]
+    let runtimeFailureProgram = Compiler.compileIrProgramWithSourceOrigins runtimeFailureContext Map.empty
+    let runtimeFailureConstructor =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins runtimeFailureContext runtimeFailureProgram
+            "native-value-stack-refined-string-runtime-failure-constructor" []
+            [ Push(LString "ok", site "runtime-failure-constructor-value" 1)
+              Call("NonEmptyString.construct", site "runtime-failure-constructor" 2) ] Map.empty
+
+    let replacementValidator =
+        refinedStringWordEntry "is-non-empty?" [ TString ] [ TBool ] 2 "replacement-validator"
+            [ Call("drop", site "replacement-validator-discard" 1)
+              Push(LBool false, site "replacement-validator-result" 2) ]
+    let replacementContext =
+        refinedStringCompilerContext [ replacementValidator ] []
+            [ scalar, "NonEmptyString.construct", "NonEmptyString.unwrap" ]
+    let replacementProgram = Compiler.compileIrProgramWithSourceOrigins replacementContext Map.empty
+    let replacementInputIdentity =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins replacementContext replacementProgram
+            "native-value-stack-refined-string-replacement-input-only" [ TNamed "NonEmptyString" ] [] Map.empty
+
+    let mailboxState: RecordDefinition =
+        { Name = "RefinedMailboxState"
+          Fields = [ { Name = "value"; Type = TNamed "NonEmptyString" } ]
+          Validator = None
+          SourceText = "record RefinedMailboxState { value: NonEmptyString }"
+          Span = site "mailbox-state-definition" 1 }
+    let mailboxContinuation: RecordDefinition =
+        { Name = "RefinedMailboxContinuation"
+          Fields = [ { Name = "value"; Type = TNamed "NonEmptyString" } ]
+          Validator = None
+          SourceText = "record RefinedMailboxContinuation { value: NonEmptyString }"
+          Span = site "mailbox-continuation-definition" 1 }
+    let mailboxContext =
+        refinedStringCompilerContext [ validator ] [ mailboxState; mailboxContinuation ]
+            [ scalar, "NonEmptyString.construct", "NonEmptyString.unwrap" ]
+    let mailboxProgram = Compiler.compileIrProgramWithSourceOrigins mailboxContext Map.empty
+    let mailboxBody name inputs expressions =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins mailboxContext mailboxProgram name inputs expressions Map.empty
+    let mailboxInitialize =
+        mailboxBody "native-value-stack-refined-mailbox-initialize" [ TString ]
+            [ Call("NonEmptyString.construct", site "mailbox-initialize-wrap" 1)
+              Call("refinedMailboxState.new", site "mailbox-initialize-state" 2) ]
+    let mailboxBegin =
+        mailboxBody "native-value-stack-refined-mailbox-begin"
+            [ TNamed "RefinedMailboxState"; TString ]
+            [ Let("refined_mailbox_text", site "mailbox-begin-save-text" 1)
+              Let("refined_mailbox_state", site "mailbox-begin-save-state" 2)
+              Load("refined_mailbox_state", site "mailbox-begin-load-state" 3)
+              Load("refined_mailbox_text", site "mailbox-begin-load-text" 4)
+              Call("NonEmptyString.construct", site "mailbox-begin-wrap" 5)
+              Call("refinedMailboxContinuation.new", site "mailbox-begin-continuation" 6) ]
+    let mailboxResume =
+        mailboxBody "native-value-stack-refined-mailbox-resume"
+            [ TNamed "RefinedMailboxState"; TNamed "RefinedMailboxContinuation"; TString ]
+            [ Call("drop", site "mailbox-resume-drop-text" 1)
+              Call("drop", site "mailbox-resume-drop-continuation" 2) ]
+
+    let groups =
+        [ coreProgram, [ constructor; stringLiteralOk; stringLiteralEmpty; inputIdentity; baseStringIdentity; inputFailure ]
+          nestedProgram,
+            [ envelopeConstruct; envelopeIdentity; envelopeProjectOwnerAndUnwrap
+              optionSomeConstruct; optionNoneConstruct; optionIdentity
+              resultOkConstruct; resultErrorConstruct; resultIdentity; inactiveResultIdentity ]
+          runtimeFailureProgram, [ runtimeFailureConstructor ]
+          replacementProgram, [ replacementInputIdentity ]
+          mailboxProgram, [ mailboxInitialize; mailboxBegin; mailboxResume ] ]
+    for program, bodies in groups do
+        if not (VerifiedIrProgram.isBackendExecutable program)
+           || bodies |> List.exists (fun body -> not (Object.ReferenceEquals(VerifiedIrBody.program body, program))) then
+            invalidOp "Refined String conformance bodies must share compiler-authorized verified program instances."
+
+    { CoreProgram = coreProgram
+      CoreCompilerContext = coreContext
+      Constructor = constructor
+      StringLiteralOk = stringLiteralOk
+      StringLiteralEmpty = stringLiteralEmpty
+      InputIdentity = inputIdentity
+      BaseStringIdentity = baseStringIdentity
+      InputFailure = inputFailure
+      NestedProgram = nestedProgram
+      NestedCompilerContext = nestedContext
+      EnvelopeConstruct = envelopeConstruct
+      EnvelopeIdentity = envelopeIdentity
+      EnvelopeProjectOwnerAndUnwrap = envelopeProjectOwnerAndUnwrap
+      OptionSomeConstruct = optionSomeConstruct
+      OptionNoneConstruct = optionNoneConstruct
+      OptionIdentity = optionIdentity
+      ResultOkConstruct = resultOkConstruct
+      ResultErrorConstruct = resultErrorConstruct
+      ResultIdentity = resultIdentity
+      InactiveResultIdentity = inactiveResultIdentity
+      RuntimeFailureProgram = runtimeFailureProgram
+      RuntimeFailureCompilerContext = runtimeFailureContext
+      RuntimeFailureConstructor = runtimeFailureConstructor
+      ReplacementProgram = replacementProgram
+      ReplacementCompilerContext = replacementContext
+      ReplacementInputIdentity = replacementInputIdentity
+      MailboxBodies = [ mailboxInitialize; mailboxBegin; mailboxResume ] }
+
 let private inspectRawOwningContextAbi (abiOracle: JsonElement) =
     let expectedSize = abiOracle.GetProperty("contextSizeBytes").GetInt32()
     let actualSize = Marshal.SizeOf<RawOwningStackContext>()
@@ -1899,6 +2198,7 @@ let private invokeRawOwningEntry
         if outputAfter.Length > 0 then Marshal.Copy(outputPointer, outputAfter, 0, outputAfter.Length)
         { NativeStatus = status
           ContextStatus = returnedContext.Status
+          ErrorId = returnedContext.ErrorId
           RetainedOutput = outputAfter }
     finally
         if outputPointer <> IntPtr.Zero then Marshal.FreeHGlobal outputPointer
@@ -6612,7 +6912,8 @@ let private runPositiveIdConformance
             match getProperty error "Diagnostic" with
             | :? Diagnostic as diagnostic -> Some diagnostic
             | _ -> None
-    let diagnosticSummary = function
+    let diagnosticSummary (diagnosticValue: Diagnostic option) =
+        match diagnosticValue with
         | Some diagnostic ->
             let spanValue =
                 diagnostic.Span
@@ -7012,6 +7313,649 @@ let private runPositiveIdConformance
         "divideDiagnosticSpanSemantics", box "Interpreter divide errors have no span; native diagnostics retain verified instruction-site spans."
         "provenanceCoverage", box "Refined provenance is covered by the existing measured nominal owner-range tests; PositiveId has no separate OwnerEnd trace in this suite." ]
 
+let private runRefinedStringConformance
+    (checks: ResizeArray<obj>)
+    (failures: ResizeArray<string>)
+    (fixture: JsonElement)
+    (artifactRoot: string)
+    (optimization: LlvmOptimization)
+    (optimizationName: string)
+    (entries: RefinedStringEntryBodies) =
+    let oracle = fixture.GetProperty("nonEmptyStringConformance")
+    let toolchain = LlvmToolchain.discover ()
+    let compile name body =
+        OwningStackAot.compile toolchain optimization
+            (Path.Combine(artifactRoot, "owning-stack", "refined-string", optimizationName, name)) body
+    let coreHost = noOpHost (NativeDiagnosticSources.fromLoweringContext entries.CoreCompilerContext)
+    let nestedHost = noOpHost (NativeDiagnosticSources.fromLoweringContext entries.NestedCompilerContext)
+    let runtimeHost = noOpHost (NativeDiagnosticSources.fromLoweringContext entries.RuntimeFailureCompilerContext)
+    let interpret host body root arguments =
+        use result = IrInterpreter.executeBodyWithInputs host (VerifiedIrBody.inspect body).BodyName body root arguments
+        result.Decode()
+    let interpretRoot host body arguments =
+        IrInterpreter.executeBodyWithInputs host (VerifiedIrBody.inspect body).BodyName body None arguments
+    let captureInterpreter host body root arguments =
+        try
+            use result = IrInterpreter.executeBodyWithInputs host (VerifiedIrBody.inspect body).BodyName body root arguments
+            result.Decode() |> ignore
+            None
+        with error -> Some error
+    let captureInterpreterRootError host body arguments = captureInterpreter host body None arguments
+    let captureError action =
+        try action (); None
+        with error -> Some error
+    let diagnosticOf (error: exn) =
+        match error with
+        | LanguageException diagnostic -> Some diagnostic
+        | _ ->
+            match getProperty error "Diagnostic" with
+            | :? Diagnostic as diagnostic -> Some diagnostic
+            | _ -> None
+    let diagnosticSummary (diagnosticValue: Diagnostic option) =
+        match diagnosticValue with
+        | Some diagnostic ->
+            let spanValue =
+                diagnostic.Span
+                |> Option.map (fun sourceSpan -> jsonObject [
+                    "file", box sourceSpan.File
+                    "line", box sourceSpan.Line
+                    "column", box sourceSpan.Column
+                    "length", box sourceSpan.Length ])
+                |> Option.defaultValue null
+            jsonObject [
+                "code", box diagnostic.Code
+                "message", box diagnostic.Message
+                "word", box (diagnostic.Word |> Option.defaultValue "")
+                "expected", box (diagnostic.Expected |> List.toArray)
+                "actual", box (diagnostic.Actual |> List.toArray)
+                "span", box spanValue ]
+        | None -> null
+    let arrayStrings (item: JsonElement) : string list = item.EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
+    let diagnosticMatches (expected: JsonElement) (actual: Diagnostic option) =
+        match actual with
+        | Some diagnostic ->
+            let expectedSpan = expected.GetProperty("span")
+            let optionalArrayMatches (property: string) (actualValues: string list) =
+                let mutable expectedValues = Unchecked.defaultof<JsonElement>
+                not (expected.TryGetProperty(property, &expectedValues))
+                || actualValues = arrayStrings expectedValues
+            let spanMatches =
+                diagnostic.Span
+                |> Option.exists (fun sourceSpan ->
+                    sourceSpan.File = expectedSpan.GetProperty("file").GetString()
+                    && sourceSpan.Line = expectedSpan.GetProperty("line").GetInt32()
+                    && sourceSpan.Column = expectedSpan.GetProperty("column").GetInt32()
+                    && sourceSpan.Length = expectedSpan.GetProperty("length").GetInt32())
+            diagnostic.Code = expected.GetProperty("code").GetString()
+            && diagnostic.Message = expected.GetProperty("message").GetString()
+            && diagnostic.Word = Some(expected.GetProperty("word").GetString())
+            && optionalArrayMatches "expected" diagnostic.Expected
+            && optionalArrayMatches "actual" diagnostic.Actual
+            && spanMatches
+        | None -> false
+    let interpreterNativeDiagnosticParity
+        (interpreterDiagnostic: Diagnostic option)
+        (nativeDiagnostic: Diagnostic option) =
+        match interpreterDiagnostic, nativeDiagnostic with
+        | Some expected, Some actual ->
+            (Option.isNone expected.Span || expected.Span = actual.Span)
+            && expected.Code = actual.Code
+            && expected.Message = actual.Message
+            && expected.Word = actual.Word
+            && expected.Expected = actual.Expected
+            && expected.Actual = actual.Actual
+        | _ -> false
+    let failureCleanupPass (error: exn option) =
+        match error with
+        | Some (:? OwningStackExecutionException as owningError) ->
+            owningError.Metrics.FinalCursorBytes = 0
+            && owningError.Metrics.HostRetainedCommitBytes = 0
+        | _ -> false
+    let sentinelByte = (bytesFromHex (oracle.GetProperty("sentinelByteHex").GetString())).[0]
+    let outputBuffer length = Array.create length sentinelByte
+    let record name passed details =
+        recordCheck checks failures $"refined-string/{optimizationName}/{name}" passed details
+
+    let identityIds = nominalIntProgramTypeIds entries.CoreProgram
+    let _, nonEmptyTypeId = identityIds["NonEmptyString"]
+    let stringTypeId = uint32 (identityIds.Count + 4)
+    let identityOracle = oracle.GetProperty("identityProgram")
+    let expectedIdentityIds = identityOracle.GetProperty("typeIds")
+    let nestedIds = nominalIntProgramTypeIds entries.NestedProgram
+    let _, nestedNonEmptyTypeId = nestedIds["NonEmptyString"]
+    let _, envelopeTypeId = nestedIds["RefinedEnvelope"]
+    let nestedStringTypeId = uint32 (nestedIds.Count + 4)
+    let expectedNestedIds = oracle.GetProperty("nestedProgram").GetProperty("typeIds")
+    use inputIdentityProgram = compile "input-only-identity" entries.InputIdentity
+    use baseStringIdentityProgram = compile "base-string-identity" entries.BaseStringIdentity
+    let scalarLayout = inputIdentityProgram.Layouts |> List.tryFind (fun layout -> layout.TypeName = "NonEmptyString")
+    let stringLayout = inputIdentityProgram.Layouts |> List.tryFind (fun layout -> layout.TypeName = "String")
+    let identityDescriptorLine =
+        inputIdentityProgram.LlvmIr.Split([| '\n' |], StringSplitOptions.RemoveEmptyEntries)
+        |> Array.tryFind (fun line -> line.StartsWith("@al_owning_types =", StringComparison.Ordinal))
+        |> Option.defaultValue ""
+    let descriptorContains typeId = identityDescriptorLine.Contains($"i32 5, i32 {typeId},", StringComparison.Ordinal)
+    let identityLayoutPassed =
+        int nonEmptyTypeId = expectedIdentityIds.GetProperty("NonEmptyString").GetInt32()
+        && int stringTypeId = expectedIdentityIds.GetProperty("String").GetInt32()
+        && nonEmptyTypeId <> stringTypeId
+        && (scalarLayout |> Option.exists (fun layout ->
+            match layout.Type with
+            | IrNominal _ ->
+                layout.IsDynamic
+                && layout.PayloadBytes = -1
+                && layout.ExtentBytes = -1
+                && layout.MinimumPayloadBytes = identityOracle.GetProperty("minimumPayloadBytes").GetInt32()
+                && layout.MinimumExtentBytes = identityOracle.GetProperty("minimumExtentBytes").GetInt32()
+            | _ -> false))
+        && (stringLayout |> Option.exists (fun layout ->
+            layout.Type = IrString
+            && layout.IsDynamic
+            && layout.PayloadBytes = -1
+            && layout.ExtentBytes = -1
+            && layout.MinimumPayloadBytes = identityOracle.GetProperty("minimumPayloadBytes").GetInt32()
+            && layout.MinimumExtentBytes = identityOracle.GetProperty("minimumExtentBytes").GetInt32()))
+        && descriptorContains nonEmptyTypeId
+        && descriptorContains stringTypeId
+    record "type-identities-and-string-layout" identityLayoutPassed (jsonObject [
+        "expectedTypeIds", box (jsonObject [ "NonEmptyString", box (expectedIdentityIds.GetProperty("NonEmptyString").GetInt32()); "String", box (expectedIdentityIds.GetProperty("String").GetInt32()) ])
+        "actualTypeIds", box (jsonObject [ "NonEmptyString", box nonEmptyTypeId; "String", box stringTypeId ])
+        "stringKind", box (identityOracle.GetProperty("stringKind").GetInt32())
+        "descriptorHasStringKindAndTypeIds", box (descriptorContains nonEmptyTypeId && descriptorContains stringTypeId)
+        "scalarLayout", box (scalarLayout |> Option.map (fun layout -> jsonObject [ "type", box (IrTypes.format layout.Type); "isDynamic", box layout.IsDynamic; "payloadBytes", box layout.PayloadBytes; "extentBytes", box layout.ExtentBytes; "minimumPayloadBytes", box layout.MinimumPayloadBytes; "minimumExtentBytes", box layout.MinimumExtentBytes ]) |> Option.defaultValue null)
+        "stringLayout", box (stringLayout |> Option.map (fun layout -> jsonObject [ "type", box (IrTypes.format layout.Type); "isDynamic", box layout.IsDynamic; "payloadBytes", box layout.PayloadBytes; "extentBytes", box layout.ExtentBytes; "minimumPayloadBytes", box layout.MinimumPayloadBytes; "minimumExtentBytes", box layout.MinimumExtentBytes ]) |> Option.defaultValue null) ])
+
+    let successOracle = oracle.GetProperty("constructor").GetProperty("success")
+    let successValue = successOracle.GetProperty("value").GetString()
+    let successBytes = bytesFromHex (successOracle.GetProperty("stringBytesHex").GetString())
+    use constructorProgram = compile "constructor" entries.Constructor
+    use successStringRoot = interpretRoot coreHost entries.StringLiteralOk []
+    let interpretedSuccess = interpret coreHost entries.Constructor (Some successStringRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let successOutput = outputBuffer successBytes.Length
+    let successResult = constructorProgram.ExecuteInto([ StringValue successValue ], 256, successOutput)
+    let successValueExpected = NamedValue("NonEmptyString", StringValue successValue)
+    let successPassed =
+        interpretedSuccess = [ successValueExpected ]
+        && successResult.Values = interpretedSuccess
+        && successOutput = successBytes
+        && successResult.Metrics.DeepCopyBytes = 0UL
+        && successResult.Metrics.MoveBytes = 0UL
+    record "constructor-success-and-utf16-bytes" successPassed (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.CoreProgram interpretedSuccess)
+        "owningValues", box (ValueInspection.toJson entries.CoreProgram successResult.Values)
+        "expectedBytesHex", box (bytesHex successBytes)
+        "actualBytesHex", box (bytesHex successOutput)
+        "payloadBytes", box (successOracle.GetProperty("payloadBytes").GetInt32())
+        "extentBytes", box (successOracle.GetProperty("extentBytes").GetInt32())
+        "deepCopyBytes", box successResult.Metrics.DeepCopyBytes
+        "moveBytes", box successResult.Metrics.MoveBytes ])
+
+    let emptyOracle = oracle.GetProperty("constructor").GetProperty("empty")
+    let falseDiagnostic = oracle.GetProperty("hostFalseDiagnostic")
+    use emptyStringRoot = interpretRoot coreHost entries.StringLiteralEmpty []
+    let interpreterEmptyError = captureInterpreter coreHost entries.Constructor (Some emptyStringRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let emptyOutput = outputBuffer successBytes.Length
+    let emptyOutputBefore = Array.copy emptyOutput
+    let owningEmptyError = captureError (fun () -> constructorProgram.ExecuteInto([ StringValue(emptyOracle.GetProperty("value").GetString()) ], 256, emptyOutput) |> ignore)
+    let interpreterEmptyDiagnostic = interpreterEmptyError |> Option.bind diagnosticOf
+    let owningEmptyDiagnostic = owningEmptyError |> Option.bind diagnosticOf
+    let emptyDiagnosticParity = interpreterNativeDiagnosticParity interpreterEmptyDiagnostic owningEmptyDiagnostic
+    let emptyPassed =
+        Option.isSome interpreterEmptyError
+        && Option.isSome owningEmptyError
+        && emptyDiagnosticParity
+        && diagnosticMatches (emptyOracle.GetProperty("diagnostic")) interpreterEmptyDiagnostic
+        && diagnosticMatches falseDiagnostic owningEmptyDiagnostic
+        && failureCleanupPass owningEmptyError
+        && emptyOutput = emptyOutputBefore
+    record "constructor-reject-empty-parity-atomically" emptyPassed (jsonObject [
+        "interpreterDiagnostic", box (diagnosticSummary interpreterEmptyDiagnostic)
+        "owningDiagnostic", box (diagnosticSummary owningEmptyDiagnostic)
+        "diagnosticParity", box emptyDiagnosticParity
+        "expectedDiagnostic", box (emptyOracle.GetProperty("diagnostic").Clone())
+        "callerBufferUnchanged", box (emptyOutput = emptyOutputBefore)
+        "nativeFailureCleanup", box (failureCleanupPass owningEmptyError) ])
+
+    let hostInputs = oracle.GetProperty("hostInputs")
+    let hostValue = NamedValue("NonEmptyString", StringValue(hostInputs.GetProperty("validValue").GetString()))
+    let hostBytes = bytesFromHex (hostInputs.GetProperty("validStringBytesHex").GetString())
+    let inputOutput = outputBuffer hostBytes.Length
+    let inputResult = inputIdentityProgram.ExecuteInto([ hostValue ], 256, inputOutput)
+    let inputOnlyPassed = inputResult.Values = [ hostValue ] && inputOutput = hostBytes
+    let inputWordFunctions =
+        inputIdentityProgram.LlvmIr.Split([| '\n' |], StringSplitOptions.RemoveEmptyEntries)
+        |> Array.filter (fun line -> line.StartsWith("define internal i32 @agentlang_word_", StringComparison.Ordinal))
+        |> Array.length
+    record "host-identity-input-only-validator-closure" (inputOnlyPassed && inputWordFunctions = 1) (jsonObject [
+        "owningValues", box (ValueInspection.toJson entries.CoreProgram inputResult.Values)
+        "expectedBytesHex", box (bytesHex hostBytes)
+        "actualBytesHex", box (bytesHex inputOutput)
+        "bodyInstructionCount", box ((VerifiedIrBody.inspect entries.InputIdentity).BodyBlock.Code.Length)
+        "reachableUserWordFunctionCount", box inputWordFunctions
+        "validatorIsTheOnlyReachableUserWord", box (inputWordFunctions = 1) ])
+
+    let utf16Cases = hostInputs.GetProperty("utf16Cases")
+    let supplementaryOracle = utf16Cases.GetProperty("supplementary")
+    let supplementaryValue = NamedValue("NonEmptyString", StringValue(supplementaryOracle.GetProperty("value").GetString()))
+    let supplementaryBytes = bytesFromHex (supplementaryOracle.GetProperty("stringBytesHex").GetString())
+    let supplementaryOutput = outputBuffer supplementaryBytes.Length
+    let supplementaryResult = inputIdentityProgram.ExecuteInto([ supplementaryValue ], 256, supplementaryOutput)
+    record "host-identity-utf16-supplementary-roundtrip"
+        (supplementaryResult.Values = [ supplementaryValue ] && supplementaryOutput = supplementaryBytes)
+        (jsonObject [
+            "codeUnitCount", box (supplementaryOracle.GetProperty("codeUnitCount").GetInt32())
+            "expectedBytesHex", box (bytesHex supplementaryBytes)
+            "actualBytesHex", box (bytesHex supplementaryOutput)
+            "exactNominalValuePreserved", box (supplementaryResult.Values = [ supplementaryValue ]) ])
+
+    let embeddedNulOracle = utf16Cases.GetProperty("embeddedNul")
+    let embeddedNulValue = NamedValue("NonEmptyString", StringValue(embeddedNulOracle.GetProperty("value").GetString()))
+    let embeddedNulBytes = bytesFromHex (embeddedNulOracle.GetProperty("stringBytesHex").GetString())
+    let embeddedNulOutput = outputBuffer embeddedNulBytes.Length
+    let embeddedNulResult = inputIdentityProgram.ExecuteInto([ embeddedNulValue ], 256, embeddedNulOutput)
+    record "host-identity-utf16-embedded-nul-roundtrip"
+        (embeddedNulResult.Values = [ embeddedNulValue ] && embeddedNulOutput = embeddedNulBytes)
+        (jsonObject [
+            "codeUnitCount", box (embeddedNulOracle.GetProperty("codeUnitCount").GetInt32())
+            "expectedBytesHex", box (bytesHex embeddedNulBytes)
+            "actualBytesHex", box (bytesHex embeddedNulOutput)
+            "exactNominalValuePreserved", box (embeddedNulResult.Values = [ embeddedNulValue ]) ])
+
+    let baseStringOutput = outputBuffer hostBytes.Length
+    let baseStringResult = baseStringIdentityProgram.ExecuteInto([ StringValue(hostInputs.GetProperty("validValue").GetString()) ], 256, baseStringOutput)
+    let baseStringTypeIdObserved =
+        baseStringResult.LayoutEvents
+        |> List.exists (fun event -> event.TypeId = stringTypeId)
+    record "base-string-type-id-and-kind-remain-distinct" (baseStringTypeIdObserved && baseStringOutput = hostBytes && baseStringResult.Values = [ StringValue(hostInputs.GetProperty("validValue").GetString()) ]) (jsonObject [
+        "expectedStringTypeId", box stringTypeId
+        "descriptorTypeIds", box (baseStringResult.LayoutEvents |> List.filter (fun event -> event.Kind = "descriptor-transfer") |> List.map (fun event -> event.TypeId) |> List.distinct)
+        "retainedBytesHex", box (bytesHex baseStringOutput) ])
+
+    let hostShapeOracle = oracle.GetProperty("hostShapeRejections")
+    let hostShapeExceptionType = hostShapeOracle.GetProperty("exceptionType").GetString()
+    let hostShapeParameterName = hostShapeOracle.GetProperty("parameterName").GetString()
+    let checkHostShape name input =
+        let rejectedOutput = outputBuffer hostBytes.Length
+        let before = Array.copy rejectedOutput
+        let hostError = captureError (fun () -> inputIdentityProgram.ExecuteInto([ input ], 256, rejectedOutput) |> ignore)
+        let exceptionType = hostError |> Option.map (fun error -> error.GetType().FullName) |> Option.defaultValue "unexpected-success"
+        let parameterName =
+            match hostError with
+            | Some (:? ArgumentException as argumentError) -> Option.ofObj argumentError.ParamName |> Option.defaultValue ""
+            | _ -> ""
+        let passed = Option.isSome hostError && exceptionType = hostShapeExceptionType && parameterName = hostShapeParameterName && rejectedOutput = before
+        record name passed (jsonObject [
+            "expectedExceptionType", box hostShapeExceptionType
+            "actualExceptionType", box exceptionType
+            "expectedParameterName", box hostShapeParameterName
+            "actualParameterName", box parameterName
+            "callerBufferUnchanged", box (rejectedOutput = before) ])
+    checkHostShape "host-shape-rejects-bare-string-atomically" (StringValue(hostInputs.GetProperty("validValue").GetString()))
+    checkHostShape "host-shape-rejects-wrong-nominal-atomically" (NamedValue(hostInputs.GetProperty("wrongNominalTypeName").GetString(), StringValue(hostInputs.GetProperty("validValue").GetString())))
+
+    let rawOracle = oracle.GetProperty("rawEntry")
+    let rawInputFailureProgram = compile "input-preflight-before-body" entries.InputFailure
+    let rawSentinel = bytesFromHex (rawOracle.GetProperty("sentinelBytesHex").GetString())
+    let invalidRawBytes = bytesFromHex (rawOracle.GetProperty("invalidEmptyBytesHex").GetString())
+    let validRawBytes = bytesFromHex (rawOracle.GetProperty("validBytesHex").GetString())
+    let inputCount = uint32 (rawOracle.GetProperty("inputCount").GetInt32())
+    let rawContextAbi = fixture.GetProperty("storageRuntimeTestOracle").GetProperty("abi")
+    let invalidRaw =
+        invokeRawOwningEntry rawInputFailureProgram rawContextAbi invalidRawBytes
+            [| uint32 (rawOracle.GetProperty("invalidEmptyExtentBytes").GetInt32()) |] inputCount rawSentinel
+    let validRaw =
+        invokeRawOwningEntry rawInputFailureProgram rawContextAbi validRawBytes
+            [| uint32 (rawOracle.GetProperty("validExtentBytes").GetInt32()) |] inputCount rawSentinel
+    let rawExpectedStatus = int32 (rawOracle.GetProperty("expectedDiagnosticStatus").GetInt32())
+    let rawInvalidOutputUnchanged = invalidRaw.RetainedOutput = rawSentinel
+    let rawValidOutputUnchanged = validRaw.RetainedOutput = rawSentinel
+    let rawEntryPassed =
+        invalidRaw.NativeStatus = rawExpectedStatus
+        && invalidRaw.ContextStatus = uint32 rawExpectedStatus
+        && invalidRaw.ErrorId > 0u
+        && validRaw.NativeStatus = rawExpectedStatus
+        && validRaw.ContextStatus = uint32 rawExpectedStatus
+        && validRaw.ErrorId > 0u
+        && invalidRaw.ErrorId <> validRaw.ErrorId
+        && rawInvalidOutputUnchanged
+        && rawValidOutputUnchanged
+    record "raw-empty-entry-preflight-before-body" rawEntryPassed (jsonObject [
+        "expectedDiagnosticStatus", box rawExpectedStatus
+        "invalidInputBytesHex", box (bytesHex invalidRawBytes)
+        "invalidInputExtentBytes", box (rawOracle.GetProperty("invalidEmptyExtentBytes").GetInt32())
+        "invalidNativeStatus", box invalidRaw.NativeStatus
+        "invalidContextStatus", box invalidRaw.ContextStatus
+        "invalidErrorId", box invalidRaw.ErrorId
+        "invalidRetainedOutputUnchanged", box rawInvalidOutputUnchanged
+        "bodyFailureInputBytesHex", box (bytesHex validRawBytes)
+        "bodyFailureErrorId", box validRaw.ErrorId
+        "distinctErrorsProveValidatorPreflight", box (invalidRaw.ErrorId <> validRaw.ErrorId)
+        "validRetainedOutputUnchanged", box rawValidOutputUnchanged ])
+
+    let nestedOracle = oracle.GetProperty("nestedProgram")
+    let envelopeOracle = nestedOracle.GetProperty("record")
+    let nestedIdentityPassed =
+        int nestedNonEmptyTypeId = expectedNestedIds.GetProperty("NonEmptyString").GetInt32()
+        && int envelopeTypeId = expectedNestedIds.GetProperty("RefinedEnvelope").GetInt32()
+        && int nestedStringTypeId = expectedNestedIds.GetProperty("String").GetInt32()
+        && nestedNonEmptyTypeId <> envelopeTypeId
+        && envelopeTypeId <> nestedStringTypeId
+    let envelopeKey, _ = nestedIds["RefinedEnvelope"]
+    use envelopeIdentityProgram = compile "envelope-input-only" entries.EnvelopeIdentity
+    let envelopeLayout = envelopeIdentityProgram.Layouts |> List.tryFind (fun layout -> layout.TypeName = "RefinedEnvelope")
+    let envelopeLayoutPassed =
+        envelopeLayout |> Option.exists (fun layout ->
+            let ownerField = layout.Fields |> List.tryFind (fun field -> field.FieldName = "owner")
+            let tailField = layout.Fields |> List.tryFind (fun field -> field.FieldName = "tail")
+            (match layout.Type with IrNominal key -> key = ProgramTypeKey envelopeKey | _ -> false)
+            && layout.IsDynamic
+            && layout.PayloadBytes = -1
+            && layout.ExtentBytes = -1
+            && layout.MinimumPayloadBytes = nestedOracle.GetProperty("envelopeLayout").GetProperty("minimumPayloadBytes").GetInt32()
+            && layout.MinimumExtentBytes = nestedOracle.GetProperty("envelopeLayout").GetProperty("minimumExtentBytes").GetInt32()
+            && (ownerField |> Option.exists (fun field -> field.OffsetBytes = 0 && field.IsDynamic && not field.IsOffsetDynamic))
+            && (tailField |> Option.exists (fun field -> field.OffsetBytes = -1 && field.IsDynamic && field.IsOffsetDynamic)))
+    let nestedDescriptorLine =
+        envelopeIdentityProgram.LlvmIr.Split([| '\n' |], StringSplitOptions.RemoveEmptyEntries)
+        |> Array.tryFind (fun line -> line.StartsWith("@al_owning_types =", StringComparison.Ordinal))
+        |> Option.defaultValue ""
+    let nestedDescriptorsPassed =
+        nestedDescriptorLine.Contains($"i32 5, i32 {nestedNonEmptyTypeId},", StringComparison.Ordinal)
+        && nestedDescriptorLine.Contains($"i32 5, i32 {nestedStringTypeId},", StringComparison.Ordinal)
+        && nestedDescriptorLine.Contains($"i32 4, i32 {envelopeTypeId},", StringComparison.Ordinal)
+    record "recursive-record-layout-type-ids-and-dynamic-fields" (nestedIdentityPassed && envelopeLayoutPassed && nestedDescriptorsPassed) (jsonObject [
+        "expectedTypeIds", box (expectedNestedIds.Clone())
+        "actualTypeIds", box (jsonObject [ "NonEmptyString", box nestedNonEmptyTypeId; "RefinedEnvelope", box envelopeTypeId; "String", box nestedStringTypeId ])
+        "expectedKindIds", box (jsonObject [ "NonEmptyString", box 5; "String", box 5; "RefinedEnvelope", box 4 ])
+        "descriptorKindsAndTypeIdsPresent", box nestedDescriptorsPassed
+        "layout", box (envelopeLayout |> Option.map (fun layout -> jsonObject [
+            "isDynamic", box layout.IsDynamic
+            "payloadBytes", box layout.PayloadBytes
+            "extentBytes", box layout.ExtentBytes
+            "minimumPayloadBytes", box layout.MinimumPayloadBytes
+            "minimumExtentBytes", box layout.MinimumExtentBytes
+            "fields", box (layout.Fields |> List.map (fun field -> jsonObject [ "name", box field.FieldName; "offsetBytes", box field.OffsetBytes; "isDynamic", box field.IsDynamic; "isOffsetDynamic", box field.IsOffsetDynamic ])) ]) |> Option.defaultValue null) ])
+
+    use envelopeProjectProgram = compile "envelope-project-owner-and-unwrap" entries.EnvelopeProjectOwnerAndUnwrap
+    let ownerString = StringValue(envelopeOracle.GetProperty("ownerValue").GetString())
+    let tailString = StringValue(envelopeOracle.GetProperty("tailValue").GetString())
+    let envelopeValue = RecordValue("RefinedEnvelope", Map.ofList [ "owner", NamedValue("NonEmptyString", ownerString); "tail", tailString ])
+    let envelopeBytes = bytesFromHex (envelopeOracle.GetProperty("bytesHex").GetString())
+    use envelopeRoot = interpretRoot nestedHost entries.EnvelopeConstruct []
+    let interpretedEnvelope = interpret nestedHost entries.EnvelopeIdentity (Some envelopeRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let envelopeOutput = outputBuffer envelopeBytes.Length
+    let envelopeResult = envelopeIdentityProgram.ExecuteInto([ envelopeValue ], 512, envelopeOutput)
+    record "record-field-validates-recursively" (interpretedEnvelope = [ envelopeValue ] && envelopeResult.Values = interpretedEnvelope && envelopeOutput = envelopeBytes) (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedEnvelope)
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram envelopeResult.Values)
+        "expectedBytesHex", box (bytesHex envelopeBytes)
+        "actualBytesHex", box (bytesHex envelopeOutput)
+        "payloadBytes", box (envelopeOracle.GetProperty("payloadBytes").GetInt32())
+        "extentBytes", box (envelopeOracle.GetProperty("extentBytes").GetInt32()) ])
+    let runRejectedHostCase name (program: OwningStackCompiledProgram) (input: Value) (expectedBytes: byte array) =
+        let rejectedOutput = outputBuffer expectedBytes.Length
+        let before = Array.copy rejectedOutput
+        let hostError = captureError (fun () -> program.ExecuteInto([ input ], 512, rejectedOutput) |> ignore)
+        let diagnostic = hostError |> Option.bind diagnosticOf
+        let passed = Option.isSome hostError && diagnosticMatches falseDiagnostic diagnostic && failureCleanupPass hostError && rejectedOutput = before
+        record name passed (jsonObject [
+            "diagnostic", box (diagnosticSummary diagnostic)
+            "expectedDiagnostic", box (falseDiagnostic.Clone())
+            "nativeFailureCleanup", box (failureCleanupPass hostError)
+            "callerBufferUnchanged", box (rejectedOutput = before) ])
+    let invalidEnvelope = RecordValue("RefinedEnvelope", Map.ofList [ "owner", NamedValue("NonEmptyString", StringValue ""); "tail", tailString ])
+    runRejectedHostCase "record-field-empty-rejected-atomically" envelopeIdentityProgram invalidEnvelope envelopeBytes
+
+    use optionProgram = compile "option-input-only" entries.OptionIdentity
+    let optionOracle = nestedOracle.GetProperty("option")
+    let someValue = OptionValue(TNamed "NonEmptyString", Some(NamedValue("NonEmptyString", ownerString)))
+    let someBytes = bytesFromHex (optionOracle.GetProperty("someBytesHex").GetString())
+    use someRoot = interpretRoot nestedHost entries.OptionSomeConstruct []
+    let interpretedSome = interpret nestedHost entries.OptionIdentity (Some someRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let someOutput = outputBuffer someBytes.Length
+    let someResult = optionProgram.ExecuteInto([ someValue ], 256, someOutput)
+    record "option-some-validates-active-payload" (interpretedSome = [ someValue ] && someResult.Values = interpretedSome && someOutput = someBytes) (jsonObject [
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram someResult.Values)
+        "expectedBytesHex", box (bytesHex someBytes)
+        "actualBytesHex", box (bytesHex someOutput) ])
+    runRejectedHostCase "option-some-empty-rejected-atomically" optionProgram (OptionValue(TNamed "NonEmptyString", Some(NamedValue("NonEmptyString", StringValue "")))) someBytes
+    let noneValue = OptionValue(TNamed "NonEmptyString", None)
+    let noneBytes = bytesFromHex (optionOracle.GetProperty("noneBytesHex").GetString())
+    use noneRoot = interpretRoot nestedHost entries.OptionNoneConstruct []
+    let interpretedNone = interpret nestedHost entries.OptionIdentity (Some noneRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let noneOutput = outputBuffer noneBytes.Length
+    let noneResult = optionProgram.ExecuteInto([ noneValue ], 256, noneOutput)
+    record "option-none-skips-inactive-validator" (interpretedNone = [ noneValue ] && noneResult.Values = interpretedNone && noneOutput = noneBytes) (jsonObject [
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram noneResult.Values)
+        "activePayloadAbsent", box true
+        "expectedBytesHex", box (bytesHex noneBytes)
+        "actualBytesHex", box (bytesHex noneOutput) ])
+
+    use resultProgram = compile "result-input-only" entries.ResultIdentity
+    let resultOracle = nestedOracle.GetProperty("result")
+    let resultOkValue = ResultValue(TNamed "NonEmptyString", TNamed "NonEmptyString", Ok(NamedValue("NonEmptyString", ownerString)))
+    let resultErrorValue = ResultValue(TNamed "NonEmptyString", TNamed "NonEmptyString", Error(NamedValue("NonEmptyString", ownerString)))
+    let resultOkBytes = bytesFromHex (resultOracle.GetProperty("okBytesHex").GetString())
+    let resultErrorBytes = bytesFromHex (resultOracle.GetProperty("errorBytesHex").GetString())
+    use resultOkRoot = interpretRoot nestedHost entries.ResultOkConstruct []
+    let interpretedResultOk = interpret nestedHost entries.ResultIdentity (Some resultOkRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let resultOkOutput = outputBuffer resultOkBytes.Length
+    let resultOkResult = resultProgram.ExecuteInto([ resultOkValue ], 256, resultOkOutput)
+    record "result-ok-validates-active-payload" (interpretedResultOk = [ resultOkValue ] && resultOkResult.Values = interpretedResultOk && resultOkOutput = resultOkBytes) (jsonObject [
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram resultOkResult.Values)
+        "expectedBytesHex", box (bytesHex resultOkBytes)
+        "actualBytesHex", box (bytesHex resultOkOutput) ])
+    runRejectedHostCase "result-ok-empty-rejected-atomically" resultProgram (ResultValue(TNamed "NonEmptyString", TNamed "NonEmptyString", Ok(NamedValue("NonEmptyString", StringValue "")))) resultOkBytes
+    use resultErrorRoot = interpretRoot nestedHost entries.ResultErrorConstruct []
+    let interpretedResultError = interpret nestedHost entries.ResultIdentity (Some resultErrorRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let resultErrorOutput = outputBuffer resultErrorBytes.Length
+    let resultErrorResult = resultProgram.ExecuteInto([ resultErrorValue ], 256, resultErrorOutput)
+    record "result-error-validates-active-payload" (interpretedResultError = [ resultErrorValue ] && resultErrorResult.Values = interpretedResultError && resultErrorOutput = resultErrorBytes) (jsonObject [
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram resultErrorResult.Values)
+        "expectedBytesHex", box (bytesHex resultErrorBytes)
+        "actualBytesHex", box (bytesHex resultErrorOutput) ])
+    runRejectedHostCase "result-error-empty-rejected-atomically" resultProgram (ResultValue(TNamed "NonEmptyString", TNamed "NonEmptyString", Error(NamedValue("NonEmptyString", StringValue "")))) resultErrorBytes
+    let inactiveResultOracle = resultOracle.GetProperty("inactiveOkInt")
+    let inactiveResultValue = ResultValue(TInt, TNamed "NonEmptyString", Ok(IntValue(inactiveResultOracle.GetProperty("value").GetInt64())))
+    let inactiveResultBytes = bytesFromHex (inactiveResultOracle.GetProperty("bytesHex").GetString())
+    use inactiveResultProgram = compile "inactive-result-input-only" entries.InactiveResultIdentity
+    let inactiveResultOutput = outputBuffer inactiveResultBytes.Length
+    let inactiveResult = inactiveResultProgram.ExecuteInto([ inactiveResultValue ], 256, inactiveResultOutput)
+    record "result-inactive-alternative-skips-validator" (inactiveResult.Values = [ inactiveResultValue ] && inactiveResultOutput = inactiveResultBytes) (jsonObject [
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram inactiveResult.Values)
+        "activeAlternative", box "Ok<Int>"
+        "inactiveAlternativeType", box "NonEmptyString"
+        "expectedBytesHex", box (bytesHex inactiveResultBytes)
+        "actualBytesHex", box (bytesHex inactiveResultOutput) ])
+
+    let functionRevision (program: VerifiedIrProgram) name =
+        VerifiedIrProgram.inspect program
+        |> fun inspected -> inspected.FunctionsById
+        |> Map.toList
+        |> List.map snd
+        |> List.tryFind (fun fn -> fn.FunctionName = name)
+        |> Option.map (fun fn -> fn.FunctionRevision)
+    use replacementIdentityProgram = compile "same-name-validator-replacement" entries.ReplacementInputIdentity
+    let replacementRevisionOracle = oracle.GetProperty("validatorReplacement")
+    let originalRevision = functionRevision entries.CoreProgram "is-non-empty?"
+    let replacementRevision = functionRevision entries.ReplacementProgram "is-non-empty?"
+    let replacementOutput = outputBuffer hostBytes.Length
+    let replacementBefore = Array.copy replacementOutput
+    let replacementError = captureError (fun () -> replacementIdentityProgram.ExecuteInto([ hostValue ], 256, replacementOutput) |> ignore)
+    let replacementDiagnostic = replacementError |> Option.bind diagnosticOf
+    let originalAfterReplacementOutput = outputBuffer hostBytes.Length
+    let originalAfterReplacement = inputIdentityProgram.ExecuteInto([ hostValue ], 256, originalAfterReplacementOutput)
+    let validatorOnlyFrozenPassed =
+        originalRevision = Some(replacementRevisionOracle.GetProperty("originalRevision").GetInt32())
+        && replacementRevision = Some(replacementRevisionOracle.GetProperty("replacementRevision").GetInt32())
+        && Option.isSome replacementError
+        && diagnosticMatches falseDiagnostic replacementDiagnostic
+        && failureCleanupPass replacementError
+        && replacementOutput = replacementBefore
+        && originalAfterReplacement.Values = [ hostValue ]
+        && originalAfterReplacementOutput = hostBytes
+    record "validator-only-dependency-freezes-target-after-same-name-replacement" validatorOnlyFrozenPassed (jsonObject [
+        "expectedOriginalRevision", box (replacementRevisionOracle.GetProperty("originalRevision").GetInt32())
+        "actualOriginalRevision", box originalRevision
+        "expectedReplacementRevision", box (replacementRevisionOracle.GetProperty("replacementRevision").GetInt32())
+        "actualReplacementRevision", box replacementRevision
+        "replacementDiagnostic", box (diagnosticSummary replacementDiagnostic)
+        "replacementCallerBufferUnchanged", box (replacementOutput = replacementBefore)
+        "originalProgramStillAcceptsInput", box (originalAfterReplacement.Values = [ hostValue ] && originalAfterReplacementOutput = hostBytes) ])
+
+    let runtimeFailureOracle = oracle.GetProperty("runtimeValidatorFailure")
+    use runtimeFailureProgram = compile "runtime-validator-failure" entries.RuntimeFailureConstructor
+    let runtimeFailureInterpreterError = captureInterpreterRootError runtimeHost entries.RuntimeFailureConstructor []
+    let runtimeFailureOutput = outputBuffer successBytes.Length
+    let runtimeFailureBefore = Array.copy runtimeFailureOutput
+    let runtimeFailureError = captureError (fun () -> runtimeFailureProgram.ExecuteInto([], 256, runtimeFailureOutput) |> ignore)
+    let runtimeInterpreterDiagnostic = runtimeFailureInterpreterError |> Option.bind diagnosticOf
+    let runtimeOwningDiagnostic = runtimeFailureError |> Option.bind diagnosticOf
+    let runtimeDiagnosticParity = interpreterNativeDiagnosticParity runtimeInterpreterDiagnostic runtimeOwningDiagnostic
+    record "validator-runtime-failure-preserves-classification"
+        (Option.isSome runtimeFailureInterpreterError
+         && Option.isSome runtimeFailureError
+         && runtimeDiagnosticParity
+         && diagnosticMatches (runtimeFailureOracle.GetProperty("diagnostic")) runtimeOwningDiagnostic
+         && failureCleanupPass runtimeFailureError
+         && runtimeFailureOutput = runtimeFailureBefore)
+        (jsonObject [
+            "interpreterDiagnostic", box (diagnosticSummary runtimeInterpreterDiagnostic)
+            "owningDiagnostic", box (diagnosticSummary runtimeOwningDiagnostic)
+            "diagnosticParity", box runtimeDiagnosticParity
+            "expectedDiagnostic", box (runtimeFailureOracle.GetProperty("diagnostic").Clone())
+            "callerBufferUnchanged", box (runtimeFailureOutput = runtimeFailureBefore)
+            "nativeFailureCleanup", box (failureCleanupPass runtimeFailureError) ])
+
+    let ownerTraceOracle = oracle.GetProperty("ownerRangeTrace")
+    let ownerRange = ownerTraceOracle.GetProperty("expectedDescriptorTransfer")
+    let ownerOutputBytes = bytesFromHex (ownerTraceOracle.GetProperty("projectedOutputBytesHex").GetString())
+    let ownerProjectionOutput = outputBuffer ownerOutputBytes.Length
+    let interpretedOwnerProjection = interpret nestedHost entries.EnvelopeProjectOwnerAndUnwrap (Some envelopeRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let ownerProjection = envelopeProjectProgram.ExecuteInto([ envelopeValue ], 1024, ownerProjectionOutput)
+    let ownerEvents = ownerProjection.LayoutEvents |> List.indexed |> List.toArray
+    let ownerTransfers =
+        ownerEvents
+        |> Array.filter (fun (_, event) ->
+            event.Kind = "descriptor-transfer"
+            && event.TypeId = uint32 (ownerRange.GetProperty("typeId").GetInt32())
+            && event.OffsetBytes = ownerRange.GetProperty("offsetBytes").GetInt32()
+            && event.SourceOffsetBytes = Some(ownerRange.GetProperty("sourceOffsetBytesOwnerEnd").GetInt32())
+            && event.SourceExtentBytes = Some(ownerRange.GetProperty("sourceExtentBytesPayloadExtent").GetInt32()))
+    let scopeAllocationExtent = (stringBytesFromCodeUnitsHex (codeUnitsHexFromString "temporary-in-scope")).Length
+    let laterAllocationExtent = (stringBytesFromCodeUnitsHex (codeUnitsHexFromString "after-scope")).Length
+    let scopeAllocation = ownerEvents |> Array.tryFind (fun (_, event) -> event.Kind = "allocate" && event.TypeId = nestedStringTypeId && event.ExtentBytes = scopeAllocationExtent)
+    let laterAllocation = ownerEvents |> Array.tryFind (fun (index, event) -> event.Kind = "allocate" && event.TypeId = nestedStringTypeId && event.ExtentBytes = laterAllocationExtent && (scopeAllocation |> Option.exists (fun (scopeIndex, _) -> index > scopeIndex)))
+    let lastOwnerTransfer = ownerTransfers |> Array.tryLast
+    let ownerRangePassed =
+        interpretedOwnerProjection = [ StringValue(envelopeOracle.GetProperty("ownerValue").GetString()) ]
+        && ownerProjection.Values = interpretedOwnerProjection
+        && ownerProjectionOutput = ownerOutputBytes
+        && ownerTransfers.Length > 0
+        && scopeAllocation.IsSome
+        && laterAllocation.IsSome
+        && (lastOwnerTransfer |> Option.exists (fun (transferIndex, _) -> laterAllocation |> Option.exists (fun (laterIndex, _) -> transferIndex > laterIndex)))
+        && ownerProjection.Metrics.DeepCopyBytes = uint64 (ownerTraceOracle.GetProperty("literalDeepCopyBytes").GetInt64())
+        && ownerProjection.Metrics.MoveBytes = 0UL
+    record "refined-field-owner-end-project-unwrap-no-extra-copy" ownerRangePassed (jsonObject [
+        "expectedOwnerEndBytes", box (ownerRange.GetProperty("sourceOffsetBytesOwnerEnd").GetInt32())
+        "expectedSourceExtentBytes", box (ownerRange.GetProperty("sourceExtentBytesPayloadExtent").GetInt32())
+        "ownerTransfers", box (ownerTransfers |> Array.map (fun (_, event) -> layoutEventDetails [ event ]))
+        "scopeStringAllocationExtentBytes", box scopeAllocationExtent
+        "laterStringAllocationExtentBytes", box laterAllocationExtent
+        "expectedLiteralDeepCopyBytes", box (ownerTraceOracle.GetProperty("literalDeepCopyBytes").GetInt64())
+        "actualDeepCopyBytes", box ownerProjection.Metrics.DeepCopyBytes
+        "actualMoveBytes", box ownerProjection.Metrics.MoveBytes
+        "laterAllocationFollowsScopeAllocation", box (scopeAllocation.IsSome && laterAllocation.IsSome)
+        "outputTransferFollowsLaterAllocation", box (lastOwnerTransfer |> Option.exists (fun (transferIndex, _) -> laterAllocation |> Option.exists (fun (laterIndex, _) -> transferIndex > laterIndex)))
+        "expectedRetainedBytesHex", box (bytesHex ownerOutputBytes)
+        "actualRetainedBytesHex", box (bytesHex ownerProjectionOutput)
+        "events", box (layoutEventDetails ownerProjection.LayoutEvents) ])
+    checkTraceUsable checks failures $"refined-string/{optimizationName}/owner-range-trace-complete" ownerProjection.Metrics ownerProjection.LayoutEvents |> ignore
+
+    let unsupportedScalar name baseType validatorName =
+        let unsupportedScalarDefinition =
+            { Name = name
+              BaseType = baseType
+              Validator = validatorName
+              SourceText = "unsupported scalar conformance type"
+              Span = span ($"<native-value-stack-scalar-{name}>") 1 }
+        let validatorEntries =
+            validatorName
+            |> Option.map (fun name ->
+                [ refinedStringWordEntry name [ baseType ] [ TBool ] 1 (name + "-validator")
+                    [ Call("drop", span ($"<native-value-stack-refined-string-{name}-drop>") 1)
+                      Push(LBool true, span ($"<native-value-stack-refined-string-{name}-result>") 2) ] ])
+            |> Option.defaultValue []
+        let context =
+            refinedStringCompilerContext validatorEntries []
+                [ unsupportedScalarDefinition, name + ".construct", name + ".unwrap" ]
+        let program = Compiler.compileIrProgramWithSourceOrigins context Map.empty
+        let literal =
+            match baseType with
+            | TBool -> LBool true
+            | TFloat -> LFloat 1.0
+            | TString -> LString "ok"
+            | _ -> invalidOp $"Unexpected unsupported scalar base type {baseType}."
+        let body =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins context program
+                ("native-value-stack-refined-string-unsupported-" + name) []
+                [ Push(literal, span ($"<native-value-stack-refined-string-{name}-literal>") 1)
+                  Call(name + ".construct", span ($"<native-value-stack-refined-string-{name}-construct>") 2) ] Map.empty
+        let compileError =
+            captureError (fun () ->
+                use _unexpectedlyCompiled = compile ("unsupported-" + name) body
+                ())
+        let code = compileError |> Option.map diagnosticCode |> Option.defaultValue ""
+        let message = compileError |> Option.bind diagnosticOf |> Option.map (fun diagnostic -> diagnostic.Message) |> Option.defaultValue ""
+        let expectedMessage =
+            if name = "UnvalidatedStringTag" then
+                Some(oracle.GetProperty("unsupportedUnvalidatedStringDiagnostic").GetProperty("message").GetString())
+            else None
+        let messageMatches = expectedMessage |> Option.forall ((=) message)
+        code = "IR_OWNING_STACK_TYPE_UNSUPPORTED" && messageMatches, code, message, expectedMessage
+    for name, baseType, validatorName in [
+        "UnvalidatedStringTag", TString, None
+        "BoolTag", TBool, Some "accept-bool?"
+        "FloatTag", TFloat, Some "accept-float?" ] do
+        let rejected, code, message, expectedMessage = unsupportedScalar name baseType validatorName
+        record ($"unsupported-{name}-is-explicit") rejected (jsonObject [
+            "rejectedBeforeExecution", box (code = "IR_OWNING_STACK_TYPE_UNSUPPORTED")
+            "expectedDiagnosticCode", box "IR_OWNING_STACK_TYPE_UNSUPPORTED"
+            "actualDiagnosticCode", box code
+            "expectedDiagnosticMessage", box (expectedMessage |> Option.defaultValue "")
+            "actualDiagnosticMessage", box message ])
+
+    let mailboxRejectedCode =
+        try
+            let _unexpectedlyCompiled =
+                OwningStackAot.compileMailbox toolchain optimization
+                    (Path.Combine(artifactRoot, "owning-stack", "refined-string", optimizationName, "unsupported-mailbox"))
+                    entries.MailboxBodies[0] entries.MailboxBodies[1] entries.MailboxBodies[2]
+            ""
+        with error -> diagnosticCode error
+    record "unsupported-refined-string-mailbox-layout-is-explicit"
+        (mailboxRejectedCode = "IR_OWNING_STACK_TYPE_UNSUPPORTED") (jsonObject [
+            "rejectedBeforeExecution", box (mailboxRejectedCode <> "")
+            "expectedDiagnosticCode", box "IR_OWNING_STACK_TYPE_UNSUPPORTED"
+            "actualDiagnosticCode", box mailboxRejectedCode ])
+
+    jsonObject [
+        "optimization", box optimizationName
+        "nonEmptyStringTypeId", box nonEmptyTypeId
+        "stringTypeId", box stringTypeId
+        "refinedEnvelopeTypeId", box envelopeTypeId
+        "caseCount", box 29
+        "rawInvalidInputCount", box 1
+        "rawBodyFailureControlCount", box 1
+        "recursiveRecordInputCount", box 2
+        "activeSumValidationCaseCount", box 4
+        "ownerEndBytes", box (ownerRange.GetProperty("sourceOffsetBytesOwnerEnd").GetInt32())
+        "stringKind", box (identityOracle.GetProperty("stringKind").GetInt32())
+        "validatorRevision", box originalRevision
+        "replacementValidatorRevision", box replacementRevision
+        "provenanceCoverage", box "After projecting and unwrapping the NonEmptyString owner field, the returned base String (TypeId 6) descriptor transfer retains the outer OwnerEnd; projection and unwrap add no payload move or deep copy beyond the two pinned temporary literals." ]
+
 [<EntryPoint>]
 let main argv =
     let reportPath =
@@ -7154,6 +8098,18 @@ let main argv =
         for optimization, optimizationName in optimizationPairs do
             positiveIdRuns.Add(box (runPositiveIdConformance checks failures fixture artifactsRoot optimization optimizationName positiveIdEntries))
         report["positiveIdRuns"] <- positiveIdRuns.ToArray()
+        let refinedStringEntries = compileRefinedStringEntries ()
+        report["refinedStringVerifiedProgramInstances"] <- box (jsonObject [
+            "identity", box true
+            "nested", box true
+            "runtimeFailure", box true
+            "replacement", box true
+            "mailboxRejection", box true ])
+        report["refinedStringBackendScope"] <- box "The same compiler-authorized NonEmptyString and nested VerifiedIrProgram instances execute through the interpreter and owning-stack LLVM O0/O2. Raw exported-entry checks use fixture-owned UTF-16 bytes and the existing context ABI oracle; the older LlvmAot sharedgraph String path remains outside this owning-only slice."
+        let refinedStringRuns = ResizeArray<obj>()
+        for optimization, optimizationName in optimizationPairs do
+            refinedStringRuns.Add(box (runRefinedStringConformance checks failures fixture artifactsRoot optimization optimizationName refinedStringEntries))
+        report["refinedStringRuns"] <- refinedStringRuns.ToArray()
     with error ->
         let exceptionDetails =
             [ "Diagnostic"; "Metrics"; "RequiredBytes"; "AvailableBytes"; "Boundary" ]

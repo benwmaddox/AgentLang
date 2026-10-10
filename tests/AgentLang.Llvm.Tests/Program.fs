@@ -12,6 +12,9 @@ open AgentLang.Llvm
 type private RawExecuteDelegate = delegate of nativeint * nativeint * int32 * nativeint -> unit
 
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+type private RawOwningExecuteDelegate = delegate of nativeint * nativeint * int32 * nativeint * int32 * nativeint * int32 -> int32
+
+[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
 type private LayoutDelegate = delegate of nativeint -> unit
 
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
@@ -1263,9 +1266,13 @@ let private testOwningNominalIntSlice () =
         let context = contextWithScalars [] [ scalarDefinition name baseType validator ]
         let body = compileBodyWithInputs context ("unsupported-" + name) [ inputType ] []
         let diagnostic = errorOf (fun () -> compileOwningNative toolchain ("unsupported-" + name) LlvmOptimization.O0 body |> ignore)
+        let expectedMessage =
+            match baseType, validator with
+            | TString, None -> "unvalidated String wrappers are unsupported"
+            | _ -> "other scalar bases remain unsupported"
         check ($"{name} remains outside the owning nominal Int slice") (
             diagnostic.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-            && diagnostic.Message.Contains("nominal Int scalar wrappers only", StringComparison.OrdinalIgnoreCase))
+            && diagnostic.Message.Contains(expectedMessage, StringComparison.OrdinalIgnoreCase))
     rejectScalar "BoolTag" TBool None (TNamed "BoolTag")
     rejectScalar "TextTag" TString None (TNamed "TextTag")
     rejectScalar "FloatTag" TFloat None (TNamed "FloatTag")
@@ -1274,7 +1281,7 @@ let private testOwningNominalIntSlice () =
     let inactiveError = errorOf (fun () -> compileOwningNative toolchain "unsupported-inactive-result-alternative" LlvmOptimization.O0 inactiveBody |> ignore)
     check "unsupported scalar is rejected in an inactive Result alternative" (
         inactiveError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-        && inactiveError.Message.Contains("nominal Int scalar wrappers only", StringComparison.OrdinalIgnoreCase))
+        && inactiveError.Message.Contains("other scalar bases remain unsupported", StringComparison.OrdinalIgnoreCase))
 
 let private testOwningRefinedIntSlice () =
     let toolchain = LlvmToolchain.discover()
@@ -1724,7 +1731,7 @@ let private testOwningRefinedIntSlice () =
     let unsupportedBool = errorOf (fun () -> compileOwningNative toolchain "owning-unsupported-refined-bool" LlvmOptimization.O0 unsupportedBoolBody |> ignore)
     check "predicate-bearing non-Int scalars remain outside the owning refined slice" (
         unsupportedBool.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-        && unsupportedBool.Message.Contains("nominal Int scalar wrappers only", StringComparison.OrdinalIgnoreCase))
+        && unsupportedBool.Message.Contains("other scalar bases remain unsupported", StringComparison.OrdinalIgnoreCase))
 
     let effectfulValidator =
         wordEntry "effectful-positive?" [ TInt ] [ TBool ] (Set.singleton "console.write") [
@@ -1826,6 +1833,365 @@ let private testOwningRefinedIntSlice () =
                 resume
             |> ignore)
     check "mailbox layout builder explicitly rejects a nested refined Int scalar" (
+        mailboxError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
+        && mailboxError.Message.Contains("unvalidated nominal Int scalar", StringComparison.OrdinalIgnoreCase))
+
+let private testOwningRefinedStringSlice () =
+    let toolchain = LlvmToolchain.discover()
+    let withScalarConstructorSpan (context: Compiler.IrLoweringContext) scalarName constructorName =
+        let scalarSpan = context.Scalars[scalarName].Span
+        let constructor = context.Words[constructorName]
+        let definition = { constructor.Definition with Span = scalarSpan }
+        { context with Words = Map.add constructorName { constructor with Definition = definition } context.Words }
+    let owningException action =
+        try
+            action ()
+            failwith "Expected an OwningStackExecutionException."
+        with :? OwningStackExecutionException as error -> error
+    let owningError action = (owningException action).Diagnostic
+    let invokeRawOwningEntry (native: OwningStackCompiledProgram) (inputBytes: byte array) (inputExtents: int array) retainedCapacity =
+        let library = NativeLibrary.Load native.LibraryPath
+        let input = Marshal.AllocHGlobal(max 1 inputBytes.Length)
+        let extents = Marshal.AllocHGlobal(max sizeof<int32> (inputExtents.Length * sizeof<int32>))
+        let retained = Marshal.AllocHGlobal(max 1 retainedCapacity)
+        let contextPointer = Marshal.AllocHGlobal(Marshal.SizeOf<NativeOwningContext>())
+        let stackCapacity = 4096
+        let bitmapBytes = stackCapacity / 8
+        let stack = Marshal.AllocHGlobal stackCapacity
+        let initialized = Marshal.AllocHGlobal bitmapBytes
+        let poison = Marshal.AllocHGlobal bitmapBytes
+        let traceCapacity = 8192
+        let trace = Marshal.AllocHGlobal(traceCapacity * 40)
+        try
+            if inputBytes.Length > 0 then Marshal.Copy(inputBytes, 0, input, inputBytes.Length)
+            if inputExtents.Length > 0 then Marshal.Copy(Array.zeroCreate<byte> (inputExtents.Length * sizeof<int32>), 0, extents, inputExtents.Length * sizeof<int32>)
+            for index, extent in inputExtents |> List.ofArray |> List.indexed do
+                Marshal.WriteInt32(extents, index * sizeof<int32>, extent)
+            Marshal.Copy(Array.create retainedCapacity 0xA5uy, 0, retained, retainedCapacity)
+            Marshal.Copy(Array.zeroCreate<byte> stackCapacity, 0, stack, stackCapacity)
+            Marshal.Copy(Array.zeroCreate<byte> bitmapBytes, 0, initialized, bitmapBytes)
+            Marshal.Copy(Array.zeroCreate<byte> bitmapBytes, 0, poison, bitmapBytes)
+            Marshal.Copy(Array.zeroCreate<byte> (traceCapacity * 40), 0, trace, traceCapacity * 40)
+            let mutable context = Unchecked.defaultof<NativeOwningContext>
+            context.AbiVersion <- 1u
+            context.StackCapacityBytes <- uint32 stackCapacity
+            context.TraceEventCapacity <- uint32 traceCapacity
+            context.InitBitmapBytes <- uint32 bitmapBytes
+            context.StackData <- stack
+            context.InitBitmap <- initialized
+            context.PoisonBitmap <- poison
+            context.TraceEvents <- trace
+            Marshal.StructureToPtr(context, contextPointer, false)
+            let execute = Marshal.GetDelegateForFunctionPointer<RawOwningExecuteDelegate>(NativeLibrary.GetExport(library, "agentlang_owning_execute"))
+            let status = execute.Invoke(contextPointer, input, inputBytes.Length, extents, inputExtents.Length, retained, retainedCapacity)
+            let finalContext = Marshal.PtrToStructure<NativeOwningContext>(contextPointer)
+            let retainedBytes = Array.create retainedCapacity 0xA5uy
+            Marshal.Copy(retained, retainedBytes, 0, retainedCapacity)
+            status, finalContext, retainedBytes
+        finally
+            NativeLibrary.Free library
+            Marshal.FreeHGlobal trace
+            Marshal.FreeHGlobal poison
+            Marshal.FreeHGlobal initialized
+            Marshal.FreeHGlobal stack
+            Marshal.FreeHGlobal contextPointer
+            Marshal.FreeHGlobal retained
+            Marshal.FreeHGlobal extents
+            Marshal.FreeHGlobal input
+
+    let nonEmptyValidator =
+        wordEntry "is-non-empty?" [ TString ] [ TBool ] Set.empty [
+            Call("string.length", span "owning-non-empty-validator.agent" 1)
+            Push(LInt 0L, span "owning-non-empty-validator.agent" 2)
+            Call("int.greater-than", span "owning-non-empty-validator.agent" 3)
+        ]
+    let singleContext =
+        contextWithScalarDefinitions [ nonEmptyValidator ] [
+            scalarDefinition "NonEmptyString" TString (Some "is-non-empty?"), "NonEmptyString.construct", "NonEmptyString.unwrap"
+        ]
+        |> fun context -> withScalarConstructorSpan context "NonEmptyString" "NonEmptyString.construct"
+    let constructorBody = compileBodyWithInputs singleContext "owning-refined-string-constructor" [ TString ] [
+        Call("NonEmptyString.construct", span "owning-refined-string-constructor.agent" 1)
+    ]
+    let emptyRawBytes = Array.zeroCreate<byte> 8
+    let expectedStringBytes = "02000000000000006f006b0000000000"
+    let expectedOtherStringBytes = "020000000000000079006f0000000000"
+    let validString = NamedValue("NonEmptyString", StringValue "ok")
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use constructor = compileOwningNative toolchain "owning-refined-string-constructor" optimization constructorBody
+        let nominalLayout = constructor.Layouts |> List.find (fun layout -> layout.TypeName = "NonEmptyString")
+        let stringLayout = constructor.Layouts |> List.find (fun layout -> layout.Type = IrString)
+        check ($"{optimization} refined String layout retains nominal key and dynamic String extent") (
+            nominalLayout.Type = IrNominal(ProgramTypeKey 0)
+            && nominalLayout.PayloadBytes = -1
+            && nominalLayout.ExtentBytes = -1
+            && nominalLayout.IsDynamic
+            && nominalLayout.MinimumPayloadBytes = 8
+            && nominalLayout.MinimumExtentBytes = 8
+            && stringLayout.TypeName = "String"
+            && stringLayout.IsDynamic
+            && stringLayout.MinimumPayloadBytes = 8
+            && stringLayout.MinimumExtentBytes = 8)
+        check ($"{optimization} refined String uses String kind 5 with its nominal and String TypeIds") (
+            constructor.LlvmIr.Contains("i32 5, i32 4, i32 0, i32 0, i32 4294967295, i32 4294967295, i32 8, i32 8, i32 0", StringComparison.Ordinal)
+            && constructor.LlvmIr.Contains("i32 5, i32 5, i32 0, i32 0, i32 4294967295, i32 4294967295, i32 8, i32 8, i32 0", StringComparison.Ordinal))
+        let constructed = constructor.Execute([ StringValue "ok" ], 4096, 16)
+        check ($"{optimization} NonEmptyString constructor preserves UTF-16 String bytes and nominal identity") (
+            constructed.Values = [ validString ]
+            && constructed.RetainedBytesWritten = 16
+            && Convert.ToHexString(constructed.RetainedOutputBytes).ToLowerInvariant() = expectedStringBytes
+            && constructed.Metrics.DeepCopyBytes = 0UL
+            && constructed.Metrics.MoveBytes = 0UL)
+        let retained = Array.create 16 0xA5uy
+        let emptyFailure = owningException (fun () -> constructor.ExecuteInto([ StringValue "" ], 4096, retained) |> ignore)
+        check ($"{optimization} empty NonEmptyString construction fails atomically") (
+            emptyFailure.Diagnostic.Code = "REFINEMENT_FAILED"
+            && emptyFailure.Diagnostic.Word = Some "NonEmptyString.construct"
+            && retained = Array.create 16 0xA5uy
+            && emptyFailure.Metrics.FinalCursorBytes = 0
+            && emptyFailure.Metrics.HostRetainedCommitBytes = 0)
+
+    let identityContext =
+        contextWithScalarDefinitions [ nonEmptyValidator ] [
+            scalarDefinition "NonEmptyString" TString (Some "is-non-empty?"), "NonEmptyString.construct", "NonEmptyString.unwrap"
+            scalarDefinition "OtherString" TString (Some "is-non-empty?"), "OtherString.construct", "OtherString.unwrap"
+        ]
+        |> fun context -> withScalarConstructorSpan context "NonEmptyString" "NonEmptyString.construct"
+    let identityBody = compileBodyWithInputs identityContext "owning-refined-string-input-only" [ TNamed "NonEmptyString"; TNamed "OtherString" ] []
+    let identityInput = [ validString; NamedValue("OtherString", StringValue "yo") ]
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use identity = compileOwningNative toolchain "owning-refined-string-input-only" optimization identityBody
+        let nonEmptyLayout = identity.Layouts |> List.find (fun layout -> layout.TypeName = "NonEmptyString")
+        let otherLayout = identity.Layouts |> List.find (fun layout -> layout.TypeName = "OtherString")
+        check ($"{optimization} refined String nominals have distinct verified identities") (
+            nonEmptyLayout.Type <> otherLayout.Type
+            && nonEmptyLayout.IsDynamic && otherLayout.IsDynamic
+            && nonEmptyLayout.MinimumPayloadBytes = 8 && otherLayout.MinimumPayloadBytes = 8)
+        let identityResult = identity.Execute(identityInput, 4096, 32)
+        check ($"{optimization} validator-only type dependencies admit and roundtrip exact nominal String values") (
+            identityResult.Values = identityInput
+            && Convert.ToHexString(identityResult.RetainedOutputBytes).ToLowerInvariant() = expectedStringBytes + expectedOtherStringBytes)
+        for label, invalidFirst in [ "bare String", StringValue "ok"; "different nominal", NamedValue("OtherString", StringValue "ok") ] do
+            let retained = Array.create 32 0xA5uy
+            let mutable rejected = false
+            try
+                identity.ExecuteInto([ invalidFirst; identityInput[1] ], 4096, retained) |> ignore
+            with :? ArgumentException -> rejected <- true
+            check ($"{optimization} host rejects {label} for NonEmptyString") rejected
+            check ($"{optimization} {label} rejection leaves caller bytes unchanged") (retained = Array.create 32 0xA5uy)
+
+    let rawRejectBody = compileBodyWithInputs singleContext "owning-refined-string-reject-before-body" [ TNamed "NonEmptyString" ] [
+        Call("drop", span "owning-refined-string-reject-before-body.agent" 1)
+        Push(LInt 1L, span "owning-refined-string-reject-before-body.agent" 2)
+        Push(LInt 0L, span "owning-refined-string-reject-before-body.agent" 3)
+        Call("divide", span "owning-refined-string-reject-before-body.agent" 4)
+    ]
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use rawInput = compileOwningNative toolchain "owning-refined-string-reject-before-body" optimization rawRejectBody
+        let failure = owningError (fun () -> rawInput.Execute([ NamedValue("NonEmptyString", StringValue "") ], 4096, 8) |> ignore)
+        check ($"{optimization} host encoded empty refined String fails refinement before divide") (
+            failure.Code = "REFINEMENT_FAILED" && failure.Word = Some "NonEmptyString.construct")
+        let status, context, rawRetained = invokeRawOwningEntry rawInput emptyRawBytes [| 8 |] 8
+        check ($"{optimization} exported owning entry validates fixture String bytes before executing the body") (
+            status = 1
+            && context.Status = 1u
+            && context.ErrorId > 0u
+            && context.StepsConsumed = 3u
+            && context.CursorBytes = 0u
+            && context.RetainedCopyBytes = 0UL
+            && rawRetained = Array.create 8 0xA5uy)
+        let validRawBodyFailure = owningError (fun () -> rawInput.Execute([ validString ], 4096, 8) |> ignore)
+        check ($"{optimization} valid raw NonEmptyString reaches the intentionally failing body") (validRawBodyFailure.Code = "RUNTIME_DIVIDE_BY_ZERO")
+
+    let replacementValidator =
+        { nonEmptyValidator with
+            Definition =
+                { nonEmptyValidator.Definition with
+                    Body = [ Call("drop", span "replacement-non-empty.agent" 1); Push(LBool false, span "replacement-non-empty.agent" 2) ]
+                    Revision = 2 }
+            Revision = 2 }
+    let replacementContext =
+        contextWithScalarDefinitions [ replacementValidator ] [
+            scalarDefinition "NonEmptyString" TString (Some "is-non-empty?"), "NonEmptyString.construct", "NonEmptyString.unwrap"
+        ]
+        |> fun context -> withScalarConstructorSpan context "NonEmptyString" "NonEmptyString.construct"
+    let replacementBody = compileBodyWithInputs replacementContext "owning-refined-string-replacement" [ TNamed "NonEmptyString" ] []
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use original = compileOwningNative toolchain "owning-refined-string-frozen-original-single" optimization (compileBodyWithInputs singleContext "owning-refined-string-frozen-original-single" [ TNamed "NonEmptyString" ] [])
+        use replacement = compileOwningNative toolchain "owning-refined-string-replacement" optimization replacementBody
+        let replacementFailure = owningException (fun () -> replacement.Execute([ validString ], 4096, 16) |> ignore)
+        check ($"{optimization} same-name String validator replacement retains the frozen revision") (
+            replacementFailure.Diagnostic.Code = "REFINEMENT_FAILED"
+            && replacementFailure.Diagnostic.Word = Some "NonEmptyString.construct")
+        check ($"{optimization} original String validator snapshot remains executable after replacement") (
+            original.Execute([ validString ], 4096, 16).Values = [ validString ])
+
+    let envelope = recordDefinition "StringOwnerEnvelope" [
+        recordField "owner" (TNamed "NonEmptyString")
+        recordField "tail" TString
+    ]
+    let nestedContext =
+        contextWithRecordDefinitions [ nonEmptyValidator ] [ envelope ] [
+            scalarDefinition "NonEmptyString" TString (Some "is-non-empty?"), "NonEmptyString.construct", "NonEmptyString.unwrap"
+        ]
+        |> fun context -> withScalarConstructorSpan context "NonEmptyString" "NonEmptyString.construct"
+    let nestedTypes = [
+        TNamed "StringOwnerEnvelope"
+        TOption(TNamed "NonEmptyString")
+        TOption(TNamed "NonEmptyString")
+        TResult(TNamed "NonEmptyString", TInt)
+        TResult(TNamed "NonEmptyString", TInt)
+        TResult(TInt, TNamed "NonEmptyString")
+        TResult(TInt, TNamed "NonEmptyString")
+    ]
+    let nestedBody = compileBodyWithInputs nestedContext "owning-refined-string-nested-inputs" nestedTypes []
+    let nominalString text = NamedValue("NonEmptyString", StringValue text)
+    let nestedValues = [
+        RecordValue("StringOwnerEnvelope", Map.ofList [ "owner", nominalString "ok"; "tail", StringValue "tail" ])
+        OptionValue(TNamed "NonEmptyString", Some(nominalString "one"))
+        OptionValue(TNamed "NonEmptyString", None)
+        ResultValue(TNamed "NonEmptyString", TInt, Ok(nominalString "two"))
+        ResultValue(TNamed "NonEmptyString", TInt, Error(IntValue 4L))
+        ResultValue(TInt, TNamed "NonEmptyString", Ok(IntValue 5L))
+        ResultValue(TInt, TNamed "NonEmptyString", Error(nominalString "three"))
+    ]
+    let replaceAt index replacement values =
+        values |> List.mapi (fun current value -> if current = index then replacement else value)
+    let unwrapFieldBody = compileBodyWithInputs nestedContext "owning-refined-string-owner-end" [ TNamed "StringOwnerEnvelope" ] [
+        Call("stringOwnerEnvelope.owner", span "owning-refined-string-owner-end.agent" 1)
+        Call("NonEmptyString.unwrap", span "owning-refined-string-owner-end.agent" 2)
+    ]
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use nested = compileOwningNative toolchain "owning-refined-string-nested-inputs" optimization nestedBody
+        let roundtrip = nested.Execute(nestedValues, 8192, 256)
+        check ($"{optimization} refined String validates records, Option Some, and active Result payloads recursively") (roundtrip.Values = nestedValues)
+        for index, invalidValue in [
+            0, RecordValue("StringOwnerEnvelope", Map.ofList [ "owner", nominalString ""; "tail", StringValue "tail" ])
+            1, OptionValue(TNamed "NonEmptyString", Some(nominalString ""))
+            3, ResultValue(TNamed "NonEmptyString", TInt, Ok(nominalString ""))
+            6, ResultValue(TInt, TNamed "NonEmptyString", Error(nominalString ""))
+        ] do
+            let retained = Array.create 256 0xA5uy
+            let failure = owningError (fun () -> nested.ExecuteInto(replaceAt index invalidValue nestedValues, 8192, retained) |> ignore)
+            check ($"{optimization} invalid active nested refined String {index} is rejected atomically") (
+                failure.Code = "REFINEMENT_FAILED"
+                && failure.Word = Some "NonEmptyString.construct"
+                && retained = Array.create 256 0xA5uy)
+        use unwrapField = compileOwningNative toolchain "owning-refined-string-owner-end" optimization unwrapFieldBody
+        let ownerEndResult =
+            unwrapField.Execute(
+                [ RecordValue("StringOwnerEnvelope", Map.ofList [ "owner", nominalString "ok"; "tail", StringValue "tail" ]) ],
+                4096,
+                16)
+        let stringTypeId = 6u
+        let preservesOwnerEnd =
+            ownerEndResult.LayoutEvents
+            |> List.exists (fun event ->
+                event.Kind = "descriptor-transfer"
+                && event.TypeId = stringTypeId
+                && event.OffsetBytes = 0
+                && event.SourceOffsetBytes = Some 32
+                && event.SourceExtentBytes = Some 16)
+        check ($"{optimization} refined String field projection and unwrap preserve the trailing String owner range") (
+            ownerEndResult.Values = [ StringValue "ok" ]
+            && Convert.ToHexString(ownerEndResult.RetainedOutputBytes).ToLowerInvariant() = expectedStringBytes
+            && ownerEndResult.Metrics.InputBytes = 32
+            && ownerEndResult.Metrics.HostEncodedInputBytes = 32
+            && ownerEndResult.Metrics.DeepCopyBytes = 0UL
+            && ownerEndResult.Metrics.MoveBytes = 0UL
+            && preservesOwnerEnd)
+
+    let failingValidator =
+        wordEntry "failing-string-validator?" [ TString ] [ TBool ] Set.empty [
+            Call("drop", span "failing-string-validator.agent" 1)
+            Push(LInt 1L, span "failing-string-validator.agent" 2)
+            Push(LInt 0L, span "failing-string-validator.agent" 3)
+            Call("divide", span "failing-string-validator.agent" 4)
+            Push(LInt 0L, span "failing-string-validator.agent" 5)
+            Call("int.greater-than", span "failing-string-validator.agent" 6)
+        ]
+    let failingContext =
+        contextWithScalarDefinitions [ failingValidator ] [
+            scalarDefinition "NonEmptyString" TString (Some "failing-string-validator?"), "NonEmptyString.construct", "NonEmptyString.unwrap"
+        ]
+        |> fun context -> withScalarConstructorSpan context "NonEmptyString" "NonEmptyString.construct"
+    let failingConstructBody = compileBodyWithInputs failingContext "owning-refined-string-validator-runtime-error" [ TString ] [
+        Call("NonEmptyString.construct", span "owning-refined-string-validator-runtime-error.agent" 1)
+    ]
+    let inactiveBody = compileBodyWithInputs failingContext "owning-refined-string-inactive-cases" [ TOption(TNamed "NonEmptyString"); TResult(TInt, TNamed "NonEmptyString") ] []
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use failingConstruct = compileOwningNative toolchain "owning-refined-string-validator-runtime-error" optimization failingConstructBody
+        let runtimeFailure = owningError (fun () -> failingConstruct.Execute([ StringValue "ok" ], 4096, 16) |> ignore)
+        check ($"{optimization} String validator runtime failures keep their original runtime classification") (
+            runtimeFailure.Code = "RUNTIME_DIVIDE_BY_ZERO" && runtimeFailure.Word = Some "divide")
+        use inactive = compileOwningNative toolchain "owning-refined-string-inactive-cases" optimization inactiveBody
+        let inactiveValues = [
+            OptionValue(TNamed "NonEmptyString", None)
+            ResultValue(TInt, TNamed "NonEmptyString", Ok(IntValue 9L))
+        ]
+        check ($"{optimization} None and Result alternatives without refined String do not invoke its validator") (
+            inactive.Execute(inactiveValues, 4096, 32).Values = inactiveValues)
+
+    let unvalidatedStringContext = contextWithScalars [] [ scalarDefinition "TextTag" TString None ]
+    let unvalidatedStringBody = compileBodyWithInputs unvalidatedStringContext "owning-unsupported-string-wrapper" [ TNamed "TextTag" ] []
+    let unvalidatedStringError = errorOf (fun () -> compileOwningNative toolchain "owning-unsupported-string-wrapper" LlvmOptimization.O0 unvalidatedStringBody |> ignore)
+    check "unvalidated String nominal wrappers remain unsupported" (
+        unvalidatedStringError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
+        && unvalidatedStringError.Message.Contains("unvalidated String wrappers", StringComparison.OrdinalIgnoreCase))
+
+    let boolValidator = wordEntry "identity-bool?" [ TBool ] [ TBool ] Set.empty [
+        Call("bool.not", span "owning-string-bool-validator.agent" 1)
+        Call("bool.not", span "owning-string-bool-validator.agent" 2)
+    ]
+    let floatValidator = wordEntry "accept-float?" [ TFloat ] [ TBool ] Set.empty [
+        Call("drop", span "owning-string-float-validator.agent" 1)
+        Push(LBool true, span "owning-string-float-validator.agent" 2)
+    ]
+    for scalarName, baseType, validatorName in [ "BoolTag", TBool, "identity-bool?"; "FloatTag", TFloat, "accept-float?" ] do
+        let context =
+            contextWithScalarDefinitions [ boolValidator; floatValidator ] [
+                scalarDefinition scalarName baseType (Some validatorName), scalarName + ".construct", scalarName + ".unwrap"
+            ]
+        let body = compileBodyWithInputs context ("owning-unsupported-string-related-" + scalarName) [ TNamed scalarName ] []
+        let diagnostic = errorOf (fun () -> compileOwningNative toolchain ("owning-unsupported-string-related-" + scalarName) LlvmOptimization.O0 body |> ignore)
+        check ($"{scalarName} refinements remain unsupported beside the refined String slice") (
+            diagnostic.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED")
+
+    let mailboxContext =
+        contextWithRecordDefinitions [ nonEmptyValidator ] [
+            recordDefinition "MailboxState" [ recordField "owner" (TNamed "NonEmptyString") ]
+            recordDefinition "MailboxContinuation" [ recordField "marker" TInt ]
+        ] [
+            scalarDefinition "NonEmptyString" TString (Some "is-non-empty?"), "NonEmptyString.construct", "NonEmptyString.unwrap"
+        ]
+    let mailboxProgram = Compiler.compileIrProgram mailboxContext
+    let initialize = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-refined-string-mailbox-initialize" [ TString ] [
+        Call("drop", span "owning-refined-string-mailbox.agent" 1)
+        Push(LString "owner", span "owning-refined-string-mailbox.agent" 2)
+        Call("NonEmptyString.construct", span "owning-refined-string-mailbox.agent" 3)
+        Call("mailboxState.new", span "owning-refined-string-mailbox.agent" 4)
+    ]
+    let beginTurn = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-refined-string-mailbox-begin" [ TNamed "MailboxState"; TString ] [
+        Call("drop", span "owning-refined-string-mailbox.agent" 5)
+        Push(LInt 1L, span "owning-refined-string-mailbox.agent" 6)
+        Call("mailboxContinuation.new", span "owning-refined-string-mailbox.agent" 7)
+    ]
+    let resume = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-refined-string-mailbox-resume" [ TNamed "MailboxState"; TNamed "MailboxContinuation"; TString ] [
+        Call("drop", span "owning-refined-string-mailbox.agent" 8)
+        Call("drop", span "owning-refined-string-mailbox.agent" 9)
+    ]
+    let mailboxError =
+        errorOf (fun () ->
+            OwningStackAot.compileMailboxWithProfile
+                toolchain
+                LlvmOptimization.O0
+                OwningRuntimeProfile.Diagnostic
+                (Path.Combine(artifactRoot, "owning-refined-string-mailbox-reject"))
+                initialize
+                beginTurn
+                resume
+            |> ignore)
+    check "validated String mailbox layouts remain unsupported by the mailbox gate" (
         mailboxError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
         && mailboxError.Message.Contains("unvalidated nominal Int scalar", StringComparison.OrdinalIgnoreCase))
 
@@ -3459,6 +3825,8 @@ let private runFullSuite () =
         testOwningNominalIntSlice ()
         printStage "owning backend refined Int constructors and host admission"
         testOwningRefinedIntSlice ()
+        printStage "owning backend refined String constructors, raw admission, and owner ranges"
+        testOwningRefinedStringSlice ()
         testNominalScalarDiagnosticsAndRejections ()
         testNominalScalarDepth ()
         printStage "record construction, accessors, aliases, and equality"
@@ -3511,6 +3879,15 @@ let main args =
             printStage "owning backend refined Int constructors and host admission"
             testOwningRefinedIntSlice ()
             printfn "AgentLang.Llvm.Tests owning refined Int checks: %d assertions passed; artifacts: %s" assertions artifactRoot
+            0
+        with ex ->
+            eprintfn "%s" (ex.ToString())
+            1
+    elif args |> Array.contains "--owning-refined-string" then
+        try
+            printStage "owning backend refined String constructors, raw admission, and owner ranges"
+            testOwningRefinedStringSlice ()
+            printfn "AgentLang.Llvm.Tests owning refined String checks: %d assertions passed; artifacts: %s" assertions artifactRoot
             0
         with ex ->
             eprintfn "%s" (ex.ToString())

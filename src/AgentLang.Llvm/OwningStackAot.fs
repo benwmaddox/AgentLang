@@ -591,7 +591,7 @@ module OwningStackAot =
 
     let private extent payload = max 8 payload
 
-    let private makeProgramInfoForBodies allowValidatedIntScalars (verifiedBodies: VerifiedIrBody list) =
+    let private makeProgramInfoForBodies allowValidatedScalars (verifiedBodies: VerifiedIrBody list) =
         if List.isEmpty verifiedBodies then invalidArg (nameof verifiedBodies) "An owning module requires at least one verified body."
         for verifiedBody in verifiedBodies do
             if Object.ReferenceEquals(verifiedBody, null) then
@@ -637,9 +637,9 @@ module OwningStackAot =
         let mutable validatedScalarConstructors = Map.empty<IrType, IrGeneratedTarget>
         let active = HashSet<IrType>()
         let unsupportedScalarMessage, unsupportedScalarExpected =
-            if allowValidatedIntScalars then
-                "Owning-stack supports nominal Int scalar wrappers only; non-Int scalar bases remain unsupported.",
-                [ "nominal Int scalar" ]
+            if allowValidatedScalars then
+                "Owning-stack supports nominal Int scalar wrappers and validated String scalar wrappers; other scalar bases remain unsupported.",
+                [ "nominal Int scalar"; "validated String scalar" ]
             else
                 "Owning-stack supports only unvalidated nominal Int scalar wrappers.",
                 [ "unvalidated Int scalar" ]
@@ -647,11 +647,12 @@ module OwningStackAot =
             match scalar.ValidatorCall with
             | None -> ()
             | Some validator ->
-                if not allowValidatedIntScalars || scalar.BaseType <> IrInt then
+                if not allowValidatedScalars || (scalar.BaseType <> IrInt && scalar.BaseType <> IrString) then
                     Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
                         unsupportedScalarMessage
                         (Some owner) None unsupportedScalarExpected [ scalar.TypeName ]
-                if validator.InputTypes <> [ IrInt ] || validator.OutputTypes <> [ IrBool ]
+                let baseTypeName = IrTypes.format scalar.BaseType
+                if validator.InputTypes <> [ scalar.BaseType ] || validator.OutputTypes <> [ IrBool ]
                    || not (Set.isEmpty validator.ResolvedDeclaredEffects)
                    || not (Set.isEmpty validator.ResolvedEffects) then
                     let actual =
@@ -660,18 +661,18 @@ module OwningStackAot =
                             (String.concat " " (validator.OutputTypes |> List.map IrTypes.format))
                             (String.concat "," (IrEffects.names validator.ResolvedEffects))
                     Diagnostics.raiseError "IR_OWNING_STACK_VALIDATOR_SIGNATURE"
-                        "A refined owning Int scalar requires its frozen pure Int -> Bool validator."
-                        (Some owner) None [ "Int -> Bool; no effects" ] [ actual ]
+                        $"A refined owning {baseTypeName} scalar requires its frozen pure {baseTypeName} -> Bool validator."
+                        (Some owner) None [ $"{baseTypeName} -> Bool; no effects" ] [ actual ]
                 match validator.ResolvedTarget with
                 | UserWordTarget(id, revision) ->
                     match program.FunctionsById.TryFind id with
                     | Some fn when fn.FunctionRevision = revision ->
-                        if fn.InputTypes <> [ IrInt ] || fn.OutputTypes <> [ IrBool ]
+                        if fn.InputTypes <> [ scalar.BaseType ] || fn.OutputTypes <> [ IrBool ]
                            || not (Set.isEmpty fn.FunctionDeclaredEffects)
                            || not (Set.isEmpty fn.FunctionInferredEffects) then
                             Diagnostics.raiseError "IR_OWNING_STACK_VALIDATOR_SIGNATURE"
-                                "The frozen refined scalar validator does not target a pure Int -> Bool function."
-                                (Some owner) None [ "pure Int -> Bool function" ] [ validator.ResolvedName ]
+                                $"The frozen refined scalar validator does not target a pure {baseTypeName} -> Bool function."
+                                (Some owner) None [ $"pure {baseTypeName} -> Bool function" ] [ validator.ResolvedName ]
                     | Some fn ->
                         Diagnostics.raiseError "IR_OWNING_STACK_TARGET_REVISION"
                             "Owning-stack validator target revision does not match the verified snapshot."
@@ -682,7 +683,7 @@ module OwningStackAot =
                             (Some owner) None [ "reachable user word" ] [ sprintf "%A" id ]
                 | _ ->
                     Diagnostics.raiseError "IR_OWNING_STACK_VALIDATOR_TARGET"
-                        "A refined owning Int scalar validator must retain an exact user-word target and revision."
+                        "A refined owning scalar validator must retain an exact user-word target and revision."
                         (Some owner) None [ "frozen user-word target" ] [ validator.ResolvedName ]
                 let constructorCandidates =
                     program.GeneratedTargetsById
@@ -692,21 +693,22 @@ module OwningStackAot =
                     |> Seq.toList
                 match constructorCandidates with
                 | [ constructor ] ->
-                    if constructor.InputTypes <> [ IrInt ]
+                    if constructor.InputTypes <> [ scalar.BaseType ]
                        || constructor.OutputTypes <> [ IrNominal scalar.TypeKey ]
                        || not (Set.isEmpty constructor.TargetDeclaredEffects)
                        || not (Set.isEmpty constructor.TargetEffects) then
+                        let baseTypeName = IrTypes.format scalar.BaseType
                         Diagnostics.raiseError "IR_OWNING_STACK_SCALAR_CONSTRUCTOR"
-                            "The frozen refined scalar constructor does not retain its exact pure Int-to-nominal shape."
-                            (Some owner) None [ "pure Int -> nominal constructor" ] [ constructor.TargetName ]
+                            $"The frozen refined scalar constructor does not retain its exact pure {baseTypeName}-to-nominal shape."
+                            (Some owner) None [ $"pure {baseTypeName} -> nominal constructor" ] [ constructor.TargetName ]
                     validatedScalarConstructors <- Map.add (IrNominal scalar.TypeKey) constructor validatedScalarConstructors
                 | [] ->
                     Diagnostics.raiseError "IR_OWNING_STACK_SCALAR_CONSTRUCTOR_MISSING"
-                        "A refined owning Int scalar requires exactly one frozen generated constructor for diagnostics."
+                        "A refined owning scalar requires exactly one frozen generated constructor for diagnostics."
                         (Some owner) None [ "one generated WrapScalar target" ] [ scalar.TypeName ]
                 | constructors ->
                     Diagnostics.raiseError "IR_OWNING_STACK_SCALAR_CONSTRUCTOR_AMBIGUOUS"
-                        "A refined owning Int scalar has more than one frozen generated constructor target."
+                        "A refined owning scalar has more than one frozen generated constructor target."
                         (Some owner) None [ "one generated WrapScalar target" ] (constructors |> List.map (fun target -> target.TargetName))
         let rec buildType owner depth ty =
             match typeInfos.TryFind ty with
@@ -831,26 +833,34 @@ module OwningStackAot =
                             typeInfos <- Map.add ty value typeInfos
                             value
                         | Some(IrScalarDefinition scalar) ->
-                            match scalar.BaseType with
-                            | IrInt ->
+                            match scalar.BaseType, scalar.ValidatorCall with
+                            | IrInt, _
+                            | IrString, Some _ ->
                                 validateScalarValidator owner scalar
                                 scalar.ValidatorCall
                                 |> Option.iter (fun validator ->
                                     validatedScalarValidators <- Map.add ty validator validatedScalarValidators)
+                                // The nominal is a descriptor/type-ID overlay on its
+                                // primitive representation, so the base adds no layout depth.
+                                let baseLayout = buildType owner depth scalar.BaseType
                                 let value =
                                     { Type = ty
                                       TypeId = typeIdFor typeIds ty
                                       Name = scalar.TypeName
-                                      PayloadBytes = 8
-                                      ExtentBytes = 8
-                                      IsDynamic = false
-                                      MinimumPayloadBytes = 8
-                                      MinimumExtentBytes = 8
-                                      LayoutDepth = 1
+                                      PayloadBytes = baseLayout.PayloadBytes
+                                      ExtentBytes = baseLayout.ExtentBytes
+                                      IsDynamic = baseLayout.IsDynamic
+                                      MinimumPayloadBytes = baseLayout.MinimumPayloadBytes
+                                      MinimumExtentBytes = baseLayout.MinimumExtentBytes
+                                      LayoutDepth = baseLayout.LayoutDepth
                                       Fields = []
                                       Cases = [] }
                                 typeInfos <- Map.add ty value typeInfos
                                 value
+                            | IrString, None ->
+                                Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
+                                    "Owning-stack requires String-backed nominal scalars to use a frozen pure String -> Bool validator; unvalidated String wrappers are unsupported."
+                                    (Some owner) None [ "validated String scalar" ] [ scalar.TypeName ]
                             | _ ->
                                 Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
                                     unsupportedScalarMessage
@@ -1003,10 +1013,12 @@ module OwningStackAot =
                         Diagnostics.raiseError "IR_OWNING_STACK_SCALAR_VALIDATOR_MISMATCH"
                             "Scalar wrap validator differs from the immutable nominal type definition."
                             (Some owner) span [ "matching frozen scalar validator" ] [ call.ResolvedName ]
-                    validateScalarCall owner span call key (WrapScalarOperation key) [ IrInt ] [ IrNominal key ]
+                    let baseType = scalarDefinition program (IrNominal key) |> Option.map (fun scalar -> scalar.BaseType) |> Option.defaultValue IrInt
+                    validateScalarCall owner span call key (WrapScalarOperation key) [ baseType ] [ IrNominal key ]
                 | IrOperation.UnwrapScalar(call, key) ->
                     checkType owner (IrNominal key)
-                    validateScalarCall owner span call key (UnwrapScalarOperation key) [ IrNominal key ] [ IrInt ]
+                    let baseType = scalarDefinition program (IrNominal key) |> Option.map (fun scalar -> scalar.BaseType) |> Option.defaultValue IrInt
+                    validateScalarCall owner span call key (UnwrapScalarOperation key) [ IrNominal key ] [ baseType ]
                 | IrOperation.MakeEnumCase(call, key, caseIndex) ->
                     checkType owner (IrNominal key)
                     validateEnumCall owner span call key caseIndex
@@ -1048,13 +1060,15 @@ module OwningStackAot =
                 | IrOperation.If(thenBlock, elseBlock) -> validateBlock owner thenBlock; validateBlock owner elseBlock
                 | operation ->
                     Diagnostics.raiseError "IR_OWNING_STACK_OPERATION_UNSUPPORTED"
-                        "Owning-stack backend supports constants, calls, records, nominal Int scalars with pure frozen predicates, payload-free enums, Option/Result values, locals, Scope, If, and exhaustive matches."
+                        "Owning-stack backend supports constants, calls, records, nominal Int and validated String scalars with pure frozen predicates, payload-free enums, Option/Result values, locals, Scope, If, and exhaustive matches."
                         (Some owner) span [ "Constant"; "Call"; "MakeRecord"; "GetRecordField"; "WrapScalar"; "UnwrapScalar"; "MakeEnumCase"; "OptionNone"; "OptionSome"; "ResultOk"; "ResultError"; "MatchOption"; "MatchResult"; "MatchEnum"; "StoreLocal"; "LoadLocal"; "Scope"; "If" ]
                         [ sprintf "%A" operation ]
 
         and validateScalarCall owner span (call: IrResolvedCall) key expectedOperation inputTypes outputTypes =
             match program.NominalTypesByKey.TryFind key with
-            | Some(IrScalarDefinition scalar) when scalar.BaseType = IrInt -> validateScalarValidator owner scalar
+            | Some(IrScalarDefinition scalar)
+                when scalar.BaseType = IrInt || (scalar.BaseType = IrString && scalar.ValidatorCall.IsSome) ->
+                validateScalarValidator owner scalar
             | _ ->
                 Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
                     unsupportedScalarMessage
@@ -1072,7 +1086,7 @@ module OwningStackAot =
                         let expected = sprintf "%s -> %s" (String.concat " " (inputTypes |> List.map IrTypes.format)) (String.concat " " (outputTypes |> List.map IrTypes.format))
                         let actual = sprintf "%s -> %s" (String.concat " " (call.InputTypes |> List.map IrTypes.format)) (String.concat " " (call.OutputTypes |> List.map IrTypes.format))
                         Diagnostics.raiseError "IR_OWNING_STACK_SCALAR_SIGNATURE"
-                            "Generated scalar constructor/accessor does not match the exact Int and nominal types."
+                            "Generated scalar constructor/accessor does not match the exact base and nominal types."
                             (Some owner) span [ expected ] [ actual ]
                 | _ ->
                     Diagnostics.raiseError "IR_OWNING_STACK_SCALAR_TARGET"
@@ -1324,6 +1338,15 @@ module OwningStackAot =
                 (scalarDefinition info.Program ty
                  |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrInt)) ->
                 8, 8
+            | IrNominal _, NamedValue(actualName, StringValue text) when
+                not (isNull text)
+                && (scalarDefinition info.Program ty
+                    |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrString)) ->
+                let payload64 = 8L + 2L * int64 text.Length
+                if payload64 > int64 Int32.MaxValue then
+                    invalidArg (nameof values) "Owning-stack String payload exceeds the bounded 32-bit runtime range."
+                let payload = int payload64
+                payload, alignedExtent payload
             | IrNominal _, RecordValue(name, fields) when name = layout.Name && Option.isSome (recordDefinition info.Program ty) ->
                 let expectedNames = layout.Fields |> List.map (fun (fieldName, _, _) -> fieldName) |> Set.ofList
                 if fields |> Map.toSeq |> Seq.map fst |> Set.ofSeq <> expectedNames then
@@ -1435,6 +1458,17 @@ module OwningStackAot =
                  |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrInt)) ->
                 writeInt64 bytes offset number
                 8
+            | IrNominal _, NamedValue(actualName, StringValue text) when
+                not (isNull text)
+                && (scalarDefinition info.Program ty
+                    |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrString)) ->
+                writeUInt32 offset (uint32 text.Length)
+                writeUInt32 (offset + 4) 0u
+                for index in 0 .. text.Length - 1 do
+                    let codeUnit = uint16 text[index]
+                    bytes[offset + 8 + index * 2] <- byte codeUnit
+                    bytes[offset + 9 + index * 2] <- byte (codeUnit >>> 8)
+                alignedExtent (8 + text.Length * 2)
             | IrNominal _, RecordValue(name, fields) when name = layout.Name && Option.isSome (recordDefinition info.Program ty) ->
                 let mutable childOffset = offset
                 let mutable payload = 0
@@ -1543,10 +1577,14 @@ module OwningStackAot =
                 EnumValue(definition.TypeName, definition.Cases[int ordinal]), 8, 8
             | IrNominal key when Option.isSome (scalarDefinition info.Program (IrNominal key)) ->
                 let definition = scalarDefinition info.Program (IrNominal key) |> Option.get
-                if definition.BaseType <> IrInt then
-                    invalidOp $"Unsupported nominal scalar reached owning-stack decode: {definition.TypeName}."
-                ensureRange offset 8 "nominal Int"
-                NamedValue(definition.TypeName, IntValue(readInt64 bytes offset)), 8, 8
+                match definition.BaseType with
+                | IrInt ->
+                    ensureRange offset 8 "nominal Int"
+                    NamedValue(definition.TypeName, IntValue(readInt64 bytes offset)), 8, 8
+                | IrString ->
+                    let value, childExtent, payload = decode false offset IrString
+                    NamedValue(definition.TypeName, value), childExtent, payload
+                | _ -> invalidOp $"Unsupported nominal scalar reached owning-stack decode: {definition.TypeName}."
             | IrNominal _ ->
                 let mutable childOffset = offset
                 let mutable payload = 0
@@ -2702,6 +2740,7 @@ module OwningStackAot =
             | IrNominal _ as ty ->
                 match scalarDefinition info.Program ty with
                 | Some scalar when scalar.BaseType = IrInt -> 1u
+                | Some scalar when scalar.BaseType = IrString -> 5u
                 | Some _ -> invalidOp $"Unsupported nominal scalar reached owning descriptor emission: {IrTypes.format ty}."
                 | None ->
                     match enumDefinition info.Program ty with
@@ -3016,7 +3055,7 @@ module OwningStackAot =
             (w: OwningLlvmWriter)
             (scalarType: IrType)
             (validator: IrResolvedCall)
-            (intValue: OwningDynamicStackEntry)
+            (valueEntry: OwningDynamicStackEntry)
             isConstructorWrap
             callSiteSpan
             failureLabel =
@@ -3030,12 +3069,12 @@ module OwningStackAot =
                 addDiagnostic "RUNTIME_VALIDATOR_RESULT"
                     "Scalar validator did not return one Bool."
                     validator.ResolvedName None [ "Bool" ] [ "invalid Bool payload" ]
-            let intArgument = { intValue with Type = IrInt }
+            let baseArgument = { valueEntry with Type = scalar.BaseType }
             let arguments = w.Fresh "validator.arguments"
             w.Inst($"{arguments} = alloca [1 x %%AlOwningDescriptor], align 4")
             let argumentPointer = emitDescriptorElementPointer w arguments 0
-            emitStoreDescriptor w argumentPointer intArgument
-            emitDescriptorTransfer w intArgument failureLabel
+            emitStoreDescriptor w argumentPointer baseArgument
+            emitDescriptorTransfer w baseArgument failureLabel
             let results = w.Fresh "validator.results"
             w.Inst($"{results} = alloca [1 x %%AlOwningDescriptor], align 4")
             let callError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." validator.ResolvedName callSiteSpan [] []
@@ -5397,7 +5436,8 @@ module OwningStackAot =
                      | IrOption _ -> "Option"
                      | IrResult _ -> "Result"
                      | IrNominal _ as ty when Option.isSome (enumDefinition programInfo.Program ty) -> "Enum"
-                     | IrNominal _ as ty when Option.isSome (scalarDefinition programInfo.Program ty) -> "Int"
+                     | IrNominal _ as ty when (scalarDefinition programInfo.Program ty |> Option.exists (fun scalar -> scalar.BaseType = IrInt)) -> "Int"
+                     | IrNominal _ as ty when (scalarDefinition programInfo.Program ty |> Option.exists (fun scalar -> scalar.BaseType = IrString)) -> "String"
                      | IrNominal _ -> "Record"
                      | other -> IrTypes.format other)
                    name = item.TypeName
