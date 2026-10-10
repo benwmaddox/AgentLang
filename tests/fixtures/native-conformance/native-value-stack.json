@@ -1318,6 +1318,116 @@
       "optionSomeExactStackCapacityBytes": 24
     }
   },
+  "positiveIdConformance": {
+    "identityProgram": {
+      "typeIds": {
+        "OrderId": 4,
+        "PositiveId": 5,
+        "payloadBytes": 8
+      },
+      "pairBytesHex": "0100000000000000d6ffffffffffffff"
+    },
+    "constructor": {
+      "success": {
+        "value": 1,
+        "intBytesHex": "0100000000000000"
+      },
+      "falseCases": [
+        {
+          "name": "zero",
+          "value": 0,
+          "diagnostic": {
+            "code": "REFINEMENT_FAILED",
+            "message": "Value does not satisfy PositiveId's refinement validator.",
+            "word": "PositiveId.construct",
+            "expected": ["validator returns true"],
+            "actual": ["false"],
+            "span": {
+              "file": "<native-value-stack-scalar-PositiveId>",
+              "line": 1,
+              "column": 1,
+              "length": 1
+            }
+          }
+        },
+        {
+          "name": "negative-one",
+          "value": -1,
+          "diagnostic": {
+            "code": "REFINEMENT_FAILED",
+            "message": "Value does not satisfy PositiveId's refinement validator.",
+            "word": "PositiveId.construct",
+            "expected": ["validator returns true"],
+            "actual": ["false"],
+            "span": {
+              "file": "<native-value-stack-scalar-PositiveId>",
+              "line": 1,
+              "column": 1,
+              "length": 1
+            }
+          }
+        }
+      ]
+    },
+    "hostInputs": {
+      "positiveIdBytesHex": "0100000000000000"
+    },
+    "hostShapeRejections": {
+      "exceptionType": "System.ArgumentException",
+      "parameterName": "values",
+      "cases": [
+        { "name": "bare-int", "kind": "int", "value": 1 },
+        { "name": "wrong-nominal", "kind": "named-int", "typeName": "OrderId", "value": 1 }
+      ]
+    },
+    "nestedHostInputs": {
+      "envelopeBytesHex": "010000000000000002000000000000006f006b0000000000",
+      "optionSomeBytesHex": "00000000000000000100000000000000",
+      "optionNoneBytesHex": "0100000000000000",
+      "resultOkBytesHex": "00000000000000000100000000000000",
+      "resultErrorBytesHex": "01000000000000000100000000000000",
+      "resultInactiveBytesHex": "00000000000000000700000000000000"
+    },
+    "hostFalseDiagnostic": {
+      "code": "REFINEMENT_FAILED",
+      "message": "Value does not satisfy PositiveId's refinement validator.",
+      "word": "PositiveId.construct",
+      "expected": ["validator returns true"],
+      "actual": ["false"],
+      "span": {
+        "file": "<native-value-stack-scalar-PositiveId>",
+        "line": 1,
+        "column": 1,
+        "length": 1
+      }
+    },
+    "overflowValidator": {
+      "value": 1,
+      "diagnostic": {
+        "code": "RUNTIME_OVERFLOW",
+        "message": "Integer division overflow.",
+        "word": "divide",
+        "span": {
+          "file": "<native-value-stack-positive-id-overflow-validator-divide>",
+          "line": 1,
+          "column": 4,
+          "length": 1
+        }
+      }
+    },
+    "bodyFailureDiagnostic": {
+      "code": "RUNTIME_DIVIDE_BY_ZERO",
+      "message": "Integer division by zero.",
+      "word": "divide",
+      "span": {
+        "file": "<native-value-stack-positive-id-body-failure-divide>",
+        "line": 1,
+        "column": 3,
+        "length": 1
+      }
+    },
+    "sentinelByteHex": "a5"
+  },
   "limits": [
     "Synchronous execution only; no async provider buffers or cancellation claims.",
     "Fixed-size Int, Bool, Unit, and acyclic nested records only.",

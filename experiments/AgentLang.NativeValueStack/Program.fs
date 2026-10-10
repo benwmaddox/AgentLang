@@ -125,6 +125,31 @@ type private NominalIntEntryBodies =
       FailAfterSumAllocation: VerifiedIrBody
       UnsupportedCases: (string * VerifiedIrProgram * VerifiedIrBody) list }
 
+type private PositiveIdEntryBodies =
+    { CoreProgram: VerifiedIrProgram
+      CoreCompilerContext: Compiler.IrLoweringContext
+      Constructor: VerifiedIrBody
+      InputIdentity: VerifiedIrBody
+      InputPairConstruct: VerifiedIrBody
+      InputPairIdentity: VerifiedIrBody
+      InputFailure: VerifiedIrBody
+      NestedProgram: VerifiedIrProgram
+      NestedCompilerContext: Compiler.IrLoweringContext
+      EnvelopeConstruct: VerifiedIrBody
+      EnvelopeIdentity: VerifiedIrBody
+      OptionSomeConstruct: VerifiedIrBody
+      OptionNoneConstruct: VerifiedIrBody
+      OptionIdentity: VerifiedIrBody
+      ResultOkConstruct: VerifiedIrBody
+      ResultErrorConstruct: VerifiedIrBody
+      ResultIdentity: VerifiedIrBody
+      InactiveResultConstruct: VerifiedIrBody
+      InactiveResultIdentity: VerifiedIrBody
+      OverflowProgram: VerifiedIrProgram
+      OverflowCompilerContext: Compiler.IrLoweringContext
+      OverflowConstructor: VerifiedIrBody
+      OverflowIdentity: VerifiedIrBody }
+
 [<Struct; StructLayout(LayoutKind.Sequential, Pack = 8)>]
 type private RawOwningStackContext =
     val mutable AbiVersion: uint32
@@ -1353,7 +1378,11 @@ let private nominalIntCompilerContext
         scalarDefinitions
         |> List.collect (fun (scalar, constructorName, accessorName) ->
             let generatedEntry builtin wordName inputs outputs =
-                let sourceSpan = span ("<generated-native-value-stack-scalar-" + scalar.Name + ">") 1
+                // Runtime-generated scalar words are stamped with the scalar
+                // declaration span. Keep this test lowering context aligned
+                // so interpreter diagnostics use the same frozen metadata as
+                // native generated targets.
+                let sourceSpan = scalar.Span
                 let definition: WordDefinition =
                     { Name = wordName
                       Inputs = inputs
@@ -1559,13 +1588,15 @@ let private compileNominalIntEntries () =
               Push(LInt 0L, site "failure-divisor" 6)
               Call("divide", site "failure-divide" 7) ]
 
-    let positiveValidator =
-        nominalIntWordEntry "is-positive?" [ TInt ] [ TBool ]
-            [ Push(LInt 0L, site "positive-zero" 1)
-              Call("int.greater-than", site "positive-test" 2) ]
     let unsupportedCase name baseType validator containerKind =
         let scalar = nominalIntScalarDefinition name baseType validator
-        let contextWords = if validator.IsSome then [ positiveValidator ] else []
+        let contextWords =
+            validator
+            |> Option.map (fun validatorName ->
+                nominalIntWordEntry validatorName [ baseType ] [ TBool ]
+                    [ Call("drop", site (name + "-validator-drop-input") 1)
+                      Push(LBool true, site (name + "-validator-result") 2) ])
+            |> Option.toList
         let context = nominalIntCompilerContext contextWords [] [ scalar, name + ".new", name + ".value" ]
         let program = Compiler.compileIrProgramWithSourceOrigins context Map.empty
         let bodyExpressions =
@@ -1582,10 +1613,9 @@ let private compileNominalIntEntries () =
             Compiler.compileIrBodyAgainstProgramWithSourceOrigins context program ("native-value-stack-unsupported-" + name) [] bodyExpressions Map.empty
         name, program, body
     let unsupportedCases =
-        [ unsupportedCase "PositiveId" TInt (Some "is-positive?") "result-ok"
-          unsupportedCase "BoolTag" TBool None "option-none"
-          unsupportedCase "TextTag" TString None "result-ok"
-          unsupportedCase "FloatTag" TFloat None "result-error" ]
+        [ unsupportedCase "BoolTag" TBool (Some "accept-bool?") "option-none"
+          unsupportedCase "TextTag" TString (Some "accept-text?") "result-ok"
+          unsupportedCase "FloatTag" TFloat (Some "accept-float?") "result-error" ]
 
     let coreBodies =
         [ metersConstruct; orderIdConstruct; hostIdentityPair; hostIdentityPairConstruct
@@ -1631,6 +1661,141 @@ let private compileNominalIntEntries () =
       ResultEquals = resultEquals
       FailAfterSumAllocation = failAfterSumAllocation
       UnsupportedCases = unsupportedCases }
+
+let private compilePositiveIdEntries () =
+    let site name column = span ($"<native-value-stack-positive-id-{name}>") column
+    let positiveId = nominalIntScalarDefinition "PositiveId" TInt (Some "is-positive?")
+    let orderId = nominalIntScalarDefinition "OrderId" TInt None
+    let positiveValidator =
+        nominalIntWordEntry "is-positive?" [ TInt ] [ TBool ]
+            [ Push(LInt 0L, site "validator-zero" 1)
+              Call("int.greater-than", site "validator-test" 2) ]
+    let coreContext =
+        nominalIntCompilerContext [ positiveValidator ] []
+            [ positiveId, "PositiveId.construct", "PositiveId.unwrap"
+              orderId, "OrderId.construct", "OrderId.unwrap" ]
+    let coreProgram = Compiler.compileIrProgramWithSourceOrigins coreContext Map.empty
+    let coreBody name inputs expressions =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins coreContext coreProgram name inputs expressions Map.empty
+    let constructor =
+        coreBody "native-value-stack-positive-id-constructor" [ TInt ]
+            [ Call("PositiveId.construct", site "constructor" 1) ]
+    // The empty body makes the scalar validator reachable only through this
+    // verified input type, which exercises native dependency closure discovery.
+    let inputIdentity = coreBody "native-value-stack-positive-id-input-only" [ TNamed "PositiveId" ] []
+    let inputPairConstruct =
+        coreBody "native-value-stack-positive-id-pair-constructor" [ TInt; TInt ]
+            [ Let("positive_pair_order_raw", site "pair-order-save" 1)
+              Call("PositiveId.construct", site "pair-positive-wrap" 2)
+              Load("positive_pair_order_raw", site "pair-order-load" 3)
+              Call("OrderId.construct", site "pair-order-wrap" 4) ]
+    let inputPairIdentity =
+        coreBody "native-value-stack-positive-id-order-id-pair-input-only" [ TNamed "PositiveId"; TNamed "OrderId" ] []
+    let inputFailure =
+        coreBody "native-value-stack-positive-id-input-preflight-before-body" [ TNamed "PositiveId" ]
+            [ Push(LInt 1L, site "body-failure-dividend" 1)
+              Push(LInt 0L, site "body-failure-divisor" 2)
+              Call("divide", site "body-failure-divide" 3)
+              Call("drop", site "body-failure-drop" 4) ]
+
+    let envelopeRecord: RecordDefinition =
+        { Name = "PositiveEnvelope"
+          Fields = [ { Name = "owner"; Type = TNamed "PositiveId" }; { Name = "tail"; Type = TString } ]
+          Validator = None
+          SourceText = "record PositiveEnvelope { owner: PositiveId; tail: String }"
+          Span = site "envelope-definition" 1 }
+    let nestedContext =
+        nominalIntCompilerContext [ positiveValidator ] [ envelopeRecord ] [ positiveId, "PositiveId.construct", "PositiveId.unwrap" ]
+    let nestedProgram = Compiler.compileIrProgramWithSourceOrigins nestedContext Map.empty
+    let nestedBody name inputs expressions =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins nestedContext nestedProgram name inputs expressions Map.empty
+    let envelopeConstruct =
+        nestedBody "native-value-stack-positive-envelope-constructor" []
+            [ Push(LInt 1L, site "envelope-owner-value" 1)
+              Call("PositiveId.construct", site "envelope-owner-wrap" 2)
+              Push(LString "ok", site "envelope-tail-value" 3)
+              Call("positiveEnvelope.new", site "envelope-construct" 4) ]
+    let envelopeIdentity = nestedBody "native-value-stack-positive-envelope-input-only" [ TNamed "PositiveEnvelope" ] []
+    let optionSomeConstruct =
+        nestedBody "native-value-stack-positive-option-some-constructor" [ TInt ]
+            [ Call("PositiveId.construct", site "option-some-wrap" 1)
+              ConstructContainer(OptionSome, [ TNamed "PositiveId" ], site "option-some-construct" 2) ]
+    let optionNoneConstruct =
+        nestedBody "native-value-stack-positive-option-none-constructor" []
+            [ ConstructContainer(OptionNone, [ TNamed "PositiveId" ], site "option-none-construct" 1) ]
+    let optionIdentity = nestedBody "native-value-stack-positive-option-input-only" [ TOption(TNamed "PositiveId") ] []
+    let resultOkConstruct =
+        nestedBody "native-value-stack-positive-result-ok-constructor" [ TInt ]
+            [ Call("PositiveId.construct", site "result-ok-wrap" 1)
+              ConstructContainer(ResultOk, [ TNamed "PositiveId"; TNamed "PositiveId" ], site "result-ok-construct" 2) ]
+    let resultErrorConstruct =
+        nestedBody "native-value-stack-positive-result-error-constructor" [ TInt ]
+            [ Call("PositiveId.construct", site "result-error-wrap" 1)
+              ConstructContainer(ResultError, [ TNamed "PositiveId"; TNamed "PositiveId" ], site "result-error-construct" 2) ]
+    let resultIdentity = nestedBody "native-value-stack-positive-result-input-only" [ TResult(TNamed "PositiveId", TNamed "PositiveId") ] []
+    let inactiveResultConstruct =
+        nestedBody "native-value-stack-positive-result-inactive-constructor" [ TInt ]
+            [ ConstructContainer(ResultOk, [ TInt; TNamed "PositiveId" ], site "result-inactive-construct" 1) ]
+    let inactiveResultIdentity = nestedBody "native-value-stack-positive-inactive-result-input-only" [ TResult(TInt, TNamed "PositiveId") ] []
+
+    let overflowId = nominalIntScalarDefinition "OverflowId" TInt (Some "always-overflows?")
+    let overflowValidator =
+        nominalIntWordEntry "always-overflows?" [ TInt ] [ TBool ]
+            [ Call("drop", site "overflow-validator-discard-input" 1)
+              Push(LInt Int64.MinValue, site "overflow-validator-minimum" 2)
+              Push(LInt -1L, site "overflow-validator-divisor" 3)
+              Call("divide", site "overflow-validator-divide" 4)
+              Call("drop", site "overflow-validator-drop-result" 5)
+              Push(LBool true, site "overflow-validator-result" 6) ]
+    let overflowContext =
+        nominalIntCompilerContext [ overflowValidator ] [] [ overflowId, "OverflowId.construct", "OverflowId.unwrap" ]
+    let overflowProgram = Compiler.compileIrProgramWithSourceOrigins overflowContext Map.empty
+    let overflowBody name inputs expressions =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins overflowContext overflowProgram name inputs expressions Map.empty
+    let overflowConstructor =
+        overflowBody "native-value-stack-overflow-id-constructor" [ TInt ]
+            [ Call("OverflowId.construct", site "overflow-constructor" 1) ]
+    let overflowIdentity = overflowBody "native-value-stack-overflow-id-input-only" [ TNamed "OverflowId" ] []
+
+    let coreBodies = [ constructor; inputIdentity; inputPairConstruct; inputPairIdentity; inputFailure ]
+    let nestedBodies =
+        [ envelopeConstruct; envelopeIdentity; optionSomeConstruct; optionNoneConstruct; optionIdentity
+          resultOkConstruct; resultErrorConstruct; resultIdentity; inactiveResultConstruct; inactiveResultIdentity ]
+    let overflowBodies = [ overflowConstructor; overflowIdentity ]
+    let bodiesUseProgram program bodies =
+        bodies |> List.forall (fun body -> Object.ReferenceEquals(VerifiedIrBody.program body, program))
+
+    if not (VerifiedIrProgram.isBackendExecutable coreProgram)
+       || not (VerifiedIrProgram.isBackendExecutable nestedProgram)
+       || not (VerifiedIrProgram.isBackendExecutable overflowProgram)
+       || not (bodiesUseProgram coreProgram coreBodies)
+       || not (bodiesUseProgram nestedProgram nestedBodies)
+       || not (bodiesUseProgram overflowProgram overflowBodies) then
+        invalidOp "PositiveId conformance bodies must share their compiler-authorized verified program instances."
+
+    { CoreProgram = coreProgram
+      CoreCompilerContext = coreContext
+      Constructor = constructor
+      InputIdentity = inputIdentity
+      InputPairConstruct = inputPairConstruct
+      InputPairIdentity = inputPairIdentity
+      InputFailure = inputFailure
+      NestedProgram = nestedProgram
+      NestedCompilerContext = nestedContext
+      EnvelopeConstruct = envelopeConstruct
+      EnvelopeIdentity = envelopeIdentity
+      OptionSomeConstruct = optionSomeConstruct
+      OptionNoneConstruct = optionNoneConstruct
+      OptionIdentity = optionIdentity
+      ResultOkConstruct = resultOkConstruct
+      ResultErrorConstruct = resultErrorConstruct
+      ResultIdentity = resultIdentity
+      InactiveResultConstruct = inactiveResultConstruct
+      InactiveResultIdentity = inactiveResultIdentity
+      OverflowProgram = overflowProgram
+      OverflowCompilerContext = overflowContext
+      OverflowConstructor = overflowConstructor
+      OverflowIdentity = overflowIdentity }
 
 let private inspectRawOwningContextAbi (abiOracle: JsonElement) =
     let expectedSize = abiOracle.GetProperty("contextSizeBytes").GetInt32()
@@ -6416,6 +6581,437 @@ let private runNominalIntConformance
         "ownerEndBytes", box (rangeOracle.GetProperty("sourceOffsetBytesOwnerEnd").GetInt32())
         "scalarPayloadExtentBytes", box (rangeOracle.GetProperty("sourceExtentBytesPayloadExtent").GetInt32()) ]
 
+let private runPositiveIdConformance
+    (checks: ResizeArray<obj>)
+    (failures: ResizeArray<string>)
+    (fixture: JsonElement)
+    (artifactRoot: string)
+    (optimization: LlvmOptimization)
+    (optimizationName: string)
+    (entries: PositiveIdEntryBodies) =
+    let oracle = fixture.GetProperty("positiveIdConformance")
+    let toolchain = LlvmToolchain.discover ()
+    let compile name body =
+        OwningStackAot.compile toolchain optimization (Path.Combine(artifactRoot, "owning-stack", "positive-id", optimizationName, name)) body
+    let coreHost = noOpHost (NativeDiagnosticSources.fromLoweringContext entries.CoreCompilerContext)
+    let nestedHost = noOpHost (NativeDiagnosticSources.fromLoweringContext entries.NestedCompilerContext)
+    let overflowHost = noOpHost (NativeDiagnosticSources.fromLoweringContext entries.OverflowCompilerContext)
+    let interpret host body root arguments =
+        use result = IrInterpreter.executeBodyWithInputs host (VerifiedIrBody.inspect body).BodyName body root arguments
+        result.Decode()
+    let interpretRoot host body arguments =
+        IrInterpreter.executeBodyWithInputs host (VerifiedIrBody.inspect body).BodyName body None arguments
+    let sentinelBytes = bytesFromHex (oracle.GetProperty("sentinelByteHex").GetString())
+    if sentinelBytes.Length <> 1 then invalidOp "PositiveId fixture sentinelByteHex must contain exactly one byte."
+    let sentinelValue = sentinelBytes[0]
+    let outputBuffer (length: int) : byte array = Array.create length sentinelValue
+    let diagnosticOf (error: exn) =
+        match error with
+        | LanguageException diagnostic -> Some diagnostic
+        | _ ->
+            match getProperty error "Diagnostic" with
+            | :? Diagnostic as diagnostic -> Some diagnostic
+            | _ -> None
+    let diagnosticSummary = function
+        | Some diagnostic ->
+            let spanValue =
+                diagnostic.Span
+                |> Option.map (fun sourceSpan -> jsonObject [
+                    "file", box sourceSpan.File
+                    "line", box sourceSpan.Line
+                    "column", box sourceSpan.Column
+                    "length", box sourceSpan.Length ])
+                |> Option.defaultValue null
+            jsonObject [
+                "code", box diagnostic.Code
+                "message", box diagnostic.Message
+                "word", box (diagnostic.Word |> Option.defaultValue "")
+                "expected", box (diagnostic.Expected |> List.toArray)
+                "actual", box (diagnostic.Actual |> List.toArray)
+                "span", box spanValue ]
+        | None -> null
+    let arrayStrings (item: JsonElement) = item.EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
+    let diagnosticMatches (expected: JsonElement) actual =
+        match actual with
+        | Some diagnostic ->
+            let expectedCode = expected.GetProperty("code").GetString()
+            let expectedWord = expected.GetProperty("word").GetString()
+            let expectedSpan = expected.GetProperty("span")
+            let spanMatches =
+                diagnostic.Span
+                |> Option.exists (fun sourceSpan ->
+                    sourceSpan.File = expectedSpan.GetProperty("file").GetString()
+                    && sourceSpan.Line = expectedSpan.GetProperty("line").GetInt32()
+                    && sourceSpan.Column = expectedSpan.GetProperty("column").GetInt32()
+                    && sourceSpan.Length = expectedSpan.GetProperty("length").GetInt32())
+            let optionalTextMatch (property: string) (actualValue: string) =
+                let mutable expectedValue = Unchecked.defaultof<JsonElement>
+                not (expected.TryGetProperty(property, &expectedValue)) || actualValue = expectedValue.GetString()
+            let optionalArrayMatch (property: string) (actualValues: string list) =
+                let mutable expectedValues = Unchecked.defaultof<JsonElement>
+                not (expected.TryGetProperty(property, &expectedValues)) || actualValues = arrayStrings expectedValues
+            diagnostic.Code = expectedCode
+            && diagnostic.Word = Some expectedWord
+            && spanMatches
+            && optionalTextMatch "message" diagnostic.Message
+            && optionalArrayMatch "expected" diagnostic.Expected
+            && optionalArrayMatch "actual" diagnostic.Actual
+        | None -> false
+    let interpreterNativeDiagnosticParity (interpreterDiagnostic: Diagnostic option) (nativeDiagnostic: Diagnostic option) =
+        match interpreterDiagnostic, nativeDiagnostic with
+        | Some expected, Some actual ->
+            expected.Span.IsNone
+            && expected.Code = actual.Code
+            && expected.Message = actual.Message
+            && expected.Word = actual.Word
+            && expected.Expected = actual.Expected
+            && expected.Actual = actual.Actual
+        | _ -> false
+    let captureError action =
+        try action (); None
+        with error -> Some error
+    let owningMetricsFromError (error: exn option) =
+        match error with
+        | Some (:? OwningStackExecutionException as owningError) -> Some owningError.Metrics
+        | _ -> None
+    let failureCleanupPass error =
+        owningMetricsFromError error
+        |> Option.exists (fun metrics -> metrics.FinalCursorBytes = 0 && metrics.HostRetainedCommitBytes = 0)
+    let failureMetricsSummary error =
+        match owningMetricsFromError error with
+        | Some metrics ->
+            let cleanupPassed = metrics.FinalCursorBytes = 0 && metrics.HostRetainedCommitBytes = 0
+            jsonObject [
+                "available", box true
+                "cleanupPassed", box cleanupPassed
+                "finalCursorBytes", box metrics.FinalCursorBytes
+                "hostRetainedCommitBytes", box metrics.HostRetainedCommitBytes
+                "finalLiveStackBytes", box (metrics.FinalLiveStackBytes |> Option.map box |> Option.defaultValue null)
+                "metrics", box (metricSummary (box metrics)) ]
+        | None -> jsonObject [ "available", box false; "cleanupPassed", box false ]
+    let captureInterpreterRootError host body arguments =
+        try
+            use result = interpretRoot host body arguments
+            result.Decode() |> ignore
+            None
+        with error -> Some error
+    let record name passed details = recordCheck checks failures $"positive-id/{optimizationName}/{name}" passed details
+
+    let coreIds = nominalIntProgramTypeIds entries.CoreProgram
+    let _, positiveTypeId = coreIds["PositiveId"]
+    let _, orderIdTypeId = coreIds["OrderId"]
+    let expectedIds = oracle.GetProperty("identityProgram").GetProperty("typeIds")
+    let typeIdsPass =
+        positiveTypeId <> orderIdTypeId
+        && int positiveTypeId = expectedIds.GetProperty("PositiveId").GetInt32()
+        && int orderIdTypeId = expectedIds.GetProperty("OrderId").GetInt32()
+    record "type-identities-and-eight-byte-payloads" typeIdsPass (jsonObject [
+        "positiveIdTypeId", box positiveTypeId
+        "expectedPositiveIdTypeId", box (expectedIds.GetProperty("PositiveId").GetInt32())
+        "orderIdTypeId", box orderIdTypeId
+        "expectedOrderIdTypeId", box (expectedIds.GetProperty("OrderId").GetInt32())
+        "sharedPayloadBytes", box (expectedIds.GetProperty("payloadBytes").GetInt32()) ])
+
+    use constructorProgram = compile "positive-id-constructor" entries.Constructor
+    use inputIdentityProgram = compile "positive-id-input-only" entries.InputIdentity
+    use inputPairConstructProgram = compile "positive-id-pair-constructor" entries.InputPairConstruct
+    use inputPairProgram = compile "positive-id-order-id-pair-input-only" entries.InputPairIdentity
+    use inputFailureProgram = compile "positive-id-input-preflight-before-body" entries.InputFailure
+    use overflowConstructorProgram = compile "overflow-id-constructor" entries.OverflowConstructor
+    use overflowIdentityProgram = compile "overflow-id-input-only" entries.OverflowIdentity
+    let constructorOracle = oracle.GetProperty("constructor")
+    let successOracle = constructorOracle.GetProperty("success")
+    let successValue = successOracle.GetProperty("value").GetInt64()
+    let positiveValue = NamedValue("PositiveId", IntValue successValue)
+    let successBytes = bytesFromHex (successOracle.GetProperty("intBytesHex").GetString())
+    use successRoot = interpretRoot coreHost entries.Constructor [ IrEntryArgument.IntArgument successValue ]
+    let interpretedSuccess = successRoot.Decode()
+    let successOutput = outputBuffer successBytes.Length
+    let successResult = constructorProgram.ExecuteInto([ IntValue successValue ], 128, successOutput)
+    record "constructor-success-one" (interpretedSuccess = [ positiveValue ] && successResult.Values = interpretedSuccess && successOutput = successBytes) (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.CoreProgram interpretedSuccess)
+        "owningValues", box (ValueInspection.toJson entries.CoreProgram successResult.Values)
+        "expectedBytesHex", box (bytesHex successBytes)
+        "actualBytesHex", box (bytesHex successOutput) ])
+
+    for falseCase in constructorOracle.GetProperty("falseCases").EnumerateArray() do
+        let caseName = falseCase.GetProperty("name").GetString()
+        let value = falseCase.GetProperty("value").GetInt64()
+        let interpreterError = captureInterpreterRootError coreHost entries.Constructor [ IrEntryArgument.IntArgument value ]
+        let failureBuffer = outputBuffer successBytes.Length
+        let failureBefore = Array.copy failureBuffer
+        let owningError = captureError (fun () -> constructorProgram.ExecuteInto([ IntValue value ], 128, failureBuffer) |> ignore)
+        let interpreterDiagnostic = interpreterError |> Option.bind diagnosticOf
+        let owningDiagnostic = owningError |> Option.bind diagnosticOf
+        let expectedDiagnostic = falseCase.GetProperty("diagnostic").Clone()
+        let cleanupPassed = failureCleanupPass owningError
+        let passed =
+            Option.isSome interpreterError
+            && Option.isSome owningError
+            && interpreterDiagnostic = owningDiagnostic
+            && diagnosticMatches expectedDiagnostic interpreterDiagnostic
+            && cleanupPassed
+            && failureBuffer = failureBefore
+        record $"constructor-reject-{caseName}-parity" passed (jsonObject [
+            "interpreterDiagnostic", box (diagnosticSummary interpreterDiagnostic)
+            "owningDiagnostic", box (diagnosticSummary owningDiagnostic)
+            "expectedDiagnostic", box expectedDiagnostic
+            "nativeFailureMetrics", box (failureMetricsSummary owningError)
+            "callerBufferUnchanged", box (failureBuffer = failureBefore) ])
+
+    let interpretedInput = interpret coreHost entries.InputIdentity (Some successRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let inputBytes = bytesFromHex (oracle.GetProperty("hostInputs").GetProperty("positiveIdBytesHex").GetString())
+    let inputOutput = outputBuffer inputBytes.Length
+    let inputResult = inputIdentityProgram.ExecuteInto([ positiveValue ], 128, inputOutput)
+    let inputOnlyPass = interpretedInput = [ positiveValue ] && inputResult.Values = interpretedInput && inputOutput = inputBytes
+    let hostShapeOracle = oracle.GetProperty("hostShapeRejections")
+    let expectedHostShapeExceptionType = hostShapeOracle.GetProperty("exceptionType").GetString()
+    let expectedHostShapeParameterName = hostShapeOracle.GetProperty("parameterName").GetString()
+    let hostShapeCases = hostShapeOracle.GetProperty("cases").EnumerateArray() |> Seq.toList
+    let hostShapeResults =
+        hostShapeCases
+        |> List.map (fun case ->
+            let caseName = case.GetProperty("name").GetString()
+            let inputValue = case.GetProperty("value").GetInt64()
+            let input =
+                match case.GetProperty("kind").GetString() with
+                | "int" -> IntValue inputValue
+                | "named-int" -> NamedValue(case.GetProperty("typeName").GetString(), IntValue inputValue)
+                | other -> invalidOp $"Unknown PositiveId host-shape rejection kind '{other}'."
+            let rejectedOutput = outputBuffer inputBytes.Length
+            let rejectedBefore = Array.copy rejectedOutput
+            let hostError = captureError (fun () -> inputIdentityProgram.ExecuteInto([ input ], 128, rejectedOutput) |> ignore)
+            let exceptionType = hostError |> Option.map (fun error -> error.GetType().FullName) |> Option.defaultValue "unexpected-success"
+            let parameterName =
+                match hostError with
+                | Some (:? ArgumentException as argumentError) -> Option.ofObj argumentError.ParamName |> Option.defaultValue ""
+                | _ -> ""
+            let metricsAbsent = Option.isNone (owningMetricsFromError hostError)
+            let casePassed =
+                Option.isSome hostError
+                && exceptionType = expectedHostShapeExceptionType
+                && parameterName = expectedHostShapeParameterName
+                && metricsAbsent
+                && rejectedOutput = rejectedBefore
+            caseName, casePassed, jsonObject [
+                "name", box caseName
+                "passed", box casePassed
+                "actualExceptionType", box exceptionType
+                "expectedExceptionType", box expectedHostShapeExceptionType
+                "actualParameterName", box parameterName
+                "expectedParameterName", box expectedHostShapeParameterName
+                "nativeMetricsAvailable", box (Option.isSome (owningMetricsFromError hostError))
+                "rejectedBeforeNativeExecution", box (exceptionType = expectedHostShapeExceptionType && metricsAbsent)
+                "callerBufferUnchanged", box (rejectedOutput = rejectedBefore) ])
+    let hostShapeCaseNames = hostShapeResults |> List.map (fun (caseName, _, _) -> caseName)
+    let hostShapeRejectionsPassed =
+        hostShapeCaseNames = [ "bare-int"; "wrong-nominal" ]
+        && (hostShapeResults |> List.forall (fun (_, passed, _) -> passed))
+    let hostShapeCaseDetails = hostShapeResults |> List.map (fun (_, _, details) -> box details) |> List.toArray
+    record "input-only-validator-closure" (inputOnlyPass && hostShapeRejectionsPassed) (jsonObject [
+        "bodyHasNoValidatorCall", box true
+        "validPositiveIdInputPassed", box inputOnlyPass
+        "interpreterValues", box (ValueInspection.toJson entries.CoreProgram interpretedInput)
+        "owningValues", box (ValueInspection.toJson entries.CoreProgram inputResult.Values)
+        "expectedBytesHex", box (bytesHex inputBytes)
+        "actualBytesHex", box (bytesHex inputOutput)
+        "expectedHostShapeCases", box [| "bare-int"; "wrong-nominal" |]
+        "actualHostShapeCases", box (hostShapeCaseNames |> List.toArray)
+        "hostShapeRejectionsPassed", box hostShapeRejectionsPassed
+        "hostShapeRejectionResults", box hostShapeCaseDetails ])
+
+    let pairValues = [ positiveValue; NamedValue("OrderId", IntValue -42L) ]
+    use pairFactory = interpretRoot coreHost entries.InputPairConstruct [ IrEntryArgument.IntArgument successValue; IrEntryArgument.IntArgument -42L ]
+    let interpretedPair = interpret coreHost entries.InputPairIdentity (Some pairFactory) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    let pairBytes = bytesFromHex (oracle.GetProperty("identityProgram").GetProperty("pairBytesHex").GetString())
+    let pairConstructOutput = outputBuffer pairBytes.Length
+    let pairConstructResult = inputPairConstructProgram.ExecuteInto([ IntValue successValue; IntValue -42L ], 256, pairConstructOutput)
+    let pairOutput = outputBuffer pairBytes.Length
+    let pairResult = inputPairProgram.ExecuteInto(pairValues, 256, pairOutput)
+    let pairDescriptorTypeIds =
+        pairResult.LayoutEvents
+        |> List.filter (fun event -> event.Kind = "descriptor-transfer")
+        |> List.map (fun event -> event.TypeId)
+        |> Set.ofList
+    record "distinct-typeids-and-pair-bytes" (interpretedPair = pairValues && pairConstructResult.Values = pairValues && pairConstructOutput = pairBytes && pairResult.Values = interpretedPair && pairOutput = pairBytes && pairDescriptorTypeIds.Contains positiveTypeId && pairDescriptorTypeIds.Contains orderIdTypeId) (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.CoreProgram interpretedPair)
+        "owningConstructorValues", box (ValueInspection.toJson entries.CoreProgram pairConstructResult.Values)
+        "owningValues", box (ValueInspection.toJson entries.CoreProgram pairResult.Values)
+        "descriptorTypeIds", box (pairDescriptorTypeIds |> Set.toList)
+        "expectedBytesHex", box (bytesHex pairBytes)
+        "constructorBytesHex", box (bytesHex pairConstructOutput)
+        "actualBytesHex", box (bytesHex pairOutput) ])
+    let nestedOracle = oracle.GetProperty("nestedHostInputs")
+    use envelopeProgram = compile "positive-envelope-input-only" entries.EnvelopeIdentity
+    use optionProgram = compile "positive-option-input-only" entries.OptionIdentity
+    use resultProgram = compile "positive-result-input-only" entries.ResultIdentity
+    use inactiveResultProgram = compile "positive-inactive-result-input-only" entries.InactiveResultIdentity
+    let owner = NamedValue("PositiveId", IntValue successValue)
+    let envelopeValue = RecordValue("PositiveEnvelope", Map.ofList [ "owner", owner; "tail", StringValue "ok" ])
+    use envelopeRoot = interpretRoot nestedHost entries.EnvelopeConstruct []
+    let interpretedEnvelope = interpret nestedHost entries.EnvelopeIdentity (Some envelopeRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let envelopeBytes = bytesFromHex (nestedOracle.GetProperty("envelopeBytesHex").GetString())
+    let envelopeOutput = outputBuffer envelopeBytes.Length
+    let envelopeResult = envelopeProgram.ExecuteInto([ envelopeValue ], 256, envelopeOutput)
+    record "record-field-host-validation" (interpretedEnvelope = [ envelopeValue ] && envelopeResult.Values = interpretedEnvelope && envelopeOutput = envelopeBytes) (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedEnvelope)
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram envelopeResult.Values)
+        "expectedBytesHex", box (bytesHex envelopeBytes)
+        "actualBytesHex", box (bytesHex envelopeOutput) ])
+
+    let hostFalseDiagnostic = oracle.GetProperty("hostFalseDiagnostic").Clone()
+    let runRejectedHostCase (label: string) (program: OwningStackCompiledProgram) (input: Value) (expectedBytes: byte array) =
+        let rejectedOutput = outputBuffer expectedBytes.Length
+        let rejectedBefore = Array.copy rejectedOutput
+        let hostError = captureError (fun () -> program.ExecuteInto([ input ], 512, rejectedOutput) |> ignore)
+        let diagnostic = hostError |> Option.bind diagnosticOf
+        let cleanupPassed = failureCleanupPass hostError
+        let passed =
+            Option.isSome hostError
+            && diagnosticMatches hostFalseDiagnostic diagnostic
+            && cleanupPassed
+            && rejectedOutput = rejectedBefore
+        record label passed (jsonObject [
+            "diagnostic", box (diagnosticSummary diagnostic)
+            "expectedDiagnostic", box hostFalseDiagnostic
+            "nativeFailureMetrics", box (failureMetricsSummary hostError)
+            "callerBufferUnchanged", box (rejectedOutput = rejectedBefore) ])
+
+    let invalidOwner = RecordValue("PositiveEnvelope", Map.ofList [ "owner", NamedValue("PositiveId", IntValue 0L); "tail", StringValue "ok" ])
+    runRejectedHostCase "record-field-negative-rejected-atomically" envelopeProgram invalidOwner envelopeBytes
+
+    let somePositive = OptionValue(TNamed "PositiveId", Some owner)
+    let someBytes = bytesFromHex (nestedOracle.GetProperty("optionSomeBytesHex").GetString())
+    use someRoot = interpretRoot nestedHost entries.OptionSomeConstruct [ IrEntryArgument.IntArgument successValue ]
+    let interpretedSome = interpret nestedHost entries.OptionIdentity (Some someRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let someOutput = outputBuffer someBytes.Length
+    let someResult = optionProgram.ExecuteInto([ somePositive ], 128, someOutput)
+    record "option-some-active-host-validation" (interpretedSome = [ somePositive ] && someResult.Values = interpretedSome && someOutput = someBytes) (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedSome)
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram someResult.Values)
+        "expectedBytesHex", box (bytesHex someBytes)
+        "actualBytesHex", box (bytesHex someOutput) ])
+    runRejectedHostCase "option-some-invalid-payload-rejected-atomically" optionProgram (OptionValue(TNamed "PositiveId", Some(NamedValue("PositiveId", IntValue 0L)))) someBytes
+
+    let noneValue = OptionValue(TNamed "PositiveId", None)
+    let noneBytes = bytesFromHex (nestedOracle.GetProperty("optionNoneBytesHex").GetString())
+    use noneRoot = interpretRoot nestedHost entries.OptionNoneConstruct []
+    let interpretedNone = interpret nestedHost entries.OptionIdentity (Some noneRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let noneOutput = outputBuffer noneBytes.Length
+    let noneResult = optionProgram.ExecuteInto([ noneValue ], 128, noneOutput)
+    record "option-none-inactive-payload-skips-validator" (interpretedNone = [ noneValue ] && noneResult.Values = interpretedNone && noneOutput = noneBytes) (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedNone)
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram noneResult.Values)
+        "validatorIsReachableOnlyForAnActivePayload", box true
+        "expectedBytesHex", box (bytesHex noneBytes)
+        "actualBytesHex", box (bytesHex noneOutput) ])
+
+    let resultOkValue = ResultValue(TNamed "PositiveId", TNamed "PositiveId", Ok owner)
+    let resultErrorValue = ResultValue(TNamed "PositiveId", TNamed "PositiveId", Error owner)
+    let resultOkBytes = bytesFromHex (nestedOracle.GetProperty("resultOkBytesHex").GetString())
+    let resultErrorBytes = bytesFromHex (nestedOracle.GetProperty("resultErrorBytesHex").GetString())
+    use resultOkRoot = interpretRoot nestedHost entries.ResultOkConstruct [ IrEntryArgument.IntArgument successValue ]
+    let interpretedResultOk = interpret nestedHost entries.ResultIdentity (Some resultOkRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let resultOkOutput = outputBuffer resultOkBytes.Length
+    let resultOkResult = resultProgram.ExecuteInto([ resultOkValue ], 128, resultOkOutput)
+    record "result-ok-active-host-validation" (interpretedResultOk = [ resultOkValue ] && resultOkResult.Values = interpretedResultOk && resultOkOutput = resultOkBytes) (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedResultOk)
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram resultOkResult.Values)
+        "expectedBytesHex", box (bytesHex resultOkBytes)
+        "actualBytesHex", box (bytesHex resultOkOutput) ])
+    runRejectedHostCase "result-ok-invalid-payload-rejected-atomically" resultProgram (ResultValue(TNamed "PositiveId", TNamed "PositiveId", Ok(NamedValue("PositiveId", IntValue 0L)))) resultOkBytes
+
+    use resultErrorRoot = interpretRoot nestedHost entries.ResultErrorConstruct [ IrEntryArgument.IntArgument successValue ]
+    let interpretedResultError = interpret nestedHost entries.ResultIdentity (Some resultErrorRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let resultErrorOutput = outputBuffer resultErrorBytes.Length
+    let resultErrorResult = resultProgram.ExecuteInto([ resultErrorValue ], 128, resultErrorOutput)
+    record "result-error-active-host-validation" (interpretedResultError = [ resultErrorValue ] && resultErrorResult.Values = interpretedResultError && resultErrorOutput = resultErrorBytes) (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedResultError)
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram resultErrorResult.Values)
+        "expectedBytesHex", box (bytesHex resultErrorBytes)
+        "actualBytesHex", box (bytesHex resultErrorOutput) ])
+    runRejectedHostCase "result-error-invalid-payload-rejected-atomically" resultProgram (ResultValue(TNamed "PositiveId", TNamed "PositiveId", Error(NamedValue("PositiveId", IntValue 0L)))) resultErrorBytes
+
+    let inactiveResultValue = ResultValue(TInt, TNamed "PositiveId", Ok(IntValue 7L))
+    let inactiveResultBytes = bytesFromHex (nestedOracle.GetProperty("resultInactiveBytesHex").GetString())
+    use inactiveResultRoot = interpretRoot nestedHost entries.InactiveResultConstruct [ IrEntryArgument.IntArgument 7L ]
+    let interpretedInactiveResult = interpret nestedHost entries.InactiveResultIdentity (Some inactiveResultRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let inactiveResultOutput = outputBuffer inactiveResultBytes.Length
+    let inactiveResult = inactiveResultProgram.ExecuteInto([ inactiveResultValue ], 128, inactiveResultOutput)
+    record "result-inactive-alternative-skips-validator" (interpretedInactiveResult = [ inactiveResultValue ] && inactiveResult.Values = interpretedInactiveResult && inactiveResultOutput = inactiveResultBytes) (jsonObject [
+        "interpreterValues", box (ValueInspection.toJson entries.NestedProgram interpretedInactiveResult)
+        "owningValues", box (ValueInspection.toJson entries.NestedProgram inactiveResult.Values)
+        "activeAlternative", box "Ok<Int>"
+        "inactiveAlternativeType", box "PositiveId"
+        "expectedBytesHex", box (bytesHex inactiveResultBytes)
+        "actualBytesHex", box (bytesHex inactiveResultOutput) ])
+
+    let overflowOracle = oracle.GetProperty("overflowValidator")
+    let overflowInput = overflowOracle.GetProperty("value").GetInt64()
+    let overflowInterpreterError = captureInterpreterRootError overflowHost entries.OverflowConstructor [ IrEntryArgument.IntArgument overflowInput ]
+    let overflowConstructorBuffer = outputBuffer 8
+    let overflowConstructorBefore = Array.copy overflowConstructorBuffer
+    let overflowConstructorError = captureError (fun () -> overflowConstructorProgram.ExecuteInto([ IntValue overflowInput ], 128, overflowConstructorBuffer) |> ignore)
+    let overflowInterpreterDiagnostic = overflowInterpreterError |> Option.bind diagnosticOf
+    let overflowNativeDiagnostic = overflowConstructorError |> Option.bind diagnosticOf
+    let overflowExpectedDiagnostic = overflowOracle.GetProperty("diagnostic").Clone()
+    let overflowConstructorCleanup = failureCleanupPass overflowConstructorError
+    record "overflow-validator-preserves-runtime-overflow" (Option.isSome overflowInterpreterError && Option.isSome overflowConstructorError && interpreterNativeDiagnosticParity overflowInterpreterDiagnostic overflowNativeDiagnostic && diagnosticMatches overflowExpectedDiagnostic overflowNativeDiagnostic && overflowConstructorCleanup && overflowConstructorBuffer = overflowConstructorBefore) (jsonObject [
+        "interpreterDiagnostic", box (diagnosticSummary overflowInterpreterDiagnostic)
+        "owningDiagnostic", box (diagnosticSummary overflowNativeDiagnostic)
+        "expectedDiagnostic", box overflowExpectedDiagnostic
+        "spanSemantics", box "Interpreter divide errors have no span; native diagnostics are pinned to the verified validator instruction site."
+        "nativeFailureMetrics", box (failureMetricsSummary overflowConstructorError)
+        "callerBufferUnchanged", box (overflowConstructorBuffer = overflowConstructorBefore) ])
+    let overflowHostBuffer = outputBuffer 8
+    let overflowHostBefore = Array.copy overflowHostBuffer
+    let overflowHostError = captureError (fun () -> overflowIdentityProgram.ExecuteInto([ NamedValue("OverflowId", IntValue overflowInput) ], 128, overflowHostBuffer) |> ignore)
+    let overflowHostDiagnostic = overflowHostError |> Option.bind diagnosticOf
+    let overflowHostCleanup = failureCleanupPass overflowHostError
+    record "overflowing-host-validator-preserves-runtime-overflow" (Option.isSome overflowHostError && diagnosticMatches overflowExpectedDiagnostic overflowHostDiagnostic && overflowHostCleanup && overflowHostBuffer = overflowHostBefore) (jsonObject [
+        "owningDiagnostic", box (diagnosticSummary overflowHostDiagnostic)
+        "expectedDiagnostic", box overflowExpectedDiagnostic
+        "nativeFailureMetrics", box (failureMetricsSummary overflowHostError)
+        "callerBufferUnchanged", box (overflowHostBuffer = overflowHostBefore) ])
+
+    let bodyFailureOracle = oracle.GetProperty("bodyFailureDiagnostic").Clone()
+    use failureRoot = interpretRoot coreHost entries.Constructor [ IrEntryArgument.IntArgument successValue ]
+    let interpreterBodyError = captureError (fun () -> interpret coreHost entries.InputFailure (Some failureRoot) [ IrEntryArgument.RetainedRoot 0 ] |> ignore)
+    let hostFailureBuffer = outputBuffer successBytes.Length
+    let hostFailureBefore = Array.copy hostFailureBuffer
+    let hostBodyError = captureError (fun () -> inputFailureProgram.ExecuteInto([ positiveValue ], 128, hostFailureBuffer) |> ignore)
+    let interpreterBodyDiagnostic = interpreterBodyError |> Option.bind diagnosticOf
+    let hostBodyDiagnostic = hostBodyError |> Option.bind diagnosticOf
+    let hostBodyCleanup = failureCleanupPass hostBodyError
+    let invalidPreflightBuffer = outputBuffer successBytes.Length
+    let invalidPreflightBefore = Array.copy invalidPreflightBuffer
+    let invalidPreflightError = captureError (fun () -> inputFailureProgram.ExecuteInto([ NamedValue("PositiveId", IntValue 0L) ], 128, invalidPreflightBuffer) |> ignore)
+    let invalidPreflightDiagnostic = invalidPreflightError |> Option.bind diagnosticOf
+    let invalidPreflightCleanup = failureCleanupPass invalidPreflightError
+    record "input-validation-precedes-pure-body-failure" (Option.isSome hostBodyError && interpreterNativeDiagnosticParity interpreterBodyDiagnostic hostBodyDiagnostic && diagnosticMatches bodyFailureOracle hostBodyDiagnostic && hostBodyCleanup && Option.isSome invalidPreflightError && diagnosticMatches hostFalseDiagnostic invalidPreflightDiagnostic && invalidPreflightCleanup && invalidPreflightBuffer = invalidPreflightBefore && hostFailureBuffer = hostFailureBefore) (jsonObject [
+        "interpreterBodyDiagnostic", box (diagnosticSummary interpreterBodyDiagnostic)
+        "validHostBodyDiagnostic", box (diagnosticSummary hostBodyDiagnostic)
+        "invalidHostInputDiagnostic", box (diagnosticSummary invalidPreflightDiagnostic)
+        "expectedBodyDiagnostic", box bodyFailureOracle
+        "expectedInvalidInputDiagnostic", box hostFalseDiagnostic
+        "spanSemantics", box "Interpreter divide errors have no span; the native body error is pinned to its verified divide instruction site."
+        "validBodyFailureMetrics", box (failureMetricsSummary hostBodyError)
+        "invalidPreflightMetrics", box (failureMetricsSummary invalidPreflightError)
+        "invalidInputBufferUnchanged", box (invalidPreflightBuffer = invalidPreflightBefore)
+        "validBodyFailureBufferUnchanged", box (hostFailureBuffer = hostFailureBefore) ])
+
+    jsonObject [
+        "optimization", box optimizationName
+        "positiveIdTypeId", box positiveTypeId
+        "orderIdTypeId", box orderIdTypeId
+        "caseCount", box 19
+        "constructorFailureCount", box (constructorOracle.GetProperty("falseCases").GetArrayLength())
+        "nestedHostInputCount", box 10
+        "overflowValidatorCount", box 1
+        "inputOnlyValidatorClosureCount", box 1
+        "divideDiagnosticSpanSemantics", box "Interpreter divide errors have no span; native diagnostics retain verified instruction-site spans."
+        "provenanceCoverage", box "Refined provenance is covered by the existing measured nominal owner-range tests; PositiveId has no separate OwnerEnd trace in this suite." ]
+
 [<EntryPoint>]
 let main argv =
     let reportPath =
@@ -6548,6 +7144,16 @@ let main argv =
         for optimization, optimizationName in optimizationPairs do
             nominalIntRuns.Add(box (runNominalIntConformance checks failures fixture artifactsRoot optimization optimizationName nominalIntEntries))
         report["nominalIntRuns"] <- nominalIntRuns.ToArray()
+        let positiveIdEntries = compilePositiveIdEntries ()
+        report["positiveIdVerifiedProgramInstances"] <- box (jsonObject [
+            "identity", box true
+            "nested", box true
+            "overflow", box true ])
+        report["positiveIdBackendScope"] <- box "The same compiler-authorized PositiveId and nested VerifiedIrProgram instances run through interpreter constructor paths and owning-stack LLVM O0/O2. Raw host ingress uses independent byte and diagnostic fixtures for type-only validator closure, nested record/Option/Result payloads, and atomic failures."
+        let positiveIdRuns = ResizeArray<obj>()
+        for optimization, optimizationName in optimizationPairs do
+            positiveIdRuns.Add(box (runPositiveIdConformance checks failures fixture artifactsRoot optimization optimizationName positiveIdEntries))
+        report["positiveIdRuns"] <- positiveIdRuns.ToArray()
     with error ->
         let exceptionDetails =
             [ "Diagnostic"; "Metrics"; "RequiredBytes"; "AvailableBytes"; "Boundary" ]

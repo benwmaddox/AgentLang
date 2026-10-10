@@ -1265,18 +1265,7 @@ let private testOwningNominalIntSlice () =
         let diagnostic = errorOf (fun () -> compileOwningNative toolchain ("unsupported-" + name) LlvmOptimization.O0 body |> ignore)
         check ($"{name} remains outside the owning nominal Int slice") (
             diagnostic.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-            && diagnostic.Message.Contains("only unvalidated nominal Int scalar wrappers", StringComparison.OrdinalIgnoreCase))
-    let positiveValidator =
-        wordEntry "is-positive?" [ TInt ] [ TBool ] Set.empty [
-            Push(LInt 0L, span "owning-positive.agent" 1)
-            Call("int.greater-than", span "owning-positive.agent" 2)
-        ]
-    let refinedContext = contextWithScalars [ positiveValidator ] [ scalarDefinition "PositiveId" TInt (Some "is-positive?") ]
-    let refinedBody = compileBodyWithInputs refinedContext "unsupported-positive-id" [ TNamed "PositiveId" ] []
-    let refinedError = errorOf (fun () -> compileOwningNative toolchain "unsupported-positive-id" LlvmOptimization.O0 refinedBody |> ignore)
-    check "Int scalar predicates remain unsupported explicitly" (
-        refinedError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-        && refinedError.Message.Contains("only unvalidated nominal Int scalar wrappers", StringComparison.OrdinalIgnoreCase))
+            && diagnostic.Message.Contains("nominal Int scalar wrappers only", StringComparison.OrdinalIgnoreCase))
     rejectScalar "BoolTag" TBool None (TNamed "BoolTag")
     rejectScalar "TextTag" TString None (TNamed "TextTag")
     rejectScalar "FloatTag" TFloat None (TNamed "FloatTag")
@@ -1285,7 +1274,560 @@ let private testOwningNominalIntSlice () =
     let inactiveError = errorOf (fun () -> compileOwningNative toolchain "unsupported-inactive-result-alternative" LlvmOptimization.O0 inactiveBody |> ignore)
     check "unsupported scalar is rejected in an inactive Result alternative" (
         inactiveError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-        && inactiveError.Message.Contains("only unvalidated nominal Int scalar wrappers", StringComparison.OrdinalIgnoreCase))
+        && inactiveError.Message.Contains("nominal Int scalar wrappers only", StringComparison.OrdinalIgnoreCase))
+
+let private testOwningRefinedIntSlice () =
+    let toolchain = LlvmToolchain.discover()
+    let withScalarConstructorSpan (context: Compiler.IrLoweringContext) scalarName constructorName =
+        let scalarSpan = context.Scalars[scalarName].Span
+        let constructor = context.Words[constructorName]
+        let definition = { constructor.Definition with Span = scalarSpan }
+        { context with Words = Map.add constructorName { constructor with Definition = definition } context.Words }
+    let owningException action =
+        try
+            action ()
+            failwith "Expected an OwningStackExecutionException."
+        with :? OwningStackExecutionException as error -> error
+    let owningError action = (owningException action).Diagnostic
+    let withInterpreterSources (sources: NativeDiagnosticSources) =
+        { noOpHost () with
+            WordDefinitionSpan = fun word -> sources.WordDefinitionSpans.TryFind word
+            PrimitiveDefinitionSpan = fun word -> sources.PrimitiveDefinitionSpans.TryFind word }
+    let positiveValidator =
+        wordEntry "is-positive?" [ TInt ] [ TBool ] Set.empty [
+            Push(LInt 0L, span "owning-positive-validator.agent" 1)
+            Call("int.greater-than", span "owning-positive-validator.agent" 2)
+        ]
+    let context =
+        contextWithScalarDefinitions [ positiveValidator ] [
+            scalarDefinition "PositiveId" TInt (Some "is-positive?"), "PositiveId.construct", "PositiveId.unwrap"
+            scalarDefinition "OrderId" TInt None, "OrderId.create", "OrderId.raw"
+        ]
+        |> fun context -> withScalarConstructorSpan context "PositiveId" "PositiveId.construct"
+    let sources = NativeDiagnosticSources.fromLoweringContext context
+    let constructorBody = compileBodyWithInputs context "owning-refined-constructor" [ TInt ] [
+        Call("PositiveId.construct", span "owning-refined-constructor.agent" 1)
+    ]
+    let identityBody = compileBodyWithInputs context "owning-refined-input-only" [ TNamed "PositiveId"; TNamed "OrderId" ] []
+    let rejectingPositiveValidator =
+        { positiveValidator with
+            Definition =
+                { positiveValidator.Definition with
+                    Body = [ Call("drop", span "replacement-positive.agent" 1); Push(LBool false, span "replacement-positive.agent" 2) ]
+                    Revision = 2 }
+            Revision = 2 }
+    let inputBody = compileBodyWithInputs context "owning-refined-reject-before-body" [ TNamed "PositiveId" ] [
+        Call("drop", span "owning-refined-reject-before-body.agent" 1)
+        Push(LInt 1L, span "owning-refined-reject-before-body.agent" 2)
+        Push(LInt 0L, span "owning-refined-reject-before-body.agent" 3)
+        Call("divide", span "owning-refined-reject-before-body.agent" 4)
+    ]
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use constructor = compileOwningNative toolchain "owning-refined-constructor" optimization constructorBody
+        let valid = constructor.Execute([ IntValue 1L ], 4096, 8)
+        check ($"{optimization} PositiveId(1) constructor succeeds") (
+            valid.Values = [ NamedValue("PositiveId", IntValue 1L) ]
+            && Convert.ToHexString(valid.RetainedOutputBytes).ToLowerInvariant() = "0100000000000000")
+
+        for invalidValue in [ 0L; -1L ] do
+            let retained = Array.create 8 0xA5uy
+            let nativeError = owningException (fun () -> constructor.ExecuteInto([ IntValue invalidValue ], 4096, retained) |> ignore)
+            let diagnostic = nativeError.Diagnostic
+            let interpreted =
+                errorOf (fun () ->
+                    use result =
+                        IrInterpreter.executeBodyWithInputs
+                            (withInterpreterSources sources)
+                            "owning-refined-constructor"
+                            constructorBody
+                            None
+                            [ IrEntryArgument.IntArgument invalidValue ]
+                    result.Decode() |> ignore)
+            check ($"{optimization} PositiveId constructor rejects {invalidValue}") (
+                diagnostic = interpreted
+                && diagnostic.Code = "REFINEMENT_FAILED"
+                && diagnostic.Word = Some "PositiveId.construct"
+                && diagnostic.Expected = [ "validator returns true" ]
+                && diagnostic.Actual = [ "false" ])
+            check ($"{optimization} false constructor leaves ExecuteInto bytes unchanged at {invalidValue}") (
+                retained = Array.create 8 0xA5uy
+                && nativeError.Metrics.FinalCursorBytes = 0
+                && nativeError.Metrics.HostRetainedCommitBytes = 0)
+
+        use identity = compileOwningNative toolchain "owning-refined-input-only" optimization identityBody
+        let positiveLayout = identity.Layouts |> List.find (fun layout -> layout.TypeName = "PositiveId")
+        let orderLayout = identity.Layouts |> List.find (fun layout -> layout.TypeName = "OrderId")
+        check ($"{optimization} refined and unvalidated Int layouts remain distinct") (
+            positiveLayout.Type <> orderLayout.Type
+            && positiveLayout.PayloadBytes = 8 && positiveLayout.ExtentBytes = 8
+            && orderLayout.PayloadBytes = 8 && orderLayout.ExtentBytes = 8)
+        let validHost = identity.Execute([ NamedValue("PositiveId", IntValue 7L); NamedValue("OrderId", IntValue -4L) ], 4096, 16)
+        check ($"{optimization} input-only validator closure admits valid exact nominal values") (
+            validHost.Values = [ NamedValue("PositiveId", IntValue 7L); NamedValue("OrderId", IntValue -4L) ]
+            && Convert.ToHexString(validHost.RetainedOutputBytes).ToLowerInvariant() = "0700000000000000fcffffffffffffff")
+        let replacementContext =
+            contextWithScalarDefinitions [ rejectingPositiveValidator ] [
+                scalarDefinition "PositiveId" TInt (Some "is-positive?"), "PositiveId.construct", "PositiveId.unwrap"
+                scalarDefinition "OrderId" TInt None, "OrderId.create", "OrderId.raw"
+            ]
+            |> fun replacement -> withScalarConstructorSpan replacement "PositiveId" "PositiveId.construct"
+        let replacementIdentityBody = compileBodyWithInputs replacementContext "owning-refined-replacement-input-only" [ TNamed "PositiveId"; TNamed "OrderId" ] []
+        use replacement = compileOwningNative toolchain "owning-refined-replacement-input-only" optimization replacementIdentityBody
+        let replacementFailure =
+            owningException (fun () -> replacement.Execute([ NamedValue("PositiveId", IntValue 7L); NamedValue("OrderId", IntValue -4L) ], 4096, 16) |> ignore)
+        check ($"{optimization} owning snapshots retain the frozen validator revision after a same-name replacement") (
+            replacementFailure.Diagnostic.Code = "REFINEMENT_FAILED"
+            && replacementFailure.Diagnostic.Word = Some "PositiveId.construct")
+        let oldSnapshotAfterReplacement = identity.Execute([ NamedValue("PositiveId", IntValue 7L); NamedValue("OrderId", IntValue -4L) ], 4096, 16)
+        check ($"{optimization} an existing owning handle keeps its old frozen predicate after replacement compilation") (
+            oldSnapshotAfterReplacement.Values = validHost.Values
+            && oldSnapshotAfterReplacement.RetainedOutputBytes = validHost.RetainedOutputBytes)
+
+        for label, badValue in [ "bare Int", IntValue 7L; "wrong nominal", NamedValue("OrderId", IntValue 7L) ] do
+            let retained = Array.create 16 0xA5uy
+            let mutable rejected = false
+            try
+                identity.ExecuteInto([ badValue; NamedValue("OrderId", IntValue 0L) ], 4096, retained) |> ignore
+            with :? ArgumentException -> rejected <- true
+            check ($"{optimization} host rejects {label} for a refined nominal input") rejected
+            check ($"{optimization} {label} rejection leaves ExecuteInto bytes unchanged") (retained = Array.create 16 0xA5uy)
+
+        use inputNative = compileOwningNative toolchain "owning-refined-reject-before-body" optimization inputBody
+        let rejectedInput = Array.create 8 0xA5uy
+        let invalidHostFailure =
+            owningException (fun () ->
+                inputNative.ExecuteInto([ NamedValue("PositiveId", IntValue 0L) ], 4096, rejectedInput) |> ignore)
+        let invalidHostDiagnostic = invalidHostFailure.Diagnostic
+        check ($"{optimization} invalid raw PositiveId is rejected before the body divide") (
+            invalidHostDiagnostic.Code = "REFINEMENT_FAILED"
+            && invalidHostDiagnostic.Word = Some "PositiveId.construct"
+            && invalidHostDiagnostic.Expected = [ "validator returns true" ]
+            && invalidHostDiagnostic.Actual = [ "false" ]
+            && rejectedInput = Array.create 8 0xA5uy
+            && invalidHostFailure.Metrics.FinalCursorBytes = 0
+            && invalidHostFailure.Metrics.HostRetainedCommitBytes = 0)
+        let validHostDiagnostic =
+            owningError (fun () -> inputNative.Execute([ NamedValue("PositiveId", IntValue 1L) ], 4096, 8) |> ignore)
+        check ($"{optimization} valid raw PositiveId reaches the failing body") (validHostDiagnostic.Code = "RUNTIME_DIVIDE_BY_ZERO")
+
+    let runRefinedDepthCase label finalIndex expectSuccess =
+        let deepWords =
+            [ 0 .. finalIndex ]
+            |> List.map (fun index ->
+                let name = $"owning.refined.depth.{label}.{index}"
+                let body =
+                    if index < finalIndex then [ Call($"owning.refined.depth.{label}.{index + 1}", span (name + ".agent") 2) ]
+                    else
+                        [ Push(LInt 1L, span (name + ".agent") 2)
+                          Call("PositiveId.construct", span (name + ".agent") 3)
+                          Call("drop", span (name + ".agent") 4) ]
+                wordEntry name [] [] Set.empty body)
+        let depthContext =
+            contextWithScalarDefinitions (positiveValidator :: deepWords) [
+                scalarDefinition "PositiveId" TInt (Some "is-positive?"), "PositiveId.construct", "PositiveId.unwrap"
+            ]
+            |> fun value -> withScalarConstructorSpan value "PositiveId" "PositiveId.construct"
+        let executionName = "owning-refined-depth-" + label
+        let body = compileBody depthContext executionName [ Call($"owning.refined.depth.{label}.0", span "owning-refined-depth-entry.agent" 1) ]
+        let interpreted =
+            if expectSuccess then None
+            else Some(errorOf (fun () -> interpreterResultWithSources (NativeDiagnosticSources.fromLoweringContext depthContext) executionName body |> ignore))
+        for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+            use native = compileOwningNative toolchain ("owning-refined-depth-" + label) optimization body
+            if expectSuccess then
+                let result = native.Execute([], 4096, 8)
+                check ($"{optimization} refined constructor permits validator at interpreter depth 64") result.Values.IsEmpty
+            else
+                let failure = owningException (fun () -> native.Execute([], 4096, 8) |> ignore)
+                let interpretedError = interpreted |> Option.get
+                let expectedConstructorCallSite = Some(span ($"owning.refined.depth.{label}.{finalIndex}.agent") 3)
+                let expectedValidatorDefinition = Some(span "is-positive?.agent" 1)
+                check ($"{optimization} refined constructor rejects validator at interpreter depth 65") (
+                    failure.Diagnostic.Code = "RUNTIME_CALL_DEPTH"
+                    && failure.Diagnostic.Word = Some "is-positive?"
+                    && interpretedError.Code = failure.Diagnostic.Code
+                    && interpretedError.Word = failure.Diagnostic.Word
+                    && failure.Diagnostic.Span = expectedConstructorCallSite
+                    && interpretedError.Span = expectedValidatorDefinition
+                    && failure.Metrics.FinalCursorBytes = 0
+                    && failure.Metrics.HostRetainedCommitBytes = 0)
+    runRefinedDepthCase "depth-64" 62 true
+    runRefinedDepthCase "depth-65" 63 false
+
+    let runInlineDepthCase label finalIndex deepInputTypes deepOutputTypes deepBody entryPrefix scalarDefinitions =
+        let deepWords =
+            [ 0 .. finalIndex ]
+            |> List.map (fun index ->
+                let name = $"owning.inline.depth.{label}.{index}"
+                let body =
+                    if index < finalIndex then [ Call($"owning.inline.depth.{label}.{index + 1}", span (name + ".agent") 2) ]
+                    else deepBody name
+                wordEntry name deepInputTypes deepOutputTypes Set.empty body)
+        let context =
+            contextWithScalarDefinitions deepWords scalarDefinitions
+        let executionName = "owning-inline-depth-" + label
+        let body =
+            compileBody context executionName (entryPrefix @ [ Call($"owning.inline.depth.{label}.0", span "owning-inline-depth-entry.agent" 1) ])
+        let interpretedError =
+            try
+                use result = IrInterpreter.executeBodyWithInputs (withInterpreterSources (NativeDiagnosticSources.fromLoweringContext context)) executionName body None []
+                result.Decode() |> ignore
+                None
+            with LanguageException diagnostic -> Some diagnostic
+        for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+            use native = compileOwningNative toolchain ("owning-inline-depth-" + label) optimization body
+            if finalIndex = 63 then
+                let result = native.Execute([], 4096, 16)
+                check ($"{optimization} {label} inline operation permits interpreter depth 64") (not result.Values.IsEmpty || deepOutputTypes.IsEmpty)
+            else
+                let failure = owningException (fun () -> native.Execute([], 4096, 16) |> ignore)
+                let expected = interpretedError |> Option.get
+                check ($"{optimization} {label} inline operation rejects interpreter depth 65") (
+                    failure.Diagnostic.Code = "RUNTIME_CALL_DEPTH"
+                    && failure.Diagnostic.Word = expected.Word
+                    && failure.Metrics.FinalCursorBytes = 0
+                    && failure.Metrics.HostRetainedCommitBytes = 0)
+
+    runInlineDepthCase "unvalidated-wrap" 63 [] [] (fun name ->
+        [ Push(LInt 1L, span (name + ".agent") 2)
+          Call("PlainDepthId.create", span (name + ".agent") 3)
+          Call("drop", span (name + ".agent") 4) ]) [] [ scalarDefinition "PlainDepthId" TInt None, "PlainDepthId.create", "PlainDepthId.raw" ]
+    runInlineDepthCase "unvalidated-wrap-too-deep" 64 [] [] (fun name ->
+        [ Push(LInt 1L, span (name + ".agent") 2)
+          Call("PlainDepthId.create", span (name + ".agent") 3)
+          Call("drop", span (name + ".agent") 4) ]) [] [ scalarDefinition "PlainDepthId" TInt None, "PlainDepthId.create", "PlainDepthId.raw" ]
+    runInlineDepthCase "unvalidated-unwrap" 63 [ TNamed "PlainDepthId" ] [ TInt ] (fun name ->
+        [ Call("PlainDepthId.raw", span (name + ".agent") 2) ])
+        [ Push(LInt 1L, span "owning-inline-unwrap-entry.agent" 2); Call("PlainDepthId.create", span "owning-inline-unwrap-entry.agent" 3) ]
+        [ scalarDefinition "PlainDepthId" TInt None, "PlainDepthId.create", "PlainDepthId.raw" ]
+    runInlineDepthCase "unvalidated-unwrap-too-deep" 64 [ TNamed "PlainDepthId" ] [ TInt ] (fun name ->
+        [ Call("PlainDepthId.raw", span (name + ".agent") 2) ])
+        [ Push(LInt 1L, span "owning-inline-unwrap-entry.agent" 2); Call("PlainDepthId.create", span "owning-inline-unwrap-entry.agent" 3) ]
+        [ scalarDefinition "PlainDepthId" TInt None, "PlainDepthId.create", "PlainDepthId.raw" ]
+    runInlineDepthCase "primitive" 63 [] [] (fun name ->
+        [ Push(LBool true, span (name + ".agent") 2)
+          Call("bool.not", span (name + ".agent") 3)
+          Call("drop", span (name + ".agent") 4) ]) [] []
+    runInlineDepthCase "primitive-too-deep" 64 [] [] (fun name ->
+        [ Push(LBool true, span (name + ".agent") 2)
+          Call("bool.not", span (name + ".agent") 3)
+          Call("drop", span (name + ".agent") 4) ]) [] []
+
+    let rawHostDepthContext label finalFunctionIndex scalarName validatorName =
+        let chainWords =
+            [ 0 .. finalFunctionIndex ]
+            |> List.map (fun index ->
+                let name = $"owning.raw.host.depth.{label}.{index}"
+                let body =
+                    if index < finalFunctionIndex then
+                        [ Call($"owning.raw.host.depth.{label}.{index + 1}", span (name + ".agent") 2) ]
+                    else
+                        [ Push(LBool true, span (name + ".agent") 2) ]
+                wordEntry name [] [ TBool ] Set.empty body)
+        let validator =
+            wordEntry validatorName [ TInt ] [ TBool ] Set.empty [
+                Call("drop", span (validatorName + ".agent") 2)
+                Call($"owning.raw.host.depth.{label}.0", span (validatorName + ".agent") 3)
+            ]
+        contextWithScalarDefinitions (validator :: chainWords) [
+            scalarDefinition scalarName TInt (Some validatorName), scalarName + ".construct", scalarName + ".unwrap"
+        ]
+        |> fun value -> withScalarConstructorSpan value scalarName (scalarName + ".construct")
+
+    let runRawHostDepthCase label finalFunctionIndex scalarName validatorName expectSuccess =
+        let depthContext = rawHostDepthContext label finalFunctionIndex scalarName validatorName
+        let hostBodyName = "owning-raw-host-depth-" + label
+        let hostBody = compileBodyWithInputs depthContext hostBodyName [ TNamed scalarName ] [ Call("drop", span (hostBodyName + ".agent") 1) ]
+        let referenceBodyName = "owning-raw-host-depth-reference-" + label
+        let referenceBody = compileBodyWithInputs depthContext referenceBodyName [ TInt ] [
+            Call(validatorName, span (referenceBodyName + ".agent") 1)
+            Call("drop", span (referenceBodyName + ".agent") 2)
+        ]
+        let sources = NativeDiagnosticSources.fromLoweringContext depthContext
+        let executeReference () =
+            use result =
+                IrInterpreter.executeBodyWithInputs
+                    (withInterpreterSources sources)
+                    referenceBodyName
+                    referenceBody
+                    None
+                    [ IrEntryArgument.IntArgument 1L ]
+            result.Decode()
+        if expectSuccess then
+            let expected = executeReference ()
+            check ($"interpreter raw-depth reference succeeds for {label}") expected.IsEmpty
+            for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+                use native = compileOwningNative toolchain hostBodyName optimization hostBody
+                let result = native.Execute([ NamedValue(scalarName, IntValue 1L) ], 8192, 8)
+                check ($"{optimization} raw {label} admission allows the depth-64 call into depth 65") result.Values.IsEmpty
+        else
+            let expected = errorOf (fun () -> executeReference () |> ignore)
+            let expectedCaller = $"owning.raw.host.depth.{label}.{finalFunctionIndex - 1}"
+            let expectedTarget = $"owning.raw.host.depth.{label}.{finalFunctionIndex}"
+            for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+                use native = compileOwningNative toolchain hostBodyName optimization hostBody
+                let retained = Array.create 8 0xA5uy
+                let failure =
+                    owningException (fun () -> native.ExecuteInto([ NamedValue(scalarName, IntValue 1L) ], 8192, retained) |> ignore)
+                check ($"{optimization} raw {label} validator rejects the first depth-65 call before the host body") (
+                    failure.Diagnostic.Code = "RUNTIME_CALL_DEPTH"
+                    && failure.Diagnostic.Word = Some expectedTarget
+                    && failure.Diagnostic.Span = Some(span (expectedCaller + ".agent") 2)
+                    && expected.Code = failure.Diagnostic.Code
+                    && expected.Word = failure.Diagnostic.Word
+                    && expected.Span = Some(span (expectedTarget + ".agent") 1)
+                    && retained = Array.create 8 0xA5uy
+                    && failure.Metrics.FinalCursorBytes = 0
+                    && failure.Metrics.HostRetainedCommitBytes = 0)
+
+    runRawHostDepthCase "depth-64" 63 "HostDepth64" "host-depth-64?" true
+    runRawHostDepthCase "depth-65" 64 "HostDepth65" "host-depth-65?" false
+
+    let fuelPredicate = wordEntry "fuel-predicate?" [ TInt ] [ TBool ] Set.empty [
+        Call("drop", span "owning-fuel-predicate.agent" 1)
+        Push(LBool true, span "owning-fuel-predicate.agent" 2)
+    ]
+    let fuelValidatorBody =
+        [ 1 .. 4998 ]
+        |> List.collect (fun _ -> [ Push(LInt 1L, span "owning-exact-fuel-validator.agent" 1); Call("drop", span "owning-exact-fuel-validator.agent" 2) ])
+        |> fun prefix -> prefix @ [ Call("fuel-predicate?", span "owning-exact-fuel-validator.agent" 3) ]
+    let fuelValidator = wordEntry "fuel-positive?" [ TInt ] [ TBool ] Set.empty fuelValidatorBody
+    let fuelContext =
+        contextWithScalarDefinitions [ fuelPredicate; fuelValidator ] [
+            scalarDefinition "FuelId" TInt (Some "fuel-positive?"), "FuelId.construct", "FuelId.unwrap"
+        ]
+        |> fun value -> withScalarConstructorSpan value "FuelId" "FuelId.construct"
+    let fuelBody = compileBodyWithInputs fuelContext "owning-exact-fuel-constructor" [ TInt ] [ Call("FuelId.construct", span "owning-exact-fuel-constructor.agent" 1) ]
+    let mutable interpreterFuelSteps = 0
+    let interpretedFuel =
+        use result =
+            IrInterpreter.executeBodyWithInputs
+                { noOpHost () with ChargeInstruction = fun _ _ -> interpreterFuelSteps <- interpreterFuelSteps + 1 }
+                "owning-exact-fuel-constructor"
+                fuelBody
+                None
+                [ IrEntryArgument.IntArgument 1L ]
+        result.Decode()
+    check "interpreter constructor plus validator consumes exactly 10,000 steps" (
+        interpreterFuelSteps = 10000
+        && interpretedFuel = [ NamedValue("FuelId", IntValue 1L) ])
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use exactFuel = compileOwningNative toolchain "owning-exact-fuel-constructor" optimization fuelBody
+        let result = exactFuel.Execute([ IntValue 1L ], 131072, 8)
+        check ($"{optimization} constructor validator succeeds at the exact 10,000-step boundary") (
+            result.Values = [ NamedValue("FuelId", IntValue 1L) ]
+            && result.RetainedBytesWritten = 8)
+
+    let overrunFuelBody = compileBodyWithInputs fuelContext "owning-overrun-fuel-constructor" [ TInt ] [
+        Call("FuelId.construct", span "owning-overrun-fuel-constructor.agent" 1)
+        Call("drop", span "owning-overrun-fuel-constructor.agent" 2)
+    ]
+    let mutable overrunFuelSteps = 0
+    let interpretedOverrun =
+        errorOf (fun () ->
+            use result =
+                IrInterpreter.executeBodyWithInputs
+                    { noOpHost () with ChargeInstruction = fun _ _ -> overrunFuelSteps <- overrunFuelSteps + 1 }
+                    "owning-overrun-fuel-constructor"
+                    overrunFuelBody
+                    None
+                    [ IrEntryArgument.IntArgument 1L ]
+            result.Decode() |> ignore)
+    check "interpreter reports the first instruction beyond constructor-validator fuel" (
+        overrunFuelSteps = 10001 && interpretedOverrun.Code = "RUNTIME_STEP_LIMIT")
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use overrunFuel = compileOwningNative toolchain "owning-overrun-fuel-constructor" optimization overrunFuelBody
+        let failure = owningException (fun () -> overrunFuel.Execute([ IntValue 1L ], 131072, 8) |> ignore)
+        check ($"{optimization} constructor validator charges the Wrap at the 10,001-step rejection boundary") (
+            failure.Diagnostic = interpretedOverrun
+            && failure.Metrics.FinalCursorBytes = 0
+            && failure.Metrics.HostRetainedCommitBytes = 0)
+
+    let overflowValidator =
+        wordEntry "checked-positive?" [ TInt ] [ TBool ] Set.empty [
+            Push(LInt 1L, span "owning-overflow-validator.agent" 1)
+            Call("add", span "owning-overflow-validator.agent" 2)
+            Push(LInt 0L, span "owning-overflow-validator.agent" 3)
+            Call("int.greater-than", span "owning-overflow-validator.agent" 4)
+        ]
+    let overflowContext =
+        contextWithScalarDefinitions [ overflowValidator ] [
+            scalarDefinition "CheckedId" TInt (Some "checked-positive?"), "CheckedId.construct", "CheckedId.unwrap"
+        ]
+    let overflowInputBody = compileBodyWithInputs overflowContext "owning-refined-overflow-input" [ TNamed "CheckedId" ] []
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use checkedInput = compileOwningNative toolchain "owning-refined-overflow-input" optimization overflowInputBody
+        let failure = owningException (fun () -> checkedInput.Execute([ NamedValue("CheckedId", IntValue Int64.MaxValue) ], 4096, 8) |> ignore)
+        let diagnostic = failure.Diagnostic
+        check ($"{optimization} raw host validator overflow propagates unchanged") (
+            diagnostic.Code = "RUNTIME_OVERFLOW"
+            && diagnostic.Word = Some "add"
+            && diagnostic.Message.Contains("add", StringComparison.Ordinal)
+            && failure.Metrics.FinalCursorBytes = 0
+            && failure.Metrics.HostRetainedCommitBytes = 0)
+
+    let envelope = recordDefinition "OwnerEnvelope" [ recordField "owner" (TNamed "PositiveId") ]
+    let nestedContext =
+        contextWithRecordDefinitions [ positiveValidator ] [ envelope ] [
+            scalarDefinition "PositiveId" TInt (Some "is-positive?"), "PositiveId.construct", "PositiveId.unwrap"
+            scalarDefinition "OrderId" TInt None, "OrderId.create", "OrderId.raw"
+        ]
+    let nestedTypes = [
+        TNamed "OwnerEnvelope"
+        TOption(TNamed "PositiveId")
+        TOption(TNamed "PositiveId")
+        TResult(TNamed "PositiveId", TInt)
+        TResult(TNamed "PositiveId", TInt)
+        TResult(TInt, TNamed "PositiveId")
+        TResult(TInt, TNamed "PositiveId")
+    ]
+    let nestedBody = compileBodyWithInputs nestedContext "owning-refined-nested-inputs" nestedTypes []
+    let positive number = NamedValue("PositiveId", IntValue number)
+    let nestedValues = [
+        RecordValue("OwnerEnvelope", Map.ofList [ "owner", positive 1L ])
+        OptionValue(TNamed "PositiveId", Some(positive 2L))
+        OptionValue(TNamed "PositiveId", None)
+        ResultValue(TNamed "PositiveId", TInt, Ok(positive 3L))
+        ResultValue(TNamed "PositiveId", TInt, Error(IntValue 4L))
+        ResultValue(TInt, TNamed "PositiveId", Ok(IntValue 5L))
+        ResultValue(TInt, TNamed "PositiveId", Error(positive 6L))
+    ]
+    let replaceAt index replacement values =
+        values |> List.mapi (fun current value -> if current = index then replacement else value)
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use nested = compileOwningNative toolchain "owning-refined-nested-inputs" optimization nestedBody
+        let actual = nested.Execute(nestedValues, 8192, 256)
+        check ($"{optimization} refined nested record, Option, and active Result cases roundtrip") (actual.Values = nestedValues)
+        for index, invalidValue in [
+            0, RecordValue("OwnerEnvelope", Map.ofList [ "owner", positive 0L ])
+            1, OptionValue(TNamed "PositiveId", Some(positive -1L))
+            3, ResultValue(TNamed "PositiveId", TInt, Ok(positive 0L))
+            6, ResultValue(TInt, TNamed "PositiveId", Error(positive -1L))
+        ] do
+            let retained = Array.create 256 0xA5uy
+            let diagnostic = owningError (fun () -> nested.ExecuteInto(replaceAt index invalidValue nestedValues, 8192, retained) |> ignore)
+            check ($"{optimization} nested active refined value at input {index} is rejected") (
+                diagnostic.Code = "REFINEMENT_FAILED"
+                && diagnostic.Word = Some "PositiveId.construct"
+                && retained = Array.create 256 0xA5uy)
+
+    let boolValidator =
+        wordEntry "identity-bool?" [ TBool ] [ TBool ] Set.empty [
+            Call("bool.not", span "owning-bool-validator.agent" 1)
+            Call("bool.not", span "owning-bool-validator.agent" 2)
+        ]
+    let unsupportedBoolContext =
+        contextWithScalarDefinitions [ boolValidator ] [
+            scalarDefinition "BoolTag" TBool (Some "identity-bool?"), "BoolTag.construct", "BoolTag.unwrap"
+        ]
+    let unsupportedBoolBody = compileBodyWithInputs unsupportedBoolContext "owning-unsupported-refined-bool" [ TNamed "BoolTag" ] []
+    let unsupportedBool = errorOf (fun () -> compileOwningNative toolchain "owning-unsupported-refined-bool" LlvmOptimization.O0 unsupportedBoolBody |> ignore)
+    check "predicate-bearing non-Int scalars remain outside the owning refined slice" (
+        unsupportedBool.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
+        && unsupportedBool.Message.Contains("nominal Int scalar wrappers only", StringComparison.OrdinalIgnoreCase))
+
+    let effectfulValidator =
+        wordEntry "effectful-positive?" [ TInt ] [ TBool ] (Set.singleton "console.write") [
+            Push(LInt 0L, span "owning-effectful-validator.agent" 1)
+            Call("int.greater-than", span "owning-effectful-validator.agent" 2)
+        ]
+    let effectfulContext =
+        contextWithScalarDefinitions [ effectfulValidator ] [
+            scalarDefinition "EffectfulId" TInt (Some "effectful-positive?"), "EffectfulId.construct", "EffectfulId.unwrap"
+        ]
+    let effectfulError = errorOf (fun () ->
+        let effectfulBody = compileBodyWithInputs effectfulContext "owning-effectful-refinement" [ TNamed "EffectfulId" ] []
+        compileOwningNative toolchain "owning-effectful-refinement" LlvmOptimization.O0 effectfulBody |> ignore)
+    check "the verified program rejects an effectful Int validator before owning compilation" (
+        effectfulError.Code = "TYPE_VALIDATOR_EFFECT"
+        && effectfulError.Word = Some "EffectfulId"
+        && effectfulError.Actual = [ "console.write" ])
+
+    let unsupportedBranchValidator =
+        wordEntry "unsupported-branch?" [ TInt ] [ TBool ] Set.empty [
+            Push(LBool false, span "owning-unsupported-validator.agent" 1)
+            If(
+                [ Call("drop", span "owning-unsupported-validator.agent" 2)
+                  Push(LFloat 1.5, span "owning-unsupported-validator.agent" 3)
+                  Call("drop", span "owning-unsupported-validator.agent" 4)
+                  Push(LBool true, span "owning-unsupported-validator.agent" 5) ],
+                [ Call("drop", span "owning-unsupported-validator.agent" 6)
+                  Push(LBool false, span "owning-unsupported-validator.agent" 7) ],
+                span "owning-unsupported-validator.agent" 1)
+        ]
+    let unsupportedBranchContext =
+        contextWithScalarDefinitions [ unsupportedBranchValidator ] [
+            scalarDefinition "UntakenBranchId" TInt (Some "unsupported-branch?"), "UntakenBranchId.construct", "UntakenBranchId.unwrap"
+        ]
+    let unsupportedBranchBody = compileBodyWithInputs unsupportedBranchContext "owning-validator-type-only-closure" [ TNamed "UntakenBranchId" ] []
+    let unsupportedBranch = errorOf (fun () -> compileOwningNative toolchain "owning-validator-type-only-closure" LlvmOptimization.O0 unsupportedBranchBody |> ignore)
+    check "validator-only closure scans unsupported IR in an untaken branch" (
+        unsupportedBranch.Code = "IR_OWNING_STACK_CONSTANT_UNSUPPORTED"
+        && unsupportedBranch.Span = Some(span "owning-unsupported-validator.agent" 3))
+
+    let missingConstructorContext =
+        { unsupportedBranchContext with
+            Words = Map.remove "UntakenBranchId.construct" unsupportedBranchContext.Words
+            WordIds = Map.remove "UntakenBranchId.construct" unsupportedBranchContext.WordIds }
+    let missingConstructorBody = compileBodyWithInputs missingConstructorContext "owning-refined-missing-constructor" [ TNamed "UntakenBranchId" ] []
+    let missingConstructor = errorOf (fun () -> compileOwningNative toolchain "owning-refined-missing-constructor" LlvmOptimization.O0 missingConstructorBody |> ignore)
+    check "refined input-only layout rejects a missing generated diagnostic constructor during preflight" (
+        missingConstructor.Code = "IR_OWNING_STACK_SCALAR_CONSTRUCTOR_MISSING"
+        && missingConstructor.Word = Some "owning-refined-missing-constructor")
+
+    let duplicateConstructorName = "UntakenBranchId.alternate-construct"
+    let duplicateConstructor =
+        generatedScalarEntry duplicateConstructorName (ScalarConstructor "UntakenBranchId") [ TInt ] [ TNamed "UntakenBranchId" ]
+    let duplicateConstructorContext =
+        { unsupportedBranchContext with
+            Words = Map.add duplicateConstructorName duplicateConstructor unsupportedBranchContext.Words
+            WordIds = Map.add duplicateConstructorName (WordId("generated-" + duplicateConstructorName)) unsupportedBranchContext.WordIds }
+    let duplicateConstructorOutcome =
+        try
+            let body = compileBodyWithInputs duplicateConstructorContext "owning-refined-ambiguous-constructor" [ TNamed "UntakenBranchId" ] []
+            let diagnostic = errorOf (fun () -> compileOwningNative toolchain "owning-refined-ambiguous-constructor" LlvmOptimization.O0 body |> ignore)
+            Some diagnostic.Code
+        with LanguageException diagnostic -> Some diagnostic.Code
+    check "multiple generated WrapScalar diagnostics targets are rejected when IR permits them" (
+        duplicateConstructorOutcome = Some "IR_OWNING_STACK_SCALAR_CONSTRUCTOR_AMBIGUOUS")
+
+    let mailboxContext =
+        contextWithRecordDefinitions [ positiveValidator ] [
+            recordDefinition "MailboxState" [ recordField "owner" (TNamed "PositiveId") ]
+            recordDefinition "MailboxContinuation" [ recordField "marker" TInt ]
+        ] [
+            scalarDefinition "PositiveId" TInt (Some "is-positive?"), "PositiveId.construct", "PositiveId.unwrap"
+        ]
+    let mailboxProgram = Compiler.compileIrProgram mailboxContext
+    let initialize = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-refined-mailbox-initialize" [ TString ] [
+        Call("drop", span "owning-refined-mailbox.agent" 1)
+        Push(LInt 1L, span "owning-refined-mailbox.agent" 2)
+        Call("PositiveId.construct", span "owning-refined-mailbox.agent" 3)
+        Call("mailboxState.new", span "owning-refined-mailbox.agent" 4)
+    ]
+    let beginTurn = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-refined-mailbox-begin" [ TNamed "MailboxState"; TString ] [
+        Call("drop", span "owning-refined-mailbox.agent" 5)
+        Push(LInt 1L, span "owning-refined-mailbox.agent" 6)
+        Call("mailboxContinuation.new", span "owning-refined-mailbox.agent" 7)
+    ]
+    let resume = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-refined-mailbox-resume" [ TNamed "MailboxState"; TNamed "MailboxContinuation"; TString ] [
+        Call("drop", span "owning-refined-mailbox.agent" 8)
+        Call("drop", span "owning-refined-mailbox.agent" 9)
+    ]
+    let mailboxError =
+        errorOf (fun () ->
+            OwningStackAot.compileMailboxWithProfile
+                toolchain
+                LlvmOptimization.O0
+                OwningRuntimeProfile.Diagnostic
+                (Path.Combine(artifactRoot, "owning-refined-mailbox-reject"))
+                initialize
+                beginTurn
+                resume
+            |> ignore)
+    check "mailbox layout builder explicitly rejects a nested refined Int scalar" (
+        mailboxError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
+        && mailboxError.Message.Contains("unvalidated nominal Int scalar", StringComparison.OrdinalIgnoreCase))
 
 let private compareRecordErrorCase (fixtureName: string) (executionName: string) (body: VerifiedIrBody) =
     let expectedFixture = recordFixtureError fixtureName
@@ -2915,6 +3457,8 @@ let private runFullSuite () =
         testNominalScalarSupport ()
         printStage "owning backend nominal Int layouts and host codecs"
         testOwningNominalIntSlice ()
+        printStage "owning backend refined Int constructors and host admission"
+        testOwningRefinedIntSlice ()
         testNominalScalarDiagnosticsAndRejections ()
         testNominalScalarDepth ()
         printStage "record construction, accessors, aliases, and equality"
@@ -2958,6 +3502,15 @@ let main args =
             testNativeModuleValidationBeforeTools ()
             testNativeModuleCompilation ()
             printfn "AgentLang.Llvm.Tests module checks: %d assertions passed; artifacts: %s" assertions artifactRoot
+            0
+        with ex ->
+            eprintfn "%s" (ex.ToString())
+            1
+    elif args |> Array.contains "--owning-refined-int" then
+        try
+            printStage "owning backend refined Int constructors and host admission"
+            testOwningRefinedIntSlice ()
+            printfn "AgentLang.Llvm.Tests owning refined Int checks: %d assertions passed; artifacts: %s" assertions artifactRoot
             0
         with ex ->
             eprintfn "%s" (ex.ToString())

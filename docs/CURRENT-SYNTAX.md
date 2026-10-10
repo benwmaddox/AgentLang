@@ -25,6 +25,10 @@ The expected expression does not supply target-function coverage. Runtime
 `help` with topic `define` or `examples` and syntaxVersion 2 includes the complete
 `tutorial-enum-tests` source and executable define/test/library-commit requests.
 
+For example, request authoring help with
+`{"op":"help","syntaxVersion":2,"topic":"define"}`. The `frontend` field
+belongs on definition/evaluation requests; it is not accepted by `help`.
+
 ## Dotted calls, properties, and bound receivers
 
 Flow/2 uses dots for namespace calls and generated constructors. A plain record

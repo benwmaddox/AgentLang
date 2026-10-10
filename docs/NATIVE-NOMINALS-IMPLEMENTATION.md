@@ -7,6 +7,12 @@ Release checks pass. Predicate-bearing Int is the next secondary backend slice. 
 does not replace the requirement for validated refinements or claim native
 support for Email. The interpreter's verified semantic IR remains authoritative.
 
+The predicate-bearing Int implementation and local validation are in progress
+in [report 172](../reports/172-native-refined-int.md). Ordinary raw host inputs
+must run the frozen predicate over active nested values before executing the
+body. Refined mailbox layouts remain rejected until their own external ingress
+is validated. Nominal identity alone is not sufficient at either boundary.
+
 ## Delivery order
 
 First preserve unvalidated nominal Int identity, such as OrderId or Meters,

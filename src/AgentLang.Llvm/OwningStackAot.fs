@@ -260,6 +260,8 @@ type internal OwningProgramInfo =
       ReachableFunctions: IrFunction list
       TypeIds: Map<IrType, uint32>
       TypeInfos: Map<IrType, OwningTypeInfo>
+      ValidatedScalarValidators: Map<IrType, IrResolvedCall>
+      ValidatedScalarConstructors: Map<IrType, IrGeneratedTarget>
       Layouts: OwningStackTypeLayout list }
 
 type internal OwningDiagnosticInfo =
@@ -589,7 +591,7 @@ module OwningStackAot =
 
     let private extent payload = max 8 payload
 
-    let private makeProgramInfoForBodies (verifiedBodies: VerifiedIrBody list) =
+    let private makeProgramInfoForBodies allowValidatedIntScalars (verifiedBodies: VerifiedIrBody list) =
         if List.isEmpty verifiedBodies then invalidArg (nameof verifiedBodies) "An owning module requires at least one verified body."
         for verifiedBody in verifiedBodies do
             if Object.ReferenceEquals(verifiedBody, null) then
@@ -631,7 +633,81 @@ module OwningStackAot =
                 typeIds <- Map.add ty value typeIds
                 value
         let mutable typeInfos = Map.empty<IrType, OwningTypeInfo>
+        let mutable validatedScalarValidators = Map.empty<IrType, IrResolvedCall>
+        let mutable validatedScalarConstructors = Map.empty<IrType, IrGeneratedTarget>
         let active = HashSet<IrType>()
+        let unsupportedScalarMessage, unsupportedScalarExpected =
+            if allowValidatedIntScalars then
+                "Owning-stack supports nominal Int scalar wrappers only; non-Int scalar bases remain unsupported.",
+                [ "nominal Int scalar" ]
+            else
+                "Owning-stack supports only unvalidated nominal Int scalar wrappers.",
+                [ "unvalidated Int scalar" ]
+        let validateScalarValidator owner (scalar: IrScalarDefinitionData) =
+            match scalar.ValidatorCall with
+            | None -> ()
+            | Some validator ->
+                if not allowValidatedIntScalars || scalar.BaseType <> IrInt then
+                    Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
+                        unsupportedScalarMessage
+                        (Some owner) None unsupportedScalarExpected [ scalar.TypeName ]
+                if validator.InputTypes <> [ IrInt ] || validator.OutputTypes <> [ IrBool ]
+                   || not (Set.isEmpty validator.ResolvedDeclaredEffects)
+                   || not (Set.isEmpty validator.ResolvedEffects) then
+                    let actual =
+                        sprintf "%s -> %s; effects=%s"
+                            (String.concat " " (validator.InputTypes |> List.map IrTypes.format))
+                            (String.concat " " (validator.OutputTypes |> List.map IrTypes.format))
+                            (String.concat "," (IrEffects.names validator.ResolvedEffects))
+                    Diagnostics.raiseError "IR_OWNING_STACK_VALIDATOR_SIGNATURE"
+                        "A refined owning Int scalar requires its frozen pure Int -> Bool validator."
+                        (Some owner) None [ "Int -> Bool; no effects" ] [ actual ]
+                match validator.ResolvedTarget with
+                | UserWordTarget(id, revision) ->
+                    match program.FunctionsById.TryFind id with
+                    | Some fn when fn.FunctionRevision = revision ->
+                        if fn.InputTypes <> [ IrInt ] || fn.OutputTypes <> [ IrBool ]
+                           || not (Set.isEmpty fn.FunctionDeclaredEffects)
+                           || not (Set.isEmpty fn.FunctionInferredEffects) then
+                            Diagnostics.raiseError "IR_OWNING_STACK_VALIDATOR_SIGNATURE"
+                                "The frozen refined scalar validator does not target a pure Int -> Bool function."
+                                (Some owner) None [ "pure Int -> Bool function" ] [ validator.ResolvedName ]
+                    | Some fn ->
+                        Diagnostics.raiseError "IR_OWNING_STACK_TARGET_REVISION"
+                            "Owning-stack validator target revision does not match the verified snapshot."
+                            (Some owner) None [ string revision ] [ string fn.FunctionRevision ]
+                    | None ->
+                        Diagnostics.raiseError "IR_OWNING_STACK_TARGET_MISSING"
+                            "Owning-stack validator target is absent from the verified snapshot."
+                            (Some owner) None [ "reachable user word" ] [ sprintf "%A" id ]
+                | _ ->
+                    Diagnostics.raiseError "IR_OWNING_STACK_VALIDATOR_TARGET"
+                        "A refined owning Int scalar validator must retain an exact user-word target and revision."
+                        (Some owner) None [ "frozen user-word target" ] [ validator.ResolvedName ]
+                let constructorCandidates =
+                    program.GeneratedTargetsById
+                    |> Map.toSeq
+                    |> Seq.map snd
+                    |> Seq.filter (fun target -> target.Operation = WrapScalarOperation scalar.TypeKey)
+                    |> Seq.toList
+                match constructorCandidates with
+                | [ constructor ] ->
+                    if constructor.InputTypes <> [ IrInt ]
+                       || constructor.OutputTypes <> [ IrNominal scalar.TypeKey ]
+                       || not (Set.isEmpty constructor.TargetDeclaredEffects)
+                       || not (Set.isEmpty constructor.TargetEffects) then
+                        Diagnostics.raiseError "IR_OWNING_STACK_SCALAR_CONSTRUCTOR"
+                            "The frozen refined scalar constructor does not retain its exact pure Int-to-nominal shape."
+                            (Some owner) None [ "pure Int -> nominal constructor" ] [ constructor.TargetName ]
+                    validatedScalarConstructors <- Map.add (IrNominal scalar.TypeKey) constructor validatedScalarConstructors
+                | [] ->
+                    Diagnostics.raiseError "IR_OWNING_STACK_SCALAR_CONSTRUCTOR_MISSING"
+                        "A refined owning Int scalar requires exactly one frozen generated constructor for diagnostics."
+                        (Some owner) None [ "one generated WrapScalar target" ] [ scalar.TypeName ]
+                | constructors ->
+                    Diagnostics.raiseError "IR_OWNING_STACK_SCALAR_CONSTRUCTOR_AMBIGUOUS"
+                        "A refined owning Int scalar has more than one frozen generated constructor target."
+                        (Some owner) None [ "one generated WrapScalar target" ] (constructors |> List.map (fun target -> target.TargetName))
         let rec buildType owner depth ty =
             match typeInfos.TryFind ty with
             | Some value ->
@@ -755,8 +831,12 @@ module OwningStackAot =
                             typeInfos <- Map.add ty value typeInfos
                             value
                         | Some(IrScalarDefinition scalar) ->
-                            match scalar.BaseType, scalar.ValidatorCall with
-                            | IrInt, None ->
+                            match scalar.BaseType with
+                            | IrInt ->
+                                validateScalarValidator owner scalar
+                                scalar.ValidatorCall
+                                |> Option.iter (fun validator ->
+                                    validatedScalarValidators <- Map.add ty validator validatedScalarValidators)
                                 let value =
                                     { Type = ty
                                       TypeId = typeIdFor typeIds ty
@@ -773,8 +853,8 @@ module OwningStackAot =
                                 value
                             | _ ->
                                 Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-                                    "Owning-stack supports only unvalidated nominal Int scalar wrappers."
-                                    (Some owner) None [ "unvalidated Int scalar" ] [ scalar.TypeName ]
+                                    unsupportedScalarMessage
+                                    (Some owner) None unsupportedScalarExpected [ scalar.TypeName ]
                         | Some(IrEnumDefinition enumDefinition) ->
                             unsupported "IR_OWNING_STACK_TYPE_UNSUPPORTED" "Owning-stack could not build the verified payload-free enum layout." owner enumDefinition.TypeName
                         | None -> unsupported "IR_OWNING_STACK_TYPE_UNKNOWN" "Owning-stack type is absent from the verified nominal table." owner (IrTypes.format ty)
@@ -917,10 +997,12 @@ module OwningStackAot =
                     validateAccessorCall owner span call key index
                 | IrOperation.WrapScalar(call, key, validator) ->
                     checkType owner (IrNominal key)
-                    if validator.IsSome then
-                        Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-                            "Owning-stack supports only unvalidated nominal Int scalar wrappers."
-                            (Some owner) span [ "unvalidated Int scalar" ] [ call.ResolvedName ]
+                    match scalarDefinition program (IrNominal key) with
+                    | Some scalar when scalar.ValidatorCall = validator -> ()
+                    | _ ->
+                        Diagnostics.raiseError "IR_OWNING_STACK_SCALAR_VALIDATOR_MISMATCH"
+                            "Scalar wrap validator differs from the immutable nominal type definition."
+                            (Some owner) span [ "matching frozen scalar validator" ] [ call.ResolvedName ]
                     validateScalarCall owner span call key (WrapScalarOperation key) [ IrInt ] [ IrNominal key ]
                 | IrOperation.UnwrapScalar(call, key) ->
                     checkType owner (IrNominal key)
@@ -966,17 +1048,17 @@ module OwningStackAot =
                 | IrOperation.If(thenBlock, elseBlock) -> validateBlock owner thenBlock; validateBlock owner elseBlock
                 | operation ->
                     Diagnostics.raiseError "IR_OWNING_STACK_OPERATION_UNSUPPORTED"
-                        "Owning-stack backend supports constants, calls, records, unvalidated Int scalars, payload-free enums, Option/Result values, locals, Scope, If, and exhaustive matches."
+                        "Owning-stack backend supports constants, calls, records, nominal Int scalars with pure frozen predicates, payload-free enums, Option/Result values, locals, Scope, If, and exhaustive matches."
                         (Some owner) span [ "Constant"; "Call"; "MakeRecord"; "GetRecordField"; "WrapScalar"; "UnwrapScalar"; "MakeEnumCase"; "OptionNone"; "OptionSome"; "ResultOk"; "ResultError"; "MatchOption"; "MatchResult"; "MatchEnum"; "StoreLocal"; "LoadLocal"; "Scope"; "If" ]
                         [ sprintf "%A" operation ]
 
         and validateScalarCall owner span (call: IrResolvedCall) key expectedOperation inputTypes outputTypes =
             match program.NominalTypesByKey.TryFind key with
-            | Some(IrScalarDefinition scalar) when scalar.BaseType = IrInt && scalar.ValidatorCall.IsNone -> ()
+            | Some(IrScalarDefinition scalar) when scalar.BaseType = IrInt -> validateScalarValidator owner scalar
             | _ ->
                 Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-                    "Owning-stack supports only unvalidated nominal Int scalar wrappers."
-                    (Some owner) span [ "unvalidated Int scalar" ] [ sprintf "%A" key ]
+                    unsupportedScalarMessage
+                    (Some owner) span unsupportedScalarExpected [ sprintf "%A" key ]
             match call.ResolvedTarget with
             | GeneratedWordTarget(id, revision) ->
                 match program.GeneratedTargetsById.TryFind id with
@@ -1046,18 +1128,31 @@ module OwningStackAot =
 
         let reachable = HashSet<WordId>()
         let pending = Queue<IrFunction>()
+        let enqueueUserFunction owner id revision =
+            match program.FunctionsById.TryFind id with
+            | Some fn when fn.FunctionRevision = revision && reachable.Add id -> pending.Enqueue fn
+            | Some fn when fn.FunctionRevision = revision -> ()
+            | Some fn -> Diagnostics.raiseError "IR_OWNING_STACK_TARGET_REVISION" "Owning-stack call target revision does not match the verified snapshot." (Some owner) None [ string revision ] [ string fn.FunctionRevision ]
+            | None -> Diagnostics.raiseError "IR_OWNING_STACK_TARGET_MISSING" "Owning-stack call target is absent from the verified snapshot." (Some owner) None [ "reachable user word" ] [ sprintf "%A" id ]
+        let inspectedTypeValidators = HashSet<IrType>()
+        let enqueueKnownTypeValidators owner =
+            for ty in typeInfos |> Map.toSeq |> Seq.map fst |> Seq.toArray do
+                if inspectedTypeValidators.Add ty then
+                    match validatedScalarValidators.TryFind ty with
+                    | Some validator ->
+                        match validator.ResolvedTarget with
+                        | UserWordTarget(id, revision) -> enqueueUserFunction owner id revision
+                        | _ -> invalidOp "Owning refined scalar validator passed validation without a user-word target."
+                    | None -> ()
         let rec inspectCalls owner (block: IrBlock) =
             for instruction in block.Code do
                 match instruction.Operation with
                 | IrOperation.Call call ->
                     match call.ResolvedTarget with
                     | UserWordTarget(id, revision) ->
-                        match program.FunctionsById.TryFind id with
-                        | Some fn when fn.FunctionRevision = revision && reachable.Add id -> pending.Enqueue fn
-                        | Some fn when fn.FunctionRevision = revision -> ()
-                        | Some fn -> Diagnostics.raiseError "IR_OWNING_STACK_TARGET_REVISION" "Owning-stack call target revision does not match the verified snapshot." (Some owner) None [ string revision ] [ string fn.FunctionRevision ]
-                        | None -> Diagnostics.raiseError "IR_OWNING_STACK_TARGET_MISSING" "Owning-stack call target is absent from the verified snapshot." (Some owner) None [ "reachable user word" ] [ sprintf "%A" id ]
+                        enqueueUserFunction owner id revision
                     | _ -> ()
+                | IrOperation.WrapScalar _ -> enqueueKnownTypeValidators owner
                 | IrOperation.Scope inner -> inspectCalls owner inner
                 | IrOperation.If(left, right) -> inspectCalls owner left; inspectCalls owner right
                 | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> inspectCalls owner)
@@ -1069,8 +1164,11 @@ module OwningStackAot =
             requireEffectFree fn.FunctionName fn.FunctionInferredEffects
             fn.InputTypes @ fn.OutputTypes |> List.iter (checkType fn.FunctionName)
             validateBlock fn.FunctionName fn.FunctionBody
+            enqueueKnownTypeValidators fn.FunctionName
             inspectCalls fn.FunctionName fn.FunctionBody
-        for current in bodies do inspectCalls current.BodyName current.BodyBlock
+        for current in bodies do
+            enqueueKnownTypeValidators current.BodyName
+            inspectCalls current.BodyName current.BodyBlock
         while pending.Count > 0 do checkFunction (pending.Dequeue())
         let typeInfos = typeInfos
         if typeInfos.Count > 4096 then
@@ -1143,10 +1241,12 @@ module OwningStackAot =
           ReachableFunctions = reachableFunctions
           TypeIds = typeIds
           TypeInfos = typeInfos
+          ValidatedScalarValidators = validatedScalarValidators
+          ValidatedScalarConstructors = validatedScalarConstructors
           Layouts = typeLayouts }
 
     let private makeProgramInfo (verifiedBody: VerifiedIrBody) =
-        makeProgramInfoForBodies [ verifiedBody ]
+        makeProgramInfoForBodies true [ verifiedBody ]
 
     let private infoFor (info: OwningProgramInfo) ty =
         info.TypeInfos.TryFind ty
@@ -1222,7 +1322,7 @@ module OwningStackAot =
                     invalidArg (nameof values) $"Input enum {Types.formatValue value} does not match verified type {IrTypes.format ty}."
             | IrNominal _, NamedValue(actualName, IntValue _) when
                 (scalarDefinition info.Program ty
-                 |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrInt && scalar.ValidatorCall.IsNone)) ->
+                 |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrInt)) ->
                 8, 8
             | IrNominal _, RecordValue(name, fields) when name = layout.Name && Option.isSome (recordDefinition info.Program ty) ->
                 let expectedNames = layout.Fields |> List.map (fun (fieldName, _, _) -> fieldName) |> Set.ofList
@@ -1332,7 +1432,7 @@ module OwningStackAot =
                     invalidArg (nameof values) $"Input enum {Types.formatValue value} does not match verified type {IrTypes.format ty}."
             | IrNominal _, NamedValue(actualName, IntValue number) when
                 (scalarDefinition info.Program ty
-                 |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrInt && scalar.ValidatorCall.IsNone)) ->
+                 |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrInt)) ->
                 writeInt64 bytes offset number
                 8
             | IrNominal _, RecordValue(name, fields) when name = layout.Name && Option.isSome (recordDefinition info.Program ty) ->
@@ -1443,7 +1543,7 @@ module OwningStackAot =
                 EnumValue(definition.TypeName, definition.Cases[int ordinal]), 8, 8
             | IrNominal key when Option.isSome (scalarDefinition info.Program (IrNominal key)) ->
                 let definition = scalarDefinition info.Program (IrNominal key) |> Option.get
-                if definition.BaseType <> IrInt || definition.ValidatorCall.IsSome then
+                if definition.BaseType <> IrInt then
                     invalidOp $"Unsupported nominal scalar reached owning-stack decode: {definition.TypeName}."
                 ensureRange offset 8 "nominal Int"
                 NamedValue(definition.TypeName, IntValue(readInt64 bytes offset)), 8, 8
@@ -2601,7 +2701,7 @@ module OwningStackAot =
             | IrResult _ -> 8u
             | IrNominal _ as ty ->
                 match scalarDefinition info.Program ty with
-                | Some scalar when scalar.BaseType = IrInt && scalar.ValidatorCall.IsNone -> 1u
+                | Some scalar when scalar.BaseType = IrInt -> 1u
                 | Some _ -> invalidOp $"Unsupported nominal scalar reached owning descriptor emission: {IrTypes.format ty}."
                 | None ->
                     match enumDefinition info.Program ty with
@@ -2882,6 +2982,254 @@ module OwningStackAot =
             w.Inst($"{initStatus} = call i32 @al_owning_check_initialized(ptr %%ctx, i32 {entry.Offset}, i32 {entry.Extent})")
             emitStatusResult w initStatus failureLabel
 
+        let scalarConstructorInfo ty =
+            match info.ValidatedScalarConstructors.TryFind ty with
+            | Some target ->
+                let span =
+                    target.SourceSite
+                    |> Option.bind (fun site -> sourceMap.TryFind site |> Option.map (fun source -> source.SiteSpan))
+                target.TargetName, span
+            | None -> invalidOp $"Validated scalar {IrTypes.format ty} lost its preflighted frozen constructor."
+
+        let emitInlineTargetDepthGuard
+            (w: OwningLlvmWriter)
+            targetName
+            instructionSpan
+            failureLabel =
+            // The interpreter checks the target depth before dispatching an
+            // inline primitive or generated operation. Native frames already
+            // include the entry frame, so depth 64 maps to a native counter of
+            // 65. Keep inline dispatch at that same boundary.
+            let depthError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." targetName instructionSpan [] []
+            let currentDepth = emitContextLoad w "%ctx" 24
+            let withinInterpreterDepth = w.Fresh "inline.target.depth.within.interpreter.limit"
+            let depthOkay = w.Label "inline.target.depth.ok"
+            let depthInvalid = w.Label "inline.target.depth.invalid"
+            w.Inst($"{withinInterpreterDepth} = icmp ule i32 {currentDepth}, 65")
+            w.Inst($"br i1 {withinInterpreterDepth}, label %%{depthOkay}, label %%{depthInvalid}")
+            w.Line($"{depthInvalid}:")
+            w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {depthError}, i32 0, i32 0)")
+            w.Inst($"br label %%{failureLabel}")
+            w.Line($"{depthOkay}:")
+
+        let emitFrozenValidatorCall
+            (w: OwningLlvmWriter)
+            (scalarType: IrType)
+            (validator: IrResolvedCall)
+            (intValue: OwningDynamicStackEntry)
+            isConstructorWrap
+            callSiteSpan
+            failureLabel =
+            let scalar = scalarDefinition program scalarType |> Option.defaultWith (fun () -> invalidOp "Frozen validator call lost its scalar definition.")
+            let constructorName, constructorSpan = scalarConstructorInfo scalarType
+            let refinementError =
+                addDiagnostic "REFINEMENT_FAILED"
+                    $"Value does not satisfy {scalar.TypeName}'s refinement validator."
+                    constructorName constructorSpan [ "validator returns true" ] [ "false" ]
+            let badResultError =
+                addDiagnostic "RUNTIME_VALIDATOR_RESULT"
+                    "Scalar validator did not return one Bool."
+                    validator.ResolvedName None [ "Bool" ] [ "invalid Bool payload" ]
+            let intArgument = { intValue with Type = IrInt }
+            let arguments = w.Fresh "validator.arguments"
+            w.Inst($"{arguments} = alloca [1 x %%AlOwningDescriptor], align 4")
+            let argumentPointer = emitDescriptorElementPointer w arguments 0
+            emitStoreDescriptor w argumentPointer intArgument
+            emitDescriptorTransfer w intArgument failureLabel
+            let results = w.Fresh "validator.results"
+            w.Inst($"{results} = alloca [1 x %%AlOwningDescriptor], align 4")
+            let callError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." validator.ResolvedName callSiteSpan [] []
+            // A generated WrapScalar runs inline in its caller, but the
+            // interpreter treats its nested validator invocation as another
+            // call-depth transition. The native frame counter also includes
+            // the entry frame, so the runtime's general frame guard alone
+            // permits this one transition too deep. Raw host-input validation
+            // follows the ordinary function-frame guard below. Keep this
+            // semantic mode explicit; source metadata only controls diagnostics.
+            if isConstructorWrap then
+                let currentDepth = emitContextLoad w "%ctx" 24
+                let withinInterpreterDepth = w.Fresh "validator.depth.within.interpreter.limit"
+                let depthOkay = w.Label "validator.depth.ok"
+                let depthInvalid = w.Label "validator.depth.invalid"
+                w.Inst($"{withinInterpreterDepth} = icmp ule i32 {currentDepth}, 64")
+                w.Inst($"br i1 {withinInterpreterDepth}, label %%{depthOkay}, label %%{depthInvalid}")
+                w.Line($"{depthInvalid}:")
+                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {callError}, i32 0, i32 0)")
+                w.Inst($"br label %%{failureLabel}")
+                w.Line($"{depthOkay}:")
+            let callStatus = w.Fresh "validator.status"
+            match validator.ResolvedTarget with
+            | UserWordTarget(id, _) ->
+                w.Inst($"{callStatus} = call i32 {symbolFor id}(ptr %%ctx, ptr {arguments}, ptr {results}, i32 {callError})")
+            | _ -> invalidOp "Owning refined scalar validator was not frozen to a user-word target."
+            emitStatusResult w callStatus failureLabel
+            let resultPointer = emitDescriptorElementPointer w results 0
+            let result, actualType = emitLoadDescriptor w resultPointer IrBool
+            let typeMatches = w.Fresh "validator.result.type.matches"
+            let typeOkay = w.Label "validator.result.type.ok"
+            let typeInvalid = w.Label "validator.result.type.invalid"
+            w.Inst($"{typeMatches} = icmp eq i32 {actualType}, {typeId IrBool}")
+            w.Inst($"br i1 {typeMatches}, label %%{typeOkay}, label %%{typeInvalid}")
+            w.Line($"{typeInvalid}:")
+            w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {badResultError}, i32 0, i32 0)")
+            w.Inst($"br label %%{failureLabel}")
+            w.Line($"{typeOkay}:")
+            emitDescriptorBounds w result (Some(string (typeId IrBool))) failureLabel
+            emitDescriptorTransfer w result failureLabel
+            let raw = w.Fresh "validator.bool"
+            w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {result.Offset})")
+            emitRuntimeStatus w "%ctx" failureLabel
+            let isTrue = w.Fresh "validator.bool.true"
+            let isFalse = w.Fresh "validator.bool.false"
+            let isBoolean = w.Fresh "validator.bool.valid"
+            let boolCheck = w.Label "validator.bool.check"
+            let invalidBool = w.Label "validator.bool.invalid"
+            let falseResult = w.Label "validator.false"
+            let trueResult = w.Label "validator.true"
+            let validatorJoin = w.Label "validator.join"
+            w.Inst($"{isTrue} = icmp eq i64 {raw}, 1")
+            w.Inst($"{isFalse} = icmp eq i64 {raw}, 0")
+            w.Inst($"{isBoolean} = or i1 {isTrue}, {isFalse}")
+            w.Inst($"br i1 {isBoolean}, label %%{boolCheck}, label %%{invalidBool}")
+            w.Line($"{invalidBool}:")
+            w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {badResultError}, i32 0, i32 0)")
+            w.Inst($"br label %%{failureLabel}")
+            w.Line($"{boolCheck}:")
+            w.Inst($"br i1 {isTrue}, label %%{trueResult}, label %%{falseResult}")
+            w.Line($"{falseResult}:")
+            w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {refinementError}, i32 0, i32 0)")
+            w.Inst($"br label %%{failureLabel}")
+            w.Line($"{trueResult}:")
+            w.Inst($"br label %%{validatorJoin}")
+            w.Line($"{validatorJoin}:")
+
+        let rec hasValidatedScalar ty =
+            if info.ValidatedScalarValidators.ContainsKey ty then true
+            else
+                match ty with
+                | IrNominal _ ->
+                    match recordDefinition program ty with
+                    | Some _ -> (typeInfo ty).Fields |> List.exists (fun (_, fieldType, _) -> hasValidatedScalar fieldType)
+                    | _ -> false
+                | IrOption item -> hasValidatedScalar item
+                | IrResult(okType, errorType) -> hasValidatedScalar okType || hasValidatedScalar errorType
+                | _ -> false
+
+        let rec emitValidateEntryValue (w: OwningLlvmWriter) owner (entry: OwningDynamicStackEntry) ty failureLabel =
+            match info.ValidatedScalarValidators.TryFind ty with
+            | Some validator -> emitFrozenValidatorCall w ty validator entry false None failureLabel
+            | None ->
+                match ty with
+                | IrNominal _ ->
+                    match recordDefinition program ty with
+                    | Some _ ->
+                        let layout = typeInfo ty
+                        let invalidError = addDiagnostic "OWNING_STACK_INPUT_INVALID" "Unable to inspect a refined value inside the validated host input." owner None [] []
+                        for fieldIndex, (_, fieldType, _) in layout.Fields |> List.indexed do
+                            if hasValidatedScalar fieldType then
+                                let location = w.Fresh "input.field.location"
+                                w.Inst($"{location} = alloca %%AlOwningFieldLocation, align 4")
+                                let status = w.Fresh "input.field.status"
+                                w.Inst($"{status} = call i32 @al_owning_locate_field(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex ty}, i32 {entry.Offset}, i32 {entry.Extent}, i32 {fieldIndex}, i32 {invalidError}, ptr {location})")
+                                emitStatusResult w status failureLabel
+                                let loadField index name =
+                                    let pointer = w.Fresh $"input.field.{name}.pointer"
+                                    let value = w.Fresh $"input.field.{name}"
+                                    w.Inst($"{pointer} = getelementptr inbounds %%AlOwningFieldLocation, ptr {location}, i32 0, i32 {index}")
+                                    w.Inst($"{value} = load i32, ptr {pointer}, align 4")
+                                    value
+                                let child =
+                                    { Type = fieldType
+                                      Offset = loadField 0 "offset"
+                                      Payload = loadField 1 "payload"
+                                      Extent = loadField 2 "extent"
+                                      OwnerEnd = entry.OwnerEnd }
+                                emitValidateEntryValue w owner child fieldType failureLabel
+                    | None -> ()
+                | IrOption itemType when hasValidatedScalar itemType ->
+                    let invalidError = addDiagnostic "OWNING_STACK_INPUT_INVALID" "Unable to inspect a refined value inside the validated host input." owner None [] []
+                    let caseIndex = w.Fresh "input.option.case"
+                    let location = w.Fresh "input.option.location"
+                    w.Inst($"{caseIndex} = alloca i32, align 4")
+                    w.Inst($"{location} = alloca %%AlOwningFieldLocation, align 4")
+                    let status = w.Fresh "input.option.status"
+                    w.Inst($"{status} = call i32 @al_owning_locate_sum_case(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex ty}, i32 {entry.Offset}, i32 {entry.Extent}, i32 {invalidError}, ptr {caseIndex}, ptr {location})")
+                    emitStatusResult w status failureLabel
+                    let tag = w.Fresh "input.option.tag"
+                    w.Inst($"{tag} = load i32, ptr {caseIndex}, align 4")
+                    let isSome = w.Fresh "input.option.is.some"
+                    let someLabel = w.Label "input.option.some"
+                    let join = w.Label "input.option.validated"
+                    w.Inst($"{isSome} = icmp eq i32 {tag}, 0")
+                    w.Inst($"br i1 {isSome}, label %%{someLabel}, label %%{join}")
+                    w.Line($"{someLabel}:")
+                    let loadCase index name =
+                        let pointer = w.Fresh $"input.option.{name}.pointer"
+                        let value = w.Fresh $"input.option.{name}"
+                        w.Inst($"{pointer} = getelementptr inbounds %%AlOwningFieldLocation, ptr {location}, i32 0, i32 {index}")
+                        w.Inst($"{value} = load i32, ptr {pointer}, align 4")
+                        value
+                    let child =
+                        { Type = itemType
+                          Offset = loadCase 0 "offset"
+                          Payload = loadCase 1 "payload"
+                          Extent = loadCase 2 "extent"
+                          OwnerEnd = entry.OwnerEnd }
+                    emitValidateEntryValue w owner child itemType failureLabel
+                    w.Inst($"br label %%{join}")
+                    w.Line($"{join}:")
+                | IrResult(okType, errorType) when hasValidatedScalar okType || hasValidatedScalar errorType ->
+                    let invalidError = addDiagnostic "OWNING_STACK_INPUT_INVALID" "Unable to inspect a refined value inside the validated host input." owner None [] []
+                    let caseIndex = w.Fresh "input.result.case"
+                    let location = w.Fresh "input.result.location"
+                    w.Inst($"{caseIndex} = alloca i32, align 4")
+                    w.Inst($"{location} = alloca %%AlOwningFieldLocation, align 4")
+                    let status = w.Fresh "input.result.status"
+                    w.Inst($"{status} = call i32 @al_owning_locate_sum_case(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex ty}, i32 {entry.Offset}, i32 {entry.Extent}, i32 {invalidError}, ptr {caseIndex}, ptr {location})")
+                    emitStatusResult w status failureLabel
+                    let tag = w.Fresh "input.result.tag"
+                    w.Inst($"{tag} = load i32, ptr {caseIndex}, align 4")
+                    let okCase = w.Fresh "input.result.is.ok"
+                    let okLabel = w.Label "input.result.ok"
+                    let errorLabel = w.Label "input.result.error"
+                    let join = w.Label "input.result.validated"
+                    w.Inst($"{okCase} = icmp eq i32 {tag}, 0")
+                    w.Inst($"br i1 {okCase}, label %%{okLabel}, label %%{errorLabel}")
+                    let loadCase index name =
+                        let pointer = w.Fresh $"input.result.{name}.pointer"
+                        let value = w.Fresh $"input.result.{name}"
+                        w.Inst($"{pointer} = getelementptr inbounds %%AlOwningFieldLocation, ptr {location}, i32 0, i32 {index}")
+                        w.Inst($"{value} = load i32, ptr {pointer}, align 4")
+                        value
+                    if hasValidatedScalar okType then
+                        w.Line($"{okLabel}:")
+                        let child =
+                            { Type = okType
+                              Offset = loadCase 0 "offset"
+                              Payload = loadCase 1 "payload"
+                              Extent = loadCase 2 "extent"
+                              OwnerEnd = entry.OwnerEnd }
+                        emitValidateEntryValue w owner child okType failureLabel
+                        w.Inst($"br label %%{join}")
+                    else
+                        w.Line($"{okLabel}:")
+                        w.Inst($"br label %%{join}")
+                    if hasValidatedScalar errorType then
+                        w.Line($"{errorLabel}:")
+                        let child =
+                            { Type = errorType
+                              Offset = loadCase 0 "offset"
+                              Payload = loadCase 1 "payload"
+                              Extent = loadCase 2 "extent"
+                              OwnerEnd = entry.OwnerEnd }
+                        emitValidateEntryValue w owner child errorType failureLabel
+                        w.Inst($"br label %%{join}")
+                    else
+                        w.Line($"{errorLabel}:")
+                        w.Inst($"br label %%{join}")
+                    w.Line($"{join}:")
+                | _ -> ()
+
         let emitFrameFunction symbol owner (inputTypes: IrType list) (outputTypes: IrType list) (block: IrBlock) (analysis: ArenaLifetimeBodyAnalysis) (frameSourceMap: Map<SourceSiteId, IrSourceSite>) =
             let plan = buildDynamicFunctionPlan block
             let w = OwningLlvmWriter()
@@ -3105,7 +3453,8 @@ module OwningStackAot =
                         emitStatusResult w status failBody
                         stack <- push stack IrString destination (string literalExtent) (string literalPayload) next
                     | IrOperation.Constant _ -> invalidOp "Owning validation missed a verified dynamic constant."
-                    | IrOperation.MakeEnumCase(_, key, caseIndex) ->
+                    | IrOperation.MakeEnumCase(call, key, caseIndex) ->
+                        emitInlineTargetDepthGuard w call.ResolvedName instructionSpan failBody
                         let ty = IrNominal key
                         let cursor = emitContextLoad w "%ctx" 2
                         let next = emitOffset w cursor "8"
@@ -3433,6 +3782,7 @@ module OwningStackAot =
                         locals <- currentLocals
                         localTypes <- firstBlock.ExitShape.LocalTypes
                     | IrOperation.MakeRecord(call, key, _) ->
+                        emitInlineTargetDepthGuard w call.ResolvedName instructionSpan failBody
                         let values, prefix = pop call.InputTypes.Length
                         let recordType = IrNominal key
                         let layout = typeInfo recordType
@@ -3468,16 +3818,26 @@ module OwningStackAot =
                         w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId recordType}, i32 {recordStart}, i32 {outputExtent}, i32 {recordPayload}, i32 0, i32 0)")
                         emitRuntimeStatus w "%ctx" failBody
                         stack <- push prefix recordType recordStart outputExtent recordPayload recordEnd
-                    | IrOperation.WrapScalar(_, key, _) ->
+                    | IrOperation.WrapScalar(call, key, validator) ->
+                        emitInlineTargetDepthGuard w call.ResolvedName instructionSpan failBody
                         let values, prefix = pop 1
                         let input = List.head values
+                        let scalarType = IrNominal key
+                        match info.ValidatedScalarValidators.TryFind scalarType with
+                        | Some frozenValidator ->
+                            if validator <> Some frozenValidator then
+                                invalidOp "Validated scalar wrap diverged from its frozen type validator during emission."
+                            emitFrozenValidatorCall w scalarType frozenValidator input true instructionSpan failBody
+                        | None -> ()
                         stack <- push prefix (IrNominal key) input.Offset input.Extent input.Payload input.OwnerEnd
-                    | IrOperation.UnwrapScalar(_, key) ->
+                    | IrOperation.UnwrapScalar(call, key) ->
+                        emitInlineTargetDepthGuard w call.ResolvedName instructionSpan failBody
                         let values, prefix = pop 1
                         let input = List.head values
                         let scalar = scalarDefinition info.Program (IrNominal key) |> Option.get
                         stack <- push prefix scalar.BaseType input.Offset input.Extent input.Payload input.OwnerEnd
                     | IrOperation.GetRecordField(call, key, fieldIndex) ->
+                        emitInlineTargetDepthGuard w call.ResolvedName instructionSpan failBody
                         let values, prefix = pop 1
                         let parent = List.head values
                         let parentType = IrNominal key
@@ -3503,6 +3863,10 @@ module OwningStackAot =
                         ignore fieldName
                         stack <- push prefix fieldType fieldOffset fieldExtent fieldPayload parent.OwnerEnd
                     | IrOperation.Call call ->
+                        match call.ResolvedTarget with
+                        | PrimitiveTarget _ | GeneratedWordTarget _ ->
+                            emitInlineTargetDepthGuard w call.ResolvedName instructionSpan failBody
+                        | UserWordTarget _ -> ()
                         match call.ResolvedTarget with
                         | PrimitiveTarget(PrimitiveId operation) ->
                             let values, prefix = pop call.InputTypes.Length
@@ -3635,7 +3999,7 @@ module OwningStackAot =
                                     w.Inst($"{isZero} = icmp eq i64 {b}, 0")
                                     let zeroLabel = w.Label "divide.zero"
                                     let nonzeroLabel = w.Label "divide.nonzero"
-                                    let zeroError = addDiagnostic "RUNTIME_DIVIDE_BY_ZERO" "Integer division by zero." currentOwner instructionSpan [] []
+                                    let zeroError = addDiagnostic "RUNTIME_DIVIDE_BY_ZERO" "Integer division by zero." operation instructionSpan [] []
                                     w.Inst($"br i1 {isZero}, label %%{zeroLabel}, label %%{nonzeroLabel}")
                                     w.Line($"{zeroLabel}:")
                                     w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {zeroError}, i32 0, i32 0)")
@@ -3649,7 +4013,7 @@ module OwningStackAot =
                                     w.Inst($"{overflow} = and i1 {isMin}, {isMinusOne}")
                                     let overflowLabel = w.Label "divide.overflow"
                                     let validLabel = w.Label "divide.valid"
-                                    let overflowError = addDiagnostic "RUNTIME_OVERFLOW" "Integer division overflow." currentOwner instructionSpan [] []
+                                    let overflowError = addDiagnostic "RUNTIME_OVERFLOW" "Integer division overflow." operation instructionSpan [] []
                                     w.Inst($"br i1 {overflow}, label %%{overflowLabel}, label %%{validLabel}")
                                     w.Line($"{overflowLabel}:")
                                     w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {overflowError}, i32 0, i32 0)")
@@ -3675,7 +4039,7 @@ module OwningStackAot =
                                     w.Inst($"{overflow} = extractvalue {{ i64, i1 }} {tuple}, 1")
                                     let overflowLabel = w.Label "integer.overflow"
                                     let validLabel = w.Label "integer.valid"
-                                    let overflowError = addDiagnostic "RUNTIME_OVERFLOW" $"'{operation}' overflowed its Int64 result." currentOwner instructionSpan [] []
+                                    let overflowError = addDiagnostic "RUNTIME_OVERFLOW" $"'{operation}' overflowed its Int64 result." operation instructionSpan [] []
                                     w.Inst($"br i1 {overflow}, label %%{overflowLabel}, label %%{validLabel}")
                                     w.Line($"{overflowLabel}:")
                                     w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {overflowError}, i32 0, i32 0)")
@@ -4214,6 +4578,8 @@ module OwningStackAot =
         let wrapperFailure = wrapper.Label "entry.failure"
         let wrapperBodyFailure = wrapper.Label "entry.body.failure"
         let wrapperSuccess = wrapper.Label "entry.success"
+        let hasValidatedEntryInputs = body.BodyInputTypes |> List.exists hasValidatedScalar
+        let wrapperValidationFailure = if hasValidatedEntryInputs then Some(wrapper.Label "entry.validation.failure") else None
         wrapper.Line("define dllexport i32 @agentlang_owning_execute(ptr %ctx, ptr %input, i32 %input.bytes, ptr %input.extents, i32 %input.count, ptr %retained, i32 %retained.capacity) {")
         wrapper.Line("entry:")
         wrapper.Inst("call void @al_owning_begin(ptr %ctx)")
@@ -4323,6 +4689,33 @@ module OwningStackAot =
             let pointer = emitDescriptorElementPointer wrapper inputDescriptors index
             emitStoreDescriptor wrapper pointer entry
             emitDescriptorTransfer wrapper entry wrapperFailure
+
+        if hasValidatedEntryInputs then
+            // Raw-value admission is a top-level semantic callsite. Its
+            // validator body must have the same depth as a user call made
+            // from the verified entry body, whose native entry frame is
+            // already active. Add that frame only while validating host
+            // inputs, then remove it on both successful and failed paths.
+            let validationDepthError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." body.BodyName None [] []
+            let validationFrame = wrapper.Fresh "entry.validation.frame.entered"
+            wrapper.Inst($"{validationFrame} = call i32 @al_owning_enter_frame(ptr %%ctx, i32 {validationDepthError})")
+            emitStatusResult wrapper validationFrame wrapperFailure
+            for _, sourceOffset, extentBytes, payloadBytes, ty in inputSizes do
+                if hasValidatedScalar ty then
+                    let entry =
+                        { Type = ty
+                          Offset = sourceOffset
+                          Extent = extentBytes
+                          Payload = payloadBytes
+                          OwnerEnd = emitOffset wrapper sourceOffset extentBytes }
+                    emitValidateEntryValue wrapper body.BodyName entry ty wrapperValidationFailure.Value
+            wrapper.Inst("call void @al_owning_leave_frame(ptr %ctx)")
+            let validationSucceeded = wrapper.Label "entry.validation.succeeded"
+            wrapper.Inst($"br label %%{validationSucceeded}")
+            wrapper.Line(wrapperValidationFailure.Value + ":")
+            wrapper.Inst("call void @al_owning_leave_frame(ptr %ctx)")
+            wrapper.Inst($"br label %%{wrapperFailure}")
+            wrapper.Line(validationSucceeded + ":")
 
         let outputDescriptors =
             if body.BodyOutputTypes.IsEmpty then "null"
@@ -4895,7 +5288,7 @@ module OwningStackAot =
         (verifiedResume: VerifiedIrBody) =
         if String.IsNullOrWhiteSpace outputDirectory then invalidArg (nameof outputDirectory) "Output directory must be nonempty."
         let verifiedBodies = [ verifiedInit; verifiedBegin; verifiedResume ]
-        let programInfo = makeProgramInfoForBodies verifiedBodies
+        let programInfo = makeProgramInfoForBodies false verifiedBodies
         validateMailboxSignatures programInfo |> ignore
         let checkedBodies =
             verifiedBodies

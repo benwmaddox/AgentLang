@@ -136,6 +136,15 @@ Future collection types are `List<T>`, `Option<T>`, and `Result<T,E>`. These are
 
 Named semantic types are required in the first release. `Email` is distinct from `String`; `MetersPerSecond` is distinct from `Float` and from other units over Float. A wrapper has one underlying scalar type, an optional pure validation predicate, and generated construction/unwrapping operations. Construction checks the predicate before creating a value and returns a structured refinement error on rejection. No implicit coercion or representation-based interchange is allowed. Nominal distinction is checked statically; value predicates are checked at construction time. A constructed value retains its nominal type throughout stack checking, records, calls, and persistence.
 
+A nominal tag supplied by a host is not proof that its predicate passed. Raw
+host-value ingress must check exact type/payload identity and run the validator
+frozen into the verified program, including active nested record and Option/Result
+values, before user code or output publication. False predicates produce a
+refinement error; failures while executing a validator retain their own error.
+Verified immutable retained roots may preserve their validated provenance without
+rechecking on every turn. Each backend and mailbox ingress must either enforce
+this boundary or reject the unsupported refined type explicitly.
+
 For example, the target Flow declaration contract is:
 
 ```text

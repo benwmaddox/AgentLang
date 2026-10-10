@@ -506,7 +506,7 @@ try {
     $nominalExpectedScalarExtent = 8
     $nominalRunsMissingCoverage = @($nominalRuns | Where-Object {
         $_['signedFixtureCount'] -ne $nominalExpectedSignedNames.Count -or
-        $_['unsupportedDefinitionCount'] -ne 4 -or
+        $_['unsupportedDefinitionCount'] -ne 3 -or
         $_['ownerRangeTransferCount'] -lt 1 -or
         $_['ownerEndBytes'] -ne $nominalExpectedOwnerEnd -or
         $_['scalarPayloadExtentBytes'] -ne $nominalExpectedScalarExtent
@@ -517,7 +517,7 @@ try {
     Add-Check 'nominal Int report has complete O0/O2 signed, unsupported, and owner-range summaries' $nominalRunCoveragePassed ([ordered]@{
         expectedOptimizations = @('O0', 'O2')
         expectedSignedFixtureCount = $nominalExpectedSignedNames.Count
-        expectedUnsupportedDefinitionCount = 4
+        expectedUnsupportedDefinitionCount = 3
         expectedOwnerEndBytes = $nominalExpectedOwnerEnd
         expectedScalarPayloadExtentBytes = $nominalExpectedScalarExtent
         actualOptimizationNames = $nominalRunOptimizationNames
@@ -564,7 +564,7 @@ try {
         $nominalCaseSuffixes.Add("$caseName/host-identity-trace")
         $nominalCaseSuffixes.Add("$caseName/wrap-unwrap-retags")
     }
-    foreach ($unsupportedName in @('PositiveId', 'BoolTag', 'TextTag', 'FloatTag')) {
+    foreach ($unsupportedName in @('BoolTag', 'TextTag', 'FloatTag')) {
         $nominalCaseSuffixes.Add("unsupported-$unsupportedName-is-explicit")
     }
     $nominalExpectedCheckNames = [Collections.Generic.List[string]]::new()
@@ -584,14 +584,178 @@ try {
         if ($matchingChecks.Count -ne 1) { $nominalMissingChecks.Add("$expectedName (count=$($matchingChecks.Count))") }
         elseif (-not [bool]$matchingChecks[0]['passed']) { $nominalFailingChecks.Add($expectedName) }
     }
-    $nominalCheckCoveragePassed = $nominalCaseSuffixes.Count -eq 47 -and
+    $nominalCheckCoveragePassed = $nominalCaseSuffixes.Count -eq 46 -and
         $nominalMissingChecks.Count -eq 0 -and $nominalFailingChecks.Count -eq 0
-    Add-Check 'nominal Int case checks cover every pinned O0/O2 identity, wrap, aggregate, owner, capacity, rejection, and unsupported case' $nominalCheckCoveragePassed ([ordered]@{
+    Add-Check 'nominal Int case checks cover every pinned O0/O2 identity, wrap, aggregate, owner, capacity, rejection, and non-Int unsupported case' $nominalCheckCoveragePassed ([ordered]@{
         expectedCasesPerOptimization = $nominalCaseSuffixes.Count
         expectedTotalCheckCount = $nominalExpectedCheckNames.Count
         actualNominalCheckCount = $nominalEvidenceChecks.Count
         missingOrDuplicateChecks = @($nominalMissingChecks)
         failingChecks = @($nominalFailingChecks)
+    })
+
+    $positiveOracle = $nativeFixture['positiveIdConformance']
+    $positiveFixturePassed = $false
+    $positiveFixtureFalseNames = @()
+    if ($null -ne $positiveOracle) {
+        $positiveIds = $positiveOracle['identityProgram']['typeIds']
+        $positiveFalseCases = @($positiveOracle['constructor']['falseCases'])
+        $positiveFixtureFalseNames = @($positiveFalseCases | ForEach-Object { [string]$_['name'] })
+        $positiveFalseDiagnosticsPassed = $positiveFalseCases.Count -eq 2
+        foreach ($falseCase in $positiveFalseCases) {
+            $expectedValue = if ([string]$falseCase['name'] -ceq 'zero') { '0' } else { '-1' }
+            $diagnostic = $falseCase['diagnostic']
+            $span = $diagnostic['span']
+            $positiveFalseDiagnosticsPassed = $positiveFalseDiagnosticsPassed -and
+                [string]$falseCase['value'] -ceq $expectedValue -and
+                [string]$diagnostic['code'] -ceq 'REFINEMENT_FAILED' -and
+                [string]$diagnostic['word'] -ceq 'PositiveId.construct' -and
+                ([string[]]$diagnostic['expected'] -join ',') -ceq 'validator returns true' -and
+                ([string[]]$diagnostic['actual'] -join ',') -ceq 'false' -and
+                [string]$span['file'] -ceq '<native-value-stack-scalar-PositiveId>' -and
+                [int]$span['line'] -eq 1 -and [int]$span['column'] -eq 1 -and [int]$span['length'] -eq 1
+        }
+        $hostFalse = $positiveOracle['hostFalseDiagnostic']
+        $hostFalseSpan = $hostFalse['span']
+        $hostShape = $positiveOracle['hostShapeRejections']
+        $hostShapeCases = @($hostShape['cases'])
+        $hostShapeCaseNames = @($hostShapeCases | ForEach-Object { [string]$_['name'] })
+        $hostShapeFixturePassed =
+            [string]$hostShape['exceptionType'] -ceq 'System.ArgumentException' -and
+            [string]$hostShape['parameterName'] -ceq 'values' -and
+            $hostShapeCases.Count -eq 2 -and
+            ($hostShapeCaseNames -join ',') -ceq 'bare-int,wrong-nominal' -and
+            [string]$hostShapeCases[0]['kind'] -ceq 'int' -and [string]$hostShapeCases[0]['value'] -ceq '1' -and
+            [string]$hostShapeCases[1]['kind'] -ceq 'named-int' -and
+            [string]$hostShapeCases[1]['typeName'] -ceq 'OrderId' -and
+            [string]$hostShapeCases[1]['value'] -ceq '1'
+        $overflowDiagnostic = $positiveOracle['overflowValidator']['diagnostic']
+        $overflowSpan = $overflowDiagnostic['span']
+        $bodyFailureDiagnostic = $positiveOracle['bodyFailureDiagnostic']
+        $bodyFailureSpan = $bodyFailureDiagnostic['span']
+        $nested = $positiveOracle['nestedHostInputs']
+        $positiveFixturePassed =
+            [int]$nativeFixture['schemaVersion'] -eq 3 -and
+            [int]$positiveIds['OrderId'] -eq 4 -and [int]$positiveIds['PositiveId'] -eq 5 -and
+            [int]$positiveIds['payloadBytes'] -eq 8 -and
+            [string]$positiveOracle['identityProgram']['pairBytesHex'] -ceq '0100000000000000d6ffffffffffffff' -and
+            [string]$positiveOracle['constructor']['success']['value'] -ceq '1' -and
+            [string]$positiveOracle['constructor']['success']['intBytesHex'] -ceq '0100000000000000' -and
+            ($positiveFixtureFalseNames -join ',') -ceq 'zero,negative-one' -and $positiveFalseDiagnosticsPassed -and
+            [string]$positiveOracle['hostInputs']['positiveIdBytesHex'] -ceq '0100000000000000' -and
+            $hostShapeFixturePassed -and
+            [string]$nested['envelopeBytesHex'] -ceq '010000000000000002000000000000006f006b0000000000' -and
+            [string]$nested['optionSomeBytesHex'] -ceq '00000000000000000100000000000000' -and
+            [string]$nested['optionNoneBytesHex'] -ceq '0100000000000000' -and
+            [string]$nested['resultOkBytesHex'] -ceq '00000000000000000100000000000000' -and
+            [string]$nested['resultErrorBytesHex'] -ceq '01000000000000000100000000000000' -and
+            [string]$nested['resultInactiveBytesHex'] -ceq '00000000000000000700000000000000' -and
+            [string]$hostFalse['code'] -ceq 'REFINEMENT_FAILED' -and
+            [string]$hostFalse['message'] -ceq "Value does not satisfy PositiveId's refinement validator." -and
+            [string]$hostFalse['word'] -ceq 'PositiveId.construct' -and
+            ([string[]]$hostFalse['expected'] -join ',') -ceq 'validator returns true' -and
+            ([string[]]$hostFalse['actual'] -join ',') -ceq 'false' -and
+            [string]$hostFalseSpan['file'] -ceq '<native-value-stack-scalar-PositiveId>' -and
+            [int]$hostFalseSpan['line'] -eq 1 -and [int]$hostFalseSpan['column'] -eq 1 -and [int]$hostFalseSpan['length'] -eq 1 -and
+            [string]$overflowDiagnostic['code'] -ceq 'RUNTIME_OVERFLOW' -and
+            [string]$overflowDiagnostic['word'] -ceq 'divide' -and
+            [string]$overflowDiagnostic['message'] -ceq 'Integer division overflow.' -and
+            [string]$overflowSpan['file'] -ceq '<native-value-stack-positive-id-overflow-validator-divide>' -and [int]$overflowSpan['line'] -eq 1 -and [int]$overflowSpan['column'] -eq 4 -and [int]$overflowSpan['length'] -eq 1 -and
+            [string]$bodyFailureDiagnostic['code'] -ceq 'RUNTIME_DIVIDE_BY_ZERO' -and
+            [string]$bodyFailureDiagnostic['word'] -ceq 'divide' -and
+            [string]$bodyFailureDiagnostic['message'] -ceq 'Integer division by zero.' -and
+            [string]$bodyFailureSpan['file'] -ceq '<native-value-stack-positive-id-body-failure-divide>' -and [int]$bodyFailureSpan['line'] -eq 1 -and [int]$bodyFailureSpan['column'] -eq 3 -and [int]$bodyFailureSpan['length'] -eq 1 -and
+            [string]$positiveOracle['sentinelByteHex'] -ceq 'a5'
+    }
+    Add-Check 'PositiveId fixture pins distinct Int TypeIds, constructor diagnostics, nested bytes, inactive alternatives, and validator errors' $positiveFixturePassed ([ordered]@{
+        expectedTypeIds = [ordered]@{ OrderId = 4; PositiveId = 5 }
+        actualTypeIds = if ($null -eq $positiveOracle) { $null } else { $positiveOracle['identityProgram']['typeIds'] }
+        expectedFalseCaseNames = @('zero', 'negative-one')
+        actualFalseCaseNames = $positiveFixtureFalseNames
+        expectedHostShapeCases = @('bare-int', 'wrong-nominal OrderId')
+        actualHostShapeCases = $hostShapeCaseNames
+        expectedPositiveIdBytesHex = '0100000000000000'
+        expectedEnvelopeBytesHex = '010000000000000002000000000000006f006b0000000000'
+        expectedHostFailure = 'REFINEMENT_FAILED / PositiveId.construct / scalar declaration span'
+        expectedOverflow = 'RUNTIME_OVERFLOW / divide / <native-value-stack-positive-id-overflow-validator-divide>:1:4:1'
+        expectedBodyFailure = 'RUNTIME_DIVIDE_BY_ZERO / divide / <native-value-stack-positive-id-body-failure-divide>:1:3:1'
+    })
+
+    $positiveCaseSuffixes = @(
+        'type-identities-and-eight-byte-payloads',
+        'constructor-success-one',
+        'constructor-reject-zero-parity',
+        'constructor-reject-negative-one-parity',
+        'input-only-validator-closure',
+        'distinct-typeids-and-pair-bytes',
+        'record-field-host-validation',
+        'record-field-negative-rejected-atomically',
+        'option-some-active-host-validation',
+        'option-some-invalid-payload-rejected-atomically',
+        'option-none-inactive-payload-skips-validator',
+        'result-ok-active-host-validation',
+        'result-ok-invalid-payload-rejected-atomically',
+        'result-error-active-host-validation',
+        'result-error-invalid-payload-rejected-atomically',
+        'result-inactive-alternative-skips-validator',
+        'overflow-validator-preserves-runtime-overflow',
+        'overflowing-host-validator-preserves-runtime-overflow',
+        'input-validation-precedes-pure-body-failure'
+    )
+    $positiveRuns = @()
+    if ($null -ne $experimentEvidence['positiveIdRuns']) { $positiveRuns = @($experimentEvidence['positiveIdRuns']) }
+    $positiveRunOptimizationNames = @($positiveRuns | ForEach-Object { [string]$_['optimization'] } | Sort-Object) -join ','
+    $positiveExpectedProvenanceCoverage = 'Refined provenance is covered by the existing measured nominal owner-range tests; PositiveId has no separate OwnerEnd trace in this suite.'
+    $positiveRunsMissingCoverage = @($positiveRuns | Where-Object {
+        $_['caseCount'] -ne $positiveCaseSuffixes.Count -or
+        $_['constructorFailureCount'] -ne 2 -or
+        $_['nestedHostInputCount'] -ne 10 -or
+        $_['overflowValidatorCount'] -ne 1 -or
+        $_['inputOnlyValidatorClosureCount'] -ne 1 -or
+        $_['divideDiagnosticSpanSemantics'] -cne 'Interpreter divide errors have no span; native diagnostics retain verified instruction-site spans.' -or
+        $_['provenanceCoverage'] -cne $positiveExpectedProvenanceCoverage -or
+        $_['positiveIdTypeId'] -ne 5 -or $_['orderIdTypeId'] -ne 4
+    }).Count
+    $positiveRunCoveragePassed = $positiveRuns.Count -eq 2 -and
+        $positiveRunOptimizationNames -ceq 'O0,O2' -and
+        $positiveRunsMissingCoverage -eq 0
+    Add-Check 'PositiveId report has complete O0/O2 constructor, ingress, closure, and overflow summaries' $positiveRunCoveragePassed ([ordered]@{
+        expectedOptimizations = @('O0', 'O2')
+        expectedCaseCountPerOptimization = $positiveCaseSuffixes.Count
+        expectedTypeIds = [ordered]@{ OrderId = 4; PositiveId = 5 }
+        expectedProvenanceCoverage = $positiveExpectedProvenanceCoverage
+        actualOptimizationNames = $positiveRunOptimizationNames
+        incompleteRunCount = $positiveRunsMissingCoverage
+        actualRuns = $positiveRuns
+    })
+    $positiveExpectedCheckNames = [Collections.Generic.List[string]]::new()
+    foreach ($optimizationName in @('O0', 'O2')) {
+        foreach ($suffix in $positiveCaseSuffixes) {
+            $positiveExpectedCheckNames.Add("positive-id/$optimizationName/$suffix")
+        }
+    }
+    $positiveEvidenceChecks = @()
+    if ($null -ne $experimentEvidence['checks']) {
+        $positiveEvidenceChecks = @($experimentEvidence['checks'] | Where-Object { [string]$_['name'] -like 'positive-id/*' })
+    }
+    $positiveMissingChecks = [Collections.Generic.List[string]]::new()
+    $positiveFailingChecks = [Collections.Generic.List[string]]::new()
+    foreach ($expectedName in $positiveExpectedCheckNames) {
+        $matchingChecks = @($positiveEvidenceChecks | Where-Object { [string]$_['name'] -ceq $expectedName })
+        if ($matchingChecks.Count -ne 1) { $positiveMissingChecks.Add("$expectedName (count=$($matchingChecks.Count))") }
+        elseif (-not [bool]$matchingChecks[0]['passed']) { $positiveFailingChecks.Add($expectedName) }
+    }
+    $positiveCheckCoveragePassed = $positiveCaseSuffixes.Count -eq 19 -and
+        $positiveExpectedCheckNames.Count -eq 38 -and
+        $positiveEvidenceChecks.Count -eq $positiveExpectedCheckNames.Count -and
+        $positiveMissingChecks.Count -eq 0 -and $positiveFailingChecks.Count -eq 0
+    Add-Check 'PositiveId cases cover exact O0/O2 constructor parity, raw ingress shapes, inactive alternatives, and failure atomicity' $positiveCheckCoveragePassed ([ordered]@{
+        expectedCasesPerOptimization = $positiveCaseSuffixes.Count
+        expectedTotalCheckCount = $positiveExpectedCheckNames.Count
+        actualPositiveIdCheckCount = $positiveEvidenceChecks.Count
+        unexpectedPositiveIdCheckCount = $positiveEvidenceChecks.Count - $positiveExpectedCheckNames.Count
+        missingOrDuplicateChecks = @($positiveMissingChecks)
+        failingChecks = @($positiveFailingChecks)
     })
 
     Add-Check 'fixed three-way controls share one compiler-authorized program instance' ([bool]$experimentEvidence.fixedControlVerifiedProgramInstance) $experimentEvidence.backendScope

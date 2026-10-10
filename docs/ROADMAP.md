@@ -75,6 +75,17 @@ is established. Correct the shared help-primer request for future trials. Next
 efficacy work should stress shared-rule/caller maintenance rather than repeat
 this easy composition task. Native refinement work remains a separate track.
 
+The next bounded maintenance candidate uses the runnable accepted report-166
+projects: require subscription handoff inside its half-open term window,
+preserving existing cancellation-error precedence and dry-run state behavior.
+Exercise the shared rule through both existing callers. Use an independent
+boundary/precedence oracle and baseline, correct, off-by-one and wrong-order
+controls before dispatch. Preserve inherited tests at the starting snapshot;
+report intentional contract updates separately from lost assertions. A seeded
+defect that prevents durable library reload is unsuitable for this comparison.
+Reuse the existing harness and score behavior, collateral edits, test quality
+and vocabulary reuse separately. This is a planned task, not an efficacy result.
+
 [Report 164](../reports/164-result-test-guidance.md) completes the returned-Result
 help improvement with executable examples that qualify as library vocabulary.
 Fresh participants have now used the updated help. The coordinated signature
@@ -141,10 +152,18 @@ generated targets are checked; wrap/unwrap preserves payload and owner range
 without copying. The 521-assertion LLVM suite, 94 independent nominal cases at
 O0/O2, existing mailbox regressions and all 37 full local Release checks pass.
 This adds no new agent-efficacy or throughput result. The
-[native typing plan](NATIVE-NOMINALS-IMPLEMENTATION.md) next adds a bounded
-predicate-bearing Int refinement before extending String/Email support. This is
+[native typing plan](NATIVE-NOMINALS-IMPLEMENTATION.md) retains bounded
+predicate-bearing Int refinements before extending String/Email support. This is
 a delivery order, not a weakening of the strong-type requirement. Unsupported
 validators must remain explicit errors; preserve a coherent baseline for each gate.
+
+[Report 172](../reports/172-native-refined-int.md) delivers the ordinary owning
+Int-backed refinement slice with frozen validator identity, constructor checks
+and recursive raw host-input validation before entry execution. Fresh gates
+pass: 595 LLVM assertions, 44 native checks, 1,587 mailbox checks and all 37 full
+local Release checks. Refined mailbox layouts remain rejected until that boundary
+has independent coverage. String/Email refinements remain later work. This
+engineering milestone adds no agent-efficacy or throughput result.
 
 A development-load follow-up should measure fresh project activation separately
 from warm request latency. Report 169 records similar 23–25-second fresh CLI
