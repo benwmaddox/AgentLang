@@ -47,6 +47,14 @@ Freeze behavioral and collateral-preservation criteria separately, including
 allowed fixture changes. Avoid more easy composition variants or new harness
 infrastructure. Native LLVM/arena conformance remains the secondary track.
 
+[Report 178](../reports/178-preview-defect-control-calibration.md) calibrates the
+first defect-repair stage: three correct controls pass 37 independent cases,
+and three faulty controls fail the same eight cases despite passing their saved
+tests. Library coverage rejects the untested branch, then accepts it when a
+deliberately mistaken expectation covers it. No experimental participants have
+been dispatched. Freeze the distinct follow-up maintenance task and preservation
+exceptions before running the sequence; retain the existing brokers.
+
 [Report 149](../reports/149-validated-window-reuse.md) and
 [report 150](../reports/150-shared-rule-maintenance.md) complete the validated
 billing composition/maintenance sequence. Both environments reuse the API and
