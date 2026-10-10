@@ -4539,6 +4539,14 @@ test-file no-fixture-calls {
         equal ("\"" + changedClock + "\"") (stringValue (evalFlow changedClockEngine "guarded::answer()" |> expectOk "execute word after failed deprecation" |> fun response -> response.["data"].["stack"].[0])) "failed deprecation leaves the persisted implementation callable under the new clock"
 
         let libraryProject = Path.Combine(root, "flow-maintenance-library-coverage")
+        let changedClockBaseline = Runtime.Engine(libraryProject, capabilities, changedClock, fileSystemMode = FileSystemMode.Virtual)
+        let markerSource = "word snapshot.marker() -> Int {\n    effects none\n    1\n}"
+        let markerTest = "test snapshot.marker/baseline { snapshot::marker() => 1 }"
+        defineFlow changedClockBaseline markerSource [ markerTest ] [] [] |> expectOk "define a baseline for the changed-clock snapshot" |> ignore
+        commit changedClockBaseline "commit" "snapshot.marker" [] |> expectOk "commit the changed-clock snapshot baseline" |> ignore
+        dispatch changedClockBaseline "snapshot.save" [ "name", jstr "changed-clock-baseline" ]
+        |> expectOk "save a named snapshot under the changed clock"
+        |> ignore
         let libraryEngine = Runtime.Engine(libraryProject, capabilities, savedClock, fileSystemMode = FileSystemMode.Virtual)
         let librarySource =
             "word coverage.branch(value: String) -> Int {\n"
@@ -4562,6 +4570,9 @@ test-file no-fixture-calls {
         |> expectOk "commit Flow library with actual own-site coverage of both clock comparison branches"
         |> ignore
         assertAllPassed 2 (dispatch libraryEngine "test" [ "word", jstr "coverage.branch" ] |> expectOk "verify both coverage fixture tests pass before mutation")
+        dispatch libraryEngine "snapshot.save" [ "name", jstr "saved-clock-library" ]
+        |> expectOk "save a library snapshot under its qualifying clock"
+        |> ignore
         let libraryStore = Storage.create libraryProject
         let beforeChangedClockReload = Storage.load libraryStore |> Result.defaultWith (fun problem -> failwith problem.Message)
         let beforeLibraryExport = File.ReadAllBytes(Path.Combine(libraryProject, "dictionary.agent"))
@@ -4573,6 +4584,12 @@ test-file no-fixture-calls {
         let afterChangedClockReload = Storage.load libraryStore |> Result.defaultWith (fun problem -> failwith problem.Message)
         equal beforeChangedClockReload.ManifestHash afterChangedClockReload.ManifestHash "failed durable library requalification leaves storage authority unchanged"
         check (beforeLibraryExport.AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(libraryProject, "dictionary.agent")).AsSpan())) "failed durable library requalification leaves export bytes unchanged"
+        let snapshotReload = Runtime.Engine(libraryProject, capabilities, savedClock, fileSystemMode = FileSystemMode.Virtual)
+        let clockBaseline = dispatch snapshotReload "snapshot.load" [ "name", jstr "changed-clock-baseline" ] |> expectOk "restore the earlier named snapshot and its clock"
+        equal changedClock (stringValue clockBaseline.["data"].["clockValue"]) "named snapshot applies its saved clock before another snapshot is loaded"
+        let restoredLibrary = dispatch snapshotReload "snapshot.load" [ "name", jstr "saved-clock-library" ] |> expectOk "restore and requalify a library under its saved clock"
+        equal savedClock (stringValue restoredLibrary.["data"].["clockValue"]) "named snapshot requalification uses and restores the library snapshot clock"
+        assertAllPassed 2 (dispatch snapshotReload "test" [ "word", jstr "coverage.branch" ] |> expectOk "run library tests after named snapshot requalification")
 
     let private testFlowStaticListFold root =
         let project = Path.Combine(root, "flow-static-list-fold")
@@ -5832,6 +5849,7 @@ test-file settings {
         expectError "EFFECT_FILE_NOT_FOUND" (evalFlow engine "overlay::read-raw(\"/missing-outside-tests\")")
         |> ignore
         commit engine "commit" "overlay.read-all" [] |> expectOk "commit the owner and its edited shared wrapper" |> ignore
+        dispatch engine "snapshot.save" [ "name", jstr "overlay-baseline" ] |> expectOk "save the named snapshot with its shared test-file override" |> ignore
 
         let store = Storage.create project
         let load () = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
@@ -5839,6 +5857,7 @@ test-file settings {
             let head = snapshot.Manifest.Value.Words |> List.find (fun item -> item.CurrentName = name)
             snapshot.Manifest.Value.Revisions |> List.find (fun item -> item.WordId = head.WordId && item.Revision = head.CurrentRevision)
         let beforeRename = load ()
+        let overlayBaseline = beforeRename
         equal 4 beforeRename.Manifest.Value.FormatVersion "shared test-file references use manifest format v4"
         let ownerRevision = currentRevision "overlay.read-all" beforeRename
         equal 1 ownerRevision.Tests.Length "a multi-case wrapper is persisted as one shared source reference"
@@ -5952,6 +5971,19 @@ test-file settings {
         for result in reloadedResults do
             let caseName = stringValue result.["name"]
             check (boolValue result.["passed"]) $"reloaded test-file case {caseName} passes"
+        let snapshotReload = Runtime.Engine(project, capabilities, "2043-04-05T06:07:08Z", fileSystemMode = FileSystemMode.Virtual)
+        dispatch snapshotReload "snapshot.load" [ "name", jstr "overlay-baseline" ]
+        |> expectOk "restore the named snapshot with its shared test-file override"
+        |> ignore
+        equal overlayBaseline.ManifestHash (load ()).ManifestHash "named snapshot restores the manifest that owns the original shared override"
+        let restoredResults = runTests snapshotReload "overlay.read-all" |> rows
+        equal 4 restoredResults.Length "named snapshot restores each saved shared-wrapper case exactly once"
+        for result in restoredResults do
+            let caseName = stringValue result.["name"]
+            check (boolValue result.["passed"]) $"named snapshot test-file case {caseName} passes"
+            equal [ "overlay.read-raw" ] (jsonArrayStrings result.["activeOverrides"]) "named snapshot reactivates the saved override identity only during tests"
+        expectError "EFFECT_FILE_NOT_FOUND" (evalFlow snapshotReload "overlay::read-raw(\"/snapshot-production\")")
+        |> ignore
 
         let contractProject = Path.Combine(root, "flow-test-file-override-contracts")
         let contractEngine = Runtime.Engine(contractProject, capabilities, fileSystemMode = FileSystemMode.Virtual)

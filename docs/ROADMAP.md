@@ -243,6 +243,15 @@ already-validated immutable snapshot before adding caches; retain source/manifes
 validation, legacy loading, test-overlay identity and durable-library requalification.
 Measure before making a speed claim or skipping any validation.
 
+[Report 181](../reports/181-validated-snapshot-reuse.md) tracks that bounded
+refactor: activation and named restore reuse the exact already-validated runtime
+snapshot, preserving library requalification and all storage checks. Focused
+runtime tests, independent source review and all 37 full local Release checks
+pass. Three fresh-process samples per build show no clear startup
+improvement (median 11.513 seconds before, 11.615 after); all responses and
+project bytes match. Profile activation phases before pursuing further
+optimization. This does not add a comparative agent-efficacy result.
+
 [Report 161](../reports/161-real-files-and-test-isolation.md) tracks real
 project-rooted filesystem execution and automatic virtual providers for attached
 tests. Focused runtime, CLI and broker checks and all 37 full local Release checks

@@ -2035,7 +2035,7 @@ module Runtime =
                     | None -> emptyState
                     | Some source -> parsedState source emptyState Map.empty
                 validateGraph proposed
-                proposed
+                compileRuntimeSnapshot proposed
             | Some value ->
                 let mismatch message word = error "STORAGE_PROJECT_MISMATCH" message word None [] []
                 let headsById = value.Words |> List.map (fun head -> head.WordId, head) |> Map.ofList
@@ -2512,7 +2512,7 @@ module Runtime =
                         mismatch "The v1 project export differs semantically from its manifest-backed Stack source objects." None
                 | Some _ -> mismatch "The durable project export does not match its manifest-backed source objects." None
                 | None -> mismatch "Manifest authority has no project export source." None
-                executable.State
+                executable
 
         let loadProject () =
             match store with
@@ -2521,8 +2521,7 @@ module Runtime =
                 match Storage.load projectStore with
                 | Error storageError -> raiseStorageError storageError
                 | Ok loaded ->
-                    let proposed = validateStoredProject projectStore loaded.Manifest loaded.ManifestHash loaded.ProjectSource
-                    let executable = compileRuntimeSnapshot proposed
+                    let executable = validateStoredProject projectStore loaded.Manifest loaded.ManifestHash loaded.ProjectSource
                     pendingLoadedSnapshot <- Some executable
                     storageGeneration <- loaded.Generation
                     storageAuthority <- loaded.Authority
@@ -6578,8 +6577,7 @@ module Runtime =
                                     match Storage.readSource projectStore snapshot.Manifest.ProjectSource with
                                     | Error storageError -> raiseStorageError storageError
                                     | Ok source -> source
-                                let proposed = validateStoredProject projectStore (Some snapshot.Manifest) (Some snapshot.ManifestHash) (Some projectSource)
-                                let executable = compileRuntimeSnapshot proposed
+                                let executable = validateStoredProject projectStore (Some snapshot.Manifest) (Some snapshot.ManifestHash) (Some projectSource)
                                 let previousClock = fixedClock
                                 fixedClock <- defaultArg snapshot.ClockValue "2000-01-01T00:00:00Z"
                                 try
