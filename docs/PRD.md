@@ -278,10 +278,13 @@ The owning-arena LLVM backend supports payload-free enums and bounded
 Option/Result layouts; [report 160](../reports/160-native-option-result.md)
 records the conformance evidence and unsupported native types.
 Ordinary owning-native compilation additionally preserves nominal Int and
-validated String scalar identities with frozen pure predicates; active nested
-payloads are checked at external entry. The bounded String slice is tracked in
-[report 174](../reports/174-native-refined-string.md). It does not establish
-general Email validation or refined mailbox ingress. Unsupported forms must
+String scalar identities. Declared pure predicates are frozen in the semantic
+IR, and active nested payloads are checked at external entry. The original
+bounded String slice is tracked in [report 174](../reports/174-native-refined-string.md),
+refined mailbox ingress in [report 180](../reports/180-native-refined-mailbox.md),
+and predicate-free String wrappers in [report 183](../reports/183-native-nominal-string.md).
+Use those reports' validation status as their completion record. These slices
+do not establish general Email validation. Unsupported forms must
 continue to reject explicitly rather than erase their semantic type.
 
 Tests must support injected deterministic effect providers for IO and other

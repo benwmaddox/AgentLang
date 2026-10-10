@@ -291,8 +291,13 @@ let private stateReentryDiagnosticFixture (name: string) : JsonElement =
     stateReentryFixtureRoot.RootElement.GetProperty("diagnostics").GetProperty(name)
 
 let private artifactRoot =
-    let run = Guid.NewGuid().ToString("N")
-    Path.Combine(Directory.GetCurrentDirectory(), ".agentlang", "native-validation", "tests-" + run)
+    let arguments = Environment.GetCommandLineArgs()
+    match arguments |> Array.tryFindIndex ((=) "--artifacts-path") with
+    | Some index when index + 1 < arguments.Length -> Path.GetFullPath(arguments[index + 1])
+    | Some _ -> invalidArg "--artifacts-path" "The artifact directory must follow --artifacts-path."
+    | None ->
+        let run = Guid.NewGuid().ToString("N")
+        Path.Combine(Directory.GetCurrentDirectory(), ".agentlang", "native-validation", "tests-" + run)
 
 let private compileNative (name: string) (optimization: LlvmOptimization) (body: VerifiedIrBody) =
     let directory = Path.Combine(artifactRoot, name, string optimization)
@@ -310,6 +315,7 @@ type private RawMailboxInvocation =
     { Status: int32
       Context: NativeOwningContext
       Outputs: RawMailboxOutputSlice list
+      StackBytes: byte array
       Diagnostic: OwningMailboxDiagnosticInfo option }
 
 let private mailboxIntBytes (value: int64) = BitConverter.GetBytes value
@@ -373,6 +379,8 @@ let private invokeRawMailboxEntry (native: OwningMailboxCompiledModule) entryInd
         let execute = Marshal.GetDelegateForFunctionPointer<OwningMailboxEntryDelegate>(executePointer)
         let status = execute.Invoke(contextPointer, inputDescriptors, uint32 inputs.Length, outputDescriptors, uint32 outputCapacity)
         let finalContext = Marshal.PtrToStructure<NativeOwningContext>(contextPointer)
+        let stackBytes = Array.zeroCreate<byte> stackCapacity
+        Marshal.Copy(stack, stackBytes, 0, stackCapacity)
         let outputSize = Marshal.SizeOf<RawMailboxOutputSlice>()
         let outputValues =
             [ for index in 0 .. outputCapacity - 1 do
@@ -381,6 +389,7 @@ let private invokeRawMailboxEntry (native: OwningMailboxCompiledModule) entryInd
         { Status = status
           Context = finalContext
           Outputs = outputValues
+          StackBytes = stackBytes
           Diagnostic = diagnostic }
     finally
         NativeLibrary.Free library
@@ -1370,26 +1379,21 @@ let private testOwningNominalIntSlice () =
             && not result.Metrics.TraceTruncated
             && preservesFullOwnerEnd)
 
-    let rejectScalar name baseType validator inputType =
-        let context = contextWithScalars [] [ scalarDefinition name baseType validator ]
-        let body = compileBodyWithInputs context ("unsupported-" + name) [ inputType ] []
+    let rejectScalar name baseType =
+        let context = contextWithScalars [] [ scalarDefinition name baseType None ]
+        let body = compileBodyWithInputs context ("unsupported-" + name) [ TNamed name ] []
         let diagnostic = errorOf (fun () -> compileOwningNative toolchain ("unsupported-" + name) LlvmOptimization.O0 body |> ignore)
-        let expectedMessage =
-            match baseType, validator with
-            | TString, None -> "unvalidated String wrappers are unsupported"
-            | _ -> "other scalar bases remain unsupported"
-        check ($"{name} remains outside the owning nominal Int slice") (
+        check ($"{name} remains outside the owning nominal Int/String slice") (
             diagnostic.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-            && diagnostic.Message.Contains(expectedMessage, StringComparison.OrdinalIgnoreCase))
-    rejectScalar "BoolTag" TBool None (TNamed "BoolTag")
-    rejectScalar "TextTag" TString None (TNamed "TextTag")
-    rejectScalar "FloatTag" TFloat None (TNamed "FloatTag")
+            && diagnostic.Message.Contains("Bool, Float, and other scalar bases remain unsupported", StringComparison.OrdinalIgnoreCase))
+    rejectScalar "BoolTag" TBool
+    rejectScalar "FloatTag" TFloat
     let inactiveContext = contextWithScalars [] [ scalarDefinition "InactiveFloat" TFloat None ]
     let inactiveBody = compileBodyWithInputs inactiveContext "unsupported-inactive-result-alternative" [ TResult(TInt, TNamed "InactiveFloat") ] []
     let inactiveError = errorOf (fun () -> compileOwningNative toolchain "unsupported-inactive-result-alternative" LlvmOptimization.O0 inactiveBody |> ignore)
     check "unsupported scalar is rejected in an inactive Result alternative" (
         inactiveError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-        && inactiveError.Message.Contains("other scalar bases remain unsupported", StringComparison.OrdinalIgnoreCase))
+        && inactiveError.Message.Contains("Bool, Float, and other scalar bases remain unsupported", StringComparison.OrdinalIgnoreCase))
 
 let private testOwningRefinedIntSlice () =
     let toolchain = LlvmToolchain.discover()
@@ -1839,7 +1843,7 @@ let private testOwningRefinedIntSlice () =
     let unsupportedBool = errorOf (fun () -> compileOwningNative toolchain "owning-unsupported-refined-bool" LlvmOptimization.O0 unsupportedBoolBody |> ignore)
     check "predicate-bearing non-Int scalars remain outside the owning refined slice" (
         unsupportedBool.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-        && unsupportedBool.Message.Contains("other scalar bases remain unsupported", StringComparison.OrdinalIgnoreCase))
+        && unsupportedBool.Message.Contains("Bool, Float, and other scalar bases remain unsupported", StringComparison.OrdinalIgnoreCase))
 
     let effectfulValidator =
         wordEntry "effectful-positive?" [ TInt ] [ TBool ] (Set.singleton "console.write") [
@@ -2265,13 +2269,6 @@ let private testOwningRefinedStringSlice () =
         check ($"{optimization} None and Result alternatives without refined String do not invoke its validator") (
             inactive.Execute(inactiveValues, 4096, 32).Values = inactiveValues)
 
-    let unvalidatedStringContext = contextWithScalars [] [ scalarDefinition "TextTag" TString None ]
-    let unvalidatedStringBody = compileBodyWithInputs unvalidatedStringContext "owning-unsupported-string-wrapper" [ TNamed "TextTag" ] []
-    let unvalidatedStringError = errorOf (fun () -> compileOwningNative toolchain "owning-unsupported-string-wrapper" LlvmOptimization.O0 unvalidatedStringBody |> ignore)
-    check "unvalidated String nominal wrappers remain unsupported" (
-        unvalidatedStringError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-        && unvalidatedStringError.Message.Contains("unvalidated String wrappers", StringComparison.OrdinalIgnoreCase))
-
     let boolValidator = wordEntry "identity-bool?" [ TBool ] [ TBool ] Set.empty [
         Call("bool.not", span "owning-string-bool-validator.agent" 1)
         Call("bool.not", span "owning-string-bool-validator.agent" 2)
@@ -2352,6 +2349,239 @@ let private testOwningRefinedStringSlice () =
         invalidMailboxTurn.Status <> 0
         && (invalidMailboxTurn.Diagnostic |> Option.exists (fun diagnostic -> diagnostic.EntryRole = Some "begin" && diagnostic.Code = "REFINEMENT_FAILED"))
         && (invalidMailboxTurn.Outputs |> List.forall (fun output -> output.TypeIndex = UInt32.MaxValue && output.OffsetBytes = 0u && output.OwnerEndBytes = 0u)))
+
+let private testOwningNominalStringSlice () =
+    let toolchain = LlvmToolchain.discover()
+    let textTag = scalarDefinition "TextTag" TString None, "TextTag.make", "TextTag.value"
+    let otherTag = scalarDefinition "OtherTag" TString None, "OtherTag.make", "OtherTag.value"
+    let context = contextWithScalarDefinitions [] [ textTag; otherTag ]
+    let noScalarValidators (body: VerifiedIrBody) =
+        (VerifiedIrProgram.inspect (VerifiedIrBody.program body)).NominalTypesByKey
+        |> Map.forall (fun _ definition ->
+            match definition with
+            | IrScalarDefinition scalar -> Option.isNone scalar.ValidatorCall
+            | _ -> true)
+    let bytes (hex: string) = Convert.FromHexString hex
+    let nulText = String([| 'a'; char 0; 'b' |])
+    let isolatedSurrogate = String([| char 0xD800 |])
+    let nulBytes = bytes "03000000000000006100000062000000"
+    let surrogateBytes = bytes "010000000000000000d8000000000000"
+    let sameBytes = bytes "0400000000000000730061006d006500"
+    let tailBytes = bytes "04000000000000007400610069006c00"
+    let textTagString = NamedValue("TextTag", StringValue "same")
+    let otherTagString = NamedValue("OtherTag", StringValue "same")
+    let identityBody = compileBodyWithInputs context "owning-nominal-string-identity" [ TNamed "TextTag"; TNamed "OtherTag" ] []
+    check "unvalidated String wrappers have no frozen validator calls" (noScalarValidators identityBody)
+
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use identity = compileOwningNative toolchain "owning-nominal-string-identity" optimization identityBody
+        let textLayout = identity.Layouts |> List.find (fun layout -> layout.TypeName = "TextTag")
+        let otherLayout = identity.Layouts |> List.find (fun layout -> layout.TypeName = "OtherTag")
+        check ($"{optimization} equal String payload wrappers retain distinct nominal types") (
+            textLayout.Type <> otherLayout.Type
+            && textLayout.IsDynamic && otherLayout.IsDynamic
+            && textLayout.MinimumPayloadBytes = 8 && otherLayout.MinimumPayloadBytes = 8
+            && textLayout.MinimumExtentBytes = 8 && otherLayout.MinimumExtentBytes = 8)
+        let stringDescriptor typeId =
+            identity.LlvmIr.Contains(
+                $"i32 5, i32 {typeId}, i32 0, i32 0, i32 4294967295, i32 4294967295, i32 8, i32 8, i32 0",
+                StringComparison.Ordinal)
+        check ($"{optimization} equal String payload wrappers have separate descriptor TypeIds") (
+            stringDescriptor 4 && stringDescriptor 5 && stringDescriptor 6)
+        let identityResult = identity.Execute([ textTagString; otherTagString ], 4096, 32)
+        check ($"{optimization} exact host names roundtrip equal nominal String payloads") (
+            identityResult.Values = [ textTagString; otherTagString ]
+            && Convert.ToHexString(identityResult.RetainedOutputBytes).ToLowerInvariant() =
+               Convert.ToHexString(Array.append sameBytes sameBytes).ToLowerInvariant())
+
+        for label, invalidValues in [
+            "bare String", [ StringValue "same"; otherTagString ]
+            "wrong first wrapper", [ otherTagString; otherTagString ]
+            "wrong second wrapper", [ textTagString; textTagString ]
+        ] do
+            let retained = Array.create 32 0xA5uy
+            let mutable rejected = false
+            try
+                identity.ExecuteInto(invalidValues, 4096, retained) |> ignore
+            with :? ArgumentException -> rejected <- true
+            check ($"{optimization} host rejects {label} for an unvalidated String nominal") rejected
+            check ($"{optimization} {label} rejection leaves retained output unchanged") (retained = Array.create 32 0xA5uy)
+
+        let emptyBody = compileBodyWithInputs context "owning-nominal-string-empty-input" [ TNamed "TextTag" ] []
+        use emptyInput = compileOwningNative toolchain "owning-nominal-string-empty-input" optimization emptyBody
+        let emptyValue = NamedValue("TextTag", StringValue "")
+        let emptyResult = emptyInput.Execute([ emptyValue ], 4096, 8)
+        check ($"{optimization} unvalidated TextTag accepts and roundtrips an empty String") (
+            emptyResult.Values = [ emptyValue ]
+            && Convert.ToHexString(emptyResult.RetainedOutputBytes).ToLowerInvariant() = "0000000000000000")
+
+        let wrapUnwrapBody = compileBodyWithInputs context "owning-nominal-string-wrap-unwrap" [ TString ] [
+            Call("TextTag.make", span "owning-nominal-string-wrap-unwrap.agent" 1)
+            Call("TextTag.value", span "owning-nominal-string-wrap-unwrap.agent" 2)
+        ]
+        use wrapUnwrap = compileOwningNative toolchain "owning-nominal-string-wrap-unwrap" optimization wrapUnwrapBody
+        check ($"{optimization} unvalidated String wrapping emits no validator call") (
+            noScalarValidators wrapUnwrapBody
+            && not (wrapUnwrap.LlvmIr.Contains("validator.arguments", StringComparison.Ordinal))
+            && not (wrapUnwrap.LlvmIr.Contains("REFINEMENT_FAILED", StringComparison.Ordinal)))
+        for label, value, expectedBytes in [
+            "embedded NUL", nulText, nulBytes
+            "isolated high surrogate", isolatedSurrogate, surrogateBytes
+        ] do
+            let result = wrapUnwrap.Execute([ StringValue value ], 4096, expectedBytes.Length)
+            check ($"{optimization} wrap/unwrap preserves {label} UTF-16 bytes without copying or moving") (
+                result.Values = [ StringValue value ]
+                && result.RetainedBytesWritten = expectedBytes.Length
+                && result.RetainedOutputBytes = expectedBytes
+                && result.Metrics.DeepCopyBytes = 0UL
+                && result.Metrics.MoveBytes = 0UL)
+
+    let envelope = recordDefinition "StringOwnerEnvelope" [
+        recordField "owner" (TNamed "TextTag")
+        recordField "tail" TString
+    ]
+    let nestedContext = contextWithRecordDefinitions [] [ envelope ] [ textTag; otherTag ]
+    let nestedTypes = [
+        TNamed "StringOwnerEnvelope"
+        TOption(TNamed "TextTag")
+        TOption(TNamed "TextTag")
+        TResult(TNamed "TextTag", TInt)
+        TResult(TNamed "TextTag", TInt)
+        TResult(TInt, TNamed "OtherTag")
+    ]
+    let nestedBody = compileBodyWithInputs nestedContext "owning-nominal-string-nested" nestedTypes []
+    let nominalText text = NamedValue("TextTag", StringValue text)
+    let nestedValues = [
+        RecordValue("StringOwnerEnvelope", Map.ofList [ "owner", nominalText nulText; "tail", StringValue "tail" ])
+        OptionValue(TNamed "TextTag", Some(nominalText isolatedSurrogate))
+        OptionValue(TNamed "TextTag", None)
+        ResultValue(TNamed "TextTag", TInt, Ok(nominalText "same"))
+        ResultValue(TNamed "TextTag", TInt, Error(IntValue 42L))
+        ResultValue(TInt, TNamed "OtherTag", Error(otherTagString))
+    ]
+    let zeroTag = bytes "0000000000000000"
+    let oneTag = bytes "0100000000000000"
+    let int42 = bytes "2a00000000000000"
+    let expectedNestedBytes =
+        [ nulBytes; tailBytes
+          zeroTag; surrogateBytes
+          oneTag
+          zeroTag; sameBytes
+          oneTag; int42
+          oneTag; sameBytes ]
+        |> Array.concat
+    let unwrapFieldBody = compileBodyWithInputs nestedContext "owning-nominal-string-owner-end" [ TNamed "StringOwnerEnvelope" ] [
+        Call("stringOwnerEnvelope.owner", span "owning-nominal-string-owner-end.agent" 1)
+        Call("TextTag.value", span "owning-nominal-string-owner-end.agent" 2)
+    ]
+    check "nested unvalidated String program remains free of frozen predicates" (
+        noScalarValidators nestedBody && noScalarValidators unwrapFieldBody)
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use nested = compileOwningNative toolchain "owning-nominal-string-nested" optimization nestedBody
+        let roundtrip = nested.Execute(nestedValues, 8192, 256)
+        check ($"{optimization} unvalidated String nominals survive nested records and active Option/Result cases") (
+            roundtrip.Values = nestedValues
+            && roundtrip.Metrics.InputBytes = 128
+            && Convert.ToHexString(roundtrip.RetainedOutputBytes).ToLowerInvariant() =
+               Convert.ToHexString(expectedNestedBytes).ToLowerInvariant())
+        use unwrapField = compileOwningNative toolchain "owning-nominal-string-owner-end" optimization unwrapFieldBody
+        let ownerEndResult =
+            unwrapField.Execute(
+                [ RecordValue("StringOwnerEnvelope", Map.ofList [ "owner", nominalText "ok"; "tail", StringValue "tail" ]) ],
+                4096,
+                16)
+        let preservesOwnerRange =
+            ownerEndResult.LayoutEvents
+            |> List.exists (fun event ->
+                event.Kind = "descriptor-transfer"
+                && event.TypeId = 7u
+                && event.OffsetBytes = 0
+                && event.SourceOffsetBytes = Some 32
+                && event.SourceExtentBytes = Some 16)
+        check ($"{optimization} unwrapped String result escapes without losing its multi-field owner range") (
+            ownerEndResult.Values = [ StringValue "ok" ]
+            && Convert.ToHexString(ownerEndResult.RetainedOutputBytes).ToLowerInvariant() = "02000000000000006f006b0000000000"
+            && ownerEndResult.Metrics.InputBytes = 32
+            && ownerEndResult.Metrics.HostEncodedInputBytes = 32
+            && ownerEndResult.Metrics.DeepCopyBytes = 0UL
+            && ownerEndResult.Metrics.MoveBytes = 0UL
+            && preservesOwnerRange)
+
+    let mailboxContext =
+        contextWithRecordDefinitions [] [
+            recordDefinition "MailboxState" [ recordField "owner" (TNamed "TextTag") ]
+            recordDefinition "MailboxContinuation" [ recordField "marker" TInt ]
+        ] [ textTag ]
+    let mailboxProgram = Compiler.compileIrProgram mailboxContext
+    let initialize = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-nominal-string-mailbox-initialize" [ TString ] [
+        Call("TextTag.make", span "owning-nominal-string-mailbox.agent" 1)
+        Call("mailboxState.new", span "owning-nominal-string-mailbox.agent" 2)
+    ]
+    let beginTurn = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-nominal-string-mailbox-begin" [ TNamed "MailboxState"; TString ] [
+        Call("drop", span "owning-nominal-string-mailbox.agent" 3)
+        Call("dup", span "owning-nominal-string-mailbox.agent" 4)
+        Call("mailboxState.owner", span "owning-nominal-string-mailbox.agent" 5)
+        Call("TextTag.value", span "owning-nominal-string-mailbox.agent" 6)
+        Call("string.length", span "owning-nominal-string-mailbox.agent" 7)
+        Call("drop", span "owning-nominal-string-mailbox.agent" 8)
+        Push(LInt 1L, span "owning-nominal-string-mailbox.agent" 9)
+        Call("mailboxContinuation.new", span "owning-nominal-string-mailbox.agent" 10)
+    ]
+    let resume = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-nominal-string-mailbox-resume" [ TNamed "MailboxState"; TNamed "MailboxContinuation"; TString ] [
+        Call("drop", span "owning-nominal-string-mailbox.agent" 17)
+        Call("drop", span "owning-nominal-string-mailbox.agent" 18)
+    ]
+    check "unvalidated String mailbox program has no frozen validator" (
+        noScalarValidators initialize && noScalarValidators beginTurn && noScalarValidators resume)
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        let mailbox =
+            OwningStackAot.compileMailboxWithProfile
+                toolchain
+                optimization
+                OwningRuntimeProfile.Diagnostic
+                (Path.Combine(artifactRoot, "owning-nominal-string-mailbox", string optimization))
+                initialize
+                beginTurn
+                resume
+        let textLayout = mailbox.Layouts |> List.find (fun layout -> layout.TypeName = "TextTag")
+        check ($"{optimization} unvalidated String wrapper is admitted in mailbox layout") (
+            textLayout.IsDynamic
+            && textLayout.MinimumPayloadBytes = 8
+            && textLayout.MinimumExtentBytes = 8
+            && not (mailbox.LlvmIr.Contains("mailbox.validation.frame.entered", StringComparison.Ordinal)))
+        let outputTypeIndexes: uint32 list = mailbox.Entries[1].OutputTypeIndexes
+        let turnBytes = mailboxStringBytes "turn"
+        let validTurn = invokeRawMailboxEntry mailbox 1 [ nulBytes; turnBytes ]
+        // The callback imports a 16-byte dynamic MailboxState owner and a
+        // 16-byte turn. `dup` of the imported state deep-copies its full 16-byte
+        // owner range; the field accessor, nominal unwrap and String length
+        // read are zero-copy. MailboxContinuation construction copies its
+        // 8-byte marker field.
+        let expectedMailboxInputCopyBytes = uint64 (nulBytes.Length + turnBytes.Length)
+        let expectedMailboxBodyDeepCopyBytes = uint64 (nulBytes.Length + 8)
+        check ($"{optimization} direct mailbox callback imports and roundtrips a nominal String owner (status={validTurn.Status}, output-types={validTurn.Outputs |> List.map (fun output -> output.TypeIndex)}, expected-types={outputTypeIndexes}, depth={validTurn.Context.CallDepth}, input={validTurn.Context.InputCopyBytes}, deep={validTurn.Context.DeepCopyBytes}, move={validTurn.Context.MoveBytes})") (
+            validTurn.Status = 0
+            && List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex) validTurn.Outputs = outputTypeIndexes
+            && validTurn.Context.CallDepth = 0u
+            && validTurn.Context.InputCopyBytes = expectedMailboxInputCopyBytes
+            && validTurn.Context.DeepCopyBytes = expectedMailboxBodyDeepCopyBytes
+            && validTurn.Context.MoveBytes = 0UL)
+        let stateOutput = validTurn.Outputs.Head
+        let stateOffset = int stateOutput.OffsetBytes
+        let stateOwnerBytes =
+            if stateOffset >= 0 && stateOffset <= validTurn.StackBytes.Length - nulBytes.Length then
+                validTurn.StackBytes[stateOffset .. stateOffset + nulBytes.Length - 1]
+            else
+                Array.empty
+        check ($"{optimization} mailbox output retains the independently pinned UTF-16 owner bytes") (
+            stateOutput.OwnerEndBytes >= stateOutput.OffsetBytes + uint32 nulBytes.Length
+            && stateOwnerBytes = nulBytes)
+
+        let failedTurn = invokeRawMailboxEntry mailbox 1 [ bytes "0000000000000001"; turnBytes ]
+        check ($"{optimization} malformed nominal String import after preflight invalidates callback outputs") (
+            failedTurn.Status <> 0
+            && (failedTurn.Diagnostic |> Option.exists (fun diagnostic -> diagnostic.EntryRole = Some "begin"))
+            && (failedTurn.Outputs |> List.forall (fun output -> output.TypeIndex = UInt32.MaxValue && output.OffsetBytes = 0u && output.OwnerEndBytes = 0u)))
 
 let private testOwningRefinedMailboxVariants () =
     let toolchain = LlvmToolchain.discover()
@@ -4118,6 +4348,8 @@ let private runFullSuite () =
         testOwningRefinedIntSlice ()
         printStage "owning backend refined String constructors, raw admission, and owner ranges"
         testOwningRefinedStringSlice ()
+        printStage "owning backend unvalidated nominal String identity, bytes, and mailbox callbacks"
+        testOwningNominalStringSlice ()
         testNominalScalarDiagnosticsAndRejections ()
         testNominalScalarDepth ()
         printStage "record construction, accessors, aliases, and equality"
@@ -4179,6 +4411,15 @@ let main args =
             printStage "owning backend refined String constructors, raw admission, and owner ranges"
             testOwningRefinedStringSlice ()
             printfn "AgentLang.Llvm.Tests owning refined String checks: %d assertions passed; artifacts: %s" assertions artifactRoot
+            0
+        with ex ->
+            eprintfn "%s" (ex.ToString())
+            1
+    elif args |> Array.contains "--owning-nominal-string" then
+        try
+            printStage "owning backend unvalidated nominal String identity, bytes, and mailbox callbacks"
+            testOwningNominalStringSlice ()
+            printfn "AgentLang.Llvm.Tests owning nominal String checks: %d assertions passed; artifacts: %s" assertions artifactRoot
             0
         with ex ->
             eprintfn "%s" (ex.ToString())

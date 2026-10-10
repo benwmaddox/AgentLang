@@ -638,8 +638,8 @@ module OwningStackAot =
         let active = HashSet<IrType>()
         let unsupportedScalarMessage, unsupportedScalarExpected =
             if allowValidatedScalars then
-                "Owning-stack supports nominal Int scalar wrappers and validated String scalar wrappers; other scalar bases remain unsupported.",
-                [ "nominal Int scalar"; "validated String scalar" ]
+                "Owning-stack supports nominal Int and String scalar wrappers with optional pure frozen validators; Bool, Float, and other scalar bases remain unsupported.",
+                [ "nominal Int scalar"; "nominal String scalar" ]
             else
                 "Owning-stack supports only unvalidated nominal Int scalar wrappers.",
                 [ "unvalidated Int scalar" ]
@@ -835,7 +835,7 @@ module OwningStackAot =
                         | Some(IrScalarDefinition scalar) ->
                             match scalar.BaseType, scalar.ValidatorCall with
                             | IrInt, _
-                            | IrString, Some _ ->
+                            | IrString, _ ->
                                 validateScalarValidator owner scalar
                                 scalar.ValidatorCall
                                 |> Option.iter (fun validator ->
@@ -857,10 +857,6 @@ module OwningStackAot =
                                       Cases = [] }
                                 typeInfos <- Map.add ty value typeInfos
                                 value
-                            | IrString, None ->
-                                Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-                                    "Owning-stack requires String-backed nominal scalars to use a frozen pure String -> Bool validator; unvalidated String wrappers are unsupported."
-                                    (Some owner) None [ "validated String scalar" ] [ scalar.TypeName ]
                             | _ ->
                                 Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
                                     unsupportedScalarMessage
@@ -1060,14 +1056,14 @@ module OwningStackAot =
                 | IrOperation.If(thenBlock, elseBlock) -> validateBlock owner thenBlock; validateBlock owner elseBlock
                 | operation ->
                     Diagnostics.raiseError "IR_OWNING_STACK_OPERATION_UNSUPPORTED"
-                        "Owning-stack backend supports constants, calls, records, nominal Int and validated String scalars with pure frozen predicates, payload-free enums, Option/Result values, locals, Scope, If, and exhaustive matches."
+                        "Owning-stack backend supports constants, calls, records, nominal Int and String scalars with optional pure frozen predicates, payload-free enums, Option/Result values, locals, Scope, If, and exhaustive matches."
                         (Some owner) span [ "Constant"; "Call"; "MakeRecord"; "GetRecordField"; "WrapScalar"; "UnwrapScalar"; "MakeEnumCase"; "OptionNone"; "OptionSome"; "ResultOk"; "ResultError"; "MatchOption"; "MatchResult"; "MatchEnum"; "StoreLocal"; "LoadLocal"; "Scope"; "If" ]
                         [ sprintf "%A" operation ]
 
         and validateScalarCall owner span (call: IrResolvedCall) key expectedOperation inputTypes outputTypes =
             match program.NominalTypesByKey.TryFind key with
             | Some(IrScalarDefinition scalar)
-                when scalar.BaseType = IrInt || (scalar.BaseType = IrString && scalar.ValidatorCall.IsSome) ->
+                when scalar.BaseType = IrInt || scalar.BaseType = IrString ->
                 validateScalarValidator owner scalar
             | _ ->
                 Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"

@@ -507,7 +507,7 @@ try {
     $nominalExpectedScalarExtent = 8
     $nominalRunsMissingCoverage = @($nominalRuns | Where-Object {
         $_['signedFixtureCount'] -ne $nominalExpectedSignedNames.Count -or
-        $_['unsupportedDefinitionCount'] -ne 3 -or
+        $_['unsupportedDefinitionCount'] -ne 2 -or
         $_['ownerRangeTransferCount'] -lt 1 -or
         $_['ownerEndBytes'] -ne $nominalExpectedOwnerEnd -or
         $_['scalarPayloadExtentBytes'] -ne $nominalExpectedScalarExtent
@@ -518,7 +518,7 @@ try {
     Add-Check 'nominal Int report has complete O0/O2 signed, unsupported, and owner-range summaries' $nominalRunCoveragePassed ([ordered]@{
         expectedOptimizations = @('O0', 'O2')
         expectedSignedFixtureCount = $nominalExpectedSignedNames.Count
-        expectedUnsupportedDefinitionCount = 3
+        expectedUnsupportedDefinitionCount = 2
         expectedOwnerEndBytes = $nominalExpectedOwnerEnd
         expectedScalarPayloadExtentBytes = $nominalExpectedScalarExtent
         actualOptimizationNames = $nominalRunOptimizationNames
@@ -565,7 +565,7 @@ try {
         $nominalCaseSuffixes.Add("$caseName/host-identity-trace")
         $nominalCaseSuffixes.Add("$caseName/wrap-unwrap-retags")
     }
-    foreach ($unsupportedName in @('BoolTag', 'UnvalidatedStringTag', 'FloatTag')) {
+    foreach ($unsupportedName in @('BoolTag', 'FloatTag')) {
         $nominalCaseSuffixes.Add("unsupported-$unsupportedName-is-explicit")
     }
     $nominalExpectedCheckNames = [Collections.Generic.List[string]]::new()
@@ -585,7 +585,7 @@ try {
         if ($matchingChecks.Count -ne 1) { $nominalMissingChecks.Add("$expectedName (count=$($matchingChecks.Count))") }
         elseif (-not [bool]$matchingChecks[0]['passed']) { $nominalFailingChecks.Add($expectedName) }
     }
-    $nominalCheckCoveragePassed = $nominalCaseSuffixes.Count -eq 46 -and
+    $nominalCheckCoveragePassed = $nominalCaseSuffixes.Count -eq 45 -and
         $nominalMissingChecks.Count -eq 0 -and $nominalFailingChecks.Count -eq 0
     Add-Check 'nominal Int case checks cover every pinned O0/O2 identity, wrap, aggregate, owner, capacity, rejection, and non-Int unsupported case' $nominalCheckCoveragePassed ([ordered]@{
         expectedCasesPerOptimization = $nominalCaseSuffixes.Count
@@ -776,7 +776,6 @@ try {
     $refinedInactive = $refinedResult['inactiveOkInt']
     $refinedRuntime = $refinedOracle['runtimeValidatorFailure']['diagnostic']
     $refinedRuntimeSpan = $refinedRuntime['span']
-    $refinedUnsupportedString = $refinedOracle['unsupportedUnvalidatedStringDiagnostic']
     $refinedOwner = $refinedOracle['ownerRangeTrace']
     $refinedTransfer = $refinedOwner['expectedDescriptorTransfer']
     $refinedUtf16 = $refinedHost['utf16Cases']
@@ -829,8 +828,6 @@ try {
         [int]$refinedTransfer['typeId'] -eq 6 -and [int]$refinedTransfer['offsetBytes'] -eq 0 -and
         [int]$refinedTransfer['sourceOffsetBytesOwnerEnd'] -eq 32 -and
         [int]$refinedTransfer['sourceExtentBytesPayloadExtent'] -eq 16 -and
-        [string]$refinedUnsupportedString['code'] -ceq 'IR_OWNING_STACK_TYPE_UNSUPPORTED' -and
-        [string]$refinedUnsupportedString['message'] -ceq 'Owning-stack requires String-backed nominal scalars to use a frozen pure String -> Bool validator; unvalidated String wrappers are unsupported.' -and
         [string]$refinedUtf16['supplementary']['value'] -ceq ("A" + [char]0xD83D + [char]0xDE00) -and
         [int]$refinedUtf16['supplementary']['codeUnitCount'] -eq 3 -and
         [string]$refinedUtf16['supplementary']['stringBytesHex'] -ceq '030000000000000041003dd800de0000' -and
@@ -846,6 +843,54 @@ try {
         expectedOwnerEndBytes = 32
         actualFixtureIdentityTypeIds = $refinedIdentityIds
         actualFixtureNestedTypeIds = $refinedNestedIds
+    })
+
+    $nominalStringOracle = $nativeFixture['nominalStringConformance']
+    $nominalStringIdentityIds = $nominalStringOracle['identityProgram']['typeIds']
+    $nominalStringNestedIds = $nominalStringOracle['nestedProgram']['typeIds']
+    $nominalStringUtf16Cases = @($nominalStringOracle['utf16Cases'])
+    $nominalStringUtf16Names = @($nominalStringUtf16Cases | ForEach-Object { [string]$_['name'] })
+    $nominalStringIsolatedSurrogate = $nominalStringUtf16Cases | Where-Object { [string]$_['name'] -ceq 'isolated-surrogate' } | Select-Object -First 1
+    $nominalStringFixturePassed =
+        [string]$nominalStringOracle['encoding'] -ceq 'String payload is an eight-byte UTF-16 code-unit count and zero reserved word, followed by UTF-16LE data and zero padding to an eight-byte extent.' -and
+        [int]$nominalStringIdentityIds['TextTag'] -eq 5 -and
+        [int]$nominalStringIdentityIds['OtherTextTag'] -eq 4 -and
+        [int]$nominalStringIdentityIds['String'] -eq 6 -and
+        [int]$nominalStringOracle['identityProgram']['stringKind'] -eq 5 -and
+        [int]$nominalStringOracle['identityProgram']['minimumPayloadBytes'] -eq 8 -and
+        [int]$nominalStringOracle['identityProgram']['minimumExtentBytes'] -eq 8 -and
+        ($nominalStringUtf16Names -join ',') -ceq 'empty,ordinary,embedded-nul,isolated-surrogate,supplementary' -and
+        ([int[]]$nominalStringIsolatedSurrogate['codeUnits'] -join ',') -ceq '65,55296,66' -and
+        [string]$nominalStringIsolatedSurrogate['codeUnitsHex'] -ceq '410000d84200' -and
+        [string]$nominalStringIsolatedSurrogate['stringBytesHex'] -ceq '0300000000000000410000d842000000' -and
+        [string]$nominalStringUtf16Cases[2]['stringBytesHex'] -ceq '03000000000000004100000042000000' -and
+        [string]$nominalStringUtf16Cases[4]['stringBytesHex'] -ceq '030000000000000041003dd800de0000' -and
+        [string]$nominalStringOracle['identityPair']['stringBytesHex'] -ceq '02000000000000006f006b0000000000' -and
+        [string]$nominalStringOracle['wrapUnwrap']['stringBytesHex'] -ceq '02000000000000006f006b0000000000' -and
+        [int]$nominalStringOracle['wrapUnwrap']['expectedDescriptorTransfer']['typeId'] -eq 6 -and
+        [int]$nominalStringOracle['wrapUnwrap']['expectedDescriptorTransfer']['sourceOffsetBytesOwnerEnd'] -eq 16 -and
+        [int]$nominalStringOracle['wrapUnwrap']['expectedDescriptorTransfer']['sourceExtentBytesPayloadExtent'] -eq 16 -and
+        [string]$nominalStringOracle['hostShapeRejections']['exceptionType'] -ceq 'System.ArgumentException' -and
+        [string]$nominalStringOracle['hostShapeRejections']['parameterName'] -ceq 'values' -and
+        [int]$nominalStringNestedIds['TextTag'] -eq 5 -and
+        [int]$nominalStringNestedIds['NominalEnvelope'] -eq 4 -and
+        [int]$nominalStringNestedIds['String'] -eq 6 -and
+        [string]$nominalStringOracle['nestedProgram']['record']['bytesHex'] -ceq '02000000000000006f006b000000000001000000000000007a00000000000000' -and
+        [string]$nominalStringOracle['nestedProgram']['option']['someBytesHex'] -ceq '000000000000000002000000000000006f006b0000000000' -and
+        [string]$nominalStringOracle['nestedProgram']['option']['noneBytesHex'] -ceq '0100000000000000' -and
+        [string]$nominalStringOracle['nestedProgram']['result']['okBytesHex'] -ceq '000000000000000002000000000000006f006b0000000000' -and
+        [string]$nominalStringOracle['nestedProgram']['result']['errorBytesHex'] -ceq '010000000000000005000000000000006500720072006f007200000000000000' -and
+        [string]$nominalStringOracle['nestedProgram']['inactiveResult']['bytesHex'] -ceq '00000000000000000700000000000000'
+    Add-Check 'unvalidated nominal String fixture pins UTF-16LE code units, distinct TypeIds, exact host shapes, owner transfer, and nested bytes' $nominalStringFixturePassed ([ordered]@{
+        expectedIdentityTypeIds = [ordered]@{ TextTag = 5; OtherTextTag = 4; String = 6 }
+        expectedNestedTypeIds = [ordered]@{ TextTag = 5; NominalEnvelope = 4; String = 6 }
+        expectedStringKind = 5
+        expectedIsolatedSurrogateCodeUnits = @(65, 55296, 66)
+        expectedIsolatedSurrogateBytesHex = '0300000000000000410000d842000000'
+        expectedOwnerEndBytes = 16
+        actualUtf16CaseNames = $nominalStringUtf16Names
+        actualFixtureIdentityTypeIds = $nominalStringIdentityIds
+        actualFixtureNestedTypeIds = $nominalStringNestedIds
     })
 
     $refinedCaseSuffixes = @(
@@ -874,7 +919,6 @@ try {
         'validator-runtime-failure-preserves-classification',
         'refined-field-owner-end-project-unwrap-no-extra-copy',
         'owner-range-trace-complete',
-        'unsupported-UnvalidatedStringTag-is-explicit',
         'unsupported-BoolTag-is-explicit',
         'unsupported-FloatTag-is-explicit',
         'refined-string-mailbox-compiled-admission-is-explicit'
@@ -923,8 +967,8 @@ try {
         if ($matchingChecks.Count -ne 1) { $refinedMissingChecks.Add("$expectedName (count=$($matchingChecks.Count))") }
         elseif (-not [bool]$matchingChecks[0]['passed']) { $refinedFailingChecks.Add($expectedName) }
     }
-    $refinedCheckCoveragePassed = $refinedCaseSuffixes.Count -eq 29 -and
-        $refinedExpectedCheckNames.Count -eq 58 -and
+    $refinedCheckCoveragePassed = $refinedCaseSuffixes.Count -eq 28 -and
+        $refinedExpectedCheckNames.Count -eq 56 -and
         $refinedEvidenceChecks.Count -eq $refinedExpectedCheckNames.Count -and
         $refinedMissingChecks.Count -eq 0 -and $refinedFailingChecks.Count -eq 0
     Add-Check 'NonEmptyString matrix has exactly one passing check per pinned O0/O2 case and no missing, duplicate, or unexpected cases' $refinedCheckCoveragePassed ([ordered]@{
@@ -934,6 +978,78 @@ try {
         unexpectedRefinedStringCheckCount = $refinedEvidenceChecks.Count - $refinedExpectedCheckNames.Count
         missingOrDuplicateChecks = @($refinedMissingChecks)
         failingChecks = @($refinedFailingChecks)
+    })
+
+    $nominalStringCaseSuffixes = @(
+        'type-identities-and-string-layout',
+        'scalar-definitions-have-no-predicate',
+        'host-identity-utf16-empty',
+        'host-identity-utf16-ordinary',
+        'host-identity-utf16-embedded-nul',
+        'host-identity-utf16-isolated-surrogate',
+        'host-identity-utf16-supplementary',
+        'host-pair-distinct-identities',
+        'wrap-unwrap-preserves-bytes-and-owner',
+        'host-shape-rejects-bare-string-atomically',
+        'host-shape-rejects-wrong-nominal-atomically',
+        'record-host-roundtrip',
+        'option-some-host-roundtrip',
+        'option-none-host-roundtrip',
+        'result-ok-host-roundtrip',
+        'result-error-host-roundtrip',
+        'inactive-result-alternative-accepted'
+    )
+    $nominalStringRuns = @()
+    if ($null -ne $experimentEvidence['nominalStringRuns']) { $nominalStringRuns = @($experimentEvidence['nominalStringRuns']) }
+    $nominalStringRunOptimizationNames = @($nominalStringRuns | ForEach-Object { [string]$_['optimization'] } | Sort-Object) -join ','
+    $nominalStringRunsMissingCoverage = @($nominalStringRuns | Where-Object {
+        $_['caseCount'] -ne $nominalStringCaseSuffixes.Count -or
+        $_['utf16CaseCount'] -ne 5 -or
+        $_['textTagTypeId'] -ne 5 -or $_['otherTextTagTypeId'] -ne 4 -or $_['stringTypeId'] -ne 6 -or
+        $_['nestedTextTagTypeId'] -ne 5 -or $_['nestedEnvelopeTypeId'] -ne 4 -or $_['nestedStringTypeId'] -ne 6 -or
+        $_['stringKind'] -ne 5 -or $_['predicateCount'] -ne 0 -or
+        $_['hostShapeRejectionCount'] -ne 2 -or $_['nestedActiveCaseCount'] -ne 3 -or
+        $_['matchingOwnerTransferCount'] -lt 1
+    }).Count
+    $nominalStringRunCoveragePassed = $nominalStringRuns.Count -eq 2 -and
+        $nominalStringRunOptimizationNames -ceq 'O0,O2' -and $nominalStringRunsMissingCoverage -eq 0
+    Add-Check 'unvalidated nominal String report has complete O0/O2 identity, UTF-16, nested, and owner-transfer summaries' $nominalStringRunCoveragePassed ([ordered]@{
+        expectedOptimizations = @('O0', 'O2')
+        expectedCaseCountPerOptimization = $nominalStringCaseSuffixes.Count
+        expectedIdentityTypeIds = [ordered]@{ TextTag = 5; OtherTextTag = 4; String = 6 }
+        expectedNestedTypeIds = [ordered]@{ TextTag = 5; NominalEnvelope = 4; String = 6 }
+        expectedOwnerEndBytes = 16
+        incompleteRunCount = $nominalStringRunsMissingCoverage
+        actualRuns = $nominalStringRuns
+    })
+    $nominalStringExpectedCheckNames = [Collections.Generic.List[string]]::new()
+    foreach ($optimizationName in @('O0', 'O2')) {
+        foreach ($suffix in $nominalStringCaseSuffixes) {
+            $nominalStringExpectedCheckNames.Add("nominal-string/$optimizationName/$suffix")
+        }
+    }
+    $nominalStringEvidenceChecks = @()
+    if ($null -ne $experimentEvidence['checks']) {
+        $nominalStringEvidenceChecks = @($experimentEvidence['checks'] | Where-Object { [string]$_['name'] -like 'nominal-string/*' })
+    }
+    $nominalStringMissingChecks = [Collections.Generic.List[string]]::new()
+    $nominalStringFailingChecks = [Collections.Generic.List[string]]::new()
+    foreach ($expectedName in $nominalStringExpectedCheckNames) {
+        $matchingChecks = @($nominalStringEvidenceChecks | Where-Object { [string]$_['name'] -ceq $expectedName })
+        if ($matchingChecks.Count -ne 1) { $nominalStringMissingChecks.Add("$expectedName (count=$($matchingChecks.Count))") }
+        elseif (-not [bool]$matchingChecks[0]['passed']) { $nominalStringFailingChecks.Add($expectedName) }
+    }
+    $nominalStringCheckCoveragePassed = $nominalStringCaseSuffixes.Count -eq 17 -and
+        $nominalStringExpectedCheckNames.Count -eq 34 -and
+        $nominalStringEvidenceChecks.Count -eq $nominalStringExpectedCheckNames.Count -and
+        $nominalStringMissingChecks.Count -eq 0 -and $nominalStringFailingChecks.Count -eq 0
+    Add-Check 'unvalidated nominal String matrix has one passing check per pinned O0/O2 case with no missing, duplicate, or unexpected cases' $nominalStringCheckCoveragePassed ([ordered]@{
+        expectedCasesPerOptimization = $nominalStringCaseSuffixes.Count
+        expectedTotalCheckCount = $nominalStringExpectedCheckNames.Count
+        actualNominalStringCheckCount = $nominalStringEvidenceChecks.Count
+        unexpectedNominalStringCheckCount = $nominalStringEvidenceChecks.Count - $nominalStringExpectedCheckNames.Count
+        missingOrDuplicateChecks = @($nominalStringMissingChecks)
+        failingChecks = @($nominalStringFailingChecks)
     })
 
     Add-Check 'fixed three-way controls share one compiler-authorized program instance' ([bool]$experimentEvidence.fixedControlVerifiedProgramInstance) $experimentEvidence.backendScope

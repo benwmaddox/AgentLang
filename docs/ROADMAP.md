@@ -257,6 +257,14 @@ improvement (median 11.513 seconds before, 11.615 after); all responses and
 project bytes match. Profile activation phases before pursuing further
 optimization. This does not add a comparative agent-efficacy result.
 
+[Report 183](../reports/183-native-nominal-string.md) completes the bounded
+native typing slice: String-backed nominal wrappers with no predicate use the
+existing UTF-16 layout while retaining distinct type identities and owner ranges.
+Wrap/unwrap introduces no payload copy. The full local gate passed 37/37;
+focused LLVM, independent native and mailbox regression gates also passed.
+The raw mailbox callback case does not establish a complete nominal-String
+controller lifecycle, a memory-policy choice or comparative agent reliability.
+
 [Report 161](../reports/161-real-files-and-test-isolation.md) tracks real
 project-rooted filesystem execution and automatic virtual providers for attached
 tests. Focused runtime, CLI and broker checks and all 37 full local Release checks

@@ -60,8 +60,8 @@ in this slice.
   move bytes; explicit record/sum construction keeps its existing accounting.
 - Records, Option and Result retain wrapped payload identity through construction,
   extraction, equality, inactive alternatives and host round trips.
-- String/Bool/Float wrappers remain explicit unsupported errors, including
-  inactive sum alternatives. Predicate-bearing Int is covered separately by
+- In the original Int-only slice, String/Bool/Float wrappers remain explicit
+  unsupported errors, including inactive sum alternatives. Predicate-bearing Int is covered separately by
   report 172; unsupported validator forms still reject explicitly.
 - Lifetime escapes and short-capacity failures preserve outputs and cleanup.
 - Fresh native value-stack and applicable mailbox regression gates, plus the
@@ -94,8 +94,9 @@ body or output publication. Wrap/unwrap must retag without payload copying.
 
 Independent O0/O2 acceptance must pin bytes, layout, recursive admission,
 frozen validator identity, atomic failures and ownership accounting. Layout
-schema 3, stack ABI 1 and module ABI 1 remain unchanged. Refined mailbox layouts,
-unvalidated String wrappers and Bool/Float refinements remain unsupported.
+schema 3, stack ABI 1 and module ABI 1 remain unchanged. In that slice, refined
+mailbox layouts, unvalidated String wrappers and Bool/Float refinements remain
+unsupported.
 This slice does not establish general Email validation or add native I/O. Run
 fresh LLVM, native value-stack, mailbox and full local gates before reporting
 completion. [Report 174](../reports/174-native-refined-string.md) records gate
@@ -152,7 +153,10 @@ if needed for the acceptance evidence. No allocator, source syntax or host
 capability change is planned. Bool wrappers need additional codec/descriptor
 work; Float requires broader numeric/ABI analysis, and List requires a larger
 representation/lifetime design. These remain explicit gaps, not silent base-type
-fallbacks. This is a bounded plan, not implementation completion.
+fallbacks. This is a bounded plan, not implementation completion. Implementation,
+accepted validation and remaining limits are tracked in
+[report 183](../reports/183-native-nominal-string.md); use its status as the
+completion record.
 
 ## Investigation references
 

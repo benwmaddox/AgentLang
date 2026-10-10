@@ -1557,9 +1557,94 @@
         "sourceExtentBytesPayloadExtent": 16
       }
     },
-    "unsupportedUnvalidatedStringDiagnostic": {
-      "code": "IR_OWNING_STACK_TYPE_UNSUPPORTED",
-      "message": "Owning-stack requires String-backed nominal scalars to use a frozen pure String -> Bool validator; unvalidated String wrappers are unsupported."
+    "sentinelByteHex": "a5"
+  },
+
+  "nominalStringConformance": {
+    "encoding": "String payload is an eight-byte UTF-16 code-unit count and zero reserved word, followed by UTF-16LE data and zero padding to an eight-byte extent.",
+    "identityProgram": {
+      "typeIds": { "TextTag": 5, "OtherTextTag": 4, "String": 6 },
+      "stringKind": 5,
+      "minimumPayloadBytes": 8,
+      "minimumExtentBytes": 8
+    },
+    "utf16Cases": [
+      {
+        "name": "empty",
+        "codeUnits": [],
+        "codeUnitsHex": "",
+        "codeUnitCount": 0,
+        "stringBytesHex": "0000000000000000"
+      },
+      {
+        "name": "ordinary",
+        "codeUnits": [111, 107],
+        "codeUnitsHex": "6f006b00",
+        "codeUnitCount": 2,
+        "stringBytesHex": "02000000000000006f006b0000000000"
+      },
+      {
+        "name": "embedded-nul",
+        "codeUnits": [65, 0, 66],
+        "codeUnitsHex": "410000004200",
+        "codeUnitCount": 3,
+        "stringBytesHex": "03000000000000004100000042000000"
+      },
+      {
+        "name": "isolated-surrogate",
+        "codeUnits": [65, 55296, 66],
+        "codeUnitsHex": "410000d84200",
+        "codeUnitCount": 3,
+        "stringBytesHex": "0300000000000000410000d842000000"
+      },
+      {
+        "name": "supplementary",
+        "codeUnits": [65, 55357, 56832],
+        "codeUnitsHex": "41003dd800de",
+        "codeUnitCount": 3,
+        "stringBytesHex": "030000000000000041003dd800de0000"
+      }
+    ],
+    "identityPair": {
+      "codeUnitsHex": "6f006b00",
+      "stringBytesHex": "02000000000000006f006b0000000000"
+    },
+    "wrapUnwrap": {
+      "codeUnitsHex": "6f006b00",
+      "stringBytesHex": "02000000000000006f006b0000000000",
+      "expectedDescriptorTransfer": {
+        "typeId": 6,
+        "offsetBytes": 0,
+        "sourceOffsetBytesOwnerEnd": 16,
+        "sourceExtentBytesPayloadExtent": 16
+      }
+    },
+    "hostShapeRejections": {
+      "exceptionType": "System.ArgumentException",
+      "parameterName": "values"
+    },
+    "nestedProgram": {
+      "typeIds": { "TextTag": 5, "NominalEnvelope": 4, "String": 6 },
+      "record": {
+        "ownerCodeUnitsHex": "6f006b00",
+        "tailCodeUnitsHex": "7a00",
+        "bytesHex": "02000000000000006f006b000000000001000000000000007a00000000000000"
+      },
+      "option": {
+        "codeUnitsHex": "6f006b00",
+        "someBytesHex": "000000000000000002000000000000006f006b0000000000",
+        "noneBytesHex": "0100000000000000"
+      },
+      "result": {
+        "okCodeUnitsHex": "6f006b00",
+        "errorCodeUnitsHex": "6500720072006f007200",
+        "okBytesHex": "000000000000000002000000000000006f006b0000000000",
+        "errorBytesHex": "010000000000000005000000000000006500720072006f007200000000000000"
+      },
+      "inactiveResult": {
+        "value": 7,
+        "bytesHex": "00000000000000000700000000000000"
+      }
     },
     "sentinelByteHex": "a5"
   },

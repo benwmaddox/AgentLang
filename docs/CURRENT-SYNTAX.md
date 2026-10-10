@@ -159,11 +159,13 @@ counts.
 ## Native refinement boundary
 
 The selected owning-native backend preserves distinct nominal identities for
-Int wrappers and validated String wrappers. A String-backed refinement uses its
+Int and String wrappers. A String-backed refinement uses its
 frozen pure String -> Bool validator at construction and external entry, also
 inside active record, Option and Result payloads. The bounded NonEmptyString
-example is not a general Email validator. Refined mailbox layouts and
-unvalidated String wrappers remain unsupported. This is a backend extension;
+example is not a general Email validator. Refined mailbox admission is covered
+by [report 180](../reports/180-native-refined-mailbox.md); String wrappers without
+a predicate and their remaining validation status are tracked in
+[report 183](../reports/183-native-nominal-string.md). This is a backend extension;
 the authoring syntax and library qualification rules are unchanged. See the
 [native typing scope](NATIVE-NOMINALS-IMPLEMENTATION.md) and
-[report 174](../reports/174-native-refined-string.md) for acceptance status.
+[report 174](../reports/174-native-refined-string.md) for the original refinement slice.

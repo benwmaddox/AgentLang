@@ -179,6 +179,19 @@ type private RefinedStringEntryBodies =
       ReplacementInputIdentity: VerifiedIrBody
       MailboxBodies: VerifiedIrBody list }
 
+type private NominalStringEntryBodies =
+    { CoreProgram: VerifiedIrProgram
+      CoreCompilerContext: Compiler.IrLoweringContext
+      InputIdentity: VerifiedIrBody
+      HostIdentityPair: VerifiedIrBody
+      WrapUnwrap: VerifiedIrBody
+      NestedProgram: VerifiedIrProgram
+      NestedCompilerContext: Compiler.IrLoweringContext
+      EnvelopeIdentity: VerifiedIrBody
+      OptionIdentity: VerifiedIrBody
+      ResultIdentity: VerifiedIrBody
+      InactiveResultIdentity: VerifiedIrBody }
+
 [<Struct; StructLayout(LayoutKind.Sequential, Pack = 8)>]
 type private RawOwningStackContext =
     val mutable AbiVersion: uint32
@@ -1711,7 +1724,6 @@ let private compileNominalIntEntries () =
         name, program, body
     let unsupportedCases =
         [ unsupportedCase "BoolTag" TBool (Some "accept-bool?") "option-none"
-          unsupportedCase "UnvalidatedStringTag" TString None "result-ok"
           unsupportedCase "FloatTag" TFloat (Some "accept-float?") "result-error" ]
 
     let coreBodies =
@@ -2095,6 +2107,90 @@ let private compileRefinedStringEntries () =
       ReplacementCompilerContext = replacementContext
       ReplacementInputIdentity = replacementInputIdentity
       MailboxBodies = [ mailboxInitialize; mailboxBegin; mailboxResume ] }
+
+let private compileNominalStringEntries () =
+    let site name column = span ($"<native-value-stack-nominal-string-{name}>") column
+    let textTag = nominalIntScalarDefinition "TextTag" TString None
+    let otherTextTag = nominalIntScalarDefinition "OtherTextTag" TString None
+    let textIdentity =
+        refinedStringWordEntry "nominal.text.identity" [ TNamed "TextTag" ] [ TNamed "TextTag" ] 1 "text-identity" []
+    let otherTextIdentity =
+        refinedStringWordEntry "nominal.other-text.identity" [ TNamed "OtherTextTag" ] [ TNamed "OtherTextTag" ] 1 "other-text-identity" []
+    let coreContext =
+        refinedStringCompilerContext
+            [ textIdentity; otherTextIdentity ] []
+            [ textTag, "TextTag.construct", "TextTag.unwrap"
+              otherTextTag, "OtherTextTag.construct", "OtherTextTag.unwrap" ]
+    let coreProgram = Compiler.compileIrProgramWithSourceOrigins coreContext Map.empty
+    let coreBody name inputs expressions =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins coreContext coreProgram name inputs expressions Map.empty
+    let inputIdentity =
+        coreBody "native-value-stack-nominal-string-input-identity" [ TNamed "TextTag" ]
+            [ Call("nominal.text.identity", site "text-identity-call" 1) ]
+    let hostIdentityPair =
+        coreBody "native-value-stack-nominal-string-distinct-identity-pair"
+            [ TNamed "TextTag"; TNamed "OtherTextTag" ]
+            [ Call("nominal.other-text.identity", site "other-text-identity-call" 1)
+              Call("swap", site "identity-pair-swap-left" 2)
+              Call("nominal.text.identity", site "text-identity-pair-call" 3)
+              Call("swap", site "identity-pair-swap-right" 4) ]
+    let wrapUnwrap =
+        coreBody "native-value-stack-nominal-string-wrap-unwrap" [ TString ]
+            [ Call("TextTag.construct", site "text-wrap" 1)
+              Call("TextTag.unwrap", site "text-unwrap" 2) ]
+
+    let envelopeRecord: RecordDefinition =
+        { Name = "NominalEnvelope"
+          Fields = [ { Name = "owner"; Type = TNamed "TextTag" }; { Name = "tail"; Type = TString } ]
+          Validator = None
+          SourceText = "record NominalEnvelope { owner: TextTag; tail: String }"
+          Span = site "envelope-definition" 1 }
+    let envelopeIdentityWord =
+        refinedStringWordEntry "nominal.envelope.identity" [ TNamed "NominalEnvelope" ] [ TNamed "NominalEnvelope" ] 1 "envelope-identity" []
+    let optionIdentityWord =
+        refinedStringWordEntry "nominal.option.identity" [ TOption(TNamed "TextTag") ] [ TOption(TNamed "TextTag") ] 1 "option-identity" []
+    let resultIdentityWord =
+        refinedStringWordEntry "nominal.result.identity" [ TResult(TNamed "TextTag", TString) ] [ TResult(TNamed "TextTag", TString) ] 1 "result-identity" []
+    let inactiveResultIdentityWord =
+        refinedStringWordEntry "nominal.inactive-result.identity" [ TResult(TInt, TNamed "TextTag") ] [ TResult(TInt, TNamed "TextTag") ] 1 "inactive-result-identity" []
+    let nestedContext =
+        refinedStringCompilerContext
+            [ envelopeIdentityWord; optionIdentityWord; resultIdentityWord; inactiveResultIdentityWord ]
+            [ envelopeRecord ]
+            [ textTag, "TextTag.construct", "TextTag.unwrap" ]
+    let nestedProgram = Compiler.compileIrProgramWithSourceOrigins nestedContext Map.empty
+    let nestedBody name inputs expressions =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins nestedContext nestedProgram name inputs expressions Map.empty
+    let envelopeIdentity =
+        nestedBody "native-value-stack-nominal-string-envelope-identity" [ TNamed "NominalEnvelope" ]
+            [ Call("nominal.envelope.identity", site "envelope-identity-call" 1) ]
+    let optionIdentity =
+        nestedBody "native-value-stack-nominal-string-option-identity" [ TOption(TNamed "TextTag") ]
+            [ Call("nominal.option.identity", site "option-identity-call" 1) ]
+    let resultIdentity =
+        nestedBody "native-value-stack-nominal-string-result-identity" [ TResult(TNamed "TextTag", TString) ]
+            [ Call("nominal.result.identity", site "result-identity-call" 1) ]
+    let inactiveResultIdentity =
+        nestedBody "native-value-stack-nominal-string-inactive-result-identity" [ TResult(TInt, TNamed "TextTag") ]
+            [ Call("nominal.inactive-result.identity", site "inactive-result-identity-call" 1) ]
+    let groups =
+        [ coreProgram, [ inputIdentity; hostIdentityPair; wrapUnwrap ]
+          nestedProgram, [ envelopeIdentity; optionIdentity; resultIdentity; inactiveResultIdentity ] ]
+    for program, bodies in groups do
+        if not (VerifiedIrProgram.isBackendExecutable program)
+           || bodies |> List.exists (fun body -> not (Object.ReferenceEquals(VerifiedIrBody.program body, program))) then
+            invalidOp "Nominal String conformance bodies must share compiler-authorized verified program instances."
+    { CoreProgram = coreProgram
+      CoreCompilerContext = coreContext
+      InputIdentity = inputIdentity
+      HostIdentityPair = hostIdentityPair
+      WrapUnwrap = wrapUnwrap
+      NestedProgram = nestedProgram
+      NestedCompilerContext = nestedContext
+      EnvelopeIdentity = envelopeIdentity
+      OptionIdentity = optionIdentity
+      ResultIdentity = resultIdentity
+      InactiveResultIdentity = inactiveResultIdentity }
 
 let private inspectRawOwningContextAbi (abiOracle: JsonElement) =
     let expectedSize = abiOracle.GetProperty("contextSizeBytes").GetInt32()
@@ -7313,6 +7409,345 @@ let private runPositiveIdConformance
         "divideDiagnosticSpanSemantics", box "Interpreter divide errors have no span; native diagnostics retain verified instruction-site spans."
         "provenanceCoverage", box "Refined provenance is covered by the existing measured nominal owner-range tests; PositiveId has no separate OwnerEnd trace in this suite." ]
 
+let private runNominalStringConformance
+    (checks: ResizeArray<obj>)
+    (failures: ResizeArray<string>)
+    (fixture: JsonElement)
+    (artifactRoot: string)
+    (optimization: LlvmOptimization)
+    (optimizationName: string)
+    (entries: NominalStringEntryBodies) =
+    let oracle = fixture.GetProperty("nominalStringConformance")
+    let site name column = span ($"<native-value-stack-nominal-string-{name}>") column
+    let toolchain = LlvmToolchain.discover ()
+    let compile name body =
+        OwningStackAot.compile toolchain optimization
+            (Path.Combine(artifactRoot, "owning-stack", "nominal-string", optimizationName, name)) body
+    let coreHost = noOpHost (NativeDiagnosticSources.fromLoweringContext entries.CoreCompilerContext)
+    let nestedHost = noOpHost (NativeDiagnosticSources.fromLoweringContext entries.NestedCompilerContext)
+    let interpret host body root arguments =
+        use result = IrInterpreter.executeBodyWithInputs host (VerifiedIrBody.inspect body).BodyName body root arguments
+        result.Decode()
+    let interpretRoot host body =
+        IrInterpreter.executeBodyWithInputs host (VerifiedIrBody.inspect body).BodyName body None []
+    let outputBuffer length = Array.create length 0xA5uy
+    let record name passed details =
+        recordCheck checks failures $"nominal-string/{optimizationName}/{name}" passed details
+    let identityIds = nominalIntProgramTypeIds entries.CoreProgram
+    let textTagTypeId = identityIds["TextTag"] |> snd
+    let otherTextTagTypeId = identityIds["OtherTextTag"] |> snd
+    let stringTypeId = uint32 (identityIds.Count + 4)
+    let identityOracle = oracle.GetProperty("identityProgram")
+    let expectedIdentityIds = identityOracle.GetProperty("typeIds")
+    use inputIdentityProgram = compile "host-identity" entries.InputIdentity
+    use hostPairProgram = compile "host-identity-pair" entries.HostIdentityPair
+    use wrapUnwrapProgram = compile "wrap-unwrap" entries.WrapUnwrap
+    let identityLayout name = inputIdentityProgram.Layouts |> List.tryFind (fun layout -> layout.TypeName = name)
+    let textTagLayout = identityLayout "TextTag"
+    let stringLayout = identityLayout "String"
+    let pairDescriptorLine =
+        hostPairProgram.LlvmIr.Split([| '\n' |], StringSplitOptions.RemoveEmptyEntries)
+        |> Array.tryFind (fun line -> line.StartsWith("@al_owning_types =", StringComparison.Ordinal))
+        |> Option.defaultValue ""
+    let descriptorContains typeId = pairDescriptorLine.Contains($"i32 5, i32 {typeId},", StringComparison.Ordinal)
+    let scalarDefinitionHasNoValidator typeName program =
+        VerifiedIrProgram.inspect program
+        |> fun inspected -> inspected.NominalTypesByKey
+        |> Map.toSeq
+        |> Seq.exists (fun (_, definition) ->
+            match definition with
+            | IrScalarDefinition scalar -> scalar.TypeName = typeName && Option.isNone scalar.ValidatorCall
+            | _ -> false)
+    let otherDefinitionHasNoValidator = scalarDefinitionHasNoValidator "OtherTextTag" entries.CoreProgram
+    let textDefinitionHasNoValidator = scalarDefinitionHasNoValidator "TextTag" entries.CoreProgram
+    let identityLayoutPassed =
+        int textTagTypeId = expectedIdentityIds.GetProperty("TextTag").GetInt32()
+        && int otherTextTagTypeId = expectedIdentityIds.GetProperty("OtherTextTag").GetInt32()
+        && int stringTypeId = expectedIdentityIds.GetProperty("String").GetInt32()
+        && textTagTypeId <> otherTextTagTypeId
+        && textTagTypeId <> stringTypeId
+        && otherTextTagTypeId <> stringTypeId
+        && identityOracle.GetProperty("stringKind").GetInt32() = 5
+        && (textTagLayout |> Option.exists (fun layout ->
+            match layout.Type with
+            | IrNominal _ -> layout.IsDynamic && layout.PayloadBytes = -1 && layout.ExtentBytes = -1
+                             && layout.MinimumPayloadBytes = 8 && layout.MinimumExtentBytes = 8
+            | _ -> false))
+        && (stringLayout |> Option.exists (fun layout ->
+            layout.Type = IrString && layout.IsDynamic && layout.PayloadBytes = -1 && layout.ExtentBytes = -1
+            && layout.MinimumPayloadBytes = 8 && layout.MinimumExtentBytes = 8))
+        && descriptorContains textTagTypeId
+        && descriptorContains otherTextTagTypeId
+        && descriptorContains stringTypeId
+    record "type-identities-and-string-layout" identityLayoutPassed (jsonObject [
+        "expectedTypeIds", box (identityOracle.GetProperty("typeIds").Clone())
+        "actualTypeIds", box (jsonObject [ "TextTag", box textTagTypeId; "OtherTextTag", box otherTextTagTypeId; "String", box stringTypeId ])
+        "stringKind", box (identityOracle.GetProperty("stringKind").GetInt32())
+        "descriptorHasStringKindAndDistinctTypeIds", box (descriptorContains textTagTypeId && descriptorContains otherTextTagTypeId && descriptorContains stringTypeId)
+        "textTagLayout", box (textTagLayout |> Option.map (fun layout -> jsonObject [ "type", box (IrTypes.format layout.Type); "isDynamic", box layout.IsDynamic; "minimumPayloadBytes", box layout.MinimumPayloadBytes; "minimumExtentBytes", box layout.MinimumExtentBytes ]) |> Option.defaultValue null)
+        "stringLayout", box (stringLayout |> Option.map (fun layout -> jsonObject [ "type", box (IrTypes.format layout.Type); "isDynamic", box layout.IsDynamic; "minimumPayloadBytes", box layout.MinimumPayloadBytes; "minimumExtentBytes", box layout.MinimumExtentBytes ]) |> Option.defaultValue null) ])
+    record "scalar-definitions-have-no-predicate" (textDefinitionHasNoValidator && otherDefinitionHasNoValidator) (jsonObject [
+        "textTagValidatorAbsent", box textDefinitionHasNoValidator
+        "otherTextTagValidatorAbsent", box otherDefinitionHasNoValidator ])
+
+    let utf16Cases = oracle.GetProperty("utf16Cases")
+    for caseOracle in utf16Cases.EnumerateArray() do
+        let caseName = caseOracle.GetProperty("name").GetString()
+        let codeUnitsHex = caseOracle.GetProperty("codeUnitsHex").GetString()
+        let codeUnitArray = caseOracle.GetProperty("codeUnits").EnumerateArray() |> Seq.map (fun item -> item.GetInt32()) |> Seq.toArray
+        let text = stringFromCodeUnitsHex codeUnitsHex
+        let expectedBytes = bytesFromHex (caseOracle.GetProperty("stringBytesHex").GetString())
+        let expectedCodeUnitHex = codeUnitsHexFromString text
+        let expectedCount = caseOracle.GetProperty("codeUnitCount").GetInt32()
+        let literalBody =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins entries.CoreCompilerContext entries.CoreProgram
+                ("native-value-stack-nominal-string-fixture-" + caseName) []
+                [ Push(LString text, span ("<native-value-stack-nominal-string-literal-" + caseName + ">") 1)
+                  Call("TextTag.construct", span ("<native-value-stack-nominal-string-wrap-" + caseName + ">") 2) ] Map.empty
+        use interpreterRoot = interpretRoot coreHost literalBody
+        let interpreted = interpret coreHost entries.InputIdentity (Some interpreterRoot) [ IrEntryArgument.RetainedRoot 0 ]
+        let hostValue = NamedValue("TextTag", StringValue text)
+        let output = outputBuffer expectedBytes.Length
+        let result = inputIdentityProgram.ExecuteInto([ hostValue ], 512, output)
+        let passed =
+            codeUnitArray = (codeUnitsFromHex codeUnitsHex |> Array.map int)
+            && text.Length = expectedCount
+            && expectedCodeUnitHex = codeUnitsHex
+            && interpreted = [ hostValue ]
+            && result.Values = interpreted
+            && output = expectedBytes
+            && result.Metrics.DeepCopyBytes = 0UL
+            && result.Metrics.MoveBytes = 0UL
+        record ("host-identity-utf16-" + caseName) passed (jsonObject [
+            "codeUnits", box codeUnitArray
+            "expectedCodeUnitsHex", box codeUnitsHex
+            "actualCodeUnitsHex", box expectedCodeUnitHex
+            "codeUnitCount", box text.Length
+            "expectedBytesHex", box (bytesHex expectedBytes)
+            "actualBytesHex", box (bytesHex output)
+            "interpreterValues", box (codeUnitSafeValuesData interpreted)
+            "owningValues", box (codeUnitSafeValuesData result.Values)
+            "deepCopyBytes", box result.Metrics.DeepCopyBytes
+            "moveBytes", box result.Metrics.MoveBytes ])
+
+    let pairOracle = oracle.GetProperty("identityPair")
+    let pairCodeUnitsHex = pairOracle.GetProperty("codeUnitsHex").GetString()
+    let pairText = stringFromCodeUnitsHex pairCodeUnitsHex
+    let onePairBytes = bytesFromHex (pairOracle.GetProperty("stringBytesHex").GetString())
+    let pairBytes = Array.append onePairBytes onePairBytes
+    let pairValues = [ NamedValue("TextTag", StringValue pairText); NamedValue("OtherTextTag", StringValue pairText) ]
+    let pairLiteralBody =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins entries.CoreCompilerContext entries.CoreProgram
+            "native-value-stack-nominal-string-pair-fixture" []
+            [ Push(LString pairText, site "pair-first-literal" 1)
+              Call("TextTag.construct", span "<native-value-stack-nominal-string-pair-first-wrap>" 2)
+              Push(LString pairText, span "<native-value-stack-nominal-string-pair-second-literal>" 3)
+              Call("OtherTextTag.construct", span "<native-value-stack-nominal-string-pair-second-wrap>" 4) ] Map.empty
+    use pairRoot = interpretRoot coreHost pairLiteralBody
+    let interpretedPair = interpret coreHost entries.HostIdentityPair (Some pairRoot) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    let pairOutput = outputBuffer pairBytes.Length
+    let pairResult = hostPairProgram.ExecuteInto(pairValues, 512, pairOutput)
+    let pairTypeIds =
+        pairResult.LayoutEvents
+        |> List.filter (fun event -> event.Kind = "descriptor-transfer")
+        |> List.map (fun event -> event.TypeId)
+        |> Set.ofList
+    let distinctPairPass =
+        interpretedPair = pairValues
+        && pairResult.Values = interpretedPair
+        && pairOutput = pairBytes
+        && pairTypeIds.Contains textTagTypeId
+        && pairTypeIds.Contains otherTextTagTypeId
+        && textTagTypeId <> otherTextTagTypeId
+        && pairResult.Metrics.DeepCopyBytes = 0UL
+        && pairResult.Metrics.MoveBytes = 0UL
+    record "host-pair-distinct-identities" distinctPairPass (jsonObject [
+        "interpreterValues", box (codeUnitSafeValuesData interpretedPair)
+        "owningValues", box (codeUnitSafeValuesData pairResult.Values)
+        "expectedTypeIds", box [| textTagTypeId; otherTextTagTypeId |]
+        "descriptorTypeIds", box (pairTypeIds |> Set.toArray)
+        "expectedBytesHex", box (bytesHex pairBytes)
+        "actualBytesHex", box (bytesHex pairOutput)
+        "deepCopyBytes", box pairResult.Metrics.DeepCopyBytes
+        "moveBytes", box pairResult.Metrics.MoveBytes ])
+
+    let wrapOracle = oracle.GetProperty("wrapUnwrap")
+    let wrapCodeUnitsHex = wrapOracle.GetProperty("codeUnitsHex").GetString()
+    let wrapText = stringFromCodeUnitsHex wrapCodeUnitsHex
+    let wrapBytes = bytesFromHex (wrapOracle.GetProperty("stringBytesHex").GetString())
+    let wrapInputBody =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins entries.CoreCompilerContext entries.CoreProgram
+            "native-value-stack-nominal-string-wrap-input" []
+            [ Push(LString wrapText, span "<native-value-stack-nominal-string-wrap-input-literal>" 1) ] Map.empty
+    use wrapRoot = interpretRoot coreHost wrapInputBody
+    let interpretedWrap = interpret coreHost entries.WrapUnwrap (Some wrapRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    let wrapOutput = outputBuffer wrapBytes.Length
+    let wrapResult = wrapUnwrapProgram.ExecuteInto([ StringValue wrapText ], 512, wrapOutput)
+    let transferOracle = wrapOracle.GetProperty("expectedDescriptorTransfer")
+    let wrapTransfers =
+        wrapResult.LayoutEvents
+        |> List.filter (fun event ->
+            event.Kind = "descriptor-transfer"
+            && event.TypeId = stringTypeId
+            && event.OffsetBytes = transferOracle.GetProperty("offsetBytes").GetInt32()
+            && event.SourceOffsetBytes = Some(transferOracle.GetProperty("sourceOffsetBytesOwnerEnd").GetInt32())
+            && event.SourceExtentBytes = Some(transferOracle.GetProperty("sourceExtentBytesPayloadExtent").GetInt32()))
+    let wrapPass =
+        interpretedWrap = [ StringValue wrapText ]
+        && wrapResult.Values = interpretedWrap
+        && wrapOutput = wrapBytes
+        && wrapResult.Metrics.DeepCopyBytes = 0UL
+        && wrapResult.Metrics.MoveBytes = 0UL
+        && wrapTransfers.Length > 0
+    record "wrap-unwrap-preserves-bytes-and-owner" wrapPass (jsonObject [
+        "interpreterValues", box (codeUnitSafeValuesData interpretedWrap)
+        "owningValues", box (codeUnitSafeValuesData wrapResult.Values)
+        "expectedBytesHex", box (bytesHex wrapBytes)
+        "actualBytesHex", box (bytesHex wrapOutput)
+        "expectedDescriptorTransfer", box (transferOracle.Clone())
+        "matchingDescriptorTransfers", box (layoutEventDetails wrapTransfers)
+        "deepCopyBytes", box wrapResult.Metrics.DeepCopyBytes
+        "moveBytes", box wrapResult.Metrics.MoveBytes ])
+
+    let hostShapeOracle = oracle.GetProperty("hostShapeRejections")
+    let expectedHostException = hostShapeOracle.GetProperty("exceptionType").GetString()
+    let expectedHostParameter = hostShapeOracle.GetProperty("parameterName").GetString()
+    let rejectionBytes = bytesFromHex (oracle.GetProperty("identityPair").GetProperty("stringBytesHex").GetString())
+    let checkHostShape label badValue =
+        let buffer = outputBuffer rejectionBytes.Length
+        let before = Array.copy buffer
+        let error =
+            try inputIdentityProgram.ExecuteInto([ badValue ], 512, buffer) |> ignore; None
+            with error -> Some error
+        let exceptionType = error |> Option.map (fun value -> value.GetType().FullName) |> Option.defaultValue ""
+        let parameterName =
+            error
+            |> Option.bind (function :? ArgumentException as argumentError -> Some(Option.ofObj argumentError.ParamName |> Option.defaultValue "") | _ -> None)
+            |> Option.defaultValue ""
+        let passed = exceptionType = expectedHostException && parameterName = expectedHostParameter && buffer = before
+        record ("host-shape-rejects-" + label + "-atomically") passed (jsonObject [
+            "expectedExceptionType", box expectedHostException
+            "actualExceptionType", box exceptionType
+            "expectedParameterName", box expectedHostParameter
+            "actualParameterName", box parameterName
+            "retainedBufferUnchanged", box (buffer = before) ])
+    checkHostShape "bare-string" (StringValue pairText)
+    checkHostShape "wrong-nominal" (NamedValue("OtherTextTag", StringValue pairText))
+
+    let nestedOracle = oracle.GetProperty("nestedProgram")
+    let nestedIds = nominalIntProgramTypeIds entries.NestedProgram
+    let _, envelopeTypeId = nestedIds["NominalEnvelope"]
+    let _, nestedTextTagTypeId = nestedIds["TextTag"]
+    let nestedStringTypeId = uint32 (nestedIds.Count + 4)
+    let nestedExpectedIds = nestedOracle.GetProperty("typeIds")
+    let nestedText = stringFromCodeUnitsHex (nestedOracle.GetProperty("record").GetProperty("ownerCodeUnitsHex").GetString())
+    let tailText = stringFromCodeUnitsHex (nestedOracle.GetProperty("record").GetProperty("tailCodeUnitsHex").GetString())
+    let nestedOwner = NamedValue("TextTag", StringValue nestedText)
+    let envelopeValue = RecordValue("NominalEnvelope", Map.ofList [ "owner", nestedOwner; "tail", StringValue tailText ])
+    let checkNested label identityBody value expectedBytesHex factoryExpressions =
+        let expectedBytes = bytesFromHex expectedBytesHex
+        let factory =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins entries.NestedCompilerContext entries.NestedProgram
+                ("native-value-stack-nominal-string-" + label + "-fixture") [] factoryExpressions Map.empty
+        use factoryRoot = interpretRoot nestedHost factory
+        let interpreted = interpret nestedHost identityBody (Some factoryRoot) [ IrEntryArgument.RetainedRoot 0 ]
+        let program = compile (label + "-identity") identityBody
+        use nativeProgram = program
+        let output = outputBuffer expectedBytes.Length
+        let result = nativeProgram.ExecuteInto([ value ], 1024, output)
+        let passed =
+            interpreted = [ value ]
+            && result.Values = interpreted
+            && output = expectedBytes
+            && result.Metrics.DeepCopyBytes = 0UL
+            && result.Metrics.MoveBytes = 0UL
+        record (label + "-host-roundtrip") passed (jsonObject [
+            "interpreterValues", box (codeUnitSafeValuesData interpreted)
+            "owningValues", box (codeUnitSafeValuesData result.Values)
+            "expectedBytesHex", box (bytesHex expectedBytes)
+            "actualBytesHex", box (bytesHex output)
+            "deepCopyBytes", box result.Metrics.DeepCopyBytes
+            "moveBytes", box result.Metrics.MoveBytes ])
+    let envelopeOracle = nestedOracle.GetProperty("record")
+    checkNested "record" entries.EnvelopeIdentity envelopeValue (envelopeOracle.GetProperty("bytesHex").GetString())
+        [ Push(LString nestedText, site "record-owner-literal" 1)
+          Call("TextTag.construct", site "record-owner-wrap" 2)
+          Push(LString tailText, site "record-tail-literal" 3)
+          Call("nominalEnvelope.new", site "record-construct" 4) ]
+
+    let optionOracle = nestedOracle.GetProperty("option")
+    let optionOwnerCodeUnits = optionOracle.GetProperty("codeUnitsHex").GetString()
+    let optionOwnerText = stringFromCodeUnitsHex optionOwnerCodeUnits
+    let optionSomeValue = OptionValue(TNamed "TextTag", Some(NamedValue("TextTag", StringValue optionOwnerText)))
+    let optionSomeFactory =
+        [ Push(LString optionOwnerText, site "option-some-literal" 1)
+          Call("TextTag.construct", site "option-some-wrap" 2)
+          ConstructContainer(OptionSome, [ TNamed "TextTag" ], site "option-some-construct" 3) ]
+    checkNested "option-some" entries.OptionIdentity optionSomeValue (optionOracle.GetProperty("someBytesHex").GetString()) optionSomeFactory
+    let optionNoneValue = OptionValue(TNamed "TextTag", None)
+    let optionNoneFactory = [ ConstructContainer(OptionNone, [ TNamed "TextTag" ], site "option-none-construct" 1) ]
+    checkNested "option-none" entries.OptionIdentity optionNoneValue (optionOracle.GetProperty("noneBytesHex").GetString()) optionNoneFactory
+
+    let resultOracle = nestedOracle.GetProperty("result")
+    let resultOkText = stringFromCodeUnitsHex (resultOracle.GetProperty("okCodeUnitsHex").GetString())
+    let resultErrorText = stringFromCodeUnitsHex (resultOracle.GetProperty("errorCodeUnitsHex").GetString())
+    let resultOkValue = ResultValue(TNamed "TextTag", TString, Ok(NamedValue("TextTag", StringValue resultOkText)))
+    let resultOkFactory =
+        [ Push(LString resultOkText, site "result-ok-literal" 1)
+          Call("TextTag.construct", site "result-ok-wrap" 2)
+          ConstructContainer(ResultOk, [ TNamed "TextTag"; TString ], site "result-ok-construct" 3) ]
+    checkNested "result-ok" entries.ResultIdentity resultOkValue (resultOracle.GetProperty("okBytesHex").GetString()) resultOkFactory
+    let resultErrorValue = ResultValue(TNamed "TextTag", TString, Error(StringValue resultErrorText))
+    let resultErrorFactory =
+        [ Push(LString resultErrorText, site "result-error-literal" 1)
+          ConstructContainer(ResultError, [ TNamed "TextTag"; TString ], site "result-error-construct" 2) ]
+    checkNested "result-error" entries.ResultIdentity resultErrorValue (resultOracle.GetProperty("errorBytesHex").GetString()) resultErrorFactory
+    let inactiveOracle = nestedOracle.GetProperty("inactiveResult")
+    let inactiveValue = ResultValue(TInt, TNamed "TextTag", Ok(IntValue(inactiveOracle.GetProperty("value").GetInt64())))
+    let inactiveFactory =
+        [ Push(LInt(inactiveOracle.GetProperty("value").GetInt64()), site "inactive-result-value" 1)
+          ConstructContainer(ResultOk, [ TInt; TNamed "TextTag" ], site "inactive-result-construct" 2) ]
+    let inactiveBytes = bytesFromHex (inactiveOracle.GetProperty("bytesHex").GetString())
+    let inactiveFactoryBody =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins entries.NestedCompilerContext entries.NestedProgram
+            "native-value-stack-nominal-string-inactive-result-fixture" [] inactiveFactory Map.empty
+    use inactiveRoot = interpretRoot nestedHost inactiveFactoryBody
+    let interpretedInactive = interpret nestedHost entries.InactiveResultIdentity (Some inactiveRoot) [ IrEntryArgument.RetainedRoot 0 ]
+    use inactiveProgram = compile "inactive-result-identity" entries.InactiveResultIdentity
+    let inactiveOutput = outputBuffer inactiveBytes.Length
+    let inactiveResult = inactiveProgram.ExecuteInto([ inactiveValue ], 1024, inactiveOutput)
+    let inactivePassed =
+        interpretedInactive = [ inactiveValue ]
+        && inactiveResult.Values = interpretedInactive
+        && inactiveOutput = inactiveBytes
+        && inactiveResult.Metrics.DeepCopyBytes = 0UL
+        && inactiveResult.Metrics.MoveBytes = 0UL
+    record "inactive-result-alternative-accepted" inactivePassed (jsonObject [
+        "interpreterValues", box (codeUnitSafeValuesData interpretedInactive)
+        "owningValues", box (codeUnitSafeValuesData inactiveResult.Values)
+        "inactiveAlternativeType", box "TextTag"
+        "expectedBytesHex", box (bytesHex inactiveBytes)
+        "actualBytesHex", box (bytesHex inactiveOutput)
+        "deepCopyBytes", box inactiveResult.Metrics.DeepCopyBytes
+        "moveBytes", box inactiveResult.Metrics.MoveBytes ])
+
+    let observedCaseCount = 2 + utf16Cases.GetArrayLength() + 1 + 1 + 2 + 5 + 1
+    jsonObject [
+        "optimization", box optimizationName
+        "caseCount", box observedCaseCount
+        "utf16CaseCount", box (utf16Cases.GetArrayLength())
+        "textTagTypeId", box textTagTypeId
+        "otherTextTagTypeId", box otherTextTagTypeId
+        "stringTypeId", box stringTypeId
+        "nestedTextTagTypeId", box nestedTextTagTypeId
+        "nestedEnvelopeTypeId", box envelopeTypeId
+        "nestedStringTypeId", box nestedStringTypeId
+        "stringKind", box (identityOracle.GetProperty("stringKind").GetInt32())
+        "predicateCount", box 0
+        "hostShapeRejectionCount", box 2
+        "nestedActiveCaseCount", box 3
+        "matchingOwnerTransferCount", box wrapTransfers.Length ]
+
 let private runRefinedStringConformance
     (checks: ResizeArray<obj>)
     (failures: ResizeArray<string>)
@@ -7909,13 +8344,10 @@ let private runRefinedStringConformance
         let code = compileError |> Option.map diagnosticCode |> Option.defaultValue ""
         let message = compileError |> Option.bind diagnosticOf |> Option.map (fun diagnostic -> diagnostic.Message) |> Option.defaultValue ""
         let expectedMessage =
-            if name = "UnvalidatedStringTag" then
-                Some(oracle.GetProperty("unsupportedUnvalidatedStringDiagnostic").GetProperty("message").GetString())
-            else None
+            None
         let messageMatches = expectedMessage |> Option.forall ((=) message)
         code = "IR_OWNING_STACK_TYPE_UNSUPPORTED" && messageMatches, code, message, expectedMessage
     for name, baseType, validatorName in [
-        "UnvalidatedStringTag", TString, None
         "BoolTag", TBool, Some "accept-bool?"
         "FloatTag", TFloat, Some "accept-float?" ] do
         let rejected, code, message, expectedMessage = unsupportedScalar name baseType validatorName
@@ -8080,7 +8512,7 @@ let private runRefinedStringConformance
         "nonEmptyStringTypeId", box nonEmptyTypeId
         "stringTypeId", box stringTypeId
         "refinedEnvelopeTypeId", box envelopeTypeId
-        "caseCount", box 29
+        "caseCount", box 28
         "rawInvalidInputCount", box 1
         "rawBodyFailureControlCount", box 1
         "recursiveRecordInputCount", box 2
@@ -8246,6 +8678,15 @@ let main argv =
         for optimization, optimizationName in optimizationPairs do
             refinedStringRuns.Add(box (runRefinedStringConformance checks failures fixture artifactsRoot optimization optimizationName refinedStringEntries))
         report["refinedStringRuns"] <- refinedStringRuns.ToArray()
+        let nominalStringEntries = compileNominalStringEntries ()
+        report["nominalStringVerifiedProgramInstances"] <- box (jsonObject [
+            "identityAndWrap", box true
+            "nested", box true ])
+        report["nominalStringBackendScope"] <- box "The compiler-authorized TextTag and nested VerifiedIrProgram instances run through the interpreter and owning-stack LLVM O0/O2. Independent UTF-16LE code-unit fixtures cover unvalidated nominal String host identity, wrap/unwrap provenance, and record/Option/Result round trips; mailbox admission is covered by the separate LLVM suite."
+        let nominalStringRuns = ResizeArray<obj>()
+        for optimization, optimizationName in optimizationPairs do
+            nominalStringRuns.Add(box (runNominalStringConformance checks failures fixture artifactsRoot optimization optimizationName nominalStringEntries))
+        report["nominalStringRuns"] <- nominalStringRuns.ToArray()
     with error ->
         let exceptionDetails =
             [ "Diagnostic"; "Metrics"; "RequiredBytes"; "AvailableBytes"; "Boundary" ]
