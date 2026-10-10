@@ -66,6 +66,17 @@ maintenance research. Investigate strict-coverage pressure around compiler-prove
 unreachable paths or reusable typed error construction without relaxing this
 study's gate.
 
+[Report 185](../reports/185-typed-reference-maintenance-results.md) records the
+first participant in the next maintenance task. The retained participant
+preserved the prior project but could not migrate its persisted record fields:
+the frozen authoring routes reject same-name type replacement. The independent
+oracle passed 13 of 18 cases; five replay cases failed. This single run is an
+environment capability-gap finding, not a balanced efficacy comparison. The
+other five participants were not dispatched, and this cohort is closed. The
+[atomic type evolution plan](TYPE-EVOLUTION.md) is now the immediate prerequisite.
+Implement and validate that change, then freeze a new cohort against the new
+runtime and inputs; do not pool the two runtime versions' results.
+
 [Report 178](../reports/178-preview-defect-control-calibration.md) calibrates the
 first defect-repair stage: three correct controls pass 37 independent cases,
 and three faulty controls fail the same eight cases despite passing their saved
