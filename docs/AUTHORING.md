@@ -169,8 +169,16 @@ The map must name exactly the functions declared in the source and use their
 currently observed revisions. This replacement batch accepts existing persistent
 Flow functions only. It preserves identities and library maturity, advances each
 revision, and checks the complete proposed dictionary before staging any change.
-Types, new functions, temporary definitions, attachment removals and external
-attachment arrays are outside this operation. Use the existing scalar
+Record, scalar and enum schemas are immutable after creation. A `define` request
+with `replace=true` and any type declaration fails with
+`FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED`, including type-only and mixed
+type/word documents. The diagnostic identifies the first declared type and its
+source span. `expectedRevision` and `expectedRevisions` compare word revisions
+only; they cannot change or bypass a type schema. Without `replace=true`, a
+duplicate type continues to fail as `FLOW_PROJECT_TYPE_ALREADY_EXISTS`. Define a
+new type under an unused name and migrate dependent words separately. New
+functions, temporary definitions, attachment removals and external attachment
+arrays are also outside this replacement operation. Use the existing scalar
 `expectedRevision` request for a single-function edit.
 
 Inline standalone tests/examples replace matching cases under their owner's

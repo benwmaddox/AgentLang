@@ -1,0 +1,172 @@
+{
+  "format": 1,
+  "report": "186-type-replacement-diagnostics",
+  "baseRevision": "cf0c86d2bf37c37360c34688b96a88d369f8c500",
+  "testedWorkingSourcePins": [
+    {
+      "path": "src/AgentLang.Core/Runtime.fs",
+      "sha256": "ac1ffb2a3d75470d31b40d2290f72f8b5fbf55c7b4444206fe707c728551882c",
+      "bytes": 501558
+    },
+    {
+      "path": "src/AgentLang.Core/AuthoringHelp.fs",
+      "sha256": "fe1991861d7b1e20dbc84a04436f74ea0d4746ef01e773b24a4b4c2b4bc5bded",
+      "bytes": 48223
+    },
+    {
+      "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "sha256": "6267d79bf7ac6652d0e4ca4eaa85949aee21f0b55928a34ecf6a16aec7d5b8e0",
+      "bytes": 491440
+    },
+    {
+      "path": "docs/AUTHORING.md",
+      "sha256": "536dbeaf20a9603a1d9bd656469d2e582b2acdfd8cf30a3b5379aa92197fd505",
+      "bytes": 10951
+    },
+    {
+      "path": "scripts/Validate.ps1",
+      "sha256": "1ae5d6539fe7ebe8c5629c50d201a6509a11a1dc5fe81782a1dcde8f40ce4ecd",
+      "bytes": 10201
+    }
+  ],
+  "localValidation": {
+    "passed": true,
+    "checks": 37,
+    "terminalExitCode": 0,
+    "focusedGroups": 42,
+    "focusedAssertions": 1891
+  },
+  "archive": {
+    "file": "evidence.zip",
+    "bytes": 1761670,
+    "sha256": "ee9fa8477a7b651bddc12749c4afc80ed198158ec4bde226a657f462c563f1d9"
+  },
+  "verification": {
+    "sourcePinsUnchanged": true,
+    "memberHashes": "passed",
+    "count": 24
+  },
+  "files": [
+    {
+      "path": "validation/capability-boundary-review.md",
+      "bytes": 5434,
+      "sha256": "e7ad5832eebe46e8612e38748440e5f28d4dc4ec3dd53f602fe703ff33c26269"
+    },
+    {
+      "path": "validation/failed-build-excerpt.json",
+      "bytes": 820,
+      "sha256": "82fd862c503c331b9ff4c234bd2b94de7b2c010cd894bc9263e30b13b0b166de"
+    },
+    {
+      "path": "validation/focused-run.txt",
+      "bytes": 64,
+      "sha256": "40afc4a6bc114607b8664c9bb5e389d713e94a3c753aafc0de5a388f90699bc0"
+    },
+    {
+      "path": "validation/full-validation-exit.json",
+      "bytes": 70,
+      "sha256": "39bdab08c3e5bae6e3b62604f279b8c2f99078055d660dfdd81011a8715ecd5c"
+    },
+    {
+      "path": "validation/full-validation.business-policy-preflight.json",
+      "bytes": 15483115,
+      "sha256": "23493ae91462d45c998842ff5c532b01e731eef747c84ad53ecccfd9b4d89144"
+    },
+    {
+      "path": "validation/full-validation.early-agent-negative.json",
+      "bytes": 172934,
+      "sha256": "32e35a7118dcb17a12ccde144e5307d515912fe5bf1c00e9e3c18bda6dcbbfb6"
+    },
+    {
+      "path": "validation/full-validation.flow-matched-fixtures.json",
+      "bytes": 230020,
+      "sha256": "96efb9d933499fe3c7d96fe590524d6aa22f399cb45424d6ada1092bb3bd5f4c"
+    },
+    {
+      "path": "validation/full-validation.json",
+      "bytes": 30096,
+      "sha256": "da39d46914beecee42dd28774790df5ff6b8b3320b296522c3bb566ebff350a4"
+    },
+    {
+      "path": "validation/full-validation.log",
+      "bytes": 17263,
+      "sha256": "5b15574e94c3fd8a5c356caa60a4f39709b292829b34d19fdc351a5c8fa5fe84"
+    },
+    {
+      "path": "validation/full-validation.matched-fixtures.json",
+      "bytes": 99883,
+      "sha256": "963641d3f54c03ee4e306c03056cba692553395d299403867b6fbf3edb8e3222"
+    },
+    {
+      "path": "validation/full-validation.matched-snapshots.json",
+      "bytes": 85956,
+      "sha256": "445ee186c2b00812bd50a1f29b16b979d3a8e8d98690701d68802affa738148e"
+    },
+    {
+      "path": "validation/full-validation.parser-limits.json",
+      "bytes": 3186,
+      "sha256": "3bda8df418529488caf8b7c74686462c92a6fcefbbf9893e52eb642ea3b910d2"
+    },
+    {
+      "path": "validation/full-validation.projection.json",
+      "bytes": 123935,
+      "sha256": "d4a0bbe8d33483573dd1b21e9a57208faff980a03696cfdae9c3a3a22d1fb839"
+    },
+    {
+      "path": "validation/full-validation.renewal-acceptance-gate.json",
+      "bytes": 1025134,
+      "sha256": "199c5b3d3f6ff07f3308b3d80f81c300ce2f48cd47e9b6f7df8486c78c1addf7"
+    },
+    {
+      "path": "validation/full-validation.renewal-replay.json",
+      "bytes": 307012,
+      "sha256": "e0c8fd401bd0c475ec11a179166a66cc537872313ebc78d34fdc0a45101910af"
+    },
+    {
+      "path": "validation/full-validation.subagent-host-v2.json",
+      "bytes": 25382,
+      "sha256": "858f1b91116cc042bfe3d6c704674ef31a5c5326face4651602ef3d509d19b3c"
+    },
+    {
+      "path": "validation/full-validation.subagent-host.json",
+      "bytes": 348075,
+      "sha256": "1f9411f73226892165c5d93703e3d7d65e610b12dcc3128e680474a1f9049775"
+    },
+    {
+      "path": "validation/source-pins.json",
+      "bytes": 1265,
+      "sha256": "ad0bd47e3890e5e0268212c189bfc50aaa1fcd3671969545a5e6e436226badd4"
+    },
+    {
+      "path": "validation/validation-receipt.md",
+      "bytes": 2806,
+      "sha256": "be21d0434652a7822a1dfdff9e37b11f9297156a1c45d71f62260ca109a6a26e"
+    },
+    {
+      "path": "sources/src/AgentLang.Core/Runtime.fs",
+      "bytes": 501558,
+      "sha256": "ac1ffb2a3d75470d31b40d2290f72f8b5fbf55c7b4444206fe707c728551882c"
+    },
+    {
+      "path": "sources/src/AgentLang.Core/AuthoringHelp.fs",
+      "bytes": 48223,
+      "sha256": "fe1991861d7b1e20dbc84a04436f74ea0d4746ef01e773b24a4b4c2b4bc5bded"
+    },
+    {
+      "path": "sources/tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "bytes": 491440,
+      "sha256": "6267d79bf7ac6652d0e4ca4eaa85949aee21f0b55928a34ecf6a16aec7d5b8e0"
+    },
+    {
+      "path": "sources/docs/AUTHORING.md",
+      "bytes": 10951,
+      "sha256": "536dbeaf20a9603a1d9bd656469d2e582b2acdfd8cf30a3b5379aa92197fd505"
+    },
+    {
+      "path": "sources/scripts/Validate.ps1",
+      "bytes": 10201,
+      "sha256": "1ae5d6539fe7ebe8c5629c50d201a6509a11a1dc5fe81782a1dcde8f40ce4ecd"
+    }
+  ],
+  "limits": "Verbose failed-build environment/property dump retained locally; archive includes terminal excerpt and original checksum. Earlier compiler/default-temp failures have worker summaries only. Engineering checks do not establish agent efficacy or cybersecurity certification."
+}

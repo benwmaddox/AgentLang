@@ -267,6 +267,21 @@ module Program =
         equal [ "tutorial-sign" ]
             (defineData.["sourceExamples"].AsArray() |> Seq.map (fun item -> stringValue item.["name"]) |> Seq.toList)
             "default Flow/1 define help preserves its existing source-example inventory"
+        let replacementHelp =
+            dispatch engine "help" [ "topic", jstr "replacement"; "syntaxVersion", jint 2 ]
+            |> expectOk "read Flow/2 replacement help"
+            |> fun response -> response.["data"]
+        let limitations = replacementHelp.["limitations"].AsArray()
+        equal 1 limitations.Count "replacement help exposes one structured type-replacement limitation"
+        let typeReplacementLimitation = limitations[0]
+        equal "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED" (stringValue typeReplacementLimitation.["code"]) "replacement help publishes the stable type-replacement diagnostic code"
+        equal "define" (stringValue typeReplacementLimitation.["operation"]) "replacement limitation names the affected operation"
+        equal "replace=true and source declares one or more types" (stringValue typeReplacementLimitation.["appliesWhen"]) "replacement limitation describes its trigger"
+        equal [ "record"; "scalar"; "enum" ] (jsonArrayStrings typeReplacementLimitation.["declarations"]) "replacement limitation names each immutable schema kind"
+        check ((stringValue typeReplacementLimitation.["explanation"]).Contains("word revisions only", StringComparison.Ordinal)) "structured replacement help explains that CAS applies only to words"
+        check ((stringValue typeReplacementLimitation.["alternative"]).Contains("unused name", StringComparison.Ordinal)) "structured replacement help gives the supported migration path"
+        for guidance in [ "immutable after creation"; "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED"; "compare word revisions only"; "unused name" ] do
+            check ((stringValue replacementHelp.["documentation"]).Contains(guidance, StringComparison.Ordinal)) $"replacement help explains {guidance}"
         check
             (defineData.["requestExamples"].AsArray()
              |> Seq.forall (fun item -> stringValue item.["name"] <> "define-tutorial-span-validator"))
@@ -776,6 +791,157 @@ module Program =
         let originalRevisions = names |> List.map (fun name -> name, revision engine name) |> Map.ofList
         let store = Storage.create project
         let durableBefore = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let wordsBeforeTypeRejections = dispatch engine "words" [] |> expectOk "capture the persisted dictionary before type replacement rejection" |> fun response -> response.["data"].ToJsonString()
+        let historyBeforeTypeRejections =
+            names
+            |> List.map (fun name ->
+                let history = dispatch engine "history" [ "word", jstr name ] |> expectOk $"capture durable history for {name} before type replacement rejection"
+                name, history.["data"].ToJsonString())
+            |> Map.ofList
+        let assertTypeReplacementRejected (label: string) (typeName: string) (source: string) (extra: (string * JsonNode) list) (wordNames: string list) =
+            let fields = [ "syntaxVersion", jint 2; "replace", jbool true ] @ extra
+            let first = defineFlowProject engine source fields |> expectError "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED"
+            let firstError = first.["error"]
+            check ((stringValue firstError.["message"]).Contains(typeName, StringComparison.Ordinal)) $"{label} identifies the offending type name"
+            check ((stringValue firstError.["message"]).Contains("immutable after creation", StringComparison.Ordinal)) $"{label} explains that type schemas are immutable"
+            check ((stringValue firstError.["message"]).Contains("compare word revisions only", StringComparison.Ordinal)) $"{label} explains that word CAS cannot change a type schema"
+            equal typeName (stringValue firstError.["word"]) $"{label} attaches the type name to its diagnostic"
+            let span = firstError.["span"]
+            check (stringValue span.["file"] = "<flow-project>") $"{label} attaches its source file"
+            check (span.["line"].GetValue<int>() > 0 && span.["column"].GetValue<int>() > 0) $"{label} attaches the declaration span"
+            let repeated = defineFlowProject engine source fields |> expectError "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED"
+            equal (first.ToJsonString()) (repeated.ToJsonString()) $"{label} returns a deterministic diagnostic"
+            equal durableBefore.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) $"{label} leaves the persisted manifest unchanged"
+            equal wordsBeforeTypeRejections (dispatch engine "words" [] |> expectOk $"inspect dictionary after {label}" |> fun response -> response.["data"].ToJsonString()) $"{label} leaves runtime words and generated functions unchanged"
+            for name in names do
+                equal historyBeforeTypeRejections[name]
+                    (dispatch engine "history" [ "word", jstr name ] |> expectOk $"inspect {name} durable history after {label}" |> fun response -> response.["data"].ToJsonString())
+                    $"{label} adds no durable history revision for {name}"
+            expectError "DISCOVERY_UNKNOWN_TYPE" (dispatch engine "source" [ "type", jstr typeName ]) |> ignore
+            let currentWords = dispatch engine "words" [] |> expectOk $"verify no partial declarations after {label}" |> fun response -> response.["data"].["words"]
+            for name in wordNames do
+                check (currentWords.AsArray() |> Seq.forall (fun item -> stringValue item.["name"] <> name)) $"{label} does not stage word '{name}'"
+
+        assertTypeReplacementRejected
+            "record-only replacement"
+            "ProbeRecord"
+            "record ProbeRecord { field value: Int }"
+            []
+            []
+        assertTypeReplacementRejected
+            "scalar-only replacement with an empty CAS map"
+            "ProbeScalar"
+            "type ProbeScalar : String { }"
+            [ "expectedRevisions", expectedRevisions [] ]
+            []
+        assertTypeReplacementRejected
+            "enum-only replacement with an empty CAS map"
+            "ProbeEnum"
+            "enum ProbeEnum { case only }"
+            [ "expectedRevisions", expectedRevisions [] ]
+            []
+        assertTypeReplacementRejected
+            "type and one-word replacement"
+            "ProbeSingleRecord"
+            "record ProbeSingleRecord { field value: Int }\n\nfn diagnostic.single(value: Int) -> Int { value }"
+            [ "expectedRevisions", expectedRevisions [ "diagnostic.single", 1 ] ]
+            [ "diagnostic.single" ]
+        assertTypeReplacementRejected
+            "type and multiword replacement"
+            "ProbeMultiEnum"
+            "enum ProbeMultiEnum { case only }\n\nfn diagnostic.first(value: Int) -> Int { value }\n\nfn diagnostic.second(value: Int) -> Int { value }"
+            [ "expectedRevisions", expectedRevisions [ "diagnostic.first", 1; "diagnostic.second", 1 ] ]
+            [ "diagnostic.first"; "diagnostic.second" ]
+
+        let duplicateTypeEngine = Runtime.Engine(Path.Combine(root, "flow-add-only-duplicate-type"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let duplicateTypeSource = "record ExistingOnly { field value: Int }"
+        defineFlowProject duplicateTypeEngine duplicateTypeSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "add an immutable type under a new name"
+        |> ignore
+        defineFlowProject duplicateTypeEngine duplicateTypeSource [ "syntaxVersion", jint 2 ]
+        |> expectError "FLOW_PROJECT_TYPE_ALREADY_EXISTS"
+        |> ignore
+
+        let existingRecordProject = Path.Combine(root, "flow-existing-record-schema-replacement")
+        let existingRecordEngine = Runtime.Engine(existingRecordProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let existingRecordStore = Storage.create existingRecordProject
+        let originalRecordSource = "record FrozenSchema { field value: Int }"
+        defineFlowProject existingRecordEngine originalRecordSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "define the persistent record schema used by the replacement diagnostic test"
+        |> ignore
+        commit existingRecordEngine "commit" "FrozenSchema" []
+        |> expectOk "persist the existing record schema"
+        |> ignore
+        let existingRecordManifestBefore = Storage.load existingRecordStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let sourceBeforeSchemaReplacement =
+            dispatch existingRecordEngine "source" [ "type", jstr "FrozenSchema" ]
+            |> expectOk "capture the authored persistent record source"
+            |> fun response -> stringValue response.["data"]
+        let constructorBeforeSchemaReplacement =
+            dispatch existingRecordEngine "describe" [ "word", jstr "frozenSchema.new" ]
+            |> expectOk "capture the record constructor signature"
+            |> fun response -> response.["data"].ToJsonString()
+        let accessorBeforeSchemaReplacement =
+            dispatch existingRecordEngine "describe" [ "word", jstr "frozenSchema.value" ]
+            |> expectOk "capture the record accessor signature"
+            |> fun response -> response.["data"].ToJsonString()
+        let generatedWordsBeforeSchemaReplacement =
+            dispatch existingRecordEngine "words" []
+            |> expectOk "capture generated record words"
+            |> fun response -> response.["data"].ToJsonString()
+        let changedRecordSource =
+            "record FrozenSchema { field value: String }\n\nfn schema.change(value: Int) -> Int { value }"
+        let changedRecord =
+            defineFlowProject existingRecordEngine changedRecordSource
+                [ "syntaxVersion", jint 2
+                  "replace", jbool true
+                  "expectedRevisions", expectedRevisions [ "schema.change", 1 ] ]
+            |> expectError "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED"
+        equal "FrozenSchema" (stringValue changedRecord.["error"].["word"]) "same-name record field change identifies the existing type"
+        check ((stringValue changedRecord.["error"].["message"]).Contains("immutable after creation", StringComparison.Ordinal)) "same-name record field change explains schema immutability"
+        equal existingRecordManifestBefore.ManifestHash (Storage.load existingRecordStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "same-name record field change leaves durable manifest authority unchanged"
+        equal sourceBeforeSchemaReplacement
+            (dispatch existingRecordEngine "source" [ "type", jstr "FrozenSchema" ] |> expectOk "read the record source after rejected field change" |> fun response -> stringValue response.["data"])
+            "same-name record field change preserves exact authored source"
+        equal constructorBeforeSchemaReplacement
+            (dispatch existingRecordEngine "describe" [ "word", jstr "frozenSchema.new" ] |> expectOk "inspect the record constructor after rejected field change" |> fun response -> response.["data"].ToJsonString())
+            "same-name record field change preserves the generated constructor signature"
+        equal accessorBeforeSchemaReplacement
+            (dispatch existingRecordEngine "describe" [ "word", jstr "frozenSchema.value" ] |> expectOk "inspect the record accessor after rejected field change" |> fun response -> response.["data"].ToJsonString())
+            "same-name record field change preserves the generated accessor signature"
+        equal generatedWordsBeforeSchemaReplacement
+            (dispatch existingRecordEngine "words" [] |> expectOk "inspect generated words after rejected field change" |> fun response -> response.["data"].ToJsonString())
+            "same-name record field change stages no partial word"
+        let reloadedExistingRecord = Runtime.Engine(existingRecordProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        equal sourceBeforeSchemaReplacement
+            (dispatch reloadedExistingRecord "source" [ "type", jstr "FrozenSchema" ] |> expectOk "read the reloaded record source after rejected field change" |> fun response -> stringValue response.["data"])
+            "fresh reload retains the original record schema"
+        equal constructorBeforeSchemaReplacement
+            (dispatch reloadedExistingRecord "describe" [ "word", jstr "frozenSchema.new" ] |> expectOk "inspect the reloaded constructor after rejected field change" |> fun response -> response.["data"].ToJsonString())
+            "fresh reload retains the original generated constructor signature"
+
+        dispatch engine "task.begin" [ "goal", jstr "verify unsupported type replacement preserves the baseline" ]
+        |> expectOk "begin a task before retrying an unsupported type replacement"
+        |> ignore
+        assertTypeReplacementRejected
+            "type replacement rejected inside a task"
+            "ProbeTaskScalar"
+            "type ProbeTaskScalar : Int { }\n\nfn diagnostic.task(value: Int) -> Int { value }"
+            [ "expectedRevisions", expectedRevisions [ "diagnostic.task", 1 ] ]
+            [ "diagnostic.task" ]
+        dispatch engine "task.abort" [] |> expectOk "abort the task after type replacement rejection" |> ignore
+        equal durableBefore.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "task abort after type rejection retains the persisted baseline"
+        equal wordsBeforeTypeRejections (dispatch engine "words" [] |> expectOk "inspect dictionary after aborting rejected type replacement" |> fun response -> response.["data"].ToJsonString()) "task abort restores the exact runtime dictionary baseline"
+        let typeRejectedReload = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        for name in names do
+            equal originalRevisions[name] (revision typeRejectedReload name) $"fresh reload after type rejection preserves {name}'s revision"
+            equal originalIds[name] (getWordId typeRejectedReload name) $"fresh reload after type rejection preserves {name}'s identity"
+            equal historyBeforeTypeRejections[name]
+                (dispatch typeRejectedReload "history" [ "word", jstr name ] |> expectOk $"inspect {name} after fresh reload from type rejection" |> fun response -> response.["data"].ToJsonString())
+                $"fresh reload after type rejection preserves {name}'s durable history"
+        for typeName in [ "ProbeRecord"; "ProbeScalar"; "ProbeEnum"; "ProbeSingleRecord"; "ProbeMultiEnum"; "ProbeTaskScalar" ] do
+            expectError "DISCOVERY_UNKNOWN_TYPE" (dispatch typeRejectedReload "source" [ "type", jstr typeName ]) |> ignore
+
         let badRoute =
             defineFlowProject engine "fn subscription.single(value: Int) -> Int { value }"
                 [ "syntaxVersion", jint 2

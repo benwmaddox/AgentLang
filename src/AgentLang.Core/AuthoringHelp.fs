@@ -43,12 +43,21 @@ module AuthoringHelp =
           Operation: string
           Fields: (string * RequestValue) list }
 
+    type StructuredLimitation =
+        { Code: string
+          Operation: string
+          AppliesWhen: string
+          Declarations: string list
+          Explanation: string
+          Alternative: string }
+
     type TopicContent =
         { Title: string
           Documentation: string
           AllowedFlowDefineFields: FlowDefineField list
           SourceExamples: SourceExample list
-          RequestExamples: RequestExample list }
+          RequestExamples: RequestExample list
+          Limitations: StructuredLimitation list }
 
     let schemaVersion = 1
 
@@ -499,6 +508,7 @@ test-file settings {
                 "Use one JSON object per JSONL request. Flow is the default frontend for define and eval. Select Flow syntax with syntaxVersion (version 1 is the default); use format to request canonical source without changing the project, then submit an explicit define request to stage an edit. Discover before editing: words with compact=true returns names only; search matches names, documentation, and signatures; describe shows full signatures and exact flowReference call spelling with its flowReferenceSyntaxVersion; context gives a bounded view of a known word and its reachable dependencies and types, with the syntax version for its references. Follow the reported version when copying a reference: Flow/2 references use shadow-safe leading-dot roots, even when the active source is Flow/1. Use transitive-dependencies to inspect the full dependency closure. Protocol queries use dictionary names with dots. Help returns instructions only; the active host still controls which operations it allows."
               AllowedFlowDefineFields = []
               SourceExamples = []
+              Limitations = []
               RequestExamples =
                 [ { Name = "help-index"
                     Description = "Return the concise authoring index."
@@ -529,6 +539,7 @@ test-file settings {
                 "A Flow define request takes source and the optional fields listed below. Omit frontend to select Flow and syntaxVersion to select Flow/1; use syntaxVersion 2 for Flow/2. Put documentation in the word body as `doc \"...\"`; doc and documentation are not request fields. A local binding stays inside one invocation. Declare effects in the word source, using `effects none` when there are no effects. For one-word declarations, attach tests and examples inline or through their source arrays. Multi-declaration project documents are add-only and must keep cases inline. An attachment-only document must keep cases inline and name exactly one existing Flow owner. Adding a new attachment-only case captures the current owner revision; replacing a case or removing one requires replace=true with the current expectedRevision, and removals also require its current expected source hash. Each case owner is the dictionary name before the slash. Define stages a candidate or temporary word and does not persist it. The format operation returns canonical Flow text without changing the project; submit the result through define when you want to stage that edit. A record validator must be pure with the exact record-type-to-Bool signature; write `validate namespace::predicate;` in Flow/1 and `validate namespace.predicate;` in Flow/2. A false result raises `RECORD_VALIDATION_FAILED`. Test rejection with an attached expected-error case; the validator's completed false return remains observable. The generated constructor's validator dependency is available through introspection. Library words may call only trusted primitives, generated type operations, or authored dependencies committed as library words. Qualify each helper with its own passing tests and complete coverage; a group library commit may qualify selected candidates together when every selected library word passes its own gate."
               AllowedFlowDefineFields = flowDefineFields
               SourceExamples = [ tutorialSourceExample ]
+              Limitations = []
               RequestExamples =
                 [ { Name = "define-tutorial-sign"
                     Description = "Define the complete source example using Flow's default frontend."
@@ -557,9 +568,16 @@ test-file settings {
           Topic.Replacement,
             { Title = "Replace a word"
               Documentation =
-                "Read describe.revision immediately before replacing a definition. Set replace=true and expectedRevision to that exact current revision for one word; a stale compare-and-swap leaves the word unchanged. For an atomic multiword Flow replacement, source must declare at least two existing persistent authored Flow words and expectedRevisions must map exactly those names to their current revisions. The batch may include standalone tests and examples inline; omitted cases and existing test-file wrappers remain attached. Batch replacement does not accept types, new words, wrapper edits, removals, external attachment arrays, or temporary lifecycle changes. A candidate replacement is tested and published with normal commit. A temporary word must be promoted to a candidate before normal commit, or task.commit will end the task and clear temporary words. For a committed word, define stages the replacement; targeted commit, commit-word, and replace-word require each selected replacement's own tests and every affected persistent caller's tests to pass. When the selected closure includes a staged replacement, publication includes staged callers whose retained or staged source depends on it. replace-word accepts a word name, not replacement source. Library publication also checks the word's own instruction, branch, and iteration coverage, every Bool/enum option at each parameter position, and all values in supported finite return domains. A library word may depend only on trusted primitives, generated type operations, and authored library words; replacement rechecks the closure of affected library callers before publication. Evidence comes only from actual calls to the exact function revision in passing attached tests; expected-value expressions are isolated. Unsupported finite domains fail closed."
+                "Read describe.revision immediately before replacing a definition. Set replace=true and expectedRevision to that exact current revision for one word; a stale compare-and-swap leaves the word unchanged. For an atomic multiword Flow replacement, source must declare at least two existing persistent authored Flow words and expectedRevisions must map exactly those names to their current revisions. The batch may include standalone tests and examples inline; omitted cases and existing test-file wrappers remain attached. Record, scalar, and enum schemas are immutable after creation. A define request with replace=true and any type declaration fails with FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED; expectedRevision and expectedRevisions compare word revisions only and cannot change or bypass a type schema. Define a new type under an unused name and migrate dependent words separately. Batch replacement does not accept types, new words, wrapper edits, removals, external attachment arrays, or temporary lifecycle changes. A candidate replacement is tested and published with normal commit. A temporary word must be promoted to a candidate before normal commit, or task.commit will end the task and clear temporary words. For a committed word, define stages the replacement; targeted commit, commit-word, and replace-word require each selected replacement's own tests and every affected persistent caller's tests to pass. When the selected closure includes a staged replacement, publication includes staged callers whose retained or staged source depends on it. replace-word accepts a word name, not replacement source. Library publication also checks the word's own instruction, branch, and iteration coverage, every Bool/enum option at each parameter position, and all values in supported finite return domains. A library word may depend only on trusted primitives, generated type operations, and authored library words; replacement rechecks the closure of affected library callers before publication. Evidence comes only from actual calls to the exact function revision in passing attached tests; expected-value expressions are isolated. Unsupported finite domains fail closed."
               AllowedFlowDefineFields = []
               SourceExamples = []
+              Limitations =
+                [ { Code = "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED"
+                    Operation = "define"
+                    AppliesWhen = "replace=true and source declares one or more types"
+                    Declarations = [ "record"; "scalar"; "enum" ]
+                    Explanation = "Nominal type schemas are immutable after creation. expectedRevision and expectedRevisions compare word revisions only; they cannot change a record, scalar, or enum schema."
+                    Alternative = "Define a type under an unused name and migrate dependent words separately." } ]
               RequestExamples =
                 [ { Name = "inspect-revision"
                     Description = "Read the current revision before preparing a replacement."
@@ -602,6 +620,7 @@ test-file settings {
                   { Name = "tutorial-sign-example"
                     Description = "A Flow example with a literal expected result."
                     Source = "example tutorial.sign/negative { tutorial::sign(-2) => -1 }" } ]
+              Limitations = []
               RequestExamples =
                 [ { Name = "test-one-word"
                     Description = "Run tests for one word."

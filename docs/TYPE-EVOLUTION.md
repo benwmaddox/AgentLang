@@ -105,3 +105,51 @@ fresh project built directly with the desired schema does not validate this
 prerequisite. Retain the migration trace, publication and fresh-reload receipts.
 Include `task.abort` in the new participant allowlist if rollback is part of its
 task; the interrupted retained participant's frozen allowlist omitted it.
+
+## Implementation sequence
+
+The existing manifest format 5 retains only current type source heads. Add
+versioned type source history as a storage prerequisite, with an explicit
+format transition, parser/serializer validation and fresh-reload checks. Preserve
+existing word history and supported older-format loading; do not silently
+reinterpret an older manifest as a new history format.
+
+Then add the runtime staging transaction. The current word replacement backups
+cannot restore an overwritten record entry. Record/source backups and a group
+publication boundary must be implemented together: durable projection and discard
+restore the old schema, while committing any group member includes the complete
+schema/function change. Compilation uses one detached proposed snapshot before
+activation. Field addition, removal, renaming and ordering remain within the
+planned end-state; a type-only-field slice must not be reported as completing
+record evolution.
+
+Finally, validate migration from the persisted unmigrated trial seed through the
+participant's permitted protocol, including original test preservation, entry
+signatures, library qualification, publication and a fresh reload. Only this
+readiness control permits a new frozen participant cohort. These are planned
+stages, not implemented capabilities.
+
+For the storage implementation, keep current `Types` heads and add a required
+format-6 collection of prior type-source rows. Each row retains the type name,
+positive revision ordinal and exact source reference/format/validator metadata.
+Prior ordinals must be contiguous and belong to a current head; the head's
+ordinal follows the retained rows. Include every historical reference in
+hash-verified load/commit closure. Missing format-6 history metadata is an error,
+not an empty-history default. Older manifests have an implicit initial source;
+record it when that source is first displaced, without inventing actor or time
+metadata. Preserve version-5 attachment-format requirements at version 6.
+
+`history` with a type selector reads these manifest references as source data;
+it must never compile a historical schema into the active environment. Reject
+ambiguous type-and-word selectors, preserve word history response shapes, and
+keep source text queries compatible. Provide an explicit type inspection payload
+for the current source hash rather than changing raw `source(type)` text.
+
+The restart control must migrate the retained seed's `Scan.reference`,
+`ScanInput.reference` and `ShipmentScanLookup.target`, plus the permitted
+`shipment.find-scan` helper parameter, to `TrackingReference`. Preserve helper
+identity/library maturity and both ingest entry signatures. Keep the original
+18-case behavior oracle and add separate publication, inherited-evidence,
+type-history and fresh-process reload checks; no single oracle proves all of
+these. Do not rerun preparation over frozen study-184 inputs or pool new
+participants with the interrupted result.

@@ -410,6 +410,18 @@ module Runtime =
                 sourceExamples.Add row
             payload["sourceExamples"] <- sourceExamples
 
+            let limitations = JsonArray()
+            for limitation in content.Limitations do
+                let row = JsonObject()
+                row["code"] <- jstr limitation.Code
+                row["operation"] <- jstr limitation.Operation
+                row["appliesWhen"] <- jstr limitation.AppliesWhen
+                row["declarations"] <- jsonNode limitation.Declarations
+                row["explanation"] <- jstr limitation.Explanation
+                row["alternative"] <- jstr limitation.Alternative
+                limitations.Add row
+            payload["limitations"] <- limitations
+
             let requestExamples = JsonArray()
             for example in content.RequestExamples do
                 let row = JsonObject()
@@ -3834,6 +3846,22 @@ module Runtime =
                     | _ -> ())
             | _ -> ()
 
+        let rejectFlowTypeReplacement (document: FlowProjectDocument) =
+            let declarations =
+                [ document.Records |> List.map (fun definition -> "record", definition.Name, definition.Span)
+                  document.Scalars |> List.map (fun definition -> "scalar", definition.Name, definition.Span)
+                  document.Enums |> List.map (fun definition -> "enum", definition.Name, definition.Span) ]
+                |> List.concat
+                |> List.sortBy (fun (_, _, span) -> span.Line, span.Column)
+            match declarations with
+            | (kind, name, span) :: _ ->
+                error "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED"
+                    $"Flow {kind} type '{name}' cannot be replaced: record, scalar, and enum schemas are immutable after creation. expectedRevision and expectedRevisions compare word revisions only; they cannot change type schemas. Define a new type under an unused name and migrate dependent words separately."
+                    (Some name) (Some span)
+                    [ "existing authored Flow word declarations only" ]
+                    [ $"{kind} type declaration"; name ]
+            | [] -> ()
+
         let registerFlowReplacementProjectParsed (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
             let old = data
             let wordNames = document.Words |> List.map (fun item -> item.Name)
@@ -3841,8 +3869,6 @@ module Runtime =
                 error "FLOW_PROJECT_REQUEST_SHAPE" "A multi-declaration Flow replacement requires replace=true and an expectedRevisions map." None None [ "replace=true with expectedRevisions" ] []
             if document.Words.Length < 2 then
                 error "FLOW_PROJECT_REPLACEMENT_SHAPE" "expectedRevisions is reserved for replacing at least two existing authored Flow words in one source document." None None [ "at least two word declarations" ] [ string document.Words.Length ]
-            if not document.Records.IsEmpty || not document.Scalars.IsEmpty || not document.Enums.IsEmpty then
-                error "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED" "A multiword replacement may contain only existing authored Flow words and their inline standalone cases." None None [ "existing Flow word declarations" ] [ "type declaration" ]
             if document.SyntaxVersion <> syntaxVersion then
                 error "FLOW_VERSION_UNSUPPORTED" "Flow project syntax version does not match the selected syntaxVersion." None None [ string syntaxVersion ] [ string document.SyntaxVersion ]
             if not document.TestFiles.IsEmpty then
@@ -5216,6 +5242,13 @@ module Runtime =
                 match FlowParser.parseDocumentWithVersion syntaxVersion "<flow-project>" source with
                 | Ok value -> value
                 | Error diagnostic -> raise (LanguageException diagnostic)
+            let replaceWasRequested =
+                match arguments["replace"] with
+                | :? JsonValue as value ->
+                    let mutable requested = false
+                    value.TryGetValue<bool>(&requested) && requested
+                | _ -> false
+            if replaceWasRequested then rejectFlowTypeReplacement document
             if arguments.ContainsKey "expectedRevisions" && document.Words.Length < 2 then
                 error "FLOW_PROJECT_REPLACEMENT_CAS_SHAPE" "expectedRevisions is only for an atomic replacement of at least two words declared in the same source document." None None [ "multiword source with one expectedRevisions entry per word" ] [ string document.Words.Length + " word declarations" ]
             if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.IsEmpty && (not document.Tests.IsEmpty || not document.Examples.IsEmpty || not document.TestFiles.IsEmpty) then
