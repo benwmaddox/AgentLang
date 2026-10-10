@@ -1,0 +1,3563 @@
+{
+  "status": "verified",
+  "description": "Accepted local gates, failed attempts, independent oracle corrections, source pins and selected generated refined mailbox modules. Build trees, binaries and environment dumps excluded.",
+  "archive": {
+    "path": "evidence.zip",
+    "bytes": 9016556,
+    "sha256": "ef76be39eba5f30e938cbcdc45354aa649263dbf95cf8d25d857a0cd8070ef21"
+  },
+  "accepted": {
+    "llvmAssertions": 655,
+    "focusedMailboxAssertions": 5,
+    "nativeChecks": 47,
+    "nativeSourcePins": 47,
+    "mailboxChecks": 2255,
+    "refinedChecks": 668,
+    "mailboxSourcePins": 28,
+    "policyChecks": 741,
+    "realIoChecks": 207190,
+    "fullLocalChecks": 37
+  },
+  "files": [
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/clang-version.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/clang-version.stdout.txt",
+      "bytes": 171,
+      "sha256": "3485a3daba6be10c6481ee1a6dfb4c663fbb6793ee51b349411eaa493038ee63"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-module-O0_diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-module-O0_diagnostic.stdout.txt",
+      "bytes": 34992,
+      "sha256": "ed7dfacdbc6c30628a3ede140a8d6c3e7a0a63258d9afda9f0030c819d92d36f"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-module-O0_trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-module-O0_trusted-generated.stdout.txt",
+      "bytes": 35027,
+      "sha256": "9ee2585f919821f9b13fcb71a7c12ce03fc7bb8d0550f01d622b7f376a00aa87"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-module-O2_diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-module-O2_diagnostic.stdout.txt",
+      "bytes": 34992,
+      "sha256": "268da32b1cebec02cf0fd60ccd8fef77de1851b71e163acfa8a76e2b0ddb8c90"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-module-O2_trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-module-O2_trusted-generated.stdout.txt",
+      "bytes": 35027,
+      "sha256": "939d94ee90aebfdd1c21ce27d9ee1fc113b00b51b288802746fb6079bb6deede"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-sums-module-O0-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-sums-module-O0-diagnostic.stdout.txt",
+      "bytes": 68207,
+      "sha256": "f35ea51930e67afc542045d43bf1ec84439c93070aca984a064d730273b38949"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-sums-module-O0-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-sums-module-O0-trusted-generated.stdout.txt",
+      "bytes": 68242,
+      "sha256": "02d90eb20cc280f7d139810c7907e91bfd3306948b82ebd2d754c95dab85348a"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-sums-module-O2-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-sums-module-O2-diagnostic.stdout.txt",
+      "bytes": 68207,
+      "sha256": "4094dbb4ff10e0fc42e0f871e85b602e8a13760732279bfeeadc7410e0e359e3"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-sums-module-O2-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/compile-sums-module-O2-trusted-generated.stdout.txt",
+      "bytes": 68242,
+      "sha256": "89bcb0c24de75eff8d17987fd3c5dbd36e55ce27fe2c7a424fb12131a16e150e"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/fresh-release-project-build.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/fresh-release-project-build.stdout.txt",
+      "bytes": 968,
+      "sha256": "491895c2cc3067cb597f13651cc66afa43a3c3071b3049f07e4b1f4b2f2d4a64"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/integration-evidence.json",
+      "bytes": 8897616,
+      "sha256": "57bac85e2629b7c8d8df697fbb647462d870812cbe9c1d31b4fd0a62abda1581"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-build-O0_diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-build-O0_diagnostic.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-build-O0_fast-reset.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-build-O0_fast-reset.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-build-O0_trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-build-O0_trusted-generated.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-build-O2_diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-build-O2_diagnostic.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-build-O2_fast-reset.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-build-O2_fast-reset.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-build-O2_trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-build-O2_trusted-generated.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-run-O0_diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-run-O0_diagnostic.stdout.txt",
+      "bytes": 15129,
+      "sha256": "55692240afd3105b68c88e5e409d9c5af9a3c1102de6136f37161ffc3710ede7"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-run-O0_fast-reset.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-run-O0_fast-reset.stdout.txt",
+      "bytes": 15117,
+      "sha256": "ae24a06d4836e317fad500203522681649c5a578cf934f7dacd5848856085bb1"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-run-O0_trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-run-O0_trusted-generated.stdout.txt",
+      "bytes": 15120,
+      "sha256": "708a2b521ff2012e312d2b661dcb9f793e3ea722eb67059d860a784b451def00"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-run-O2_diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-run-O2_diagnostic.stdout.txt",
+      "bytes": 15129,
+      "sha256": "55692240afd3105b68c88e5e409d9c5af9a3c1102de6136f37161ffc3710ede7"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-run-O2_fast-reset.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-run-O2_fast-reset.stdout.txt",
+      "bytes": 15117,
+      "sha256": "ae24a06d4836e317fad500203522681649c5a578cf934f7dacd5848856085bb1"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-run-O2_trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-runner-run-O2_trusted-generated.stdout.txt",
+      "bytes": 15120,
+      "sha256": "708a2b521ff2012e312d2b661dcb9f793e3ea722eb67059d860a784b451def00"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-build-O0_diagnostic_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-build-O0_diagnostic_sums.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-build-O0_fast-reset_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-build-O0_fast-reset_sums.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-build-O0_trusted-generated_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-build-O0_trusted-generated_sums.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-build-O2_diagnostic_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-build-O2_diagnostic_sums.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-build-O2_fast-reset_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-build-O2_fast-reset_sums.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-build-O2_trusted-generated_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-build-O2_trusted-generated_sums.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-run-O0_diagnostic_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-run-O0_diagnostic_sums.stdout.txt",
+      "bytes": 12696,
+      "sha256": "1871e15d7317a5f863b4482a0c937871c50b80bdc52f6e08221f2a37ad77d641"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-run-O0_fast-reset_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-run-O0_fast-reset_sums.stdout.txt",
+      "bytes": 12696,
+      "sha256": "1871e15d7317a5f863b4482a0c937871c50b80bdc52f6e08221f2a37ad77d641"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-run-O0_trusted-generated_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-run-O0_trusted-generated_sums.stdout.txt",
+      "bytes": 12696,
+      "sha256": "1871e15d7317a5f863b4482a0c937871c50b80bdc52f6e08221f2a37ad77d641"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-run-O2_diagnostic_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-run-O2_diagnostic_sums.stdout.txt",
+      "bytes": 12696,
+      "sha256": "1871e15d7317a5f863b4482a0c937871c50b80bdc52f6e08221f2a37ad77d641"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-run-O2_fast-reset_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-run-O2_fast-reset_sums.stdout.txt",
+      "bytes": 12696,
+      "sha256": "1871e15d7317a5f863b4482a0c937871c50b80bdc52f6e08221f2a37ad77d641"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-run-O2_trusted-generated_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/native-sums-runner-run-O2_trusted-generated_sums.stdout.txt",
+      "bytes": 12696,
+      "sha256": "1871e15d7317a5f863b4482a0c937871c50b80bdc52f6e08221f2a37ad77d641"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O0-arena_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O0-arena_runtime_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O0-mailbox_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O0-mailbox_runtime_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O0-mailbox_runtime_windows_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O0-mailbox_runtime_windows_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O0-owning_bank_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O0-owning_bank_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O0-owning_stack_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O0-owning_stack_runtime_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O2-arena_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O2-arena_runtime_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O2-mailbox_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O2-mailbox_runtime_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O2-mailbox_runtime_windows_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O2-mailbox_runtime_windows_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O2-owning_bank_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O2-owning_bank_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O2-owning_stack_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-build-O2-owning_stack_runtime_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O0-arena_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O0-arena_runtime_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O0-mailbox_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O0-mailbox_runtime_c.stdout.txt",
+      "bytes": 695,
+      "sha256": "0d87cd6717f74a0837bc4aa7552e779b23d2563b967179d1020e8d7f6db5e908"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O0-mailbox_runtime_windows_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O0-mailbox_runtime_windows_c.stdout.txt",
+      "bytes": 36,
+      "sha256": "8e49c44492f03779432e95a5022ea7c2ea83ae840a7265c75c2fd64e75dc91db"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O0-owning_bank_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O0-owning_bank_c.stdout.txt",
+      "bytes": 123,
+      "sha256": "65adb443aec8d63e5f8a3e7faf3999e10caa324b9ebb36dc7afeb21f12894ce6"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O0-owning_stack_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O0-owning_stack_runtime_c.stdout.txt",
+      "bytes": 20,
+      "sha256": "569d9871506db6346d154db85d8980f9a2e8512ad614fe79e47ec8f83d7abd6d"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O2-arena_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O2-arena_runtime_c.stdout.txt",
+      "bytes": 18,
+      "sha256": "5d2792dcceb414c9e62f027ee69b602ab848e9d238d4ac34157d643a864678fd"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O2-mailbox_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O2-mailbox_runtime_c.stdout.txt",
+      "bytes": 677,
+      "sha256": "fc3ee3e36c69c86818a2fc832e9a8962ac2f9145759b4b3169ef0a6c59dcb17d"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O2-mailbox_runtime_windows_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O2-mailbox_runtime_windows_c.stdout.txt",
+      "bytes": 36,
+      "sha256": "8e49c44492f03779432e95a5022ea7c2ea83ae840a7265c75c2fd64e75dc91db"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O2-owning_bank_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O2-owning_bank_c.stdout.txt",
+      "bytes": 123,
+      "sha256": "65adb443aec8d63e5f8a3e7faf3999e10caa324b9ebb36dc7afeb21f12894ce6"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O2-owning_stack_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/owning-runtime-object-symbols-O2-owning_stack_runtime_c.stdout.txt",
+      "bytes": 20,
+      "sha256": "569d9871506db6346d154db85d8980f9a2e8512ad614fe79e47ec8f83d7abd6d"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-O0-diagnostic_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-O0-diagnostic_exe.stdout.txt",
+      "bytes": 2870,
+      "sha256": "13442b9f3d5ef446f73354d11a5af4d9ddac24f343bc2f9a9d6d36121d4cfe8f"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-O0-fast-reset_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-O0-fast-reset_exe.stdout.txt",
+      "bytes": 2870,
+      "sha256": "841b60beb36a8a2c6ae8135911e70fc34e310878cbfd80ede7a6e2cc51306887"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-O0-trusted-generated_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-O0-trusted-generated_exe.stdout.txt",
+      "bytes": 2884,
+      "sha256": "48c062b5044063c19665d14d505123c46cd7a0391ed7d70f926ee7ad24af6682"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-O2-diagnostic_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-O2-diagnostic_exe.stdout.txt",
+      "bytes": 2897,
+      "sha256": "7c3efd6f5853f56d8fc149a753e3d76a2d5c715fde1edb9f49497aeb6846ed36"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-O2-fast-reset_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-O2-fast-reset_exe.stdout.txt",
+      "bytes": 2897,
+      "sha256": "33a667c0d007263bd65f092bf26a6c5313c28dae6d99aa59e54b9fd0d941efab"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-O2-trusted-generated_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-O2-trusted-generated_exe.stdout.txt",
+      "bytes": 2911,
+      "sha256": "93be8e88e8ffa25d1c513f0eb092116353aa9596efef7452141b9ec0c21cda6e"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-sums-O0-diagnostic_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-sums-O0-diagnostic_exe.stdout.txt",
+      "bytes": 2880,
+      "sha256": "31b94496c36a33bb60ca02d39ebaeb923e27c0a3523f49289bc5fbb8d530d151"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-sums-O0-fast-reset_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-sums-O0-fast-reset_exe.stdout.txt",
+      "bytes": 2880,
+      "sha256": "5da80675c38cafddbb1d4f4cac37b24fa57329d081394082e28ac69409ad305c"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-sums-O0-trusted-generated_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-sums-O0-trusted-generated_exe.stdout.txt",
+      "bytes": 2894,
+      "sha256": "37f24e2626111e1e2cb6f006cf3e04c06fd61f827dd1951361627cfa7709763d"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-sums-O2-diagnostic_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-sums-O2-diagnostic_exe.stdout.txt",
+      "bytes": 2907,
+      "sha256": "51c11ccf452e132d15dd16d6c4075c981cc99771f9694f4edcd07b79a64d9bc0"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-sums-O2-fast-reset_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-sums-O2-fast-reset_exe.stdout.txt",
+      "bytes": 2907,
+      "sha256": "5a180659eddccadf778f7b9e3f46c55055dc8cd19dfe0726a775010baba4718d"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-sums-O2-trusted-generated_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-native-owning-mailbox-sums-O2-trusted-generated_exe.stdout.txt",
+      "bytes": 2921,
+      "sha256": "31e97d1105ee3aff243b5d88bae243dea6f2b768a3b6f41ffefd8459967bba17"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-owning-mailbox-native_dll.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/pe-import-audit-owning-mailbox-native_dll.stdout.txt",
+      "bytes": 215,
+      "sha256": "1d83f0e8ff6be7885d213f9ff8cfd742fc9fc08d63a05cf3f16a1a6f32695b15"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/profile-control-diagnostic-host_diagnostic-module.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/profile-control-diagnostic-host_diagnostic-module.stdout.txt",
+      "bytes": 493,
+      "sha256": "a92f0590a824fe43dc2c79ca62f8c8196b89de5d8f0669c16cb2f4278d435ebb"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/profile-control-trusted-host_trusted-module.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/profile-control-trusted-host_trusted-module.stdout.txt",
+      "bytes": 493,
+      "sha256": "a92f0590a824fe43dc2c79ca62f8c8196b89de5d8f0669c16cb2f4278d435ebb"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/profile-mismatch-diagnostic-host_trusted-module.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/profile-mismatch-diagnostic-host_trusted-module.stdout.txt",
+      "bytes": 693,
+      "sha256": "2267ff528cffd1aace5e16f5ca0112c65147eae0145f8134df2c4e48d3ec496a"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/profile-mismatch-trusted-host_diagnostic-module.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/profile-mismatch-trusted-host_diagnostic-module.stdout.txt",
+      "bytes": 693,
+      "sha256": "2267ff528cffd1aace5e16f5ca0112c65147eae0145f8134df2c4e48d3ec496a"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/clang-version.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/clang-version.stdout.txt",
+      "bytes": 171,
+      "sha256": "3485a3daba6be10c6481ee1a6dfb4c663fbb6793ee51b349411eaa493038ee63"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-module-O0_diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-module-O0_diagnostic.stdout.txt",
+      "bytes": 34992,
+      "sha256": "c2a8b4b255ab6a220a2478b84b73b2f2048e4adf39aaa95b27862ab5dd8df3d9"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-module-O0_trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-module-O0_trusted-generated.stdout.txt",
+      "bytes": 35027,
+      "sha256": "5c6b85955ac54fe0bbe73d565dfc53b41abf8335ee7e2ab4e76255fa429ae6c6"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-module-O2_diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-module-O2_diagnostic.stdout.txt",
+      "bytes": 34992,
+      "sha256": "a4e2a84a59982a3e5a60787364bb4f7cedc786a3b04a54107476d789bd710deb"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-module-O2_trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-module-O2_trusted-generated.stdout.txt",
+      "bytes": 35027,
+      "sha256": "90d9113fe1d8441057ba34eef2ff9f0b8b218a8f23f427788f919eec1ae79665"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-sums-module-O0-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-sums-module-O0-diagnostic.stdout.txt",
+      "bytes": 68207,
+      "sha256": "12c2a0ab872f24de9a3c33debfaaaa9dce7ce56dc39175c55cf5525bb461cb34"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-sums-module-O0-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-sums-module-O0-trusted-generated.stdout.txt",
+      "bytes": 68242,
+      "sha256": "11b480138d692c1fdfd0d463ea68b889f6d75897ea43501c83c51f116b784e57"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-sums-module-O2-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-sums-module-O2-diagnostic.stdout.txt",
+      "bytes": 68207,
+      "sha256": "30c6bb141c04da8d85ac089d6b648d24bcf0ececfe6595def888cd06ebe3ba1e"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-sums-module-O2-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-sums-module-O2-trusted-generated.stdout.txt",
+      "bytes": 68242,
+      "sha256": "0b4ba4add172fb5ccb30a095d1f7f501b752283442db92b4960608c027b5852f"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/fresh-release-project-build.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/fresh-release-project-build.stdout.txt",
+      "bytes": 968,
+      "sha256": "dbe6b7265287ae99f6e73df2d976168b9d3b13e75f89d87adc6dc666b82b98eb"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/integration-evidence.json",
+      "bytes": 10725433,
+      "sha256": "58b0fc6567ef0a233ad537688955b8cfec586ed8607e9b2076cafd8f83535ee3"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-build-O0_diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-build-O0_diagnostic.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-build-O0_fast-reset.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-build-O0_fast-reset.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-build-O0_trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-build-O0_trusted-generated.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-build-O2_diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-build-O2_diagnostic.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-build-O2_fast-reset.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-build-O2_fast-reset.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-build-O2_trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-build-O2_trusted-generated.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-run-O0_diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-run-O0_diagnostic.stdout.txt",
+      "bytes": 15129,
+      "sha256": "55692240afd3105b68c88e5e409d9c5af9a3c1102de6136f37161ffc3710ede7"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-run-O0_fast-reset.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-run-O0_fast-reset.stdout.txt",
+      "bytes": 15117,
+      "sha256": "ae24a06d4836e317fad500203522681649c5a578cf934f7dacd5848856085bb1"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-run-O0_trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-run-O0_trusted-generated.stdout.txt",
+      "bytes": 15120,
+      "sha256": "708a2b521ff2012e312d2b661dcb9f793e3ea722eb67059d860a784b451def00"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-run-O2_diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-run-O2_diagnostic.stdout.txt",
+      "bytes": 15129,
+      "sha256": "55692240afd3105b68c88e5e409d9c5af9a3c1102de6136f37161ffc3710ede7"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-run-O2_fast-reset.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-run-O2_fast-reset.stdout.txt",
+      "bytes": 15117,
+      "sha256": "ae24a06d4836e317fad500203522681649c5a578cf934f7dacd5848856085bb1"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-run-O2_trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-runner-run-O2_trusted-generated.stdout.txt",
+      "bytes": 15120,
+      "sha256": "708a2b521ff2012e312d2b661dcb9f793e3ea722eb67059d860a784b451def00"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-build-O0_diagnostic_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-build-O0_diagnostic_sums.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-build-O0_fast-reset_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-build-O0_fast-reset_sums.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-build-O0_trusted-generated_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-build-O0_trusted-generated_sums.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-build-O2_diagnostic_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-build-O2_diagnostic_sums.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-build-O2_fast-reset_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-build-O2_fast-reset_sums.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-build-O2_trusted-generated_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-build-O2_trusted-generated_sums.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-run-O0_diagnostic_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-run-O0_diagnostic_sums.stdout.txt",
+      "bytes": 12696,
+      "sha256": "1871e15d7317a5f863b4482a0c937871c50b80bdc52f6e08221f2a37ad77d641"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-run-O0_fast-reset_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-run-O0_fast-reset_sums.stdout.txt",
+      "bytes": 12696,
+      "sha256": "1871e15d7317a5f863b4482a0c937871c50b80bdc52f6e08221f2a37ad77d641"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-run-O0_trusted-generated_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-run-O0_trusted-generated_sums.stdout.txt",
+      "bytes": 12696,
+      "sha256": "1871e15d7317a5f863b4482a0c937871c50b80bdc52f6e08221f2a37ad77d641"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-run-O2_diagnostic_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-run-O2_diagnostic_sums.stdout.txt",
+      "bytes": 12696,
+      "sha256": "1871e15d7317a5f863b4482a0c937871c50b80bdc52f6e08221f2a37ad77d641"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-run-O2_fast-reset_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-run-O2_fast-reset_sums.stdout.txt",
+      "bytes": 12696,
+      "sha256": "1871e15d7317a5f863b4482a0c937871c50b80bdc52f6e08221f2a37ad77d641"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-run-O2_trusted-generated_sums.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-sums-runner-run-O2_trusted-generated_sums.stdout.txt",
+      "bytes": 12696,
+      "sha256": "1871e15d7317a5f863b4482a0c937871c50b80bdc52f6e08221f2a37ad77d641"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O0-arena_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O0-arena_runtime_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O0-mailbox_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O0-mailbox_runtime_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O0-mailbox_runtime_windows_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O0-mailbox_runtime_windows_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O0-owning_bank_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O0-owning_bank_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O0-owning_stack_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O0-owning_stack_runtime_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O2-arena_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O2-arena_runtime_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O2-mailbox_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O2-mailbox_runtime_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O2-mailbox_runtime_windows_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O2-mailbox_runtime_windows_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O2-owning_bank_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O2-owning_bank_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O2-owning_stack_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-build-O2-owning_stack_runtime_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O0-arena_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O0-arena_runtime_c.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O0-mailbox_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O0-mailbox_runtime_c.stdout.txt",
+      "bytes": 695,
+      "sha256": "0d87cd6717f74a0837bc4aa7552e779b23d2563b967179d1020e8d7f6db5e908"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O0-mailbox_runtime_windows_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O0-mailbox_runtime_windows_c.stdout.txt",
+      "bytes": 36,
+      "sha256": "8e49c44492f03779432e95a5022ea7c2ea83ae840a7265c75c2fd64e75dc91db"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O0-owning_bank_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O0-owning_bank_c.stdout.txt",
+      "bytes": 123,
+      "sha256": "65adb443aec8d63e5f8a3e7faf3999e10caa324b9ebb36dc7afeb21f12894ce6"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O0-owning_stack_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O0-owning_stack_runtime_c.stdout.txt",
+      "bytes": 20,
+      "sha256": "569d9871506db6346d154db85d8980f9a2e8512ad614fe79e47ec8f83d7abd6d"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O2-arena_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O2-arena_runtime_c.stdout.txt",
+      "bytes": 18,
+      "sha256": "5d2792dcceb414c9e62f027ee69b602ab848e9d238d4ac34157d643a864678fd"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O2-mailbox_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O2-mailbox_runtime_c.stdout.txt",
+      "bytes": 677,
+      "sha256": "fc3ee3e36c69c86818a2fc832e9a8962ac2f9145759b4b3169ef0a6c59dcb17d"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O2-mailbox_runtime_windows_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O2-mailbox_runtime_windows_c.stdout.txt",
+      "bytes": 36,
+      "sha256": "8e49c44492f03779432e95a5022ea7c2ea83ae840a7265c75c2fd64e75dc91db"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O2-owning_bank_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O2-owning_bank_c.stdout.txt",
+      "bytes": 123,
+      "sha256": "65adb443aec8d63e5f8a3e7faf3999e10caa324b9ebb36dc7afeb21f12894ce6"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O2-owning_stack_runtime_c.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/owning-runtime-object-symbols-O2-owning_stack_runtime_c.stdout.txt",
+      "bytes": 20,
+      "sha256": "569d9871506db6346d154db85d8980f9a2e8512ad614fe79e47ec8f83d7abd6d"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-O0-diagnostic_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-O0-diagnostic_exe.stdout.txt",
+      "bytes": 2870,
+      "sha256": "777b154a366c84d4e8f05fa4a654d457894e1bd416cab63b236ac170b4775bc9"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-O0-fast-reset_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-O0-fast-reset_exe.stdout.txt",
+      "bytes": 2870,
+      "sha256": "705c8d6c990ed9b4d1dfb63e4fc0ae709c6d7c80df8b46500d165a37fc55f5d0"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-O0-trusted-generated_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-O0-trusted-generated_exe.stdout.txt",
+      "bytes": 2884,
+      "sha256": "c1ee1e41de290b8bd0c8de27cf76bc809a54b8434f5de7bea394e73e1ebc1855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-O2-diagnostic_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-O2-diagnostic_exe.stdout.txt",
+      "bytes": 2897,
+      "sha256": "a86f5e17d540ba87a5d9cef9742991bf610059d39fc50b3e46e43daa141efc99"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-O2-fast-reset_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-O2-fast-reset_exe.stdout.txt",
+      "bytes": 2897,
+      "sha256": "bd957e8dbf432ce61c1a4ecf31438e3cf6d971d23bb7f7044fdd2e4f90c8b603"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-O2-trusted-generated_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-O2-trusted-generated_exe.stdout.txt",
+      "bytes": 2911,
+      "sha256": "3ca329e04b71959a25dcb1a1092662c2159823825e099ebc18b648ac39f0ce1e"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-sums-O0-diagnostic_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-sums-O0-diagnostic_exe.stdout.txt",
+      "bytes": 2880,
+      "sha256": "fcfb14af04dcdb7eed8b3da4e7a0af0c13123e6fd601b4195ea7647d32d8c23a"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-sums-O0-fast-reset_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-sums-O0-fast-reset_exe.stdout.txt",
+      "bytes": 2880,
+      "sha256": "cce8ba9b80878301b6ebf6b3d185bd5c68ae2f9c1c88d73075c747939a22bbaf"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-sums-O0-trusted-generated_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-sums-O0-trusted-generated_exe.stdout.txt",
+      "bytes": 2894,
+      "sha256": "8b322e745132d95e16446c0bf51ee545fd0953bc0860c4464fa6b5ad18c6248f"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-sums-O2-diagnostic_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-sums-O2-diagnostic_exe.stdout.txt",
+      "bytes": 2907,
+      "sha256": "2db9b6f0f0c446d28e6b37427013e0b34c907b375c5c3510dccd7ca0b2edb2af"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-sums-O2-fast-reset_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-sums-O2-fast-reset_exe.stdout.txt",
+      "bytes": 2907,
+      "sha256": "f5decc39104e2187fd26a6ec0a016373e624adf05b1fc95b772ac7ce153892d2"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-sums-O2-trusted-generated_exe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-native-owning-mailbox-sums-O2-trusted-generated_exe.stdout.txt",
+      "bytes": 2921,
+      "sha256": "436d3b96ca6d40e6edcc1d7764c56a73650ecf46b8b47dd5948bdf49babc95e6"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-owning-mailbox-native_dll.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/pe-import-audit-owning-mailbox-native_dll.stdout.txt",
+      "bytes": 215,
+      "sha256": "bdf7a89c2f25b093f312aef2b71a63bc308e6a373ff3a3ab1d0b663f493a4ce6"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/profile-control-diagnostic-host_diagnostic-module.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/profile-control-diagnostic-host_diagnostic-module.stdout.txt",
+      "bytes": 493,
+      "sha256": "a92f0590a824fe43dc2c79ca62f8c8196b89de5d8f0669c16cb2f4278d435ebb"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/profile-control-trusted-host_trusted-module.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/profile-control-trusted-host_trusted-module.stdout.txt",
+      "bytes": 493,
+      "sha256": "a92f0590a824fe43dc2c79ca62f8c8196b89de5d8f0669c16cb2f4278d435ebb"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/profile-mismatch-diagnostic-host_trusted-module.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/profile-mismatch-diagnostic-host_trusted-module.stdout.txt",
+      "bytes": 693,
+      "sha256": "2267ff528cffd1aace5e16f5ca0112c65147eae0145f8134df2c4e48d3ec496a"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/profile-mismatch-trusted-host_diagnostic-module.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/profile-mismatch-trusted-host_diagnostic-module.stdout.txt",
+      "bytes": 693,
+      "sha256": "2267ff528cffd1aace5e16f5ca0112c65147eae0145f8134df2c4e48d3ec496a"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/compile-module-O0_diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/compile-module-O0_diagnostic.stdout.txt",
+      "bytes": 34972,
+      "sha256": "b0d38eee6eec8076af06f783eadb37070d5a821281b0ed9a6900c39b8ae2b9af"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/compile-module-O0_trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/compile-module-O0_trusted-generated.stdout.txt",
+      "bytes": 35007,
+      "sha256": "a25b164aa6c65fce91df4b6ef6fbcca2169611d412a8deaf0bccd162900ce170"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/compile-module-O2_diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/compile-module-O2_diagnostic.stdout.txt",
+      "bytes": 34972,
+      "sha256": "44eecfa36cc202947e1092805a7949e538d115c6dbac16f1d0db30e2efb01bdb"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/compile-module-O2_trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/compile-module-O2_trusted-generated.stdout.txt",
+      "bytes": 35007,
+      "sha256": "c27f222ef92fa822a7e46f314d5e3a583804fb28efeddd88e4f2ea4ae1f0ef32"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/fresh-release-project-build.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/fresh-release-project-build.stdout.txt",
+      "bytes": 953,
+      "sha256": "a88e4f38ce5562e6fd2b3b93929b9da77d884d1022684c72126ac30ff154ed16"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-build-O0-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-build-O0-diagnostic.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-build-O0-fast.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-build-O0-fast.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-build-O0-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-build-O0-trusted-generated.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-build-O2-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-build-O2-diagnostic.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-build-O2-fast.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-build-O2-fast.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-build-O2-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-build-O2-trusted-generated.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-run-O0-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-run-O0-diagnostic.stdout.txt",
+      "bytes": 15637,
+      "sha256": "569edb22e7d4efe7d189281078eb1f17e87a78bf04ee405d59605ba24012098d"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-run-O0-fast.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-run-O0-fast.stdout.txt",
+      "bytes": 15625,
+      "sha256": "22a597d67303b39e234aa62139b07f10f8bde3e2e242a9a9ad6e9c6aaeef4ce9"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-run-O0-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-run-O0-trusted-generated.stdout.txt",
+      "bytes": 15630,
+      "sha256": "ac08069f570f832b0cb07d69614adb065c0181654bf3cbf1d98b84020ca5d443"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-run-O2-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-run-O2-diagnostic.stdout.txt",
+      "bytes": 15637,
+      "sha256": "569edb22e7d4efe7d189281078eb1f17e87a78bf04ee405d59605ba24012098d"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-run-O2-fast.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-run-O2-fast.stdout.txt",
+      "bytes": 15625,
+      "sha256": "22a597d67303b39e234aa62139b07f10f8bde3e2e242a9a9ad6e9c6aaeef4ce9"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-run-O2-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/native-policy-run-O2-trusted-generated.stdout.txt",
+      "bytes": 15630,
+      "sha256": "ac08069f570f832b0cb07d69614adb065c0181654bf3cbf1d98b84020ca5d443"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-1b6ceb4877ab4847a2b3b7910f6fcfe5/policy-evidence.json",
+      "bytes": 1290862,
+      "sha256": "47e3a09991a4063ffce9ff5ace3f8bb817a36314217d2369336187c871dad24b"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/compile-real-io-module-O0-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/compile-real-io-module-O0-diagnostic.stdout.txt",
+      "bytes": 51353,
+      "sha256": "f77d9834a7e328867bf7a4d15d6fdd80f23e359e5271d440d2693b20d7653fb8"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/compile-real-io-module-O0-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/compile-real-io-module-O0-trusted-generated.stdout.txt",
+      "bytes": 51388,
+      "sha256": "650f6711193a9d1b076f0e3ba86be5cad4c342a8c140081126bdc5ee6a055eff"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/compile-real-io-module-O2-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/compile-real-io-module-O2-diagnostic.stdout.txt",
+      "bytes": 51353,
+      "sha256": "0a2e2b2f5d01219df88b48c615b775a86f6529ee6ecc3817bee32e259b1cddbc"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/compile-real-io-module-O2-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/compile-real-io-module-O2-trusted-generated.stdout.txt",
+      "bytes": 51388,
+      "sha256": "d8fd6b826105f48342ab1ff4df2d968e4ce14edc42f73224e384761e2a0771be"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/fresh-release-owning-mailbox-bootstrap-build.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/fresh-release-owning-mailbox-bootstrap-build.stdout.txt",
+      "bytes": 950,
+      "sha256": "aaa1f73702e179bcd30bc48a4fc72d1beb0a078391556e7338c6792d081caa2d"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/fresh-release-real-io-provider-build.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/fresh-release-real-io-provider-build.stdout.txt",
+      "bytes": 476,
+      "sha256": "f449c007243d405786da942b2ec6453c3b802b7a01ecb6e9a661c7fec6db99b3"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/io-evidence.json",
+      "bytes": 1072060,
+      "sha256": "66a2578fd216af3703da6f22db25af304ef4f7bdced934172a09d9863b7ddb0e"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/loopback-provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/loopback-provider.stdout.txt",
+      "bytes": 126,
+      "sha256": "d67f1403ba8bca519087f98905b71f5868b031fd6e88148de411ff6cf7f38079"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/native-real-io-build-O0-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/native-real-io-build-O0-diagnostic.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/native-real-io-run-O0-diagnostic-return.stderr.txt",
+      "bytes": 50,
+      "sha256": "af5620033244fd869a99b420b7eeb01f413c96e30f5045ccff20d02397d61944"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/native-real-io-run-O0-diagnostic-return.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/oracle-freeze.json",
+      "bytes": 837,
+      "sha256": "637b0b2089a39130f54bb6eb073713ffe0fc9ab052a75a36025fe34b83817b26"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-259fa0e6ca2b4f57844f53c0c7c9bd36/provider-ready.json",
+      "bytes": 231,
+      "sha256": "c2a3952d77daeb079d0bb699b88dcf4e9247c1b7b9ff9359cc80bec853ab3be0"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/compile-real-io-module-O0-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/compile-real-io-module-O0-diagnostic.stdout.txt",
+      "bytes": 51353,
+      "sha256": "658bc9e323af03a8e6b647df6b056936fb0f1717bdca1b92d76c6528f5e391ec"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/compile-real-io-module-O0-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/compile-real-io-module-O0-trusted-generated.stdout.txt",
+      "bytes": 51388,
+      "sha256": "36cbae0b65a0dd031defc759d4571076c76a7017107e325d523014a87844c825"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/compile-real-io-module-O2-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/compile-real-io-module-O2-diagnostic.stdout.txt",
+      "bytes": 51353,
+      "sha256": "90de22845497ae6b752e2e7fb11011798c4fc1d4fa4bf43d49ab33311eab0b4c"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/compile-real-io-module-O2-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/compile-real-io-module-O2-trusted-generated.stdout.txt",
+      "bytes": 51388,
+      "sha256": "4e2d5a4680ab7e806ee635a4dbb6fdbb1b3e90f00c17c3920e47f60dc6e4a6af"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/fresh-release-owning-mailbox-bootstrap-build.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/fresh-release-owning-mailbox-bootstrap-build.stdout.txt",
+      "bytes": 950,
+      "sha256": "539b14654215b439c0f8300429f28378ad7112ba07897e589c3a59fa18829577"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/fresh-release-real-io-provider-build.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/fresh-release-real-io-provider-build.stdout.txt",
+      "bytes": 476,
+      "sha256": "83128472dfd11ca7798eb8ffb50b8436be9a8d0e7f1ec3e35b20a51d81efb591"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/io-evidence.json",
+      "bytes": 88993651,
+      "sha256": "c1b7a1b128e24f886d40ad34d7c4edb4052359683295fc37c41aa85d548b4e7d"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/loopback-provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/loopback-provider.stdout.txt",
+      "bytes": 131,
+      "sha256": "9013c0ecaa4c4bf65f1e3da415ca731c024174da27d30044f5ccfca0f7a960ae"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-build-O0-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-build-O0-diagnostic.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-build-O0-fast.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-build-O0-fast.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-build-O0-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-build-O0-trusted-generated.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-build-O2-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-build-O2-diagnostic.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-build-O2-fast.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-build-O2-fast.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-build-O2-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-build-O2-trusted-generated.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O0-diagnostic-keep.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O0-diagnostic-keep.stdout.txt",
+      "bytes": 521117,
+      "sha256": "2f2df994b270eb4a909995ee57ca470a772bb9f4905b2d6b710d42f5a46a99bf"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O0-diagnostic-return.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O0-diagnostic-return.stdout.txt",
+      "bytes": 520383,
+      "sha256": "40d74e315e0dd8a86bdf774504b75c337cdcb3a6a242751bca0371a612fb5643"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O0-fast-keep.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O0-fast-keep.stdout.txt",
+      "bytes": 515559,
+      "sha256": "b13a2a11099940b2917d5389af3e13d8d2dfc7e1cd8af3c2d471a61e483b5714"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O0-fast-return.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O0-fast-return.stdout.txt",
+      "bytes": 514674,
+      "sha256": "1c5c5de5849a24544a08e81d7b502a65b6c72955c13d53fcb7ff4db90248c9fa"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O0-trusted-generated-keep.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O0-trusted-generated-keep.stdout.txt",
+      "bytes": 518366,
+      "sha256": "ceaade9a795600948fd087b2731902be04b0226806e4a5207186920c17121552"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O0-trusted-generated-return.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O0-trusted-generated-return.stdout.txt",
+      "bytes": 504735,
+      "sha256": "fecd16ebe6c64e9c32ae2bd6653aac74ec6e8437ff2cd90ad99037c3880e9b62"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O2-diagnostic-keep.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O2-diagnostic-keep.stdout.txt",
+      "bytes": 517674,
+      "sha256": "d42d0b38889a403969ffd5ba0f70188d45f214621c862ddc23386f0c0020d680"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O2-diagnostic-return.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O2-diagnostic-return.stdout.txt",
+      "bytes": 512321,
+      "sha256": "1ed0528926b298393021c84ce41b3e662dbe557c2c1cfa9188ea94696727f001"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O2-fast-keep.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O2-fast-keep.stdout.txt",
+      "bytes": 514375,
+      "sha256": "8ed952fc8e0ee82d5495fec408da0af7dbe49e89f59a034fe151136e75711560"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O2-fast-return.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O2-fast-return.stdout.txt",
+      "bytes": 514485,
+      "sha256": "80fe42467610aff75f5c569bd7271f43b1d6d617ea60821b96ee2745f0e8d2fc"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O2-trusted-generated-keep.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O2-trusted-generated-keep.stdout.txt",
+      "bytes": 516712,
+      "sha256": "8cc11f6cce840e0a65b754f738bf974e9609ef517f17f451ffb008ace56e3dc5"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O2-trusted-generated-return.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/native-real-io-run-O2-trusted-generated-return.stdout.txt",
+      "bytes": 512980,
+      "sha256": "ddc14a9d2509d9cecd7d6e077affdea97fcba4b5ab667359edc83169109714a1"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/oracle-freeze.json",
+      "bytes": 837,
+      "sha256": "637b0b2089a39130f54bb6eb073713ffe0fc9ab052a75a36025fe34b83817b26"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/io-run-e7599f4f57de49e6bc4f33a136a65521/provider-ready.json",
+      "bytes": 231,
+      "sha256": "e5b2b73ea3a06c6bf36038ab5ca07ce9212fb6c4e9ce484540f2b11f33bd0df4"
+    },
+    {
+      "path": ".agentlang/owning-mailbox-003/oracle-freeze.json",
+      "bytes": 837,
+      "sha256": "637b0b2089a39130f54bb6eb073713ffe0fc9ab052a75a36025fe34b83817b26"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/acceptance-plan.md",
+      "bytes": 5575,
+      "sha256": "e29b7e5d4f3762df7d7bae9195ecc61b261b2e9e388cbe126f57473b3a33a804"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/implementation-plan.md",
+      "bytes": 13173,
+      "sha256": "dcf602afba4027bcc528c3103f765264d42a01733df8c28be485caa214fba1bf"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/compiler-proved-arena-lifetime-tests.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/compiler-proved-arena-lifetime-tests.stdout.txt",
+      "bytes": 59,
+      "sha256": "49035ce9453fbb350eec72438b192830829d5f3891e3d1eb17ee66a76d69f6b1"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/expanded-fixed-source.flow",
+      "bytes": 8515,
+      "sha256": "5e835f91d520b9b427152ffe961d12da3cea467937eafacaa5ac30803c451341"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/expanded-string-source.flow",
+      "bytes": 10997,
+      "sha256": "57e3823f6745c690554258dd0ff0a555ac0c5ebdb5753e7fa3dbe3c2a7d9eac2"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/fresh-arena-lifetime-tests-build.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/fresh-arena-lifetime-tests-build.stdout.txt",
+      "bytes": 811,
+      "sha256": "e9bae9d4e1bdf9e7776aeb86f0b51800968522f0ed089339409c180e23f2a2c7"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/fresh-dotnet-build.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/fresh-dotnet-build.stdout.txt",
+      "bytes": 968,
+      "sha256": "50cbfe61c5e569f854582a267cd89f43facf870269f3de9ad8ec7e694daf66ee"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/fresh-owning-stack-c-build-O0.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/fresh-owning-stack-c-build-O0.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/fresh-owning-stack-c-build-O2.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/fresh-owning-stack-c-build-O2.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/native-value-stack-evidence.json",
+      "bytes": 3364374,
+      "sha256": "2f0adb7701175e6f7eb0a91079ed9604a0bec2642aaf9ec9f98fb84c83edf545"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/owning-stack-native-storage-tests-O0.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/owning-stack-native-storage-tests-O0.stdout.txt",
+      "bytes": 1367,
+      "sha256": "dbea184e9f434d38915f6dbbb0c7427c0d1214ef799327486d80a17db486edd6"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/owning-stack-native-storage-tests-O2.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/owning-stack-native-storage-tests-O2.stdout.txt",
+      "bytes": 1367,
+      "sha256": "dbea184e9f434d38915f6dbbb0c7427c0d1214ef799327486d80a17db486edd6"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/owning-stack-ubsan-normal-build.stderr.txt",
+      "bytes": 84,
+      "sha256": "e959aee710329d206dad24fa22cb2f6ebcedade15a679c593f68e5e96af822e7"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/owning-stack-ubsan-normal-build.stdout.txt",
+      "bytes": 7454,
+      "sha256": "6cb8ded0f0ca431a778cfc31380616170c24fb28c17909a3bbeb8fe7d000d175"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/owning-stack-ubsan-trap-build.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/owning-stack-ubsan-trap-build.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/owning-stack-ubsan-trap-run.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/owning-stack-ubsan-trap-run.stdout.txt",
+      "bytes": 1367,
+      "sha256": "dbea184e9f434d38915f6dbbb0c7427c0d1214ef799327486d80a17db486edd6"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/same-ir-cross-backend-experiment.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/same-ir-cross-backend-experiment.stdout.txt",
+      "bytes": 181,
+      "sha256": "142813261cd63f7b8ac02a7db9aeb26dcab394b140a64445ef3f63f722c0220d"
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-380f97853cc4458a8ac73f6343d7d7dd/verification-evidence.json",
+      "bytes": 1259638,
+      "sha256": "bae893dc41467e1a01f8de1510d457ad6ba45b7ce3db6de2d7ef2ed78d83310e"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/archive-evidence.py",
+      "bytes": 5524,
+      "sha256": "b31911152f047df46bcdefe5c1468d486c4cdcf83026720982e42b51bfde671d"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/business-language-workspace-temp-exit.json",
+      "bytes": 271,
+      "sha256": "c8b735a0b96ab8c977c51fb27a461a2b27d25aaeb6ee10239f15e3355c19d7e9"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/business-language-workspace-temp.log",
+      "bytes": 603,
+      "sha256": "ffdf382c4859a1de20260a172be0c731e8a4e33e6057389c4939f60f53fc3004"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/fixture-freeze-final.json",
+      "bytes": 825,
+      "sha256": "e210c0db5794b12aba7e37a1e86e77f0a0e354ad6673f497449dc709448664df"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/fixture-freeze-post-correction.json",
+      "bytes": 616,
+      "sha256": "2bd1fa3a510db4d28add7ba9aeb5278f8016ca9529c501d45b0fcc5441cffe67"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/fixture-freeze.json",
+      "bytes": 382,
+      "sha256": "611a4200c15919d622b1927612ba989a2596a4a693ddd1a5bb319b4d6e2dfb7a"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-gate-resource-check.json",
+      "bytes": 480,
+      "sha256": "d8bd851610b3c9ab9f9aa2d31cf6aaa6cd0f8532381e989e84fbafd5a43907b4"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-001-termination.json",
+      "bytes": 468,
+      "sha256": "3a8e5d6e57967a9d028bb3625232821bffbd2a244eb3e71a805f37b998ce3962"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-001.log",
+      "bytes": 28362,
+      "sha256": "d0a48e25e59785c9f2198891c78c501e06ee859daf3ac917e71faae5cabf6b96"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-002-exit.json",
+      "bytes": 340,
+      "sha256": "940b78c8be53a8e4ff5931338d25c2d57ad3a056cfd87b7a3b2bebc1c11fd032"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-002.business-policy-preflight.json",
+      "bytes": 15483108,
+      "sha256": "40c4c537b85cb03dbe0678a28d91df9cc78cba6e0becc74a556be9d6769bbed6"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-002.early-agent-negative.json",
+      "bytes": 172934,
+      "sha256": "e72084e8d2767573bcdca3939dc15acf917616c0a633b47988929c295d5f3421"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-002.flow-matched-fixtures.json",
+      "bytes": 230020,
+      "sha256": "8a964c767af393952c8661586adf120cab1855fc205a3a18818c9dd52b2a5d99"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-002.json",
+      "bytes": 30164,
+      "sha256": "efb668911f2c965994e6cde37d5b0855e39cace5de53762356527e6148b744d7"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-002.log",
+      "bytes": 17300,
+      "sha256": "3f598379c1b839c88a24e44d24bceda609a3866427985a4a4c41f7ff409ef7a4"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-002.matched-fixtures.json",
+      "bytes": 99883,
+      "sha256": "bb6d90ff724d989b5d2a8b39cd42bce177811552105daf61a820d98c6c557f43"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-002.matched-snapshots.json",
+      "bytes": 85956,
+      "sha256": "1f79d27bf71a7e66c24adc9ccbde567f2740e2848e7e4c0cfeb3b8c31cc61962"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-002.parser-limits.json",
+      "bytes": 3186,
+      "sha256": "221c82ec82cf5c3533a3b190688f4071f5bfa6342accb649df06a78216bd4975"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-002.projection.json",
+      "bytes": 123935,
+      "sha256": "3eb3b0122536301bef775f8d47608ad20a613a624cd5f56b5c5a8fbdf30a61bf"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-002.renewal-acceptance-gate.json",
+      "bytes": 1025134,
+      "sha256": "adcc233c8164f2fc6fdf69389c88a5402c2ceaaf2f17929f31f09f606d14e92f"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-002.renewal-replay.json",
+      "bytes": 307012,
+      "sha256": "3c37cfa3d405140cd034f0d2b51100f1b4b261de1a53204fe5c480c675b23af2"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-002.subagent-host-v2.json",
+      "bytes": 25382,
+      "sha256": "947586dbb56df1405f6e78df9a00a9e8e0464ae4fd43a9721a01d3064ed7bc52"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/full-validation-002.subagent-host.json",
+      "bytes": 348071,
+      "sha256": "19ef5b7e1377bd0afc0dd2e3c473a451d9c930e1c459ebc6bbb41dc9f6f68bbc"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/implementation/full-llvm-tests.log",
+      "bytes": 1278,
+      "sha256": "e6a125196d6e7eaa97ac6c22dbac81efaaa21b8b9b5bf9501d5637d99a32892a"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/implementation/validation.log",
+      "bytes": 13096,
+      "sha256": "f53f4b89b35c3fbb99110c14dc03c5e2b46ec1939daa6634c5678b679b980c42"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/implementation-plan.md",
+      "bytes": 2889,
+      "sha256": "de6dfa098135407a7d891daf8b2466e455cfe3b9e376e028cb2a4fbe596ec3d0"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/integration/evidence/intmin-failprefix.txt",
+      "bytes": 7413,
+      "sha256": "e3d7c71e249c294e185e6b2b6585c9fda2a3afa5edb27e119c47a376ea8c5975"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/integration/evidence/intmin-prefix-audit.md",
+      "bytes": 1312,
+      "sha256": "02cbe62ea66793cec383932049c34be9404b2d20063e490ed451092b1b6d30b8"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/integration/integration-plan.md",
+      "bytes": 13719,
+      "sha256": "0b2ca4285adfb118719b7b84f4054fc8d089a01800110c80f143562e142724d3"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/intmin-failprefix.fsx",
+      "bytes": 5635,
+      "sha256": "0745fed056ca915365aa7715b97df9feb652214b850250c652329446ae958942"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/mailbox-gate-001-exit.json",
+      "bytes": 243,
+      "sha256": "6e392e44af98648d1e4136250aeba1360ef0b7665569d1968437fa69ab0e7711"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/mailbox-gate-001-start.json",
+      "bytes": 270,
+      "sha256": "db34c02af68149e495918356ea107be4294c768ccbc4cf34147a5b2bc87925b3"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/mailbox-gate-001.log",
+      "bytes": 992,
+      "sha256": "4288ed3625d02b9e6721d06a8149da6307377ab6fd8ac447cccfd31d91946353"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/mailbox-gate-002-exit.json",
+      "bytes": 243,
+      "sha256": "6dcdb50b46ea1b34864816830d24b191a4ca04244c963dc70d327921cc28689f"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/mailbox-gate-002-start.json",
+      "bytes": 344,
+      "sha256": "1e8a607d1b3166277fbfce4ca7edd29d2d61e01b534c4338befe42dea46e255b"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/mailbox-gate-002-summary.json",
+      "bytes": 473,
+      "sha256": "1abcfd4533961ca294404466c7fde8f9db1340fdfebc1e8a799aa482a2e5d639"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/mailbox-gate-002.log",
+      "bytes": 1134,
+      "sha256": "cb46abfb9b7b1042c67abd4ad81ab8a2b96d832efc0c4092632289116a94d0f3"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-flow2-O0/entries/begin.verified-ir.txt",
+      "bytes": 894,
+      "sha256": "b052a2ed669c29c4fd630e03624b38fee7200fd7c9b3e778f0e64c124e5ee530"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-flow2-O0/entries/initialize.verified-ir.txt",
+      "bytes": 795,
+      "sha256": "e9e34934822732b93139067eda2b638e383ca12348228f2b4ed2b3b55a566167"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-flow2-O0/entries/resume.verified-ir.txt",
+      "bytes": 917,
+      "sha256": "de93b3735fcde6a3e570c5aae69afe27c9eaa4e41ad34fa4b034a8b2a58479bc"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-flow2-O0/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "00de17c4f4cb894666096ef945800efc914321ab2434ca451e95e692c694a645"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-flow2-O0/owning-mailbox-module-manifest.json",
+      "bytes": 128363,
+      "sha256": "66703217b7a04af38ec5ae593e7be6b92e9c7264459cc7d18dc614952677818e"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-flow2-O0.json",
+      "bytes": 85852,
+      "sha256": "1206da642ea451ea7b2917f6b38ed74e569cd65355a2483e4a4a17c520b28b02"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-flow2-O2/entries/begin.verified-ir.txt",
+      "bytes": 894,
+      "sha256": "b052a2ed669c29c4fd630e03624b38fee7200fd7c9b3e778f0e64c124e5ee530"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-flow2-O2/entries/initialize.verified-ir.txt",
+      "bytes": 795,
+      "sha256": "e9e34934822732b93139067eda2b638e383ca12348228f2b4ed2b3b55a566167"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-flow2-O2/entries/resume.verified-ir.txt",
+      "bytes": 917,
+      "sha256": "de93b3735fcde6a3e570c5aae69afe27c9eaa4e41ad34fa4b034a8b2a58479bc"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-flow2-O2/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "00de17c4f4cb894666096ef945800efc914321ab2434ca451e95e692c694a645"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-flow2-O2/owning-mailbox-module-manifest.json",
+      "bytes": 128363,
+      "sha256": "92d5c34b2a0a17d5a88844d939dcd442e37fd4f5200bef3e9f14757284a7bc34"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-flow2-O2.json",
+      "bytes": 85852,
+      "sha256": "6b9a6df2909636b4910445a67b895804d40f4a2a328762c853a2e031bd16ce1d"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-O0/entries/begin.verified-ir.txt",
+      "bytes": 894,
+      "sha256": "b052a2ed669c29c4fd630e03624b38fee7200fd7c9b3e778f0e64c124e5ee530"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-O0/entries/initialize.verified-ir.txt",
+      "bytes": 795,
+      "sha256": "e9e34934822732b93139067eda2b638e383ca12348228f2b4ed2b3b55a566167"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-O0/entries/resume.verified-ir.txt",
+      "bytes": 917,
+      "sha256": "de93b3735fcde6a3e570c5aae69afe27c9eaa4e41ad34fa4b034a8b2a58479bc"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-O0/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "00de17c4f4cb894666096ef945800efc914321ab2434ca451e95e692c694a645"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-O0/owning-mailbox-module-manifest.json",
+      "bytes": 128363,
+      "sha256": "ca10d4772de9287df66560aea89da2c857f553a3d671ef652c95187f9ccc49d0"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-O0.json",
+      "bytes": 85828,
+      "sha256": "c3f47394b06d92ea9f26f502a1b2e9c75bdbccbb89a8e7a01083a0ddaf6b1a9b"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-O2/entries/begin.verified-ir.txt",
+      "bytes": 894,
+      "sha256": "b052a2ed669c29c4fd630e03624b38fee7200fd7c9b3e778f0e64c124e5ee530"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-O2/entries/initialize.verified-ir.txt",
+      "bytes": 795,
+      "sha256": "e9e34934822732b93139067eda2b638e383ca12348228f2b4ed2b3b55a566167"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-O2/entries/resume.verified-ir.txt",
+      "bytes": 917,
+      "sha256": "de93b3735fcde6a3e570c5aae69afe27c9eaa4e41ad34fa4b034a8b2a58479bc"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-O2/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "00de17c4f4cb894666096ef945800efc914321ab2434ca451e95e692c694a645"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-O2/owning-mailbox-module-manifest.json",
+      "bytes": 128363,
+      "sha256": "dd92508177de5e23f47f7be5fc3f949d2016e5ecdfc77182ed02efdb8d00eed9"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/module-O2.json",
+      "bytes": 85828,
+      "sha256": "2fd77c08be7bceca647dc743e6504e8077d06fa2d4983b0961b22fe3852cb17c"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/native-gate-001-exit.json",
+      "bytes": 213,
+      "sha256": "b5b994dee14df345f221081e4993897a85e099ec07b6057eeee189b0d46232c8"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/native-gate-001.log",
+      "bytes": 177,
+      "sha256": "5e0a62c386ad0e2a24d6778d8bc3a32bd0ff3b9ff0c11fed8c650f2a98f6d186"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/oracle/expanded-fixed-source.flow",
+      "bytes": 8515,
+      "sha256": "5e835f91d520b9b427152ffe961d12da3cea467937eafacaa5ac30803c451341"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/oracle/expanded-string-source.flow",
+      "bytes": 10997,
+      "sha256": "57e3823f6745c690554258dd0ff0a555ac0c5ebdb5753e7fa3dbe3c2a7d9eac2"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/oracle/native-value-stack-attempts.md",
+      "bytes": 2315,
+      "sha256": "45222e584ba6ea8a3bf9e8742becbce54e96e73b44fb45dda35984b11ce373a9"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/oracle/native-value-stack-evidence.json",
+      "bytes": 3364374,
+      "sha256": "2f0adb7701175e6f7eb0a91079ed9604a0bec2642aaf9ec9f98fb84c83edf545"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/policy-gate-001-exit.json",
+      "bytes": 236,
+      "sha256": "8870b412e4bcbb78972c2778346a5d5035c39f19111750960c1c09859fe22223"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/policy-gate-001.log",
+      "bytes": 138,
+      "sha256": "71458054ad8b0c3882ad7f17379ef61d1ea343244b54fd683ad5c5b48d330f5f"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/real-io-gate-001-exit.json",
+      "bytes": 236,
+      "sha256": "99b8641d1ed930cb3f121af912b41e8f6f9d0c513eb5de62e498f9f00dea9c68"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/real-io-gate-001.log",
+      "bytes": 601,
+      "sha256": "b56bab7ac397a9e1b9f96689d5e3d6d62b91b4ceee4143d1b86993b18454c19e"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/real-io-gate-002-exit.json",
+      "bytes": 240,
+      "sha256": "b46c0b930a688fd6f5748c6ee785d9ce142d83b5ea2f530f78a704e14f4477ca"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/real-io-gate-002.log",
+      "bytes": 140,
+      "sha256": "c1dd4da11a6cbedef0b778e681f6cdc587fb65a719da7eca19bc8bcfdce2e188"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/review/compiler-review.md",
+      "bytes": 5967,
+      "sha256": "03f4fd97046de78365af1ca0d8f85b4d7b9999cb11148f72a5bf71caf8de0999"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/review/counter-correction.md",
+      "bytes": 1169,
+      "sha256": "bf4f421c622c37dca4b3a838d3d9e6242ed62f3e4335b83b48cbd24eff3dc47a"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/review/gate001-repair-review.md",
+      "bytes": 5648,
+      "sha256": "4bf75749f9be4b838952e3cc390f6484a3aac5ff5868f623835ed60ceb500c6f"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/review/lifecycle-review.md",
+      "bytes": 4032,
+      "sha256": "2382c820a948a217bb923dc787282c713f9f409f69976ed01c2b74067f4be4b5"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/failed-gate-001-sources/native_owning_mailbox_refinements.c",
+      "bytes": 49927,
+      "sha256": "1ce52ef481e1a7709439d515b3df36e2cbcab7d14f55ec7fd53b89aaf2ee9176"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/failed-gate-001-sources/owning-mailbox-refinements-diagnostic-correction.json",
+      "bytes": 18006,
+      "sha256": "cbaa516667b1f14d516d36b0f9d9992d62c76e6e0652e2e5a993021934ad7376"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/failed-gate-001-sources/owning-mailbox-refinements.json",
+      "bytes": 14792,
+      "sha256": "d903fd6d61406d76c424ded506f437ba406ea61b6fedad686530043916b548e9"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/failed-gate-001-sources/Verify-OwningMailbox.ps1",
+      "bytes": 144479,
+      "sha256": "1b98c392448bd1da512ed8bf4f3488af3ed70242b15ec1568df6cc0776fde64e"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/compile-refined-module-O0-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/compile-refined-module-O0-diagnostic.stdout.txt",
+      "bytes": 86136,
+      "sha256": "96cfe8633c6c94296bf11aba1b754a191a2f13c5667101877efa250af4040a36"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/compile-refined-module-O0-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/compile-refined-module-O0-trusted-generated.stdout.txt",
+      "bytes": 86171,
+      "sha256": "5d0ad10a9f5e44d1decf481a275dd690659c7573a48ca99e1efd361c3e823891"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/compile-refined-module-O2-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/compile-refined-module-O2-diagnostic.stdout.txt",
+      "bytes": 86136,
+      "sha256": "27bc2daa80e75752160a43dcdca57a9b0152b7fbe4a5accf479b044837f45dcc"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/compile-refined-module-O2-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/compile-refined-module-O2-trusted-generated.stdout.txt",
+      "bytes": 86171,
+      "sha256": "53f472cc4630fa059f645fb7ac0d918e0ad7e61ddc9317a4ecd4a31680ec0488"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/integration-evidence.json",
+      "bytes": 2283350,
+      "sha256": "57702ed093cbeb1097d86e1059e5539b82758f0e89ab30d9e893672fcb1c2a0e"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O0-diagnostic/entries/begin.verified-ir.txt",
+      "bytes": 894,
+      "sha256": "b052a2ed669c29c4fd630e03624b38fee7200fd7c9b3e778f0e64c124e5ee530"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O0-diagnostic/entries/initialize.verified-ir.txt",
+      "bytes": 795,
+      "sha256": "e9e34934822732b93139067eda2b638e383ca12348228f2b4ed2b3b55a566167"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O0-diagnostic/entries/resume.verified-ir.txt",
+      "bytes": 917,
+      "sha256": "de93b3735fcde6a3e570c5aae69afe27c9eaa4e41ad34fa4b034a8b2a58479bc"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O0-diagnostic/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "00de17c4f4cb894666096ef945800efc914321ab2434ca451e95e692c694a645"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O0-diagnostic/owning-mailbox-module-manifest.json",
+      "bytes": 128363,
+      "sha256": "88596d850588b1d6640251614101bdef9c2cddcddd87c28930ece1c19f38835a"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O0-diagnostic/owning-mailbox-native.ll",
+      "bytes": 3100275,
+      "sha256": "4baed97ff927d70f86298fae03f700db5f6f8f9d44ee2551bb2fa0bd8d4567b8"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O0-trusted-generated/entries/begin.verified-ir.txt",
+      "bytes": 894,
+      "sha256": "b052a2ed669c29c4fd630e03624b38fee7200fd7c9b3e778f0e64c124e5ee530"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O0-trusted-generated/entries/initialize.verified-ir.txt",
+      "bytes": 795,
+      "sha256": "e9e34934822732b93139067eda2b638e383ca12348228f2b4ed2b3b55a566167"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O0-trusted-generated/entries/resume.verified-ir.txt",
+      "bytes": 917,
+      "sha256": "de93b3735fcde6a3e570c5aae69afe27c9eaa4e41ad34fa4b034a8b2a58479bc"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O0-trusted-generated/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "00de17c4f4cb894666096ef945800efc914321ab2434ca451e95e692c694a645"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O0-trusted-generated/owning-mailbox-module-manifest.json",
+      "bytes": 128370,
+      "sha256": "90994e5d8c391c02f5727235200823a3dc0fe113f39d9862cf87012c1651459d"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O0-trusted-generated/owning-mailbox-native.ll",
+      "bytes": 3100275,
+      "sha256": "4baed97ff927d70f86298fae03f700db5f6f8f9d44ee2551bb2fa0bd8d4567b8"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O2-diagnostic/entries/begin.verified-ir.txt",
+      "bytes": 894,
+      "sha256": "b052a2ed669c29c4fd630e03624b38fee7200fd7c9b3e778f0e64c124e5ee530"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O2-diagnostic/entries/initialize.verified-ir.txt",
+      "bytes": 795,
+      "sha256": "e9e34934822732b93139067eda2b638e383ca12348228f2b4ed2b3b55a566167"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O2-diagnostic/entries/resume.verified-ir.txt",
+      "bytes": 917,
+      "sha256": "de93b3735fcde6a3e570c5aae69afe27c9eaa4e41ad34fa4b034a8b2a58479bc"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O2-diagnostic/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "00de17c4f4cb894666096ef945800efc914321ab2434ca451e95e692c694a645"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O2-diagnostic/owning-mailbox-module-manifest.json",
+      "bytes": 128363,
+      "sha256": "3da8ca87ad18b94deb4007897aea37439f5e16cf9be1f319131016e440ccf12e"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O2-diagnostic/owning-mailbox-native.ll",
+      "bytes": 3100275,
+      "sha256": "4baed97ff927d70f86298fae03f700db5f6f8f9d44ee2551bb2fa0bd8d4567b8"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O2-trusted-generated/entries/begin.verified-ir.txt",
+      "bytes": 894,
+      "sha256": "b052a2ed669c29c4fd630e03624b38fee7200fd7c9b3e778f0e64c124e5ee530"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O2-trusted-generated/entries/initialize.verified-ir.txt",
+      "bytes": 795,
+      "sha256": "e9e34934822732b93139067eda2b638e383ca12348228f2b4ed2b3b55a566167"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O2-trusted-generated/entries/resume.verified-ir.txt",
+      "bytes": 917,
+      "sha256": "de93b3735fcde6a3e570c5aae69afe27c9eaa4e41ad34fa4b034a8b2a58479bc"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O2-trusted-generated/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "00de17c4f4cb894666096ef945800efc914321ab2434ca451e95e692c694a645"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O2-trusted-generated/owning-mailbox-module-manifest.json",
+      "bytes": 128370,
+      "sha256": "194c3db6785d98d187a76b2efc28359638b531be71328678fba3ec6823c785db"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/module-refined-O2-trusted-generated/owning-mailbox-native.ll",
+      "bytes": 3100275,
+      "sha256": "4baed97ff927d70f86298fae03f700db5f6f8f9d44ee2551bb2fa0bd8d4567b8"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/native-refined-runner-build-O0-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/native-refined-runner-build-O0-diagnostic.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/native-refined-runner-run-O0-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/native-refined-runner-run-O0-diagnostic.stdout.txt",
+      "bytes": 16697,
+      "sha256": "3e8841d44dc5dc8e540233a6d04c7b1f91f774caef31c4f5c198806d8fc6e442"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-refined-module-O0-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-refined-module-O0-diagnostic.stdout.txt",
+      "bytes": 86136,
+      "sha256": "fcffd71251def5156b569c45a843bdf60b0bbde3340e15e64bce9ac4568da516"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-refined-module-O0-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-refined-module-O0-trusted-generated.stdout.txt",
+      "bytes": 86171,
+      "sha256": "4e177314a0bca663bf63ccb5239c6954d1b1dfbe4b2a9a2a111387382d9b51b0"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-refined-module-O2-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-refined-module-O2-diagnostic.stdout.txt",
+      "bytes": 86136,
+      "sha256": "d59f383eef215bdb5d72ee98dcf2d7d6915fa5bada759b1c2d446619525225a7"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-refined-module-O2-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/compile-refined-module-O2-trusted-generated.stdout.txt",
+      "bytes": 86171,
+      "sha256": "497abe0cc7501343bd9c2261ddf0b936d4063df99a76c54cc16880c9ef975a12"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/integration-evidence.json",
+      "bytes": 3130612,
+      "sha256": "f6f0f21cdc0c530a75c0d8fef0ffe4e7c40724b74053026613a08cee99c12d59"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O0-diagnostic/entries/begin.verified-ir.txt",
+      "bytes": 894,
+      "sha256": "b052a2ed669c29c4fd630e03624b38fee7200fd7c9b3e778f0e64c124e5ee530"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O0-diagnostic/entries/initialize.verified-ir.txt",
+      "bytes": 795,
+      "sha256": "e9e34934822732b93139067eda2b638e383ca12348228f2b4ed2b3b55a566167"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O0-diagnostic/entries/resume.verified-ir.txt",
+      "bytes": 917,
+      "sha256": "de93b3735fcde6a3e570c5aae69afe27c9eaa4e41ad34fa4b034a8b2a58479bc"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O0-diagnostic/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "00de17c4f4cb894666096ef945800efc914321ab2434ca451e95e692c694a645"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O0-diagnostic/owning-mailbox-module-manifest.json",
+      "bytes": 128363,
+      "sha256": "2fcd1835d809c7d77ff7cadb47cb9e026347e2f86e10920154dc9b99e6a9dc17"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O0-diagnostic/owning-mailbox-native.ll",
+      "bytes": 3100275,
+      "sha256": "4baed97ff927d70f86298fae03f700db5f6f8f9d44ee2551bb2fa0bd8d4567b8"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O0-trusted-generated/entries/begin.verified-ir.txt",
+      "bytes": 894,
+      "sha256": "b052a2ed669c29c4fd630e03624b38fee7200fd7c9b3e778f0e64c124e5ee530"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O0-trusted-generated/entries/initialize.verified-ir.txt",
+      "bytes": 795,
+      "sha256": "e9e34934822732b93139067eda2b638e383ca12348228f2b4ed2b3b55a566167"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O0-trusted-generated/entries/resume.verified-ir.txt",
+      "bytes": 917,
+      "sha256": "de93b3735fcde6a3e570c5aae69afe27c9eaa4e41ad34fa4b034a8b2a58479bc"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O0-trusted-generated/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "00de17c4f4cb894666096ef945800efc914321ab2434ca451e95e692c694a645"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O0-trusted-generated/owning-mailbox-module-manifest.json",
+      "bytes": 128370,
+      "sha256": "d454c9561be3c113c12a7ed3ec4f66c53aebb37739b4547fdd25be8cdc8a5769"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O0-trusted-generated/owning-mailbox-native.ll",
+      "bytes": 3100275,
+      "sha256": "4baed97ff927d70f86298fae03f700db5f6f8f9d44ee2551bb2fa0bd8d4567b8"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O2-diagnostic/entries/begin.verified-ir.txt",
+      "bytes": 894,
+      "sha256": "b052a2ed669c29c4fd630e03624b38fee7200fd7c9b3e778f0e64c124e5ee530"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O2-diagnostic/entries/initialize.verified-ir.txt",
+      "bytes": 795,
+      "sha256": "e9e34934822732b93139067eda2b638e383ca12348228f2b4ed2b3b55a566167"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O2-diagnostic/entries/resume.verified-ir.txt",
+      "bytes": 917,
+      "sha256": "de93b3735fcde6a3e570c5aae69afe27c9eaa4e41ad34fa4b034a8b2a58479bc"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O2-diagnostic/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "00de17c4f4cb894666096ef945800efc914321ab2434ca451e95e692c694a645"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O2-diagnostic/owning-mailbox-module-manifest.json",
+      "bytes": 128363,
+      "sha256": "3e5df2615f18827b9621ea377a769b6e1cec43072550639e5eef94da91862c53"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O2-diagnostic/owning-mailbox-native.ll",
+      "bytes": 3100275,
+      "sha256": "4baed97ff927d70f86298fae03f700db5f6f8f9d44ee2551bb2fa0bd8d4567b8"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O2-trusted-generated/entries/begin.verified-ir.txt",
+      "bytes": 894,
+      "sha256": "b052a2ed669c29c4fd630e03624b38fee7200fd7c9b3e778f0e64c124e5ee530"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O2-trusted-generated/entries/initialize.verified-ir.txt",
+      "bytes": 795,
+      "sha256": "e9e34934822732b93139067eda2b638e383ca12348228f2b4ed2b3b55a566167"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O2-trusted-generated/entries/resume.verified-ir.txt",
+      "bytes": 917,
+      "sha256": "de93b3735fcde6a3e570c5aae69afe27c9eaa4e41ad34fa4b034a8b2a58479bc"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O2-trusted-generated/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "00de17c4f4cb894666096ef945800efc914321ab2434ca451e95e692c694a645"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O2-trusted-generated/owning-mailbox-module-manifest.json",
+      "bytes": 128370,
+      "sha256": "ca07aca9c00d6cf1ee61229c137cd1810374b89f6ded56acd8f7ca087065c453"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/module-refined-O2-trusted-generated/owning-mailbox-native.ll",
+      "bytes": 3100275,
+      "sha256": "4baed97ff927d70f86298fae03f700db5f6f8f9d44ee2551bb2fa0bd8d4567b8"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-build-O0-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-build-O0-diagnostic.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-build-O0-fast-reset.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-build-O0-fast-reset.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-build-O0-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-build-O0-trusted-generated.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-build-O2-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-build-O2-diagnostic.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-build-O2-fast-reset.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-build-O2-fast-reset.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-build-O2-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-build-O2-trusted-generated.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-run-O0-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-run-O0-diagnostic.stdout.txt",
+      "bytes": 16697,
+      "sha256": "e426dce6e5d76aee57551be32a84114c967b5f30382cae161259e7c6804ad783"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-run-O0-fast-reset.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-run-O0-fast-reset.stdout.txt",
+      "bytes": 16697,
+      "sha256": "31c009e09f21954b4823fd5a2aa11bb612d98938b569574dbb76ce2954145e0c"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-run-O0-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-run-O0-trusted-generated.stdout.txt",
+      "bytes": 16697,
+      "sha256": "848a19bc733cef8d165695a6fc5ec0e19fd1dddc6f4466173ff17461ccb3448b"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-run-O2-diagnostic.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-run-O2-diagnostic.stdout.txt",
+      "bytes": 16697,
+      "sha256": "cde4506985580e8557373c66939575d3889f5ee74cd140e5671d4afe54306f2b"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-run-O2-fast-reset.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-run-O2-fast-reset.stdout.txt",
+      "bytes": 16697,
+      "sha256": "93900d8e44070cd6024969e8f75c168cad304b3db8944d120e8d0eb740b1e72c"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-run-O2-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-d9c8bbea5d724c12885e7aa9045b5a9a/native-refined-runner-run-O2-trusted-generated.stdout.txt",
+      "bytes": 16697,
+      "sha256": "7e5be0e14ae1031b6cc5bc63d7b80b240e9268490ff6762e010373dff6f6e6d0"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/runner/preparation.md",
+      "bytes": 9006,
+      "sha256": "d5084ba20cf4a296e3237355b904d4a0e33bc82aa665c22de5cb800267744446"
+    },
+    {
+      "path": ".agentlang/refined-mailbox-180/source-freeze.json",
+      "bytes": 2271,
+      "sha256": "9df298ac710602edba8acfdc6593fae5025051dc590de249dbd1a0f68b83bd0f"
+    },
+    {
+      "path": "AgentLang.sln",
+      "bytes": 43601,
+      "sha256": "880648cba529b30c8e46b38222f807ce25470a6b86259f159a0cbe0daaf467d6"
+    },
+    {
+      "path": "docs/NATIVE-NOMINALS-IMPLEMENTATION.md",
+      "bytes": 8404,
+      "sha256": "93fb852615d217cb38c8638444f79f21565b0952d4da84e0e735c06fae650a27"
+    },
+    {
+      "path": "docs/STACK-ONLY-RESEARCH.md",
+      "bytes": 10495,
+      "sha256": "ea631c2c42331c6a8d092c965f14ff1358b8af160411622b30300a192720a74d"
+    },
+    {
+      "path": "experiments/AgentLang.NativeValueStack/AgentLang.NativeValueStack.fsproj",
+      "bytes": 590,
+      "sha256": "1a41bd5ae6735f751b06476351ab0e7f9a15aee10d808ce8a94379ddbae1b068"
+    },
+    {
+      "path": "experiments/AgentLang.NativeValueStack/Program.fs",
+      "bytes": 572555,
+      "sha256": "b6683d8d0dd9262b54ada368e5a95c6f6d2c4ef0fbfbde015124ed2ca06d7968"
+    },
+    {
+      "path": "experiments/AgentLang.NativeValueStack/value-stack.flow",
+      "bytes": 4192,
+      "sha256": "62eac4e0aa5b9cb5caba5f350788fd5b554715c6b9021e287ef2081951f09c35"
+    },
+    {
+      "path": "experiments/AgentLang.OwningMailbox/AgentLang.OwningMailbox.fsproj",
+      "bytes": 690,
+      "sha256": "859b902094d17b333e42e47417d55ed1938aab667ddda64b6f5266bd019f9bdb"
+    },
+    {
+      "path": "experiments/AgentLang.OwningMailbox/native_owning_mailbox.c",
+      "bytes": 129481,
+      "sha256": "9ab2ca35daae6636ec27b05806c8dad25970df648df66a5eceae70552222ef13"
+    },
+    {
+      "path": "experiments/AgentLang.OwningMailbox/native_owning_mailbox_refinements.c",
+      "bytes": 49927,
+      "sha256": "1ce52ef481e1a7709439d515b3df36e2cbcab7d14f55ec7fd53b89aaf2ee9176"
+    },
+    {
+      "path": "experiments/AgentLang.OwningMailbox/native_owning_mailbox_sums.c",
+      "bytes": 55643,
+      "sha256": "aefd3e0980a7be632dadf292a53d53ea67f502f7a61401adf655e2ed9209895c"
+    },
+    {
+      "path": "experiments/AgentLang.OwningMailbox/owning-mailbox-refinements.flow",
+      "bytes": 2375,
+      "sha256": "016735bb21d961c0521476b4d4655a2fd181c9593305f0a44ccd8b5b3534c791"
+    },
+    {
+      "path": "experiments/AgentLang.OwningMailbox/owning-mailbox-sums.flow",
+      "bytes": 2119,
+      "sha256": "bdcc25e275df8723980c4e11c34d58300666bb119af3e4a6dc2713238c0deee7"
+    },
+    {
+      "path": "experiments/AgentLang.OwningMailbox/owning-mailbox.flow",
+      "bytes": 966,
+      "sha256": "02868c667fecb59df1afd59cb2b9affed1621f84ef43ec46ab58262595ba45a2"
+    },
+    {
+      "path": "experiments/AgentLang.OwningMailbox/Program.fs",
+      "bytes": 28873,
+      "sha256": "c67af99acf52f475f00d9c750bf3ede80237e86762f9ee15ea4e473192482d43"
+    },
+    {
+      "path": "experiments/AgentLang.RealIoMailbox/correctness-cases.json",
+      "bytes": 31176,
+      "sha256": "cee6a474add7f60177055ba3e20ec990e9a157c02536d712388532ca6832185e"
+    },
+    {
+      "path": "experiments/AgentLang.RealIoMailbox/mailbox.flow",
+      "bytes": 1341,
+      "sha256": "d8d98a660dcf5acf4fd73736d112a47f2602506752f2b8e0fea29710ba95712a"
+    },
+    {
+      "path": "experiments/AgentLang.RealIoMailbox/native_host.c",
+      "bytes": 79661,
+      "sha256": "b862eb6a3410e2ee9686a7664823597bb8a2fb5682e3f7ea2bd13c8bac67baa3"
+    },
+    {
+      "path": "experiments/AgentLang.RealIoMailbox/Provider/AgentLang.RealIoMailbox.Provider.fsproj",
+      "bytes": 284,
+      "sha256": "35d7db899486bbfca16cb26f62281a5c0c855e292ca88c5a8b9f501ed7e6f3df"
+    },
+    {
+      "path": "experiments/AgentLang.RealIoMailbox/Provider/Program.fs",
+      "bytes": 19067,
+      "sha256": "a53b2bd1e1b737099b8b35d8ae6c1af9a80e6f220566855bf168e6055ed878fe"
+    },
+    {
+      "path": "scripts/Verify-NativeValueStack.ps1",
+      "bytes": 67687,
+      "sha256": "be2aa4d2d113c755cd8241d43cb30b59da8cbf8cca26186825cce7e5fac434fe"
+    },
+    {
+      "path": "scripts/Verify-OwningMailbox.ps1",
+      "bytes": 150059,
+      "sha256": "9df12016f827c8837701aa2237bfbf5152de2c140060ade430486afa0af731f1"
+    },
+    {
+      "path": "scripts/Verify-OwningMailboxPolicy.ps1",
+      "bytes": 51255,
+      "sha256": "e156c0a453692adfb0437070dbc1ac0e04f9889e20b8a9eb39f387100c31ff77"
+    },
+    {
+      "path": "scripts/Verify-OwningMailboxRealIo.ps1",
+      "bytes": 123262,
+      "sha256": "246b1881e4c01272af9a305d14a9fdcd8e319315f95718ce01fa5eb80e52f1d1"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/dev-obj/AgentLang.Core.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/dev-obj/AgentLang.Core.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/dev-obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/dev-obj/Release/net9.0/AgentLang.Core.AssemblyInfo.fs",
+      "bytes": 724,
+      "sha256": "54a76c83a7dc03c6fa8ba8d59aeca0e29a68dd06a7ea667b347844d641a56adb"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj/AgentLang.Core.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj/AgentLang.Core.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj/Release/net9.0/AgentLang.Core.AssemblyInfo.fs",
+      "bytes": 724,
+      "sha256": "54a76c83a7dc03c6fa8ba8d59aeca0e29a68dd06a7ea667b347844d641a56adb"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj2/AgentLang.Core.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj2/AgentLang.Core.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj2/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj2/Release/net9.0/AgentLang.Core.AssemblyInfo.fs",
+      "bytes": 724,
+      "sha256": "54a76c83a7dc03c6fa8ba8d59aeca0e29a68dd06a7ea667b347844d641a56adb"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj3/AgentLang.Core.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj3/AgentLang.Core.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj3/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj3/Release/net9.0/AgentLang.Core.AssemblyInfo.fs",
+      "bytes": 724,
+      "sha256": "54a76c83a7dc03c6fa8ba8d59aeca0e29a68dd06a7ea667b347844d641a56adb"
+    },
+    {
+      "path": "src/AgentLang.Core/AgentLang.Core.fsproj",
+      "bytes": 1150,
+      "sha256": "8ca96104d8b3490409b63bc61bb499aeaa1c5c97f0069adef6cf024463537666"
+    },
+    {
+      "path": "src/AgentLang.Core/AuthoringHelp.fs",
+      "bytes": 46885,
+      "sha256": "c19132166fe54e9d8ceffd752e9695bcae6b8449aa920e89c89d2272933fe402"
+    },
+    {
+      "path": "src/AgentLang.Core/Compiler.fs",
+      "bytes": 116257,
+      "sha256": "22d5f12ca4f68b199314db04b6f49658516e85765ba989e14c0aca3960929486"
+    },
+    {
+      "path": "src/AgentLang.Core/Core.fs",
+      "bytes": 8402,
+      "sha256": "57fe2d9512afa26fc920c06a8b4558bdf965157e27a2bd35ceda64dfabb85428"
+    },
+    {
+      "path": "src/AgentLang.Core/Discovery.fs",
+      "bytes": 31779,
+      "sha256": "4150b0ee8ca3791f176ed696b1886ab29b917930dbdb815809029130a94b9d34"
+    },
+    {
+      "path": "src/AgentLang.Core/FileSystem.fs",
+      "bytes": 8148,
+      "sha256": "6c198fce54831d9de6755d43145d4db87ff7a8880b239a58f93a034101f7c0b6"
+    },
+    {
+      "path": "src/AgentLang.Core/FiniteCoverage.fs",
+      "bytes": 24435,
+      "sha256": "cb3f072280035d004bcd573648e6da5b1b396c8ab6d0c2760cbf243793695e3c"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowLint.fs",
+      "bytes": 14022,
+      "sha256": "5ba6a10171f4d67cff6f43d32ddce8b9e7aa33eb3f97d407aee3bcd76bfb5ccf"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowLowering.fs",
+      "bytes": 234056,
+      "sha256": "4bc28660f17645807e6d8dd75b8042985bb9f949e39ca59ad00b6d435e576b01"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowParser.fs",
+      "bytes": 94395,
+      "sha256": "ba8fed209badc72cd4709c8d02f40b32ac910d84ea9376d2cf12d49804683be1"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowPersistence.fs",
+      "bytes": 4724,
+      "sha256": "13288baaaf6812d5949c05e2d5942ad5a6cd286d245d793efef676f5aa4e587d"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowRewrite.fs",
+      "bytes": 57359,
+      "sha256": "9445ddb9ca47aac590e3852cdbc3c9a67f6288d4d5aaff1ee2c13f4121d20e01"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowSyntax.fs",
+      "bytes": 62305,
+      "sha256": "d84fc27aa22ef21628d5bb863b24ca6d240d303b1010bc536c136d883f62d7a8"
+    },
+    {
+      "path": "src/AgentLang.Core/IrFormatting.fs",
+      "bytes": 52796,
+      "sha256": "9f219735b931f4503ec0f8e5a217630b2fc8a38b8fb84931a17c5959316ecdb7"
+    },
+    {
+      "path": "src/AgentLang.Core/IrInterpreter.fs",
+      "bytes": 87118,
+      "sha256": "1ebe81ce1c9e227edf39639e94755db2d6c957a57a019ac1f2ec59ffd388807c"
+    },
+    {
+      "path": "src/AgentLang.Core/Parser.fs",
+      "bytes": 44492,
+      "sha256": "996140b145d04314da8ae9755e926323ff71852d36a49383f75b0941aa304521"
+    },
+    {
+      "path": "src/AgentLang.Core/Protocol.fs",
+      "bytes": 3314,
+      "sha256": "d1dfb67c82760aa5b6663162c31f1dfce70441275c073fd344a13a00e34f27e5"
+    },
+    {
+      "path": "src/AgentLang.Core/Runtime.fs",
+      "bytes": 499895,
+      "sha256": "1b7fa2af7c6f0d39641c2470751f6f4a82d8a7f74a3498561ef8829d0cd42678"
+    },
+    {
+      "path": "src/AgentLang.Core/Source.fs",
+      "bytes": 11285,
+      "sha256": "f661d907d27be0627197e20cc0b008bbd562b7b14a33c0dd9a6ffd17c092f9fc"
+    },
+    {
+      "path": "src/AgentLang.Core/Storage.fs",
+      "bytes": 97840,
+      "sha256": "adfff2cdbcc3c667407a1eed2a8704b3295fcd97e12fcc4457e568e4dd98fefa"
+    },
+    {
+      "path": "src/AgentLang.Core/TrustedValues.fs",
+      "bytes": 8978,
+      "sha256": "c26edc9681c879c5f0a410274901d6e1cfc3c515f7628f139235747daad57659"
+    },
+    {
+      "path": "src/AgentLang.Core/TypedIR.fs",
+      "bytes": 83533,
+      "sha256": "e564bcb0785ea7c71030848934ae9cc6af331d5a74add3d87ff0f51cc0152dc1"
+    },
+    {
+      "path": "src/AgentLang.Core/ValueInspection.fs",
+      "bytes": 29556,
+      "sha256": "cf323570d8898de919bea520aa290645f2c722b988da91a7879b9ef893a7a645"
+    },
+    {
+      "path": "src/AgentLang.Core/VocabularyAnalysis.fs",
+      "bytes": 26114,
+      "sha256": "0be80d5bc6f5774151cc054e2c4225297c4bbfcb8d09d5f91b447f4d295bd826"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/dev-obj/AgentLang.Llvm.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/dev-obj/AgentLang.Llvm.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/dev-obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/dev-obj/Release/net9.0/AgentLang.Llvm.AssemblyInfo.fs",
+      "bytes": 814,
+      "sha256": "883c395dbfe293cca22c2ab8ea45f61cc237d37b0e32952393ead60093881360"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj/AgentLang.Llvm.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj/AgentLang.Llvm.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj/Release/net9.0/AgentLang.Llvm.AssemblyInfo.fs",
+      "bytes": 814,
+      "sha256": "883c395dbfe293cca22c2ab8ea45f61cc237d37b0e32952393ead60093881360"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj2/AgentLang.Llvm.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj2/AgentLang.Llvm.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj2/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj2/Release/net9.0/AgentLang.Llvm.AssemblyInfo.fs",
+      "bytes": 814,
+      "sha256": "883c395dbfe293cca22c2ab8ea45f61cc237d37b0e32952393ead60093881360"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj3/AgentLang.Llvm.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj3/AgentLang.Llvm.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj3/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj3/Release/net9.0/AgentLang.Llvm.AssemblyInfo.fs",
+      "bytes": 814,
+      "sha256": "883c395dbfe293cca22c2ab8ea45f61cc237d37b0e32952393ead60093881360"
+    },
+    {
+      "path": "src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+      "bytes": 1433,
+      "sha256": "a20481964b8f8dea28801c255ab18d6644cf43a8a82b263c308a55bca094b85e"
+    },
+    {
+      "path": "src/AgentLang.Llvm/ArenaLifetime.fs",
+      "bytes": 20186,
+      "sha256": "05eabe2a0e90f5aed418a5f8869075ab234cff1fd212d208f32672c8a63ec385"
+    },
+    {
+      "path": "src/AgentLang.Llvm/LlvmAot.fs",
+      "bytes": 130875,
+      "sha256": "4633336ae677dbbd434b494596bb4891ac3f280d6e2a6c9f84a5d6ffa708acf4"
+    },
+    {
+      "path": "src/AgentLang.Llvm/LlvmToolchain.fs",
+      "bytes": 13709,
+      "sha256": "e2c4611fe8c234fda1d3b40a84c9cf71a01becaa0af228a2afd73c268d70bf4f"
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/mailbox_runtime.c",
+      "bytes": 157304,
+      "sha256": "02a51af9abb9e50a4c6efce04c3505e3374289117aca1f80eb47dfd4001496ae"
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/mailbox_runtime.h",
+      "bytes": 19300,
+      "sha256": "f2efc5cbaecb803c9fd8c1df1bd3de3b07a09ce9f485b85682a937b69902c3af"
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/mailbox_runtime_windows.c",
+      "bytes": 1092,
+      "sha256": "97ca4a9fdca6f5fdb2a7347272158cfcd722da62adb4737f0bb207a5577685d9"
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/module_abi.h",
+      "bytes": 4310,
+      "sha256": "dd39d846c17758674f9dfe77e9c5ebce05adfe555a539c37f5e1be710a2ac5a5"
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_bank.c",
+      "bytes": 24571,
+      "sha256": "301330fb04c197d812a71d7f27f851c249b73aa0503158386a8c7ce1069c085b"
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_bank.h",
+      "bytes": 5976,
+      "sha256": "63fd3b3deda0adad7c50b67307e760458692c46f4ca1d4a8a34ead929bb5e43a"
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_mailbox_abi.h",
+      "bytes": 5845,
+      "sha256": "e0fb00ab40f4b9842c3cfc0047d936927f9ba11ae4f29e9542375bed2abf772c"
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "bytes": 90412,
+      "sha256": "4ccdfa232bc1448a9953e82edb1a68e3d2152bfc3ef5c6c1b4a2284628c05627"
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "bytes": 11819,
+      "sha256": "83e47a3a655c1fb3f27559c138a44bfd3b1bdd086b6e604659802346296683e0"
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+      "bytes": 121530,
+      "sha256": "c9034d10daa99ae8ec5dd854d1b55c029612551d4e105151f25c086b8036676d"
+    },
+    {
+      "path": "src/AgentLang.Llvm/NativeAbi.fs",
+      "bytes": 5317,
+      "sha256": "4c2504edcff2bf4d52ccfb0ec920c92ff9298f347278e996a2de46828199791a"
+    },
+    {
+      "path": "src/AgentLang.Llvm/NativeValueMetrics.fs",
+      "bytes": 12945,
+      "sha256": "e0e4f8d764a3bcc2abeb29a7ddfb4c7500b8c3bd01fc89104840b1a9eb593b25"
+    },
+    {
+      "path": "src/AgentLang.Llvm/NativeValues.fs",
+      "bytes": 16129,
+      "sha256": "a5a2898a23d98c6f52b48cc471f111f757d4560dc9e30aed8fe40bb54dd93957"
+    },
+    {
+      "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+      "bytes": 388546,
+      "sha256": "cf98467cede722b819cd6de6ae8fa364330fb492fb46ec0a2e770eed4db3dc23"
+    },
+    {
+      "path": "tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj",
+      "bytes": 1371,
+      "sha256": "8b98394da31b4b404f2d065ac4b459373dc026fb7ae8ad831e8dce27d5185866"
+    },
+    {
+      "path": "tests/AgentLang.Llvm.Tests/ArenaLifetimeTests.fs",
+      "bytes": 29298,
+      "sha256": "d8327b48a64f49d6475e49db77a016d33c301e9f1ea2b4ae82261411902ca6f3"
+    },
+    {
+      "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+      "bytes": 264666,
+      "sha256": "a4ffa7dfc57cd50113d47a7a2c113833938a982d6b9746433253dc270bd3d792"
+    },
+    {
+      "path": "tests/fixtures/native-conformance/native-value-stack.json",
+      "bytes": 73137,
+      "sha256": "ab5fcccb652a84d9880d9321c6d30447c013f6b1699485c2a466b79188305218"
+    },
+    {
+      "path": "tests/fixtures/native-conformance/owning-mailbox-policy.json",
+      "bytes": 9906,
+      "sha256": "432b6cf4441ef57c740048b1970af6a2f42b0d3d8f8ce52ab3d525504e009381"
+    },
+    {
+      "path": "tests/fixtures/native-conformance/owning-mailbox-refinements.json",
+      "bytes": 22668,
+      "sha256": "a22bb448ee864713903d5ee7946c785cd7c8978cf54da02e0f2e0b86911cbbb1"
+    },
+    {
+      "path": "tests/fixtures/native-conformance/owning-mailbox-sums.json",
+      "bytes": 12726,
+      "sha256": "4a93f34ef057fab5378b217dbbb1d5f6ec422ee5d8509c37a5304237bd34a8ca"
+    },
+    {
+      "path": "tests/fixtures/native-conformance/owning-mailbox.json",
+      "bytes": 10759,
+      "sha256": "0be8115f64fca26f36e9aacb9611f9e581d3366933b1c3224c3d859c0772d0d0"
+    }
+  ]
+}

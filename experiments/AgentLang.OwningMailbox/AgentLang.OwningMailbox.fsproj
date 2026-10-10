@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <Content Include="owning-mailbox.flow" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="owning-mailbox-refinements.flow" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

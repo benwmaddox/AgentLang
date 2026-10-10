@@ -225,6 +225,16 @@ status are recorded in the report. Refined mailbox ingress, general Email
 validation, JIT and memory-policy selection remain separate work. This adds no
 agent-efficacy or service-throughput claim.
 
+[Report 180](../reports/180-native-refined-mailbox.md) completes refined
+Int/String admission at owning mailbox ingress. Recursive active-payload checks
+run before handlers; private associated-root resumes retain their existing
+boundary. Controller APIs, effects and ABI/layout versions are unchanged.
+Direct raw callbacks and real text-controller lifecycles pass O0/O2 with all
+three host profiles and both arena policies: 2,255 checks, including 668 refined
+checks, plus all 37 full local Release checks. The report retains the failed
+first run and disclosed diagnostic/copy oracle corrections. This is native
+conformance, with no new efficacy, throughput or security-certification claim.
+
 A development-load follow-up should measure fresh project activation separately
 from warm request latency. Report 169 records similar 23–25-second fresh CLI
 session times across very different request counts and a static-review candidate:

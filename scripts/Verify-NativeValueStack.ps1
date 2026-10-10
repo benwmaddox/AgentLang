@@ -877,7 +877,7 @@ try {
         'unsupported-UnvalidatedStringTag-is-explicit',
         'unsupported-BoolTag-is-explicit',
         'unsupported-FloatTag-is-explicit',
-        'unsupported-refined-string-mailbox-layout-is-explicit'
+        'refined-string-mailbox-compiled-admission-is-explicit'
     )
     $refinedRuns = @()
     if ($null -ne $experimentEvidence['refinedStringRuns']) { $refinedRuns = @($experimentEvidence['refinedStringRuns']) }

@@ -3,6 +3,7 @@ module AgentLang.Llvm.Tests
 open System
 open System.IO
 open System.Runtime.InteropServices
+open System.Text
 open System.Text.Json
 open System.Threading
 open AgentLang
@@ -13,6 +14,25 @@ type private RawExecuteDelegate = delegate of nativeint * nativeint * int32 * na
 
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
 type private RawOwningExecuteDelegate = delegate of nativeint * nativeint * int32 * nativeint * int32 * nativeint * int32 -> int32
+
+[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+type private OwningMailboxModuleExport = delegate of unit -> nativeint
+
+[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+type private OwningMailboxEntryDelegate = delegate of nativeint * nativeint * uint32 * nativeint * uint32 -> int32
+
+[<Struct; StructLayout(LayoutKind.Sequential, Pack = 8)>]
+type private RawMailboxExternalSlice =
+    val mutable Bytes: nativeint
+    val mutable ExtentBytes: uint32
+    val mutable TypeIndex: uint32
+
+[<Struct; StructLayout(LayoutKind.Sequential, Pack = 8)>]
+type private RawMailboxOutputSlice =
+    val mutable TypeIndex: uint32
+    val mutable OffsetBytes: uint32
+    val mutable OwnerEndBytes: uint32
+    val mutable Reserved: uint32
 
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
 type private LayoutDelegate = delegate of nativeint -> unit
@@ -285,6 +305,94 @@ let private compileNativeWithSources (name: string) (optimization: LlvmOptimizat
 let private compileOwningNative toolchain (name: string) (optimization: LlvmOptimization) (body: VerifiedIrBody) =
     let directory = Path.Combine(artifactRoot, name, string optimization)
     OwningStackAot.compile toolchain optimization directory body
+
+type private RawMailboxInvocation =
+    { Status: int32
+      Context: NativeOwningContext
+      Outputs: RawMailboxOutputSlice list
+      Diagnostic: OwningMailboxDiagnosticInfo option }
+
+let private mailboxIntBytes (value: int64) = BitConverter.GetBytes value
+
+let private mailboxStringBytes (value: string) =
+    let utf16 = Encoding.Unicode.GetBytes value
+    let payloadBytes = 8 + utf16.Length
+    let extentBytes = (payloadBytes + 7) &&& ~~~7
+    let bytes = Array.zeroCreate<byte> extentBytes
+    Buffer.BlockCopy(BitConverter.GetBytes(value.Length), 0, bytes, 0, sizeof<int32>)
+    Buffer.BlockCopy(utf16, 0, bytes, 8, utf16.Length)
+    bytes
+
+let private invokeRawMailboxEntry (native: OwningMailboxCompiledModule) entryIndex (inputs: byte array list) =
+    if entryIndex < 0 || entryIndex >= native.Entries.Length then invalidArg (nameof entryIndex) "Mailbox entry index is outside the compiled module."
+    let entry = native.Entries[entryIndex]
+    if inputs.Length <> entry.InputTypes.Length then invalidArg (nameof inputs) "Mailbox input bytes do not match the compiled entry shape."
+    let library = NativeLibrary.Load native.LibraryPath
+    let inputBuffers = Array.zeroCreate<nativeint> inputs.Length
+    let inputDescriptors = Marshal.AllocHGlobal(max 1 (inputs.Length * Marshal.SizeOf<RawMailboxExternalSlice>()))
+    let outputCapacity = entry.OutputTypes.Length
+    let outputDescriptors = Marshal.AllocHGlobal(max 1 (outputCapacity * Marshal.SizeOf<RawMailboxOutputSlice>()))
+    let contextPointer = Marshal.AllocHGlobal(Marshal.SizeOf<NativeOwningContext>())
+    let stackCapacity = 4096
+    let bitmapBytes = stackCapacity / 8
+    let stack = Marshal.AllocHGlobal stackCapacity
+    let initialized = Marshal.AllocHGlobal bitmapBytes
+    let poison = Marshal.AllocHGlobal bitmapBytes
+    let traceCapacity = 8192
+    let trace = Marshal.AllocHGlobal(traceCapacity * 40)
+    try
+        for index, bytes in inputs |> List.indexed do
+            let buffer = Marshal.AllocHGlobal(max 1 bytes.Length)
+            inputBuffers[index] <- buffer
+            if bytes.Length > 0 then Marshal.Copy(bytes, 0, buffer, bytes.Length)
+            let mutable descriptor = Unchecked.defaultof<RawMailboxExternalSlice>
+            descriptor.Bytes <- buffer
+            descriptor.ExtentBytes <- uint32 bytes.Length
+            descriptor.TypeIndex <- entry.InputTypeIndexes[index]
+            Marshal.StructureToPtr(descriptor, IntPtr.Add(inputDescriptors, index * Marshal.SizeOf<RawMailboxExternalSlice>()), false)
+        let outputBytes = max 1 (outputCapacity * Marshal.SizeOf<RawMailboxOutputSlice>())
+        Marshal.Copy(Array.create outputBytes 0xA5uy, 0, outputDescriptors, outputBytes)
+        Marshal.Copy(Array.zeroCreate<byte> stackCapacity, 0, stack, stackCapacity)
+        Marshal.Copy(Array.zeroCreate<byte> bitmapBytes, 0, initialized, bitmapBytes)
+        Marshal.Copy(Array.zeroCreate<byte> bitmapBytes, 0, poison, bitmapBytes)
+        Marshal.Copy(Array.zeroCreate<byte> (traceCapacity * 40), 0, trace, traceCapacity * 40)
+        let mutable context = Unchecked.defaultof<NativeOwningContext>
+        context.AbiVersion <- 1u
+        context.StackCapacityBytes <- uint32 stackCapacity
+        context.AvailableBytes <- uint32 stackCapacity
+        context.TraceEventCapacity <- uint32 traceCapacity
+        context.InitBitmapBytes <- uint32 bitmapBytes
+        context.StackData <- stack
+        context.InitBitmap <- initialized
+        context.PoisonBitmap <- poison
+        context.TraceEvents <- trace
+        Marshal.StructureToPtr(context, contextPointer, false)
+        let export = Marshal.GetDelegateForFunctionPointer<OwningMailboxModuleExport>(NativeLibrary.GetExport(library, "agentlang_owning_mailbox_module"))
+        let modulePointer = export.Invoke()
+        let executePointer = Marshal.ReadIntPtr(modulePointer, 16 + entryIndex * 40 + 32)
+        let execute = Marshal.GetDelegateForFunctionPointer<OwningMailboxEntryDelegate>(executePointer)
+        let status = execute.Invoke(contextPointer, inputDescriptors, uint32 inputs.Length, outputDescriptors, uint32 outputCapacity)
+        let finalContext = Marshal.PtrToStructure<NativeOwningContext>(contextPointer)
+        let outputSize = Marshal.SizeOf<RawMailboxOutputSlice>()
+        let outputValues =
+            [ for index in 0 .. outputCapacity - 1 do
+                yield Marshal.PtrToStructure<RawMailboxOutputSlice>(IntPtr.Add(outputDescriptors, index * outputSize)) ]
+        let diagnostic = native.Diagnostics |> List.tryFind (fun item -> uint32 item.Id = finalContext.ErrorId)
+        { Status = status
+          Context = finalContext
+          Outputs = outputValues
+          Diagnostic = diagnostic }
+    finally
+        NativeLibrary.Free library
+        Marshal.FreeHGlobal trace
+        Marshal.FreeHGlobal poison
+        Marshal.FreeHGlobal initialized
+        Marshal.FreeHGlobal stack
+        Marshal.FreeHGlobal contextPointer
+        Marshal.FreeHGlobal outputDescriptors
+        Marshal.FreeHGlobal inputDescriptors
+        for buffer in inputBuffers do
+            if buffer <> IntPtr.Zero then Marshal.FreeHGlobal buffer
 
 let private compareSuccessfulCase (fixtureName: string) (executionName: string) (body: VerifiedIrBody) (expected: Value list) =
     check (fixtureName + " independent expected result") (formatValues expected = fixtureValues fixtureName)
@@ -1821,20 +1929,45 @@ let private testOwningRefinedIntSlice () =
         Call("drop", span "owning-refined-mailbox.agent" 8)
         Call("drop", span "owning-refined-mailbox.agent" 9)
     ]
-    let mailboxError =
-        errorOf (fun () ->
-            OwningStackAot.compileMailboxWithProfile
-                toolchain
-                LlvmOptimization.O0
-                OwningRuntimeProfile.Diagnostic
-                (Path.Combine(artifactRoot, "owning-refined-mailbox-reject"))
-                initialize
-                beginTurn
-                resume
-            |> ignore)
-    check "mailbox layout builder explicitly rejects a nested refined Int scalar" (
-        mailboxError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-        && mailboxError.Message.Contains("unvalidated nominal Int scalar", StringComparison.OrdinalIgnoreCase))
+    let mailbox =
+        OwningStackAot.compileMailboxWithProfile
+            toolchain
+            LlvmOptimization.O0
+            OwningRuntimeProfile.Diagnostic
+            (Path.Combine(artifactRoot, "owning-refined-mailbox-int"))
+            initialize
+            beginTurn
+            resume
+    check "mailbox layout admits a nested refined Int scalar" (
+        mailbox.Entries.Length = 3
+        && (mailbox.Layouts |> List.exists (fun layout -> layout.TypeName = "PositiveId")))
+    check "mailbox begin validates refined Int inputs before the entry frame" (
+        mailbox.LlvmIr.Contains("mailbox.validation.frame.entered", StringComparison.Ordinal)
+        && mailbox.LlvmIr.Contains("@agentlang_mailbox_begin_frame", StringComparison.Ordinal))
+    check "mailbox callback metadata bound includes the refined admission allocas" (
+        (mailbox.CallbackMetadataPerEntryBytes.TryFind "begin" |> Option.exists (fun bytes -> bytes > 0))
+        && mailbox.BackendMetadataPeakBoundBytes >= int64 (mailbox.CallbackMetadataPerEntryBytes["begin"]))
+    let mailboxBeginOutputTypeIndexes: uint32 list = mailbox.Entries[1].OutputTypeIndexes
+    let validMailboxTurn = invokeRawMailboxEntry mailbox 1 [ mailboxIntBytes 1L; mailboxStringBytes "turn" ]
+    check "valid refined Int mailbox input executes and publishes both begin outputs" (
+        validMailboxTurn.Status = 0
+        && List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex) validMailboxTurn.Outputs = mailboxBeginOutputTypeIndexes
+        && validMailboxTurn.Context.CallDepth = 0u)
+    // The raw callback imports the 8-byte state and 16-byte turn once. In the
+    // verified begin body, MailboxContinuation construction copies its one
+    // 8-byte marker field. Admission only reads the imported root and adds no
+    // payload copy or move.
+    let expectedIntMailboxInputCopyBytes = uint64 (8 + (mailboxStringBytes "turn").Length)
+    let expectedIntMailboxBodyDeepCopyBytes = 8UL
+    check ($"refined Int mailbox admission preserves verified body counters (deep={validMailboxTurn.Context.DeepCopyBytes}, expected-deep={expectedIntMailboxBodyDeepCopyBytes}, move={validMailboxTurn.Context.MoveBytes}, input={validMailboxTurn.Context.InputCopyBytes}, expected-input={expectedIntMailboxInputCopyBytes})") (
+        validMailboxTurn.Context.DeepCopyBytes = expectedIntMailboxBodyDeepCopyBytes
+        && validMailboxTurn.Context.MoveBytes = 0UL
+        && validMailboxTurn.Context.InputCopyBytes = expectedIntMailboxInputCopyBytes)
+    let invalidMailboxTurn = invokeRawMailboxEntry mailbox 1 [ mailboxIntBytes 0L; mailboxStringBytes "turn" ]
+    check "invalid nested refined Int input fails before begin publishes output" (
+        invalidMailboxTurn.Status <> 0
+        && (invalidMailboxTurn.Diagnostic |> Option.exists (fun diagnostic -> diagnostic.EntryRole = Some "begin" && diagnostic.Code = "REFINEMENT_FAILED"))
+        && (invalidMailboxTurn.Outputs |> List.forall (fun output -> output.TypeIndex = UInt32.MaxValue && output.OffsetBytes = 0u && output.OwnerEndBytes = 0u)))
 
 let private testOwningRefinedStringSlice () =
     let toolchain = LlvmToolchain.discover()
@@ -2180,20 +2313,178 @@ let private testOwningRefinedStringSlice () =
         Call("drop", span "owning-refined-string-mailbox.agent" 8)
         Call("drop", span "owning-refined-string-mailbox.agent" 9)
     ]
-    let mailboxError =
-        errorOf (fun () ->
+    let mailbox =
+        OwningStackAot.compileMailboxWithProfile
+            toolchain
+            LlvmOptimization.O0
+            OwningRuntimeProfile.Diagnostic
+            (Path.Combine(artifactRoot, "owning-refined-mailbox-string"))
+            initialize
+            beginTurn
+            resume
+    check "mailbox layout admits a nested validated String scalar" (
+        mailbox.Entries.Length = 3
+        && (mailbox.Layouts |> List.exists (fun layout -> layout.TypeName = "NonEmptyString")))
+    check "mailbox begin validates refined String inputs before the entry frame" (
+        mailbox.LlvmIr.Contains("mailbox.validation.frame.entered", StringComparison.Ordinal)
+        && mailbox.LlvmIr.Contains("@agentlang_mailbox_begin_frame", StringComparison.Ordinal))
+    check "mailbox callback metadata bound includes the refined admission allocas" (
+        (mailbox.CallbackMetadataPerEntryBytes.TryFind "begin" |> Option.exists (fun bytes -> bytes > 0))
+        && mailbox.BackendMetadataPeakBoundBytes >= int64 (mailbox.CallbackMetadataPerEntryBytes["begin"]))
+    let mailboxBeginOutputTypeIndexes: uint32 list = mailbox.Entries[1].OutputTypeIndexes
+    let validMailboxTurn = invokeRawMailboxEntry mailbox 1 [ mailboxStringBytes "owner"; mailboxStringBytes "turn" ]
+    check "valid refined String mailbox input executes and publishes both begin outputs" (
+        validMailboxTurn.Status = 0
+        && List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex) validMailboxTurn.Outputs = mailboxBeginOutputTypeIndexes
+        && validMailboxTurn.Context.CallDepth = 0u)
+    // The external MailboxState owner String is 24 bytes in UTF-16 form and
+    // the turn String is 16 bytes. The verified body has one 8-byte marker
+    // field copy in MailboxContinuation construction; admission adds no payload
+    // copy or move.
+    let expectedStringMailboxInputCopyBytes = uint64 ((mailboxStringBytes "owner").Length + (mailboxStringBytes "turn").Length)
+    let expectedStringMailboxBodyDeepCopyBytes = 8UL
+    check ($"refined String mailbox admission preserves verified body counters (deep={validMailboxTurn.Context.DeepCopyBytes}, expected-deep={expectedStringMailboxBodyDeepCopyBytes}, move={validMailboxTurn.Context.MoveBytes}, input={validMailboxTurn.Context.InputCopyBytes}, expected-input={expectedStringMailboxInputCopyBytes})") (
+        validMailboxTurn.Context.DeepCopyBytes = expectedStringMailboxBodyDeepCopyBytes
+        && validMailboxTurn.Context.MoveBytes = 0UL
+        && validMailboxTurn.Context.InputCopyBytes = expectedStringMailboxInputCopyBytes)
+    let invalidMailboxTurn = invokeRawMailboxEntry mailbox 1 [ mailboxStringBytes ""; mailboxStringBytes "turn" ]
+    check "invalid nested refined String input fails before begin publishes output" (
+        invalidMailboxTurn.Status <> 0
+        && (invalidMailboxTurn.Diagnostic |> Option.exists (fun diagnostic -> diagnostic.EntryRole = Some "begin" && diagnostic.Code = "REFINEMENT_FAILED"))
+        && (invalidMailboxTurn.Outputs |> List.forall (fun output -> output.TypeIndex = UInt32.MaxValue && output.OffsetBytes = 0u && output.OwnerEndBytes = 0u)))
+
+let private testOwningRefinedMailboxVariants () =
+    let toolchain = LlvmToolchain.discover()
+    let positiveValidator =
+        wordEntry "is-positive?" [ TInt ] [ TBool ] Set.empty [
+            Push(LInt 0L, span "owning-mailbox-positive-validator.agent" 1)
+            Call("int.greater-than", span "owning-mailbox-positive-validator.agent" 2)
+        ]
+    let scalarDefinitions = [
+        scalarDefinition "PositiveId" TInt (Some "is-positive?"), "PositiveId.construct", "PositiveId.unwrap"
+    ]
+    let createMailbox label (ownerType: LangType) (initializeExpressions: Expr list) =
+        let context =
+            contextWithRecordDefinitions [ positiveValidator ] [
+                recordDefinition "MailboxState" [ recordField "owner" ownerType ]
+                recordDefinition "MailboxContinuation" [ recordField "marker" TInt ]
+            ] scalarDefinitions
+        let program = Compiler.compileIrProgram context
+        let initialize = Compiler.compileIrBodyAgainstProgram context program (label + "-initialize") [ TString ] initializeExpressions
+        let beginTurn = Compiler.compileIrBodyAgainstProgram context program (label + "-begin") [ TNamed "MailboxState"; TString ] [
+            Call("drop", span (label + ".agent") 10)
+            Push(LInt 1L, span (label + ".agent") 11)
+            Call("mailboxContinuation.new", span (label + ".agent") 12)
+        ]
+        let resume = Compiler.compileIrBodyAgainstProgram context program (label + "-resume") [ TNamed "MailboxState"; TNamed "MailboxContinuation"; TString ] [
+            Call("drop", span (label + ".agent") 13)
+            Call("drop", span (label + ".agent") 14)
+        ]
+        let mailbox =
             OwningStackAot.compileMailboxWithProfile
                 toolchain
                 LlvmOptimization.O0
                 OwningRuntimeProfile.Diagnostic
-                (Path.Combine(artifactRoot, "owning-refined-string-mailbox-reject"))
+                (Path.Combine(artifactRoot, label))
                 initialize
                 beginTurn
                 resume
-            |> ignore)
-    check "validated String mailbox layouts remain unsupported by the mailbox gate" (
-        mailboxError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-        && mailboxError.Message.Contains("unvalidated nominal Int scalar", StringComparison.OrdinalIgnoreCase))
+        context, program, mailbox
+
+    let optionField = TOption(TNamed "PositiveId")
+    let optionInitialize = [
+        Call("drop", span "owning-mailbox-option.agent" 1)
+        ConstructContainer(OptionNone, [ TNamed "PositiveId" ], span "owning-mailbox-option.agent" 2)
+        Call("mailboxState.new", span "owning-mailbox-option.agent" 3)
+    ]
+    let optionContext, optionProgram, optionMailbox = createMailbox "owning-refined-mailbox-option" optionField optionInitialize
+    let noneBody = Compiler.compileIrBodyAgainstProgram optionContext optionProgram "owning-mailbox-option-none-value" [] [
+        ConstructContainer(OptionNone, [ TNamed "PositiveId" ], span "owning-mailbox-option-none.agent" 1)
+    ]
+    use noneNative = compileOwningNative toolchain "owning-mailbox-option-none-value" LlvmOptimization.O0 noneBody
+    let inactiveOptionBytes = noneNative.Execute([], 4096, 32).RetainedOutputBytes
+    let inactiveOption = invokeRawMailboxEntry optionMailbox 1 [ inactiveOptionBytes; mailboxStringBytes "turn" ]
+    check "inactive Option payload skips its refined predicate in the mailbox callback" (
+        inactiveOption.Status = 0
+        && inactiveOption.Outputs.Length = 2
+        && inactiveOption.Context.CallDepth = 0u)
+    let activeOptionBytes = Array.concat [ BitConverter.GetBytes(0u); BitConverter.GetBytes(0u); mailboxIntBytes 0L ]
+    let activeOption = invokeRawMailboxEntry optionMailbox 1 [ activeOptionBytes; mailboxStringBytes "turn" ]
+    check "active Option payload runs its refined predicate in the mailbox callback" (
+        activeOption.Status <> 0
+        && (activeOption.Diagnostic |> Option.exists (fun diagnostic -> diagnostic.Code = "REFINEMENT_FAILED" && diagnostic.EntryRole = Some "begin")))
+
+    let resultField = TResult(TNamed "PositiveId", TString)
+    let resultErrorExpression = [
+        Call("drop", span "owning-mailbox-result.agent" 1)
+        Push(LString "inactive", span "owning-mailbox-result.agent" 2)
+        ConstructContainer(ResultError, [ TNamed "PositiveId"; TString ], span "owning-mailbox-result.agent" 3)
+        Call("mailboxState.new", span "owning-mailbox-result.agent" 4)
+    ]
+    let resultContext, resultProgram, resultMailbox = createMailbox "owning-refined-mailbox-result" resultField resultErrorExpression
+    let resultErrorBody = Compiler.compileIrBodyAgainstProgram resultContext resultProgram "owning-mailbox-result-error-value" [] [
+        Push(LString "inactive", span "owning-mailbox-result-error.agent" 1)
+        ConstructContainer(ResultError, [ TNamed "PositiveId"; TString ], span "owning-mailbox-result-error.agent" 2)
+    ]
+    use resultErrorNative = compileOwningNative toolchain "owning-mailbox-result-error-value" LlvmOptimization.O0 resultErrorBody
+    let inactiveResultBytes = resultErrorNative.Execute([], 4096, 64).RetainedOutputBytes
+    let inactiveResult = invokeRawMailboxEntry resultMailbox 1 [ inactiveResultBytes; mailboxStringBytes "turn" ]
+    check "inactive Result payload skips its refined predicate in the mailbox callback" (
+        inactiveResult.Status = 0
+        && inactiveResult.Outputs.Length = 2
+        && inactiveResult.Context.CallDepth = 0u)
+    let activeResultBytes = Array.concat [ BitConverter.GetBytes(0u); BitConverter.GetBytes(0u); mailboxIntBytes 0L ]
+    let activeResult = invokeRawMailboxEntry resultMailbox 1 [ activeResultBytes; mailboxStringBytes "turn" ]
+    check "active Result payload runs its refined predicate in the mailbox callback" (
+        activeResult.Status <> 0
+        && (activeResult.Diagnostic |> Option.exists (fun diagnostic -> diagnostic.Code = "REFINEMENT_FAILED" && diagnostic.EntryRole = Some "begin")))
+
+    let failingValidator =
+        wordEntry "mailbox-failing-validator?" [ TInt ] [ TBool ] Set.empty [
+            Call("drop", span "owning-mailbox-failing-validator.agent" 1)
+            Push(LInt 1L, span "owning-mailbox-failing-validator.agent" 2)
+            Push(LInt 0L, span "owning-mailbox-failing-validator.agent" 3)
+            Call("divide", span "owning-mailbox-failing-validator.agent" 4)
+            Push(LInt 0L, span "owning-mailbox-failing-validator.agent" 5)
+            Call("int.greater-than", span "owning-mailbox-failing-validator.agent" 6)
+        ]
+    let failingContext =
+        contextWithRecordDefinitions [ failingValidator ] [
+            recordDefinition "MailboxState" [ recordField "owner" (TNamed "PositiveId") ]
+            recordDefinition "MailboxContinuation" [ recordField "marker" TInt ]
+        ] [ scalarDefinition "PositiveId" TInt (Some "mailbox-failing-validator?"), "PositiveId.construct", "PositiveId.unwrap" ]
+    let failingProgram = Compiler.compileIrProgram failingContext
+    let failingInitialize = Compiler.compileIrBodyAgainstProgram failingContext failingProgram "owning-mailbox-validator-error-initialize" [ TString ] [
+        Call("drop", span "owning-mailbox-validator-error.agent" 7)
+        Push(LInt 1L, span "owning-mailbox-validator-error.agent" 8)
+        Call("PositiveId.construct", span "owning-mailbox-validator-error.agent" 9)
+        Call("mailboxState.new", span "owning-mailbox-validator-error.agent" 10)
+    ]
+    let failingBegin = Compiler.compileIrBodyAgainstProgram failingContext failingProgram "owning-mailbox-validator-error-begin" [ TNamed "MailboxState"; TString ] [
+        Call("drop", span "owning-mailbox-validator-error.agent" 11)
+        Push(LInt 1L, span "owning-mailbox-validator-error.agent" 12)
+        Call("mailboxContinuation.new", span "owning-mailbox-validator-error.agent" 13)
+    ]
+    let failingResume = Compiler.compileIrBodyAgainstProgram failingContext failingProgram "owning-mailbox-validator-error-resume" [ TNamed "MailboxState"; TNamed "MailboxContinuation"; TString ] [
+        Call("drop", span "owning-mailbox-validator-error.agent" 14)
+        Call("drop", span "owning-mailbox-validator-error.agent" 15)
+    ]
+    let failingMailbox =
+        OwningStackAot.compileMailboxWithProfile
+            toolchain
+            LlvmOptimization.O0
+            OwningRuntimeProfile.Diagnostic
+            (Path.Combine(artifactRoot, "owning-refined-mailbox-validator-runtime-error"))
+            failingInitialize
+            failingBegin
+            failingResume
+    let failingAdmission = invokeRawMailboxEntry failingMailbox 1 [ mailboxIntBytes 1L; mailboxStringBytes "turn" ]
+    check "mailbox predicate runtime errors retain their code and balance validation cleanup" (
+        failingAdmission.Status <> 0
+        && (failingAdmission.Diagnostic |> Option.exists (fun diagnostic -> diagnostic.Code = "RUNTIME_DIVIDE_BY_ZERO"))
+        && failingAdmission.Context.CallDepth = 0u
+        && failingAdmission.Context.ActiveLocalReservedBytes = 0u
+        && (failingAdmission.Outputs |> List.forall (fun output -> output.TypeIndex = UInt32.MaxValue && output.OffsetBytes = 0u && output.OwnerEndBytes = 0u)))
 
 let private compareRecordErrorCase (fixtureName: string) (executionName: string) (body: VerifiedIrBody) =
     let expectedFixture = recordFixtureError fixtureName
@@ -3888,6 +4179,15 @@ let main args =
             printStage "owning backend refined String constructors, raw admission, and owner ranges"
             testOwningRefinedStringSlice ()
             printfn "AgentLang.Llvm.Tests owning refined String checks: %d assertions passed; artifacts: %s" assertions artifactRoot
+            0
+        with ex ->
+            eprintfn "%s" (ex.ToString())
+            1
+    elif args |> Array.contains "--owning-refined-mailbox" then
+        try
+            printStage "owning mailbox refined scalar active and inactive admission"
+            testOwningRefinedMailboxVariants ()
+            printfn "AgentLang.Llvm.Tests owning refined mailbox checks: %d assertions passed; artifacts: %s" assertions artifactRoot
             0
         with ex ->
             eprintfn "%s" (ex.ToString())

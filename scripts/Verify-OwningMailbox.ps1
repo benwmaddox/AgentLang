@@ -1,7 +1,8 @@
 #requires -Version 7.0
 [CmdletBinding()]
 param(
-    [switch]$SerialBuild
+    [switch]$SerialBuild,
+    [switch]$RefinementsOnly
 )
 
 Set-StrictMode -Version Latest
@@ -20,6 +21,12 @@ $runnerSourcePath = Join-Path $repo 'experiments/AgentLang.OwningMailbox/native_
 $sumsRunnerSourcePath = Join-Path $repo 'experiments/AgentLang.OwningMailbox/native_owning_mailbox_sums.c'
 $fixturePath = Join-Path $repo 'tests/fixtures/native-conformance/owning-mailbox.json'
 $sumsFixturePath = Join-Path $repo 'tests/fixtures/native-conformance/owning-mailbox-sums.json'
+$refinementsFlowPath = Join-Path $repo 'experiments/AgentLang.OwningMailbox/owning-mailbox-refinements.flow'
+$refinementsRunnerSourcePath = Join-Path $repo 'experiments/AgentLang.OwningMailbox/native_owning_mailbox_refinements.c'
+$refinementsFixturePath = Join-Path $repo 'tests/fixtures/native-conformance/owning-mailbox-refinements.json'
+$refinementsEvidenceRoot = Join-Path $repo '.agentlang/refined-mailbox-180/runner'
+$refinementsRunDirectory = Join-Path $refinementsEvidenceRoot "integration-run-$runId"
+$refinementsReportPath = Join-Path $refinementsRunDirectory 'integration-evidence.json'
 $nativeDirectory = Join-Path $repo 'src/AgentLang.Llvm/native'
 $arenaRuntimePath = Join-Path $nativeDirectory 'arena_runtime.c'
 $mailboxRuntimePath = Join-Path $nativeDirectory 'mailbox_runtime.c'
@@ -36,6 +43,14 @@ $nativeSources = @(
 )
 $sumsNativeSources = @(
     $sumsRunnerSourcePath,
+    $arenaRuntimePath,
+    $mailboxRuntimePath,
+    (Join-Path $nativeDirectory 'mailbox_runtime_windows.c'),
+    $owningStackPath,
+    $owningBankPath
+)
+$refinementsNativeSources = @(
+    $refinementsRunnerSourcePath,
     $arenaRuntimePath,
     $mailboxRuntimePath,
     (Join-Path $nativeDirectory 'mailbox_runtime_windows.c'),
@@ -59,6 +74,9 @@ $sourceInputPaths = @(
     $sumsFlowPath,
     $sumsRunnerSourcePath,
     $sumsFixturePath,
+    $refinementsFlowPath,
+    $refinementsRunnerSourcePath,
+    $refinementsFixturePath,
     (Join-Path $repo 'src/AgentLang.Llvm/AgentLang.Llvm.fsproj'),
     (Join-Path $repo 'src/AgentLang.Llvm/OwningStackAot.fs'),
     (Join-Path $repo 'src/AgentLang.Llvm/LlvmAot.fs'),
@@ -80,14 +98,19 @@ $checks = [Collections.Generic.List[object]]::new()
 $processes = [Collections.Generic.List[object]]::new()
 $moduleBuilds = [Collections.Generic.List[object]]::new()
 $sumModuleBuilds = [Collections.Generic.List[object]]::new()
+$refinementsModuleBuilds = [Collections.Generic.List[object]]::new()
 $nativeBuilds = [Collections.Generic.List[object]]::new()
 $sumNativeBuilds = [Collections.Generic.List[object]]::new()
+$refinementsNativeBuilds = [Collections.Generic.List[object]]::new()
 $nativeRuns = [Collections.Generic.List[object]]::new()
 $sumNativeRuns = [Collections.Generic.List[object]]::new()
+$refinementsNativeRuns = [Collections.Generic.List[object]]::new()
 $errors = [Collections.Generic.List[string]]::new()
 $timeoutMilliseconds = 300000
 $utf8 = [Text.UTF8Encoding]::new($false)
 $sourceInputBefore = @()
+$refinementFirstCheck = 0
+$refinementsStarted = $false
 $report = [ordered]@{
     schemaVersion = 1
     kind = 'owning-native-mailbox-integration'
@@ -95,6 +118,8 @@ $report = [ordered]@{
     startedUtc = [DateTime]::UtcNow.ToString('O')
     repository = $repo
     fixture = $fixturePath
+    refinementsFixture = $refinementsFixturePath
+    refinementsOnly = [bool]$RefinementsOnly
     checks = @()
 }
 $runtimeProfiles = @('diagnostic', 'trusted-generated')
@@ -521,6 +546,462 @@ function Resolve-SumLayoutIndexes($Bootstrap) {
     return $indexes
 }
 
+function Resolve-RefinementLayoutIndexes($Bootstrap) {
+    $requiredTypes = @('State', 'Continuation', 'String', 'Option<NonEmptyString>', 'Option<PositiveId>', 'Result<PositiveId, NonEmptyString>')
+    $layouts = @(Get-Field $Bootstrap 'layouts')
+    $indexes = [ordered]@{}
+    foreach ($typeName in $requiredTypes) {
+        $matches = @($layouts | Where-Object { [string](Get-Field $_ 'typeName') -ceq $typeName })
+        if ($matches.Count -ne 1 -or -not (Has-Field $matches[0] 'layoutIndex')) {
+            throw "Refined bootstrap must expose exactly one layout with typeName '$typeName' and a layoutIndex."
+        }
+        $indexes[$typeName] = [uint32](Get-Field $matches[0] 'layoutIndex')
+    }
+    if (@($indexes.Values | Select-Object -Unique).Count -ne $requiredTypes.Count) {
+        throw 'Refined mailbox layout indexes must be unique for every runner argument type.'
+    }
+    return $indexes
+}
+
+function Compare-RefinementSnapshot($Actual, [Parameter()][AllowEmptyCollection()][object[]]$ExpectedRoots, [bool]$Pending, [string]$Label) {
+    $actualRoots = [Collections.Generic.List[object]]::new()
+    $actualRootsValue = Get-Field $Actual 'roots'
+    if ($null -ne $actualRootsValue) {
+        foreach ($root in $actualRootsValue) { $actualRoots.Add($root) }
+    }
+    $expectedRootsNormalized = [Collections.Generic.List[object]]::new()
+    if ($null -ne $ExpectedRoots) {
+        foreach ($root in $ExpectedRoots) { $expectedRootsNormalized.Add($root) }
+    }
+    $okay = (Get-Field $Actual 'pending') -eq [int]$Pending -and $actualRoots.Count -eq $expectedRootsNormalized.Count
+    $offset = [uint32]0
+    for ($index = 0; $index -lt [Math]::Min($actualRoots.Count, $expectedRootsNormalized.Count); $index++) {
+        $actualRoot = $actualRoots[$index]
+        $expectedRoot = $expectedRootsNormalized[$index]
+        $rootOkay = [uint32](Get-Field $actualRoot 'typeId') -eq [uint32](Get-Field $expectedRoot 'typeId') -and
+            [uint32](Get-Field $actualRoot 'offsetBytes') -eq $offset -and
+            [uint32](Get-Field $actualRoot 'extentBytes') -eq [uint32](Get-Field $expectedRoot 'extentBytes') -and
+            [uint32](Get-Field $actualRoot 'payloadBytes') -eq [uint32](Get-Field $expectedRoot 'payloadBytes') -and
+            [uint32](Get-Field $actualRoot 'ownerEndBytes') -eq ($offset + [uint32](Get-Field $expectedRoot 'extentBytes')) -and
+            [string](Get-Field $actualRoot 'serializedHex') -ceq [string](Get-Field $expectedRoot 'serializedHex')
+        Add-Check "$Label root $index matches independent type, payload, extent, and bytes" $rootOkay ([ordered]@{ expected = $expectedRoot; actual = $actualRoot })
+        $okay = $okay -and $rootOkay
+        $offset += [uint32](Get-Field $expectedRoot 'extentBytes')
+    }
+    $okay = $okay -and [uint32](Get-Field $Actual 'rootCount') -eq $expectedRootsNormalized.Count -and [uint32](Get-Field $Actual 'usedBytes') -eq $offset
+    Add-Check "$Label root count, pending state, and used extent match the independent fixture" $okay ([ordered]@{ pending = Get-Field $Actual 'pending'; rootCount = Get-Field $Actual 'rootCount'; usedBytes = Get-Field $Actual 'usedBytes'; expectedRootCount = $expectedRootsNormalized.Count; expectedUsedBytes = $offset })
+    return $okay
+}
+
+function Get-RefinementExpectedStepArray($Oracle, [string]$Policy) {
+    $expected = Get-Field $Oracle 'expectedSteps'
+    if ($Policy -ceq 'RETURN') {
+        return @(
+            [uint32](Get-Field $expected 'initialize'),
+            [uint32](Get-Field $expected 'beginReturn'),
+            [uint32](Get-Field $expected 'resumeEmptyReturn'),
+            [uint32](Get-Field $expected 'resumeFailReturn'),
+            [uint32](Get-Field $expected 'resumeSuccessReturn'))
+    }
+    return @(
+        [uint32](Get-Field $expected 'initialize'),
+        [uint32](Get-Field $expected 'beginKeep'),
+        [uint32](Get-Field $expected 'resumeEmptyKeep'),
+        [uint32](Get-Field $expected 'resumeFailKeep'),
+        [uint32](Get-Field $expected 'resumeSuccessKeep'))
+}
+
+function Test-RefinementOracle($Bootstrap, $Fixture, [string]$Label) {
+    $provenance = Get-Field $Fixture 'oracleProvenance'
+    $firstEvidence = Get-Field $provenance 'firstNativeExecutionEvidence'
+    $correctionValue = Get-Field $provenance 'postExecutionCorrections'
+    $corrections = [Collections.Generic.List[object]]::new()
+    if ($null -ne $correctionValue) {
+        foreach ($correction in $correctionValue) { $corrections.Add($correction) }
+    }
+    $initialHash = [string](Get-Field $provenance 'initialFrozenSnapshotSha256')
+    $firstRunId = [string](Get-Field $firstEvidence 'runId')
+    $firstEvidencePath = [string](Get-Field $firstEvidence 'relativePath')
+    $expectedFinalFixtureHash = 'A22BB448EE864713903D5EE7946C785CD7C8978CF54DA02E0F2E0B86911CBBB1'
+    $actualFixtureHash = (Get-FileHash -LiteralPath $script:refinementsFixturePath -Algorithm SHA256).Hash.ToUpperInvariant()
+    $expectedPriorHash = $initialHash
+    $correctionKinds = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $provenanceOkay = (Get-Field $Fixture 'frozenBeforeNativeExecution') -eq $false -and
+        (Get-Field $provenance 'sourceDerivedBeforeNativeExecution') -eq $false -and
+        (Get-Field $provenance 'initialFreezeBeforeNativeExecution') -eq $true -and
+        (Get-Field $provenance 'valueAndStepOraclesFrozenBeforeNativeExecution') -eq $true -and
+        (Get-Field $provenance 'copyOracleFrozenBeforeNativeExecution') -eq $false -and
+        (Get-Field $provenance 'copyOracleCorrectedAfterFirstNativeExecution') -eq $true -and
+        $initialHash -match '^[0-9a-fA-F]{64}$' -and
+        $firstEvidencePath -match [regex]::Escape($firstRunId) -and
+        $firstEvidencePath -match 'integration-evidence\.json$' -and
+        $firstRunId -match '^[0-9a-fA-F]{32}$' -and
+        -not [string]::IsNullOrWhiteSpace([string](Get-Field $firstEvidence 'scope')) -and
+        $corrections.Count -ge 2
+    for ($correctionIndex = 0; $correctionIndex -lt $corrections.Count; $correctionIndex++) {
+        $correction = $corrections[$correctionIndex]
+        $changeValue = Get-Field $correction 'changes'
+        $changes = [Collections.Generic.List[object]]::new()
+        if ($null -ne $changeValue) {
+            foreach ($change in $changeValue) { $changes.Add($change) }
+        }
+        $kind = [string](Get-Field $correction 'kind')
+        $priorHash = [string](Get-Field $correction 'priorFixtureSha256')
+        $afterHash = [string](Get-Field $correction 'afterFixtureSha256')
+        $hasFollowingCorrection = $correctionIndex -lt ($corrections.Count - 1)
+        $provenanceOkay = $provenanceOkay -and
+            [string](Get-Field $correction 'afterRunId') -ceq $firstRunId -and
+            $priorHash -ceq $expectedPriorHash -and
+            $priorHash -match '^[0-9a-fA-F]{64}$' -and
+            -not [string]::IsNullOrWhiteSpace($kind) -and
+            $changes.Count -gt 0 -and
+            (-not $hasFollowingCorrection -or $afterHash -match '^[0-9a-fA-F]{64}$')
+        [void]$correctionKinds.Add($kind)
+        if ($hasFollowingCorrection) { $expectedPriorHash = $afterHash }
+    }
+    $lastCorrectionAfterHash = if ($corrections.Count -gt 0) { [string](Get-Field $corrections[$corrections.Count - 1] 'afterFixtureSha256') } else { '' }
+    $provenanceOkay = $provenanceOkay -and
+        $correctionKinds.Contains('diagnostic-code-classification') -and
+        $correctionKinds.Contains('copy-accounting') -and
+        [string]::IsNullOrWhiteSpace($lastCorrectionAfterHash) -and
+        $actualFixtureHash -ceq $expectedFinalFixtureHash
+    Add-Check "$Label fixture provenance links the initial freeze and corrections to the pinned current fixture bytes" $provenanceOkay ([ordered]@{ frozenBeforeNativeExecution = Get-Field $Fixture 'frozenBeforeNativeExecution'; initialFrozenSnapshotSha256 = $initialHash; terminalCorrectionPriorSha256 = $expectedPriorHash; actualFixtureSha256 = $actualFixtureHash; expectedFixtureSha256 = $expectedFinalFixtureHash; provenance = $provenance })
+
+    $oracle = Get-Field $Bootstrap 'sourceDerivedRefinementOracle'
+    $expected = Get-Field $Fixture 'sourceDerivedStepOracle'
+    $expectedBodies = Get-Field $expected 'handlerBodyStepsExcludingExternalAdmission'
+    $actualBodies = Get-Field $oracle 'bodySteps'
+    $bodyPairs = @(
+        @{ actual = 'initialize'; expected = 'initialize' },
+        @{ actual = 'beginRole'; expected = 'begin' },
+        @{ actual = 'resumeEmpty'; expected = 'resumeEmpty' },
+        @{ actual = 'resumeFail'; expected = 'resumeFail' },
+        @{ actual = 'resumeSuccess'; expected = 'resumeSuccess' })
+    $bodyOkay = $true
+    foreach ($pair in $bodyPairs) {
+        $bodyOkay = $bodyOkay -and [uint32](Get-Field $actualBodies $pair.actual) -eq [uint32](Get-Field $expectedBodies $pair.expected)
+    }
+    Add-Check "$Label handler body instruction costs match the frozen verified-IR oracle" $bodyOkay ([ordered]@{ expected = $expectedBodies; actual = $actualBodies })
+
+    $expectedIdentity = @(Get-Field $Fixture 'frozenPredicates')
+    $actualIdentity = @(Get-Field $oracle 'validatorIdentity')
+    $identityOkay = $expectedIdentity.Count -eq 2 -and $actualIdentity.Count -eq 2
+    foreach ($expectedPredicate in $expectedIdentity) {
+        $found = @($actualIdentity | Where-Object { [string](Get-Field $_ 'name') -ceq [string](Get-Field $expectedPredicate 'validator') })
+        $identityOkay = $identityOkay -and $found.Count -eq 1 -and
+            [string](Get-Field $found[0] 'wordId') -ceq [string](Get-Field $expectedPredicate 'wordId') -and
+            [uint32](Get-Field $found[0] 'revision') -eq [uint32](Get-Field $expectedPredicate 'revision') -and
+            [uint32](Get-Field $found[0] 'instructionCost') -eq [uint32](Get-Field $expectedPredicate 'stepsPerInvocation')
+    }
+    Add-Check "$Label validator target identities, revisions, and normal instruction costs match the fixture" $identityOkay ([ordered]@{ expected = $expectedIdentity; actual = $actualIdentity })
+
+    $expectedCalls = Get-Field $expected 'sourceDerivedPredicateInvocations'
+    $actualCalls = Get-Field $oracle 'expectedCalls'
+    $callPairs = @(
+        @{ actual = 'initialize'; expected = 'initialize' },
+        @{ actual = 'beginRole'; expected = 'begin' },
+        @{ actual = 'resumeEmptyReturn'; expected = 'resumeEmptyReturn' },
+        @{ actual = 'resumeEmptyKeep'; expected = 'resumeEmptyKeep' },
+        @{ actual = 'resumeFailReturn'; expected = 'resumeFailReturn' },
+        @{ actual = 'resumeFailKeep'; expected = 'resumeFailKeep' },
+        @{ actual = 'resumeSuccessReturn'; expected = 'resumeSuccessReturn' },
+        @{ actual = 'resumeSuccessKeep'; expected = 'resumeSuccessKeep' },
+        @{ actual = 'controllerTotalReturn'; expected = 'controllerTotalReturn' },
+        @{ actual = 'controllerTotalKeep'; expected = 'controllerTotalKeep' })
+    $callsOkay = $true
+    foreach ($pair in $callPairs) {
+        $actualPair = Get-Field $actualCalls $pair.actual
+        $expectedPair = Get-Field $expectedCalls $pair.expected
+        foreach ($name in @('positiveId', 'nonEmptyString')) {
+            $expectedName = if ($name -ceq 'positiveId') { 'PositiveId' } else { 'NonEmptyString' }
+            $callsOkay = $callsOkay -and [int](Get-Field $actualPair $name) -eq [int](Get-Field $expectedPair $expectedName)
+        }
+    }
+    Add-Check "$Label source-derived refinement invocation counts match the frozen fixture" $callsOkay ([ordered]@{ expected = $expectedCalls; actual = $actualCalls })
+
+    $returnSteps = Get-RefinementExpectedStepArray $oracle 'RETURN'
+    $keepSteps = Get-RefinementExpectedStepArray $oracle 'KEEP_ASSOCIATED'
+    $fixtureReturnSteps = @(Get-Field (Get-Field $expected 'stepsConsumedByCall') 'RETURN' | ForEach-Object { [uint32]$_ })
+    $fixtureKeepSteps = @(Get-Field (Get-Field $expected 'stepsConsumedByCall') 'KEEP_ASSOCIATED' | ForEach-Object { [uint32]$_ })
+    $stepsOkay = ($returnSteps -join ',') -ceq ($fixtureReturnSteps -join ',') -and ($keepSteps -join ',') -ceq ($fixtureKeepSteps -join ',')
+    $actualExpectedSteps = Get-Field $oracle 'expectedSteps'
+    $stepsOkay = $stepsOkay -and [uint32](Get-Field $actualExpectedSteps 'returnTotal') -eq [uint32](($fixtureReturnSteps | Measure-Object -Sum).Sum) -and
+        [uint32](Get-Field $actualExpectedSteps 'keepTotal') -eq [uint32](($fixtureKeepSteps | Measure-Object -Sum).Sum)
+    Add-Check "$Label source-derived per-call and total instruction counts match the frozen fixture" $stepsOkay ([ordered]@{ expectedReturn = $fixtureReturnSteps; actualReturn = $returnSteps; expectedKeep = $fixtureKeepSteps; actualKeep = $keepSteps })
+    return $provenanceOkay -and $bodyOkay -and $identityOkay -and $callsOkay -and $stepsOkay
+}
+
+function Compare-RefinementStats($Actual, $Expected, [string]$Label) {
+    $fields = @(
+        'utf8InputBytes', 'utf16StagingBytes', 'inputImportBytes',
+        'publicationCopyBytes', 'beginPublicationCopyBytes', 'resumeRootImportBytes',
+        'deepCopyBytes', 'moveBytes', 'returnedOutputDescriptors',
+        'handlerInvocations', 'handlerFailures')
+    $okay = $true
+    foreach ($field in $fields) {
+        $hasActual = Has-Field $Actual $field
+        $hasExpected = Has-Field $Expected $field
+        $matches = $hasActual -and $hasExpected -and
+            [uint64](Get-Field $Actual $field) -eq [uint64](Get-Field $Expected $field)
+        Add-Check "$Label $field equals source-derived fixture accounting" $matches ([ordered]@{ expected = if ($hasExpected) { Get-Field $Expected $field } else { $null }; actual = if ($hasActual) { Get-Field $Actual $field } else { $null } })
+        $okay = $okay -and $matches
+    }
+    return $okay
+}
+
+function Get-RefinementErrorCode($Bootstrap, $ErrorId) {
+    if ($null -eq $ErrorId -or [uint32]$ErrorId -eq [uint32]::MaxValue) { return $null }
+    $matches = @(Get-Field $Bootstrap 'diagnostics' | Where-Object { [uint32](Get-Field $_ 'id') -eq [uint32]$ErrorId })
+    if ($matches.Count -ne 1) { return $null }
+    return [string](Get-Field $matches[0] 'code')
+}
+
+function Get-RefinementConcatenatedHex([object[]]$Roots) {
+    return (($Roots | ForEach-Object { [string](Get-Field $_ 'serializedHex') }) -join '')
+}
+
+function Get-RefinementRawProjection($Raw) {
+    return [ordered]@{
+        pending = Get-Field $Raw 'pending'
+        bankRootCount = Get-Field $Raw 'bankRootCount'
+        bankUsedBytes = Get-Field $Raw 'bankUsedBytes'
+        bankBytesHex = Get-Field $Raw 'bankBytesHex'
+        bankRoots = @(Get-Field $Raw 'bankRoots')
+        associatedRootCount = Get-Field $Raw 'associatedRootCount'
+        associatedCursorBytes = Get-Field $Raw 'associatedCursorBytes'
+        associatedPrefixHex = Get-Field $Raw 'associatedPrefixHex'
+        associatedRoots = @(Get-Field $Raw 'associatedRoots')
+    }
+}
+
+function Compare-RefinementRawSnapshot($Actual, [Parameter()][AllowEmptyCollection()][object[]]$ExpectedBankRoots, [Parameter()][AllowEmptyCollection()][object[]]$ExpectedAssociatedRoots, $LayoutIndexes, [string]$Label) {
+    $bankRoots = [Collections.Generic.List[object]]::new()
+    $bankRootsValue = Get-Field $Actual 'bankRoots'
+    if ($null -ne $bankRootsValue) {
+        foreach ($root in $bankRootsValue) { $bankRoots.Add($root) }
+    }
+    $expectedBankRootsNormalized = [Collections.Generic.List[object]]::new()
+    if ($null -ne $ExpectedBankRoots) {
+        foreach ($root in $ExpectedBankRoots) { $expectedBankRootsNormalized.Add($root) }
+    }
+    $expectedAssociatedRootsNormalized = [Collections.Generic.List[object]]::new()
+    if ($null -ne $ExpectedAssociatedRoots) {
+        foreach ($root in $ExpectedAssociatedRoots) { $expectedAssociatedRootsNormalized.Add($root) }
+    }
+    $bankOkay = [uint32](Get-Field $Actual 'pending') -eq 1 -and
+        [uint32](Get-Field $Actual 'bankRootCount') -eq $expectedBankRootsNormalized.Count -and
+        [uint32](Get-Field $Actual 'bankUsedBytes') -eq [uint32](($expectedBankRootsNormalized | Measure-Object -Property extentBytes -Sum).Sum) -and
+        [string](Get-Field $Actual 'bankBytesHex') -ceq (Get-RefinementConcatenatedHex $expectedBankRootsNormalized.ToArray()) -and
+        $bankRoots.Count -eq $expectedBankRootsNormalized.Count
+    $offset = [uint32]0
+    for ($index = 0; $index -lt [Math]::Min($bankRoots.Count, $expectedBankRootsNormalized.Count); $index++) {
+        $actualRoot = $bankRoots[$index]
+        $expectedRoot = $expectedBankRootsNormalized[$index]
+        $rootOkay = [uint32](Get-Field $actualRoot 'typeId') -eq [uint32](Get-Field $expectedRoot 'typeId') -and
+            [uint32](Get-Field $actualRoot 'offsetBytes') -eq $offset -and
+            [uint32](Get-Field $actualRoot 'extentBytes') -eq [uint32](Get-Field $expectedRoot 'extentBytes') -and
+            [uint32](Get-Field $actualRoot 'payloadBytes') -eq [uint32](Get-Field $expectedRoot 'payloadBytes') -and
+            [uint32](Get-Field $actualRoot 'ownerEndBytes') -eq ($offset + [uint32](Get-Field $expectedRoot 'extentBytes'))
+        $bankOkay = $bankOkay -and $rootOkay
+        $offset += [uint32](Get-Field $expectedRoot 'extentBytes')
+    }
+    Add-Check "$Label raw bank bytes and descriptors match independently serialized roots" $bankOkay ([ordered]@{ expectedRoots = $ExpectedBankRoots; actual = $Actual })
+
+    $associatedRoots = [Collections.Generic.List[object]]::new()
+    $associatedRootsValue = Get-Field $Actual 'associatedRoots'
+    if ($null -ne $associatedRootsValue) {
+        foreach ($root in $associatedRootsValue) { $associatedRoots.Add($root) }
+    }
+    $prefix = [string](Get-Field $Actual 'associatedPrefixHex')
+    $associatedOkay = [uint32](Get-Field $Actual 'associatedRootCount') -eq $expectedAssociatedRootsNormalized.Count -and
+        $associatedRoots.Count -eq $expectedAssociatedRootsNormalized.Count -and
+        ([uint32](Get-Field $Actual 'associatedCursorBytes') * 2) -eq $prefix.Length
+    $associatedIndexes = @(
+        [uint32](Get-Field $LayoutIndexes 'State'),
+        [uint32](Get-Field $LayoutIndexes 'Continuation'))
+    for ($index = 0; $index -lt [Math]::Min($associatedRoots.Count, $expectedAssociatedRootsNormalized.Count); $index++) {
+        $actualRoot = $associatedRoots[$index]
+        $expectedRoot = $expectedAssociatedRootsNormalized[$index]
+        $start = [uint32](Get-Field $actualRoot 'sourceOffsetBytes')
+        $end = [uint32](Get-Field $actualRoot 'sourceOwnerEndBytes')
+        $extent = [uint32](Get-Field $expectedRoot 'extentBytes')
+        $sliceOkay = [uint32](Get-Field $actualRoot 'typeIndex') -eq $associatedIndexes[$index] -and
+            [uint32](Get-Field $actualRoot 'reserved') -eq 0 -and
+            $end -ge $start -and ($end - $start) -eq $extent -and
+            ($end * 2) -le $prefix.Length
+        if ($sliceOkay) {
+            $sliceHex = $prefix.Substring([int]($start * 2), [int]($extent * 2))
+            $sliceOkay = $sliceHex -ceq [string](Get-Field $expectedRoot 'serializedHex')
+        }
+        $associatedOkay = $associatedOkay -and $sliceOkay
+    }
+    Add-Check "$Label raw associated root slices identify and contain the independently serialized values" $associatedOkay ([ordered]@{ expectedRoots = $ExpectedAssociatedRoots; actual = $Actual })
+    return $bankOkay -and $associatedOkay
+}
+
+function Check-RefinementNativeEvidence($Native, $Fixture, $Bootstrap, $LayoutIndexes, [string]$Label) {
+    $nativePassed = (Get-Field $Native 'passed') -eq $true -and [int](Get-Field $Native 'failureCount') -eq 0
+    Add-Check "$Label C runner completed all structural and lifecycle checks" $nativePassed (Get-Field $Native 'checks')
+    $named = @(Get-Field $Native 'checks')
+    Add-Check "$Label C runner named assertions all pass" ($named.Count -eq 13 -and @($named | Where-Object { (Get-Field $_ 'passed') -ne $true }).Count -eq 0) ([ordered]@{ assertionCount = $named.Count; failures = @($named | Where-Object { (Get-Field $_ 'passed') -ne $true }) })
+
+    $direct = Get-Field $Native 'direct'
+    $roots = Get-Field (Get-Field $Fixture 'lifecycle') 'roots'
+    $validDirect = Get-Field $direct 'validBegin'
+    $validDirectOkay = [uint32](Get-Field $validDirect 'callbackResult') -eq 0 -and
+        [uint32](Get-Field $validDirect 'contextStatus') -eq 0 -and
+        (Get-Field $validDirect 'outputContract') -eq $true -and
+        [uint32](Get-Field $validDirect 'stepsConsumed') -eq [uint32](Get-Field (Get-Field (Get-Field $Fixture 'directAdmissionControls') 'validState') 'fullBeginStepsIncludingHandler')
+    Add-Check "$Label direct valid raw State skips inactive alternatives and admits the full begin role" $validDirectOkay $validDirect
+    Compare-RefinementSnapshot (Get-Field $validDirect 'outputs') @((Get-Field $roots 'initializedState'), (Get-Field $roots 'suspendedContinuation')) $false "$Label direct valid begin outputs"
+
+    $directCases = @(
+        @{ fixtureName = 'State.id-negative'; outputName = 'negativeId' },
+        @{ fixtureName = 'State.id-minimum-integer'; outputName = 'overflowId' },
+        @{ fixtureName = 'State.optional-some-empty-string'; outputName = 'someEmptyLabel' },
+        @{ fixtureName = 'State.status-error-empty-string'; outputName = 'resultErrorEmptyLabel' })
+    $invalidControls = @(Get-Field (Get-Field $Fixture 'directAdmissionControls') 'invalidActiveValues')
+    foreach ($case in $directCases) {
+        $expectedCase = @($invalidControls | Where-Object { [string](Get-Field $_ 'name') -ceq $case.fixtureName })
+        if ($expectedCase.Count -ne 1) { throw "Refinement fixture is missing direct admission control '$($case.fixtureName)'." }
+        $expectedCase = $expectedCase[0]
+        $actualCase = Get-Field $direct $case.outputName
+        $expectedError = [string](Get-Field $expectedCase 'expectedError')
+        $actualError = Get-RefinementErrorCode $Bootstrap (Get-Field $actualCase 'errorId')
+        $caseOkay = [uint32](Get-Field $actualCase 'callbackResult') -ne 0 -and
+            [uint32](Get-Field $actualCase 'contextStatus') -ne 0 -and
+            (Get-Field $actualCase 'outputContract') -eq $true -and
+            [uint32](Get-Field $actualCase 'stepsConsumed') -eq [uint32](Get-Field $expectedCase 'stepsConsumed') -and
+            $actualError -ceq $expectedError -and
+            [uint32](Get-Field (Get-Field $actualCase 'outputs') 'rootCount') -eq 0
+        Add-Check "$Label direct $($case.fixtureName) fails at the frozen step prefix with invalid output descriptors" $caseOkay ([ordered]@{ expected = $expectedCase; actual = $actualCase; actualError = $actualError })
+    }
+    $overflowExpected = @($invalidControls | Where-Object { [string](Get-Field $_ 'name') -ceq 'State.id-minimum-integer' })[0]
+    $normalPositiveCost = [uint32](Get-Field (@(Get-Field $Fixture 'frozenPredicates' | Where-Object { [string](Get-Field $_ 'scalar') -ceq 'PositiveId' })[0]) 'stepsPerInvocation')
+    $overflowPrefix = [uint32](Get-Field (@(Get-Field $Fixture 'frozenPredicates' | Where-Object { [string](Get-Field $_ 'scalar') -ceq 'PositiveId' })[0]) 'runtimeErrorPrefixSteps')
+    Add-Check "$Label direct Int64.MinValue uses the independently audited checked-division prefix" ([uint32](Get-Field $overflowExpected 'stepsConsumed') -eq $overflowPrefix -and $overflowPrefix -lt $normalPositiveCost)
+
+    $descriptorContract = Get-Field (Get-Field $Fixture 'directAdmissionControls') 'outputDescriptorContract'
+    foreach ($case in @(
+        @{ fixtureName = 'postPreflightMalformedOptionTag'; outputName = 'postPreflightMalformedOptionTag' },
+        @{ fixtureName = 'postPreflightMalformedResultTag'; outputName = 'postPreflightMalformedResultTag' })) {
+        $expectedContract = Get-Field $descriptorContract $case.fixtureName
+        $malformed = Get-Field $direct $case.outputName
+        $actualError = Get-RefinementErrorCode $Bootstrap (Get-Field $malformed 'errorId')
+        $malformedOkay = [uint32](Get-Field $malformed 'callbackResult') -ne 0 -and
+            [uint32](Get-Field $malformed 'contextStatus') -eq [uint32](Get-Field $expectedContract 'expectedContextStatus') -and
+            (Get-Field $malformed 'outputContract') -eq $true -and
+            [uint32](Get-Field $malformed 'stepsConsumed') -eq [uint32](Get-Field $expectedContract 'stepsConsumed') -and
+            $actualError -ceq [string](Get-Field $expectedContract 'expectedError') -and
+            [string](Get-Field $expectedContract 'outputDescriptors') -ceq 'invalid' -and
+            [uint32](Get-Field (Get-Field $malformed 'outputs') 'rootCount') -eq 0
+        Add-Check "$Label $($case.fixtureName) is a post-preflight scan failure with invalid outputs" $malformedOkay ([ordered]@{ expected = $expectedContract; actual = $malformed; actualError = $actualError })
+    }
+    $wrongIndexExpected = Get-Field $descriptorContract 'earlyBoundaryWrongInputTypeIndex'
+    $wrongIndex = Get-Field $direct 'earlyBoundaryWrongInputTypeIndex'
+    $wrongIndexError = Get-RefinementErrorCode $Bootstrap (Get-Field $wrongIndex 'errorId')
+    $wrongIndexOkay = [uint32](Get-Field $wrongIndex 'callbackResult') -ne 0 -and
+        [uint32](Get-Field $wrongIndex 'contextStatus') -eq [uint32](Get-Field $wrongIndexExpected 'expectedContextStatus') -and
+        (Get-Field $wrongIndex 'outputContract') -eq $true -and
+        [uint32](Get-Field $wrongIndex 'stepsConsumed') -eq [uint32](Get-Field $wrongIndexExpected 'stepsConsumed') -and
+        $wrongIndexError -ceq [string](Get-Field $wrongIndexExpected 'expectedError') -and
+        [string](Get-Field $wrongIndexExpected 'outputDescriptors') -ceq 'unchanged' -and
+        [uint32](Get-Field $wrongIndexExpected 'actualInputTypeIndex') -eq [uint32](Get-Field $LayoutIndexes 'Continuation') -and
+        [uint32](Get-Field $wrongIndexExpected 'expectedInputTypeIndex') -eq [uint32](Get-Field $LayoutIndexes 'State') -and
+        [uint32](Get-Field (Get-Field $wrongIndex 'outputs') 'rootCount') -eq 0
+    Add-Check "$Label early wrong input type index is rejected before callback output writes" $wrongIndexOkay ([ordered]@{ expected = $wrongIndexExpected; actual = $wrongIndex; actualError = $wrongIndexError })
+
+    $policyEvidence = Get-Field $Native 'policies'
+    $expectedRoots = @((Get-Field $roots 'beforeAndAfterFailedResume'))
+    $expectedFinal = @((Get-Field $roots 'completedState'))
+    $statsByPolicy = Get-Field (Get-Field $Fixture 'copyAccounting') 'expectedStatsBySuspensionPolicy'
+    $stepOracle = Get-Field $Fixture 'sourceDerivedStepOracle'
+    foreach ($policy in @('RETURN', 'KEEP_ASSOCIATED')) {
+        $policyRun = Get-Field $policyEvidence $policy
+        $isKeep = $policy -ceq 'KEEP_ASSOCIATED'
+        $bankRoots = if ($isKeep) { @((Get-Field $roots 'initializedState')) } else { @((Get-Field $roots 'initializedState'), (Get-Field $roots 'suspendedContinuation')) }
+        $associatedRoots = if ($isKeep) { $expectedRoots } else { @() }
+        $expectedPending = if ($isKeep) { $expectedRoots } else { $expectedRoots }
+        Compare-RefinementSnapshot (Get-Field $policyRun 'initialize') @((Get-Field $roots 'initializedState')) $false "$Label $policy initialized State"
+        Compare-RefinementSnapshot (Get-Field $policyRun 'pendingBank') $bankRoots $true "$Label $policy pending bank"
+        Compare-RefinementSnapshot (Get-Field $policyRun 'pendingAssociated') $associatedRoots $true "$Label $policy pending associated roots"
+        Compare-RefinementSnapshot (Get-Field $policyRun 'beforeEmptyResume') $expectedPending $true "$Label $policy before failed resumes"
+        Compare-RefinementSnapshot (Get-Field $policyRun 'afterEmptyResume') $expectedPending $true "$Label $policy after empty failure"
+        Compare-RefinementSnapshot (Get-Field $policyRun 'afterFailResume') $expectedPending $true "$Label $policy after divide failure"
+        Compare-RefinementSnapshot (Get-Field $policyRun 'final') $expectedFinal $false "$Label $policy same-token retry result"
+
+        $rawExpectedBank = if ($isKeep) { @((Get-Field $roots 'initializedState')) } else { $expectedRoots }
+        Compare-RefinementRawSnapshot (Get-Field $policyRun 'rawPending') $rawExpectedBank $associatedRoots $LayoutIndexes "$Label $policy raw pending roots"
+        $rawProjection = ConvertTo-Json -InputObject (Get-RefinementRawProjection (Get-Field $policyRun 'rawPending')) -Depth 20 -Compress
+        foreach ($rawName in @('rawAfterEmptyResume', 'rawAfterFailResume')) {
+            $afterRaw = Get-Field $policyRun $rawName
+            $afterProjection = ConvertTo-Json -InputObject (Get-RefinementRawProjection $afterRaw) -Depth 20 -Compress
+            $sameRaw = [string]::Equals($rawProjection, $afterProjection, [StringComparison]::Ordinal)
+            Add-Check "$Label $policy $rawName preserves raw root descriptors and bytes" $sameRaw ([ordered]@{ before = Get-RefinementRawProjection (Get-Field $policyRun 'rawPending'); after = Get-RefinementRawProjection $afterRaw })
+            Compare-RefinementRawSnapshot $afterRaw $rawExpectedBank $associatedRoots $LayoutIndexes "$Label $policy $rawName"
+        }
+
+        $preservation = Get-Field $policyRun 'preservation'
+        Add-Check "$Label $policy both semantic and runtime failures preserve pending logical roots" ((Get-Field $preservation 'emptyResume') -eq $true -and (Get-Field $preservation 'failResume') -eq $true)
+        $tokens = Get-Field $policyRun 'tokens'
+        $beforeToken = @(Get-Field (Get-Field $tokens 'before') 'opaque') -join ','
+        $emptyToken = @(Get-Field (Get-Field $tokens 'afterEmptyResume') 'opaque') -join ','
+        $failToken = @(Get-Field (Get-Field $tokens 'afterFailResume') 'opaque') -join ','
+        Add-Check "$Label $policy both failures preserve the same opaque continuation token" ($beforeToken -ceq $emptyToken -and $beforeToken -ceq $failToken) ([ordered]@{ before = $beforeToken; afterEmpty = $emptyToken; afterFail = $failToken })
+
+        $calls = Get-Field $policyRun 'calls'
+        $expectedSteps = @(Get-Field (Get-Field $stepOracle 'stepsConsumedByCall') $policy | ForEach-Object { [uint32]$_ })
+        $callNames = @('initialize', 'begin', 'resumeEmpty', 'resumeFail', 'retry')
+        $expectedResults = @(0u, 0u, 17u, 17u, 0u)
+        $expectedErrors = @($null, $null, 'REFINEMENT_FAILED', 'RUNTIME_DIVIDE_BY_ZERO', $null)
+        $actualStepList = [Collections.Generic.List[uint32]]::new()
+        for ($index = 0; $index -lt $callNames.Count; $index++) {
+            $call = Get-Field $calls $callNames[$index]
+            $errorCode = Get-RefinementErrorCode $Bootstrap (Get-Field $call 'errorId')
+            $callOkay = [uint32](Get-Field $call 'result') -eq $expectedResults[$index] -and
+                [uint32](Get-Field $call 'stepsConsumed') -eq $expectedSteps[$index] -and
+                $errorCode -ceq $expectedErrors[$index]
+            $actualStepList.Add([uint32](Get-Field $call 'stepsConsumed'))
+            Add-Check "$Label $policy $($callNames[$index]) status, diagnostic, and measured IR steps match the fixture" $callOkay ([ordered]@{ expectedResult = $expectedResults[$index]; expectedError = $expectedErrors[$index]; expectedSteps = $expectedSteps[$index]; actual = $call; actualError = $errorCode })
+        }
+        $statsExpected = Get-Field $statsByPolicy $policy
+        $stats = Get-Field $policyRun 'stats'
+        Compare-RefinementStats $stats $statsExpected "$Label $policy controller"
+        $cleanupOkay = [uint32](Get-Field $stats 'pendingMailboxes') -eq 0 -and
+            [uint64](Get-Field $stats 'liveRetainedRoots') -eq 1 -and
+            [uint32](Get-Field $stats 'outstandingScratchLeases') -eq 0 -and
+            [uint32](Get-Field $stats 'pinnedScratchSlots') -eq 0 -and
+            [uint64](Get-Field $stats 'pinnedScratchBytes') -eq 0
+        Add-Check "$Label $policy final controller has one active root and no pending or retained scratch frame" $cleanupOkay $stats
+    }
+}
+
+function Get-RefinementBehaviorProjection($Native) {
+    $policies = [ordered]@{}
+    foreach ($policyName in @('RETURN', 'KEEP_ASSOCIATED')) {
+        $policy = Get-Field (Get-Field $Native 'policies') $policyName
+        $policyProjection = [ordered]@{}
+        foreach ($name in @('initialize', 'pendingBank', 'pendingAssociated', 'beforeEmptyResume', 'afterEmptyResume', 'afterFailResume', 'final', 'rawPending', 'rawAfterEmptyResume', 'rawAfterFailResume', 'calls', 'preservation', 'tokens')) {
+            if ($name -like 'raw*') { $policyProjection[$name] = Get-RefinementRawProjection (Get-Field $policy $name) }
+            else { $policyProjection[$name] = Get-Field $policy $name }
+        }
+        $stats = Get-Field $policy 'stats'
+        $stableStats = [ordered]@{}
+        foreach ($name in @('utf8InputBytes','utf16StagingBytes','inputImportBytes','publicationCopyBytes','beginPublicationCopyBytes','resumeRootImportBytes','deepCopyBytes','moveBytes','returnedOutputDescriptors','handlerInvocations','handlerFailures','pendingMailboxes','liveRetainedRoots','outstandingScratchLeases','pinnedScratchSlots','pinnedScratchBytes')) {
+            $stableStats[$name] = Get-Field $stats $name
+        }
+        $policyProjection.stats = $stableStats
+        $policies[$policyName] = $policyProjection
+    }
+    return [ordered]@{ passed = Get-Field $Native 'passed'; failureCount = Get-Field $Native 'failureCount'; checks = Get-Field $Native 'checks'; abi = Get-Field $Native 'abi'; direct = Get-Field $Native 'direct'; policies = $policies }
+}
+
+function Compare-RefinementBehavior($Left, $Right, [string]$Label) {
+    $leftJson = ConvertTo-Json -InputObject (Get-RefinementBehaviorProjection $Left) -Depth 90 -Compress
+    $rightJson = ConvertTo-Json -InputObject (Get-RefinementBehaviorProjection $Right) -Depth 90 -Compress
+    Add-Check $Label ([string]::Equals($leftJson, $rightJson, [StringComparison]::Ordinal))
+}
+
 function Resolve-SumTypeNamesByIrType($Bootstrap) {
     $layouts = @(Get-Field $Bootstrap 'layouts')
     $typeNamesByIrType = [Collections.Generic.Dictionary[string, string]]::new([StringComparer]::Ordinal)
@@ -786,6 +1267,7 @@ try {
     [IO.Directory]::CreateDirectory($script:tempDirectory) | Out-Null
     $fixture = Read-JsonFile $fixturePath
     $sumsFixture = Read-JsonFile $sumsFixturePath
+    $refinementsFixture = Read-JsonFile $refinementsFixturePath
     $report.sumsFixture = $sumsFixturePath
     foreach ($inputPath in $sourceInputPaths) {
         if (-not (Test-Path -LiteralPath $inputPath -PathType Leaf)) { throw "Required acceptance input is missing: $inputPath" }
@@ -816,6 +1298,7 @@ try {
     $assemblyPath = $assemblies[0].FullName
     Add-Check 'bootstrap assembly came from this run artifact directory' ([IO.Path]::GetFullPath($assemblyPath).StartsWith([IO.Path]::GetFullPath($artifactsRoot), [StringComparison]::OrdinalIgnoreCase))
 
+    if (-not $RefinementsOnly) {
     foreach ($optimization in @('O0', 'O2')) {
       foreach ($runtimeProfile in $runtimeProfiles) {
         $moduleLabel = "$optimization/$runtimeProfile"
@@ -1242,6 +1725,183 @@ try {
     } else {
         Add-Check 'llvm-readobj is available for native import audit' $false $readobj
     }
+    }
+
+    [IO.Directory]::CreateDirectory($refinementsRunDirectory) | Out-Null
+    $runDirectory = $refinementsRunDirectory
+    $refinementsStarted = $true
+    $script:tempDirectory = Join-Path $refinementsRunDirectory 'repo-temp'
+    [IO.Directory]::CreateDirectory($script:tempDirectory) | Out-Null
+    $refinementFirstCheck = $checks.Count
+    $refinementModuleMap = @{}
+    foreach ($optimization in @('O0', 'O2')) {
+        foreach ($runtimeProfile in $runtimeProfiles) {
+            $moduleLabel = "$optimization/$runtimeProfile refined"
+            $moduleDirectory = Join-Path $refinementsRunDirectory "module-refined-$optimization-$runtimeProfile"
+            [IO.Directory]::CreateDirectory($moduleDirectory) | Out-Null
+            $moduleArguments = @($assemblyPath, $optimization, $moduleDirectory, $refinementsFlowPath)
+            if ($runtimeProfile -ceq 'trusted-generated') { $moduleArguments += @('--runtime-profile', 'trusted-generated') }
+            $moduleProcess = Invoke-CapturedProcess "compile-refined-module-$optimization-$runtimeProfile" $dotnet $moduleArguments $repo
+            Require-ProcessSuccess $moduleProcess "Fresh $moduleLabel module compile succeeded"
+            $bootstrap = ConvertFrom-JsonText $moduleProcess.stdout.Trim() "$moduleLabel module bootstrap"
+            $modulePath = [string](Get-Field $bootstrap 'modulePath')
+            $manifestPath = [string](Get-Field $bootstrap 'manifestPath')
+            $llvmIrPath = [string](Get-Field $bootstrap 'llvmIrPath')
+            $metadataPath = [string](Get-Field $bootstrap 'metadataSourcePath')
+            foreach ($path in @($modulePath, $manifestPath, $llvmIrPath, $metadataPath)) {
+                if ([string]::IsNullOrWhiteSpace($path) -or -not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "$moduleLabel generated artifact is missing: $path" }
+            }
+            $manifest = Read-JsonFile $manifestPath
+            $moduleInfo = Get-Field $manifest 'moduleInfo'
+            $expectedManifestAbi = [ordered]@{
+                abiVersion = Get-Field $refinementsFixture 'moduleAbiVersion'
+                layoutAbiVersion = Get-Field $refinementsFixture 'layoutAbiVersion'
+            }
+            $manifestOkay = [uint32](Get-Field $moduleInfo 'abiVersion') -eq [uint32]$expectedManifestAbi.abiVersion -and
+                [uint32](Get-Field $moduleInfo 'layoutAbiVersion') -eq [uint32]$expectedManifestAbi.layoutAbiVersion -and
+                [string](Get-Field $moduleInfo 'runtimeProfile') -ceq $runtimeProfile
+            Add-Check "$moduleLabel manifest keeps the frozen module/layout ABI and selected profile" $manifestOkay ([ordered]@{ expected = $expectedManifestAbi; actual = $moduleInfo })
+
+            $layoutIndexes = Resolve-RefinementLayoutIndexes $bootstrap
+            $typeInfo = Get-Field (Get-Field $refinementsFixture 'sourceDerivedTypeIds') 'typeIds'
+            $actualTypeIds = Get-Field (Get-Field $bootstrap 'sourceDerivedTypeIds') 'typeIds'
+            $typeIdsOkay = $true
+            foreach ($typeName in @('Continuation', 'NonEmptyString', 'PositiveId', 'State', 'String')) {
+                $typeIdsOkay = $typeIdsOkay -and [uint32](Get-Field $actualTypeIds $typeName) -eq [uint32](Get-Field $typeInfo $typeName)
+            }
+            Add-Check "$moduleLabel nominal TypeIds match the independent source-name oracle" $typeIdsOkay ([ordered]@{ expected = $typeInfo; actual = $actualTypeIds })
+
+            $expectedLayoutInfo = Get-Field (Get-Field $refinementsFixture 'sourceDerivedTypeIds') 'layoutIndexesFromSourceCompilation'
+            $actualLayouts = @(Get-Field $bootstrap 'layouts')
+            $expectedLayoutOrder = @(Get-Field (Get-Field $refinementsFixture 'sourceDerivedTypeIds') 'reachableDescriptorOrder' | ForEach-Object { [string]$_ })
+            $actualLayoutOrder = @($actualLayouts | ForEach-Object { [string](Get-Field $_ 'typeName') })
+            $layoutOkay = ($actualLayoutOrder -join ',') -ceq ($expectedLayoutOrder -join ',')
+            foreach ($layout in $actualLayouts) {
+                $typeName = [string](Get-Field $layout 'typeName')
+                if (Has-Field $expectedLayoutInfo $typeName) {
+                    $layoutOkay = $layoutOkay -and [uint32](Get-Field $layout 'layoutIndex') -eq [uint32](Get-Field $expectedLayoutInfo $typeName)
+                }
+            }
+            foreach ($typeName in @('State', 'Continuation', 'String', 'Option<NonEmptyString>', 'Option<PositiveId>', 'Result<PositiveId, NonEmptyString>')) {
+                $layoutOkay = $layoutOkay -and [uint32](Get-Field $layoutIndexes $typeName) -eq [uint32](Get-Field $expectedLayoutInfo $typeName)
+            }
+            Add-Check "$moduleLabel reachable descriptor order and emitted dense indexes match the frozen oracle" $layoutOkay ([ordered]@{ expectedOrder = $expectedLayoutOrder; actualOrder = $actualLayoutOrder; expectedIndexes = $expectedLayoutInfo; runnerIndexes = $layoutIndexes })
+
+            $roleFixtures = Get-Field $refinementsFixture 'roles'
+            $roleInputs = @(
+                @{ role = 'initialize'; inputNames = @('String'); outputNames = @('State') },
+                @{ role = 'begin'; inputNames = @('State', 'String'); outputNames = @('State', 'Continuation') },
+                @{ role = 'resume'; inputNames = @('State', 'Continuation', 'String'); outputNames = @('State') })
+            $rolesOkay = (Get-Field $bootstrap 'sameVerifiedProgramInstance') -eq $true -and @(Get-Field $bootstrap 'entries').Count -eq 3
+            foreach ($role in $roleInputs) {
+                $entry = @(Get-Field $bootstrap 'entries' | Where-Object { [string](Get-Field $_ 'role') -ceq $role.role })
+                $fixtureRole = Get-Field $roleFixtures $role.role
+                $entryOkay = $entry.Count -eq 1 -and
+                    (@(Get-Field $fixtureRole 'inputs') -join ',') -ceq ($role.inputNames -join ',') -and
+                    (@(Get-Field $fixtureRole 'outputs') -join ',') -ceq ($role.outputNames -join ',')
+                if ($entryOkay) {
+                    $expectedInputs = @($role.inputNames | ForEach-Object { [uint32](Get-Field $layoutIndexes $_) })
+                    $expectedOutputs = @($role.outputNames | ForEach-Object { [uint32](Get-Field $layoutIndexes $_) })
+                    $actualInputs = @(Get-Field $entry[0] 'inputTypeIndexes' | ForEach-Object { [uint32]$_ })
+                    $actualOutputs = @(Get-Field $entry[0] 'outputTypeIndexes' | ForEach-Object { [uint32]$_ })
+                    $entryOkay = ($actualInputs -join ',') -ceq ($expectedInputs -join ',') -and ($actualOutputs -join ',') -ceq ($expectedOutputs -join ',')
+                }
+                $rolesOkay = $rolesOkay -and $entryOkay
+            }
+            Add-Check "$moduleLabel uses the fixture roles and emitted layout indexes in the three entry signatures" $rolesOkay ([ordered]@{ expected = $roleFixtures; actual = Get-Field $bootstrap 'entries' })
+            $oracleOkay = Test-RefinementOracle $bootstrap $refinementsFixture $moduleLabel
+
+            $artifactPaths = @($modulePath, $llvmIrPath, $metadataPath, $manifestPath)
+            $artifactHashes = @($artifactPaths | ForEach-Object { [ordered]@{ path = $_; bytes = (Get-Item -LiteralPath $_).Length; sha256 = Get-Hash $_ } })
+            $moduleRecord = [ordered]@{
+                optimization = $optimization
+                runtimeProfile = $runtimeProfile
+                outputDirectory = $moduleDirectory
+                modulePath = $modulePath
+                layoutIndexes = $layoutIndexes
+                oraclePassed = $oracleOkay
+                bootstrap = $bootstrap
+                manifest = $manifest
+                artifacts = $artifactHashes
+                process = $moduleProcess
+            }
+            $refinementsModuleBuilds.Add($moduleRecord)
+            $refinementModuleMap["$optimization/$runtimeProfile"] = $moduleRecord
+        }
+    }
+
+    foreach ($optimization in @('O0', 'O2')) {
+        foreach ($executionProfile in $executionProfiles) {
+            $profileName = [string]$executionProfile.name
+            $moduleRecord = $refinementModuleMap["$optimization/$($executionProfile.runtimeProfile)"]
+            $moduleBootstrap = $moduleRecord.bootstrap
+            $runnerDirectory = Join-Path $refinementsRunDirectory "native-refined-$optimization-$profileName"
+            [IO.Directory]::CreateDirectory($runnerDirectory) | Out-Null
+            foreach ($source in $refinementsNativeSources) {
+                if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Native refined mailbox source is missing: $source" }
+            }
+            $runnerPath = Join-Path $runnerDirectory "native-owning-mailbox-refinements-$optimization-$profileName.exe"
+            $compileArguments = @('--target=x86_64-pc-windows-msvc', '-std=c11', '-Wall', '-Wextra', '-Werror', "-$optimization", '-I', $nativeDirectory)
+            if ($null -ne $executionProfile.define) { $compileArguments += [string]$executionProfile.define }
+            $compileArguments += $refinementsNativeSources + @('-o', $runnerPath)
+            $nativeBuild = Invoke-CapturedProcess "native-refined-runner-build-$optimization-$profileName" $clang $compileArguments $runnerDirectory
+            Require-ProcessSuccess $nativeBuild "$optimization/$profileName refined runner build succeeded"
+            $refinementsNativeBuilds.Add([ordered]@{ optimization = $optimization; profile = $profileName; runtimeProfile = $executionProfile.runtimeProfile; resetProfile = $executionProfile.resetProfile; executable = $runnerPath; sha256 = Get-Hash $runnerPath; process = $nativeBuild })
+
+            $runArguments = @([string](Get-Field $moduleBootstrap 'modulePath'))
+            foreach ($typeName in @('State', 'Continuation', 'String', 'Option<NonEmptyString>', 'Option<PositiveId>', 'Result<PositiveId, NonEmptyString>')) {
+                $runArguments += ([uint32](Get-Field $moduleRecord.layoutIndexes $typeName)).ToString([Globalization.CultureInfo]::InvariantCulture)
+            }
+            $initializedState = Get-Field (Get-Field (Get-Field $refinementsFixture 'lifecycle') 'roots') 'initializedState'
+            $initializedStateHex = [string](Get-Field $initializedState 'serializedHex')
+            $runArguments += $initializedStateHex
+            $nativeRun = Invoke-CapturedProcess "native-refined-runner-run-$optimization-$profileName" $runnerPath $runArguments $runnerDirectory
+            Require-ProcessSuccess $nativeRun "$optimization/$profileName refined mailbox runner completed"
+            $native = ConvertFrom-JsonText $nativeRun.stdout.Trim() "$optimization/$profileName refined mailbox result"
+            Check-RefinementNativeEvidence $native $refinementsFixture $moduleBootstrap $moduleRecord.layoutIndexes "$optimization/$profileName refined"
+            Add-Check "$optimization/$profileName runner uses the module with matching runtime profile" ([string](Get-Field (Get-Field $moduleRecord.manifest 'moduleInfo') 'runtimeProfile') -ceq [string]$executionProfile.runtimeProfile)
+            $refinementsNativeRuns.Add([ordered]@{
+                optimization = $optimization
+                profile = $profileName
+                runtimeProfile = $executionProfile.runtimeProfile
+                resetProfile = $executionProfile.resetProfile
+                modulePath = Get-Field $moduleBootstrap 'modulePath'
+                layoutIndexes = $moduleRecord.layoutIndexes
+                process = $nativeRun
+                result = $native
+            })
+        }
+        $diagnosticRun = $refinementsNativeRuns | Where-Object { $_.optimization -ceq $optimization -and $_.profile -ceq 'diagnostic' } | Select-Object -First 1
+        $fastRun = $refinementsNativeRuns | Where-Object { $_.optimization -ceq $optimization -and $_.profile -ceq 'fast-reset' } | Select-Object -First 1
+        $trustedRun = $refinementsNativeRuns | Where-Object { $_.optimization -ceq $optimization -and $_.profile -ceq 'trusted-generated' } | Select-Object -First 1
+        Compare-RefinementBehavior $diagnosticRun.result $fastRun.result "$optimization diagnostic and fast-reset refined lifecycle behavior agrees"
+        Compare-RefinementBehavior $diagnosticRun.result $trustedRun.result "$optimization diagnostic and trusted-generated refined lifecycle behavior agrees"
+    }
+
+    $expectedRefinementMatrix = @('O0/diagnostic', 'O0/fast-reset', 'O0/trusted-generated', 'O2/diagnostic', 'O2/fast-reset', 'O2/trusted-generated')
+    $actualRefinementMatrix = @($refinementsNativeRuns | ForEach-Object { "$($_.optimization)/$($_.profile)" })
+    $matrixOkay = $actualRefinementMatrix.Count -eq $expectedRefinementMatrix.Count -and
+        @($expectedRefinementMatrix | Where-Object { $actualRefinementMatrix -cnotcontains $_ }).Count -eq 0 -and
+        @($refinementsNativeRuns | Where-Object { $_.process.exitCode -ne 0 -or $_.process.timedOut -or (Get-Field $_.result 'passed') -ne $true }).Count -eq 0
+    Add-Check 'O0/O2 diagnostic, fast-reset, and trusted-generated refined lifecycle matrix completed' $matrixOkay ([ordered]@{ expected = $expectedRefinementMatrix; actual = $actualRefinementMatrix })
+    foreach ($profileName in @('diagnostic', 'fast-reset', 'trusted-generated')) {
+        $o0Run = $refinementsNativeRuns | Where-Object { $_.optimization -ceq 'O0' -and $_.profile -ceq $profileName } | Select-Object -First 1
+        $o2Run = $refinementsNativeRuns | Where-Object { $_.optimization -ceq 'O2' -and $_.profile -ceq $profileName } | Select-Object -First 1
+        Compare-RefinementBehavior $o0Run.result $o2Run.result "$profileName refined runner behavior agrees between O0 and O2"
+    }
+
+    $refinementChecks = @($checks | Select-Object -Skip $refinementFirstCheck)
+    $report.refinements = [ordered]@{
+        fixture = $refinementsFixturePath
+        flowSource = $refinementsFlowPath
+        runnerSource = $refinementsRunnerSourcePath
+        runDirectory = $refinementsRunDirectory
+        modules = @($refinementsModuleBuilds)
+        nativeBuilds = @($refinementsNativeBuilds)
+        nativeRuns = @($refinementsNativeRuns)
+        checks = $refinementChecks
+        passed = $refinementChecks.Count -gt 0 -and @($refinementChecks | Where-Object { -not $_.passed }).Count -eq 0
+    }
 } catch {
     $errors.Add($_.Exception.ToString())
     Add-Check 'verification completed without an uncaught error' $false $_.Exception.Message
@@ -1268,12 +1928,37 @@ try {
     $report.sumNativeBuilds = @($sumNativeBuilds)
     $report.nativeRuns = @($nativeRuns)
     $report.sumNativeRuns = @($sumNativeRuns)
+    $report.refinementsModuleBuilds = @($refinementsModuleBuilds)
+    $report.refinementsNativeBuilds = @($refinementsNativeBuilds)
+    $report.refinementsNativeRuns = @($refinementsNativeRuns)
     $report.checks = @($checks)
     $report.passed = $checks.Count -gt 0 -and @($checks | Where-Object { -not $_.passed }).Count -eq 0
     if ($errors.Count -gt 0) { $report.errors = @($errors) }
+    if (-not (Has-Field $report 'refinements')) {
+        $refinementChecks = if ($refinementsStarted) { @($checks | Select-Object -Skip $refinementFirstCheck) } else { @() }
+        $report.refinements = [ordered]@{
+            fixture = $refinementsFixturePath
+            flowSource = $refinementsFlowPath
+            runnerSource = $refinementsRunnerSourcePath
+            runDirectory = $refinementsRunDirectory
+            modules = @($refinementsModuleBuilds)
+            nativeBuilds = @($refinementsNativeBuilds)
+            nativeRuns = @($refinementsNativeRuns)
+            checks = $refinementChecks
+            passed = $false
+            started = [bool]$refinementsStarted
+            errors = @($errors)
+        }
+    } else {
+        $report.refinements.sourceInputHashes = [ordered]@{ before = @($sourceInputBefore); after = @($sourceInputAfter); unchanged = ($complete -and $changed.Count -eq 0) }
+        $report.refinements.errors = @($errors)
+        $report.refinements.passed = [bool]$report.refinements.passed -and $complete -and $changed.Count -eq 0 -and $errors.Count -eq 0
+    }
     try {
         [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($reportPath)) | Out-Null
         [IO.File]::WriteAllText($reportPath, (ConvertTo-Json -InputObject $report -Depth 100) + [Environment]::NewLine, $utf8)
+        [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($refinementsReportPath)) | Out-Null
+        [IO.File]::WriteAllText($refinementsReportPath, (ConvertTo-Json -InputObject $report.refinements -Depth 100) + [Environment]::NewLine, $utf8)
     } catch {
         Write-Error "Could not write owning mailbox evidence: $($_.Exception.Message)"
         exit 1
@@ -1281,6 +1966,7 @@ try {
 }
 
 Write-Output "EvidencePath=$reportPath"
+Write-Output "RefinementsEvidencePath=$refinementsReportPath"
 Write-Output "Passed=$($report.passed)"
 if (-not $report.passed) {
     $failedNames = @($checks | Where-Object { -not $_.passed } | ForEach-Object { $_.name })

@@ -11,6 +11,7 @@ type private MailboxBodies =
       CompilerContext: Compiler.IrLoweringContext
       SourceOrigins: Map<SourceSpan, SourceSpan>
       SourceTypeIds: Map<string, uint32>
+      ScalarDefinitions: Map<string, ScalarTypeDefinition>
       Initialize: VerifiedIrBody
       Begin: VerifiedIrBody
       Resume: VerifiedIrBody }
@@ -57,14 +58,40 @@ let private generatedRecordEntries (records: Map<string, RecordDefinition>) =
                     [ TNamed name ] [ field.Type ])
         constructor :: accessors)
 
-let private compileBodies (source: string) =
+let private generatedScalarEntries (scalars: Map<string, ScalarTypeDefinition>) =
+    scalars
+    |> Map.toList
+    |> List.collect (fun (name, scalar) ->
+        let prefix = lowerFirst name
+        let definition wordName inputs outputs =
+            { Name = wordName
+              Inputs = inputs
+              Outputs = outputs
+              Effects = Set.empty
+              Maturity = LibraryWord
+              Revision = 1
+              Documentation = "Generated owning-mailbox scalar operation."
+              Body = []
+              SourceText = ""
+              Span = scalar.Span }
+        let entry builtin wordName inputs outputs =
+            { Definition = definition wordName inputs outputs
+              Builtin = Some builtin
+              Status = Persistent
+              Maturity = LibraryWord
+              Revision = 1 }
+        [ entry (ScalarConstructor name) (prefix + ".new") [ scalar.BaseType ] [ TNamed name ]
+          entry (ScalarAccessor name) (prefix + ".value") [ TNamed name ] [ scalar.BaseType ] ])
+
+let private compileBodies (sourceName: string) (source: string) =
     let document =
-        match FlowParser.parseDocumentWithVersion 2 "owning-mailbox.flow" source with
+        match FlowParser.parseDocumentWithVersion 2 sourceName source with
         | Ok parsed -> parsed
         | Error diagnostic -> failwith (Diagnostics.render diagnostic)
     let records = document.Records |> List.map (fun record -> record.Name, record) |> Map.ofList
+    let scalars = document.Scalars |> List.map (fun scalar -> scalar.Name, scalar) |> Map.ofList
     let words =
-        generatedRecordEntries records
+        generatedRecordEntries records @ generatedScalarEntries scalars
         |> List.fold (fun current entry -> Map.add entry.Definition.Name entry current) Compiler.primitives
     let wordIds =
         words
@@ -80,7 +107,7 @@ let private compileBodies (source: string) =
     let compilerContext: Compiler.IrLoweringContext =
         { Words = words
           Records = records
-          Scalars = Map.empty
+          Scalars = scalars
           Enums = Map.empty
           WordIds = wordIds }
     let context: FlowLowering.Context =
@@ -99,17 +126,21 @@ let private compileBodies (source: string) =
             compiled.Context.CompilerContext compiled.Program entryName inputTypes
             [ Call(target, sourceSpan ("<" + entryName + ">") 1) ]
             compiled.Context.SourceOrigins
+    let nominalTypeNames = (records |> Map.toList |> List.map fst) @ (scalars |> Map.toList |> List.map fst)
+    let nominalTypeIds =
+        nominalTypeNames
+        |> List.sortWith (fun left right -> StringComparer.Ordinal.Compare(left, right))
+        |> List.mapi (fun index name -> name, uint32 (index + 4))
     let bodies =
         { Program = compiled.Program
           CompilerContext = compiled.Context.CompilerContext
           SourceOrigins = compiled.Context.SourceOrigins
           SourceTypeIds =
-            (records
-             |> Map.toList
-             |> List.mapi (fun index (name, _) -> name, uint32 (index + 4)))
+            nominalTypeIds
             |> List.append [ "Int", 1u; "Bool", 2u; "Unit", 3u ]
-            |> fun values -> values @ [ "String", uint32 (records.Count + 4) ]
+            |> fun values -> values @ [ "String", uint32 (nominalTypeNames.Length + 4) ]
             |> Map.ofList
+          ScalarDefinitions = scalars
           Initialize = compileEntry "owning-mailbox.initialize.entry" "mailbox.initialize" [ TString ]
           Begin = compileEntry "owning-mailbox.begin.entry" "mailbox.begin" [ TNamed "State"; TString ]
           Resume = compileEntry "owning-mailbox.resume.entry" "mailbox.resume" [ TNamed "State"; TNamed "Continuation"; TString ] }
@@ -131,6 +162,116 @@ let private interpreterHost (compilerContext: Compiler.IrLoweringContext) =
       ReturnUserFunction = fun _ _ _ -> ()
       WordDefinitionSpan = fun word -> wordSpans.TryFind word
       PrimitiveDefinitionSpan = fun word -> wordSpans.TryFind word }
+
+let private interpreterHostWithStepCounter (compilerContext: Compiler.IrLoweringContext) (stepCount: int ref) =
+    let wordSpans = compilerContext.Words |> Map.map (fun _ entry -> entry.Definition.Span)
+    { PreflightEffects = fun _ _ _ -> ()
+      ChargeInstruction = fun _ _ -> stepCount.Value <- stepCount.Value + 1
+      RecordBranchOutcome = fun _ _ _ -> ()
+      RecordUse = ignore
+      InvokeEffect = fun _ -> EffectUnit
+      EnterUserFunction = fun _ _ _ -> fun () -> ()
+      ReturnUserFunction = fun _ _ _ -> ()
+      WordDefinitionSpan = fun word -> wordSpans.TryFind word
+      PrimitiveDefinitionSpan = fun word -> wordSpans.TryFind word }
+
+let rec private blockInstructionCount (block: IrBlock) =
+    block.Code
+    |> List.sumBy (fun instruction ->
+        1
+        + match instruction.Operation with
+          | IrOperation.Scope nested -> blockInstructionCount nested
+          | IrOperation.If(thenBlock, elseBlock) -> blockInstructionCount thenBlock + blockInstructionCount elseBlock
+          | IrOperation.MatchOption(_, someBlock, noneBlock) -> blockInstructionCount someBlock + blockInstructionCount noneBlock
+          | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> blockInstructionCount okBlock + blockInstructionCount errorBlock
+          | IrOperation.MatchEnum(_, cases) -> cases |> List.sumBy (snd >> blockInstructionCount)
+          | _ -> 0)
+
+let private functionForName (program: VerifiedIrProgram) (name: string) =
+    let inspected = VerifiedIrProgram.inspect program
+    inspected.FunctionsById
+    |> Map.toList
+    |> List.map snd
+    |> List.tryFind (fun fn -> fn.FunctionName = name)
+    |> Option.defaultWith (fun () -> invalidOp $"Verified Flow function '{name}' is missing.")
+
+let private refinedStepOracle (bodies: MailboxBodies) =
+    let steps = ref 0
+    let host = interpreterHostWithStepCounter bodies.CompilerContext steps
+    let program = bodies.Program
+    let sourceOrigins = bodies.SourceOrigins
+    let compileString executionName value =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins bodies.CompilerContext program executionName []
+            [ Push(LString value, sourceSpan ("<" + executionName + ">") 1) ] sourceOrigins
+    use seed = IrInterpreter.executeBodyWithInputs host "owning-mailbox.refinement-oracle.seed" (compileString "refinement-oracle-seed" "A") None []
+    steps.Value <- 0
+    use initial = IrInterpreter.executeBodyWithInputs host "owning-mailbox.initialize" bodies.Initialize (Some seed) [ IrEntryArgument.RetainedRoot 0 ]
+    let initializeBodySteps = steps.Value
+    let beginInput =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins bodies.CompilerContext program "owning-mailbox.refinement-oracle.begin-input" [ TNamed "State" ]
+            [ Push(LString "B", sourceSpan "<refinement-oracle-begin>" 1) ] sourceOrigins
+    steps.Value <- 0
+    use beginArguments = IrInterpreter.executeBodyWithInputs host "owning-mailbox.refinement-oracle.begin-arguments" beginInput (Some initial) [ IrEntryArgument.RetainedRoot 0 ]
+    steps.Value <- 0
+    use pending = IrInterpreter.executeBodyWithInputs host "owning-mailbox.begin" bodies.Begin (Some beginArguments) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    let beginBodySteps = steps.Value
+    let initializedJson = ValueInspection.toJson program (initial.Decode())
+    let pendingJson = ValueInspection.toJson program (pending.Decode())
+    let resumeInput executionName message =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins bodies.CompilerContext program executionName [ TNamed "State"; TNamed "Continuation" ]
+            [ Push(LString message, sourceSpan ("<" + executionName + ">") 1) ] sourceOrigins
+    let runResume executionName message =
+        let argumentsBody = resumeInput (executionName + ".arguments") message
+        use argumentsOwner = IrInterpreter.executeBodyWithInputs host (executionName + ".arguments") argumentsBody (Some pending) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+        steps.Value <- 0
+        try
+            use completed = IrInterpreter.executeBodyWithInputs host executionName bodies.Resume (Some argumentsOwner) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1; IrEntryArgument.RetainedRoot 2 ]
+            steps.Value, Some(ValueInspection.toJson program (completed.Decode()))
+        with _ -> steps.Value, None
+    let resumeEmptySteps, _ = runResume "owning-mailbox.resume-empty" ""
+    let resumeFailSteps, _ = runResume "owning-mailbox.resume-fail" "FAIL"
+    // Use exact retained roots and change only the message argument for successful C.
+    let resumeSuccessSteps, completedJson = runResume "owning-mailbox.resume-success" "C"
+    let positiveValidator = functionForName program "mailbox.is-positive-id?"
+    let stringValidator = functionForName program "mailbox.is-non-empty?"
+    let positiveCost = blockInstructionCount positiveValidator.FunctionBody
+    let stringCost = blockInstructionCount stringValidator.FunctionBody
+    let admissionCost positiveCount stringCount = positiveCount * positiveCost + stringCount * stringCost
+    let expectedStep handlerSteps positiveCount stringCount = handlerSteps + admissionCost positiveCount stringCount
+    {| validatorIdentity =
+           [ {| name = "mailbox.is-positive-id?"
+                wordId = (match positiveValidator.FunctionId with WordId value -> value)
+                revision = positiveValidator.FunctionRevision
+                instructionCost = positiveCost |};
+             {| name = "mailbox.is-non-empty?"
+                wordId = (match stringValidator.FunctionId with WordId value -> value)
+                revision = stringValidator.FunctionRevision
+                instructionCost = stringCost |}]
+       bodySteps = {| initialize = initializeBodySteps; beginRole = beginBodySteps; resumeEmpty = resumeEmptySteps; resumeFail = resumeFailSteps; resumeSuccess = resumeSuccessSteps |}
+       interpreterValues = {| initialized = initializedJson; pending = pendingJson; completed = completedJson |}
+       expectedCalls =
+         {| initialize = {| positiveId = 1; nonEmptyString = 1 |}
+            beginRole = {| positiveId = 3; nonEmptyString = 2 |}
+            resumeEmptyReturn = {| positiveId = 4; nonEmptyString = 4 |}
+            resumeEmptyKeep = {| positiveId = 1; nonEmptyString = 1 |}
+            resumeFailReturn = {| positiveId = 3; nonEmptyString = 3 |}
+            resumeFailKeep = {| positiveId = 0; nonEmptyString = 0 |}
+            resumeSuccessReturn = {| positiveId = 4; nonEmptyString = 4 |}
+            resumeSuccessKeep = {| positiveId = 1; nonEmptyString = 1 |}
+            controllerTotalReturn = {| positiveId = 15; nonEmptyString = 14 |}
+            controllerTotalKeep = {| positiveId = 6; nonEmptyString = 5 |} |}
+       expectedSteps =
+         {| initialize = initializeBodySteps
+            beginReturn = expectedStep beginBodySteps 2 1
+            beginKeep = expectedStep beginBodySteps 2 1
+            resumeEmptyReturn = expectedStep resumeEmptySteps 3 3
+            resumeEmptyKeep = resumeEmptySteps
+            resumeFailReturn = expectedStep resumeFailSteps 3 3
+            resumeFailKeep = resumeFailSteps
+            resumeSuccessReturn = expectedStep resumeSuccessSteps 3 3
+            resumeSuccessKeep = resumeSuccessSteps
+            returnTotal = initializeBodySteps + expectedStep beginBodySteps 2 1 + expectedStep resumeEmptySteps 3 3 + expectedStep resumeFailSteps 3 3 + expectedStep resumeSuccessSteps 3 3
+            keepTotal = initializeBodySteps + expectedStep beginBodySteps 2 1 + resumeEmptySteps + resumeFailSteps + resumeSuccessSteps |} |}
 
 let private interpreterOracle (bodies: MailboxBodies) seed chunk message =
     let context = bodies.CompilerContext
@@ -221,16 +362,20 @@ let main argv =
             let sourcePath = Path.GetFullPath argv[2]
             let source = File.ReadAllText sourcePath
             Directory.CreateDirectory outputDirectory |> ignore
-            let bodies = compileBodies source
+            let bodies = compileBodies (Path.GetFileName sourcePath) source
             let artifact =
                 OwningStackAot.compileMailboxWithProfile
                     (LlvmToolchain.discover ()) optimization runtimeProfile outputDirectory
                     bodies.Initialize bodies.Begin bodies.Resume
             let compiledRuntimeProfile = runtimeProfileName artifact.RuntimeProfile
-            let unicodeOracle = interpreterOracle bodies "A🙂" "δ" "\u0000🚀"
-            let emptyOracle = interpreterOracle bodies "" "" "B"
-            let errorOracle = interpreterOracle bodies "Z" "" "ERR"
-            let errorRoundTripOracle = interpreterErrorRoundTrip bodies
+            let hasRefinedScalars = not bodies.ScalarDefinitions.IsEmpty
+            let unicodeOracle = if hasRefinedScalars then box null else box (interpreterOracle bodies "A🙂" "δ" "\u0000🚀")
+            let emptyOracle = if hasRefinedScalars then box null else box (interpreterOracle bodies "" "" "B")
+            let errorOracle = if hasRefinedScalars then box null else box (interpreterOracle bodies "Z" "" "ERR")
+            let errorRoundTripOracle = if hasRefinedScalars then box null else box (interpreterErrorRoundTrip bodies)
+            let sourceDerivedRefinementOracle =
+                if hasRefinedScalars then box (refinedStepOracle bodies)
+                else null
             let controllerReservedStorageBytes =
                 artifact.ControllerReservedStorageBytes
                 |> Option.map box
@@ -317,7 +462,8 @@ let main argv =
                                       preflightSpanTableBytes = artifact.PreflightSpanTableBytes
                                       controllerReservedStorageBytes = controllerReservedStorageBytes |}
                    sourceDerivedTypeIds = {| typeIds = sourceTypeIds |}
-                   interpreterOracle = {| unicode = unicodeOracle; empty = emptyOracle; error = errorOracle; errorRoundTrip = errorRoundTripOracle |} |}
+                   interpreterOracle = {| unicode = unicodeOracle; empty = emptyOracle; error = errorOracle; errorRoundTrip = errorRoundTripOracle |}
+                   sourceDerivedRefinementOracle = sourceDerivedRefinementOracle |}
             Console.WriteLine(JsonSerializer.Serialize(result))
             0
     with error ->

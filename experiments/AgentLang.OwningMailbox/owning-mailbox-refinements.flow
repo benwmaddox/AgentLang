@@ -1,0 +1,75 @@
+type PositiveId : Int {
+    validate mailbox.is-positive-id?
+}
+
+type NonEmptyString : String {
+    validate mailbox.is-non-empty?
+}
+
+record State {
+    field id: PositiveId
+    field label: NonEmptyString
+    field optional: Option<NonEmptyString>
+    field status: Result<PositiveId, NonEmptyString>
+}
+
+record Continuation {
+    field id: PositiveId
+    field label: NonEmptyString
+    field optional: Option<PositiveId>
+    field status: Result<PositiveId, NonEmptyString>
+}
+
+fn mailbox.is-positive-id?(value: Int) -> Bool {
+    effects none
+    doc "Accepts positive values and gives Int64.MinValue a distinct checked-negation error."
+
+    let negated = divide(value, -1)
+    bool.and(int.greater-than(value, 0), int.less-than(negated, 0))
+}
+
+fn mailbox.is-non-empty?(value: String) -> Bool {
+    effects none
+    doc "Accepts strings with at least one UTF-16 code unit."
+
+    int.greater-than(string.length(value), 0)
+}
+
+fn mailbox.initialize(seed: String) -> State {
+    effects none
+    doc "Creates refined roots with None and an inactive Result error payload."
+
+    let id = positiveId.new(1)
+    let label = nonEmptyString.new(seed)
+    let optional = option.none<NonEmptyString>()
+    let status = result.ok<PositiveId, NonEmptyString>(id)
+    .state.new(id = id, label = label, optional = optional, status = status)
+}
+
+fn mailbox.begin(state: State, chunk: String) -> (State, Continuation) {
+    effects none
+    doc "Returns the state and suspends an independently refined continuation."
+
+    let id = positiveId.new(2)
+    let label = nonEmptyString.new(chunk)
+    let optional = option.none<PositiveId>()
+    let status = result.error<PositiveId, NonEmptyString>(label)
+    let continuation = continuation.new(id = id, label = label, optional = optional, status = status)
+    return (state, continuation)
+}
+
+fn mailbox.resume(state: State, continuation: Continuation, message: String) -> State {
+    effects none
+    doc "Rebuilds refined state after a failure guard that preserves retained roots for retry."
+
+    let guard = if message == "FAIL" {
+        divide(1, 0)
+    } else {
+        0
+    }
+    let id = positiveId.new(2)
+    let label = nonEmptyString.new(message)
+    let optional = option.none<NonEmptyString>()
+    let status = result.ok<PositiveId, NonEmptyString>(id)
+    .state.new(id = id, label = label, optional = optional, status = status)
+}

@@ -1,0 +1,434 @@
+{
+  "schemaVersion": 1,
+  "kind": "owning-native-mailbox-refinements",
+  "frozenBeforeNativeExecution": false,
+  "oracleProvenance": {
+    "sourceDerivedBeforeNativeExecution": false,
+    "initialFreezeBeforeNativeExecution": true,
+    "initialFrozenSnapshotSha256": "D903FD6D61406D76C424DED506F437BA406EA61B6FEDAD686530043916B548E9",
+    "valueAndStepOraclesFrozenBeforeNativeExecution": true,
+    "copyOracleFrozenBeforeNativeExecution": false,
+    "copyOracleCorrectedAfterFirstNativeExecution": true,
+    "firstNativeExecutionEvidence": {
+      "relativePath": ".agentlang/owning-mailbox-001/integration-run-75f4c94e30e4437590e62b206de67b28/integration-evidence.json",
+      "runId": "75f4c94e30e4437590e62b206de67b28",
+      "startedUtc": "2026-10-10T18:22:34.2885625Z",
+      "scope": "Gate001 O0/diagnostic direct callback cases; evidence also contains the separate uncaught PowerShell Count aggregation failure."
+    },
+    "postExecutionCorrections": [
+      {
+        "afterRunId": "75f4c94e30e4437590e62b206de67b28",
+        "priorFixtureSha256": "D903FD6D61406D76C424DED506F437BA406EA61B6FEDAD686530043916B548E9",
+        "afterFixtureSha256": "CBAA516667B1F14D516D36B0F9D9992D62C76E6E0652E2E5A993021934AD7376",
+        "kind": "diagnostic-code-classification",
+        "changes": [
+          {
+            "path": "directAdmissionControls.outputDescriptorContract.postPreflightMalformedOptionTag.expectedError",
+            "previous": "INVALID_REQUEST",
+            "corrected": "OWNING_STACK_INPUT_INVALID",
+            "addedField": "directAdmissionControls.outputDescriptorContract.postPreflightMalformedOptionTag.expectedContextStatus",
+            "expectedContextStatus": 4
+          },
+          {
+            "path": "directAdmissionControls.outputDescriptorContract.postPreflightMalformedResultTag.expectedError",
+            "previous": "INVALID_REQUEST",
+            "corrected": "OWNING_STACK_INPUT_INVALID",
+            "addedField": "directAdmissionControls.outputDescriptorContract.postPreflightMalformedResultTag.expectedContextStatus",
+            "expectedContextStatus": 4
+          },
+          {
+            "path": "directAdmissionControls.outputDescriptorContract.earlyBoundaryWrongInputTypeIndex.expectedError",
+            "previous": "INVALID_REQUEST",
+            "corrected": "OWNING_MAILBOX_INPUT_INVALID",
+            "addedField": "directAdmissionControls.outputDescriptorContract.earlyBoundaryWrongInputTypeIndex.expectedContextStatus",
+            "expectedContextStatus": 4
+          }
+        ],
+        "sourceAudit": [
+          "src/AgentLang.Llvm/OwningStackAot.fs:4220-4223 defines invalidError=OWNING_MAILBOX_INPUT_INVALID and measureError=OWNING_STACK_INPUT_INVALID.",
+          "Generated callback boundary preflight reports numeric AL_OWNING_STATUS_INVALID_REQUEST (4) with invalidError; after preflight succeeds it invalidates outputs before al_owning_measure_external_value scans nested tags.",
+          "src/AgentLang.Llvm/native/owning_stack_runtime.c:1128-1134 returns the structural measure error; src/AgentLang.Llvm/native/owning_mailbox_abi.h:47-52 documents the output descriptor boundary contract."
+        ],
+        "limits": "Gate001 is O0/diagnostic evidence only and failed these expected diagnostic-code comparisons; Gate002 must verify the corrected oracle across the focused matrix. The original PowerShell Count aggregation failure was separate and has been fixed in the runner replay. This correction did not change serialized bytes, layout IDs, step expectations, or the copy oracle; copy-accounting correction is recorded in the next chain entry."
+      },
+      {
+        "afterRunId": "75f4c94e30e4437590e62b206de67b28",
+        "priorFixtureSha256": "CBAA516667B1F14D516D36B0F9D9992D62C76E6E0652E2E5A993021934AD7376",
+        "kind": "copy-accounting",
+        "evidencePath": ".agentlang/refined-mailbox-180/runner/integration-run-75f4c94e30e4437590e62b206de67b28/native-refined-runner-run-O0-diagnostic.stdout.txt",
+        "changes": [
+          {
+            "path": "copyAccounting.deepCopyTerms.resumeEmptyFailure",
+            "previous": 0,
+            "corrected": "16-byte aligned UTF-16LE FAIL literal copy",
+            "reason": "The resume guard materializes the 16-byte aligned UTF-16LE FAIL literal before the empty-string refinement fails."
+          },
+          {
+            "path": "copyAccounting.deepCopyTerms.resumeFailFailure",
+            "previous": 0,
+            "corrected": "16-byte aligned UTF-16LE FAIL literal copy",
+            "reason": "The resume guard materializes the 16-byte aligned UTF-16LE FAIL literal before divide-by-zero."
+          },
+          {
+            "path": "copyAccounting.deepCopyTerms.resumeSuccess",
+            "previous": "Result.Ok copies PositiveId 8 + State.new copies fields 8+16+8+16 = 56",
+            "corrected": "resume guard literal 16 + Result.Ok copies PositiveId 8 + State.new copies fields 8+16+8+16 = 72"
+          },
+          {
+            "path": "copyAccounting.deepCopyBytes",
+            "previous": 184,
+            "corrected": 232
+          },
+          {
+            "path": "copyAccounting.scope",
+            "previous": "One controller sequence per suspension policy; each formula is derived from input extents and verified record/sum construction instructions.",
+            "corrected": "One controller sequence per suspension policy; formulas include input extents, verified record/sum construction, and dynamic literal materialization instructions."
+          },
+          {
+            "path": "copyAccounting.resumeGuardLiteralExtentBytes",
+            "previous": null,
+            "corrected": 16
+          },
+          {
+            "path": "copyAccounting.resumeGuardLiteralCopiesPerPolicy",
+            "previous": null,
+            "corrected": 3
+          },
+          {
+            "path": "copyAccounting.resumeGuardLiteralDeepCopyBytesPerPolicy",
+            "previous": null,
+            "corrected": 48
+          },
+          {
+            "path": "copyAccounting.expectedStatsBySuspensionPolicy.RETURN.deepCopyBytes",
+            "previous": 184,
+            "corrected": 232
+          },
+          {
+            "path": "copyAccounting.expectedStatsBySuspensionPolicy.KEEP_ASSOCIATED.deepCopyBytes",
+            "previous": 184,
+            "corrected": 232
+          }
+        ],
+        "sourceAudit": [
+          "experiments/AgentLang.OwningMailbox/owning-mailbox-refinements.flow:65 compares message with the literal FAIL once per resume invocation.",
+          "src/AgentLang.Llvm/OwningStackAot.fs:3481 emits each dynamic String constant through al_owning_copy_constant.",
+          "src/AgentLang.Llvm/native/owning_stack_runtime.c:468-522 copies the complete literal extent and increments deep_copy_bytes by extent_bytes.",
+          "Four UTF-16 code units encode to extent align_up(8+8,8)=16; the three lifecycle resume calls therefore add 3*16=48 bytes. The source-derived lifecycle total is init56 + begin72 + resume-empty16 + resume-fail16 + retry(16+56) = 232 bytes for either policy."
+        ],
+        "limits": "This corrects the copy oracle after the first native execution, based on source emission and counter semantics; it is not a pre-run prediction. Admission still adds no deep-copy or move bytes. The C runner's O0/diagnostic raw output reports 232 for both policies; Gate002 must verify the corrected total across the full matrix."
+      }
+    ],
+    "preNativeAuditCorrection": {
+      "previousFrozenFixtureSha256": "99A7A0DB25885722F3694FC32BFDF0F40DF483076790BEADB1EEF7EB156ACB7D",
+      "previousExpectedOutputDescriptorContract": {
+        "semanticAdmissionFailure": "all requested output descriptors are invalidated after structural preflight, before validators run",
+        "structuralPreflightFailure": "caller output descriptor sentinels remain unchanged"
+      },
+      "reason": "Generated callbacks invalidate output descriptors immediately after boundary preflight succeeds. Nested Option/Result tag scanning occurs later in al_owning_measure_external_value, so those structural scan failures leave descriptors invalid. Only an earlier boundary-preflight failure preserves sentinels.",
+      "evidence": [
+        "src/AgentLang.Llvm/OwningStackAot.fs:4243-4262",
+        "src/AgentLang.Llvm/OwningStackAot.fs:5084-5190",
+        "src/AgentLang.Llvm/native/owning_stack_runtime.c:1128-1134",
+        "src/AgentLang.Llvm/native/owning_mailbox_abi.h:47-52"
+      ]
+    }
+  },
+  "sourceFixture": "experiments/AgentLang.OwningMailbox/owning-mailbox-refinements.flow",
+  "moduleAbiVersion": 1,
+  "stackAbiVersion": 1,
+  "layoutAbiVersion": 3,
+  "entryOrder": ["initialize", "begin", "resume"],
+  "roles": {
+    "initialize": { "inputs": ["String"], "outputs": ["State"] },
+    "begin": { "inputs": ["State", "String"], "outputs": ["State", "Continuation"] },
+    "resume": { "inputs": ["State", "Continuation", "String"], "outputs": ["State"] }
+  },
+  "sourceDerivedTypeIds": {
+    "typeIdRule": "Int=1, Bool=2, Unit=3, nominal records and scalars sorted ordinally start at 4, String follows all nominal types",
+    "nominalTypeOrder": ["Continuation", "NonEmptyString", "PositiveId", "State"],
+    "typeIds": {
+      "Continuation": 4,
+      "NonEmptyString": 5,
+      "PositiveId": 6,
+      "State": 7,
+      "String": 8
+    },
+    "layoutIndexRule": "Resolve dense zero-based indices from generated module metadata; do not infer them from TypeIds.",
+    "reachableDescriptorOrder": [
+      "Int",
+      "Bool",
+      "Continuation",
+      "NonEmptyString",
+      "PositiveId",
+      "State",
+      "String",
+      "Option<NonEmptyString>",
+      "Result<PositiveId, NonEmptyString>",
+      "Option<PositiveId>"
+    ],
+    "layoutIndexesFromSourceCompilation": {
+      "Int": 0,
+      "Bool": 1,
+      "Continuation": 2,
+      "NonEmptyString": 3,
+      "PositiveId": 4,
+      "State": 5,
+      "String": 6,
+      "Option<NonEmptyString>": 7,
+      "Result<PositiveId, NonEmptyString>": 8,
+      "Option<PositiveId>": 9
+    }
+  },
+  "serializedEncoding": {
+    "byteOrder": "little-endian",
+    "integerBytes": 8,
+    "stringHeaderBytes": 8,
+    "stringCountOffsetBytes": 0,
+    "stringCountWidthBytes": 4,
+    "stringReservedHeaderBytes": 4,
+    "stringEncoding": "UTF-16LE",
+    "stringExtentFormula": "align_up(8 + 2*UTF16CodeUnits, 8)",
+    "sumTagEncoding": "8-byte little-endian tag; Option.None=1, Some=0, Result.Ok=0, Result.Error=1",
+    "onlyActiveSumPayloadIsSerialized": true,
+    "paddingBytesAreZero": true
+  },
+  "frozenPredicates": [
+    {
+      "scalar": "PositiveId",
+      "baseType": "Int",
+      "validator": "mailbox.is-positive-id?",
+      "wordId": "owning-mailbox-source-mailbox.is-positive-id?",
+      "revision": 1,
+      "stepsPerInvocation": 12,
+      "runtimeErrorPrefixSteps": 4,
+      "semantics": "The normal predicate path charges 12 instructions and accepts iff value > 0 and divide(value, -1) < 0. The division is checked; Int64.MinValue raises RUNTIME_OVERFLOW at the fourth charged predicate instruction, before normal return."
+    },
+    {
+      "scalar": "NonEmptyString",
+      "baseType": "String",
+      "validator": "mailbox.is-non-empty?",
+      "wordId": "owning-mailbox-source-mailbox.is-non-empty?",
+      "revision": 1,
+      "stepsPerInvocation": 5,
+      "semantics": "Accept iff string.length(value) > 0"
+    }
+  ],
+  "lifecycle": {
+    "mailboxCount": 1,
+    "suspensionPolicies": ["RETURN", "KEEP_ASSOCIATED"],
+    "sequence": [
+      { "call": "initialize", "utf8Hex": "41", "value": "A" },
+      { "call": "begin", "utf8Hex": "42", "value": "B" },
+      { "call": "resume-empty", "utf8Hex": "", "expectedFailure": "REFINEMENT_FAILED" },
+      { "call": "resume-fail", "utf8Hex": "4641494c", "value": "FAIL", "expectedFailure": "RUNTIME_DIVIDE_BY_ZERO" },
+      { "call": "retry-same-token", "utf8Hex": "43", "value": "C", "expectedSuccess": true }
+    ],
+    "roots": {
+      "initializedState": {
+        "type": "State",
+        "typeId": 7,
+        "payloadBytes": 42,
+        "extentBytes": 48,
+        "serializedHex": "010000000000000001000000000000004100000000000000010000000000000000000000000000000100000000000000"
+      },
+      "suspendedContinuation": {
+        "type": "Continuation",
+        "typeId": 4,
+        "payloadBytes": 44,
+        "extentBytes": 56,
+        "serializedHex": "0200000000000000010000000000000042000000000000000100000000000000010000000000000001000000000000004200000000000000"
+      },
+      "completedState": {
+        "type": "State",
+        "typeId": 7,
+        "payloadBytes": 42,
+        "extentBytes": 48,
+        "serializedHex": "020000000000000001000000000000004300000000000000010000000000000000000000000000000200000000000000"
+      },
+      "beforeAndAfterFailedResume": [
+        { "type": "State", "typeId": 7, "payloadBytes": 42, "extentBytes": 48, "serializedHex": "010000000000000001000000000000004100000000000000010000000000000000000000000000000100000000000000" },
+        { "type": "Continuation", "typeId": 4, "payloadBytes": 44, "extentBytes": 56, "serializedHex": "0200000000000000010000000000000042000000000000000100000000000000010000000000000001000000000000004200000000000000" }
+      ]
+    }
+  },
+  "sourceDerivedStepOracle": {
+    "method": "Verified-IR interpreter ChargeInstruction counts handler/body instructions; external refined-value admission adds the frozen validator function cost once per active refined scalar. Predicate-call counts are source-derived expectations, not a runtime predicate counter.",
+    "handlerBodyStepsExcludingExternalAdmission": {
+      "initialize": 44,
+      "begin": 48,
+      "resumeEmpty": 33,
+      "resumeFail": 12,
+      "resumeSuccess": 53
+    },
+    "sourceDerivedPredicateInvocations": {
+      "initialize": { "PositiveId": 1, "NonEmptyString": 1 },
+      "begin": { "PositiveId": 3, "NonEmptyString": 2 },
+      "resumeEmptyReturn": { "PositiveId": 4, "NonEmptyString": 4 },
+      "resumeEmptyKeep": { "PositiveId": 1, "NonEmptyString": 1 },
+      "resumeFailReturn": { "PositiveId": 3, "NonEmptyString": 3 },
+      "resumeFailKeep": { "PositiveId": 0, "NonEmptyString": 0 },
+      "resumeSuccessReturn": { "PositiveId": 4, "NonEmptyString": 4 },
+      "resumeSuccessKeep": { "PositiveId": 1, "NonEmptyString": 1 },
+      "controllerTotalReturn": { "PositiveId": 15, "NonEmptyString": 14 },
+      "controllerTotalKeep": { "PositiveId": 6, "NonEmptyString": 5 }
+    },
+    "stepsConsumedByCall": {
+      "RETURN": [44, 77, 84, 63, 104],
+      "KEEP_ASSOCIATED": [44, 77, 33, 12, 53]
+    },
+    "callOrder": ["initialize", "begin", "resume-empty", "resume-fail", "retry-same-token"],
+    "returnVsKeepResumeStepDelta": 51,
+    "deltaDerivation": "RETURN rereads and re-admits State (2 PositiveId, 1 NonEmptyString) and Continuation (1 PositiveId, 2 NonEmptyString): 3*12 + 3*5 = 51 steps on each resume. KEEP_ASSOCIATED reuses admitted private roots."
+  },
+  "directAdmissionControls": {
+    "inputRole": "begin State input, followed by valid text B",
+    "validState": {
+      "predicateCalls": { "PositiveId": 2, "NonEmptyString": 1 },
+      "admissionSteps": 29,
+      "fullBeginStepsIncludingHandler": 77,
+      "inactiveOptionAndResultAreSkipped": true
+    },
+    "invalidActiveValues": [
+      {
+        "name": "State.id-negative",
+        "mutation": { "field": "id", "serializedValueHex": "ffffffffffffffff" },
+        "expectedError": "REFINEMENT_FAILED",
+        "predicateCalls": { "PositiveId": 1, "NonEmptyString": 0 },
+        "stepsConsumed": 12
+      },
+      {
+        "name": "State.id-minimum-integer",
+        "mutation": { "field": "id", "serializedValueHex": "0000000000000080" },
+        "expectedError": "RUNTIME_OVERFLOW",
+        "predicateCalls": { "PositiveId": 1, "NonEmptyString": 0 },
+        "stepsConsumed": 4
+      },
+      {
+        "name": "State.optional-some-empty-string",
+        "mutation": { "field": "optional", "valueType": "NonEmptyString", "optionTagHex": "0000000000000000", "valueHex": "0000000000000000" },
+        "expectedError": "REFINEMENT_FAILED",
+        "predicateCalls": { "PositiveId": 1, "NonEmptyString": 2 },
+        "stepsConsumed": 22
+      },
+      {
+        "name": "State.status-error-empty-string",
+        "mutation": { "field": "status", "resultTagHex": "0100000000000000", "stringHex": "0000000000000000" },
+        "expectedError": "REFINEMENT_FAILED",
+        "predicateCalls": { "PositiveId": 1, "NonEmptyString": 2 },
+        "stepsConsumed": 22
+      }
+    ],
+      "outputDescriptorContract": {
+      "semanticAdmissionFailure": "all requested output descriptors are invalidated after boundary preflight, before validators run",
+      "postPreflightStructuralScanFailure": "malformed nested Option/Result tags fail in al_owning_measure_external_value after output invalidation; requested descriptors remain invalid",
+      "boundaryPreflightFailure": "input count/type index/pointer/range/capacity failures happen before output invalidation; caller sentinels remain unchanged",
+      "postPreflightMalformedResultTag": {
+        "inputRole": "begin State input",
+        "rootHexPath": "lifecycle.roots.initializedState.serializedHex",
+        "mutation": { "field": "status", "byteOffset": 32, "tagHex": "0200000000000000" },
+        "failureStage": "external structural value scan after boundary preflight",
+        "expectedError": "OWNING_STACK_INPUT_INVALID",
+        "expectedContextStatus": 4,
+        "stepsConsumed": 0,
+        "expectedHandlerInvocations": 0,
+        "outputDescriptors": "invalid"
+      },
+      "postPreflightMalformedOptionTag": {
+        "inputRole": "begin State input",
+        "rootHexPath": "lifecycle.roots.initializedState.serializedHex",
+        "mutation": { "field": "optional", "byteOffset": 24, "tagHex": "0200000000000000" },
+        "failureStage": "external structural value scan after boundary preflight",
+        "expectedError": "OWNING_STACK_INPUT_INVALID",
+        "expectedContextStatus": 4,
+        "stepsConsumed": 0,
+        "expectedHandlerInvocations": 0,
+        "outputDescriptors": "invalid"
+      },
+      "earlyBoundaryWrongInputTypeIndex": {
+        "inputRole": "begin State input",
+        "rootHexPath": "lifecycle.roots.initializedState.serializedHex",
+        "inputCount": 2,
+        "actualInputTypeIndex": 2,
+        "expectedInputTypeIndex": 5,
+        "failureStage": "boundary preflight before output invalidation",
+        "expectedError": "OWNING_MAILBOX_INPUT_INVALID",
+        "expectedContextStatus": 4,
+        "stepsConsumed": 0,
+        "expectedHandlerInvocations": 0,
+        "outputDescriptors": "unchanged"
+      }
+    }
+  },
+  "copyAccounting": {
+    "scope": "One controller sequence per suspension policy; formulas include input extents, verified record/sum construction, and dynamic literal materialization instructions.",
+    "deepCopyTerms": {
+      "initialize": "Result.Ok copies PositiveId 8 + State.new copies fields 8+16+8+16 = 56",
+      "begin": "Result.Error copies String 16 + Continuation.new copies fields 8+16+8+24 = 72",
+      "resumeEmptyFailure": "resume guard materializes the 16-byte aligned UTF-16LE FAIL literal before refinement failure",
+      "resumeFailFailure": "resume guard materializes the 16-byte aligned UTF-16LE FAIL literal before divide-by-zero",
+      "resumeSuccess": "resume guard literal 16 + Result.Ok copies PositiveId 8 + State.new copies fields 8+16+8+16 = 72"
+    },
+    "resumeGuardLiteralExtentBytes": 16,
+    "resumeGuardLiteralCopiesPerPolicy": 3,
+    "resumeGuardLiteralDeepCopyBytesPerPolicy": 48,
+    "deepCopyBytes": 232,
+    "moveBytes": 0,
+    "admissionAddsNoRootCopiesOrPayloadMoves": true,
+    "textInputBytesUtf8": 7,
+    "textInputStagingBytes": 72,
+    "controllerImports": {
+      "RETURN": "initialize String16 + begin State48 and String16 + three resume root pairs (2*(State48+Continuation56)) plus String extents 8,16,16 = 432",
+      "KEEP_ASSOCIATED": "initialize String16 + begin State48 and String16 + resume String extents 8,16,16 = 120"
+    },
+    "expectedStatsBySuspensionPolicy": {
+      "RETURN": {
+        "utf8InputBytes": 7,
+        "utf16StagingBytes": 72,
+        "inputImportBytes": 432,
+        "publicationCopyBytes": 200,
+        "beginPublicationCopyBytes": 104,
+        "resumeRootImportBytes": 312,
+        "deepCopyBytes": 232,
+        "moveBytes": 0,
+        "returnedOutputDescriptors": 4,
+        "handlerInvocations": 5,
+        "handlerFailures": 2
+      },
+      "KEEP_ASSOCIATED": {
+        "utf8InputBytes": 7,
+        "utf16StagingBytes": 72,
+        "inputImportBytes": 120,
+        "publicationCopyBytes": 96,
+        "beginPublicationCopyBytes": 0,
+        "resumeRootImportBytes": 0,
+        "deepCopyBytes": 232,
+        "moveBytes": 0,
+        "returnedOutputDescriptors": 4,
+        "handlerInvocations": 5,
+        "handlerFailures": 2
+      }
+    }
+  },
+  "requiredChecks": [
+    "both suspension policies retain refined roots through two distinct resume failures and same-token retry",
+    "State and Continuation exact type IDs, dynamic extents, payload lengths, and bytes match this fixture",
+    "inactive Option and Result alternatives are not revalidated",
+    "external State admission rejects active Int and String refinement failures before handler execution",
+    "Int64.MinValue distinguishes validator runtime overflow from false refinement",
+    "direct callback semantic failure invalidates output descriptors after boundary preflight",
+    "post-preflight malformed Option and Result tags fail structural scanning with descriptors invalid",
+    "early boundary-preflight type-index failure leaves output descriptor sentinels untouched",
+    "RETURN re-imports and re-admits roots while KEEP_ASSOCIATED reuses admitted private roots",
+    "frozen validator target identity and revision match source-derived fixture",
+    "source-derived copy and step counts match runtime evidence without predicate counter instrumentation",
+    "O0 and O2 diagnostic, fast-reset, and trusted-generated profiles agree",
+    "Layout ABI remains 3 and stack ABI remains 1"
+  ],
+  "limitations": [
+    "Controller lifecycle guarantees and direct raw-callback admission controls are separate evidence paths.",
+    "Step totals use measured verified-IR instructions plus source-derived external validator invocations; they do not claim a native predicate counter.",
+    "Deep-copy totals include the lowered String literal copy on each resume attempt; refined-value admission itself adds no root copy or payload move.",
+    "Copy counters report logical requested extents rather than hardware traffic."
+  ]
+}

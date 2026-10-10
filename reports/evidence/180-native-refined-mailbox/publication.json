@@ -1,0 +1,24 @@
+{
+  "status": "locally-validated",
+  "baseRevision": "4bd0ecc4a7317c420595a53f37d0badf0dbc87a0",
+  "branch": "main",
+  "verifiedUtc": "2026-10-10T18:48:26.9827981Z",
+  "archiveSha256": "ef76be39eba5f30e938cbcdc45354aa649263dbf95cf8d25d857a0cd8070ef21",
+  "archiveBytes": 9016556,
+  "archiveEntries": 708,
+  "finalFixtureSha256": "a22bb448ee864713903d5ee7946c785cd7c8978cf54da02e0f2e0b86911cbbb1",
+  "accepted": {
+    "llvmAssertions": 655,
+    "focusedMailboxAssertions": 5,
+    "nativeChecks": 47,
+    "nativeSourcePins": 47,
+    "mailboxChecks": 2255,
+    "refinedChecks": 668,
+    "mailboxSourcePins": 28,
+    "policyChecks": 741,
+    "realIoChecks": 207190,
+    "fullLocalChecks": 37
+  },
+  "ciUsed": false,
+  "limits": "Native conformance only; disclosed post-execution diagnostic/copy oracle corrections. No security certification or comparative throughput/agent-efficacy claim."
+}

@@ -7926,19 +7926,154 @@ let private runRefinedStringConformance
             "expectedDiagnosticMessage", box (expectedMessage |> Option.defaultValue "")
             "actualDiagnosticMessage", box message ])
 
-    let mailboxRejectedCode =
-        try
-            let _unexpectedlyCompiled =
-                OwningStackAot.compileMailbox toolchain optimization
-                    (Path.Combine(artifactRoot, "owning-stack", "refined-string", optimizationName, "unsupported-mailbox"))
-                    entries.MailboxBodies[0] entries.MailboxBodies[1] entries.MailboxBodies[2]
-            ""
-        with error -> diagnosticCode error
-    record "unsupported-refined-string-mailbox-layout-is-explicit"
-        (mailboxRejectedCode = "IR_OWNING_STACK_TYPE_UNSUPPORTED") (jsonObject [
-            "rejectedBeforeExecution", box (mailboxRejectedCode <> "")
-            "expectedDiagnosticCode", box "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-            "actualDiagnosticCode", box mailboxRejectedCode ])
+    let mailboxProgram = VerifiedIrBody.program entries.MailboxBodies[0]
+    let mailboxIr = VerifiedIrProgram.inspect mailboxProgram
+    let mailboxTypeIds = nominalIntProgramTypeIds mailboxProgram
+    let mailboxTypeKeys =
+        mailboxIr.NominalTypesByKey
+        |> Map.toList
+        |> List.map (fun (key, definition) ->
+            let name =
+                match definition with
+                | IrRecordDefinition record -> record.TypeName
+                | IrScalarDefinition scalar -> scalar.TypeName
+                | IrEnumDefinition enumDefinition -> enumDefinition.TypeName
+            name, key)
+        |> Map.ofList
+    let nonEmptyTypeKey = mailboxTypeKeys["NonEmptyString"]
+    let stateTypeKey = mailboxTypeKeys["RefinedMailboxState"]
+    let continuationTypeKey = mailboxTypeKeys["RefinedMailboxContinuation"]
+    let _, nonEmptyMailboxTypeId = mailboxTypeIds["NonEmptyString"]
+    let _, stateMailboxTypeId = mailboxTypeIds["RefinedMailboxState"]
+    let _, continuationMailboxTypeId = mailboxTypeIds["RefinedMailboxContinuation"]
+    let scalarValidator =
+        mailboxIr.NominalTypesByKey
+        |> Map.toSeq
+        |> Seq.tryPick (fun (_, definition) ->
+            match definition with
+            | IrScalarDefinition scalar when scalar.TypeName = "NonEmptyString" -> scalar.ValidatorCall
+            | _ -> None)
+    let frozenValidatorIdentity =
+        match scalarValidator with
+        | Some validator ->
+            match validator.ResolvedTarget with
+            | UserWordTarget(id, revision) ->
+                mailboxIr.FunctionsById.TryFind id
+                |> Option.exists (fun target ->
+                    validator.ResolvedName = "is-non-empty?"
+                    && validator.InputTypes = [ IrString ]
+                    && validator.OutputTypes = [ IrBool ]
+                    && Set.isEmpty validator.ResolvedDeclaredEffects
+                    && Set.isEmpty validator.ResolvedEffects
+                    && target.FunctionRevision = revision
+                    && target.InputTypes = [ IrString ]
+                    && target.OutputTypes = [ IrBool ]
+                    && Set.isEmpty target.FunctionDeclaredEffects
+                    && Set.isEmpty target.FunctionInferredEffects)
+            | _ -> false
+        | None -> false
+    let validatorTargetIdentity, validatorRevision =
+        match scalarValidator with
+        | Some { ResolvedTarget = UserWordTarget(WordId id, revision) } -> id, revision
+        | _ -> "", -1
+    let mailboxModule =
+        OwningStackAot.compileMailbox toolchain optimization
+            (Path.Combine(artifactRoot, "owning-stack", "refined-string", optimizationName, "refined-mailbox"))
+            entries.MailboxBodies[0] entries.MailboxBodies[1] entries.MailboxBodies[2]
+    let layoutFor typeName = mailboxModule.Layouts |> List.tryFind (fun layout -> layout.TypeName = typeName)
+    let exactLayouts =
+        layoutFor "NonEmptyString" |> Option.exists (fun layout -> layout.Type = IrNominal nonEmptyTypeKey)
+        && (layoutFor "RefinedMailboxState"
+            |> Option.exists (fun layout ->
+                layout.Type = IrNominal stateTypeKey
+                && (layout.Fields |> List.exists (fun field -> field.FieldName = "value" && field.FieldType = IrNominal nonEmptyTypeKey))))
+        && (layoutFor "RefinedMailboxContinuation"
+            |> Option.exists (fun layout ->
+                layout.Type = IrNominal continuationTypeKey
+                && (layout.Fields |> List.exists (fun field -> field.FieldName = "value" && field.FieldType = IrNominal nonEmptyTypeKey))))
+        && stateTypeKey <> continuationTypeKey
+    let entryFor role = mailboxModule.Entries |> List.tryFind (fun entry -> entry.Role = role)
+    let stringMailboxTypeId = uint32 (mailboxTypeIds.Count + 4)
+    let mailboxTypeIdsByIrType =
+        mailboxTypeIds
+        |> Map.toList
+        |> List.map (fun (name, (_, typeId)) -> IrNominal mailboxTypeKeys[name], typeId)
+        |> Map.ofList
+        |> Map.add IrString stringMailboxTypeId
+    let expectedCallbacks =
+        [ "initialize", "agentlang_mailbox_initialize", [ IrString ], [ IrNominal stateTypeKey ]
+          "begin", "agentlang_mailbox_begin", [ IrNominal stateTypeKey; IrString ], [ IrNominal stateTypeKey; IrNominal continuationTypeKey ]
+          "resume", "agentlang_mailbox_resume", [ IrNominal stateTypeKey; IrNominal continuationTypeKey; IrString ], [ IrNominal stateTypeKey ] ]
+    use mailboxManifest = JsonDocument.Parse(File.ReadAllText mailboxModule.ManifestPath)
+    let mailboxModuleInfo = mailboxManifest.RootElement.GetProperty("moduleInfo")
+    let mailboxManifestFormatVersion = mailboxModuleInfo.GetProperty("formatVersion").GetInt32()
+    let mailboxAbiVersion = mailboxModuleInfo.GetProperty("abiVersion").GetInt32()
+    let mailboxLayoutAbiVersion = mailboxModuleInfo.GetProperty("layoutAbiVersion").GetInt32()
+    let mailboxLayoutRows = mailboxModuleInfo.GetProperty("sharedLayout").EnumerateArray() |> Seq.toArray
+    let mailboxEntryRows = mailboxModuleInfo.GetProperty("entries").EnumerateArray() |> Seq.toArray
+    let mailboxManifestIdsPassed =
+        [ "NonEmptyString", nonEmptyMailboxTypeId
+          "RefinedMailboxState", stateMailboxTypeId
+          "RefinedMailboxContinuation", continuationMailboxTypeId ]
+        |> List.forall (fun (typeName, expectedTypeId) ->
+            mailboxLayoutRows
+            |> Array.exists (fun row ->
+                row.GetProperty("name").GetString() = typeName
+                && row.GetProperty("typeId").GetUInt32() = expectedTypeId))
+    let exactCallbacks =
+        expectedCallbacks
+        |> List.forall (fun (role, symbol, inputTypes, outputTypes) ->
+            let entryMatches =
+                entryFor role
+                |> Option.exists (fun entry ->
+                    entry.FunctionSymbol = symbol
+                    && entry.InputTypes = inputTypes
+                    && entry.OutputTypes = outputTypes)
+            let manifestMatches =
+                mailboxEntryRows
+                |> Array.exists (fun row ->
+                    row.GetProperty("role").GetString() = role
+                    && (row.GetProperty("inputTypeIds").EnumerateArray() |> Seq.map (fun item -> item.GetUInt32()) |> Seq.toList)
+                       = (inputTypes |> List.map (fun ty -> mailboxTypeIdsByIrType[ty]))
+                    && (row.GetProperty("outputTypeIds").EnumerateArray() |> Seq.map (fun item -> item.GetUInt32()) |> Seq.toList)
+                       = (outputTypes |> List.map (fun ty -> mailboxTypeIdsByIrType[ty])))
+            entryMatches && manifestMatches)
+        && mailboxModule.AssociatedResumeSymbol = "agentlang_mailbox_resume_associated"
+    let mailboxAdmissionPassed =
+        VerifiedIrProgram.isBackendExecutable mailboxProgram
+        && frozenValidatorIdentity
+        && exactLayouts
+        && exactCallbacks
+        && mailboxManifestIdsPassed
+        && mailboxManifestFormatVersion = 1
+        && mailboxAbiVersion = 1
+        && mailboxLayoutAbiVersion = 3
+    record "refined-string-mailbox-compiled-admission-is-explicit" mailboxAdmissionPassed (jsonObject [
+        "compiledModule", box true
+        "backendExecutableProgram", box (VerifiedIrProgram.isBackendExecutable mailboxProgram)
+        "frozenPureValidatorIdentity", box frozenValidatorIdentity
+        "validatorName", box (scalarValidator |> Option.map (fun validator -> validator.ResolvedName) |> Option.defaultValue "")
+        "validatorTargetIdentity", box validatorTargetIdentity
+        "validatorRevision", box validatorRevision
+        "exactNominalLayouts", box exactLayouts
+        "exactCallbackSignatures", box exactCallbacks
+        "manifestNominalTypeIds", box mailboxManifestIdsPassed
+        "expectedTypeIds", box (jsonObject [
+            "NonEmptyString", box nonEmptyMailboxTypeId
+            "RefinedMailboxState", box stateMailboxTypeId
+            "RefinedMailboxContinuation", box continuationMailboxTypeId ])
+        "actualManifestTypeIds", box (mailboxLayoutRows |> Array.choose (fun row ->
+            let name = row.GetProperty("name").GetString()
+            if name = "NonEmptyString" || name = "RefinedMailboxState" || name = "RefinedMailboxContinuation" then
+                Some(jsonObject [ "name", box name; "typeId", box (row.GetProperty("typeId").GetUInt32()) ])
+            else None))
+        "moduleFormatVersion", box mailboxManifestFormatVersion
+        "expectedModuleFormatVersion", box 1
+        "moduleAbiVersion", box mailboxAbiVersion
+        "expectedModuleAbiVersion", box 1
+        "layoutAbiVersion", box mailboxLayoutAbiVersion
+        "expectedLayoutAbiVersion", box 3
+        "associatedResumeSymbol", box mailboxModule.AssociatedResumeSymbol ])
 
     jsonObject [
         "optimization", box optimizationName
@@ -7954,6 +8089,7 @@ let private runRefinedStringConformance
         "stringKind", box (identityOracle.GetProperty("stringKind").GetInt32())
         "validatorRevision", box originalRevision
         "replacementValidatorRevision", box replacementRevision
+        "mailboxAdmission", box mailboxAdmissionPassed
         "provenanceCoverage", box "After projecting and unwrapping the NonEmptyString owner field, the returned base String (TypeId 6) descriptor transfer retains the outer OwnerEnd; projection and unwrap add no payload move or deep copy beyond the two pinned temporary literals." ]
 
 [<EntryPoint>]
@@ -8104,7 +8240,7 @@ let main argv =
             "nested", box true
             "runtimeFailure", box true
             "replacement", box true
-            "mailboxRejection", box true ])
+            "mailboxAdmission", box true ])
         report["refinedStringBackendScope"] <- box "The same compiler-authorized NonEmptyString and nested VerifiedIrProgram instances execute through the interpreter and owning-stack LLVM O0/O2. Raw exported-entry checks use fixture-owned UTF-16 bytes and the existing context ABI oracle; the older LlvmAot sharedgraph String path remains outside this owning-only slice."
         let refinedStringRuns = ResizeArray<obj>()
         for optimization, optimizationName in optimizationPairs do

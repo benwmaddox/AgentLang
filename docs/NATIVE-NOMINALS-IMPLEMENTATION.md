@@ -101,6 +101,33 @@ fresh LLVM, native value-stack, mailbox and full local gates before reporting
 completion. [Report 174](../reports/174-native-refined-string.md) records gate
 results and retained failed attempts; its status is the completion record.
 
+## Refined mailbox admission (milestone 180 acceptance plan)
+
+Admit the same frozen pure Int/String predicates in owning mailbox compilation.
+After structural import, validate active nested State/Continuation payloads
+before the external callback body. A temporary validation frame must leave on
+both success and failure. Constructors validate newly produced values; avoid
+blanket output predicate replay.
+
+RETURN re-imports retained roots and validates them again. KEEP_ASSOCIATED
+resumes from privately retained, previously admitted roots without replaying
+their predicates. The completion remains a plain String. Keep the existing
+text controller APIs: real lifecycle fixtures construct refined records from
+text and test failure/retry; direct generated callbacks separately exercise
+raw invalid external slices. No new host effect or controller API is required.
+
+Structural preflight failure leaves output sentinels untouched. Later predicate
+failure leaves requested descriptors invalid under the existing ABI, while
+committed roots and pending tokens survive for retry. Distinguish predicate
+false from validator execution failure. Pin exact nominal identities, frozen
+revisions, independent bytes, active/inactive nested payloads and copy/predicate
+counts across O0/O2 and both arena policies. Keep ABI/layout versions unchanged
+and audit generated frame bounds. Unsupported validator forms remain explicit.
+
+This is an acceptance plan, not a completion or security certification. Fresh
+focused and full LLVM, native value-stack, mailbox/policy and applicable local
+I/O regression gates, plus the full local Release gate, precede publication.
+
 ## Investigation references
 
 Read-only planning inspected `TypedIR.fs` scalar definitions and generated-target

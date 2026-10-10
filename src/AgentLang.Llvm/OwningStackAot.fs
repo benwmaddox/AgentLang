@@ -4314,6 +4314,27 @@ module OwningStackAot =
                 emitStatusResult callback copyStatus failure
                 emitDescriptorTransfer callback descriptor failure
 
+            if entryBody.BodyInputTypes |> List.exists hasValidatedScalar then
+                // Raw mailbox values have the same semantic admission boundary
+                // as ordinary owning exports. Validate the imported arena
+                // entries before the role frame can inspect them, and balance
+                // the temporary frame on both validator outcomes.
+                let validationDepthError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." entryBody.BodyName None [] []
+                let validationFailure = callback.Label $"mailbox.{role}.validation.failure"
+                let validationFrame = callback.Fresh "mailbox.validation.frame.entered"
+                callback.Inst($"{validationFrame} = call i32 @al_owning_enter_frame(ptr %%ctx, i32 {validationDepthError})")
+                emitStatusResult callback validationFrame failure
+                for descriptor, _, _ in inputEntries do
+                    if hasValidatedScalar descriptor.Type then
+                        emitValidateEntryValue callback entryBody.BodyName descriptor descriptor.Type validationFailure
+                callback.Inst("call void @al_owning_leave_frame(ptr %ctx)")
+                let validationSucceeded = callback.Label $"mailbox.{role}.validation.succeeded"
+                callback.Inst($"br label %%{validationSucceeded}")
+                callback.Line($"{validationFailure}:")
+                callback.Inst("call void @al_owning_leave_frame(ptr %ctx)")
+                callback.Inst($"br label %%{failure}")
+                callback.Line($"{validationSucceeded}:")
+
             let outputDescriptors = callback.Fresh "mailbox.output.descriptors"
             callback.Inst($"{outputDescriptors} = alloca [{outputCount} x %%AlOwningDescriptor], align 4")
             let frameStatus = callback.Fresh "mailbox.frame.status"
@@ -5327,7 +5348,7 @@ module OwningStackAot =
         (verifiedResume: VerifiedIrBody) =
         if String.IsNullOrWhiteSpace outputDirectory then invalidArg (nameof outputDirectory) "Output directory must be nonempty."
         let verifiedBodies = [ verifiedInit; verifiedBegin; verifiedResume ]
-        let programInfo = makeProgramInfoForBodies false verifiedBodies
+        let programInfo = makeProgramInfoForBodies true verifiedBodies
         validateMailboxSignatures programInfo |> ignore
         let checkedBodies =
             verifiedBodies
