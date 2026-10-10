@@ -1,0 +1,57 @@
+fn shipment.find-scan(shipment: Shipment, reference: String) -> Option<Scan> {
+    effects none
+    doc "Return the first scan with exactly matching reference text, if present."
+
+    let initial = shipmentScanLookup.new(target = reference, found = option.none<Scan>());
+    shipment.scans.fold(initial, .shipment.scan-lookup-step).found
+}
+
+test shipment.find-scan/no-match {
+    let item = .shipment.new(
+        id = ShipmentId.new("shipment-1"),
+        label = "Box",
+        scans = list.singleton<Scan>(.scan.new(reference = "scan-1", status = "received")));
+    match shipment.find-scan(item, "missing") {
+        some selected => { false }
+        none => { true }
+    }
+    => true
+}
+
+test shipment.find-scan/empty-shipment {
+    let item = .shipment.new(
+        id = ShipmentId.new("shipment-empty"),
+        label = "Empty parcel",
+        scans = list.empty<Scan>());
+    match shipment.find-scan(item, "scan-1") {
+        some selected => { false }
+        none => { true }
+    }
+    => true
+}
+
+test shipment.find-scan/returns-first-match {
+    let first = .scan.new(reference = "scan-1", status = "received");
+    let later = .scan.new(reference = "scan-1", status = "delivered");
+    let item = .shipment.new(
+        id = ShipmentId.new("shipment-1"),
+        label = "Box",
+        scans = list.append(list.singleton<Scan>(first), later));
+    match shipment.find-scan(item, "scan-1") {
+        some selected => { equals(selected, first) }
+        none => { false }
+    }
+    => true
+}
+
+example shipment.find-scan/first-reference {
+    let item = .shipment.new(
+        id = ShipmentId.new("shipment-example"),
+        label = "Sample parcel",
+        scans = list.singleton<Scan>(.scan.new(reference = "carrier-001", status = "received")));
+    match shipment.find-scan(item, "carrier-001") {
+        some selected => { equals(selected.reference, "carrier-001") }
+        none => { false }
+    }
+    => true
+}

@@ -1,0 +1,605 @@
+type ShipmentId : String { }
+
+type TrackingReference : String { }
+
+enum ScanError {
+    case unknown-shipment
+    case invalid-status
+}
+
+record Scan {
+    field reference: TrackingReference
+    field status: String
+}
+
+record Shipment {
+    field id: ShipmentId
+    field label: String
+    field scans: List<Scan>
+}
+
+record Store {
+    field shipments: List<Shipment>
+    field audit: String
+    field generation: Int
+}
+
+record ScanInput {
+    field shipment-id: ShipmentId
+    field reference: TrackingReference
+    field status: String
+}
+
+record ShipmentScanLookup {
+    field target: TrackingReference
+    field found: Option<Scan>
+}
+
+record StoreShipmentLookup {
+    field target-id: ShipmentId
+    field found: Option<Shipment>
+}
+
+record ShipmentReplacement {
+    field target-id: ShipmentId
+    field replacement: Shipment
+    field replaced: Bool
+    field output: List<Shipment>
+}
+
+record BatchState {
+    field outcome: Result<Store, ScanError>
+}
+
+fn shipment.scan-lookup-step(state: ShipmentScanLookup, candidate: Scan) -> ShipmentScanLookup {
+    effects none
+    doc "Keep the first scan whose reference exactly matches the lookup text."
+
+    match state.found {
+        some existing => { state }
+        none => {
+            if equals(candidate.reference, state.target) {
+                shipmentScanLookup.new(
+                    target = state.target,
+                    found = option.some<Scan>(candidate))
+            } else {
+                state
+            }
+        }
+    }
+}
+
+fn store.shipment-lookup-step(state: StoreShipmentLookup, candidate: Shipment) -> StoreShipmentLookup {
+    effects none
+    doc "Keep the first shipment whose ID matches the lookup key."
+
+    match state.found {
+        some existing => { state }
+        none => {
+            if equals(candidate.id, state.target-id) {
+                storeShipmentLookup.new(
+                    target-id = state.target-id,
+                    found = option.some<Shipment>(candidate))
+            } else {
+                state
+            }
+        }
+    }
+}
+
+fn store.shipment(id: ShipmentId, store: Store) -> Option<Shipment> {
+    effects none
+    doc "Find the first shipment with this ID, preserving shipment order."
+
+    let initial = storeShipmentLookup.new(target-id = id, found = option.none<Shipment>());
+    store.shipments.fold(initial, .store.shipment-lookup-step).found
+}
+
+fn store.shipment-replacement-step(state: ShipmentReplacement, candidate: Shipment) -> ShipmentReplacement {
+    effects none
+    doc "Copy shipments in order while replacing the shipment with the target ID."
+
+    if state.replaced {
+        shipmentReplacement.new(
+            target-id = state.target-id,
+            replacement = state.replacement,
+            replaced = true,
+            output = list.append(state.output, candidate))
+    } else {
+        if equals(candidate.id, state.target-id) {
+            shipmentReplacement.new(
+                target-id = state.target-id,
+                replacement = state.replacement,
+                replaced = true,
+                output = list.append(state.output, state.replacement))
+        } else {
+            shipmentReplacement.new(
+                target-id = state.target-id,
+                replacement = state.replacement,
+                replaced = false,
+                output = list.append(state.output, candidate))
+        }
+    }
+}
+
+fn store.with-shipment(store: Store, replacement: Shipment) -> Store {
+    effects none
+    doc "Replace one shipment while preserving the remaining Store fields and order."
+
+    let initial = shipmentReplacement.new(
+        target-id = replacement.id,
+        replacement = replacement,
+        replaced = false,
+        output = list.empty<Shipment>());
+    .store.new(
+        shipments = store.shipments.fold(initial, .store.shipment-replacement-step).output,
+        audit = store.audit,
+        generation = store.generation)
+}
+
+fn shipment.ingest-rule(shipment: Shipment, input: ScanInput) -> Result<Shipment, ScanError> {
+    effects none
+    doc "Append the first scan after validating status; an existing exact reference is idempotent."
+
+    let status-ok = bool.or(
+        equals(input.status, "received"),
+        bool.or(equals(input.status, "in-transit"), equals(input.status, "delivered")));
+    if status-ok {
+        match .shipment.find-scan(shipment, input.reference) {
+            some existing => { result.ok<Shipment, ScanError>(shipment) }
+            none => {
+                let scan = .scan.new(reference = input.reference, status = input.status);
+                let updated = .shipment.new(
+                    id = shipment.id,
+                    label = shipment.label,
+                    scans = list.append(shipment.scans, scan));
+                result.ok<Shipment, ScanError>(updated)
+            }
+        }
+    } else {
+        result.error<Shipment, ScanError>(ScanError.invalid-status())
+    }
+}
+
+fn shipment.ingest(store: Store, input: ScanInput) -> Result<Store, ScanError> {
+    effects none
+    doc "Ingest one scan after checking shipment existence and status; this control deduplicates store-wide."
+
+    match .store.shipment(input.shipment-id, store) {
+        some selected => {
+            match shipment.ingest-rule(selected, input) {
+                error problem => { result.error<Store, ScanError>(problem) }
+                ok updated-shipment => {
+                    match .store.find-scan(store, input.reference) {
+                        some existing => { result.ok<Store, ScanError>(store) }
+                        none => {
+                            let updated-store = .store.with-shipment(store, updated-shipment);
+                            result.ok<Store, ScanError>(updated-store)
+                        }
+                    }
+                }
+            }
+        }
+        none => {
+            result.error<Store, ScanError>(ScanError.unknown-shipment())
+        }
+    }
+}
+
+fn shipment.batch-step(state: BatchState, input: ScanInput) -> BatchState {
+    effects none
+    doc "Apply a scan to the running Store while retaining the first batch error."
+
+    match state.outcome {
+        error problem => { state }
+        ok current => { batchState.new(outcome = shipment.ingest(current, input)) }
+    }
+}
+
+fn shipment.ingest-batch(store: Store, events: List<ScanInput>) -> Result<Store, ScanError> {
+    effects none
+    doc "Ingest scans in order and return the first error without changing the input Store."
+
+    let initial = batchState.new(outcome = result.ok<Store, ScanError>(store));
+    events.fold(initial, .shipment.batch-step).outcome
+}
+
+test store.shipment-lookup-step/no-match {
+    let target-id = ShipmentId.new("shipment-1");
+    let state = storeShipmentLookup.new(target-id = target-id, found = option.none<Shipment>());
+    let other = .shipment.new(id = ShipmentId.new("shipment-2"), label = "Other", scans = list.empty<Scan>());
+    match .store.shipment-lookup-step(state, other).found {
+        some selected => { false }
+        none => { true }
+    }
+    => true
+}
+
+test store.shipment-lookup-step/match {
+    let target-id = ShipmentId.new("shipment-1");
+    let expected = .shipment.new(id = target-id, label = "Box", scans = list.empty<Scan>());
+    let state = storeShipmentLookup.new(target-id = target-id, found = option.none<Shipment>());
+    match .store.shipment-lookup-step(state, expected).found {
+        some selected => { equals(selected, expected) }
+        none => { false }
+    }
+    => true
+}
+
+test store.shipment-lookup-step/keeps-first-match {
+    let target-id = ShipmentId.new("shipment-1");
+    let first = .shipment.new(id = target-id, label = "First", scans = list.empty<Scan>());
+    let later = .shipment.new(id = target-id, label = "Later", scans = list.empty<Scan>());
+    let state = storeShipmentLookup.new(target-id = target-id, found = option.some<Shipment>(first));
+    match .store.shipment-lookup-step(state, later).found {
+        some selected => { equals(selected, first) }
+        none => { false }
+    }
+    => true
+}
+
+test store.shipment/no-match {
+    let current = .store.new(shipments = list.empty<Shipment>(), audit = "keep", generation = 1);
+    match .store.shipment(ShipmentId.new("missing"), current) {
+        some selected => { false }
+        none => { true }
+    }
+    => true
+}
+
+test store.shipment/returns-first-match {
+    let key = ShipmentId.new("shipment-1");
+    let first = .shipment.new(id = key, label = "First", scans = list.empty<Scan>());
+    let later = .shipment.new(id = key, label = "Later", scans = list.empty<Scan>());
+    let current = .store.new(shipments = list.append(list.singleton<Shipment>(first), later), audit = "keep", generation = 1);
+    match .store.shipment(key, current) {
+        some selected => { equals(selected, first) }
+        none => { false }
+    }
+    => true
+}
+
+test store.shipment-replacement-step/replaces-only-the-target {
+    let target-id = ShipmentId.new("shipment-1");
+    let replacement = .shipment.new(id = target-id, label = "Updated", scans = list.empty<Scan>());
+    let other = .shipment.new(id = ShipmentId.new("shipment-2"), label = "Other", scans = list.empty<Scan>());
+    let later-duplicate = .shipment.new(id = target-id, label = "Later duplicate", scans = list.empty<Scan>());
+    let state = shipmentReplacement.new(
+        target-id = target-id,
+        replacement = replacement,
+        replaced = false,
+        output = list.empty<Shipment>());
+    let after-other = .store.shipment-replacement-step(state, other);
+    let after-first-target = .store.shipment-replacement-step(after-other, replacement);
+    let after-duplicate = .store.shipment-replacement-step(after-first-target, later-duplicate);
+    equals(
+        after-duplicate.output,
+        list.append(list.append(list.singleton<Shipment>(other), replacement), later-duplicate))
+    => true
+}
+
+test store.with-shipment/preserves-store-fields-and-order {
+    let target-id = ShipmentId.new("shipment-1");
+    let first = .shipment.new(id = target-id, label = "Old", scans = list.empty<Scan>());
+    let other = .shipment.new(id = ShipmentId.new("shipment-2"), label = "Other", scans = list.empty<Scan>());
+    let current = .store.new(
+        shipments = list.append(list.singleton<Shipment>(first), other),
+        audit = "sentinel",
+        generation = 19);
+    let replacement = .shipment.new(id = target-id, label = "New", scans = list.empty<Scan>());
+    let expected = .store.new(
+        shipments = list.append(list.singleton<Shipment>(replacement), other),
+        audit = "sentinel",
+        generation = 19);
+    equals(.store.with-shipment(current, replacement), expected)
+    => true
+}
+
+test shipment.batch-step/applies-successful-input {
+    let target-id = ShipmentId.new("shipment-1");
+    let item = .shipment.new(id = target-id, label = "Box", scans = list.empty<Scan>());
+    let current = .store.new(shipments = list.singleton<Shipment>(item), audit = "keep", generation = 1);
+    let state = batchState.new(outcome = result.ok<Store, ScanError>(current));
+    let next = .shipment.batch-step(state, scanInput.new(shipment-id = target-id, reference = TrackingReference.new("scan-1"), status = "received"));
+    match next.outcome {
+        error problem => { false }
+        ok updated => { equals(updated.shipments.count(), 1) }
+    }
+    => true
+}
+
+test shipment.batch-step/keeps-first-error {
+    let state = batchState.new(outcome = result.error<Store, ScanError>(ScanError.invalid-status()));
+    let next = .shipment.batch-step(state, scanInput.new(
+        shipment-id = ShipmentId.new("missing"), reference = TrackingReference.new("later"), status = "received"));
+    equals(next.outcome, state.outcome)
+    => true
+}
+
+test shipment.ingest-rule/appends-first-scan {
+    let key = ShipmentId.new("shipment-1");
+    let current = .shipment.new(id = key, label = "Box", scans = list.empty<Scan>());
+    let input = scanInput.new(shipment-id = key, reference = TrackingReference.new("scan-1"), status = "received");
+    match shipment.ingest-rule(current, input) {
+        error problem => { false }
+        ok updated => {
+            bool.and(
+                equals(updated.scans.count(), 1),
+                bool.and(
+                    equals(updated.scans, list.singleton<Scan>(.scan.new(reference = TrackingReference.new("scan-1"), status = "received"))),
+                    equals(updated.label, "Box")))
+        }
+    }
+    => true
+}
+
+test shipment.scan-lookup-step/no-match {
+    let state = shipmentScanLookup.new(target = TrackingReference.new("scan-1"), found = option.none<Scan>());
+    let other = .scan.new(reference = TrackingReference.new("scan-2"), status = "received");
+    match shipment.scan-lookup-step(state, other).found {
+        some selected => { false }
+        none => { true }
+    }
+    => true
+}
+
+test shipment.scan-lookup-step/match {
+    let state = shipmentScanLookup.new(target = TrackingReference.new("scan-1"), found = option.none<Scan>());
+    let expected = .scan.new(reference = TrackingReference.new("scan-1"), status = "received");
+    match shipment.scan-lookup-step(state, expected).found {
+        some selected => { equals(selected, expected) }
+        none => { false }
+    }
+    => true
+}
+
+test shipment.scan-lookup-step/keeps-first-match {
+    let first = .scan.new(reference = TrackingReference.new("scan-1"), status = "received");
+    let later = .scan.new(reference = TrackingReference.new("scan-1"), status = "delivered");
+    let state = shipmentScanLookup.new(target = TrackingReference.new("scan-1"), found = option.some<Scan>(first));
+    match shipment.scan-lookup-step(state, later).found {
+        some selected => { equals(selected, first) }
+        none => { false }
+    }
+    => true
+}
+
+test shipment.ingest/unknown-shipment-precedes-invalid-status {
+    let current = .store.new(shipments = list.empty<Shipment>(), audit = "keep", generation = 7);
+    let input = scanInput.new(
+        shipment-id = ShipmentId.new("missing"), reference = TrackingReference.new("scan-1"), status = "broken");
+    match shipment.ingest(current, input) {
+        ok updated => { false }
+        error problem => { equals(problem, ScanError.unknown-shipment()) }
+    }
+    => true
+}
+
+test shipment.ingest/invalid-status-for-known-shipment {
+    let key = ShipmentId.new("shipment-1");
+    let item = .shipment.new(id = key, label = "Box", scans = list.empty<Scan>());
+    let current = .store.new(shipments = list.singleton<Shipment>(item), audit = "keep", generation = 7);
+    let input = scanInput.new(shipment-id = key, reference = TrackingReference.new("scan-1"), status = "broken");
+    match shipment.ingest(current, input) {
+        ok updated => { false }
+        error problem => { equals(problem, ScanError.invalid-status()) }
+    }
+    => true
+}
+
+test shipment.ingest/preserves-unrelated-state {
+    let first-id = ShipmentId.new("shipment-1");
+    let second-id = ShipmentId.new("shipment-2");
+    let first = .shipment.new(id = first-id, label = "Box", scans = list.empty<Scan>());
+    let second = .shipment.new(id = second-id, label = "Envelope", scans = list.empty<Scan>());
+    let current = .store.new(
+        shipments = list.append(list.singleton<Shipment>(first), second),
+        audit = "sentinel-audit",
+        generation = 19);
+    let input = scanInput.new(shipment-id = first-id, reference = TrackingReference.new("scan-1"), status = "received");
+    let expected-first = .shipment.new(
+        id = first-id,
+        label = "Box",
+        scans = list.singleton<Scan>(.scan.new(reference = TrackingReference.new("scan-1"), status = "received")));
+    let expected = .store.new(
+        shipments = list.append(list.singleton<Shipment>(expected-first), second),
+        audit = "sentinel-audit",
+        generation = 19);
+    equals(shipment.ingest(current, input), result.ok<Store, ScanError>(expected))
+    => true
+}
+
+test shipment.ingest-batch/empty-is-identity {
+    let current = .store.new(shipments = list.empty<Shipment>(), audit = "sentinel", generation = 3);
+    equals(
+        shipment.ingest-batch(current, list.empty<ScanInput>()),
+        result.ok<Store, ScanError>(current))
+    => true
+}
+
+test shipment.ingest-batch/preserves-order-and-stops-at-first-error {
+    let first-id = ShipmentId.new("shipment-1");
+    let second-id = ShipmentId.new("shipment-2");
+    let first = .shipment.new(id = first-id, label = "Box", scans = list.empty<Scan>());
+    let second = .shipment.new(id = second-id, label = "Envelope", scans = list.empty<Scan>());
+    let current = .store.new(
+        shipments = list.append(list.singleton<Shipment>(first), second),
+        audit = "sentinel",
+        generation = 3);
+    let events = list.append(
+        list.append(
+            list.singleton<ScanInput>(scanInput.new(shipment-id = second-id, reference = TrackingReference.new("scan-b"), status = "received")),
+            scanInput.new(shipment-id = first-id, reference = TrackingReference.new("scan-bad"), status = "invalid")),
+        scanInput.new(shipment-id = first-id, reference = TrackingReference.new("scan-later"), status = "delivered"));
+    match shipment.ingest-batch(current, events) {
+        ok updated => { false }
+        error problem => { equals(problem, ScanError.invalid-status()) }
+    }
+    => true
+}
+
+example shipment.ingest/append-one-scan {
+    let key = ShipmentId.new("shipment-example");
+    let item = .shipment.new(id = key, label = "Sample parcel", scans = list.empty<Scan>());
+    let current = .store.new(shipments = list.singleton<Shipment>(item), audit = "example", generation = 1);
+    let input = scanInput.new(shipment-id = key, reference = TrackingReference.new("carrier-001"), status = "received");
+    match shipment.ingest(current, input) {
+        ok updated => { equals(updated.shipments.count(), 1) }
+        error problem => { false }
+    }
+    => true
+}
+
+example shipment.ingest-batch/ordered-events {
+    let key = ShipmentId.new("shipment-example");
+    let item = .shipment.new(id = key, label = "Sample parcel", scans = list.empty<Scan>());
+    let current = .store.new(shipments = list.singleton<Shipment>(item), audit = "example", generation = 1);
+    let events = list.append(
+        list.singleton<ScanInput>(scanInput.new(shipment-id = key, reference = TrackingReference.new("carrier-001"), status = "received")),
+        scanInput.new(shipment-id = key, reference = TrackingReference.new("carrier-002"), status = "delivered"));
+    match shipment.ingest-batch(current, events) {
+        ok updated => { equals(updated.shipments.count(), 1) }
+        error problem => { false }
+    }
+    => true
+}
+
+fn shipment.find-scan(shipment: Shipment, reference: TrackingReference) -> Option<Scan> {
+    effects none
+    doc "Return the first scan with exactly matching reference text, if present."
+
+    let initial = shipmentScanLookup.new(target = reference, found = option.none<Scan>());
+    shipment.scans.fold(initial, .shipment.scan-lookup-step).found
+}
+
+test shipment.find-scan/no-match {
+    let item = .shipment.new(
+        id = ShipmentId.new("shipment-1"),
+        label = "Box",
+        scans = list.singleton<Scan>(.scan.new(reference = TrackingReference.new("scan-1"), status = "received")));
+    match shipment.find-scan(item, TrackingReference.new("missing")) {
+        some selected => { false }
+        none => { true }
+    }
+    => true
+}
+
+test shipment.find-scan/empty-shipment {
+    let item = .shipment.new(
+        id = ShipmentId.new("shipment-empty"),
+        label = "Empty parcel",
+        scans = list.empty<Scan>());
+    match shipment.find-scan(item, TrackingReference.new("scan-1")) {
+        some selected => { false }
+        none => { true }
+    }
+    => true
+}
+
+test shipment.find-scan/returns-first-match {
+    let first = .scan.new(reference = TrackingReference.new("scan-1"), status = "received");
+    let later = .scan.new(reference = TrackingReference.new("scan-1"), status = "delivered");
+    let item = .shipment.new(
+        id = ShipmentId.new("shipment-1"),
+        label = "Box",
+        scans = list.append(list.singleton<Scan>(first), later));
+    match shipment.find-scan(item, TrackingReference.new("scan-1")) {
+        some selected => { equals(selected, first) }
+        none => { false }
+    }
+    => true
+}
+
+example shipment.find-scan/first-reference {
+    let item = .shipment.new(
+        id = ShipmentId.new("shipment-example"),
+        label = "Sample parcel",
+        scans = list.singleton<Scan>(.scan.new(reference = TrackingReference.new("carrier-001"), status = "received")));
+    match shipment.find-scan(item, TrackingReference.new("carrier-001")) {
+        some selected => { equals(selected.reference, TrackingReference.new("carrier-001")) }
+        none => { false }
+    }
+    => true
+}
+
+fn store.scan-lookup-step(state: ShipmentScanLookup, candidate: Shipment) -> ShipmentScanLookup {
+    effects none
+    doc "Fold each shipment's scans into the store-wide exact-reference lookup."
+
+    candidate.scans.fold(state, .shipment.scan-lookup-step)
+}
+
+fn store.find-scan(store: Store, reference: TrackingReference) -> Option<Scan> {
+    effects none
+    doc "Return the first exact-reference match anywhere in the Store."
+
+    let initial = shipmentScanLookup.new(target = reference, found = option.none<Scan>());
+    store.shipments.fold(initial, .store.scan-lookup-step).found
+}
+
+test store.scan-lookup-step/folds-shipment-scans {
+    let reference = TrackingReference.new("scan-1");
+    let expected = .scan.new(reference = reference, status = "received");
+    let item = .shipment.new(
+        id = ShipmentId.new("shipment-1"),
+        label = "Box",
+        scans = list.singleton<Scan>(expected));
+    let state = shipmentScanLookup.new(target = reference, found = option.none<Scan>());
+    match store.scan-lookup-step(state, item).found {
+        some selected => { equals(selected, expected) }
+        none => { false }
+    }
+    => true
+}
+
+test store.find-scan/returns-first-store-match {
+    let reference = TrackingReference.new("scan-1");
+    let first = .scan.new(reference = reference, status = "received");
+    let later = .scan.new(reference = reference, status = "delivered");
+    let first-shipment = .shipment.new(
+        id = ShipmentId.new("shipment-1"), label = "First",
+        scans = list.singleton<Scan>(first));
+    let later-shipment = .shipment.new(
+        id = ShipmentId.new("shipment-2"), label = "Later",
+        scans = list.singleton<Scan>(later));
+    let current = .store.new(
+        shipments = list.append(list.singleton<Shipment>(first-shipment), later-shipment),
+        audit = "keep", generation = 1);
+    equals(store.find-scan(current, reference), option.some<Scan>(first))
+    => true
+}
+
+test shipment.ingest/replay-keeps-first-scan {
+    let key = ShipmentId.new("shipment-1");
+    let first = .scan.new(reference = TrackingReference.new("scan-1"), status = "received");
+    let item = .shipment.new(id = key, label = "Box", scans = list.singleton<Scan>(first));
+    let current = .store.new(shipments = list.singleton<Shipment>(item), audit = "sentinel", generation = 11);
+    let input = scanInput.new(shipment-id = key, reference = TrackingReference.new("scan-1"), status = "delivered");
+    equals(shipment.ingest(current, input), result.ok<Store, ScanError>(current))
+    => true
+}
+
+test shipment.ingest/invalid-status-on-replay-still-errors {
+    let key = ShipmentId.new("shipment-1");
+    let existing = .scan.new(reference = TrackingReference.new("scan-1"), status = "received");
+    let item = .shipment.new(id = key, label = "Box", scans = list.singleton<Scan>(existing));
+    let current = .store.new(shipments = list.singleton<Shipment>(item), audit = "sentinel", generation = 13);
+    let input = scanInput.new(shipment-id = key, reference = TrackingReference.new("scan-1"), status = "invalid");
+    match shipment.ingest(current, input) {
+        ok updated => { false }
+        error problem => { equals(problem, ScanError.invalid-status()) }
+    }
+    => true
+}
+
+test shipment.ingest/same-reference-on-another-shipment-is-globally-deduplicated {
+    let first-id = ShipmentId.new("shipment-1");
+    let second-id = ShipmentId.new("shipment-2");
+    let first-scan = .scan.new(reference = TrackingReference.new("scan-1"), status = "received");
+    let first = .shipment.new(id = first-id, label = "Box", scans = list.singleton<Scan>(first-scan));
+    let second = .shipment.new(id = second-id, label = "Envelope", scans = list.empty<Scan>());
+    let current = .store.new(shipments = list.append(list.singleton<Shipment>(first), second), audit = "sentinel", generation = 12);
+    let input = scanInput.new(shipment-id = second-id, reference = TrackingReference.new("scan-1"), status = "delivered");
+    equals(shipment.ingest(current, input), result.ok<Store, ScanError>(current))
+    => true
+}
