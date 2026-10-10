@@ -35,13 +35,23 @@ is complete: all three conditions repaired the defect, with no reliability
 superiority established. Native conformance and arena selection should
 not wait for every optional feature or proof of a comparative advantage.
 
-## 1. Finish the bounded vocabulary-retention review
+## 1. Validate reliability beyond easy composition
+
+The [current efficacy checkpoint](../reports/177-reliability-and-vocabulary-checkpoint.md)
+reviews evidence through report 176. Discovery and reuse are demonstrated on
+bounded tasks; a comparative reliability advantage remains unproven. Passing
+library checks have coexisted with lost assertions and changed examples. Next,
+use existing brokers for a predeclared repeated defect-repair and shared-rule
+maintenance sequence, comparing retained, reset-rich and conventional conditions.
+Freeze behavioral and collateral-preservation criteria separately, including
+allowed fixture changes. Avoid more easy composition variants or new harness
+infrastructure. Native LLVM/arena conformance remains the secondary track.
 
 [Report 149](../reports/149-validated-window-reuse.md) and
 [report 150](../reports/150-shared-rule-maintenance.md) complete the validated
 billing composition/maintenance sequence. Both environments reuse the API and
 pass the respective 18 and 48 hidden cases; no language reliability lead is
-established. The [current efficacy checkpoint](../reports/151-efficacy-checkpoint.md)
+established. The [earlier efficacy checkpoint](../reports/151-efficacy-checkpoint.md)
 closes this microtrial sequence. Next, address the demonstrated empty-occupancy
 domain gap using validated nonempty periods and explicit absence, while retaining
 independent behavior checks and library gates. Resume native conformance as a

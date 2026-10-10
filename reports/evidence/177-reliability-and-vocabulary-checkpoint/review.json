@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "recordedUtc": "2026-10-10T15:12:33.100949Z",
+  "sourceRevision": "926e039c0d84901b044ac580f7e6fce05c89c6f1",
+  "inputPins": {
+    "schemaVersion": 1,
+    "recordedUtc": "2026-10-10T11:08:44.107443-04:00",
+    "sourceRevision": "926e039c0d84901b044ac580f7e6fce05c89c6f1",
+    "files": [
+      {
+        "path": "docs/PRD.md",
+        "sha256": "495f5d3fba2c5e202e659e2fe2a6c3cef28044c6ed8fb7f4a50a5bc713c2ae5e"
+      },
+      {
+        "path": "docs/ROADMAP.md",
+        "sha256": "74b36342ca37caf1af85e3a2047e33d546b99762412e947bc7e3c68af3ebf273"
+      },
+      {
+        "path": "reports/151-efficacy-checkpoint.md",
+        "sha256": "6368f7beac970063b8045649e2f0bae1f92d207b8ff8ba0f9c0b0de5f180d87c"
+      },
+      {
+        "path": "reports/149-validated-window-reuse.md",
+        "sha256": "98a1f3cb231734125b5bb098160d77de936811c703d0d022845cfc1f7b9c4f57"
+      },
+      {
+        "path": "reports/150-shared-rule-maintenance.md",
+        "sha256": "9de1eb185ec53da4d69db85d73ca3e701779a2b683a791c85e6da86eeed1ff1e"
+      },
+      {
+        "path": "reports/163-atomic-subscription-handoff.md",
+        "sha256": "6ec98662b2699217622adcf18eeb39a5e389e30a886fb43569185a86fdab00ef"
+      },
+      {
+        "path": "reports/166-handoff-signature-maintenance-agent-pair.md",
+        "sha256": "c9c17a648749b76cba1f2f1a452602ce59c1aa4dba09e029062d7b7c0ee10b65"
+      },
+      {
+        "path": "reports/168-test-source-inspection-agent-probe.md",
+        "sha256": "6c999901520f8cbaf79839f59181c23e22b58e6f3adc42d4254af686a660782e"
+      },
+      {
+        "path": "reports/171-preview-vocabulary-retention.md",
+        "sha256": "7fea3708d5ce634f456157b11bca0841b8728e49835e513ec226011624732b32"
+      },
+      {
+        "path": "reports/173-handoff-window-maintenance.md",
+        "sha256": "56f716bfa414f854ce88aa56105d28b7d75a2ea9b71eef7a55423e4cbc5b155c"
+      },
+      {
+        "path": "reports/175-email-fifo-batch.md",
+        "sha256": "5ad67c2c75c4173d6468a1fa0781e40bfce9e31a09564a2fbb5c166c66d23c5f"
+      },
+      {
+        "path": "reports/176-retained-attachment-source-versions.md",
+        "sha256": "dc6f5bc277c6b7dd5e2f3b2523f081565015f28468544c1297a370866673547f"
+      },
+      {
+        "path": "reports/140-matched-mailbox-load.md",
+        "sha256": "6dcfd71ded408647194b3178a054a3147ab55b2df0c81561537a9f3ea6b8ebc3"
+      },
+      {
+        "path": "reports/174-native-refined-string.md",
+        "sha256": "250f90cc56fccdfe374e8553adc7be1c1c96c66663913e4ec7df066347326b43"
+      }
+    ]
+  },
+  "independentAudits": [
+    {
+      "reasoning": "max",
+      "findings": "Both environments passed bounded acceptance and reused APIs. No causal reliability, compact-core or controlled-context claim established.",
+      "method": "Read-only reports and representative archived acceptance JSON; five outer archive hashes checked",
+      "model": "gpt-6-luna",
+      "scope": "PRD, checkpoint 151, reports 149, 150, 163"
+    },
+    {
+      "reasoning": "max",
+      "findings": "Bounded feasibility and reuse; varied preservation independent of library qualification. Engineering remediation is not new agent efficacy evidence.",
+      "method": "Read-only archived scores, traces, preservation reviews and reload results; outer archive hashes including 175 supplement checked",
+      "model": "gpt-6-luna",
+      "scope": "Reports 166, 168, 171, 173, 175, 176"
+    }
+  ],
+  "validation": {
+    "runtimeTests": "Not rerun: documentation only; report 176 remains last full runtime gate",
+    "diffCheck": "passed",
+    "localMarkdownLinksChecked": 131,
+    "unchangedPinnedInputsVerified": 12,
+    "intentionallyEditedPinnedInputs": [
+      "docs/ROADMAP.md",
+      "reports/151-efficacy-checkpoint.md"
+    ]
+  },
+  "finalReview": "Completed by recent-evidence auditor: counts and claims match audited evidence; wording narrowed to observed discovery and wrapper implementation surface; retention treatment definition made explicit."
+}

@@ -1,9 +1,12 @@
 # 151 — Efficacy checkpoint: typed vocabulary and reliable maintenance
 
 Status: initial synthesis through report 150, 2026-10-09; subsequent evidence
-updated through report 168, 2026-10-10. This assesses the prototype; it does not
+updated through report 173, 2026-10-10. This assesses the prototype; it does not
 establish PRD completion or comparative superiority. Later sections preserve
 the original trials and their frozen outcomes.
+
+See [checkpoint 177](177-reliability-and-vocabulary-checkpoint.md) for the current
+synthesis through report 176. Historical results below remain unchanged.
 
 ## What is working
 
