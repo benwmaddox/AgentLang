@@ -84,12 +84,16 @@ adjustment. All reuse the shared policy; none creates a new domain helper.
 Different seed suites and supplied patch guards prevent a causal reliability
 interpretation. Close this boundary task without a comparative advantage claim.
 
-The next efficacy question should stress an established abstraction under a
-materially different stateful change, including partial failure and preservation
-of prior evidence. Use the existing harness, expose equivalent source/tests,
-calibrate independent acceptance controls and separate behavior, collateral
-changes, test quality and reuse. Do not repeat this same easy boundary task or
-add new benchmark infrastructure before a concrete comparison requires it.
+[Report 175](../reports/175-email-fifo-batch.md) completes that stateful partial-
+failure trial: both fresh agents pass six independent FIFO batching cases and
+reuse an existing single-message operation. AgentLang qualifies its library
+closure and passes 200 saved tests, but rewrites a helper and changes an
+inherited example's observable output. F# retains original production functions
+and assertions. No comparative reliability advantage is established. Keep the
+raw preservation failures separate from behavior and coverage. Address observed
+qualified-call and attachment conversion friction; make inherited example output
+an explicit preservation contract before another distinct efficacy task. Close
+this batch task without more easy variants or new harness infrastructure.
 
 [Report 164](../reports/164-result-test-guidance.md) completes the returned-Result
 help improvement with executable examples that qualify as library vocabulary.
