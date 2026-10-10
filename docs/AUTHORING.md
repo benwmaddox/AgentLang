@@ -135,6 +135,35 @@ and is not the command for revising an uncommitted candidate. Temporary words
 are task-scoped vocabulary; local bindings are values inside one invocation.
 Promotion controls lifetime separately from library quality.
 
+For a coordinated signature change, stage the complete replacement functions in
+one multi-declaration Flow document:
+
+```json
+{"op":"define","frontend":"flow","syntaxVersion":2,"source":"<complete replacement functions and inline cases>","replace":true,"expectedRevisions":{"subscription.handoff":1,"caller.one":1,"caller.two":1}}
+```
+
+The map must name exactly the functions declared in the source and use their
+currently observed revisions. This replacement batch accepts existing persistent
+Flow functions only. It preserves identities and library maturity, advances each
+revision, and checks the complete proposed dictionary before staging any change.
+Types, new functions, temporary definitions, attachment removals and external
+attachment arrays are outside this operation. Use the existing scalar
+`expectedRevision` request for a single-function edit.
+
+Inline standalone tests/examples replace matching cases under their owner's
+revision check; omitted cases remain and must still type check. Existing
+`test-file` context is retained. A standalone case cannot replace a wrapped case,
+and new wrappers are outside this initial batch operation. If an omitted test,
+example or caller still uses the old signature, the entire request fails.
+
+Run the affected tests, then `replace-word` on the changed callee. Publication
+includes staged affected callers and requires their tests and library
+qualification before publishing together. Ordinary `commit` aliases apply the
+same caller selection when they select a persistent replacement. Unrelated batch
+members outside the selected dependency/caller closure remain staged. Staging
+does not persist the batch, and a failed publication leaves the durable project
+unchanged. Task abort retains its normal rollback behavior.
+
 These are JSONL protocol operations. The six-tool model harness currently has
 a smaller mutation adapter and does not expose the full replacement protocol.
 Only use operations supplied by the active host; consult help for supported

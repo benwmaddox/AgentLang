@@ -3339,7 +3339,11 @@ module Runtime =
                     | Some owner when candidateTypes.Contains owner -> Set.empty, typeClosure [ owner ] Set.empty
                     | _ -> error "COMMIT_NOT_CANDIDATE" $"'{name}' is not a candidate word or type." (Some name) None [] []
 
-            if includeReplacementCallers then
+            let includeStagedReplacementCallers () =
+                includeReplacementCallers
+                || (data.Replacements |> Map.exists (fun name _ -> selectedWords.Contains name))
+
+            if includeStagedReplacementCallers () then
                 let mutable callerSearch = selectedWords
                 let mutable addedCallers = true
                 while addedCallers do
@@ -3347,7 +3351,14 @@ module Runtime =
                         data.Replacements
                         |> Map.toSeq
                         |> Seq.choose (fun (name, backup) ->
-                            if candidateWords.ContainsKey name && not (selectedWords.Contains name) && backup.Word.Status = Persistent && not (Set.isEmpty (Set.intersect callerSearch (Compiler.dependencies backup.Word.Definition.Body))) then Some name
+                            let priorDependsOn = not (Set.isEmpty (Set.intersect callerSearch (Compiler.dependencies backup.Word.Definition.Body)))
+                            let stagedDependsOn =
+                                candidateWords.TryFind name
+                                |> Option.exists (fun candidate -> not (Set.isEmpty (Set.intersect callerSearch (Compiler.dependencies candidate.Definition.Body))))
+                            if candidateWords.ContainsKey name
+                               && not (selectedWords.Contains name)
+                               && backup.Word.Status = Persistent
+                               && (priorDependsOn || stagedDependsOn) then Some name
                             else None)
                         |> Set.ofSeq
                     if Set.isEmpty stagedCallers then addedCallers <- false
@@ -3383,15 +3394,19 @@ module Runtime =
                     |> Set.ofList
                 let metadataWords = wordClosure (Set.toList metadataDependencies) Set.empty
                 let replacementCallerWords =
-                    if includeReplacementCallers then
+                    if includeStagedReplacementCallers () then
                         let callerRoots =
                             data.Replacements
                             |> Map.toSeq
                             |> Seq.choose (fun (name, backup) ->
+                                let priorDependsOn = not (Set.isEmpty (Set.intersect selectedWords (Compiler.dependencies backup.Word.Definition.Body)))
+                                let stagedDependsOn =
+                                    candidateWords.TryFind name
+                                    |> Option.exists (fun candidate -> not (Set.isEmpty (Set.intersect selectedWords (Compiler.dependencies candidate.Definition.Body))))
                                 if candidateWords.ContainsKey name
                                    && not (selectedWords.Contains name)
                                    && backup.Word.Status = Persistent
-                                   && not (Set.isEmpty (Set.intersect selectedWords (Compiler.dependencies backup.Word.Definition.Body))) then Some name
+                                   && (priorDependsOn || stagedDependsOn) then Some name
                                 else None)
                             |> Set.ofSeq
                         wordClosure (Set.toList callerRoots) Set.empty
@@ -3636,6 +3651,22 @@ module Runtime =
                 else flowArgumentError "expectedRevision" "a nonnegative integer" (flowJsonKind value)
             | value -> flowArgumentError "expectedRevision" "a nonnegative integer" (flowJsonKind value)
 
+        let flowExpectedRevisions (arguments: JsonObject) =
+            if not (arguments.ContainsKey "expectedRevisions") then
+                flowArgumentError "expectedRevisions" "an object mapping each replaced word to its nonnegative current revision" "missing"
+            match arguments["expectedRevisions"] with
+            | :? JsonObject as values ->
+                values
+                |> Seq.map (fun (KeyValue(name, node)) ->
+                    match node with
+                    | :? JsonValue as value ->
+                        let mutable parsed = 0
+                        if value.TryGetValue<int>(&parsed) && parsed >= 0 then name, parsed
+                        else flowArgumentError ($"expectedRevisions.{name}") "a nonnegative integer" (flowJsonKind node)
+                    | _ -> flowArgumentError ($"expectedRevisions.{name}") "a nonnegative integer" (flowJsonKind node))
+                |> Map.ofSeq
+            | value -> flowArgumentError "expectedRevisions" "an object mapping each replaced word to its nonnegative current revision" (flowJsonKind value)
+
         let flowAttachmentRemovals (arguments: JsonObject) =
             if not (arguments.ContainsKey "removeAttachments") then []
             else
@@ -3705,7 +3736,266 @@ module Runtime =
                     | _ -> ())
             | _ -> ()
 
-        let registerFlowProjectParsed (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
+        let registerFlowReplacementProjectParsed (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
+            let old = data
+            let wordNames = document.Words |> List.map (fun item -> item.Name)
+            if not (readOptionalStrictBool arguments "replace" false) then
+                error "FLOW_PROJECT_REQUEST_SHAPE" "A multi-declaration Flow replacement requires replace=true and an expectedRevisions map." None None [ "replace=true with expectedRevisions" ] []
+            if document.Words.Length < 2 then
+                error "FLOW_PROJECT_REPLACEMENT_SHAPE" "expectedRevisions is reserved for replacing at least two existing authored Flow words in one source document." None None [ "at least two word declarations" ] [ string document.Words.Length ]
+            if not document.Records.IsEmpty || not document.Scalars.IsEmpty || not document.Enums.IsEmpty then
+                error "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED" "A multiword replacement may contain only existing authored Flow words and their inline standalone cases." None None [ "existing Flow word declarations" ] [ "type declaration" ]
+            if document.SyntaxVersion <> syntaxVersion then
+                error "FLOW_VERSION_UNSUPPORTED" "Flow project syntax version does not match the selected syntaxVersion." None None [ string syntaxVersion ] [ string document.SyntaxVersion ]
+            if not document.TestFiles.IsEmpty then
+                error "FLOW_PROJECT_REPLACEMENT_WRAPPERS_UNSUPPORTED" "A multiword replacement cannot add or edit test-file wrappers; existing wrappers are retained with their owner revisions." None None [ "standalone inline tests and examples" ] [ "test-file wrapper" ]
+            if arguments.ContainsKey "expectedRevision"
+               || arguments.ContainsKey "removeAttachments"
+               || arguments.ContainsKey "tests"
+               || arguments.ContainsKey "examples"
+               || arguments.ContainsKey "temporary" then
+                error "FLOW_PROJECT_REQUEST_SHAPE" "A multiword replacement requires one exact expectedRevisions map; temporary lifecycle changes, scalar CAS, removals, and external attachments are unsupported." None None
+                    [ "replace=true, expectedRevisions, and complete Flow source with inline cases" ]
+                    ((if arguments.ContainsKey "expectedRevision" then [ "expectedRevision" ] else [])
+                     @ (if arguments.ContainsKey "removeAttachments" then [ "removeAttachments" ] else [])
+                     @ (if arguments.ContainsKey "tests" then [ "tests" ] else [])
+                     @ (if arguments.ContainsKey "examples" then [ "examples" ] else [])
+                     @ (if arguments.ContainsKey "temporary" then [ "temporary" ] else []))
+            let revisionsByName = flowExpectedRevisions arguments
+            match wordNames |> List.groupBy id |> List.tryFind (fun (_, grouped) -> grouped.Length > 1) with
+            | Some(name, _) -> error "FLOW_PROJECT_DUPLICATE_WORD" $"Word '{name}' is declared more than once in the Flow project." (Some name) None [] [ name ]
+            | None -> ()
+            if Set.ofList wordNames <> (revisionsByName |> Map.toSeq |> Seq.map fst |> Set.ofSeq) then
+                error "FLOW_PROJECT_REPLACEMENT_CAS_SHAPE" "expectedRevisions must contain exactly one entry for each word declared in source." None None
+                    (ordinalSort wordNames) (revisionsByName |> Map.toList |> List.map fst |> ordinalSort)
+
+            let replacementRows =
+                document.Words
+                |> List.map (fun parsed ->
+                    if parsed.SyntaxVersion <> syntaxVersion then
+                        error "FLOW_VERSION_UNSUPPORTED" "Flow word syntax version does not match the selected syntaxVersion." (Some parsed.Name) (Some parsed.Span) [ string syntaxVersion ] [ string parsed.SyntaxVersion ]
+                    let prior =
+                        old.Words.TryFind parsed.Name
+                        |> Option.defaultWith (fun () -> error "FLOW_BATCH_REPLACE_MISSING" "A batch replacement requires each declared word to exist already." (Some parsed.Name) (Some parsed.Span) [ "existing authored Flow word" ] [])
+                    if prior.Builtin.IsSome || prior.Status <> Persistent then
+                        error "FLOW_BATCH_REPLACE_PROTECTED" "A batch replacement accepts only persistent user-authored Flow words." (Some parsed.Name) (Some parsed.Span) [ "persistent authored Flow word" ] [ string prior.Status ]
+                    let expected = revisionsByName[parsed.Name]
+                    if expected <> prior.Revision || expected <> prior.Definition.Revision then
+                        error "FLOW_BATCH_STALE_REVISION" "Batch replacement expectedRevisions does not match every current owner revision." (Some parsed.Name) (Some parsed.Span) [ string prior.Revision ] [ string expected ]
+                    if old.Replacements.ContainsKey parsed.Name then
+                        error "FLOW_REPLACEMENT_ALREADY_STAGED" "A word with an existing staged replacement cannot be included in another batch replacement." (Some parsed.Name) (Some parsed.Span) [ "no staged replacement" ] [ parsed.Name ]
+                    let identity =
+                        old.WordIds.TryFind parsed.Name
+                        |> Option.defaultWith (fun () -> error "WORD_ID_MISSING" "A batch replacement requires each word's existing stable identity." (Some parsed.Name) (Some parsed.Span) [] [])
+                        |> WordId
+                    let authored =
+                        old.FlowWords.TryFind(wordIdText identity)
+                        |> Option.defaultWith (fun () -> error "FLOW_BATCH_REPLACE_NOT_FLOW" "A batch replacement accepts only existing authored Flow words." (Some parsed.Name) (Some parsed.Span) [ "Flow-authored word" ] [ "Stack-authored word" ])
+                    if authored.Source.OwnerName <> parsed.Name || authored.Source.OwnerRevision <> prior.Revision then
+                        error "FLOW_ATTACHMENT_OWNER_STALE" $"Flow word '{parsed.Name}' does not match its current immutable owner revision." (Some parsed.Name) (Some parsed.Span) [ $"{parsed.Name}@{prior.Revision}" ] [ $"{authored.Source.OwnerName}@{authored.Source.OwnerRevision}" ]
+                    if authored.Source.SyntaxVersion <> syntaxVersion && not (arguments.ContainsKey "syntaxVersion") then
+                        error "FLOW_SOURCE_VERSION_CHANGE_REQUIRES_SELECTION" "Replacing a Flow word with a different syntax version requires an explicit syntaxVersion selector." (Some parsed.Name) (Some parsed.Span) [ string authored.Source.SyntaxVersion; "explicit syntaxVersion" ] [ string syntaxVersion ]
+                    let revision = prior.Revision + 1
+                    let content = parsed.SourceText
+                    let sourceObject = Storage.sourceObject StorageObjectKind.WordDefinition content
+                    let sourceFile = $"<flow:{parsed.Name}/{revision}:{sourceObject.Reference.Hash}>"
+                    let definition =
+                        match FlowParser.parseWordWithVersion syntaxVersion sourceFile content with
+                        | Ok value when value.Name = parsed.Name -> value
+                        | Ok value -> error "FLOW_RUNTIME_OWNER_MISMATCH" "A standalone Flow word source changed its declared owner during validation." (Some parsed.Name) (Some value.Span) [ parsed.Name ] [ value.Name ]
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    let source: FlowLowering.FlowSourceDocument =
+                        { OwnerName = parsed.Name
+                          SyntaxVersion = syntaxVersion
+                          EffectsDeclared = definition.EffectsDeclared
+                          OwnerId = identity
+                          OwnerRevision = revision
+                          Reference = sourceObject.Reference
+                          SourceFile = sourceFile
+                          Content = content }
+                    let flowWord: FlowAuthoredWord = { Definition = definition; Source = source; StoredBindings = None }
+                    let projected: WordDefinition =
+                        { Name = definition.Name
+                          Inputs = definition.Parameters |> List.map (fun parameter -> parameter.Type)
+                          Outputs = definition.Outputs
+                          Effects = definition.Effects
+                          Maturity = prior.Maturity
+                          Revision = revision
+                          Documentation = definition.Documentation
+                          Body = []
+                          SourceText = content
+                          Span = definition.Span }
+                    parsed.Name, prior, identity, revision, flowWord, projected)
+            let rowByName = replacementRows |> List.map (fun (name, prior, identity, revision, authored, projected) -> name, (prior, identity, revision, authored, projected)) |> Map.ofList
+            let rowByIdentity = replacementRows |> List.map (fun (name, _, identity, revision, _, _) -> wordIdText identity, (name, revision)) |> Map.ofList
+            let owners = replacementRows |> List.map (fun (_, _, identity, _, _, _) -> wordIdText identity) |> Set.ofList
+
+            let parseTests =
+                document.Tests
+                |> List.map (fun parsed ->
+                    match rowByName.TryFind parsed.Word with
+                    | None -> error "FLOW_ATTACHMENT_OWNER_MISMATCH" $"Batch test '{parsed.CaseName}' must attach to a word declared in the same replacement document." (Some parsed.Word) (Some parsed.Span) wordNames [ parsed.Word ]
+                    | Some(_, identity, revision, _, _) ->
+                        let content = parsed.SourceText
+                        let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition content
+                        let sourceFile = $"<flow:{parsed.Word}/{revision}>/test:{sourceObject.Reference.Hash}"
+                        let definition =
+                            match FlowParser.parseTestWithVersion syntaxVersion sourceFile content with
+                            | Ok value when value.Word = parsed.Word -> value
+                            | Ok value -> error "FLOW_ATTACHMENT_OWNER_MISMATCH" "A Flow test source changed its declared owner during batch validation." (Some parsed.Word) (Some value.Span) [ parsed.Word ] [ value.Word ]
+                            | Error diagnostic -> raise (LanguageException diagnostic)
+                        let source: FlowLowering.FlowAttachmentSourceDocument =
+                            { OwnerName = parsed.Word
+                              SyntaxVersion = syntaxVersion
+                              OwnerId = identity
+                              OwnerRevision = revision
+                              Kind = FlowLowering.FlowAttachmentKind.Test
+                              CaseName = definition.CaseName
+                              Reference = sourceObject.Reference
+                              SourceFile = sourceFile
+                              Content = content }
+                        flowAttachmentKey identity definition.CaseName, { Source = source; StoredBindings = None })
+            let parseExamples =
+                document.Examples
+                |> List.map (fun parsed ->
+                    match rowByName.TryFind parsed.Word with
+                    | None -> error "FLOW_ATTACHMENT_OWNER_MISMATCH" $"Batch example '{parsed.CaseName}' must attach to a word declared in the same replacement document." (Some parsed.Word) (Some parsed.Span) wordNames [ parsed.Word ]
+                    | Some(_, identity, revision, _, _) ->
+                        let content = parsed.SourceText
+                        let sourceObject = Storage.sourceObject StorageObjectKind.ExampleDefinition content
+                        let sourceFile = $"<flow:{parsed.Word}/{revision}>/example:{sourceObject.Reference.Hash}"
+                        let definition =
+                            match FlowParser.parseExampleWithVersion syntaxVersion sourceFile content with
+                            | Ok value when value.Word = parsed.Word -> value
+                            | Ok value -> error "FLOW_ATTACHMENT_OWNER_MISMATCH" "A Flow example source changed its declared owner during batch validation." (Some parsed.Word) (Some value.Span) [ parsed.Word ] [ value.Word ]
+                            | Error diagnostic -> raise (LanguageException diagnostic)
+                        let source: FlowLowering.FlowAttachmentSourceDocument =
+                            { OwnerName = parsed.Word
+                              SyntaxVersion = syntaxVersion
+                              OwnerId = identity
+                              OwnerRevision = revision
+                              Kind = FlowLowering.FlowAttachmentKind.Example
+                              CaseName = definition.CaseName
+                              Reference = sourceObject.Reference
+                              SourceFile = sourceFile
+                              Content = content }
+                        flowAttachmentKey identity definition.CaseName, { Source = source; StoredBindings = None })
+            let rejectDuplicateAttachmentKeys kind rows =
+                match rows |> List.groupBy fst |> List.tryFind (fun (_, grouped) -> grouped.Length > 1) with
+                | Some(key, _) -> error "FLOW_ATTACHMENT_DUPLICATE_CHANGE" $"A Flow batch may change one {kind} attachment key only once." (Some key) None [] [ key ]
+                | None -> ()
+            rejectDuplicateAttachmentKeys "test" parseTests
+            rejectDuplicateAttachmentKeys "example" parseExamples
+            for name, prior, identity, _, _, _ in replacementRows do
+                let currentFlowWord = old.FlowWords[wordIdText identity]
+                if currentFlowWord.Source.SyntaxVersion <> syntaxVersion && not (arguments.ContainsKey "syntaxVersion") then
+                    error "FLOW_SOURCE_VERSION_CHANGE_REQUIRES_SELECTION" "Replacing a Flow word with a different syntax version requires an explicit syntaxVersion selector." (Some name) (Some currentFlowWord.Definition.Span) [ string currentFlowWord.Source.SyntaxVersion; "explicit syntaxVersion" ] [ string syntaxVersion ]
+
+            let incomingTestsByKey = parseTests |> Map.ofList
+            let incomingExamplesByKey = parseExamples |> Map.ofList
+            let rejectWrappedReplacement kind (incoming: (string * FlowAuthoredAttachment) list) (priorItems: Map<string, FlowAuthoredAttachment>) =
+                for key, _ in incoming do
+                    match priorItems.TryFind key with
+                    | Some prior when old.FlowTestFiles.ContainsKey(flowTestFileKey prior.Source.OwnerId prior.Source.Reference) ->
+                        error "FLOW_BATCH_REPLACE_WRAPPED_CASE" $"A batch cannot replace standalone {kind} case key '{key}' while it is represented by a retained test-file wrapper." (Some key) None [ "retained wrapper or a separate wrapper edit" ] [ "standalone case replacement" ]
+                    | _ -> ()
+            rejectWrappedReplacement "test" parseTests old.FlowTests
+
+            let nextTestFiles =
+                old.FlowTestFiles
+                |> Map.map (fun _ file ->
+                    if owners.Contains(wordIdText file.OwnerId) then
+                        let name, revision = rowByIdentity[wordIdText file.OwnerId]
+                        { file with OwnerRevision = revision; SourceFile = $"<flow:{name}/{revision}>/test-file:{file.Reference.Hash}" }
+                    else file)
+            let refreshRetainedTest (key: string) (item: FlowAuthoredAttachment) : FlowAuthoredAttachment =
+                if owners.Contains(wordIdText item.Source.OwnerId) then
+                    let name, revision = rowByIdentity[wordIdText item.Source.OwnerId]
+                    match old.FlowTestFiles.TryFind(flowTestFileKey item.Source.OwnerId item.Source.Reference) with
+                    | Some file ->
+                        let updatedFile = nextTestFiles[flowTestFileKey file.OwnerId file.Reference]
+                        { item with Source = { item.Source with OwnerRevision = revision; Reference = updatedFile.Reference; SourceFile = updatedFile.SourceFile; Content = updatedFile.Settings.SourceText } }
+                    | None ->
+                        { item with Source = { item.Source with OwnerRevision = revision; SourceFile = $"<flow:{name}/{revision}>/test:{item.Source.Reference.Hash}" } }
+                else item
+            let retainedTests = old.FlowTests |> Map.map refreshRetainedTest
+            let nextTests =
+                incomingTestsByKey
+                |> Map.fold (fun found key incoming ->
+                    let prior = old.FlowTests.TryFind key
+                    let stored =
+                        prior
+                        |> Option.filter (fun item -> item.Source.Reference = incoming.Source.Reference)
+                        |> Option.bind (fun item -> item.StoredBindings)
+                    Map.add key { incoming with StoredBindings = stored } found) retainedTests
+            let retainedExamples =
+                old.FlowExamples
+                |> Map.map (fun _ item ->
+                    if owners.Contains(wordIdText item.Source.OwnerId) then
+                        let name, revision = rowByIdentity[wordIdText item.Source.OwnerId]
+                        { item with Source = { item.Source with OwnerRevision = revision; SourceFile = $"<flow:{name}/{revision}>/example:{item.Source.Reference.Hash}" } }
+                    else item)
+            let nextExamples =
+                incomingExamplesByKey
+                |> Map.fold (fun found key incoming ->
+                    let prior = old.FlowExamples.TryFind key
+                    let stored =
+                        prior
+                        |> Option.filter (fun item -> item.Source.Reference = incoming.Source.Reference)
+                        |> Option.bind (fun item -> item.StoredBindings)
+                    Map.add key { incoming with StoredBindings = stored } found) retainedExamples
+            let replacementBackups =
+                replacementRows
+                |> List.fold (fun found (name, prior, identity, _, _, _) ->
+                    let ownerId = wordIdText identity
+                    let backup: ReplacementBackup =
+                        { Word = prior
+                          Tests = old.Tests |> Map.filter (fun _ test -> test.Word = name)
+                          Examples = old.Examples |> Map.filter (fun _ example -> example.Word = name)
+                          FlowWord = old.FlowWords.TryFind ownerId
+                          FlowTests = old.FlowTests |> Map.filter (fun _ item -> item.Source.OwnerId = identity)
+                          FlowTestFiles = old.FlowTestFiles |> Map.filter (fun _ item -> item.OwnerId = identity)
+                          FlowExamples = old.FlowExamples |> Map.filter (fun _ item -> item.Source.OwnerId = identity) }
+                    Map.add name backup found) old.Replacements
+            let nextWords =
+                replacementRows
+                |> List.fold (fun found (name, _, _, revision, _, projected) -> Map.add name (entry projected None Candidate projected.Maturity revision) found) old.Words
+            let nextFlowWords =
+                replacementRows
+                |> List.fold (fun found (_, _, identity, _, authored, _) -> Map.add (wordIdText identity) authored found) old.FlowWords
+            let proposed =
+                { old with
+                    Words = nextWords
+                    FlowWords = nextFlowWords
+                    FlowTests = nextTests
+                    FlowTestFiles = nextTestFiles
+                    FlowExamples = nextExamples
+                    Replacements = replacementBackups }
+            let executable = compileRuntimeSnapshot proposed
+            let frozen = frozenValidatorWords old (effectiveWords old)
+            match Set.intersect frozen (Set.ofList wordNames) |> Set.toList with
+            | name :: _ -> error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{name}' while a nominal type is persistent." (Some name) None [] [ name ]
+            | [] -> ()
+            for name in wordNames do
+                if old.Words[name].Maturity = LibraryWord then
+                    rejectUnqualifiedLibraryDependencies executable.Words name
+            activateRuntimeSnapshot executable
+            lastResults <- []
+            for name in wordNames do log "create" name
+            let payload = JsonObject()
+            payload["frontend"] <- jstr "flow"
+            let wordPayload = JsonArray()
+            for name in wordNames do
+                let item = executable.State.Words[name]
+                let row = JsonObject()
+                row["name"] <- jstr name
+                row["id"] <- jstr (wordIdentity executable.State item)
+                row["revision"] <- jint item.Revision
+                wordPayload.Add row
+            payload["words"] <- wordPayload
+            success "defined" "Flow word replacements and inline standalone cases were validated and staged atomically." (Some payload)
+
+        let registerFlowProjectAddOnlyParsed (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
             let old = data
             let temporary = readOptionalStrictBool arguments "temporary" false
             let hasTypes = not document.Records.IsEmpty || not document.Scalars.IsEmpty || not document.Enums.IsEmpty
@@ -3717,6 +4007,7 @@ module Runtime =
                 error "FLOW_PROJECT_TEMPORARY_TYPES_UNSUPPORTED" "Flow types do not have a temporary lifecycle; define the typed project as candidates or omit its type declarations." None None [ "temporary=false for project types" ] [ "temporary=true" ]
             if readOptionalStrictBool arguments "replace" false
                || arguments.ContainsKey "expectedRevision"
+               || arguments.ContainsKey "expectedRevisions"
                || arguments.ContainsKey "removeAttachments"
                || (arguments.ContainsKey "tests" && not (flowSourceStrings arguments "tests").IsEmpty)
                || (arguments.ContainsKey "examples" && not (flowSourceStrings arguments "examples").IsEmpty) then
@@ -4057,6 +4348,12 @@ module Runtime =
                 payload["tests"] <- jsonNode ((newTests |> List.map (fun (_, attachment) -> attachment.Source.CaseName)) @ (wrapperCaseRows |> List.map (fun (_, attachment) -> attachment.Source.CaseName)) |> List.sort)
                 payload["examples"] <- jsonNode (newExamples |> List.map (fun (_, attachment) -> attachment.Source.CaseName) |> List.sort)
             success "defined" "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically." (Some payload)
+
+        let registerFlowProjectParsed (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
+            if readOptionalStrictBool arguments "replace" false then
+                registerFlowReplacementProjectParsed arguments syntaxVersion document
+            else
+                registerFlowProjectAddOnlyParsed arguments syntaxVersion document
 
         let registerFlowParsedLegacy (arguments: JsonObject) syntaxVersion =
             let old = data
@@ -4820,6 +5117,8 @@ module Runtime =
                 match FlowParser.parseDocumentWithVersion syntaxVersion "<flow-project>" source with
                 | Ok value -> value
                 | Error diagnostic -> raise (LanguageException diagnostic)
+            if arguments.ContainsKey "expectedRevisions" && document.Words.Length < 2 then
+                error "FLOW_PROJECT_REPLACEMENT_CAS_SHAPE" "expectedRevisions is only for an atomic replacement of at least two words declared in the same source document." None None [ "multiword source with one expectedRevisions entry per word" ] [ string document.Words.Length + " word declarations" ]
             if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.IsEmpty && (not document.Tests.IsEmpty || not document.Examples.IsEmpty || not document.TestFiles.IsEmpty) then
                 registerFlowAttachmentsOnly arguments syntaxVersion document
             elif document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.Length = 1 && document.TestFiles.IsEmpty then

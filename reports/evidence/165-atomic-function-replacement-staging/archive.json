@@ -1,0 +1,137 @@
+{
+  "status": "verified",
+  "fullGateChecks": 37,
+  "description": "Final full gate, focused validation and retained initial/failed development evidence; binaries and temporary projects excluded.",
+  "archive": {
+    "path": "evidence.zip",
+    "bytes": 1738894,
+    "sha256": "9966612cc60aafabcde4c03746553f3a2a853742270fdaff23152ed3598d75e5"
+  },
+  "files": [
+    {
+      "path": "archive-evidence.py",
+      "bytes": 1892,
+      "sha256": "5ab46bbedb3c1b29c4bd38db9517a1699d4e0d22c729e4404506e394fe04d30a"
+    },
+    {
+      "path": "commit-route-before-requests.jsonl",
+      "bytes": 748,
+      "sha256": "f65af44425e1eae70e7c78dd8ebe4cbc1f12659270f581edb5d3ca85315c3217"
+    },
+    {
+      "path": "commit-route-before-responses.jsonl",
+      "bytes": 1715,
+      "sha256": "4964cf5acae07ad159a34c1a6c365512dd7681ad9b976be881370885d3313d09"
+    },
+    {
+      "path": "commit-route-before-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "full-validation-final.business-policy-preflight.json",
+      "bytes": 15483113,
+      "sha256": "dc8864b4b2adbebea08c9ad574691645b574ca6d27a787255dbbe7e49512d4c0"
+    },
+    {
+      "path": "full-validation-final.early-agent-negative.json",
+      "bytes": 172934,
+      "sha256": "af61eb83b14efe7015751e0b403d03f6bf79a619e3b77e4f9aabc303dd5e0862"
+    },
+    {
+      "path": "full-validation-final.flow-matched-fixtures.json",
+      "bytes": 230020,
+      "sha256": "7e32d3616e02c917abe99e8017c02c888b6e59b2896e7f97936f4899ca17d654"
+    },
+    {
+      "path": "full-validation-final.json",
+      "bytes": 30201,
+      "sha256": "7b89f6e58e9653b2c334849377701e2e0ca45d86514db202198d9e08a59977f5"
+    },
+    {
+      "path": "full-validation-final.matched-fixtures.json",
+      "bytes": 99883,
+      "sha256": "0603b2c3dd939288832d4f13dea474cee91a4a8a5c662035e72a5d830c6da729"
+    },
+    {
+      "path": "full-validation-final.matched-snapshots.json",
+      "bytes": 85956,
+      "sha256": "09013baf99c4d0caf236f65c39fca33eb07b5dd6c03856a1969924172efb84fd"
+    },
+    {
+      "path": "full-validation-final.parser-limits.json",
+      "bytes": 3186,
+      "sha256": "a7bb4a8e741f8780506ace0f9a5aa33735cb95ff3d2bf9a898bb55455db29d65"
+    },
+    {
+      "path": "full-validation-final.projection.json",
+      "bytes": 123935,
+      "sha256": "7a08ea7ced16f591af50bb34ae5d3ed4e4e097af057e61812d2392d1d5aaad7e"
+    },
+    {
+      "path": "full-validation-final.renewal-acceptance-gate.json",
+      "bytes": 1025134,
+      "sha256": "4d244f01780ab898dd1ecf5ebab0478ca8a6494538d6e2b2c79f9c37c5fb9ff3"
+    },
+    {
+      "path": "full-validation-final.renewal-replay.json",
+      "bytes": 307012,
+      "sha256": "7dfb1f76d68b27b8e847a16941c54647ffd2e61e7c04c8a8ef21a3500b189f1d"
+    },
+    {
+      "path": "full-validation-final.subagent-host-v2.json",
+      "bytes": 25381,
+      "sha256": "c57ff46f279377c16a08ee22a1bfc66492104007a67a7d7edf06dc5daf361a7b"
+    },
+    {
+      "path": "full-validation-final.subagent-host.json",
+      "bytes": 348074,
+      "sha256": "4b2837da4a644a6a9c2a7d8c6ce84ae5077ea2e82600e4554cbe6c32f0249383"
+    },
+    {
+      "path": "full-validation.early-agent-negative.json",
+      "bytes": 172934,
+      "sha256": "b414916620e3e14709255a0e176af84be5f21dbd22ad35ab407d9eb67479a24c"
+    },
+    {
+      "path": "full-validation.flow-matched-fixtures.json",
+      "bytes": 230020,
+      "sha256": "7360ea7f73f01e92b1d9ff875d7a751effcf5ead0a8f4efd9334624b248919dd"
+    },
+    {
+      "path": "full-validation.matched-fixtures.json",
+      "bytes": 99883,
+      "sha256": "9dadd8f348555567512dc7b17f1ce169004efd9ef691d8fd604b21518dc29406"
+    },
+    {
+      "path": "full-validation.matched-snapshots.json",
+      "bytes": 85956,
+      "sha256": "5a1b436660557300416fe26c9585c49b1b631d4bafaed30ba35f1c3708a01272"
+    },
+    {
+      "path": "full-validation.projection.json",
+      "bytes": 123935,
+      "sha256": "becb11d69ebeb5e7d8c6e97a3267095351219f9d552781c89dcc2b8bdd9460f8"
+    },
+    {
+      "path": "full-validation.renewal-acceptance-gate.json",
+      "bytes": 1025134,
+      "sha256": "511cf6c96c53008429a269ec48242373d722fc155e76c6de36429edfe3547e57"
+    },
+    {
+      "path": "full-validation.renewal-replay.json",
+      "bytes": 307012,
+      "sha256": "a962b7069688eaf4b7605e64ee7831ba5c9229aaa4fc01c3deaf12412e542929"
+    },
+    {
+      "path": "probe-commit-route.py",
+      "bytes": 2712,
+      "sha256": "ea5c82515a9c9973cd019d484affaf9ca35d7b9a190a8ec2f86c673decb46a81"
+    },
+    {
+      "path": "validation.txt",
+      "bytes": 21559,
+      "sha256": "908eabb0278111ecaaf81130da1733dc636f56a7c7db946cee122737e321bd7b"
+    }
+  ]
+}

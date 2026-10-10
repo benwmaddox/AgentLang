@@ -166,11 +166,15 @@ module AuthoringHelp =
           { Name = "replace"
             Type = "boolean"
             Required = false
-            Documentation = "Set true to stage a replacement or a compare-and-swap edit to an attached case." }
+            Documentation = "Set true to stage a compare-and-swap replacement or attached-case edit; multiword Flow source uses expectedRevisions." }
           { Name = "expectedRevision"
             Type = "nonnegative integer"
             Required = false
             Documentation = "Required with replace=true for an existing owner; use the current describe.revision value." }
+          { Name = "expectedRevisions"
+            Type = "object of word names to nonnegative integers"
+            Required = false
+            Documentation = "For one atomic multiword replacement, set replace=true and map exactly every word declared in source to its current describe.revision. This is mutually exclusive with expectedRevision; the first supported form accepts only existing persistent Flow words and inline standalone cases." }
           { Name = "tests"
             Type = "array of source strings"
             Required = false
@@ -553,7 +557,7 @@ test-file settings {
           Topic.Replacement,
             { Title = "Replace a word"
               Documentation =
-                "Read describe.revision immediately before replacing a definition. Set replace=true and expectedRevision to that exact current revision; a stale compare-and-swap leaves the word unchanged. Existing attached cases remain unless you replace a case with the same kind/name or remove it through removeAttachments with its current source hash. A candidate replacement is tested and published with normal commit. A temporary word must be promoted to a candidate before normal commit, or task.commit will end the task and clear temporary words. For a committed word, define stages the replacement; replace-word then requires the replacement's own tests and every affected persistent caller's tests to pass. replace-word accepts a word name, not replacement source. Library publication also checks the word's own instruction, branch, and iteration coverage, every Bool/enum option at each parameter position, and all values in supported finite return domains. A library word may depend only on trusted primitives, generated type operations, and authored library words; replacement rechecks the closure of affected library callers before publication. Evidence comes only from actual calls to the exact function revision in passing attached tests; expected-value expressions are isolated. Unsupported finite domains fail closed."
+                "Read describe.revision immediately before replacing a definition. Set replace=true and expectedRevision to that exact current revision for one word; a stale compare-and-swap leaves the word unchanged. For an atomic multiword Flow replacement, source must declare at least two existing persistent authored Flow words and expectedRevisions must map exactly those names to their current revisions. The batch may include standalone tests and examples inline; omitted cases and existing test-file wrappers remain attached. Batch replacement does not accept types, new words, wrapper edits, removals, external attachment arrays, or temporary lifecycle changes. A candidate replacement is tested and published with normal commit. A temporary word must be promoted to a candidate before normal commit, or task.commit will end the task and clear temporary words. For a committed word, define stages the replacement; targeted commit, commit-word, and replace-word require each selected replacement's own tests and every affected persistent caller's tests to pass. When the selected closure includes a staged replacement, publication includes staged callers whose retained or staged source depends on it. replace-word accepts a word name, not replacement source. Library publication also checks the word's own instruction, branch, and iteration coverage, every Bool/enum option at each parameter position, and all values in supported finite return domains. A library word may depend only on trusted primitives, generated type operations, and authored library words; replacement rechecks the closure of affected library callers before publication. Evidence comes only from actual calls to the exact function revision in passing attached tests; expected-value expressions are isolated. Unsupported finite domains fail closed."
               AllowedFlowDefineFields = []
               SourceExamples = []
               RequestExamples =

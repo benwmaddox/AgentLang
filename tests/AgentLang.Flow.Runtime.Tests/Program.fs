@@ -742,6 +742,351 @@ module Program =
         check (jsonArrayStrings published.["data"] |> List.contains "durable.forward/basic") "successful replacement result includes persistent caller tests"
         equal "Increment an integer by one." (stringValue (dispatch engine "describe" [ "word", jstr "durable.bump" ] |> expectOk "inspect published replacement documentation").["data"].["documentation"]) "compatible replacement publishes new inline documentation"
 
+    let private testAtomicMultiwordFlowReplacement root =
+        let expectedRevisions (revisions: (string * int) list) =
+            let values = JsonObject()
+            for name, revision in revisions do values[name] <- jint revision
+            values :> JsonNode
+        let stageBatch (engine: Runtime.Engine) source revisions =
+            defineFlowProject engine source
+                [ "syntaxVersion", jint 2
+                  "replace", jbool true
+                  "expectedRevisions", expectedRevisions revisions ]
+        let revision (engine: Runtime.Engine) name =
+            dispatch engine "describe" [ "word", jstr name ]
+            |> expectOk $"inspect {name} revision"
+            |> fun response -> response.["data"].["revision"].GetValue<int>()
+
+        let project = Path.Combine(root, "atomic-flow-signature-replacement")
+        let engine = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let baseline =
+            "fn subscription.handoff(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) -> Int { add(a, f) }\n\n"
+            + "fn subscription.left(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) -> Int { subscription::handoff(a, b, c, d, e, f) }\n\n"
+            + "fn subscription.right(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) -> Int { subscription::handoff(a, b, c, d, e, f) }\n\n"
+            + "test subscription.handoff/basic { subscription::handoff(1, 2, 3, 4, 5, 6) => 7 }\n\n"
+            + "test subscription.left/basic { subscription::left(1, 2, 3, 4, 5, 6) => 7 }\n\n"
+            + "test subscription.right/basic { subscription::right(1, 2, 3, 4, 5, 6) => 7 }\n\n"
+            + "example subscription.left/retained { subscription::left(1, 2, 3, 4, 5, 6) => 7 }\n\n"
+            + "test-file retained-left { test subscription.left/from-wrapper { subscription::left(1, 2, 3, 4, 5, 6) => 7 } }"
+        defineFlowProject engine baseline [ "syntaxVersion", jint 2 ] |> expectOk "define the original handoff signature and two callers" |> ignore
+        commit engine "commit" "" [ "library", jbool true ] |> expectOk "persist all original handoff words as libraries" |> ignore
+
+        let names = [ "subscription.handoff"; "subscription.left"; "subscription.right" ]
+        let originalIds = names |> List.map (fun name -> name, getWordId engine name) |> Map.ofList
+        let originalRevisions = names |> List.map (fun name -> name, revision engine name) |> Map.ofList
+        let store = Storage.create project
+        let durableBefore = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let badRoute =
+            defineFlowProject engine "fn subscription.single(value: Int) -> Int { value }"
+                [ "syntaxVersion", jint 2
+                  "replace", jbool true
+                  "expectedRevisions", expectedRevisions [ "subscription.single", 1 ] ]
+            |> expectError "FLOW_PROJECT_REPLACEMENT_CAS_SHAPE"
+        check (not (succeeded badRoute)) "the batch CAS map is rejected on a single-word source"
+        defineFlowProject engine "fn subscription.single(value: Int) -> Int { value }"
+            [ "syntaxVersion", jint 2
+              "expectedRevisions", expectedRevisions [ "subscription.single", 1 ] ]
+        |> expectError "FLOW_PROJECT_REPLACEMENT_CAS_SHAPE"
+        |> ignore
+        defineFlowProject engine "test subscription.left/only { subscription::left(1, 2, 3, 4, 5, 6) => 7 }"
+            [ "syntaxVersion", jint 2
+              "expectedRevisions", expectedRevisions [ "subscription.left", originalRevisions["subscription.left"] ] ]
+        |> expectError "FLOW_PROJECT_REPLACEMENT_CAS_SHAPE"
+        |> ignore
+        let typeReplacement =
+            "record ExtraType { field value: Int }\n\n"
+            + "fn subscription.handoff(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) -> Int { add(a, f) }\n\n"
+            + "fn subscription.left(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) -> Int { subscription::handoff(a, b, c, d, e, f) }"
+        stageBatch engine typeReplacement (names |> List.map (fun name -> name, originalRevisions[name]))
+        |> expectError "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED"
+        |> ignore
+
+        let migration =
+            "fn subscription.handoff(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int, acknowledged: Bool) -> Int { if acknowledged { add(a, f) } else { add(a, f) } }\n\n"
+            + "fn subscription.left(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) -> Int { subscription::handoff(a, b, c, d, e, f, false) }\n\n"
+            + "fn subscription.right(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) -> Int { subscription::handoff(a, b, c, d, e, f, false) }\n\n"
+            + "test subscription.handoff/basic { subscription::handoff(1, 2, 3, 4, 5, 6, false) => 7 }\n\n"
+            + "test subscription.handoff/acknowledged { subscription::handoff(1, 2, 3, 4, 5, 6, true) => 7 }"
+        let revisions = names |> List.map (fun name -> name, originalRevisions[name])
+        let stale =
+            stageBatch engine migration [ "subscription.handoff", 1; "subscription.left", 1; "subscription.right", 0 ]
+            |> expectError "FLOW_BATCH_STALE_REVISION"
+        check (not (succeeded stale)) "all batch revision comparisons run before any candidate is staged"
+        equal durableBefore.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "stale batch CAS leaves durable authority unchanged"
+        for name in names do
+            equal originalRevisions[name] (revision engine name) $"stale batch CAS leaves {name} at its original revision"
+            equal "persistent" (stringValue (dispatch engine "describe" [ "word", jstr name ] |> expectOk "inspect word after stale CAS" |> fun response -> response.["data"].["status"])) $"stale batch CAS leaves {name} persistent in memory"
+
+        let invalidLaterWord =
+            "fn subscription.handoff(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int, acknowledged: Bool) -> Int { add(a, f) }\n\n"
+            + "fn subscription.left(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) -> Int { subscription::handoff(a, b, c, d, e, f, false) }\n\n"
+            + "fn subscription.right(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) -> Int { \"wrong type\" }"
+        let invalid = stageBatch engine invalidLaterWord revisions
+        check (not (succeeded invalid)) "a type-invalid later declaration rejects the whole staged replacement"
+        equal durableBefore.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "bad later source leaves durable authority unchanged"
+        for name in names do
+            equal originalRevisions[name] (revision engine name) $"bad later source leaves {name} at its original revision"
+            equal "persistent" (stringValue (dispatch engine "describe" [ "word", jstr name ] |> expectOk "inspect word after invalid batch" |> fun response -> response.["data"].["status"])) $"bad later source leaves {name} persistent in memory"
+            let sourceAfterFailure = stringValue (dispatch engine "source" [ "word", jstr name ] |> expectOk "read word after invalid batch" |> fun response -> response.["data"])
+            check (not (sourceAfterFailure.Contains("acknowledged", StringComparison.Ordinal))) $"bad later source does not leak the new signature for {name}"
+
+        stageBatch engine migration revisions |> expectOk "stage a complete three-word Bool arity migration atomically" |> ignore
+        for name in names do
+            equal originalIds[name] (getWordId engine name) $"staging preserves the stable identity of {name}"
+            equal (originalRevisions[name] + 1) (revision engine name) $"staging advances {name} exactly once"
+            equal "candidate" (stringValue (dispatch engine "describe" [ "word", jstr name ] |> expectOk "inspect staged batch" |> fun response -> response.["data"].["status"])) $"staging marks {name} candidate"
+        assertAllPassed 2 (dispatch engine "test" [ "word", jstr "subscription.handoff" ] |> expectOk "run both Bool branches on the staged target")
+        assertAllPassed 2 (dispatch engine "test" [ "word", jstr "subscription.left" ] |> expectOk "run retained standalone and wrapper caller cases")
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "subscription.right" ] |> expectOk "run retained second caller case")
+        let published = commit engine "replace-word" "subscription.handoff" [] |> expectOk "publish target and both staged persisted callers through existing gates"
+        check (jsonArrayStrings published.["data"] |> List.contains "subscription.left/from-wrapper") "replacement publication includes the retained wrapper case"
+        check (jsonArrayStrings published.["data"] |> List.contains "subscription.right/basic") "replacement publication includes the second caller gate"
+        for name in names do
+            equal originalIds[name] (getWordId engine name) $"publication preserves the stable identity of {name}"
+            equal (originalRevisions[name] + 1) (revision engine name) $"publication keeps the staged revision of {name}"
+            equal "library" (stringValue (dispatch engine "describe" [ "word", jstr name ] |> expectOk "inspect published batch" |> fun response -> response.["data"].["maturity"])) $"publication preserves {name}'s library maturity"
+        let leftExamples = dispatch engine "examples" [ "word", jstr "subscription.left" ] |> expectOk "inspect omitted example after batch replacement"
+        check (jsonArrayStrings leftExamples.["data"] |> List.contains "retained") "an omitted standalone example remains attached"
+        let afterPublish = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        check (afterPublish.ManifestHash <> durableBefore.ManifestHash) "successful batch replacement publishes a new manifest"
+        let reloaded = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        assertAllPassed 2 (dispatch reloaded "test" [ "word", jstr "subscription.handoff" ] |> expectOk "reload the changed target and its Bool coverage")
+        assertAllPassed 2 (dispatch reloaded "test" [ "word", jstr "subscription.left" ] |> expectOk "reload retained standalone and wrapper attachments")
+        check (jsonArrayStrings (dispatch reloaded "examples" [ "word", jstr "subscription.left" ] |> expectOk "reload retained example").["data"] |> List.contains "retained") "omitted examples survive a fresh runtime reload"
+
+        let rollbackBaseline = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        dispatch engine "task.begin" [ "goal", jstr "verify atomic multiword replacement rollback" ] |> expectOk "begin batch rollback task" |> ignore
+        stageBatch engine migration (names |> List.map (fun name -> name, revision engine name)) |> expectOk "stage the same multiword replacement inside a task" |> ignore
+        commit engine "replace-word" "subscription.handoff" [] |> expectOk "commit the batch replacement inside its task" |> ignore
+        dispatch engine "task.abort" [] |> expectOk "abort the multiword replacement task" |> ignore
+        equal rollbackBaseline.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun restored -> restored.ManifestHash) "task abort restores the exact pre-batch durable authority"
+        for name in names do
+            equal originalIds[name] (getWordId engine name) $"task abort restores {name}'s stable identity"
+            equal (originalRevisions[name] + 1) (revision engine name) $"task abort restores {name}'s exact baseline revision"
+
+        let dropEdgeProject = Path.Combine(root, "atomic-flow-signature-replacement-drop-caller-edge")
+        let dropEdgeEngine = Runtime.Engine(dropEdgeProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let dropEdgeBaseline =
+            "fn signature.target(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) -> Int { add(a, f) }\n\n"
+            + "fn signature.caller(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) -> Int { signature::target(a, b, c, d, e, f) }\n\n"
+            + "test signature.target/basic { signature::target(1, 2, 3, 4, 5, 6) => 7 }\n\n"
+            + "test signature.caller/basic { signature::caller(1, 2, 3, 4, 5, 6) => 7 }"
+        defineFlowProject dropEdgeEngine dropEdgeBaseline [ "syntaxVersion", jint 2 ] |> expectOk "define a six-input callee and persisted caller" |> ignore
+        commit dropEdgeEngine "commit" "" [ "library", jbool true ] |> expectOk "persist the six-input callee and caller as libraries" |> ignore
+        let dropEdgeIds = [ "signature.target"; "signature.caller" ] |> List.map (fun name -> name, getWordId dropEdgeEngine name) |> Map.ofList
+        let dropEdgeBefore = Storage.load (Storage.create dropEdgeProject) |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let dropEdgeMigration =
+            "fn signature.target(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int, acknowledged: Bool) -> Int { if acknowledged { add(a, f) } else { add(a, f) } }\n\n"
+            + "fn signature.caller(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) -> Int { 7 }\n\n"
+            + "test signature.target/basic { signature::target(1, 2, 3, 4, 5, 6, false) => 7 }\n\n"
+            + "test signature.target/acknowledged { signature::target(1, 2, 3, 4, 5, 6, true) => 7 }\n\n"
+            + "test signature.caller/basic { signature::caller(1, 2, 3, 4, 5, 6) => 7 }"
+        stageBatch dropEdgeEngine dropEdgeMigration [ "signature.target", 1; "signature.caller", 1 ]
+        |> expectOk "stage the seven-input migration and a caller revision that removes the old edge"
+        |> ignore
+        let dropEdgePublished = commit dropEdgeEngine "commit-word" "signature.target" [] |> expectOk "commit the migration and updated edge-free caller atomically"
+        check (jsonArrayStrings dropEdgePublished.["data"] |> List.contains "signature.caller/basic") "edge-free caller test participates in the migration gate"
+        let dropEdgeAfter = Storage.load (Storage.create dropEdgeProject) |> Result.defaultWith (fun problem -> failwith problem.Message)
+        check (dropEdgeAfter.ManifestHash <> dropEdgeBefore.ManifestHash) "successful edge-free caller migration publishes a new manifest"
+        let dropEdgeReload = Runtime.Engine(dropEdgeProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        for name in [ "signature.target"; "signature.caller" ] do
+            equal dropEdgeIds[name] (getWordId dropEdgeReload name) $"signature migration preserves {name}'s identity"
+            equal 2 (revision dropEdgeReload name) $"signature migration publishes {name} revision 2"
+        assertAllPassed 2 (dispatch dropEdgeReload "test" [ "word", jstr "signature.target" ] |> expectOk "reload both target Bool cases")
+        assertAllPassed 1 (dispatch dropEdgeReload "test" [ "word", jstr "signature.caller" ] |> expectOk "reload the edge-free caller test")
+        let migratedCallerSource = dispatch dropEdgeReload "source" [ "word", jstr "signature.caller" ] |> expectOk "read the migrated caller source" |> fun response -> stringValue response.["data"]
+        check (not (migratedCallerSource.Contains("signature::target", StringComparison.Ordinal))) "reloaded caller source has no stale six-argument callee edge"
+        equal "7" (stringValue (evalFlow dropEdgeReload "signature::caller(1, 2, 3, 4, 5, 6)" |> expectOk "execute the migrated caller after reload" |> fun response -> response.["data"].["stack"].[0])) "reloaded caller uses its published edge-free implementation"
+
+    let private testAtomicMultiwordReplacementCallerClosure root =
+        let expectedRevisions (revisions: (string * int) list) =
+            let values = JsonObject()
+            for name, revision in revisions do values[name] <- jint revision
+            values :> JsonNode
+        let stageBatch (engine: Runtime.Engine) source revisions =
+            defineFlowProject engine source
+                [ "syntaxVersion", jint 2
+                  "replace", jbool true
+                  "expectedRevisions", expectedRevisions revisions ]
+        let project = Path.Combine(root, "atomic-flow-replacement-new-caller-edge")
+        let engine = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let baseline =
+            "fn edge.target(value: Int) -> Int { add(value, 1) }\n\n"
+            + "fn edge.caller(value: Int) -> Int { add(value, 10) }\n\n"
+            + "test edge.target/basic { edge::target(1) => 2 }\n\n"
+            + "test edge.caller/basic { edge::caller(1) => 11 }"
+        defineFlowProject engine baseline [ "syntaxVersion", jint 2 ] |> expectOk "define two persistent libraries without an edge" |> ignore
+        commit engine "commit" "" [ "library", jbool true ] |> expectOk "qualify both baseline words as libraries" |> ignore
+        let targetId, callerId = getWordId engine "edge.target", getWordId engine "edge.caller"
+        let source =
+            "fn edge.target(value: Int) -> Int { add(value, 2) }\n\n"
+            + "fn edge.caller(value: Int) -> Int { edge::target(value) }\n\n"
+            + "test edge.target/basic { edge::target(1) => 3 }\n\n"
+            + "test edge.caller/basic { edge::caller(1) => 3 }"
+        stageBatch engine source [ "edge.target", 1; "edge.caller", 1 ] |> expectOk "stage a replacement that adds a caller edge" |> ignore
+        let published = commit engine "replace-word" "edge.target" [] |> expectOk "include a staged caller that newly depends on the selected word"
+        check (jsonArrayStrings published.["data"] |> List.contains "edge.caller/basic") "newly affected caller test participates in replace-word publication"
+        equal targetId (getWordId engine "edge.target") "new-edge publication preserves the target identity"
+        equal callerId (getWordId engine "edge.caller") "new-edge publication preserves the caller identity"
+        equal 2 (dispatch engine "describe" [ "word", jstr "edge.caller" ] |> expectOk "inspect newly affected caller revision" |> fun response -> response.["data"].["revision"].GetValue<int>()) "new-edge publication advances the caller's revision"
+        equal "3" (stringValue (evalFlow engine "edge::caller(1)" |> expectOk "run newly connected caller" |> fun response -> response.["data"].["stack"].[0])) "newly connected caller uses the published target"
+
+        let runTargetedCommitAlias operation callerPasses =
+            let aliasProject = Path.Combine(root, $"atomic-flow-replacement-new-edge-{operation}-{callerPasses}")
+            let aliasEngine = Runtime.Engine(aliasProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+            defineFlowProject aliasEngine baseline [ "syntaxVersion", jint 2 ] |> expectOk "define alias-gate baseline libraries" |> ignore
+            commit aliasEngine "commit" "" [ "library", jbool true ] |> expectOk "qualify alias-gate baseline libraries" |> ignore
+            let aliasTargetId = getWordId aliasEngine "edge.target"
+            let aliasCallerId = getWordId aliasEngine "edge.caller"
+            let aliasStore = Storage.create aliasProject
+            let aliasBefore = Storage.load aliasStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+            let callerExpected = if callerPasses then 3 else 99
+            let aliasSource =
+                "fn edge.target(value: Int) -> Int { add(value, 2) }\n\n"
+                + "fn edge.caller(value: Int) -> Int { edge::target(value) }\n\n"
+                + "test edge.target/basic { edge::target(1) => 3 }\n\n"
+                + $"test edge.caller/basic {{ edge::caller(1) => {callerExpected} }}"
+            stageBatch aliasEngine aliasSource [ "edge.target", 1; "edge.caller", 1 ] |> expectOk $"stage new caller edge for {operation}" |> ignore
+            let outcome = commit aliasEngine operation "edge.target" []
+            if callerPasses then
+                let committed = expectOk $"publish target and new caller using {operation}" outcome
+                check (jsonArrayStrings committed.["data"] |> List.contains "edge.caller/basic") $"{operation} reports the new caller's test gate"
+                check (Storage.load aliasStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun after -> after.ManifestHash <> aliasBefore.ManifestHash) $"successful {operation} publishes the replacement closure"
+                let fresh = Runtime.Engine(aliasProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+                equal aliasTargetId (getWordId fresh "edge.target") $"successful {operation} preserves the target identity after reload"
+                equal aliasCallerId (getWordId fresh "edge.caller") $"successful {operation} preserves the caller identity after reload"
+                for name in [ "edge.target"; "edge.caller" ] do
+                    equal 2 (dispatch fresh "describe" [ "word", jstr name ] |> expectOk $"inspect {name} after {operation} reload" |> fun response -> response.["data"].["revision"].GetValue<int>()) $"successful {operation} publishes {name} revision 2"
+                assertAllPassed 1 (dispatch fresh "test" [ "word", jstr "edge.caller" ] |> expectOk $"reload caller after {operation}")
+                equal "3" (stringValue (evalFlow fresh "edge::caller(1)" |> expectOk $"evaluate caller after {operation} reload" |> fun response -> response.["data"].["stack"].[0])) $"successful {operation} publishes the caller edge"
+            else
+                let rejected = expectError "COMMIT_TESTS_FAILED" outcome
+                check (jsonArrayStrings rejected.["error"].["actual"] |> List.contains "edge.caller/basic") $"{operation} blocks on the newly affected caller's failing test"
+                equal aliasBefore.ManifestHash (Storage.load aliasStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun after -> after.ManifestHash) $"failed {operation} leaves the exact manifest unchanged"
+                let fresh = Runtime.Engine(aliasProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+                equal aliasTargetId (getWordId fresh "edge.target") $"failed {operation} reload preserves the target identity"
+                equal aliasCallerId (getWordId fresh "edge.caller") $"failed {operation} reload preserves the caller identity"
+                for name in [ "edge.target"; "edge.caller" ] do
+                    equal 1 (dispatch fresh "describe" [ "word", jstr name ] |> expectOk $"inspect {name} after failed {operation} reload" |> fun response -> response.["data"].["revision"].GetValue<int>()) $"failed {operation} reload keeps {name} at revision 1"
+                equal "11" (stringValue (evalFlow fresh "edge::caller(1)" |> expectOk $"evaluate caller after failed {operation} reload" |> fun response -> response.["data"].["stack"].[0])) $"failed {operation} reload retains the old caller behavior"
+        for operation in [ "commit"; "commit-word" ] do
+            runTargetedCommitAlias operation false
+            runTargetedCommitAlias operation true
+
+        let lateProject = Path.Combine(root, "atomic-flow-replacement-late-metadata-closure")
+        let lateEngine = Runtime.Engine(lateProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        defineFlowProject lateEngine baseline [ "syntaxVersion", jint 2 ] |> expectOk "define late-closure baseline libraries" |> ignore
+        commit lateEngine "commit" "" [ "library", jbool true ] |> expectOk "qualify late-closure baseline libraries" |> ignore
+        let lateReplacementSource =
+            "fn edge.target(value: Int) -> Int { add(value, 2) }\n\n"
+            + "fn edge.caller(value: Int) -> Int { edge::target(value) }\n\n"
+            + "test edge.target/basic { edge::target(1) => 3 }\n\n"
+            + "test edge.caller/basic { edge::caller(1) => 3 }"
+        stageBatch lateEngine lateReplacementSource [ "edge.target", 1; "edge.caller", 1 ] |> expectOk "stage replacement closure before selecting its metadata dependency" |> ignore
+        defineFlow lateEngine "fn edge.trigger(value: Int) -> Int { add(value, 0) }" [ "test edge.trigger/uses-target { edge::target(1) => 3 }" ] [] [ "syntaxVersion", jint 2 ]
+        |> expectOk "stage an ordinary word whose attached metadata selects the replacement later" |> ignore
+        let latePublished = commit lateEngine "commit" "edge.trigger" [] |> expectOk "expand replacement callers after scoped metadata adds the target"
+        check (jsonArrayStrings latePublished.["data"] |> List.contains "edge.caller/basic") "scoped metadata closure includes the staged new-edge caller on the next fixed-point pass"
+        equal 2 (dispatch lateEngine "describe" [ "word", jstr "edge.caller" ] |> expectOk "inspect caller from late metadata closure" |> fun response -> response.["data"].["revision"].GetValue<int>()) "late metadata closure publishes the caller revision"
+
+    let private testAtomicMultiwordReplacementGates root =
+        let expectedRevisions (revisions: (string * int) list) =
+            let values = JsonObject()
+            for name, revision in revisions do values[name] <- jint revision
+            values :> JsonNode
+        let stageBatch (engine: Runtime.Engine) source revisions =
+            defineFlowProject engine source
+                [ "syntaxVersion", jint 2
+                  "replace", jbool true
+                  "expectedRevisions", expectedRevisions revisions ]
+
+        let callerProject = Path.Combine(root, "atomic-flow-replacement-failed-caller")
+        let callerEngine = Runtime.Engine(callerProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let callerBaseline =
+            "fn gate.target(value: Int) -> Int { add(value, 1) }\n\n"
+            + "fn gate.caller(value: Int) -> Int { add(value, 10) }\n\n"
+            + "test gate.target/basic { gate::target(1) => 2 }\n\n"
+            + "test gate.caller/basic { gate::caller(1) => 11 }"
+        defineFlowProject callerEngine callerBaseline [ "syntaxVersion", jint 2 ] |> expectOk "define failed-caller baseline libraries" |> ignore
+        commit callerEngine "commit" "" [ "library", jbool true ] |> expectOk "qualify failed-caller baseline libraries" |> ignore
+        let callerStore = Storage.create callerProject
+        let callerBefore = Storage.load callerStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let failedCallerBatch =
+            "fn gate.target(value: Int) -> Int { add(value, 2) }\n\n"
+            + "fn gate.caller(value: Int) -> Int { gate::target(value) }\n\n"
+            + "test gate.target/basic { gate::target(1) => 3 }\n\n"
+            + "test gate.caller/basic { gate::caller(1) => 99 }"
+        stageBatch callerEngine failedCallerBatch [ "gate.target", 1; "gate.caller", 1 ] |> expectOk "stage a batch with a failing newly affected caller test" |> ignore
+        let failedCallerPublish = commit callerEngine "replace-word" "gate.target" [] |> expectError "COMMIT_TESTS_FAILED"
+        check (jsonArrayStrings failedCallerPublish.["error"].["actual"] |> List.contains "gate.caller/basic") "caller test failure blocks the entire replacement batch"
+        equal callerBefore.ManifestHash (Storage.load callerStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "failed caller tests do not publish any batch member"
+
+        let coverageProject = Path.Combine(root, "atomic-flow-replacement-incomplete-bool")
+        let coverageEngine = Runtime.Engine(coverageProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let coverageBaseline =
+            "fn cover.target(value: Int) -> Int { add(value, 1) }\n\n"
+            + "fn cover.caller(value: Int) -> Int { add(value, 10) }\n\n"
+            + "test cover.target/basic { cover::target(1) => 2 }\n\n"
+            + "test cover.caller/basic { cover::caller(1) => 11 }"
+        defineFlowProject coverageEngine coverageBaseline [ "syntaxVersion", jint 2 ] |> expectOk "define Bool coverage baseline libraries" |> ignore
+        commit coverageEngine "commit" "" [ "library", jbool true ] |> expectOk "qualify Bool coverage baseline libraries" |> ignore
+        let coverageStore = Storage.create coverageProject
+        let coverageBefore = Storage.load coverageStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let incompleteCoverageBatch =
+            "fn cover.target(value: Int, enabled: Bool) -> Int { if enabled { add(value, 2) } else { add(value, 1) } }\n\n"
+            + "fn cover.caller(value: Int) -> Int { cover::target(value, false) }\n\n"
+            + "test cover.target/basic { cover::target(1, false) => 2 }\n\n"
+            + "test cover.caller/basic { cover::caller(1) => 2 }"
+        stageBatch coverageEngine incompleteCoverageBatch [ "cover.target", 1; "cover.caller", 1 ] |> expectOk "stage a Bool signature without true-branch evidence" |> ignore
+        expectError "LIBRARY_COVERAGE_INCOMPLETE" (commit coverageEngine "replace-word" "cover.target" []) |> ignore
+        equal coverageBefore.ManifestHash (Storage.load coverageStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "incomplete Bool coverage leaves every batch member unpublished"
+
+        let qualificationProject = Path.Combine(root, "atomic-flow-replacement-library-qualification")
+        let qualificationEngine = Runtime.Engine(qualificationProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        defineFlow qualificationEngine "fn project.helper(value: Int) -> Int { add(value, 5) }" [ "test project.helper/basic { project::helper(1) => 6 }" ] [] [ "syntaxVersion", jint 2 ]
+        |> expectOk "define a project-maturity helper" |> ignore
+        commit qualificationEngine "commit" "project.helper" [] |> expectOk "persist the project helper below library maturity" |> ignore
+        let qualificationBaseline =
+            "fn qualify.target(value: Int) -> Int { add(value, 1) }\n\n"
+            + "fn qualify.caller(value: Int) -> Int { add(value, 10) }\n\n"
+            + "test qualify.target/basic { qualify::target(1) => 2 }\n\n"
+            + "test qualify.caller/basic { qualify::caller(1) => 11 }"
+        defineFlowProject qualificationEngine qualificationBaseline [ "syntaxVersion", jint 2 ] |> expectOk "define qualified target and caller baseline" |> ignore
+        commit qualificationEngine "commit" "" [ "library", jbool true ] |> expectOk "qualify target and caller baseline" |> ignore
+        let qualificationStore = Storage.create qualificationProject
+        let qualificationBefore = Storage.load qualificationStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let unqualifiedBatch =
+            "fn qualify.target(value: Int) -> Int { project::helper(value) }\n\n"
+            + "fn qualify.caller(value: Int) -> Int { qualify::target(value) }\n\n"
+            + "test qualify.target/basic { qualify::target(1) => 6 }\n\n"
+            + "test qualify.caller/basic { qualify::caller(1) => 6 }"
+        stageBatch qualificationEngine unqualifiedBatch [ "qualify.target", 1; "qualify.caller", 1 ] |> expectError "LIBRARY_DEPENDENCY_NOT_QUALIFIED" |> ignore
+        equal qualificationBefore.ManifestHash (Storage.load qualificationStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "library qualification failure does not stage or publish batch members"
+
+        let resultProject = Path.Combine(root, "atomic-flow-replacement-incomplete-result")
+        let resultEngine = Runtime.Engine(resultProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let resultBaseline =
+            "fn result.target(value: Int) -> Int { add(value, 1) }\n\n"
+            + "fn result.caller(value: Int) -> Int { add(value, 10) }\n\n"
+            + "test result.target/basic { result::target(1) => 2 }\n\n"
+            + "test result.caller/basic { result::caller(1) => 11 }"
+        defineFlowProject resultEngine resultBaseline [ "syntaxVersion", jint 2 ] |> expectOk "define Result coverage baseline libraries" |> ignore
+        commit resultEngine "commit" "" [ "library", jbool true ] |> expectOk "qualify Result coverage baseline libraries" |> ignore
+        let resultStore = Storage.create resultProject
+        let resultBefore = Storage.load resultStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let incompleteResultBatch =
+            "fn result.target(choice: Int) -> Result<Bool, Bool> { if equals(choice, 0) { result::ok<Bool, Bool>(false) } else { if equals(choice, 1) { result::ok<Bool, Bool>(true) } else { result::error<Bool, Bool>(false) } } }\n\n"
+            + "fn result.caller(choice: Int) -> Result<Bool, Bool> { result::target(choice) }\n\n"
+            + "test result.target/basic { result::target(0) => value result::ok<Bool, Bool>(false) }\n\n"
+            + "test result.target/ok-false { result::target(0) => value result::ok<Bool, Bool>(false) }\n\n"
+            + "test result.target/ok-true { result::target(1) => value result::ok<Bool, Bool>(true) }\n\n"
+            + "test result.target/error-false { result::target(2) => value result::error<Bool, Bool>(false) }\n\n"
+            + "test result.caller/basic { result::caller(2) => value result::error<Bool, Bool>(false) }"
+        stageBatch resultEngine incompleteResultBatch [ "result.target", 1; "result.caller", 1 ] |> expectOk "stage Result replacement missing one error payload observation" |> ignore
+        assertAllPassed 4 (dispatch resultEngine "test" [ "word", jstr "result.target" ] |> expectOk "run all authored Result tag cases")
+        expectError "LIBRARY_FINITE_COVERAGE_INCOMPLETE" (commit resultEngine "replace-word" "result.target" []) |> ignore
+        equal resultBefore.ManifestHash (Storage.load resultStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "incomplete Result tag coverage leaves every batch member unpublished"
+
     let private testFlowUnknownArgumentsAndExpectationGuidance root =
         let project = Path.Combine(root, "authoring-help-unknown-fields")
         let engine = Runtime.Engine(project, Set.ofList [ "fs.read"; "fs.write" ], fileSystemMode = FileSystemMode.Virtual)
@@ -775,7 +1120,7 @@ module Program =
                   "documentation", jstr "metadata is inline"
                   "extra", jbool true ]
             |> expectError "FLOW_RUNTIME_UNKNOWN_ARGUMENT"
-        equal [ "examples"; "expectedRevision"; "frontend"; "removeAttachments"; "replace"; "source"; "syntaxVersion"; "temporary"; "tests" ]
+        equal [ "examples"; "expectedRevision"; "expectedRevisions"; "frontend"; "removeAttachments"; "replace"; "source"; "syntaxVersion"; "temporary"; "tests" ]
             (jsonArrayStrings unknownTopLevel.["error"].["expected"]) "unknown Flow field error returns the allowed field set"
         equal [ "code"; "documentation"; "extra" ] (jsonArrayStrings unknownTopLevel.["error"].["actual"]) "unknown Flow fields are reported in sorted order"
         let unknownMessage = stringValue unknownTopLevel.["error"].["message"]
@@ -1321,7 +1666,7 @@ module Program =
         equal "3" (stringValue (evalFlow groupEngine "group::wrapper(1)" |> expectOk "evaluate the replaced qualified group" |> fun response -> response.["data"].["stack"].[0])) "staged library candidates can be qualified together after all own gates pass"
 
         let replacementProject = Path.Combine(root, "library-dependency-replacement")
-        let mutable replacementEngine = Runtime.Engine(replacementProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let replacementEngine = Runtime.Engine(replacementProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let replacementSource =
             "fn replace.helper(value: Int) -> Int { add(value, 1) }\n\n"
             + "fn replace.caller(value: Int) -> Int { replace::helper(value) }\n\n"
@@ -1335,39 +1680,47 @@ module Program =
         |> ignore
         commit replacementEngine "commit" "replace.ordinary" [] |> expectOk "persist the ordinary helper used by the unsafe replacement" |> ignore
         let replacementStore = Storage.create replacementProject
-        let beforeUnsafeReplacement = Storage.load replacementStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeHelperOnlyCommit = Storage.load replacementStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let originalHelperId = getWordId replacementEngine "replace.helper"
+        let originalCallerId = getWordId replacementEngine "replace.caller"
+        let helperRevision =
+            dispatch replacementEngine "describe" [ "word", jstr "replace.helper" ]
+            |> expectOk "inspect the helper before replacing it alone"
+            |> fun response -> response.["data"].["revision"].GetValue<int>()
+        defineFlow replacementEngine "fn replace.helper(value: Int) -> Int { add(value, 2) }" [ "test replace.helper/basic { replace::helper(1) => 3 }" ] [] [ "replace", jbool true; "expectedRevision", jint helperRevision; "syntaxVersion", jint 2 ]
+        |> expectOk "stage a helper replacement while its persisted caller remains unchanged"
+        |> ignore
+        let rejectedHelperOnlyCommit = commit replacementEngine "commit" "replace.helper" [] |> expectError "COMMIT_TESTS_FAILED"
+        check (jsonArrayStrings rejectedHelperOnlyCommit.["error"].["actual"] |> List.contains "replace.caller/basic") "helper-only publication tests the unchanged durable caller"
+        equal beforeHelperOnlyCommit.ManifestHash (Storage.load replacementStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.ManifestHash) "failed helper-only publication leaves the old manifest authoritative"
+
         let callerRevision =
             dispatch replacementEngine "describe" [ "word", jstr "replace.caller" ]
-            |> expectOk "inspect the affected caller before its staged replacement"
-            |> fun response -> response.["data"].["revision"].GetValue<int>()
-        let helperRevisionForCallerCheck =
-            dispatch replacementEngine "describe" [ "word", jstr "replace.helper" ]
-            |> expectOk "inspect the helper before its staged replacement"
+            |> expectOk "inspect the caller before its grouped migration"
             |> fun response -> response.["data"].["revision"].GetValue<int>()
         defineFlow replacementEngine "fn replace.caller(value: Int) -> Int { add(value, 5) }" [ "test replace.caller/basic { replace::caller(1) => 6 }" ] [] [ "replace", jbool true; "expectedRevision", jint callerRevision; "syntaxVersion", jint 2 ]
-        |> expectOk "stage a passing caller replacement that removes its helper dependency"
+        |> expectOk "stage an updated caller that intentionally drops its helper dependency"
         |> ignore
-        defineFlow replacementEngine "fn replace.helper(value: Int) -> Int { add(value, 2) }" [ "test replace.helper/basic { replace::helper(1) => 3 }" ] [] [ "replace", jbool true; "expectedRevision", jint helperRevisionForCallerCheck; "syntaxVersion", jint 2 ]
-        |> expectOk "stage a helper replacement behind the affected caller"
-        |> ignore
-        assertAllPassed 1 (dispatch replacementEngine "test" [ "word", jstr "replace.caller" ] |> expectOk "run the passing staged caller replacement")
-        let rejectedAffectedCaller = commit replacementEngine "commit" "replace.helper" [] |> expectError "COMMIT_TESTS_FAILED"
-        check (jsonArrayStrings rejectedAffectedCaller.["error"].["actual"] |> List.contains "replace.caller/basic") "publishing the helper alone tests the durable caller even when its passing staged replacement removes that edge"
-        equal beforeUnsafeReplacement.ManifestHash (Storage.load replacementStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.ManifestHash) "failed affected-caller replacement leaves the old manifest authoritative"
-        replacementEngine <- Runtime.Engine(replacementProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
-        let durableCallerSource = dispatch replacementEngine "source" [ "word", jstr "replace.caller" ] |> expectOk "read the caller restored from durable state" |> fun response -> stringValue response.["data"]
-        check (durableCallerSource.Contains("replace::helper", StringComparison.Ordinal)) "fresh reload retains the durable caller edge after failed staged replacements"
-        let helperRevision =
+        let publishedReplacementGroup = commit replacementEngine "commit" "replace.helper" [] |> expectOk "publish the helper with the updated caller tests"
+        check (jsonArrayStrings publishedReplacementGroup.["data"] |> List.contains "replace.caller/basic") "group publication includes the updated caller test"
+        for name, identity in [ "replace.helper", originalHelperId; "replace.caller", originalCallerId ] do
+            equal identity (getWordId replacementEngine name) $"group publication preserves {name}'s stable identity"
+            equal 2 (dispatch replacementEngine "describe" [ "word", jstr name ] |> expectOk $"inspect {name} after grouped publication" |> fun response -> response.["data"].["revision"].GetValue<int>()) $"group publication advances {name} exactly once"
+        let beforeUnsafeReplacement = Storage.load replacementStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let currentHelperRevision =
             dispatch replacementEngine "describe" [ "word", jstr "replace.helper" ]
             |> expectOk "inspect library helper before replacement"
             |> fun response -> response.["data"].["revision"].GetValue<int>()
-        defineFlow replacementEngine "fn replace.helper(value: Int) -> Int { replace::ordinary(value) }" [ "test replace.helper/basic { replace::helper(1) => 10 }" ] [] [ "replace", jbool true; "expectedRevision", jint helperRevision; "syntaxVersion", jint 2 ]
+        defineFlow replacementEngine "fn replace.helper(value: Int) -> Int { replace::ordinary(value) }" [ "test replace.helper/basic { replace::helper(1) => 10 }" ] [] [ "replace", jbool true; "expectedRevision", jint currentHelperRevision; "syntaxVersion", jint 2 ]
         |> expectError "LIBRARY_DEPENDENCY_NOT_QUALIFIED"
         |> ignore
         equal beforeUnsafeReplacement.ManifestHash (Storage.load replacementStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.ManifestHash) "unsafe library helper replacement leaves the old manifest authoritative"
         let replacementReload = Runtime.Engine(replacementProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
-        assertAllPassed 1 (dispatch replacementReload "test" [ "word", jstr "replace.caller" ] |> expectOk "requalify the preserved affected caller on reload")
-        equal "2" (stringValue (evalFlow replacementReload "replace::caller(1)" |> expectOk "evaluate preserved caller after rejected helper replacement" |> fun response -> response.["data"].["stack"].[0])) "fresh reload retains the previous qualified helper and caller"
+        assertAllPassed 1 (dispatch replacementReload "test" [ "word", jstr "replace.caller" ] |> expectOk "requalify the updated caller on reload")
+        let reloadedCallerSource = dispatch replacementReload "source" [ "word", jstr "replace.caller" ] |> expectOk "read the updated caller after reload" |> fun response -> stringValue response.["data"]
+        check (not (reloadedCallerSource.Contains("replace::helper", StringComparison.Ordinal))) "reloaded caller keeps its deliberate dependency removal"
+        equal "6" (stringValue (evalFlow replacementReload "replace::caller(1)" |> expectOk "evaluate updated caller after reload" |> fun response -> response.["data"].["stack"].[0])) "fresh reload retains the grouped caller migration"
+        equal "3" (stringValue (evalFlow replacementReload "replace::helper(1)" |> expectOk "evaluate the qualified helper after reload" |> fun response -> response.["data"].["stack"].[0])) "fresh reload retains the new helper revision"
 
     let private testEnumFiniteLibraryCoverage root =
         let enumAndHelpers =
@@ -5133,6 +5486,9 @@ test-file self {
             testAuthoringHelpAndCanonicalLibrarySource root
             testCandidateCasThenNormalCommit root
             testCommittedReplacementCallerGate root
+            testAtomicMultiwordFlowReplacement root
+            testAtomicMultiwordReplacementCallerClosure root
+            testAtomicMultiwordReplacementGates root
             testFlowUnknownArgumentsAndExpectationGuidance root
             testExplicitFrontendAndDurableReload root
             testExplicitFrontendCannotFallBack root
@@ -5166,7 +5522,7 @@ test-file self {
             testRecordValidatorRuntimeAndPersistence root
             testEffectCountAssertions root
             testFlowTestFileOverrides root
-            printfn $"Flow Runtime tests passed: 36 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 39 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)
