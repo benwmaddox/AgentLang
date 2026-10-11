@@ -1,0 +1,98 @@
+{
+  "status": "closed fresh continuation pilot",
+  "conditions": {
+    "retained": {
+      "acceptedEdit": true,
+      "automatedPassed": true,
+      "sourceReview": "accepted",
+      "normalFinalization": true,
+      "behavior": {
+        "expected": 9,
+        "executed": 9,
+        "passed": 9
+      },
+      "retainedCreatorBehavior": {
+        "expected": 66,
+        "executed": 66,
+        "passed": 66
+      },
+      "gates": {
+        "cliExitZero": true,
+        "responseCountExact": true,
+        "allNineCasesExecuted": true,
+        "allNineCasesPassed": true,
+        "retainedCreatorsComplete": true,
+        "observationSetupPassed": true,
+        "testAllPassed": true,
+        "allCurrentExamplesPassed": true,
+        "batchRootAndFailureTypePassed": true,
+        "baselineBindingPassed": true,
+        "baselineSeedPreservationPassed": true,
+        "commonSeedPreserved": true,
+        "armBaselinePreserved": true,
+        "actorProjectUnchanged": true,
+        "baselineProjectUnchanged": true,
+        "scoringCopyUnchanged": true
+      },
+      "commonSeedTestCount": 137,
+      "totalTestCount": 152,
+      "exampleOwnerCount": 39,
+      "actorProjectFingerprint": "a96279f55ca100cf69f0c93546bbd084d8d6d4d8dafce59f59e2a3ea3a662d86",
+      "metrics": {
+        "brokerExchanges": 39,
+        "exchangeCountBasis": "terminal host receipt",
+        "exchangeRequestWireBytes": 34259,
+        "exchangeResponseWireBytes": 112799,
+        "brokerDurationSeconds": 685.5625,
+        "hostReportedExchangeErrors": 8
+      }
+    },
+    "reset": {
+      "acceptedEdit": false,
+      "automatedPassed": true,
+      "sourceReview": "accepted",
+      "normalFinalization": false,
+      "behavior": {
+        "expected": 9,
+        "executed": 9,
+        "passed": 9
+      },
+      "retainedCreatorBehavior": {
+        "expected": 0,
+        "executed": 0,
+        "passed": 0
+      },
+      "gates": {
+        "cliExitZero": true,
+        "responseCountExact": true,
+        "allNineCasesExecuted": true,
+        "allNineCasesPassed": true,
+        "retainedCreatorsComplete": true,
+        "observationSetupPassed": true,
+        "testAllPassed": true,
+        "allCurrentExamplesPassed": true,
+        "batchRootAndFailureTypePassed": true,
+        "baselineBindingPassed": true,
+        "baselineSeedPreservationPassed": true,
+        "commonSeedPreserved": true,
+        "armBaselinePreserved": true,
+        "actorProjectUnchanged": true,
+        "baselineProjectUnchanged": true,
+        "scoringCopyUnchanged": true
+      },
+      "commonSeedTestCount": 137,
+      "totalTestCount": 150,
+      "exampleOwnerCount": 39,
+      "actorProjectFingerprint": "acbe05d40a13d283cf9e580fd675bb13045e14097f60731829aa81a17783bf80",
+      "metrics": {
+        "brokerExchanges": 59,
+        "exchangeCountBasis": "recorded trace exchanges; terminal receipt absent",
+        "exchangeRequestWireBytes": 64007,
+        "exchangeResponseWireBytes": 150546,
+        "brokerDurationSeconds": null,
+        "hostReportedExchangeErrors": 7
+      }
+    }
+  },
+  "interpretationLimit": "One fresh agent per unequal continuation project; no causal retention contrast, reliability rate, F# comparison, model token/context measurement or native performance result."
+}

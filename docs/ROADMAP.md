@@ -78,11 +78,13 @@ input state, and explicitly reviewed inherited test adaptations. It uses both
 accepted terminal 213 projects as unequal continuation seeds. Correct controls
 pass 9/9 in both arms and 66 retained regressions; runtime mutations calibrate at
 6/9 and 8/9. The [fresh continuation trial](../reports/217-typed-batch-failure-maintenance.md)
-now has one accepted retained edit: 9/9 migration cases, 66 inherited creator cases,
-152 tests and preserved source/evidence. Closure required a disclosed lifecycle-only
-instruction. Reset is running; no closed paired result or causal retention
-comparison is claimed. Next complete its terminal score and independent source
-review, then clarify atomic-publication help without changing validation gates.
+closes with correct preserved edits in both: 9/9 migration cases each, 152 retained
+tests, 150 reset tests and 66 retained creator regressions. Retained closure needed
+a disclosed lifecycle-only instruction; reset sent Ctrl+C and fails its normal
+finalization gate. These unequal continuation seeds do not establish a causal
+retention effect or reliability superiority. Next clarify atomic-publication help
+without changing validation gates, and disclose transport controls/operation
+limits in future trial bootstrap instructions.
 The [prior decision](../reports/199-efficacy-decision-after-reference-maintenance.md)
 covers the closed typed-reference cohort and its representation supplement in
 reports 196 and 197. The [previous checkpoint](../reports/182-efficacy-decision-checkpoint.md)

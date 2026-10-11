@@ -1,0 +1,252 @@
+{
+  "status": "sealed closed continuation summary; reset finalization failed",
+  "archiveSha256": "c8728982f56f52c23a0422400e57718d944af764cf6242c77fdf1e09c82c23b1",
+  "archiveBytes": 51230,
+  "memberCount": 29,
+  "members": [
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/aggregate.py",
+      "bytes": 2784,
+      "sha256": "b10d58b77acd870829f3d62032e61a7c9f1d95005848548a3eb12e53001c24e5"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/finalize-preflight.py",
+      "bytes": 3493,
+      "sha256": "fcd58491ed0a64107b180b98bad0ed0149b673eaaf8fcb497dd1ca01f6110c23"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/package-condition.py",
+      "bytes": 2748,
+      "sha256": "d094514c0f2ff83d0cca3b02e874c235219a06af5304e284dacf1f33d4dc6f35"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/package-preflight.py",
+      "bytes": 3301,
+      "sha256": "582b4f7f34fc484d3e4bc6bfa668f57995de1e6a3bea33a8ffd8edc2ccfc6692"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/package-summary.py",
+      "bytes": 2259,
+      "sha256": "2322009f3cbb522914ae33fe8a0688d7b47ad975c6c5620ce9e86daf0630c8bb"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/paired-summary.json",
+      "bytes": 3365,
+      "sha256": "74a971b7b70588fd866243fca61111ad937881cc05630d88bc8c98ae15ca2b0d"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/prepare_baselines.py",
+      "bytes": 2026,
+      "sha256": "9f5f1e4a553aad8ac16f5fe18f45b78f8eb3321da56d9ab80594b244604dcdb2"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/publication-help-review.md",
+      "bytes": 1647,
+      "sha256": "c0ddeaaf538ebea4c668f94d92ef2c91fa2344a478d70c26ef8eabf907c79a70"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/record-dispatch.py",
+      "bytes": 1286,
+      "sha256": "951f61a56a472e52ce17bd95cfa9f08fe3691a0ff05d21afbb0ac6c0d6bb905b"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/reset-dispatch.json",
+      "bytes": 831,
+      "sha256": "f1e13ea7b00931688b0fff49f1679d625991023ff3ec968834942e075c308340"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/reset-final.md",
+      "bytes": 1280,
+      "sha256": "db6174735b3f79a20bd64c5a8daf99758794cea1aabf0aec80f77232c018a675"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/reset-lifecycle-observation.json",
+      "bytes": 517,
+      "sha256": "bfc3f7f9c1a78d81671a635f6aa5024502cd2ae27f6400b492f52638938a2158"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/reset-review.json",
+      "bytes": 1203,
+      "sha256": "3c08a205ea17f513e4ac3d2531524cde40fd8275f1d650344ec01165d215edde"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/reset-score.json",
+      "bytes": 116915,
+      "sha256": "d337b6ab49f88d8809fac90f39eae0fc8b366c1fc65750b958df11e4a2a10b4c"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/reset-scoring-receipt.json",
+      "bytes": 181,
+      "sha256": "76651f3a8c000514f76301ecbb6e9391f92c67d8af6a2265326593750cf51d89"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/reset-terminal-audit.txt",
+      "bytes": 75,
+      "sha256": "70a10f4103acd040a2fbd090955e40ea5fb47a6ac183adfcb407b20d0bd3fd6c"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/retained-dispatch.json",
+      "bytes": 840,
+      "sha256": "841bac9a572133f2e33313d7e1f20d3b869a93ea002252e8aeecfab5bc28fc32"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/retained-final.md",
+      "bytes": 1246,
+      "sha256": "51623edc0c5240737696256fcefeffb7bdb97609742820184a0629ebecfab275"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/retained-lifecycle-observation.json",
+      "bytes": 743,
+      "sha256": "9f51d2715b596c3fede5ad645b5747a32be4051b28a7c5569d5211593b0fbe9d"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/retained-review.json",
+      "bytes": 1179,
+      "sha256": "9acd0c351e7514a11cab5ca028c8df02ddadebc1d42131d3e2bd58250f9a2907"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/retained-score.json",
+      "bytes": 130336,
+      "sha256": "172f62bfe07efbfa67b58395810dcf044eb9791182c1d5143cb7e4bc506dae14"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/retained-scoring-receipt.json",
+      "bytes": 184,
+      "sha256": "d0122303e6f5b63744b9e3182cbceed9288c6b385b6646039d3b0715ee595a0f"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/retained-terminal-audit.txt",
+      "bytes": 93,
+      "sha256": "1d86fa45ab05fec41c59fcd599aa41fdfae934707b183d63d276a924fe8b6b29"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/score-condition.ps1",
+      "bytes": 1215,
+      "sha256": "5b0265e36341c6e983b1fa776d7bd66f0733a29eea32f725e04ac66c7e74f979"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/start-reset.ps1",
+      "bytes": 740,
+      "sha256": "81a712311d35cbf5b482af421fcfc998e3fcd0b315cd27aee53fc63b374d933f"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/start-retained.ps1",
+      "bytes": 746,
+      "sha256": "21522289762cb8bd1e441d45ccce18e450ea916cce473111c9934feca9dff29e"
+    },
+    {
+      "path": ".agentlang/typed-batch-failure-216/dispatch/verify-frozen.py",
+      "bytes": 1123,
+      "sha256": "6cb55ad306158fb53c5297d19357eb17b8ba74bd366b0e381a6d4535fb4c8794"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/typed-batch-failure-216/PLAN.md",
+      "bytes": 4930,
+      "sha256": "583fddadc5603eb5bb66ce65810f442da4ef96d938ff78e90ae4fbbacce2d221"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/typed-batch-failure-216/preparation/task-packet.md",
+      "bytes": 1923,
+      "sha256": "42e48fb5207a7a0e2bc5ff8086d304c70fd677b589a159588aa4afc3e0352366"
+    }
+  ],
+  "summary": {
+    "status": "closed fresh continuation pilot",
+    "conditions": {
+      "retained": {
+        "acceptedEdit": true,
+        "automatedPassed": true,
+        "sourceReview": "accepted",
+        "normalFinalization": true,
+        "behavior": {
+          "expected": 9,
+          "executed": 9,
+          "passed": 9
+        },
+        "retainedCreatorBehavior": {
+          "expected": 66,
+          "executed": 66,
+          "passed": 66
+        },
+        "gates": {
+          "cliExitZero": true,
+          "responseCountExact": true,
+          "allNineCasesExecuted": true,
+          "allNineCasesPassed": true,
+          "retainedCreatorsComplete": true,
+          "observationSetupPassed": true,
+          "testAllPassed": true,
+          "allCurrentExamplesPassed": true,
+          "batchRootAndFailureTypePassed": true,
+          "baselineBindingPassed": true,
+          "baselineSeedPreservationPassed": true,
+          "commonSeedPreserved": true,
+          "armBaselinePreserved": true,
+          "actorProjectUnchanged": true,
+          "baselineProjectUnchanged": true,
+          "scoringCopyUnchanged": true
+        },
+        "commonSeedTestCount": 137,
+        "totalTestCount": 152,
+        "exampleOwnerCount": 39,
+        "actorProjectFingerprint": "a96279f55ca100cf69f0c93546bbd084d8d6d4d8dafce59f59e2a3ea3a662d86",
+        "metrics": {
+          "brokerExchanges": 39,
+          "exchangeCountBasis": "terminal host receipt",
+          "exchangeRequestWireBytes": 34259,
+          "exchangeResponseWireBytes": 112799,
+          "brokerDurationSeconds": 685.5625,
+          "hostReportedExchangeErrors": 8
+        }
+      },
+      "reset": {
+        "acceptedEdit": false,
+        "automatedPassed": true,
+        "sourceReview": "accepted",
+        "normalFinalization": false,
+        "behavior": {
+          "expected": 9,
+          "executed": 9,
+          "passed": 9
+        },
+        "retainedCreatorBehavior": {
+          "expected": 0,
+          "executed": 0,
+          "passed": 0
+        },
+        "gates": {
+          "cliExitZero": true,
+          "responseCountExact": true,
+          "allNineCasesExecuted": true,
+          "allNineCasesPassed": true,
+          "retainedCreatorsComplete": true,
+          "observationSetupPassed": true,
+          "testAllPassed": true,
+          "allCurrentExamplesPassed": true,
+          "batchRootAndFailureTypePassed": true,
+          "baselineBindingPassed": true,
+          "baselineSeedPreservationPassed": true,
+          "commonSeedPreserved": true,
+          "armBaselinePreserved": true,
+          "actorProjectUnchanged": true,
+          "baselineProjectUnchanged": true,
+          "scoringCopyUnchanged": true
+        },
+        "commonSeedTestCount": 137,
+        "totalTestCount": 150,
+        "exampleOwnerCount": 39,
+        "actorProjectFingerprint": "acbe05d40a13d283cf9e580fd675bb13045e14097f60731829aa81a17783bf80",
+        "metrics": {
+          "brokerExchanges": 59,
+          "exchangeCountBasis": "recorded trace exchanges; terminal receipt absent",
+          "exchangeRequestWireBytes": 64007,
+          "exchangeResponseWireBytes": 150546,
+          "brokerDurationSeconds": null,
+          "hostReportedExchangeErrors": 7
+        }
+      }
+    },
+    "interpretationLimit": "One fresh agent per unequal continuation project; no causal retention contrast, reliability rate, F# comparison, model token/context measurement or native performance result."
+  },
+  "interpretation": "Correct preserved edits in both; retained closure assisted; reset lifecycle gate failed. No causal or comparative reliability claim."
+}
