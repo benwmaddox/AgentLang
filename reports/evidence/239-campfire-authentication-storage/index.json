@@ -1,0 +1,138 @@
+{
+  "formatVersion": 1,
+  "archive": "evidence.zip",
+  "archiveSha256": "b4d80425638fa37b766740cde4ff64fa8468d74690bec90d3d40d8bc37647fec",
+  "memberCount": 26,
+  "members": [
+    {
+      "name": "source/applications/campfire/Authentication.Persistence/AgentLang.Campfire.Authentication.Persistence.fsproj",
+      "bytes": 449,
+      "sha256": "07bcdbcafecf7c340182757b41be913ccbc6e8c910038f35af9bb6f1d4517539"
+    },
+    {
+      "name": "source/applications/campfire/Authentication.Persistence/SqliteProvider.fs",
+      "bytes": 16622,
+      "sha256": "0805c959924957b41d86ce945937ed41724d2b8b3e05f8181521075782e79157"
+    },
+    {
+      "name": "source/tests/AgentLang.Campfire.Authentication.Persistence.Tests/AgentLang.Campfire.Authentication.Persistence.Tests.fsproj",
+      "bytes": 455,
+      "sha256": "1b589235d1410d856e27957bc610c98392e1384981c186c41ac13450a25f1de4"
+    },
+    {
+      "name": "source/tests/AgentLang.Campfire.Authentication.Persistence.Tests/Program.fs",
+      "bytes": 32474,
+      "sha256": "a02a3149cc7c9a5162af2ad9a8f37ebdfc2278919db2010ec515524c04f99421"
+    },
+    {
+      "name": "validation/build-cutoff-precision.log",
+      "bytes": 622,
+      "sha256": "eb6de4ccc9186bd5d82f22973d7d16de6b092169715805ef09e8eadad0ab2007"
+    },
+    {
+      "name": "validation/build-final.log",
+      "bytes": 622,
+      "sha256": "cac8b769e0c028d4d46cbbfc62bc72f13f9b9bda352039a2de5db6a5a95991c7"
+    },
+    {
+      "name": "validation/build-nonpositive-id.log",
+      "bytes": 622,
+      "sha256": "80a645df2f13fb45a547b627205a7d103da1311155d51b1b565352dcd3917ee4"
+    },
+    {
+      "name": "validation/build-sandbox.log",
+      "bytes": 622,
+      "sha256": "e3bac05258991efd99e19c1ddd0e80bf7126c70146c5e6ff1304028f98647293"
+    },
+    {
+      "name": "validation/build.log",
+      "bytes": 1969,
+      "sha256": "a71a6fce5109e502ea5c83f17912683f042eecd720620d4fbd259c908dd986cc"
+    },
+    {
+      "name": "validation/host-restore.log",
+      "bytes": 390,
+      "sha256": "5aca6e5e1fa69935980a6d95bdcaf8f29c0cb92070e070bf6e5775737a5276da"
+    },
+    {
+      "name": "validation/implementation-hashes-239-nonpositive-id.sha256",
+      "bytes": 875,
+      "sha256": "7038dcca173ba3a23ef99a2ff3c7584c367eb833ae3ca5b46d5f9328c82996c5"
+    },
+    {
+      "name": "validation/implementation-hashes-240-cutoff-precision.sha256",
+      "bytes": 875,
+      "sha256": "6f861dbb97d9c4e93452f7dbef5400dcba0d5a16f2913eb052e22b709d7b934f"
+    },
+    {
+      "name": "validation/implementation-hashes.sha256",
+      "bytes": 875,
+      "sha256": "4d11261f71a346cb377eb0bc8e7bd42545ff00bcafab38b4d2f7e4172f9e7b92"
+    },
+    {
+      "name": "validation/plan.md",
+      "bytes": 5904,
+      "sha256": "cc2da3d0d60679165a91f0a5fbfc83f18cc877eaf586eee6116f9b6dc20cd012"
+    },
+    {
+      "name": "validation/reference-precision-hashes.sha256",
+      "bytes": 368,
+      "sha256": "26615037137e6c7ddb70d84b69b632aea6900302b0ddf775f5ba21dc6fea1204"
+    },
+    {
+      "name": "validation/root-build.log",
+      "bytes": 622,
+      "sha256": "5ef3562005c411601f8510c00669c7d009cb858f287a60eefd7cb1cc3b4a0c03"
+    },
+    {
+      "name": "validation/root-test-run.log",
+      "bytes": 362,
+      "sha256": "219fe6ed867cef7eae96c81709b4428fd8d87450ed28bac950b155d342a1c973"
+    },
+    {
+      "name": "validation/source-hashes.sha256",
+      "bytes": 978,
+      "sha256": "e87d9828660d6f27662c6987c0c7518df3464617765c20ca786f7b43da7ffe7c"
+    },
+    {
+      "name": "validation/test-run-cutoff-precision.log",
+      "bytes": 362,
+      "sha256": "219fe6ed867cef7eae96c81709b4428fd8d87450ed28bac950b155d342a1c973"
+    },
+    {
+      "name": "validation/test-run-final.log",
+      "bytes": 361,
+      "sha256": "b9860097ebeab899dd50f34e46052978486f6395c8b28a79910e85273c27edf6"
+    },
+    {
+      "name": "validation/test-run-nonpositive-id.log",
+      "bytes": 362,
+      "sha256": "64f6e75805ba06b723326c9ca326e8c6c5d29af9db003c9ac4809002cc7604b8"
+    },
+    {
+      "name": "validation/test-run-with-placeholder.log",
+      "bytes": 361,
+      "sha256": "a5f20839030fd990fbf1cfa5a30850e81cb8b560e2686a95521ec36cf3a77e00"
+    },
+    {
+      "name": "validation/test-run-wrong-token-failure.log",
+      "bytes": 1154,
+      "sha256": "a0679e58a180e02797de0ef39350dd8a2e9f3adaf6a6342cd3d6ff369500e224"
+    },
+    {
+      "name": "validation/test-run.log",
+      "bytes": 1186,
+      "sha256": "0f668c47e6351f16cbb32b6e67d4439add1ac99d5b434da62aa6ac5469bcc21f"
+    },
+    {
+      "name": "validation/validation.md",
+      "bytes": 5151,
+      "sha256": "e1e8cfa33345bb103a82ea688bf776fe860b3045f7d9bb3990f54cf59ade09c3"
+    },
+    {
+      "name": "validation/receipt.json",
+      "bytes": 1808,
+      "sha256": "34d440adabd43ad88f0f5d6960e8575bbc5bf160446e70f9496290eccdcaaa62"
+    }
+  ]
+}

@@ -33,3 +33,10 @@ The rule is `administrator || creator_id == current_user.id || is_new`. Rails co
 ```powershell
 dotnet run --project tests/AgentLang.Campfire.Cookies.Tests/AgentLang.Campfire.Cookies.Tests.fsproj --configuration Release
 ```
+## Authentication storage
+
+`Authentication.Persistence/` provides six fixed SQLite operations for session/user lookup, conditional session refresh, active bot keys, banned IPs and membership-scoped room lookup. They are locally tested but not yet registered with the runtime or connected to HTTP. See [authentication storage report](../../reports/239-campfire-authentication-storage.md).
+
+```powershell
+dotnet run --project tests/AgentLang.Campfire.Authentication.Persistence.Tests/AgentLang.Campfire.Authentication.Persistence.Tests.fsproj --configuration Release
+```

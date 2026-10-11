@@ -1,0 +1,46 @@
+{
+  "formatVersion": 1,
+  "passed": true,
+  "scope": "standalone six-operation Campfire authentication/session SQLite adapter",
+  "rootBuild": {
+    "command": "dotnet build tests/AgentLang.Campfire.Authentication.Persistence.Tests/AgentLang.Campfire.Authentication.Persistence.Tests.fsproj -c Release -m:1 --no-restore",
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0
+  },
+  "rootTests": {
+    "groups": 8,
+    "assertions": 102,
+    "exitCode": 0,
+    "command": "dotnet run --project tests/AgentLang.Campfire.Authentication.Persistence.Tests/AgentLang.Campfire.Authentication.Persistence.Tests.fsproj -c Release --no-build --no-restore"
+  },
+  "packageRestore": {
+    "sandboxNetworkFailure": "NU1900",
+    "hostRetryExitCode": 0,
+    "nuGetAudit": true
+  },
+  "sourcePins": [
+    {
+      "path": "applications/campfire/Authentication.Persistence/AgentLang.Campfire.Authentication.Persistence.fsproj",
+      "sha256": "07bcdbcafecf7c340182757b41be913ccbc6e8c910038f35af9bb6f1d4517539"
+    },
+    {
+      "path": "applications/campfire/Authentication.Persistence/SqliteProvider.fs",
+      "sha256": "0805c959924957b41d86ce945937ed41724d2b8b3e05f8181521075782e79157"
+    },
+    {
+      "path": "tests/AgentLang.Campfire.Authentication.Persistence.Tests/AgentLang.Campfire.Authentication.Persistence.Tests.fsproj",
+      "sha256": "1b589235d1410d856e27957bc610c98392e1384981c186c41ac13450a25f1de4"
+    },
+    {
+      "path": "tests/AgentLang.Campfire.Authentication.Persistence.Tests/Program.fs",
+      "sha256": "a02a3149cc7c9a5162af2ad9a8f37ebdfc2278919db2010ec515524c04f99421"
+    }
+  ],
+  "limitations": [
+    "No Core host registration",
+    "No HTTP/session restoration",
+    "Narrow SQLite fixtures",
+    "No native backend/performance claim"
+  ]
+}
