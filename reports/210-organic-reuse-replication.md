@@ -1,7 +1,31 @@
 # 210 — Fresh replication of organic vocabulary creation
 
-Status: preflight accepted on 2026-10-11; creator dispatch is next. No new agent
-outcome is claimed in this preparation report.
+Status: closed on 2026-10-11 after one accepted creator. No eligible shared
+helper was created; the frozen stop rule prevents successor dispatch.
+
+The fresh creator passes all 66 independent behavior observations, 145/145 tests,
+examples for all 39 owners, library publication and inherited-evidence preservation.
+Each requested function has four attached tests. The scorer leaves the actor
+project unchanged and records an empty eligible-helper set. Both production
+bodies use the same lookup/cancel/start structure with different fixed term strings.
+This is a correct implementation with a negative optional-helper endpoint.
+
+The termination audit establishes 22 broker exchanges and host/runtime exits 0/0.
+The participant's own final poll reported an unknown process ID; that poll alone
+does not establish successful termination. Its non-broker disclosure is limited
+to reading the assigned packet and launching the assigned broker. No out-of-band
+coordination was reported or observed. All runtime work used virtual I/O and empty
+external capabilities.
+
+[Participant evidence](evidence/210-organic-reuse-replication/creator-result.zip)
+and [index](evidence/210-organic-reuse-replication/creator-result.index.json) preserve
+the exact final project, trace, independent score and disclosure separately from
+pre-dispatch evidence. All 564 archive members were reopened and their lengths
+and SHA256 checked. No successor was launched.
+
+An [independent review](evidence/210-organic-reuse-replication/review.md) agrees
+with the saved score and terminal evidence and verifies every indexed member of
+both archives. It ran no new participant or runtime.
 
 The primary efficacy question remains whether agents independently create useful
 typed vocabulary that a later agent discovers and reuses. Trial 200 completed its
@@ -51,7 +75,23 @@ Participants use fresh contexts and assigned broker sessions, Luna/max, at most
 sandbox; external-tool isolation is prompt-governed and must be disclosed.
 No public listener, new external capability or language escape hatch is introduced.
 
-This preparation changes no efficacy conclusion in [report 203](203-efficacy-decision-after-organic-creation.md).
-One additional creator can supply another observation of this particular task;
-it cannot estimate comparative reliability, context savings or a native runtime
-advantage. No helper means no successor and no downstream reuse claim.
+This result strengthens bounded evidence for discovery, composition, correct
+implementation and preservation on this task. Together with 200, it gives two
+successful creators with no qualifying optional helper on the repeated opportunity.
+It cannot estimate a general abstraction-creation rate, identify why duplication
+was chosen, establish comparative reliability or show a runtime advantage.
+Broker exchanges do not measure provider tokens or context savings.
+
+The helper endpoint is narrower than the overall accumulation hypothesis. The two
+requested renewal functions are themselves creator-authored vocabulary, with
+task-prescribed names/signatures. Their later usefulness has not been tested here.
+An empty optional-helper set neither establishes nor disproves that usefulness.
+A separate minimal follow-up should test a fresh developer's discovery and
+production reuse of those accepted public functions on the existing held-out
+batch task, explicitly labelled task-required vocabulary reuse. Preserve 210's
+stop rule and do not relabel such a follow-up as its successor or as spontaneous
+helper reuse. A matched reset comparison remains necessary to estimate a benefit.
+
+The broader conclusion in [report 203](203-efficacy-decision-after-organic-creation.md)
+remains: discovery/composition are demonstrated on bounded tasks; comparative
+reliability and beneficial vocabulary accumulation are unproven.
