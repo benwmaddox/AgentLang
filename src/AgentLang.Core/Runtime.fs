@@ -4069,6 +4069,80 @@ module Runtime =
                 error "FLOW_RUNTIME_UNKNOWN_ARGUMENT" $"{location} has unsupported field(s): {unknownText}.{docHint}" None None
                     (allowed |> ordinalSort) unknown
 
+        let flowTestChanges (arguments: JsonObject) =
+            if not (arguments.ContainsKey "testChanges") then []
+            else
+                match arguments["testChanges"] with
+                | :? JsonArray as rows ->
+                    rows
+                    |> Seq.mapi (fun index row ->
+                        let prefix = $"testChanges[{index}]"
+                        match row with
+                        | :? JsonObject as item ->
+                            let allowed = [ "word"; "caseName"; "expectedSourceHash" ]
+                            let allowedSet = Set.ofList allowed
+                            let unknown =
+                                item
+                                |> Seq.map (fun (KeyValue(key, _)) -> key)
+                                |> Seq.filter (allowedSet.Contains >> not)
+                                |> Seq.toList
+                            rejectUnknownFields prefix allowed unknown
+                            let requiredNonempty name =
+                                if not (item.ContainsKey name) then
+                                    flowArgumentError ($"{prefix}.{name}") "a nonempty string" "missing"
+                                let value = flowStringValue ($"{prefix}.{name}") item[name]
+                                if String.IsNullOrWhiteSpace value then
+                                    flowArgumentError ($"{prefix}.{name}") "a nonempty string" "empty"
+                                value
+                            requiredNonempty "word", requiredNonempty "caseName", requiredNonempty "expectedSourceHash"
+                        | value -> flowArgumentError prefix "an object with word, caseName, and expectedSourceHash strings" (flowJsonKind value))
+                    |> Seq.toList
+                | value -> flowArgumentError "testChanges" "an array of inherited test-change objects" (flowJsonKind value)
+
+        let rejectUnsupportedFlowTestChanges (arguments: JsonObject) =
+            if arguments.ContainsKey "testChanges" then
+                error "FLOW_TEST_CHANGE_UNSUPPORTED" "testChanges applies only to changed existing inline Flow tests submitted with a definition replacement." None None
+                    [ "Flow definition replacement with inline tests" ] [ "testChanges" ]
+
+        let validateFlowTestChanges (changes: (string * string * string) list) (priorTests: Map<string, FlowAuthoredAttachment>) incomingTests =
+            match changes |> List.groupBy (fun (word, caseName, _) -> word, caseName) |> List.tryFind (fun (_, rows) -> rows.Length > 1) with
+            | Some((word, caseName), _) ->
+                error "FLOW_TEST_CHANGE_DUPLICATE" "A Flow test case can have at most one testChanges row." (Some(word + "/" + caseName)) None [] [ word + "/" + caseName ]
+            | None -> ()
+            let declared = changes |> List.map (fun (word, caseName, hash) -> (word, caseName), hash) |> Map.ofList
+            let priorByOwnerAndCase =
+                priorTests
+                |> Map.toList
+                |> List.map snd
+                |> List.map (fun attachment ->
+                    (attachment.Source.OwnerName, attachment.Source.CaseName),
+                    (attachment.Source.Reference.Hash, attachment.Source.SyntaxVersion))
+                |> Map.ofList
+            let mutable used = Set.empty
+            for ownerName, caseName, sourceHash, syntaxVersion in incomingTests do
+                let key = ownerName, caseName
+                match priorByOwnerAndCase.TryFind key with
+                | None ->
+                    if declared.ContainsKey key then
+                        error "FLOW_TEST_CHANGE_UNUSED" "A new test does not need a testChanges row; declarations must match changed existing inline cases." (Some(ownerName + "/" + caseName)) None [] [ "new test" ]
+                | Some(priorHash, priorSyntaxVersion) ->
+                    let changed = priorHash <> sourceHash || priorSyntaxVersion <> syntaxVersion
+                    match changed, declared.TryFind key with
+                    | false, Some _ ->
+                        error "FLOW_TEST_CHANGE_UNUSED" "A testChanges row must identify a changed existing inline case." (Some(ownerName + "/" + caseName)) None [ "changed existing test" ] [ "unchanged test" ]
+                    | false, None -> ()
+                    | true, None ->
+                        error "FLOW_TEST_CHANGE_REQUIRED" "Changing an existing inline Flow test during definition replacement requires its current source hash in testChanges; comparison includes source bytes and syntax version." (Some(ownerName + "/" + caseName)) None
+                            [ $"{priorHash} (syntaxVersion {priorSyntaxVersion})" ]
+                            [ $"{sourceHash} (syntaxVersion {syntaxVersion})" ]
+                    | true, Some expectedHash when expectedHash <> priorHash ->
+                        error "FLOW_ATTACHMENT_STALE_SOURCE" "testChanges expectedSourceHash does not match the current immutable test source." (Some(ownerName + "/" + caseName)) None [ priorHash ] [ expectedHash ]
+                    | true, Some _ -> used <- Set.add key used
+            for key in declared |> Map.toSeq |> Seq.map fst do
+                if not (used.Contains key) then
+                    let ownerName, caseName = key
+                    error "FLOW_TEST_CHANGE_UNUSED" "A testChanges row must identify one changed existing inline case submitted in this replacement." (Some(ownerName + "/" + caseName)) None [ "changed existing inline test" ] [ "no changed submitted test" ]
+
         let validateFlowDefineArguments (arguments: JsonObject) =
             let allowed = Set.ofList flowDefineAllowedKeys
             let topLevelUnknown =
@@ -4077,6 +4151,8 @@ module Runtime =
                 |> Seq.filter (allowed.Contains >> not)
                 |> Seq.toList
             rejectUnknownFields "" flowDefineAllowedKeys topLevelUnknown
+
+            flowTestChanges arguments |> ignore
 
             match arguments["removeAttachments"] with
             | :? JsonArray as rows ->
@@ -4608,6 +4684,15 @@ module Runtime =
             match Set.intersect frozen (Set.ofList wordNames) |> Set.toList with
             | name :: _ -> error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{name}' while a nominal type is persistent." (Some name) None [] [ name ]
             | [] -> ()
+            validateFlowTestChanges
+                (flowTestChanges arguments)
+                old.FlowTests
+                (parseTests
+                 |> List.map (fun (_, attachment) ->
+                     attachment.Source.OwnerName,
+                     attachment.Source.CaseName,
+                     attachment.Source.Reference.Hash,
+                     attachment.Source.SyntaxVersion))
             for name in wordNames do
                 if old.Words.TryFind name |> Option.exists (fun word -> word.Maturity = LibraryWord) then
                     rejectUnqualifiedLibraryDependencies executable.Words name
@@ -4639,6 +4724,7 @@ module Runtime =
 
         let registerFlowProjectAddOnlyParsed (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
             let old = data
+            rejectUnsupportedFlowTestChanges arguments
             let temporary = readOptionalStrictBool arguments "temporary" false
             let hasTypes = not document.Records.IsEmpty || not document.Scalars.IsEmpty || not document.Enums.IsEmpty
             if document.SyntaxVersion <> syntaxVersion then
@@ -4943,7 +5029,7 @@ module Runtime =
             else
                 registerFlowProjectAddOnlyParsed arguments syntaxVersion document
 
-        let registerFlowParsedLegacyWithAttachmentVersion (arguments: JsonObject) definitionSyntaxVersion attachmentSyntaxVersion =
+        let registerFlowParsedLegacyWithAttachmentVersion (arguments: JsonObject) definitionSyntaxVersion attachmentSyntaxVersion enforceInheritedTestIntent =
             let old = data
             let source = requiredFlowString arguments "source"
             let parsedWord =
@@ -4954,6 +5040,8 @@ module Runtime =
                 error "FLOW_VERSION_UNSUPPORTED" "Flow word syntax version does not match the selected syntaxVersion." (Some parsedWord.Name) (Some parsedWord.Span) [ string definitionSyntaxVersion ] [ string parsedWord.SyntaxVersion ]
 
             let replace = readOptionalStrictBool arguments "replace" false
+            if arguments.ContainsKey "testChanges" && not replace then
+                rejectUnsupportedFlowTestChanges arguments
             let temporary = readOptionalStrictBool arguments "temporary" false
             let previous = old.Words.TryFind parsedWord.Name
             if replace && previous.IsNone then
@@ -5043,6 +5131,8 @@ module Runtime =
             let currentFlowTests = old.FlowTests |> Map.filter (fun _ item -> item.Source.OwnerId = ownerId)
             let currentFlowTestFiles = old.FlowTestFiles |> Map.filter (fun _ item -> item.OwnerId = ownerId)
             let currentFlowExamples = old.FlowExamples |> Map.filter (fun _ item -> item.Source.OwnerId = ownerId)
+            if arguments.ContainsKey "testChanges" && previous.IsSome && currentFlowWord.IsNone then
+                rejectUnsupportedFlowTestChanges arguments
             let suppliedTestNames = parsedTests |> List.map fst |> Set.ofList
             let suppliedExampleNames = parsedExamples |> List.map fst |> Set.ofList
             let previousWasStack = previous.IsSome && currentFlowWord.IsNone
@@ -5253,6 +5343,16 @@ module Runtime =
             let frozen = frozenValidatorWords old (effectiveWords old)
             if frozen.Contains parsedWord.Name then
                 error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{parsedWord.Name}' while a nominal type is persistent." (Some parsedWord.Name) (Some parsedWord.Span) [] [ parsedWord.Name ]
+            if enforceInheritedTestIntent then
+                validateFlowTestChanges
+                    (flowTestChanges arguments)
+                    currentFlowTests
+                    (parsedTests
+                     |> List.map (fun (_, source) ->
+                         source.OwnerName,
+                         source.CaseName,
+                         source.Reference.Hash,
+                         source.SyntaxVersion))
             activateRuntimeSnapshot executable
             lastResults <- []
             log "create" parsedWord.Name
@@ -5266,10 +5366,11 @@ module Runtime =
             success "defined" "Flow definition, tests, examples, and retained source bindings validated and staged." (Some payload)
 
         let registerFlowParsedLegacy (arguments: JsonObject) syntaxVersion =
-            registerFlowParsedLegacyWithAttachmentVersion arguments syntaxVersion syntaxVersion
+            registerFlowParsedLegacyWithAttachmentVersion arguments syntaxVersion syntaxVersion true
 
         let registerFlowTestFilesOnly (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
             let old = data
+            rejectUnsupportedFlowTestChanges arguments
             if not document.Records.IsEmpty || not document.Scalars.IsEmpty || not document.Enums.IsEmpty || not document.Words.IsEmpty then
                 error "FLOW_ATTACHMENT_DOCUMENT_SHAPE" "A test-file attachment document cannot also define a word or type." None None [ "test-file and attachment declarations only" ] []
             if not (flowSourceStrings arguments "tests").IsEmpty || not (flowSourceStrings arguments "examples").IsEmpty then
@@ -5621,6 +5722,7 @@ module Runtime =
 
         let registerFlowAttachmentsOnlyLegacy (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
             let old = data
+            rejectUnsupportedFlowTestChanges arguments
             let attachmentSources =
                 (document.Tests |> List.map (fun item -> item.Word))
                 @ (document.Examples |> List.map (fun item -> item.Word))
@@ -5692,7 +5794,7 @@ module Runtime =
             if not replace && not hasExpectedRevision then
                 routed["replace"] <- jbool true
                 routed["expectedRevision"] <- jint ownerWord.Revision
-            registerFlowParsedLegacyWithAttachmentVersion routed ownerSyntaxVersion syntaxVersion
+            registerFlowParsedLegacyWithAttachmentVersion routed ownerSyntaxVersion syntaxVersion false
 
         let registerFlowAttachmentsOnly (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
             if not document.TestFiles.IsEmpty then
@@ -6040,6 +6142,7 @@ module Runtime =
                         validateFlowDefineArguments args
                         registerFlowParsed args syntaxVersion
                     | _ ->
+                        rejectUnsupportedFlowTestChanges args
                         let source = readString args "source" (readString args "code" "")
                         match Parser.parse "<definition>" source with
                         | Error diagnostic -> response false "error" (Diagnostics.render diagnostic) None (Some diagnostic)

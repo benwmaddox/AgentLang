@@ -1,0 +1,13 @@
+{
+  "archiveBytes": 2317892,
+  "archivePath": "reports/evidence/233-inherited-test-change-intent/evidence.zip",
+  "archiveSha256": "c8efdcbfee9308a76a64e0e0d1d83bc324358fec96fd6e3b0b60a6da407bcb80",
+  "indexPath": "reports/evidence/233-inherited-test-change-intent/index.json",
+  "indexSha256": "00c064ae7a20f3bf60a8dd67751ac619382a0544b1fe074ab6c8724b017096a3",
+  "memberCount": 396,
+  "schema": "233-inherited-test-change-intent-evidence-receipt-v1",
+  "status": "verified",
+  "validationAggregatePath": ".agentlang/test-preservation-233/validation/aggregate-receipt.json",
+  "validationAggregateSha256": "e42d96d9c4963a42478046fbdf9561cc980957c3858ccbe3083ee7a000eeba18",
+  "zipMemberReadback": "all members byte-for-byte verified; no traversal paths, symlinks, duplicate members, or compiled runtime files"
+}

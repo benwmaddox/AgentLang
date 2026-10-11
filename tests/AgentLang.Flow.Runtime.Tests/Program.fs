@@ -42,6 +42,16 @@ module Program =
             result.[name] <- if isNull value then null else value.DeepClone()
         result
 
+    let private testChangeRows (rows: (string * string * string) list) =
+        let result = JsonArray()
+        for word, caseName, expectedSourceHash in rows do
+            let row = JsonObject()
+            row.["word"] <- jstr word
+            row.["caseName"] <- jstr caseName
+            row.["expectedSourceHash"] <- jstr expectedSourceHash
+            result.Add row
+        result :> JsonNode
+
     let private dispatch (engine: Runtime.Engine) operation values =
         engine.Dispatch(operation, arguments values)
 
@@ -63,6 +73,17 @@ module Program =
         let actualCode = stringValue (response.["error"].["code"])
         equal expectedCode actualCode "runtime diagnostic code"
         response
+
+    let private currentTestChangeRows (engine: Runtime.Engine) (cases: (string * string) list) =
+        cases
+        |> List.map (fun (word, caseName) ->
+            let rows =
+                dispatch engine "tests" [ "word", jstr word; "includeSource", jbool true ]
+                |> expectOk $"inspect current tests for {word}"
+                |> fun response -> response.["data"].AsArray()
+            let row = rows |> Seq.find (fun item -> stringValue item.["name"] = caseName)
+            word, caseName, stringValue row.["sourceHash"])
+        |> testChangeRows
 
     let private errorCode (response: JsonObject) = stringValue (response.["error"].["code"])
 
@@ -692,12 +713,14 @@ module Program =
         let replacementTest = "test draft.bump/basic { draft::bump(1) => 3 }"
         let stale =
             defineFlow engine replacementSource [ replacementTest ] []
-                [ "replace", jbool true; "expectedRevision", jint 0 ]
+                [ "replace", jbool true; "expectedRevision", jint 0
+                  "testChanges", testChangeRows [ "draft.bump", "basic", digest firstTest ] ]
         expectError "FLOW_BATCH_STALE_REVISION" stale |> ignore
         let afterStale = dispatch engine "describe" [ "word", jstr "draft.bump" ] |> expectOk "inspect candidate after stale CAS"
         equal 1 (afterStale.["data"].["revision"].GetValue<int>()) "stale CAS does not advance candidate revision"
         defineFlow engine replacementSource [ replacementTest ] []
-            [ "replace", jbool true; "expectedRevision", jint 1 ]
+            [ "replace", jbool true; "expectedRevision", jint 1
+              "testChanges", testChangeRows [ "draft.bump", "basic", digest firstTest ] ]
         |> expectOk "stage the current-revision candidate replacement"
         |> ignore
         equal 2 ((dispatch engine "describe" [ "word", jstr "draft.bump" ] |> expectOk "inspect staged candidate revision").["data"].["revision"].GetValue<int>()) "candidate replacement advances its local revision"
@@ -779,6 +802,12 @@ module Program =
                 [ "syntaxVersion", jint 2
                   "replace", jbool true
                   "expectedRevisions", expectedRevisions revisions ]
+        let stageBatchWithTestChanges (engine: Runtime.Engine) source revisions testCases =
+            defineFlowProject engine source
+                [ "syntaxVersion", jint 2
+                  "replace", jbool true
+                  "expectedRevisions", expectedRevisions revisions
+                  "testChanges", currentTestChangeRows engine testCases ]
         let revision (engine: Runtime.Engine) name =
             dispatch engine "describe" [ "word", jstr name ]
             |> expectOk $"inspect {name} revision"
@@ -1031,7 +1060,7 @@ module Program =
             let sourceAfterFailure = stringValue (dispatch engine "source" [ "word", jstr name ] |> expectOk "read word after invalid batch" |> fun response -> response.["data"])
             check (not (sourceAfterFailure.Contains("acknowledged", StringComparison.Ordinal))) $"bad later source does not leak the new signature for {name}"
 
-        stageBatch engine migration revisions |> expectOk "stage a complete three-word Bool arity migration atomically" |> ignore
+        stageBatchWithTestChanges engine migration revisions [ "subscription.handoff", "basic" ] |> expectOk "stage a complete three-word Bool arity migration atomically" |> ignore
         for name in names do
             equal originalIds[name] (getWordId engine name) $"staging preserves the stable identity of {name}"
             equal (originalRevisions[name] + 1) (revision engine name) $"staging advances {name} exactly once"
@@ -1082,7 +1111,7 @@ module Program =
             + "test signature.target/basic { signature::target(1, 2, 3, 4, 5, 6, false) => 7 }\n\n"
             + "test signature.target/acknowledged { signature::target(1, 2, 3, 4, 5, 6, true) => 7 }\n\n"
             + "test signature.caller/basic { signature::caller(1, 2, 3, 4, 5, 6) => 7 }"
-        stageBatch dropEdgeEngine dropEdgeMigration [ "signature.target", 1; "signature.caller", 1 ]
+        stageBatchWithTestChanges dropEdgeEngine dropEdgeMigration [ "signature.target", 1; "signature.caller", 1 ] [ "signature.target", "basic" ]
         |> expectOk "stage the seven-input migration and a caller revision that removes the old edge"
         |> ignore
         let dropEdgePublished = commit dropEdgeEngine "commit-word" "signature.target" [] |> expectOk "commit the migration and updated edge-free caller atomically"
@@ -1130,13 +1159,16 @@ module Program =
             dispatch target "describe" [ "word", jstr name ]
             |> expectOk $"inspect {name} revision"
             |> fun response -> response.["data"].["revision"].GetValue<int>()
-        let evolve source typeSources revisions includeWordCas =
+        let evolveWithTestChanges source typeSources revisions includeWordCas testCases =
             let fields =
                 [ "syntaxVersion", jint 2
                   "replace", jbool true
                   "expectedTypeSources", expectedTypeSources typeSources ]
                 @ (if includeWordCas then [ "expectedRevisions", expectedRevisions revisions ] else [])
+                @ (if List.isEmpty testCases then [] else [ "testChanges", currentTestChangeRows engine testCases ])
             defineFlowProject engine source fields
+        let evolve source typeSources revisions includeWordCas =
+            evolveWithTestChanges source typeSources revisions includeWordCas []
         let namedConstructor title count note = $"parcel::new(title = {title}, count = {count}, note = {note})"
         let trackingConstructor title count note = $"parcel::new(label = TrackingReference::new({title}), count = {count}, note = {note})"
         let basicCase word call expected = testSource word "basic" call expected
@@ -1307,9 +1339,10 @@ module Program =
         let addDocument =
             source [ addNoteRecord; addNoteLabelFn; addNoteForwardFn; noteFn; addNoteDefaultTitleFn; addTitleTest; addInheritedTitleTest; addForwardTest; addNoteTest; initialDefaultTitleTest; addForwardExample ]
         let addedNoteStage =
-            evolve addDocument [ "Parcel", originalTypeHash ]
+            evolveWithTestChanges addDocument [ "Parcel", originalTypeHash ]
                 [ "parcel.label-text", revision engine "parcel.label-text"; "parcel.forward", revision engine "parcel.forward"
                   "parcel.default-title", revision engine "parcel.default-title" ] true
+                [ "parcel.label-text", "basic"; "parcel.label-text", "inherited"; "parcel.forward", "basic" ]
             |> expectOk "stage a field addition with exact existing owner CAS and a new helper"
         equal "candidate" (stringValue (dispatch engine "describe" [ "type", jstr "Parcel" ] |> expectOk "inspect staged added record" |> fun result -> result.["data"].["status"])) "record field addition remains staged"
         let newNoteId = getWordId engine "parcel.note-text"
@@ -1346,9 +1379,10 @@ module Program =
         let renameDocument =
             source [ renamedRecord; renameLabelFn; renameForwardFn; renameNoteFn; renameDefaultTitleFn
                      renameTitleTest; renameInheritedTitleTest; renameForwardTest; renameNoteTest; renameDefaultTitleTest; renameForwardExample ]
-        evolve renameDocument [ "Parcel", typeSourceHash engine "Parcel" ]
+        evolveWithTestChanges renameDocument [ "Parcel", typeSourceHash engine "Parcel" ]
             [ "parcel.label-text", revision engine "parcel.label-text"; "parcel.forward", revision engine "parcel.forward"
               "parcel.note-text", revision engine "parcel.note-text"; "parcel.default-title", revision engine "parcel.default-title" ] true
+            [ "parcel.label-text", "basic"; "parcel.label-text", "inherited"; "parcel.forward", "basic"; "parcel.note-text", "basic" ]
         |> expectOk "rename a record field and adapt every authored consumer"
         |> ignore
         commit engine "commit" "Parcel" [] |> expectOk "publish field rename and caller group by type" |> ignore
@@ -1374,10 +1408,11 @@ module Program =
             source [ "type TrackingReference : String { }"; "type OtherReference : String { }"; typedRecord
                      typedLabelFn; typedForwardFn; typedNoteFn; typedLookupFn; typedDefaultTitleFn
                      typedTitleTest; typedInheritedTitleTest; typedForwardTest; typedNoteTest; typedLookupTest; typedDefaultTitleTest; typedForwardExample ]
-        evolve typedDocument [ "Parcel", typeSourceHash engine "Parcel" ]
+        evolveWithTestChanges typedDocument [ "Parcel", typeSourceHash engine "Parcel" ]
             [ "parcel.label-text", revision engine "parcel.label-text"; "parcel.forward", revision engine "parcel.forward"
               "parcel.note-text", revision engine "parcel.note-text"; "parcel.lookup", revision engine "parcel.lookup"
               "parcel.default-title", revision engine "parcel.default-title" ] true
+            [ "parcel.label-text", "basic"; "parcel.label-text", "inherited"; "parcel.forward", "basic"; "parcel.note-text", "basic"; "parcel.lookup", "basic" ]
         |> expectOk "replace a String field with a new nominal String type and adapt the helper signature"
         |> ignore
         commit engine "commit" "parcel.lookup" [] |> expectOk "publish new nominal types and helper signature through a changed word" |> ignore
@@ -1418,9 +1453,10 @@ module Program =
         let removeDocument =
             source [ removedNoteRecord; removeLabelFn; removeForwardFn; removeNoteFn; removeDefaultTitleFn
                      removeTitleTest; removeInheritedTitleTest; removeForwardTest; removeNoteTest; removeDefaultTitleTest; removeForwardExample ]
-        evolve removeDocument [ "Parcel", typeSourceHash engine "Parcel" ]
+        evolveWithTestChanges removeDocument [ "Parcel", typeSourceHash engine "Parcel" ]
             [ "parcel.label-text", revision engine "parcel.label-text"; "parcel.forward", revision engine "parcel.forward"
               "parcel.note-text", revision engine "parcel.note-text"; "parcel.default-title", revision engine "parcel.default-title" ] true
+            [ "parcel.label-text", "basic"; "parcel.label-text", "inherited"; "parcel.forward", "basic"; "parcel.note-text", "basic" ]
         |> expectOk "remove a record field and adapt all constructor consumers"
         |> ignore
         commit engine "commit" "parcel.note-text" [] |> expectOk "publish field removal through one changed word" |> ignore
@@ -1582,7 +1618,8 @@ module Program =
         defineFlowProject singleOwnerEngine singleOwnerEvolution
             [ "syntaxVersion", jint 2; "replace", jbool true
               "expectedTypeSources", expectedTypeSources [ "Badge", typeSourceHash singleOwnerEngine "Badge" ]
-              "expectedRevisions", expectedRevisions [ "badge.code", revision singleOwnerEngine "badge.code" ] ]
+              "expectedRevisions", expectedRevisions [ "badge.code", revision singleOwnerEngine "badge.code" ]
+              "testChanges", currentTestChangeRows singleOwnerEngine [ "badge.code", "basic" ] ]
         |> expectOk "stage field addition with exactly one replaced existing function owner"
         |> ignore
         commit singleOwnerEngine "commit" "badge.code" [] |> expectOk "publish the one-owner record evolution" |> ignore
@@ -1631,11 +1668,12 @@ module Program =
             let values = JsonObject()
             for name, revision in revisions do values[name] <- jint revision
             values :> JsonNode
-        let stageBatch (engine: Runtime.Engine) source revisions =
+        let stageBatch (engine: Runtime.Engine) source revisions testCases =
             defineFlowProject engine source
                 [ "syntaxVersion", jint 2
                   "replace", jbool true
-                  "expectedRevisions", expectedRevisions revisions ]
+                  "expectedRevisions", expectedRevisions revisions
+                  "testChanges", currentTestChangeRows engine testCases ]
         let project = Path.Combine(root, "atomic-flow-replacement-new-caller-edge")
         let engine = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
         let baseline =
@@ -1651,7 +1689,7 @@ module Program =
             + "fn edge.caller(value: Int) -> Int { edge::target(value) }\n\n"
             + "test edge.target/basic { edge::target(1) => 3 }\n\n"
             + "test edge.caller/basic { edge::caller(1) => 3 }"
-        stageBatch engine source [ "edge.target", 1; "edge.caller", 1 ] |> expectOk "stage a replacement that adds a caller edge" |> ignore
+        stageBatch engine source [ "edge.target", 1; "edge.caller", 1 ] [ "edge.target", "basic"; "edge.caller", "basic" ] |> expectOk "stage a replacement that adds a caller edge" |> ignore
         let published = commit engine "replace-word" "edge.target" [] |> expectOk "include a staged caller that newly depends on the selected word"
         check (jsonArrayStrings published.["data"] |> List.contains "edge.caller/basic") "newly affected caller test participates in replace-word publication"
         equal targetId (getWordId engine "edge.target") "new-edge publication preserves the target identity"
@@ -1674,7 +1712,7 @@ module Program =
                 + "fn edge.caller(value: Int) -> Int { edge::target(value) }\n\n"
                 + "test edge.target/basic { edge::target(1) => 3 }\n\n"
                 + $"test edge.caller/basic {{ edge::caller(1) => {callerExpected} }}"
-            stageBatch aliasEngine aliasSource [ "edge.target", 1; "edge.caller", 1 ] |> expectOk $"stage new caller edge for {operation}" |> ignore
+            stageBatch aliasEngine aliasSource [ "edge.target", 1; "edge.caller", 1 ] [ "edge.target", "basic"; "edge.caller", "basic" ] |> expectOk $"stage new caller edge for {operation}" |> ignore
             let outcome = commit aliasEngine operation "edge.target" []
             if callerPasses then
                 let committed = expectOk $"publish target and new caller using {operation}" outcome
@@ -1710,7 +1748,7 @@ module Program =
             + "fn edge.caller(value: Int) -> Int { edge::target(value) }\n\n"
             + "test edge.target/basic { edge::target(1) => 3 }\n\n"
             + "test edge.caller/basic { edge::caller(1) => 3 }"
-        stageBatch lateEngine lateReplacementSource [ "edge.target", 1; "edge.caller", 1 ] |> expectOk "stage replacement closure before selecting its metadata dependency" |> ignore
+        stageBatch lateEngine lateReplacementSource [ "edge.target", 1; "edge.caller", 1 ] [ "edge.target", "basic"; "edge.caller", "basic" ] |> expectOk "stage replacement closure before selecting its metadata dependency" |> ignore
         defineFlow lateEngine "fn edge.trigger(value: Int) -> Int { add(value, 0) }" [ "test edge.trigger/uses-target { edge::target(1) => 3 }" ] [] [ "syntaxVersion", jint 2 ]
         |> expectOk "stage an ordinary word whose attached metadata selects the replacement later" |> ignore
         let latePublished = commit lateEngine "commit" "edge.trigger" [] |> expectOk "expand replacement callers after scoped metadata adds the target"
@@ -1722,11 +1760,12 @@ module Program =
             let values = JsonObject()
             for name, revision in revisions do values[name] <- jint revision
             values :> JsonNode
-        let stageBatch (engine: Runtime.Engine) source revisions =
+        let stageBatch (engine: Runtime.Engine) source revisions testCases =
             defineFlowProject engine source
                 [ "syntaxVersion", jint 2
                   "replace", jbool true
-                  "expectedRevisions", expectedRevisions revisions ]
+                  "expectedRevisions", expectedRevisions revisions
+                  "testChanges", currentTestChangeRows engine testCases ]
 
         let callerProject = Path.Combine(root, "atomic-flow-replacement-failed-caller")
         let callerEngine = Runtime.Engine(callerProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
@@ -1744,7 +1783,7 @@ module Program =
             + "fn gate.caller(value: Int) -> Int { gate::target(value) }\n\n"
             + "test gate.target/basic { gate::target(1) => 3 }\n\n"
             + "test gate.caller/basic { gate::caller(1) => 99 }"
-        stageBatch callerEngine failedCallerBatch [ "gate.target", 1; "gate.caller", 1 ] |> expectOk "stage a batch with a failing newly affected caller test" |> ignore
+        stageBatch callerEngine failedCallerBatch [ "gate.target", 1; "gate.caller", 1 ] [ "gate.target", "basic"; "gate.caller", "basic" ] |> expectOk "stage a batch with a failing newly affected caller test" |> ignore
         let failedCallerPublish = commit callerEngine "replace-word" "gate.target" [] |> expectError "COMMIT_TESTS_FAILED"
         check (jsonArrayStrings failedCallerPublish.["error"].["actual"] |> List.contains "gate.caller/basic") "caller test failure blocks the entire replacement batch"
         equal callerBefore.ManifestHash (Storage.load callerStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "failed caller tests do not publish any batch member"
@@ -1765,7 +1804,7 @@ module Program =
             + "fn cover.caller(value: Int) -> Int { cover::target(value, false) }\n\n"
             + "test cover.target/basic { cover::target(1, false) => 2 }\n\n"
             + "test cover.caller/basic { cover::caller(1) => 2 }"
-        stageBatch coverageEngine incompleteCoverageBatch [ "cover.target", 1; "cover.caller", 1 ] |> expectOk "stage a Bool signature without true-branch evidence" |> ignore
+        stageBatch coverageEngine incompleteCoverageBatch [ "cover.target", 1; "cover.caller", 1 ] [ "cover.target", "basic"; "cover.caller", "basic" ] |> expectOk "stage a Bool signature without true-branch evidence" |> ignore
         expectError "LIBRARY_COVERAGE_INCOMPLETE" (commit coverageEngine "replace-word" "cover.target" []) |> ignore
         equal coverageBefore.ManifestHash (Storage.load coverageStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "incomplete Bool coverage leaves every batch member unpublished"
 
@@ -1788,7 +1827,7 @@ module Program =
             + "fn qualify.caller(value: Int) -> Int { qualify::target(value) }\n\n"
             + "test qualify.target/basic { qualify::target(1) => 6 }\n\n"
             + "test qualify.caller/basic { qualify::caller(1) => 6 }"
-        stageBatch qualificationEngine unqualifiedBatch [ "qualify.target", 1; "qualify.caller", 1 ] |> expectError "LIBRARY_DEPENDENCY_NOT_QUALIFIED" |> ignore
+        stageBatch qualificationEngine unqualifiedBatch [ "qualify.target", 1; "qualify.caller", 1 ] [ "qualify.target", "basic"; "qualify.caller", "basic" ] |> expectError "LIBRARY_DEPENDENCY_NOT_QUALIFIED" |> ignore
         equal qualificationBefore.ManifestHash (Storage.load qualificationStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "library qualification failure does not stage or publish batch members"
 
         let resultProject = Path.Combine(root, "atomic-flow-replacement-incomplete-result")
@@ -1810,7 +1849,7 @@ module Program =
             + "test result.target/ok-true { result::target(1) => value result::ok<Bool, Bool>(true) }\n\n"
             + "test result.target/error-false { result::target(2) => value result::error<Bool, Bool>(false) }\n\n"
             + "test result.caller/basic { result::caller(2) => value result::error<Bool, Bool>(false) }"
-        stageBatch resultEngine incompleteResultBatch [ "result.target", 1; "result.caller", 1 ] |> expectOk "stage Result replacement missing one error payload observation" |> ignore
+        stageBatch resultEngine incompleteResultBatch [ "result.target", 1; "result.caller", 1 ] [ "result.target", "basic"; "result.caller", "basic" ] |> expectOk "stage Result replacement missing one error payload observation" |> ignore
         assertAllPassed 4 (dispatch resultEngine "test" [ "word", jstr "result.target" ] |> expectOk "run all authored Result tag cases")
         expectError "LIBRARY_FINITE_COVERAGE_INCOMPLETE" (commit resultEngine "replace-word" "result.target" []) |> ignore
         equal resultBefore.ManifestHash (Storage.load resultStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "incomplete Result tag coverage leaves every batch member unpublished"
@@ -1848,7 +1887,7 @@ module Program =
                   "documentation", jstr "metadata is inline"
                   "extra", jbool true ]
             |> expectError "FLOW_RUNTIME_UNKNOWN_ARGUMENT"
-        equal [ "examples"; "expectedRevision"; "expectedRevisions"; "expectedTypeSources"; "frontend"; "removeAttachments"; "replace"; "source"; "syntaxVersion"; "temporary"; "tests" ]
+        equal [ "examples"; "expectedRevision"; "expectedRevisions"; "expectedTypeSources"; "frontend"; "removeAttachments"; "replace"; "source"; "syntaxVersion"; "temporary"; "testChanges"; "tests" ]
             (jsonArrayStrings unknownTopLevel.["error"].["expected"]) "unknown Flow field error returns the allowed field set"
         equal [ "code"; "documentation"; "extra" ] (jsonArrayStrings unknownTopLevel.["error"].["actual"]) "unknown Flow fields are reported in sorted order"
         let unknownMessage = stringValue unknownTopLevel.["error"].["message"]
@@ -2598,7 +2637,9 @@ test-file scoped-io {
             |> expectOk $"inspect {name} before grouped replacement"
             |> fun response -> response.["data"].["revision"].GetValue<int>()
         let stageGroupReplacement name source testSource expectedRevision =
-            defineFlow groupEngine source [ testSource ] [] [ "replace", jbool true; "expectedRevision", jint expectedRevision; "syntaxVersion", jint 2 ]
+            defineFlow groupEngine source [ testSource ] []
+                [ "replace", jbool true; "expectedRevision", jint expectedRevision; "syntaxVersion", jint 2
+                  "testChanges", currentTestChangeRows groupEngine [ name, "basic" ] ]
             |> expectOk $"stage grouped replacement for {name}"
             |> ignore
         let helperRevision = groupRevision "group.helper"
@@ -2630,7 +2671,8 @@ test-file scoped-io {
             dispatch replacementEngine "describe" [ "word", jstr "replace.helper" ]
             |> expectOk "inspect the helper before replacing it alone"
             |> fun response -> response.["data"].["revision"].GetValue<int>()
-        defineFlow replacementEngine "fn replace.helper(value: Int) -> Int { add(value, 2) }" [ "test replace.helper/basic { replace::helper(1) => 3 }" ] [] [ "replace", jbool true; "expectedRevision", jint helperRevision; "syntaxVersion", jint 2 ]
+        defineFlow replacementEngine "fn replace.helper(value: Int) -> Int { add(value, 2) }" [ "test replace.helper/basic { replace::helper(1) => 3 }" ] [] [ "replace", jbool true; "expectedRevision", jint helperRevision; "syntaxVersion", jint 2;
+                                                                                                                           "testChanges", currentTestChangeRows replacementEngine [ "replace.helper", "basic" ] ]
         |> expectOk "stage a helper replacement while its persisted caller remains unchanged"
         |> ignore
         let rejectedHelperOnlyCommit = commit replacementEngine "commit" "replace.helper" [] |> expectError "COMMIT_TESTS_FAILED"
@@ -2641,7 +2683,8 @@ test-file scoped-io {
             dispatch replacementEngine "describe" [ "word", jstr "replace.caller" ]
             |> expectOk "inspect the caller before its grouped migration"
             |> fun response -> response.["data"].["revision"].GetValue<int>()
-        defineFlow replacementEngine "fn replace.caller(value: Int) -> Int { add(value, 5) }" [ "test replace.caller/basic { replace::caller(1) => 6 }" ] [] [ "replace", jbool true; "expectedRevision", jint callerRevision; "syntaxVersion", jint 2 ]
+        defineFlow replacementEngine "fn replace.caller(value: Int) -> Int { add(value, 5) }" [ "test replace.caller/basic { replace::caller(1) => 6 }" ] [] [ "replace", jbool true; "expectedRevision", jint callerRevision; "syntaxVersion", jint 2;
+                                                                                                                           "testChanges", currentTestChangeRows replacementEngine [ "replace.caller", "basic" ] ]
         |> expectOk "stage an updated caller that intentionally drops its helper dependency"
         |> ignore
         let publishedReplacementGroup = commit replacementEngine "commit" "replace.helper" [] |> expectOk "publish the helper with the updated caller tests"
@@ -2759,7 +2802,7 @@ test-file scoped-io {
             + "    match RenewalState::pending() { pending => { value } renewed => { value } cancelled => { value } }\n"
             + "}"
         let enumReplacementTest = "test public.pure/basic { public::pure(7) => 7 }"
-        defineFlow engine enumReplacement [ enumReplacementTest ] [] [ "replace", jbool true; "expectedRevision", jint currentRevision; "syntaxVersion", jint 2 ]
+        defineFlow engine enumReplacement [ enumReplacementTest ] [] [ "replace", jbool true; "expectedRevision", jint currentRevision; "syntaxVersion", jint 2; "testChanges", currentTestChangeRows engine [ "public.pure", "basic" ] ]
         |> expectOk "stage a direct enum match replacement before evaluating its test evidence"
         |> ignore
         commit engine "replace-word" "public.pure" []
@@ -3304,6 +3347,238 @@ test durable.v4-ready/basic {
         check (boolValue (example.["data"].["results"].[0].["passed"])) "migrated Flow example passes after reload"
         equal flowExample (stringValue (example.["data"].["results"].[0].["source"])) "migrated Flow example source survives reload"
 
+    let private testInheritedInlineTestReplacementIntent root =
+        let inlineTestInventory (engine: Runtime.Engine) word =
+            dispatch engine "tests" [ "word", jstr word; "includeSource", jbool true ]
+            |> expectOk $"capture inline test sources for {word}"
+            |> fun response -> response.["data"].ToJsonString()
+        let project = Path.Combine(root, "inherited-inline-test-intent")
+        let engine = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let definition = "fn preservation.step(failed: Bool, laterId: String) -> Int { if failed { 0 } else { 1 } }"
+        let retainedCase = "test preservation.step/errors { preservation::step(true, \"30000000-0000-0000-0000-000000000001\") => 0 }"
+        let baseline = definition + "\n\n" + retainedCase
+        defineFlowProject engine baseline [ "syntaxVersion", jint 2 ] |> expectOk "define the inherited test source" |> ignore
+        commit engine "commit" "preservation.step" [] |> expectOk "persist the inherited-test baseline" |> ignore
+
+        let store = Storage.create project
+        let durableBefore = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let wordsBefore = dispatch engine "words" [ "compact", jbool true ] |> expectOk "capture baseline owner state" |> fun response -> response.["data"].ToJsonString()
+        let describeBefore = dispatch engine "describe" [ "word", jstr "preservation.step" ] |> expectOk "capture baseline revision and status" |> fun response -> response.["data"].ToJsonString()
+        let sourceBefore = dispatch engine "source" [ "word", jstr "preservation.step" ] |> expectOk "capture baseline source" |> fun response -> stringValue response.["data"]
+        let testSourcesBefore = inlineTestInventory engine "preservation.step"
+        let oldHash = digest retainedCase
+        let changedCase = retainedCase.Replace("30000000-0000-0000-0000-000000000001", "33000000-0000-0000-0000-000000000001", StringComparison.Ordinal)
+        let newCase = "test preservation.step/success { preservation::step(false, \"new\") => 1 }"
+        let replacement = definition + "\n\n" + changedCase + "\n\n" + newCase
+        let replacementFields =
+            [ "syntaxVersion", jint 2
+              "replace", jbool true
+              "expectedRevision", jint 1 ]
+        let assertUnchangedAfterRejection label =
+            equal durableBefore.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun snapshot -> snapshot.ManifestHash) $"{label} leaves durable authority unchanged"
+            equal wordsBefore (dispatch engine "words" [ "compact", jbool true ] |> expectOk $"inspect dictionary after {label}" |> fun response -> response.["data"].ToJsonString()) $"{label} does not create or stage words"
+            equal describeBefore (dispatch engine "describe" [ "word", jstr "preservation.step" ] |> expectOk $"inspect owner after {label}" |> fun response -> response.["data"].ToJsonString()) $"{label} leaves owner revision and status unchanged"
+            equal sourceBefore (dispatch engine "source" [ "word", jstr "preservation.step" ] |> expectOk $"read owner source after {label}" |> fun response -> stringValue response.["data"]) $"{label} leaves authored definition unchanged"
+            equal testSourcesBefore (inlineTestInventory engine "preservation.step") $"{label} leaves immutable inline test attachments unchanged"
+
+        let missing =
+            defineFlowProject engine replacement replacementFields
+            |> expectError "FLOW_TEST_CHANGE_REQUIRED"
+        equal [ $"{oldHash} (syntaxVersion 2)" ] (jsonArrayStrings missing.["error"].["expected"]) "missing declaration reports the exact prior test source and syntax version"
+        equal [ $"{digest changedCase} (syntaxVersion 2)" ] (jsonArrayStrings missing.["error"].["actual"]) "missing declaration reports the changed source and syntax version"
+        assertUnchangedAfterRejection "missing inherited-test declaration"
+
+        let stale =
+            defineFlowProject engine replacement
+                (replacementFields @ [ "testChanges", testChangeRows [ "preservation.step", "errors", String.replicate 64 "0" ] ])
+            |> expectError "FLOW_ATTACHMENT_STALE_SOURCE"
+        ignore stale
+        assertUnchangedAfterRejection "stale inherited-test declaration"
+
+        let duplicate =
+            defineFlowProject engine replacement
+                (replacementFields @ [ "testChanges", testChangeRows [ "preservation.step", "errors", oldHash; "preservation.step", "errors", oldHash ] ])
+            |> expectError "FLOW_TEST_CHANGE_DUPLICATE"
+        ignore duplicate
+        assertUnchangedAfterRejection "duplicate inherited-test declaration"
+
+        let malformedRow = JsonObject()
+        malformedRow.["word"] <- jstr "preservation.step"
+        malformedRow.["caseName"] <- jstr "errors"
+        malformedRow.["expectedSourceHash"] <- jstr oldHash
+        malformedRow.["extra"] <- jstr "not in the schema"
+        let malformedRows = JsonArray()
+        malformedRows.Add malformedRow
+        defineFlowProject engine replacement (replacementFields @ [ "testChanges", malformedRows ])
+        |> expectError "FLOW_RUNTIME_UNKNOWN_ARGUMENT"
+        |> ignore
+        assertUnchangedAfterRejection "malformed inherited-test declaration"
+
+        defineFlowProject engine (baseline + "\n\n" + newCase)
+            (replacementFields @ [ "testChanges", testChangeRows [ "preservation.step", "errors", oldHash ] ])
+        |> expectError "FLOW_TEST_CHANGE_UNUSED"
+        |> ignore
+        assertUnchangedAfterRejection "unused inherited-test declaration"
+
+        let staged =
+            defineFlowProject engine replacement
+                (replacementFields @ [ "testChanges", testChangeRows [ "preservation.step", "errors", oldHash ] ])
+            |> expectOk "stage the explicitly declared inherited-test edit and undeclared new case"
+        equal 2 ((staged.["data"].["revision"]).GetValue<int>()) "declared test edit stages exactly one owner revision"
+        equal [ "errors"; "success" ] (jsonArrayStrings staged.["data"].["tests"]) "new cases are accepted without declaration rows"
+        equal "candidate" (stringValue (dispatch engine "describe" [ "word", jstr "preservation.step" ] |> expectOk "inspect declared replacement candidate" |> fun response -> response.["data"].["status"])) "declared test edit becomes a candidate"
+        assertAllPassed 2 (dispatch engine "test" [ "word", jstr "preservation.step" ] |> expectOk "run the changed inherited test and new case")
+        commit engine "replace-word" "preservation.step" [] |> expectOk "publish the declared test edit" |> ignore
+        let reloaded = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        equal [ "errors"; "success" ] (jsonArrayStrings (dispatch reloaded "tests" [ "word", jstr "preservation.step" ] |> expectOk "reload retained and added test names" |> fun response -> response.["data"])) "published replacement preserves the adapted case and new case"
+        equal changedCase
+            (dispatch reloaded "tests" [ "word", jstr "preservation.step"; "caseName", jstr "errors"; "includeSource", jbool true ] |> expectOk "inspect the changed inherited source" |> fun response -> stringValue response.["data"].[0].["source"])
+            "published inherited case contains the exact declared source"
+
+        let versionProject = Path.Combine(root, "inherited-inline-test-intent-version")
+        let versionEngine = Runtime.Engine(versionProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let flow1Definition =
+            "word preservation.versioned(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    value\n"
+            + "}"
+        let flow2Definition = "fn preservation.versioned(value: Int) -> Int { value }"
+        let versionCase =
+            "test preservation.versioned/basic {\n"
+            + "    preservation::versioned(1)\n"
+            + "    => value preservation::versioned(1)\n"
+            + "}"
+        defineFlow versionEngine flow1Definition [ versionCase ] [] [] |> expectOk "define a Flow/1 inherited case for syntax-version comparison" |> ignore
+        commit versionEngine "commit" "preservation.versioned" [] |> expectOk "persist the Flow/1 syntax baseline" |> ignore
+        defineFlowProject versionEngine flow2Definition
+            [ "syntaxVersion", jint 2; "replace", jbool true; "expectedRevision", jint 1 ]
+        |> expectOk "replace the word while retaining its Flow/1 case" |> ignore
+        commit versionEngine "replace-word" "preservation.versioned" [] |> expectOk "publish the Flow/2 word with retained Flow/1 case" |> ignore
+        let versionOnlyFields = [ "syntaxVersion", jint 2; "replace", jbool true; "expectedRevision", jint 2 ]
+        let versionOnlyRejected =
+            defineFlowProject versionEngine (flow2Definition + "\n\n" + versionCase) versionOnlyFields
+            |> expectError "FLOW_TEST_CHANGE_REQUIRED"
+        let sameHash = digest versionCase
+        equal [ $"{sameHash} (syntaxVersion 1)" ] (jsonArrayStrings versionOnlyRejected.["error"].["expected"]) "version-only diagnostic identifies the inherited syntax version"
+        equal [ $"{sameHash} (syntaxVersion 2)" ] (jsonArrayStrings versionOnlyRejected.["error"].["actual"]) "version-only diagnostic distinguishes same source bytes under the incoming syntax version"
+        let versionOnlyAccepted =
+            defineFlowProject versionEngine (flow2Definition + "\n\n" + versionCase)
+                (versionOnlyFields @ [ "testChanges", testChangeRows [ "preservation.versioned", "basic", sameHash ] ])
+            |> expectOk "allow an explicitly declared syntax-version-only test change"
+        equal 3 ((versionOnlyAccepted.["data"].["revision"]).GetValue<int>()) "explicit syntax-version change stages one revision"
+
+        let multiProject = Path.Combine(root, "inherited-inline-test-intent-multiword")
+        let multiEngine = Runtime.Engine(multiProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let multiBaseline =
+            "fn preservation.left(value: Int) -> Int { value }\n\n"
+            + "fn preservation.right(value: Int) -> Int { value }\n\n"
+            + "test preservation.left/basic { preservation::left(1) => 1 }\n\n"
+            + "test preservation.right/basic { preservation::right(1) => 1 }"
+        defineFlowProject multiEngine multiBaseline [ "syntaxVersion", jint 2 ] |> expectOk "define two owners with inherited inline tests" |> ignore
+        commit multiEngine "commit" "preservation.left" [] |> expectOk "persist the first multiword owner" |> ignore
+        commit multiEngine "commit" "preservation.right" [] |> expectOk "persist the second multiword owner" |> ignore
+        let multiStore = Storage.create multiProject
+        let multiManifestBefore = Storage.load multiStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let multiWordsBefore = dispatch multiEngine "words" [] |> expectOk "capture multiword dictionary before rejected test edit" |> fun response -> response.["data"].ToJsonString()
+        let multiOwnerSnapshots =
+            [ "preservation.left"; "preservation.right" ]
+            |> List.map (fun word ->
+                word,
+                (dispatch multiEngine "describe" [ "word", jstr word ] |> expectOk $"capture {word} before rejected multiword edit" |> fun response -> response.["data"].ToJsonString()),
+                (dispatch multiEngine "source" [ "word", jstr word ] |> expectOk $"capture {word} source before rejected multiword edit" |> fun response -> stringValue response.["data"]),
+                inlineTestInventory multiEngine word)
+        let multiReplacement =
+            "fn preservation.left(value: Int) -> Int { add(value, 1) }\n\n"
+            + "fn preservation.right(value: Int) -> Int { value }\n\n"
+            + "test preservation.left/basic { preservation::left(1) => 2 }\n\n"
+            + "test preservation.right/basic { preservation::right(1) => 1 }"
+        let multiExpectedRevisions = JsonObject()
+        multiExpectedRevisions.["preservation.left"] <- jint 1
+        multiExpectedRevisions.["preservation.right"] <- jint 1
+        defineFlowProject multiEngine multiReplacement
+            [ "syntaxVersion", jint 2
+              "replace", jbool true
+              "expectedRevisions", multiExpectedRevisions ]
+        |> expectError "FLOW_TEST_CHANGE_REQUIRED"
+        |> ignore
+        equal multiManifestBefore.ManifestHash (Storage.load multiStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun snapshot -> snapshot.ManifestHash) "missing multiword test declaration leaves durable authority unchanged"
+        equal multiWordsBefore (dispatch multiEngine "words" [] |> expectOk "inspect dictionary after rejected multiword test edit" |> fun response -> response.["data"].ToJsonString()) "missing multiword test declaration leaves runtime words unchanged"
+        for word, describeBefore, sourceBefore, testsBefore in multiOwnerSnapshots do
+            equal describeBefore (dispatch multiEngine "describe" [ "word", jstr word ] |> expectOk $"inspect {word} after rejected multiword test edit" |> fun response -> response.["data"].ToJsonString()) $"missing multiword test declaration leaves {word} revision and status unchanged"
+            equal sourceBefore (dispatch multiEngine "source" [ "word", jstr word ] |> expectOk $"read {word} after rejected multiword test edit" |> fun response -> stringValue response.["data"]) $"missing multiword test declaration leaves {word} source unchanged"
+            equal testsBefore (inlineTestInventory multiEngine word) $"missing multiword test declaration leaves {word} inline test attachments unchanged"
+
+        let typeProject = Path.Combine(root, "inherited-inline-test-intent-record-evolution")
+        let typeEngine = Runtime.Engine(typeProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let typeBaseline =
+            "record PreserveAmount { field amount: Int }\n\n"
+            + "fn preservation.amount(value: PreserveAmount) -> Int { value.amount }\n\n"
+            + "test preservation.amount/basic { preservation::amount(preserveAmount.new(amount = 1)) => 1 }"
+        defineFlowProject typeEngine typeBaseline [ "syntaxVersion", jint 2 ] |> expectOk "define a record owner with an inherited inline test" |> ignore
+        commit typeEngine "commit" "PreserveAmount" [] |> expectOk "persist the record-evolution test baseline" |> ignore
+        commit typeEngine "commit" "preservation.amount" [] |> expectOk "persist the record consumer" |> ignore
+        let typeStore = Storage.create typeProject
+        let typeManifestBefore = Storage.load typeStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let recordDescribeBefore = dispatch typeEngine "describe" [ "type", jstr "PreserveAmount" ] |> expectOk "capture type state before rejected inherited-test edit" |> fun response -> response.["data"].ToJsonString()
+        let recordSourceBefore = dispatch typeEngine "source" [ "type", jstr "PreserveAmount" ] |> expectOk "capture record source before rejected inherited-test edit" |> fun response -> stringValue response.["data"]
+        let consumerDescribeBefore = dispatch typeEngine "describe" [ "word", jstr "preservation.amount" ] |> expectOk "capture consumer state before rejected inherited-test edit" |> fun response -> response.["data"].ToJsonString()
+        let consumerSourceBefore = dispatch typeEngine "source" [ "word", jstr "preservation.amount" ] |> expectOk "capture consumer source before rejected inherited-test edit" |> fun response -> stringValue response.["data"]
+        let recordTestsBefore = inlineTestInventory typeEngine "preservation.amount"
+        let recordSourceHash = stringValue (dispatch typeEngine "describe" [ "type", jstr "PreserveAmount" ] |> expectOk "read the record source hash" |> fun response -> response.["data"].["sourceHash"])
+        let evolvedRecordSource =
+            "record PreserveAmount { field amount: String }\n\n"
+            + "fn preservation.amount(value: PreserveAmount) -> String { value.amount }\n\n"
+            + "test preservation.amount/basic { preservation::amount(preserveAmount.new(amount = \"1\")) => \"1\" }"
+        let typeExpectedRevisions = JsonObject()
+        typeExpectedRevisions.["preservation.amount"] <- jint 1
+        let typeExpectedSources = JsonObject()
+        typeExpectedSources.["PreserveAmount"] <- jstr recordSourceHash
+        defineFlowProject typeEngine evolvedRecordSource
+            [ "syntaxVersion", jint 2
+              "replace", jbool true
+              "expectedRevisions", typeExpectedRevisions
+              "expectedTypeSources", typeExpectedSources ]
+        |> expectError "FLOW_TEST_CHANGE_REQUIRED"
+        |> ignore
+        equal typeManifestBefore.ManifestHash (Storage.load typeStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun snapshot -> snapshot.ManifestHash) "missing record-evolution test declaration leaves durable authority unchanged"
+        equal recordDescribeBefore (dispatch typeEngine "describe" [ "type", jstr "PreserveAmount" ] |> expectOk "inspect the record after rejected inherited-test edit" |> fun response -> response.["data"].ToJsonString()) "missing record-evolution test declaration leaves type revision and status unchanged"
+        equal recordSourceBefore (dispatch typeEngine "source" [ "type", jstr "PreserveAmount" ] |> expectOk "read the record after rejected inherited-test edit" |> fun response -> stringValue response.["data"]) "missing record-evolution test declaration leaves record source unchanged"
+        equal consumerDescribeBefore (dispatch typeEngine "describe" [ "word", jstr "preservation.amount" ] |> expectOk "inspect the consumer after rejected inherited-test edit" |> fun response -> response.["data"].ToJsonString()) "missing record-evolution test declaration leaves consumer revision and status unchanged"
+        equal consumerSourceBefore (dispatch typeEngine "source" [ "word", jstr "preservation.amount" ] |> expectOk "read the consumer after rejected inherited-test edit" |> fun response -> stringValue response.["data"]) "missing record-evolution test declaration leaves consumer source unchanged"
+        equal recordTestsBefore (inlineTestInventory typeEngine "preservation.amount") "missing record-evolution test declaration leaves inline test attachment source unchanged"
+
+        let attachmentProject = Path.Combine(root, "inherited-inline-test-intent-attachment-editor")
+        let attachmentEngine = Runtime.Engine(attachmentProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        defineFlowProject attachmentEngine baseline [ "syntaxVersion", jint 2 ] |> expectOk "define a separate owner for the explicit attachment editor" |> ignore
+        commit attachmentEngine "commit" "preservation.step" [] |> expectOk "persist the attachment-editor baseline" |> ignore
+        let attachmentCase = "test preservation.step/errors { preservation::step(true, \"explicit-edit\") => 0 }"
+        defineFlowProject attachmentEngine attachmentCase
+            [ "syntaxVersion", jint 2
+              "replace", jbool true
+              "expectedRevision", jint 1
+              "testChanges", testChangeRows [] ]
+        |> expectError "FLOW_TEST_CHANGE_UNSUPPORTED"
+        |> ignore
+        let explicitEdit =
+            defineFlowProject attachmentEngine attachmentCase
+                [ "syntaxVersion", jint 2
+                  "replace", jbool true
+                  "expectedRevision", jint 1 ]
+            |> expectOk "retain the dedicated revision-bound attachment editor"
+        equal 2 ((explicitEdit.["data"].["revision"]).GetValue<int>()) "explicit attachment edit still stages an owner revision"
+
+        let addOnlyEngine = Runtime.Engine(Path.Combine(root, "inherited-inline-test-intent-add-only"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        defineFlowProject addOnlyEngine "fn preservation.new(value: Int) -> Int { value }"
+            [ "syntaxVersion", jint 2; "testChanges", testChangeRows [] ]
+        |> expectError "FLOW_TEST_CHANGE_UNSUPPORTED"
+        |> ignore
+
+        let stackEngine = Runtime.Engine(Path.Combine(root, "inherited-inline-test-intent-stack"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let stackSource = "word preservation.stack : Int -> Int\n    effects none\n    dup\nend"
+        defineStack stackEngine stackSource [ "testChanges", testChangeRows [] ]
+        |> expectError "FLOW_TEST_CHANGE_UNSUPPORTED"
+        |> ignore
+
     let private testReplacementCasAndRollback root =
         let project = Path.Combine(root, "replacement-cas")
         let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z", fileSystemMode = FileSystemMode.Virtual)
@@ -3394,7 +3669,8 @@ test durable.v4-ready/basic {
             + "}"
         defineFlow engine compatibleReplacement [ updatedBasicTest; extraTest ] []
             [ "replace", jbool true
-              "expectedRevision", jint 2 ]
+              "expectedRevision", jint 2
+              "testChanges", testChangeRows [ "durable.increment", "basic", digest flowTestSource ] ]
         |> expectOk "replace an attached Flow test and add another case"
         |> ignore
         commit engine "replace-word" "durable.increment" [] |> expectOk "publish Flow test replacement and addition" |> ignore
@@ -7313,6 +7589,7 @@ test-file self {
             testAtomicMultiwordReplacementCallerClosure root
             testAtomicMultiwordReplacementGates root
             testFlowUnknownArgumentsAndExpectationGuidance root
+            testInheritedInlineTestReplacementIntent root
             testExplicitFrontendAndDurableReload root
             testTestSourceInspection root
             testExplicitFrontendCannotFallBack root
