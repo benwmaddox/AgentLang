@@ -89,9 +89,13 @@ by the frozen scalar-only checker: none of its 18 behavior cases executed.
 both F# participants passing 18 cases and preserving inherited assertions.
 [Report 195](../reports/195-second-reset-reference-maintenance-interim.md) records
 the second reset participant passing 18 cases and preserving inherited evidence.
-Five participants are complete; the final retained participant is running.
-Finish it without runtime changes or task feedback, seal all original results,
-then run the separately labelled representation-adapted check from report 193.
+[Report 196](../reports/196-typed-reference-maintenance-cohort-results.md) closes
+the original six-participant cohort. Five candidates pass the original 18-case
+checker; reset-1 remains a representation/setup incompatibility. All inherited
+tests are preserved, but retained-2 materially rewrites its three examples,
+including a replaced fixture. Passing library publication does not establish
+evidence preservation. Original snapshots, scores and audits are sealed;
+run the separately labelled representation-adapted check from report 193 next.
 Assess behavior, evidence preservation, library qualification, finalization and
 recovery separately; this pilot does not establish a comparative vocabulary
 advantage. [Report 194](../reports/194-native-bool-implementation-plan.md) plans
