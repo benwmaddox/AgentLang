@@ -1,0 +1,103 @@
+// Correct public-interface migration for the reset accepted actor.
+
+record SubscriptionRenewalFailure {
+    field index: Int
+    field old-id: SubscriptionId
+    field cause: BusinessError
+}
+
+record SubscriptionRenewalState {
+    field at: Instant
+    field store: Store
+    field failure: Option<SubscriptionRenewalFailure>
+    field index: Int
+}
+
+// frontend: flow/2
+
+fn subscription.renew-batch(store: Store, changes: List<SubscriptionRenewal>, at: Instant) -> Result<Store, SubscriptionRenewalFailure> {
+    doc "Renew subscriptions in order and return the first localized failure without exposing partial Store state."
+
+    let initial = subscriptionRenewalState.new(at = at, store = store, failure = option.none<SubscriptionRenewalFailure>(), index = 0)
+    let final-state = changes.fold(initial, subscription.renew-batch-step)
+    match final-state.failure {
+        some failure => result.error<Store, SubscriptionRenewalFailure>(failure)
+        none => result.ok<Store, SubscriptionRenewalFailure>(final-state.store)
+    }
+}
+
+// frontend: flow/2
+
+fn subscription.renew-batch-step(state: SubscriptionRenewalState, change: SubscriptionRenewal) -> SubscriptionRenewalState {
+    doc "Stage one renewal, preserving the first failure and its input position."
+
+    let next-index = add(state.index, 1)
+    match state.failure {
+        some earlier-failure => subscriptionRenewalState.new(at = state.at, store = state.store, failure = option.some<SubscriptionRenewalFailure>(earlier-failure), index = next-index)
+        none => {
+            let term = if change.plan == SubscriptionPlan.monthly() {
+                "monthly"
+            } else {
+                "annual"
+            }
+            match store.subscription(change.old-id, state.store) {
+                some existing => {
+                    match subscription.cancel(state.store, change.old-id, state.at) {
+                        ok ended => {
+                            match subscription.start(ended, change.new-id, existing.customer-id, existing.product-id, term, state.at, change.expires-at) {
+                                ok renewed => subscriptionRenewalState.new(at = state.at, store = renewed, failure = option.none<SubscriptionRenewalFailure>(), index = next-index)
+                                error problem => subscriptionRenewalState.new(at = state.at, store = state.store, failure = option.some<SubscriptionRenewalFailure>(subscriptionRenewalFailure.new(index = state.index, old-id = change.old-id, cause = problem)), index = next-index)
+                            }
+                        }
+                        error problem => subscriptionRenewalState.new(at = state.at, store = state.store, failure = option.some<SubscriptionRenewalFailure>(subscriptionRenewalFailure.new(index = state.index, old-id = change.old-id, cause = problem)), index = next-index)
+                    }
+                }
+                none => subscriptionRenewalState.new(at = state.at, store = state.store, failure = option.some<SubscriptionRenewalFailure>(subscriptionRenewalFailure.new(index = state.index, old-id = change.old-id, cause = businessError.new(code = "SUBSCRIPTION_NOT_FOUND", message = "The subscription does not exist."))), index = next-index)
+            }
+        }
+    }
+}
+
+// frontend: flow/2
+
+test subscription.renew-batch/later-item-failure-localized {
+    let initial = business.seed(unit)
+    let at = Instant.new("2026-01-15T12:00:00.0000000+00:00")
+    match list.get(initial.subscriptions, 0) {
+        some existing => {
+            let first-new-id = SubscriptionId.new("f1000000-0000-0000-0000-000000000001")
+            let missing-id = SubscriptionId.new("f2000000-0000-0000-0000-000000000002")
+            let first = subscriptionRenewal.new(old-id = existing.id, new-id = first-new-id, plan = SubscriptionPlan.monthly(), expires-at = Instant.new("2026-03-15T12:00:00.0000000+00:00"))
+            let second = subscriptionRenewal.new(old-id = missing-id, new-id = SubscriptionId.new("f3000000-0000-0000-0000-000000000003"), plan = SubscriptionPlan.annual(), expires-at = Instant.new("2027-03-15T12:00:00.0000000+00:00"))
+            match subscription.renew-batch(initial, list.append(list.singleton<SubscriptionRenewal>(first), second), at) {
+                ok updated => false
+                error failure => bool.and(equals(failure.index, 1), bool.and(equals(failure.old-id, missing-id), bool.and(equals(failure.cause, businessError.new(code = "SUBSCRIPTION_NOT_FOUND", message = "The subscription does not exist.")), equals(initial, business.seed(unit)))))
+            }
+        }
+        none => false
+    }
+    => true
+}
+
+// frontend: flow/2
+
+test subscription.renew-batch/first-error-precedes-later-error {
+    let initial = business.seed(unit)
+    let at = Instant.new("2026-01-15T12:00:00.0000000+00:00")
+    match list.get(initial.subscriptions, 0) {
+        some existing => {
+            let first-new-id = SubscriptionId.new("f4000000-0000-0000-0000-000000000004")
+            let missing-id = SubscriptionId.new("f5000000-0000-0000-0000-000000000005")
+            let first = subscriptionRenewal.new(old-id = existing.id, new-id = first-new-id, plan = SubscriptionPlan.monthly(), expires-at = Instant.new("2026-03-15T12:00:00.0000000+00:00"))
+            let second = subscriptionRenewal.new(old-id = existing.id, new-id = SubscriptionId.new("f6000000-0000-0000-0000-000000000006"), plan = SubscriptionPlan.annual(), expires-at = Instant.new("2027-03-15T12:00:00.0000000+00:00"))
+            let third = subscriptionRenewal.new(old-id = missing-id, new-id = SubscriptionId.new("f7000000-0000-0000-0000-000000000007"), plan = SubscriptionPlan.annual(), expires-at = Instant.new("2027-03-15T12:00:00.0000000+00:00"))
+            let changes = list.append(list.append(list.singleton<SubscriptionRenewal>(first), second), third)
+            match subscription.renew-batch(initial, changes, at) {
+                ok updated => false
+                error failure => bool.and(equals(failure.index, 1), bool.and(equals(failure.old-id, existing.id), bool.and(equals(failure.cause, businessError.new(code = "SUBSCRIPTION_ALREADY_CANCELLED", message = "The subscription is already cancelled.")), equals(initial, business.seed(unit)))))
+            }
+        }
+        none => false
+    }
+    => true
+}

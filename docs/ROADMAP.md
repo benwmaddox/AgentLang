@@ -72,10 +72,14 @@ is historical evidence, not its matched retained arm. Next use another small
 held-out task to test harder edits, with conventional comparisons and repeated
 outcomes required before claiming superior reliability.
 The next [typed batch failure maintenance study](../experiments/AgentLang.SubagentTrials/typed-batch-failure-216/PLAN.md)
-is in preflight: structured first-failure index/ID/cause, preserved success and
+has [reviewed passing preflight](../reports/216-typed-batch-failure-preflight.md):
+structured first-failure index/ID/cause, preserved success and
 input state, and explicitly reviewed inherited test adaptations. It uses both
 accepted terminal 213 projects as unequal continuation seeds. No participant
-has been dispatched and no causal retention comparison is claimed.
+has been dispatched and no causal retention comparison is claimed. Correct controls
+pass 9/9 in both arms and 66 retained regressions; runtime mutations calibrate at
+6/9 and 8/9. Next dispatch the frozen fresh participants rather than adding more
+preparation infrastructure.
 The [prior decision](../reports/199-efficacy-decision-after-reference-maintenance.md)
 covers the closed typed-reference cohort and its representation supplement in
 reports 196 and 197. The [previous checkpoint](../reports/182-efficacy-decision-checkpoint.md)
