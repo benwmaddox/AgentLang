@@ -44,8 +44,10 @@ fresh retained and conventional F# edits using existing brokers and the same sem
 disclose transport controls before future dispatch. No comparative reliability
 advantage is established. The [comparison readiness checkpoint](../reports/220-typed-batch-comparison-readiness.md)
 now accepts corrected language/F# controls and equivalent inherited scenarios.
-Fresh participant packets and their complete freeze remain next; no participant
-has run in this pair. The [prior decision](../reports/215-efficacy-after-paired-vocabulary-pilot.md)
+The [fresh comparison protocol](../reports/221-typed-batch-fresh-comparison.md)
+is frozen after a preserved launcher setup failure and corrected broker smoke.
+Corrected fresh participant outcomes remain pending.
+The [prior decision](../reports/215-efficacy-after-paired-vocabulary-pilot.md)
 preserves the earlier negative helper-creation and preservation findings.
 The [previous handoff checkpoint](../reports/212-efficacy-after-public-vocabulary-reuse.md)
 records a successful later-agent handoff through creator-authored public functions.
