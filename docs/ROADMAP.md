@@ -703,6 +703,12 @@ KEEP avoids suspension-boundary copies but construction copies remain substantia
 The observed overload rejection categories do not establish the cause of the
 earlier sixteen-slot confirmation result. Preserve both policies; a bounded
 driver-servicing experiment precedes any new performance ranking.
+The [completion-service diagnostic](../reports/214-completion-service-diagnostic.md)
+adds opt-in ready-queue draining while keeping one-packet service as default.
+Eleven fresh smoke and fifteen rotated overload trials pass correctness, accounting
+and cleanup. KEEP improves in this short fixture; RETURN ranges overlap and all
+groups fail the rejection gate. Both policies remain available. A focused
+long-run comparison at the earlier 500/s workload is needed before a ranking.
 Keep both arena policies available; return to the primary maintenance-efficacy
 comparison below before expanding performance infrastructure. A general actor
 framework is not a prerequisite for either experiment.

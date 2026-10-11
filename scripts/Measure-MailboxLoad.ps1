@@ -2,11 +2,12 @@
 [CmdletBinding()]
 param(
     [switch]$Smoke,
-    [switch]$Confirm16Slot
+    [switch]$Confirm16Slot,
+    [switch]$DriverServiceDiagnostic
 )
 
-if ($Smoke -and $Confirm16Slot) {
-    throw 'Smoke and Confirm16Slot are mutually exclusive modes.'
+if (($Smoke -and $Confirm16Slot) -or ($Smoke -and $DriverServiceDiagnostic) -or ($Confirm16Slot -and $DriverServiceDiagnostic)) {
+    throw 'Smoke, Confirm16Slot, and DriverServiceDiagnostic are mutually exclusive modes.'
 }
 
 Set-StrictMode -Version Latest
@@ -82,9 +83,10 @@ $script:report = [ordered]@{
     repository = $repo
     runDirectory = $runRoot
     tempDirectory = $tempRoot
-    mode = if ($Smoke) { 'smoke' } elseif ($Confirm16Slot) { 'confirm-16-slot' } else { 'full-matrix' }
+    mode = if ($Smoke) { 'smoke' } elseif ($Confirm16Slot) { 'confirm-16-slot' } elseif ($DriverServiceDiagnostic) { 'driver-service-diagnostic' } else { 'full-matrix' }
     smoke = [bool]$Smoke
     confirm16Slot = [bool]$Confirm16Slot
+    driverServiceDiagnostic = [bool]$DriverServiceDiagnostic
     measurementScope = 'Deterministic open-loop loopback mailbox workload; arrival scheduling overhead is included. The provider is measured in a separate Job Object and excluded from the application process-commit ceiling.'
     ceilings = [ordered]@{ equalLimitBytes = 268435456; nativeFollowupLimitBytes = 335544320; limitType = 'JOB_OBJECT_LIMIT_JOB_MEMORY process commit for the job and descendants; not resident memory' }
     cpu = [ordered]@{ policy = 'All app variants use one selected CPU; the provider uses a distinct available CPU when one exists.' }
@@ -608,7 +610,7 @@ function Validate-NativeDiagnostics($Result, [string]$Policy, [int]$PayloadBytes
     return [ordered]@{ rejectionReasons = $reasonValues; owningStats = $statValues; scope = $stats.scope; fixtureOracle = $expected }
 }
 
-function Validate-AppResult($Result, [string]$Backend, [string]$Policy, [int]$Rate, [int]$PayloadBytes, [int]$DelayMs, [int]$WarmupMs, [int]$DurationMs, [int]$ScratchSlots) {
+function Validate-AppResult($Result, [string]$Backend, [string]$Policy, [int]$Rate, [int]$PayloadBytes, [int]$DelayMs, [int]$WarmupMs, [int]$DurationMs, [int]$ScratchSlots, [string]$CompletionServiceMode = 'one-packet') {
     $schema = Require-Integer (Get-ExactField $Result 'schemaVersion' 'application result') 'schemaVersion'
     if ($schema -ne 1) { throw "Unsupported application result schemaVersion $schema." }
     foreach ($pair in @(@('backend', $Backend), @('policy', $Policy))) {
@@ -669,6 +671,8 @@ function Validate-AppResult($Result, [string]$Backend, [string]$Policy, [int]$Ra
     if ($Backend -ceq 'native') {
         $storageBytes = Require-Integer $storage 'result.storageReservedBytes' 1
         if ((Require-Integer $reportedScratchSlots 'result.scratchSlots' 1) -ne $ScratchSlots) { throw 'Native reported a different scratch slot count than requested.' }
+        $reportedServiceMode = [string](Get-ExactField $Result 'completionServiceMode' 'application result')
+        if ($reportedServiceMode -cne $CompletionServiceMode) { throw "Native completion service mode mismatch: expected '$CompletionServiceMode', found '$reportedServiceMode'." }
     } else {
         if ($null -ne $storage) { throw 'F# storageReservedBytes must be null.' }
         $storageBytes = $null
@@ -683,6 +687,7 @@ function Validate-AppResult($Result, [string]$Backend, [string]$Policy, [int]$Ra
     $qualifies = $null -ne $p99 -and $p99 -le 50000 -and $rejectionFraction -le 0.01
     return [ordered]@{
         backend = $Backend; policy = $Policy; rate = $Rate; payloadBytes = $PayloadBytes; delayMs = $DelayMs
+        completionServiceMode = if ($Backend -ceq 'native') { $CompletionServiceMode } else { 'fsharp-reference' }
         warmupMs = $WarmupMs; durationMs = $DurationMs; scratchSlots = if ($Backend -ceq 'native') { $ScratchSlots } else { $null }
         offered = $values.offered; admitted = $values.admitted; rejected = $values.rejected; rejectedFraction = $rejectionFraction
         completed = $values.completed; completedWithinWindow = $values.completedWithinWindow; warmupCompleted = $values.warmupCompleted
@@ -695,8 +700,23 @@ function Validate-AppResult($Result, [string]$Backend, [string]$Policy, [int]$Ra
     }
 }
 
-function Invoke-Trial([string]$Backend, [string]$Policy, [int]$ScratchSlots, [int]$Rate, [int]$DelayMs, [int]$WarmupMs, [int]$DurationMs, [long]$LimitBytes, [int]$Repeat, [string]$Phase) {
-    $trialId = '{0}-{1}-{2}-{3}-d{4}-r{5}-s{6}' -f $Phase, $Backend, $Policy, $Rate, $DelayMs, $Repeat, $ScratchSlots
+function Get-TrialCompletionServiceMode($Trial) {
+    if ($Trial.backend -ceq 'fsharp') { return 'fsharp-reference' }
+    $value = $null
+    if ($Trial -is [Collections.IDictionary]) {
+        if ($Trial.Contains('completionServiceMode')) { $value = $Trial['completionServiceMode'] }
+    } else {
+        $property = $Trial.PSObject.Properties['completionServiceMode']
+        if ($null -ne $property) { $value = $property.Value }
+    }
+    if ($null -eq $value -or [string]::IsNullOrWhiteSpace([string]$value)) { return 'one-packet' }
+    return [string]$value
+}
+
+function Invoke-Trial([string]$Backend, [string]$Policy, [int]$ScratchSlots, [int]$Rate, [int]$DelayMs, [int]$WarmupMs, [int]$DurationMs, [long]$LimitBytes, [int]$Repeat, [string]$Phase, [string]$CompletionServiceMode = 'one-packet') {
+    if ($Backend -ceq 'native' -and $CompletionServiceMode -cnotin @('one-packet', 'drain-ready')) { throw "Unsupported native completion service mode '$CompletionServiceMode'." }
+    $trialServiceMode = if ($Backend -ceq 'native') { $CompletionServiceMode } else { 'fsharp-reference' }
+    $trialId = '{0}-{1}-{2}-{3}-d{4}-r{5}-s{6}-cs{7}' -f $Phase, $Backend, $Policy, $Rate, $DelayMs, $Repeat, $ScratchSlots, $trialServiceMode
     $trialDirectory = Join-Path $runRoot "trials/$trialId"
     [IO.Directory]::CreateDirectory($trialDirectory) | Out-Null
     $appResultPath = Join-Path $trialDirectory 'application-result.json'
@@ -710,6 +730,7 @@ function Invoke-Trial([string]$Backend, [string]$Policy, [int]$ScratchSlots, [in
     $appRunner = $null
     $trialRecord = [ordered]@{
         trialId = $trialId; phase = $Phase; backend = $Backend; policy = $Policy; scratchSlots = if ($Backend -ceq 'native') { $ScratchSlots } else { $null }
+        completionServiceMode = $trialServiceMode
         rate = $Rate; delayMs = $DelayMs; payloadBytes = 4096; warmupMs = $WarmupMs; durationMs = $DurationMs
         repeat = $Repeat; applicationLimitBytes = $LimitBytes; application = $null; provider = $null; qualification = $null
         paths = [ordered]@{ directory = $trialDirectory; applicationResult = $appResultPath; applicationStdout = $appStdout; applicationStderr = $appStderr; applicationRunner = $appRunnerResult }
@@ -719,7 +740,7 @@ function Invoke-Trial([string]$Backend, [string]$Policy, [int]$ScratchSlots, [in
         $provider = Start-Provider $trialDirectory $providerTimeout '268435456'
         $commonArgs = @('--port', [string]$provider.Port, '--rate', [string]$Rate, '--payload-bytes', '4096', '--delay-ms', [string]$DelayMs, '--warmup-ms', [string]$WarmupMs, '--duration-ms', [string]$DurationMs, '--output', $appResultPath)
         if ($Backend -ceq 'native') {
-            $childArgs = @('--module', $script:modulePath, '--policy', $Policy, '--scratch-slots', [string]$ScratchSlots) + $commonArgs
+            $childArgs = @('--module', $script:modulePath, '--policy', $Policy, '--scratch-slots', [string]$ScratchSlots, '--completion-service-mode', $CompletionServiceMode) + $commonArgs
             $application = $script:nativeExe
             $appWork = $trialDirectory
         } else {
@@ -749,7 +770,7 @@ function Invoke-Trial([string]$Backend, [string]$Policy, [int]$ScratchSlots, [in
         if ($appAffinity -cne $script:appAffinityMask) { throw "Application CPU affinity changed from the predeclared mask $script:appAffinityMask to $appAffinity." }
         if ((Normalize-AffinityMask ([string](Get-ExactField $runnerMetadata 'availableAffinityMask' 'application runner metadata')) 'application.availableAffinityMask') -cne $script:availableAffinityMask) { throw 'Application runner reported a changed available CPU mask.' }
         $applicationResult = Read-JsonFile $appResultPath 'Application benchmark result'
-        $summary = Validate-AppResult $applicationResult $Backend $Policy $Rate 4096 $DelayMs $WarmupMs $DurationMs $ScratchSlots
+        $summary = Validate-AppResult $applicationResult $Backend $Policy $Rate 4096 $DelayMs $WarmupMs $DurationMs $ScratchSlots $CompletionServiceMode
         $expectedProviderFrames = [long]$summary.warmupCompleted + [long]$summary.admitted
         $providerSummary = Stop-Provider $provider $expectedProviderFrames
         $providerAffinity = Normalize-AffinityMask ([string](Get-ExactField $providerSummary.process 'affinityMask' 'provider runner metadata')) 'provider.affinityMask'
@@ -809,17 +830,17 @@ function Get-RuntimeSettings {
 function Get-ScoreGroups($Trials, [string]$Phase = 'grid') {
     $groups = [Collections.Generic.List[object]]::new()
     $keys = @($Trials | Where-Object { $_.validComparison -and $_.phase -ceq $Phase } |
-        ForEach-Object { '{0}|{1}|{2}|{3}' -f $_.backend, $_.policy, $_.scratchSlots, $_.delayMs } | Sort-Object -Unique)
+        ForEach-Object { '{0}|{1}|{2}|{3}|{4}' -f $_.backend, $_.policy, $_.scratchSlots, $_.delayMs, (Get-TrialCompletionServiceMode $_) } | Sort-Object -Unique)
     foreach ($key in $keys) {
-        $parts = $key -split '\|'
-        $rows = @($Trials | Where-Object { $_.phase -ceq $Phase -and $_.backend -ceq $parts[0] -and $_.policy -ceq $parts[1] -and [string]$_.scratchSlots -ceq $parts[2] -and $_.delayMs -eq [int]$parts[3] })
+        $parts = $key -split '\|', 5
+        $rows = @($Trials | Where-Object { $_.phase -ceq $Phase -and $_.backend -ceq $parts[0] -and $_.policy -ceq $parts[1] -and [string]$_.scratchSlots -ceq $parts[2] -and $_.delayMs -eq [int]$parts[3] -and (Get-TrialCompletionServiceMode $_) -ceq $parts[4] })
         $rates = @($rows | Group-Object { [int]$_.rate } | Sort-Object { [int]$_.Name })
         foreach ($rateGroup in $rates) {
             $runs = @($rateGroup.Group)
             $qualified = $runs.Count -eq 3 -and @($runs | Where-Object { -not (Test-TrialQualifies $_) }).Count -eq 0
             $groups.Add([ordered]@{
                 backend = $parts[0]; policy = $parts[1]; scratchSlots = if ($parts[2] -eq '') { $null } else { [int]$parts[2] }
-                delayMs = [int]$parts[3]; rate = [int]$rateGroup.Name; repeatCount = $runs.Count
+                delayMs = [int]$parts[3]; completionServiceMode = $parts[4]; rate = [int]$rateGroup.Name; repeatCount = $runs.Count
                 allRepeatsQualify = $qualified; trialIds = @($runs | ForEach-Object { $_.trialId })
                 throughputPerSecond = @($runs | ForEach-Object { $_.application.throughputPerSecond })
                 p99LatencyMicroseconds = @($runs | ForEach-Object { $_.application.p99LatencyMicroseconds })
@@ -831,8 +852,9 @@ function Get-ScoreGroups($Trials, [string]$Phase = 'grid') {
     return @($groups)
 }
 
-function Get-HighestQualifyingTestedRate($Groups, [string]$Backend, [string]$Policy, $ScratchSlots, [int]$DelayMs) {
-    $matches = @($Groups | Where-Object { $_.backend -ceq $Backend -and $_.policy -ceq $Policy -and $_.scratchSlots -eq $ScratchSlots -and $_.delayMs -eq $DelayMs -and $_.allRepeatsQualify } | Sort-Object { [int]$_.rate })
+function Get-HighestQualifyingTestedRate($Groups, [string]$Backend, [string]$Policy, $ScratchSlots, [int]$DelayMs, [string]$CompletionServiceMode = '') {
+    if ([string]::IsNullOrWhiteSpace($CompletionServiceMode)) { $CompletionServiceMode = if ($Backend -ceq 'fsharp') { 'fsharp-reference' } else { 'one-packet' } }
+    $matches = @($Groups | Where-Object { $_.backend -ceq $Backend -and $_.policy -ceq $Policy -and $_.scratchSlots -eq $ScratchSlots -and $_.delayMs -eq $DelayMs -and $_.completionServiceMode -ceq $CompletionServiceMode -and $_.allRepeatsQualify } | Sort-Object { [int]$_.rate })
     if ($matches.Count -eq 0) { return $null }
     return [int]$matches[-1].rate
 }
@@ -879,6 +901,26 @@ function Test-ScoreAggregationPreflight {
         @($groups | Where-Object { $_.backend -ceq 'native' -and $_.scratchSlots -ne 4 }).Count -ne 0) {
         throw 'Scoring preflight did not preserve numeric rate order or the F# null/native four-slot axis.'
     }
+
+    $serviceModeFixtureTrials = [Collections.Generic.List[object]]::new()
+    foreach ($serviceMode in @('one-packet', 'drain-ready')) {
+        for ($repeat = 1; $repeat -le 3; $repeat++) {
+            $serviceModeFixtureTrials.Add([ordered]@{
+                trialId = "service-mode-$serviceMode-$repeat"; phase = 'driver-service-diagnostic'; validComparison = $true
+                backend = 'native'; policy = 'return'; scratchSlots = 16; delayMs = 5; rate = 64000
+                completionServiceMode = $serviceMode
+                application = [ordered]@{ qualifies = $false; throughputPerSecond = 0.0; p99LatencyMicroseconds = $null; rejectedFraction = 0.99; process = [ordered]@{} }
+            })
+        }
+    }
+    $serviceModeGroups = @(Get-ScoreGroups $serviceModeFixtureTrials 'driver-service-diagnostic')
+    $serviceModeNames = @($serviceModeGroups | ForEach-Object { $_.completionServiceMode } | Sort-Object -Unique)
+    if ($serviceModeGroups.Count -ne 2 -or
+        @($serviceModeGroups | Where-Object { $_.repeatCount -ne 3 }).Count -ne 0 -or
+        ($serviceModeNames -join ',') -cne 'drain-ready,one-packet') {
+        throw 'Scoring preflight pooled native trials with different completion service modes.'
+    }
+
     $oneHighTrial = @($fixtureTrials | Where-Object { $_.backend -ceq 'native' -and $_.policy -ceq 'return' -and $_.delayMs -eq 0 -and $_.rate -eq 8000 })[0]
     $oneHighTrial.application.qualifies = $false
     $oneFailureGroups = @(Get-ScoreGroups $fixtureTrials)
@@ -902,6 +944,7 @@ function Test-ScoreAggregationPreflight {
     }
     return [ordered]@{
         passed = $true; fixtureTrialCount = $fixtureTrials.Count; groupCount = $groups.Count; repeatsPerGroup = 3
+        serviceModeSeparationFixtureGroupCount = $serviceModeGroups.Count
         singleFailedRepeatFallbackRate = $fallbackAfterOneFailure
         highestQualifyingTestedRates = @($checks | ForEach-Object { [ordered]@{ backend = $_.backend; policy = $_.policy; scratchSlots = $_.scratchSlots; delayMs = $_.delayMs; rate = $_.expectedRate; nextRate = $_.expectedNextRate } })
         inputRepresentation = 'live System.Collections.Specialized.OrderedDictionary trial records'
@@ -1119,6 +1162,57 @@ function Run-Focused16SlotConfirmation {
     }
 }
 
+function Run-DriverServiceDiagnostic {
+    $rate = 64000
+    $delay = 5
+    $warmup = 100
+    $duration = 250
+    $limit = 268435456L
+    $phase = 'driver-service-diagnostic'
+    $variants = @(
+        [pscustomobject]@{ backend = 'fsharp'; policy = 'gc'; scratchSlots = 0; completionServiceMode = 'fsharp-reference' },
+        [pscustomobject]@{ backend = 'native'; policy = 'return'; scratchSlots = 16; completionServiceMode = 'one-packet' },
+        [pscustomobject]@{ backend = 'native'; policy = 'keep'; scratchSlots = 16; completionServiceMode = 'one-packet' },
+        [pscustomobject]@{ backend = 'native'; policy = 'return'; scratchSlots = 16; completionServiceMode = 'drain-ready' },
+        [pscustomobject]@{ backend = 'native'; policy = 'keep'; scratchSlots = 16; completionServiceMode = 'drain-ready' }
+    )
+
+    for ($repeat = 0; $repeat -lt 3; $repeat++) {
+        for ($position = 0; $position -lt $variants.Count; $position++) {
+            $variant = $variants[($position + $repeat) % $variants.Count]
+            $slots = if ($variant.backend -ceq 'native') { [int]$variant.scratchSlots } else { 0 }
+            $null = Invoke-Trial $variant.backend $variant.policy $slots $rate $delay $warmup $duration $limit ($repeat + 1) $phase $variant.completionServiceMode
+        }
+    }
+
+    $focusedTrials = @($script:trialResults | Where-Object { $_.phase -ceq $phase })
+    $groups = @(Get-ScoreGroups $focusedTrials $phase)
+    if ($focusedTrials.Count -ne 15 -or $groups.Count -ne 5 -or
+        @($groups | Where-Object { $_.repeatCount -ne 3 }).Count -ne 0 -or
+        @($groups | Where-Object { $_.backend -ceq 'fsharp' -and $_.completionServiceMode -cne 'fsharp-reference' }).Count -ne 0 -or
+        @($groups | Where-Object { $_.backend -ceq 'native' -and $_.completionServiceMode -notin @('one-packet', 'drain-ready') }).Count -ne 0) {
+        throw "Driver service diagnostic expected 15 trials in five mode-separated groups of three; found $($focusedTrials.Count) trials and $($groups.Count) groups."
+    }
+
+    $script:report.score = [ordered]@{
+        mode = 'driver-service-diagnostic'
+        scored = $false
+        throughputQualificationClaimed = $false
+        claimScope = 'Matched diagnostic at 64000/s with 16-slot native RETURN and KEEP policies, comparing one-packet service against draining only already-queued IOCP packets. The fixed F# runs are a reference; this diagnostic makes no throughput qualification claim.'
+        configuration = [ordered]@{
+            rate = $rate; payloadBytes = 4096; delayMs = $delay; warmupMs = $warmup; durationMs = $duration
+            repeatsPerVariant = 3; applicationLimitBytes = $limit; nativeScratchSlots = 16
+            completionServiceModes = @('one-packet', 'drain-ready'); fsharpCompletionServiceMode = 'fsharp-reference'
+        }
+        expectedTrialCount = 15
+        actualTrialCount = $focusedTrials.Count
+        expectedGroupCount = 5
+        actualGroupCount = $groups.Count
+        groups = $groups
+        rawTrials = $focusedTrials
+    }
+}
+
 try {
     [IO.Directory]::CreateDirectory($runRoot) | Out-Null
     [IO.Directory]::CreateDirectory($tempRoot) | Out-Null
@@ -1207,6 +1301,8 @@ try {
         $script:report.score = [ordered]@{ mode = 'smoke'; smokeCases = @($script:trialResults | Where-Object { $_.phase -like 'smoke*' } | ForEach-Object { $_.application }); scored = $false; reason = 'Smoke validation is not a scored result.' }
     } elseif ($Confirm16Slot) {
         Run-Focused16SlotConfirmation
+    } elseif ($DriverServiceDiagnostic) {
+        Run-DriverServiceDiagnostic
     } else {
         Run-ScoredTrials
     }

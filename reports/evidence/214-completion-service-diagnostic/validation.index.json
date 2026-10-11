@@ -1,0 +1,2306 @@
+{
+  "archiveSha256": "c1153c8c30370b4fa65722771bd885cec35cfb9fc0af0313016e8c836346ac9a",
+  "archiveBytes": 1093233,
+  "verification": "Every member reopened and verified by length and SHA256",
+  "runId": "2dc7b8c333d749008de0ec602e0a1574",
+  "error": null,
+  "sourceStable": true,
+  "memberCount": 459,
+  "members": [
+    {
+      "path": "review.md",
+      "bytes": 1318,
+      "sha256": "cfedca6a230d23a46036a55fee59df15f5c7670c24172969bbdca7dd5099052c"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-fsharp-gc-64000-d5-r1-s0-csfsharp-reference.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-fsharp-gc-64000-d5-r1-s0-csfsharp-reference.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-fsharp-gc-64000-d5-r2-s0-csfsharp-reference.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-fsharp-gc-64000-d5-r2-s0-csfsharp-reference.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-fsharp-gc-64000-d5-r3-s0-csfsharp-reference.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-fsharp-gc-64000-d5-r3-s0-csfsharp-reference.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-keep-64000-d5-r1-s16-csdrain-ready.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-keep-64000-d5-r1-s16-csdrain-ready.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-keep-64000-d5-r1-s16-csone-packet.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-keep-64000-d5-r1-s16-csone-packet.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-keep-64000-d5-r2-s16-csdrain-ready.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-keep-64000-d5-r2-s16-csdrain-ready.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-keep-64000-d5-r2-s16-csone-packet.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-keep-64000-d5-r2-s16-csone-packet.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-keep-64000-d5-r3-s16-csdrain-ready.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-keep-64000-d5-r3-s16-csdrain-ready.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-keep-64000-d5-r3-s16-csone-packet.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-keep-64000-d5-r3-s16-csone-packet.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-return-64000-d5-r1-s16-csdrain-ready.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-return-64000-d5-r1-s16-csdrain-ready.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-return-64000-d5-r1-s16-csone-packet.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-return-64000-d5-r1-s16-csone-packet.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-return-64000-d5-r2-s16-csdrain-ready.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-return-64000-d5-r2-s16-csdrain-ready.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-return-64000-d5-r2-s16-csone-packet.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-return-64000-d5-r2-s16-csone-packet.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-return-64000-d5-r3-s16-csdrain-ready.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-return-64000-d5-r3-s16-csdrain-ready.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-return-64000-d5-r3-s16-csone-packet.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-driver-service-diagnostic-native-return-64000-d5-r3-s16-csone-packet.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-capacity-16-slot-native-keep-64000-d5-r1-s16-csone-packet.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-capacity-16-slot-native-keep-64000-d5-r1-s16-csone-packet.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-capacity-16-slot-native-return-64000-d5-r1-s16-csone-packet.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-capacity-16-slot-native-return-64000-d5-r1-s16-csone-packet.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-fsharp-gc-250-d0-r1-s0-csfsharp-reference.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-fsharp-gc-250-d0-r1-s0-csfsharp-reference.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-fsharp-gc-500-d5-r1-s0-csfsharp-reference.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-fsharp-gc-500-d5-r1-s0-csfsharp-reference.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-fsharp-gc-64000-d5-r1-s0-csfsharp-reference.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-fsharp-gc-64000-d5-r1-s0-csfsharp-reference.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-native-keep-250-d0-r1-s4-csone-packet.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-native-keep-250-d0-r1-s4-csone-packet.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-native-keep-500-d5-r1-s4-csone-packet.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-native-keep-500-d5-r1-s4-csone-packet.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-native-keep-64000-d5-r1-s4-csone-packet.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-native-keep-64000-d5-r1-s4-csone-packet.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-native-return-250-d0-r1-s4-csone-packet.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-native-return-250-d0-r1-s4-csone-packet.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-native-return-500-d5-r1-s4-csone-packet.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-native-return-500-d5-r1-s4-csone-packet.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-native-return-64000-d5-r1-s4-csone-packet.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/app-smoke-native-return-64000-d5-r1-s4-csone-packet.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/build-fsharp-baseline-release.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/build-fsharp-baseline-release.stdout.txt",
+      "bytes": 464,
+      "sha256": "1df228244f637450b2b441b4bc606b87ba4983958bfd15bcc1a4600e493e325c"
+    },
+    {
+      "path": "run/build-launcher-control-probe.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/build-launcher-control-probe.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/build-limit-runner.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/build-limit-runner.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/build-native-load-host-O2-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/build-native-load-host-O2-trusted-generated.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/build-owning-mailbox-bootstrap-release.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/build-owning-mailbox-bootstrap-release.stdout.txt",
+      "bytes": 968,
+      "sha256": "762bc1ed5572287dd5a8cf2bf025ef996a6d2e654d21de8aef4ba03f6fd75fbf"
+    },
+    {
+      "path": "run/build-provider-release.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/build-provider-release.stdout.txt",
+      "bytes": 475,
+      "sha256": "b77430e8fa14e7d57ee99fe5cfdd8be5dac31b6fcc6d90915bddc4f36c87df3b"
+    },
+    {
+      "path": "run/commands.json",
+      "bytes": 159738,
+      "sha256": "0b71692f8a4361f922843af61d780d42c3cfbfea39f01253e73309ce03d03e5d"
+    },
+    {
+      "path": "run/compile-mailbox-flow-O2-trusted-generated.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/compile-mailbox-flow-O2-trusted-generated.stdout.txt",
+      "bytes": 51585,
+      "sha256": "d93ac5825aaa099769047cb05b10ff5f6ac58840ceacf1b81c0eb9ae81d0569a"
+    },
+    {
+      "path": "run/control-cap-positive.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/control-cap-positive.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/control-cap.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/control-cap.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/control-exit.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/control-exit.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/control-timeout.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/control-timeout.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/controls/cap-negative/runner.json",
+      "bytes": 802,
+      "sha256": "6d82712520931dcb96d616055d36ff4d6078fe78cca6504d08038c3a24728945"
+    },
+    {
+      "path": "run/controls/cap-negative/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/controls/cap-negative/stdout.txt",
+      "bytes": 117,
+      "sha256": "1f4bf2ca23aeda39fa509e52c0890e7aaadc84c469c3ef5a78565ad4be22e06f"
+    },
+    {
+      "path": "run/controls/cap-positive/runner.json",
+      "bytes": 803,
+      "sha256": "b78393cc394b2a23f4c0a59fe88b0a0307b08b8d72005a361c8e4c329d692be3"
+    },
+    {
+      "path": "run/controls/cap-positive/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/controls/cap-positive/stdout.txt",
+      "bytes": 102,
+      "sha256": "5b7fe7d76ec35eebc0ef35268eaba8d2b9da191cd1450ed7f6f233f802f935e4"
+    },
+    {
+      "path": "run/controls/exit-code/runner.json",
+      "bytes": 792,
+      "sha256": "fd57a065cbf30d7117a6dbc5ce8d9e8ecdc5ea6aec7240c88c37946a01537380"
+    },
+    {
+      "path": "run/controls/exit-code/stderr.txt",
+      "bytes": 26,
+      "sha256": "cc00d9383dc1143f76c1273ee962e5b5ccfaa4202c61aa21c9245790968917f9"
+    },
+    {
+      "path": "run/controls/exit-code/stdout.txt",
+      "bytes": 26,
+      "sha256": "23fb523db1030ca9006599b67b49fece1e86281369ba722e1590c08aa69dc31b"
+    },
+    {
+      "path": "run/controls/timeout/runner.json",
+      "bytes": 792,
+      "sha256": "a031adb2c2dd414d99225aee3b96d355c9de99f780e064d5034b7a5741463006"
+    },
+    {
+      "path": "run/controls/timeout/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/controls/timeout/stdout.txt",
+      "bytes": 40,
+      "sha256": "348a343c0c367095dcb0e5d62f7e08bef204c0218d1183f7326ba1e0f88a0b7c"
+    },
+    {
+      "path": "run/dotnet-version.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/dotnet-version.stdout.txt",
+      "bytes": 9,
+      "sha256": "cf50f3f17fe821e5df2c97efab82bf8ec585bbd55e3cea51015a84a1b71ff0d9"
+    },
+    {
+      "path": "run/launcher-control-probe.c",
+      "bytes": 1451,
+      "sha256": "3048ed7861817cbdf3c270033169b1cc4808360f2ad7a83890e9ad0cbd9d0da1"
+    },
+    {
+      "path": "run/module-trusted-generated-O2/entries/begin.frame.ll",
+      "bytes": 23929,
+      "sha256": "ec228313e6d7848d7b662053b0c41bf6a1169ebbc437392ebc46053f73b38f1d"
+    },
+    {
+      "path": "run/module-trusted-generated-O2/entries/begin.verified-ir.txt",
+      "bytes": 894,
+      "sha256": "66e3216f0c2d198fcd687954ec2e26a2dbdf500c21ad4df9daadeb61b25f906c"
+    },
+    {
+      "path": "run/module-trusted-generated-O2/entries/initialize.frame.ll",
+      "bytes": 13253,
+      "sha256": "3166430b0b36f51948ef2271f9a20d0d84004d8ab1cfe5b9b61bc5d82d4723f5"
+    },
+    {
+      "path": "run/module-trusted-generated-O2/entries/initialize.verified-ir.txt",
+      "bytes": 795,
+      "sha256": "97eb6d39086d4ecce7dc19191f0cfa84a82b60362001faf27e4d3c4322c68560"
+    },
+    {
+      "path": "run/module-trusted-generated-O2/entries/resume.frame.ll",
+      "bytes": 21823,
+      "sha256": "7f88d20ca49a6c8d6454d772d5e80039a5038ee71d6cddabebf4b2ecc185f5c6"
+    },
+    {
+      "path": "run/module-trusted-generated-O2/entries/resume.verified-ir.txt",
+      "bytes": 917,
+      "sha256": "4cb4e26f8556f9d9f21be64f231a79373d0b61d6b7051316343f05aab20bdb7c"
+    },
+    {
+      "path": "run/module-trusted-generated-O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 102998,
+      "sha256": "8634b6bd2e24692cb967285504ec8293081422cb06f29a28601bfbafce477aba"
+    },
+    {
+      "path": "run/module-trusted-generated-O2/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "fab12941a0624e757098099d6a6d0b441374a4d9962e7b11b0c6653dc930c186"
+    },
+    {
+      "path": "run/module-trusted-generated-O2/owning-mailbox-module-manifest.json",
+      "bytes": 78091,
+      "sha256": "5da7c8118b2a67d39c6361edd5b7c1fcb8359fa5ff2b20d5bed5179b299e67a0"
+    },
+    {
+      "path": "run/module-trusted-generated-O2/owning-mailbox-native.ll",
+      "bytes": 2031076,
+      "sha256": "9048ad77e1a472fdd21e52dadefbf6d9146f71466ab528c40591c8216f3a8889"
+    },
+    {
+      "path": "run/parse-controls.json",
+      "bytes": 1410,
+      "sha256": "41a6a338ae4c2480b41df315bddd3c93ba944414e080ff80be5c84e854c8aa10"
+    },
+    {
+      "path": "run/provider.launcher.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/provider.launcher.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/run-report.json",
+      "bytes": 809078,
+      "sha256": "6dd34516ffb8536cc33e31ad7f37f2268c996250d976a4237017cad4ab956dc0"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/application-result.json",
+      "bytes": 2961,
+      "sha256": "486cb3178c25ec844584e6415b443ce1e776081bbc1f7970b1df6640d0dfc09f"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/application-runner.json",
+      "bytes": 786,
+      "sha256": "7910ad68822b266cf33aeb4079692b4cf05c0d5756cce58a6e1e90c6eda9c6dd"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/configuration.json",
+      "bytes": 1544,
+      "sha256": "ed04d00d0090571583ea9e4fb3383e7ec3b86503679e95c997cee4c145817603"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "55bc435f41ce11adfc23cd5ced212b49d3b5288d0003b985b70160f0b4c4e0d9"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/provider/ready.json",
+      "bytes": 234,
+      "sha256": "80c590ecf4d61c784bd3a695ac2991ce9a6f8c204b9952c40309f631ab275769"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/provider/runner.json",
+      "bytes": 796,
+      "sha256": "6d7fbe1aa1787af0de8a99a1fe05758b51a13dd973a373e5fac614ca6ad44093"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/trial-summary.json",
+      "bytes": 9151,
+      "sha256": "8e6eb2fce926409f6e98ca788bca3bf16c390ceb854e352e1dcf04054f31da92"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r2-s0-csfsharp-reference/application-result.json",
+      "bytes": 2962,
+      "sha256": "8c88327e366ea2502fe2194ab838fab95ec185c83a3a0fd7b34b8e8f3e708405"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r2-s0-csfsharp-reference/application-runner.json",
+      "bytes": 786,
+      "sha256": "87a59a1d528255015666345571e2357427adac55d8ebb82af3339430098c1d93"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r2-s0-csfsharp-reference/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r2-s0-csfsharp-reference/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r2-s0-csfsharp-reference/configuration.json",
+      "bytes": 1544,
+      "sha256": "e370555d47216faebd0d7211d6de4ebfeb9b767302a33621a2fd1a5c76dedd2d"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r2-s0-csfsharp-reference/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r2-s0-csfsharp-reference/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "de9fe1c82dd96a642dda4b905cdc464989ad447b5173b0a86410624da15cdb3b"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r2-s0-csfsharp-reference/provider/ready.json",
+      "bytes": 234,
+      "sha256": "acb4f9f962f09210f47b1f2f3442212468753bb951253fd8db951d341ddbcb8a"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r2-s0-csfsharp-reference/provider/runner.json",
+      "bytes": 796,
+      "sha256": "de2ea45758653672c7e4ad9b6868950c186340a26a5f94a3a492798f30dbfaa6"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r2-s0-csfsharp-reference/trial-summary.json",
+      "bytes": 9152,
+      "sha256": "934673c72f37eb39c2bd124d9c0faa053067e39971f44bbde0d6268e62352d25"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r3-s0-csfsharp-reference/application-result.json",
+      "bytes": 2866,
+      "sha256": "637fedc4b376d8b38d7c5dd339aa8e7242f34c227062930314bd37e2abf24dd7"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r3-s0-csfsharp-reference/application-runner.json",
+      "bytes": 786,
+      "sha256": "77e3afa23fa3772a7e44c80e0ee80b8c42a0d9dae2737bb7c1347284882c0c4c"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r3-s0-csfsharp-reference/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r3-s0-csfsharp-reference/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r3-s0-csfsharp-reference/configuration.json",
+      "bytes": 1544,
+      "sha256": "bf8c1bb934c168e89bbdda9872b735f2444175199817c50e0fbd6ead62e3d166"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r3-s0-csfsharp-reference/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r3-s0-csfsharp-reference/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "708637d9938b0c4a89ec5c8b8a81fe5bb1f0204d74623fc3a236e016a7338614"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r3-s0-csfsharp-reference/provider/ready.json",
+      "bytes": 234,
+      "sha256": "f16848c61f706aa6ee35a794ba2bb7eb12d3335d0c36c88ffda6ec28e039ba9b"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r3-s0-csfsharp-reference/provider/runner.json",
+      "bytes": 796,
+      "sha256": "f258529df237c9669a0dfc2847d346b2d8dd9c8ad6cc3e8f07d91918bd40e86a"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-fsharp-gc-64000-d5-r3-s0-csfsharp-reference/trial-summary.json",
+      "bytes": 9154,
+      "sha256": "900dff984f7ff391535534f49af832b7aa9ecc590837d151b488b81844967ed3"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csdrain-ready/application-result.json",
+      "bytes": 3730,
+      "sha256": "fbe1bf27f3eb777546787b4914cbd189314b7ac283e84c1139abddc2bc209e70"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csdrain-ready/application-runner.json",
+      "bytes": 850,
+      "sha256": "1cb7ac78feee697a9b2dc309745ef257460bd79d66668fd8140469ab482a40bd"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csdrain-ready/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csdrain-ready/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csdrain-ready/configuration.json",
+      "bytes": 1527,
+      "sha256": "66fc5f50feb64e59b5562b6a14130b4ef15b5721900e7410b8b5758e6142dc90"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csdrain-ready/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csdrain-ready/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "de9fe1c82dd96a642dda4b905cdc464989ad447b5173b0a86410624da15cdb3b"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csdrain-ready/provider/ready.json",
+      "bytes": 234,
+      "sha256": "139f90d99e9150ea00a80d26078642743a77e1103213eb72ff38349432a56415"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csdrain-ready/provider/runner.json",
+      "bytes": 794,
+      "sha256": "ea19b8095917d42964b16e9d9a0210f053128847aa082d7cc003d094b975b309"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csdrain-ready/trial-summary.json",
+      "bytes": 10644,
+      "sha256": "f47bf70e76da65f073756e2b29303a99b90417ff3b85621701da00e27c1dbac4"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csone-packet/application-result.json",
+      "bytes": 3530,
+      "sha256": "3ba3d8ab120732c7fbc09ff13e5d7e21ef6cc8c3a63a5e191e2f1e1532551b42"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csone-packet/application-runner.json",
+      "bytes": 849,
+      "sha256": "5d7346e3f57a98cb8c1980d33d6021bdbb697d2d2a9be7915f6dbb9fd57b529b"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csone-packet/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csone-packet/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csone-packet/configuration.json",
+      "bytes": 1520,
+      "sha256": "9ba2ece74d0018c44bf1bc4f6d696f0a22cf113066cf11ae2b1be6182fddb126"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csone-packet/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csone-packet/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "3bca778479b75ebd6efc5f4b7ee411a86d43dd8c05b75b28882d0aaaa67af7ba"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csone-packet/provider/ready.json",
+      "bytes": 234,
+      "sha256": "612d05b1759a09d46589868a948e589b9e343a2609a55d0417c3719d05004cf5"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csone-packet/provider/runner.json",
+      "bytes": 793,
+      "sha256": "473f9fafafd34e2689d488369ca54dbb9905d0957bd4d628301746853d94254a"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r1-s16-csone-packet/trial-summary.json",
+      "bytes": 10627,
+      "sha256": "d8da0bfad845a61c083584e8a249a3fd6ec12c1931b8fd5e22bc3552a86d6fb9"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csdrain-ready/application-result.json",
+      "bytes": 3824,
+      "sha256": "b7eca28c54633cfaa6bdf99938e839642aef89aecba507b48a03426d1bed6b9c"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csdrain-ready/application-runner.json",
+      "bytes": 850,
+      "sha256": "e1e7adcba5df05ea961ee5fa1dc5cc85dcf08136a68e29ddc04225bf3cc729c9"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csdrain-ready/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csdrain-ready/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csdrain-ready/configuration.json",
+      "bytes": 1527,
+      "sha256": "8aa420c55f2f3c52e952a0d2a68f10e4ccc8aafbcab910c75efda96065282663"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csdrain-ready/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csdrain-ready/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "419ec8bd77a36262608d3246a9756ee79ca976f8c34f3a8b390c7054b2c54513"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csdrain-ready/provider/ready.json",
+      "bytes": 234,
+      "sha256": "2d1842ae090360cc2c40fff333d4ae90bade63be1243b0a53cd26acb62f6ca34"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csdrain-ready/provider/runner.json",
+      "bytes": 794,
+      "sha256": "e3fa6c56c88716a1b24eb4919b9ea2e7fbb642ea054e9c2957d1d200eb499b77"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csdrain-ready/trial-summary.json",
+      "bytes": 10643,
+      "sha256": "a336058d6d1ff9ea28eb3c322890ceea62040daf3544b63c193c8939e79fcca6"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csone-packet/application-result.json",
+      "bytes": 3533,
+      "sha256": "753c0150b3cbde42414f96b206180c51e9be8910f1f3059a5980d730e80f1edb"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csone-packet/application-runner.json",
+      "bytes": 849,
+      "sha256": "bf6428ada00207dd9488d76bf437acd59337270a1755e1a525307401dd9e8271"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csone-packet/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csone-packet/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csone-packet/configuration.json",
+      "bytes": 1520,
+      "sha256": "f2e52efd8ed32de14fe5dd3efab923a7aed29392d6ab79347d62d35a91c66d19"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csone-packet/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csone-packet/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "b9223e89002e79f4292a9df669aad8937a439f1ed311140b6c65efb69adf427e"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csone-packet/provider/ready.json",
+      "bytes": 234,
+      "sha256": "27d5b43742e5db1850c58184234a408130ce91b84367244318ba7449249c8e69"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csone-packet/provider/runner.json",
+      "bytes": 793,
+      "sha256": "92c0509083796568aa159b894533b310d73a2eaec4baad9e1b7907ebbb92796e"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r2-s16-csone-packet/trial-summary.json",
+      "bytes": 10620,
+      "sha256": "d94919b213cf61eefae788531c7e179b1592fb59612556ab2e881f2c68c3730d"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csdrain-ready/application-result.json",
+      "bytes": 3728,
+      "sha256": "fd4ea2c290aed3e78c8388adb562667b9927dd5cbed6ae2f9f6a40d51d0813ae"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csdrain-ready/application-runner.json",
+      "bytes": 850,
+      "sha256": "cc8b3b8d32e838ee90850168a9b11402362625a160d579b99f4f19f2c293f54c"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csdrain-ready/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csdrain-ready/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csdrain-ready/configuration.json",
+      "bytes": 1527,
+      "sha256": "ea777c68c30abf942f32e112ac55da814dfb7ca7d60058159b0312cd41b71890"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csdrain-ready/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csdrain-ready/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "de9fe1c82dd96a642dda4b905cdc464989ad447b5173b0a86410624da15cdb3b"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csdrain-ready/provider/ready.json",
+      "bytes": 234,
+      "sha256": "0cff09a2ec1bc1d46a48b4b0d847bf156a625d39fa7381580a15d7bbb71b7038"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csdrain-ready/provider/runner.json",
+      "bytes": 794,
+      "sha256": "8b3bd92f31c62116b9e103f849ee620fb4b1313375296535d0315c673617e889"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csdrain-ready/trial-summary.json",
+      "bytes": 10643,
+      "sha256": "d087788a5ba05eff1dd0bab7c6b228bc8da5c946b82f0a9ea995379e1bbb1f49"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csone-packet/application-result.json",
+      "bytes": 3624,
+      "sha256": "589e7404279d3acfc5adbb9f8dfe69a26a661bddfa9d577f9864464d437aff5c"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csone-packet/application-runner.json",
+      "bytes": 849,
+      "sha256": "7fdf01e9fdcdff7b1ca15c90b3d08d1ab87bb43bbd467fdbc8cbf1452a172613"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csone-packet/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csone-packet/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csone-packet/configuration.json",
+      "bytes": 1520,
+      "sha256": "dfb94cd8ef3befe969084de2a2cf1bf9d28e1dc3d2e229aac3a5d59f851d0866"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csone-packet/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csone-packet/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "353d21385db4ff4b8c8d8131c683eb390991a12760e03e6edc701a9041bb002f"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csone-packet/provider/ready.json",
+      "bytes": 234,
+      "sha256": "8c803efb585a14a2fc1040553d5b9d6c8a1f96e652f6350d6950d43a5dce800b"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csone-packet/provider/runner.json",
+      "bytes": 793,
+      "sha256": "3c38dd963bc017eb8aa379937a08566e483fb71efa8198cb2297a36e9ea97f88"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-keep-64000-d5-r3-s16-csone-packet/trial-summary.json",
+      "bytes": 10624,
+      "sha256": "e7646ca1be368f7a802f8470d317ddbbc45185cbd952b5d8fb3d5074c546ab18"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csdrain-ready/application-result.json",
+      "bytes": 3744,
+      "sha256": "aa2593695cef59fab0346cc7aefbf59a7eb4eb811f5f6eca34e61ba81881dd97"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csdrain-ready/application-runner.json",
+      "bytes": 852,
+      "sha256": "deed2896350f8dffebc5b47d76bbfa87f3a220e50b4727e3b374e324713487d6"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csdrain-ready/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csdrain-ready/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csdrain-ready/configuration.json",
+      "bytes": 1541,
+      "sha256": "885a5f5d983ffbee9d18b3c072b9a8fb3d71512e5313cffcd82e8cb895de51c5"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csdrain-ready/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csdrain-ready/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "de9fe1c82dd96a642dda4b905cdc464989ad447b5173b0a86410624da15cdb3b"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csdrain-ready/provider/ready.json",
+      "bytes": 234,
+      "sha256": "93110ee2cae94818cb1a6b030c0df47b6eaa33d501cfc3225ff5e59640639c92"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csdrain-ready/provider/runner.json",
+      "bytes": 796,
+      "sha256": "da4ee13b062a2ec5e2af44d42ab4fe519005799d551cda119dfd0050bf4caff2"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csdrain-ready/trial-summary.json",
+      "bytes": 10709,
+      "sha256": "32165c14b72f674d2cb2af3c6ef9eca8279e41af87b1a5ae3c4a1d6aabc7fccd"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csone-packet/application-result.json",
+      "bytes": 3701,
+      "sha256": "7d72095f40b8d9a5ee3d5660d6fb60076ba713b12f9cd84653caa0a14585fb27"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csone-packet/application-runner.json",
+      "bytes": 851,
+      "sha256": "b3810eb6408a5ada76dfc993ef29052b12198a6d0459ac8097accb1c1cf667a6"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csone-packet/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csone-packet/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csone-packet/configuration.json",
+      "bytes": 1534,
+      "sha256": "f133008c55d5d0605a702b115b73f4992c9b59766478639a4f4bb65ac37980b2"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csone-packet/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csone-packet/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "f5e70c465fd3fd2692a680af0e0ea8f9ac54eab8c640270eb3ef96d184aa3970"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csone-packet/provider/ready.json",
+      "bytes": 234,
+      "sha256": "ebcb288b38a3dfd87354f326dcad3e1632e2d973892e96d8d0af6fe36a1d9b0f"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csone-packet/provider/runner.json",
+      "bytes": 795,
+      "sha256": "16c5dff3a9196e91660f0f6309b514da693f1acd4fc75561f937f98b2df5e928"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r1-s16-csone-packet/trial-summary.json",
+      "bytes": 10692,
+      "sha256": "8111038427eefd44811528b6de39ec948648ed308e4fe323f5e8c6d536f877fa"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csdrain-ready/application-result.json",
+      "bytes": 3838,
+      "sha256": "95e4dfbd22fa60ca98a20df47ef068f20beea1d210276b777a52cbc43e7209ed"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csdrain-ready/application-runner.json",
+      "bytes": 852,
+      "sha256": "8e138dccb708440efdb5ebffe85407439eb3ccfc4ac987e3ad76165d535c4619"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csdrain-ready/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csdrain-ready/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csdrain-ready/configuration.json",
+      "bytes": 1541,
+      "sha256": "7184e686c6a1e4f03d4187027ae387423d54632d488c67cca7ba6b297d5fb8e1"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csdrain-ready/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csdrain-ready/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "419ec8bd77a36262608d3246a9756ee79ca976f8c34f3a8b390c7054b2c54513"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csdrain-ready/provider/ready.json",
+      "bytes": 234,
+      "sha256": "99ae4db7505835ff0dbec8cb0331a9cd6243d79bf50e5d50ac2183d73b8e1650"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csdrain-ready/provider/runner.json",
+      "bytes": 796,
+      "sha256": "0d5a9e44588a5955483b60d8becf433092b168dcebf3423276fda309cf176a58"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csdrain-ready/trial-summary.json",
+      "bytes": 10708,
+      "sha256": "aaa32d809df5a72660cf972c2b2601f3520f52b2185cb268cc47f8e024d64678"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csone-packet/application-result.json",
+      "bytes": 3550,
+      "sha256": "2151b31b6cca56877953b4ae2f1fe4683c2decd39c544316226ee67015a29471"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csone-packet/application-runner.json",
+      "bytes": 851,
+      "sha256": "69d4b992dd68fd4d291b210b5ed7ab399ee7e9980af2786b3ba8f6528123941e"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csone-packet/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csone-packet/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csone-packet/configuration.json",
+      "bytes": 1534,
+      "sha256": "64a800679a4d7db7bfe527e5cc312db510590d2ae520d17b7dd53f41bac32fed"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csone-packet/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csone-packet/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "c1c2579ba53a79230c3350497f9a5182e7f2d74f0e9e9bd1e92b32daa10215c0"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csone-packet/provider/ready.json",
+      "bytes": 234,
+      "sha256": "c1a86e57e7fa88304f28a3a2f76e6e8c52ac6d485494ecb4bf53917ed569ed3a"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csone-packet/provider/runner.json",
+      "bytes": 795,
+      "sha256": "d778806ea12035e232a297af04efebcd805c7e21c8e64be1e1b2bac89aa954f6"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r2-s16-csone-packet/trial-summary.json",
+      "bytes": 10689,
+      "sha256": "7c7cbd722ae8034339b82c90f13f1ed85055234f419e2ad43a4be73213c8435a"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csdrain-ready/application-result.json",
+      "bytes": 3551,
+      "sha256": "54b26b60512de0fe8e1da344545f5baefb5e78dcf96d5cf7e2d6f024ef5f9b3b"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csdrain-ready/application-runner.json",
+      "bytes": 852,
+      "sha256": "536a1fd709192e76506c62c6a10537ae14ce48a63d51cab1c15d57b81b52f6de"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csdrain-ready/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csdrain-ready/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csdrain-ready/configuration.json",
+      "bytes": 1541,
+      "sha256": "9b4698b2c951cfb8fff829db5168e2d4efc7610904efad3024683bcc749628fa"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csdrain-ready/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csdrain-ready/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "02519ba19f846ab0243edf9af3bf0675e04c15558bd7f57fa492687ebe4b5590"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csdrain-ready/provider/ready.json",
+      "bytes": 234,
+      "sha256": "e4d2b4e4ca1ceff69ce51734b78ddbbefa16e31a21d50c8c71ee03700336ef6b"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csdrain-ready/provider/runner.json",
+      "bytes": 796,
+      "sha256": "a8773f00ccaebe9e9a3582c559aed423a298b1515600a7de071f74f15167b0c6"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csdrain-ready/trial-summary.json",
+      "bytes": 10707,
+      "sha256": "4d3e1cafbbc6f117af73f877f0982aeb9b3b0143f2e4c1f77b20c45fe6ee486a"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csone-packet/application-result.json",
+      "bytes": 3744,
+      "sha256": "8597c095a337fad97bcc2cecf964dbe31f9901087284da749014e57330ca3f14"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csone-packet/application-runner.json",
+      "bytes": 851,
+      "sha256": "5eb8fd5be19ba16af33888d8130af5ba9d2201a1d75bac597566280d81fd153b"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csone-packet/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csone-packet/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csone-packet/configuration.json",
+      "bytes": 1534,
+      "sha256": "e796f5d4b059bc828f9fe8bed9aff0f7d56a02346770e36b44c20c0d2a5fe0e5"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csone-packet/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csone-packet/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "d35a4aeeec7f178806c126e4a0537351b0c0acae8ade6229b740c1dd9237da55"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csone-packet/provider/ready.json",
+      "bytes": 234,
+      "sha256": "ece191ab53921604101dfd4ad9f351d3e7f2b8689f6a81f8580b772f5a5d1e3c"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csone-packet/provider/runner.json",
+      "bytes": 795,
+      "sha256": "250669de028db50bd6bc9fdddd469d850ba02361520a4d53f6e3f614791c70cd"
+    },
+    {
+      "path": "run/trials/driver-service-diagnostic-native-return-64000-d5-r3-s16-csone-packet/trial-summary.json",
+      "bytes": 10690,
+      "sha256": "d445e0f28399f1d7cdcd4c4dc24af92f01d3e8ad6c012151c31519cc529d1fbd"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16-csone-packet/application-result.json",
+      "bytes": 3625,
+      "sha256": "e993225d287417bcc0bf1429312f3757cea50f3a011ea3ea0e876404e9770821"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16-csone-packet/application-runner.json",
+      "bytes": 846,
+      "sha256": "cf56f8792b8c08f7b3963af4fb41bdcf5a0e368bbfa59150f6664ba38403dc93"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16-csone-packet/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16-csone-packet/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16-csone-packet/configuration.json",
+      "bytes": 1499,
+      "sha256": "de83433e33fec37eb7bba3db9ef9073bfe903f33e7e182d2857c7c1908e40805"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16-csone-packet/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16-csone-packet/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "f5e70c465fd3fd2692a680af0e0ea8f9ac54eab8c640270eb3ef96d184aa3970"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16-csone-packet/provider/ready.json",
+      "bytes": 234,
+      "sha256": "36ce683c4c14188a805800ce157885465672833d6c25e6c8cce0b9d7c79eff84"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16-csone-packet/provider/runner.json",
+      "bytes": 790,
+      "sha256": "2796ce5752e7f67eb127ed9ffed5f36c67febe21a1c72102fb2736e6d7785e70"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16-csone-packet/trial-summary.json",
+      "bytes": 10571,
+      "sha256": "9aed5d72b810d3878fb7b2277c0802361b89329eb62bfd50c2e7316ec9a6bcad"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16-csone-packet/application-result.json",
+      "bytes": 3597,
+      "sha256": "9230aa3bd4c903a3b6889c81ffa8bf461d78aaf1028355da005f47e27682036d"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16-csone-packet/application-runner.json",
+      "bytes": 849,
+      "sha256": "eb9509e33a33a1580bc0898cce98ce2754c0ec83e7ab1bff3bc2a7592b7c9b3c"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16-csone-packet/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16-csone-packet/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16-csone-packet/configuration.json",
+      "bytes": 1513,
+      "sha256": "887ae7f7088b75ac05c42e7bd7a06598fdef51c8fe4031afb9f3ed77d6c205bd"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16-csone-packet/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16-csone-packet/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "c1c2579ba53a79230c3350497f9a5182e7f2d74f0e9e9bd1e92b32daa10215c0"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16-csone-packet/provider/ready.json",
+      "bytes": 234,
+      "sha256": "9e7091cb1673806a695e9726922c9115c448fe098054d074361fd3013407ef07"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16-csone-packet/provider/runner.json",
+      "bytes": 792,
+      "sha256": "d415786abd892e7241a4ff7156f7c33f535493fc56185192b33b7c01cfc8538b"
+    },
+    {
+      "path": "run/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16-csone-packet/trial-summary.json",
+      "bytes": 10634,
+      "sha256": "f0c2616606b36454d12f68cf21c1996b5643f90e8546d3c5fa336bc8fb81edb1"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-250-d0-r1-s0-csfsharp-reference/application-result.json",
+      "bytes": 1660,
+      "sha256": "21036b362c4b0b1071f30b0847f4b20487e0f7aad7690b61159720b2b84e31b9"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-250-d0-r1-s0-csfsharp-reference/application-runner.json",
+      "bytes": 764,
+      "sha256": "508057815b0fcfec08cf6374d18c9cb70af83aecc8fcebf9ce3272f7ab6b3688"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-250-d0-r1-s0-csfsharp-reference/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-250-d0-r1-s0-csfsharp-reference/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-250-d0-r1-s0-csfsharp-reference/configuration.json",
+      "bytes": 1390,
+      "sha256": "bf47fb17f7f54f300c501f1b78cc3fcd730cb90dab4556440222391cddd959af"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-250-d0-r1-s0-csfsharp-reference/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-250-d0-r1-s0-csfsharp-reference/provider/provider.stdout.txt",
+      "bytes": 194,
+      "sha256": "579fed686e296b6037fa099fd2c895f4eb1955ecdb4f93a342d919386a1c58a0"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-250-d0-r1-s0-csfsharp-reference/provider/ready.json",
+      "bytes": 234,
+      "sha256": "904df2825a12aeb307f23ad6d38d5b6b29f0691ca86c84ab32fb7db640717170"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-250-d0-r1-s0-csfsharp-reference/provider/runner.json",
+      "bytes": 774,
+      "sha256": "23282c243a03fc860c607bf7a578a2e921ee41c5c10f47c4fa984276a4ffeed1"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-250-d0-r1-s0-csfsharp-reference/trial-summary.json",
+      "bytes": 8724,
+      "sha256": "a2ac8bda713548ef8c7827d3d2831a8b683ab46a9318e07a04a227ed9c661bfc"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-500-d5-r1-s0-csfsharp-reference/application-result.json",
+      "bytes": 2127,
+      "sha256": "1f34ca6f59597da1658f315a402f65c7a7a129e972a412170f90c004d06c13da"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-500-d5-r1-s0-csfsharp-reference/application-runner.json",
+      "bytes": 764,
+      "sha256": "7a36dad6abab8d4d338cfad49b09f5d68b955040106aa70d5694b75051cbe910"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-500-d5-r1-s0-csfsharp-reference/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-500-d5-r1-s0-csfsharp-reference/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-500-d5-r1-s0-csfsharp-reference/configuration.json",
+      "bytes": 1390,
+      "sha256": "56a28689263c4a6f75eab7a918bbd818b97ca413f07a8e9a58f8ac27be59f509"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-500-d5-r1-s0-csfsharp-reference/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-500-d5-r1-s0-csfsharp-reference/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "898b288922aa49640b3a3f95a0142206869c889096e3a0df92cd8a959e8b7a6e"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-500-d5-r1-s0-csfsharp-reference/provider/ready.json",
+      "bytes": 234,
+      "sha256": "dcf7c75f5543b1a9f28d140ade17e26f3bf3d601df0a96a9dce1cbe9e083c0ee"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-500-d5-r1-s0-csfsharp-reference/provider/runner.json",
+      "bytes": 774,
+      "sha256": "17979ed6df4d0c29aa1862516bf02fb32d7642000c10dd57bcdf187f256b8e3a"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-500-d5-r1-s0-csfsharp-reference/trial-summary.json",
+      "bytes": 8720,
+      "sha256": "4f1f4434e2ac93aa01b561bc2a143c653119ed225a17d50845191896f8ffed5b"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/application-result.json",
+      "bytes": 2986,
+      "sha256": "036a6bd3bfc41df455070e2c77487bb4e08c97f4dd85b36fe8a94d112a60dabc"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/application-runner.json",
+      "bytes": 766,
+      "sha256": "a5d237003d610208a6abd6314a42e662fc52d46997837341b972afd547ff7446"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/configuration.json",
+      "bytes": 1404,
+      "sha256": "b5735ce2b462a8e83cf059bcacf478ab6623394b72c9a5bba5730e5b9d6cc2b9"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "00547a98d8d72a584d94f44975df03e4aff6cb9e81ba07ef06eb2670ced7f892"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/provider/ready.json",
+      "bytes": 234,
+      "sha256": "94151b394c6d6ed48aecc43a63b79c1c6897e43ddf36ea4d4baaf72261ad790f"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/provider/runner.json",
+      "bytes": 776,
+      "sha256": "0af9c1cf180203b8e6e5046aea5f90ce8c23d5da2b021574208089276343dd7e"
+    },
+    {
+      "path": "run/trials/smoke-fsharp-gc-64000-d5-r1-s0-csfsharp-reference/trial-summary.json",
+      "bytes": 8774,
+      "sha256": "a6af4eada7295e47d685e6561b99e65149a96aeab2858d0e67b5f233f5931417"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-250-d0-r1-s4-csone-packet/application-result.json",
+      "bytes": 2401,
+      "sha256": "bbb0aede47310a2e47fec2234f4a47ef26eb627f578d66a017e098ae12dace7d"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-250-d0-r1-s4-csone-packet/application-runner.json",
+      "bytes": 821,
+      "sha256": "e6d960ac9282ac545275174b90615f7ffb83d4e91ea15bfb7a82dfdd2148be4c"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-250-d0-r1-s4-csone-packet/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-250-d0-r1-s4-csone-packet/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-250-d0-r1-s4-csone-packet/configuration.json",
+      "bytes": 1359,
+      "sha256": "476e12a412405e51b9223a5237e0430b842c6b32bc2ea47b6346230ab47a0dca"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-250-d0-r1-s4-csone-packet/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-250-d0-r1-s4-csone-packet/provider/provider.stdout.txt",
+      "bytes": 194,
+      "sha256": "46fc6edad179a0a72603ba7db40e3ddb1887346e42ef8f88369f12ab2787ec5e"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-250-d0-r1-s4-csone-packet/provider/ready.json",
+      "bytes": 234,
+      "sha256": "92e35b31480ee7bb20078a45f985d07daa6a26c143058081d7ff0e6c8316c61e"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-250-d0-r1-s4-csone-packet/provider/runner.json",
+      "bytes": 770,
+      "sha256": "58dd6b42b88b56884a2bdd0e4737c6d2973229f3fefafb2591595e290b0468c0"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-250-d0-r1-s4-csone-packet/trial-summary.json",
+      "bytes": 10156,
+      "sha256": "6b4b144b92c24452d90fc3c1929011c398016e0993dace1309b411847f93e69e"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-500-d5-r1-s4-csone-packet/application-result.json",
+      "bytes": 2325,
+      "sha256": "aac2ef6fd11ae2f7266a3aaaaf6f93470e7885b828ebb0616a321676d72be5df"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-500-d5-r1-s4-csone-packet/application-runner.json",
+      "bytes": 826,
+      "sha256": "4548fab7405de70f114e4469cce6a9a534617f431783c28272e51552f0331edc"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-500-d5-r1-s4-csone-packet/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-500-d5-r1-s4-csone-packet/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-500-d5-r1-s4-csone-packet/configuration.json",
+      "bytes": 1359,
+      "sha256": "3d1b29c59c9987d59607cd9f0c071c904f768f7d3ba977daeb0309f30700c378"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-500-d5-r1-s4-csone-packet/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-500-d5-r1-s4-csone-packet/provider/provider.stdout.txt",
+      "bytes": 194,
+      "sha256": "ef034f7b5020cbc43025cfa909e0a5834b1afb818ecd8bcb6d2fce5bdfd28d05"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-500-d5-r1-s4-csone-packet/provider/ready.json",
+      "bytes": 234,
+      "sha256": "4465c735c7773dee1965d2fd414f7f0b452ba5a45fde883154007de5fe0f89d8"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-500-d5-r1-s4-csone-packet/provider/runner.json",
+      "bytes": 770,
+      "sha256": "4a81168915fd4e8a05af2fb56aa3f9341d2cf2d5b29a17c6407121d10d58842d"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-500-d5-r1-s4-csone-packet/trial-summary.json",
+      "bytes": 10148,
+      "sha256": "909d29e1767bd007ddc4a29ef2444850e7a59ce044f2395621e77ad3bf15c62c"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-64000-d5-r1-s4-csone-packet/application-result.json",
+      "bytes": 2560,
+      "sha256": "7ebe2c962c26a87b446a23ed2796381fb26f3fbdc3721b65246168505d1cadb7"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-64000-d5-r1-s4-csone-packet/application-runner.json",
+      "bytes": 828,
+      "sha256": "68e3ebbbef85e113916c2e74384f0aa2c13c33d3678b5816dfad65f843421f91"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-64000-d5-r1-s4-csone-packet/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-64000-d5-r1-s4-csone-packet/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-64000-d5-r1-s4-csone-packet/configuration.json",
+      "bytes": 1373,
+      "sha256": "daccdacded2778992f85c70e4df351d8b2f8d3085cf1e9b493c2dc138deb8a20"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-64000-d5-r1-s4-csone-packet/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-64000-d5-r1-s4-csone-packet/provider/provider.stdout.txt",
+      "bytes": 194,
+      "sha256": "ccd19d22edb98838a3145a7dc31b25da40677e8dd31b49801b9bea22ecc92ee0"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-64000-d5-r1-s4-csone-packet/provider/ready.json",
+      "bytes": 234,
+      "sha256": "bfedecb799e8c9dbcc49e9ca7e9361f71773f0eedaf0658f4a01bff4cbfd3a9c"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-64000-d5-r1-s4-csone-packet/provider/runner.json",
+      "bytes": 772,
+      "sha256": "d2449642b082a1ee9657991ac74e463c8c2b15cb550af5766079b38d70654214"
+    },
+    {
+      "path": "run/trials/smoke-native-keep-64000-d5-r1-s4-csone-packet/trial-summary.json",
+      "bytes": 10209,
+      "sha256": "efe4235252a8470ec390c13df38c5588daf457a11cf025aa6e8fb4283e8380a9"
+    },
+    {
+      "path": "run/trials/smoke-native-return-250-d0-r1-s4-csone-packet/application-result.json",
+      "bytes": 2487,
+      "sha256": "96d5b48d77b5145be84db424affbe5f3b5d89c53bb93598fe894366a5d1a62ff"
+    },
+    {
+      "path": "run/trials/smoke-native-return-250-d0-r1-s4-csone-packet/application-runner.json",
+      "bytes": 828,
+      "sha256": "2c6134a9f86d5f440eede228e0abb2d3dc1e78bc6bd0a16e48e57ae9e271dd64"
+    },
+    {
+      "path": "run/trials/smoke-native-return-250-d0-r1-s4-csone-packet/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-return-250-d0-r1-s4-csone-packet/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-return-250-d0-r1-s4-csone-packet/configuration.json",
+      "bytes": 1373,
+      "sha256": "af3f74c1229014dfad816fb7dc0ea4faabb6963836500050ecea1340084cf774"
+    },
+    {
+      "path": "run/trials/smoke-native-return-250-d0-r1-s4-csone-packet/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-return-250-d0-r1-s4-csone-packet/provider/provider.stdout.txt",
+      "bytes": 194,
+      "sha256": "ff87109df98144e2cca205ce5bcdd90a59432cf923e9e319a9924bdb1f8dc944"
+    },
+    {
+      "path": "run/trials/smoke-native-return-250-d0-r1-s4-csone-packet/provider/ready.json",
+      "bytes": 234,
+      "sha256": "05921fc6ab5db94791e559f43335f2eab74a4308ed398b212a6d4b1c7b98e3f7"
+    },
+    {
+      "path": "run/trials/smoke-native-return-250-d0-r1-s4-csone-packet/provider/runner.json",
+      "bytes": 772,
+      "sha256": "986e8b4530aff103d8cfada3e09e16ea0089df4a53bf7356354d26e90e01dc84"
+    },
+    {
+      "path": "run/trials/smoke-native-return-250-d0-r1-s4-csone-packet/trial-summary.json",
+      "bytes": 10212,
+      "sha256": "074026698d331820c8b784d9eb6703a9c5faa9a695b9cfc3ba8eb1fdbc635eca"
+    },
+    {
+      "path": "run/trials/smoke-native-return-500-d5-r1-s4-csone-packet/application-result.json",
+      "bytes": 2857,
+      "sha256": "88e51a527b7709110f908489f0e81994bfc31cd04f2a9081e3d8667af79da3b1"
+    },
+    {
+      "path": "run/trials/smoke-native-return-500-d5-r1-s4-csone-packet/application-runner.json",
+      "bytes": 828,
+      "sha256": "adf726608c8969be33feaf17b38b38ec8845e87a32490ba6c56411b4200d5efd"
+    },
+    {
+      "path": "run/trials/smoke-native-return-500-d5-r1-s4-csone-packet/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-return-500-d5-r1-s4-csone-packet/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-return-500-d5-r1-s4-csone-packet/configuration.json",
+      "bytes": 1373,
+      "sha256": "e787c61eafe5faa2463b52c00409e9bb57e15e982bd5d1a305c9dfe8c433d783"
+    },
+    {
+      "path": "run/trials/smoke-native-return-500-d5-r1-s4-csone-packet/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-return-500-d5-r1-s4-csone-packet/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "8650a14d04c9548d44f42ba960359f1cd1dcf9aef746af8d1dbd677dd8f97c0d"
+    },
+    {
+      "path": "run/trials/smoke-native-return-500-d5-r1-s4-csone-packet/provider/ready.json",
+      "bytes": 234,
+      "sha256": "37c104528e6b5111f6b522523fc349c0572c3f2fe7ab0b4231ed8d79b85eb03a"
+    },
+    {
+      "path": "run/trials/smoke-native-return-500-d5-r1-s4-csone-packet/provider/runner.json",
+      "bytes": 772,
+      "sha256": "0952626be499a451de3d6d56be663031c4a0a03cb38e105f1ec3a9eaa6fe3565"
+    },
+    {
+      "path": "run/trials/smoke-native-return-500-d5-r1-s4-csone-packet/trial-summary.json",
+      "bytes": 10231,
+      "sha256": "8c258ff90b954683ed15cf45010560a29a94f03e18e09fba38550bffe9bd44de"
+    },
+    {
+      "path": "run/trials/smoke-native-return-64000-d5-r1-s4-csone-packet/application-result.json",
+      "bytes": 3543,
+      "sha256": "72998c7ab8803f625ffdac7a93f850d7e6104739e8df0df3420182020a58401c"
+    },
+    {
+      "path": "run/trials/smoke-native-return-64000-d5-r1-s4-csone-packet/application-runner.json",
+      "bytes": 830,
+      "sha256": "910beba739360e10e80719ee3046b984165af419c28ab94c2945868efa1771e9"
+    },
+    {
+      "path": "run/trials/smoke-native-return-64000-d5-r1-s4-csone-packet/application.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-return-64000-d5-r1-s4-csone-packet/application.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-return-64000-d5-r1-s4-csone-packet/configuration.json",
+      "bytes": 1387,
+      "sha256": "10768f30b0a4ea403de8f707289c9aae12cc69eec15a0b1888db7757e7501534"
+    },
+    {
+      "path": "run/trials/smoke-native-return-64000-d5-r1-s4-csone-packet/provider/provider.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run/trials/smoke-native-return-64000-d5-r1-s4-csone-packet/provider/provider.stdout.txt",
+      "bytes": 197,
+      "sha256": "708637d9938b0c4a89ec5c8b8a81fe5bb1f0204d74623fc3a236e016a7338614"
+    },
+    {
+      "path": "run/trials/smoke-native-return-64000-d5-r1-s4-csone-packet/provider/ready.json",
+      "bytes": 234,
+      "sha256": "0c0415004d0a3a32534c5fe15581c4751f0669b7c4f83364ac391ca834438051"
+    },
+    {
+      "path": "run/trials/smoke-native-return-64000-d5-r1-s4-csone-packet/provider/runner.json",
+      "bytes": 774,
+      "sha256": "6bcb312b11f1fe82d4217b2f3fbb6443e525ea321d020b8c7744a4b94e157df5"
+    },
+    {
+      "path": "run/trials/smoke-native-return-64000-d5-r1-s4-csone-packet/trial-summary.json",
+      "bytes": 10293,
+      "sha256": "c9c79527a1f74e982effa4170fe9e0d79c62949b5241611beb7122927135af89"
+    },
+    {
+      "path": "source/AgentLang.sln",
+      "bytes": 43601,
+      "sha256": "880648cba529b30c8e46b38222f807ce25470a6b86259f159a0cbe0daaf467d6"
+    },
+    {
+      "path": "source/experiments/AgentLang.MailboxLoad/Baseline/AgentLang.MailboxLoad.Baseline.fsproj",
+      "bytes": 284,
+      "sha256": "35d7db899486bbfca16cb26f62281a5c0c855e292ca88c5a8b9f501ed7e6f3df"
+    },
+    {
+      "path": "source/experiments/AgentLang.MailboxLoad/Baseline/Program.fs",
+      "bytes": 23498,
+      "sha256": "12457c0836ba1b0ce4786717426738c9c8a9a81f8e31812b86587dfbd5122644"
+    },
+    {
+      "path": "source/experiments/AgentLang.MailboxLoad/CONTRACT.md",
+      "bytes": 11492,
+      "sha256": "1f15a5042453a59aa353c85b5b9c03cec0c4184c1ac67d251e53afe5d350b99a"
+    },
+    {
+      "path": "source/experiments/AgentLang.MailboxLoad/limit_runner.c",
+      "bytes": 28012,
+      "sha256": "9b6ec186a7c12f9f5a3db063ad55e5f2b53c9b240d2c89f5e140c677f8190434"
+    },
+    {
+      "path": "source/experiments/AgentLang.MailboxLoad/load_host.c",
+      "bytes": 51708,
+      "sha256": "771292dc56c17e5e85d845974e87bd68288ea1cb5e29dfd14571616eec24ce40"
+    },
+    {
+      "path": "source/experiments/AgentLang.OwningMailbox/AgentLang.OwningMailbox.fsproj",
+      "bytes": 690,
+      "sha256": "859b902094d17b333e42e47417d55ed1938aab667ddda64b6f5266bd019f9bdb"
+    },
+    {
+      "path": "source/experiments/AgentLang.OwningMailbox/Program.fs",
+      "bytes": 28873,
+      "sha256": "c67af99acf52f475f00d9c750bf3ede80237e86762f9ee15ea4e473192482d43"
+    },
+    {
+      "path": "source/experiments/AgentLang.RealIoMailbox/Provider/AgentLang.RealIoMailbox.Provider.fsproj",
+      "bytes": 284,
+      "sha256": "35d7db899486bbfca16cb26f62281a5c0c855e292ca88c5a8b9f501ed7e6f3df"
+    },
+    {
+      "path": "source/experiments/AgentLang.RealIoMailbox/Provider/Program.fs",
+      "bytes": 19067,
+      "sha256": "a53b2bd1e1b737099b8b35d8ae6c1af9a80e6f220566855bf168e6055ed878fe"
+    },
+    {
+      "path": "source/experiments/AgentLang.RealIoMailbox/mailbox.flow",
+      "bytes": 1341,
+      "sha256": "d8d98a660dcf5acf4fd73736d112a47f2602506752f2b8e0fea29710ba95712a"
+    },
+    {
+      "path": "source/scripts/Measure-MailboxLoad.ps1",
+      "bytes": 91497,
+      "sha256": "b05579ab0d570fe4017e8fb7159cfb1156cf1e192c1fc54309d9c2fe18d83753"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/dev-obj/AgentLang.Core.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/dev-obj/AgentLang.Core.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/dev-obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/dev-obj/Release/net9.0/AgentLang.Core.AssemblyInfo.fs",
+      "bytes": 724,
+      "sha256": "54a76c83a7dc03c6fa8ba8d59aeca0e29a68dd06a7ea667b347844d641a56adb"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj/AgentLang.Core.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj/AgentLang.Core.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj/Release/net9.0/AgentLang.Core.AssemblyInfo.fs",
+      "bytes": 724,
+      "sha256": "54a76c83a7dc03c6fa8ba8d59aeca0e29a68dd06a7ea667b347844d641a56adb"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj2/AgentLang.Core.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj2/AgentLang.Core.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj2/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj2/Release/net9.0/AgentLang.Core.AssemblyInfo.fs",
+      "bytes": 724,
+      "sha256": "54a76c83a7dc03c6fa8ba8d59aeca0e29a68dd06a7ea667b347844d641a56adb"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj3/AgentLang.Core.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj3/AgentLang.Core.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj3/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj3/Release/net9.0/AgentLang.Core.AssemblyInfo.fs",
+      "bytes": 724,
+      "sha256": "54a76c83a7dc03c6fa8ba8d59aeca0e29a68dd06a7ea667b347844d641a56adb"
+    },
+    {
+      "path": "source/src/AgentLang.Core/AgentLang.Core.fsproj",
+      "bytes": 1150,
+      "sha256": "8ca96104d8b3490409b63bc61bb499aeaa1c5c97f0069adef6cf024463537666"
+    },
+    {
+      "path": "source/src/AgentLang.Core/AuthoringHelp.fs",
+      "bytes": 48683,
+      "sha256": "da7f95ef47a9e34cee518f7ac7c93addc23f2c861d0feb7311764852c050cdd6"
+    },
+    {
+      "path": "source/src/AgentLang.Core/Compiler.fs",
+      "bytes": 116257,
+      "sha256": "22d5f12ca4f68b199314db04b6f49658516e85765ba989e14c0aca3960929486"
+    },
+    {
+      "path": "source/src/AgentLang.Core/Core.fs",
+      "bytes": 8402,
+      "sha256": "57fe2d9512afa26fc920c06a8b4558bdf965157e27a2bd35ceda64dfabb85428"
+    },
+    {
+      "path": "source/src/AgentLang.Core/Discovery.fs",
+      "bytes": 31779,
+      "sha256": "4150b0ee8ca3791f176ed696b1886ab29b917930dbdb815809029130a94b9d34"
+    },
+    {
+      "path": "source/src/AgentLang.Core/FileSystem.fs",
+      "bytes": 10745,
+      "sha256": "4068dd856384978a1a7894b9560eebd7fa632662efb9861d959f8d03479018d7"
+    },
+    {
+      "path": "source/src/AgentLang.Core/FiniteCoverage.fs",
+      "bytes": 24435,
+      "sha256": "cb3f072280035d004bcd573648e6da5b1b396c8ab6d0c2760cbf243793695e3c"
+    },
+    {
+      "path": "source/src/AgentLang.Core/FlowLint.fs",
+      "bytes": 14022,
+      "sha256": "5ba6a10171f4d67cff6f43d32ddce8b9e7aa33eb3f97d407aee3bcd76bfb5ccf"
+    },
+    {
+      "path": "source/src/AgentLang.Core/FlowLowering.fs",
+      "bytes": 234056,
+      "sha256": "4bc28660f17645807e6d8dd75b8042985bb9f949e39ca59ad00b6d435e576b01"
+    },
+    {
+      "path": "source/src/AgentLang.Core/FlowParser.fs",
+      "bytes": 94395,
+      "sha256": "ba8fed209badc72cd4709c8d02f40b32ac910d84ea9376d2cf12d49804683be1"
+    },
+    {
+      "path": "source/src/AgentLang.Core/FlowPersistence.fs",
+      "bytes": 4724,
+      "sha256": "13288baaaf6812d5949c05e2d5942ad5a6cd286d245d793efef676f5aa4e587d"
+    },
+    {
+      "path": "source/src/AgentLang.Core/FlowRewrite.fs",
+      "bytes": 57359,
+      "sha256": "9445ddb9ca47aac590e3852cdbc3c9a67f6288d4d5aaff1ee2c13f4121d20e01"
+    },
+    {
+      "path": "source/src/AgentLang.Core/FlowSyntax.fs",
+      "bytes": 62305,
+      "sha256": "d84fc27aa22ef21628d5bb863b24ca6d240d303b1010bc536c136d883f62d7a8"
+    },
+    {
+      "path": "source/src/AgentLang.Core/IrFormatting.fs",
+      "bytes": 52796,
+      "sha256": "9f219735b931f4503ec0f8e5a217630b2fc8a38b8fb84931a17c5959316ecdb7"
+    },
+    {
+      "path": "source/src/AgentLang.Core/IrInterpreter.fs",
+      "bytes": 87565,
+      "sha256": "e5dd2985cd984c791261db4bc90d324a37514031d6c8425c617e8f219400dfd0"
+    },
+    {
+      "path": "source/src/AgentLang.Core/Parser.fs",
+      "bytes": 44492,
+      "sha256": "996140b145d04314da8ae9755e926323ff71852d36a49383f75b0941aa304521"
+    },
+    {
+      "path": "source/src/AgentLang.Core/Protocol.fs",
+      "bytes": 3314,
+      "sha256": "d1dfb67c82760aa5b6663162c31f1dfce70441275c073fd344a13a00e34f27e5"
+    },
+    {
+      "path": "source/src/AgentLang.Core/Runtime.fs",
+      "bytes": 544879,
+      "sha256": "e1442c614f6c41abd1657b18b9095027010d1282fb2dc29b916e1cd05c509117"
+    },
+    {
+      "path": "source/src/AgentLang.Core/Source.fs",
+      "bytes": 11285,
+      "sha256": "f661d907d27be0627197e20cc0b008bbd562b7b14a33c0dd9a6ffd17c092f9fc"
+    },
+    {
+      "path": "source/src/AgentLang.Core/Storage.fs",
+      "bytes": 106195,
+      "sha256": "b5322215792397293e5adec2b3efd3705459bacdc0561996385a04ce7bbcf3ec"
+    },
+    {
+      "path": "source/src/AgentLang.Core/TrustedValues.fs",
+      "bytes": 8978,
+      "sha256": "c26edc9681c879c5f0a410274901d6e1cfc3c515f7628f139235747daad57659"
+    },
+    {
+      "path": "source/src/AgentLang.Core/TypedIR.fs",
+      "bytes": 83533,
+      "sha256": "e564bcb0785ea7c71030848934ae9cc6af331d5a74add3d87ff0f51cc0152dc1"
+    },
+    {
+      "path": "source/src/AgentLang.Core/ValueInspection.fs",
+      "bytes": 29556,
+      "sha256": "cf323570d8898de919bea520aa290645f2c722b988da91a7879b9ef893a7a645"
+    },
+    {
+      "path": "source/src/AgentLang.Core/VocabularyAnalysis.fs",
+      "bytes": 26114,
+      "sha256": "0be80d5bc6f5774151cc054e2c4225297c4bbfcb8d09d5f91b447f4d295bd826"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/dev-obj/AgentLang.Llvm.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/dev-obj/AgentLang.Llvm.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/dev-obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/dev-obj/Release/net9.0/AgentLang.Llvm.AssemblyInfo.fs",
+      "bytes": 814,
+      "sha256": "883c395dbfe293cca22c2ab8ea45f61cc237d37b0e32952393ead60093881360"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj/AgentLang.Llvm.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj/AgentLang.Llvm.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj/Release/net9.0/AgentLang.Llvm.AssemblyInfo.fs",
+      "bytes": 814,
+      "sha256": "883c395dbfe293cca22c2ab8ea45f61cc237d37b0e32952393ead60093881360"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj2/AgentLang.Llvm.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj2/AgentLang.Llvm.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj2/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj2/Release/net9.0/AgentLang.Llvm.AssemblyInfo.fs",
+      "bytes": 814,
+      "sha256": "883c395dbfe293cca22c2ab8ea45f61cc237d37b0e32952393ead60093881360"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj3/AgentLang.Llvm.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj3/AgentLang.Llvm.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj3/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj3/Release/net9.0/AgentLang.Llvm.AssemblyInfo.fs",
+      "bytes": 814,
+      "sha256": "883c395dbfe293cca22c2ab8ea45f61cc237d37b0e32952393ead60093881360"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+      "bytes": 1433,
+      "sha256": "a20481964b8f8dea28801c255ab18d6644cf43a8a82b263c308a55bca094b85e"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/ArenaLifetime.fs",
+      "bytes": 20186,
+      "sha256": "05eabe2a0e90f5aed418a5f8869075ab234cff1fd212d208f32672c8a63ec385"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/LlvmAot.fs",
+      "bytes": 131678,
+      "sha256": "efaf238d55167d2870c5eebd2b67a77759224fdd69bacbac0d0a266765ce9c80"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/LlvmToolchain.fs",
+      "bytes": 13709,
+      "sha256": "e2c4611fe8c234fda1d3b40a84c9cf71a01becaa0af228a2afd73c268d70bf4f"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/NativeAbi.fs",
+      "bytes": 5317,
+      "sha256": "4c2504edcff2bf4d52ccfb0ec920c92ff9298f347278e996a2de46828199791a"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/NativeValueMetrics.fs",
+      "bytes": 12945,
+      "sha256": "e0e4f8d764a3bcc2abeb29a7ddfb4c7500b8c3bd01fc89104840b1a9eb593b25"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/NativeValues.fs",
+      "bytes": 16129,
+      "sha256": "a5a2898a23d98c6f52b48cc471f111f757d4560dc9e30aed8fe40bb54dd93957"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/OwningStackAot.fs",
+      "bytes": 430313,
+      "sha256": "7dafc3aa039333b145a3327e71c058d4c5712fd0edc8153c0ad4cdc7a0dc98f5"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/arena_runtime.c",
+      "bytes": 46738,
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/arena_runtime.h",
+      "bytes": 10596,
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/mailbox_runtime.c",
+      "bytes": 157340,
+      "sha256": "bb82ae6925c9c880adfebe9743f5b25dc929012b5d412a0cb91b442532d06ab3"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/mailbox_runtime.h",
+      "bytes": 19300,
+      "sha256": "f2efc5cbaecb803c9fd8c1df1bd3de3b07a09ce9f485b85682a937b69902c3af"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/mailbox_runtime_test.c",
+      "bytes": 45955,
+      "sha256": "35c2f2f55109cc3499b799cd04f695c962264e4da42b79fad42221f911e5e41a"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/mailbox_runtime_windows.c",
+      "bytes": 1092,
+      "sha256": "97ca4a9fdca6f5fdb2a7347272158cfcd722da62adb4737f0bb207a5577685d9"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/module_abi.h",
+      "bytes": 4310,
+      "sha256": "dd39d846c17758674f9dfe77e9c5ebce05adfe555a539c37f5e1be710a2ac5a5"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/owning_bank.c",
+      "bytes": 24571,
+      "sha256": "301330fb04c197d812a71d7f27f851c249b73aa0503158386a8c7ce1069c085b"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/owning_bank.h",
+      "bytes": 5976,
+      "sha256": "63fd3b3deda0adad7c50b67307e760458692c46f4ca1d4a8a34ead929bb5e43a"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/owning_bank_test.c",
+      "bytes": 33046,
+      "sha256": "c7400b42687a89c9562554dffa967dbb14b936308094a5c9a33ccbee4d8f7fb5"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/owning_mailbox_abi.h",
+      "bytes": 5845,
+      "sha256": "5ee9b31d74a0e7dcc07bd4e53f9d34044f4e56a58b8f83caab4cb8554401238d"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/owning_mailbox_release_test.c",
+      "bytes": 15297,
+      "sha256": "66a3f07a46da93c1c379b3c3e7320c13fb78766f38d59d82e3a551b8094bb08a"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/owning_mailbox_test.c",
+      "bytes": 71533,
+      "sha256": "687746f01d951116bc8d477674d79d2e4d518b28c3ad5183ed4deb6b9e18021c"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/owning_release_runtime_test.c",
+      "bytes": 14516,
+      "sha256": "75606eef1796e2a882b67f646ec5a4df14eacb402fefea478f851706a4a92847"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "bytes": 102998,
+      "sha256": "8634b6bd2e24692cb967285504ec8293081422cb06f29a28601bfbafce477aba"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "bytes": 12295,
+      "sha256": "0a81f2a3a1e70f967f9e1d6cb01cf405b5edc92f01987ad0701873c895652f99"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+      "bytes": 159705,
+      "sha256": "3f3c63c7434b09e258effa1c04426f04db5d3b9a973f38214f9ecb8b51b0351e"
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/runtime_test.c",
+      "bytes": 64314,
+      "sha256": "9cc2600b4ace7fcb92f9bcca1ac7c743f2be246657410bdb09f1171b78cccb2a"
+    }
+  ]
+}

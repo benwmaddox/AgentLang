@@ -54,6 +54,12 @@ and invalid ranges are errors):
 
 Native additionally requires `--module DLL --policy return|keep` and accepts
 `--scratch-slots 4|16` (default 4). Report `scratchSlots` in native results.
+The native driver also accepts `--completion-service-mode one-packet|drain-ready`
+(default `one-packet`). The first mode services one completion per scheduling
+point. The second services that completion with the existing wait, then polls
+already-ready completions with zero timeout until the queue is empty. Arrival
+batch size, synchronous sends, provider behavior and arena policies are fixed.
+Unknown values and duplicate options are errors.
 Limits: port 1..65535, rate 1..64000, payload 1..4096, delay 0..1000,
 warmup 0..10000 ms, duration 100..30000 ms. Use a finite 5-second drain deadline.
 All runs exit nonzero on protocol, state, I/O, timeout or invariant errors, while
@@ -96,7 +102,20 @@ Use offered=admitted+rejected and admitted=completed+errors+timedOut after drain
 for successful correctness runs errors=timedOut=pendingAtEnd=0. Counters are
 integers; raw samples permit an independent nearest-rank percentile calculation.
 Native may add native runtime/copy stats. F# may add GC counts/allocation bytes.
+Current native results include `completionServiceMode`, derived from the parsed
+driver setting. This is an additive native observer field under schemaVersion 1;
+older archived results may omit it and represent the original one-packet driver.
+The current measurement runner requires the field and verifies it against the
+requested setting. Trial and group identities include the service mode so results
+from different driver settings cannot be pooled. Runtime ABIs are unchanged.
 Keep output and timing instrumentation outside the handler implementation.
+
+`Measure-MailboxLoad.ps1 -DriverServiceDiagnostic` is mutually exclusive with
+`-Smoke` and `-Confirm16Slot`. It runs three rotated repeats of a fixed F# reference
+and native RETURN-16/KEEP-16 under each service mode at 64,000 arrivals/s, 4,096-byte
+payload, 5 ms provider delay, 100 ms warmup and 250 ms measured duration. This is
+a driver diagnostic, not service-throughput qualification or an arena-policy
+selection. Ordinary measurement modes retain one-packet native service.
 
 Current native diagnostics report `rejectionReasons`: active/unavailable mailbox,
 runtime busy, scratch/retained/text capacity, and missed deadline. Their sum must

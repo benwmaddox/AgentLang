@@ -31,6 +31,11 @@ enum {
   MAX_WAIT_MS = 10u
 };
 
+enum {
+  COMPLETION_SERVICE_ONE_PACKET = 1u,
+  COMPLETION_SERVICE_DRAIN_READY = 2u
+};
+
 typedef struct options {
   const char *module_path;
   const char *output_path;
@@ -42,6 +47,7 @@ typedef struct options {
   uint32_t duration_ms;
   uint32_t scratch_slots;
   uint32_t policy;
+  uint32_t completion_service_mode;
   uint32_t seen_module;
   uint32_t seen_output;
   uint32_t seen_port;
@@ -52,6 +58,7 @@ typedef struct options {
   uint32_t seen_duration;
   uint32_t seen_scratch_slots;
   uint32_t seen_policy;
+  uint32_t seen_completion_service_mode;
 } options;
 
 typedef struct mailbox_io {
@@ -346,6 +353,7 @@ static int parse_options(int argc, char **argv, options *parsed) {
   int index;
   memset(parsed, 0, sizeof(*parsed));
   parsed->scratch_slots = DEFAULT_SCRATCH_SLOTS;
+  parsed->completion_service_mode = COMPLETION_SERVICE_ONE_PACKET;
   for (index = 1; index < argc; index += 2) {
     const char *name = argv[index];
     const char *value;
@@ -366,6 +374,16 @@ static int parse_options(int argc, char **argv, options *parsed) {
         parsed->policy = AL_MAILBOX_OWNING_POLICY_RETURN;
       else if (strcmp(value, "keep") == 0)
         parsed->policy = AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED;
+      else
+        return 0;
+    } else if (strcmp(name, "--completion-service-mode") == 0) {
+      if (parsed->seen_completion_service_mode != 0u)
+        return 0;
+      parsed->seen_completion_service_mode = 1u;
+      if (strcmp(value, "one-packet") == 0)
+        parsed->completion_service_mode = COMPLETION_SERVICE_ONE_PACKET;
+      else if (strcmp(value, "drain-ready") == 0)
+        parsed->completion_service_mode = COMPLETION_SERVICE_DRAIN_READY;
       else
         return 0;
     } else if (strcmp(name, "--port") == 0) {
@@ -773,6 +791,22 @@ static int dispatch_one(DWORD timeout_ms) {
   return 2;
 }
 
+/* Dispatch one packet using the requested wait, then drain only packets that
+ * are already queued. The drain polls with zero timeout and never adds a wait.
+ */
+static int dispatch_selected(DWORD timeout_ms) {
+  int result = dispatch_one(timeout_ms);
+  if (result == 0 || result == 1 ||
+      g_options.completion_service_mode != COMPLETION_SERVICE_DRAIN_READY)
+    return result;
+  do {
+    result = dispatch_one(0u);
+    if (result == 0)
+      return 0;
+  } while (result == 2);
+  return 2;
+}
+
 static uint64_t arrivals_in_window(uint32_t rate, uint32_t duration_ms) {
   uint64_t product = (uint64_t)rate * (uint64_t)duration_ms;
   return (product + 999u) / 1000u;
@@ -952,14 +986,14 @@ static int run_phase(uint32_t duration_ms, uint32_t measured,
       if (!service_deadlines(now, drain_deadline))
         return 0;
       if (batch != 0u) {
-        if (dispatch_one(0u) == 0)
+        if (dispatch_selected(0u) == 0)
           return 0;
       } else {
         uint64_t next = arrival_time(epoch, sequence, g_options.rate);
         DWORD wait_ms = wait_duration_ms(now, next);
         if (g_active_count != 0u && wait_ms > 1u)
           wait_ms = 1u;
-        if (dispatch_one(wait_ms) == 0)
+        if (dispatch_selected(wait_ms) == 0)
           return 0;
       }
       continue;
@@ -1002,7 +1036,7 @@ static int run_phase(uint32_t duration_ms, uint32_t measured,
     }
     if (!service_deadlines(now, drain_deadline))
       return 0;
-    if (g_active_count != 0u && dispatch_one(1u) == 0)
+    if (g_active_count != 0u && dispatch_selected(1u) == 0)
       return 0;
   }
   g_measured_phase = 0u;
@@ -1117,6 +1151,10 @@ static int write_result(const options *parsed) {
   const char *policy = parsed->policy == AL_MAILBOX_OWNING_POLICY_RETURN
                            ? "return"
                            : "keep";
+  const char *completion_service_mode =
+      parsed->completion_service_mode == COMPLETION_SERVICE_DRAIN_READY
+          ? "drain-ready"
+          : "one-packet";
   memset(&owning_stats, 0, sizeof(owning_stats));
   owning_stats.control_abi_version = AL_MAILBOX_CONTROL_ABI_VERSION;
   owning_stats.struct_size = (uint32_t)sizeof(owning_stats);
@@ -1128,6 +1166,7 @@ static int write_result(const options *parsed) {
     return failf("could not open result file (errno %d)", errno);
   fprintf(output,
           "{\"schemaVersion\":1,\"backend\":\"native\",\"policy\":\"%s\","
+          "\"completionServiceMode\":\"%s\","
           "\"rate\":%u,\"payloadBytes\":%u,\"delayMs\":%u,"
           "\"warmupMs\":%u,\"durationMs\":%u,\"scratchSlots\":%u,"
           "\"offered\":%" PRIu64 ",\"admitted\":%" PRIu64
@@ -1143,7 +1182,7 @@ static int write_result(const options *parsed) {
           ",\"retainedCapacity\":%" PRIu64 ",\"textCapacity\":%" PRIu64
           ",\"missedDeadline\":%" PRIu64 "}"
           ",\"verified\":%s,\"latencyMicroseconds\":[",
-          policy, parsed->rate, parsed->payload_bytes, parsed->delay_ms,
+          policy, completion_service_mode, parsed->rate, parsed->payload_bytes, parsed->delay_ms,
           parsed->warmup_ms, parsed->duration_ms, parsed->scratch_slots,
           g_result.offered, g_result.admitted, g_result.rejected,
           g_result.completed, g_result.completed_within_window,
@@ -1253,7 +1292,9 @@ int main(int argc, char **argv) {
     fprintf(stderr,
             "Usage: load-host --module DLL --policy return|keep --port PORT "
             "--rate RATE --payload-bytes BYTES --delay-ms MS --warmup-ms MS "
-            "--duration-ms MS [--scratch-slots 4|16] --output ABSOLUTE_JSON_PATH\n");
+            "--duration-ms MS [--scratch-slots 4|16] "
+            "[--completion-service-mode one-packet|drain-ready] "
+            "--output ABSOLUTE_JSON_PATH\n");
     return 2;
   }
   memset(&g_result, 0, sizeof(g_result));
