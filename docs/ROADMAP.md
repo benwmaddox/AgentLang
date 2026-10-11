@@ -71,15 +71,18 @@ evidence, not a reliability rate, token saving or causal speedup claim. Trial 21
 is historical evidence, not its matched retained arm. Next use another small
 held-out task to test harder edits, with conventional comparisons and repeated
 outcomes required before claiming superior reliability.
-The next [typed batch failure maintenance study](../experiments/AgentLang.SubagentTrials/typed-batch-failure-216/PLAN.md)
+The [typed batch failure maintenance study](../experiments/AgentLang.SubagentTrials/typed-batch-failure-216/PLAN.md)
 has [reviewed passing preflight](../reports/216-typed-batch-failure-preflight.md):
 structured first-failure index/ID/cause, preserved success and
 input state, and explicitly reviewed inherited test adaptations. It uses both
-accepted terminal 213 projects as unequal continuation seeds. No participant
-has been dispatched and no causal retention comparison is claimed. Correct controls
+accepted terminal 213 projects as unequal continuation seeds. Correct controls
 pass 9/9 in both arms and 66 retained regressions; runtime mutations calibrate at
-6/9 and 8/9. Next dispatch the frozen fresh participants rather than adding more
-preparation infrastructure.
+6/9 and 8/9. The [fresh continuation trial](../reports/217-typed-batch-failure-maintenance.md)
+now has one accepted retained edit: 9/9 migration cases, 66 inherited creator cases,
+152 tests and preserved source/evidence. Closure required a disclosed lifecycle-only
+instruction. Reset is running; no closed paired result or causal retention
+comparison is claimed. Next complete its terminal score and independent source
+review, then clarify atomic-publication help without changing validation gates.
 The [prior decision](../reports/199-efficacy-decision-after-reference-maintenance.md)
 covers the closed typed-reference cohort and its representation supplement in
 reports 196 and 197. The [previous checkpoint](../reports/182-efficacy-decision-checkpoint.md)
