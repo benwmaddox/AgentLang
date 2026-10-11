@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "stage": "read-only implementation planning",
+  "sourceRevision": "392d167",
+  "implementationComplete": false,
+  "testsRun": 0,
+  "plan": "plan.md",
+  "planSha256": "0f5099c5b98b6499113b47dc803a7984d7652649640fa52a9f226d53289aa90f",
+  "sources": [
+    {
+      "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+      "sha256": "408482ab19135cc893b0f6cb4be8d0a89643a2645038189aaa1d68d16d7a4fee",
+      "bytes": 388109
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "sha256": "4ccdfa232bc1448a9953e82edb1a68e3d2152bfc3ef5c6c1b4a2284628c05627",
+      "bytes": 90412
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "sha256": "83e47a3a655c1fb3f27559c138a44bfd3b1bdd086b6e604659802346296683e0",
+      "bytes": 11819
+    },
+    {
+      "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+      "sha256": "2fabba20fba1becbe985409fd271440245aabd4de91d55ab2452ec6397870e4c",
+      "bytes": 279856
+    },
+    {
+      "path": "docs/NATIVE-NOMINALS-IMPLEMENTATION.md",
+      "sha256": "0ad5109674f27e289b2b19f964ffcc58e11d1084a660a30c2377049e9ae667a4",
+      "bytes": 10286
+    },
+    {
+      "path": "reports/183-native-nominal-string.md",
+      "sha256": "4f188c9f5e0c89daed69345ff4f8ae035fa1685f43ef42ed578551e80b519b51",
+      "bytes": 5509
+    }
+  ]
+}
