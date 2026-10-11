@@ -51,3 +51,7 @@ The bundle contains only the completed retained participant, not the live reset
 trial. The final cohort report will
 assess behavior, evidence preservation, library qualification, finalization and
 recovery separately.
+
+The [delivery roadmap](../docs/ROADMAP.md) now reflects the accepted record
+evolution implementation and this open cohort. Its prior prerequisite is no
+longer blocked; the remaining work here is the comparison and its analysis.

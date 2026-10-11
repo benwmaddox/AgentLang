@@ -73,9 +73,19 @@ the frozen authoring routes reject same-name type replacement. The independent
 oracle passed 13 of 18 cases; five replay cases failed. This single run is an
 environment capability-gap finding, not a balanced efficacy comparison. The
 other five participants were not dispatched, and this cohort is closed. The
-[atomic type evolution plan](TYPE-EVOLUTION.md) is now the immediate prerequisite.
-Implement and validate that change, then freeze a new cohort against the new
-runtime and inputs; do not pool the two runtime versions' results.
+[atomic type evolution contract](TYPE-EVOLUTION.md) defines the prerequisite.
+[Report 188](../reports/188-atomic-record-evolution.md) accepts its implementation
+after the full local validation gate. [Report 189](../reports/189-persisted-migration-readiness.md)
+checks migration of the original persisted seed through the public interface.
+The new [six-participant cohort](../reports/190-typed-reference-maintenance-cohort.md)
+is frozen against that accepted runtime; do not pool its results with 185.
+[Interim report 191](../reports/191-typed-reference-maintenance-interim.md) records
+the first retained participant passing 18 independent cases while preserving
+all inherited tests and examples. It also records unresolved history queries
+and near-budget protocol use. Finish the remaining five trials without runtime
+changes or participant feedback, then assess independent behavior, evidence
+preservation, library qualification, finalization and recovery separately.
+One passing participant does not establish a comparative vocabulary advantage.
 
 [Report 178](../reports/178-preview-defect-control-calibration.md) calibrates the
 first defect-repair stage: three correct controls pass 37 independent cases,
