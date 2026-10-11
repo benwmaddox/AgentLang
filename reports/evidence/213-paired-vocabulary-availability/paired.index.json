@@ -1,0 +1,46 @@
+{
+  "status": "closed independently reviewed paired pilot",
+  "inputs": [
+    {
+      "path": "preflight.zip",
+      "bytes": 2179858,
+      "sha256": "dcf5dd5eb2b81bc5898e6d8bbcf98274c3bf9c343d96babcb37d257478990087"
+    },
+    {
+      "path": "preflight.index.json",
+      "bytes": 322924,
+      "sha256": "5ccae78fbc6e906eae2dd42d009048f3d19a2d44b754a0a962c6533400383189"
+    },
+    {
+      "path": "reset-result.zip",
+      "bytes": 1027677,
+      "sha256": "10b65dbbed43c7a719e86db33dcc5a821e676ddf7e47c9f9d3a82732db285473"
+    },
+    {
+      "path": "reset-result.index.json",
+      "bytes": 165088,
+      "sha256": "f5cc85651189a67c145c5bfc7afd11f9719e291c090b231551abf65cd74b55d6"
+    },
+    {
+      "path": "retained-result.zip",
+      "bytes": 1235991,
+      "sha256": "08273a11365f487b9cb70bbd126e38495becfbaba31be090085bbdae29801eb7"
+    },
+    {
+      "path": "retained-result.index.json",
+      "bytes": 175535,
+      "sha256": "59566e0ffa5e9063fe3f78c156df1ea43f508a20a1f13ad8539687d29c8cd284"
+    },
+    {
+      "path": "paired-summary.json",
+      "bytes": 10214,
+      "sha256": "81ee379aa77cdf4e45a95e582c863c262624753d2deefb52f107bb9c62116b03"
+    },
+    {
+      "path": "terminal-review.md",
+      "bytes": 1226,
+      "sha256": "27ba7f726b036c15894e594da0c7d93e60c5be5718d6169d02bc3185dcc39815"
+    }
+  ],
+  "limits": "One participant per condition; no population reliability, causal speedup, model-token or native-performance claim."
+}

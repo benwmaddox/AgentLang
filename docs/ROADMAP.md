@@ -59,13 +59,15 @@ This demonstrates task-required public vocabulary reuse; spontaneous helper
 creation and a causal or comparative advantage remain unproven. Next estimate
 retention benefit with a matched reset/retained comparison, keeping behavior,
 preservation, discovery and production paths as separate endpoints.
-The [fresh paired pilot](../reports/213-paired-vocabulary-availability.md) prepares
-that minimal contrast: identical task/runtime/broker/model budgets, with reset
-and retained initial projects. Six behavior controls and the condition-neutral
-adapter pass preflight. Reset independently passes nine cases, preserves the
-common seed and publishes both batch functions; the fresh retained participant
-is running. No paired advantage is claimed. Trial 211 is historical evidence,
-not its matched retained arm.
+The [fresh paired pilot](../reports/213-paired-vocabulary-availability.md) closes
+that minimal contrast: both fresh participants pass nine independent cases,
+137 common tests and 39 example owners, with inherited evidence preserved.
+Retained discovers and production-reuses both renewal functions, using 31 broker
+exchanges versus reset's 39. This is encouraging reuse and per-instance traffic
+evidence, not a reliability rate, token saving or causal speedup claim. Trial 211
+is historical evidence, not its matched retained arm. Next use another small
+held-out task to test harder edits, with conventional comparisons and repeated
+outcomes required before claiming superior reliability.
 The [prior decision](../reports/199-efficacy-decision-after-reference-maintenance.md)
 covers the closed typed-reference cohort and its representation supplement in
 reports 196 and 197. The [previous checkpoint](../reports/182-efficacy-decision-checkpoint.md)

@@ -1,28 +1,56 @@
 # 213 — Fresh retained/reset vocabulary availability pilot
 
-Status: interim on 2026-10-11. Reset is independently accepted; the fresh retained
-participant is running. No paired outcome or comparative benefit is claimed.
+Status: closed paired pilot on 2026-10-11. Both fresh participants pass the
+independent behavior and preservation gates. The retained participant discovers
+and production-reuses both creator-authored renewal functions. This supports
+usable accumulated vocabulary on this task; comparative reliability remains
+unproven.
 
-The reset participant passes all nine independent full-result/error cases,
-137 common inherited tests, 148 total tests and 39 example owners. The batch and
-its fold helper are library functions with five and six own tests respectively.
-All 47 inherited words and 29 types preserve their source, maturity, tests and
-examples. Independent read-only review verifies the stored object hashes and
-unchanged actor fingerprint. The broker audit passes with 39 exchanges and exits
-0/0. Reset does not create or call either retained renewal target; it composes
-the inherited subscription operations directly.
+| Observation | Reset | Retained |
+| --- | ---: | ---: |
+| Independent full-result/error cases | 9/9 | 9/9 |
+| Common inherited tests | 137 | 137 |
+| Total passing tests | 148 | 151 |
+| Passing example owners | 39 | 39 |
+| Broker exchanges | 39 | 31 |
+| Request wire bytes | 59,740 | 48,405 |
+| Response wire bytes | 202,688 | 135,004 |
+| Broker elapsed seconds | 1,423.975 | 581.001 |
+| Normal host/runtime exits | 0/0 | 0/0 |
 
-The participant reports correcting noncanonical IDs in initial helper test
-fixtures before publishing both functions. Root sent one lifecycle-only check
-after a process probe could not see the recorded PIDs; the trace subsequently
-advanced. No restart or score/implementation feedback was supplied. This
-administrative intervention is retained as a limitation of procedural symmetry.
+Both publish the batch and its fold helper as library functions and preserve
+inherited source, maturity, tests and examples. Reset composes the domain seed
+operations directly. Retained inspects the earlier functions and calls both
+through its batch helper. Correctness is scored independently of those paths.
+
+Retained uses eight fewer exchanges (20.5%) in this pair. Wire bytes measure
+serialized broker traffic, not model tokens or context. Broker elapsed time
+includes participant reasoning, orchestration and waiting; it is not an isolated
+language latency or causal speedup measurement. Both edits are correct, so this
+pair shows no per-instance correctness difference. Different participants, sequential order
+and one sample per arm prevent population or feature-specific attribution.
+
+Reset reports correcting noncanonical IDs in its initial test fixtures. Root
+sent one lifecycle-only check after a process probe could not see recorded PIDs;
+the trace subsequently advanced. No restart or score/implementation feedback was
+supplied. This intervention limits procedural symmetry. Retained reports an
+unknown process handle after close; the independent terminal trace audit records
+31 exchanges and normal 0/0 exits, resolving the shutdown uncertainty.
 
 [Reset result](evidence/213-paired-vocabulary-availability/reset-result.zip) and
-[index](evidence/213-paired-vocabulary-availability/reset-result.index.json) retain
-the terminal project, trace, disclosure, audit, independent score/copy and review.
-Every member is reopened and verified by length and SHA256. This first arm is
-kept separate from preflight fixtures and the still-running retained arm.
+[index](evidence/213-paired-vocabulary-availability/reset-result.index.json), plus
+[retained result](evidence/213-paired-vocabulary-availability/retained-result.zip)
+and [index](evidence/213-paired-vocabulary-availability/retained-result.index.json),
+retain final projects, traces, disclosures, audits and independent scores/copies.
+Each archive member is reopened and verified by length and SHA256. The
+[paired summary](evidence/213-paired-vocabulary-availability/paired-summary.json)
+keeps behavior, preservation, discovery, production paths and traffic distinct.
+
+The next useful research increment is another small held-out task with the same
+neutral behavioral and preservation gates, rather than more preparation for this
+completed task. A stronger reliability claim needs harder edits and repeated
+outcomes, including the conventional baseline. Native runtime evaluation can
+continue separately.
 
 The [efficacy checkpoint](212-efficacy-after-public-vocabulary-reuse.md) separates
 the demonstrated public-function handoff from unproven retention benefit. This
@@ -72,7 +100,7 @@ retain the protocol, shared packet, reviewed adapter/imported oracle sources,
 initial projects, source/runtime pins and closed control/calibration receipts.
 Saved control/scoring project copies are omitted from this package; exact
 baseline snapshots, requests, responses and receipt hashes are retained.
-Participant output will be archived separately.
+Participant outputs are archived separately above.
 
 No new capability, public listener or language escape hatch is added. Runtime
 and broker work uses virtual I/O and empty external effect grants. External-tool

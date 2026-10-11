@@ -1,0 +1,276 @@
+{
+  "status": "closed paired pilot",
+  "conditions": {
+    "reset": {
+      "acceptedEdit": true,
+      "independentScoreStatus": "passed",
+      "normalFinalization": true,
+      "behavior": {
+        "expected": 9,
+        "executed": 9,
+        "passed": 9
+      },
+      "gates": {
+        "cliExitZero": true,
+        "responseCountExact": true,
+        "allNineCasesExecuted": true,
+        "allNineCasesPassed": true,
+        "observationSetupPassed": true,
+        "testAllPassed": true,
+        "allCurrentExamplesPassed": true,
+        "batchRootContractPassed": true,
+        "baselineBindingPassed": true,
+        "commonSeedPreserved": true,
+        "armBaselinePreserved": true,
+        "actorProjectUnchanged": true
+      },
+      "commonSeedTestCount": 137,
+      "totalTestCount": 148,
+      "exampleOwnerCount": 39,
+      "batchRoot": {
+        "present": true,
+        "wordId": "word_cf49111a531842e1b11bc45de0cfe65e",
+        "revision": 2,
+        "definitionHash": "2ed9c176f9272b8f8f0ad1392392bf48358c48d502644f32a8e2e99a3053da33",
+        "signature": {
+          "inputs": [
+            "Store",
+            "List<SubscriptionRenewal>",
+            "Instant"
+          ],
+          "output": "Result<Store,BusinessError>"
+        },
+        "signaturePassed": true,
+        "maturity": "library",
+        "libraryPassed": true,
+        "ownTestCount": 5,
+        "ownTestsPassed": true,
+        "passed": true
+      },
+      "preservation": {
+        "fromReport163Seed": {
+          "passed": true,
+          "changedInheritedWords": {},
+          "changedInheritedTypes": {}
+        },
+        "fromArmBaseline": {
+          "passed": true,
+          "changedInheritedWords": {},
+          "changedInheritedTypes": {}
+        }
+      },
+      "secondaryTargetObservations": {
+        "targetNames": [
+          "subscription.renew-monthly",
+          "subscription.renew-annual"
+        ],
+        "discovery": {
+          "status": "scored",
+          "path": "D:\\code\\AgentLang\\.agentlang\\paired-vocabulary-213\\traces\\reset.jsonl",
+          "sha256": "b3dfbfd1ae75a9961a8d6e394b14482d2ab3f3a2fcca35160702b9d52476aae3",
+          "discoveredHelpers": [],
+          "inspectionHits": [],
+          "metadataInspectedHelpers": [],
+          "discoveredAnyEligibleHelper": false
+        },
+        "productionPathsFromBatchRoot": {
+          "subscription.renew-monthly": null,
+          "subscription.renew-annual": null
+        },
+        "interpretation": "secondary observation only; these targets and paths are not acceptance requirements"
+      },
+      "metrics": {
+        "brokerExchanges": 39,
+        "exchangeRequestWireBytes": 59740,
+        "exchangeResponseWireBytes": 202688,
+        "brokerDurationSeconds": 1423.974515,
+        "hostReportedExchangeErrors": 0
+      },
+      "actorProjectFingerprint": "b939b981fb1ba47a3f004d2bd76c7851adbe8f744f72d1cf62ea100873b1361e"
+    },
+    "retained": {
+      "acceptedEdit": true,
+      "independentScoreStatus": "passed",
+      "normalFinalization": true,
+      "behavior": {
+        "expected": 9,
+        "executed": 9,
+        "passed": 9
+      },
+      "gates": {
+        "cliExitZero": true,
+        "responseCountExact": true,
+        "allNineCasesExecuted": true,
+        "allNineCasesPassed": true,
+        "observationSetupPassed": true,
+        "testAllPassed": true,
+        "allCurrentExamplesPassed": true,
+        "batchRootContractPassed": true,
+        "baselineBindingPassed": true,
+        "commonSeedPreserved": true,
+        "armBaselinePreserved": true,
+        "actorProjectUnchanged": true
+      },
+      "commonSeedTestCount": 137,
+      "totalTestCount": 151,
+      "exampleOwnerCount": 39,
+      "batchRoot": {
+        "present": true,
+        "wordId": "word_29425ff0e2224a3aaf3c98c01cf043c2",
+        "revision": 1,
+        "definitionHash": "3f27a38342b5cf27173370ac99cef277b20776415a7c80a29c912163d98dffa8",
+        "signature": {
+          "inputs": [
+            "Store",
+            "List<SubscriptionRenewal>",
+            "Instant"
+          ],
+          "output": "Result<Store,BusinessError>"
+        },
+        "signaturePassed": true,
+        "maturity": "library",
+        "libraryPassed": true,
+        "ownTestCount": 4,
+        "ownTestsPassed": true,
+        "passed": true
+      },
+      "preservation": {
+        "fromReport163Seed": {
+          "passed": true,
+          "changedInheritedWords": {},
+          "changedInheritedTypes": {}
+        },
+        "fromArmBaseline": {
+          "passed": true,
+          "changedInheritedWords": {},
+          "changedInheritedTypes": {}
+        }
+      },
+      "secondaryTargetObservations": {
+        "targetNames": [
+          "subscription.renew-monthly",
+          "subscription.renew-annual"
+        ],
+        "discovery": {
+          "status": "scored",
+          "path": "D:\\code\\AgentLang\\.agentlang\\paired-vocabulary-213\\traces\\retained.jsonl",
+          "sha256": "aa9bf87d58a6b2d201a38b2a4e041410801497a269b00442f44bf7d8daaa399f",
+          "discoveredHelpers": [
+            "subscription.renew-annual",
+            "subscription.renew-monthly"
+          ],
+          "inspectionHits": [
+            {
+              "line": 5,
+              "exchange": 4,
+              "operation": "words",
+              "requestSha256": "9c2533d128823d5a5b3b5b894221477b1da5cc4bb10664919231d06fc8d7b473",
+              "responseSha256": "d5528cb4b8d18f9aaaa2c0cb1067bb0fbb4c2c11ebc4009cf7e1e63213e1877b",
+              "helperNamesReturned": [
+                "subscription.renew-annual",
+                "subscription.renew-monthly"
+              ],
+              "helperNamesRequestedForMetadata": []
+            },
+            {
+              "line": 6,
+              "exchange": 5,
+              "operation": "describe",
+              "requestSha256": "51ed477de09ccc47887452cd81f466bb1a707a6db02a74f935ebe7ec886ebc54",
+              "responseSha256": "0397a33d88342c7b76664e9836e5d91da25f4e7d3290679987eb7c8b8fb1708f",
+              "helperNamesReturned": [
+                "subscription.renew-monthly"
+              ],
+              "helperNamesRequestedForMetadata": []
+            },
+            {
+              "line": 7,
+              "exchange": 6,
+              "operation": "source",
+              "requestSha256": "8a920ebaabe676e6ac6ff1693a0abb3a9ea73ff69778605ea6b6dc7807c64323",
+              "responseSha256": "f1ab890a70d06e873346f44467499295a9cbb8deb780b441b7b6f1ad6745ada6",
+              "helperNamesReturned": [
+                "subscription.renew-monthly"
+              ],
+              "helperNamesRequestedForMetadata": []
+            },
+            {
+              "line": 8,
+              "exchange": 7,
+              "operation": "tests",
+              "requestSha256": "708ec1fc839d3221118ab806ba31e4d8092519a2184b6221c30906ef6add3ac8",
+              "responseSha256": "0c1f85e093b89afbef5c5d7b5a1dc0a0f0875ff7f31ed23b514a6b21aec6b897",
+              "helperNamesReturned": [
+                "subscription.renew-monthly"
+              ],
+              "helperNamesRequestedForMetadata": [
+                "subscription.renew-monthly"
+              ]
+            },
+            {
+              "line": 9,
+              "exchange": 8,
+              "operation": "source",
+              "requestSha256": "dd8edeab31b902b0826a2df8f69a0597b18441cff18c24f27129afe756bfb1a2",
+              "responseSha256": "21fa0c9ee7e9b96da6956af2269215604d832dd4edfc452100dbb1bc3532c39c",
+              "helperNamesReturned": [
+                "subscription.renew-annual"
+              ],
+              "helperNamesRequestedForMetadata": []
+            },
+            {
+              "line": 26,
+              "exchange": 25,
+              "operation": "describe",
+              "requestSha256": "2f9b3e1f1b99db121a42815abcce2b441ce4276d495ed64cb5e79dbd26dc238f",
+              "responseSha256": "b272588bee76f643e537dbebd4686931440df645c3a3396e282312969ec734a6",
+              "helperNamesReturned": [
+                "subscription.renew-annual",
+                "subscription.renew-monthly"
+              ],
+              "helperNamesRequestedForMetadata": []
+            },
+            {
+              "line": 28,
+              "exchange": 27,
+              "operation": "describe",
+              "requestSha256": "2f9b3e1f1b99db121a42815abcce2b441ce4276d495ed64cb5e79dbd26dc238f",
+              "responseSha256": "59c8835f752c69ac2c1ad462c5696b4f9e97fba952eb764933a073dd6e1172d4",
+              "helperNamesReturned": [
+                "subscription.renew-annual",
+                "subscription.renew-monthly"
+              ],
+              "helperNamesRequestedForMetadata": []
+            }
+          ],
+          "metadataInspectedHelpers": [
+            "subscription.renew-monthly"
+          ],
+          "discoveredAnyEligibleHelper": true
+        },
+        "productionPathsFromBatchRoot": {
+          "subscription.renew-monthly": [
+            "subscription.renew-batch",
+            "subscription.renew-batch-step",
+            "subscription.renew-monthly"
+          ],
+          "subscription.renew-annual": [
+            "subscription.renew-batch",
+            "subscription.renew-batch-step",
+            "subscription.renew-annual"
+          ]
+        },
+        "interpretation": "secondary observation only; these targets and paths are not acceptance requirements"
+      },
+      "metrics": {
+        "brokerExchanges": 31,
+        "exchangeRequestWireBytes": 48405,
+        "exchangeResponseWireBytes": 135004,
+        "brokerDurationSeconds": 581.000754,
+        "hostReportedExchangeErrors": 0
+      },
+      "actorProjectFingerprint": "b99ad6a855a96aa2ed577230b0c03c285d38e65f40f850ea7420d0f29d5f1611"
+    }
+  },
+  "interpretationLimit": "One fresh participant per arm; per-instance outcome comparison, not a reliability rate, causal feature attribution, token/context measurement or native performance result."
+}
