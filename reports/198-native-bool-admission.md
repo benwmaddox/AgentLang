@@ -3,6 +3,12 @@
 Status: accepted on 2026-10-11 after fresh local validation. Failed preparation
 attempts remain separate from accepted results.
 
+A subsequent [focused source review](evidence/198-native-bool-admission/security-review.md)
+found no concrete regression in owner-bounded Bool reads, canonical encoding,
+host codecs or frozen pure-validator admission. This review did not rerun tests
+and is not a general security certification. Its note is separate from the
+unchanged accepted validation archive.
+
 This implements the bounded [plan in report 194](194-native-bool-implementation-plan.md):
 Bool-backed nominal types and optional pure frozen Bool-to-Bool predicates in
 the owning native backend. Host values retain exact nominal names and distinct
