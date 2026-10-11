@@ -116,13 +116,15 @@ and receipt gaps remain explicit. This adds no agent efficacy or throughput
 result.
 
 
-[Report 200](../reports/200-organic-vocabulary-reuse.md) freezes the next organic
-creation-and-reuse pilot. Its seed, current Flow/2 fold guidance and six
-correct/faulty runtime controls pass preflight. A creator may choose an optional
-shared library helper; only an independently accepted qualifying helper permits
-a fresh successor task. These preparation results add no comparative efficacy
-claim. Keep returned-name discovery, known-helper metadata inspection,
-production reuse, behavior and inherited-evidence preservation separate.
+[Report 200](../reports/200-organic-vocabulary-reuse.md) closes the organic
+creation pilot after one creator passes all 66 independent observations,
+145 tests, examples for 39 owners, library gates and inherited-evidence
+preservation. It reuses existing vocabulary but duplicates the renewal bodies
+without creating an eligible shared helper. The frozen no-helper stop rule
+prevents successor dispatch. Organic accumulation remains unproven; this is
+not a comparative reliability result. Do not manufacture or prompt a helper
+under the same trial identity. Resume bounded LLVM/arena conformance while
+retaining this negative creation endpoint for later research design.
 
 [Report 178](../reports/178-preview-defect-control-calibration.md) calibrates the
 first defect-repair stage: three correct controls pass 37 independent cases,

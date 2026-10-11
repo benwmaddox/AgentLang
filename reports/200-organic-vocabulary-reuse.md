@@ -1,8 +1,43 @@
 # 200 — Organic vocabulary creation and later reuse
 
-Status: pre-dispatch preparation accepted. No participants have run.
+Status: closed after one accepted creator on 2026-10-11. No eligible shared
+helper was created; the predeclared stop rule prevents successor dispatch.
 
-This is the next bounded test of the question left open by
+The creator completed both pure library renewal functions correctly: all 66
+independent observations pass, the complete suite passes 145/145 tests, and
+examples for all 39 owners pass. Both functions have their own attached tests
+and library maturity. Every inherited definition, type, test and example is
+preserved; scoring leaves the actor project unchanged.
+
+The two new production bodies have the same cancellation/start structure,
+with different fixed term strings. They call existing subscription vocabulary
+but introduce no additional shared function. The mechanically frozen eligibility
+rule yields an empty helper set. This is an accepted implementation with a
+negative organic-helper endpoint, not a rejected task or later-agent reuse
+result. No successor was launched, and no prompt or acceptance rule was changed
+to manufacture a helper.
+
+The broker records 24 runtime exchanges plus one explicit `host.close` request;
+termination auditing passes with host/runtime exits 0/0. The participant reports
+only the two assigned public-file reads, one broker launch and its owned stream
+as non-broker tool use. External-tool isolation is prompt-governed; the broker
+is not an operating-system sandbox. Runtime execution used virtual filesystem
+providers and no external effect grants. No out-of-band coordination was
+reported or observed.
+
+This one participant supports correct discovery and composition of existing
+vocabulary on this task. It does not establish that agents naturally factor
+shared abstractions, or a comparative reliability, token or performance benefit.
+The result leaves organic accumulation unproven. The trace does not establish
+why the participant chose duplication; attributing it to syntax, library gates
+or context cost would require a separate experiment.
+
+[Participant evidence](evidence/200-organic-vocabulary-reuse/creator-result.zip)
+and [hash index](evidence/200-organic-vocabulary-reuse/creator-result.index.json)
+retain the submission, closed trace, exact actor project and independent score
+separately from the immutable pre-dispatch archive below.
+
+This was a bounded test of the question left open by
 [report 199](199-efficacy-decision-after-reference-maintenance.md): does a useful
 abstraction selected by one coding agent help a fresh later agent make a correct
 change? It is one sequential chain, not a comparative reliability estimate.
@@ -48,7 +83,7 @@ qualification or organic helper creation.
 
 The native Bool milestone is accepted and pushed as `0da7c27`. Relevant source
 inputs and all five runtime file hashes still match the preflight copy; its
-accepted fresh build is reused. Study inputs and final scorer review are now frozen. Participant execution uses
+accepted fresh build was reused. Study inputs and final scorer review were frozen before dispatch. Participant execution used
 isolated broker sessions. No external effect capability is granted to these
 pure-domain participants.
 
