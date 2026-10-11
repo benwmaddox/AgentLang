@@ -1,0 +1,409 @@
+{
+  "format": 1,
+  "stage": "completed participant interim evidence",
+  "participants": [
+    "fsharp-1",
+    "fsharp-2"
+  ],
+  "cohortCompleted": 4,
+  "cohortPlanned": 6,
+  "acceptedAgentLangRuntimeRevision": "56dafc1",
+  "participantRuntime": "fresh conventional CLI pinned by actor manifest",
+  "actorManifestSha256": "667244bcd52398b7d03dbdaee73c5c078f1e7eeed0ab6364e090b7b98a170b42",
+  "archive": "evidence.zip",
+  "archiveSha256": "83aec016f53a3fb2fae8950be811be4573c0a18f24330753aeaa07f43d2ee457",
+  "archiveBytes": 162351,
+  "memberCount": 78,
+  "files": [
+    {
+      "path": ".agentlang/efficacy-maintenance-190/dispatch-preflight-fsharp-1.json",
+      "sha256": "d973e823b60edeeb1294fe60a90b0fa5266005ceebce95ffb360510159aa9e94",
+      "bytes": 393
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/dispatch-preflight-fsharp-2.json",
+      "sha256": "471f9244f6078b52c3b876325668bf5d8cee37d3b232b03e5b3c3ec312f0a992",
+      "bytes": 393
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/fsharp-build.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/fsharp-build.stdout.txt",
+      "sha256": "603e58a90db70ae339c95084f03acf34b0d1796cb09788c026818d9b781dc938",
+      "bytes": 426
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/fsharp-helper-negative.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/fsharp-helper-negative.stdout.txt",
+      "sha256": "83996bb55d8aff1f29c3102c8c92e60f91f20c289fc7125bbda95735fa4a7d28",
+      "bytes": 1146
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/fsharp-helper-positive.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/fsharp-helper-positive.stdout.txt",
+      "sha256": "0a30458fb69601ccdb18aef6f957401c91bbc76b9dad8f6e65536d46f6229cf6",
+      "bytes": 460
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/fsharp-oracle.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/fsharp-oracle.stdout.txt",
+      "sha256": "ebd1c3f3b6b7600b4bcaf0c5826eae940018974b2a60837b312cda4769de8414",
+      "bytes": 9920
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/NegativeShipmentId.fs.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/NegativeShipmentId.fs.stdout.txt",
+      "sha256": "07f316b8c7c20d7fa38ff15a06161281517e7e2880a6acfe8d6ca6e5c87886f2",
+      "bytes": 1845
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/NegativeString.fs.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/NegativeString.fs.stdout.txt",
+      "sha256": "26949de83dd6b4278ea0b8fb68ba7822479441b633867bfc80b756f7b3207def",
+      "bytes": 1023
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/result.json",
+      "sha256": "2241797958d9cfa3d632e684426c93061b769f13d1013ce0704172228952ef0a",
+      "bytes": 9534
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/scoring-project/business/Business.fs",
+      "sha256": "49359a7c2ad814705e581db34241f4cf9db99e1fec4f88a3b3e20f24247b31ac",
+      "bytes": 3858
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/scoring-project/fsharp-helper-positive/HelperPositive.fs",
+      "sha256": "eddd87819c29fdb66533c7a6c70902e8c5c8c66cc1ad29e0d1c17ccf6057d2f6",
+      "bytes": 416
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/scoring-project/fsharp-helper-positive/HelperPositive.fsproj",
+      "sha256": "016249dd3081bc47a23eea1e081ffe7a21b0dff2eef27beb7a67169f9ac7028d",
+      "bytes": 353
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/scoring-project/fsharp-helper-string-negative/HelperStringNegative.fs",
+      "sha256": "507c7d397c28777c95154604a40ae670418b8b319189cde6fd58557642a6881e",
+      "bytes": 327
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/scoring-project/fsharp-helper-string-negative/HelperStringNegative.fsproj",
+      "sha256": "2419d7af4af772c566c3f1da13159cffa09bd2127fbd1ee1c6b0e600dfdc1c12",
+      "bytes": 359
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/scoring-project/negativeshipmentid/Negative.fsproj",
+      "sha256": "f85774afe22be2ddcb753c49881c78e246ac8d84519746eabe6ebce48434e348",
+      "bytes": 357
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/scoring-project/negativeshipmentid/NegativeShipmentId.fs",
+      "sha256": "97f85005918734340f328bd742f40b6f8285712c9d3812faf01e924b973065a4",
+      "bytes": 274
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/scoring-project/negativestring/Negative.fsproj",
+      "sha256": "2b10c3165e90cb325c55ddd08c32d81e9baaa6cf528f15901f5065109ed02bab",
+      "bytes": 353
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/scoring-project/negativestring/NegativeString.fs",
+      "sha256": "88173cda8eea894bd8e5f3fd0d7f971b8c5a4c8ca21ed656c0f68a30c5936afd",
+      "bytes": 260
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/scoring-project/OracleProgram.fs",
+      "sha256": "f2300a5ca05db325904025b0e32ed29ecc47ce7eb5cd23e7cfdc32fa6ffe5b15",
+      "bytes": 9690
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-1/scoring-project/Reference184Oracle.fsproj",
+      "sha256": "6d07095f1e95d0659e0829da19fdb754c57a72191839dc7358378acc2cf8f185",
+      "bytes": 379
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/fsharp-build.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/fsharp-build.stdout.txt",
+      "sha256": "02933998fe0814d69fcd8d75c81edbe0d7bfce5212c9c73b5fbae980ffa7effd",
+      "bytes": 426
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/fsharp-helper-negative.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/fsharp-helper-negative.stdout.txt",
+      "sha256": "b135ea48aae1c398cf07c3ec7eb6ef4750b4754d7dc8fd441b831ff64dc4bb34",
+      "bytes": 1146
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/fsharp-helper-positive.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/fsharp-helper-positive.stdout.txt",
+      "sha256": "20e0e9fb42ea215847fef6ed9a19d480723b6e7935143700845dd3301a19a188",
+      "bytes": 460
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/fsharp-oracle.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/fsharp-oracle.stdout.txt",
+      "sha256": "ebd1c3f3b6b7600b4bcaf0c5826eae940018974b2a60837b312cda4769de8414",
+      "bytes": 9920
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/NegativeShipmentId.fs.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/NegativeShipmentId.fs.stdout.txt",
+      "sha256": "692f5161cdaf26557c595a909ae1795deac50afe09ad2d991b7743d72259dd08",
+      "bytes": 1845
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/NegativeString.fs.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/NegativeString.fs.stdout.txt",
+      "sha256": "ce5064f1e897e29fcdb665c36c35d6c0cce59c2d3945cb1951a9dd4795f0d6f8",
+      "bytes": 1023
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/result.json",
+      "sha256": "438cf950a3ce108142beed40a139013e785cc33c2b848629d84dbffa7d60a568",
+      "bytes": 9534
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/scoring-project/business/Business.fs",
+      "sha256": "6257573f624bd4a9b56fa915138c67657762de6c167014df050725a7af2177f7",
+      "bytes": 3943
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/scoring-project/fsharp-helper-positive/HelperPositive.fs",
+      "sha256": "eddd87819c29fdb66533c7a6c70902e8c5c8c66cc1ad29e0d1c17ccf6057d2f6",
+      "bytes": 416
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/scoring-project/fsharp-helper-positive/HelperPositive.fsproj",
+      "sha256": "016249dd3081bc47a23eea1e081ffe7a21b0dff2eef27beb7a67169f9ac7028d",
+      "bytes": 353
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/scoring-project/fsharp-helper-string-negative/HelperStringNegative.fs",
+      "sha256": "507c7d397c28777c95154604a40ae670418b8b319189cde6fd58557642a6881e",
+      "bytes": 327
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/scoring-project/fsharp-helper-string-negative/HelperStringNegative.fsproj",
+      "sha256": "2419d7af4af772c566c3f1da13159cffa09bd2127fbd1ee1c6b0e600dfdc1c12",
+      "bytes": 359
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/scoring-project/negativeshipmentid/Negative.fsproj",
+      "sha256": "f85774afe22be2ddcb753c49881c78e246ac8d84519746eabe6ebce48434e348",
+      "bytes": 357
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/scoring-project/negativeshipmentid/NegativeShipmentId.fs",
+      "sha256": "97f85005918734340f328bd742f40b6f8285712c9d3812faf01e924b973065a4",
+      "bytes": 274
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/scoring-project/negativestring/Negative.fsproj",
+      "sha256": "2b10c3165e90cb325c55ddd08c32d81e9baaa6cf528f15901f5065109ed02bab",
+      "bytes": 353
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/scoring-project/negativestring/NegativeString.fs",
+      "sha256": "88173cda8eea894bd8e5f3fd0d7f971b8c5a4c8ca21ed656c0f68a30c5936afd",
+      "bytes": 260
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/scoring-project/OracleProgram.fs",
+      "sha256": "f2300a5ca05db325904025b0e32ed29ecc47ce7eb5cd23e7cfdc32fa6ffe5b15",
+      "bytes": 9690
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-results/fsharp-2/scoring-project/Reference184Oracle.fsproj",
+      "sha256": "6d07095f1e95d0659e0829da19fdb754c57a72191839dc7358378acc2cf8f185",
+      "bytes": 379
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/representation-review.md",
+      "sha256": "9ad9f58000e575be7ca2856dadf2ca8ca510044f128e6c586c62292016592670",
+      "bytes": 7094
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors.json",
+      "sha256": "667244bcd52398b7d03dbdaee73c5c078f1e7eeed0ab6364e090b7b98a170b42",
+      "bytes": 106102
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/capture-fsharp-1.json",
+      "sha256": "ac3cd850eae934162a02fef34c967c7dfae3fbb209eeae6261e2544cbbeffffd",
+      "bytes": 1793
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/capture-fsharp-2.json",
+      "sha256": "f675699fdc3a4cace8572b515d8ddd7170b9b3b3cfdadd5e9415b9f7d01e73a8",
+      "bytes": 1792
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/metrics-fsharp-1.json",
+      "sha256": "4c2a2b069cb255a18217426b3acbdf8a6a56e0fa46906260b42d9c7966c9d688",
+      "bytes": 16824
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/metrics-fsharp-2.json",
+      "sha256": "86ddaaa7aa727b96f7eab03f626a671dcfe282a123522c56e46fdc5dd3c03648",
+      "bytes": 15657
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/preservation-fsharp-1.json",
+      "sha256": "5849399d7b98865d9edd4a1e4b08268314e874414c3284b5727365bde8952f76",
+      "bytes": 20951
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/preservation-fsharp-1.md",
+      "sha256": "3e20cd3c58dc1aaaa928e12dfe72f827c81813c00424a5eed62620876dfffb07",
+      "bytes": 6050
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/preservation-fsharp-2.json",
+      "sha256": "68dc60b04a49aaf511eb29ef50af9c40d2e1a9e7de1ec171c44282a5ede6ae4a",
+      "bytes": 11754
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/preservation-fsharp-2.md",
+      "sha256": "a7d9c51dea8ec5e7c2e35844e4c1afc76d93abeafe42682fdfed2ac1752cfe23",
+      "bytes": 2430
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/prompts/fsharp-1.md",
+      "sha256": "565a2caa923e62cf4aa1f7c7b3c2f4d8dbd342d858499a8125f544fcbfb5112a",
+      "bytes": 4159
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/prompts/fsharp-2.md",
+      "sha256": "e7c8341473eb334f0b7d898ecd3a9aec246f448f379830fa82ea19a362f0dbbd",
+      "bytes": 4159
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/score-fsharp-1-receipt.json",
+      "sha256": "401f7228d1f97378996fe10e2a3e9102283cc1746f0f57700dd35312f3488c5d",
+      "bytes": 303
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/score-fsharp-2-receipt.json",
+      "sha256": "16fbc17e9bb3b2eca94bfc822c9af5d92b5f8973c65ffa20d28ab5909003928e",
+      "bytes": 303
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/snapshots/fsharp-1/business/AgentLang.TypedReference.Business.fsproj",
+      "sha256": "b195fa6a90fd4b20d13fffb8f6aca5a13a0f24fe2207f5cfa2adb991a1c91449",
+      "bytes": 315
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/snapshots/fsharp-1/business/Business.fs",
+      "sha256": "49359a7c2ad814705e581db34241f4cf9db99e1fec4f88a3b3e20f24247b31ac",
+      "bytes": 3858
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/snapshots/fsharp-1/tests/AgentLang.TypedReference.Tests.fsproj",
+      "sha256": "4faa0540778fd5fc36dad2105a1ef065396a0b41e76139d7735ce43bbf2de7c9",
+      "bytes": 400
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/snapshots/fsharp-1/tests/Program.fs",
+      "sha256": "d04274b57a056263a6468183cb3649864fca4f35a44a76d67af0161677d67367",
+      "bytes": 7556
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/snapshots/fsharp-2/business/AgentLang.TypedReference.Business.fsproj",
+      "sha256": "b195fa6a90fd4b20d13fffb8f6aca5a13a0f24fe2207f5cfa2adb991a1c91449",
+      "bytes": 315
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/snapshots/fsharp-2/business/Business.fs",
+      "sha256": "6257573f624bd4a9b56fa915138c67657762de6c167014df050725a7af2177f7",
+      "bytes": 3943
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/snapshots/fsharp-2/tests/AgentLang.TypedReference.Tests.fsproj",
+      "sha256": "4faa0540778fd5fc36dad2105a1ef065396a0b41e76139d7735ce43bbf2de7c9",
+      "bytes": 400
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/snapshots/fsharp-2/tests/Program.fs",
+      "sha256": "065bc1358630cd09cae819c2bbf053efd412399a06a2881498fe11da9cbdd68d",
+      "bytes": 9083
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/traces/fsharp-1.jsonl",
+      "sha256": "76e438d395550b7de3b9b661073c8fd759ae1e68eebade0f147b848d8809ab67",
+      "bytes": 205656
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/traces/fsharp-2.jsonl",
+      "sha256": "f889c4bedf7c0b774f3fdb1da1af88ab0d5134fa585d99c25de1751d59ad61b3",
+      "bytes": 163052
+    },
+    {
+      "path": ".agentlang/type-evolution-188/accepted-runtime-pins.json",
+      "sha256": "89cc407b0b81726d904d681a2b4c7195af38687d5d8b00fe73a5745a5223aac3",
+      "bytes": 1605
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/typed-reference-maintenance-190/oracle/cases.json",
+      "sha256": "1ff64efdff553279d835137cdff7ceaa6e27c3d4d74ff7f1621dc6f02beb5e22",
+      "bytes": 24622
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/typed-reference-maintenance-190/oracle/model.py",
+      "sha256": "ce7f674ac361139476c1b21c7ec9a32158babac32b385efeb26c1a552cba61a8",
+      "bytes": 11073
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/typed-reference-maintenance-190/oracle/score_reference.py",
+      "sha256": "cdce83df8f8ec2b45f64fff0b41a52cb1d58d439906dbd24c30d9aace40d437c",
+      "bytes": 55603
+    }
+  ]
+}
