@@ -1,0 +1,256 @@
+{
+  "format": 1,
+  "report": "188-atomic-record-evolution",
+  "baseRevision": "82d3180ba85aeb0e542dde9a6a6a0376c442e579",
+  "testedWorkingSourcePins": [
+    {
+      "path": "docs/TYPE-EVOLUTION.md",
+      "sha256": "162918af81152d6fc62334b0552f10d4ce4aee6ebae82c344a7170bae2a9709e"
+    },
+    {
+      "path": "scripts/Validate.ps1",
+      "sha256": "1ae5d6539fe7ebe8c5629c50d201a6509a11a1dc5fe81782a1dcde8f40ce4ecd"
+    },
+    {
+      "path": "src/AgentLang.Core/AuthoringHelp.fs",
+      "sha256": "da7f95ef47a9e34cee518f7ac7c93addc23f2c861d0feb7311764852c050cdd6"
+    },
+    {
+      "path": "src/AgentLang.Core/Runtime.fs",
+      "sha256": "e1442c614f6c41abd1657b18b9095027010d1282fb2dc29b916e1cd05c509117"
+    },
+    {
+      "path": "tests/AgentLang.Flow.Runtime.Tests/AgentLang.Flow.Runtime.Tests.fsproj",
+      "sha256": "a42d9b06f4128adfd42580bf2e6b47e3fe1a6b735d139a319dfa8f3c0f2b359d"
+    },
+    {
+      "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "sha256": "93adf2a8476e449cbaf9962b37cd4dea349e7606e5a5309690c54db9efd33550"
+    },
+    {
+      "path": "tests/AgentLang.Flow.Runtime.Tests/RecordEvolutionIsolation.fs",
+      "sha256": "e25f75cc6bfc2ef82bca46758393ffaa13fc6f7b2dfefcae9b95984d5b5f0f34"
+    },
+    {
+      "path": "tests/AgentLang.IR.Tests/Program.fs",
+      "sha256": "6f7b4d73c87ee95af59d72e85c34a7696e0bfbb0feba22f81eb2d437389c9a10"
+    }
+  ],
+  "localValidation": {
+    "passed": true,
+    "checks": 37,
+    "terminalExitCode": 0
+  },
+  "archive": {
+    "file": "evidence.zip",
+    "bytes": 1836001,
+    "sha256": "6f9257f4cddb9be6526d8f6d8445f832ba6f3868d2fff33059b240d71a47ecd7"
+  },
+  "verification": {
+    "sourcePinsUnchanged": true,
+    "memberHashes": "passed",
+    "count": 40
+  },
+  "files": [
+    {
+      "path": "readiness-source/atomic-migration.patch.flow",
+      "bytes": 20431,
+      "sha256": "ef8c9bc22ec5e38c059e924f3439dbbd6aadee814085aa9a11328ad257c97e85"
+    },
+    {
+      "path": "validation/full-validation.projection.json",
+      "bytes": 123935,
+      "sha256": "68dbd0897b735b060c6e8fe999c69f55d229680ba945c5f1e6120dd00a501075"
+    },
+    {
+      "path": "validation/full-validation.renewal-acceptance-gate.json",
+      "bytes": 1025134,
+      "sha256": "e0b0a8a4c256ee6c5a430e470d1edc3d3c01b8388e70de7d39e2075a156f1f60"
+    },
+    {
+      "path": "validation/full-validation.renewal-replay.json",
+      "bytes": 307012,
+      "sha256": "c838cf37c0ff5c930d00645d323d655552d0bfceaf5dc9fd53a0fe6fd9f4701e"
+    },
+    {
+      "path": "validation/full-validation.subagent-host-v2.json",
+      "bytes": 25382,
+      "sha256": "ad8c4c4cb42cd51132435115a8f83d8578b387f41d00a091525a4b057a7a5df1"
+    },
+    {
+      "path": "validation/full-validation.subagent-host.json",
+      "bytes": 348065,
+      "sha256": "3dc0356654704c9c14c687de471b80e24ca26455236b4df7ca2f3676a76182ad"
+    },
+    {
+      "path": "validation/inherited-evidence-audit.json",
+      "bytes": 5986,
+      "sha256": "6cc20553f9b345de2eae64915e936926f1f60df181b2ec78a864eb851a867eb4"
+    },
+    {
+      "path": "validation/inherited-evidence-failure-summary.md",
+      "bytes": 970,
+      "sha256": "c6bdc179aa782b30e87b82ca31bc5ac920bf9fd8f88b8b5b0c376fea5d3a35f3"
+    },
+    {
+      "path": "validation/full-validation.parser-limits.json",
+      "bytes": 3186,
+      "sha256": "ed977ecea963a8ca663e5a8d53f7d7e1586aa416425b4b5668456a53b89f10a2"
+    },
+    {
+      "path": "validation/package-evidence.ps1",
+      "bytes": 4733,
+      "sha256": "d919da4bbe021f1d63d1bdcc18d8cceef0822a25b0307a6a07f4553699e7ed51"
+    },
+    {
+      "path": "validation/review-delta.md",
+      "bytes": 7300,
+      "sha256": "07351e4d510a3542dc411b12854c215cac25fd0f624d6ae201f4f2158939047b"
+    },
+    {
+      "path": "validation/review-early.md",
+      "bytes": 2785,
+      "sha256": "52beee0fda2337446c232011f93ab764d61900e2edf97e13bf75599ce830bf8c"
+    },
+    {
+      "path": "validation/review-final.md",
+      "bytes": 5181,
+      "sha256": "c66fc2cdc3b9a3230adad9fd2bc45658a6697c1b7959a80e59ce09ebecf87fab"
+    },
+    {
+      "path": "validation/review-integration.md",
+      "bytes": 2634,
+      "sha256": "4bfaca1db57263ef76a8401f9759a51fb9feeec37dbf9040f739e7ba6fff8493"
+    },
+    {
+      "path": "validation/run-full-validation.ps1",
+      "bytes": 1524,
+      "sha256": "625d901cb9c80e939f60cb291627ef1e8ad8fa805240b5238b17244390bf1aa9"
+    },
+    {
+      "path": "validation/source-pins.json",
+      "bytes": 1403,
+      "sha256": "cb6330887cb3b85e100083759c0e58d057a853146f273cf856f04530395adc88"
+    },
+    {
+      "path": "validation/validation-receipt.md",
+      "bytes": 4606,
+      "sha256": "7996d18a6ee38ec74c233981c02cb22227609ea403a30c63e432cd98c2809b24"
+    },
+    {
+      "path": "validation/pin-accepted-runtime.ps1",
+      "bytes": 2552,
+      "sha256": "a595b6c440eaf164dfdf76dfa20e003c10ebf181ce6b46df3efefbfbbcc64bac"
+    },
+    {
+      "path": "validation/full-validation.matched-snapshots.json",
+      "bytes": 85956,
+      "sha256": "f4f5208afd1fa7eec344c0d3a8ec7af876d297680552cb98c963ccc01454067b"
+    },
+    {
+      "path": "validation/full-validation.matched-fixtures.json",
+      "bytes": 99883,
+      "sha256": "8eefcaec0164f5b4a4a24165aaae48bff5a3862088eeb1750c5541eedc25d463"
+    },
+    {
+      "path": "validation/full-validation.log",
+      "bytes": 17253,
+      "sha256": "1e4c5eef5a622558c55bff1f3042af2d20ead484a74c6c3df91cc587f50fc5f9"
+    },
+    {
+      "path": "readiness-source/persisted-seed-source-audit.md",
+      "bytes": 7657,
+      "sha256": "dd7c56b266ea36fc8dbb26133763e7e70d93b9ac6d269d7d16a481c8908b5e6f"
+    },
+    {
+      "path": "readiness-source/readiness-owner-inventory.md",
+      "bytes": 11564,
+      "sha256": "a3ecc7f538d77d59dcbd020e1d001794a93f42abcc9c834eb2d9558aca9420da"
+    },
+    {
+      "path": "sources/docs/TYPE-EVOLUTION.md",
+      "bytes": 10352,
+      "sha256": "162918af81152d6fc62334b0552f10d4ce4aee6ebae82c344a7170bae2a9709e"
+    },
+    {
+      "path": "sources/scripts/Validate.ps1",
+      "bytes": 10201,
+      "sha256": "1ae5d6539fe7ebe8c5629c50d201a6509a11a1dc5fe81782a1dcde8f40ce4ecd"
+    },
+    {
+      "path": "sources/src/AgentLang.Core/AuthoringHelp.fs",
+      "bytes": 48683,
+      "sha256": "da7f95ef47a9e34cee518f7ac7c93addc23f2c861d0feb7311764852c050cdd6"
+    },
+    {
+      "path": "sources/src/AgentLang.Core/Runtime.fs",
+      "bytes": 544879,
+      "sha256": "e1442c614f6c41abd1657b18b9095027010d1282fb2dc29b916e1cd05c509117"
+    },
+    {
+      "path": "sources/tests/AgentLang.Flow.Runtime.Tests/AgentLang.Flow.Runtime.Tests.fsproj",
+      "bytes": 508,
+      "sha256": "a42d9b06f4128adfd42580bf2e6b47e3fe1a6b735d139a319dfa8f3c0f2b359d"
+    },
+    {
+      "path": "sources/tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "bytes": 558084,
+      "sha256": "93adf2a8476e449cbaf9962b37cd4dea349e7606e5a5309690c54db9efd33550"
+    },
+    {
+      "path": "sources/tests/AgentLang.Flow.Runtime.Tests/RecordEvolutionIsolation.fs",
+      "bytes": 29829,
+      "sha256": "e25f75cc6bfc2ef82bca46758393ffaa13fc6f7b2dfefcae9b95984d5b5f0f34"
+    },
+    {
+      "path": "sources/tests/AgentLang.IR.Tests/Program.fs",
+      "bytes": 131987,
+      "sha256": "6f7b4d73c87ee95af59d72e85c34a7696e0bfbb0feba22f81eb2d437389c9a10"
+    },
+    {
+      "path": "validation/accepted-runtime-pins.json",
+      "bytes": 1605,
+      "sha256": "89cc407b0b81726d904d681a2b4c7195af38687d5d8b00fe73a5745a5223aac3"
+    },
+    {
+      "path": "validation/audit-inherited-evidence.ps1",
+      "bytes": 3520,
+      "sha256": "8b78b7b9958d483a916e1b5c0103e6f11abe354fd6f8e0b1651203affcd6f21b"
+    },
+    {
+      "path": "validation/full-validation-exit.json",
+      "bytes": 75,
+      "sha256": "e28b63bff2303af5e3a74130c25e7ee4ad62a576c0cd4d8c2efdd73609ac5092"
+    },
+    {
+      "path": "validation/full-validation.business-policy-preflight.json",
+      "bytes": 15483110,
+      "sha256": "78621f7902bcffa8f45e2a0c80d0065eb0a85924d2bad67efe1b8c9687049a10"
+    },
+    {
+      "path": "validation/full-validation.early-agent-negative.json",
+      "bytes": 172934,
+      "sha256": "93ee556258fa906c9a3049ecd255c9141bd6317670e3fb9cd11529d56fda6e61"
+    },
+    {
+      "path": "validation/full-validation.flow-matched-fixtures.json",
+      "bytes": 230020,
+      "sha256": "d9e5343a440a6ac335bd661de3f77ea873332faaa40536182ab5a9310baa4a18"
+    },
+    {
+      "path": "validation/full-validation.json",
+      "bytes": 30070,
+      "sha256": "27723029cfacab93f83dd794f2c6e27bf6b19c593d718bfd57c8760e341d3595"
+    },
+    {
+      "path": "validation/ir-snapshot/failure-attempts.txt",
+      "bytes": 161,
+      "sha256": "9fb1ee4f16cdc6a63d503b6c8c1332ccd30fc2efb96068532744aae6d0ac972d"
+    },
+    {
+      "path": "validation/ir-snapshot/validation.txt",
+      "bytes": 842,
+      "sha256": "df7f9f9214209ee689f0333c700fc56db4dca227ece3f5e49a663acaa8d67f32"
+    }
+  ]
+}

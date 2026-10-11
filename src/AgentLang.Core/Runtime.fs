@@ -50,6 +50,17 @@ module Runtime =
           FlowTestFiles: Map<string, FlowAuthoredTestFile>
           FlowExamples: Map<string, FlowAuthoredAttachment> }
 
+    type private TypeReplacementBackup =
+        { Record: RecordEntry
+          Source: AuthoredTypeSource }
+
+    /// Ephemeral publication boundary for one staged Flow record evolution.
+    /// The first replaced record name is a deterministic transaction key.
+    type private TypeEvolutionGroup =
+        { Id: string
+          Types: Set<string>
+          Words: Set<string> }
+
     type private DictionaryState =
         { Words: Map<string, WordEntry>
           WordIds: Map<string, string>
@@ -66,7 +77,9 @@ module Runtime =
           FlowTestFiles: Map<string, FlowAuthoredTestFile>
           FlowExamples: Map<string, FlowAuthoredAttachment>
           FlowHistory: Map<string, FlowAuthoredWord list>
-          Replacements: Map<string, ReplacementBackup> }
+          Replacements: Map<string, ReplacementBackup>
+          TypeReplacements: Map<string, TypeReplacementBackup>
+          TypeEvolutionGroups: Map<string, TypeEvolutionGroup> }
 
     type private TestFileOverlay =
         { Program: VerifiedIrProgram
@@ -451,7 +464,9 @@ module Runtime =
               FlowTestFiles = Map.empty
               FlowExamples = Map.empty
               FlowHistory = Map.empty
-              Replacements = Map.empty }
+              Replacements = Map.empty
+              TypeReplacements = Map.empty
+              TypeEvolutionGroups = Map.empty }
         let mutable activeSnapshot: RuntimeSnapshot option = None
 
         let currentSnapshot () =
@@ -771,6 +786,14 @@ module Runtime =
                         | _ -> current)
                     state
                     state.Replacements
+            let restored =
+                Map.fold
+                    (fun (current: DictionaryState) name (backup: TypeReplacementBackup) ->
+                        { current with
+                            Records = Map.add name backup.Record current.Records
+                            TypeSources = Map.add name backup.Source current.TypeSources })
+                    restored
+                    state.TypeReplacements
             let persistentWords = restored.Words |> Map.filter (fun _ value -> value.Builtin.IsSome || value.Status = Persistent)
             let persistentOwnerIds =
                 persistentWords
@@ -803,12 +826,94 @@ module Runtime =
                         |> Map.filter (fun identity revisions ->
                             persistentOwnerIds.Contains (WordId identity)
                             && (revisions |> List.forall (fun authored -> wordIdText authored.Source.OwnerId = identity)))
-                    Replacements = Map.empty }
+                    Replacements = Map.empty
+                    TypeReplacements = Map.empty
+                    TypeEvolutionGroups = Map.empty }
             let words = effectiveWords projected
             let isDurableCase target body = words.ContainsKey target && (Compiler.dependencies body |> Set.forall words.ContainsKey)
             { projected with
                 Tests = restored.Tests |> Map.filter (fun _ test -> isDurableCase test.Word (testExpressions test))
                 Examples = restored.Examples |> Map.filter (fun _ example -> isDurableCase example.Word example.Body) }
+
+        let restoreTypeEvolutionGroup (state: DictionaryState) (group: TypeEvolutionGroup) =
+            let restoredWords =
+                group.Words
+                |> Set.fold (fun current name ->
+                    match current.Replacements.TryFind name with
+                    | Some backup ->
+                        let ownerId = WordId(wordIdentity current backup.Word)
+                        let tests =
+                            current.Tests
+                            |> Map.filter (fun _ test -> test.Word <> name)
+                            |> fun found -> Map.fold (fun acc key value -> Map.add key value acc) found backup.Tests
+                        let examples =
+                            current.Examples
+                            |> Map.filter (fun _ example -> example.Word <> name)
+                            |> fun found -> Map.fold (fun acc key value -> Map.add key value acc) found backup.Examples
+                        let flowWords =
+                            current.FlowWords
+                            |> Map.filter (fun _ authored -> authored.Source.OwnerId <> ownerId)
+                            |> fun found ->
+                                match backup.FlowWord with
+                                | Some authored -> Map.add (wordIdText authored.Source.OwnerId) authored found
+                                | None -> found
+                        let flowTests =
+                            current.FlowTests
+                            |> Map.filter (fun _ attachment -> attachment.Source.OwnerId <> ownerId)
+                            |> fun found -> Map.fold (fun acc key value -> Map.add key value acc) found backup.FlowTests
+                        let flowTestFiles =
+                            current.FlowTestFiles
+                            |> Map.filter (fun _ file -> file.OwnerId <> ownerId)
+                            |> fun found -> Map.fold (fun acc key value -> Map.add key value acc) found backup.FlowTestFiles
+                        let flowExamples =
+                            current.FlowExamples
+                            |> Map.filter (fun _ attachment -> attachment.Source.OwnerId <> ownerId)
+                            |> fun found -> Map.fold (fun acc key value -> Map.add key value acc) found backup.FlowExamples
+                        { current with
+                            Words = Map.add name backup.Word current.Words
+                            Tests = tests
+                            Examples = examples
+                            FlowWords = flowWords
+                            FlowTests = flowTests
+                            FlowTestFiles = flowTestFiles
+                            FlowExamples = flowExamples
+                            Replacements = Map.remove name current.Replacements }
+                    | None ->
+                        let ownerId = current.WordIds.TryFind name |> Option.map WordId
+                        let removeOwner currentMap selector =
+                            currentMap |> Map.filter (fun _ item -> ownerId <> Some(selector item))
+                        let flowHistory =
+                            ownerId
+                            |> Option.map (fun identity -> Map.remove (wordIdText identity) current.FlowHistory)
+                            |> Option.defaultValue current.FlowHistory
+                        { current with
+                            Words = Map.remove name current.Words
+                            WordIds = Map.remove name current.WordIds
+                            Tests = current.Tests |> Map.filter (fun _ test -> test.Word <> name)
+                            Examples = current.Examples |> Map.filter (fun _ example -> example.Word <> name)
+                            FlowWords = removeOwner current.FlowWords (fun (item: FlowAuthoredWord) -> item.Source.OwnerId)
+                            FlowTests = removeOwner current.FlowTests (fun (item: FlowAuthoredAttachment) -> item.Source.OwnerId)
+                            FlowTestFiles = removeOwner current.FlowTestFiles (fun (item: FlowAuthoredTestFile) -> item.OwnerId)
+                            FlowExamples = removeOwner current.FlowExamples (fun (item: FlowAuthoredAttachment) -> item.Source.OwnerId)
+                            FlowHistory = flowHistory })
+                    state
+            let restoreTypes =
+                group.Types
+                |> Set.fold (fun current name ->
+                    match current.TypeReplacements.TryFind name with
+                    | Some backup ->
+                        { current with
+                            Records = Map.add name backup.Record current.Records
+                            TypeSources = Map.add name backup.Source current.TypeSources
+                            TypeReplacements = Map.remove name current.TypeReplacements }
+                    | None ->
+                        { current with
+                            Records = Map.remove name current.Records
+                            Scalars = Map.remove name current.Scalars
+                            Enums = Map.remove name current.Enums
+                            TypeSources = Map.remove name current.TypeSources })
+                    restoredWords
+            { restoreTypes with TypeEvolutionGroups = Map.remove group.Id restoreTypes.TypeEvolutionGroups }
 
         let serializeWord (word: WordEntry) =
             let lines = word.Definition.SourceText.Replace("\r\n", "\n").Split('\n') |> Array.filter (fun line -> not (line.Trim().StartsWith("maturity ", StringComparison.Ordinal) || line.Trim().StartsWith("revision ", StringComparison.Ordinal)))
@@ -969,7 +1074,9 @@ module Runtime =
                     Tests = parsed.Tests |> List.fold addTest Map.empty
                     Examples = parsed.Examples |> List.fold addExample Map.empty
                     History = Map.empty
-                    Replacements = Map.empty }
+                    Replacements = Map.empty
+                    TypeReplacements = Map.empty
+                    TypeEvolutionGroups = Map.empty }
             state
 
         let currentManifestFor (state: DictionaryState) (baseline: DictionaryState) (actor: string) =
@@ -2061,7 +2168,9 @@ module Runtime =
                         FlowTestFiles = Map.empty
                         FlowExamples = Map.empty
                         FlowHistory = Map.empty
-                        Replacements = Map.empty }
+                        Replacements = Map.empty
+                        TypeReplacements = Map.empty
+                        TypeEvolutionGroups = Map.empty }
                 let proposed =
                     match parsed with
                     | None -> emptyState
@@ -2515,7 +2624,9 @@ module Runtime =
                         FlowTestFiles = flowTestFiles
                         FlowExamples = flowExamples
                         FlowHistory = loadedFlowHistory
-                        Replacements = Map.empty }
+                        Replacements = Map.empty
+                        TypeReplacements = Map.empty
+                        TypeEvolutionGroups = Map.empty }
                 validateTypeSourceMetadata proposed
                 if proposed.Words.Count - Compiler.primitives.Count <> value.Words.Length then
                     mismatch "Manifest word heads do not match the revision-authored word sources." None
@@ -3276,7 +3387,22 @@ module Runtime =
             let metadataTargets =
                 (parsed.Tests |> List.map (fun test -> test.Word)) @ (parsed.Examples |> List.map (fun example -> example.Word))
                 |> Set.ofList
+            let generatedOwner (item: WordEntry) =
+                match item.Builtin with
+                | Some(RecordConstructor owner)
+                | Some(RecordAccessor(owner, _))
+                | Some(ScalarConstructor owner)
+                | Some(ScalarAccessor owner)
+                | Some(EnumCaseConstructor(owner, _)) -> Some owner
+                | _ -> None
             for name in metadataTargets do
+                let generatedItem = entries.TryFind name |> Option.orElseWith (fun () -> generated.TryFind name)
+                match generatedItem |> Option.bind generatedOwner with
+                | Some owner when data.TypeEvolutionGroups |> Map.exists (fun _ group -> group.Types.Contains owner) ->
+                    error "FLOW_TYPE_EVOLUTION_GENERATED_ATTACHMENT_STAGED"
+                        $"Generated operation '{name}' belongs to a staged record-evolution group. Attach its Stack cases before staging the type change, then retain them unchanged."
+                        (Some name) None [ "no generated-operation attachment edit during type evolution" ] [ "staged record-evolution group" ]
+                | _ -> ()
                 match entries.TryFind name with
                 | Some item when item.Builtin.IsNone && item.Status = Persistent ->
                     let backup =
@@ -3359,6 +3485,9 @@ module Runtime =
             taskCounter <- max taskCounter persistedMaximum + 1
             taskCounter
 
+        let ordinalSort values =
+            values |> List.sortWith (fun left right -> StringComparer.Ordinal.Compare(left, right))
+
         let commitCandidates target library actor includeReplacementCallers =
             let candidateWords = data.Words |> Map.filter (fun _ value -> value.Status = Candidate)
             let candidateRecords = data.Records |> Map.filter (fun _ value -> value.Status = Candidate)
@@ -3388,8 +3517,8 @@ module Runtime =
                 | TResult(ok, err) -> Set.union (namedTypes ok) (namedTypes err)
                 | _ -> Set.empty
 
-            let ownerOfGeneratedWord name =
-                match currentWords.TryFind name with
+            let ownerOfGeneratedWordIn (words: Map<string, WordEntry>) name =
+                match words.TryFind name with
                 | Some { Builtin = Some(RecordConstructor owner) } -> Some owner
                 | Some { Builtin = Some(RecordAccessor(owner, _)) } -> Some owner
                 | Some { Builtin = Some(ScalarConstructor owner) } -> Some owner
@@ -3397,17 +3526,22 @@ module Runtime =
                 | Some { Builtin = Some(EnumCaseConstructor(owner, _)) } -> Some owner
                 | _ -> None
 
-            let typeReferencesForWord (name: string) =
-                match data.Words.TryFind name with
+            let ownerOfGeneratedWord name = ownerOfGeneratedWordIn currentWords name
+
+            let typeReferencesForState (state: DictionaryState) (name: string) =
+                match state.Words.TryFind name with
                 | None -> Set.empty
                 | Some value ->
                     let signatures = value.Definition.Inputs @ value.Definition.Outputs |> List.map namedTypes |> Set.unionMany
                     let generatedDependencies =
+                        let words = effectiveWords state
                         Compiler.dependencies value.Definition.Body
                         |> Set.toList
-                        |> List.choose ownerOfGeneratedWord
+                        |> List.choose (ownerOfGeneratedWordIn words)
                         |> Set.ofList
                     Set.union signatures generatedDependencies
+
+            let typeReferencesForWord (name: string) = typeReferencesForState data name
 
             let rec typeClosure (pending: string list) (found: Set<string>) =
                 match pending with
@@ -3473,6 +3607,10 @@ module Runtime =
             let includeStagedReplacementCallers () =
                 includeReplacementCallers
                 || (data.Replacements |> Map.exists (fun name _ -> selectedWords.Contains name))
+                || (data.TypeEvolutionGroups
+                    |> Map.exists (fun _ group ->
+                        not (Set.isEmpty (Set.intersect selectedWords group.Words))
+                        || not (Set.isEmpty (Set.intersect selectedTypes group.Types))))
 
             if includeStagedReplacementCallers () then
                 let mutable callerSearch = selectedWords
@@ -3501,6 +3639,17 @@ module Runtime =
             let mutable changed = true
             while changed do
                 let previousWords, previousTypes = selectedWords, selectedTypes
+                let touchedEvolutionGroups =
+                    data.TypeEvolutionGroups
+                    |> Map.toList
+                    |> List.map snd
+                    |> List.filter (fun group ->
+                        not (Set.isEmpty (Set.intersect selectedWords group.Words))
+                        || not (Set.isEmpty (Set.intersect selectedTypes group.Types)))
+                let groupWords = touchedEvolutionGroups |> List.map (fun group -> group.Words) |> Set.unionMany
+                let groupTypes = touchedEvolutionGroups |> List.map (fun group -> group.Types) |> Set.unionMany
+                selectedWords <- Set.union selectedWords (wordClosure (Set.toList groupWords) Set.empty)
+                selectedTypes <- typeClosure (Set.union selectedTypes groupTypes |> Set.toList) selectedTypes
                 let validatorWords =
                     selectedTypes
                     |> Set.toList
@@ -3551,6 +3700,20 @@ module Runtime =
             if Set.isEmpty selectedWords && Set.isEmpty selectedTypes then
                 error "COMMIT_NO_CANDIDATES" "There are no candidate words or types to commit." None None [] []
 
+            let touchedTypeEvolutionGroups =
+                data.TypeEvolutionGroups
+                |> Map.toList
+                |> List.map snd
+                |> List.filter (fun group ->
+                    not (Set.isEmpty (Set.intersect selectedWords group.Words))
+                    || not (Set.isEmpty (Set.intersect selectedTypes group.Types)))
+            for group in touchedTypeEvolutionGroups do
+                if not (Set.isSubset group.Words selectedWords && Set.isSubset group.Types selectedTypes) then
+                    error "COMMIT_TYPE_EVOLUTION_GROUP_INCOMPLETE" "A record schema and its authored word changes must publish as one atomic group." (Some group.Id) None
+                        (ordinalSort (Set.toList group.Words @ Set.toList group.Types))
+                        (ordinalSort (Set.toList (Set.difference group.Words selectedWords) @ Set.toList (Set.difference group.Types selectedTypes)))
+            let completedTypeEvolutionIds = touchedTypeEvolutionGroups |> List.map (fun group -> group.Id) |> Set.ofList
+
             let proposedWords =
                 data.Words
                 |> Map.map (fun name value ->
@@ -3568,7 +3731,9 @@ module Runtime =
                     Records = proposedRecords
                     Scalars = proposedScalars
                     Enums = proposedEnums
-                    Replacements = data.Replacements |> Map.filter (fun name _ -> not (selectedWords.Contains name)) }
+                    Replacements = data.Replacements |> Map.filter (fun name _ -> not (selectedWords.Contains name))
+                    TypeReplacements = data.TypeReplacements |> Map.filter (fun name _ -> not (selectedTypes.Contains name))
+                    TypeEvolutionGroups = data.TypeEvolutionGroups |> Map.filter (fun name _ -> not (completedTypeEvolutionIds.Contains name)) }
             for name in selectedWords do
                 rejectUnqualifiedLibraryDependencies (effectiveWords proposed) name
             compileRuntimeSnapshot proposed |> ignore
@@ -3600,8 +3765,62 @@ module Runtime =
                 error "COMMIT_SELECTED_EXAMPLE_NOT_DURABLE" "A selected example would not survive the durable project projection." None None [] missingDurableExamples
             let selectedTestOwners = Set.union selectedWords (selectedTypeWordNames selectedTypes)
             let selectedResults = selectedTestOwners |> Set.toList |> List.collect (fun name -> runTestsFor durableSnapshot (Some name))
-            let mutable changedNames = replacing
-            let mutable callers = Set.empty
+            let evolvedTypeNames =
+                touchedTypeEvolutionGroups
+                |> List.map (fun group -> group.Types)
+                |> Set.unionMany
+            let generatedWordsForTypes (state: DictionaryState) =
+                let words = effectiveWords state
+                words
+                |> Map.toSeq
+                |> Seq.choose (fun (name, _) ->
+                    ownerOfGeneratedWordIn words name
+                    |> Option.filter evolvedTypeNames.Contains
+                    |> Option.map (fun _ -> name))
+                |> Set.ofSeq
+            let changedGeneratedWords = Set.union (generatedWordsForTypes durableBefore) (generatedWordsForTypes durableProposed)
+            let signatureAffectedOwners (state: DictionaryState) =
+                state.Words
+                |> Map.toSeq
+                |> Seq.choose (fun (name, item) ->
+                    if item.Builtin.IsNone
+                       && item.Status = Persistent
+                       && not (Set.isEmpty (Set.intersect evolvedTypeNames (typeReferencesForState state name))) then Some name
+                    else None)
+                |> Set.ofSeq
+            let metadataAffectedOwners =
+                let tests =
+                    data.Tests
+                    |> Map.toSeq
+                    |> Seq.choose (fun (_, test) ->
+                        if not (Set.isEmpty (Set.intersect evolvedTypeNames (expressionTypeReferences (testExpressions test)))) then Some test.Word
+                        else None)
+                let examples =
+                    data.Examples
+                    |> Map.toSeq
+                    |> Seq.choose (fun (_, example) ->
+                        if not (Set.isEmpty (Set.intersect evolvedTypeNames (expressionTypeReferences example.Body))) then Some example.Word
+                        else None)
+                Seq.append tests examples |> Set.ofSeq
+            let generatedMetadataAffectedOwners =
+                let generatedDependencies (body: Expr list) =
+                    not (Set.isEmpty (Set.intersect changedGeneratedWords (Compiler.dependencies body)))
+                let tests =
+                    data.Tests
+                    |> Map.toSeq
+                    |> Seq.choose (fun (_, test) -> if generatedDependencies (testExpressions test) then Some test.Word else None)
+                let examples =
+                    data.Examples
+                    |> Map.toSeq
+                    |> Seq.choose (fun (_, example) -> if generatedDependencies example.Body then Some example.Word else None)
+                Seq.append tests examples |> Set.ofSeq
+            let directTypeAffectedOwners =
+                Set.unionMany [ signatureAffectedOwners durableBefore
+                                signatureAffectedOwners durableProposed
+                                metadataAffectedOwners
+                                generatedMetadataAffectedOwners ]
+            let mutable changedNames = Set.unionMany [ replacing; changedGeneratedWords; directTypeAffectedOwners ]
+            let mutable callers = directTypeAffectedOwners
             let mutable foundCallers = true
             while foundCallers do
                 let nextCallers =
@@ -3798,6 +4017,16 @@ module Runtime =
                 |> Map.ofSeq
             | value -> flowArgumentError "expectedRevisions" "an object mapping each replaced word to its nonnegative current revision" (flowJsonKind value)
 
+        let flowExpectedTypeSources (arguments: JsonObject) =
+            if not (arguments.ContainsKey "expectedTypeSources") then
+                flowArgumentError "expectedTypeSources" "an object mapping each replaced record to its current source hash" "missing"
+            match arguments["expectedTypeSources"] with
+            | :? JsonObject as values ->
+                values
+                |> Seq.map (fun (KeyValue(name, node)) -> name, flowStringValue ($"expectedTypeSources.{name}") node)
+                |> Map.ofSeq
+            | value -> flowArgumentError "expectedTypeSources" "an object mapping each replaced record to its current source hash" (flowJsonKind value)
+
         let flowAttachmentRemovals (arguments: JsonObject) =
             if not (arguments.ContainsKey "removeAttachments") then []
             else
@@ -3820,9 +4049,6 @@ module Runtime =
                         | value -> flowArgumentError prefix "an attachment removal object" (flowJsonKind value))
                     |> Seq.toList
                 | value -> flowArgumentError "removeAttachments" "an array of attachment removal objects" (flowJsonKind value)
-
-        let ordinalSort values =
-            values |> List.sortWith (fun left right -> StringComparer.Ordinal.Compare(left, right))
 
         let flowDefineAllowedKeys = AuthoringHelp.flowDefineFields |> List.map (fun field -> field.Name)
 
@@ -3876,20 +4102,90 @@ module Runtime =
                 |> List.sortBy (fun (_, _, span) -> span.Line, span.Column)
             match declarations with
             | (kind, name, span) :: _ ->
-                error "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED"
-                    $"Flow {kind} type '{name}' cannot be replaced: record, scalar, and enum schemas are immutable after creation. expectedRevision and expectedRevisions compare word revisions only; they cannot change type schemas. Define a new type under an unused name and migrate dependent words separately."
+                error "FLOW_TYPE_EVOLUTION_KIND_UNSUPPORTED"
+                    $"Flow {kind} type '{name}' cannot be changed through record-field evolution. Existing scalar representations and validators, enum cases, and type-kind conversions remain immutable. Define a new type under an unused name."
                     (Some name) (Some span)
-                    [ "existing authored Flow word declarations only" ]
-                    [ $"{kind} type declaration"; name ]
+                    [ "new type declaration or record-field evolution" ]
+                    [ $"existing {kind} declaration"; name ]
             | [] -> ()
 
-        let registerFlowReplacementProjectParsed (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
+        let parseFlowTypeSources
+            (syntaxVersion: int)
+            (records: RecordDefinition list)
+            (scalars: ScalarTypeDefinition list)
+            (enums: EnumDefinition list) =
+            let newRecords: (string * RecordEntry * AuthoredTypeSource) list =
+                records
+                |> List.map (fun parsed ->
+                    let content = parsed.SourceText
+                    let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition content
+                    let file = $"<flow-type:{parsed.Name}/{sourceObject.Reference.Hash}>"
+                    let reparsed =
+                        match FlowParser.parseDocumentWithVersion syntaxVersion file content with
+                        | Ok value -> value
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    match reparsed.Records, reparsed.Scalars, reparsed.Enums, reparsed.Words, reparsed.Tests, reparsed.Examples, reparsed.TestFiles with
+                    | [ definition ], [], [], [], [], [], [] when definition.Name = parsed.Name ->
+                        parsed.Name,
+                        ({ Definition = definition; Status = Candidate }: RecordEntry),
+                        { SourceFormat = { Frontend = SourceFrontend.Flow; Version = syntaxVersion }
+                          Content = content
+                          Reference = sourceObject.Reference
+                          ValidatorTarget = None }
+                    | _ -> error "FLOW_PROJECT_TYPE_SOURCE_INVALID" $"Record source '{parsed.Name}' must contain exactly its authored Flow record declaration." (Some parsed.Name) (Some parsed.Span) [] [])
+            let newScalars: (string * ScalarEntry * AuthoredTypeSource) list =
+                scalars
+                |> List.map (fun parsed ->
+                    let content = parsed.SourceText
+                    let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition content
+                    let file = $"<flow-type:{parsed.Name}/{sourceObject.Reference.Hash}>"
+                    let reparsed =
+                        match FlowParser.parseDocumentWithVersion syntaxVersion file content with
+                        | Ok value -> value
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    match reparsed.Records, reparsed.Scalars, reparsed.Enums, reparsed.Words, reparsed.Tests, reparsed.Examples, reparsed.TestFiles with
+                    | [], [ definition ], [], [], [], [], [] when definition.Name = parsed.Name ->
+                        parsed.Name,
+                        ({ Definition = definition; Status = Candidate }: ScalarEntry),
+                        { SourceFormat = { Frontend = SourceFrontend.Flow; Version = syntaxVersion }
+                          Content = content
+                          Reference = sourceObject.Reference
+                          ValidatorTarget = None }
+                    | _ -> error "FLOW_PROJECT_TYPE_SOURCE_INVALID" $"Scalar source '{parsed.Name}' must contain exactly its authored Flow type declaration." (Some parsed.Name) (Some parsed.Span) [] [])
+            let newEnums: (string * EnumEntry * AuthoredTypeSource) list =
+                enums
+                |> List.map (fun parsed ->
+                    let content = parsed.SourceText
+                    let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition content
+                    let file = $"<flow-type:{parsed.Name}/{sourceObject.Reference.Hash}>"
+                    let reparsed =
+                        match FlowParser.parseDocumentWithVersion syntaxVersion file content with
+                        | Ok value -> value
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    match reparsed.Records, reparsed.Scalars, reparsed.Enums, reparsed.Words, reparsed.Tests, reparsed.Examples, reparsed.TestFiles with
+                    | [], [], [ definition ], [], [], [], [] when syntaxVersion = 2 && definition.Name = parsed.Name ->
+                        parsed.Name,
+                        ({ Definition = definition; Status = Candidate }: EnumEntry),
+                        { SourceFormat = { Frontend = SourceFrontend.Flow; Version = syntaxVersion }
+                          Content = content
+                          Reference = sourceObject.Reference
+                          ValidatorTarget = None }
+                    | _ -> error "FLOW_PROJECT_TYPE_SOURCE_INVALID" $"Enum source '{parsed.Name}' must contain exactly its authored Flow enum declaration." (Some parsed.Name) (Some parsed.Span) [] [])
+            newRecords, newScalars, newEnums
+
+        let registerFlowReplacementProjectParsed typeEvolution (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
             let old = data
             let wordNames = document.Words |> List.map (fun item -> item.Name)
+            let typeNames =
+                (document.Records |> List.map (fun item -> item.Name))
+                @ (document.Scalars |> List.map (fun item -> item.Name))
+                @ (document.Enums |> List.map (fun item -> item.Name))
             if not (readOptionalStrictBool arguments "replace" false) then
-                error "FLOW_PROJECT_REQUEST_SHAPE" "A multi-declaration Flow replacement requires replace=true and an expectedRevisions map." None None [ "replace=true with expectedRevisions" ] []
-            if document.Words.Length < 2 then
+                error "FLOW_PROJECT_REQUEST_SHAPE" "A Flow replacement requires replace=true and the compare-and-swap tokens for its owners." None None [ "replace=true with expectedRevisions or expectedTypeSources" ] []
+            if not typeEvolution && document.Words.Length < 2 then
                 error "FLOW_PROJECT_REPLACEMENT_SHAPE" "expectedRevisions is reserved for replacing at least two existing authored Flow words in one source document." None None [ "at least two word declarations" ] [ string document.Words.Length ]
+            if typeEvolution && document.Records.IsEmpty then
+                error "FLOW_TYPE_EVOLUTION_REQUIRES_RECORD" "Atomic type evolution requires at least one existing Flow-authored record declaration." None None [ "an existing record declaration" ] typeNames
             if document.SyntaxVersion <> syntaxVersion then
                 error "FLOW_VERSION_UNSUPPORTED" "Flow project syntax version does not match the selected syntaxVersion." None None [ string syntaxVersion ] [ string document.SyntaxVersion ]
             if not document.TestFiles.IsEmpty then
@@ -3899,23 +4195,98 @@ module Runtime =
                || arguments.ContainsKey "tests"
                || arguments.ContainsKey "examples"
                || arguments.ContainsKey "temporary" then
-                error "FLOW_PROJECT_REQUEST_SHAPE" "A multiword replacement requires one exact expectedRevisions map; temporary lifecycle changes, scalar CAS, removals, and external attachments are unsupported." None None
-                    [ "replace=true, expectedRevisions, and complete Flow source with inline cases" ]
+                error "FLOW_PROJECT_REQUEST_SHAPE" "A Flow project replacement uses exact owner CAS maps; temporary lifecycle changes, scalar CAS, removals, and external attachments are unsupported." None None
+                    [ if typeEvolution then "replace=true, expectedTypeSources, optional expectedRevisions, and complete Flow source with inline cases" else "replace=true, expectedRevisions, and complete Flow source with inline cases" ]
                     ((if arguments.ContainsKey "expectedRevision" then [ "expectedRevision" ] else [])
                      @ (if arguments.ContainsKey "removeAttachments" then [ "removeAttachments" ] else [])
                      @ (if arguments.ContainsKey "tests" then [ "tests" ] else [])
                      @ (if arguments.ContainsKey "examples" then [ "examples" ] else [])
-                     @ (if arguments.ContainsKey "temporary" then [ "temporary" ] else []))
-            let revisionsByName = flowExpectedRevisions arguments
+                      @ (if arguments.ContainsKey "temporary" then [ "temporary" ] else []))
             match wordNames |> List.groupBy id |> List.tryFind (fun (_, grouped) -> grouped.Length > 1) with
             | Some(name, _) -> error "FLOW_PROJECT_DUPLICATE_WORD" $"Word '{name}' is declared more than once in the Flow project." (Some name) None [] [ name ]
             | None -> ()
-            if Set.ofList wordNames <> (revisionsByName |> Map.toSeq |> Seq.map fst |> Set.ofSeq) then
+            match typeNames |> List.groupBy id |> List.tryFind (fun (_, grouped) -> grouped.Length > 1) with
+            | Some(name, _) -> error "FLOW_PROJECT_DUPLICATE_TYPE" $"Type '{name}' is declared more than once in the Flow project." (Some name) None [] [ name ]
+            | None -> ()
+            match Set.intersect (Set.ofList wordNames) (Set.ofList typeNames) |> Set.toList with
+            | name :: _ -> error "FLOW_PROJECT_NAME_COLLISION" $"'{name}' is declared as both a type and a word." (Some name) None [] [ name ]
+            | [] -> ()
+            let replacedRecordNames =
+                document.Records
+                |> List.choose (fun parsed -> if old.Records.ContainsKey parsed.Name then Some parsed.Name else None)
+                |> Set.ofList
+            let revisionsByName =
+                if not (arguments.ContainsKey "expectedRevisions") then
+                    if not typeEvolution || not (List.isEmpty (wordNames |> List.filter old.Words.ContainsKey)) then
+                        flowArgumentError "expectedRevisions" "an object mapping every replaced existing word to its current revision" "missing"
+                    else Map.empty
+                else flowExpectedRevisions arguments
+            let replacedWordNames = wordNames |> List.filter old.Words.ContainsKey |> Set.ofList
+            if (if typeEvolution then replacedWordNames else Set.ofList wordNames) <> (revisionsByName |> Map.toSeq |> Seq.map fst |> Set.ofSeq) then
                 error "FLOW_PROJECT_REPLACEMENT_CAS_SHAPE" "expectedRevisions must contain exactly one entry for each word declared in source." None None
-                    (ordinalSort wordNames) (revisionsByName |> Map.toList |> List.map fst |> ordinalSort)
+                    (ordinalSort (if typeEvolution then Set.toList replacedWordNames else wordNames)) (revisionsByName |> Map.toList |> List.map fst |> ordinalSort)
+
+            let newRecords, newScalars, newEnums = parseFlowTypeSources syntaxVersion document.Records document.Scalars document.Enums
+            let typeReplacementBackups, proposedRecords, proposedScalars, proposedEnums, proposedTypeSources =
+                if not typeEvolution then
+                    old.TypeReplacements, old.Records, old.Scalars, old.Enums, old.TypeSources
+                else
+                    if replacedRecordNames.IsEmpty then
+                        error "FLOW_TYPE_EVOLUTION_REQUIRES_RECORD" "At least one declared record must replace an existing Flow-authored record." None None [ "existing record declaration" ] (ordinalSort typeNames)
+                    let expectedTypeSources = flowExpectedTypeSources arguments
+                    if replacedRecordNames <> (expectedTypeSources |> Map.toSeq |> Seq.map fst |> Set.ofSeq) then
+                        error "FLOW_TYPE_REPLACEMENT_CAS_SHAPE" "expectedTypeSources must contain exactly one entry for each existing record declared in source." None None
+                            (ordinalSort (Set.toList replacedRecordNames)) (expectedTypeSources |> Map.toList |> List.map fst |> ordinalSort)
+                    for parsed in document.Scalars do
+                        if (knownTypes old).Contains parsed.Name then
+                            error "FLOW_TYPE_EVOLUTION_KIND_UNSUPPORTED" $"Existing type '{parsed.Name}' cannot be replaced as a scalar during record-field evolution." (Some parsed.Name) (Some parsed.Span) [ "new scalar name or unchanged existing scalar" ] [ "existing type declaration" ]
+                    for parsed in document.Enums do
+                        if (knownTypes old).Contains parsed.Name then
+                            error "FLOW_TYPE_EVOLUTION_KIND_UNSUPPORTED" $"Existing type '{parsed.Name}' cannot be replaced as an enum during record-field evolution." (Some parsed.Name) (Some parsed.Span) [ "new enum name or unchanged existing enum" ] [ "existing type declaration" ]
+                    for parsed in document.Records do
+                        match old.Records.TryFind parsed.Name with
+                        | Some prior ->
+                            if prior.Status <> Persistent then
+                                error "FLOW_TYPE_EVOLUTION_RECORD_PROTECTED" $"Record '{parsed.Name}' is not a persistent type owner." (Some parsed.Name) (Some parsed.Span) [ "persistent Flow-authored record" ] [ string prior.Status ]
+                            if old.Scalars.ContainsKey parsed.Name || old.Enums.ContainsKey parsed.Name then
+                                error "FLOW_TYPE_EVOLUTION_KIND_UNSUPPORTED" $"Type '{parsed.Name}' cannot change its existing kind to record." (Some parsed.Name) (Some parsed.Span) [ "record remains a record" ] [ "type-kind conversion" ]
+                            let authored =
+                                old.TypeSources.TryFind parsed.Name
+                                |> Option.defaultWith (fun () -> error "FLOW_TYPE_EVOLUTION_SOURCE_MISSING" $"Record '{parsed.Name}' has no authored type source for compare-and-swap." (Some parsed.Name) (Some parsed.Span) [ "current authored Flow source" ] [])
+                            if authored.SourceFormat.Frontend <> SourceFrontend.Flow then
+                                error "FLOW_TYPE_EVOLUTION_NOT_FLOW" $"Record '{parsed.Name}' is not authored in Flow and cannot use the Flow type-CAS route." (Some parsed.Name) (Some parsed.Span) [ "Flow-authored record" ] [ string authored.SourceFormat.Frontend ]
+                            let expectedHash = expectedTypeSources[parsed.Name]
+                            if expectedHash <> authored.Reference.Hash then
+                                error "FLOW_TYPE_STALE_SOURCE" "expectedTypeSources does not match the current authored record source hash." (Some parsed.Name) (Some parsed.Span) [ authored.Reference.Hash ] [ expectedHash ]
+                            if old.TypeReplacements.ContainsKey parsed.Name then
+                                error "FLOW_TYPE_EVOLUTION_ALREADY_STAGED" $"Record '{parsed.Name}' already has a staged type evolution." (Some parsed.Name) (Some parsed.Span) [ "no staged type evolution" ] [ parsed.Name ]
+                            if old.TypeEvolutionGroups |> Map.exists (fun _ group -> group.Types.Contains parsed.Name) then
+                                error "FLOW_TYPE_EVOLUTION_ALREADY_STAGED" $"Record '{parsed.Name}' already belongs to a staged type evolution." (Some parsed.Name) (Some parsed.Span) [ "no overlapping type evolution" ] [ parsed.Name ]
+                            let replacement = newRecords |> List.find (fun (name, _, _) -> name = parsed.Name) |> fun (_, item, _) -> item
+                            if replacement.Definition.Validator <> prior.Definition.Validator then
+                                error "FLOW_TYPE_EVOLUTION_VALIDATOR_IMMUTABLE" $"Record '{parsed.Name}' cannot change its validator as part of field evolution." (Some parsed.Name) (Some parsed.Span) [ string prior.Definition.Validator ] [ string replacement.Definition.Validator ]
+                        | None ->
+                            if (knownTypes old).Contains parsed.Name then
+                                error "FLOW_TYPE_EVOLUTION_KIND_UNSUPPORTED" $"Existing non-record type '{parsed.Name}' cannot be converted into a record." (Some parsed.Name) (Some parsed.Span) [ "unused record name" ] [ "existing type name" ]
+                    for name in typeNames do
+                        if not (old.Records.ContainsKey name) && (knownTypes old).Contains name then
+                            error "FLOW_PROJECT_TYPE_ALREADY_EXISTS" $"Type '{name}' already exists; only existing records can be evolved." (Some name) None [ "unused type name or existing record replacement" ] [ name ]
+                    let backups =
+                        replacedRecordNames
+                        |> Set.fold (fun found name -> Map.add name { Record = old.Records[name]; Source = old.TypeSources[name] } found) old.TypeReplacements
+                    let records = newRecords |> List.fold (fun found (name, item, _) -> Map.add name item found) old.Records
+                    let scalars = newScalars |> List.fold (fun found (name, item, _) -> Map.add name item found) old.Scalars
+                    let enums = newEnums |> List.fold (fun found (name, item, _) -> Map.add name item found) old.Enums
+                    let sources =
+                        ((newRecords |> List.map (fun (name, _, source) -> name, source))
+                         @ (newScalars |> List.map (fun (name, _, source) -> name, source))
+                         @ (newEnums |> List.map (fun (name, _, source) -> name, source)))
+                        |> List.fold (fun found (name, source) -> Map.add name source found) old.TypeSources
+                    backups, records, scalars, enums, sources
 
             let replacementRows =
                 document.Words
+                |> List.filter (fun parsed -> not typeEvolution || old.Words.ContainsKey parsed.Name)
                 |> List.map (fun parsed ->
                     if parsed.SyntaxVersion <> syntaxVersion then
                         error "FLOW_VERSION_UNSUPPORTED" "Flow word syntax version does not match the selected syntaxVersion." (Some parsed.Name) (Some parsed.Span) [ string syntaxVersion ] [ string parsed.SyntaxVersion ]
@@ -3971,8 +4342,61 @@ module Runtime =
                           SourceText = content
                           Span = definition.Span }
                     parsed.Name, prior, identity, revision, flowWord, projected)
-            let rowByName = replacementRows |> List.map (fun (name, prior, identity, revision, authored, projected) -> name, (prior, identity, revision, authored, projected)) |> Map.ofList
-            let rowByIdentity = replacementRows |> List.map (fun (name, _, identity, revision, _, _) -> wordIdText identity, (name, revision)) |> Map.ofList
+            let newWordRows =
+                if not typeEvolution then []
+                else
+                    let proposedTypeState = { old with Records = proposedRecords; Scalars = proposedScalars; Enums = proposedEnums }
+                    let generatedProposedTypes = makeGenerated proposedTypeState
+                    let existingWords = effectiveWords old
+                    document.Words
+                    |> List.filter (fun parsed -> not (old.Words.ContainsKey parsed.Name))
+                    |> List.map (fun parsed ->
+                        if parsed.SyntaxVersion <> syntaxVersion then
+                            error "FLOW_VERSION_UNSUPPORTED" "Flow word syntax version does not match the selected syntaxVersion." (Some parsed.Name) (Some parsed.Span) [ string syntaxVersion ] [ string parsed.SyntaxVersion ]
+                        if existingWords.ContainsKey parsed.Name then
+                            error "FLOW_PROJECT_WORD_ALREADY_EXISTS" $"Word '{parsed.Name}' already exists as a primitive, generated word, or user word." (Some parsed.Name) (Some parsed.Span) [ "unused word name" ] [ parsed.Name ]
+                        if generatedProposedTypes.ContainsKey parsed.Name then
+                            error "NAME_GENERATED_COLLISION" $"Generated type word '{parsed.Name}' collides with a user-defined word." (Some parsed.Name) (Some parsed.Span) [] [ parsed.Name ]
+                        let identity = WordId(newWordIdentity ())
+                        let revision = 1
+                        let content = parsed.SourceText
+                        let sourceObject = Storage.sourceObject StorageObjectKind.WordDefinition content
+                        let sourceFile = $"<flow:{parsed.Name}/{revision}:{sourceObject.Reference.Hash}>"
+                        let definition =
+                            match FlowParser.parseWordWithVersion syntaxVersion sourceFile content with
+                            | Ok value when value.Name = parsed.Name -> value
+                            | Ok value -> error "FLOW_RUNTIME_OWNER_MISMATCH" "A standalone Flow source changed its declared owner during validation." (Some parsed.Name) (Some value.Span) [ parsed.Name ] [ value.Name ]
+                            | Error diagnostic -> raise (LanguageException diagnostic)
+                        let source: FlowLowering.FlowSourceDocument =
+                            { OwnerName = definition.Name
+                              SyntaxVersion = syntaxVersion
+                              EffectsDeclared = definition.EffectsDeclared
+                              OwnerId = identity
+                              OwnerRevision = revision
+                              Reference = sourceObject.Reference
+                              SourceFile = sourceFile
+                              Content = content }
+                        let authored: FlowAuthoredWord = { Definition = definition; Source = source; StoredBindings = None }
+                        let projected: WordDefinition =
+                            { Name = definition.Name
+                              Inputs = definition.Parameters |> List.map (fun parameter -> parameter.Type)
+                              Outputs = definition.Outputs
+                              Effects = definition.Effects
+                              Maturity = ProjectWord
+                              Revision = revision
+                              Documentation = definition.Documentation
+                              Body = []
+                              SourceText = content
+                              Span = definition.Span }
+                        parsed.Name, entry projected None Candidate ProjectWord revision, identity, authored, projected)
+            let rowByName =
+                (replacementRows |> List.map (fun (name, _, identity, revision, _, _) -> name, (identity, revision)))
+                @ (newWordRows |> List.map (fun (name, _, identity, authored, _) -> name, (identity, authored.Source.OwnerRevision)))
+                |> Map.ofList
+            let rowByIdentity =
+                (replacementRows |> List.map (fun (name, _, identity, revision, _, _) -> wordIdText identity, (name, revision)))
+                @ (newWordRows |> List.map (fun (name, _, identity, authored, _) -> wordIdText identity, (name, authored.Source.OwnerRevision)))
+                |> Map.ofList
             let owners = replacementRows |> List.map (fun (_, _, identity, _, _, _) -> wordIdText identity) |> Set.ofList
 
             let parseTests =
@@ -3980,7 +4404,7 @@ module Runtime =
                 |> List.map (fun parsed ->
                     match rowByName.TryFind parsed.Word with
                     | None -> error "FLOW_ATTACHMENT_OWNER_MISMATCH" $"Batch test '{parsed.CaseName}' must attach to a word declared in the same replacement document." (Some parsed.Word) (Some parsed.Span) wordNames [ parsed.Word ]
-                    | Some(_, identity, revision, _, _) ->
+                    | Some(identity, revision) ->
                         let content = parsed.SourceText
                         let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition content
                         let sourceFile = $"<flow:{parsed.Word}/{revision}>/test:{sourceObject.Reference.Hash}"
@@ -4005,7 +4429,7 @@ module Runtime =
                 |> List.map (fun parsed ->
                     match rowByName.TryFind parsed.Word with
                     | None -> error "FLOW_ATTACHMENT_OWNER_MISMATCH" $"Batch example '{parsed.CaseName}' must attach to a word declared in the same replacement document." (Some parsed.Word) (Some parsed.Span) wordNames [ parsed.Word ]
-                    | Some(_, identity, revision, _, _) ->
+                    | Some(identity, revision) ->
                         let content = parsed.SourceText
                         let sourceObject = Storage.sourceObject StorageObjectKind.ExampleDefinition content
                         let sourceFile = $"<flow:{parsed.Word}/{revision}>/example:{sourceObject.Reference.Hash}"
@@ -4105,24 +4529,85 @@ module Runtime =
             let nextWords =
                 replacementRows
                 |> List.fold (fun found (name, _, _, revision, _, projected) -> Map.add name (entry projected None Candidate projected.Maturity revision) found) old.Words
+                |> fun found ->
+                    newWordRows
+                    |> List.fold (fun current (name, word, _, _, _) -> Map.add name word current) found
+            let nextWordIds =
+                newWordRows
+                |> List.fold (fun found (name, _, identity, _, _) -> Map.add name (wordIdText identity) found) old.WordIds
             let nextFlowWords =
                 replacementRows
                 |> List.fold (fun found (_, _, identity, _, authored, _) -> Map.add (wordIdText identity) authored found) old.FlowWords
-            let proposed =
+                |> fun found -> newWordRows |> List.fold (fun current (_, _, identity, authored, _) -> Map.add (wordIdText identity) authored current) found
+            let nextEvolutionGroups =
+                if not typeEvolution then old.TypeEvolutionGroups
+                else
+                    let overlapping =
+                        old.TypeEvolutionGroups
+                        |> Map.toList
+                        |> List.tryFind (fun (_, group) -> not (Set.isEmpty (Set.intersect group.Types (Set.ofList typeNames))) || not (Set.isEmpty (Set.intersect group.Words (Set.ofList wordNames))))
+                    match overlapping with
+                    | Some(_, group) -> error "FLOW_TYPE_EVOLUTION_ALREADY_STAGED" "A declaration overlaps an existing staged record-evolution group." None None [] [ group.Id ]
+                    | None ->
+                        let groupId = replacedRecordNames |> Set.toList |> ordinalSort |> List.head
+                        let group: TypeEvolutionGroup = { Id = groupId; Types = Set.ofList typeNames; Words = Set.ofList wordNames }
+                        Map.add groupId group old.TypeEvolutionGroups
+            let proposedBase =
                 { old with
                     Words = nextWords
+                    WordIds = nextWordIds
+                    Records = proposedRecords
+                    Scalars = proposedScalars
+                    Enums = proposedEnums
+                    TypeSources = proposedTypeSources
                     FlowWords = nextFlowWords
                     FlowTests = nextTests
                     FlowTestFiles = nextTestFiles
                     FlowExamples = nextExamples
-                    Replacements = replacementBackups }
+                    Replacements = replacementBackups
+                    TypeReplacements = typeReplacementBackups
+                    TypeEvolutionGroups = nextEvolutionGroups }
+            let stableTypeSources =
+                proposedBase.TypeSources
+                |> Map.map (fun name authored ->
+                    match proposedBase.Records.TryFind name, proposedBase.Scalars.TryFind name with
+                    | Some record, _ -> { authored with ValidatorTarget = resolvedRecordValidatorTarget proposedBase name record.Definition }
+                    | _, Some scalar -> { authored with ValidatorTarget = resolvedValidatorTarget proposedBase name scalar.Definition }
+                    | _ -> authored)
+            let proposed = { proposedBase with TypeSources = stableTypeSources }
+            validateTypeSourceMetadata proposed
+            if typeEvolution then
+                let evolvedTypeNames = Set.ofList typeNames
+                let generatedWordNames state =
+                    makeGenerated state
+                    |> Map.toSeq
+                    |> Seq.choose (fun (name, word) ->
+                        match word.Builtin with
+                        | Some(RecordConstructor owner)
+                        | Some(RecordAccessor(owner, _)) when evolvedTypeNames.Contains owner -> Some name
+                        | _ -> None)
+                    |> Set.ofSeq
+                let previousGenerated = generatedWordNames old
+                let proposedGenerated = generatedWordNames proposed
+                let retainedGeneratedCases =
+                    Seq.append
+                        (data.Tests |> Map.toSeq |> Seq.map (fun (_, test) -> test.Word))
+                        (data.Examples |> Map.toSeq |> Seq.map (fun (_, example) -> example.Word))
+                    |> Set.ofSeq
+                    |> Set.intersect previousGenerated
+                match Set.difference retainedGeneratedCases proposedGenerated |> Set.toList |> ordinalSort with
+                | owner :: _ ->
+                    error "FLOW_TYPE_EVOLUTION_GENERATED_CASE_INCOMPATIBLE"
+                        $"Record evolution removes generated operation '{owner}', which still owns retained Stack test or example cases. Keep the operation compatible or remove those cases through an explicit owner migration."
+                        (Some owner) None [ "retained generated operation" ] [ "removed generated operation" ]
+                | [] -> ()
             let executable = compileRuntimeSnapshot proposed
             let frozen = frozenValidatorWords old (effectiveWords old)
             match Set.intersect frozen (Set.ofList wordNames) |> Set.toList with
             | name :: _ -> error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{name}' while a nominal type is persistent." (Some name) None [] [ name ]
             | [] -> ()
             for name in wordNames do
-                if old.Words[name].Maturity = LibraryWord then
+                if old.Words.TryFind name |> Option.exists (fun word -> word.Maturity = LibraryWord) then
                     rejectUnqualifiedLibraryDependencies executable.Words name
             activateRuntimeSnapshot executable
             lastResults <- []
@@ -4138,7 +4623,17 @@ module Runtime =
                 row["revision"] <- jint item.Revision
                 wordPayload.Add row
             payload["words"] <- wordPayload
-            success "defined" "Flow word replacements and inline standalone cases were validated and staged atomically." (Some payload)
+            let typePayload = JsonArray()
+            for name in typeNames do
+                let row = JsonObject()
+                row["name"] <- jstr name
+                row["sourceHash"] <- jstr executable.State.TypeSources[name].Reference.Hash
+                typePayload.Add row
+            payload["types"] <- typePayload
+            let message =
+                if typeEvolution then "Flow record-field evolution, helper words, and inline standalone cases were validated and staged as one atomic group."
+                else "Flow word replacements and inline standalone cases were validated and staged atomically."
+            success "defined" message (Some payload)
 
         let registerFlowProjectAddOnlyParsed (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
             let old = data
@@ -4153,6 +4648,7 @@ module Runtime =
             if readOptionalStrictBool arguments "replace" false
                || arguments.ContainsKey "expectedRevision"
                || arguments.ContainsKey "expectedRevisions"
+               || arguments.ContainsKey "expectedTypeSources"
                || arguments.ContainsKey "removeAttachments"
                || (arguments.ContainsKey "tests" && not (flowSourceStrings arguments "tests").IsEmpty)
                || (arguments.ContainsKey "examples" && not (flowSourceStrings arguments "examples").IsEmpty) then
@@ -4191,63 +4687,7 @@ module Runtime =
                 if existingWords.ContainsKey name || generatedBeforeWords.ContainsKey name then
                     error "FLOW_PROJECT_WORD_ALREADY_EXISTS" $"Word '{name}' already exists as a primitive, generated word, or user word." (Some name) None [ "unused word name" ] [ name ]
 
-            let newRecords: (string * RecordEntry * AuthoredTypeSource) list =
-                document.Records
-                |> List.map (fun parsed ->
-                    let content = parsed.SourceText
-                    let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition content
-                    let file = $"<flow-type:{parsed.Name}/{sourceObject.Reference.Hash}>"
-                    let reparsed =
-                        match FlowParser.parseDocumentWithVersion syntaxVersion file content with
-                        | Ok value -> value
-                        | Error diagnostic -> raise (LanguageException diagnostic)
-                    match reparsed.Records, reparsed.Scalars, reparsed.Enums, reparsed.Words, reparsed.Tests, reparsed.Examples with
-                    | [ definition ], [], [], [], [], [] when definition.Name = parsed.Name ->
-                        parsed.Name,
-                        ({ Definition = definition; Status = Candidate }: RecordEntry),
-                        { SourceFormat = { Frontend = SourceFrontend.Flow; Version = syntaxVersion }
-                          Content = content
-                          Reference = sourceObject.Reference
-                          ValidatorTarget = None }
-                    | _ -> error "FLOW_PROJECT_TYPE_SOURCE_INVALID" $"Record source '{parsed.Name}' must contain exactly its authored Flow record declaration." (Some parsed.Name) (Some parsed.Span) [] [] )
-            let newScalars: (string * ScalarEntry * AuthoredTypeSource) list =
-                document.Scalars
-                |> List.map (fun parsed ->
-                    let content = parsed.SourceText
-                    let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition content
-                    let file = $"<flow-type:{parsed.Name}/{sourceObject.Reference.Hash}>"
-                    let reparsed =
-                        match FlowParser.parseDocumentWithVersion syntaxVersion file content with
-                        | Ok value -> value
-                        | Error diagnostic -> raise (LanguageException diagnostic)
-                    match reparsed.Records, reparsed.Scalars, reparsed.Enums, reparsed.Words, reparsed.Tests, reparsed.Examples with
-                    | [], [ definition ], [], [], [], [] when definition.Name = parsed.Name ->
-                        parsed.Name,
-                        ({ Definition = definition; Status = Candidate }: ScalarEntry),
-                        { SourceFormat = { Frontend = SourceFrontend.Flow; Version = syntaxVersion }
-                          Content = content
-                          Reference = sourceObject.Reference
-                          ValidatorTarget = None }
-                    | _ -> error "FLOW_PROJECT_TYPE_SOURCE_INVALID" $"Scalar source '{parsed.Name}' must contain exactly its authored Flow type declaration." (Some parsed.Name) (Some parsed.Span) [] [] )
-            let newEnums: (string * EnumEntry * AuthoredTypeSource) list =
-                document.Enums
-                |> List.map (fun parsed ->
-                    let content = parsed.SourceText
-                    let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition content
-                    let file = $"<flow-type:{parsed.Name}/{sourceObject.Reference.Hash}>"
-                    let reparsed =
-                        match FlowParser.parseDocumentWithVersion syntaxVersion file content with
-                        | Ok value -> value
-                        | Error diagnostic -> raise (LanguageException diagnostic)
-                    match reparsed.Records, reparsed.Scalars, reparsed.Enums, reparsed.Words, reparsed.Tests, reparsed.Examples with
-                    | [], [], [ definition ], [], [], [] when syntaxVersion = 2 && definition.Name = parsed.Name ->
-                        parsed.Name,
-                        ({ Definition = definition; Status = Candidate }: EnumEntry),
-                        { SourceFormat = { Frontend = SourceFrontend.Flow; Version = syntaxVersion }
-                          Content = content
-                          Reference = sourceObject.Reference
-                          ValidatorTarget = None }
-                    | _ -> error "FLOW_PROJECT_TYPE_SOURCE_INVALID" $"Enum source '{parsed.Name}' must contain exactly its authored Flow enum declaration." (Some parsed.Name) (Some parsed.Span) [] [] )
+            let newRecords, newScalars, newEnums = parseFlowTypeSources syntaxVersion document.Records document.Scalars document.Enums
 
             let identities =
                 document.Words
@@ -4496,7 +4936,8 @@ module Runtime =
 
         let registerFlowProjectParsed (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
             if readOptionalStrictBool arguments "replace" false then
-                registerFlowReplacementProjectParsed arguments syntaxVersion document
+                let typeEvolution = arguments.ContainsKey "expectedTypeSources" || not document.Records.IsEmpty
+                registerFlowReplacementProjectParsed typeEvolution arguments syntaxVersion document
             else
                 registerFlowProjectAddOnlyParsed arguments syntaxVersion document
 
@@ -5269,10 +5710,14 @@ module Runtime =
                     let mutable requested = false
                     value.TryGetValue<bool>(&requested) && requested
                 | _ -> false
-            if replaceWasRequested then rejectFlowTypeReplacement document
-            if arguments.ContainsKey "expectedRevisions" && document.Words.Length < 2 then
+            let typeEvolutionRoute = arguments.ContainsKey "expectedTypeSources" || (replaceWasRequested && not document.Records.IsEmpty)
+            let hasTypeDeclarations = not document.Records.IsEmpty || not document.Scalars.IsEmpty || not document.Enums.IsEmpty
+            if replaceWasRequested && hasTypeDeclarations && not typeEvolutionRoute then rejectFlowTypeReplacement document
+            if arguments.ContainsKey "expectedRevisions" && document.Words.Length < 2 && not typeEvolutionRoute then
                 error "FLOW_PROJECT_REPLACEMENT_CAS_SHAPE" "expectedRevisions is only for an atomic replacement of at least two words declared in the same source document." None None [ "multiword source with one expectedRevisions entry per word" ] [ string document.Words.Length + " word declarations" ]
-            if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.IsEmpty && (not document.Tests.IsEmpty || not document.Examples.IsEmpty || not document.TestFiles.IsEmpty) then
+            if typeEvolutionRoute then
+                registerFlowProjectParsed arguments syntaxVersion document
+            elif document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.IsEmpty && (not document.Tests.IsEmpty || not document.Examples.IsEmpty || not document.TestFiles.IsEmpty) then
                 registerFlowAttachmentsOnly arguments syntaxVersion document
             elif document.Records.IsEmpty && document.Scalars.IsEmpty && document.Enums.IsEmpty && document.Words.Length = 1 && document.TestFiles.IsEmpty then
                 if document.Tests.IsEmpty && document.Examples.IsEmpty then
@@ -6482,6 +6927,20 @@ module Runtime =
                 | "discard" ->
                     let name = readString args "word" ""
                     match data.Words.TryFind name with
+                    | Some item when (item.Status = Temporary || item.Status = Candidate)
+                                      && (data.TypeEvolutionGroups
+                                          |> Map.tryPick (fun _ group -> if group.Words.Contains name then Some group else None)
+                                          |> Option.isSome) ->
+                        let group =
+                            data.TypeEvolutionGroups
+                            |> Map.toSeq
+                            |> Seq.map snd
+                            |> Seq.find (fun group -> group.Words.Contains name)
+                        let proposed = restoreTypeEvolutionGroup data group
+                        let executable = compileRuntimeSnapshot proposed
+                        activateRuntimeSnapshot executable
+                        lastResults <- []
+                        success "discard" $"Discarded staged record-evolution group '{group.Id}'." None
                     | Some item when item.Status = Temporary || item.Status = Candidate ->
                         let ownerId = data.WordIds.TryFind name |> Option.map WordId
                         let proposed =
@@ -6539,6 +6998,19 @@ module Runtime =
                         activateRuntimeSnapshot executable
                         lastResults <- []
                         success "discard" $"Discarded staged word '{name}'." None
+                    | None when (data.TypeEvolutionGroups
+                                 |> Map.tryPick (fun _ group -> if group.Types.Contains name then Some group else None)
+                                 |> Option.isSome) ->
+                        let group =
+                            data.TypeEvolutionGroups
+                            |> Map.toSeq
+                            |> Seq.map snd
+                            |> Seq.find (fun group -> group.Types.Contains name)
+                        let proposed = restoreTypeEvolutionGroup data group
+                        let executable = compileRuntimeSnapshot proposed
+                        activateRuntimeSnapshot executable
+                        lastResults <- []
+                        success "discard" $"Discarded staged record-evolution group '{group.Id}'." None
                     | None when data.Records.TryFind name |> Option.exists (fun value -> value.Status = Candidate) ->
                         let prefix = lowerFirst name
                         let owns generated = generated = prefix + ".new" || generated = prefix + ".value" || generated.StartsWith(prefix + ".", StringComparison.Ordinal)

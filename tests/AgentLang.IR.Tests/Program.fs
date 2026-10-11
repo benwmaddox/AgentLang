@@ -1908,6 +1908,33 @@ let private testCompilerSnapshotIdentity () =
     let recordSnapshot = Compiler.compileIrProgram (recordContext TInt)
     expectDiagnostic "record layout after the hundredth field invalidates cached body" "IR_STALE_COMPILER_SNAPSHOT" (fun () -> Compiler.compileIrBodyAgainstProgram (recordContext TBool) recordSnapshot "eval" [] [] |> ignore)
 
+    let layoutOwner = wordEntry "layout-owner" [] [] Set.empty [] 7 Candidate
+    let layoutOwnerId = WordId "stable-layout-owner-id"
+    let layoutFields names = names |> List.map (fun name -> { Name = name; Type = TInt })
+    let layoutRecord fields =
+        { Name = "SnapshotRecord"
+          Fields = fields
+          Validator = None
+          SourceText = "record SnapshotRecord"
+          Span = span }
+    let layoutContext fields =
+        let context = loweringContext (Map.ofList [ "layout-owner", layoutOwner ]) (Map.ofList [ "SnapshotRecord", layoutRecord fields ]) Map.empty
+        { context with WordIds = Map.add "layout-owner" layoutOwnerId context.WordIds }
+    let stableLayoutFields = layoutFields [ "left"; "right" ]
+    let stableLayoutContext = layoutContext stableLayoutFields
+    let stableLayoutSnapshot = Compiler.compileIrProgram stableLayoutContext
+    let detachedBody = Compiler.compileIrBodyAgainstProgram stableLayoutContext stableLayoutSnapshot "detached-layout-body" [] [ Push(LInt 1L, span) ]
+    check "unchanged record schema accepts a detached body against its verified snapshot"
+        (VerifiedIrBody.inspect detachedBody |> fun body -> body.BodyOutputTypes = [ IrInt ])
+    expectDiagnostic "renaming only a record field invalidates the old verified program attachment" "IR_STALE_COMPILER_SNAPSHOT"
+        (fun () -> Compiler.compileIrBodyAgainstProgram (layoutContext (layoutFields [ "renamed"; "right" ])) stableLayoutSnapshot "detached-layout-body" [] [ Push(LInt 1L, span) ] |> ignore)
+    expectDiagnostic "reordering same-typed record fields invalidates the old verified program attachment" "IR_STALE_COMPILER_SNAPSHOT"
+        (fun () -> Compiler.compileIrBodyAgainstProgram (layoutContext (layoutFields [ "right"; "left" ])) stableLayoutSnapshot "detached-layout-body" [] [ Push(LInt 1L, span) ] |> ignore)
+    expectDiagnostic "adding a record field invalidates the old verified program attachment" "IR_STALE_COMPILER_SNAPSHOT"
+        (fun () -> Compiler.compileIrBodyAgainstProgram (layoutContext (layoutFields [ "left"; "right"; "added" ])) stableLayoutSnapshot "detached-layout-body" [] [ Push(LInt 1L, span) ] |> ignore)
+    expectDiagnostic "removing a record field invalidates the old verified program attachment" "IR_STALE_COMPILER_SNAPSHOT"
+        (fun () -> Compiler.compileIrBodyAgainstProgram (layoutContext (layoutFields [ "right" ])) stableLayoutSnapshot "detached-layout-body" [] [ Push(LInt 1L, span) ] |> ignore)
+
     let validatorEntry name =
         wordEntry name [ TNamed "ValidatedWide" ] [ TBool ] Set.empty
             [ Call("drop", span); Push(LBool true, span) ] 1 Candidate

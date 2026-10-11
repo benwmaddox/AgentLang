@@ -272,15 +272,15 @@ module Program =
             |> expectOk "read Flow/2 replacement help"
             |> fun response -> response.["data"]
         let limitations = replacementHelp.["limitations"].AsArray()
-        equal 1 limitations.Count "replacement help exposes one structured type-replacement limitation"
+        equal 1 limitations.Count "replacement help exposes one structured type-evolution limitation"
         let typeReplacementLimitation = limitations[0]
-        equal "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED" (stringValue typeReplacementLimitation.["code"]) "replacement help publishes the stable type-replacement diagnostic code"
+        equal "FLOW_TYPE_EVOLUTION_KIND_UNSUPPORTED" (stringValue typeReplacementLimitation.["code"]) "replacement help publishes the stable type-kind diagnostic code"
         equal "define" (stringValue typeReplacementLimitation.["operation"]) "replacement limitation names the affected operation"
-        equal "replace=true and source declares one or more types" (stringValue typeReplacementLimitation.["appliesWhen"]) "replacement limitation describes its trigger"
+        equal "record-field evolution declares an existing scalar or enum, or changes a type kind" (stringValue typeReplacementLimitation.["appliesWhen"]) "replacement limitation describes its trigger"
         equal [ "record"; "scalar"; "enum" ] (jsonArrayStrings typeReplacementLimitation.["declarations"]) "replacement limitation names each immutable schema kind"
-        check ((stringValue typeReplacementLimitation.["explanation"]).Contains("word revisions only", StringComparison.Ordinal)) "structured replacement help explains that CAS applies only to words"
-        check ((stringValue typeReplacementLimitation.["alternative"]).Contains("unused name", StringComparison.Ordinal)) "structured replacement help gives the supported migration path"
-        for guidance in [ "immutable after creation"; "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED"; "compare word revisions only"; "unused name" ] do
+        check ((stringValue typeReplacementLimitation.["explanation"]).Contains("Existing scalar representations", StringComparison.Ordinal)) "structured replacement help explains which type kinds remain immutable"
+        check ((stringValue typeReplacementLimitation.["alternative"]).Contains("unused name", StringComparison.Ordinal)) "structured replacement help gives the supported type-kind path"
+        for guidance in [ "record-field evolution"; "FLOW_TYPE_EVOLUTION_KIND_UNSUPPORTED"; "existing scalar"; "record validator declarations"; "unused name" ] do
             check ((stringValue replacementHelp.["documentation"]).Contains(guidance, StringComparison.Ordinal)) $"replacement help explains {guidance}"
         check
             (defineData.["requestExamples"].AsArray()
@@ -762,6 +762,10 @@ module Program =
             let values = JsonObject()
             for name, revision in revisions do values[name] <- jint revision
             values :> JsonNode
+        let expectedTypeSources (sources: (string * string) list) =
+            let values = JsonObject()
+            for name, hash in sources do values[name] <- jstr hash
+            values :> JsonNode
         let stageBatch (engine: Runtime.Engine) source revisions =
             defineFlowProject engine source
                 [ "syntaxVersion", jint 2
@@ -800,16 +804,17 @@ module Program =
             |> Map.ofList
         let assertTypeReplacementRejected (label: string) (typeName: string) (source: string) (extra: (string * JsonNode) list) (wordNames: string list) =
             let fields = [ "syntaxVersion", jint 2; "replace", jbool true ] @ extra
-            let first = defineFlowProject engine source fields |> expectError "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED"
+            let expectedCode =
+                if source.Contains("record ", StringComparison.Ordinal) then "FLOW_TYPE_EVOLUTION_REQUIRES_RECORD"
+                else "FLOW_TYPE_EVOLUTION_KIND_UNSUPPORTED"
+            let first = defineFlowProject engine source fields |> expectError expectedCode
             let firstError = first.["error"]
-            check ((stringValue firstError.["message"]).Contains(typeName, StringComparison.Ordinal)) $"{label} identifies the offending type name"
-            check ((stringValue firstError.["message"]).Contains("immutable after creation", StringComparison.Ordinal)) $"{label} explains that type schemas are immutable"
-            check ((stringValue firstError.["message"]).Contains("compare word revisions only", StringComparison.Ordinal)) $"{label} explains that word CAS cannot change a type schema"
-            equal typeName (stringValue firstError.["word"]) $"{label} attaches the type name to its diagnostic"
-            let span = firstError.["span"]
-            check (stringValue span.["file"] = "<flow-project>") $"{label} attaches its source file"
-            check (span.["line"].GetValue<int>() > 0 && span.["column"].GetValue<int>() > 0) $"{label} attaches the declaration span"
-            let repeated = defineFlowProject engine source fields |> expectError "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED"
+            if expectedCode = "FLOW_TYPE_EVOLUTION_KIND_UNSUPPORTED" then
+                check ((stringValue firstError.["message"]).Contains(typeName, StringComparison.Ordinal)) $"{label} identifies the unsupported existing type kind"
+                equal typeName (stringValue firstError.["word"]) $"{label} attaches the type name to its diagnostic"
+            else
+                check (jsonArrayStrings firstError.["actual"] |> List.contains typeName) $"{label} reports that its record is only a new name"
+            let repeated = defineFlowProject engine source fields |> expectError expectedCode
             equal (first.ToJsonString()) (repeated.ToJsonString()) $"{label} returns a deterministic diagnostic"
             equal durableBefore.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) $"{label} leaves the persisted manifest unchanged"
             equal wordsBeforeTypeRejections (dispatch engine "words" [] |> expectOk $"inspect dictionary after {label}" |> fun response -> response.["data"].ToJsonString()) $"{label} leaves runtime words and generated functions unchanged"
@@ -844,7 +849,7 @@ module Program =
             "type and one-word replacement"
             "ProbeSingleRecord"
             "record ProbeSingleRecord { field value: Int }\n\nfn diagnostic.single(value: Int) -> Int { value }"
-            [ "expectedRevisions", expectedRevisions [ "diagnostic.single", 1 ] ]
+            []
             [ "diagnostic.single" ]
         assertTypeReplacementRejected
             "type and multiword replacement"
@@ -873,10 +878,6 @@ module Program =
         |> expectOk "persist the existing record schema"
         |> ignore
         let existingRecordManifestBefore = Storage.load existingRecordStore |> Result.defaultWith (fun problem -> failwith problem.Message)
-        let sourceBeforeSchemaReplacement =
-            dispatch existingRecordEngine "source" [ "type", jstr "FrozenSchema" ]
-            |> expectOk "capture the authored persistent record source"
-            |> fun response -> stringValue response.["data"]
         let constructorBeforeSchemaReplacement =
             dispatch existingRecordEngine "describe" [ "word", jstr "frozenSchema.new" ]
             |> expectOk "capture the record constructor signature"
@@ -889,36 +890,58 @@ module Program =
             dispatch existingRecordEngine "words" []
             |> expectOk "capture generated record words"
             |> fun response -> response.["data"].ToJsonString()
-        let changedRecordSource =
-            "record FrozenSchema { field value: String }\n\nfn schema.change(value: Int) -> Int { value }"
+        let frozenSchemaHash =
+            dispatch existingRecordEngine "describe" [ "type", jstr "FrozenSchema" ]
+            |> expectOk "inspect the persistent record source hash"
+            |> fun response -> stringValue response.["data"].["sourceHash"]
+        let changedRecordSource = "record FrozenSchema { field value: String }"
         let changedRecord =
             defineFlowProject existingRecordEngine changedRecordSource
                 [ "syntaxVersion", jint 2
                   "replace", jbool true
-                  "expectedRevisions", expectedRevisions [ "schema.change", 1 ] ]
-            |> expectError "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED"
-        equal "FrozenSchema" (stringValue changedRecord.["error"].["word"]) "same-name record field change identifies the existing type"
-        check ((stringValue changedRecord.["error"].["message"]).Contains("immutable after creation", StringComparison.Ordinal)) "same-name record field change explains schema immutability"
-        equal existingRecordManifestBefore.ManifestHash (Storage.load existingRecordStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "same-name record field change leaves durable manifest authority unchanged"
-        equal sourceBeforeSchemaReplacement
-            (dispatch existingRecordEngine "source" [ "type", jstr "FrozenSchema" ] |> expectOk "read the record source after rejected field change" |> fun response -> stringValue response.["data"])
-            "same-name record field change preserves exact authored source"
-        equal constructorBeforeSchemaReplacement
-            (dispatch existingRecordEngine "describe" [ "word", jstr "frozenSchema.new" ] |> expectOk "inspect the record constructor after rejected field change" |> fun response -> response.["data"].ToJsonString())
-            "same-name record field change preserves the generated constructor signature"
-        equal accessorBeforeSchemaReplacement
-            (dispatch existingRecordEngine "describe" [ "word", jstr "frozenSchema.value" ] |> expectOk "inspect the record accessor after rejected field change" |> fun response -> response.["data"].ToJsonString())
-            "same-name record field change preserves the generated accessor signature"
-        equal generatedWordsBeforeSchemaReplacement
-            (dispatch existingRecordEngine "words" [] |> expectOk "inspect generated words after rejected field change" |> fun response -> response.["data"].ToJsonString())
-            "same-name record field change stages no partial word"
+                  "expectedTypeSources", expectedTypeSources [ "FrozenSchema", frozenSchemaHash ] ]
+            |> expectOk "stage a zero-word record-field type evolution"
+        equal changedRecordSource
+            (dispatch existingRecordEngine "source" [ "type", jstr "FrozenSchema" ] |> expectOk "read the candidate record source" |> fun response -> stringValue response.["data"])
+            "record staging exposes the complete authored replacement source"
+        check (stringValue (dispatch existingRecordEngine "describe" [ "type", jstr "FrozenSchema" ] |> expectOk "inspect the candidate record" |> fun response -> response.["data"].["status"]) = "candidate")
+            "record replacement is staged as a candidate"
+        check (constructorBeforeSchemaReplacement <> (dispatch existingRecordEngine "describe" [ "word", jstr "frozenSchema.new" ] |> expectOk "inspect changed generated constructor" |> fun response -> response.["data"].ToJsonString()))
+            "record staging rebuilds the generated constructor signature"
+        check (accessorBeforeSchemaReplacement <> (dispatch existingRecordEngine "describe" [ "word", jstr "frozenSchema.value" ] |> expectOk "inspect changed generated accessor" |> fun response -> response.["data"].ToJsonString()))
+            "record staging rebuilds the generated accessor signature"
+        let frozenSchemaGeneratedNames (words: JsonNode) =
+            words.["words"].AsArray()
+            |> Seq.map (fun item -> stringValue item.["name"])
+            |> Seq.filter (fun name -> name.StartsWith("frozenSchema.", StringComparison.Ordinal))
+            |> Seq.toList
+        equal [ "frozenSchema.new"; "frozenSchema.value" ] (frozenSchemaGeneratedNames (JsonNode.Parse(generatedWordsBeforeSchemaReplacement))) "baseline record exposes its constructor and accessor"
+        equal [ "frozenSchema.new"; "frozenSchema.value" ]
+            (dispatch existingRecordEngine "words" [] |> expectOk "inspect generated word names after field-type change" |> fun response -> frozenSchemaGeneratedNames response.["data"])
+            "a field-type change retains generated operation names"
+        equal existingRecordManifestBefore.ManifestHash
+            (Storage.load existingRecordStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash)
+            "staging a record-field change leaves durable manifest authority unchanged"
+        commit existingRecordEngine "commit" "FrozenSchema" []
+        |> expectOk "publish the zero-word schema group"
+        |> ignore
+        let evolvedRecordManifest = Storage.load existingRecordStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        check (evolvedRecordManifest.ManifestHash <> existingRecordManifestBefore.ManifestHash) "publishing record evolution changes durable authority"
+        let frozenSchemaHistory =
+            dispatch existingRecordEngine "history" [ "type", jstr "FrozenSchema" ]
+            |> expectOk "inspect type-source history after evolution"
+            |> fun response -> response.["data"].["revisions"].AsArray()
+        equal 2 frozenSchemaHistory.Count "record-field publication appends exactly one type-source revision"
+        equal (digest (stringValue (frozenSchemaHistory[1].["source"])))
+            (stringValue frozenSchemaHistory[1].["sourceHash"])
+            "record type history hashes exact replacement source bytes"
         let reloadedExistingRecord = Runtime.Engine(existingRecordProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
-        equal sourceBeforeSchemaReplacement
-            (dispatch reloadedExistingRecord "source" [ "type", jstr "FrozenSchema" ] |> expectOk "read the reloaded record source after rejected field change" |> fun response -> stringValue response.["data"])
-            "fresh reload retains the original record schema"
-        equal constructorBeforeSchemaReplacement
-            (dispatch reloadedExistingRecord "describe" [ "word", jstr "frozenSchema.new" ] |> expectOk "inspect the reloaded constructor after rejected field change" |> fun response -> response.["data"].ToJsonString())
-            "fresh reload retains the original generated constructor signature"
+        equal "record FrozenSchema { field value: String }"
+            (dispatch reloadedExistingRecord "source" [ "type", jstr "FrozenSchema" ] |> expectOk "read the reloaded evolved record source" |> fun response -> stringValue response.["data"])
+            "fresh reload retains the evolved schema"
+        equal (dispatch existingRecordEngine "describe" [ "word", jstr "frozenSchema.new" ] |> expectOk "read the evolved constructor head" |> fun response -> response.["data"].ToJsonString())
+            (dispatch reloadedExistingRecord "describe" [ "word", jstr "frozenSchema.new" ] |> expectOk "inspect the reloaded evolved constructor" |> fun response -> response.["data"].ToJsonString())
+            "fresh reload rebuilds the evolved generated constructor signature"
 
         dispatch engine "task.begin" [ "goal", jstr "verify unsupported type replacement preserves the baseline" ]
         |> expectOk "begin a task before retrying an unsupported type replacement"
@@ -963,8 +986,12 @@ module Program =
             "record ExtraType { field value: Int }\n\n"
             + "fn subscription.handoff(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) -> Int { add(a, f) }\n\n"
             + "fn subscription.left(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) -> Int { subscription::handoff(a, b, c, d, e, f) }"
-        stageBatch engine typeReplacement (names |> List.map (fun name -> name, originalRevisions[name]))
-        |> expectError "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED"
+        defineFlowProject engine typeReplacement
+            [ "syntaxVersion", jint 2
+              "replace", jbool true
+              "expectedRevisions", expectedRevisions [ "subscription.handoff", originalRevisions["subscription.handoff"]; "subscription.left", originalRevisions["subscription.left"] ]
+              "expectedTypeSources", expectedTypeSources [] ]
+        |> expectError "FLOW_TYPE_EVOLUTION_REQUIRES_RECORD"
         |> ignore
 
         let migration =
@@ -1063,6 +1090,533 @@ module Program =
         let migratedCallerSource = dispatch dropEdgeReload "source" [ "word", jstr "signature.caller" ] |> expectOk "read the migrated caller source" |> fun response -> stringValue response.["data"]
         check (not (migratedCallerSource.Contains("signature::target", StringComparison.Ordinal))) "reloaded caller source has no stale six-argument callee edge"
         equal "7" (stringValue (evalFlow dropEdgeReload "signature::caller(1, 2, 3, 4, 5, 6)" |> expectOk "execute the migrated caller after reload" |> fun response -> response.["data"].["stack"].[0])) "reloaded caller uses its published edge-free implementation"
+
+    let private testAtomicFlowRecordFieldEvolution root =
+        let expectedRevisions (revisions: (string * int) list) =
+            let values = JsonObject()
+            for name, revision in revisions do values[name] <- jint revision
+            values :> JsonNode
+        let expectedTypeSources (sources: (string * string) list) =
+            let values = JsonObject()
+            for name, hash in sources do values[name] <- jstr hash
+            values :> JsonNode
+        let recordSource (fields: (string * string) list) =
+            let declarations = fields |> List.map (fun (name, fieldType) -> $"field {name}: {fieldType}") |> String.concat "; "
+            "record Parcel { " + declarations + " }"
+        let functionSource name inputs output body = $"fn {name}({inputs}) -> {output} {{ {body} }}"
+        let testSource word caseName call expected = $"test {word}/{caseName} {{ {call} => \"{expected}\" }}"
+        let exampleSource word caseName call expected = $"example {word}/{caseName} {{ {call} => \"{expected}\" }}"
+        let source blocks = String.concat "\n\n" blocks
+        let project = Path.Combine(root, "atomic-flow-record-field-evolution")
+        let engine = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let store = Storage.create project
+        let typeSourceHash (target: Runtime.Engine) name =
+            dispatch target "describe" [ "type", jstr name ]
+            |> expectOk $"inspect {name} source CAS token"
+            |> fun response -> stringValue response.["data"].["sourceHash"]
+        let typeSourceText (target: Runtime.Engine) name =
+            dispatch target "source" [ "type", jstr name ]
+            |> expectOk $"read {name} source"
+            |> fun response -> stringValue response.["data"]
+        let revision (target: Runtime.Engine) name =
+            dispatch target "describe" [ "word", jstr name ]
+            |> expectOk $"inspect {name} revision"
+            |> fun response -> response.["data"].["revision"].GetValue<int>()
+        let evolve source typeSources revisions includeWordCas =
+            let fields =
+                [ "syntaxVersion", jint 2
+                  "replace", jbool true
+                  "expectedTypeSources", expectedTypeSources typeSources ]
+                @ (if includeWordCas then [ "expectedRevisions", expectedRevisions revisions ] else [])
+            defineFlowProject engine source fields
+        let namedConstructor title count note = $"parcel::new(title = {title}, count = {count}, note = {note})"
+        let trackingConstructor title count note = $"parcel::new(label = TrackingReference::new({title}), count = {count}, note = {note})"
+        let basicCase word call expected = testSource word "basic" call expected
+        let inheritedCase word call expected = testSource word "inherited" call expected
+        let forwardExample call expected = exampleSource "parcel.forward" "retained" call expected
+        let initialRecord = recordSource [ "title", "String"; "count", "Int" ]
+        let initialLabelFn = functionSource "parcel.label-text" "value: Parcel" "String" "value.title"
+        let initialForwardFn = functionSource "parcel.forward" "value: Parcel" "String" "parcel::label-text(value)"
+        let initialLookupFn = functionSource "parcel.lookup" "value: String" "String" "value"
+        let initialDefaultTitleFn =
+            functionSource "parcel.default-title" "" "String"
+                "parcel::title(parcel::new(title = \"oak\", count = 1))"
+        let initialTitleTest = basicCase "parcel.label-text" "parcel::label-text(parcel::new(title = \"oak\", count = 1))" "oak"
+        let initialInheritedTitleTest = inheritedCase "parcel.label-text" "parcel::label-text(parcel::new(title = \"pine\", count = 2))" "pine"
+        let initialForwardTest = basicCase "parcel.forward" "parcel::forward(parcel::new(title = \"fir\", count = 3))" "fir"
+        let initialLookupTest = basicCase "parcel.lookup" "parcel::lookup(\"plain\")" "plain"
+        let initialDefaultTitleTest = basicCase "parcel.default-title" "parcel::default-title()" "oak"
+        defineFlowProject engine
+            (source [ initialRecord; initialLabelFn; initialForwardFn; initialLookupFn; initialDefaultTitleFn
+                      initialTitleTest; initialInheritedTitleTest; initialForwardTest; initialLookupTest; initialDefaultTitleTest ])
+            [ "syntaxVersion", jint 2 ]
+        |> expectOk "define Parcel and its authored record consumers"
+        |> ignore
+        commit engine "commit" "Parcel" [] |> expectOk "persist baseline Parcel schema" |> ignore
+        commit engine "commit" "parcel.label-text" [] |> expectOk "persist baseline label helper" |> ignore
+        commit engine "commit" "parcel.forward" [] |> expectOk "persist baseline transitive caller" |> ignore
+        commit engine "commit" "parcel.lookup" [] |> expectOk "persist baseline String lookup helper" |> ignore
+        commit engine "commit" "parcel.default-title" [ "library", jbool true ]
+        |> expectOk "persist a finite-evidence library consumer of generated record words"
+        |> ignore
+
+        let originalRecordSource = typeSourceText engine "Parcel"
+        let originalTypeHash = typeSourceHash engine "Parcel"
+        let originalManifest = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let stableNames = [ "parcel.label-text"; "parcel.forward"; "parcel.lookup"; "parcel.default-title" ]
+        let originalIds = stableNames |> List.map (fun name -> name, getWordId engine name) |> Map.ofList
+        let originalSignatures =
+            [ "parcel.forward"; "parcel.default-title" ]
+            |> List.map (fun name ->
+                let description = dispatch engine "describe" [ "word", jstr name ] |> expectOk $"capture public signature for {name}"
+                name, (description.["data"].["inputs"].ToJsonString(), description.["data"].["outputs"].ToJsonString()))
+            |> Map.ofList
+
+        let assertUnchangedAfterRejectedStage label (response: JsonObject) =
+            check (not (succeeded response)) $"{label} rejects the complete proposed transaction"
+            let current = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+            equal originalManifest.ManifestHash current.ManifestHash $"{label} leaves durable authority unchanged"
+            equal originalRecordSource (typeSourceText engine "Parcel") $"{label} does not activate a replacement record"
+            equal "persistent" (stringValue (dispatch engine "describe" [ "type", jstr "Parcel" ] |> expectOk $"inspect Parcel after {label}" |> fun result -> result.["data"].["status"])) $"{label} leaves the original record persistent"
+
+        let addNoteRecord = recordSource [ "title", "String"; "count", "Int"; "note", "String" ]
+        assertUnchangedAfterRejectedStage "missing type source CAS"
+            (defineFlowProject engine addNoteRecord [ "syntaxVersion", jint 2; "replace", jbool true ])
+        assertUnchangedAfterRejectedStage "stale type source CAS"
+            (evolve addNoteRecord [ "Parcel", String.replicate 64 "0" ] [] false)
+            |> ignore
+        expectError "FLOW_TYPE_REPLACEMENT_CAS_SHAPE"
+            (evolve addNoteRecord [ "Parcel", originalTypeHash; "Unused", String.replicate 64 "1" ] [] false)
+        |> ignore
+        let duplicateRecordSource = addNoteRecord + "\n\n" + addNoteRecord
+        expectError "FLOW_PROJECT_DUPLICATE_TYPE"
+            (evolve duplicateRecordSource [ "Parcel", originalTypeHash ] [] false)
+        |> ignore
+        let oneOwnerSource = source [ addNoteRecord; initialLabelFn; initialTitleTest ]
+        check (not (succeeded (evolve oneOwnerSource [ "Parcel", originalTypeHash ] [] false)))
+            "an existing word owner cannot be replaced without its exact revision map"
+        expectError "FLOW_PROJECT_REPLACEMENT_CAS_SHAPE"
+            (evolve addNoteRecord [ "Parcel", originalTypeHash ] [ "parcel.label-text", revision engine "parcel.label-text" ] true)
+        |> ignore
+        expectError "FLOW_BATCH_STALE_REVISION"
+            (evolve oneOwnerSource [ "Parcel", originalTypeHash ] [ "parcel.label-text", 0 ] true)
+        |> ignore
+        let extraNewHelperSource = source [ addNoteRecord; functionSource "parcel.extra-note" "value: Parcel" "String" "value.note" ]
+        expectError "FLOW_PROJECT_REPLACEMENT_CAS_SHAPE"
+            (evolve extraNewHelperSource [ "Parcel", originalTypeHash ] [ "parcel.extra-note", 1 ] true)
+        |> ignore
+
+        let unadapted = evolve addNoteRecord [ "Parcel", originalTypeHash ] [] false
+        assertUnchangedAfterRejectedStage "incompatible inherited constructor cases" unadapted |> ignore
+
+        let authoredCollisionSource =
+            source [ addNoteRecord
+                     functionSource "parcel.note" "value: Int" "Int" "value"
+                     testSource "parcel.note" "basic" "parcel::note(4)" "4" ]
+        expectError "NAME_GENERATED_COLLISION"
+            (evolve authoredCollisionSource [ "Parcel", originalTypeHash ] [] false)
+        |> ignore
+        equal originalRecordSource (typeSourceText engine "Parcel") "an authored accessor-name collision leaves the old record active"
+        equal originalManifest.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash)
+            "an authored accessor-name collision leaves the old manifest authoritative"
+
+        let addValidatorProposal =
+            "record Parcel { field title: String; field count: Int; validate parcel.valid?; }"
+        expectError "FLOW_TYPE_EVOLUTION_VALIDATOR_IMMUTABLE"
+            (defineFlowProject engine addValidatorProposal
+                [ "syntaxVersion", jint 2; "replace", jbool true; "expectedTypeSources", expectedTypeSources [ "Parcel", originalTypeHash ] ])
+        |> ignore
+        equal originalRecordSource (typeSourceText engine "Parcel") "adding a record validator under type CAS leaves the old schema active"
+
+        let validatorProject = Path.Combine(root, "atomic-flow-record-validator-cas")
+        let validatorEngine = Runtime.Engine(validatorProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let validatorStore = Storage.create validatorProject
+        let validatorRecordSource =
+            "record Guarded {\n"
+            + "    field value: Int;\n"
+            + "    validate guarded::valid?;\n"
+            + "}"
+        let validatorWordSource =
+            "fn guarded.valid?(value: Guarded) -> Bool {\n"
+            + "    effects none\n"
+            + "    int::less-or-equal(0, value.value)\n"
+            + "}"
+        let validatorTests =
+            "test guarded.valid?/positive {\n"
+            + "    guarded::valid?(guarded::new(value = 1))\n"
+            + "    => true\n"
+            + "}\n\n"
+            + "test guarded.valid?/negative {\n"
+            + "    guarded::new(value = -1)\n"
+            + "    => error RECORD_VALIDATION_FAILED\n"
+            + "}"
+        defineFlowProject validatorEngine (source [ validatorRecordSource; validatorWordSource; validatorTests ]) [ "syntaxVersion", jint 2 ]
+        |> expectOk "define a persisted record-validator CAS baseline"
+        |> ignore
+        assertAllPassed 2 (dispatch validatorEngine "test" [ "word", jstr "guarded.valid?" ] |> expectOk "run the record-validator CAS baseline")
+        dispatch validatorEngine "commit" [] |> expectOk "persist the record-validator CAS baseline" |> ignore
+        let validatorBefore = Storage.load validatorStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let validatorHash = typeSourceHash validatorEngine "Guarded"
+        let rejectValidatorEvolution label content =
+            expectError "FLOW_TYPE_EVOLUTION_VALIDATOR_IMMUTABLE"
+                (defineFlowProject validatorEngine content
+                    [ "syntaxVersion", jint 2; "replace", jbool true; "expectedTypeSources", expectedTypeSources [ "Guarded", validatorHash ] ])
+            |> ignore
+            equal validatorRecordSource (typeSourceText validatorEngine "Guarded") $"{label} preserves the original validator declaration"
+            equal validatorBefore.ManifestHash
+                (Storage.load validatorStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash)
+                $"{label} preserves durable validator authority"
+        rejectValidatorEvolution "dropping a record validator under type CAS" "record Guarded { field value: Int; }"
+        rejectValidatorEvolution "changing a record validator under type CAS" "record Guarded { field value: Int; validate guarded::other-valid?; }"
+
+        let trustedCollisionProject = Path.Combine(root, "atomic-flow-record-trusted-collision")
+        let trustedCollisionEngine = Runtime.Engine(trustedCollisionProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let trustedCollisionOriginal = "record File { field path: String }"
+        defineFlowProject trustedCollisionEngine trustedCollisionOriginal [ "syntaxVersion", jint 2 ]
+        |> expectOk "define a record whose accessor does not overlap a trusted primitive"
+        |> ignore
+        commit trustedCollisionEngine "commit" "File" [] |> expectOk "persist the trusted-collision baseline record" |> ignore
+        let trustedCollisionHash = typeSourceHash trustedCollisionEngine "File"
+        let trustedCollisionBefore = Storage.load (Storage.create trustedCollisionProject) |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let trustedCollisionProposal = "record File { field read: String }"
+        expectError "NAME_GENERATED_COLLISION"
+            (defineFlowProject trustedCollisionEngine trustedCollisionProposal
+                [ "syntaxVersion", jint 2; "replace", jbool true; "expectedTypeSources", expectedTypeSources [ "File", trustedCollisionHash ] ])
+        |> ignore
+        equal trustedCollisionOriginal (typeSourceText trustedCollisionEngine "File") "a trusted accessor-name collision leaves the old record active"
+        equal trustedCollisionBefore.ManifestHash (Storage.load (Storage.create trustedCollisionProject) |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash)
+            "a trusted accessor-name collision leaves the old manifest authoritative"
+
+        let addNoteLabelFn = functionSource "parcel.label-text" "value: Parcel" "String" "value.title"
+        let addNoteForwardFn = functionSource "parcel.forward" "value: Parcel" "String" "parcel::label-text(value)"
+        let noteFn = functionSource "parcel.note-text" "value: Parcel" "String" "value.note"
+        let addNoteDefaultTitleFn = functionSource "parcel.default-title" "" "String" "parcel::title(parcel::new(title = \"oak\", count = 1, note = \"memo\"))"
+        let addTitleTest = basicCase "parcel.label-text" "parcel::label-text(parcel::new(title = \"oak\", count = 1, note = \"memo\"))" "oak"
+        let addInheritedTitleTest = inheritedCase "parcel.label-text" "parcel::label-text(parcel::new(title = \"pine\", count = 2, note = \"kept\"))" "pine"
+        let addForwardTest = basicCase "parcel.forward" "parcel::forward(parcel::new(title = \"fir\", count = 3, note = \"kept\"))" "fir"
+        let addNoteTest = basicCase "parcel.note-text" "parcel::note-text(parcel::new(title = \"oak\", count = 1, note = \"memo\"))" "memo"
+        let addForwardExample = forwardExample "parcel::forward(parcel::new(title = \"example\", count = 4, note = \"kept\"))" "example"
+        let addDocument =
+            source [ addNoteRecord; addNoteLabelFn; addNoteForwardFn; noteFn; addNoteDefaultTitleFn; addTitleTest; addInheritedTitleTest; addForwardTest; addNoteTest; initialDefaultTitleTest; addForwardExample ]
+        let addedNoteStage =
+            evolve addDocument [ "Parcel", originalTypeHash ]
+                [ "parcel.label-text", revision engine "parcel.label-text"; "parcel.forward", revision engine "parcel.forward"
+                  "parcel.default-title", revision engine "parcel.default-title" ] true
+            |> expectOk "stage a field addition with exact existing owner CAS and a new helper"
+        equal "candidate" (stringValue (dispatch engine "describe" [ "type", jstr "Parcel" ] |> expectOk "inspect staged added record" |> fun result -> result.["data"].["status"])) "record field addition remains staged"
+        let newNoteId = getWordId engine "parcel.note-text"
+        equal "project" (stringValue (dispatch engine "describe" [ "word", jstr "parcel.note-text" ] |> expectOk "inspect new helper maturity" |> fun result -> result.["data"].["maturity"])) "new helper enters the group through the add-only project identity path"
+        assertAllPassed 2 (dispatch engine "test" [ "word", jstr "parcel.label-text" ] |> expectOk "run adapted and inherited title cases")
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "parcel.note-text" ] |> expectOk "run new helper case")
+        let independentSource = "fn isolated.stable(value: Int) -> Int { value }\n\ntest isolated.stable/basic { isolated::stable(9) => 9 }"
+        defineFlowProject engine independentSource [ "syntaxVersion", jint 2 ] |> expectOk "stage an unrelated candidate beside record evolution" |> ignore
+        commit engine "commit" "isolated.stable" [] |> expectOk "publish the unrelated candidate while record evolution remains staged" |> ignore
+        let afterUnrelatedCommit = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        equal originalRecordSource (typeSourceText afterUnrelatedCommit "Parcel") "an unrelated publication retains the prior durable schema"
+        check (not (succeeded (dispatch afterUnrelatedCommit "source" [ "word", jstr "parcel.note-text" ]))) "unrelated publication does not persist the group's new helper"
+        equal "candidate" (stringValue (dispatch engine "describe" [ "word", jstr "parcel.label-text" ] |> expectOk "inspect staged owner after unrelated commit" |> fun result -> result.["data"].["status"])) "unrelated publication leaves group owners staged in memory"
+        let addedNoteCommit = commit engine "commit" "parcel.note-text" [] |> expectOk "publish the complete record group through its new helper member"
+        let publishedNames = jsonArrayStrings addedNoteCommit.["data"]
+        for name in [ "parcel.label-text"; "parcel.forward"; "parcel.note-text" ] do
+            check (publishedNames |> List.contains (name + "/basic") || publishedNames |> List.contains name) $"group publication includes {name}"
+        equal (originalIds["parcel.label-text"]) (getWordId engine "parcel.label-text") "field addition preserves label helper identity"
+        equal (originalIds["parcel.forward"]) (getWordId engine "parcel.forward") "field addition preserves public caller identity"
+        equal newNoteId (getWordId engine "parcel.note-text") "field addition persists the new helper's staged identity"
+        equal "library" (stringValue (dispatch engine "describe" [ "word", jstr "parcel.default-title" ] |> expectOk "inspect library maturity after field addition" |> fun result -> result.["data"].["maturity"])) "field addition preserves library qualification"
+
+        let renamedRecord = recordSource [ "label", "String"; "count", "Int"; "note", "String" ]
+        let renameLabelFn = functionSource "parcel.label-text" "value: Parcel" "String" "value.label"
+        let renameForwardFn = functionSource "parcel.forward" "value: Parcel" "String" "parcel::label-text(value)"
+        let renameNoteFn = functionSource "parcel.note-text" "value: Parcel" "String" "value.note"
+        let renameDefaultTitleFn = functionSource "parcel.default-title" "" "String" "parcel::label(parcel::new(label = \"oak\", count = 1, note = \"memo\"))"
+        let renameTitleTest = basicCase "parcel.label-text" "parcel::label-text(parcel::new(label = \"oak\", count = 1, note = \"memo\"))" "oak"
+        let renameInheritedTitleTest = inheritedCase "parcel.label-text" "parcel::label-text(parcel::new(label = \"pine\", count = 2, note = \"kept\"))" "pine"
+        let renameForwardTest = basicCase "parcel.forward" "parcel::forward(parcel::new(label = \"fir\", count = 3, note = \"kept\"))" "fir"
+        let renameNoteTest = basicCase "parcel.note-text" "parcel::note-text(parcel::new(label = \"oak\", count = 1, note = \"memo\"))" "memo"
+        let renameDefaultTitleTest = initialDefaultTitleTest
+        let renameForwardExample = forwardExample "parcel::forward(parcel::new(label = \"example\", count = 4, note = \"kept\"))" "example"
+        let renameDocument =
+            source [ renamedRecord; renameLabelFn; renameForwardFn; renameNoteFn; renameDefaultTitleFn
+                     renameTitleTest; renameInheritedTitleTest; renameForwardTest; renameNoteTest; renameDefaultTitleTest; renameForwardExample ]
+        evolve renameDocument [ "Parcel", typeSourceHash engine "Parcel" ]
+            [ "parcel.label-text", revision engine "parcel.label-text"; "parcel.forward", revision engine "parcel.forward"
+              "parcel.note-text", revision engine "parcel.note-text"; "parcel.default-title", revision engine "parcel.default-title" ] true
+        |> expectOk "rename a record field and adapt every authored consumer"
+        |> ignore
+        commit engine "commit" "Parcel" [] |> expectOk "publish field rename and caller group by type" |> ignore
+        expectError "NAME_UNKNOWN_WORD" (dispatch engine "describe" [ "word", jstr "parcel.title" ]) |> ignore
+        check (succeeded (dispatch engine "describe" [ "word", jstr "parcel.label" ])) "field rename installs the new generated accessor"
+
+        let typedRecord = recordSource [ "label", "TrackingReference"; "count", "Int"; "note", "String" ]
+        let typedLabelFn = functionSource "parcel.label-text" "value: Parcel" "String" "TrackingReference::value(value.label)"
+        let typedForwardFn = functionSource "parcel.forward" "value: Parcel" "String" "parcel::label-text(value)"
+        let typedNoteFn = functionSource "parcel.note-text" "value: Parcel" "String" "value.note"
+        let typedLookupFn = functionSource "parcel.lookup" "value: TrackingReference" "String" "TrackingReference::value(value)"
+        let typedDefaultTitleFn =
+            functionSource "parcel.default-title" "" "String"
+                "TrackingReference::value(parcel::label(parcel::new(label = TrackingReference::new(\"oak\"), count = 1, note = \"memo\")))"
+        let typedTitleTest = basicCase "parcel.label-text" "parcel::label-text(parcel::new(label = TrackingReference::new(\"oak\"), count = 1, note = \"memo\"))" "oak"
+        let typedInheritedTitleTest = inheritedCase "parcel.label-text" "parcel::label-text(parcel::new(label = TrackingReference::new(\"pine\"), count = 2, note = \"kept\"))" "pine"
+        let typedForwardTest = basicCase "parcel.forward" "parcel::forward(parcel::new(label = TrackingReference::new(\"fir\"), count = 3, note = \"kept\"))" "fir"
+        let typedNoteTest = basicCase "parcel.note-text" "parcel::note-text(parcel::new(label = TrackingReference::new(\"oak\"), count = 1, note = \"memo\"))" "memo"
+        let typedLookupTest = basicCase "parcel.lookup" "parcel::lookup(TrackingReference::new(\"wrapped\"))" "wrapped"
+        let typedDefaultTitleTest = initialDefaultTitleTest
+        let typedForwardExample = forwardExample "parcel::forward(parcel::new(label = TrackingReference::new(\"example\"), count = 4, note = \"kept\"))" "example"
+        let typedDocument =
+            source [ "type TrackingReference : String { }"; "type OtherReference : String { }"; typedRecord
+                     typedLabelFn; typedForwardFn; typedNoteFn; typedLookupFn; typedDefaultTitleFn
+                     typedTitleTest; typedInheritedTitleTest; typedForwardTest; typedNoteTest; typedLookupTest; typedDefaultTitleTest; typedForwardExample ]
+        evolve typedDocument [ "Parcel", typeSourceHash engine "Parcel" ]
+            [ "parcel.label-text", revision engine "parcel.label-text"; "parcel.forward", revision engine "parcel.forward"
+              "parcel.note-text", revision engine "parcel.note-text"; "parcel.lookup", revision engine "parcel.lookup"
+              "parcel.default-title", revision engine "parcel.default-title" ] true
+        |> expectOk "replace a String field with a new nominal String type and adapt the helper signature"
+        |> ignore
+        commit engine "commit" "parcel.lookup" [] |> expectOk "publish new nominal types and helper signature through a changed word" |> ignore
+        equal [ "TrackingReference" ] (jsonArrayStrings (dispatch engine "describe" [ "word", jstr "parcel.lookup" ] |> expectOk "inspect evolved helper input" |> fun result -> result.["data"].["inputs"])) "helper signature changes to the new nominal type"
+        check (not (succeeded (evalFlow engine "parcel::new(label = \"raw\", count = 1, note = \"memo\")"))) "record constructor rejects a raw String for a nominal String field"
+        check (not (succeeded (evalFlow engine "parcel::new(label = OtherReference::new(\"wrong\"), count = 1, note = \"memo\")"))) "record constructor rejects a different nominal String type"
+        check (not (succeeded (evalFlow engine "parcel::lookup(\"raw\")"))) "changed helper rejects its former raw String input"
+        equal "\"wrapped\"" (stringValue (evalFlow engine "parcel::lookup(TrackingReference::new(\"wrapped\"))" |> expectOk "call helper with exact nominal String input" |> fun result -> result.["data"].["stack"].[0])) "typed helper unwraps only its declared nominal type"
+
+        let reorderedRecord = recordSource [ "count", "Int"; "label", "TrackingReference"; "note", "String" ]
+        evolve reorderedRecord [ "Parcel", typeSourceHash engine "Parcel" ] [] false
+        |> expectOk "stage a field order change with zero replaced function owners"
+        |> ignore
+        commit engine "commit" "Parcel" [] |> expectOk "publish record reorder through the type-only route" |> ignore
+        equal [ "Int"; "TrackingReference"; "String" ]
+            (jsonArrayStrings (dispatch engine "describe" [ "word", jstr "parcel.new" ] |> expectOk "inspect reordered constructor parameters" |> fun result -> result.["data"].["inputs"]))
+            "generated constructor inputs follow the new declaration order"
+
+        let removedNoteRecord = recordSource [ "count", "Int"; "label", "TrackingReference" ]
+        let removeLabelFn = functionSource "parcel.label-text" "value: Parcel" "String" "TrackingReference::value(value.label)"
+        let removeForwardFn = functionSource "parcel.forward" "value: Parcel" "String" "parcel::label-text(value)"
+        let removeNoteFn = functionSource "parcel.note-text" "value: Parcel" "String" "parcel::label-text(value)"
+        let removeDefaultTitleFn = functionSource "parcel.default-title" "" "String" "TrackingReference::value(parcel::label(parcel::new(label = TrackingReference::new(\"oak\"), count = 1)))"
+        let removeTitleTest = basicCase "parcel.label-text" "parcel::label-text(parcel::new(label = TrackingReference::new(\"oak\"), count = 1))" "oak"
+        let removeInheritedTitleTest = inheritedCase "parcel.label-text" "parcel::label-text(parcel::new(label = TrackingReference::new(\"pine\"), count = 2))" "pine"
+        let removeForwardTest = basicCase "parcel.forward" "parcel::forward(parcel::new(label = TrackingReference::new(\"fir\"), count = 3))" "fir"
+        let removeNoteTest = basicCase "parcel.note-text" "parcel::note-text(parcel::new(label = TrackingReference::new(\"oak\"), count = 1))" "oak"
+        let removeDefaultTitleTest = initialDefaultTitleTest
+        let removeForwardExample = forwardExample "parcel::forward(parcel::new(label = TrackingReference::new(\"example\"), count = 4))" "example"
+        let beforeRejectedRemoval = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeRejectedRemovalSource = typeSourceText engine "Parcel"
+        let rejectedRemoval =
+            evolve removedNoteRecord [ "Parcel", typeSourceHash engine "Parcel" ] [] false
+        check (not (succeeded rejectedRemoval)) "removing a field that still has an authored caller is rejected"
+        equal beforeRejectedRemovalSource (typeSourceText engine "Parcel") "a stranded field caller leaves the current schema active"
+        equal beforeRejectedRemoval.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash)
+            "a stranded field caller leaves the durable manifest authoritative"
+        let removeDocument =
+            source [ removedNoteRecord; removeLabelFn; removeForwardFn; removeNoteFn; removeDefaultTitleFn
+                     removeTitleTest; removeInheritedTitleTest; removeForwardTest; removeNoteTest; removeDefaultTitleTest; removeForwardExample ]
+        evolve removeDocument [ "Parcel", typeSourceHash engine "Parcel" ]
+            [ "parcel.label-text", revision engine "parcel.label-text"; "parcel.forward", revision engine "parcel.forward"
+              "parcel.note-text", revision engine "parcel.note-text"; "parcel.default-title", revision engine "parcel.default-title" ] true
+        |> expectOk "remove a record field and adapt all constructor consumers"
+        |> ignore
+        commit engine "commit" "parcel.note-text" [] |> expectOk "publish field removal through one changed word" |> ignore
+        expectError "NAME_UNKNOWN_WORD" (dispatch engine "describe" [ "word", jstr "parcel.note" ]) |> ignore
+        equal [ "Int"; "TrackingReference" ]
+            (jsonArrayStrings (dispatch engine "describe" [ "word", jstr "parcel.new" ] |> expectOk "inspect constructor after field removal" |> fun result -> result.["data"].["inputs"]))
+            "generated constructor removes the deleted field input"
+
+        for name in stableNames do
+            equal originalIds[name] (getWordId engine name) $"all evolved authored owners retain stable identity: {name}"
+            let expectedMaturity = if name = "parcel.default-title" then "library" else "project"
+            equal expectedMaturity (stringValue (dispatch engine "describe" [ "word", jstr name ] |> expectOk $"inspect retained maturity for {name}" |> fun result -> result.["data"].["maturity"])) $"type evolution preserves {name} maturity"
+        equal originalSignatures["parcel.forward"]
+            (let description = dispatch engine "describe" [ "word", jstr "parcel.forward" ] |> expectOk "inspect unchanged public function signature"
+             description.["data"].["inputs"].ToJsonString(), description.["data"].["outputs"].ToJsonString())
+            "public Parcel entry signature remains unchanged across field evolution"
+        let typeHistory = dispatch engine "history" [ "type", jstr "Parcel" ] |> expectOk "inspect complete record type history" |> fun result -> result.["data"].["revisions"].AsArray()
+        equal 6 typeHistory.Count "the field matrix appends an exact type-source revision for every committed operation"
+        for item in typeHistory do
+            equal (digest (stringValue item.["source"])) (stringValue item.["sourceHash"]) "retained record history hashes exact source bytes"
+        let finalManifest = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        check (finalManifest.ManifestHash <> originalManifest.ManifestHash) "the completed field matrix persists its group history"
+        let reloaded = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        equal removedNoteRecord (typeSourceText reloaded "Parcel") "fresh reload retains the final field layout"
+        assertAllPassed 2 (dispatch reloaded "test" [ "word", jstr "parcel.label-text" ] |> expectOk "reload evolved label tests")
+        assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "parcel.default-title" ] |> expectOk "reload the retained library consumer")
+        equal "\"oak\"" (stringValue (evalFlow reloaded "parcel::forward(parcel::new(label = TrackingReference::new(\"oak\"), count = 5))" |> expectOk "execute the evolved public function after reload" |> fun result -> result.["data"].["stack"].[0])) "the evolved public function executes after fresh reload"
+        equal originalIds["parcel.default-title"] (getWordId reloaded "parcel.default-title") "fresh reload retains the library owner's stable ID"
+
+        let beforeDiscard = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeDiscardSource = typeSourceText engine "Parcel"
+        evolve (recordSource [ "label", "TrackingReference"; "count", "Int" ]) [ "Parcel", typeSourceHash engine "Parcel" ] [] false
+        |> expectOk "stage an order-only group for discard"
+        |> ignore
+        dispatch engine "discard" [ "word", jstr "Parcel" ] |> expectOk "discard a staged type-only record group" |> ignore
+        equal beforeDiscard.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "type-group discard preserves the exact durable manifest"
+        equal beforeDiscardSource (typeSourceText engine "Parcel") "type-group discard restores the exact authored schema"
+
+        let stagedWriteFailureSource =
+            source [ recordSource [ "label", "TrackingReference"; "count", "Int" ]
+                     functionSource "parcel.forward" "value: Parcel" "String" "parcel::label-text(value)" ]
+        let stagedWriteFailureRecord = recordSource [ "label", "TrackingReference"; "count", "Int" ]
+        let beforeWriteFailure = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeWriteFailureSource = typeSourceText engine "Parcel"
+        let beforeWriteFailureRevision = revision engine "parcel.forward"
+        evolve stagedWriteFailureSource [ "Parcel", typeSourceHash engine "Parcel" ]
+            [ "parcel.forward", beforeWriteFailureRevision ] true
+        |> expectOk "stage a mixed schema and word group before an injected storage failure"
+        |> ignore
+        let stagedWriteHash = typeSourceHash engine "Parcel"
+        let blockedObjectPath = Path.Combine(project, ".agentlang", "store", "objects", stagedWriteHash + ".agent")
+        check (not (File.Exists blockedObjectPath || Directory.Exists blockedObjectPath)) "the proposed type source has a fresh content-addressed path"
+        Directory.CreateDirectory blockedObjectPath |> ignore
+        let failedGroupWrite =
+            try
+                expectError "STORAGE_IO" (commit engine "commit" "parcel.forward" []) |> ignore
+                true
+            finally
+                Directory.Delete(blockedObjectPath, true)
+        check failedGroupWrite "a selected record group reports the blocked source write"
+        equal beforeWriteFailure.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash)
+            "a failed group write leaves the previous manifest authoritative"
+        equal stagedWriteFailureRecord (typeSourceText engine "Parcel") "a failed group write keeps the complete proposed schema staged"
+        equal "candidate" (stringValue (dispatch engine "describe" [ "word", jstr "parcel.forward" ] |> expectOk "inspect the selected word after a failed write" |> fun result -> result.["data"].["status"]))
+            "a failed group write does not partially activate its word"
+        let durableAfterWriteFailure = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        equal beforeWriteFailureSource (typeSourceText durableAfterWriteFailure "Parcel") "a fresh engine still loads the previous schema after a failed group write"
+        dispatch engine "discard" [ "word", jstr "parcel.forward" ] |> expectOk "discard a mixed schema group by its replaced word" |> ignore
+        equal beforeWriteFailure.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash)
+            "mixed-group discard preserves the durable manifest after a failed write"
+        equal beforeWriteFailureSource (typeSourceText engine "Parcel") "discarding a mixed group by word restores the prior schema"
+        equal beforeWriteFailureRevision (revision engine "parcel.forward") "discarding a mixed group by word restores the prior function revision"
+
+        let beforeNewTypeDiscard = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeNewTypeDiscardSource = typeSourceText engine "Parcel"
+        let newTypeDiscardSource =
+            source [ recordSource [ "count", "Int"; "label", "TrackingReference" ]
+                     "type RollbackMarker : String { }"
+                     functionSource "parcel.rollback-marker" "value: RollbackMarker" "String" "RollbackMarker::value(value)"
+                     "test parcel.rollback-marker/basic { parcel::rollback-marker(RollbackMarker::new(\"held\")) => \"held\" }" ]
+        evolve newTypeDiscardSource [ "Parcel", typeSourceHash engine "Parcel" ] [] false
+        |> expectOk "stage a new nominal type and helper for group discard"
+        |> ignore
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "parcel.rollback-marker" ] |> expectOk "test the grouped new type helper before discard")
+        dispatch engine "discard" [ "word", jstr "RollbackMarker" ] |> expectOk "discard a mixed new-type group by its new type name" |> ignore
+        equal beforeNewTypeDiscard.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash)
+            "new-type group discard preserves durable authority"
+        equal beforeNewTypeDiscardSource (typeSourceText engine "Parcel") "new-type group discard restores the previous record source"
+        check (not (succeeded (dispatch engine "describe" [ "type", jstr "RollbackMarker" ]))) "new-type group discard removes the candidate type"
+        check (not (succeeded (dispatch engine "describe" [ "word", jstr "parcel.rollback-marker" ]))) "new-type group discard removes its helper and attachments"
+
+        dispatch engine "task.begin" [ "goal", jstr "verify atomic record evolution abort" ] |> expectOk "begin record evolution abort task" |> ignore
+        let abortGroupSource =
+            source [ recordSource [ "label", "TrackingReference"; "count", "Int" ]
+                     "type AbortMarker : String { }"
+                     functionSource "parcel.abort-marker" "value: AbortMarker" "String" "AbortMarker::value(value)"
+                     "test parcel.abort-marker/basic { parcel::abort-marker(AbortMarker::new(\"abort\")) => \"abort\" }" ]
+        evolve abortGroupSource [ "Parcel", typeSourceHash engine "Parcel" ] [] false
+        |> expectOk "stage a record, nominal type, new helper, and attachment inside a task"
+        |> ignore
+        dispatch engine "task.abort" [] |> expectOk "abort the staged record evolution task" |> ignore
+        equal beforeDiscard.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash) "task.abort restores the pre-evolution manifest"
+        equal beforeDiscardSource (typeSourceText engine "Parcel") "task.abort restores the pre-evolution record and source"
+        check (not (succeeded (dispatch engine "describe" [ "type", jstr "AbortMarker" ]))) "task.abort removes the grouped nominal type"
+        check (not (succeeded (dispatch engine "describe" [ "word", jstr "parcel.abort-marker" ]))) "task.abort removes the grouped helper and attachment"
+
+        let beforePublishedTaskAbort = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforePublishedTaskAbortSource = typeSourceText engine "Parcel"
+        let beforePublishedTaskAbortHistory =
+            dispatch engine "history" [ "type", jstr "Parcel" ]
+            |> expectOk "capture record history before task-local publication"
+            |> fun response -> response.["data"].ToJsonString()
+        let beforePublishedTaskAbortRevision = revision engine "parcel.forward"
+        dispatch engine "task.begin" [ "goal", jstr "publish and abort a record evolution" ]
+        |> expectOk "begin task for published record evolution rollback"
+        |> ignore
+        let rollbackPublishedRecord = recordSource [ "label", "TrackingReference"; "count", "Int" ]
+        evolve rollbackPublishedRecord [ "Parcel", typeSourceHash engine "Parcel" ] [] false
+        |> expectOk "stage a type-only layout change inside a task"
+        |> ignore
+        commit engine "commit" "Parcel" [] |> expectOk "publish the record layout inside the task" |> ignore
+        equal rollbackPublishedRecord (typeSourceText engine "Parcel") "task-local type publication activates its proposed schema"
+        let historyDuringPublishedTask =
+            dispatch engine "history" [ "type", jstr "Parcel" ]
+            |> expectOk "inspect task-local record history"
+            |> fun response -> response.["data"].["revisions"].AsArray().Count
+        equal 7 historyDuringPublishedTask "task-local schema publication appends its history revision before abort"
+        dispatch engine "task.abort" [] |> expectOk "abort the already-published record evolution task" |> ignore
+        equal beforePublishedTaskAbort.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun current -> current.ManifestHash)
+            "task.abort restores the exact manifest after record publication"
+        equal beforePublishedTaskAbortSource (typeSourceText engine "Parcel") "task.abort restores the prior authored record after publication"
+        equal beforePublishedTaskAbortHistory
+            (dispatch engine "history" [ "type", jstr "Parcel" ] |> expectOk "read record history after published task abort" |> fun response -> response.["data"].ToJsonString())
+            "task.abort restores the exact record history"
+        equal beforePublishedTaskAbortRevision (revision engine "parcel.forward") "task.abort restores the existing word revision after schema publication"
+        let afterPublishedTaskAbort = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        equal beforePublishedTaskAbortSource (typeSourceText afterPublishedTaskAbort "Parcel") "fresh reload after task abort reads the original record source"
+        equal beforePublishedTaskAbortHistory
+            (dispatch afterPublishedTaskAbort "history" [ "type", jstr "Parcel" ] |> expectOk "reload record history after published task abort" |> fun response -> response.["data"].ToJsonString())
+            "fresh reload after task abort retains the original type-history hashes"
+        equal beforePublishedTaskAbortRevision (revision afterPublishedTaskAbort "parcel.forward") "fresh reload after task abort restores the word revision"
+
+        let singleOwnerProject = Path.Combine(root, "atomic-flow-record-one-owner")
+        let singleOwnerEngine = Runtime.Engine(singleOwnerProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let singleOwnerBase =
+            "record Badge { field number: Int }\n\n"
+            + "fn badge.code(value: Badge) -> Int { value.number }\n\n"
+            + "test badge.code/basic { badge::code(badge::new(number = 7)) => 7 }"
+        defineFlowProject singleOwnerEngine singleOwnerBase [ "syntaxVersion", jint 2 ]
+        |> expectOk "define the single-owner record evolution baseline"
+        |> ignore
+        commit singleOwnerEngine "commit" "Badge" [] |> expectOk "persist the one-owner baseline record" |> ignore
+        commit singleOwnerEngine "commit" "badge.code" [] |> expectOk "persist the one-owner baseline helper" |> ignore
+        let singleOwnerId = getWordId singleOwnerEngine "badge.code"
+        let singleOwnerEvolution =
+            "record Badge { field number: Int; field note: String }\n\n"
+            + "fn badge.code(value: Badge) -> Int { value.number }\n\n"
+            + "test badge.code/basic { badge::code(badge::new(number = 7, note = \"ok\")) => 7 }"
+        defineFlowProject singleOwnerEngine singleOwnerEvolution
+            [ "syntaxVersion", jint 2; "replace", jbool true
+              "expectedTypeSources", expectedTypeSources [ "Badge", typeSourceHash singleOwnerEngine "Badge" ]
+              "expectedRevisions", expectedRevisions [ "badge.code", revision singleOwnerEngine "badge.code" ] ]
+        |> expectOk "stage field addition with exactly one replaced existing function owner"
+        |> ignore
+        commit singleOwnerEngine "commit" "badge.code" [] |> expectOk "publish the one-owner record evolution" |> ignore
+        equal singleOwnerId (getWordId singleOwnerEngine "badge.code") "single-owner evolution retains the existing helper identity"
+        assertAllPassed 1 (dispatch singleOwnerEngine "test" [ "word", jstr "badge.code" ] |> expectOk "run the single-owner adapted case")
+        equal [ "Int"; "String" ]
+            (jsonArrayStrings (dispatch singleOwnerEngine "describe" [ "word", jstr "badge.new" ] |> expectOk "inspect the one-owner generated constructor" |> fun result -> result.["data"].["inputs"]))
+            "single-owner evolution publishes the complete constructor layout"
+
+        let allCandidateProject = Path.Combine(root, "atomic-flow-record-all-candidates")
+        let allCandidateEngine = Runtime.Engine(allCandidateProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let allCandidateBase =
+            "record Token { field identifier: Int; field label: String }\n\n"
+            + "fn token.id(value: Token) -> Int { value.identifier }\n\n"
+            + "test token.id/basic { token::id(token::new(identifier = 1, label = \"old\")) => 1 }"
+        defineFlowProject allCandidateEngine allCandidateBase [ "syntaxVersion", jint 2 ]
+        |> expectOk "define an all-candidates group baseline"
+        |> ignore
+        commit allCandidateEngine "commit" "Token" [] |> expectOk "persist the all-candidates baseline record" |> ignore
+        commit allCandidateEngine "commit" "token.id" [] |> expectOk "persist the all-candidates baseline helper" |> ignore
+        let allCandidateEvolution =
+            "record Token { field label: String; field identifier: Int }\n\n"
+            + "fn token.id(value: Token) -> Int { value.identifier }"
+        defineFlowProject allCandidateEngine allCandidateEvolution
+            [ "syntaxVersion", jint 2; "replace", jbool true
+              "expectedTypeSources", expectedTypeSources [ "Token", typeSourceHash allCandidateEngine "Token" ]
+              "expectedRevisions", expectedRevisions [ "token.id", revision allCandidateEngine "token.id" ] ]
+        |> expectOk "stage a record group for no-target publication"
+        |> ignore
+        let allCandidateUnrelated =
+            "fn separate.value(value: Int) -> Int { value }\n\n"
+            + "test separate.value/basic { separate::value(9) => 9 }"
+        defineFlowProject allCandidateEngine allCandidateUnrelated [ "syntaxVersion", jint 2 ]
+        |> expectOk "stage an unrelated candidate beside a record group"
+        |> ignore
+        let allPublished = dispatch allCandidateEngine "commit" [] |> expectOk "publish every candidate including the complete record group"
+        let allPublishedCases = jsonArrayStrings allPublished.["data"]
+        check (allPublishedCases |> List.contains "token.id/basic") "no-target publication includes the evolved record owner's tests"
+        check (allPublishedCases |> List.contains "separate.value/basic") "no-target publication also includes the unrelated candidate's tests"
+        equal "record Token { field label: String; field identifier: Int }" (typeSourceText allCandidateEngine "Token") "no-target publication commits the complete evolved schema"
+        equal "persistent" (stringValue (dispatch allCandidateEngine "describe" [ "word", jstr "separate.value" ] |> expectOk "inspect unrelated all-candidates publication" |> fun result -> result.["data"].["status"]))
+            "no-target publication commits unrelated candidates independently with the group"
 
     let private testAtomicMultiwordReplacementCallerClosure root =
         let expectedRevisions (revisions: (string * int) list) =
@@ -1286,7 +1840,7 @@ module Program =
                   "documentation", jstr "metadata is inline"
                   "extra", jbool true ]
             |> expectError "FLOW_RUNTIME_UNKNOWN_ARGUMENT"
-        equal [ "examples"; "expectedRevision"; "expectedRevisions"; "frontend"; "removeAttachments"; "replace"; "source"; "syntaxVersion"; "temporary"; "tests" ]
+        equal [ "examples"; "expectedRevision"; "expectedRevisions"; "expectedTypeSources"; "frontend"; "removeAttachments"; "replace"; "source"; "syntaxVersion"; "temporary"; "tests" ]
             (jsonArrayStrings unknownTopLevel.["error"].["expected"]) "unknown Flow field error returns the allowed field set"
         equal [ "code"; "documentation"; "extra" ] (jsonArrayStrings unknownTopLevel.["error"].["actual"]) "unknown Flow fields are reported in sorted order"
         let unknownMessage = stringValue unknownTopLevel.["error"].["message"]
@@ -5654,6 +6208,57 @@ test owner.read-bound/local-receiver {
         |> ignore
         equal beforeReplacement (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.ManifestHash)
             "rejected predicate replacement leaves the durable validator binding unchanged"
+        let validatorTypeHash =
+            dispatch engine "describe" [ "type", jstr "ValidatedCustomerLookup" ]
+            |> expectOk "read record source hash before validator-closure type evolution"
+            |> fun response -> stringValue response.["data"].["sourceHash"]
+        let validatorRevision =
+            dispatch engine "describe" [ "word", jstr "customer.lookup-valid?" ]
+            |> expectOk "read validator revision before closure replacement"
+            |> fun response -> response.["data"].["revision"].GetValue<int>()
+        let evolvedNoneLookup =
+            $"customer::lookup-valid?(validatedCustomerLookup::new(target = CustomerId::new(\"{targetId}\"), found = option::none<Customer>(), sequence = 0))"
+        let evolvedMatchingLookup =
+            $"customer::lookup-valid?(validatedCustomerLookup::new(target = CustomerId::new(\"{targetId}\"), found = option::some<Customer>({matchingCustomer}), sequence = 0))"
+        let evolvedMismatchConstructor =
+            $"validatedCustomerLookup::new(target = CustomerId::new(\"{targetId}\"), found = option::some<Customer>({mismatchCustomer}), sequence = 0)"
+        let validatorClosureEvolution =
+            "record ValidatedCustomerLookup {\n"
+            + "    field target: CustomerId;\n"
+            + "    field found: Option<Customer>;\n"
+            + "    field sequence: Int;\n"
+            + "    validate customer::lookup-valid?;\n"
+            + "}\n\n"
+            + "fn customer.lookup-valid?(value: ValidatedCustomerLookup) -> Bool {\n"
+            + "    doc \"A missing lookup is valid only for the first sequence.\"\n"
+            + "    match value.found {\n"
+            + "        some customer => { customer.id == value.target }\n"
+            + "        none => { value.sequence == 0 }\n"
+            + "    }\n"
+            + "}\n\n"
+            + $"test customer.lookup-valid?/none {{ {evolvedNoneLookup} => true }}\n\n"
+            + $"test customer.lookup-valid?/matching {{ {evolvedMatchingLookup} => true }}\n\n"
+            + $"test customer.lookup-valid?/mismatch {{ {evolvedMismatchConstructor} => error RECORD_VALIDATION_FAILED }}"
+        let expectedValidatorTypeSources = JsonObject()
+        expectedValidatorTypeSources["ValidatedCustomerLookup"] <- jstr validatorTypeHash
+        let expectedValidatorWordRevisions = JsonObject()
+        expectedValidatorWordRevisions["customer.lookup-valid?"] <- jint validatorRevision
+        defineFlowProject engine validatorClosureEvolution
+            [ "syntaxVersion", jint 2
+              "replace", jbool true
+              "expectedTypeSources", expectedValidatorTypeSources
+              "expectedRevisions", expectedValidatorWordRevisions ]
+        |> expectError "TYPE_VALIDATOR_FROZEN"
+        |> ignore
+        equal recordSource (stringValue (dispatch engine "source" [ "type", jstr "ValidatedCustomerLookup" ] |> expectOk "verify rejected closure evolution preserves record source" |> fun response -> response.["data"]))
+            "rejected type-CAS validator replacement leaves the record schema unchanged"
+        equal validatorSource (stringValue (dispatch engine "source" [ "word", jstr "customer.lookup-valid?" ] |> expectOk "verify rejected closure evolution preserves validator source" |> fun response -> response.["data"]))
+            "rejected type-CAS validator replacement leaves the persistent validator source unchanged"
+        equal beforeReplacement (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.ManifestHash)
+            "rejected type-CAS validator replacement preserves the durable manifest"
+        equal validatorRevision
+            (dispatch engine "describe" [ "word", jstr "customer.lookup-valid?" ] |> expectOk "inspect validator revision after rejected closure replacement" |> fun response -> response.["data"].["revision"].GetValue<int>())
+            "rejected type-CAS validator replacement does not advance its owner revision"
         dispatch engine "rename" [ "word", jstr "customer.lookup-valid?"; "to", jstr "customer.lookup-valid-renamed"; "actor", jstr "client" ]
         |> expectError "TYPE_VALIDATOR_FROZEN"
         |> ignore
@@ -6440,6 +7045,8 @@ test-file self {
             testCandidateCasThenNormalCommit root
             testCommittedReplacementCallerGate root
             testAtomicMultiwordFlowReplacement root
+            testAtomicFlowRecordFieldEvolution root
+            assertions <- assertions + RecordEvolutionIsolation.run root
             testAtomicMultiwordReplacementCallerClosure root
             testAtomicMultiwordReplacementGates root
             testFlowUnknownArgumentsAndExpectationGuidance root
@@ -6478,7 +7085,7 @@ test-file self {
             testRecordValidatorRuntimeAndPersistence root
             testEffectCountAssertions root
             testFlowTestFileOverrides root
-            printfn $"Flow Runtime tests passed: 42 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 44 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

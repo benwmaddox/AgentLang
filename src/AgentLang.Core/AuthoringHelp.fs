@@ -175,7 +175,7 @@ module AuthoringHelp =
           { Name = "replace"
             Type = "boolean"
             Required = false
-            Documentation = "Set true to stage a compare-and-swap replacement or attached-case edit; multiword Flow source uses expectedRevisions." }
+            Documentation = "Set true to stage a compare-and-swap replacement or attached-case edit. Word-only multiword Flow source uses expectedRevisions; record-field evolution also uses expectedTypeSources." }
           { Name = "expectedRevision"
             Type = "nonnegative integer"
             Required = false
@@ -183,7 +183,11 @@ module AuthoringHelp =
           { Name = "expectedRevisions"
             Type = "object of word names to nonnegative integers"
             Required = false
-            Documentation = "For one atomic multiword replacement, set replace=true and map exactly every word declared in source to its current describe.revision. This is mutually exclusive with expectedRevision; the first supported form accepts only existing persistent Flow words and inline standalone cases." }
+            Documentation = "For a word-only atomic multiword replacement, map exactly its two or more existing words to current describe.revision values. In a record-field evolution request, map exactly the existing word owners being replaced; new helper words have no entry, and an empty or omitted map is allowed when no existing word is replaced. This is mutually exclusive with expectedRevision." }
+          { Name = "expectedTypeSources"
+            Type = "object of record names to source-hash strings"
+            Required = false
+            Documentation = "For atomic Flow record-field evolution, set replace=true and map exactly each existing record being changed to the sourceHash from describe.type. New type names have no entry. The map is a compare-and-swap token and must not be stale, missing, or contain extra owners." }
           { Name = "tests"
             Type = "array of source strings"
             Required = false
@@ -568,16 +572,16 @@ test-file settings {
           Topic.Replacement,
             { Title = "Replace a word"
               Documentation =
-                "Read describe.revision immediately before replacing a definition. Set replace=true and expectedRevision to that exact current revision for one word; a stale compare-and-swap leaves the word unchanged. For an atomic multiword Flow replacement, source must declare at least two existing persistent authored Flow words and expectedRevisions must map exactly those names to their current revisions. The batch may include standalone tests and examples inline; omitted cases and existing test-file wrappers remain attached. Record, scalar, and enum schemas are immutable after creation. A define request with replace=true and any type declaration fails with FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED; expectedRevision and expectedRevisions compare word revisions only and cannot change or bypass a type schema. Define a new type under an unused name and migrate dependent words separately. Batch replacement does not accept types, new words, wrapper edits, removals, external attachment arrays, or temporary lifecycle changes. A candidate replacement is tested and published with normal commit. A temporary word must be promoted to a candidate before normal commit, or task.commit will end the task and clear temporary words. For a committed word, define stages the replacement; targeted commit, commit-word, and replace-word require each selected replacement's own tests and every affected persistent caller's tests to pass. When the selected closure includes a staged replacement, publication includes staged callers whose retained or staged source depends on it. replace-word accepts a word name, not replacement source. Library publication also checks the word's own instruction, branch, and iteration coverage, every Bool/enum option at each parameter position, and all values in supported finite return domains. A library word may depend only on trusted primitives, generated type operations, and authored library words; replacement rechecks the closure of affected library callers before publication. Evidence comes only from actual calls to the exact function revision in passing attached tests; expected-value expressions are isolated. Unsupported finite domains fail closed."
+                "Read describe.revision immediately before replacing a definition. Set replace=true and expectedRevision to that exact current revision for one word; a stale compare-and-swap leaves the word unchanged. A word-only atomic multiword Flow replacement still requires at least two existing persistent authored Flow words and an exact expectedRevisions map. Atomic Flow record-field evolution requires at least one existing Flow-authored record, replace=true, and an exact expectedTypeSources map copied from describe.type sourceHash. It may add new types under unused names, replace zero or more existing Flow words with exact expectedRevisions, and add new helper words without word revision tokens. It supports field addition, removal, rename, type change, and reordering while preserving record names, word identities, and existing library maturity; existing record validator declarations and existing scalar and enum schemas remain unchanged, and type-kind conversions remain immutable (FLOW_TYPE_EVOLUTION_KIND_UNSUPPORTED). The proposal is compiled as one detached project snapshot. Omitted tests and examples remain attached; an incompatible standalone case must be explicitly adapted with its owner's CAS token. Existing test-file wrappers are retained and recompiled unchanged; wrapper edits are not accepted. A candidate group is published as a whole with normal commit, after all selected owner and persistent caller tests pass. A temporary word must be promoted to a candidate before normal commit, or task.commit will end the task and clear temporary words. replace-word accepts a word name, not replacement source. Library publication also checks instruction, branch, and iteration coverage, every Bool/enum option at each parameter position, all values in supported finite return domains, and qualified authored dependencies. Evidence comes only from actual calls to the exact function revision in passing attached tests; expected-value expressions are isolated. Unsupported finite domains fail closed."
               AllowedFlowDefineFields = []
               SourceExamples = []
               Limitations =
-                [ { Code = "FLOW_PROJECT_REPLACEMENT_TYPES_UNSUPPORTED"
+                [ { Code = "FLOW_TYPE_EVOLUTION_KIND_UNSUPPORTED"
                     Operation = "define"
-                    AppliesWhen = "replace=true and source declares one or more types"
+                    AppliesWhen = "record-field evolution declares an existing scalar or enum, or changes a type kind"
                     Declarations = [ "record"; "scalar"; "enum" ]
-                    Explanation = "Nominal type schemas are immutable after creation. expectedRevision and expectedRevisions compare word revisions only; they cannot change a record, scalar, or enum schema."
-                    Alternative = "Define a type under an unused name and migrate dependent words separately." } ]
+                    Explanation = "This operation evolves existing Flow record fields only. Existing scalar representations and validators, enum cases, and type kinds remain immutable."
+                    Alternative = "Keep existing scalar and enum declarations unchanged and introduce a new nominal type under an unused name." } ]
               RequestExamples =
                 [ { Name = "inspect-revision"
                     Description = "Read the current revision before preparing a replacement."

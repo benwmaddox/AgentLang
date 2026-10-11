@@ -1,9 +1,12 @@
-# Atomic type evolution: implementation plan
+# Atomic type evolution
 
-Status: planned, 2026-10-10. Same-name type replacement is currently unsupported.
+Status: record-field evolution implementation, 2026-10-10. Validation and publication
+status are recorded in [report 188](../reports/188-atomic-record-evolution.md).
+Durable type-source history and inspection are validated in
+[report 187](../reports/187-durable-type-source-history.md).
 The interrupted [typed-reference trial](../reports/185-typed-reference-maintenance-results.md)
-demonstrated this missing prerequisite. This document specifies the next change;
-it does not claim that the runtime implements it.
+demonstrated this missing prerequisite. This document defines the runtime contract
+and the separate persisted-seed readiness control.
 
 ## First supported operation
 
@@ -12,14 +15,16 @@ Keep record names, function identities and library maturity. Allow new nominal
 types to be introduced in the same proposed project. Do not initially permit
 changing an existing scalar's representation or validator, an enum's cases, or
 converting one kind of type into another. Existing validator freezing remains.
+Field evolution also preserves each existing record's validator declaration;
+it cannot add, remove or replace that validation rule.
 
 Use the existing `define` project request rather than add a second authoring API.
 Add an exact `expectedTypeSources` map from every replaced record name to its
 current authored source hash; retain `expectedRevisions` for replaced functions.
-Expose these hashes through type inspection. A source hash is a concurrency
+Use the hashes exposed through type inspection. A source hash is a concurrency
 token, not a semantic identity. Reject stale, missing, extra or duplicate owners
 before staging. New definitions must have unused names and are distinguished
-from replacements. This request shape remains a proposal until implemented.
+from replacements.
 Type-CAS requests must admit zero or one changed function as well as multiple
 functions; the current word-only two-function minimum cannot govern this route.
 Word-only requests retain their existing validation rules.
@@ -34,6 +39,12 @@ Retain existing test-file wrappers unchanged and recompile their overrides and
 cases. Reject requests that edit wrappers in this transaction; reject a schema
 change if an unchanged wrapper becomes incompatible. Atomic wrapper adaptations
 can follow once their shared-scope ownership protocol is designed.
+Inline Flow case adaptation requires an authored function owner and its revision
+token. Generated constructors/accessors have no such authored owner. Retain and
+recompile their existing Stack cases unchanged; an incompatible generated case
+rejects the proposal. This stage does not add a generated-case ownership API or
+silently remove legacy evidence. Field changes can use authored consumer cases
+whose owners participate in the transaction.
 Resolve generated constructors/accessors from the proposed record fields.
 Recompile every authored function, test, example and test-file override against
 the same snapshot. Recheck exhaustive matches, effects, validator dependencies
@@ -108,26 +119,25 @@ task; the interrupted retained participant's frozen allowlist omitted it.
 
 ## Implementation sequence
 
-The existing manifest format 5 retains only current type source heads. Add
-versioned type source history as a storage prerequisite, with an explicit
-format transition, parser/serializer validation and fresh-reload checks. Preserve
-existing word history and supported older-format loading; do not silently
-reinterpret an older manifest as a new history format.
+Legacy manifest format 5 retains only current type source heads. The format-6
+type-history prerequisite is now implemented, including explicit transition,
+parser/serializer validation, fresh-reload checks and supported older-format
+loading. Existing word history remains compatible; older manifests are not
+silently reinterpreted as a new history format.
 
-Then add the runtime staging transaction. The current word replacement backups
-cannot restore an overwritten record entry. Record/source backups and a group
-publication boundary must be implemented together: durable projection and discard
+The runtime staging transaction uses record/source backups alongside word
+replacement backups and a group publication boundary: durable projection and discard
 restore the old schema, while committing any group member includes the complete
 schema/function change. Compilation uses one detached proposed snapshot before
-activation. Field addition, removal, renaming and ordering remain within the
-planned end-state; a type-only-field slice must not be reported as completing
-record evolution.
+activation. Field addition, removal, renaming, type changes and ordering are all
+part of this contract; a type-only-field slice cannot establish its acceptance.
 
 Finally, validate migration from the persisted unmigrated trial seed through the
 participant's permitted protocol, including original test preservation, entry
 signatures, library qualification, publication and a fresh reload. Only this
-readiness control permits a new frozen participant cohort. These are planned
-stages, not implemented capabilities.
+readiness control permits a new frozen participant cohort. Runtime acceptance
+does not establish that readiness control or an agent-efficacy result. The
+type-history prerequisite is complete.
 
 For the storage implementation, keep current `Types` heads and add a required
 format-6 collection of prior type-source rows. Each row retains the type name,
