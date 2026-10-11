@@ -1,4 +1,5 @@
 #include "owning_stack_runtime.h"
+#include "float_format.h"
 
 #include <limits.h>
 
@@ -2044,6 +2045,100 @@ int32_t al_owning_string_concat_write(
   al_owning_event(ctx, AL_OWNING_EVENT_STRING_CONCAT_RIGHT, type_id,
                   destination_offset + 8u + left_data_bytes, right_data_bytes,
                   right_data_bytes, right_offset + 8u, right_data_bytes, 0u);
+  return 0;
+}
+
+int32_t al_owning_float_format(al_owning_stack_context *ctx, uint64_t bits,
+                               uint8_t *ascii32, uint32_t *out_length,
+                               uint32_t error_id) {
+  uint8_t formatted[AL_OWNING_FLOAT_ASCII_CAPACITY];
+  uint32_t formatted_length = 0u;
+  const uint32_t exponent_field = (uint32_t)((bits >> 52u) & 0x7ffu);
+
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (ascii32 == 0 || out_length == 0) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
+    return 1;
+  }
+  if (exponent_field == 0x7ffu) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INVALID_REQUEST, error_id, 0u,
+                          0u);
+    return 1;
+  }
+  if (!al_owning_float_format_ascii(bits, formatted, &formatted_length) ||
+      formatted_length == 0u ||
+      formatted_length > AL_OWNING_FLOAT_ASCII_CAPACITY) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
+    return 1;
+  }
+  al_owning_ff_copy_bytes(ascii32, formatted, formatted_length);
+  *out_length = formatted_length;
+  return 0;
+}
+
+int32_t al_owning_float_string_write(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    uint32_t destination_extent_bytes, const uint8_t *ascii,
+    uint32_t ascii_length, uint32_t type_id, uint32_t error_id) {
+  uint8_t local_ascii[AL_OWNING_FLOAT_ASCII_CAPACITY];
+  uint32_t payload_bytes;
+  uint32_t measured_extent;
+  uint32_t index;
+  uint32_t cursor;
+  volatile uint8_t *local_ascii_bytes = local_ascii;
+  const volatile uint8_t *ascii_bytes = ascii;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (ctx->stack_data == 0 || ascii == 0 || ascii_length == 0u ||
+      ascii_length > AL_OWNING_FLOAT_ASCII_CAPACITY) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          ascii_length, AL_OWNING_FLOAT_ASCII_CAPACITY);
+    return 1;
+  }
+
+  payload_bytes = 8u + ascii_length * 2u;
+  measured_extent = (payload_bytes + 7u) & ~7u;
+  if (destination_extent_bytes != measured_extent ||
+      (destination_offset & 7u) != 0u ||
+      destination_offset > UINT32_MAX - destination_extent_bytes ||
+      destination_offset > ctx->cursor_bytes ||
+      destination_extent_bytes > ctx->cursor_bytes - destination_offset ||
+      !al_owning_range_valid(ctx, destination_offset,
+                             destination_extent_bytes)) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          destination_extent_bytes,
+                          ctx->cursor_bytes -
+                              (destination_offset <= ctx->cursor_bytes
+                                   ? destination_offset
+                                   : ctx->cursor_bytes));
+    return 1;
+  }
+
+  for (index = 0u; index < ascii_length; ++index) {
+    if (ascii_bytes[index] > 0x7fu) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                            ascii_length, AL_OWNING_FLOAT_ASCII_CAPACITY);
+      return 1;
+    }
+    local_ascii_bytes[index] = ascii_bytes[index];
+  }
+
+  al_owning_write_u32_le(ctx->stack_data + destination_offset, 0u,
+                         ascii_length);
+  for (index = 0u; index < 4u; ++index)
+    ctx->stack_data[destination_offset + 4u + index] = 0u;
+  cursor = destination_offset + 8u;
+  for (index = 0u; index < ascii_length; ++index) {
+    ctx->stack_data[cursor + index * 2u] = local_ascii[index];
+    ctx->stack_data[cursor + index * 2u + 1u] = 0u;
+  }
+  cursor += ascii_length * 2u;
+  while (cursor < destination_offset + destination_extent_bytes)
+    ctx->stack_data[cursor++] = 0u;
+  al_owning_mark(ctx, destination_offset, destination_extent_bytes, 1, 0);
+  al_owning_event(ctx, AL_OWNING_EVENT_ALLOCATE, type_id, destination_offset,
+                  destination_extent_bytes, payload_bytes, 0u, 0u, 0u);
   return 0;
 }
 

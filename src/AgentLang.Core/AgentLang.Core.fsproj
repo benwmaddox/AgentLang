@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="FloatText.fs" />
     <Compile Include="Core.fs" />
     <Compile Include="TrustedValues.fs" />
     <Compile Include="FlowSyntax.fs" />

@@ -9,7 +9,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
 $cli = (Resolve-Path -LiteralPath $CliDll).Path
-$restoreScript = Join-Path $PSScriptRoot 'Restore-MatchedRenewalSnapshot.ps1'
+$currentFixtureScript = Join-Path $PSScriptRoot 'Current-MatchedRenewalFixture.ps1'
+. $currentFixtureScript
 $solutionVerifier = Join-Path $PSScriptRoot 'Verify-FlowRenewalSolution.ps1'
 $oraclePath = Join-Path $repo 'experiments/AgentLang.SubagentTrials/matched-renewal-001/flow-renewal-acceptance.json'
 $oracle = Get-Content -LiteralPath $oraclePath -Raw | ConvertFrom-Json
@@ -22,6 +23,7 @@ $startedUtc = [DateTimeOffset]::UtcNow.ToString('O')
 $runRootRelative = ".agentlang/renewal-acceptance-gate/$runId"
 $runRoot = [IO.Path]::GetFullPath($runRootRelative, $repo)
 [void][IO.Directory]::CreateDirectory($runRoot)
+$currentFixtureRoot = Join-Path $repo ".agentlang/float-contract-229/current-fixtures/acceptance-gate/$runId"
 $evidenceTarget = if ([IO.Path]::IsPathRooted($EvidencePath)) {
     [IO.Path]::GetFullPath($EvidencePath)
 } else {
@@ -325,7 +327,7 @@ function Invoke-ExpectedRejection {
 }
 
 try {
-    Assert-GateCheck 'restore helper exists' (Test-Path -LiteralPath $restoreScript -PathType Leaf) $restoreScript
+    Assert-GateCheck 'current fixture helper exists' (Test-Path -LiteralPath $currentFixtureScript -PathType Leaf) $currentFixtureScript
     Assert-GateCheck 'solution verifier exists' (Test-Path -LiteralPath $solutionVerifier -PathType Leaf) $solutionVerifier
     Assert-GateCheck 'CLI artifact exists' (Test-Path -LiteralPath $cli -PathType Leaf) $cli
 
@@ -337,18 +339,24 @@ try {
 
     foreach ($scenario in $scenarios) {
         $scenarioRootRelative = Join-Path $runRootRelative $scenario.name
-        $projectRelative = Join-Path $scenarioRootRelative 'project'
-        $projectPath = [IO.Path]::GetFullPath($projectRelative, $repo)
-        if (Test-Path -LiteralPath $projectPath) { throw "Generated control project already exists: $projectPath" }
-
-        & $restoreScript -Profile growing -ProjectPath $projectRelative | Out-Null
-        Assert-GateCheck "$($scenario.name) restores the frozen Growing snapshot" (Test-Path -LiteralPath (Join-Path $projectPath '.agentlang/store/CURRENT') -PathType Leaf) $projectPath
+        $projectPath = Join-Path $currentFixtureRoot "$($scenario.name)/project"
+        $fixture = New-CurrentMatchedRenewalFixture -CliDll $cli -RepoRoot $repo -Profile growing -ProjectPath $projectPath -SnapshotName "matched-renewal-current-$($scenario.name)"
+        Assert-GateCheck "$($scenario.name) current-format Growing fixture passes strict reload" ($fixture.passed -eq $true) $fixture.currentManifestHash
+        Assert-GateCheck "$($scenario.name) current fixture uses seven passing baseline tests" (
+            @($fixture.reloadedTestResults).Count -eq 7 -and
+            @($fixture.reloadedTestResults | Where-Object { $_.passed -ne $true }).Count -eq 0
+        ) "tests=$(@($fixture.reloadedTestResults).Count)"
 
         $result = [ordered]@{
             name = $scenario.name
             projectPath = $projectPath
             expectedFailedCheck = $scenario.expectedFailedCheck
-            restoreProfile = 'growing'
+            currentFixture = [ordered]@{
+                evidencePath = (Join-Path $projectPath 'current-fixture-evidence.json')
+                manifestHash = $fixture.currentManifestHash
+                words = $fixture.reloadedWords
+                testResults = $fixture.reloadedTestResults
+            }
             baseline = $null
             setup = $null
             rejection = $null
@@ -361,8 +369,11 @@ try {
         )
         $result.baseline = $baselineSession
         $baselineTests = @($baselineSession.responses[0].data.results)
-        Assert-GateCheck "$($scenario.name) frozen Growing baseline has seven passing tests" (
-            $baselineTests.Count -eq 7 -and @($baselineTests | Where-Object { $_.passed -ne $true }).Count -eq 0
+        Assert-GateCheck "$($scenario.name) current Growing baseline has the seven expected passing test names" (
+            $baselineTests.Count -eq 7 -and
+            @($baselineTests | Where-Object { $_.passed -ne $true }).Count -eq 0 -and
+            (@($baselineTests | ForEach-Object { "$($_.word)/$($_.name)" } | Sort-Object) -join ',') -ceq
+                (@($fixture.reloadedTestResults | ForEach-Object { "$($_.word)/$($_.name)" } | Sort-Object) -join ',')
         ) "tests=$($baselineTests.Count); failed=$(@($baselineTests | Where-Object { $_.passed -ne $true }).Count)"
         $baselineWords = @(Get-UserWordNames $baselineSession.responses[1])
         Assert-GateCheck "$($scenario.name) baseline has no target word" ($baselineWords -notcontains $oracle.word) "userWords=$($baselineWords -join ',')"
@@ -455,7 +466,7 @@ finally {
             word = $oracle.word
             caseCount = $oracle.cases.Count
         }
-        restoreScriptSha256 = (Get-FileHash -LiteralPath $restoreScript -Algorithm SHA256).Hash.ToLowerInvariant()
+        currentFixtureScriptSha256 = (Get-FileHash -LiteralPath $currentFixtureScript -Algorithm SHA256).Hash.ToLowerInvariant()
         solutionVerifierSha256 = (Get-FileHash -LiteralPath $solutionVerifier -Algorithm SHA256).Hash.ToLowerInvariant()
         scriptSha256 = (Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant()
         scratchRoot = $runRoot
@@ -463,7 +474,7 @@ finally {
         sessions = $script:sessions.ToArray()
         checks = $script:checks.ToArray()
         limits = @(
-            'Controls are generated only in isolated restored projects; they are not agent trial solutions or fixtures.',
+            'Controls use disposable current-runtime Growing fixtures generated from the verified authoritative Flow seed; they are not agent trial solutions.',
             'The gate checks selected Float behavior from the current acceptance oracle.',
             'No token, latency, agent-efficiency, or production-money claim is made.'
         )

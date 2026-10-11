@@ -1,0 +1,9 @@
+Independent numerical and boundary review (Sol/medium, read-only)
+
+Reviewed float_format.h, owning_stack_runtime.c/.h, and the dynamic lowering. No blocking issue found. Checked factor-four interval construction, normal-power-of-two asymmetric margin except minimum normal, even-significand endpoint inclusion, nearest/ties-even choice, post-carry notation, 40-limb bounds, 32-byte scratch and final 24-byte text bound, staged UTF-16 writing, and failure publication behavior.
+
+Smallest subnormal needs 324 decimal normalization shifts: 4*10^324 and 2*10^324 remain near 1079 bits. Largest finite denominator normalization and subsequent digit margins remain below the conservative 1140-bit bound; workspace is 1280 bits per integer.
+
+Review found a trace consistency omission; implementation now emits ALLOCATE with output payload and padded extent, verified by a native assertion. Re-reviewed volatile limb/byte loops after symbol audit found optimizer-generated CRT calls; backward sign shift preserves overlap safety. No new numerical, memory-safety or atomicity issue found.
+
+Reviewer did not rebuild shared dependencies. Actual O0/O2 symbol audit and test results are separate implementation and root validation evidence. Native ABI remains a trusted host boundary, not an OS sandbox. Corpus coverage is not an exhaustive proof over all binary64 inputs.

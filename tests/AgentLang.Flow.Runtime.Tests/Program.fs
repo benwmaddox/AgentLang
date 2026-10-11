@@ -2834,6 +2834,8 @@ fn renewal.dependent(state: RenewalState) -> String {
         let floatResult = evalFlow2 $"{floatReference}(1.5, 2.25)" |> expectOk "evaluate described primitive Float reference"
         equal "Float" (stringValue floatResult.["data"].["stackTypes"].[0]) "described primitive Float reference keeps its Float type"
         equal "3.75" (stringValue floatResult.["data"].["stack"].[0]) "described primitive Float reference computes its value"
+        let integralFloatResult = evalFlow2 $"{floatReference}(1.25, 0.75)" |> expectOk "evaluate an integral result through the Float primitive"
+        equal "2.0" (stringValue integralFloatResult.["data"].["stack"].[0]) "Flow preserves the Float type in integral result text"
 
         let tailDescription = describe "list.tail"
         equal "primitive" (stringValue tailDescription.["kind"]) "list.tail is exposed as a dictionary primitive"
@@ -5954,7 +5956,7 @@ test owner.read-bound/local-receiver {
         equal emailTypeSource (stringValue (sourceType reloaded "Email" |> expectOk "read authored Flow scalar source after reload" |> fun response -> response.["data"])) "source(type) returns the exact authored scalar declaration"
         equal recordSource (stringValue (sourceType reloaded "Customer" |> expectOk "read authored Flow record source after reload" |> fun response -> response.["data"])) "source(type) returns the exact authored record declaration"
         equal "MetersPerSecond" (stringValue (evalFlow reloaded "speed::roundtrip(MetersPerSecond::new(1.0))" |> expectOk "evaluate a reloaded nominal Float wrapper" |> fun response -> response.["data"].["stackTypes"].[0])) "nominal wrapper remains distinct from its Float base after reload"
-        equal "1" (stringValue (evalFlow reloaded "MetersPerSecond::value(MetersPerSecond::new(1.0))" |> expectOk "construct and explicitly unwrap the reloaded nominal wrapper" |> fun response -> response.["data"].["stack"].[0])) "nominal payload is available only through the generated accessor"
+        equal "1.0" (stringValue (evalFlow reloaded "MetersPerSecond::value(MetersPerSecond::new(1.0))" |> expectOk "construct and explicitly unwrap the reloaded nominal wrapper" |> fun response -> response.["data"].["stack"].[0])) "nominal Float payload retains its canonical Float text through the generated accessor"
         assertAllPassed 2 (dispatch reloaded "test" [ "word", jstr "customer.accepts-email" ] |> expectOk "run reloaded dependent record cases")
         expectError "REFINEMENT_FAILED"
             (evalFlow reloaded "customer::accepts-email(customer::new(email = Email::new(\"missing\")))")

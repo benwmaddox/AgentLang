@@ -89,6 +89,7 @@ $sourceInputPaths = @(
     (Join-Path $nativeDirectory 'mailbox_runtime_windows.c'),
     (Join-Path $nativeDirectory 'owning_mailbox_abi.h'),
     (Join-Path $nativeDirectory 'owning_stack_runtime.h'),
+    (Join-Path $nativeDirectory 'float_format.h'),
     $owningStackPath,
     (Join-Path $nativeDirectory 'owning_bank.h'),
     $owningBankPath,
@@ -1291,7 +1292,7 @@ try {
     }
 
     $artifactsRoot = Join-Path $runDirectory 'dotnet-artifacts'
-    $buildArguments = @('build', $projectPath, '--artifacts-path', $artifactsRoot, '--configuration', 'Release', '--verbosity', 'minimal', '-p:NuGetAudit=false')
+    $buildArguments = @('build', $projectPath, '--artifacts-path', $artifactsRoot, '--configuration', 'Release', '--verbosity', 'minimal', '-p:NuGetAudit=true')
     if ($SerialBuild) { $buildArguments += '-m:1' } else { $buildArguments += '-m:1' }
     $build = Invoke-CapturedProcess 'fresh-release-project-build' $dotnet $buildArguments $repo
     Require-ProcessSuccess $build 'Fresh Release build of the owning mailbox experiment succeeded'

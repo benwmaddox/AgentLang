@@ -791,10 +791,10 @@ let private testFlow2DottedCallsAndNewlineSeparators () =
     => 100.0
 }"""
     let flow1FloatTest = parseTest floatSource
-    equal "Flow/1 float formatting retains the archived literal spelling"
+    equal "Flow/1 float formatting preserves the Float literal type"
         """test float.identity/preserved {
-    float::identity(100)
-    => 100
+    float::identity(100.0)
+    => 100.0
 }"""
         (FlowSource.renderTest flow1FloatTest)
     let flow2FloatTest =
@@ -808,7 +808,7 @@ let private testFlow2DottedCallsAndNewlineSeparators () =
 }"""
         (FlowSource.renderTest flow2FloatTest)
 
-    let floatCases = [ "100.0"; "-0.0"; "1e2"; "1e200" ]
+    let floatCases = [ "100.0"; "-0.0"; "1e2"; "1e200"; "0.0001"; "0.00001"; "1e16"; "1e17"; "4.1045368012983762E-289" ]
     for source in floatCases do
         let parsed = parseExpressionV2 source
         let originalFloat =
@@ -816,6 +816,9 @@ let private testFlow2DottedCallsAndNewlineSeparators () =
             | FlowExpression.Literal(LFloat value, _) -> value
             | other -> failwithf "Expected %s to parse as a Float literal, got %A" source other
         let canonical = FlowSource.renderExpressionWithVersion 2 parsed
+        equal ("Flow/2 Float text matches the shared formatter: " + source) (FloatText.format originalFloat) canonical
+        if source = "4.1045368012983762E-289" then
+            equal "documented Float regression parses to its exact binary64 payload" 0x0410000000000000UL (BitConverter.DoubleToUInt64Bits originalFloat)
         let reparsed = parseExpressionV2 canonical
         let roundTrippedFloat =
             match reparsed with

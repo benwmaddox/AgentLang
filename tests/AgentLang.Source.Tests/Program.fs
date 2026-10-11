@@ -192,6 +192,37 @@ end
         let reparsedExample = parse plainExample |> fun document -> document.Examples.Head
         equal plainExample (Source.renderExample reparsedExample) "example blocks round-trip"
 
+    let private testCanonicalFloatTextRoundTrips () =
+        let sourceSpan = { File = "float-text.agent"; Line = 1; Column = 1; Length = 1 }
+        let knownRegression = BitConverter.UInt64BitsToDouble(0x0410000000000000UL)
+        let cases =
+            [ "positive zero", 0.0, "0.0"
+              "negative zero", BitConverter.UInt64BitsToDouble(0x8000000000000000UL), "-0.0"
+              "integral float", 100.0, "100.0"
+              "plain lower exponent boundary", 1e-4, "0.0001"
+              "scientific below plain boundary", 1e-5, "1E-05"
+              "plain upper exponent boundary", 1e16, "10000000000000000.0"
+              "scientific above plain boundary", 1e17, "1E+17"
+              "minimum subnormal", Double.Epsilon, "5E-324"
+              "smallest normal", BitConverter.UInt64BitsToDouble(0x0010000000000000UL), "2.2250738585072014E-308"
+              "largest subnormal", BitConverter.UInt64BitsToDouble(0x000FFFFFFFFFFFFFUL), "2.225073858507201E-308"
+              "maximum finite", Double.MaxValue, "1.7976931348623157E+308"
+              "documented short-format regression", knownRegression, "4.1045368012983762E-289" ]
+
+        for (name, value, expectedText) in cases do
+            let text = FloatText.format value
+            equal expectedText text ($"{name} uses canonical Float text")
+            equal expectedText (Types.formatValue (FloatValue value)) ($"{name} uses canonical value display")
+            let reparsed =
+                match Parser.parseExpression "<float-text>" text with
+                | Ok [ Push(LFloat parsed, _) ] -> parsed
+                | Ok expressions -> failwithf "%s formatted Float parsed to an unexpected AST: %A" name expressions
+                | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+            equal (BitConverter.DoubleToUInt64Bits value) (BitConverter.DoubleToUInt64Bits reparsed) ($"{name} preserves binary64 bits through source parsing")
+            equal text (Source.renderExpression (Push(LFloat reparsed, sourceSpan))) ($"{name} source formatting is idempotent")
+
+        equal "4.1045368012983762E-289" (Source.renderExpression (Push(LFloat knownRegression, sourceSpan))) "source renderer preserves the documented shortest spelling"
+
     let private testExpectedRuntimeErrorSyntax () =
         let expectParseError code source =
             match Parser.parse "<expected-error-test>" source with
@@ -686,6 +717,7 @@ end
     let main _ =
         try
             testCanonicalRoundTrip ()
+            testCanonicalFloatTextRoundTrips ()
             testExpectedRuntimeErrorSyntax ()
             testValueExpressionExpectationSyntax ()
             testSemanticRename ()

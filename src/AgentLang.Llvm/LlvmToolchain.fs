@@ -128,22 +128,32 @@ module LlvmToolchain =
         | LlvmOptimization.O0 -> "-O0"
         | LlvmOptimization.O2 -> "-O2"
 
-    let private compileLlvmObject (toolchain: LlvmToolchain) optimization (llvmIrPath: string) (objectPath: string) workingDirectory =
+    let private stackUsageSidecarPath (objectPath: string) = Path.ChangeExtension(objectPath, ".su")
+
+    let private compileLlvmObject (toolchain: LlvmToolchain) optimization screenNativeStackUsage (llvmIrPath: string) (objectPath: string) workingDirectory =
         if File.Exists objectPath then File.Delete objectPath
-        run toolchain.ClangPath
+        let stackUsagePath = stackUsageSidecarPath objectPath
+        if screenNativeStackUsage && File.Exists stackUsagePath then File.Delete stackUsagePath
+        let stackUsageArguments = if screenNativeStackUsage then [ "-fstack-usage" ] else []
+        let arguments =
             [ "--target=x86_64-pc-windows-msvc"
               "-x"; "ir"
               "-c"; Path.GetFullPath llvmIrPath
-              optimizationArgument optimization
-              "-o"; objectPath ]
-            workingDirectory
+              optimizationArgument optimization ]
+            @ stackUsageArguments
+            @ [ "-o"; objectPath ]
+        run toolchain.ClangPath arguments workingDirectory
+        if screenNativeStackUsage then NativeStackUsage.verifyFreshFile stackUsagePath
 
-    let private compileCObject (toolchain: LlvmToolchain) optimization (runtimeProfile: OwningRuntimeProfile) (sourcePath: string) (includeDirectory: string) (objectPath: string) workingDirectory =
+    let private compileCObject (toolchain: LlvmToolchain) optimization (runtimeProfile: OwningRuntimeProfile) screenNativeStackUsage (sourcePath: string) (includeDirectory: string) (objectPath: string) workingDirectory =
         if File.Exists objectPath then File.Delete objectPath
+        let stackUsagePath = stackUsageSidecarPath objectPath
+        if screenNativeStackUsage && File.Exists stackUsagePath then File.Delete stackUsagePath
         let profileArguments =
             match runtimeProfile with
             | OwningRuntimeProfile.Diagnostic -> []
             | OwningRuntimeProfile.TrustedGenerated -> [ "-DAL_OWNING_TRUSTED_GENERATED=1" ]
+        let stackUsageArguments = if screenNativeStackUsage then [ "-fstack-usage" ] else []
         let arguments =
             [ "--target=x86_64-pc-windows-msvc"
               "-std=c11"
@@ -153,12 +163,14 @@ module LlvmToolchain =
               "-Wextra"
               "-Werror"
               optimizationArgument optimization ]
+            @ stackUsageArguments
             @ profileArguments
             @ [
               "-c"; Path.GetFullPath sourcePath
               "-I"; Path.GetFullPath includeDirectory
               "-o"; objectPath ]
         run toolchain.ClangPath arguments workingDirectory
+        if screenNativeStackUsage then NativeStackUsage.verifyFreshFile stackUsagePath
 
     let private linkObjects (toolchain: LlvmToolchain) (outputDllPath: string) (objectPaths: string list) =
         if File.Exists outputDllPath then File.Delete outputDllPath
@@ -183,14 +195,15 @@ module LlvmToolchain =
         Directory.CreateDirectory workingDirectory |> ignore
         if not (File.Exists irPath) then invalidArg (nameof llvmIrPath) "LLVM IR input does not exist."
         let objectPath = Path.ChangeExtension(dllPath, ".obj")
-        compileLlvmObject toolchain optimization irPath objectPath workingDirectory |> ignore
+        compileLlvmObject toolchain optimization false irPath objectPath workingDirectory |> ignore
         linkObjects toolchain dllPath [ objectPath ]
 
     /// Compile the freestanding arena runtime at the same optimization level
     /// as the emitted LLVM body and link both fresh objects into one DLL.
-    let compileLibraryWithRuntime
+    let private compileLibraryWithRuntimeCore
         (toolchain: LlvmToolchain)
         optimization
+        screenNativeStackUsage
         (llvmIrPath: string)
         (runtimeSourcePath: string)
         (runtimeIncludeDirectory: string)
@@ -201,35 +214,50 @@ module LlvmToolchain =
         let dllPath = Path.GetFullPath outputDllPath
         let workingDirectory = Path.GetDirectoryName dllPath
         Directory.CreateDirectory workingDirectory |> ignore
+        if screenNativeStackUsage && File.Exists dllPath then File.Delete dllPath
         if not (File.Exists irPath) then invalidArg (nameof llvmIrPath) "LLVM IR input does not exist."
         if not (File.Exists sourcePath) then invalidArg (nameof runtimeSourcePath) "Native runtime source does not exist."
         if not (Directory.Exists includeDirectory) then invalidArg (nameof runtimeIncludeDirectory) "Native runtime include directory does not exist."
         let llvmObjectPath = Path.Combine(workingDirectory, "agentlang-native.obj")
         let runtimeObjectPath = Path.Combine(workingDirectory, "agentlang-arena-runtime.obj")
-        compileLlvmObject toolchain optimization irPath llvmObjectPath workingDirectory |> ignore
-        if File.Exists runtimeObjectPath then File.Delete runtimeObjectPath
-        run toolchain.ClangPath
-            [ "--target=x86_64-pc-windows-msvc"
-              "-std=c11"
-              "-ffreestanding"
-              "-fno-builtin"
-              "-Wall"
-              "-Wextra"
-              "-Werror"
-              optimizationArgument optimization
-              "-c"; sourcePath
-              "-I"; includeDirectory
-              "-o"; runtimeObjectPath ]
-            workingDirectory
+        compileLlvmObject toolchain optimization screenNativeStackUsage irPath llvmObjectPath workingDirectory |> ignore
+        compileCObject
+            toolchain optimization OwningRuntimeProfile.Diagnostic screenNativeStackUsage
+            sourcePath includeDirectory runtimeObjectPath workingDirectory
         linkObjects toolchain dllPath [ llvmObjectPath; runtimeObjectPath ]
+
+    /// Compile and link without imposing the owning-runtime native frame screen.
+    /// Existing arena callers retain their prior compile behavior.
+    let compileLibraryWithRuntime
+        (toolchain: LlvmToolchain)
+        optimization
+        (llvmIrPath: string)
+        (runtimeSourcePath: string)
+        (runtimeIncludeDirectory: string)
+        (outputDllPath: string) =
+        compileLibraryWithRuntimeCore
+            toolchain optimization false llvmIrPath runtimeSourcePath runtimeIncludeDirectory outputDllPath
+
+    /// Compile an owning runtime and its LLVM IR with fresh static per-frame
+    /// stack-usage receipts before linking. This is not a call-chain bound.
+    let compileLibraryWithRuntimeAndNativeStackScreen
+        (toolchain: LlvmToolchain)
+        optimization
+        (llvmIrPath: string)
+        (runtimeSourcePath: string)
+        (runtimeIncludeDirectory: string)
+        (outputDllPath: string) =
+        compileLibraryWithRuntimeCore
+            toolchain optimization true llvmIrPath runtimeSourcePath runtimeIncludeDirectory outputDllPath
 
     /// Compile a deterministic set of per-entry LLVM objects, one immutable
     /// module-metadata C object, and one arena runtime object into a DLL.
     /// Returns the DLL path and the object paths in link order.
-    let compileModuleLibraryWithProfile
+    let private compileModuleLibraryWithProfileCore
         (toolchain: LlvmToolchain)
         optimization
         (runtimeProfile: OwningRuntimeProfile)
+        screenNativeStackUsage
         (llvmIrPaths: string list)
         (metadataSourcePath: string)
         (runtimeSourcePath: string)
@@ -243,6 +271,7 @@ module LlvmToolchain =
         let dllPath = Path.GetFullPath outputDllPath
         let workingDirectory = Path.GetDirectoryName dllPath
         Directory.CreateDirectory workingDirectory |> ignore
+        if screenNativeStackUsage && File.Exists dllPath then File.Delete dllPath
         for irPath in irPaths do
             if not (File.Exists irPath) then invalidArg (nameof llvmIrPaths) $"LLVM IR input does not exist: {irPath}"
         if not (File.Exists sourcePath) then invalidArg (nameof metadataSourcePath) "Native module metadata source does not exist."
@@ -253,14 +282,42 @@ module LlvmToolchain =
             irPaths
             |> List.mapi (fun index irPath ->
                 let objectPath = Path.Combine(workingDirectory, $"agentlang-entry-{index:D3}.obj")
-                compileLlvmObject toolchain optimization irPath objectPath workingDirectory |> ignore
+                compileLlvmObject toolchain optimization screenNativeStackUsage irPath objectPath workingDirectory |> ignore
                 objectPath)
         let metadataObjectPath = Path.Combine(workingDirectory, "agentlang-module-metadata.obj")
-        compileCObject toolchain optimization runtimeProfile sourcePath includePath metadataObjectPath workingDirectory
+        compileCObject toolchain optimization runtimeProfile screenNativeStackUsage sourcePath includePath metadataObjectPath workingDirectory
         let runtimeObjectPath = Path.Combine(workingDirectory, "agentlang-arena-runtime.obj")
-        compileCObject toolchain optimization runtimeProfile runtimePath includePath runtimeObjectPath workingDirectory
+        compileCObject toolchain optimization runtimeProfile screenNativeStackUsage runtimePath includePath runtimeObjectPath workingDirectory
         let objectPaths = entryObjects @ [ metadataObjectPath; runtimeObjectPath ]
         linkObjects toolchain dllPath objectPaths, objectPaths
+
+    /// Compile a module without imposing the owning-runtime native frame screen.
+    /// Existing module callers retain their prior compile behavior.
+    let compileModuleLibraryWithProfile
+        (toolchain: LlvmToolchain)
+        optimization
+        (runtimeProfile: OwningRuntimeProfile)
+        (llvmIrPaths: string list)
+        (metadataSourcePath: string)
+        (runtimeSourcePath: string)
+        (includeDirectory: string)
+        (outputDllPath: string) =
+        compileModuleLibraryWithProfileCore
+            toolchain optimization runtimeProfile false llvmIrPaths metadataSourcePath runtimeSourcePath includeDirectory outputDllPath
+
+    /// Compile a module's owning runtime with fresh static per-frame stack-
+    /// usage receipts before linking. This is not a call-chain bound.
+    let compileModuleLibraryWithProfileAndNativeStackScreen
+        (toolchain: LlvmToolchain)
+        optimization
+        (runtimeProfile: OwningRuntimeProfile)
+        (llvmIrPaths: string list)
+        (metadataSourcePath: string)
+        (runtimeSourcePath: string)
+        (includeDirectory: string)
+        (outputDllPath: string) =
+        compileModuleLibraryWithProfileCore
+            toolchain optimization runtimeProfile true llvmIrPaths metadataSourcePath runtimeSourcePath includeDirectory outputDllPath
 
     /// Compile a module with diagnostic runtime checks enabled.
     let compileModuleLibrary

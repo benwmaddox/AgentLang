@@ -38,6 +38,7 @@ $sourceInputPaths = @(
     (Join-Path $repo 'src/AgentLang.Core/AgentLang.Core.fsproj'),
     (Join-Path $nativeSourceDirectory 'owning_stack_runtime.h'),
     $nativeRuntimeSource,
+    (Join-Path $nativeSourceDirectory 'float_format.h'),
     $nativeTestSource,
     (Join-Path $repo 'docs/STACK-ONLY-RESEARCH.md'),
     (Join-Path $repo 'docs/NATIVE-NOMINALS-IMPLEMENTATION.md'),
@@ -221,7 +222,7 @@ try {
     }
 
     $build = Invoke-CapturedProcess 'fresh-dotnet-build' $dotnet @(
-        'build', $runnerProject, '--artifacts-path', $buildDirectory, '--configuration', 'Release', '--verbosity', 'minimal', '-p:NuGetAudit=false', '-m:1'
+        'build', $runnerProject, '--artifacts-path', $buildDirectory, '--configuration', 'Release', '--verbosity', 'minimal', '-p:NuGetAudit=true', '-m:1'
     ) $repo
     $report.dependencyBuild = $build
     Require-ProcessSuccess $build 'fresh Release build of the comparison runner and dependencies'
@@ -231,7 +232,7 @@ try {
     Add-Check 'comparison runner assembly is inside fresh artifact root' $runnerAssembly.StartsWith([IO.Path]::GetFullPath($buildDirectory), [StringComparison]::OrdinalIgnoreCase) $runnerAssembly
 
     $arenaLifetimeBuild = Invoke-CapturedProcess 'fresh-arena-lifetime-tests-build' $dotnet @(
-        'build', $arenaLifetimeTestProject, '--artifacts-path', $buildDirectory, '--configuration', 'Release', '--verbosity', 'minimal', '-p:NuGetAudit=false', '-m:1'
+        'build', $arenaLifetimeTestProject, '--artifacts-path', $buildDirectory, '--configuration', 'Release', '--verbosity', 'minimal', '-p:NuGetAudit=true', '-m:1'
     ) $repo
     $report.arenaLifetimeTestBuild = $arenaLifetimeBuild
     Require-ProcessSuccess $arenaLifetimeBuild 'fresh Release build of the compiler-proved arena-lifetime analysis tests'

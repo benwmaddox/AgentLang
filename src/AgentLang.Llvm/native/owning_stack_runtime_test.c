@@ -3319,6 +3319,160 @@ failed:
   return 0;
 }
 
+static int al_test_float_format_values(void) {
+  static const struct {
+    uint64_t bits;
+    const char *expected;
+  } values[] = {
+      {UINT64_C(0x0000000000000000), "0.0"},
+      {UINT64_C(0x8000000000000000), "-0.0"},
+      {UINT64_C(0x0000000000000001), "5E-324"},
+      {UINT64_C(0x000fffffffffffff), "2.225073858507201E-308"},
+      {UINT64_C(0x0010000000000000), "2.2250738585072014E-308"},
+      {UINT64_C(0x3ff0000000000000), "1.0"},
+      {UINT64_C(0x3ff0000000000001), "1.0000000000000002"},
+      {UINT64_C(0x3fffffffffffffff), "1.9999999999999998"},
+      {UINT64_C(0x040fffffffffffff), "4.104536801298376E-289"},
+      {UINT64_C(0x0410000000000000), "4.1045368012983762E-289"},
+      {UINT64_C(0x0410000000000001), "4.104536801298377E-289"},
+      {UINT64_C(0x840fffffffffffff), "-4.104536801298376E-289"},
+      {UINT64_C(0x8410000000000000), "-4.1045368012983762E-289"},
+      {UINT64_C(0x8410000000000001), "-4.104536801298377E-289"},
+      {UINT64_C(0x3fb999999999999a), "0.1"},
+      {UINT64_C(0x3f1a36e2eb1c432d), "0.0001"},
+      {UINT64_C(0x3ee4f8b588e368f1), "1E-05"},
+      {UINT64_C(0x4341c37937e08000), "10000000000000000.0"},
+      {UINT64_C(0x4376345785d8a000), "1E+17"},
+      {UINT64_C(0x4415af1d78b58c40), "1E+20"},
+      {UINT64_C(0x7fefffffffffffff), "1.7976931348623157E+308"},
+      {UINT64_C(0xffefffffffffffff), "-1.7976931348623157E+308"},
+      {UINT64_C(0x3ff3c0ca428c59fb), "1.2345678901234567"}};
+  al_test_fixture fixture;
+  al_owning_stack_context *ctx;
+  uint8_t output[AL_OWNING_FLOAT_ASCII_CAPACITY];
+  uint8_t before[AL_OWNING_FLOAT_ASCII_CAPACITY];
+  uint32_t output_length;
+  uint32_t index;
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  for (index = 0u; index < (uint32_t)(sizeof(values) / sizeof(values[0]));
+       ++index) {
+    uint32_t expected_length = (uint32_t)strlen(values[index].expected);
+    (void)memset(output, AL_TEST_CANARY, sizeof(output));
+    output_length = UINT32_C(0xdeadbeef);
+    AL_CHECK(al_owning_float_format(ctx, values[index].bits, output,
+                                    &output_length,
+                                    AL_TEST_FLOAT_ERROR_ID) == 0 &&
+             ctx->status == AL_OWNING_STATUS_OK &&
+             output_length == expected_length &&
+             memcmp(output, values[index].expected, expected_length) == 0 &&
+             output[expected_length] == AL_TEST_CANARY);
+  }
+
+  (void)memset(output, AL_TEST_CANARY, sizeof(output));
+  (void)memcpy(before, output, sizeof(output));
+  output_length = UINT32_C(0xdeadbeef);
+  AL_CHECK(al_owning_float_format(ctx, UINT64_C(0x7ff0000000000001), output,
+                                  &output_length,
+                                  AL_TEST_FLOAT_ERROR_ID) != 0 &&
+           ctx->status == AL_OWNING_STATUS_INVALID_REQUEST &&
+           ctx->error_id == AL_TEST_FLOAT_ERROR_ID &&
+           output_length == UINT32_C(0xdeadbeef) &&
+           memcmp(output, before, sizeof(output)) == 0);
+  ctx->status = AL_OWNING_STATUS_OK;
+  AL_CHECK(al_owning_float_format(ctx, UINT64_C(0x7ff0000000000000), output,
+                                  &output_length,
+                                  AL_TEST_FLOAT_ERROR_ID) != 0 &&
+           ctx->status == AL_OWNING_STATUS_INVALID_REQUEST &&
+           output_length == UINT32_C(0xdeadbeef) &&
+           memcmp(output, before, sizeof(output)) == 0);
+  ctx->status = AL_OWNING_STATUS_OK;
+  AL_CHECK(al_owning_float_format(ctx, UINT64_C(0x3ff0000000000000), 0,
+                                  &output_length,
+                                  AL_TEST_FLOAT_ERROR_ID) != 0 &&
+           ctx->status == AL_OWNING_STATUS_INTERNAL &&
+           output_length == UINT32_C(0xdeadbeef));
+  ctx->status = AL_OWNING_STATUS_OK;
+  AL_CHECK(al_test_case_begin("float_format_values", &fixture));
+  return 1;
+failed:
+  return 0;
+}
+
+static int al_test_float_string_writer(void) {
+  static const uint8_t text[] = {'1', 'E', '+', '2', '0'};
+  static const uint8_t non_ascii[] = {'1', 0x80u};
+  al_test_fixture fixture;
+  al_owning_stack_context *ctx;
+  uint8_t before[AL_TEST_DYNAMIC_STACK_CAPACITY];
+  uint8_t init_before[sizeof(fixture.init_bitmap)];
+  uint8_t poison_before[sizeof(fixture.poison_bitmap)];
+  uint32_t index;
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  if (al_owning_reserve_to(ctx, 64u, AL_TEST_FLOAT_ERROR_ID) != 0)
+    goto failed;
+  AL_CHECK(al_owning_float_string_write(
+               ctx, 0u, 24u, text, (uint32_t)sizeof(text),
+               AL_TEST_TYPE_STRING, AL_TEST_FLOAT_ERROR_ID) == 0 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+  AL_CHECK(ctx->stack_data[0u] == sizeof(text) &&
+           ctx->stack_data[1u] == 0u && ctx->stack_data[2u] == 0u &&
+           ctx->stack_data[3u] == 0u);
+  for (index = 0u; index < (uint32_t)sizeof(text); ++index) {
+    AL_CHECK(ctx->stack_data[8u + index * 2u] == text[index] &&
+             ctx->stack_data[9u + index * 2u] == 0u);
+  }
+  AL_CHECK(ctx->stack_data[18u] == 0u && ctx->stack_data[19u] == 0u &&
+           ctx->stack_data[20u] == 0u && ctx->stack_data[21u] == 0u &&
+           ctx->stack_data[22u] == 0u && ctx->stack_data[23u] == 0u &&
+           al_owning_check_initialized(ctx, 0u, 24u) == 0);
+  AL_CHECK(ctx->trace_event_count == 1u &&
+           fixture.events[0].kind == AL_OWNING_EVENT_ALLOCATE &&
+           fixture.events[0].type_id == AL_TEST_TYPE_STRING &&
+           fixture.events[0].offset == 0u &&
+           fixture.events[0].extent_bytes == 24u &&
+           fixture.events[0].payload_bytes == 18u);
+
+  (void)memcpy(before, ctx->stack_data, sizeof(before));
+  (void)memcpy(init_before, fixture.init_bitmap, sizeof(init_before));
+  (void)memcpy(poison_before, fixture.poison_bitmap, sizeof(poison_before));
+  AL_CHECK(al_owning_float_string_write(
+               ctx, 0u, 16u, text, (uint32_t)sizeof(text),
+               AL_TEST_TYPE_STRING, AL_TEST_FLOAT_ERROR_ID) != 0 &&
+           ctx->status == AL_OWNING_STATUS_INTERNAL &&
+           memcmp(before, ctx->stack_data, sizeof(before)) == 0 &&
+           memcmp(init_before, fixture.init_bitmap, sizeof(init_before)) == 0 &&
+           memcmp(poison_before, fixture.poison_bitmap,
+                  sizeof(poison_before)) == 0);
+  ctx->status = AL_OWNING_STATUS_OK;
+  AL_CHECK(al_owning_float_string_write(
+               ctx, 56u, 24u, text, (uint32_t)sizeof(text),
+               AL_TEST_TYPE_STRING, AL_TEST_FLOAT_ERROR_ID) != 0 &&
+           ctx->status == AL_OWNING_STATUS_INTERNAL &&
+           memcmp(before, ctx->stack_data, sizeof(before)) == 0 &&
+           memcmp(init_before, fixture.init_bitmap, sizeof(init_before)) == 0 &&
+           memcmp(poison_before, fixture.poison_bitmap,
+                  sizeof(poison_before)) == 0);
+  ctx->status = AL_OWNING_STATUS_OK;
+  AL_CHECK(al_owning_float_string_write(
+               ctx, 32u, 16u, non_ascii, (uint32_t)sizeof(non_ascii),
+               AL_TEST_TYPE_STRING, AL_TEST_FLOAT_ERROR_ID) != 0 &&
+           ctx->status == AL_OWNING_STATUS_INTERNAL &&
+           memcmp(before, ctx->stack_data, sizeof(before)) == 0 &&
+           memcmp(init_before, fixture.init_bitmap, sizeof(init_before)) == 0 &&
+           memcmp(poison_before, fixture.poison_bitmap,
+                  sizeof(poison_before)) == 0);
+  ctx->status = AL_OWNING_STATUS_OK;
+  AL_CHECK(al_test_fixture_guards_ok(&fixture));
+  AL_CHECK(al_test_case_begin("float_string_writer", &fixture));
+  return 1;
+failed:
+  return 0;
+}
+
 int main(int argc, char **argv) {
   if (argc == 2 && strcmp(argv[1], "--bool-scanner-only") == 0) {
     if (!al_test_bool_canonical_scanner())
@@ -3367,7 +3521,8 @@ int main(int argc, char **argv) {
       !al_test_option_result_layout_and_scanner() ||
       !al_test_record_copy_preserves_source() ||
       !al_test_float_finite_scanner() ||
-      !al_test_float_typed_equality()) {
+      !al_test_float_typed_equality() || !al_test_float_format_values() ||
+      !al_test_float_string_writer()) {
     return 1;
   }
   {

@@ -1,0 +1,22 @@
+[native-conformance] owning backend Float transport, diagnostics, equality, and mailbox lifecycle
+[float.to-string oracle] O0 checked 0/30396 finite bit patterns
+[float.to-string oracle] O0 checked 4096/30396 finite bit patterns
+[float.to-string oracle] O0 checked 8192/30396 finite bit patterns
+[float.to-string oracle] O0 checked 12288/30396 finite bit patterns
+[float.to-string oracle] O0 checked 16384/30396 finite bit patterns
+[float.to-string oracle] O0 checked 20480/30396 finite bit patterns
+[float.to-string oracle] O0 checked 24576/30396 finite bit patterns
+[float.to-string oracle] O0 checked 28672/30396 finite bit patterns
+[float.to-string oracle] O2 checked 0/30396 finite bit patterns
+[float.to-string oracle] O2 checked 4096/30396 finite bit patterns
+[float.to-string oracle] O2 checked 8192/30396 finite bit patterns
+[float.to-string oracle] O2 checked 12288/30396 finite bit patterns
+[float.to-string oracle] O2 checked 16384/30396 finite bit patterns
+[float.to-string oracle] O2 checked 20480/30396 finite bit patterns
+[float.to-string oracle] O2 checked 24576/30396 finite bit patterns
+[float.to-string oracle] O2 checked 28672/30396 finite bit patterns
+System.Exception: float.to-string matches invariant .NET G for 30396 finite seeded, exponent-band, parity, power, neighbor, and notation-boundary bit patterns; mismatch=Some(O0 sample 780 bits=0x0410000000000000; expected=StringValue "4.104536801298376E-289"; actual=StringValue "4.1045368012983762E-289"): assertion failed
+   at AgentLang.Llvm.Tests.check[a](a name, Boolean condition) in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 97
+   at AgentLang.Llvm.Tests.testOwningFloatSlice() in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 4410
+   at AgentLang.Llvm.Tests.main$cont@6351(String[] args, Unit unitVar) in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 6354
+dotnet run exit code: 1

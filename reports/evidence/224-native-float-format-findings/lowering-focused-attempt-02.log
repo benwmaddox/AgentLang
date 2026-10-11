@@ -1,0 +1,5 @@
+[native-conformance] owning backend Float transport, diagnostics, equality, and mailbox lifecycle
+System.Exception: O0 float.to-string charges fuel before formatting and does not publish a failed result (diagnostic=Some((RUNTIME_STEP_LIMIT, 0)); rawStatus=2; rawSteps=1023; rawRetainedSentinel=True; hostSentinel=True): assertion failed
+   at AgentLang.Llvm.Tests.check[a](a name, Boolean condition) in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 97
+   at AgentLang.Llvm.Tests.testOwningFloatSlice() in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 3346
+   at AgentLang.Llvm.Tests.main$cont@6328(String[] args, Unit unitVar) in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 6331

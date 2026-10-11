@@ -218,6 +218,23 @@ is accepted: finite interpreter inputs pass 155 assertions; owning Float passes
 176 focused assertions, the full LLVM suite passes 950, and the 50-check value-stack
 gate and owning mailbox integration pass with the coordinated ABI changes. Legacy graph AOT and native Float
 formatting remain deferred.
+[Findings 224](../reports/224-native-float-format-findings.md) records the .NET
+formatter counterexample and failed wide-function test. The PRD now selects
+canonical shortest-roundtrip Float text across backends; [report 229](../reports/229-canonical-float-text.md)
+accepts the implementation, including exact IR JSON transport: 37 full-suite
+checks and 1,008 native assertions pass with package auditing enabled. Retain the original failure evidence;
+do not reproduce the host bug or weaken the independent oracle to claim parity.
+
+Before general or untrusted native execution, enforce a post-codegen thread-stack
+budget covering spills, calls, helper frames and interop. Existing metadata
+counts explicit LLVM `alloca` storage only. A 256-value candidate corpus crashed
+the in-process test host; smaller batches preserve coverage, not a safety proof.
+Use a worker-process crash boundary for untrusted native work until the budget
+is validated. This is separate from arena and mailbox storage sizing.
+[Report 225](../reports/225-native-machine-frame-screening.md) implements a
+local first step: entry-block scratch allocation and fresh static compiler
+receipts with a 64 KiB individual-frame limit. This does not establish a
+combined call-chain budget or replace process isolation.
 
 [Report 204](../reports/204-git-control-plane-boundary.md) extends the real-file
 boundary to root Git metadata, including pointer files. A fresh solution build,
@@ -399,7 +416,7 @@ first run and disclosed diagnostic/copy oracle corrections. This is native
 conformance, with no new efficacy, throughput or security-certification claim.
 
 A development-load follow-up should measure fresh project activation separately
-from warm request latency. Report 169 records similar 23–25-second fresh CLI
+from warm request latency. Report 169 records similar 23â€“25-second fresh CLI
 session times across very different request counts and a static-review candidate:
 the manifest loader currently compiles its snapshot twice. Consider reusing the
 already-validated immutable snapshot before adding caches; retain source/manifest
@@ -632,7 +649,7 @@ research continues. Implementation language remains open to maintenance needs.
 
 The first standalone native arena/mailbox comparison is complete; see
 [report 104](../reports/104-native-arena-mailbox-feasibility.md). All 72 runs
-passed. Per-turn backing fell 77–80% for suspended workloads with disposable data,
+passed. Per-turn backing fell 77â€“80% for suspended workloads with disposable data,
 but the retained-only control used more backing and copying. This supports
 continuing the candidate, not a production throughput claim or language-wide
 lifetime guarantee. Next, specify a narrow retained-value/lifetime contract in

@@ -2,8 +2,10 @@ module AgentLang.Llvm.Tests
 
 open System
 open System.Diagnostics
+open System.Globalization
 open System.IO
 open System.Runtime.InteropServices
+open System.Security.Cryptography
 open System.Text
 open System.Text.Json
 open System.Threading
@@ -316,7 +318,41 @@ let private compileNativeWithSources (name: string) (optimization: LlvmOptimizat
 
 let private compileOwningNative toolchain (name: string) (optimization: LlvmOptimization) (body: VerifiedIrBody) =
     let directory = Path.Combine(artifactRoot, name, string optimization)
-    OwningStackAot.compile toolchain optimization directory body
+    let native = OwningStackAot.compile toolchain optimization directory body
+    let mutable inFunction = false
+    let mutable inEntry = false
+    let mutable allocationNames = Set.empty<string>
+    // A valid body can need no scratch at all; scratch presence is asserted by
+    // the String and branch fixtures that deliberately exercise those paths.
+    for line in File.ReadLines(Path.Combine(directory, "owning-stack-native.ll")) do
+        let text = line.Trim()
+        if text.StartsWith("define ", StringComparison.Ordinal) then
+            inFunction <- true
+            inEntry <- false
+            allocationNames <- Set.empty
+        elif text = "}" then
+            inFunction <- false
+            inEntry <- false
+            allocationNames <- Set.empty
+        elif inFunction && text.EndsWith(":", StringComparison.Ordinal) then
+            inEntry <- text = "entry:"
+        elif text.Contains(" = alloca ", StringComparison.Ordinal) then
+            if not (inFunction && inEntry) then
+                failwith $"Owning scratch allocation was emitted outside function entry: {line}"
+            let marker = " = alloca "
+            let markerIndex = text.IndexOf(marker, StringComparison.Ordinal)
+            let allocationName = text.Substring(0, markerIndex)
+            if Set.contains allocationName allocationNames then
+                failwith $"Owning scratch slots alias within one function: {allocationName}"
+            allocationNames <- Set.add allocationName allocationNames
+    native
+
+let private owningNativeAllocaCountForPrefix (prefix: string) (native: OwningStackCompiledProgram) =
+    native.LlvmIr.Split([| '\n' |], StringSplitOptions.RemoveEmptyEntries)
+    |> Array.filter (fun line ->
+        line.Contains(prefix, StringComparison.Ordinal)
+        && line.Contains(" = alloca ", StringComparison.Ordinal))
+    |> Array.length
 
 let private runNativeTestTool executable arguments workingDirectory =
     let startInfo = ProcessStartInfo(executable)
@@ -623,17 +659,17 @@ let private invokeRawMailboxAssociatedResumeWithRetry
         Marshal.FreeHGlobal completionDescriptor
         Marshal.FreeHGlobal inputBuffer
 
-let private invokeRawOwningEntryForMetrics
+let private invokeRawOwningEntryForMetricsWithStackCapacity
     (native: OwningStackCompiledProgram)
     (inputBytes: byte array)
-    (inputExtents: int array) =
+    (inputExtents: int array)
+    (stackCapacity: int) =
     let library = NativeLibrary.Load native.LibraryPath
     let input = Marshal.AllocHGlobal(max 1 inputBytes.Length)
     let extents = Marshal.AllocHGlobal(max sizeof<int32> (inputExtents.Length * sizeof<int32>))
     let retainedCapacity = 4096
     let retained = Marshal.AllocHGlobal(retainedCapacity)
     let contextPointer = Marshal.AllocHGlobal(Marshal.SizeOf<NativeOwningContext>())
-    let stackCapacity = 4096
     let bitmapBytes = stackCapacity / 8
     let stack = Marshal.AllocHGlobal stackCapacity
     let initialized = Marshal.AllocHGlobal bitmapBytes
@@ -677,6 +713,12 @@ let private invokeRawOwningEntryForMetrics
         Marshal.FreeHGlobal retained
         Marshal.FreeHGlobal extents
         Marshal.FreeHGlobal input
+
+let private invokeRawOwningEntryForMetrics
+    (native: OwningStackCompiledProgram)
+    (inputBytes: byte array)
+    (inputExtents: int array) =
+    invokeRawOwningEntryForMetricsWithStackCapacity native inputBytes inputExtents 4096
 
 let private interpreterResultWithInputsAndSteps (executionName: string) (body: VerifiedIrBody) (arguments: IrEntryArgument list) =
     let mutable steps = 0
@@ -2640,8 +2682,9 @@ let private testOwningRefinedIntSlice () =
             Push(LBool false, span "owning-unsupported-validator.agent" 1)
             If(
                 [ Call("drop", span "owning-unsupported-validator.agent" 2)
-                  Push(LFloat 1.5, span "owning-unsupported-validator.agent" 3)
-                  Call("float.to-string", span "owning-unsupported-validator.agent" 4)
+                  Push(LString "hello", span "owning-unsupported-validator.agent" 3)
+                  Push(LString "ell", span "owning-unsupported-validator.agent" 4)
+                  Call("string.contains", span "owning-unsupported-validator.agent" 4)
                   Call("drop", span "owning-unsupported-validator.agent" 5)
                   Push(LBool true, span "owning-unsupported-validator.agent" 6) ],
                 [ Call("drop", span "owning-unsupported-validator.agent" 6)
@@ -2830,6 +2873,9 @@ let private testOwningRefinedStringSlice () =
     let validString = NamedValue("NonEmptyString", StringValue "ok")
     for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
         use constructor = compileOwningNative toolchain "owning-refined-string-constructor" optimization constructorBody
+        check ($"{optimization} refined String constructor retains entry-hoisted validator scratch") (
+            owningNativeAllocaCountForPrefix "validator.arguments." constructor = 1
+            && owningNativeAllocaCountForPrefix "validator.results." constructor = 1)
         let nominalLayout = constructor.Layouts |> List.find (fun layout -> layout.TypeName = "NonEmptyString")
         let stringLayout = constructor.Layouts |> List.find (fun layout -> layout.Type = IrString)
         check ($"{optimization} refined String layout retains nominal key and dynamic String extent") (
@@ -4165,17 +4211,325 @@ let private testOwningFloatSlice () =
             unequalStatus = 0 && unequalContext.StepsConsumed = uint32 resultSteps
             && unequalRetained[..7] = BitConverter.GetBytes 0L)
 
-    let unsupportedTextBody = compileBody (contextWith []) "owning-float-to-string-unsupported" [
-        Push(LFloat 1.5, span "owning-float-to-string-unsupported.agent" 1)
-        Call("float.to-string", span "owning-float-to-string-unsupported.agent" 2)
+    let floatOraclePath =
+        Path.GetFullPath(
+            Path.Combine(
+                __SOURCE_DIRECTORY__,
+                "..",
+                "fixtures",
+                "native-conformance",
+                "float-shortest-oracle.json"))
+    let floatOracleBytes = File.ReadAllBytes floatOraclePath
+    let floatOracleSha256 = Convert.ToHexString(SHA256.HashData floatOracleBytes)
+    let floatOracleGeneratorPath = Path.ChangeExtension(floatOraclePath, ".py")
+    let floatOracleGeneratorSha256 =
+        Convert.ToHexString(SHA256.HashData(File.ReadAllBytes floatOracleGeneratorPath))
+    use floatOracleDocument = JsonDocument.Parse(Encoding.UTF8.GetString floatOracleBytes)
+    let floatOracleRoot = floatOracleDocument.RootElement
+    let floatOracleMetadata = floatOracleRoot.GetProperty("oracle")
+    let floatOracleSamples =
+        floatOracleRoot.GetProperty("samples").EnumerateArray()
+        |> Seq.map (fun sample ->
+            let bitsText = sample[0].GetString()
+            let bitsUnsigned = UInt64.Parse(bitsText, NumberStyles.HexNumber, CultureInfo.InvariantCulture)
+            let bits = BitConverter.ToInt64(BitConverter.GetBytes bitsUnsigned, 0)
+            let expected = sample[1].GetString()
+            let roundTripText = sample[2].GetString()
+            let roundTripUnsigned = UInt64.Parse(roundTripText, NumberStyles.HexNumber, CultureInfo.InvariantCulture)
+            let parsed = Double.Parse(expected, NumberStyles.Float, CultureInfo.InvariantCulture)
+            let parsedBits = BitConverter.DoubleToInt64Bits parsed
+            bits, expected, roundTripUnsigned = bitsUnsigned && parsedBits = bits && Double.IsFinite(doubleFromBits bits))
+        |> Seq.toArray
+    let floatOracleTextByBits =
+        floatOracleSamples
+        |> Array.map (fun (bits, expected, _) -> bits, expected)
+        |> Map.ofArray
+    let floatTextOracle (value: float) =
+        let bits = BitConverter.DoubleToInt64Bits value
+        match Map.tryFind bits floatOracleTextByBits with
+        | Some text -> text
+        | None -> failwith ($"The pinned CPython oracle has no sample for Float bits 0x{uint64 bits:X16}.")
+    let floatOracleCategories =
+        floatOracleMetadata.GetProperty("categoryAttemptCounts").EnumerateObject()
+        |> Seq.map (fun category -> category.Name)
+        |> Set.ofSeq
+    let expectedFloatOracleCategories =
+        Set.ofList [
+            "contract-vector"
+            "decimal-power-neighbor"
+            "exponent-band"
+            "notation-boundary"
+            "power-of-two"
+            "seeded-random"
+            "signed-zero"
+            "subnormal"
+        ]
+    let actualGeneratorHash = "34EDA3C815F4D03A49C00B19280CE1564CFC08578C7D1825D755855DBB1660C7"
+    let actualRowsHash = "D9E387EF70C0EE70D0031F9A80DDC1E76A3CEA8220EBBBF97EFD43B2F7604A1C"
+    let actualFixtureHash = "405BB0DCA3540A7D36CF6B9BF9A05D318B72612C415D9984DA2A698BEDD53B4E"
+    check "float oracle fixture is pinned to the independent CPython 3.12.10 generator and corpus hashes" (
+        floatOracleRoot.GetProperty("schemaVersion").GetInt32() = 1
+        && floatOracleMetadata.GetProperty("implementation").GetString() = "CPython"
+        && floatOracleMetadata.GetProperty("pythonVersion").GetString() = "3.12.10"
+        && floatOracleMetadata.GetProperty("pythonBuild").GetString() = "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        && floatOracleMetadata.GetProperty("shortestSource").GetString() = "repr(float), CPython shortest-roundtrip conversion"
+        && floatOracleMetadata.GetProperty("canonicalRenderer").GetString() = "Decimal tuple; adjusted exponent -4..16 plain, otherwise uppercase E with sign and two exponent digits; append .0 to plain integers and signed zero"
+        && floatOracleMetadata.GetProperty("generator").GetString() = "float-shortest-oracle.py"
+        && floatOracleMetadata.GetProperty("generatorSha256").GetString() = actualGeneratorHash
+        && floatOracleGeneratorSha256 = actualGeneratorHash
+        && floatOracleMetadata.GetProperty("rowsSha256").GetString() = actualRowsHash
+        && floatOracleMetadata.GetProperty("sampleCount").GetInt32() = 30400
+        && floatOracleSamples.Length = 30400
+        && floatOracleCategories = expectedFloatOracleCategories
+        && floatOracleSha256 = actualFixtureHash)
+    check "every CPython oracle text parses back to its exact finite IEEE-754 bits" (
+        floatOracleSamples |> Array.forall (fun (_, _, bitRoundtripPassed) -> bitRoundtripPassed))
+    let managedFormatterMismatch =
+        floatOracleSamples
+        |> Array.tryPick (fun (bits, expected, _) ->
+            let actual = FloatText.format (doubleFromBits bits)
+            if actual = expected then None else Some $"bits=0x{uint64 bits:X16}; expected={expected}; actual={actual}")
+    check ($"AgentLang.FloatText.format matches the pinned CPython shortest oracle for all {floatOracleSamples.Length} finite samples; mismatch={managedFormatterMismatch}") (
+        managedFormatterMismatch.IsNone)
+
+    let expectedStringBytes (values: string list) = values |> List.map mailboxStringBytes |> Array.concat
+    let directFormatContext = contextWith []
+    let directFormatBody = compileBodyWithInputs directFormatContext "owning-float-to-string-input" [ TFloat ] [
+        Call("float.to-string", span "owning-float-to-string-input.agent" 1)
     ]
-    let absentTools = LlvmToolchain("missing-float-test-clang", "missing-float-test-lld", None)
-    let unsupportedText = errorOf (fun () ->
-        OwningStackAot.compile absentTools LlvmOptimization.O0 (Path.Combine(artifactRoot, "owning-float-to-string-unsupported")) unsupportedTextBody
-        |> ignore)
-    check "float.to-string remains explicitly unsupported and fails before any native tool invocation" (
-        unsupportedText.Code = "IR_OWNING_STACK_PRIMITIVE_UNSUPPORTED"
-        && not (Directory.Exists(Path.Combine(artifactRoot, "owning-float-to-string-unsupported"))))
+    let literalFormatValue = doubleFromBits 0x4415AF1D78B58C40L
+    let literalFormatBody = compileBody (contextWith []) "owning-float-to-string-literal" [
+        Push(LFloat literalFormatValue, span "owning-float-to-string-literal.agent" 1)
+        Call("float.to-string", span "owning-float-to-string-literal.agent" 2)
+    ]
+    let arithmeticFormatValue = 0.1 + 0.2
+    let arithmeticFormatBody = compileBody (contextWith []) "owning-float-to-string-arithmetic" [
+        Push(LFloat 0.1, span "owning-float-to-string-arithmetic.agent" 1)
+        Push(LFloat 0.2, span "owning-float-to-string-arithmetic.agent" 2)
+        Call("float.add", span "owning-float-to-string-arithmetic.agent" 3)
+        Call("float.to-string", span "owning-float-to-string-arithmetic.agent" 4)
+    ]
+    let formatWord = wordEntry "format-float" [ TFloat ] [ TString ] Set.empty [
+        Call("float.to-string", span "owning-float-format-word.agent" 1)
+    ]
+    let formatRecord = recordDefinition "FloatText" [ recordField "text" TString ]
+    let aggregateFormatContext = contextWithRecordDefinitions [ formatWord ] [ formatRecord ] []
+    let aggregateFormatProgram = Compiler.compileIrProgram aggregateFormatContext
+    let aggregateFormatBody = Compiler.compileIrBodyAgainstProgram aggregateFormatContext aggregateFormatProgram "owning-float-to-string-call-local-aggregate" [ TFloat ] [
+        Let("saved-float", span "owning-float-to-string-call-local-aggregate.agent" 1)
+        Load("saved-float", span "owning-float-to-string-call-local-aggregate.agent" 2)
+        Call("format-float", span "owning-float-to-string-call-local-aggregate.agent" 3)
+        Call("floatText.new", span "owning-float-to-string-call-local-aggregate.agent" 4)
+        Call("floatText.text", span "owning-float-to-string-call-local-aggregate.agent" 5)
+    ]
+    let branchFormatBody = compileBodyWithInputs (contextWith []) "owning-float-to-string-branch" [ TBool ] [
+        If(
+            [ Push(LFloat 1.0e16, span "owning-float-to-string-branch.agent" 2)
+              Call("float.to-string", span "owning-float-to-string-branch.agent" 3) ],
+            [ Push(LFloat 1.0e17, span "owning-float-to-string-branch.agent" 4)
+              Call("float.to-string", span "owning-float-to-string-branch.agent" 5) ],
+            span "owning-float-to-string-branch.agent" 1)
+    ]
+
+    let checkFormattedOutput (label: string) (native: OwningStackCompiledProgram) inputs (expected: string) =
+        let expectedBytes = mailboxStringBytes expected
+        let result = native.Execute(inputs, 16384, expectedBytes.Length)
+        check label (
+            result.Values = [ StringValue expected ]
+            && result.RetainedOutputBytes = expectedBytes
+            && result.RetainedBytesWritten = expectedBytes.Length
+            && result.Metrics.FinalCursorBytes = 0)
+    let interpretedFormat, interpretedFormatSteps =
+        interpreterResultWithInputsAndSteps
+            "owning-float-to-string-input"
+            directFormatBody
+            [ IrEntryArgument.FloatArgument literalFormatValue ]
+    check "interpreter float.to-string agrees with the independent CPython shortest oracle" (
+        interpretedFormat = [ StringValue(floatTextOracle literalFormatValue) ]
+        && interpretedFormatSteps = 1)
+    let captureExecutionFailure action =
+        try
+            action ()
+            None
+        with :? OwningStackExecutionException as failure -> Some failure
+
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use directFormat = compileOwningNative toolchain "owning-float-to-string-input" optimization directFormatBody
+        let directExpectedBytes = mailboxStringBytes (floatTextOracle literalFormatValue)
+        let directRawStatus, directRawContext, directRawRetained =
+            invokeRawOwningEntryForMetrics
+                directFormat
+                (BitConverter.GetBytes(BitConverter.DoubleToInt64Bits literalFormatValue))
+                [| 8 |]
+        check ($"{optimization} float.to-string raw entry accounts for exactly one operation and publishes the expected String bytes") (
+            directRawStatus = 0
+            && directRawContext.StepsConsumed = 1u
+            && directRawRetained[..(directExpectedBytes.Length - 1)] = directExpectedBytes
+            && directRawRetained[directExpectedBytes.Length..] = Array.create (directRawRetained.Length - directExpectedBytes.Length) 0xA5uy)
+        checkFormattedOutput
+            ($"{optimization} float.to-string input matches the pinned CPython oracle")
+            directFormat [ FloatValue literalFormatValue ] (floatTextOracle literalFormatValue)
+
+        use literalFormat = compileOwningNative toolchain "owning-float-to-string-literal" optimization literalFormatBody
+        checkFormattedOutput
+            ($"{optimization} float.to-string literal matches the pinned CPython oracle")
+            literalFormat [] (floatTextOracle literalFormatValue)
+
+        use arithmeticFormat = compileOwningNative toolchain "owning-float-to-string-arithmetic" optimization arithmeticFormatBody
+        checkFormattedOutput
+            ($"{optimization} float arithmetic then float.to-string matches the pinned CPython oracle")
+            arithmeticFormat [] (floatTextOracle arithmeticFormatValue)
+
+        use aggregateFormat = compileOwningNative toolchain "owning-float-to-string-call-local-aggregate" optimization aggregateFormatBody
+        checkFormattedOutput
+            ($"{optimization} float.to-string survives a user call, local, and String record field")
+            aggregateFormat [ FloatValue literalFormatValue ] (floatTextOracle literalFormatValue)
+
+        use branchFormat = compileOwningNative toolchain "owning-float-to-string-branch" optimization branchFormatBody
+        check ($"{optimization} both branch-local Float formatters retain distinct entry-hoisted scratch") (
+            owningNativeAllocaCountForPrefix "float.to.string.ascii.buffer." branchFormat = 2
+            && owningNativeAllocaCountForPrefix "float.to.string.length.pointer." branchFormat = 2)
+        for flag, value in [ true, 1.0e16; false, 1.0e17 ] do
+            checkFormattedOutput
+                ($"{optimization} float.to-string in the {flag} String branch uses the pinned CPython oracle")
+                branchFormat [ BoolValue flag ] (floatTextOracle value)
+
+        let capacitySentinel = Array.create 64 0xA5uy
+        let tooSmall =
+            try
+                directFormat.ExecuteInto([ FloatValue 1.25 ], 4096, capacitySentinel, 1) |> ignore
+                None
+            with :? OwningStackCapacityException as failure -> Some failure
+        check ($"{optimization} float.to-string retained-capacity failure leaves caller output untouched") (
+            tooSmall |> Option.exists (fun failure ->
+                failure.Code = "OWNING_RETAINED_CAPACITY"
+                && failure.Metrics.FinalCursorBytes = 0)
+            && capacitySentinel = Array.create capacitySentinel.Length 0xA5uy)
+
+        let stackCapacitySentinel = Array.create 64 0xA5uy
+        let stackTooSmall =
+            try
+                directFormat.ExecuteInto([ FloatValue 1.25 ], 8, stackCapacitySentinel) |> ignore
+                None
+            with :? OwningStackCapacityException as failure -> Some failure
+        check ($"{optimization} float.to-string stack-capacity failure leaves caller output untouched") (
+            stackTooSmall |> Option.exists (fun failure ->
+                failure.Code = "OWNING_STACK_CAPACITY"
+                && failure.Metrics.FinalCursorBytes = 0)
+            && stackCapacitySentinel = Array.create stackCapacitySentinel.Length 0xA5uy)
+
+        let malformedBits = 0x7FF8000000000001L
+        let rawStatus, rawContext, rawRetained = invokeRawOwningEntryForMetrics directFormat (bytesOfBits malformedBits) [| 8 |]
+        check ($"{optimization} malformed non-finite Float is rejected before formatting or output publication") (
+            rawStatus <> 0
+            && rawContext.StepsConsumed = 0u
+            && rawRetained = Array.create rawRetained.Length 0xA5uy)
+
+        let fuelOperations =
+            [ for index in 0 .. 4999 do
+                  Call("dup", span "owning-float-to-string-fuel.agent" (index * 2 + 1))
+                  Call("drop", span "owning-float-to-string-fuel.agent" (index * 2 + 2)) ]
+            @ [ Call("float.to-string", span "owning-float-to-string-fuel.agent" 10001) ]
+        let fuelBody = compileBodyWithInputs (contextWith []) "owning-float-to-string-fuel" [ TFloat ] fuelOperations
+        use fuelNative = compileOwningNative toolchain "owning-float-to-string-fuel" optimization fuelBody
+        let fuelSentinel = Array.create 64 0xA5uy
+        let fuelFailure = captureExecutionFailure (fun () ->
+            fuelNative.ExecuteInto([ FloatValue 1.25 ], 131072, fuelSentinel) |> ignore)
+        let fuelStatus, fuelContext, fuelRetained =
+            invokeRawOwningEntryForMetricsWithStackCapacity
+                fuelNative
+                (BitConverter.GetBytes(BitConverter.DoubleToInt64Bits 1.25))
+                [| 8 |]
+                131072
+        check ($"{optimization} float.to-string charges fuel before formatting and does not publish a failed result (diagnostic={fuelFailure |> Option.map (fun failure -> failure.Diagnostic.Code, failure.Metrics.FinalCursorBytes)}; rawStatus={fuelStatus}; rawSteps={fuelContext.StepsConsumed}; rawRetainedSentinel={fuelRetained = Array.create fuelRetained.Length 0xA5uy}; hostSentinel={fuelSentinel = Array.create fuelSentinel.Length 0xA5uy})") (
+            fuelFailure |> Option.exists (fun failure ->
+                failure.Diagnostic.Code = "RUNTIME_STEP_LIMIT"
+                && failure.Metrics.FinalCursorBytes = 0)
+            && fuelStatus <> 0
+            && fuelContext.StepsConsumed = 10001u
+            && fuelRetained = Array.create fuelRetained.Length 0xA5uy
+            && fuelSentinel = Array.create fuelSentinel.Length 0xA5uy)
+
+    let corpusBatchSize = 32
+    let corpusInputs = List.replicate corpusBatchSize TFloat
+    let corpusExpressions =
+        [ for index in corpusBatchSize - 1 .. -1 .. 0 do
+              Call("float.to-string", span "owning-float-to-string-corpus.agent" (index * 2 + 1))
+              Let($"formatted-{index}", span "owning-float-to-string-corpus.agent" (index * 2 + 2)) ]
+        @ [ for index in 0 .. corpusBatchSize - 1 do
+                Load($"formatted-{index}", span "owning-float-to-string-corpus.agent" (corpusBatchSize * 2 + index + 1)) ]
+    let corpusBody = compileBodyWithInputs (contextWith []) "owning-float-to-string-corpus" corpusInputs corpusExpressions
+    let corpusRows = floatOracleSamples |> Array.map (fun (bits, expected, _) -> bits, expected)
+    let corpusBits = corpusRows |> Array.map fst
+    let mutable corpusMismatch: string option = None
+    let mutable corpusChecked = 0
+    let mutable managedCorpusMismatch: string option = None
+    let mutable managedCorpusChecked = 0
+    let mutable interpreterBatchStart = 0
+    while interpreterBatchStart < corpusRows.Length do
+        let batchRows =
+            Array.init corpusBatchSize (fun offset ->
+                let index = interpreterBatchStart + offset
+                if index < corpusRows.Length then corpusRows[index] else (0L, "0.0"))
+        let expectedValues = batchRows |> Array.map (fun (_, text) -> StringValue text) |> Array.toList
+        let inputs =
+            batchRows
+            |> Array.map (fun (bits, _) -> IrEntryArgument.FloatArgument(doubleFromBits bits))
+            |> Array.toList
+        let interpreted, _ =
+            interpreterResultWithInputsAndSteps "owning-float-to-string-corpus" corpusBody inputs
+        if managedCorpusMismatch.IsNone && interpreted <> expectedValues then
+            let firstMismatch =
+                List.zip interpreted expectedValues
+                |> List.tryFindIndex (fun (actual, expected) -> actual <> expected)
+                |> Option.map (fun index ->
+                    let globalIndex = interpreterBatchStart + index
+                    let bits = if globalIndex < corpusRows.Length then corpusRows[globalIndex] |> fst else 0L
+                    $"managed sample {globalIndex} bits=0x{uint64 bits:X16}; expected={expectedValues[index]}; actual={interpreted[index]}")
+                |> Option.defaultValue $"managed sample {interpreterBatchStart} returned an unexpected value count"
+            managedCorpusMismatch <- Some firstMismatch
+        managedCorpusChecked <- managedCorpusChecked + min corpusBatchSize (corpusRows.Length - interpreterBatchStart)
+        interpreterBatchStart <- interpreterBatchStart + corpusBatchSize
+    check ($"managed IR interpreter matches the pinned CPython oracle for {corpusRows.Length} finite patterns in 32-value batches; mismatch={managedCorpusMismatch}") (
+        managedCorpusMismatch.IsNone && managedCorpusChecked = corpusRows.Length)
+
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use corpusNative = compileOwningNative toolchain "owning-float-to-string-corpus" optimization corpusBody
+        let mutable batchStart = 0
+        while batchStart < corpusBits.Length do
+            if batchStart % 4096 = 0 then
+                printfn "[float.to-string oracle] %A checked %d/%d finite bit patterns" optimization batchStart corpusBits.Length
+            let batchRows =
+                Array.init corpusBatchSize (fun offset ->
+                    let index = batchStart + offset
+                    if index < corpusRows.Length then corpusRows[index] else (0L, "0.0"))
+            let expectedStrings = batchRows |> Array.map snd
+            let expectedBytes = expectedStringBytes (Array.toList expectedStrings)
+            let batchInputs =
+                batchRows
+                |> Array.map (fun (bits, _) -> FloatValue(doubleFromBits bits))
+                |> Array.toList
+            let result =
+                corpusNative.Execute(
+                    batchInputs,
+                    131072,
+                    expectedBytes.Length)
+            let expectedValues = expectedStrings |> Array.map StringValue |> Array.toList
+            if corpusMismatch.IsNone && (result.Values <> expectedValues || result.RetainedOutputBytes <> expectedBytes) then
+                let firstMismatch =
+                    List.zip result.Values expectedValues
+                    |> List.tryFindIndex (fun (actual, expected) -> actual <> expected)
+                    |> Option.map (fun index ->
+                        let globalIndex = batchStart + index
+                        let bits = if globalIndex < corpusBits.Length then corpusBits[globalIndex] else 0L
+                        $"{optimization} sample {globalIndex} bits=0x{uint64 bits:X16}; expected={expectedValues[index]}; actual={result.Values[index]}")
+                    |> Option.defaultValue $"{optimization} sample {batchStart} retained bytes differed from the exact String encoding"
+                corpusMismatch <- Some firstMismatch
+            corpusChecked <- corpusChecked + min corpusBatchSize (corpusBits.Length - batchStart)
+            batchStart <- batchStart + corpusBatchSize
+    printfn "[float.to-string oracle] CPython 3.12.10; %d finite patterns checked per optimization profile" corpusBits.Length
+    check ($"native float.to-string matches the pinned CPython oracle for {corpusBits.Length} finite seeded, exponent-band, power, subnormal, neighbor, and notation-boundary bit patterns; mismatch={corpusMismatch}") (
+        corpusMismatch.IsNone && corpusChecked = corpusBits.Length * 2)
 
     let mailboxContext = contextWithRecords [] [
         recordDefinition "FloatMailboxState" [ recordField "value" TFloat ]
@@ -5753,6 +6107,69 @@ let private testNativeModuleCompilation () =
     finally
         NativeLibrary.Free library
 
+let private testNativeStackScreen () =
+    let usageFile = "fixture.su"
+    let parse text = NativeStackUsage.parseText usageFile text
+    let reject name expectedCode action =
+        let mutable error = None
+        try action () with :? NativeStackUsageException as ex -> error <- Some ex
+        check name (error |> Option.exists (fun ex -> ex.Code = expectedCode))
+    let frames = parse "C:\\source.ll:entry\t65536\tstatic\nC:\\source.ll:entry\t0\tstatic\n"
+    check "stack receipt retains duplicate frame labels and exact boundary sizes" (frames.Length = 2 && frames[0].SizeBytes = 65536UL)
+    NativeStackUsage.checkFrames usageFile 65536UL frames
+    for name, text in [
+        "empty", ""
+        "dynamic", "source:entry\t16\tdynamic\n"
+        "unknown qualifier", "source:entry\t16\tdynamic,bounded\n"
+        "extra column", "source:entry\t16\tstatic\textra\n"
+        "negative size", "source:entry\t-1\tstatic\n"
+        "overflow size", "source:entry\t18446744073709551616\tstatic\n"
+        "missing frame", "source:\t16\tstatic\n"
+        "missing separator", "garbage\t0\tstatic\n"
+        "missing source location", ":entry\t0\tstatic\n"
+    ] do
+        reject $"stack receipt rejects {name}" "IR_NATIVE_STACK_USAGE_UNKNOWN" (fun () -> parse text |> ignore)
+    reject "stack screen rejects an oversized static frame" "IR_NATIVE_STACK_FRAME_LIMIT" (fun () ->
+        parse "source:entry\t65537\tstatic\n" |> NativeStackUsage.checkFrames usageFile 65536UL)
+    let toolchain = LlvmToolchain.discover()
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        let directory = Path.Combine(artifactRoot, "native-stack-screen", string optimization)
+        Directory.CreateDirectory directory |> ignore
+        let irPath = Path.Combine(directory, "oversized.ll")
+        let runtimePath = Path.Combine(directory, "runtime.c")
+        let dllPath = Path.Combine(directory, "oversized.dll")
+        File.WriteAllText(irPath, String.concat "\n" [
+            "target triple = \"x86_64-pc-windows-msvc\""
+            "define dllexport i8 @oversized(i64 %index) {"
+            "entry:"
+            "  %buffer = alloca [131072 x i8], align 16"
+            "  %cell = getelementptr [131072 x i8], ptr %buffer, i64 0, i64 %index"
+            "  store volatile i8 7, ptr %cell"
+            "  %value = load volatile i8, ptr %cell"
+            "  ret i8 %value"
+            "}"
+        ])
+        File.WriteAllText(runtimePath, "int runtime_fixture(void) { return 0; }\n")
+        let sidecar = Path.Combine(directory, "agentlang-native.su")
+        File.WriteAllText(sidecar, "stale:safe\t0\tstatic\n")
+        File.WriteAllText(dllPath, "stale artifact must not survive rejected compilation")
+        reject $"{optimization}: oversized actual machine frame rejected before link/invocation" "IR_NATIVE_STACK_FRAME_LIMIT" (fun () ->
+            LlvmToolchain.compileLibraryWithRuntimeAndNativeStackScreen toolchain optimization irPath runtimePath directory dllPath |> ignore)
+        check $"{optimization}: fresh compiler receipt replaces stale metadata" (
+            File.Exists sidecar && not (File.ReadAllText(sidecar).Contains("stale:safe", StringComparison.Ordinal)))
+        check $"{optimization}: rejected artifact has no linked DLL" (not (File.Exists dllPath))
+        reject $"{optimization}: missing receipt is rejected" "IR_NATIVE_STACK_USAGE_UNKNOWN" (fun () ->
+            NativeStackUsage.verifyFreshFile(Path.Combine(directory, "absent.su")))
+        File.WriteAllText(irPath, "define dllexport i32 @small() {\nentry:\n  ret i32 0\n}\n")
+        File.WriteAllText(runtimePath, "int runtime_fixture(unsigned long long index) { volatile unsigned char scratch[131072]; scratch[index] = 7; return scratch[index]; }\n")
+        reject $"{optimization}: oversized C runtime frame rejected before linking" "IR_NATIVE_STACK_FRAME_LIMIT" (fun () ->
+            LlvmToolchain.compileLibraryWithRuntimeAndNativeStackScreen toolchain optimization irPath runtimePath directory dllPath |> ignore)
+        check $"{optimization}: oversized C runtime leaves no DLL" (not (File.Exists dllPath))
+        File.WriteAllText(runtimePath, "int runtime_fixture(unsigned int count) { volatile unsigned char scratch[count]; scratch[0] = 7; return scratch[count - 1]; }\n")
+        reject $"{optimization}: dynamic C runtime frame rejected before linking" "IR_NATIVE_STACK_USAGE_UNKNOWN" (fun () ->
+            LlvmToolchain.compileLibraryWithRuntimeAndNativeStackScreen toolchain optimization irPath runtimePath directory dllPath |> ignore)
+        check $"{optimization}: dynamic C runtime leaves no DLL" (not (File.Exists dllPath))
+
 let private testCompilerRuntimeDiscovery () =
     let temporaryRoot = Path.Combine(Path.GetTempPath(), "agentlang-llvm-runtime-" + Guid.NewGuid().ToString("N"))
     let versionDirectory = Path.Combine(temporaryRoot, "MSVC", "99.0.0")
@@ -6079,6 +6496,7 @@ let private runFullSuite () =
         printStage "native module validation, immutable ABI metadata, and multi-entry compilation"
         testNativeModuleValidationBeforeTools ()
         testNativeModuleCompilation ()
+        testNativeStackScreen ()
         testCompilerRuntimeDiscovery ()
         printfn "AgentLang.Llvm.Tests: %d assertions passed; artifacts: %s" assertions artifactRoot
         0
@@ -6088,7 +6506,15 @@ let private runFullSuite () =
 
 [<EntryPoint>]
 let main args =
-    if args |> Array.contains "--arena-lifetime" then
+    if args |> Array.contains "--native-stack-screen" then
+        try
+            testNativeStackScreen ()
+            printfn "AgentLang.Llvm.Tests native stack screen: %d assertions passed; artifacts: %s" assertions artifactRoot
+            0
+        with ex ->
+            eprintfn "%s" (ex.ToString())
+            1
+    elif args |> Array.contains "--arena-lifetime" then
         try
             let assertions = global.AgentLang.Llvm.ArenaLifetimeTests.run ()
             printfn "AgentLang.Llvm.Tests arena lifetime: %d assertions passed" assertions

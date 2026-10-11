@@ -1,0 +1,430 @@
+{
+  "status": "candidate, exact .NET parity failed; contract pending",
+  "baseCommit": "57097550576df10208563c15235d4468c1b3bb4b",
+  "zip": "candidate-and-validation.zip",
+  "sha256": "ec578078eae6be789c9a69082a94210e1e76ba515cc6bd9e95373362dd017bdf",
+  "memberCount": 84,
+  "verifiedAllMembers": true,
+  "members": [
+    {
+      "name": "candidate-source/scripts/Verify-NativeValueStack.ps1",
+      "bytes": 76215,
+      "sha256": "3f876b43a2684f3b486bffecb73f9241e38475ee5719927f5f8f6679f816a9ee"
+    },
+    {
+      "name": "candidate-source/scripts/Verify-OwningMailbox.ps1",
+      "bytes": 150498,
+      "sha256": "a441064226a10b7a53095e977224e4c0fb376e527bd9dedc7a04fd00c6650dda"
+    },
+    {
+      "name": "candidate-source/src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+      "bytes": 1541,
+      "sha256": "b8c7c8e15bb1a85eec9810e48effeb2cfd9c46db6848d8e80044e82efbcacfa3"
+    },
+    {
+      "name": "candidate-source/src/AgentLang.Llvm/native/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "name": "candidate-source/src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+      "bytes": 167249,
+      "sha256": "f288d1020e6e6f5f70e801f51ea0befecd8d445e7db86d865a9af900f6e82272"
+    },
+    {
+      "name": "candidate-source/src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "name": "candidate-source/src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "name": "candidate-source/src/AgentLang.Llvm/OwningStackAot.fs",
+      "bytes": 437723,
+      "sha256": "2bf4dd46111e2206ab314a15fc10437d1afd5337f99530c1eba769a623b1e11a"
+    },
+    {
+      "name": "candidate-source/tests/AgentLang.Llvm.Tests/Program.fs",
+      "bytes": 408768,
+      "sha256": "dbe7026c7fa0e9eddf80b2d88e87fd9a790d5c79f483b47aa52af2df087ca1e7"
+    },
+    {
+      "name": "candidate-source/tests/fixtures/native-conformance/native-value-stack.json",
+      "bytes": 75781,
+      "sha256": "e63f153915e3ee94fc9cf22e0c35b187bc0155207157da701ee483c01e1021c5"
+    },
+    {
+      "name": "environment.json",
+      "bytes": 528,
+      "sha256": "02befd8dcafdefba5df64da5c0f5342fdf9a41d2984ddad94f4227079661ef78"
+    },
+    {
+      "name": "lowering-build-attempt-03.log",
+      "bytes": 812,
+      "sha256": "e03b95590b222308bbd5d3c946d14c5a2d5b52a574f60316cc515defa1e276b6"
+    },
+    {
+      "name": "lowering-build-attempt-04.log",
+      "bytes": 417,
+      "sha256": "bbf3883d58fcdd0efb3b65b4f3d7964b50143612d780411cd88d47802aab65ce"
+    },
+    {
+      "name": "lowering-focused-attempt-02.log",
+      "bytes": 731,
+      "sha256": "9d1940b2489921e02e9d4f565572a47b31b25d6231107913a4104491874c57a4"
+    },
+    {
+      "name": "lowering-focused-attempt-03.log",
+      "bytes": 754,
+      "sha256": "5d432f94026531fd3fa4c3a1bbe3a82abfae5fd4cd4652d9ff6bf64282fab909"
+    },
+    {
+      "name": "lowering-focused-attempt-04.log",
+      "bytes": 1933,
+      "sha256": "1a0f08b655f9159f746e7d67c10c7f13f5aee6f1df47a1d8c7aa68e1c471e650"
+    },
+    {
+      "name": "net9-repro/net9-repro.csproj",
+      "bytes": 196,
+      "sha256": "271b5d6c542eb9e5f6adb038202425813c5ce294865b151e746ea77c75c550e5"
+    },
+    {
+      "name": "net9-repro/output.txt",
+      "bytes": 811,
+      "sha256": "c893bcea53ad8dec42918c67dfc1c883984f684828d9e6f66a886b323e7cb414"
+    },
+    {
+      "name": "net9-repro/Program.cs",
+      "bytes": 1512,
+      "sha256": "449eaf9a9189fd69f1d695d29b781861bd0eb1cf0c1a306c30608030d3cb7ad0"
+    },
+    {
+      "name": "net9-repro/README.md",
+      "bytes": 2210,
+      "sha256": "8c3a5d7929d56ab7c64408bb956069e175ad80365988a1dee4384cb078b31a61"
+    },
+    {
+      "name": "net9-repro/run.ps1",
+      "bytes": 333,
+      "sha256": "d77f7fd24a9c80affc2fa91d2f90280c0ca2dfb66904ce3d64e218c64294a37c"
+    },
+    {
+      "name": "numerical-review.txt",
+      "bytes": 1361,
+      "sha256": "7fce69bd9aa90b0950d8caf4395dd5a2a72e4d2b2b21f26357f4edb6e4778233"
+    },
+    {
+      "name": "plan.txt",
+      "bytes": 1550,
+      "sha256": "937a312930599cf68c5460ca96fbce00b880f8045f1a1e1b5e536d6e2a776412"
+    },
+    {
+      "name": "power-two-mismatch-probe-net10.json",
+      "bytes": 209,
+      "sha256": "441e67d232772f844d03075a56db3f208eb4549b41672ddce5a1b2498f701507"
+    },
+    {
+      "name": "report-draft.md",
+      "bytes": 2157,
+      "sha256": "b27fe4665c75f20a9db89c116349e41b3f8f9b08d7cc40221e7ae73dc2c0ec4a"
+    },
+    {
+      "name": "runtime/audit_symbols.ps1",
+      "bytes": 3093,
+      "sha256": "1dcd9a611f7599116b766d074bb27508e82d4173a1dff0af18fe2dd203500b48"
+    },
+    {
+      "name": "runtime/baseline/owning_stack_runtime.c",
+      "bytes": 105471,
+      "sha256": "9cc95796da4e37e53eef3c4fb4a94a8d76b1a8e80aec7abf1f358f4218c960e6"
+    },
+    {
+      "name": "runtime/baseline/owning_stack_runtime.h",
+      "bytes": 12576,
+      "sha256": "f526640dd2d4415fb08c92afb0295e2a789476afc1d66bf350e301d9ee89dfc4"
+    },
+    {
+      "name": "runtime/build-O0.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "runtime/build-O2.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "runtime/build-ubsan-trap.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "runtime/clang-version.log",
+      "bytes": 175,
+      "sha256": "3a64c31205f894b283d54af1f2bd1b333c8853f51831d8753bc94aef46c9afed"
+    },
+    {
+      "name": "runtime/compare_float_fuzz.ps1",
+      "bytes": 1412,
+      "sha256": "1ea5de302fa133805e2b28177923486f59aee8d3e0e1524ce008fbc0a01b819c"
+    },
+    {
+      "name": "runtime/compare_pow2_probe.ps1",
+      "bytes": 1814,
+      "sha256": "d4df1917cde22683127596076bbbabdc0dab5295e65c30b04c1502ae08a6158d"
+    },
+    {
+      "name": "runtime/diff-check.log",
+      "bytes": 168,
+      "sha256": "b81c1ee2cb1fe1f29e23df438bb10c1e13f6d14985151ec0bd5b5da921a9bd84"
+    },
+    {
+      "name": "runtime/dotnet-float-format-10000.tsv",
+      "bytes": 414488,
+      "sha256": "5d7e43dfbdaec71a2c7a84c3f663ac98649670c39cd40520e204378243f5d4f3"
+    },
+    {
+      "name": "runtime/dotnet-g-fallback-bug-repro-net10.log",
+      "bytes": 2079,
+      "sha256": "67150caf7bf39a6d19d5d52a90ea25331724e7afccbaa7961d56d8fdc57adc51"
+    },
+    {
+      "name": "runtime/float_format_fuzz.c",
+      "bytes": 813,
+      "sha256": "546b7294cd00d4cf7767cffbf29a0fba80b7dfd172aeca0b3c0907e52f79603f"
+    },
+    {
+      "name": "runtime/float_format_fuzz.exe",
+      "bytes": 183808,
+      "sha256": "de7a70600401fd455f1e9db0f8d069cdbc12480ffdbb5f15df373ef694c8304a"
+    },
+    {
+      "name": "runtime/float_format_pow2_probe.c",
+      "bytes": 898,
+      "sha256": "df6928ec6a189a4c63c85dac12518f52df7fe5a83ab92b0a485f0b518acdaa62"
+    },
+    {
+      "name": "runtime/float_format_pow2_probe.exe",
+      "bytes": 184320,
+      "sha256": "d90f5b469dfa3d32226114006f82b1593296f9d88e19e0049166632a00b43300"
+    },
+    {
+      "name": "runtime/float-format-10000-bits.txt",
+      "bytes": 180000,
+      "sha256": "909aa920bb00191bd2c8fdd576f0d4f6fbebfd6eaf46dd8dc13063cc34827f59"
+    },
+    {
+      "name": "runtime/fuzz-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "runtime/fuzz-commands-and-exits.txt",
+      "bytes": 988,
+      "sha256": "5a13646da4ea2a8f8b64e0c71324db96b8bb09395419dbfc531306084481a1b8"
+    },
+    {
+      "name": "runtime/hashes.sha256",
+      "bytes": 4564,
+      "sha256": "b9b0d2715848e34fd84589410908d132e0cc8b49bb0756cf4e37a6400535a493"
+    },
+    {
+      "name": "runtime/native-float-format-10000.tsv",
+      "bytes": 414488,
+      "sha256": "5d7e43dfbdaec71a2c7a84c3f663ac98649670c39cd40520e204378243f5d4f3"
+    },
+    {
+      "name": "runtime/native-test-commands.txt",
+      "bytes": 2172,
+      "sha256": "63504d00f10a4ee830a77e40aeaf3f19021e2b9106e61a28febf98a491013dcc"
+    },
+    {
+      "name": "runtime/native-test-regression-rerun.txt",
+      "bytes": 6367,
+      "sha256": "9e6b283738b894b67e06012cf022c5a4d61a3a02041f4ca158a88cb0a7c2c4eb"
+    },
+    {
+      "name": "runtime/native-test-results.txt",
+      "bytes": 4292,
+      "sha256": "d668f4b07b77254e7aa5961bebd998a511fbda1055a4656cc00b76f20d104e66"
+    },
+    {
+      "name": "runtime/oracle-environment.txt",
+      "bytes": 56,
+      "sha256": "8c0d6c9a3ad449381f138a2ed4c902a379733da5265c08fc5edc21b86f8ad071"
+    },
+    {
+      "name": "runtime/owning_stack_runtime_test_O0.exe",
+      "bytes": 326656,
+      "sha256": "a0b59ea35f9372b2055bb3af74f3e7748740d492ed34cca5fa998459e2b59a8d"
+    },
+    {
+      "name": "runtime/owning_stack_runtime_test_O2.exe",
+      "bytes": 317952,
+      "sha256": "40024f315510a52d8ff8aaa7cbc55cf929c2501ee7fc6ad0ea6268703a779dd6"
+    },
+    {
+      "name": "runtime/owning_stack_runtime_test_ubsan-trap.exe",
+      "bytes": 316928,
+      "sha256": "9933d44fd387234ffba32f4eaade0c63cef4f6f0c44bee7bc557c27cfc04fea6"
+    },
+    {
+      "name": "runtime/pow2-probe-build-exit.txt",
+      "bytes": 13,
+      "sha256": "faddaa6b1b3d29848858aa1da804c9827eab2378d351462ebc301c62a0e96f0e"
+    },
+    {
+      "name": "runtime/pow2-probe-build.log",
+      "bytes": 483,
+      "sha256": "f7e3ea07bc3f68b31f5238050c75dde044fde138d20e374116456ee82689fab9"
+    },
+    {
+      "name": "runtime/pow2-probe-comparison.log",
+      "bytes": 777,
+      "sha256": "96ebd7067784a1d55c1c8d3ab16b9ccd01a9b2fc98071bdcf65db2b21e0f4bdd"
+    },
+    {
+      "name": "runtime/pow2-probe-native.tsv",
+      "bytes": 507148,
+      "sha256": "88728500c7bc9e62b39bd2086306851152ea3081f47ef17f42dfca3b4e43d3b1"
+    },
+    {
+      "name": "runtime/pow2-probe-run-exit.txt",
+      "bytes": 11,
+      "sha256": "e066ba49b4860ef9e4ef92aa30039ce978c0a05ec837bc151d7be3066045355c"
+    },
+    {
+      "name": "runtime/random-oracle-comparison.log",
+      "bytes": 146,
+      "sha256": "34b50c41375fb4a0560f72e3657214a3bb7ed7892495ae20e68563eb170b6a44"
+    },
+    {
+      "name": "runtime/README.md",
+      "bytes": 4334,
+      "sha256": "c6d0c1b98518a51527af1fe8c6603695a2c94857553d76ca283c6fcecab775c1"
+    },
+    {
+      "name": "runtime/run-O0.log",
+      "bytes": 1395,
+      "sha256": "1ce9243b6af26bf49df905eddee5f64fc2ac931113a91c5b414490018e007796"
+    },
+    {
+      "name": "runtime/run-O2.log",
+      "bytes": 1395,
+      "sha256": "1ce9243b6af26bf49df905eddee5f64fc2ac931113a91c5b414490018e007796"
+    },
+    {
+      "name": "runtime/run-ubsan-trap.log",
+      "bytes": 1395,
+      "sha256": "1ce9243b6af26bf49df905eddee5f64fc2ac931113a91c5b414490018e007796"
+    },
+    {
+      "name": "runtime/runtime-baseline-O0-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "runtime/runtime-baseline-O0.obj",
+      "bytes": 43066,
+      "sha256": "5b1b7137d9e954c3ebd486b1d92a4b6d23f7b0a2a44588a77c3e6bd75fe37858"
+    },
+    {
+      "name": "runtime/runtime-baseline-O2-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "runtime/runtime-baseline-O2.obj",
+      "bytes": 34468,
+      "sha256": "5121cf922d70a2ad0db7ef2c275655a6f5e1f58022273bc9e4bf8928e80c519c"
+    },
+    {
+      "name": "runtime/runtime-current-O0-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "runtime/runtime-current-O0.obj",
+      "bytes": 50584,
+      "sha256": "8bbd8dc34eb83d7534e5608000b14b06c15e79df0dc7e33aabb8688e629b094b"
+    },
+    {
+      "name": "runtime/runtime-current-O2-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "runtime/runtime-current-O2.obj",
+      "bytes": 44315,
+      "sha256": "819fba14a417f1c3256924d0b9f6c2e998a9c98f8a5eec3b621161b6cfffa07b"
+    },
+    {
+      "name": "runtime/symbol-audit-commands.txt",
+      "bytes": 1682,
+      "sha256": "8a229af192ead4306f402b7ef2b59e106eec6660cee62e6f56b572b91b0b21d7"
+    },
+    {
+      "name": "runtime/symbol-audit-results.txt",
+      "bytes": 392,
+      "sha256": "8febc48481025976e635c8517dd1c2e781a663a72d08889069f0bc93d71553da"
+    },
+    {
+      "name": "runtime/symbols-baseline-O0.txt",
+      "bytes": 21,
+      "sha256": "07d6ae0f34f5c60880ab517a98e2a5b52bda17e61fd35efd07d5ee20340fe628"
+    },
+    {
+      "name": "runtime/symbols-baseline-O2.txt",
+      "bytes": 21,
+      "sha256": "07d6ae0f34f5c60880ab517a98e2a5b52bda17e61fd35efd07d5ee20340fe628"
+    },
+    {
+      "name": "runtime/symbols-current-O0.txt",
+      "bytes": 21,
+      "sha256": "07d6ae0f34f5c60880ab517a98e2a5b52bda17e61fd35efd07d5ee20340fe628"
+    },
+    {
+      "name": "runtime/symbols-current-O2.txt",
+      "bytes": 21,
+      "sha256": "07d6ae0f34f5c60880ab517a98e2a5b52bda17e61fd35efd07d5ee20340fe628"
+    },
+    {
+      "name": "strict_oracle_helper.c",
+      "bytes": 212,
+      "sha256": "a29b1ca94fd6e0942bd962f84860c60fcb6654dc382f90fe463b50f01fbc26bd"
+    },
+    {
+      "name": "strict_oracle_helper.dll",
+      "bytes": 9728,
+      "sha256": "451a383be6b13beb3ed4c5fd719a1861974d38652ee32aabf9aabba8f74ada8c"
+    },
+    {
+      "name": "strict_oracle_helper.lib",
+      "bytes": 1552,
+      "sha256": "a23a2c903035b80d70c4d61fc835ead61df77fe6b422c6bff107ff2f6e321db9"
+    },
+    {
+      "name": "strict_oracle_helper.obj",
+      "bytes": 8785,
+      "sha256": "3391800a828c40df67ea1db89d6bce2545998bb7c6419ca18139fea093880778"
+    },
+    {
+      "name": "strict_python_oracle.py",
+      "bytes": 3238,
+      "sha256": "807afea20c58038ab368213102df1f0c9d17f264eea9a4ff6263379bde784f8f"
+    },
+    {
+      "name": "strict-python-oracle-summary.json",
+      "bytes": 307,
+      "sha256": "71b9a33dc5e391dcb5e874847a2b2d1e70676fb1c58b988c575dc30a80e8a3cb"
+    },
+    {
+      "name": "strict-python-oracle.tsv",
+      "bytes": 2403144,
+      "sha256": "4820d2432d6344178ca976b327700ac4c805bd82a6b97b2a9482fe863cb4b130"
+    }
+  ]
+}

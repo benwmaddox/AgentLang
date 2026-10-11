@@ -87,7 +87,7 @@ The first usable release is a vertical slice of the original milestones. It must
 | First usable prototype | Subsequent experiment release | Deferred |
 | --- | --- | --- |
 | Typed stack, scalars, records, nominal refined types | List/Option/Result | Native compilation, optimization, WASM |
-| Approximately 30 trusted primitives | Expand to 50–100 only for measured needs | General .NET calls or reflection |
+| Approximately 30 trusted primitives | Expand to 50â€“100 only for measured needs | General .NET calls or reflection |
 | Words, local bindings, conditional branches | Higher-order list operations if justified | Generics, compiler macros, OOP |
 | Structured diagnostics and JSON protocol | Conversion hints and richer source tooling | Dependency resolution and package system |
 | Introspection and dependency graph | Context generation and budget experiments | Async and distributed execution |
@@ -129,6 +129,23 @@ syntax version. Historical experiment evidence remains frozen. See
 Preserve stack-inspired discipline through explicit consumed/produced values and minimal hidden state. No mutable language globals are introduced. Immutable constants remain inspectable typed pure definitions; application state is passed explicitly where practical, and external mutable state is accessed only through declared host effects. Definitions precede use lexically; closeness to first use is lint rather than a type/syntax requirement. A stack representation does not by itself guarantee these policies or low memory use.
 
 Initial scalar types are `Int`, `Float`, `Bool`, `String`, and `Unit`. Integers are signed 64-bit values with defined overflow errors. Floats are floating-point values, not financial decimals. The demo must describe its numeric limitations; a real billing fixture needs an explicit decimal or integer-minor-unit Money type.
+
+Float text contract: finite values use invariant ASCII and the shortest decimal
+significand that parses under round-to-nearest, ties-to-even to the identical
+binary64 bits. Select the closest valid decimal; an exact decimal tie selects
+an even final digit. Use plain notation for adjusted decimal exponents -4
+through 16; otherwise use uppercase `E`, an explicit exponent sign and at least
+two exponent digits. When the text contains neither a decimal point nor an
+exponent, append `.0`, preserving `0.0` and `-0.0`. Source rendering, semantic
+IR displays, interpreted `float.to-string` and native `float.to-string` share
+this contract. Host formatter behavior is not the language specification. IR inspection
+transmits the Float literal payload as canonical text, preserving exact bits
+rather than depending on host JSON numeric serialization.
+Backend parity and bitwise round-trip must be validated against a reproducible
+independent oracle. The current implementation passes the 30,400-pattern corpus
+and full local gates; see [report 229](../reports/229-canonical-float-text.md).
+Existing finite-value validation remains
+in force; diagnostic spelling of nonfinite values is separate.
 
 Record declarations are nominal: two records with the same fields but different names are different types. Field order determines constructor input order. Each record provides a constructor and typed field accessors. Field access must be checked during compilation, not deferred to a string lookup at runtime.
 
@@ -595,7 +612,7 @@ Also investigate memory behavior under the later LLVM development/release backen
 Priority clarification, 2026-10-06: validating external AI-agent behavior is the
 next major milestone. Take the shortest path using the existing small domain
 and a matched Flat/Growing/Conventional sequence. Do not wait for the full
-40–60-word domain, 60-task execution suite, optional command completeness,
+40â€“60-word domain, 60-task execution suite, optional command completeness,
 mailboxes, arenas or LLVM before the first comparative review. Finish bounded
 work already underway and add capabilities only when trial requirements or
 observed failures justify them. This changes delivery order, not the remaining

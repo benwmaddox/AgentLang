@@ -1,0 +1,9 @@
+[native-conformance] owning backend Float transport, diagnostics, equality, and mailbox lifecycle
+Stack overflow.
+   at AgentLang.Llvm.OwningStackCompiledProgram.ExecuteIntoCore(Microsoft.FSharp.Collections.FSharpList`1<AgentLang.Value>, Int32, Byte[], Int32)
+   at AgentLang.Llvm.OwningStackCompiledProgram.ExecuteInto(Microsoft.FSharp.Collections.FSharpList`1<AgentLang.Value>, Int32, Byte[])
+   at AgentLang.Llvm.OwningStackCompiledProgram.Execute(Microsoft.FSharp.Collections.FSharpList`1<AgentLang.Value>, Int32, Int32)
+   at AgentLang.Llvm.Tests.testOwningFloatSlice()
+   at AgentLang.Llvm.Tests.main$cont@6349(System.String[], Microsoft.FSharp.Core.Unit)
+   at AgentLang.Llvm.Tests.main(System.String[])
+dotnet run exit code: -1073741571

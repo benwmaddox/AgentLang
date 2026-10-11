@@ -134,6 +134,19 @@ The owning-value mailbox integration is locally validated in
 fresh LLVM modules and exercises native initialize/begin/resume calls with
 inline String payloads, retained byte banks and scratch reset. This is a
 correctness gate; it does not measure service throughput or agent efficacy.
+The owning backend's finite Float slice is validated in
+[report 206](reports/206-native-float-conformance.md). Native Float formatting
+now follows the canonical shortest-roundtrip contract tracked in
+[report 229](reports/229-canonical-float-text.md). Its independent 30,400-value
+oracle passes in managed code and native O0/O2 builds, along with all 37 local
+full-suite checks. [Findings 224](reports/224-native-float-format-findings.md)
+preserves the .NET formatting counterexample and failed wide-function native test.
+Backend metadata counts explicit LLVM allocations; it does not bound the native
+thread stack. The local [frame-screen candidate](reports/225-native-machine-frame-screening.md)
+normalizes scratch allocations and rejects unknown or oversized individual
+machine frames. Execute only trusted generated programs in process. Enforced
+machine-stack budgets and a separate worker process are required before exposing
+native execution to untrusted programs.
 
 The focused [arena-policy comparison](reports/132-associated-arena-comparison.md)
 also passes at O0/O2. Run `pwsh -NoProfile -File scripts/Verify-OwningMailboxPolicy.ps1`

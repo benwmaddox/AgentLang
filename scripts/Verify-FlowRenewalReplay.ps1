@@ -12,10 +12,12 @@ $startedUtc = [DateTimeOffset]::UtcNow.ToString('O')
 $runId = [Guid]::NewGuid().ToString('N')
 $runRootRelative = ".agentlang/renewal-acceptance-replay/$runId"
 $runRoot = [IO.Path]::GetFullPath($runRootRelative, $repo)
+$currentFixtureRoot = Join-Path $repo ".agentlang/float-contract-229/current-fixtures/replay/$runId"
 $acceptedSourcePath = Join-Path $repo 'experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-history-control-001/accepted.agent'
 $acceptedWordSourcePath = Join-Path $repo 'experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-history-control-001/accepted-word.agent'
 $artifactManifestPath = Join-Path $repo 'experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-history-control-001/artifacts.json'
-$restoreScript = Join-Path $PSScriptRoot 'Restore-MatchedRenewalSnapshot.ps1'
+$currentFixtureScript = Join-Path $PSScriptRoot 'Current-MatchedRenewalFixture.ps1'
+. $currentFixtureScript
 $solutionVerifier = Join-Path $PSScriptRoot 'Verify-FlowRenewalSolution.ps1'
 $oraclePath = Join-Path $repo 'experiments/AgentLang.SubagentTrials/matched-renewal-001/flow-renewal-acceptance.json'
 $evidenceTarget = if ([IO.Path]::IsPathRooted($EvidencePath)) {
@@ -34,14 +36,12 @@ $script:acceptedWordSourceSha256 = $null
 $script:artifactManifestSha256 = $null
 $script:verifierEvidence = $null
 $script:verifierException = $null
+$script:currentFixture = $null
 $passed = $false
 $failure = $null
 $baselineWords = $null
 $replaySession = $null
-$expectedSeed = @(
-    [ordered]@{ name = 'customer.discounted-balance'; id = 'word_90c3fe0f880848bf84d63dd72b8707bf'; revision = 1 },
-    [ordered]@{ name = 'customer.premium?'; id = 'word_6f1915c78d344e4386fedc1ffecc01f0'; revision = 1 }
-)
+$expectedSeed = @()
 
 function Assert-ReplayCheck([string]$Name, [bool]$Passed, [string]$Detail = '') {
     $script:checks.Add([ordered]@{ name = $Name; passed = $Passed; detail = $Detail })
@@ -104,7 +104,7 @@ try {
     Assert-ReplayCheck 'accepted external source exists' (Test-Path -LiteralPath $acceptedSourcePath -PathType Leaf) $acceptedSourcePath
     Assert-ReplayCheck 'accepted word source exists' (Test-Path -LiteralPath $acceptedWordSourcePath -PathType Leaf) $acceptedWordSourcePath
     Assert-ReplayCheck 'accepted artifact manifest exists' (Test-Path -LiteralPath $artifactManifestPath -PathType Leaf) $artifactManifestPath
-    Assert-ReplayCheck 'snapshot restore helper exists' (Test-Path -LiteralPath $restoreScript -PathType Leaf) $restoreScript
+    Assert-ReplayCheck 'current fixture helper exists' (Test-Path -LiteralPath $currentFixtureScript -PathType Leaf) $currentFixtureScript
     Assert-ReplayCheck 'acceptance verifier exists' (Test-Path -LiteralPath $solutionVerifier -PathType Leaf) $solutionVerifier
 
     $sourceBytes = [IO.File]::ReadAllBytes($acceptedSourcePath)
@@ -130,10 +130,16 @@ try {
         $wordSourceEntry.Count -eq 1 -and [int64]$wordSourceEntry[0].bytes -eq $acceptedWordBytes.Length -and $wordSourceEntry[0].sha256 -ceq $script:acceptedWordSourceSha256
     ) "manifestBytes=$(if ($wordSourceEntry.Count -eq 1) { $wordSourceEntry[0].bytes } else { 'missing' }); actualBytes=$($acceptedWordBytes.Length); manifestSha=$(if ($wordSourceEntry.Count -eq 1) { $wordSourceEntry[0].sha256 } else { 'missing' }); actualSha=$($script:acceptedWordSourceSha256)"
 
-    $script:projectPath = [IO.Path]::GetFullPath((Join-Path $runRootRelative 'project'), $repo)
-    if (Test-Path -LiteralPath $script:projectPath) { throw "Generated replay project already exists: $script:projectPath" }
-    & $restoreScript -Profile growing -ProjectPath (Join-Path $runRootRelative 'project') | Out-Null
-    Assert-ReplayCheck 'fresh replay project restores Growing snapshot' (Test-Path -LiteralPath (Join-Path $script:projectPath '.agentlang/store/CURRENT') -PathType Leaf) $script:projectPath
+    $script:projectPath = Join-Path $currentFixtureRoot 'project'
+    $script:currentFixture = New-CurrentMatchedRenewalFixture -CliDll $script:cli -RepoRoot $repo -Profile growing -ProjectPath $script:projectPath -SnapshotName 'matched-renewal-current-replay-v1'
+    Assert-ReplayCheck 'fresh replay project uses a verified current-format Growing fixture' ($script:currentFixture.passed -eq $true) $script:currentFixture.currentManifestHash
+    Assert-ReplayCheck 'current fixture baseline has exactly seven passing tests' (
+        @($script:currentFixture.reloadedTestResults).Count -eq 7 -and
+        @($script:currentFixture.reloadedTestResults | Where-Object { $_.passed -ne $true }).Count -eq 0
+    ) "tests=$(@($script:currentFixture.reloadedTestResults).Count)"
+    $expectedSeed = @($script:currentFixture.descriptions | Sort-Object name | ForEach-Object {
+        [ordered]@{ name = [string]$_.name; id = [string]$_.id; revision = [int]$_.revision }
+    })
 
     $baselineSession = Invoke-CliSession -Name 'replay-baseline-words' -ProjectPath $script:projectPath -Requests @(
         [ordered]@{ op = 'words' },
@@ -143,13 +149,13 @@ try {
     $baselineWords = @(Get-AuthoredWords $baselineSession.responses[0])
     $baselineIdentityRows = @($baselineWords | ForEach-Object { "$($_.name)|$($_.id)" } | Sort-Object)
     $expectedIdentityRows = @($expectedSeed | ForEach-Object { "$($_.name)|$($_.id)" } | Sort-Object)
-    Assert-ReplayCheck 'Growing replay starts with exactly the two pinned seed identities' (
+    Assert-ReplayCheck 'Growing replay starts with exactly the two generated current-fixture identities' (
         ($baselineIdentityRows -join "`n") -ceq ($expectedIdentityRows -join "`n")
     ) ($baselineIdentityRows -join '; ')
     for ($index = 0; $index -lt $expectedSeed.Count; $index++) {
         $seed = $expectedSeed[$index]
         $baselineDescription = $baselineSession.responses[$index + 1].data
-        Assert-ReplayCheck "baseline seed '$($seed.name)' has its pinned identity and revision one" (
+        Assert-ReplayCheck "baseline seed '$($seed.name)' has its generated identity and revision one" (
             $baselineDescription.name -ceq $seed.name -and
             $baselineDescription.id -ceq $seed.id -and
             [int]$baselineDescription.revision -eq 1 -and
@@ -157,7 +163,7 @@ try {
             $baselineDescription.maturity -ceq 'library'
         ) "id=$($baselineDescription.id); revision=$($baselineDescription.revision); status=$($baselineDescription.status)"
     }
-    Assert-ReplayCheck 'target renewal word is absent from initial Growing seed' (@($baselineWords | Where-Object name -CEQ 'customer.renewal-balance').Count -eq 0)
+    Assert-ReplayCheck 'target renewal word is absent from initial current Growing seed' (@($baselineWords | Where-Object name -CEQ 'customer.renewal-balance').Count -eq 0)
 
     $requests = @(
         [ordered]@{ op = 'task.begin'; goal = 'Replay accepted inherited-history customer renewal-balance definition' },
@@ -275,7 +281,7 @@ finally {
         completedUtc = [DateTimeOffset]::UtcNow.ToString('O')
         cliPath = $script:cli
         cliSha256 = if ($null -ne $script:cli -and (Test-Path -LiteralPath $script:cli -PathType Leaf)) { (Get-FileHash -LiteralPath $script:cli -Algorithm SHA256).Hash.ToLowerInvariant() } else { $null }
-        restoreScriptSha256 = if (Test-Path -LiteralPath $restoreScript -PathType Leaf) { (Get-FileHash -LiteralPath $restoreScript -Algorithm SHA256).Hash.ToLowerInvariant() } else { $null }
+        currentFixtureScriptSha256 = if (Test-Path -LiteralPath $currentFixtureScript -PathType Leaf) { (Get-FileHash -LiteralPath $currentFixtureScript -Algorithm SHA256).Hash.ToLowerInvariant() } else { $null }
         verifierScriptSha256 = if (Test-Path -LiteralPath $solutionVerifier -PathType Leaf) { (Get-FileHash -LiteralPath $solutionVerifier -Algorithm SHA256).Hash.ToLowerInvariant() } else { $null }
         replayScriptSha256 = (Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant()
         acceptedSource = [ordered]@{
@@ -296,6 +302,15 @@ finally {
         }
         profile = 'growing'
         projectPath = $script:projectPath
+        currentFixture = if ($null -ne $script:currentFixture) {
+            [ordered]@{
+                evidencePath = (Join-Path $script:projectPath 'current-fixture-evidence.json')
+                manifestHash = $script:currentFixture.currentManifestHash
+                generatedWords = $script:currentFixture.generatedWords
+                reloadedWords = $script:currentFixture.reloadedWords
+                testResults = $script:currentFixture.reloadedTestResults
+            }
+        } else { $null }
         expectedSeedWords = $expectedSeed
         initialWords = $baselineWords
         replayRequests = if ($null -ne $replaySession) { $replaySession.requests } else { @() }

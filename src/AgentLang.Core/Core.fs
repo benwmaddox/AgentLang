@@ -216,7 +216,7 @@ module Types =
 
     let rec formatValue = function
         | IntValue value -> string value
-        | FloatValue value -> value.ToString("G", Globalization.CultureInfo.InvariantCulture)
+        | FloatValue value -> FloatText.format value
         | BoolValue value -> if value then "true" else "false"
         | StringValue value -> System.Text.Json.JsonSerializer.Serialize(value)
         | UnitValue -> "unit"

@@ -9,6 +9,7 @@
     <Compile Include="NativeValues.fs" />
     <Compile Include="NativeValueMetrics.fs" />
     <Compile Include="ArenaLifetime.fs" />
+    <Compile Include="NativeStackUsage.fs" />
     <Compile Include="LlvmToolchain.fs" />
     <Compile Include="LlvmAot.fs" />
     <Compile Include="OwningStackAot.fs" />
@@ -20,6 +21,7 @@
     <EmbeddedResource Include="native\module_abi.h" LogicalName="AgentLang.Llvm.native.module_abi.h" />
     <EmbeddedResource Include="native\owning_stack_runtime.h" LogicalName="AgentLang.Llvm.native.owning_stack_runtime.h" />
     <EmbeddedResource Include="native\owning_stack_runtime.c" LogicalName="AgentLang.Llvm.native.owning_stack_runtime.c" />
+    <EmbeddedResource Include="native\float_format.h" LogicalName="AgentLang.Llvm.native.float_format.h" />
     <EmbeddedResource Include="native\owning_mailbox_abi.h" LogicalName="AgentLang.Llvm.native.owning_mailbox_abi.h" />
   </ItemGroup>
 

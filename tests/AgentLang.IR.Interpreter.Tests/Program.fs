@@ -295,6 +295,25 @@ let private testDirectFloatEntry () =
         (preflightCount > 0 && chargeCount > 0 && enterHookCount = 1
          && returnHookCount = 1 && exitHookCount = 1 && recordUseCount > 0)
 
+let private testCanonicalFloatToString () =
+    let source = span "float-format.agent"
+    let context = defaultContext ()
+    let program = Compiler.compileIrProgram context
+    let cases =
+        [ "positive zero", 0.0, "0.0"
+          "negative zero", BitConverter.UInt64BitsToDouble(0x8000000000000000UL), "-0.0"
+          "integral float", 100.0, "100.0"
+          "minimum subnormal", Double.Epsilon, "5E-324"
+          "maximum finite", Double.MaxValue, "1.7976931348623157E+308"
+          "documented short-format regression", BitConverter.UInt64BitsToDouble(0x0410000000000000UL), "4.1045368012983762E-289" ]
+
+    for (name, value, expectedText) in cases do
+        let body =
+            Compiler.compileIrBodyAgainstProgram context program ("float-to-string-" + name) []
+                [ Push(LFloat value, source); Call("float.to-string", source) ]
+        check ($"float.to-string uses canonical text for {name}")
+            (IrInterpreter.executeBody (noOpHost ()) ("float-to-string-" + name) body = [ StringValue expectedText ])
+
 let private testVerifiedUserFunctionHooks () =
     let source = span "function-hook.agent"
     let revisionedBase =
@@ -1387,6 +1406,7 @@ let main _ =
     testProgramTrustAndSnapshotBinding ()
     testPublicBoundaryAndEmptyEntryOnly ()
     testDirectFloatEntry ()
+    testCanonicalFloatToString ()
     testVerifiedUserFunctionHooks ()
     testTestFileReplacementDispatch ()
     testOpaqueTypedInterpreterReentry ()

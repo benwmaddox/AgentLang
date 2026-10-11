@@ -44,7 +44,7 @@ module IrFormatting =
         { Kind: string
           Display: string
           IntValue: int64
-          FloatValue: double
+          FloatValue: string
           BoolValue: bool
           StringValue: string }
 
@@ -168,9 +168,9 @@ module IrFormatting =
         | PrimitiveContractDocument of PrimitiveContractDocumentDto
 
     // Version 3 adds typed ListFold; version 4 exposes record validators in
-    // nominal metadata. Emit one global version so readers interpret the
-    // expanded semantics deliberately.
-    let private formatVersion = 4
+    // nominal metadata; version 5 encodes Float literal values as canonical
+    // text so protocol JSON preserves every binary64 value exactly.
+    let private formatVersion = 5
     // The formatter rejects deep documents before JsonSerializer or the outer
     // Protocol response can throw. This conservative estimate reserves ten
     // JSON levels for the response envelope and fixed DTO nesting.
@@ -251,14 +251,14 @@ module IrFormatting =
             { Kind = "int"
               Display = string value
               IntValue = value
-              FloatValue = 0.0
+              FloatValue = ""
               BoolValue = false
               StringValue = "" }
         | LFloat value ->
             { Kind = "float"
-              Display = value.ToString("R", CultureInfo.InvariantCulture)
+              Display = FloatText.format value
               IntValue = 0L
-              FloatValue = value
+              FloatValue = FloatText.format value
               BoolValue = false
               StringValue = "" }
         | LBool value ->
@@ -266,21 +266,21 @@ module IrFormatting =
             { Kind = "bool"
               Display = display
               IntValue = 0L
-              FloatValue = 0.0
+              FloatValue = ""
               BoolValue = value
               StringValue = "" }
         | LString value ->
             { Kind = "string"
               Display = JsonSerializer.Serialize(value)
               IntValue = 0L
-              FloatValue = 0.0
+              FloatValue = ""
               BoolValue = false
               StringValue = value }
         | LUnit ->
             { Kind = "unit"
               Display = "unit"
               IntValue = 0L
-              FloatValue = 0.0
+              FloatValue = ""
               BoolValue = false
               StringValue = "" }
 

@@ -18,6 +18,7 @@
 #define AL_OWNING_LAYOUT_MAX_DEPTH 64u
 #define AL_OWNING_LAYOUT_MAX_TYPES 4096u
 #define AL_OWNING_LAYOUT_MAX_FIELDS 65536u
+#define AL_OWNING_FLOAT_ASCII_CAPACITY 32u
 
 enum {
   AL_OWNING_TYPE_I64 = 1u,
@@ -218,6 +219,13 @@ int32_t al_owning_string_concat_write(
     uint32_t destination_extent_bytes, uint32_t left_offset,
     uint32_t left_extent_bytes, uint32_t right_offset,
     uint32_t right_extent_bytes, uint32_t type_id, uint32_t error_id);
+int32_t al_owning_float_format(al_owning_stack_context *ctx, uint64_t bits,
+                               uint8_t *ascii32, uint32_t *out_length,
+                               uint32_t error_id);
+int32_t al_owning_float_string_write(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    uint32_t destination_extent_bytes, const uint8_t *ascii,
+    uint32_t ascii_length, uint32_t type_id, uint32_t error_id);
 void al_owning_move_range(al_owning_stack_context *ctx,
                           uint32_t destination_offset, uint32_t source_offset,
                           uint32_t byte_count, uint32_t payload_bytes,

@@ -1,0 +1,8 @@
+{
+  "command": "dotnet build tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj -c Release --no-restore -m:1 -v:minimal",
+  "exitCode": 0,
+  "warnings": 0,
+  "errors": 0,
+  "logSha256": "6a5187dc4960f9f8e3c866eb801be86dfac7c3096ce254e5fd68c61c7f42f73e",
+  "limitation": "Build receipt only. Exact .NET formatting conformance remains failed; sealed candidate archive unchanged."
+}

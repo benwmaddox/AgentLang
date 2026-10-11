@@ -482,12 +482,10 @@ module FlowStructure =
 module FlowSource =
     open System.Text.Json
 
-    let private renderLiteral syntaxVersion literal =
+    let private renderLiteral literal =
         match literal with
-        | LFloat value when syntaxVersion = 2 ->
-            let text = value.ToString("R", System.Globalization.CultureInfo.InvariantCulture)
-            if text.Contains('.') || text.Contains('e') || text.Contains('E') then text else text + ".0"
-        | LInt _ | LFloat _ | LBool _ | LUnit -> Types.formatValue (Types.literalValue literal)
+        | LFloat value -> FloatText.format value
+        | LInt _ | LBool _ | LUnit -> Types.formatValue (Types.literalValue literal)
         | LString value -> JsonSerializer.Serialize(value)
 
     let private indent depth = String.replicate (depth * 4) " "
@@ -519,7 +517,7 @@ module FlowSource =
     let rec private renderExpressionAt syntaxVersion locals depth expression =
         let prefix = indent depth
         match expression with
-        | FlowExpression.Literal(value, _) -> prefix + renderLiteral syntaxVersion value
+        | FlowExpression.Literal(value, _) -> prefix + renderLiteral value
         | FlowExpression.Local(name, _) -> prefix + name
         | FlowExpression.Call(name, arguments, _) ->
             let shownName = renderQualifiedName syntaxVersion name
@@ -559,7 +557,7 @@ module FlowSource =
                 (cases |> List.collect (fun caseValue -> renderMatchCase syntaxVersion (depth + 1) caseValue.Name locals caseValue.Statements))
     and private renderInlineExpression syntaxVersion locals expression =
         match expression with
-        | FlowExpression.Literal(value, _) -> renderLiteral syntaxVersion value
+        | FlowExpression.Literal(value, _) -> renderLiteral value
         | FlowExpression.Local(name, _) -> name
         | FlowExpression.Container(kind, typeArguments, payload, _) -> renderContainer syntaxVersion locals kind typeArguments payload
         | FlowExpression.Call(name, arguments, _) ->
@@ -706,7 +704,7 @@ module FlowSource =
         String.concat "\n" lines
 
     let private renderExpectation syntaxVersion locals = function
-        | FlowTestExpectation.Literal(literal, _) -> renderLiteral syntaxVersion literal
+        | FlowTestExpectation.Literal(literal, _) -> renderLiteral literal
         | FlowTestExpectation.RuntimeError(code, _) -> "error " + code
         | FlowTestExpectation.Expression expression -> "value " + renderInlineExpression syntaxVersion locals expression
 
@@ -738,7 +736,7 @@ module FlowSource =
         let lines = ResizeArray<string>()
         lines.Add($"example {definition.Word}/{definition.CaseName} {{")
         renderStatements definition.SyntaxVersion Set.empty 1 definition.Body |> fst |> List.iter lines.Add
-        lines.Add("    => " + renderLiteral definition.SyntaxVersion definition.Expected)
+        lines.Add("    => " + renderLiteral definition.Expected)
         lines.Add("}")
         String.concat "\n" lines
 

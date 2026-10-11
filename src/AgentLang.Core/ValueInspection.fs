@@ -307,9 +307,9 @@ module ValueInspection =
                 node :> JsonNode
             | TFloat, FloatValue number ->
                 if not (Double.IsFinite number) then
-                    fail "VALUE_FLOAT_NONFINITE" "Structured Float values must be finite." path [ "finite Float" ] [ number.ToString("R", CultureInfo.InvariantCulture) ]
+                    fail "VALUE_FLOAT_NONFINITE" "Structured Float values must be finite." path [ "finite Float" ] [ FloatText.format number ]
                 let node = objectNode budget path jsonDepth
-                let roundTrip = number.ToString("R", CultureInfo.InvariantCulture)
+                let roundTrip = FloatText.format number
                 let negativeZero = number = 0.0 && BitConverter.DoubleToInt64Bits(number) = Int64.MinValue
                 addString budget path node "kind" (jsonDepth + 1) "float"
                 addString budget path node "value" (jsonDepth + 1) roundTrip

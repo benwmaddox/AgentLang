@@ -10,13 +10,9 @@ module Source =
 
     let private quote (value: string) = JsonSerializer.Serialize(value)
 
-    let private formatFloat (value: double) =
-        let text = value.ToString("R", CultureInfo.InvariantCulture)
-        if text.Contains('.') || text.Contains('e') || text.Contains('E') then text else text + ".0"
-
     let private renderLiteral = function
         | LInt value -> value.ToString(CultureInfo.InvariantCulture)
-        | LFloat value -> formatFloat value
+        | LFloat value -> FloatText.format value
         | LBool true -> "true"
         | LBool false -> "false"
         | LString value -> quote value

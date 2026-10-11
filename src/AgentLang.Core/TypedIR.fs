@@ -558,7 +558,7 @@ module IrVerifier =
                     | IrOperation.Constant(literal, ty) ->
                         verifyIrType program sourceOwner (Some instruction.Site) ty
                         match literal with
-                        | LFloat value when not (Double.IsFinite value) -> operationError "IR_CONSTANT_LITERAL_INVALID" "IR floating constants must be finite, matching source literal validation." [ "finite Float" ] [ value.ToString("R", Globalization.CultureInfo.InvariantCulture) ]
+                        | LFloat value when not (Double.IsFinite value) -> operationError "IR_CONSTANT_LITERAL_INVALID" "IR floating constants must be finite, matching source literal validation." [ "finite Float" ] [ FloatText.format value ]
                         | LString value when isNull value -> operationError "IR_CONSTANT_LITERAL_INVALID" "IR string constants cannot be null." [ "non-null String" ] [ "null" ]
                         | _ -> ()
                         if valueType literal <> ty then operationError "IR_CONSTANT_TYPE_MISMATCH" "Constant type does not match its literal." [ IrTypes.format (valueType literal) ] [ IrTypes.format ty ]

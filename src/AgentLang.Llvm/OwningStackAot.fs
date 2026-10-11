@@ -84,7 +84,9 @@ type OwningStackMetrics =
       HostInputExtentTableBytes: int
       HostRetainedStagingBytes: int
       HostRetainedCommitBytes: int
+      /// Sum of explicit LLVM allocas attributed to one emitted frame. This excludes compiler spills and native/runtime call frames.
       BackendMetadataPerFrameBytes: int
+      /// Peak explicit-alloca metadata estimate across emitted frames; this is not a native thread-stack bound.
       BackendMetadataPeakBoundBytes: int64
       RuntimeLayoutScannerScratchBytes: int
       FinalCursorBytes: int
@@ -324,12 +326,67 @@ type private OwningDynamicLocalBinding =
 
 type private OwningLlvmWriter() =
     let output = StringBuilder()
+    let entryAllocas = ResizeArray<string>()
     let mutable serial = 0
     let mutable currentBlock = ""
+    let mutable entryInsertionOffset: int option = None
+
+    let rec isSupportedAllocaType (typeText: string) =
+        match typeText with
+        | "i1" | "i8" | "i32" | "i64" | "ptr"
+        | "%AlOwningValueSize" | "%AlOwningFieldLocation" | "%AlOwningDescriptor"
+        | "%AlOwningExternalSlice" | "%AlOwningMailboxOutputSlice" -> true
+        | other when other.StartsWith("[", StringComparison.Ordinal) && other.EndsWith("]", StringComparison.Ordinal) ->
+            let separator = other.IndexOf(" x ", StringComparison.Ordinal)
+            if separator <= 1 then false
+            else
+                let countText = other.Substring(1, separator - 1)
+                let mutable count = 0L
+                Int64.TryParse(countText, &count)
+                && count >= 0L
+                && isSupportedAllocaType (other.Substring(separator + 3, other.Length - separator - 4))
+        | _ -> false
+
+    let addEntryAlloca (value: string) =
+        let marker = " = alloca "
+        let markerIndex = value.IndexOf(marker, StringComparison.Ordinal)
+        let declaration = value.Substring(markerIndex + marker.Length).Trim()
+        let typeText = declaration.Split([| ',' |], 2).[0].Trim()
+        let suffix = declaration.Substring(typeText.Length)
+        let alignMarker = ", align "
+        if not (isSupportedAllocaType typeText) then
+            invalidOp $"Owning-stack LLVM emission encountered an unsupported alloca type '{typeText}'."
+        if not (suffix.StartsWith(alignMarker, StringComparison.Ordinal)) then
+            invalidOp "Owning-stack LLVM emission only supports constant-size allocas with an explicit alignment."
+        let alignmentText = suffix.Substring(alignMarker.Length).Trim()
+        let mutable alignment = 0
+        if not (Int32.TryParse(alignmentText, &alignment)) || alignment <= 0 then
+            invalidOp $"Owning-stack LLVM emission encountered an invalid alloca alignment '{alignmentText}'."
+        if Option.isNone entryInsertionOffset then
+            invalidOp "Owning-stack LLVM emission encountered an alloca before its function entry block."
+        entryAllocas.Add(value)
+
+    let renderText () =
+        let text = output.ToString()
+        if entryAllocas.Count = 0 then text
+        else
+            let insertionOffset =
+                entryInsertionOffset
+                |> Option.defaultWith (fun () -> invalidOp "Owning-stack LLVM emission could not find an entry block for its allocas.")
+            let declarations = StringBuilder()
+            for alloca in entryAllocas do
+                declarations.Append("  ").AppendLine(alloca) |> ignore
+            text.Insert(insertionOffset, declarations.ToString())
+
     member _.Line(value: string) =
         output.AppendLine(value) |> ignore
-        if value.EndsWith(":", StringComparison.Ordinal) then currentBlock <- value.Substring(0, value.Length - 1)
-    member _.Inst(value: string) = output.Append("  ").AppendLine(value) |> ignore
+        if value.EndsWith(":", StringComparison.Ordinal) then
+            currentBlock <- value.Substring(0, value.Length - 1)
+            if currentBlock = "entry" && Option.isNone entryInsertionOffset then
+                entryInsertionOffset <- Some output.Length
+    member _.Inst(value: string) =
+        if value.Contains(" = alloca ", StringComparison.Ordinal) then addEntryAlloca value
+        else output.Append("  ").AppendLine(value) |> ignore
     member _.CurrentBlock = currentBlock
     member _.Fresh(prefix: string) =
         let value = $"%%{prefix}.{serial}"
@@ -339,7 +396,7 @@ type private OwningLlvmWriter() =
         let value = $"{prefix}.{serial}"
         serial <- serial + 1
         value
-    member _.Text = output.ToString()
+    member _.Text = renderText ()
     member this.EmitFloatRoundAwayFromZero(inputBits: string) =
         // Binary64 values with exponents >= 52 are already integral. For smaller
         // values, split the significand at its exact binary point and increment
@@ -1007,7 +1064,7 @@ module OwningStackAot =
                   "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
                   "float.add"; "float.subtract"; "float.multiply"; "float.divide"
                   "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
-                  "int.to-float"; "float.to-int"; "float.round"
+                  "int.to-float"; "float.to-int"; "float.round"; "float.to-string"
                   "equals"; "bool.and"; "bool.or"; "bool.not"; "dup"; "drop"; "swap"
                   "string.concat"; "string.length" ]
 
@@ -1027,6 +1084,7 @@ module OwningStackAot =
                 | ("float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal"), [ IrFloat; IrFloat ], [ IrBool ] -> true
                 | "int.to-float", [ IrInt ], [ IrFloat ] -> true
                 | ("float.to-int" | "float.round"), [ IrFloat ], [ IrInt ] -> true
+                | "float.to-string", [ IrFloat ], [ IrString ] -> true
                 | "equals", [ left; right ], [ IrBool ] -> left = right
                 | "bool.and", [ IrBool; IrBool ], [ IrBool ] -> true
                 | "bool.or", [ IrBool; IrBool ], [ IrBool ] -> true
@@ -3267,6 +3325,8 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_string_length(ptr, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_plan(ptr, i32, i32, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_float_format(ptr, i64, ptr, ptr, i32)")
+        writer.Line("declare i32 @al_owning_float_string_write(ptr, i32, i32, ptr, i32, i32, i32)")
         writer.Line("declare void @al_owning_move_range(ptr, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_copy_range(ptr, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_duplicate(ptr, i32, i32, i32, i32, i32)")
@@ -4555,6 +4615,74 @@ module OwningStackAot =
                                 let result = w.Fresh "float.round.result"
                                 w.Inst($"{result} = fptosi double {rounded} to i64")
                                 emitScalarResult IrInt result
+                            | "float.to-string", [ value ] ->
+                                // Preserve the Float bits until the native formatter has
+                                // copied them into its bounded stack-local conversion state.
+                                let raw = w.Fresh "float.to.string.input.bits"
+                                w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {value.Offset})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let exponent = w.Fresh "float.to.string.input.exponent"
+                                w.Inst($"{exponent} = and i64 {raw}, 9218868437227405312")
+                                let nonFinite = w.Fresh "float.to.string.input.nonfinite"
+                                w.Inst($"{nonFinite} = icmp eq i64 {exponent}, 9218868437227405312")
+                                let nonFiniteLabel = w.Label "float.to.string.nonfinite.failure"
+                                let finiteLabel = w.Label "float.to.string.input.finite"
+                                w.Inst($"br i1 {nonFinite}, label %%{nonFiniteLabel}, label %%{finiteLabel}")
+                                let nonFiniteError =
+                                    addFloatActualDiagnostic
+                                        "RUNTIME_NONFINITE_FLOAT"
+                                        "Float value must be finite before formatting as a String."
+                                        operation instructionSpan [ "finite Float" ]
+                                w.Line($"{nonFiniteLabel}:")
+                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {nonFiniteError}, i32 0, i32 0)")
+                                emitStoreDiagnosticFloatBits w raw
+                                w.Inst($"br label %%{failBody}")
+                                w.Line($"{finiteLabel}:")
+                                let asciiBuffer = w.Fresh "float.to.string.ascii.buffer"
+                                let ascii = w.Fresh "float.to.string.ascii"
+                                let lengthPointer = w.Fresh "float.to.string.length.pointer"
+                                w.Inst($"{asciiBuffer} = alloca [32 x i8], align 1")
+                                w.Inst($"{ascii} = getelementptr inbounds [32 x i8], ptr {asciiBuffer}, i64 0, i64 0")
+                                w.Inst($"{lengthPointer} = alloca i32, align 4")
+                                let formatError =
+                                    addDiagnostic
+                                        "OWNING_STACK_INTERNAL"
+                                        "The native Float formatter rejected a verified finite value."
+                                        currentOwner instructionSpan [] []
+                                let formatStatus = w.Fresh "float.to.string.format.status"
+                                w.Inst($"{formatStatus} = call i32 @al_owning_float_format(ptr %%ctx, i64 {raw}, ptr {ascii}, ptr {lengthPointer}, i32 {formatError})")
+                                emitStatusResult w formatStatus failBody
+                                let length = w.Fresh "float.to.string.length"
+                                w.Inst($"{length} = load i32, ptr {lengthPointer}, align 4")
+                                let lengthValid = w.Fresh "float.to.string.length.valid"
+                                w.Inst($"{lengthValid} = icmp ule i32 {length}, 24")
+                                let lengthFailure = w.Label "float.to.string.length.failure"
+                                let lengthReady = w.Label "float.to.string.length.ready"
+                                let lengthError = addDiagnostic "OWNING_STACK_INTERNAL" "The native Float formatter exceeded its 24-byte ASCII bound." currentOwner instructionSpan [] []
+                                w.Inst($"br i1 {lengthValid}, label %%{lengthReady}, label %%{lengthFailure}")
+                                w.Line($"{lengthFailure}:")
+                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {lengthError}, i32 {length}, i32 24)")
+                                w.Inst($"br label %%{failBody}")
+                                w.Line($"{lengthReady}:")
+                                dropInputs ()
+                                let doubledLength = w.Fresh "float.to.string.utf16.length"
+                                let payload = w.Fresh "float.to.string.payload"
+                                let payloadWithPadding = w.Fresh "float.to.string.payload.with.padding"
+                                let extent = w.Fresh "float.to.string.extent"
+                                w.Inst($"{doubledLength} = mul i32 {length}, 2")
+                                w.Inst($"{payload} = add i32 {doubledLength}, 8")
+                                w.Inst($"{payloadWithPadding} = add i32 {payload}, 7")
+                                w.Inst($"{extent} = and i32 {payloadWithPadding}, -8")
+                                let destination = emitContextLoad w "%ctx" 2
+                                let resultEnd = emitOffset w destination extent
+                                let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve exact Float String output." currentOwner instructionSpan [] []
+                                emitReserve w resultEnd reserveError failBody
+                                let writeError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to write the formatted Float String." currentOwner instructionSpan [] []
+                                let writeStatus = w.Fresh "float.to.string.write.status"
+                                w.Inst($"{writeStatus} = call i32 @al_owning_float_string_write(ptr %%ctx, i32 {destination}, i32 {extent}, ptr {ascii}, i32 {length}, i32 {typeId IrString}, i32 {writeError})")
+                                emitStatusResult w writeStatus failBody
+                                emitUpdateLive w payload "0" failBody
+                                stack <- push prefix IrString destination extent payload resultEnd
                             | ("add" | "subtract" | "multiply" | "divide" | "int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"), [ left; right ] ->
                                 let rightOffset = right.Offset
                                 let leftOffset = left.Offset
@@ -4708,6 +4836,10 @@ module OwningStackAot =
             frameTexts.Add(functionText)
             writer.Line(functionText)
 
+        // This intentionally accounts only for explicit LLVM allocas present in
+        // generated IR. LLVM register spills, ABI call frames, and native runtime
+        // scratch are compiler/runtime-owned and are not included; this estimate
+        // must not be treated as a native thread-stack bound.
         let explicitAllocaBoundBytes (llvmText: string) =
             let mutable totalBytes = 0L
             for line in llvmText.Split([| '\n' |], StringSplitOptions.RemoveEmptyEntries) do
@@ -4722,7 +4854,7 @@ module OwningStackAot =
                         invalidOp $"Unable to account for emitted LLVM alloca alignment '{alignmentText}'."
                     let rec llvmTypeSize typeText =
                         match typeText with
-                        | "i1" -> 1L
+                        | "i1" | "i8" -> 1L
                         | "i32" -> 4L
                         | "i64" | "ptr" -> 8L
                         | "%AlOwningValueSize" -> 8L
@@ -5858,10 +5990,13 @@ module OwningStackAot =
         let assembly = typeof<OwningStackCompiledProgram>.Assembly
         let runtimeHeaderPath = Path.Combine(runtimeDirectory, "owning_stack_runtime.h")
         let runtimeSourcePath = Path.Combine(runtimeDirectory, "owning_stack_runtime.c")
+        let floatFormatHeaderPath = Path.Combine(runtimeDirectory, "float_format.h")
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.h" runtimeHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.c" runtimeSourcePath
+        writeEmbeddedResource assembly "AgentLang.Llvm.native.float_format.h" floatFormatHeaderPath
         let compiledPath =
-            LlvmToolchain.compileLibraryWithRuntime toolchain optimization llvmIrPath runtimeSourcePath runtimeDirectory libraryPath
+            LlvmToolchain.compileLibraryWithRuntimeAndNativeStackScreen
+                toolchain optimization llvmIrPath runtimeSourcePath runtimeDirectory libraryPath
         new OwningStackCompiledProgram(
             compiledPath, programInfo, diagnostics, llvmIr, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
             encodeValues, decodeValues, readEvents, readMetrics, diagnosticForError)
@@ -5943,12 +6078,14 @@ module OwningStackAot =
         let assembly = typeof<OwningStackCompiledProgram>.Assembly
         let runtimeHeaderPath = Path.Combine(runtimeDirectory, "owning_stack_runtime.h")
         let runtimeSourcePath = Path.Combine(runtimeDirectory, "owning_stack_runtime.c")
+        let floatFormatHeaderPath = Path.Combine(runtimeDirectory, "float_format.h")
         let mailboxAbiHeaderPath = Path.Combine(runtimeDirectory, "owning_mailbox_abi.h")
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.h" runtimeHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.c" runtimeSourcePath
+        writeEmbeddedResource assembly "AgentLang.Llvm.native.float_format.h" floatFormatHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_mailbox_abi.h" mailboxAbiHeaderPath
         let compiledPath, objectPaths =
-            LlvmToolchain.compileModuleLibraryWithProfile
+            LlvmToolchain.compileModuleLibraryWithProfileAndNativeStackScreen
                 toolchain optimization runtimeProfile [ llvmIrPath ] metadataSourcePath runtimeSourcePath runtimeDirectory libraryPath
         let hashText (value: string) =
             SHA256.HashData(Encoding.UTF8.GetBytes value)
@@ -5964,6 +6101,7 @@ module OwningStackAot =
               "owning-mailbox-metadata.c", hashFile metadataSourcePath
               "native-runtime/owning_stack_runtime.c", hashFile runtimeSourcePath
               "native-runtime/owning_stack_runtime.h", hashFile runtimeHeaderPath
+              "native-runtime/float_format.h", hashFile floatFormatHeaderPath
               "native-runtime/owning_mailbox_abi.h", hashFile mailboxAbiHeaderPath ]
             @ (List.zip entryMetadata entryFrameIrPaths
                |> List.map (fun (entry, path) -> entry.FrameSourcePath, hashFile path))

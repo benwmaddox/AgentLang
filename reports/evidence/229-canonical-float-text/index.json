@@ -1,0 +1,2035 @@
+{
+  "archiveBytes": 6051401,
+  "exclusions": {
+    "filteredCounts": {
+      "binary-or-generated:.dll": 429,
+      "binary-or-generated:.exp": 4,
+      "binary-or-generated:.lib": 429,
+      "binary-or-generated:.obj": 900,
+      "build-or-copied-runtime-directory": 1189,
+      "unselected:.c": 20,
+      "unselected:.ll": 480,
+      "unselected:.su": 628
+    },
+    "notTraversed": [
+      ".agentlang/float-contract-229/native/build/**",
+      ".agentlang/float-contract-229/current-fixtures/**/project/** (only the six final current-fixture-evidence.json receipts are retained)",
+      ".agentlang/native-validation/run-5d98faf67c4b45d8ad9186f73d489515/** (fresh build artifacts; summary is retained in the final native host log)",
+      ".agentlang/native-validation/tests-b79f5d8d54b84af3b0aa31f083f3b537/** (binaries and generated LLVM omitted; only four native-stack-screen .su receipts are retained)",
+      ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/compiler-temp/**",
+      ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/dotnet-artifacts/**",
+      ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/native-output/**",
+      "reports/evidence/224-native-float-format-findings/** (cross-reference only)",
+      "reports/evidence/225-native-machine-frame-screening/** (cross-reference only)"
+    ],
+    "policy": "Include current source/docs/tests with explicit source pins, raw text/JSON validation receipts including failed and successful full-gate and native-final host logs, the four focused verifier JSONs, only the six final current-fixture-evidence.json receipts, OwningMailbox and refinedMailbox integration receipts, four frame receipts from the passing final native verifier, the current-fixture review, the Python oracle fixture, root terminal value-stack evidence, and only selected focused LLVM .ll/.su files. Exclude runtime/build binaries, build/obj trees, duplicate copied native-runtime source, generated current-fixture project copies, other final-verifier generated output, and large generated assembly outputs."
+  },
+  "format": "canonical-float-text-runtime-milestone-229-v1",
+  "memberCount": 248,
+  "members": [
+    {
+      "bytes": 161620,
+      "group": "focused-verifier-and-current-fixture-receipt",
+      "path": ".agentlang/float-contract-229/current-fixtures/acceptance-gate/55339324342046e4ae5d2f9218a49525/hardcoded-balance/project/current-fixture-evidence.json",
+      "sha256": "18620bdcc23d2357e1e5ec0d5156424e998dcfbdce2920ba96ead8d8365ae10c",
+      "source": ".agentlang/float-contract-229/current-fixtures/acceptance-gate/55339324342046e4ae5d2f9218a49525/hardcoded-balance/project/current-fixture-evidence.json"
+    },
+    {
+      "bytes": 161510,
+      "group": "focused-verifier-and-current-fixture-receipt",
+      "path": ".agentlang/float-contract-229/current-fixtures/acceptance-gate/55339324342046e4ae5d2f9218a49525/missing-word/project/current-fixture-evidence.json",
+      "sha256": "4fa9cf5188a9e725647687bb0438bb1e97f75565e745ec67589087379e0c17dd",
+      "source": ".agentlang/float-contract-229/current-fixtures/acceptance-gate/55339324342046e4ae5d2f9218a49525/missing-word/project/current-fixture-evidence.json"
+    },
+    {
+      "bytes": 161862,
+      "group": "focused-verifier-and-current-fixture-receipt",
+      "path": ".agentlang/float-contract-229/current-fixtures/acceptance-gate/55339324342046e4ae5d2f9218a49525/premium-only-annual-discount/project/current-fixture-evidence.json",
+      "sha256": "351cf50c03dca233dab407fbd75ab3a146563fb3b40be8177369a71892834476",
+      "source": ".agentlang/float-contract-229/current-fixtures/acceptance-gate/55339324342046e4ae5d2f9218a49525/premium-only-annual-discount/project/current-fixture-evidence.json"
+    },
+    {
+      "bytes": 161364,
+      "group": "focused-verifier-and-current-fixture-receipt",
+      "path": ".agentlang/float-contract-229/current-fixtures/replay/3970e8b2b2da4dfcbc705ad96edff0ca/project/current-fixture-evidence.json",
+      "sha256": "47a87d46430322ed6c9298c435104580651427f6642fcbd2c8629707f3ff15db",
+      "source": ".agentlang/float-contract-229/current-fixtures/replay/3970e8b2b2da4dfcbc705ad96edff0ca/project/current-fixture-evidence.json"
+    },
+    {
+      "bytes": 1816,
+      "group": "current-fixture-review",
+      "path": ".agentlang/float-contract-229/current-fixtures/review.md",
+      "sha256": "4cec69d9ad519cac1334bae2fbeadabe8e4bd36d5dc06af308c42ec58bcb4146",
+      "source": ".agentlang/float-contract-229/current-fixtures/review.md"
+    },
+    {
+      "bytes": 129653,
+      "group": "focused-verifier-and-current-fixture-receipt",
+      "path": ".agentlang/float-contract-229/current-fixtures/snapshot-verification/flat-596a986739444a28a38c9c2b7ea34a8a/project/current-fixture-evidence.json",
+      "sha256": "95f5b2c790397b279657686c91a69e76a1b814c6293579e2fc9b6f45da60745e",
+      "source": ".agentlang/float-contract-229/current-fixtures/snapshot-verification/flat-596a986739444a28a38c9c2b7ea34a8a/project/current-fixture-evidence.json"
+    },
+    {
+      "bytes": 161474,
+      "group": "focused-verifier-and-current-fixture-receipt",
+      "path": ".agentlang/float-contract-229/current-fixtures/snapshot-verification/growing-3a6f09c15e8c438189b627e5ea5457f3/project/current-fixture-evidence.json",
+      "sha256": "98d9151bb00b6ed5a0980d3429bd96e7d342dbd6b76341a7d304aadc03024245",
+      "source": ".agentlang/float-contract-229/current-fixtures/snapshot-verification/growing-3a6f09c15e8c438189b627e5ea5457f3/project/current-fixture-evidence.json"
+    },
+    {
+      "bytes": 15492639,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-final-host.business-policy-preflight.json",
+      "sha256": "f81bcf04f37e1b9d73c4e6d677f431b6ff000808eb2f953ce2f6f9db8cb36778",
+      "source": ".agentlang/float-contract-229/full-validation-final-host.business-policy-preflight.json"
+    },
+    {
+      "bytes": 175112,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-final-host.early-agent-negative.json",
+      "sha256": "c82452a81fbb04d21badc03154690ad4debfd8d870668792d2a848688bbfd4fa",
+      "source": ".agentlang/float-contract-229/full-validation-final-host.early-agent-negative.json"
+    },
+    {
+      "bytes": 230835,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-final-host.flow-matched-fixtures.json",
+      "sha256": "208c9a74fa470e7f42491b280317b7a54bff3ed825059d7c6b04e99b2d5d961d",
+      "source": ".agentlang/float-contract-229/full-validation-final-host.flow-matched-fixtures.json"
+    },
+    {
+      "bytes": 30846,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-final-host.json",
+      "sha256": "8291a8f74a7c603421ad4cb6043bbf91c64db8de526e768d1ddbee1d4b12a1dc",
+      "source": ".agentlang/float-contract-229/full-validation-final-host.json"
+    },
+    {
+      "bytes": 17852,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-final-host.log",
+      "sha256": "4d90a3e96e883cbdfe59016f1576f35a48a683d150b7dc8d1a73c9dc13008b0d",
+      "source": ".agentlang/float-contract-229/full-validation-final-host.log"
+    },
+    {
+      "bytes": 100201,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-final-host.matched-fixtures.json",
+      "sha256": "d0efe5edc0dc171e4b2099c3f9fb5051940313852cfb59fb6c753741c5134fe4",
+      "source": ".agentlang/float-contract-229/full-validation-final-host.matched-fixtures.json"
+    },
+    {
+      "bytes": 341973,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-final-host.matched-snapshots.json",
+      "sha256": "0d2f4262c9b7c3dfb99398b1111fbfbf6728b129e026d120756e76a5935c0251",
+      "source": ".agentlang/float-contract-229/full-validation-final-host.matched-snapshots.json"
+    },
+    {
+      "bytes": 3186,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-final-host.parser-limits.json",
+      "sha256": "810b8df832dff3589f18b661904fee024272829ff96a35e5e9f4a6bff5ef6a20",
+      "source": ".agentlang/float-contract-229/full-validation-final-host.parser-limits.json"
+    },
+    {
+      "bytes": 125230,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-final-host.projection.json",
+      "sha256": "8c160619cc367c1b138a40a82f0efe35a3ed1f8d2d0dfe77dfb92bcc9dbf8882",
+      "source": ".agentlang/float-contract-229/full-validation-final-host.projection.json"
+    },
+    {
+      "bytes": 1039706,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-final-host.renewal-acceptance-gate.json",
+      "sha256": "6b7ec9efb8516b528a57dc1ba8084e18cb451a0f5d31cdad2b7bcb93e92e0ad0",
+      "source": ".agentlang/float-contract-229/full-validation-final-host.renewal-acceptance-gate.json"
+    },
+    {
+      "bytes": 311190,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-final-host.renewal-replay.json",
+      "sha256": "507f029fe3436cebf7d5a7a403c5291eee670e5767faa65f3cdfbb53d18c7701",
+      "source": ".agentlang/float-contract-229/full-validation-final-host.renewal-replay.json"
+    },
+    {
+      "bytes": 25382,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-final-host.subagent-host-v2.json",
+      "sha256": "68b605af777534d1cc4fc3440410db45b9bdca170b248fde143d87ad13465bf6",
+      "source": ".agentlang/float-contract-229/full-validation-final-host.subagent-host-v2.json"
+    },
+    {
+      "bytes": 350271,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-final-host.subagent-host.json",
+      "sha256": "0c10e4a79e92a18e8ec563841ef7584798e171e8eb8420670e9669563be18fa1",
+      "source": ".agentlang/float-contract-229/full-validation-final-host.subagent-host.json"
+    },
+    {
+      "bytes": 15492638,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-host.business-policy-preflight.json",
+      "sha256": "64d60a41ce26ac7141a4fc5b52d2515a5bb90441f77ea67e2d258f9f21c62d2d",
+      "source": ".agentlang/float-contract-229/full-validation-host.business-policy-preflight.json"
+    },
+    {
+      "bytes": 175112,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-host.early-agent-negative.json",
+      "sha256": "922ef5a01bbb0bc7c44aa2bd727a5eccce3c4f29e05a72be6d1b20efae995d62",
+      "source": ".agentlang/float-contract-229/full-validation-host.early-agent-negative.json"
+    },
+    {
+      "bytes": 230835,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-host.flow-matched-fixtures.json",
+      "sha256": "3d6be19ccd5300dfe74ceb836ce6e4373f552e3776aeb0c0f744962a2f53b412",
+      "source": ".agentlang/float-contract-229/full-validation-host.flow-matched-fixtures.json"
+    },
+    {
+      "bytes": 36410,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-host.json",
+      "sha256": "43a3521e745f19d6e2057d4b87a89104fa49d28bd20c93a26c718f55fea44496",
+      "source": ".agentlang/float-contract-229/full-validation-host.json"
+    },
+    {
+      "bytes": 22711,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-host.log",
+      "sha256": "c01e05f31d11ab223627b2df1b6eef3548b7b2390ed1c885e71b2d29635bc8f1",
+      "source": ".agentlang/float-contract-229/full-validation-host.log"
+    },
+    {
+      "bytes": 100201,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-host.matched-fixtures.json",
+      "sha256": "b016885dde088cd8dd9d33e5d42976e562a0e03d8c34794534ef959abbf40d8b",
+      "source": ".agentlang/float-contract-229/full-validation-host.matched-fixtures.json"
+    },
+    {
+      "bytes": 41832,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-host.matched-snapshots.json",
+      "sha256": "983f15a6b39c4e053a75ccc30b5ec36292227b400734f6d2851ea299d32d93d4",
+      "source": ".agentlang/float-contract-229/full-validation-host.matched-snapshots.json"
+    },
+    {
+      "bytes": 3186,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-host.parser-limits.json",
+      "sha256": "b777bcc2be0ef4670b7d00a0fe5031d9f87ff71e98262c69c85e4f740743af89",
+      "source": ".agentlang/float-contract-229/full-validation-host.parser-limits.json"
+    },
+    {
+      "bytes": 125230,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-host.projection.json",
+      "sha256": "a5d5833626b94efe9202a7826b3bb72c9f53fe25c0f10e029e3841cece580553",
+      "source": ".agentlang/float-contract-229/full-validation-host.projection.json"
+    },
+    {
+      "bytes": 3214,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-host.renewal-acceptance-gate.json",
+      "sha256": "613d551f918fc7b00dd9916e2bc8dd478fb062cc5fcc1ea512cc54e30786f1ce",
+      "source": ".agentlang/float-contract-229/full-validation-host.renewal-acceptance-gate.json"
+    },
+    {
+      "bytes": 7273,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-host.renewal-replay.json",
+      "sha256": "755370e3de0ed20523fe08d4dfa03383964c8d492982e547dcab3a512bfef897",
+      "source": ".agentlang/float-contract-229/full-validation-host.renewal-replay.json"
+    },
+    {
+      "bytes": 25381,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-host.subagent-host-v2.json",
+      "sha256": "02db508c47ead028b9cdc8341e3a357db633a826a564833bd8cc10a595fed6fa",
+      "source": ".agentlang/float-contract-229/full-validation-host.subagent-host-v2.json"
+    },
+    {
+      "bytes": 350258,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation-host.subagent-host.json",
+      "sha256": "c61d3319ae41799470ed92b6f05391bed831b24cc4e2488984771fa83bd67dd1",
+      "source": ".agentlang/float-contract-229/full-validation-host.subagent-host.json"
+    },
+    {
+      "bytes": 2323,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation.json",
+      "sha256": "81f0a82529b6f2de5d8285d4af03a53a93760f31f2b91f913d196c403a7ab1a4",
+      "source": ".agentlang/float-contract-229/full-validation.json"
+    },
+    {
+      "bytes": 1375,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/full-validation.log",
+      "sha256": "8f0ffbb70c356057f646d826a9861fa74a28eaada22c6dd566eb7f824387c4ac",
+      "source": ".agentlang/float-contract-229/full-validation.log"
+    },
+    {
+      "bytes": 36,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/Flow.Tests.log",
+      "sha256": "7bb2d310bf913b926f0063dbbdecc3ccbafa350756c2ff0c373d28c1aa23c080",
+      "source": ".agentlang/float-contract-229/managed/Flow.Tests.log"
+    },
+    {
+      "bytes": 279,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/IR.Formatting.Tests.log",
+      "sha256": "a463b9246927d6715cc1ed52aa905a2d2f16fb232a5dff5c7db598c21e673c03",
+      "source": ".agentlang/float-contract-229/managed/IR.Formatting.Tests.log"
+    },
+    {
+      "bytes": 47,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/IR.Interpreter.Tests.log",
+      "sha256": "7e39bf8a8dfd4c33c0fa8ccbe70827ea3dc7a60c6d1edf0517993734d3f2b36e",
+      "source": ".agentlang/float-contract-229/managed/IR.Interpreter.Tests.log"
+    },
+    {
+      "bytes": 174,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/OracleCheck.log",
+      "sha256": "26435d97ea795e8dd68745145b0f8907073d9350ddf09cc9ebf3d39db445ed94",
+      "source": ".agentlang/float-contract-229/managed/OracleCheck.log"
+    },
+    {
+      "bytes": 43,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/Source.Tests.log",
+      "sha256": "bd2a949d47eac60cb8fed5c499eeb96d230c66865cdb32a5d188f17611a043c4",
+      "source": ".agentlang/float-contract-229/managed/Source.Tests.log"
+    },
+    {
+      "bytes": 244,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/ValueInspection.Tests.log",
+      "sha256": "eb4fa1338ec1452f0438d51cd7156cdbab1af59f9a4b3d43d250751b3b2c52f3",
+      "source": ".agentlang/float-contract-229/managed/ValueInspection.Tests.log"
+    },
+    {
+      "bytes": 294,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/acceptance-followup-build.log",
+      "sha256": "e49f1c05a50c9a4c86d7fb7ad43a92d89d5c2fe13911d1f5e4de0953eaffdfd5",
+      "source": ".agentlang/float-contract-229/managed/acceptance-followup-build.log"
+    },
+    {
+      "bytes": 1398,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/acceptance-followup-workspace.log",
+      "sha256": "2c6ef0c3c2fdff691b9e9ff3cb3e32f13ab1f4fcb460f2d79c481d9afbbe7ef8",
+      "source": ".agentlang/float-contract-229/managed/acceptance-followup-workspace.log"
+    },
+    {
+      "bytes": 20097,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/acceptance-followup.log",
+      "sha256": "2447dd607f0a9a19dd883d48adb7833ab8431369502740ff62f1facfff3ceace",
+      "source": ".agentlang/float-contract-229/managed/acceptance-followup.log"
+    },
+    {
+      "bytes": 1553651,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/flow-runtime-followup/Flow.Runtime.Build.diag.log",
+      "sha256": "4066fd434129bfb2325fa0b9f9abd0a4c8c6bd6fb07193c54b24a8b26d4e0cf5",
+      "source": ".agentlang/float-contract-229/managed/flow-runtime-followup/Flow.Runtime.Build.diag.log"
+    },
+    {
+      "bytes": 57,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/flow-runtime-followup/Flow.Runtime.Build.first-attempt.log",
+      "sha256": "1f308d4592758031aa9106e320cd289909bffd621726394cfc804a599e3f92ee",
+      "source": ".agentlang/float-contract-229/managed/flow-runtime-followup/Flow.Runtime.Build.first-attempt.log"
+    },
+    {
+      "bytes": 411,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/flow-runtime-followup/Flow.Runtime.Build.log",
+      "sha256": "d84ed790e7f045aad2858428eb881047d24e0a805d04d7f111394be295376f19",
+      "source": ".agentlang/float-contract-229/managed/flow-runtime-followup/Flow.Runtime.Build.log"
+    },
+    {
+      "bytes": 1242361,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/flow-runtime-followup/Flow.Runtime.NoRestore.diag.log",
+      "sha256": "fc8f7c1f8e67d7d936d1f7e6ececd9241c83aaa2831b39d5dbb735ed95ea75a1",
+      "source": ".agentlang/float-contract-229/managed/flow-runtime-followup/Flow.Runtime.NoRestore.diag.log"
+    },
+    {
+      "bytes": 56,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/flow-runtime-followup/Flow.Runtime.Tests.log",
+      "sha256": "b7eb36fecb3f8afa2ae636c1aaaa6e0c8fda15be55cfca1dbbc041dda4b3dc48",
+      "source": ".agentlang/float-contract-229/managed/flow-runtime-followup/Flow.Runtime.Tests.log"
+    },
+    {
+      "bytes": 260,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/ir-json-fix/Core.Release.log",
+      "sha256": "85a1d17521cfdde164fd6d6be94de372a58f441d21780937f00eec5a2349869c",
+      "source": ".agentlang/float-contract-229/managed/ir-json-fix/Core.Release.log"
+    },
+    {
+      "bytes": 320,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/ir-json-fix/IR.Formatting.Tests.log",
+      "sha256": "7bf87fb602c32cd1da97bfe76af0b5592de4879fc51a6f0ff050758270c4ace1",
+      "source": ".agentlang/float-contract-229/managed/ir-json-fix/IR.Formatting.Tests.log"
+    },
+    {
+      "bytes": 1736,
+      "group": "managed-validation-raw",
+      "path": ".agentlang/float-contract-229/managed/json-transport-check.json",
+      "sha256": "0fe7f4c1d5feb82c528d04103774dd7a7966b2e59d47ce3063b0cee34dcf46bc",
+      "source": ".agentlang/float-contract-229/managed/json-transport-check.json"
+    },
+    {
+      "bytes": 3636,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/native-conformance-final-host.log",
+      "sha256": "634d46740a1499a474497379e89e5e135084177b538ee5a46a004959553d63a3",
+      "source": ".agentlang/float-contract-229/native-conformance-final-host.log"
+    },
+    {
+      "bytes": 2676,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/native-conformance-host.log",
+      "sha256": "4e993b44e16fc1e5a59152ff79a36a5df9860d794659da7e95420707c8e539ce",
+      "source": ".agentlang/float-contract-229/native-conformance-host.log"
+    },
+    {
+      "bytes": 177,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/native-value-stack-host.log",
+      "sha256": "a73702088fd0e5296620160ec52f2c1d69f8b2bc2b5aa2cb1261017577fc8958",
+      "source": ".agentlang/float-contract-229/native-value-stack-host.log"
+    },
+    {
+      "bytes": 2999,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/native-value-stack-retry.log",
+      "sha256": "aee8cea1cfff88ff9b7e5077848b36a1c772629adf3beb2f9cc6ad06101e5ff4",
+      "source": ".agentlang/float-contract-229/native-value-stack-retry.log"
+    },
+    {
+      "bytes": 2975,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/native-value-stack.log",
+      "sha256": "d7b24ebba176d06eaf3974dc5ca4322fe497a53654eb5d97adc563cf79580d43",
+      "source": ".agentlang/float-contract-229/native-value-stack.log"
+    },
+    {
+      "bytes": 1270899,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/build.log",
+      "sha256": "b6caa704a41de4fff8e1052db509d398c7155dd88ece58796ee9e808fc9d699c",
+      "source": ".agentlang/float-contract-229/native/build.log"
+    },
+    {
+      "bytes": 472,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/default-serial-build-2.log",
+      "sha256": "be36e01acbbf03b7893d80b6f6f2c9993c386864b832af59ae7913c568a305cd",
+      "source": ".agentlang/float-contract-229/native/default-serial-build-2.log"
+    },
+    {
+      "bytes": 472,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/default-serial-build.log",
+      "sha256": "9c66c6ab5cab74c2592876f4f38b6e768c6ddf716e46d6e466c436e38270bad0",
+      "source": ".agentlang/float-contract-229/native/default-serial-build.log"
+    },
+    {
+      "bytes": 472,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/default-serial-build.log",
+      "sha256": "4d67b58e494a66fb1efbd7ca0a43b7e27bfd5eb981fb4b5f1e759703a702a9b1",
+      "source": ".agentlang/float-contract-229/native/frame-followup/default-serial-build.log"
+    },
+    {
+      "bytes": 618,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/diagnosis.txt",
+      "sha256": "4eb6bded27186b459ef258fdd95c30df437f83c487d5e8e189ce687a24b6b679",
+      "source": ".agentlang/float-contract-229/native/frame-followup/diagnosis.txt"
+    },
+    {
+      "bytes": 2793,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance-tests.log",
+      "sha256": "89c89a0ff0baf0552911a839ef0e64713f24b351d84fbc581f686b7c17c6cab9",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance-tests.log"
+    },
+    {
+      "bytes": 2475,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance.log",
+      "sha256": "b3d4a5b83257f7c46290c85f2e67d808d3956f7889b3dcfe7e6e0189b9f96ac7",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance.log"
+    },
+    {
+      "bytes": 6346,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/module/fresh-a/O0/agentlang-module-manifest.json",
+      "sha256": "c08ce92e11f5a81a7c3a9d6f0c1329dac358c6e37628af920cda841e0b6f6a50",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/module/fresh-a/O0/agentlang-module-manifest.json"
+    },
+    {
+      "bytes": 6346,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/module/fresh-b/O2/agentlang-module-manifest.json",
+      "sha256": "6394232cdf254b451d1d45e4191e6657a4cb8ad34eca5ffa42049b8d288ae8cd",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/module/fresh-b/O2/agentlang-module-manifest.json"
+    },
+    {
+      "bytes": 1479,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-diagnostic/entries/begin.verified-ir.txt",
+      "sha256": "b315770e755e729758a98c71a3fe36f64cee3a47e80083554797ef09cfe51ed3",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-diagnostic/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 1401,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-diagnostic/entries/initialize.verified-ir.txt",
+      "sha256": "e7fb9de5be7189435c68b67cc7e225c7027410cbc67236f0d2a11fc604b0915f",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-diagnostic/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1256,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-diagnostic/entries/resume.verified-ir.txt",
+      "sha256": "a21c5e368829e17b9e4255ce972612c34771863db29e8bc7e3ad1b27079f834b",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-diagnostic/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 29235,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-diagnostic/owning-mailbox-module-manifest.json",
+      "sha256": "b454584b1b9fc4d33f08af0704d9b8b1375f578ce743f50b27cfc2bcaad67a11",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-diagnostic/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 1479,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-trusted-generated/entries/begin.verified-ir.txt",
+      "sha256": "b315770e755e729758a98c71a3fe36f64cee3a47e80083554797ef09cfe51ed3",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-trusted-generated/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 1401,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-trusted-generated/entries/initialize.verified-ir.txt",
+      "sha256": "e7fb9de5be7189435c68b67cc7e225c7027410cbc67236f0d2a11fc604b0915f",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-trusted-generated/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1256,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-trusted-generated/entries/resume.verified-ir.txt",
+      "sha256": "a21c5e368829e17b9e4255ce972612c34771863db29e8bc7e3ad1b27079f834b",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-trusted-generated/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 29242,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-trusted-generated/owning-mailbox-module-manifest.json",
+      "sha256": "5fabb14c04dd5f90a02262b3a7fd1014eea788f9d1d13b7c856280c394555d17",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-callbacks-trusted-generated/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 1479,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O0/entries/begin.verified-ir.txt",
+      "sha256": "b315770e755e729758a98c71a3fe36f64cee3a47e80083554797ef09cfe51ed3",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O0/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 1401,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O0/entries/initialize.verified-ir.txt",
+      "sha256": "e7fb9de5be7189435c68b67cc7e225c7027410cbc67236f0d2a11fc604b0915f",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O0/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1256,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O0/entries/resume.verified-ir.txt",
+      "sha256": "a21c5e368829e17b9e4255ce972612c34771863db29e8bc7e3ad1b27079f834b",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O0/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 29235,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O0/owning-mailbox-module-manifest.json",
+      "sha256": "302652ba5f8a4d959a5f88cbca4f3e9810f440a379b04b525e0225d2ce2b67b0",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O0/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 1479,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O2/entries/begin.verified-ir.txt",
+      "sha256": "b315770e755e729758a98c71a3fe36f64cee3a47e80083554797ef09cfe51ed3",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O2/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 1401,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O2/entries/initialize.verified-ir.txt",
+      "sha256": "e7fb9de5be7189435c68b67cc7e225c7027410cbc67236f0d2a11fc604b0915f",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O2/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1256,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O2/entries/resume.verified-ir.txt",
+      "sha256": "a21c5e368829e17b9e4255ce972612c34771863db29e8bc7e3ad1b27079f834b",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O2/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 29235,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O2/owning-mailbox-module-manifest.json",
+      "sha256": "03ae7fd8ee1067d182ae0ee33eda15d66034af41186459dc64a63a752b2fb3e4",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-float-mailbox-lifecycle/O2/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 3836,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O0/entries/begin.verified-ir.txt",
+      "sha256": "30725f64e90af40e0d53197f16eb08a7c1c3470eb976d88c1be06e75b426c397",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O0/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 1332,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O0/entries/initialize.verified-ir.txt",
+      "sha256": "e67d424e95aa7a5b12499e71018bfae70811b2bbeec9a31b2f4c6720263fd310",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O0/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1285,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O0/entries/resume.verified-ir.txt",
+      "sha256": "94cef839a085d1fb233b2a6d89b6021fdeb1563cf259e0137a837665031e8346",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O0/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 35357,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O0/owning-mailbox-module-manifest.json",
+      "sha256": "54f390f14793ef9a425b1ef26daefefa7a70d9f6f8c1615cc396d41722198a41",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O0/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 3836,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O2/entries/begin.verified-ir.txt",
+      "sha256": "30725f64e90af40e0d53197f16eb08a7c1c3470eb976d88c1be06e75b426c397",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O2/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 1332,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O2/entries/initialize.verified-ir.txt",
+      "sha256": "e67d424e95aa7a5b12499e71018bfae70811b2bbeec9a31b2f4c6720263fd310",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O2/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1285,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O2/entries/resume.verified-ir.txt",
+      "sha256": "94cef839a085d1fb233b2a6d89b6021fdeb1563cf259e0137a837665031e8346",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O2/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 35357,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O2/owning-mailbox-module-manifest.json",
+      "sha256": "42cb001c7a2e24f86b3c069918a79d781e631d5b5909d294cd25e575fe75fb29",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-nominal-string-mailbox/O2/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 1481,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O0/entries/begin.verified-ir.txt",
+      "sha256": "6e291807e0ffff691882b5a1e6cce2f100068d356c4c1b3230ad6a3c72ad8cd8",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O0/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 2215,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O0/entries/initialize.verified-ir.txt",
+      "sha256": "4773ebae62dc31c16b68baca73aa3572d4355a1eb68e9990a51c91fb055b0b8f",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O0/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1277,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O0/entries/resume.verified-ir.txt",
+      "sha256": "a21c311dc33755d2bddf683cc2c50b8036713665fcd71f3e696b0f42674c5f20",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O0/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 39629,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O0/owning-mailbox-module-manifest.json",
+      "sha256": "b927c5c3a3f75196aae88805bc7a77e40a58b3d93c430eaec53e2407453f4ba1",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O0/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 1481,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O2/entries/begin.verified-ir.txt",
+      "sha256": "6e291807e0ffff691882b5a1e6cce2f100068d356c4c1b3230ad6a3c72ad8cd8",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O2/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 2215,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O2/entries/initialize.verified-ir.txt",
+      "sha256": "4773ebae62dc31c16b68baca73aa3572d4355a1eb68e9990a51c91fb055b0b8f",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O2/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1277,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O2/entries/resume.verified-ir.txt",
+      "sha256": "a21c311dc33755d2bddf683cc2c50b8036713665fcd71f3e696b0f42674c5f20",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O2/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 39629,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O2/owning-mailbox-module-manifest.json",
+      "sha256": "889236068b8e28cc131756e075ac70056b9742405607dbb4e0aa945e16dac653",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-bool-mailbox/O2/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 1461,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-int/entries/begin.verified-ir.txt",
+      "sha256": "02c5c15a605f918a74b5b0a2ed22287498e6d3b7227b1327d18fe0481a742acd",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-int/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 2208,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-int/entries/initialize.verified-ir.txt",
+      "sha256": "042a1f217f296c05a15edb2f2bd59c396cf58dba39f197355fe23adbb3175874",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-int/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1262,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-int/entries/resume.verified-ir.txt",
+      "sha256": "9d15990ac22d89e1bcfadf218f3c16a95b87ffcfc61c68632a5e3b06f7f86194",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-int/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 38988,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-int/owning-mailbox-module-manifest.json",
+      "sha256": "a6cadfbffc7ecda6f1529a83b184619118e120825eac40241a6851e6bb630dfd",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-int/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 1489,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-string/entries/begin.verified-ir.txt",
+      "sha256": "cbe21747e2c5880e53d68d8c5b487b30d5883d1ad077896efbdd455bf7b66f0a",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-string/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 2282,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-string/entries/initialize.verified-ir.txt",
+      "sha256": "7c353ae21c3f65516301e0805011454e4213eda00584a997bb7c06e4e9b1d85d",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-string/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1283,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-string/entries/resume.verified-ir.txt",
+      "sha256": "0c8595f4c6151565cd6a8f5dccded6452ac9b479ece25f50ecca2ece52a88dae",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-string/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 41720,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-string/owning-mailbox-module-manifest.json",
+      "sha256": "e09e7db01f7f2e38b4f7a9610920608cff028fa1f2c8572c8874c518daaa5983",
+      "source": ".agentlang/float-contract-229/native/frame-followup/full-native-conformance/owning-refined-mailbox-string/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 2676,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/native-conformance-original-failure.log",
+      "sha256": "4e993b44e16fc1e5a59152ff79a36a5df9860d794659da7e95420707c8e539ce",
+      "source": ".agentlang/float-contract-229/native/frame-followup/native-conformance-original-failure.log"
+    },
+    {
+      "bytes": 251,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/owning-refined-int-retry.log",
+      "sha256": "f6b04158d32b6b966938da55cedf2b190c6db0f16b48025dd3c02e49b662a031",
+      "source": ".agentlang/float-contract-229/native/frame-followup/owning-refined-int-retry.log"
+    },
+    {
+      "bytes": 245,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/owning-refined-int.log",
+      "sha256": "2ba8e206689211a96821c33fa90ad6b45e63aea517e3273394498bd0918f569c",
+      "source": ".agentlang/float-contract-229/native/frame-followup/owning-refined-int.log"
+    },
+    {
+      "bytes": 1461,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/refined-int-retry/owning-refined-mailbox-int/entries/begin.verified-ir.txt",
+      "sha256": "02c5c15a605f918a74b5b0a2ed22287498e6d3b7227b1327d18fe0481a742acd",
+      "source": ".agentlang/float-contract-229/native/frame-followup/refined-int-retry/owning-refined-mailbox-int/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 2208,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/refined-int-retry/owning-refined-mailbox-int/entries/initialize.verified-ir.txt",
+      "sha256": "042a1f217f296c05a15edb2f2bd59c396cf58dba39f197355fe23adbb3175874",
+      "source": ".agentlang/float-contract-229/native/frame-followup/refined-int-retry/owning-refined-mailbox-int/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1262,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/refined-int-retry/owning-refined-mailbox-int/entries/resume.verified-ir.txt",
+      "sha256": "9d15990ac22d89e1bcfadf218f3c16a95b87ffcfc61c68632a5e3b06f7f86194",
+      "source": ".agentlang/float-contract-229/native/frame-followup/refined-int-retry/owning-refined-mailbox-int/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 38988,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/refined-int-retry/owning-refined-mailbox-int/owning-mailbox-module-manifest.json",
+      "sha256": "60dfa19f79175c3b79181a3f2c67d0d1fb03187422cff068a652f4f66d6e33ab",
+      "source": ".agentlang/float-contract-229/native/frame-followup/refined-int-retry/owning-refined-mailbox-int/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 1461,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/refined-int/owning-refined-mailbox-int/entries/begin.verified-ir.txt",
+      "sha256": "02c5c15a605f918a74b5b0a2ed22287498e6d3b7227b1327d18fe0481a742acd",
+      "source": ".agentlang/float-contract-229/native/frame-followup/refined-int/owning-refined-mailbox-int/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 2208,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/refined-int/owning-refined-mailbox-int/entries/initialize.verified-ir.txt",
+      "sha256": "042a1f217f296c05a15edb2f2bd59c396cf58dba39f197355fe23adbb3175874",
+      "source": ".agentlang/float-contract-229/native/frame-followup/refined-int/owning-refined-mailbox-int/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1262,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/refined-int/owning-refined-mailbox-int/entries/resume.verified-ir.txt",
+      "sha256": "9d15990ac22d89e1bcfadf218f3c16a95b87ffcfc61c68632a5e3b06f7f86194",
+      "source": ".agentlang/float-contract-229/native/frame-followup/refined-int/owning-refined-mailbox-int/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 38988,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/frame-followup/refined-int/owning-refined-mailbox-int/owning-mailbox-module-manifest.json",
+      "sha256": "7195ced86c9fcab84dc0fb11cf91e18a0f99faf4a6c16a74b12183e6d5d4a2d5",
+      "source": ".agentlang/float-contract-229/native/frame-followup/refined-int/owning-refined-mailbox-int/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 13261,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/legacy-float-entry-rejection/O0/agentlang-native.ll",
+      "sha256": "25060d29f5b60cf407474ee80ff73eedd97e0bda6cad02d38e011b5f5d27cd30",
+      "source": ".agentlang/float-contract-229/native/legacy-float-entry-rejection/O0/agentlang-native.ll"
+    },
+    {
+      "bytes": 710,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/native-build-O0-2.log",
+      "sha256": "c074cfa5b253f060d64fcbe91d167154b3ce8ac45b63d7119be436368c619f9f",
+      "source": ".agentlang/float-contract-229/native/native-build-O0-2.log"
+    },
+    {
+      "bytes": 57,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/native-build-O0.log",
+      "sha256": "d924a7785e9875d974cd56ca4ce5b9a3fafc03a969f6be4d3c9d67705409b897",
+      "source": ".agentlang/float-contract-229/native/native-build-O0.log"
+    },
+    {
+      "bytes": 6134,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-aggregate-transport/O0/agentlang-arena-runtime.su",
+      "sha256": "2fde55df8b29cf0a88092340b2ab6a5f7a19de0a85f6a467d6c2966d405b6716",
+      "source": ".agentlang/float-contract-229/native/owning-float-aggregate-transport/O0/agentlang-arena-runtime.su"
+    },
+    {
+      "bytes": 442,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-aggregate-transport/O0/agentlang-native.su",
+      "sha256": "6cb37039cbdf5fa04e6a704b1a8b3b8f95991b5ff6989a184245e306ca68b4a3",
+      "source": ".agentlang/float-contract-229/native/owning-float-aggregate-transport/O0/agentlang-native.su"
+    },
+    {
+      "bytes": 196969,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-aggregate-transport/O0/owning-stack-native.ll",
+      "sha256": "3d083a28bc73bffd01ad0d1a9e0755a9f8b183cddf1e86f0541523d146859553",
+      "source": ".agentlang/float-contract-229/native/owning-float-aggregate-transport/O0/owning-stack-native.ll"
+    },
+    {
+      "bytes": 4363,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-aggregate-transport/O2/agentlang-arena-runtime.su",
+      "sha256": "3b28d3bd184431b73a12d967caa1d2b09cddadd83281a0b016f8af4dfb640ffa",
+      "source": ".agentlang/float-contract-229/native/owning-float-aggregate-transport/O2/agentlang-arena-runtime.su"
+    },
+    {
+      "bytes": 442,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-aggregate-transport/O2/agentlang-native.su",
+      "sha256": "553847ec334206c93fd2f563eba61427db69f707e525c4d62c212440f536b332",
+      "source": ".agentlang/float-contract-229/native/owning-float-aggregate-transport/O2/agentlang-native.su"
+    },
+    {
+      "bytes": 196969,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-aggregate-transport/O2/owning-stack-native.ll",
+      "sha256": "3d083a28bc73bffd01ad0d1a9e0755a9f8b183cddf1e86f0541523d146859553",
+      "source": ".agentlang/float-contract-229/native/owning-float-aggregate-transport/O2/owning-stack-native.ll"
+    },
+    {
+      "bytes": 6134,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-direct-roundtrip/O0/agentlang-arena-runtime.su",
+      "sha256": "2fde55df8b29cf0a88092340b2ab6a5f7a19de0a85f6a467d6c2966d405b6716",
+      "source": ".agentlang/float-contract-229/native/owning-float-direct-roundtrip/O0/agentlang-arena-runtime.su"
+    },
+    {
+      "bytes": 291,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-direct-roundtrip/O0/agentlang-native.su",
+      "sha256": "af633f1a53895e453a9589b9603f7243739069bac54d12c512503e9c4874174f",
+      "source": ".agentlang/float-contract-229/native/owning-float-direct-roundtrip/O0/agentlang-native.su"
+    },
+    {
+      "bytes": 96340,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-direct-roundtrip/O0/owning-stack-native.ll",
+      "sha256": "1eb895018e6fe0bd430928868b3768e62f01d2c7d88ffc396073a6dbcd998944",
+      "source": ".agentlang/float-contract-229/native/owning-float-direct-roundtrip/O0/owning-stack-native.ll"
+    },
+    {
+      "bytes": 4363,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-direct-roundtrip/O2/agentlang-arena-runtime.su",
+      "sha256": "3b28d3bd184431b73a12d967caa1d2b09cddadd83281a0b016f8af4dfb640ffa",
+      "source": ".agentlang/float-contract-229/native/owning-float-direct-roundtrip/O2/agentlang-arena-runtime.su"
+    },
+    {
+      "bytes": 291,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-direct-roundtrip/O2/agentlang-native.su",
+      "sha256": "0f6215dc50db9486022adfb020a077ec997c6ac48ebad7e8bfb2c5edd0eecffd",
+      "source": ".agentlang/float-contract-229/native/owning-float-direct-roundtrip/O2/agentlang-native.su"
+    },
+    {
+      "bytes": 96340,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-direct-roundtrip/O2/owning-stack-native.ll",
+      "sha256": "1eb895018e6fe0bd430928868b3768e62f01d2c7d88ffc396073a6dbcd998944",
+      "source": ".agentlang/float-contract-229/native/owning-float-direct-roundtrip/O2/owning-stack-native.ll"
+    },
+    {
+      "bytes": 1479,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-diagnostic/entries/begin.verified-ir.txt",
+      "sha256": "b315770e755e729758a98c71a3fe36f64cee3a47e80083554797ef09cfe51ed3",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-diagnostic/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 1401,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-diagnostic/entries/initialize.verified-ir.txt",
+      "sha256": "e7fb9de5be7189435c68b67cc7e225c7027410cbc67236f0d2a11fc604b0915f",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-diagnostic/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1256,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-diagnostic/entries/resume.verified-ir.txt",
+      "sha256": "a21c5e368829e17b9e4255ce972612c34771863db29e8bc7e3ad1b27079f834b",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-diagnostic/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 29235,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-diagnostic/owning-mailbox-module-manifest.json",
+      "sha256": "2de5ee9074da16a8fc24946f2ff068d82482def60c0e62c1b4cf551889c428c5",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-diagnostic/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 1479,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-trusted-generated/entries/begin.verified-ir.txt",
+      "sha256": "b315770e755e729758a98c71a3fe36f64cee3a47e80083554797ef09cfe51ed3",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-trusted-generated/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 1401,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-trusted-generated/entries/initialize.verified-ir.txt",
+      "sha256": "e7fb9de5be7189435c68b67cc7e225c7027410cbc67236f0d2a11fc604b0915f",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-trusted-generated/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1256,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-trusted-generated/entries/resume.verified-ir.txt",
+      "sha256": "a21c5e368829e17b9e4255ce972612c34771863db29e8bc7e3ad1b27079f834b",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-trusted-generated/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 29242,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-trusted-generated/owning-mailbox-module-manifest.json",
+      "sha256": "8ba2086298ff9d95603987ce88c8a984ca34c31466ed849c7ded8b90e6534748",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-callbacks-trusted-generated/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 1479,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O0/entries/begin.verified-ir.txt",
+      "sha256": "b315770e755e729758a98c71a3fe36f64cee3a47e80083554797ef09cfe51ed3",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O0/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 1401,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O0/entries/initialize.verified-ir.txt",
+      "sha256": "e7fb9de5be7189435c68b67cc7e225c7027410cbc67236f0d2a11fc604b0915f",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O0/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1256,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O0/entries/resume.verified-ir.txt",
+      "sha256": "a21c5e368829e17b9e4255ce972612c34771863db29e8bc7e3ad1b27079f834b",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O0/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 29235,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O0/owning-mailbox-module-manifest.json",
+      "sha256": "809a2b31adaf3c24324d149f7c3caaae44340b4ef461cfa8219397d8224af1ac",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O0/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 1479,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O2/entries/begin.verified-ir.txt",
+      "sha256": "b315770e755e729758a98c71a3fe36f64cee3a47e80083554797ef09cfe51ed3",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O2/entries/begin.verified-ir.txt"
+    },
+    {
+      "bytes": 1401,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O2/entries/initialize.verified-ir.txt",
+      "sha256": "e7fb9de5be7189435c68b67cc7e225c7027410cbc67236f0d2a11fc604b0915f",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O2/entries/initialize.verified-ir.txt"
+    },
+    {
+      "bytes": 1256,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O2/entries/resume.verified-ir.txt",
+      "sha256": "a21c5e368829e17b9e4255ce972612c34771863db29e8bc7e3ad1b27079f834b",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O2/entries/resume.verified-ir.txt"
+    },
+    {
+      "bytes": 29235,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O2/owning-mailbox-module-manifest.json",
+      "sha256": "1d6988f6a50b7b75f10607d32c205bf7d7916c1e44ab53e056f1e200bceb6439",
+      "source": ".agentlang/float-contract-229/native/owning-float-mailbox-lifecycle/O2/owning-mailbox-module-manifest.json"
+    },
+    {
+      "bytes": 1421,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-release-2.log",
+      "sha256": "88d1a2037128eefd3896e6f204246f6d97a8f17f8444b33f3eb0e2cc152c99c9",
+      "source": ".agentlang/float-contract-229/native/owning-float-release-2.log"
+    },
+    {
+      "bytes": 624,
+      "group": "native-validation-raw",
+      "path": ".agentlang/float-contract-229/native/owning-float-release.log",
+      "sha256": "cd1922c7ee305e39b15b57346b26b54f602cb945385b16b4d5868f4743074c98",
+      "source": ".agentlang/float-contract-229/native/owning-float-release.log"
+    },
+    {
+      "bytes": 6134,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-to-string-literal/O0/agentlang-arena-runtime.su",
+      "sha256": "2fde55df8b29cf0a88092340b2ab6a5f7a19de0a85f6a467d6c2966d405b6716",
+      "source": ".agentlang/float-contract-229/native/owning-float-to-string-literal/O0/agentlang-arena-runtime.su"
+    },
+    {
+      "bytes": 293,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-to-string-literal/O0/agentlang-native.su",
+      "sha256": "8d31349bc23d8ef1dacbb043831d80b09ce39cddca14686251cbb9b67c4c8269",
+      "source": ".agentlang/float-contract-229/native/owning-float-to-string-literal/O0/agentlang-native.su"
+    },
+    {
+      "bytes": 24931,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-to-string-literal/O0/owning-stack-native.ll",
+      "sha256": "f670e277926f3f1d7f4b6281ec6ce9decab291d74e9679d2f73fa38772c7c79d",
+      "source": ".agentlang/float-contract-229/native/owning-float-to-string-literal/O0/owning-stack-native.ll"
+    },
+    {
+      "bytes": 4363,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-to-string-literal/O2/agentlang-arena-runtime.su",
+      "sha256": "3b28d3bd184431b73a12d967caa1d2b09cddadd83281a0b016f8af4dfb640ffa",
+      "source": ".agentlang/float-contract-229/native/owning-float-to-string-literal/O2/agentlang-arena-runtime.su"
+    },
+    {
+      "bytes": 293,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-to-string-literal/O2/agentlang-native.su",
+      "sha256": "9a32ae69c972a93bbfa38f296c4818f1943da75ef0468160b9112de060c04b52",
+      "source": ".agentlang/float-contract-229/native/owning-float-to-string-literal/O2/agentlang-native.su"
+    },
+    {
+      "bytes": 24931,
+      "group": "selected-native-llvm-and-frame-receipts",
+      "path": ".agentlang/float-contract-229/native/owning-float-to-string-literal/O2/owning-stack-native.ll",
+      "sha256": "f670e277926f3f1d7f4b6281ec6ce9decab291d74e9679d2f73fa38772c7c79d",
+      "source": ".agentlang/float-contract-229/native/owning-float-to-string-literal/O2/owning-stack-native.ll"
+    },
+    {
+      "bytes": 528,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/oracle-reproduction.json",
+      "sha256": "311b881133330a7732ffaa7191d2d6fa316539c1d33f61371ed55a2198fd1944",
+      "source": ".agentlang/float-contract-229/oracle-reproduction.json"
+    },
+    {
+      "bytes": 1134,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/owning-mailbox-host.log",
+      "sha256": "5f4ad27fc31172affee9a755ec46286115baf341fc1539e5beac0723b370625e",
+      "source": ".agentlang/float-contract-229/owning-mailbox-host.log"
+    },
+    {
+      "bytes": 7557,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/persistence-investigation.md",
+      "sha256": "68b6a921b1da5a9abeb9aa41c85fb8755997bf906320cf58ec632695b67cf44b",
+      "source": ".agentlang/float-contract-229/persistence-investigation.md"
+    },
+    {
+      "bytes": 4128,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/review.md",
+      "sha256": "43d6953acaeb053a28a2b8fa8ef29adc97103e1041fa5dfcd2157134d8ee7d83",
+      "source": ".agentlang/float-contract-229/review.md"
+    },
+    {
+      "bytes": 1379,
+      "group": "raw-validation-log-and-review",
+      "path": ".agentlang/float-contract-229/root-llvm-build.log",
+      "sha256": "eb5c7c4368d016eaac63f13f50ab9e03a3becf5c1db373ed4298a6b5a8dc9802",
+      "source": ".agentlang/float-contract-229/root-llvm-build.log"
+    },
+    {
+      "bytes": 39,
+      "group": "final-native-verifier-frame-receipt",
+      "path": ".agentlang/native-validation/tests-b79f5d8d54b84af3b0aa31f083f3b537/native-stack-screen/O0/agentlang-arena-runtime.su",
+      "sha256": "8205b5b494f91d5b1337099ee2f689559fc65d8a5fccc92a755f0cae80557273",
+      "source": ".agentlang/native-validation/tests-b79f5d8d54b84af3b0aa31f083f3b537/native-stack-screen/O0/agentlang-arena-runtime.su"
+    },
+    {
+      "bytes": 137,
+      "group": "final-native-verifier-frame-receipt",
+      "path": ".agentlang/native-validation/tests-b79f5d8d54b84af3b0aa31f083f3b537/native-stack-screen/O0/agentlang-native.su",
+      "sha256": "431cd2bf3917e22ac501255ba6ae85ef7434d2867a06ea689f888d02dba77293",
+      "source": ".agentlang/native-validation/tests-b79f5d8d54b84af3b0aa31f083f3b537/native-stack-screen/O0/agentlang-native.su"
+    },
+    {
+      "bytes": 38,
+      "group": "final-native-verifier-frame-receipt",
+      "path": ".agentlang/native-validation/tests-b79f5d8d54b84af3b0aa31f083f3b537/native-stack-screen/O2/agentlang-arena-runtime.su",
+      "sha256": "56eba436ff37688753447c4a326d505c4e50c62554daf4d7b3aee1415ba97886",
+      "source": ".agentlang/native-validation/tests-b79f5d8d54b84af3b0aa31f083f3b537/native-stack-screen/O2/agentlang-arena-runtime.su"
+    },
+    {
+      "bytes": 137,
+      "group": "final-native-verifier-frame-receipt",
+      "path": ".agentlang/native-validation/tests-b79f5d8d54b84af3b0aa31f083f3b537/native-stack-screen/O2/agentlang-native.su",
+      "sha256": "efe8cbd0c93b4deec3e360a8c6060158cadc12d6cf21b290636d2a4f80a8d264",
+      "source": ".agentlang/native-validation/tests-b79f5d8d54b84af3b0aa31f083f3b537/native-stack-screen/O2/agentlang-native.su"
+    },
+    {
+      "bytes": 10991440,
+      "group": "focused-verifier-and-current-fixture-receipt",
+      "path": ".agentlang/owning-mailbox-001/integration-run-b9084dae7140460fa003bef9b8a218a1/integration-evidence.json",
+      "sha256": "65ab02736a5ebf42938db29c3bcf83577d2cbda8c8329568411f8f010a915af5",
+      "source": ".agentlang/owning-mailbox-001/integration-run-b9084dae7140460fa003bef9b8a218a1/integration-evidence.json"
+    },
+    {
+      "bytes": 0,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/compiler-proved-arena-lifetime-tests.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/compiler-proved-arena-lifetime-tests.stderr.txt"
+    },
+    {
+      "bytes": 59,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/compiler-proved-arena-lifetime-tests.stdout.txt",
+      "sha256": "49035ce9453fbb350eec72438b192830829d5f3891e3d1eb17ee66a76d69f6b1",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/compiler-proved-arena-lifetime-tests.stdout.txt"
+    },
+    {
+      "bytes": 8515,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/expanded-fixed-source.flow",
+      "sha256": "5e835f91d520b9b427152ffe961d12da3cea467937eafacaa5ac30803c451341",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/expanded-fixed-source.flow"
+    },
+    {
+      "bytes": 10997,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/expanded-string-source.flow",
+      "sha256": "57e3823f6745c690554258dd0ff0a555ac0c5ebdb5753e7fa3dbe3c2a7d9eac2",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/expanded-string-source.flow"
+    },
+    {
+      "bytes": 0,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-arena-lifetime-tests-build.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-arena-lifetime-tests-build.stderr.txt"
+    },
+    {
+      "bytes": 811,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-arena-lifetime-tests-build.stdout.txt",
+      "sha256": "9644e375f86ab01d436f875a2852dbbe9c869f0d29c00716c522dae94f09eb2d",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-arena-lifetime-tests-build.stdout.txt"
+    },
+    {
+      "bytes": 0,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-dotnet-build.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-dotnet-build.stderr.txt"
+    },
+    {
+      "bytes": 968,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-dotnet-build.stdout.txt",
+      "sha256": "0174b8f3ab14fbb2ff8191a2dd0176f7a145dc299e4f4d0254b7fabf47024fde",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-dotnet-build.stdout.txt"
+    },
+    {
+      "bytes": 0,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-owning-stack-c-build-O0.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-owning-stack-c-build-O0.stderr.txt"
+    },
+    {
+      "bytes": 0,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-owning-stack-c-build-O0.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-owning-stack-c-build-O0.stdout.txt"
+    },
+    {
+      "bytes": 0,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-owning-stack-c-build-O2.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-owning-stack-c-build-O2.stderr.txt"
+    },
+    {
+      "bytes": 0,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-owning-stack-c-build-O2.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/fresh-owning-stack-c-build-O2.stdout.txt"
+    },
+    {
+      "bytes": 3396436,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/native-value-stack-evidence.json",
+      "sha256": "d9f03d0c6d19d4304f69ab6982b754bfd4550cb171ab1ee30abfe0d595db11a0",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/native-value-stack-evidence.json"
+    },
+    {
+      "bytes": 0,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-native-storage-tests-O0.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-native-storage-tests-O0.stderr.txt"
+    },
+    {
+      "bytes": 1395,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-native-storage-tests-O0.stdout.txt",
+      "sha256": "1ce9243b6af26bf49df905eddee5f64fc2ac931113a91c5b414490018e007796",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-native-storage-tests-O0.stdout.txt"
+    },
+    {
+      "bytes": 0,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-native-storage-tests-O2.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-native-storage-tests-O2.stderr.txt"
+    },
+    {
+      "bytes": 1395,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-native-storage-tests-O2.stdout.txt",
+      "sha256": "1ce9243b6af26bf49df905eddee5f64fc2ac931113a91c5b414490018e007796",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-native-storage-tests-O2.stdout.txt"
+    },
+    {
+      "bytes": 84,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-ubsan-normal-build.stderr.txt",
+      "sha256": "e959aee710329d206dad24fa22cb2f6ebcedade15a679c593f68e5e96af822e7",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-ubsan-normal-build.stderr.txt"
+    },
+    {
+      "bytes": 7454,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-ubsan-normal-build.stdout.txt",
+      "sha256": "1a50cd2644b55e72212762a82f9661011c6150add65bde806008a2a1fac6ecf5",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-ubsan-normal-build.stdout.txt"
+    },
+    {
+      "bytes": 0,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-ubsan-trap-build.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-ubsan-trap-build.stderr.txt"
+    },
+    {
+      "bytes": 0,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-ubsan-trap-build.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-ubsan-trap-build.stdout.txt"
+    },
+    {
+      "bytes": 0,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-ubsan-trap-run.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-ubsan-trap-run.stderr.txt"
+    },
+    {
+      "bytes": 1395,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-ubsan-trap-run.stdout.txt",
+      "sha256": "1ce9243b6af26bf49df905eddee5f64fc2ac931113a91c5b414490018e007796",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/owning-stack-ubsan-trap-run.stdout.txt"
+    },
+    {
+      "bytes": 0,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/same-ir-cross-backend-experiment.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/same-ir-cross-backend-experiment.stderr.txt"
+    },
+    {
+      "bytes": 181,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/same-ir-cross-backend-experiment.stdout.txt",
+      "sha256": "8417a7acd58f2bd2ec3ed79669aee7c9f575a6a5ea3c9e27ae6972cc2ddbb407",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/same-ir-cross-backend-experiment.stdout.txt"
+    },
+    {
+      "bytes": 1776451,
+      "group": "passed-native-value-stack-terminal-evidence",
+      "path": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/verification-evidence.json",
+      "sha256": "af5da003a1f181ca09ab5c7cc39ea00c6a6fdaa1f73137e8f4f870c810021119",
+      "source": ".agentlang/owning-stack-003/verification-08308efe6c824f47a1de61b8ff915d21/verification-evidence.json"
+    },
+    {
+      "bytes": 3224813,
+      "group": "focused-verifier-and-current-fixture-receipt",
+      "path": ".agentlang/refined-mailbox-180/runner/integration-run-b9084dae7140460fa003bef9b8a218a1/integration-evidence.json",
+      "sha256": "2fc124310ac3290db5c76adf123e9153c1c137b20766a4ac95ff830d7bf5ad90",
+      "source": ".agentlang/refined-mailbox-180/runner/integration-run-b9084dae7140460fa003bef9b8a218a1/integration-evidence.json"
+    },
+    {
+      "bytes": 230835,
+      "group": "focused-verifier-and-current-fixture-receipt",
+      "path": ".agentlang/reports/flow-matched-renewal-fixtures.json",
+      "sha256": "705490615bbfce254fcd8d0cade885630300d3360c355c4e86d988acfa9fe406",
+      "source": ".agentlang/reports/flow-matched-renewal-fixtures.json"
+    },
+    {
+      "bytes": 1039706,
+      "group": "focused-verifier-and-current-fixture-receipt",
+      "path": ".agentlang/reports/flow-renewal-acceptance-gate.json",
+      "sha256": "151c3f984c5737fe4a6fcbbb8186c0e6b70ea7c5d1c1dbf24a33c3ab9439e2b3",
+      "source": ".agentlang/reports/flow-renewal-acceptance-gate.json"
+    },
+    {
+      "bytes": 311190,
+      "group": "focused-verifier-and-current-fixture-receipt",
+      "path": ".agentlang/reports/flow-renewal-replay.json",
+      "sha256": "3e10c480089c5f85d084f83182693c99ed61abd87a7ed84dafd3ee57a3436122",
+      "source": ".agentlang/reports/flow-renewal-replay.json"
+    },
+    {
+      "bytes": 341973,
+      "group": "focused-verifier-and-current-fixture-receipt",
+      "path": ".agentlang/reports/matched-renewal-snapshots.json",
+      "sha256": "fc28b34a49c04eca9fc37f566f4eb0bc3351203c675585bc8d30b60b83c8bb78",
+      "source": ".agentlang/reports/matched-renewal-snapshots.json"
+    },
+    {
+      "bytes": 106238,
+      "group": "archive-member-manifest",
+      "path": "MANIFEST.json",
+      "sha256": "54d7434564546193588d1c848279624d45e54b47b3149624a914dcfefaf74505",
+      "source": "generated"
+    },
+    {
+      "bytes": 28446,
+      "group": "candidate-source-and-tests",
+      "path": "README.md",
+      "sha256": "906dba3ee65dccb28f9d8ce605a4c6e154403175f51aed1b2e7fc8733a3821ec",
+      "source": "README.md"
+    },
+    {
+      "bytes": 73506,
+      "group": "candidate-source-and-tests",
+      "path": "docs/PRD.md",
+      "sha256": "6a6c8114009ed3ee6d29444ee4f289ea9552d8bf290b515683a765cfec9a63f0",
+      "source": "docs/PRD.md"
+    },
+    {
+      "bytes": 76667,
+      "group": "candidate-source-and-tests",
+      "path": "docs/ROADMAP.md",
+      "sha256": "b764a3954e45ba89a1a80a317f3e362662d7862394078e9dce188e193f159eb7",
+      "source": "docs/ROADMAP.md"
+    },
+    {
+      "bytes": 18193,
+      "group": "archive-helper",
+      "path": "evidence/package-helper.py",
+      "sha256": "a07e882ba24473a055a292154f64c5e5ca9f10a1bcb154217091213ca04e4f6d",
+      "source": ".agentlang/float-contract-229/archive/package.py"
+    },
+    {
+      "bytes": 1467,
+      "group": "prior-failed-evidence-cross-references",
+      "path": "evidence/prior-candidate-cross-references.json",
+      "sha256": "22d62681e06c1660194cfdf4157b4758ab4b49785ecc732e15a08e2d8960bf76",
+      "source": "generated"
+    },
+    {
+      "bytes": 7000,
+      "group": "report-snapshot",
+      "path": "reports/229-canonical-float-text.md",
+      "sha256": "592620f26da040723ac2abc83d09155cd1fb6218054af17058820b30d6c53ec2",
+      "source": "reports/229-canonical-float-text.md"
+    },
+    {
+      "bytes": 16968,
+      "group": "candidate-source-and-tests",
+      "path": "scripts/Current-MatchedRenewalFixture.ps1",
+      "sha256": "1c998e0fc1c6a4fde32b76d1bc6541b543a0658cfba151d1581999b2af2d6fc7",
+      "source": "scripts/Current-MatchedRenewalFixture.ps1"
+    },
+    {
+      "bytes": 21178,
+      "group": "candidate-source-and-tests",
+      "path": "scripts/Verify-FlowMatchedRenewalFixtures.ps1",
+      "sha256": "073d348879f7f807cb764b823e105bb30c2f65a54cdf4d1dc7583043ce76139a",
+      "source": "scripts/Verify-FlowMatchedRenewalFixtures.ps1"
+    },
+    {
+      "bytes": 22967,
+      "group": "candidate-source-and-tests",
+      "path": "scripts/Verify-FlowRenewalAcceptanceGate.ps1",
+      "sha256": "c2e68ac41fb17de6a2555ba655cc9616e7d247475619e6731d409254ab91c178",
+      "source": "scripts/Verify-FlowRenewalAcceptanceGate.ps1"
+    },
+    {
+      "bytes": 22726,
+      "group": "candidate-source-and-tests",
+      "path": "scripts/Verify-FlowRenewalReplay.ps1",
+      "sha256": "465e98d5689b677838df4fe3d25f50e0f2d5317676823b103203e3eefceaf81b",
+      "source": "scripts/Verify-FlowRenewalReplay.ps1"
+    },
+    {
+      "bytes": 9144,
+      "group": "candidate-source-and-tests",
+      "path": "scripts/Verify-MatchedRenewalSnapshots.ps1",
+      "sha256": "09703e458e01b2a5f319a1660a507f51775636364a380438cfe9fe6eb3710bf4",
+      "source": "scripts/Verify-MatchedRenewalSnapshots.ps1"
+    },
+    {
+      "bytes": 76215,
+      "group": "candidate-source-and-tests",
+      "path": "scripts/Verify-NativeValueStack.ps1",
+      "sha256": "3f876b43a2684f3b486bffecb73f9241e38475ee5719927f5f8f6679f816a9ee",
+      "source": "scripts/Verify-NativeValueStack.ps1"
+    },
+    {
+      "bytes": 150498,
+      "group": "candidate-source-and-tests",
+      "path": "scripts/Verify-OwningMailbox.ps1",
+      "sha256": "a441064226a10b7a53095e977224e4c0fb376e527bd9dedc7a04fd00c6650dda",
+      "source": "scripts/Verify-OwningMailbox.ps1"
+    },
+    {
+      "bytes": 1189,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Core/AgentLang.Core.fsproj",
+      "sha256": "28c58faeed2e6cde4540c8e5ab7b12e5c87e49a4b68cfe36738aaedf248c5424",
+      "source": "src/AgentLang.Core/AgentLang.Core.fsproj"
+    },
+    {
+      "bytes": 8361,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Core/Core.fs",
+      "sha256": "db1d8d2f616936f37fa86ad6cb9e9304ab9d85abb0c8ac1cdc68c4ad22e5771e",
+      "source": "src/AgentLang.Core/Core.fs"
+    },
+    {
+      "bytes": 5663,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Core/FloatText.fs",
+      "sha256": "7793b40f8c85671f6807d91e79d5a4adce7f2564c09e47cef30e79155214e160",
+      "source": "src/AgentLang.Core/FloatText.fs"
+    },
+    {
+      "bytes": 62014,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Core/FlowSyntax.fs",
+      "sha256": "aae3ae56d0d7dc576956dffdd180741bae25b413d22bd24470b45fabdbf45078",
+      "source": "src/AgentLang.Core/FlowSyntax.fs"
+    },
+    {
+      "bytes": 52814,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Core/IrFormatting.fs",
+      "sha256": "8d1adb2e7988d1ddba0917a48b5b0d0cd27ac0e33efe63807fdd41dee8aa64bc",
+      "source": "src/AgentLang.Core/IrFormatting.fs"
+    },
+    {
+      "bytes": 87538,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Core/IrInterpreter.fs",
+      "sha256": "fb651d19008bc97398069de12b19422622112bb0cec94e9f9def67fc466693c9",
+      "source": "src/AgentLang.Core/IrInterpreter.fs"
+    },
+    {
+      "bytes": 11073,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Core/Source.fs",
+      "sha256": "e49f8e969fdb0a88385c463d66f1fbc439ea477d03147b82b01851798731f7bb",
+      "source": "src/AgentLang.Core/Source.fs"
+    },
+    {
+      "bytes": 83492,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Core/TypedIR.fs",
+      "sha256": "781409136adcbdde8998c9658458914236054b7bd828650bfd5e16106568f296",
+      "source": "src/AgentLang.Core/TypedIR.fs"
+    },
+    {
+      "bytes": 29502,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Core/ValueInspection.fs",
+      "sha256": "fcbb073611e2bcb9cc6a1b2032783824be097b7dc55e07a7bac587ced28c474c",
+      "source": "src/AgentLang.Core/ValueInspection.fs"
+    },
+    {
+      "bytes": 1587,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+      "sha256": "920551a55dd6097a20bce934b9e4bbb98e37e6cd71d6fb298242f699d24e4c06",
+      "source": "src/AgentLang.Llvm/AgentLang.Llvm.fsproj"
+    },
+    {
+      "bytes": 17067,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Llvm/LlvmToolchain.fs",
+      "sha256": "c5e0ef9cd0452647d45189eade31ffea652a43583c5941a1009831d4f8b023e3",
+      "source": "src/AgentLang.Llvm/LlvmToolchain.fs"
+    },
+    {
+      "bytes": 5433,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Llvm/NativeStackUsage.fs",
+      "sha256": "d576e8c82f3055c1bd6278715e7935203961c8fb49fc241f8c36a3a85a626e05",
+      "source": "src/AgentLang.Llvm/NativeStackUsage.fs"
+    },
+    {
+      "bytes": 440769,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+      "sha256": "4173880b4550c546ed8c805090ba7fd015110f800d0a8699fbfd8d27eb06401f",
+      "source": "src/AgentLang.Llvm/OwningStackAot.fs"
+    },
+    {
+      "bytes": 15142,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Llvm/native/float_format.h",
+      "sha256": "bd424792f314bb4266024dcc0a4720828afeb1bd7ebf0d4165bfb03e6b2049bd",
+      "source": "src/AgentLang.Llvm/native/float_format.h"
+    },
+    {
+      "bytes": 106900,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3",
+      "source": "src/AgentLang.Llvm/native/owning_stack_runtime.c"
+    },
+    {
+      "bytes": 12763,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19",
+      "source": "src/AgentLang.Llvm/native/owning_stack_runtime.h"
+    },
+    {
+      "bytes": 167257,
+      "group": "candidate-source-and-tests",
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+      "sha256": "b1e34ea7532e0414e92d8f6517ddc6f0e422934ccaacb0c825c242836fdd4b88",
+      "source": "src/AgentLang.Llvm/native/owning_stack_runtime_test.c"
+    },
+    {
+      "bytes": 342,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.Acceptance/AgentLang.Acceptance.fsproj",
+      "sha256": "1b183fe2fc40e1d4f2ff10a443885032942c9dc789cccd6c056e9a7bd6b86f82",
+      "source": "tests/AgentLang.Acceptance/AgentLang.Acceptance.fsproj"
+    },
+    {
+      "bytes": 147072,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.Acceptance/Program.fs",
+      "sha256": "2743dbcb0e22bef629b1b8b66b7e4e0bae3617766671857ce8f06188c5a143d0",
+      "source": "tests/AgentLang.Acceptance/Program.fs"
+    },
+    {
+      "bytes": 508,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.Flow.Runtime.Tests/AgentLang.Flow.Runtime.Tests.fsproj",
+      "sha256": "a42d9b06f4128adfd42580bf2e6b47e3fe1a6b735d139a319dfa8f3c0f2b359d",
+      "source": "tests/AgentLang.Flow.Runtime.Tests/AgentLang.Flow.Runtime.Tests.fsproj"
+    },
+    {
+      "bytes": 570696,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "sha256": "36b98901e437e7abf50b130abd8a91d51017068647d5291bca629f66cd8e519d",
+      "source": "tests/AgentLang.Flow.Runtime.Tests/Program.fs"
+    },
+    {
+      "bytes": 342,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.Flow.Tests/AgentLang.Flow.Tests.fsproj",
+      "sha256": "1b183fe2fc40e1d4f2ff10a443885032942c9dc789cccd6c056e9a7bd6b86f82",
+      "source": "tests/AgentLang.Flow.Tests/AgentLang.Flow.Tests.fsproj"
+    },
+    {
+      "bytes": 390646,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.Flow.Tests/Program.fs",
+      "sha256": "f31ac9603ca68434f21258d637cf5abd41429d2742f973af23e8a3b00ed0d684",
+      "source": "tests/AgentLang.Flow.Tests/Program.fs"
+    },
+    {
+      "bytes": 340,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.IR.Formatting.Tests/AgentLang.IR.Formatting.Tests.fsproj",
+      "sha256": "d054003f34c30c41739159dd3892d8d56c42d3e3531219744989cea88cea46e6",
+      "source": "tests/AgentLang.IR.Formatting.Tests/AgentLang.IR.Formatting.Tests.fsproj"
+    },
+    {
+      "bytes": 25115,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.IR.Formatting.Tests/Program.fs",
+      "sha256": "9c1945b58a131264a9b42ff2aecc1f33e78f6b0062ba67ed6cb0efdc1ef880fe",
+      "source": "tests/AgentLang.IR.Formatting.Tests/Program.fs"
+    },
+    {
+      "bytes": 340,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.IR.Interpreter.Tests/AgentLang.IR.Interpreter.Tests.fsproj",
+      "sha256": "d054003f34c30c41739159dd3892d8d56c42d3e3531219744989cea88cea46e6",
+      "source": "tests/AgentLang.IR.Interpreter.Tests/AgentLang.IR.Interpreter.Tests.fsproj"
+    },
+    {
+      "bytes": 82368,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.IR.Interpreter.Tests/Program.fs",
+      "sha256": "df51ac780b516c014b3d5457f3c312e2956f8f2f8c977626849df5f4e540024a",
+      "source": "tests/AgentLang.IR.Interpreter.Tests/Program.fs"
+    },
+    {
+      "bytes": 1371,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj",
+      "sha256": "8b98394da31b4b404f2d065ac4b459373dc026fb7ae8ad831e8dce27d5185866",
+      "source": "tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj"
+    },
+    {
+      "bytes": 29298,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.Llvm.Tests/ArenaLifetimeTests.fs",
+      "sha256": "d8327b48a64f49d6475e49db77a016d33c301e9f1ea2b4ae82261411902ca6f3",
+      "source": "tests/AgentLang.Llvm.Tests/ArenaLifetimeTests.fs"
+    },
+    {
+      "bytes": 421621,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+      "sha256": "6d9e7cbd9605d1045a01cbac7c499c71947136d8bea37a521268d5041f8cff06",
+      "source": "tests/AgentLang.Llvm.Tests/Program.fs"
+    },
+    {
+      "bytes": 342,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.Source.Tests/AgentLang.Source.Tests.fsproj",
+      "sha256": "1b183fe2fc40e1d4f2ff10a443885032942c9dc789cccd6c056e9a7bd6b86f82",
+      "source": "tests/AgentLang.Source.Tests/AgentLang.Source.Tests.fsproj"
+    },
+    {
+      "bytes": 35229,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.Source.Tests/Program.fs",
+      "sha256": "4627aeb1d619a89a66a611186393c3cf77e9e5e406f8827b5fb9a869b6d366e5",
+      "source": "tests/AgentLang.Source.Tests/Program.fs"
+    },
+    {
+      "bytes": 340,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.ValueInspection.Tests/AgentLang.ValueInspection.Tests.fsproj",
+      "sha256": "d054003f34c30c41739159dd3892d8d56c42d3e3531219744989cea88cea46e6",
+      "source": "tests/AgentLang.ValueInspection.Tests/AgentLang.ValueInspection.Tests.fsproj"
+    },
+    {
+      "bytes": 16593,
+      "group": "candidate-source-and-tests",
+      "path": "tests/AgentLang.ValueInspection.Tests/Program.fs",
+      "sha256": "53c533c17e9c807621bcf9d1470e87cf5d35be431c715dfeccf87bb7159dd3b6",
+      "source": "tests/AgentLang.ValueInspection.Tests/Program.fs"
+    },
+    {
+      "bytes": 2119671,
+      "group": "candidate-source-and-tests",
+      "path": "tests/fixtures/native-conformance/float-shortest-oracle.json",
+      "sha256": "405bb0dca3540a7d36cf6b9bf9a05d318b72612c415d9984da2a698bedd53b4e",
+      "source": "tests/fixtures/native-conformance/float-shortest-oracle.json"
+    },
+    {
+      "bytes": 7187,
+      "group": "candidate-source-and-tests",
+      "path": "tests/fixtures/native-conformance/float-shortest-oracle.py",
+      "sha256": "34eda3c815f4d03a49c00b19280ce1564cfc08578c7d1825d755855dbb1660c7",
+      "source": "tests/fixtures/native-conformance/float-shortest-oracle.py"
+    },
+    {
+      "bytes": 75781,
+      "group": "candidate-source-and-tests",
+      "path": "tests/fixtures/native-conformance/native-value-stack.json",
+      "sha256": "e63f153915e3ee94fc9cf22e0c35b187bc0155207157da701ee483c01e1021c5",
+      "source": "tests/fixtures/native-conformance/native-value-stack.json"
+    }
+  ],
+  "priorEvidence": {
+    "224": {
+      "archiveBytes": 2143867,
+      "archivePath": "reports/evidence/224-native-float-format-findings/candidate-and-validation.zip",
+      "archiveSha256": "ec578078eae6be789c9a69082a94210e1e76ba515cc6bd9e95373362dd017bdf",
+      "indexPath": "reports/evidence/224-native-float-format-findings/index.json",
+      "indexSha256": "1ec1a5412f8e3d4a2de54434110dd5d8d7d5c9e9a2f5ff0d7d24699fcc46cdfa",
+      "memberCount": 84,
+      "note": "Exact prior failed/candidate evidence is cross-referenced and remains in its original archive; it is not copied into this package.",
+      "status": "candidate, exact .NET parity failed; contract pending",
+      "study": "224-native-float-format-findings",
+      "verified": true
+    },
+    "225": {
+      "archiveBytes": 13109372,
+      "archivePath": "reports/evidence/225-native-machine-frame-screening/candidate-and-validation.zip",
+      "archiveSha256": "a35b910fa3dbbd8228cd5281d4b9f1928c2c994794a35fc7211ebbfb6bac3477",
+      "indexPath": "reports/evidence/225-native-machine-frame-screening/index.json",
+      "indexSha256": "da4f550f37067aaf9e93ab8e85f981cbc6243bad0f6dc0695fa35ea539eed7eb",
+      "memberCount": 448,
+      "note": "Exact prior failed/candidate evidence is cross-referenced and remains in its original archive; it is not copied into this package.",
+      "status": "local candidate; focused checks pass; full branch acceptance pending Float contract",
+      "study": "225-native-machine-frame-screening",
+      "verified": true
+    }
+  },
+  "reportSnapshot": "reports/229-canonical-float-text.md",
+  "sha256": "05031f4146f67d72d61e6462f14e3982d03622b166e376fda802fa82d48a7fef",
+  "sourcePins": [
+    {
+      "bytes": 28446,
+      "path": "README.md",
+      "sha256": "906dba3ee65dccb28f9d8ce605a4c6e154403175f51aed1b2e7fc8733a3821ec"
+    },
+    {
+      "bytes": 73506,
+      "path": "docs/PRD.md",
+      "sha256": "6a6c8114009ed3ee6d29444ee4f289ea9552d8bf290b515683a765cfec9a63f0"
+    },
+    {
+      "bytes": 76667,
+      "path": "docs/ROADMAP.md",
+      "sha256": "b764a3954e45ba89a1a80a317f3e362662d7862394078e9dce188e193f159eb7"
+    },
+    {
+      "bytes": 16968,
+      "path": "scripts/Current-MatchedRenewalFixture.ps1",
+      "sha256": "1c998e0fc1c6a4fde32b76d1bc6541b543a0658cfba151d1581999b2af2d6fc7"
+    },
+    {
+      "bytes": 21178,
+      "path": "scripts/Verify-FlowMatchedRenewalFixtures.ps1",
+      "sha256": "073d348879f7f807cb764b823e105bb30c2f65a54cdf4d1dc7583043ce76139a"
+    },
+    {
+      "bytes": 22967,
+      "path": "scripts/Verify-FlowRenewalAcceptanceGate.ps1",
+      "sha256": "c2e68ac41fb17de6a2555ba655cc9616e7d247475619e6731d409254ab91c178"
+    },
+    {
+      "bytes": 22726,
+      "path": "scripts/Verify-FlowRenewalReplay.ps1",
+      "sha256": "465e98d5689b677838df4fe3d25f50e0f2d5317676823b103203e3eefceaf81b"
+    },
+    {
+      "bytes": 9144,
+      "path": "scripts/Verify-MatchedRenewalSnapshots.ps1",
+      "sha256": "09703e458e01b2a5f319a1660a507f51775636364a380438cfe9fe6eb3710bf4"
+    },
+    {
+      "bytes": 76215,
+      "path": "scripts/Verify-NativeValueStack.ps1",
+      "sha256": "3f876b43a2684f3b486bffecb73f9241e38475ee5719927f5f8f6679f816a9ee"
+    },
+    {
+      "bytes": 150498,
+      "path": "scripts/Verify-OwningMailbox.ps1",
+      "sha256": "a441064226a10b7a53095e977224e4c0fb376e527bd9dedc7a04fd00c6650dda"
+    },
+    {
+      "bytes": 1189,
+      "path": "src/AgentLang.Core/AgentLang.Core.fsproj",
+      "sha256": "28c58faeed2e6cde4540c8e5ab7b12e5c87e49a4b68cfe36738aaedf248c5424"
+    },
+    {
+      "bytes": 8361,
+      "path": "src/AgentLang.Core/Core.fs",
+      "sha256": "db1d8d2f616936f37fa86ad6cb9e9304ab9d85abb0c8ac1cdc68c4ad22e5771e"
+    },
+    {
+      "bytes": 5663,
+      "path": "src/AgentLang.Core/FloatText.fs",
+      "sha256": "7793b40f8c85671f6807d91e79d5a4adce7f2564c09e47cef30e79155214e160"
+    },
+    {
+      "bytes": 62014,
+      "path": "src/AgentLang.Core/FlowSyntax.fs",
+      "sha256": "aae3ae56d0d7dc576956dffdd180741bae25b413d22bd24470b45fabdbf45078"
+    },
+    {
+      "bytes": 52814,
+      "path": "src/AgentLang.Core/IrFormatting.fs",
+      "sha256": "8d1adb2e7988d1ddba0917a48b5b0d0cd27ac0e33efe63807fdd41dee8aa64bc"
+    },
+    {
+      "bytes": 87538,
+      "path": "src/AgentLang.Core/IrInterpreter.fs",
+      "sha256": "fb651d19008bc97398069de12b19422622112bb0cec94e9f9def67fc466693c9"
+    },
+    {
+      "bytes": 11073,
+      "path": "src/AgentLang.Core/Source.fs",
+      "sha256": "e49f8e969fdb0a88385c463d66f1fbc439ea477d03147b82b01851798731f7bb"
+    },
+    {
+      "bytes": 83492,
+      "path": "src/AgentLang.Core/TypedIR.fs",
+      "sha256": "781409136adcbdde8998c9658458914236054b7bd828650bfd5e16106568f296"
+    },
+    {
+      "bytes": 29502,
+      "path": "src/AgentLang.Core/ValueInspection.fs",
+      "sha256": "fcbb073611e2bcb9cc6a1b2032783824be097b7dc55e07a7bac587ced28c474c"
+    },
+    {
+      "bytes": 1587,
+      "path": "src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+      "sha256": "920551a55dd6097a20bce934b9e4bbb98e37e6cd71d6fb298242f699d24e4c06"
+    },
+    {
+      "bytes": 17067,
+      "path": "src/AgentLang.Llvm/LlvmToolchain.fs",
+      "sha256": "c5e0ef9cd0452647d45189eade31ffea652a43583c5941a1009831d4f8b023e3"
+    },
+    {
+      "bytes": 5433,
+      "path": "src/AgentLang.Llvm/NativeStackUsage.fs",
+      "sha256": "d576e8c82f3055c1bd6278715e7935203961c8fb49fc241f8c36a3a85a626e05"
+    },
+    {
+      "bytes": 440769,
+      "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+      "sha256": "4173880b4550c546ed8c805090ba7fd015110f800d0a8699fbfd8d27eb06401f"
+    },
+    {
+      "bytes": 15142,
+      "path": "src/AgentLang.Llvm/native/float_format.h",
+      "sha256": "bd424792f314bb4266024dcc0a4720828afeb1bd7ebf0d4165bfb03e6b2049bd"
+    },
+    {
+      "bytes": 106900,
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "bytes": 12763,
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "bytes": 167257,
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+      "sha256": "b1e34ea7532e0414e92d8f6517ddc6f0e422934ccaacb0c825c242836fdd4b88"
+    },
+    {
+      "bytes": 342,
+      "path": "tests/AgentLang.Acceptance/AgentLang.Acceptance.fsproj",
+      "sha256": "1b183fe2fc40e1d4f2ff10a443885032942c9dc789cccd6c056e9a7bd6b86f82"
+    },
+    {
+      "bytes": 147072,
+      "path": "tests/AgentLang.Acceptance/Program.fs",
+      "sha256": "2743dbcb0e22bef629b1b8b66b7e4e0bae3617766671857ce8f06188c5a143d0"
+    },
+    {
+      "bytes": 508,
+      "path": "tests/AgentLang.Flow.Runtime.Tests/AgentLang.Flow.Runtime.Tests.fsproj",
+      "sha256": "a42d9b06f4128adfd42580bf2e6b47e3fe1a6b735d139a319dfa8f3c0f2b359d"
+    },
+    {
+      "bytes": 570696,
+      "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "sha256": "36b98901e437e7abf50b130abd8a91d51017068647d5291bca629f66cd8e519d"
+    },
+    {
+      "bytes": 342,
+      "path": "tests/AgentLang.Flow.Tests/AgentLang.Flow.Tests.fsproj",
+      "sha256": "1b183fe2fc40e1d4f2ff10a443885032942c9dc789cccd6c056e9a7bd6b86f82"
+    },
+    {
+      "bytes": 390646,
+      "path": "tests/AgentLang.Flow.Tests/Program.fs",
+      "sha256": "f31ac9603ca68434f21258d637cf5abd41429d2742f973af23e8a3b00ed0d684"
+    },
+    {
+      "bytes": 340,
+      "path": "tests/AgentLang.IR.Formatting.Tests/AgentLang.IR.Formatting.Tests.fsproj",
+      "sha256": "d054003f34c30c41739159dd3892d8d56c42d3e3531219744989cea88cea46e6"
+    },
+    {
+      "bytes": 25115,
+      "path": "tests/AgentLang.IR.Formatting.Tests/Program.fs",
+      "sha256": "9c1945b58a131264a9b42ff2aecc1f33e78f6b0062ba67ed6cb0efdc1ef880fe"
+    },
+    {
+      "bytes": 340,
+      "path": "tests/AgentLang.IR.Interpreter.Tests/AgentLang.IR.Interpreter.Tests.fsproj",
+      "sha256": "d054003f34c30c41739159dd3892d8d56c42d3e3531219744989cea88cea46e6"
+    },
+    {
+      "bytes": 82368,
+      "path": "tests/AgentLang.IR.Interpreter.Tests/Program.fs",
+      "sha256": "df51ac780b516c014b3d5457f3c312e2956f8f2f8c977626849df5f4e540024a"
+    },
+    {
+      "bytes": 1371,
+      "path": "tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj",
+      "sha256": "8b98394da31b4b404f2d065ac4b459373dc026fb7ae8ad831e8dce27d5185866"
+    },
+    {
+      "bytes": 29298,
+      "path": "tests/AgentLang.Llvm.Tests/ArenaLifetimeTests.fs",
+      "sha256": "d8327b48a64f49d6475e49db77a016d33c301e9f1ea2b4ae82261411902ca6f3"
+    },
+    {
+      "bytes": 421621,
+      "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+      "sha256": "6d9e7cbd9605d1045a01cbac7c499c71947136d8bea37a521268d5041f8cff06"
+    },
+    {
+      "bytes": 342,
+      "path": "tests/AgentLang.Source.Tests/AgentLang.Source.Tests.fsproj",
+      "sha256": "1b183fe2fc40e1d4f2ff10a443885032942c9dc789cccd6c056e9a7bd6b86f82"
+    },
+    {
+      "bytes": 35229,
+      "path": "tests/AgentLang.Source.Tests/Program.fs",
+      "sha256": "4627aeb1d619a89a66a611186393c3cf77e9e5e406f8827b5fb9a869b6d366e5"
+    },
+    {
+      "bytes": 340,
+      "path": "tests/AgentLang.ValueInspection.Tests/AgentLang.ValueInspection.Tests.fsproj",
+      "sha256": "d054003f34c30c41739159dd3892d8d56c42d3e3531219744989cea88cea46e6"
+    },
+    {
+      "bytes": 16593,
+      "path": "tests/AgentLang.ValueInspection.Tests/Program.fs",
+      "sha256": "53c533c17e9c807621bcf9d1470e87cf5d35be431c715dfeccf87bb7159dd3b6"
+    },
+    {
+      "bytes": 2119671,
+      "path": "tests/fixtures/native-conformance/float-shortest-oracle.json",
+      "sha256": "405bb0dca3540a7d36cf6b9bf9a05d318b72612c415d9984da2a698bedd53b4e"
+    },
+    {
+      "bytes": 7187,
+      "path": "tests/fixtures/native-conformance/float-shortest-oracle.py",
+      "sha256": "34eda3c815f4d03a49c00b19280ce1564cfc08578c7d1825d755855dbb1660c7"
+    },
+    {
+      "bytes": 75781,
+      "path": "tests/fixtures/native-conformance/native-value-stack.json",
+      "sha256": "e63f153915e3ee94fc9cf22e0c35b187bc0155207157da701ee483c01e1021c5"
+    }
+  ],
+  "sourceRecheck": "unchanged",
+  "verifiedAllMembers": true,
+  "zip": "reports/evidence/229-canonical-float-text/candidate-and-validation.zip"
+}

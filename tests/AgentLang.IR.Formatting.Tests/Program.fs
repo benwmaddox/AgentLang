@@ -1,6 +1,7 @@
 module AgentLang.IR.Formatting.Tests
 
 open System
+open System.Globalization
 open System.Text.Json
 open System.Text.Json.Nodes
 open AgentLang
@@ -141,7 +142,7 @@ let private testUserFunctionJson () =
     let context, verified = contextAndProgram ()
     let document = IrFormatting.toData verified (IrFormatTarget.UserWordName "customer.active?")
     check "user target serializes as function DTO" (stringField "kind" document = "function")
-    check "record validator metadata is exposed under schema version 4" (intField "formatVersion" document = 4)
+    check "record validator metadata is exposed under schema version 5" (intField "formatVersion" document = 5)
     let (WordId activeId) = context.WordIds["customer.active?"]
     check "function retains stable ID and revision" (stringField "wordId" document = activeId && intField "revision" document = 2)
     check "function signature uses nominal display name" (document |> prop "inputs" |> at 0 |> stringField "display" = "Customer")
@@ -178,8 +179,8 @@ let private testUserFunctionJson () =
             WordIds = Map.add "customer.scoped" (WordId "user-customer.scoped") context.WordIds }
     let scopedProgram = Compiler.compileIrProgram scopedContext
     let scopedDocument = IrFormatting.toData scopedProgram (IrFormatTarget.UserWordName "customer.scoped")
-    check "Scope operation is emitted under the explicit version 4 schema"
-        (intField "formatVersion" scopedDocument = 4
+    check "Scope operation is emitted under the explicit version 5 schema"
+        (intField "formatVersion" scopedDocument = 5
          && (scopedDocument |> prop "body" |> prop "instructions" |> at 0 |> prop "operation" |> stringField "kind") = "scope")
 
     let fold = IrFormatting.toData scopedProgram (IrFormatTarget.UserWordName "customers.fold-email")
@@ -236,7 +237,7 @@ let private testGeneratedAndPrimitiveDocuments () =
     check "generated target includes source declaration location" (stringField "file" sourceSpanNode = "formatting.agent" && intField "line" sourceSpanNode = 2)
 
     let primitive = IrFormatting.toData verified (IrFormatTarget.PrimitiveContract(PrimitiveId "equals"))
-    check "primitive contracts use the same current top-level schema version" (intField "formatVersion" primitive = 4)
+    check "primitive contracts use the same current top-level schema version" (intField "formatVersion" primitive = 5)
     check "primitive output is explicitly a contract, not executable code" (stringField "kind" primitive = "primitive-contract" && prop "body" primitive = null)
     let inputPatterns = primitive |> prop "inputs" |> fun node -> node.AsArray()
     check "primitive contract retains generic type variable pattern" (stringField "kind" inputPatterns[0] = "variable" && intField "variableIndex" inputPatterns[0] = 0 && intField "variableIndex" inputPatterns[1] = 0)
@@ -251,6 +252,71 @@ let private testStructuredLookupErrors () =
     expectDiagnostic "unknown primitive returns structured diagnostic" "IR_FORMAT_PRIMITIVE_NOT_FOUND" (fun () -> IrFormatting.toData verified (IrFormatTarget.PrimitiveContract(PrimitiveId "not-a-primitive")) |> ignore)
     let modelOnly = IrVerifier.verify Compiler.primitiveIrCatalog (VerifiedIrProgram.inspect verified)
     expectDiagnostic "model-only verifier handle is not exposed as executable formatting" "IR_BACKEND_UNTRUSTED_PROGRAM" (fun () -> IrFormatting.toData modelOnly (IrFormatTarget.UserWordName "customer.active?") |> ignore)
+
+let private testCanonicalFloatLiteralDisplay () =
+    let baseContext, _ = contextAndProgram ()
+    let source = span 40
+    let knownRegression = BitConverter.UInt64BitsToDouble(0x0410000000000000UL)
+    let name = "float.canonical"
+    let entry = wordEntry name [] [ TFloat ] Set.empty [ Push(LFloat knownRegression, source) ] 1 Candidate
+    let context: Compiler.IrLoweringContext =
+        { baseContext with
+            Words = Map.add name entry baseContext.Words
+            WordIds = Map.add name (WordId("user-" + name)) baseContext.WordIds }
+    let program = Compiler.compileIrProgram context
+    let document = IrFormatting.toData program (IrFormatTarget.UserWordName name)
+    let operation = document |> prop "body" |> prop "instructions" |> at 0 |> prop "operation"
+    let literal = prop "literal" operation
+    check "IR JSON keeps the canonical known-regression Float text"
+        (stringField "display" literal = "4.1045368012983762E-289")
+    check "IR human text keeps the canonical known-regression Float text"
+        ((IrFormatting.toText program (IrFormatTarget.UserWordName name)).Contains("constant 4.1045368012983762E-289 : Float", StringComparison.Ordinal))
+
+let private testCanonicalFloatProtocolTransport () =
+    let baseContext, _ = contextAndProgram ()
+    let verifyFloat name bits expectedText =
+        let value = BitConverter.UInt64BitsToDouble(bits)
+        let source = span 41
+        let entry = wordEntry name [] [ TFloat ] Set.empty [ Push(LFloat value, source) ] 1 Candidate
+        let context: Compiler.IrLoweringContext =
+            { baseContext with
+                Words = Map.add name entry baseContext.Words
+                WordIds = Map.add name (WordId("user-" + name)) baseContext.WordIds }
+        let program = Compiler.compileIrProgram context
+        let irData = IrFormatting.toData program (IrFormatTarget.UserWordName name)
+        let literal = irData |> prop "body" |> prop "instructions" |> at 0 |> prop "operation" |> prop "literal"
+        check $"{name} DTO stores FloatValue as canonical text" (stringField "floatValue" literal = expectedText)
+        check $"{name} DTO display agrees with FloatValue" (stringField "display" literal = expectedText)
+
+        let response = JsonObject()
+        response["ok"] <- JsonValue.Create(true) :> JsonNode
+        response["kind"] <- JsonValue.Create("inspect") :> JsonNode
+        response["text"] <- JsonValue.Create("verified IR") :> JsonNode
+        response["data"] <- irData
+        let serialized = Protocol.serializeResponse response
+        use parsed = JsonDocument.Parse(serialized)
+        let instructions = parsed.RootElement.GetProperty("data").GetProperty("body").GetProperty("instructions")
+        let transportedLiteral = instructions[0].GetProperty("operation").GetProperty("literal")
+        let floatValue = transportedLiteral.GetProperty("floatValue")
+        check $"{name} protocol floatValue is a JSON string" (floatValue.ValueKind = JsonValueKind.String)
+        let text = floatValue.GetString()
+        check $"{name} protocol retains canonical display text" (text = expectedText && transportedLiteral.GetProperty("display").GetString() = expectedText)
+        let parsedValue = Double.Parse(text, NumberStyles.Float, CultureInfo.InvariantCulture)
+        check $"{name} protocol text parses back to the exact binary64 bits" (BitConverter.DoubleToUInt64Bits(parsedValue) = bits)
+
+    verifyFloat "float.protocol-known" 0x0410000000000000UL "4.1045368012983762E-289"
+    verifyFloat "float.protocol-negative-zero" 0x8000000000000000UL "-0.0"
+
+    let integerName = "int.protocol-inactive-float"
+    let integerEntry = wordEntry integerName [] [ TInt ] Set.empty [ Push(LInt 7L, span 42) ] 1 Candidate
+    let integerContext: Compiler.IrLoweringContext =
+        { baseContext with
+            Words = Map.add integerName integerEntry baseContext.Words
+            WordIds = Map.add integerName (WordId("user-" + integerName)) baseContext.WordIds }
+    let integerProgram = Compiler.compileIrProgram integerContext
+    let integerDocument = IrFormatting.toData integerProgram (IrFormatTarget.UserWordName integerName)
+    let integerLiteral = integerDocument |> prop "body" |> prop "instructions" |> at 0 |> prop "operation" |> prop "literal"
+    check "non-Float literal leaves floatValue as an empty string" (stringField "floatValue" integerLiteral = "")
 
 let private testProtocolDepthGuard () =
     let baseContext, _ = contextAndProgram ()
@@ -298,6 +364,8 @@ let private tests =
       "callbacks locals and nominal closure", testCallbacksLocalsAndNominalClosure
       "generated and primitive documents", testGeneratedAndPrimitiveDocuments
       "structured lookup errors", testStructuredLookupErrors
+      "canonical Float literal display", testCanonicalFloatLiteralDisplay
+      "canonical Float Protocol transport", testCanonicalFloatProtocolTransport
       "protocol depth guard", testProtocolDepthGuard ]
 
 [<EntryPoint>]

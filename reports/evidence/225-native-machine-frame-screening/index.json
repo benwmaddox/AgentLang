@@ -1,0 +1,2247 @@
+{
+  "status": "local candidate; focused checks pass; full branch acceptance pending Float contract",
+  "baseCommit": "57097550576df10208563c15235d4468c1b3bb4b",
+  "archiveSha256": "a35b910fa3dbbd8228cd5281d4b9f1928c2c994794a35fc7211ebbfb6bac3477",
+  "members": [
+    {
+      "path": "raw/256-O0-stack-usage-build.log",
+      "bytes": 127,
+      "sha256": "419c5487aa2c81799c30e18e1b22531a07335b1e44a130077f1402e0b7c2e1c0"
+    },
+    {
+      "path": "raw/256-O0-stack-usage-exit.txt",
+      "bytes": 8,
+      "sha256": "2095d5302e465922147e220c0389f7a923ea0c1509a23097f04b3c220798aef8"
+    },
+    {
+      "path": "raw/256-O0-stack-usage.obj",
+      "bytes": 62050483,
+      "sha256": "148a5ed1d471d55b791bd3000a3d48d59097a7222a29feb2ff128449c038750e"
+    },
+    {
+      "path": "raw/256-O0-stack-usage.su",
+      "bytes": 361,
+      "sha256": "298e2795a3858e727fd22cb87871d60ce84be681597835a07eb38e9e1d59fe8c"
+    },
+    {
+      "path": "raw/256-O0.unwind.txt",
+      "bytes": 1261,
+      "sha256": "796fc2297085cfeea3f9b786e4603aed269a5657c9883629cfeb56aab2adb681"
+    },
+    {
+      "path": "raw/256-O2-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "raw/256-O2-command.txt",
+      "bytes": 354,
+      "sha256": "f41ac5c878e126641e7bc8e83491b8a641a76ff25fd15d7043567ca28afd0cc8"
+    },
+    {
+      "path": "raw/32-O0-assembly-build.log",
+      "bytes": 127,
+      "sha256": "419c5487aa2c81799c30e18e1b22531a07335b1e44a130077f1402e0b7c2e1c0"
+    },
+    {
+      "path": "raw/32-O0-assembly-exit.txt",
+      "bytes": 8,
+      "sha256": "2095d5302e465922147e220c0389f7a923ea0c1509a23097f04b3c220798aef8"
+    },
+    {
+      "path": "raw/32-O0-runtime-stack-sizes.txt",
+      "bytes": 193,
+      "sha256": "cf0ab1fc43cf49a47811c862233cd16e4ee0be46c111fad0b3813f4e80a6db42"
+    },
+    {
+      "path": "raw/32-O0-runtime.unwind.txt",
+      "bytes": 235,
+      "sha256": "6d53973333ea0db2a41cec9b194dd9352ce410adc2867013531c864f72cf4116"
+    },
+    {
+      "path": "raw/32-O0-stack-size-section-build.log",
+      "bytes": 127,
+      "sha256": "419c5487aa2c81799c30e18e1b22531a07335b1e44a130077f1402e0b7c2e1c0"
+    },
+    {
+      "path": "raw/32-O0-stack-size-section-readobj.txt",
+      "bytes": 121,
+      "sha256": "b28a76e6bab0a80ba4787e8dc5930845b21be26e2fb85bc07a8014a27f79a78a"
+    },
+    {
+      "path": "raw/32-O0-stack-size-section.obj",
+      "bytes": 1059338,
+      "sha256": "3176962743cbc8b0647489e9780a70fe9c2e74a539d1e5d2b2509bbf35d9bc74"
+    },
+    {
+      "path": "raw/32-O0-stack-sizes.txt",
+      "bytes": 186,
+      "sha256": "86e9d824fc4d654f285bd360353a356efdbe3b84f27f1dc54541f7f4ce4760ff"
+    },
+    {
+      "path": "raw/32-O0-stack-usage-build.log",
+      "bytes": 127,
+      "sha256": "419c5487aa2c81799c30e18e1b22531a07335b1e44a130077f1402e0b7c2e1c0"
+    },
+    {
+      "path": "raw/32-O0-stack-usage-exit.txt",
+      "bytes": 8,
+      "sha256": "2095d5302e465922147e220c0389f7a923ea0c1509a23097f04b3c220798aef8"
+    },
+    {
+      "path": "raw/32-O0-stack-usage.obj",
+      "bytes": 1059338,
+      "sha256": "df82b784ec2db14dc112daf63595decd40781b82b37ade8e33caf71a698416c8"
+    },
+    {
+      "path": "raw/32-O0-stack-usage.su",
+      "bytes": 358,
+      "sha256": "e37cce9534c1bab7a0ac2237940f280ef78934b6e824fbd665d0266cd8795d8e"
+    },
+    {
+      "path": "raw/32-O0.s",
+      "bytes": 6979644,
+      "sha256": "c29d554ef8d51b857411a4621db400b2e6c5b02b13cb9082330b6749a33d40fb"
+    },
+    {
+      "path": "raw/32-O0.unwind.txt",
+      "bytes": 1254,
+      "sha256": "d05ce0ddc5baf2a1969a410addba330c94ff5b6af0b4aa3a7b38ae313d0072a1"
+    },
+    {
+      "path": "raw/32-O2-runtime.unwind.txt",
+      "bytes": 235,
+      "sha256": "9f3db23f5c8577ea5825535c415116bd73b8ecc04c18e981fbe1d92a199feab4"
+    },
+    {
+      "path": "raw/32-O2-stack-usage-build.log",
+      "bytes": 127,
+      "sha256": "419c5487aa2c81799c30e18e1b22531a07335b1e44a130077f1402e0b7c2e1c0"
+    },
+    {
+      "path": "raw/32-O2-stack-usage-exit.txt",
+      "bytes": 8,
+      "sha256": "2095d5302e465922147e220c0389f7a923ea0c1509a23097f04b3c220798aef8"
+    },
+    {
+      "path": "raw/32-O2-stack-usage.obj",
+      "bytes": 477616,
+      "sha256": "39ac88f18d7197462ff12e56d6614fa375f5d5d6bec6cb314071f4f2c35a9be9"
+    },
+    {
+      "path": "raw/32-O2-stack-usage.su",
+      "bytes": 355,
+      "sha256": "09c65156e9a9be6f75c723c9b52e83fc53a7d98deb88f4d861689d493ae0ec00"
+    },
+    {
+      "path": "raw/32-O2.unwind.txt",
+      "bytes": 1709,
+      "sha256": "575dd432e407b3f7d1b7611d2c6fcd5d3a80b775172f66111db90a607e315ead"
+    },
+    {
+      "path": "raw/archive_evidence.py",
+      "bytes": 1911,
+      "sha256": "7fe55a6c6e2cc37d771d8c626fcda8259f8b3efd4e4b43fb1e00d9950f4aeac8"
+    },
+    {
+      "path": "raw/build-release.log",
+      "bytes": 274,
+      "sha256": "0be3fcb5c6afce9fb218138fecb34fcf173f32d0d016478be09e8eb2789d3a17"
+    },
+    {
+      "path": "raw/clang-stack-flags.txt",
+      "bytes": 176,
+      "sha256": "8d6e50348a0321b2242b48b319e6445f0a975c4e88aab5c64091368151f7e7e1"
+    },
+    {
+      "path": "raw/commands.txt",
+      "bytes": 4189,
+      "sha256": "f1f9972b431abb40a1f12c64d118ef5caecd36fd2baeb2af8bc3e695e1a6b63c"
+    },
+    {
+      "path": "raw/final-build.log",
+      "bytes": 390,
+      "sha256": "dd5a6babcd66253f4dda21471a2808bf7d1d207d2b27e2f48efdccb8cd28fabe"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-option-none-value/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "e26cfafb941a22503f210b5479eb9883afb77d9900cddbe60438825b04eca795"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-option-none-value/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-option-none-value/O0/agentlang-native.obj",
+      "bytes": 5452,
+      "sha256": "4013b1391fcb6233699145f8a5611160b201e1cd84247a5705b0e1c406ff4789"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-option-none-value/O0/agentlang-native.su",
+      "bytes": 475,
+      "sha256": "cbb9bee93d0f107bf67ec6fd74078b9a940b0c61ee9985756a667fcaa59ea02c"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-option-none-value/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-option-none-value/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-option-none-value/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-option-none-value/O0/owning-stack-native.ll",
+      "bytes": 34964,
+      "sha256": "b2a957f5f8c407d43243e25742981882c7c0a66144db93625b11871d38e8f609"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-result-error-value/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "e26cfafb941a22503f210b5479eb9883afb77d9900cddbe60438825b04eca795"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-result-error-value/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-result-error-value/O0/agentlang-native.obj",
+      "bytes": 6053,
+      "sha256": "f3fe5e5d7e79d86217a847cf70b5748ab88b6bad94e5e32276f42775c494fcfb"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-result-error-value/O0/agentlang-native.su",
+      "bytes": 478,
+      "sha256": "37ae6d466faa7538993dc0f13037db920278f139a98027e01da3eb89376f9e61"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-result-error-value/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-result-error-value/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-result-error-value/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-mailbox-result-error-value/O0/owning-stack-native.ll",
+      "bytes": 38456,
+      "sha256": "a86eab57fa646793af7bfedfecdfd9887e284fe503f63f685a8038f16992344c"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "d84a43b614d9b15d0ab8d4386038a732e760793fc16dd0ddab899ff32a26f489"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/agentlang-entry-000.obj",
+      "bytes": 22926,
+      "sha256": "d12a1b2ab0668958f49e549f49d28b9fece091edb9e1ae5220b006e6a9155ea5"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/agentlang-entry-000.su",
+      "bytes": 1443,
+      "sha256": "1cee5f183e55e7d9103f4f73728411bdf39c702d1b143c854e160587e7257628"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/agentlang-module-metadata.obj",
+      "bytes": 10147,
+      "sha256": "3f062dc2de9da0dc3eb60f07df4c98934e38a699b036ee156eb4a40212e24d4d"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/agentlang-module-metadata.su",
+      "bytes": 505,
+      "sha256": "71bdccaa532f01dc5f71fad0971d142c8e306028a97c734a7bc37ea60e010470"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/entries/begin.frame.ll",
+      "bytes": 23280,
+      "sha256": "119acfdd6a9a654681cd315670f37799f01d1ad017d46b408f85d6d5657aa51a"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/entries/begin.verified-ir.txt",
+      "bytes": 1492,
+      "sha256": "b0af3705f78df81c32b6ff8fdefaf7240b88aab2c837b304105a8dcdcc0d8f59"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/entries/initialize.frame.ll",
+      "bytes": 14684,
+      "sha256": "b2d7f773894c395f42a6010f81829dd2b102daeb11c4504630faddafb7fb43f1"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/entries/initialize.verified-ir.txt",
+      "bytes": 1448,
+      "sha256": "0a2cbbb5c4b6c4e7da56e667c0921dd24d34d73fed2931685b4d8283754ac779"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/entries/resume.frame.ll",
+      "bytes": 20107,
+      "sha256": "c6bee4a846eda3c09265f119662ba7092bf82e6c6363efa7733cbfcbe7657cbf"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/entries/resume.verified-ir.txt",
+      "bytes": 1285,
+      "sha256": "1c6f68389db9b6566ca682ea2adc428dd44ac098a29b3f37cc170f94a806d636"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/native-runtime/owning_mailbox_abi.h",
+      "bytes": 5845,
+      "sha256": "5ee9b31d74a0e7dcc07bd4e53f9d34044f4e56a58b8f83caab4cb8554401238d"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "ae9eb4a4c3aab2817c3c9cd6d1d2997f506f4f54e4068c397fa38124ccbc47ef"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/owning-mailbox-module-manifest.json",
+      "bytes": 39151,
+      "sha256": "16046af37ce5e7889bbee93317257549d46c118bebec7a6cd0aa3f813def7d55"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-option/owning-mailbox-native.ll",
+      "bytes": 182089,
+      "sha256": "8b726292b988c2e81e01e06ee2742301b58a91e61cd7d63bbb9bead7dfaae564"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "e26cfafb941a22503f210b5479eb9883afb77d9900cddbe60438825b04eca795"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/agentlang-entry-000.obj",
+      "bytes": 23479,
+      "sha256": "74ef2c99965c9570b5eb1dca0b43efddfb197b5542e27cb5382530f70f00ef09"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/agentlang-entry-000.su",
+      "bytes": 1443,
+      "sha256": "8cefaec03f7e6f4090f7433451e2f495ce12b36dbd408eefcb2062596983f605"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/agentlang-module-metadata.obj",
+      "bytes": 10147,
+      "sha256": "c14cb70bae6d4769ee4f02c27f065b52d133520b2c7388cbcc6a6ffec74d154e"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/agentlang-module-metadata.su",
+      "bytes": 505,
+      "sha256": "71bdccaa532f01dc5f71fad0971d142c8e306028a97c734a7bc37ea60e010470"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/entries/begin.frame.ll",
+      "bytes": 23282,
+      "sha256": "ffc2a6c22ff2c06e1b2d4f3d6119bd5bff1c327c9490c1f281f45b53cc4decff"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/entries/begin.verified-ir.txt",
+      "bytes": 1492,
+      "sha256": "e13def71ac6e5020471ae77206649266592838549fb2ba24e36e82ffa7a11079"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/entries/initialize.frame.ll",
+      "bytes": 17986,
+      "sha256": "51d48093cbe678c27d60832e07c32dbecc4a3cfc1866bb7f6a5044229daf6b91"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/entries/initialize.verified-ir.txt",
+      "bytes": 1638,
+      "sha256": "0536f902c9cda9aff239821e83f11575a06f8d0e2513e5b13f4c39274f0f22da"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/entries/resume.frame.ll",
+      "bytes": 20107,
+      "sha256": "bb683a8686e3f69da2e508d281375b966c9dcd03b7aeaa2935e6135eacf1d93e"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/entries/resume.verified-ir.txt",
+      "bytes": 1285,
+      "sha256": "6448b9b64228bdbff36bc6f05a683f4f120be022e8567ea4307a7da55175fcb0"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/native-runtime/owning_mailbox_abi.h",
+      "bytes": 5845,
+      "sha256": "5ee9b31d74a0e7dcc07bd4e53f9d34044f4e56a58b8f83caab4cb8554401238d"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "ae9eb4a4c3aab2817c3c9cd6d1d2997f506f4f54e4068c397fa38124ccbc47ef"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/owning-mailbox-module-manifest.json",
+      "bytes": 40598,
+      "sha256": "d7272c7c041c410cf48be845ffe01bf7cdd20fe5f4d8b99cb5962127a32f5a18"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-result/owning-mailbox-native.ll",
+      "bytes": 185650,
+      "sha256": "a4a7f258d374f95b67ae88a32a5fca94326af0e54d8d065cc2ce50ca9c959185"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "caf109990d50cfdfc82044df27d115623f40f5134f210d13bcadb5a5f0390abe"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/agentlang-entry-000.obj",
+      "bytes": 25583,
+      "sha256": "5a63e066926047b4023b03276e2aa56677d5945e0843b0494af9ae46f4440656"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/agentlang-entry-000.su",
+      "bytes": 1596,
+      "sha256": "7b8331e5395aa2969cf9bbe018d65ef93f51c948fd562da446842e0147ff96c8"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/agentlang-module-metadata.obj",
+      "bytes": 10147,
+      "sha256": "12743162de91034bce6455c78f9f590bb21f17b8152c19a11a9850ae005e1d03"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/agentlang-module-metadata.su",
+      "bytes": 505,
+      "sha256": "71bdccaa532f01dc5f71fad0971d142c8e306028a97c734a7bc37ea60e010470"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/entries/begin.frame.ll",
+      "bytes": 23282,
+      "sha256": "56ae21d7c111f0e53b9fb4e121a3be030354e36aa17f1facc2c69659b479dad0"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/entries/begin.verified-ir.txt",
+      "bytes": 1496,
+      "sha256": "83ccda10263e9b7b404407f973889f87239e9051035b9e58a2eb235ca6c718d1"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/entries/initialize.frame.ll",
+      "bytes": 23524,
+      "sha256": "7343e084de9c7bb558bf12976d1c062e631cfd9c68f5bfff6de57015c9df2506"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/entries/initialize.verified-ir.txt",
+      "bytes": 2289,
+      "sha256": "e5f9801ecca15cbd0b553e11eddacfdfec96b324dbd6bdd2cda0a8446cb94a82"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/entries/resume.frame.ll",
+      "bytes": 20107,
+      "sha256": "22418e339b6fb08a96692abe41c2e85a5d1f0e8d85f28324f73509976d98ff45"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/entries/resume.verified-ir.txt",
+      "bytes": 1288,
+      "sha256": "45bc737f855830c083817d1ca23206e3864cd4fda06ae29d87797c1146bfaeec"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/native-runtime/owning_mailbox_abi.h",
+      "bytes": 5845,
+      "sha256": "5ee9b31d74a0e7dcc07bd4e53f9d34044f4e56a58b8f83caab4cb8554401238d"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "ae9eb4a4c3aab2817c3c9cd6d1d2997f506f4f54e4068c397fa38124ccbc47ef"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/owning-mailbox-module-manifest.json",
+      "bytes": 44530,
+      "sha256": "ea15eb1a4976ecfa63fb8d4a1afac9ce38a914cace408775b61e3e094e046e61"
+    },
+    {
+      "path": "raw/final-mailbox-tests/owning-refined-mailbox-validator-runtime-error/owning-mailbox-native.ll",
+      "bytes": 202049,
+      "sha256": "b70830eb86b4239fefc354132062d42562775a31b491e1e042ea529ebfd871b2"
+    },
+    {
+      "path": "raw/final-mailbox-tests.log",
+      "bytes": 233,
+      "sha256": "8f5ec7ba03b43382bc093e3da38afc2ac29237d525204ee7f2faa1bb68bba58c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "f03083242458912082c57199d5e57af0d26a9a54f986b86576e475768d9c6af0"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O0/agentlang-native.obj",
+      "bytes": 4037,
+      "sha256": "52be98e75c05b803cf1c437ddd3774e54aa927901900efdc83b6fd5d8663ef4c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O0/agentlang-native.su",
+      "bytes": 323,
+      "sha256": "229264d29ded84a24416d0f80b335238f6c787fc11dbfd563e0c315d31f3353b"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O0/owning-stack-native.ll",
+      "bytes": 23754,
+      "sha256": "771611baaa89d4ea9e16142ad37f9d2f6b4ad843cd79126b66e8184792330a37"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "54713e76759378fcd57fdc141bf775096befd9a6b7db8d43fb8abcc16c1520e5"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O2/agentlang-native.obj",
+      "bytes": 3133,
+      "sha256": "880ce0e26de26274dea63f1d5aca1e0c4343a80a4c3003344689160f95ff9d51"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O2/agentlang-native.su",
+      "bytes": 323,
+      "sha256": "49debbc19ee0a3d7f3b4afaaa8e358ee578d1a3fd72b7568e61eb90471303807"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-empty-input/O2/owning-stack-native.ll",
+      "bytes": 23754,
+      "sha256": "771611baaa89d4ea9e16142ad37f9d2f6b4ad843cd79126b66e8184792330a37"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "f03083242458912082c57199d5e57af0d26a9a54f986b86576e475768d9c6af0"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O0/agentlang-native.obj",
+      "bytes": 5488,
+      "sha256": "428fead684526cbdc72bc1ff2183c307e459c32ca2da954c213abcd81dedb7ca"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O0/agentlang-native.su",
+      "bytes": 317,
+      "sha256": "390c19695cd80722d818d762665308206c415811487d959d95a0607819156fb2"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O0/owning-stack-native.ll",
+      "bytes": 35914,
+      "sha256": "e4378e27c6186b069653301a159ed0205c7687bff1e9530259bd0dae3778e089"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "54713e76759378fcd57fdc141bf775096befd9a6b7db8d43fb8abcc16c1520e5"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O2/agentlang-native.obj",
+      "bytes": 3953,
+      "sha256": "640df1196814b27ea412de064ef2c8989dbfa604ed58936adffc762275dc7f6c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O2/agentlang-native.su",
+      "bytes": 317,
+      "sha256": "014932374f21e0cab56008ad38b8d7e26d457e52a6e4803661b87ad00184f0ca"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-identity/O2/owning-stack-native.ll",
+      "bytes": 35914,
+      "sha256": "e4378e27c6186b069653301a159ed0205c7687bff1e9530259bd0dae3778e089"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "ebdfd8f3c0f86fa2c89531ebc9835757795897412ac55f4f495cf86346c8a22e"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/agentlang-entry-000.obj",
+      "bytes": 21134,
+      "sha256": "f218ded0ba098489e992271857df0fcd2409c170e3d8662628cbb76fca49ae03"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/agentlang-entry-000.su",
+      "bytes": 1323,
+      "sha256": "e6a69b5dc34978565cf454ca3da1ab28fdb08cf578f2710a818b9a7bad0df447"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/agentlang-module-metadata.obj",
+      "bytes": 10147,
+      "sha256": "9d568a46d6f80f00ac3af6b21fa22561d24c0c3dcf4ab8c650271a8ce7dead76"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/agentlang-module-metadata.su",
+      "bytes": 505,
+      "sha256": "71bdccaa532f01dc5f71fad0971d142c8e306028a97c734a7bc37ea60e010470"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/entries/begin.frame.ll",
+      "bytes": 46355,
+      "sha256": "8392fa9c179dd16f3244b537994ea6a0414243412571da93e85669a87fedbd27"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/entries/begin.verified-ir.txt",
+      "bytes": 3836,
+      "sha256": "30725f64e90af40e0d53197f16eb08a7c1c3470eb976d88c1be06e75b426c397"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/entries/initialize.frame.ll",
+      "bytes": 12526,
+      "sha256": "05f44c365a538e4125d2cf171706acc83b86e6615b1c7431aba4fdc0bde50725"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/entries/initialize.verified-ir.txt",
+      "bytes": 1332,
+      "sha256": "e67d424e95aa7a5b12499e71018bfae70811b2bbeec9a31b2f4c6720263fd310"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/entries/resume.frame.ll",
+      "bytes": 20107,
+      "sha256": "68902f13d10fc7d4ee92912bff628b28c8cbcb05934e1ad93d608b67087f744c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/entries/resume.verified-ir.txt",
+      "bytes": 1285,
+      "sha256": "94cef839a085d1fb233b2a6d89b6021fdeb1563cf259e0137a837665031e8346"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/native-runtime/owning_mailbox_abi.h",
+      "bytes": 5845,
+      "sha256": "5ee9b31d74a0e7dcc07bd4e53f9d34044f4e56a58b8f83caab4cb8554401238d"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "452041986e09dc1dbc43c4d8f8a7a0ada1a981580218c1e7e933f6e98e8f733b"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/owning-mailbox-module-manifest.json",
+      "bytes": 35357,
+      "sha256": "a6658c2a33dabe2868734b1205d9b21b9d1e1ee5e1ad85db064ffcc1ebfb2d17"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O0/owning-mailbox-native.ll",
+      "bytes": 166724,
+      "sha256": "560f9d1e75bc7adaefadf232514470df8fb1d9d23fecb9a6fa6d07f77e971253"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "aa5c03c76de679dec2220562dc0412b02e5efd42b42eaa31c070afedcf11aedb"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/agentlang-entry-000.obj",
+      "bytes": 14004,
+      "sha256": "fa66d68985c61d182021b049f74e9b3b7019b0a92c284df99d8e53f1b0890dc5"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/agentlang-entry-000.su",
+      "bytes": 1323,
+      "sha256": "c9a212ff5db4e7f23e340f508e8ad4a150ab0c19eb275b1ffa1e92fdf8dc2288"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/agentlang-module-metadata.obj",
+      "bytes": 5429,
+      "sha256": "ad74fcabd07213460d0857cd9c2167d0bd755dab79e28cfd28ef4a2024cb7302"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/agentlang-module-metadata.su",
+      "bytes": 298,
+      "sha256": "31d4af371bfcee765c186072c48baf89f5384bcb620d8d5fe0d36a6a97cfd525"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/entries/begin.frame.ll",
+      "bytes": 46355,
+      "sha256": "8392fa9c179dd16f3244b537994ea6a0414243412571da93e85669a87fedbd27"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/entries/begin.verified-ir.txt",
+      "bytes": 3836,
+      "sha256": "30725f64e90af40e0d53197f16eb08a7c1c3470eb976d88c1be06e75b426c397"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/entries/initialize.frame.ll",
+      "bytes": 12526,
+      "sha256": "05f44c365a538e4125d2cf171706acc83b86e6615b1c7431aba4fdc0bde50725"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/entries/initialize.verified-ir.txt",
+      "bytes": 1332,
+      "sha256": "e67d424e95aa7a5b12499e71018bfae70811b2bbeec9a31b2f4c6720263fd310"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/entries/resume.frame.ll",
+      "bytes": 20107,
+      "sha256": "68902f13d10fc7d4ee92912bff628b28c8cbcb05934e1ad93d608b67087f744c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/entries/resume.verified-ir.txt",
+      "bytes": 1285,
+      "sha256": "94cef839a085d1fb233b2a6d89b6021fdeb1563cf259e0137a837665031e8346"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/native-runtime/owning_mailbox_abi.h",
+      "bytes": 5845,
+      "sha256": "5ee9b31d74a0e7dcc07bd4e53f9d34044f4e56a58b8f83caab4cb8554401238d"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "452041986e09dc1dbc43c4d8f8a7a0ada1a981580218c1e7e933f6e98e8f733b"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/owning-mailbox-module-manifest.json",
+      "bytes": 35357,
+      "sha256": "e05f162acb272e8dc48ab207ffc85aa3850899b215b003f02663106631904732"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-mailbox/O2/owning-mailbox-native.ll",
+      "bytes": 166724,
+      "sha256": "560f9d1e75bc7adaefadf232514470df8fb1d9d23fecb9a6fa6d07f77e971253"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "b567a92712aac6dca087d4350571dc8c1449748b259c9a6710f6d70c56d1919d"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O0/agentlang-native.obj",
+      "bytes": 11463,
+      "sha256": "18731ed08a8488f16fbbb80e4afa9291d7d040e3af2ba86878f8ef42b9c41dee"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O0/agentlang-native.su",
+      "bytes": 313,
+      "sha256": "4b2339789351a6321dba251682b21c0512015507f3191a29dfa1d902c8fcb775"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O0/owning-stack-native.ll",
+      "bytes": 85421,
+      "sha256": "b60f234d97b8425eb5b32ea70e8207c76ac85ad5e72626cece7152e8b1c495ce"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "efcd940808506cff65613e1ff6485ca5e0afb8af144190f254d63d99199ab8e3"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O2/agentlang-native.obj",
+      "bytes": 7821,
+      "sha256": "7231b042e27319805ec7b846308be3e12f8ec8c300377628ae9ba61092d69262"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O2/agentlang-native.su",
+      "bytes": 313,
+      "sha256": "02ce6c6985b378b1c942026c48a26dd755155413a12ba1c8fe68fc156ac5aeee"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-nested/O2/owning-stack-native.ll",
+      "bytes": 85421,
+      "sha256": "b60f234d97b8425eb5b32ea70e8207c76ac85ad5e72626cece7152e8b1c495ce"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "452cf0a9d7bd33d93580e66280722f8fda610f7f737b5c7e02b84a73f95c4179"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O0/agentlang-native.obj",
+      "bytes": 4826,
+      "sha256": "1669ba1706e69c8551416729564db2ed0b1f88f6886f1898652eeaf24b9bca8d"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O0/agentlang-native.su",
+      "bytes": 319,
+      "sha256": "bd3697eadf301d93a530e1dfd893a5fe4047512e4c1ff4bba0cf6912c1765f08"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O0/owning-stack-native.ll",
+      "bytes": 28934,
+      "sha256": "27fb6bedec7d7af8a75923bd47ef46507d8a50a8588e02a9e307e5c2d2f48600"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "9496469739ea15bd665ef217a80064a7a7e689d56a4d9f47945463f9c8f5471b"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O2/agentlang-native.obj",
+      "bytes": 3576,
+      "sha256": "a94fa73d611f8d92603281b18d1de4d3f7918bee71450770ebc353d65b6710ea"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O2/agentlang-native.su",
+      "bytes": 319,
+      "sha256": "81488d07f4375faab04039752d83145b42df6685683f15ec36fa6cacbd9ed614"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-owner-end/O2/owning-stack-native.ll",
+      "bytes": 28934,
+      "sha256": "27fb6bedec7d7af8a75923bd47ef46507d8a50a8588e02a9e307e5c2d2f48600"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "f03083242458912082c57199d5e57af0d26a9a54f986b86576e475768d9c6af0"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O0/agentlang-native.obj",
+      "bytes": 4431,
+      "sha256": "3c28078bf4570fcd0a15e4f36880c7b1ceae68dbcea093a568f05829481ad9bc"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O0/agentlang-native.su",
+      "bytes": 323,
+      "sha256": "b34519f8684cb9c3ad3e27912c93a0a5a2074e8fa846bffbc47807abc98e3070"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O0/owning-stack-native.ll",
+      "bytes": 27354,
+      "sha256": "8fce40e8a78ba8cd7294a142be46690e6e37d2f52beb4c35ce804287da90d128"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "765263a9470643c5fe04c940aced03157c6ea966d305688cba5326d0fe405eff"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O2/agentlang-native.obj",
+      "bytes": 3260,
+      "sha256": "cc311baf57a3d107118d1cad5e18b8297f15b0e1b2e47d8f67350a0be14fa63d"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O2/agentlang-native.su",
+      "bytes": 323,
+      "sha256": "891a8c3ec9bcc947d411751c1d21375e4af01f849cdb4151501d57f94038b068"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-nominal-string/owning-nominal-string-wrap-unwrap/O2/owning-stack-native.ll",
+      "bytes": 27354,
+      "sha256": "8fce40e8a78ba8cd7294a142be46690e6e37d2f52beb4c35ce804287da90d128"
+    },
+    {
+      "path": "raw/final-nominal-string.log",
+      "bytes": 255,
+      "sha256": "00d891a3e17144a5f18bcd22b5c06b462d0d47845420c850ceb10a5fb0c5cd4d"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "4e2ce562b9c0f374eae51d4ff27b08e439cf171d2538f274e9a909865b68e86e"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/agentlang-entry-000.obj",
+      "bytes": 24267,
+      "sha256": "2e0c0aa1e1c8e9c4baaeaff9dfa0191fedc1c9055f3e6d30ced7a9cfdbf4fed4"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/agentlang-entry-000.su",
+      "bytes": 1452,
+      "sha256": "58dd7beb5dd5a3faac0534aa26a70fea7b699e348c7656529fe6085f4bb8fcd3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/agentlang-module-metadata.obj",
+      "bytes": 10147,
+      "sha256": "3bfd9b5212a4bf6bb13dd5e90c3cc1f10eb055276c8b68dcf7b8897e34ca7b3a"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/agentlang-module-metadata.su",
+      "bytes": 505,
+      "sha256": "71bdccaa532f01dc5f71fad0971d142c8e306028a97c734a7bc37ea60e010470"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/entries/begin.frame.ll",
+      "bytes": 23282,
+      "sha256": "d355ae7acd388bb48e7c20dd24771c662df4275d21f56487fa0e146b8706e8a1"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/entries/begin.verified-ir.txt",
+      "bytes": 1489,
+      "sha256": "cbe21747e2c5880e53d68d8c5b487b30d5883d1ad077896efbdd455bf7b66f0a"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/entries/initialize.frame.ll",
+      "bytes": 23151,
+      "sha256": "7f05eb5bd12877e4cb7cd61e5aa4720dc5734d6ee00bb0b315e1b8bfbdbbbb36"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/entries/initialize.verified-ir.txt",
+      "bytes": 2282,
+      "sha256": "7c353ae21c3f65516301e0805011454e4213eda00584a997bb7c06e4e9b1d85d"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/entries/resume.frame.ll",
+      "bytes": 20107,
+      "sha256": "0f48e98ac01825025388546a7f708c93c79dd954e7378a82b38b8a70cd7eb635"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/entries/resume.verified-ir.txt",
+      "bytes": 1283,
+      "sha256": "0c8595f4c6151565cd6a8f5dccded6452ac9b479ece25f50ecca2ece52a88dae"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/native-runtime/owning_mailbox_abi.h",
+      "bytes": 5845,
+      "sha256": "5ee9b31d74a0e7dcc07bd4e53f9d34044f4e56a58b8f83caab4cb8554401238d"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/owning-mailbox-metadata.c",
+      "bytes": 22694,
+      "sha256": "ae9eb4a4c3aab2817c3c9cd6d1d2997f506f4f54e4068c397fa38124ccbc47ef"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/owning-mailbox-module-manifest.json",
+      "bytes": 41720,
+      "sha256": "03be4222aabb618a04627f9a2ac94ad797f9ade93185d3898cd08f9e9e837798"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-mailbox-string/owning-mailbox-native.ll",
+      "bytes": 191822,
+      "sha256": "1c526136b4412f450c45b9a4bf05dcf76cbef00af2fc68b317aa613660d43502"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "f03083242458912082c57199d5e57af0d26a9a54f986b86576e475768d9c6af0"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O0/agentlang-native.obj",
+      "bytes": 7878,
+      "sha256": "72a980ad0c4f50a0517d6a8c0316ac680307997976300470db1e4ccbcb417804"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O0/agentlang-native.su",
+      "bytes": 481,
+      "sha256": "055f1773f88c96713ceaa9c800fffc9adf6000f4f37986111d991991f3f0f4d6"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O0/owning-stack-native.ll",
+      "bytes": 52748,
+      "sha256": "a80a8bec2308f98154ec6fc0e3ea49c609e64a8dafa00645caebd084b187e2e0"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "5ce9583ef0e80e4a0fab9c28eaffe1800433901bc02cd3572fdf7c876c34829f"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O2/agentlang-native.obj",
+      "bytes": 5483,
+      "sha256": "ab6ec5ad2ee6d353aba068c203ed09c134a75a84f8d6eb716e0ea69aa619fee7"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O2/agentlang-native.su",
+      "bytes": 481,
+      "sha256": "6d7d0583fe64a05b261d8facfdefe9a9d252b8318cd17aa7de4de526dd55cdb0"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-constructor/O2/owning-stack-native.ll",
+      "bytes": 52748,
+      "sha256": "a80a8bec2308f98154ec6fc0e3ea49c609e64a8dafa00645caebd084b187e2e0"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "b567a92712aac6dca087d4350571dc8c1449748b259c9a6710f6d70c56d1919d"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O0/agentlang-native.obj",
+      "bytes": 7796,
+      "sha256": "a17ec71f37026bc9e4688a436209872e1d5db397ccd1d2e1ab1a947c8d09c07f"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O0/agentlang-native.su",
+      "bytes": 514,
+      "sha256": "514301a71734ce28bd0b2759e51b91acd0ca7e8755c52db955ca7fbd4a75a594"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O0/owning-stack-native.ll",
+      "bytes": 51605,
+      "sha256": "8baaf8e8e88285958c303c7793a9fd7f683e3dff98d995571faaad6d05384d16"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "efcd940808506cff65613e1ff6485ca5e0afb8af144190f254d63d99199ab8e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O2/agentlang-native.obj",
+      "bytes": 5548,
+      "sha256": "26404dcf8a8040b0236e92b68ea75671428f8604c2cbf9cb0f81ce0ac545f324"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O2/agentlang-native.su",
+      "bytes": 514,
+      "sha256": "6d5057618cd1bf4caa437d0a509be8cd5c1b3472c1206a5e64056080242e8b2a"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-frozen-original-single/O2/owning-stack-native.ll",
+      "bytes": 51605,
+      "sha256": "8baaf8e8e88285958c303c7793a9fd7f683e3dff98d995571faaad6d05384d16"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "e389fc026ece5e65b01628d43efc2c533e9d40f29fe55b4b1a4c0176f3d16dcc"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O0/agentlang-native.obj",
+      "bytes": 11871,
+      "sha256": "24dfa925d7ab0b2c2ceef8712e80112ce1f181d2ac9675a1ba854b0e064401cc"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O0/agentlang-native.su",
+      "bytes": 490,
+      "sha256": "4c5114ae51281341b15d9e2ecb63ee50e74f88d9bc83ace37e527418a70fa6a2"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O0/owning-stack-native.ll",
+      "bytes": 83968,
+      "sha256": "9f5ee6e2f532f0bc9c41bbc986c44ecab6dfa357a622f0ff00fc0a09aca966ed"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "b4328d6b3e11470b5abb0da365adee7db98eb096fc0160a67efc17b6d3489811"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O2/agentlang-native.obj",
+      "bytes": 7922,
+      "sha256": "b4551d178f5d3f0bb8cc9ef986d7e25bed5da74f2a8f75e36664b42b5e9a38fb"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O2/agentlang-native.su",
+      "bytes": 490,
+      "sha256": "4e6938a7197d4c72d73229eefb64554f2297ee7f9339eb7fffe6e50c707b3244"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-inactive-cases/O2/owning-stack-native.ll",
+      "bytes": 83968,
+      "sha256": "9f5ee6e2f532f0bc9c41bbc986c44ecab6dfa357a622f0ff00fc0a09aca966ed"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "683cb8fc2b8e7ae15b57f2a26f003133968a3e8858934acec6af8cb5d56b7d5e"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O0/agentlang-native.obj",
+      "bytes": 10060,
+      "sha256": "60e44eb7148a1ef08edd3b94dc77138212863e5544795960357a7d5a4cd73efe"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O0/agentlang-native.su",
+      "bytes": 478,
+      "sha256": "b2a71538a0575549c2234f224cfffc9609f82bee6a05ddc1cac26eaa0e9787e7"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O0/owning-stack-native.ll",
+      "bytes": 70530,
+      "sha256": "be21a778873815c7e997c80ae0edcccc1be26099f550916022bc064b6d606567"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "54713e76759378fcd57fdc141bf775096befd9a6b7db8d43fb8abcc16c1520e5"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O2/agentlang-native.obj",
+      "bytes": 6823,
+      "sha256": "849128773d9e39977603097ea3ce6e8e8fd1e28346b96542a8cc495213c8ff65"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O2/agentlang-native.su",
+      "bytes": 478,
+      "sha256": "f6d5624d0009eba17669764ce756797d745f041721e8002a60fe2807f0b14d3c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-input-only/O2/owning-stack-native.ll",
+      "bytes": 70530,
+      "sha256": "be21a778873815c7e997c80ae0edcccc1be26099f550916022bc064b6d606567"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "ebdfd8f3c0f86fa2c89531ebc9835757795897412ac55f4f495cf86346c8a22e"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O0/agentlang-native.obj",
+      "bytes": 22511,
+      "sha256": "210ae763e874cf305eb0cc1b638db10c2bc87a92edb4ff5c991da98ec29ca228"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O0/agentlang-native.su",
+      "bytes": 488,
+      "sha256": "bba37edf19d73e48620cbbee5126fdd2a677ad123f8102a23143a9d04f8dd0ae"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O0/owning-stack-native.ll",
+      "bytes": 176461,
+      "sha256": "80ea56740f7ae90903257870aaf459cee408100f39f5b7b6066ef2098efeb237"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "aa5c03c76de679dec2220562dc0412b02e5efd42b42eaa31c070afedcf11aedb"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O2/agentlang-native.obj",
+      "bytes": 14818,
+      "sha256": "7581d960f4d45aaf843b0a5632b2a7ab1d34f70b4eaf6cf895b38363ee083c0f"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O2/agentlang-native.su",
+      "bytes": 488,
+      "sha256": "9c4df53eff4c6659de2982b8739b84e15c8f5eb6ee6c9f59560f5c4efbcb6cb2"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-nested-inputs/O2/owning-stack-native.ll",
+      "bytes": 176461,
+      "sha256": "80ea56740f7ae90903257870aaf459cee408100f39f5b7b6066ef2098efeb237"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "ebdfd8f3c0f86fa2c89531ebc9835757795897412ac55f4f495cf86346c8a22e"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O0/agentlang-native.obj",
+      "bytes": 8687,
+      "sha256": "2ece4458912eb69ba124963893046f78a54af428d8e77e63c4532ca243b34eee"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O0/agentlang-native.su",
+      "bytes": 475,
+      "sha256": "7746a2d437ed83d75282c6d647d5adb68c08773e4030919816b40363719d9d3f"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O0/owning-stack-native.ll",
+      "bytes": 57887,
+      "sha256": "dfd4f8608d5127a10b07a4b672a37097b2f1171188309af41e5cc3b24f0879ec"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "5f707c1d5e3ff6fe446517a5d27f9e6752d6f3604bff5b83658a91275e6ae5a2"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O2/agentlang-native.obj",
+      "bytes": 6062,
+      "sha256": "8420dc58e898c2df2e0857ca38d0d80e11ffd16bbfb16b86f4e5cc5b41969ae2"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O2/agentlang-native.su",
+      "bytes": 475,
+      "sha256": "a524deb35124c35a49f5ff86f6722b991fc34d005d2d1905e24db22b70cf0e04"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-owner-end/O2/owning-stack-native.ll",
+      "bytes": 57887,
+      "sha256": "dfd4f8608d5127a10b07a4b672a37097b2f1171188309af41e5cc3b24f0879ec"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "683cb8fc2b8e7ae15b57f2a26f003133968a3e8858934acec6af8cb5d56b7d5e"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O0/agentlang-native.obj",
+      "bytes": 9660,
+      "sha256": "cd171384e5391e6c1dbca81532de795b51c7b7fd6167640f54962bdb9c4efa0e"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O0/agentlang-native.su",
+      "bytes": 502,
+      "sha256": "ab2b892390da9015957c947956b4d03d7b672cdd042bc29ae891b2f3e250103a"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O0/owning-stack-native.ll",
+      "bytes": 64988,
+      "sha256": "f92c2fe86871d06db359386aea35c593de385569a40dde49fb609a503204cf8a"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "765263a9470643c5fe04c940aced03157c6ea966d305688cba5326d0fe405eff"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O2/agentlang-native.obj",
+      "bytes": 6612,
+      "sha256": "659911f970f6b601af46c3b8eb22f6c6f41d2e049f8b31a5afe482ac8ceffbcc"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O2/agentlang-native.su",
+      "bytes": 502,
+      "sha256": "458c796749f28a96d8af93f5b5af2df80527016149f4f8c8c2d41e5e6c9cbe08"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-reject-before-body/O2/owning-stack-native.ll",
+      "bytes": 64988,
+      "sha256": "f92c2fe86871d06db359386aea35c593de385569a40dde49fb609a503204cf8a"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "452cf0a9d7bd33d93580e66280722f8fda610f7f737b5c7e02b84a73f95c4179"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O0/agentlang-native.obj",
+      "bytes": 6395,
+      "sha256": "bdd05b350703df75fa6d9927e2d771770228689d1c7b936b05f266f012ee8868"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O0/agentlang-native.su",
+      "bytes": 481,
+      "sha256": "bdd2ba24d449c23b3fe667bf590ff29db089c3d2ac454a8209ab88baf62680e4"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O0/owning-stack-native.ll",
+      "bytes": 41364,
+      "sha256": "2daf344c9cf5d3863ba7676559c871f05d83efa91cd872f3ebba03f40aba8120"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "9496469739ea15bd665ef217a80064a7a7e689d56a4d9f47945463f9c8f5471b"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O2/agentlang-native.obj",
+      "bytes": 4716,
+      "sha256": "426468578adc8f7a6cb8cf1cbf7702a3dad9a8f62662eefcc8021602052d1e3c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O2/agentlang-native.su",
+      "bytes": 481,
+      "sha256": "c1e513ee0f55e40380dd62a3068c61cf4daf8cf759bac461f6deae36b35b8ed8"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-replacement/O2/owning-stack-native.ll",
+      "bytes": 41364,
+      "sha256": "2daf344c9cf5d3863ba7676559c871f05d83efa91cd872f3ebba03f40aba8120"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O0/agentlang-arena-runtime.obj",
+      "bytes": 50584,
+      "sha256": "e389fc026ece5e65b01628d43efc2c533e9d40f29fe55b4b1a4c0176f3d16dcc"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O0/agentlang-arena-runtime.su",
+      "bytes": 6134,
+      "sha256": "47ffacb9e48343b17ea11edb43ea0d1db1b273a2f4715bb354bfe16636f2946c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O0/agentlang-native.obj",
+      "bytes": 9261,
+      "sha256": "6390652760ca36d460370c6cf4c2593c843df4f881860449f0a0fc5f9cfceb21"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O0/agentlang-native.su",
+      "bytes": 517,
+      "sha256": "8cdab366ca6215ce8ee9e5377a0079e518f5c85bb0fac48ba5a62fdba8403dce"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O0/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O0/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O0/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O0/owning-stack-native.ll",
+      "bytes": 62794,
+      "sha256": "b34e98f15066b42201090b3b8c917217e13614cb6fc53b2caf97675c3d009ded"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O2/agentlang-arena-runtime.obj",
+      "bytes": 44315,
+      "sha256": "b4328d6b3e11470b5abb0da365adee7db98eb096fc0160a67efc17b6d3489811"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O2/agentlang-arena-runtime.su",
+      "bytes": 4363,
+      "sha256": "bea857dc714b43aad152560011e332cd93b4d3db9d6289c5b977e8a88103e30c"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O2/agentlang-native.obj",
+      "bytes": 6231,
+      "sha256": "25546eac37cd485c65ee71014ad5f99a8515684bffb5986f06a17712505c657e"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O2/agentlang-native.su",
+      "bytes": 517,
+      "sha256": "1cd16d54452d32da539f93d46e18b9d929c95b15ad792d3e70921ffdc820da4f"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O2/native-runtime/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O2/native-runtime/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O2/native-runtime/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "raw/final-refined-string/owning-refined-string-validator-runtime-error/O2/owning-stack-native.ll",
+      "bytes": 62794,
+      "sha256": "b34e98f15066b42201090b3b8c917217e13614cb6fc53b2caf97675c3d009ded"
+    },
+    {
+      "path": "raw/final-refined-string.log",
+      "bytes": 250,
+      "sha256": "f1cb7dcbb357f616d28879fa78c537c8b031ec630e4c67246f09044289ff32c5"
+    },
+    {
+      "path": "raw/final-screen-tests/native-stack-screen/O0/agentlang-native.obj",
+      "bytes": 776,
+      "sha256": "7a08b6af9f9accfa61464165d29da7d490a8ebaa98cc404d4e0526335193ae9d"
+    },
+    {
+      "path": "raw/final-screen-tests/native-stack-screen/O0/agentlang-native.su",
+      "bytes": 125,
+      "sha256": "4cfc287fdd9faf685109ede746df9ee26149180c318e810020f5ed792078e04b"
+    },
+    {
+      "path": "raw/final-screen-tests/native-stack-screen/O0/oversized.ll",
+      "bytes": 295,
+      "sha256": "13bd5dbd367b750120f05b56f56bd51bae5f57c05a257939300835fe86527965"
+    },
+    {
+      "path": "raw/final-screen-tests/native-stack-screen/O0/runtime.c",
+      "bytes": 40,
+      "sha256": "8ed107f9606269317b8a971f4dff108c4e4e8bb123300be95a8e9ee5a806cce0"
+    },
+    {
+      "path": "raw/final-screen-tests/native-stack-screen/O2/agentlang-native.obj",
+      "bytes": 575,
+      "sha256": "7e21a1268140b16977a4291b58c99bac79e3ff71f803494c8bac326ac9fd7700"
+    },
+    {
+      "path": "raw/final-screen-tests/native-stack-screen/O2/agentlang-native.su",
+      "bytes": 125,
+      "sha256": "cc1261d4fd1552d98f43bcd89cb64f4cf837889245d1bc6d68c53e1d270401eb"
+    },
+    {
+      "path": "raw/final-screen-tests/native-stack-screen/O2/oversized.ll",
+      "bytes": 295,
+      "sha256": "13bd5dbd367b750120f05b56f56bd51bae5f57c05a257939300835fe86527965"
+    },
+    {
+      "path": "raw/final-screen-tests/native-stack-screen/O2/runtime.c",
+      "bytes": 40,
+      "sha256": "8ed107f9606269317b8a971f4dff108c4e4e8bb123300be95a8e9ee5a806cce0"
+    },
+    {
+      "path": "raw/final-screen-tests.log",
+      "bytes": 141,
+      "sha256": "60e2947d3e68fcb7d9aeef5b156dade197376be6f60fff69a89bf22d7dd44bd7"
+    },
+    {
+      "path": "raw/frame-screen-tests.log",
+      "bytes": 135,
+      "sha256": "1b3e8a9e9fd2f3837a44aeb267ec6b048ca8a384de6adab35a4a4802f03a9a53"
+    },
+    {
+      "path": "raw/hashes.sha256",
+      "bytes": 5579,
+      "sha256": "a02dbc7f5a7ef77d2dfedf88a7805470eb6572661e4f0d6d5d9c644a02553573"
+    },
+    {
+      "path": "raw/implementation/build-final-release-no-restore.log",
+      "bytes": 390,
+      "sha256": "1a1fd77ab35189dae7b1364dd52d518ed9f16670a31ee53a18608e3c14eb4bd8"
+    },
+    {
+      "path": "raw/implementation/build-release-no-restore.log",
+      "bytes": 390,
+      "sha256": "2fe007566d1225fac2e2a7249f371c5af3c242bdb829201d9385bdc2604479bf"
+    },
+    {
+      "path": "raw/implementation/clang-stack-usage.log",
+      "bytes": 127,
+      "sha256": "419c5487aa2c81799c30e18e1b22531a07335b1e44a130077f1402e0b7c2e1c0"
+    },
+    {
+      "path": "raw/implementation/owning-nominal-string-final.log",
+      "bytes": 274,
+      "sha256": "e90e31d89bbcc9ba8ed694fc7581ac8bfdd3981df4fd62fc239cba21417e6a11"
+    },
+    {
+      "path": "raw/implementation/owning-nominal-string-O2.obj",
+      "bytes": 3260,
+      "sha256": "6c10af5a564e6a2baf9561726a20ebdbb6ec8f68e70385a0a170937bbb974055"
+    },
+    {
+      "path": "raw/implementation/owning-nominal-string-O2.su",
+      "bytes": 361,
+      "sha256": "809e8475274974cc6a5708c1a13ccb8fa8aece1e5c06aed2f3f0a1f51cf35690"
+    },
+    {
+      "path": "raw/implementation/owning-nominal-string.log",
+      "bytes": 274,
+      "sha256": "6842cbbfe33ff858eb3d18258dd02653c7a2dd4d07d17dfbdf315416848c414a"
+    },
+    {
+      "path": "raw/implementation/owning-refined-string-final.log",
+      "bytes": 269,
+      "sha256": "43690dc09cd3bdca0f0cda20308ed9d67c5041ed03742e45faf023cb3871a00f"
+    },
+    {
+      "path": "raw/implementation/owning-string-static-frame-summary.txt",
+      "bytes": 220,
+      "sha256": "44f3786e6a9bf4deec823fb01b13aa7f4fd844407a09852aead1fba5771426d1"
+    },
+    {
+      "path": "raw/independent-review.txt",
+      "bytes": 2879,
+      "sha256": "d42d7a3f29bacef235756a3193eb5717c606e53dbe107008a0449991a0be4b85"
+    },
+    {
+      "path": "raw/ir-alloca-summary.txt",
+      "bytes": 1053,
+      "sha256": "1ede734c7386c9d63a5ffc39bc19beb7a644d6558f4bbb3ae7df4708cf28d8d7"
+    },
+    {
+      "path": "raw/review-repair-build.log",
+      "bytes": 390,
+      "sha256": "a87f9d76c97b5d5adff5180e402506835e746c2c6f5e78accd0827c4f7ea7076"
+    },
+    {
+      "path": "raw/review-repair-tests/native-stack-screen/O0/agentlang-arena-runtime.obj",
+      "bytes": 538,
+      "sha256": "c1a2e5ff8db4754e3ca380d081adeb702329643c715c728c93646fb727d7bda0"
+    },
+    {
+      "path": "raw/review-repair-tests/native-stack-screen/O0/agentlang-arena-runtime.su",
+      "bytes": 39,
+      "sha256": "8205b5b494f91d5b1337099ee2f689559fc65d8a5fccc92a755f0cae80557273"
+    },
+    {
+      "path": "raw/review-repair-tests/native-stack-screen/O0/agentlang-native.obj",
+      "bytes": 507,
+      "sha256": "63658b61ee012cc82c50517c5df90492c2c83c0d8ffa1e4ce6d20378d89044f6"
+    },
+    {
+      "path": "raw/review-repair-tests/native-stack-screen/O0/agentlang-native.su",
+      "bytes": 117,
+      "sha256": "29672bc72aedcb9390a205ea092c846ee90d63e515589da3521eb25d28486041"
+    },
+    {
+      "path": "raw/review-repair-tests/native-stack-screen/O0/oversized.ll",
+      "bytes": 53,
+      "sha256": "513ad8318aff513d209bf96c76f6e9155548eb633a0507aacd59ce3210c5f55e"
+    },
+    {
+      "path": "raw/review-repair-tests/native-stack-screen/O0/runtime.c",
+      "bytes": 126,
+      "sha256": "5bb8f90cb1ff3447c1206133be6b7939d3e3d161cb36827fe3bfd24be49d0986"
+    },
+    {
+      "path": "raw/review-repair-tests/native-stack-screen/O2/agentlang-arena-runtime.obj",
+      "bytes": 497,
+      "sha256": "f46cf3d4b8a3a8e546c71b3852542de92abcc35109e522d51f8f3fd0158080ef"
+    },
+    {
+      "path": "raw/review-repair-tests/native-stack-screen/O2/agentlang-arena-runtime.su",
+      "bytes": 38,
+      "sha256": "56eba436ff37688753447c4a326d505c4e50c62554daf4d7b3aee1415ba97886"
+    },
+    {
+      "path": "raw/review-repair-tests/native-stack-screen/O2/agentlang-native.obj",
+      "bytes": 507,
+      "sha256": "63658b61ee012cc82c50517c5df90492c2c83c0d8ffa1e4ce6d20378d89044f6"
+    },
+    {
+      "path": "raw/review-repair-tests/native-stack-screen/O2/agentlang-native.su",
+      "bytes": 117,
+      "sha256": "95529718b0642448f3bf9046acfe999ca5709aaf9bb44ad231f568d7b2d18ae2"
+    },
+    {
+      "path": "raw/review-repair-tests/native-stack-screen/O2/oversized.ll",
+      "bytes": 53,
+      "sha256": "513ad8318aff513d209bf96c76f6e9155548eb633a0507aacd59ce3210c5f55e"
+    },
+    {
+      "path": "raw/review-repair-tests/native-stack-screen/O2/runtime.c",
+      "bytes": 126,
+      "sha256": "5bb8f90cb1ff3447c1206133be6b7939d3e3d161cb36827fe3bfd24be49d0986"
+    },
+    {
+      "path": "raw/review-repair-tests.log",
+      "bytes": 142,
+      "sha256": "18447166576f903d15060a1c62101bd950b7dc86ebc18304d41b2ebe5abf6652"
+    },
+    {
+      "path": "raw/runtime-O0-stack-usage.obj",
+      "bytes": 50584,
+      "sha256": "c3cb5bd86f89af0b65054eebc1133c7f7954ae03286315be0a1c20cc5342a7bf"
+    },
+    {
+      "path": "raw/runtime-O0-stack-usage.su",
+      "bytes": 14416,
+      "sha256": "7ccf1ca01b4ee0a14e9a04da4c6799ce2b947024a2c1ac5760bb4860abe71659"
+    },
+    {
+      "path": "raw/runtime-O2-stack-usage.obj",
+      "bytes": 44315,
+      "sha256": "92e671a174031a7f892758de18d1deb26c823672fc0ad0fb93f0f5380fd1c9c4"
+    },
+    {
+      "path": "raw/runtime-O2-stack-usage.su",
+      "bytes": 10120,
+      "sha256": "f3f171597a8d2418bae2601af5f16ba98c5ba64f916aa04ea915634e568623ee"
+    },
+    {
+      "path": "raw/screen-tests/native-stack-screen/O0/agentlang-native.obj",
+      "bytes": 776,
+      "sha256": "30ab1c63c2f98263d7cb198d60c32a3c6626b4a34c3a531341f464920f4d31eb"
+    },
+    {
+      "path": "raw/screen-tests/native-stack-screen/O0/agentlang-native.su",
+      "bytes": 119,
+      "sha256": "0d4ddbf09be9c1e203bbddc4ba29c596d10b9b97b73b0220ac2155a0abfd7697"
+    },
+    {
+      "path": "raw/screen-tests/native-stack-screen/O0/oversized.ll",
+      "bytes": 295,
+      "sha256": "13bd5dbd367b750120f05b56f56bd51bae5f57c05a257939300835fe86527965"
+    },
+    {
+      "path": "raw/screen-tests/native-stack-screen/O0/runtime.c",
+      "bytes": 40,
+      "sha256": "8ed107f9606269317b8a971f4dff108c4e4e8bb123300be95a8e9ee5a806cce0"
+    },
+    {
+      "path": "raw/screen-tests/native-stack-screen/O2/agentlang-native.obj",
+      "bytes": 575,
+      "sha256": "56bc9d49c10acff525302025b6b7f3d74917a3f256aa296088972d9871a32f26"
+    },
+    {
+      "path": "raw/screen-tests/native-stack-screen/O2/agentlang-native.su",
+      "bytes": 119,
+      "sha256": "afac2b7a2cb46b2cd5fd3cebb9861edde3b0f3ceef18085b72d768ece516a816"
+    },
+    {
+      "path": "raw/screen-tests/native-stack-screen/O2/oversized.ll",
+      "bytes": 295,
+      "sha256": "13bd5dbd367b750120f05b56f56bd51bae5f57c05a257939300835fe86527965"
+    },
+    {
+      "path": "raw/screen-tests/native-stack-screen/O2/runtime.c",
+      "bytes": 40,
+      "sha256": "8ed107f9606269317b8a971f4dff108c4e4e8bb123300be95a8e9ee5a806cce0"
+    },
+    {
+      "path": "raw/stack-evidence-index.json",
+      "bytes": 2837,
+      "sha256": "a82c264ae9fae9005447248b2367c46f2f376882556cf6d524c0ad46cd1138ff"
+    },
+    {
+      "path": "raw/stack-evidence.md",
+      "bytes": 5870,
+      "sha256": "50735da7770646d3430f5835fbb992b80cb83a07077da9b7bcf23e2a0a520e54"
+    },
+    {
+      "path": "raw/summarize_ir_allocas.py",
+      "bytes": 2080,
+      "sha256": "ac6b777b29605bb227c5235e24c7473d416daec62d46a2bb5cd03b0e7a42031e"
+    },
+    {
+      "path": "candidate-source/src/AgentLang.Llvm/NativeStackUsage.fs",
+      "bytes": 5433,
+      "sha256": "d576e8c82f3055c1bd6278715e7935203961c8fb49fc241f8c36a3a85a626e05"
+    },
+    {
+      "path": "candidate-source/src/AgentLang.Llvm/LlvmToolchain.fs",
+      "bytes": 17067,
+      "sha256": "c5e0ef9cd0452647d45189eade31ffea652a43583c5941a1009831d4f8b023e3"
+    },
+    {
+      "path": "candidate-source/src/AgentLang.Llvm/OwningStackAot.fs",
+      "bytes": 440769,
+      "sha256": "4173880b4550c546ed8c805090ba7fd015110f800d0a8699fbfd8d27eb06401f"
+    },
+    {
+      "path": "candidate-source/src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+      "bytes": 1587,
+      "sha256": "920551a55dd6097a20bce934b9e4bbb98e37e6cd71d6fb298242f699d24e4c06"
+    },
+    {
+      "path": "candidate-source/src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "bytes": 106900,
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3"
+    },
+    {
+      "path": "candidate-source/src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "bytes": 12763,
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19"
+    },
+    {
+      "path": "candidate-source/src/AgentLang.Llvm/native/float_format.h",
+      "bytes": 14352,
+      "sha256": "4ec9f05914006f7394ab3d64ce07506ea462ade21b35d44885cea7d1a21d7d44"
+    },
+    {
+      "path": "candidate-source/tests/AgentLang.Llvm.Tests/Program.fs",
+      "bytes": 414729,
+      "sha256": "90a5cb8ef7f780326fbf1d1e3fe715e4abfffa8927423e3a966b72f3e553ed44"
+    }
+  ]
+}

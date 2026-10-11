@@ -189,14 +189,15 @@ let private testLosslessIntegerAndFloatEncoding () =
           FloatValue Double.MaxValue
           FloatValue Double.Epsilon
           FloatValue -0.0
-          FloatValue 0.0 ]
+          FloatValue 0.0
+          FloatValue(BitConverter.UInt64BitsToDouble(0x0410000000000000UL)) ]
     let document = ValueInspection.toData verified samples
     let nodes = prop "values" document
     check "Int64 minimum is serialized as exact invariant decimal text"
         (stringField "value" (at 0 nodes) = Int64.MinValue.ToString(CultureInfo.InvariantCulture))
     check "Int64 maximum is serialized as exact invariant decimal text"
         (stringField "value" (at 1 nodes) = Int64.MaxValue.ToString(CultureInfo.InvariantCulture))
-    for index in 2 .. 6 do
+    for index in 2 .. 7 do
         let node = at index nodes
         let text = stringField "value" node
         let parsed = Double.Parse(text, NumberStyles.Float, CultureInfo.InvariantCulture)
@@ -209,6 +210,8 @@ let private testLosslessIntegerAndFloatEncoding () =
         check $"finite Float sample {index} round-trips its binary64 bits" (BitConverter.DoubleToInt64Bits(roundTripped) = BitConverter.DoubleToInt64Bits(source))
     check "negative zero is signaled independently for neutral JSON adapters"
         (boolField "negativeZero" (at 5 nodes) && not (boolField "negativeZero" (at 6 nodes)))
+    check "ValueInspection uses the canonical spelling for the documented regression"
+        (stringField "value" (at 7 nodes) = "4.1045368012983762E-289")
 
 let private testInvalidHostValuesAndSnapshots () =
     let verified = snapshot ()

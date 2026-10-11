@@ -156,9 +156,9 @@ end
         let premium = evaluate runtime "\"premium\" 100.0 customer.new customer.premium?" |> expectOk "premium record check"
         equal "true" (stackValue premium 0) "premium predicate"
         let discounted = evaluate runtime "\"premium\" 100.0 customer.new customer.discounted-balance" |> expectOk "premium discount"
-        equal "90" (stackValue discounted 0) "discounted balance"
+        equal "90.0" (stackValue discounted 0) "discounted Float balance"
         let regular = evaluate runtime "\"regular\" 100.0 customer.new customer.discounted-balance" |> expectOk "regular balance"
-        equal "100" (stackValue regular 0) "regular customer keeps balance"
+        equal "100.0" (stackValue regular 0) "regular customer keeps Float balance"
 
         let wrongFieldType = evaluate runtime "\"premium\" \"100\" customer.new"
         expectError "TYPE_STACK_MISMATCH" wrongFieldType |> ignore

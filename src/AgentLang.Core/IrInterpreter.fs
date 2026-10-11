@@ -851,7 +851,7 @@ module IrInterpreter =
                     fail "RUNTIME_RANGE" "Rounded Float value is outside the Int64 range." (Some operation) None [ "finite Int64 range" ] [ string value ]
                 [ RuntimeInt(int64 rounded) ]
             | "int.to-string", [ RuntimeInt value ] -> [ RuntimeString(string value) ]
-            | "float.to-string", [ RuntimeFloat value ] -> [ RuntimeString(value.ToString("G", CultureInfo.InvariantCulture)) ]
+            | "float.to-string", [ RuntimeFloat value ] -> [ RuntimeString(FloatText.format value) ]
             | "list.count", [ RuntimeList(_, values) ] -> [ RuntimeInt(int64 values.Length) ]
             | "list.tail", [ RuntimeList(itemType, []) ] -> [ RuntimeList(itemType, []) ]
             | "list.tail", [ RuntimeList(itemType, _ :: values) ] -> [ RuntimeList(itemType, values) ]
