@@ -47,6 +47,12 @@ eligible optional helper. Its frozen stop rule prevents successor dispatch.
 The two requested functions still constitute new creator-authored vocabulary;
 their later usefulness needs a separate held-out public-function reuse study.
 Do not confuse that broader endpoint with spontaneous optional-helper creation.
+The [separate public-vocabulary reuse study](../reports/211-public-vocabulary-reuse.md)
+pins the accepted 210 creator project and predeclares its two renewal functions
+as targets for a fresh developer's held-out batch task. Current-runtime and
+adapter preflight pass; no developer outcome is claimed yet. Behavior,
+preservation, discovery and production paths are distinct endpoints, with no
+causal or comparative advantage claim from one instance.
 The [prior decision](../reports/199-efficacy-decision-after-reference-maintenance.md)
 covers the closed typed-reference cohort and its representation supplement in
 reports 196 and 197. The [previous checkpoint](../reports/182-efficacy-decision-checkpoint.md)
