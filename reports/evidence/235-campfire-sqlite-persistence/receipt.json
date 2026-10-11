@@ -1,0 +1,48 @@
+{
+  "format": "campfire-evidence-receipt-v1",
+  "archive": "evidence.zip",
+  "archiveSha256": "d8456e5ceba90e940a6740409c435d8343d11944c3043e73b92606a49921eb4a",
+  "index": "index.json",
+  "indexSha256": "4ec9691e197eecd28edd68450aed8d1fbee7775ca5773aa714afa645c2779006",
+  "readback": {
+    "passed": true,
+    "checkedMembers": 18,
+    "rawBytesMatched": true
+  },
+  "sourceHashesMatchedPrivateReceipt": [
+    {
+      "path": "applications/campfire/Persistence/AgentLang.Campfire.Persistence.fsproj",
+      "sha256": "64b05c56f5c3f5eca0926a1101ea9425b2d5f3bdef8ecbd3608166eb0cf8b9fd"
+    },
+    {
+      "path": "applications/campfire/Persistence/SqliteProvider.fs",
+      "sha256": "245f6bddee10939b7c409884777685a95d77064b0d057011055200be9994b7b6"
+    },
+    {
+      "path": "tests/AgentLang.Campfire.Persistence.Tests/AgentLang.Campfire.Persistence.Tests.fsproj",
+      "sha256": "389ab96cce4799e99f540c534cbcae4f4901d6bf8cb4aa3555d5d3b3dfb64569"
+    },
+    {
+      "path": "tests/AgentLang.Campfire.Persistence.Tests/Program.fs",
+      "sha256": "b64ceac0bddb7156ff002af2ad0771a7ebb1b50bf25fadf7486525e7d83620e3"
+    }
+  ],
+  "validation": {
+    "releaseBuild": "passed (0 warnings, 0 errors)",
+    "focusedTests": "passed",
+    "groups": 4,
+    "assertions": 60
+  },
+  "retainedInitialFailures": [
+    "restore.log: sandbox NU1900 audit-data network failure; host restore with audit enabled is also included",
+    "build.log and build-2.log: intermediate compile failures",
+    "test-2.log: intermediate tie-test assertion failure; corrected final test-3.log passes"
+  ],
+  "excludedArtifacts": [
+    "test-data/**/*.db",
+    "bin/**",
+    "obj/**",
+    "native SQLite DLLs",
+    "NuGet package cache"
+  ]
+}

@@ -1,4 +1,16 @@
-# Campfire message administration policy
+# Campfire implementation
+
+The first language component is the pure message-administration policy below. `Persistence/` now contains a standalone trusted SQLite adapter for bounded room/message reads and transactional message creation. It is not yet callable from language code; the typed host bridge is the next integration step. Authorization, HTTP handling and browser behavior remain application work.
+
+Run the storage component's local checks with:
+
+```powershell
+dotnet run --project tests/AgentLang.Campfire.Persistence.Tests/AgentLang.Campfire.Persistence.Tests.fsproj --configuration Release
+```
+
+The tests create fresh local databases from a narrow schema fixture. Production opening requires an existing host-selected database. See [storage report](../../reports/235-campfire-sqlite-persistence.md) for the tested behavior and remaining integration, and [implementation plan](../../docs/CAMPFIRE-IMPLEMENTATION.md) for the full migration sequence.
+
+## Message administration policy
 
 This directory contains one pure Flow/2 policy component from ONCE Campfire: whether a given user may administer a message. It does not implement cookie/session verification, room membership, account or user status checks, message reads or writes, HTTP, WebSockets, or rendering. A `true` result establishes only this policy decision.
 

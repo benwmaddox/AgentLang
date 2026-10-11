@@ -1,0 +1,98 @@
+{
+  "format": "campfire-evidence-index-v1",
+  "archive": "evidence.zip",
+  "archiveSha256": "d8456e5ceba90e940a6740409c435d8343d11944c3043e73b92606a49921eb4a",
+  "memberCount": 18,
+  "members": [
+    {
+      "path": "applications/campfire/Persistence/AgentLang.Campfire.Persistence.fsproj",
+      "size": 361,
+      "sha256": "64b05c56f5c3f5eca0926a1101ea9425b2d5f3bdef8ecbd3608166eb0cf8b9fd"
+    },
+    {
+      "path": "applications/campfire/Persistence/SqliteProvider.fs",
+      "size": 11591,
+      "sha256": "245f6bddee10939b7c409884777685a95d77064b0d057011055200be9994b7b6"
+    },
+    {
+      "path": "tests/AgentLang.Campfire.Persistence.Tests/AgentLang.Campfire.Persistence.Tests.fsproj",
+      "size": 425,
+      "sha256": "389ab96cce4799e99f540c534cbcae4f4901d6bf8cb4aa3555d5d3b3dfb64569"
+    },
+    {
+      "path": "tests/AgentLang.Campfire.Persistence.Tests/Program.fs",
+      "size": 22984,
+      "sha256": "b64ceac0bddb7156ff002af2ad0771a7ebb1b50bf25fadf7486525e7d83620e3"
+    },
+    {
+      "path": ".agentlang/campfire-235/implementation/plan.md",
+      "size": 4055,
+      "sha256": "0477a786b51fe84f4a872208cd9cef3fb5250e213f6dd6aa2e4e463484ef905d"
+    },
+    {
+      "path": ".agentlang/campfire-235/implementation/receipt.md",
+      "size": 5641,
+      "sha256": "7147c6cc514709327a54b81ce6ddb4090f6eac0c6447c1bfa6632983038b7589"
+    },
+    {
+      "path": ".agentlang/campfire-235/implementation/source-pins.sha256",
+      "size": 1364,
+      "sha256": "549479c89c6e1e8755262aa487f20193b1596981c93bae3521cb8bcd7e16b118"
+    },
+    {
+      "path": ".agentlang/campfire-235/implementation/host-restore.log",
+      "size": 283,
+      "sha256": "c8aced78287c86a6d66754db01ac2834da4ec3ac2b1850d9124b3dece5dc538d"
+    },
+    {
+      "path": ".agentlang/campfire-235/implementation/restore.log",
+      "size": 427,
+      "sha256": "918d776dd52983de309092eba0914627a29595bfdc3bc8a1ca242b7ee8838290"
+    },
+    {
+      "path": ".agentlang/campfire-235/implementation/build.log",
+      "size": 6417,
+      "sha256": "7600ac4d172a78ec643ab9fbf438a5dc9b239e9ef44eba818b94801fb947b209"
+    },
+    {
+      "path": ".agentlang/campfire-235/implementation/build-2.log",
+      "size": 4789,
+      "sha256": "f30ae5ef8fcad27266246ea9433289088633c97ef329d4d87197dee6752eb047"
+    },
+    {
+      "path": ".agentlang/campfire-235/implementation/build-3.log",
+      "size": 402,
+      "sha256": "310f37ac85ef026ea5aee52aaa79f2bbd60c6f721066934cdeaaffe990e54b0b"
+    },
+    {
+      "path": ".agentlang/campfire-235/implementation/build-4.log",
+      "size": 402,
+      "sha256": "0973db5c36e51363fff15b7ddd14ab03d01d816df0c594bdcc52233554b4b8a8"
+    },
+    {
+      "path": ".agentlang/campfire-235/implementation/build-5.log",
+      "size": 402,
+      "sha256": "63f3a09d1a1f630dd116be75c7b7bcfa7cf4bf61f3ebc73cf030d5678229bb96"
+    },
+    {
+      "path": ".agentlang/campfire-235/implementation/test.log",
+      "size": 176,
+      "sha256": "86a8a71e3babdccbb8df2c2575031e72903e6c063040092d997bbba5527ac859"
+    },
+    {
+      "path": ".agentlang/campfire-235/implementation/test-2.log",
+      "size": 915,
+      "sha256": "a6cc2ba51f4d43d30bf1c0033dc8e137caa63e34d640cdcb259a20c653c25419"
+    },
+    {
+      "path": ".agentlang/campfire-235/implementation/test-3.log",
+      "size": 176,
+      "sha256": "9b95a8a631f13640f69e74a89cd8b59aa366ff449422e5e38519ff1231f737c3"
+    },
+    {
+      "path": ".agentlang/campfire-235/implementation/root-test.log",
+      "size": 163,
+      "sha256": "e29240739ae7785fc768fc20f956454d48bdacc7138acf55ba06fa6ade6f2f24"
+    }
+  ]
+}
