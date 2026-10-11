@@ -1708,6 +1708,44 @@ let private testOwningNominalBoolSlice () =
             actual.Values = nestedValues && actual.RetainedBytesWritten = 88
             && Convert.ToHexString(actual.RetainedOutputBytes).ToLowerInvariant() = expectedBytes)
 
+let private testOwningCanonicalUnitSlice () =
+    let toolchain = LlvmToolchain.discover()
+    let body = compileBody (contextWith []) "owning-canonical-unit" [
+        Push(LUnit, span "owning-canonical-unit.agent" 1)
+        Push(LUnit, span "owning-canonical-unit.agent" 2)
+        ConstructContainer(OptionSome, [ TUnit ], span "owning-canonical-unit.agent" 3)
+        ConstructContainer(OptionNone, [ TUnit ], span "owning-canonical-unit.agent" 4)
+    ]
+    let expected = [
+        UnitValue
+        OptionValue(TUnit, Some UnitValue)
+        OptionValue(TUnit, None)
+    ]
+    let expectedBytes = String.concat "" [
+        "0000000000000000"
+        "0000000000000000"
+        "0000000000000000"
+        "0100000000000000"
+    ]
+    let interpreted, expectedSteps = interpreterResultAndSteps "owning-canonical-unit" body
+    check "interpreter Unit and Option<Unit> fixture has an independent value oracle" (
+        interpreted = expected)
+    check "interpreter Unit and Option<Unit> fuel oracle is four instructions" (
+        expectedSteps = 4)
+
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native = compileOwningNative toolchain "owning-canonical-unit" optimization body
+        let actual = native.Execute([], 4096, 32)
+        let rawStatus, rawContext, _ =
+            invokeRawOwningEntryForMetrics native Array.empty<byte> Array.empty<int>
+        check ($"{optimization} canonical Unit and Option<Unit> values match the interpreter") (
+            actual.Values = interpreted && actual.Values = expected
+            && actual.LayoutSchemaVersion = 3
+            && actual.RetainedBytesWritten = 32
+            && Convert.ToHexString(actual.RetainedOutputBytes).ToLowerInvariant() = expectedBytes)
+        check ($"{optimization} canonical Unit and Option<Unit> preserve instruction fuel") (
+            rawStatus = 0 && rawContext.Status = 0u
+            && rawContext.StepsConsumed = uint32 expectedSteps)
 let private testOwningRefinedBoolSlice () =
     let toolchain = LlvmToolchain.discover()
     let owningException action =
@@ -5005,6 +5043,8 @@ let private runFullSuite () =
         testNominalScalarSupport ()
         printStage "owning backend nominal Bool layouts, host codecs, and nesting"
         testOwningNominalBoolSlice ()
+        printStage "owning backend canonical Unit and Option<Unit> interpreter parity"
+        testOwningCanonicalUnitSlice ()
         printStage "owning backend frozen Bool refinements and mailbox policies"
         testOwningRefinedBoolSlice ()
         printStage "owning backend nominal Int layouts and host codecs"

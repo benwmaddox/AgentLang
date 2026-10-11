@@ -37,9 +37,12 @@ not wait for every optional feature or proof of a comparative advantage.
 
 ## 1. Validate reliability beyond easy composition
 
-The [current efficacy decision](../reports/199-efficacy-decision-after-reference-maintenance.md)
-incorporates the closed typed-reference cohort and its representation supplement
-in reports 196 and 197. The [previous checkpoint](../reports/182-efficacy-decision-checkpoint.md)
+The [current efficacy decision](../reports/203-efficacy-decision-after-organic-creation.md)
+incorporates the organic creator's correct implementation without an eligible
+new helper. No successor was dispatched and organic accumulation remains
+unproven. The [prior decision](../reports/199-efficacy-decision-after-reference-maintenance.md)
+covers the closed typed-reference cohort and its representation supplement in
+reports 196 and 197. The [previous checkpoint](../reports/182-efficacy-decision-checkpoint.md)
 covers repeated maintenance through 179 and separates native conformance and
 activation work through 181 from agent outcomes.
 It retains the conclusion of the
@@ -134,12 +137,15 @@ from language I/O. Storage preservation and normal project file access pass
 protection does not establish a hostile-filesystem
 sandbox or revise the closed agent trial's pinned runtime.
 
-The [next bounded native plan](../reports/202-native-unit-canonicality-plan.md)
+The [accepted Unit slice](../reports/202-native-unit-canonicality-plan.md)
 closes a source-evidenced Unit admission mismatch before widening types: the
 managed codec requires zero bytes while the raw C scanner accepts other bits.
 Require the same canonical zero after existing owner-bounded readability checks,
-retaining active/inactive sum behavior and unchanged layouts. This is a proposal
-awaiting implementation and C/LLVM validation. Float transport remains deferred
+retaining active/inactive sum behavior and unchanged layouts. The implemented
+slice passes the 50-check native verifier, 52/704 C scanner cases/checks at O0,
+O2 and UBSan trap mode, and 777 full LLVM assertions. Default build and normal
+UBSan-link limitations remain recorded; the accepted full LLVM build is serial
+and audit-disabled. Float transport remains deferred
 until entry contracts and signed-zero equality are resolved.
 
 [Report 178](../reports/178-preview-defect-control-calibration.md) calibrates the

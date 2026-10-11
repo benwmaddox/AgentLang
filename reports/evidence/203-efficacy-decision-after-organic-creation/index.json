@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "checkpoint": "203",
+  "kind": "evidence synthesis; no participant rerun",
+  "inputs": [
+    {
+      "path": "reports/199-efficacy-decision-after-reference-maintenance.md",
+      "bytes": 5216,
+      "sha256": "85cc81634401f1ad362e2bd628944b53970f14c1f4aa2d93bbce848cb9a726aa"
+    },
+    {
+      "path": "reports/200-organic-vocabulary-reuse.md",
+      "bytes": 5809,
+      "sha256": "91ba393ef28723ff95eab001a33476ab8071a6ea4955e9931a96516467ee904c"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/organic-reuse-200/PLAN.md",
+      "bytes": 17498,
+      "sha256": "febcff9c0b4f30e56fe007ba6f023c113a0985129c70f69fdf146b0de9317452"
+    },
+    {
+      "path": "reports/evidence/200-organic-vocabulary-reuse/creator-result.zip",
+      "bytes": 915188,
+      "sha256": "69c7820d3ecdeb140db3c948f760fb04da141cd5827a301bd35960c8586ddd9a"
+    },
+    {
+      "path": "reports/evidence/200-organic-vocabulary-reuse/creator-result.index.json",
+      "bytes": 166449,
+      "sha256": "cae2d4ac2b739a99f137c07c4420dcb628457ff2b94bcf565deee18b36f33f66"
+    }
+  ]
+}

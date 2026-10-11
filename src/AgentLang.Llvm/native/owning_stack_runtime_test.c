@@ -302,6 +302,30 @@ static const al_owning_layout al_test_bool_layout = {
     (uint32_t)(sizeof(al_test_bool_fields) /
                sizeof(al_test_bool_fields[0]))};
 
+enum {
+  AL_TEST_UNIT_LAYOUT_UNIT = 0u,
+  AL_TEST_UNIT_LAYOUT_OPTION = 1u,
+  AL_TEST_UNIT_LAYOUT_TYPE_COUNT = 2u,
+  AL_TEST_UNIT_ERROR_ID = 220u
+};
+
+static const al_owning_type_descriptor al_test_unit_types[] = {
+    {AL_OWNING_TYPE_UNIT, 701u, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_OPTION, 702u, 0u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 2u}};
+
+static const al_owning_field_descriptor al_test_unit_fields[] = {
+    {AL_TEST_UNIT_LAYOUT_UNIT, 8u, 0u, 0u},
+    {AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 0u, 0u}};
+
+static const al_owning_layout al_test_unit_layout = {
+    AL_OWNING_LAYOUT_ABI_VERSION,
+    al_test_unit_types,
+    AL_TEST_UNIT_LAYOUT_TYPE_COUNT,
+    al_test_unit_fields,
+    (uint32_t)(sizeof(al_test_unit_fields) /
+               sizeof(al_test_unit_fields[0]))};
+
 typedef struct al_test_fixture {
   uint8_t raw[AL_TEST_DYNAMIC_STACK_CAPACITY + 2u * AL_TEST_GUARD_BYTES];
   uint8_t init_bitmap[16u];
@@ -2389,6 +2413,160 @@ failed:
   return 0;
 }
 
+static int al_test_unit_external_rejected(uint32_t type_index,
+                                          const uint8_t *bytes,
+                                          uint32_t byte_count) {
+  al_test_fixture fixture;
+  uint8_t before[sizeof(fixture.raw)];
+  uint32_t payload = UINT32_C(0xAABBCCDD);
+  uint32_t extent = UINT32_C(0x11223344);
+  al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+  (void)memcpy(before, fixture.raw, sizeof(before));
+  return al_owning_measure_external_value(
+             &fixture.ctx, &al_test_unit_layout, type_index, bytes, byte_count,
+             0u, AL_TEST_UNIT_ERROR_ID, &payload, &extent) != 0 &&
+         fixture.ctx.status == AL_OWNING_STATUS_INVALID_REQUEST &&
+         fixture.ctx.error_id == AL_TEST_UNIT_ERROR_ID &&
+         fixture.ctx.cursor_bytes == 0u &&
+         payload == UINT32_C(0xAABBCCDD) &&
+         extent == UINT32_C(0x11223344) &&
+         memcmp(before, fixture.raw, sizeof(before)) == 0 &&
+         al_test_fixture_guards_ok(&fixture);
+}
+
+static int al_test_unit_external_valid(uint32_t type_index,
+                                       const uint8_t *bytes,
+                                       uint32_t byte_count,
+                                       uint32_t expected_payload,
+                                       uint32_t expected_extent) {
+  al_test_fixture fixture;
+  uint32_t payload = UINT32_C(0xAABBCCDD);
+  uint32_t extent = UINT32_C(0x11223344);
+  al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+  return al_owning_measure_external_value(
+             &fixture.ctx, &al_test_unit_layout, type_index, bytes, byte_count,
+             0u, AL_TEST_UNIT_ERROR_ID, &payload, &extent) == 0 &&
+         fixture.ctx.status == AL_OWNING_STATUS_OK &&
+         fixture.ctx.cursor_bytes == 0u && payload == expected_payload &&
+         extent == expected_extent && al_test_fixture_guards_ok(&fixture);
+}
+
+static int al_test_unit_stack_measure(uint32_t type_index,
+                                      const uint8_t *bytes,
+                                      uint32_t copy_bytes,
+                                      uint32_t owner_end,
+                                      uint32_t expected_status,
+                                      uint32_t expected_payload,
+                                      uint32_t expected_extent) {
+  al_test_fixture fixture;
+  uint8_t before[AL_TEST_STACK_CAPACITY];
+  al_owning_value_size measured = {UINT32_C(0xAABBCCDD),
+                                   UINT32_C(0x11223344)};
+  int32_t measure_status;
+  al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+  if (al_owning_reserve_to(&fixture.ctx, copy_bytes,
+                           AL_TEST_UNIT_ERROR_ID) != 0)
+    return 0;
+  al_owning_copy_external(&fixture.ctx, 0u, bytes, copy_bytes, copy_bytes,
+                          701u);
+  if (fixture.ctx.status != AL_OWNING_STATUS_OK)
+    return 0;
+  (void)memcpy(before, fixture.ctx.stack_data, sizeof(before));
+  measure_status = al_owning_measure_value(
+      &fixture.ctx, &al_test_unit_layout, type_index, 0u, owner_end,
+      AL_TEST_UNIT_ERROR_ID, &measured);
+  return (expected_status == AL_OWNING_STATUS_OK
+              ? measure_status == 0
+              : measure_status != 0) &&
+         fixture.ctx.status == expected_status &&
+         (expected_status == AL_OWNING_STATUS_OK ||
+          fixture.ctx.error_id == AL_TEST_UNIT_ERROR_ID) &&
+         fixture.ctx.cursor_bytes == copy_bytes &&
+         (expected_status != AL_OWNING_STATUS_OK ||
+          (measured.payload_bytes == expected_payload &&
+           measured.extent_bytes == expected_extent)) &&
+         (expected_status == AL_OWNING_STATUS_OK ||
+          (measured.payload_bytes == UINT32_C(0xAABBCCDD) &&
+           measured.extent_bytes == UINT32_C(0x11223344))) &&
+         memcmp(before, fixture.ctx.stack_data, sizeof(before)) == 0 &&
+         al_test_fixture_guards_ok(&fixture);
+}
+
+static int al_test_unit_canonical_scanner(void) {
+  al_test_fixture fixture;
+  uint8_t unit[8] = {0u};
+  uint8_t option[16] = {0u};
+  const uint64_t bad_values[] = {
+      UINT64_C(1), UINT64_C(0x0100000000000000),
+      UINT64_C(0x8000000000000000)};
+  uint32_t index;
+
+  AL_CHECK(al_test_unit_external_valid(AL_TEST_UNIT_LAYOUT_UNIT, unit,
+                                       sizeof(unit), 8u, 8u));
+  AL_CHECK(al_test_unit_stack_measure(
+      AL_TEST_UNIT_LAYOUT_UNIT, unit, sizeof(unit), sizeof(unit),
+      AL_OWNING_STATUS_OK, 8u, 8u));
+
+  for (index = 0u;
+       index < (uint32_t)(sizeof(bad_values) / sizeof(bad_values[0]));
+       ++index) {
+    al_test_write_u64_le(unit, 0u, bad_values[index]);
+    AL_CHECK(al_test_unit_external_rejected(AL_TEST_UNIT_LAYOUT_UNIT, unit,
+                                            sizeof(unit)));
+    AL_CHECK(al_test_unit_stack_measure(
+        AL_TEST_UNIT_LAYOUT_UNIT, unit, sizeof(unit), sizeof(unit),
+        AL_OWNING_STATUS_INTERNAL, 0u, 0u));
+  }
+
+  (void)memset(unit, 0, sizeof(unit));
+  for (index = 0u; index < 8u; ++index) {
+    AL_CHECK(al_test_unit_external_rejected(AL_TEST_UNIT_LAYOUT_UNIT, unit,
+                                           index));
+    AL_CHECK(al_test_unit_stack_measure(
+        AL_TEST_UNIT_LAYOUT_UNIT, unit, sizeof(unit), index,
+        AL_OWNING_STATUS_INTERNAL, 0u, 0u));
+  }
+
+  (void)memset(option, 0, sizeof(option));
+  AL_CHECK(al_test_unit_external_valid(AL_TEST_UNIT_LAYOUT_OPTION, option,
+                                       sizeof(option), 16u, 16u));
+  AL_CHECK(al_test_unit_stack_measure(
+      AL_TEST_UNIT_LAYOUT_OPTION, option, sizeof(option), sizeof(option),
+      AL_OWNING_STATUS_OK, 16u, 16u));
+
+  for (index = 0u;
+       index < (uint32_t)(sizeof(bad_values) / sizeof(bad_values[0]));
+       ++index) {
+    al_test_write_u64_le(option, 8u, bad_values[index]);
+    AL_CHECK(al_test_unit_external_rejected(AL_TEST_UNIT_LAYOUT_OPTION,
+                                            option, sizeof(option)));
+    AL_CHECK(al_test_unit_stack_measure(
+        AL_TEST_UNIT_LAYOUT_OPTION, option, sizeof(option), sizeof(option),
+        AL_OWNING_STATUS_INTERNAL, 0u, 0u));
+  }
+
+  /* The active Some child is checked recursively; None's storage stays inactive. */
+  al_test_write_u64_le(option, 0u, 1u);
+  al_test_write_u64_le(option, 8u, bad_values[1]);
+  AL_CHECK(al_test_unit_external_valid(AL_TEST_UNIT_LAYOUT_OPTION, option,
+                                       sizeof(option), 8u, 8u));
+  AL_CHECK(al_test_unit_stack_measure(
+      AL_TEST_UNIT_LAYOUT_OPTION, option, sizeof(option), sizeof(option),
+      AL_OWNING_STATUS_OK, 8u, 8u));
+  AL_CHECK(al_test_unit_external_valid(AL_TEST_UNIT_LAYOUT_OPTION, option,
+                                       8u, 8u, 8u));
+  AL_CHECK(al_test_unit_stack_measure(
+      AL_TEST_UNIT_LAYOUT_OPTION, option, 8u, 8u, AL_OWNING_STATUS_OK, 8u,
+      8u));
+
+  al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+  AL_CHECK(al_test_fixture_guards_ok(&fixture));
+  ++al_test_cases;
+  return 1;
+failed:
+  return 0;
+}
+
 static int al_test_sum_descriptor_rejected(
     const al_owning_type_descriptor *types,
     const al_owning_field_descriptor *fields, uint32_t type_index,
@@ -2796,7 +2974,8 @@ int main(int argc, char **argv) {
     return 1;
   }
   {
-    if (!al_test_bool_canonical_scanner())
+    if (!al_test_bool_canonical_scanner() ||
+        !al_test_unit_canonical_scanner())
       return 1;
   }
   (void)printf(

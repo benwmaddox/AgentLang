@@ -1212,6 +1212,10 @@ static int32_t al_owning_scan_value(al_owning_scan_view *view,
                                1u);
         return 0;
       }
+    } else if (type->kind == AL_OWNING_TYPE_UNIT &&
+               al_owning_read_u64_le(view->bytes, offset) != 0u) {
+      al_owning_scan_failure(view, 1u, 0u);
+      return 0;
     }
     payload = 8u;
     extent = 8u;
