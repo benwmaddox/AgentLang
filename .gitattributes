@@ -151,3 +151,4 @@ reports/evidence/231-grouped-renewal-timing-comparison/** -text -whitespace
 reports/evidence/233-inherited-test-change-intent/** -text -whitespace
 reports/evidence/235-campfire-sqlite-persistence/** -text -whitespace
 reports/evidence/237-campfire-request-policy/** -text -whitespace
+reports/evidence/238-campfire-cookie-compatibility/** -text -whitespace

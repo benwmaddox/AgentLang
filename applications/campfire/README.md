@@ -26,3 +26,10 @@ The behavior attribution is to 37signals, LLC. The pinned upstream repository is
 - Rails reference submodule commit `90b330024dec3e757c79b6a7e6568f93da8e3148`: `reference/app/models/user/role.rb` (`can_administer?`) and `reference/app/controllers/messages_controller.rb` (`ensure_can_administer`).
 
 The rule is `administrator || creator_id == current_user.id || is_new`. Rails compares the current user with `record.creator`; the Rust port expresses the creator comparison with user IDs. The Flow tests cover all role, creator, and new/existing combinations plus the existing-message wrapper. Run `scripts/Verify-CampfirePolicy.ps1` after a Release CLI build to execute attached tests and an independent CLI truth-table oracle; pass `-CliDll` to use a different local CLI build.
+## Cookie compatibility
+
+`Cookies/` contains the standalone trusted host component for signed `session_token` and encrypted `_campfire_session` compatibility. Its local executable suite checks Rails golden vectors and failure cases; it is not yet connected to HTTP/session restoration. See [cookie report](../../reports/238-campfire-cookie-compatibility.md).
+
+```powershell
+dotnet run --project tests/AgentLang.Campfire.Cookies.Tests/AgentLang.Campfire.Cookies.Tests.fsproj --configuration Release
+```

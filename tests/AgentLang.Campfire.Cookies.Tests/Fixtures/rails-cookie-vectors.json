@@ -1,0 +1,282 @@
+{
+  "secret_key_base": "5335c3b1ad35b4ad170c3413bd651ef3b6ed64e257261871a6de3f978cf3868ee417a927040935fb30b0f7debdedb34a2a403e9f34b16cf594c917c2ecd4a995",
+  "now": "2026-01-01T12:00:00Z",
+  "key_generator": [
+    {
+      "salt": "signed cookie",
+      "length": 64,
+      "key_hex": "4777669222a1dfbfcb0ae1a07fee1450b0c2aeccc8821f27a4514212906dd3d142608325b7b3126978936f407bb147605a074d6d4a63bb4edd9518d72f4f9399"
+    },
+    {
+      "salt": "authenticated encrypted cookie",
+      "length": 32,
+      "key_hex": "c37b900eab3de6f1f2c0693db47bcb6d24f11b2668329b978a93aebcf77283c2"
+    }
+  ],
+  "signed_cookies": {
+    "generate": [
+      {
+        "name": "session_token",
+        "value": "e5XWBGGnEJqiHpVCZzbj6bra",
+        "expires_at": "2046-01-01T12:00:00Z",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--97d26d3a75e1d4d5a12fa3a2448d1feac36314b9"
+      },
+      {
+        "name": "session_token",
+        "value": "hello world",
+        "expires_at": "2046-01-01T12:00:00Z",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltaGxiR3h2SUhkdmNteGtJZz09IiwiZXhwIjoiMjA0Ni0wMS0wMVQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--39bc3535e5f45a95eb9b0e682f896d448c372571"
+      },
+      {
+        "name": "session_token",
+        "value": "<script>&'\"</script>",
+        "expires_at": "2046-01-01T12:00:00Z",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IklseDFNREF6WTNOamNtbHdkRngxTURBelpWeDFNREF5TmlkY0lseDFNREF6WXk5elkzSnBjSFJjZFRBd00yVWkiLCJleHAiOiIyMDQ2LTAxLTAxVDEyOjAwOjAwLjAwMFoiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ==--29f504b833cf0789baef02f4caee6d202dd1d692"
+      },
+      {
+        "name": "session_token",
+        "value": "line\u2028sep\u2029",
+        "expires_at": "2046-01-01T12:00:00Z",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IklteHBibVhpZ0toelpYRGlnS2tpIiwiZXhwIjoiMjA0Ni0wMS0wMVQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--1920f09ef997c2bc745cd3d7b16feb41fe859e66"
+      }
+    ],
+    "verify": [
+      {
+        "case": "valid session_token \"e5XWBGGnEJqiHpVCZzbj6bra\"",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--97d26d3a75e1d4d5a12fa3a2448d1feac36314b9",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": "e5XWBGGnEJqiHpVCZzbj6bra"
+      },
+      {
+        "case": "valid session_token \"hello world\"",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltaGxiR3h2SUhkdmNteGtJZz09IiwiZXhwIjoiMjA0Ni0wMS0wMVQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--39bc3535e5f45a95eb9b0e682f896d448c372571",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": "hello world"
+      },
+      {
+        "case": "valid session_token \"<script>&'\\\"</script>\"",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IklseDFNREF6WTNOamNtbHdkRngxTURBelpWeDFNREF5TmlkY0lseDFNREF6WXk5elkzSnBjSFJjZFRBd00yVWkiLCJleHAiOiIyMDQ2LTAxLTAxVDEyOjAwOjAwLjAwMFoiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ==--29f504b833cf0789baef02f4caee6d202dd1d692",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": "<script>&'\"</script>"
+      },
+      {
+        "case": "valid session_token \"line\\u2028sep\\u2029\"",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IklteHBibVhpZ0toelpYRGlnS2tpIiwiZXhwIjoiMjA0Ni0wMS0wMVQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--1920f09ef997c2bc745cd3d7b16feb41fe859e66",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": "line\u2028sep\u2029"
+      },
+      {
+        "case": "permanent just before 20 years",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--97d26d3a75e1d4d5a12fa3a2448d1feac36314b9",
+        "now": "2046-01-01T11:59:59Z",
+        "expected": "e5XWBGGnEJqiHpVCZzbj6bra"
+      },
+      {
+        "case": "permanent after 20 years",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--97d26d3a75e1d4d5a12fa3a2448d1feac36314b9",
+        "now": "2046-01-01T12:00:01Z",
+        "expected": null
+      },
+      {
+        "case": "tampered digest",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--97d26d3a75e1d4d5a12fa3a2448d1feac36314b0",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": null
+      },
+      {
+        "case": "no metadata (pre-5.2), any name",
+        "name": "session_token",
+        "raw": "ImxlZ2FjeSI=--437adfa25141b53e3be94b290283538fd975ef08",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": "legacy"
+      },
+      {
+        "case": "metadata without purpose",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltNXZjSFZ5Y0c5elpTST0iLCJleHAiOiIyMDI2LTAxLTAyVDEyOjAwOjAwLjAwMFoiLCJwdXIiOm51bGx9fQ==--ce674c4e2eae4763923a1a05d72f6b9fdcdf14fc",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": "nopurpose"
+      },
+      {
+        "case": "metadata without purpose, expired",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltNXZjSFZ5Y0c5elpTST0iLCJleHAiOiIyMDI1LTEyLTMxVDEyOjAwOjAwLjAwMFoiLCJwdXIiOm51bGx9fQ==--991b52e0442af6ca5302f80e6fd90b38060f536e",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": null
+      },
+      {
+        "case": "purpose of another cookie",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluZ2kiLCJleHAiOm51bGwsInB1ciI6ImNvb2tpZS5vdGhlciJ9fQ==--d3cabe684a242043755b350b99d67ad0c3c2a557",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": null
+      },
+      {
+        "case": "marshal serialized value",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaEpJZzV0WVhKemFHRnNaV1FHT2daRlZBPT0iLCJleHAiOm51bGwsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--d5f938abb8ec3b9549d0e2f69c566b1599d8bd5b",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": null
+      },
+      {
+        "case": "json integer value",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6Ik1USXoiLCJleHAiOm51bGwsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--4e01a2f412b6fff5d82f2e7c18592da31be06786",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": 123
+      },
+      {
+        "case": "json object value",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6ImV5SmhJam94ZlE9PSIsImV4cCI6bnVsbCwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--e72973158fcec6041a61cb6d2889c1f5ff47cf12",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": {
+          "a": 1
+        }
+      },
+      {
+        "case": "unparseable value",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6ImJtOTBJR3B6YjI0PSIsImV4cCI6bnVsbCwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--ee079fb585dc2bf67b9026e9497077d7948eda8b",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": null
+      },
+      {
+        "case": "new-style envelope",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsiZGF0YSI6IngiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ==--4ed1f8dd2148962bafc9a10c184e6085af6ea631",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": {
+          "_rails": {
+            "data": "x",
+            "pur": "cookie.session_token"
+          }
+        }
+      }
+    ]
+  },
+  "encrypted_cookies": {
+    "generate": [
+      {
+        "name": "_campfire_session",
+        "value": {
+          "session_id": "abc",
+          "return_to_after_authenticating": "http://campfire.test/rooms/1?a=1&b=<2>"
+        },
+        "expires_at": "2046-01-01T12:00:00Z",
+        "raw": "Mltp2V+lJUXoHwCPulaV5ovHpQB5PNVEJKG+CYHrFhTZqJ+KZI9yhpYzr9WuGwPh2VXWaSpiRkclC8JmIv9mtIVFXstMSOPlEMB4qawo30mAAu79B9xGKPao7gQCpjgCAnrSoCwWWtVXH3gD52XQpBFhWXzm8a8IPi/vqTdPbHj0pH2JUhqTFX8tPIWHZ7YrnR8tRCTGp5sBxQYNQ1s0Zp94shMON8mJ3ForjWvQsTM/RImFm5KHYfQLqQancp3sFPJKCS8r/jt9rZePAhznqZKoA4oj6KfWy0EbV+XrfsA/RvDnSQgxZ0tVtDDhID0=--mZL/dQUCpZMaYjVh--z/3hFjCLRDe9c4ZSNVlzBA==",
+        "plaintext": "{\"_rails\":{\"message\":\"eyJzZXNzaW9uX2lkIjoiYWJjIiwicmV0dXJuX3RvX2FmdGVyX2F1dGhlbnRpY2F0aW5nIjoiaHR0cDovL2NhbXBmaXJlLnRlc3Qvcm9vbXMvMT9hPTFcdTAwMjZiPVx1MDAzYzJcdTAwM2UifQ==\",\"exp\":\"2046-01-01T12:00:00.000Z\",\"pur\":\"cookie._campfire_session\"}}"
+      }
+    ],
+    "verify": [
+      {
+        "case": "valid _campfire_session {\"session_id\" => \"6d3a2b1c0f9e8d7c6b5a49",
+        "name": "_campfire_session",
+        "raw": "NOlqOHTLnofV9OfOPTKwbz37W5h0q5v2MN7NAxU32S858Btw/VEXc0cNPhs9WTp42dlZrAyx8asFgNETEY83jKHTybeGKogaRsHJXG/M9O92ZHdCZg4zFslMfzI2DgBZIyKL3sIesagGeqVNYqRgi/4vc+QA3lX2xTL01kNKc/sKGtt2WXI45za/LQyIy1xHHmfNXpGS7nEswMMw5AXqXk1lC0PKGKd+s8YLD8f+0Tc3dJ9M6hygi2I16zTTRhRCFl5WdKjc0WsmRblgDw+xrYJ5s9NwwuqN/tA8Uom39ma0w+QUh+GBrvR5dueBJK0=--aLsLJQUZe1sHp4Y/--gXqGsSLjvclcSmibYj1XYQ==",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": {
+          "session_id": "6d3a2b1c0f9e8d7c6b5a493827161504",
+          "_csrf_token": "qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k"
+        }
+      },
+      {
+        "case": "valid _campfire_session {\"session_id\" => \"abc\", \"return_to_after",
+        "name": "_campfire_session",
+        "raw": "Mltp2V+lJUXoHwCPulaV5ovHpQB5PNVEJKG+CYHrFhTZqJ+KZI9yhpYzr9WuGwPh2VXWaSpiRkclC8JmIv9mtIVFXstMSOPlEMB4qawo30mAAu79B9xGKPao7gQCpjgCAnrSoCwWWtVXH3gD52XQpBFhWXzm8a8IPi/vqTdPbHj0pH2JUhqTFX8tPIWHZ7YrnR8tRCTGp5sBxQYNQ1s0Zp94shMON8mJ3ForjWvQsTM/RImFm5KHYfQLqQancp3sFPJKCS8r/jt9rZePAhznqZKoA4oj6KfWy0EbV+XrfsA/RvDnSQgxZ0tVtDDhID0=--mZL/dQUCpZMaYjVh--z/3hFjCLRDe9c4ZSNVlzBA==",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": {
+          "session_id": "abc",
+          "return_to_after_authenticating": "http://campfire.test/rooms/1?a=1&b=<2>"
+        }
+      },
+      {
+        "case": "short-lived before expiry",
+        "name": "short",
+        "raw": "JEK+GZF9xu62Rx6U7zC8Rw0/t9P8Y61uFki4vmUD1NPI4guY+u5cKMI/IlSOH3JKG0LzmFT6mgsQfyFGM1wLzB/KxDdS6wB0VF0Mfdd9ipg4mLICyNKlTSHRKCdJhTj0+Xvp--6idWOtttFR0Iql+N--0Mw3B+FFaaWgJOVBPim9PA==",
+        "now": "2026-01-01T12:30:00Z",
+        "expected": "short-lived"
+      },
+      {
+        "case": "tampered ciphertext",
+        "name": "_campfire_session",
+        "raw": "AOlqOHTLnofV9OfOPTKwbz37W5h0q5v2MN7NAxU32S858Btw/VEXc0cNPhs9WTp42dlZrAyx8asFgNETEY83jKHTybeGKogaRsHJXG/M9O92ZHdCZg4zFslMfzI2DgBZIyKL3sIesagGeqVNYqRgi/4vc+QA3lX2xTL01kNKc/sKGtt2WXI45za/LQyIy1xHHmfNXpGS7nEswMMw5AXqXk1lC0PKGKd+s8YLD8f+0Tc3dJ9M6hygi2I16zTTRhRCFl5WdKjc0WsmRblgDw+xrYJ5s9NwwuqN/tA8Uom39ma0w+QUh+GBrvR5dueBJK0=--aLsLJQUZe1sHp4Y/--gXqGsSLjvclcSmibYj1XYQ==",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": null
+      },
+      {
+        "case": "tampered iv",
+        "name": "_campfire_session",
+        "raw": "NOlqOHTLnofV9OfOPTKwbz37W5h0q5v2MN7NAxU32S858Btw/VEXc0cNPhs9WTp42dlZrAyx8asFgNETEY83jKHTybeGKogaRsHJXG/M9O92ZHdCZg4zFslMfzI2DgBZIyKL3sIesagGeqVNYqRgi/4vc+QA3lX2xTL01kNKc/sKGtt2WXI45za/LQyIy1xHHmfNXpGS7nEswMMw5AXqXk1lC0PKGKd+s8YLD8f+0Tc3dJ9M6hygi2I16zTTRhRCFl5WdKjc0WsmRblgDw+xrYJ5s9NwwuqN/tA8Uom39ma0w+QUh+GBrvR5dueBJK0=--ALsLJQUZe1sHp4Y/--gXqGsSLjvclcSmibYj1XYQ==",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": null
+      },
+      {
+        "case": "tampered auth tag",
+        "name": "_campfire_session",
+        "raw": "NOlqOHTLnofV9OfOPTKwbz37W5h0q5v2MN7NAxU32S858Btw/VEXc0cNPhs9WTp42dlZrAyx8asFgNETEY83jKHTybeGKogaRsHJXG/M9O92ZHdCZg4zFslMfzI2DgBZIyKL3sIesagGeqVNYqRgi/4vc+QA3lX2xTL01kNKc/sKGtt2WXI45za/LQyIy1xHHmfNXpGS7nEswMMw5AXqXk1lC0PKGKd+s8YLD8f+0Tc3dJ9M6hygi2I16zTTRhRCFl5WdKjc0WsmRblgDw+xrYJ5s9NwwuqN/tA8Uom39ma0w+QUh+GBrvR5dueBJK0=--aLsLJQUZe1sHp4Y/--AXqGsSLjvclcSmibYj1XYQ==",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": null
+      },
+      {
+        "case": "no metadata (any name)",
+        "name": "whatever",
+        "raw": "1Hlan0W975fFfpTpWpDX--NZU3dSs+fg4ubbUy--1u3BfAPkOkSv9ywa2UVfZA==",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": {
+          "legacy": true
+        }
+      },
+      {
+        "case": "marshal value",
+        "name": "_campfire_session",
+        "raw": "vj7uLN8uwRzdlsP9DehDO1/voxhE8vIKVEqUBWb2q/ztiznN2bKvUAmZfXOnT1F+Z8Fb97q9UwdMjMzg8cjBfcaZViPTWGaC+kRjOToesA97KtQR4VfqCmU876Kifu5JJw==--B+wMwUjJY2C2rLFy--uzEm+veuAfCwCBFwKxDJJA==",
+        "now": "2026-01-01T12:00:00Z",
+        "expected": null
+      }
+    ]
+  },
+  "cookie_escaping": [
+    {
+      "raw": "abc",
+      "wire": "abc",
+      "parsed": "abc"
+    },
+    {
+      "raw": "a+b/c=d--0f",
+      "wire": "a%2Bb%2Fc%3Dd--0f",
+      "parsed": "a+b/c=d--0f"
+    },
+    {
+      "raw": "with space",
+      "wire": "with+space",
+      "parsed": "with space"
+    },
+    {
+      "raw": "é~*'()!",
+      "wire": "%C3%A9%7E*%27%28%29%21",
+      "parsed": "é~*'()!"
+    },
+    {
+      "raw": "a%20b",
+      "wire": "a%2520b",
+      "parsed": "a%20b"
+    },
+    {
+      "raw": null,
+      "wire": "a+b",
+      "parsed": "a b"
+    },
+    {
+      "raw": null,
+      "wire": "bad%zzescape",
+      "parsed": "bad%zzescape"
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "formatVersion": 1,
+  "passed": true,
+  "scope": "standalone Campfire Rails-cookie compatibility host component",
+  "rootBuild": {
+    "exitCode": 0,
+    "warnings": 0,
+    "command": "dotnet build tests/AgentLang.Campfire.Cookies.Tests/AgentLang.Campfire.Cookies.Tests.fsproj -c Release -m:1 --no-restore",
+    "errors": 0
+  },
+  "rootTests": {
+    "assertions": 76,
+    "exitCode": 0,
+    "groups": 5,
+    "command": "dotnet run --project tests/AgentLang.Campfire.Cookies.Tests/AgentLang.Campfire.Cookies.Tests.fsproj -c Release --no-build --no-restore"
+  },
+  "rootStringControls": {
+    "exitCode": 0,
+    "command": "dotnet fsi --reference:applications/campfire/Cookies/bin/Release/net9.0/AgentLang.Campfire.Cookies.dll --exec .agentlang/campfire-cookies-238/root-string-controls.fsx",
+    "cases": 6
+  },
+  "upstreamSigningOutputsMatched": 4,
+  "packageRestore": {
+    "sandboxNetworkFailure": "NU1900",
+    "subsequentSandboxBuildNoRestore": true,
+    "hostRetryExitCode": 0,
+    "nuGetAudit": true
+  },
+  "sourcePins": [
+    {
+      "path": "applications/campfire/Cookies/AgentLang.Campfire.Cookies.fsproj",
+      "sha256": "933b2906219d10042bdfc0eef83139aec8b43f61ac11923739e39ae5384320fc"
+    },
+    {
+      "path": "applications/campfire/Cookies/CookieService.fs",
+      "sha256": "84b7e5d871acc294e846fb339fb9b120ec917092faaff27d6f95977994c56d0e"
+    },
+    {
+      "path": "tests/AgentLang.Campfire.Cookies.Tests/AgentLang.Campfire.Cookies.Tests.fsproj",
+      "sha256": "b4def9a3b6c7f77a3c5c5185af59be3a9c3bef85e2f7e78d54f879d3f780296f"
+    },
+    {
+      "path": "tests/AgentLang.Campfire.Cookies.Tests/Program.fs",
+      "sha256": "747e30859dc25411d4937a8dbf9a5c70c14a71ccb362f42ab8b0e500280b6b0a"
+    },
+    {
+      "path": "tests/AgentLang.Campfire.Cookies.Tests/Fixtures/rails-cookie-vectors.json",
+      "sha256": "eb1c6afd57d445dcb327821e2134d8366383c5565ba1c1f2b1b2dfd5f822fae4"
+    },
+    {
+      "path": "tests/AgentLang.Campfire.Cookies.Tests/Fixtures/MIT-LICENSE",
+      "sha256": "fa0d1454375cbc7701bc13d916c3ae71e613b8ae718321641e678e09409393c4"
+    },
+    {
+      "path": "tests/AgentLang.Campfire.Cookies.Tests/Fixtures/README.md",
+      "sha256": "0e0269b59b1efd27bd7fd732fe2c000cbc230b6f63d8f5bfbef35235b45545a6"
+    }
+  ],
+  "runtimeSha256": "1165c8134fbb7d3be19175f385150672ab82a559d85d3e7a344604abcb2589da",
+  "limitations": [
+    "No HTTP/auth integration",
+    "No native backend",
+    "Expiry precision limited to seven fractional digits",
+    "No whole-application security claim"
+  ]
+}

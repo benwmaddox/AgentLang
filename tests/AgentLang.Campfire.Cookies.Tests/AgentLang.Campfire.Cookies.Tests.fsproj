@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\applications\campfire\Cookies\AgentLang.Campfire.Cookies.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+    <None Include="Fixtures\rails-cookie-vectors.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\MIT-LICENSE" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\README.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

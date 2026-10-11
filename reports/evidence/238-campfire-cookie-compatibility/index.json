@@ -1,0 +1,83 @@
+{
+  "formatVersion": 1,
+  "archive": "evidence.zip",
+  "archiveSha256": "2deff41b9e4c8f68a85be867f1f7d2026c5cadd5e5f5ef886c2b498bd2a1d3fd",
+  "memberCount": 15,
+  "members": [
+    {
+      "name": "source/applications/campfire/Cookies/AgentLang.Campfire.Cookies.fsproj",
+      "bytes": 355,
+      "sha256": "933b2906219d10042bdfc0eef83139aec8b43f61ac11923739e39ae5384320fc"
+    },
+    {
+      "name": "source/applications/campfire/Cookies/CookieService.fs",
+      "bytes": 27367,
+      "sha256": "84b7e5d871acc294e846fb339fb9b120ec917092faaff27d6f95977994c56d0e"
+    },
+    {
+      "name": "source/tests/AgentLang.Campfire.Cookies.Tests/AgentLang.Campfire.Cookies.Tests.fsproj",
+      "bytes": 678,
+      "sha256": "b4def9a3b6c7f77a3c5c5185af59be3a9c3bef85e2f7e78d54f879d3f780296f"
+    },
+    {
+      "name": "source/tests/AgentLang.Campfire.Cookies.Tests/Program.fs",
+      "bytes": 12548,
+      "sha256": "747e30859dc25411d4937a8dbf9a5c70c14a71ccb362f42ab8b0e500280b6b0a"
+    },
+    {
+      "name": "source/tests/AgentLang.Campfire.Cookies.Tests/Fixtures/rails-cookie-vectors.json",
+      "bytes": 13536,
+      "sha256": "eb1c6afd57d445dcb327821e2134d8366383c5565ba1c1f2b1b2dfd5f822fae4"
+    },
+    {
+      "name": "source/tests/AgentLang.Campfire.Cookies.Tests/Fixtures/MIT-LICENSE",
+      "bytes": 1053,
+      "sha256": "fa0d1454375cbc7701bc13d916c3ae71e613b8ae718321641e678e09409393c4"
+    },
+    {
+      "name": "source/tests/AgentLang.Campfire.Cookies.Tests/Fixtures/README.md",
+      "bytes": 2781,
+      "sha256": "0e0269b59b1efd27bd7fd732fe2c000cbc230b6f63d8f5bfbef35235b45545a6"
+    },
+    {
+      "name": "validation/implementation-notes.md",
+      "bytes": 3402,
+      "sha256": "f68ae522a693892f32e563ea8f01964da488c340e0a5aa3e7bb25ed52dc6caa9"
+    },
+    {
+      "name": "validation/host-restore.log",
+      "bytes": 271,
+      "sha256": "3c43eef4af64f7813e9ac38232ac197a6c5cfd22232fad446bbcf6dfb6e058e7"
+    },
+    {
+      "name": "validation/root-build.log",
+      "bytes": 365,
+      "sha256": "0c5380f9a2e461cc6bd281fdce582a70ffcd9b1e362b045edc522f67b58c1687"
+    },
+    {
+      "name": "validation/root-test-run.log",
+      "bytes": 39,
+      "sha256": "8ecc347c29566b70a8e85a97f5a549cc2c8812c4def2bee16e177af7761c13e7"
+    },
+    {
+      "name": "validation/root-string-controls.fsx",
+      "bytes": 1032,
+      "sha256": "137e238857f17cb9721406547ab57f9e879a1101eae552f7b5a632d6bb01a8b9"
+    },
+    {
+      "name": "validation/root-string-controls.log",
+      "bytes": 57,
+      "sha256": "05a772b34090cbc635abca58ed3696dbe49b7ea6d40ad89511484754283f6641"
+    },
+    {
+      "name": "validation/root-string-controls-01.log",
+      "bytes": 189,
+      "sha256": "677d1d8362000b1a919f493446056eec1c8860b92f2a5ff5ec878406b3cc6e29"
+    },
+    {
+      "name": "validation/receipt.json",
+      "bytes": 2595,
+      "sha256": "703552c6faf809fd05cb77569b897b84f5f9f33ae2f6057e4492e3576f65cabe"
+    }
+  ]
+}
