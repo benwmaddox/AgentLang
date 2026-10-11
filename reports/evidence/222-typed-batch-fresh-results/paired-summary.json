@@ -1,0 +1,63 @@
+{
+  "retained": {
+    "arm": "retained",
+    "status": "behavior correct; full edit acceptance rejected",
+    "behavior": {
+      "expected": 9,
+      "executed": 9,
+      "passed": 9
+    },
+    "creatorRegressions": {
+      "expected": 66,
+      "executed": 66,
+      "passed": 66
+    },
+    "persistedSuite": "152/152 test(s) passed.",
+    "rawAutomatedPassed": false,
+    "failedRawGates": [
+      "batchRootAndFailureTypePassed"
+    ],
+    "nominalGateAdjudication": "frozen textual parser retains legal field semicolons; exact runtime nominal metadata checks passed",
+    "preservationAccepted": false,
+    "preservationFinding": "inherited renew-batch-step/errors later-change.old-id changed from 30000000-0000-0000-0000-000000000001 to 33000000-0000-0000-0000-000000000001",
+    "libraryPublished": true,
+    "normalFinalization": true,
+    "exchanges": 58,
+    "requestWireBytes": 38398,
+    "responseWireBytes": 134056,
+    "startedUtc": "2026-10-11T13:05:35.2695959+00:00",
+    "finishedUtc": "2026-10-11T13:12:02.1601830+00:00",
+    "traceSha256": "7c513aba6de692b188d626f67d62e4097c9034c54fe58efc232424f0c64eb994",
+    "reviewSha256": "92abc3a4eca0348a7b5949fd6275336bee5bd44d84cfe019a4d2353e80e0dcea",
+    "actorFingerprintAfterScore": "67fc5cb7d6ed10f2efa276c7c8e46e88572ff87b8b9dba4bee8dff6328eae413",
+    "sourceUnchangedDuringScore": true,
+    "baselineUnchangedDuringScore": true,
+    "copyUnchangedDuringScore": true,
+    "reported311Correction": "cumulative executions: targeted5+2, full-suite152, failed-tests rerun152; persisted suite152"
+  },
+  "fsharp": {
+    "arm": "fsharp",
+    "status": "behavior and full edit acceptance passed",
+    "behavior": {
+      "expected": 9,
+      "executed": 9,
+      "passed": 9
+    },
+    "rawAutomatedPassed": true,
+    "preservationAccepted": true,
+    "fixedValidationPassed": true,
+    "normalFinalization": true,
+    "participantTestsExcludedFromScorer": true,
+    "exchanges": 28,
+    "requestWireBytes": 15388,
+    "responseWireBytes": 40212,
+    "startedUtc": "2026-10-11T13:12:58.4099101+00:00",
+    "finishedUtc": "2026-10-11T13:20:07.7334007+00:00",
+    "traceSha256": "597686c00f52c3caa7ec479d8f67729a85d89a2f9a5820e96636d8f1209791c9",
+    "reviewSha256": "b83f11704f1b8d3bc2b531c06b3c9bec499ade910c2af8bbea033c28cf82ea9a",
+    "sourceUnchangedDuringScore": true,
+    "copyUnchangedDuringBuild": true,
+    "copyUnchangedDuringScore": true,
+    "suiteCountLimit": "Validator prints inherited scenario text; reviewed one added regression is not a new reported suite-count metric"
+  }
+}

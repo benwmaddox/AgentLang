@@ -1,6 +1,7 @@
 # 221 — Fresh typed batch comparison
 
-Status: corrected protocol frozen; fresh paired participant outcomes pending.
+Status: corrected protocol frozen; fresh paired outcomes are closed in
+[report 222](222-typed-batch-fresh-results.md).
 This continues [readiness 220](220-typed-batch-comparison-readiness.md), comparing
 preserved typed-result maintenance in retained AgentLang and conventional F#.
 No comparative efficacy claim is established.

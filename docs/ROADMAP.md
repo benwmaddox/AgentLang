@@ -37,16 +37,22 @@ not wait for every optional feature or proof of a comparative advantage.
 
 ## 1. Validate reliability beyond easy composition
 
-The [current efficacy decision](../reports/219-efficacy-after-typed-batch-maintenance.md)
+The [fresh comparison result](../reports/222-typed-batch-fresh-results.md) closes
+with both implementations passing nine behavior cases, but only F# preserving
+the full assigned edit scope. AgentLang changes one inherited fixture and its
+raw scorer also exposes a separate punctuation-sensitive type gate. No comparative
+reliability advantage is established. Next fix semantic type-contract inspection
+and cumulative test-count clarity; retain explicit fixture preservation review.
+The [prior efficacy decision](../reports/219-efficacy-after-typed-batch-maintenance.md)
 records correct preserved typed-contract maintenance in both continuation seeds,
-with assisted/failed finalization kept separate from source correctness. Next compare
-fresh retained and conventional F# edits using existing brokers and the same semantic cases;
-disclose transport controls before future dispatch. No comparative reliability
+with assisted/failed finalization kept separate from source correctness. It called
+for the fresh retained/F# comparison now closed in report 222, with transport
+controls disclosed before dispatch. No comparative reliability
 advantage is established. The [comparison readiness checkpoint](../reports/220-typed-batch-comparison-readiness.md)
 now accepts corrected language/F# controls and equivalent inherited scenarios.
 The [fresh comparison protocol](../reports/221-typed-batch-fresh-comparison.md)
 is frozen after a preserved launcher setup failure and corrected broker smoke.
-Corrected fresh participant outcomes remain pending.
+Corrected fresh participant outcomes are now closed in report 222.
 The [prior decision](../reports/215-efficacy-after-paired-vocabulary-pilot.md)
 preserves the earlier negative helper-creation and preservation findings.
 The [previous handoff checkpoint](../reports/212-efficacy-after-public-vocabulary-reuse.md)
