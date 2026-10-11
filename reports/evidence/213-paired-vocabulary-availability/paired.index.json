@@ -28,18 +28,18 @@
     },
     {
       "path": "retained-result.index.json",
-      "bytes": 175535,
-      "sha256": "59566e0ffa5e9063fe3f78c156df1ea43f508a20a1f13ad8539687d29c8cd284"
+      "bytes": 172537,
+      "sha256": "dfa4684cd619064a363b4769bf1f490983f1d45bde7440cc6d34c66f7ff68e7c"
     },
     {
       "path": "paired-summary.json",
-      "bytes": 10214,
-      "sha256": "81ee379aa77cdf4e45a95e582c863c262624753d2deefb52f107bb9c62116b03"
+      "bytes": 9938,
+      "sha256": "518b2a3630fb1c506cccf203027659c069f3510554f84336df4fb682d02c114e"
     },
     {
       "path": "terminal-review.md",
-      "bytes": 1226,
-      "sha256": "27ba7f726b036c15894e594da0c7d93e60c5be5718d6169d02bc3185dcc39815"
+      "bytes": 1207,
+      "sha256": "80f39c2f9be1b9a81cf76cf6daaf28be9a581f3ee9882aa793af09b7667ce727"
     }
   ],
   "limits": "One participant per condition; no population reliability, causal speedup, model-token or native-performance claim."
