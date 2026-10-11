@@ -150,3 +150,4 @@ reports/evidence/231-grouped-renewal-timing-comparison/** -text -whitespace
 # Preserve exact local validation receipts and sealed evidence byte hashes.
 reports/evidence/233-inherited-test-change-intent/** -text -whitespace
 reports/evidence/235-campfire-sqlite-persistence/** -text -whitespace
+reports/evidence/237-campfire-request-policy/** -text -whitespace

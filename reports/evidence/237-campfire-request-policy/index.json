@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "archive": "evidence.zip",
+  "hashAlgorithm": "SHA-256",
+  "memberCount": 18,
+  "members": [
+    {
+      "member": "source/applications/campfire/request-policy.flow",
+      "length": 9551,
+      "sha256": "2183bf86e8fe510f6433612941dcef1f65cdde9652a5ecd7bf4ced925ed7f357"
+    },
+    {
+      "member": "runs/default/20261011T213649Z-6fdd6473/fresh-reload-and-independent-matrix.stdout.jsonl",
+      "length": 174018,
+      "sha256": "919fdc4ee138cd3f943553dde0f1bc0f63941f063735e853874694633e363e62"
+    },
+    {
+      "member": "runs/default/20261011T213649Z-6fdd6473/fresh-reload-and-independent-matrix.stdin.jsonl",
+      "length": 222712,
+      "sha256": "3e36cc9b5c8a91bfe8d7c0172c45db06e09211890c8b5f82705ee2fedb9fbc0e"
+    },
+    {
+      "member": "runs/default/20261011T213649Z-6fdd6473/define-test-commit.stderr.txt",
+      "length": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "runs/default/20261011T213649Z-6fdd6473/define-test-commit.stdout.jsonl",
+      "length": 7184,
+      "sha256": "70b7ad237c727480942a763459129881baca1b59323b971e27e35c31e7e5d9f4"
+    },
+    {
+      "member": "runs/default/20261011T213649Z-6fdd6473/define-test-commit.stdin.jsonl",
+      "length": 10192,
+      "sha256": "f398a4e7ae1fdff47dfab95b7c52f7c849d1d25b27a67f7c042e9696f8ef5217"
+    },
+    {
+      "member": "runs/sealed-explicit/20261011T213524Z-9ff005c1/fresh-reload-and-independent-matrix.stderr.txt",
+      "length": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "runs/sealed-explicit/20261011T213524Z-9ff005c1/fresh-reload-and-independent-matrix.stdout.jsonl",
+      "length": 174018,
+      "sha256": "117948422ca3a5234f00fb3fe6993f330bb8f2cf0beda0faf5b11e1a70395baa"
+    },
+    {
+      "member": "runs/sealed-explicit/20261011T213524Z-9ff005c1/fresh-reload-and-independent-matrix.stdin.jsonl",
+      "length": 222712,
+      "sha256": "3e36cc9b5c8a91bfe8d7c0172c45db06e09211890c8b5f82705ee2fedb9fbc0e"
+    },
+    {
+      "member": "runs/sealed-explicit/20261011T213524Z-9ff005c1/define-test-commit.stderr.txt",
+      "length": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "runs/sealed-explicit/20261011T213524Z-9ff005c1/define-test-commit.stdout.jsonl",
+      "length": 7184,
+      "sha256": "06533ee41c5aaeb46a1691275056ad0afe6adf5856304035845b23925e35722d"
+    },
+    {
+      "member": "runs/sealed-explicit/20261011T213524Z-9ff005c1/define-test-commit.stdin.jsonl",
+      "length": 10192,
+      "sha256": "f398a4e7ae1fdff47dfab95b7c52f7c849d1d25b27a67f7c042e9696f8ef5217"
+    },
+    {
+      "member": "runs/default/20261011T213649Z-6fdd6473/verification.json",
+      "length": 154549,
+      "sha256": "e5f079479d1876db6a86a44c846f985ea213ae165739388eaa6c502856c16a59"
+    },
+    {
+      "member": "runs/sealed-explicit/20261011T213524Z-9ff005c1/verification.json",
+      "length": 154608,
+      "sha256": "b40b42443042fdfc6fe565b10c13b8f0c86a60bdbca118b799eb8084ba010320"
+    },
+    {
+      "member": "runtime/pure-policy-runtime-pins.json",
+      "length": 660,
+      "sha256": "364a7a9b036f7efd7d3018869a7a91caa52ed853390736fa1d97175632af4424"
+    },
+    {
+      "member": "source/scripts/Verify-CampfireRequestPolicy.ps1",
+      "length": 25071,
+      "sha256": "18bab27d93f36a04315360fba6d8d425af2b2f2d1a9d6d4670a1e015463031fa"
+    },
+    {
+      "member": "runs/default/20261011T213649Z-6fdd6473/fresh-reload-and-independent-matrix.stderr.txt",
+      "length": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "provenance/pinned-request-policy-source.json",
+      "length": 406,
+      "sha256": "d1e14727aab070398997bff848562b3087ccf7ccd699bc4abcc63fff94f5bbc0"
+    }
+  ]
+}

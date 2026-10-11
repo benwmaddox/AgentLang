@@ -10,9 +10,13 @@ dotnet run --project tests/AgentLang.Campfire.Persistence.Tests/AgentLang.Campfi
 
 The tests create fresh local databases from a narrow schema fixture. Production opening requires an existing host-selected database. See [storage report](../../reports/235-campfire-sqlite-persistence.md) for the tested behavior and remaining integration, and [implementation plan](../../docs/CAMPFIRE-IMPLEMENTATION.md) for the full migration sequence.
 
+## Request forgery policy
+
+`request-policy.flow` separately implements the pinned Rust port's pure Origin/fetch-metadata checks. Run `scripts/Verify-CampfireRequestPolicy.ps1` after a Release CLI build. It qualifies the three functions as libraries and checks an independent 840-case matrix. See [request-policy report](../../reports/237-campfire-request-policy.md); HTTP/session handling is still pending.
+
 ## Message administration policy
 
-This directory contains one pure Flow/2 policy component from ONCE Campfire: whether a given user may administer a message. It does not implement cookie/session verification, room membership, account or user status checks, message reads or writes, HTTP, WebSockets, or rendering. A `true` result establishes only this policy decision.
+`message-policy.flow` contains the pure Flow/2 policy for whether a given user may administer a message. It does not implement cookie/session verification, room membership, account or user status checks, message reads or writes, HTTP, WebSockets, or rendering. A `true` result establishes only this policy decision.
 
 `UserId` is a nominal `Int` wrapper matching the Rust/SQLite integer identifier boundary. `ExistingMessage` is intentionally a narrow policy projection that contains its persisted creator ID; it is not the full Campfire `Message` model. `user.can-administer?` preserves the generic record rule, including creator absence and new-record cases. `message.can-administer?` applies it to an existing message, with `is-new = false`, as the edit/update/destroy controllers do after resolving that message inside its room.
 

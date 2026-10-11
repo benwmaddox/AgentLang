@@ -1,0 +1,224 @@
+enum RequestMethod {
+    case get
+    case head
+    case unsafe
+}
+
+fn campfire.request.origin-valid?(origin: Option<String>, base-url: String, origin-check-enabled: Bool) -> Bool {
+    effects none
+    doc "Applies the pinned Campfire origin rule to the raw Origin value and trusted normalized base URL. Missing Origin is allowed; the literal null and nonmatching present values fail when checking is enabled. This helper is pure and performs no request parsing, normalization, or IO."
+
+    if origin-check-enabled {
+        match origin {
+            some origin-value => {
+                if origin-value == "null" {
+                    false
+                } else {
+                    origin-value == base-url
+                }
+            }
+            none => true
+        }
+    } else {
+        true
+    }
+}
+
+test campfire.request.origin-valid?/checking-disabled-allows-missing {
+    campfire.request.origin-valid?(option.none<String>(), "https://chat.example.test", false)
+        => true
+}
+
+test campfire.request.origin-valid?/checking-disabled-allows-null {
+    campfire.request.origin-valid?(option.some<String>("null"), "https://chat.example.test", false)
+        => true
+}
+
+test campfire.request.origin-valid?/checking-enabled-allows-missing {
+    campfire.request.origin-valid?(option.none<String>(), "https://chat.example.test", true)
+        => true
+}
+
+test campfire.request.origin-valid?/checking-enabled-allows-exact-match {
+    campfire.request.origin-valid?(option.some<String>("https://chat.example.test"), "https://chat.example.test", true)
+        => true
+}
+
+test campfire.request.origin-valid?/checking-enabled-rejects-different-host {
+    campfire.request.origin-valid?(option.some<String>("https://other.example.test"), "https://chat.example.test", true)
+        => false
+}
+
+test campfire.request.origin-valid?/checking-enabled-rejects-case-changed-origin {
+    campfire.request.origin-valid?(option.some<String>("https://CHAT.example.test"), "https://chat.example.test", true)
+        => false
+}
+
+test campfire.request.origin-valid?/checking-enabled-rejects-null {
+    campfire.request.origin-valid?(option.some<String>("null"), "https://chat.example.test", true)
+        => false
+}
+
+fn campfire.request.fetch-site-valid?(fetch-site: Option<String>, request-is-ssl: Bool, force-ssl: Bool) -> Bool {
+    effects none
+    doc "Applies the pinned Campfire Sec-Fetch-Site rule to the raw header value and trusted request/configuration flags. Same-origin and same-site pass; other present values fail. Missing is accepted only for a non-SSL request when force_ssl is off. This helper is pure and performs no header parsing or IO."
+
+    match fetch-site {
+        some site-value => {
+            if site-value == "same-origin" {
+                true
+            } else {
+                if site-value == "same-site" {
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+        none => {
+            if request-is-ssl {
+                false
+            } else {
+                if force-ssl {
+                    false
+                } else {
+                    true
+                }
+            }
+        }
+    }
+}
+
+test campfire.request.fetch-site-valid?/accepts-same-origin {
+    campfire.request.fetch-site-valid?(option.some<String>("same-origin"), false, false)
+        => true
+}
+
+test campfire.request.fetch-site-valid?/accepts-same-site {
+    campfire.request.fetch-site-valid?(option.some<String>("same-site"), true, true)
+        => true
+}
+
+test campfire.request.fetch-site-valid?/rejects-cross-site {
+    campfire.request.fetch-site-valid?(option.some<String>("cross-site"), false, false)
+        => false
+}
+
+test campfire.request.fetch-site-valid?/rejects-none-value {
+    campfire.request.fetch-site-valid?(option.some<String>("none"), false, false)
+        => false
+}
+
+test campfire.request.fetch-site-valid?/rejects-invalid-value {
+    campfire.request.fetch-site-valid?(option.some<String>("invalid"), false, false)
+        => false
+}
+
+test campfire.request.fetch-site-valid?/rejects-case-changed-value {
+    campfire.request.fetch-site-valid?(option.some<String>("Same-Origin"), false, false)
+        => false
+}
+
+test campfire.request.fetch-site-valid?/missing-is-allowed-for-http-without-force-ssl {
+    campfire.request.fetch-site-valid?(option.none<String>(), false, false)
+        => true
+}
+
+test campfire.request.fetch-site-valid?/missing-is-rejected-for-http-with-force-ssl {
+    campfire.request.fetch-site-valid?(option.none<String>(), false, true)
+        => false
+}
+
+test campfire.request.fetch-site-valid?/missing-is-rejected-for-https-without-force-ssl {
+    campfire.request.fetch-site-valid?(option.none<String>(), true, false)
+        => false
+}
+
+test campfire.request.fetch-site-valid?/missing-is-rejected-for-https-with-force-ssl {
+    campfire.request.fetch-site-valid?(option.none<String>(), true, true)
+        => false
+}
+
+fn campfire.request.forgery-check-passed?(method: RequestMethod, origin: Option<String>, fetch-site: Option<String>, base-url: String, origin-check-enabled: Bool, request-is-ssl: Bool, force-ssl: Bool) -> Bool {
+    effects none
+    doc "Applies the pinned Campfire forgery-check decision to a classified method, raw optional request-header values, trusted normalized base URL, and trusted request/configuration flags. GET and HEAD pass without header checks; unsafe methods require both pure checks to pass. HTTP transport, method classification, authentication, CSRF token verification, and IO are outside this helper."
+
+    let origin-ok = campfire.request.origin-valid?(origin, base-url, origin-check-enabled)
+    let fetch-site-ok = campfire.request.fetch-site-valid?(fetch-site, request-is-ssl, force-ssl)
+
+    match method {
+        get => true
+        head => true
+        unsafe => {
+            if origin-ok {
+                if fetch-site-ok {
+                    true
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        }
+    }
+}
+
+test campfire.request.forgery-check-passed?/get-skips-forgery-headers {
+    campfire.request.forgery-check-passed?(RequestMethod.get(), option.some<String>("wrong"), option.some<String>("cross-site"), "https://chat.example.test", true, true, false)
+        => true
+}
+
+test campfire.request.forgery-check-passed?/head-skips-forgery-headers {
+    campfire.request.forgery-check-passed?(RequestMethod.head(), option.some<String>("null"), option.some<String>("invalid"), "https://chat.example.test", true, false, true)
+        => true
+}
+
+test campfire.request.forgery-check-passed?/unsafe-accepts-exact-origin-and-same-origin {
+    campfire.request.forgery-check-passed?(RequestMethod.unsafe(), option.some<String>("https://chat.example.test"), option.some<String>("same-origin"), "https://chat.example.test", true, true, false)
+        => true
+}
+
+test campfire.request.forgery-check-passed?/unsafe-accepts-missing-origin-when-checking-enabled {
+    campfire.request.forgery-check-passed?(RequestMethod.unsafe(), option.none<String>(), option.some<String>("same-site"), "https://chat.example.test", true, true, false)
+        => true
+}
+
+test campfire.request.forgery-check-passed?/unsafe-accepts-missing-origin-when-checking-disabled {
+    campfire.request.forgery-check-passed?(RequestMethod.unsafe(), option.none<String>(), option.some<String>("same-origin"), "https://chat.example.test", false, false, false)
+        => true
+}
+
+test campfire.request.forgery-check-passed?/unsafe-checking-disabled-allows-null-origin {
+    campfire.request.forgery-check-passed?(RequestMethod.unsafe(), option.some<String>("null"), option.some<String>("same-site"), "https://chat.example.test", false, false, false)
+        => true
+}
+
+test campfire.request.forgery-check-passed?/unsafe-rejects-wrong-origin {
+    campfire.request.forgery-check-passed?(RequestMethod.unsafe(), option.some<String>("https://other.example.test"), option.some<String>("same-origin"), "https://chat.example.test", true, true, false)
+        => false
+}
+
+test campfire.request.forgery-check-passed?/unsafe-rejects-null-origin {
+    campfire.request.forgery-check-passed?(RequestMethod.unsafe(), option.some<String>("null"), option.some<String>("same-origin"), "https://chat.example.test", true, true, false)
+        => false
+}
+
+test campfire.request.forgery-check-passed?/unsafe-rejects-cross-site {
+    campfire.request.forgery-check-passed?(RequestMethod.unsafe(), option.some<String>("https://chat.example.test"), option.some<String>("cross-site"), "https://chat.example.test", true, true, false)
+        => false
+}
+
+test campfire.request.forgery-check-passed?/unsafe-missing-fetch-site-is-allowed-for-http {
+    campfire.request.forgery-check-passed?(RequestMethod.unsafe(), option.some<String>("https://chat.example.test"), option.none<String>(), "https://chat.example.test", true, false, false)
+        => true
+}
+
+test campfire.request.forgery-check-passed?/unsafe-missing-fetch-site-rejects-force-ssl-http {
+    campfire.request.forgery-check-passed?(RequestMethod.unsafe(), option.some<String>("https://chat.example.test"), option.none<String>(), "https://chat.example.test", true, false, true)
+        => false
+}
+
+test campfire.request.forgery-check-passed?/unsafe-missing-fetch-site-rejects-https {
+    campfire.request.forgery-check-passed?(RequestMethod.unsafe(), option.some<String>("https://chat.example.test"), option.none<String>(), "https://chat.example.test", true, true, false)
+        => false
+}

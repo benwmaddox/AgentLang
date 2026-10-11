@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "createdAtUtc": "2026-10-11T21:38:48.6066765Z",
+  "archive": {
+    "path": "evidence.zip",
+    "length": 39961,
+    "sha256": "8b4b3f8828cbd3d0076efd053e0787214e0775bb04ba908073eb316d27fe5e94"
+  },
+  "index": {
+    "path": "index.json",
+    "sha256": "82dc59aca2c0d740c2f96824bc367b33359200abf9187e03efd6042d399b8a91",
+    "memberCount": 18
+  },
+  "readback": {
+    "verified": true,
+    "membersRead": 18,
+    "allMemberHashesMatchIndex": true,
+    "compiledBinariesIncluded": false
+  },
+  "currentSource": {
+    "path": "applications/campfire/request-policy.flow",
+    "sha256": "2183bf86e8fe510f6433612941dcef1f65cdde9652a5ecd7bf4ced925ed7f357",
+    "archivedMember": "source/applications/campfire/request-policy.flow",
+    "archivedSha256": "2183bf86e8fe510f6433612941dcef1f65cdde9652a5ecd7bf4ced925ed7f357",
+    "matches": true
+  },
+  "verifierSha256": "18bab27d93f36a04315360fba6d8d425af2b2f2d1a9d6d4670a1e015463031fa",
+  "runs": [
+    {
+      "kind": "explicit-sealed-runtime",
+      "runId": "20261011T213524Z-9ff005c1",
+      "passed": true,
+      "attachedTests": 29,
+      "independentCases": 840,
+      "coreSha256": "a390b1fcdd85b39de3143348e439a75ddbd783225d3f834dfc946254f03ff2e0",
+      "runtimePinned": true
+    },
+    {
+      "kind": "default-release-runtime",
+      "runId": "20261011T213649Z-6fdd6473",
+      "passed": true,
+      "attachedTests": 29,
+      "independentCases": 840,
+      "coreSha256": "a390b1fcdd85b39de3143348e439a75ddbd783225d3f834dfc946254f03ff2e0",
+      "runtimePinned": false
+    }
+  ],
+  "runtimeComparison": {
+    "coreHashesMatch": true,
+    "note": "The default CLI run reused the accepted 233 Core hash; this package does not claim a fresh 236 Core build."
+  }
+}
