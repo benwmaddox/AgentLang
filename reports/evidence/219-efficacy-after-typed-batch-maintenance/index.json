@@ -1,0 +1,67 @@
+{
+  "status": "verified current evidence inputs; no new participant result",
+  "inputs": [
+    {
+      "path": "reports/199-efficacy-decision-after-reference-maintenance.md",
+      "bytes": 5216,
+      "sha256": "85cc81634401f1ad362e2bd628944b53970f14c1f4aa2d93bbce848cb9a726aa",
+      "bytePolicy": "CRLF normalized to LF"
+    },
+    {
+      "path": "reports/215-efficacy-after-paired-vocabulary-pilot.md",
+      "bytes": 5730,
+      "sha256": "403f4256750ab5910d734046f2739b9e49e074ed7fe89f89140f21fce195e7f7",
+      "bytePolicy": "CRLF normalized to LF"
+    },
+    {
+      "path": "reports/217-typed-batch-failure-maintenance.md",
+      "bytes": 8777,
+      "sha256": "6db9d848a7da29bd03ca70d9542680ce17fe0c7c522f4626fe99d47a5cc9f02c",
+      "bytePolicy": "CRLF normalized to LF"
+    },
+    {
+      "path": "reports/218-atomic-record-publication-help.md",
+      "bytes": 2738,
+      "sha256": "5cf430fa0d25d3f3e6421060c1ca9564825ba139bb0e80d9c56a7db2b8f686e7",
+      "bytePolicy": "CRLF normalized to LF"
+    },
+    {
+      "path": "reports/214-completion-service-diagnostic.md",
+      "bytes": 4017,
+      "sha256": "78ccb74ffa40397861097e4ce32fa393e16b6d08c9e3aaaae6f8230423e484fd",
+      "bytePolicy": "CRLF normalized to LF"
+    },
+    {
+      "path": "reports/evidence/217-typed-batch-failure-maintenance/paired-summary.json",
+      "bytes": 3267,
+      "sha256": "c86ea862b1885ed741c82ef7c53db3122ee70a6731c261621d93d47ed3392548",
+      "bytePolicy": "CRLF normalized to LF"
+    },
+    {
+      "path": "reports/evidence/217-typed-batch-failure-maintenance/retained-review-clarification.md",
+      "bytes": 1012,
+      "sha256": "88725d804c66f6c1b9aa82ed522071f943286ca75cbbac719ddf8bbaa9afe741",
+      "bytePolicy": "CRLF normalized to LF"
+    }
+  ],
+  "archives": [
+    {
+      "path": "reports/evidence/217-typed-batch-failure-maintenance/retained-result.zip",
+      "bytes": 1679405,
+      "sha256": "9ad097b37fcec5b64f6365ae7beafefbc3e15ada30779b7d3889028a6b626d3b",
+      "membersVerified": 617
+    },
+    {
+      "path": "reports/evidence/217-typed-batch-failure-maintenance/reset-result.zip",
+      "bytes": 1433672,
+      "sha256": "fb484db3a1e302f394ca616fc1c06185cbe0d4c5dfd4e7a3b12b9f9ae2738d3b",
+      "membersVerified": 609
+    },
+    {
+      "path": "reports/evidence/217-typed-batch-failure-maintenance/summary.zip",
+      "bytes": 51230,
+      "sha256": "c8728982f56f52c23a0422400e57718d944af764cf6242c77fdf1e09c82c23b1",
+      "membersVerified": 29
+    }
+  ]
+}

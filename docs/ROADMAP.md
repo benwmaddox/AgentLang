@@ -37,9 +37,13 @@ not wait for every optional feature or proof of a comparative advantage.
 
 ## 1. Validate reliability beyond easy composition
 
-The [current efficacy decision](../reports/215-efficacy-after-paired-vocabulary-pilot.md)
-records correct reset and retained edits with successful public-vocabulary reuse,
-while preserving the earlier negative helper-creation and preservation findings.
+The [current efficacy decision](../reports/219-efficacy-after-typed-batch-maintenance.md)
+records correct preserved typed-contract maintenance in both continuation seeds,
+with assisted/failed finalization kept separate from source correctness. Next compare
+fresh retained and conventional F# edits using existing brokers and the same semantic cases;
+disclose transport controls before future dispatch. No comparative reliability
+advantage is established. The [prior decision](../reports/215-efficacy-after-paired-vocabulary-pilot.md)
+preserves the earlier negative helper-creation and preservation findings.
 The [previous handoff checkpoint](../reports/212-efficacy-after-public-vocabulary-reuse.md)
 records a successful later-agent handoff through creator-authored public functions.
 Retention benefit and comparative reliability remain unproven. The
