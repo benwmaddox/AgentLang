@@ -1,0 +1,213 @@
+{
+  "study": "replacement-trial-230",
+  "metricScope": "broker sessions, excluding coordinator calibration/grading and outside-session agent reasoning",
+  "arms": [
+    {
+      "arm": "fsharp",
+      "startedUtc": "2026-10-11T19:10:08.2606527+00:00",
+      "finishedUtc": "2026-10-11T19:13:33.3481883+00:00",
+      "brokerSessionSeconds": 205.087536,
+      "exchangeCount": 21,
+      "operations": {
+        "inspect": 9,
+        "read": 2,
+        "search": 1,
+        "patch": 8,
+        "validate": 1
+      },
+      "requestWireBytes": 8167,
+      "responseWireBytes": 39851,
+      "rejectedResponses": [
+        {
+          "index": 5,
+          "operation": "patch",
+          "error": {
+            "code": "HASH_INVALID",
+            "message": "expectedSha256 must contain exactly 64 hexadecimal characters."
+          },
+          "text": "expectedSha256 must contain exactly 64 hexadecimal characters."
+        },
+        {
+          "index": 7,
+          "operation": "patch",
+          "error": {
+            "code": "HASH_INVALID",
+            "message": "expectedSha256 must contain exactly 64 hexadecimal characters."
+          },
+          "text": "expectedSha256 must contain exactly 64 hexadecimal characters."
+        }
+      ],
+      "termination": {
+        "event": "session-end",
+        "finishedUtc": "2026-10-11T19:13:33.3481883+00:00",
+        "exchangeCount": 21,
+        "terminationKind": "host-close",
+        "hostExitCode": 0,
+        "runtimeExitCode": 0,
+        "runtimeStderrPrefixBytes": 0,
+        "runtimeStderrTotalBytes": 0,
+        "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtimeStderrCaptureTruncated": false
+      },
+      "llmTokenUsage": null,
+      "tokenLimit": "LLM token usage unavailable; wire bytes are not tokens."
+    },
+    {
+      "arm": "retained",
+      "startedUtc": "2026-10-11T19:14:33.7939974+00:00",
+      "finishedUtc": "2026-10-11T19:25:46.9447530+00:00",
+      "brokerSessionSeconds": 673.150756,
+      "exchangeCount": 71,
+      "operations": {
+        "help": 4,
+        "task.status": 1,
+        "words": 2,
+        "storage.status": 3,
+        "tests": 22,
+        "source": 12,
+        "describe": 18,
+        "define": 3,
+        "test-all": 3,
+        "commit": 2,
+        "search": 1
+      },
+      "requestWireBytes": 21826,
+      "responseWireBytes": 253071,
+      "rejectedResponses": [
+        {
+          "index": 7,
+          "operation": "tests",
+          "error": {
+            "code": "TESTS_INVALID_ARGUMENT",
+            "message": "Tests argument 'word' must be a nonempty string.",
+            "expected": [
+              "a nonempty string"
+            ],
+            "actual": [
+              "missing"
+            ]
+          },
+          "text": "TESTS_INVALID_ARGUMENT: Tests argument 'word' must be a nonempty string."
+        },
+        {
+          "index": 39,
+          "operation": "define",
+          "error": {
+            "code": "FLOW_ATTACHMENT_OWNER_MISMATCH",
+            "message": "A Flow project test 'grouped-instants' must attach to a word declared in the same project document.",
+            "word": "RenewalTiming.new",
+            "span": {
+              "file": "<flow-project>",
+              "line": 6,
+              "column": 1,
+              "length": 331
+            },
+            "expected": [],
+            "actual": [
+              "RenewalTiming.new"
+            ]
+          },
+          "text": "FLOW_ATTACHMENT_OWNER_MISMATCH in RenewalTiming.new at <flow-project>:6:1: A Flow project test 'grouped-instants' must attach to a word declared in the same project document."
+        },
+        {
+          "index": 41,
+          "operation": "source",
+          "error": {
+            "code": "NAME_UNKNOWN_WORD",
+            "message": "Word 'RenewalTiming.new' is not defined.",
+            "word": "RenewalTiming.new",
+            "expected": [],
+            "actual": []
+          },
+          "text": "NAME_UNKNOWN_WORD in RenewalTiming.new: Word 'RenewalTiming.new' is not defined."
+        },
+        {
+          "index": 42,
+          "operation": "describe",
+          "error": {
+            "code": "NAME_UNKNOWN_WORD",
+            "message": "Word 'RenewalTiming.new' is not defined.",
+            "word": "RenewalTiming.new",
+            "expected": [],
+            "actual": []
+          },
+          "text": "NAME_UNKNOWN_WORD in RenewalTiming.new: Word 'RenewalTiming.new' is not defined."
+        },
+        {
+          "index": 43,
+          "operation": "tests",
+          "error": {
+            "code": "NAME_UNKNOWN_WORD",
+            "message": "Word 'RenewalTiming.new' is not defined.",
+            "word": "RenewalTiming.new",
+            "expected": [],
+            "actual": []
+          },
+          "text": "NAME_UNKNOWN_WORD in RenewalTiming.new: Word 'RenewalTiming.new' is not defined."
+        },
+        {
+          "index": 46,
+          "operation": "source",
+          "error": {
+            "code": "NAME_UNKNOWN_WORD",
+            "message": "Word 'RenewalTiming.new' is not defined.",
+            "word": "RenewalTiming.new",
+            "expected": [],
+            "actual": []
+          },
+          "text": "NAME_UNKNOWN_WORD in RenewalTiming.new: Word 'RenewalTiming.new' is not defined."
+        },
+        {
+          "index": 47,
+          "operation": "describe",
+          "error": {
+            "code": "NAME_UNKNOWN_WORD",
+            "message": "Word 'RenewalTiming.new' is not defined.",
+            "word": "RenewalTiming.new",
+            "expected": [],
+            "actual": []
+          },
+          "text": "NAME_UNKNOWN_WORD in RenewalTiming.new: Word 'RenewalTiming.new' is not defined."
+        },
+        {
+          "index": 51,
+          "operation": "describe",
+          "error": {
+            "code": "NAME_UNKNOWN_WORD",
+            "message": "Word 'RenewalTiming' is not defined.",
+            "word": "RenewalTiming",
+            "expected": [],
+            "actual": []
+          },
+          "text": "NAME_UNKNOWN_WORD in RenewalTiming: Word 'RenewalTiming' is not defined."
+        },
+        {
+          "index": 52,
+          "operation": "source",
+          "error": {
+            "code": "NAME_UNKNOWN_WORD",
+            "message": "Word 'RenewalTiming' is not defined.",
+            "word": "RenewalTiming",
+            "expected": [],
+            "actual": []
+          },
+          "text": "NAME_UNKNOWN_WORD in RenewalTiming: Word 'RenewalTiming' is not defined."
+        }
+      ],
+      "termination": {
+        "event": "session-end",
+        "finishedUtc": "2026-10-11T19:25:46.9447530+00:00",
+        "exchangeCount": 71,
+        "terminationKind": "host-close",
+        "hostExitCode": 0,
+        "runtimeExitCode": 0,
+        "runtimeStderrPrefixBytes": 0,
+        "runtimeStderrTotalBytes": 0,
+        "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtimeStderrCaptureTruncated": false
+      },
+      "llmTokenUsage": null,
+      "tokenLimit": "LLM token usage unavailable; wire bytes are not tokens."
+    }
+  ]
+}

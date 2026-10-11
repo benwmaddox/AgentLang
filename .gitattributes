@@ -146,3 +146,4 @@ reports/evidence/141-paid-invoice-maintenance/** -text -whitespace
 # Preserve frozen grouped-timing trial inputs and evidence byte hashes.
 experiments/AgentLang.SubagentTrials/replacement-trial-230/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 reports/evidence/230-grouped-renewal-timing-preflight/** -text -whitespace
+reports/evidence/231-grouped-renewal-timing-comparison/** -text -whitespace

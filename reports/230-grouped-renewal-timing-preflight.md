@@ -1,6 +1,6 @@
-# 230 — Grouped renewal timing replacement preflight
+# 230 â€” Grouped renewal timing replacement preflight
 
-Status: calibrated and frozen; F# trial completed and AgentLang trial underway.
+Status: preflight complete; both trials completed. See [report 231](231-grouped-renewal-timing-comparison.md) for results.
 
 The next comparison tests replacement of an existing function contract and
 preservation of its callers. Both fresh agents will group monthly renewal's
@@ -114,4 +114,4 @@ The archived report predates this footer and status update. This snapshot does
 not freeze the oracle or authorize dispatch. Those later gates are recorded in the preflight archive below.
 
 
-The [sealed preflight archive](evidence/230-grouped-renewal-timing-preflight/preflight-230-20261011T191419.684150Z.zip) and [member index](evidence/230-grouped-renewal-timing-preflight/preflight-230-20261011T191419.684150Z.members.json) preserve the 48 frozen inputs and 10,079 verified evidence/source members. Archive SHA-256: `1728f033de7052955b4450d25c95105df33cb858403193b39786f77e016fe34c`. This preflight-only archive includes zero participants; it was sealed after dispatch from frozen pre-dispatch inputs. The archived report predates this footer. Both trials use fresh Luna/max agents, F# first, under sandbox-only execution. Participant results will be reported separately.
+The [sealed preflight archive](evidence/230-grouped-renewal-timing-preflight/preflight-230-20261011T191419.684150Z.zip) and [member index](evidence/230-grouped-renewal-timing-preflight/preflight-230-20261011T191419.684150Z.members.json) preserve the 48 frozen inputs and 10,079 verified evidence/source members. Archive SHA-256: `1728f033de7052955b4450d25c95105df33cb858403193b39786f77e016fe34c`. This preflight-only archive includes zero participants; it was sealed after dispatch from frozen pre-dispatch inputs. The archived report predates this footer. Both trials used fresh Luna/max agents, F# first, under sandbox-only execution. Participant results are recorded separately in [report 231](231-grouped-renewal-timing-comparison.md).
