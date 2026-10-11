@@ -1,7 +1,9 @@
 # 194 — Next native slice: Bool wrappers and admission
 
 Status: reviewed implementation plan only. No runtime changes, builds or tests
-were performed for this report. The frozen maintenance cohort remains open.
+were performed for this report. The original maintenance cohort and its
+representation supplement have since closed in reports 196 and 197;
+implementation is underway, with executable acceptance still pending.
 
 The next bounded native slice admits Bool-backed nominal wrappers and frozen
 pure Bool-to-Bool refinements in ordinary owning execution and mailbox entry.

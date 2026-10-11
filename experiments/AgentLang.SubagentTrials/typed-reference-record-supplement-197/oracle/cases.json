@@ -1,0 +1,1138 @@
+[
+  {
+    "id": "first-scan",
+    "entry": "single",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": []
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "ship-a",
+        "reference": "scan-001",
+        "status": "received"
+      }
+    ],
+    "expected": {
+      "tag": "ok",
+      "store": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "scan-001",
+                "status": "received"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      },
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": []
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "append-after-existing",
+    "entry": "single",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": [
+            {
+              "reference": "scan-old",
+              "status": "received"
+            }
+          ]
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "ship-a",
+        "reference": "scan-new",
+        "status": "in-transit"
+      }
+    ],
+    "expected": {
+      "tag": "ok",
+      "store": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "scan-old",
+                "status": "received"
+              },
+              {
+                "reference": "scan-new",
+                "status": "in-transit"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      },
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "scan-old",
+                "status": "received"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "same-shipment-replay-same-status",
+    "entry": "single",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": [
+            {
+              "reference": "scan-dup",
+              "status": "delivered"
+            }
+          ]
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "ship-a",
+        "reference": "scan-dup",
+        "status": "delivered"
+      }
+    ],
+    "expected": {
+      "tag": "ok",
+      "store": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "scan-dup",
+                "status": "delivered"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      },
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "scan-dup",
+                "status": "delivered"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "same-shipment-replay-keeps-first-status",
+    "entry": "single",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": [
+            {
+              "reference": "scan-dup",
+              "status": "received"
+            }
+          ]
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "ship-a",
+        "reference": "scan-dup",
+        "status": "delivered"
+      }
+    ],
+    "expected": {
+      "tag": "ok",
+      "store": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "scan-dup",
+                "status": "received"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      },
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "scan-dup",
+                "status": "received"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "same-reference-on-another-shipment",
+    "entry": "single",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": [
+            {
+              "reference": "shared-ref",
+              "status": "received"
+            }
+          ]
+        },
+        {
+          "id": "ship-b",
+          "label": "Beta",
+          "scans": []
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "ship-b",
+        "reference": "shared-ref",
+        "status": "delivered"
+      }
+    ],
+    "expected": {
+      "tag": "ok",
+      "store": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "shared-ref",
+                "status": "received"
+              }
+            ]
+          },
+          {
+            "id": "ship-b",
+            "label": "Beta",
+            "scans": [
+              {
+                "reference": "shared-ref",
+                "status": "delivered"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      },
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "shared-ref",
+                "status": "received"
+              }
+            ]
+          },
+          {
+            "id": "ship-b",
+            "label": "Beta",
+            "scans": []
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "reference-text-equals-shipment-id",
+    "entry": "single",
+    "store": {
+      "shipments": [
+        {
+          "id": "same-text",
+          "label": "Text collision",
+          "scans": []
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "same-text",
+        "reference": "same-text",
+        "status": "received"
+      }
+    ],
+    "expected": {
+      "tag": "ok",
+      "store": {
+        "shipments": [
+          {
+            "id": "same-text",
+            "label": "Text collision",
+            "scans": [
+              {
+                "reference": "same-text",
+                "status": "received"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      },
+      "input": {
+        "shipments": [
+          {
+            "id": "same-text",
+            "label": "Text collision",
+            "scans": []
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "empty-batch-is-identity",
+    "entry": "batch",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": [
+            {
+              "reference": "keep",
+              "status": "in-transit"
+            }
+          ]
+        },
+        {
+          "id": "ship-b",
+          "label": "Beta",
+          "scans": []
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [],
+    "expected": {
+      "tag": "ok",
+      "store": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "keep",
+                "status": "in-transit"
+              }
+            ]
+          },
+          {
+            "id": "ship-b",
+            "label": "Beta",
+            "scans": []
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      },
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "keep",
+                "status": "in-transit"
+              }
+            ]
+          },
+          {
+            "id": "ship-b",
+            "label": "Beta",
+            "scans": []
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "replay-within-batch-keeps-first",
+    "entry": "batch",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": []
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "ship-a",
+        "reference": "batch-dup",
+        "status": "received"
+      },
+      {
+        "shipmentId": "ship-a",
+        "reference": "batch-dup",
+        "status": "delivered"
+      }
+    ],
+    "expected": {
+      "tag": "ok",
+      "store": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "batch-dup",
+                "status": "received"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      },
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": []
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "batch-replay-of-existing-reference-is-identity",
+    "entry": "batch",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": [
+            {
+              "reference": "existing",
+              "status": "in-transit"
+            }
+          ]
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "ship-a",
+        "reference": "existing",
+        "status": "delivered"
+      }
+    ],
+    "expected": {
+      "tag": "ok",
+      "store": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "existing",
+                "status": "in-transit"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      },
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "existing",
+                "status": "in-transit"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "batch-appends-fresh-references-in-order",
+    "entry": "batch",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": [
+            {
+              "reference": "before",
+              "status": "received"
+            }
+          ]
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "ship-a",
+        "reference": "new-1",
+        "status": "in-transit"
+      },
+      {
+        "shipmentId": "ship-a",
+        "reference": "new-2",
+        "status": "delivered"
+      }
+    ],
+    "expected": {
+      "tag": "ok",
+      "store": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "before",
+                "status": "received"
+              },
+              {
+                "reference": "new-1",
+                "status": "in-transit"
+              },
+              {
+                "reference": "new-2",
+                "status": "delivered"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      },
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "before",
+                "status": "received"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "interleaved-batch-preserves-shipments-and-unrelated-fields",
+    "entry": "batch",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-b",
+          "label": "Beta",
+          "scans": [
+            {
+              "reference": "b-old",
+              "status": "received"
+            }
+          ]
+        },
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": [
+            {
+              "reference": "a-old",
+              "status": "in-transit"
+            }
+          ]
+        },
+        {
+          "id": "ship-c",
+          "label": "Gamma",
+          "scans": [
+            {
+              "reference": "c-old",
+              "status": "delivered"
+            }
+          ]
+        }
+      ],
+      "audit": "audit: keep exact",
+      "generation": 9001
+    },
+    "events": [
+      {
+        "shipmentId": "ship-a",
+        "reference": "a-new",
+        "status": "delivered"
+      },
+      {
+        "shipmentId": "ship-b",
+        "reference": "b-new",
+        "status": "in-transit"
+      },
+      {
+        "shipmentId": "ship-a",
+        "reference": "a-newer",
+        "status": "received"
+      }
+    ],
+    "expected": {
+      "tag": "ok",
+      "store": {
+        "shipments": [
+          {
+            "id": "ship-b",
+            "label": "Beta",
+            "scans": [
+              {
+                "reference": "b-old",
+                "status": "received"
+              },
+              {
+                "reference": "b-new",
+                "status": "in-transit"
+              }
+            ]
+          },
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "a-old",
+                "status": "in-transit"
+              },
+              {
+                "reference": "a-new",
+                "status": "delivered"
+              },
+              {
+                "reference": "a-newer",
+                "status": "received"
+              }
+            ]
+          },
+          {
+            "id": "ship-c",
+            "label": "Gamma",
+            "scans": [
+              {
+                "reference": "c-old",
+                "status": "delivered"
+              }
+            ]
+          }
+        ],
+        "audit": "audit: keep exact",
+        "generation": 9001
+      },
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-b",
+            "label": "Beta",
+            "scans": [
+              {
+                "reference": "b-old",
+                "status": "received"
+              }
+            ]
+          },
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "a-old",
+                "status": "in-transit"
+              }
+            ]
+          },
+          {
+            "id": "ship-c",
+            "label": "Gamma",
+            "scans": [
+              {
+                "reference": "c-old",
+                "status": "delivered"
+              }
+            ]
+          }
+        ],
+        "audit": "audit: keep exact",
+        "generation": 9001
+      }
+    }
+  },
+  {
+    "id": "unknown-shipment",
+    "entry": "single",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": []
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "missing",
+        "reference": "scan-unknown",
+        "status": "received"
+      }
+    ],
+    "expected": {
+      "tag": "error",
+      "code": "UNKNOWN_SHIPMENT",
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": []
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "invalid-status-for-known-shipment",
+    "entry": "single",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": []
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "ship-a",
+        "reference": "scan-invalid",
+        "status": "pending"
+      }
+    ],
+    "expected": {
+      "tag": "error",
+      "code": "INVALID_STATUS",
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": []
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "unknown-shipment-precedes-invalid-status",
+    "entry": "single",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": []
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "missing",
+        "reference": "scan-unknown",
+        "status": "pending"
+      }
+    ],
+    "expected": {
+      "tag": "error",
+      "code": "UNKNOWN_SHIPMENT",
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": []
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "invalid-status-precedes-replay-deduplication",
+    "entry": "single",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": [
+            {
+              "reference": "replayed",
+              "status": "received"
+            }
+          ]
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "ship-a",
+        "reference": "replayed",
+        "status": "pending"
+      }
+    ],
+    "expected": {
+      "tag": "error",
+      "code": "INVALID_STATUS",
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "replayed",
+                "status": "received"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "batch-stops-at-first-error",
+    "entry": "batch",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": [
+            {
+              "reference": "initial",
+              "status": "received"
+            }
+          ]
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "ship-a",
+        "reference": "valid-before-error",
+        "status": "in-transit"
+      },
+      {
+        "shipmentId": "ship-a",
+        "reference": "bad-status",
+        "status": "pending"
+      },
+      {
+        "shipmentId": "missing",
+        "reference": "later-unknown",
+        "status": "received"
+      }
+    ],
+    "expected": {
+      "tag": "error",
+      "code": "INVALID_STATUS",
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "initial",
+                "status": "received"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "empty-reference-is-valid-and-deduplicates-exactly",
+    "entry": "batch",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": []
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "ship-a",
+        "reference": "",
+        "status": "received"
+      },
+      {
+        "shipmentId": "ship-a",
+        "reference": "",
+        "status": "delivered"
+      }
+    ],
+    "expected": {
+      "tag": "ok",
+      "store": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "",
+                "status": "received"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      },
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": []
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  },
+  {
+    "id": "whitespace-and-case-are-distinct",
+    "entry": "batch",
+    "store": {
+      "shipments": [
+        {
+          "id": "ship-a",
+          "label": "Alpha",
+          "scans": []
+        }
+      ],
+      "audit": "audit-sentinel",
+      "generation": 73
+    },
+    "events": [
+      {
+        "shipmentId": "ship-a",
+        "reference": "Ref",
+        "status": "received"
+      },
+      {
+        "shipmentId": "ship-a",
+        "reference": " ref",
+        "status": "in-transit"
+      },
+      {
+        "shipmentId": "ship-a",
+        "reference": "ref",
+        "status": "delivered"
+      },
+      {
+        "shipmentId": "ship-a",
+        "reference": "Ref ",
+        "status": "received"
+      }
+    ],
+    "expected": {
+      "tag": "ok",
+      "store": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": [
+              {
+                "reference": "Ref",
+                "status": "received"
+              },
+              {
+                "reference": " ref",
+                "status": "in-transit"
+              },
+              {
+                "reference": "ref",
+                "status": "delivered"
+              },
+              {
+                "reference": "Ref ",
+                "status": "received"
+              }
+            ]
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      },
+      "input": {
+        "shipments": [
+          {
+            "id": "ship-a",
+            "label": "Alpha",
+            "scans": []
+          }
+        ],
+        "audit": "audit-sentinel",
+        "generation": 73
+      }
+    }
+  }
+]

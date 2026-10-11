@@ -94,14 +94,19 @@ the original six-participant cohort. Five candidates pass the original 18-case
 checker; reset-1 remains a representation/setup incompatibility. All inherited
 tests are preserved, but retained-2 materially rewrites its three examples,
 including a replaced fixture. Passing library publication does not establish
-evidence preservation. Original snapshots, scores and audits are sealed;
-run the separately labelled representation-adapted check from report 193 next.
+evidence preservation. Original snapshots, scores and audits are sealed.
+[Report 197](../reports/197-typed-reference-record-supplement.md) closes the
+separately labelled representation-adapted check: reset-1 passes the same 18
+model cases using its one-field record constructor, with nominal negative
+controls and unchanged participant files. Keep that supplemental result
+separate from the original setup failure; it does not revise the frozen score.
 Assess behavior, evidence preservation, library qualification, finalization and
 recovery separately; this pilot does not establish a comparative vocabulary
 advantage. [Report 194](../reports/194-native-bool-implementation-plan.md) plans
 the next native slice after cohort and supplemental-check closure: Bool-backed
 nominal/refined values with canonical encoding admission, unchanged ABIs and
-fresh ordinary/mailbox conformance checks. It is not yet implemented.
+fresh ordinary/mailbox conformance checks. Implementation is now underway;
+fresh focused and full local validation remain required before acceptance.
 
 [Report 178](../reports/178-preview-defect-control-calibration.md) calibrates the
 first defect-repair stage: three correct controls pass 37 independent cases,

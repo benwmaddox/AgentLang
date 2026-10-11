@@ -1,7 +1,8 @@
 # 196 — Typed reference maintenance: original cohort results
 
 Status: the original six-participant cohort is complete, audited and packaged.
-The representation-adapted supplement has not run. No comparative reliability
+The representation-adapted supplement was pending at original closure and is
+now recorded separately in [report 197](197-typed-reference-record-supplement.md). No comparative reliability
 ranking or general vocabulary advantage is established.
 
 The accepted record-evolution capability lets external coding agents migrate
@@ -11,7 +12,8 @@ the second reset-rich participant and both F# participants pass the original
 one-field String record rather than the scalar constructor assumed by that
 checker: none of its behavior cases executed. This is setup incompatibility,
 not 18 observed behavior failures. Keep the original result and evaluate that
-immutable candidate with the separately labelled adapter from report 193.
+immutable candidate with the separately labelled adapter from report 193, as
+subsequently completed in report 197.
 
 | Participant | Original independent behavior | Local tests/assertions | Broker exchanges | Rejected requests |
 | --- | --- | ---: | ---: | ---: |
@@ -99,8 +101,12 @@ and source-preservation review alongside those gates. Do not repeat another
 easy composition trial to turn these feasibility results into a superiority
 claim.
 
-Continue native semantic conformance after original evidence and the narrow
-representation supplement are sealed. The next implementation remains the
+[Report 197](197-typed-reference-record-supplement.md) subsequently closes the
+narrow representation supplement: the captured reset-1 candidate passes all
+18 cases under the record-specific adapter. Its original setup-failure score
+and this archive remain unchanged; no participant repair was made.
+
+Continue native semantic conformance after this evidence closure. The next implementation remains the
 Bool slice in [report 194](194-native-bool-implementation-plan.md), including
 its admission review. This cohort adds no native service measurement and
 selects no mailbox memory policy. It adds no host capability; the trial brokers
