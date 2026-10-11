@@ -296,6 +296,14 @@ and dependency identities. The R02 result shows why complete structural
 coverage and self-authored passing expectations alone cannot prove behavior.
 
 Normal filesystem primitives must read and write real project-rooted files.
+The project's host-managed `.agentlang` subtree and root `dictionary.agent`
+must remain inaccessible to real language file operations, even when the
+corresponding filesystem effect is granted. Author dictionary changes through
+the runtime's semantic commands. Reserve those names case-insensitively on all
+platforms. Reject ambiguous Windows path aliases rather
+than permitting alternate spellings to bypass the reserved namespace. This
+path-based prototype policy does not establish protection from concurrent
+host filesystem changes or pre-existing hard links.
 Attached tests, including setup, expectation evaluation, publication gates and
 reload qualification, must use isolated virtual files and never perform language
 filesystem I/O against host files. Test grants may be configured separately from

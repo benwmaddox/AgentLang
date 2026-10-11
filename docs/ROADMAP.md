@@ -1,6 +1,6 @@
 # Current delivery roadmap
 
-Updated 2026-10-10. This is a delivery order and status map, not a replacement
+Updated 2026-10-11. This is a delivery order and status map, not a replacement
 for the [PRD](PRD.md). Reliable agent edits, discovery and reuse of accumulated
 typed vocabulary remain the primary research question. Runtime performance and
 development cost are separate measurements.
@@ -125,6 +125,22 @@ prevents successor dispatch. Organic accumulation remains unproven; this is
 not a comparative reliability result. Do not manufacture or prompt a helper
 under the same trial identity. Resume bounded LLVM/arena conformance while
 retaining this negative creation endpoint for later research design.
+
+[Report 201](../reports/201-filesystem-control-plane-boundary.md) addresses a
+confirmed real-file scope gap: language writes could corrupt the host dictionary
+pointer with a valid `fs.write` grant. Host dictionary metadata is now reserved
+from language I/O. Storage preservation and normal project file access pass
+249 focused assertions and all 37 full local Release checks. This bounded
+protection does not establish a hostile-filesystem
+sandbox or revise the closed agent trial's pinned runtime.
+
+The [next bounded native plan](../reports/202-native-unit-canonicality-plan.md)
+closes a source-evidenced Unit admission mismatch before widening types: the
+managed codec requires zero bytes while the raw C scanner accepts other bits.
+Require the same canonical zero after existing owner-bounded readability checks,
+retaining active/inactive sum behavior and unchanged layouts. This is a proposal
+awaiting implementation and C/LLVM validation. Float transport remains deferred
+until entry contracts and signed-zero equality are resolved.
 
 [Report 178](../reports/178-preview-defect-control-calibration.md) calibrates the
 first defect-repair stage: three correct controls pass 37 independent cases,

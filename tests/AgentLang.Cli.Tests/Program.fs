@@ -645,6 +645,81 @@ test fixture.read/fresh-state {
             let productionValue = (tested[3].["data"].["stack"].[0]).GetValue<string>()
             equal hostContents (JsonSerializer.Deserialize<string>(productionValue)) "production binding resumes actual file reads"
 
+            let storePointerPath = Path.Combine(project, ".agentlang", "store", "CURRENT")
+            check (File.Exists storePointerPath) "actual library commit creates the authoritative storage pointer"
+            let storePointerBytes = File.ReadAllBytes storePointerPath
+            let legacyExportPath = Path.Combine(project, "dictionary.agent")
+            if not (File.Exists legacyExportPath) then
+                // A current-authority fixture keeps the root legacy path populated
+                // even if this commit mode did not materialize its export.
+                File.WriteAllText(legacyExportPath, source, UTF8Encoding(false))
+            let legacyExportExisted = File.Exists legacyExportPath
+            let legacyExportBytes = File.ReadAllBytes legacyExportPath
+            let protectedPaths =
+                [ ".agentlang/store/CURRENT"
+                  "./.agentlang/store/CURRENT"
+                  "ordinary/../.agentlang/store/CURRENT"
+                  ".agentlang"
+                  ".agentlang/store"
+                  "dictionary.agent"
+                  "ordinary/../dictionary.agent"
+                  ".AGENTLANG/store/CURRENT"
+                  "DICTIONARY.AGENT" ]
+            let protectedOperations (path: string) =
+                let quotedPath = JsonSerializer.Serialize(path)
+                [ eval $"file.read({quotedPath})"
+                  eval $"file.write({quotedPath}, \"not-json\")"
+                  eval $"file.exists?({quotedPath})" ]
+            let protectedAttempts =
+                runCli project [ "--allow"; "fs.read,fs.write"; "--test-allow"; "fs.read,fs.write"; "--jsonl" ]
+                    (protectedPaths |> List.collect protectedOperations) 20000
+                |> checkedResponses "real I/O rejects canonical AgentLang metadata paths"
+            equal (protectedPaths.Length * 3) protectedAttempts.Length "each protected path is checked by read, write, and exists"
+            for response in protectedAttempts do
+                equal "EFFECT_FILE_PATH_RESERVED" ((response.["error"]["code"]).GetValue<string>()) "managed metadata paths have a structured reserved-path error"
+
+            if OperatingSystem.IsWindows() then
+                let ambiguousPaths =
+                    [ ".agentlang./store/CURRENT"
+                      ".agentlang /store/CURRENT"
+                      ".agentlang:stream/store/CURRENT"
+                      ".AGENTL~1/store/CURRENT"
+                      "DICTIO~1.AGE" ]
+                let ambiguousAttempts =
+                    runCli project [ "--allow"; "fs.read,fs.write"; "--test-allow"; "fs.read,fs.write"; "--jsonl" ]
+                        (ambiguousPaths |> List.collect protectedOperations) 20000
+                    |> checkedResponses "real I/O rejects ambiguous Windows path spellings"
+                equal (ambiguousPaths.Length * 3) ambiguousAttempts.Length "each ambiguous Windows path is checked by read, write, and exists"
+                for response in ambiguousAttempts do
+                    equal "EFFECT_FILE_PATH_INVALID" ((response.["error"]["code"]).GetValue<string>()) "ambiguous Windows path spelling has a structured invalid-path error"
+
+            Directory.CreateDirectory(Path.Combine(project, ".agentlang-data")) |> ignore
+            let siblingIo =
+                runCli project [ "--allow"; "fs.read,fs.write"; "--test-allow"; "fs.read,fs.write"; "--jsonl" ]
+                    [ eval "file.write(\".agentlang-data/ordinary.txt\", \"sibling Ω\")"
+                      eval "file.read(\".agentlang-data/ordinary.txt\")"
+                      eval "file.write(\"dictionary.agent.backup\", \"ordinary sibling\")"
+                      eval "file.read(\"dictionary.agent.backup\")" ] 15000
+                |> checkedResponses "ordinary files beside protected names remain available"
+            for response in siblingIo do check ((response.["ok"]).GetValue<bool>()) "ordinary sibling file operation succeeds"
+            let siblingValue (response: JsonNode) =
+                let rendered = response.["data"].["stack"].[0].GetValue<string>()
+                JsonSerializer.Deserialize<string>(rendered)
+            equal "sibling Ω" (siblingValue siblingIo[1]) "reserved directory name uses a segment boundary"
+            equal "ordinary sibling" (siblingValue siblingIo[3]) "reserved export name uses an exact root-name boundary"
+
+            let freshReload =
+                runCli project [ "--allow"; "fs.read"; "--test-allow"; "fs.read,fs.write"; "--jsonl" ] [ eval "fixture.read(\"shared.txt\")" ] 15000
+                |> checkedResponses "fresh CLI reloads the committed library after reserved-path attempts"
+            equal 1 freshReload.Length "fresh library reload returns one response"
+            check ((freshReload[0].["ok"]).GetValue<bool>()) "fresh library reload succeeds"
+            let reloadedValue = freshReload[0].["data"].["stack"].[0].GetValue<string>() |> fun rendered -> JsonSerializer.Deserialize<string>(rendered)
+            equal hostContents reloadedValue "reloaded library keeps reading the original host file"
+            equal storePointerBytes (File.ReadAllBytes storePointerPath) "language operations preserve authoritative CURRENT bytes"
+            equal legacyExportExisted (File.Exists legacyExportPath) "language operations do not create or remove the legacy export"
+            if legacyExportExisted then
+                equal legacyExportBytes (File.ReadAllBytes legacyExportPath) "language operations preserve legacy export bytes"
+
             let readOnly =
                 runCli project [ "--allow"; "fs.read"; "--test-allow"; "fs.read,fs.write"; "--jsonl" ]
                     [ request "test" [ "word", JsonValue.Create("fixture.read") :> JsonNode ]

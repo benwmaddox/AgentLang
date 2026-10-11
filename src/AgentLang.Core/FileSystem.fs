@@ -48,7 +48,47 @@ module internal FileSystem =
         | _ -> false
 
     let private pathFailure path =
-        failure "EFFECT_FILE_PATH_INVALID" $"File path '{path}' must stay beneath the project directory." [ "relative path within project directory" ] [ path ]
+        failure "EFFECT_FILE_PATH_INVALID" $"File path '{path}' must be an unambiguous relative path beneath the project directory." [ "unambiguous relative path within project directory" ] [ path ]
+
+    let private reservedPathFailure path =
+        failure "EFFECT_FILE_PATH_RESERVED" $"File path '{path}' targets AgentLang-managed project metadata." [ "ordinary project file outside AgentLang-managed storage paths" ] [ path ]
+
+    // Windows accepts several spellings for the same path (including trailing
+    // dots/spaces, alternate data stream suffixes, and DOS short names). Keep
+    // the real provider's policy conservative so those spellings cannot alias
+    // the reserved storage namespace after our lexical path checks.
+    let private hasDosShortNamePattern (segment: string) =
+        let mutable index = segment.IndexOf '~'
+        let mutable found = false
+        while index >= 0 && not found do
+            let mutable next = index + 1
+            while next < segment.Length && segment[next] >= '0' && segment[next] <= '9' do
+                next <- next + 1
+            found <- next > index + 1
+            if not found then index <- segment.IndexOf('~', index + 1)
+        found
+
+    let private hasAmbiguousWindowsSegment (path: string) =
+        if not (OperatingSystem.IsWindows()) then false
+        else
+            path.Split([| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
+            |> Array.exists (fun segment ->
+                if segment = "." || segment = ".." then false
+                else
+                    segment.EndsWith(".", StringComparison.Ordinal)
+                    || segment.EndsWith(" ", StringComparison.Ordinal)
+                    || segment.Contains ':'
+                    || hasDosShortNamePattern segment)
+
+    let private isReservedProjectPath (root: string) (fullPath: string) =
+        let relative = Path.GetRelativePath(root, fullPath)
+        let segments = relative.Split([| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
+        // These names are reserved consistently even on case-sensitive hosts,
+        // because a project may move between filesystem implementations.
+        let comparison = StringComparison.OrdinalIgnoreCase
+        segments.Length > 0
+        && (String.Equals(segments[0], ".agentlang", comparison)
+            || (segments.Length = 1 && String.Equals(segments[0], "dictionary.agent", comparison)))
 
     let private rootUnavailable () =
         failure "EFFECT_FILE_ROOT_UNAVAILABLE" "Filesystem effects require an Engine project directory." [ "project directory" ] []
@@ -105,6 +145,7 @@ module internal FileSystem =
         match projectDirectory with
         | None -> Error(rootUnavailable ())
         | Some root when String.IsNullOrEmpty path -> Error(pathFailure path)
+        | Some _ when hasAmbiguousWindowsSegment path -> Error(pathFailure path)
         | Some root ->
             try
                 if Path.IsPathRooted path then Error(pathFailure path)
@@ -118,6 +159,7 @@ module internal FileSystem =
                         String.Equals(fullPath, canonicalRoot, comparison)
                         || fullPath.StartsWith(rootPrefix, comparison)
                     if not contained || String.Equals(fullPath, canonicalRoot, comparison) then Error(pathFailure path)
+                    elif isReservedProjectPath canonicalRoot fullPath then Error(reservedPathFailure path)
                     else validateReparsePoints canonicalRoot fullPath path
             with
             | :? ArgumentException

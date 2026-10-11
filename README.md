@@ -352,7 +352,9 @@ Language programs can invoke only trusted primitives. A primitive's declared eff
 dotnet run --project src/AgentLang.Cli -- --allow fs.read,fs.write,console.write --jsonl
 ~~~
 
-Normal file operations use real UTF-8 files beneath the configured project directory. Attached tests always use fresh virtual files, including during library publication. Use --filesystem virtual to simulate an entire session explicitly. Capabilities are required in both contexts; --test-allow can explicitly grant isolated tests permissions separately from production --allow. Task abort and snapshots do not undo real external writes. The clock provider remains deterministic; --clock sets the value returned by clock.now.
+Normal file operations use real UTF-8 files beneath the configured project directory. The root `.agentlang` subtree and root `dictionary.agent` are reserved for host-managed dictionary storage: language reads, writes and existence checks return `EFFECT_FILE_PATH_RESERVED` for those paths. Reserved names are case-insensitive on every platform. Windows real-file paths reject ambiguous trailing dots/spaces, alternate-stream colons and DOS short-name alias spellings. Ordinary neighboring names such as `.agentlang-data` remain available. This path policy is not an operating-system sandbox against hostile concurrent filesystem changes or pre-existing hard links.
+
+Attached tests always use fresh virtual files, including during library publication. Use --filesystem virtual to simulate an entire session explicitly. Capabilities are required in both contexts; --test-allow can explicitly grant isolated tests permissions separately from production --allow. Task abort and snapshots do not undo real external writes. The clock provider remains deterministic; --clock sets the value returned by clock.now.
 
 ## External experiment harness
 
