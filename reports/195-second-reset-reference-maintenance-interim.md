@@ -3,6 +3,8 @@
 Status: five of six participants completed. The final retained-vocabulary
 participant is running. The frozen cohort remains open; no comparative
 reliability ranking is established.
+The [delivery roadmap](../docs/ROADMAP.md) now reflects all five completed
+participants and the required post-cohort representation check.
 
 The second reset-rich participant passes all 18 independent behavior cases,
 nominal construction probes, static field metadata, raw String and ShipmentId

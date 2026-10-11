@@ -81,11 +81,23 @@ The new [six-participant cohort](../reports/190-typed-reference-maintenance-coho
 is frozen against that accepted runtime; do not pool its results with 185.
 [Interim report 191](../reports/191-typed-reference-maintenance-interim.md) records
 the first retained participant passing 18 independent cases while preserving
-all inherited tests and examples. It also records unresolved history queries
-and near-budget protocol use. Finish the remaining five trials without runtime
-changes or participant feedback, then assess independent behavior, evidence
-preservation, library qualification, finalization and recovery separately.
-One passing participant does not establish a comparative vocabulary advantage.
+all inherited tests and examples, with unresolved history queries and
+near-budget protocol use. [Report 192](../reports/192-reset-reference-maintenance-interim.md)
+records a reset participant whose record representation cannot be constructed
+by the frozen scalar-only checker: none of its 18 behavior cases executed.
+[Report 193](../reports/193-conventional-reference-maintenance-interim.md) records
+both F# participants passing 18 cases and preserving inherited assertions.
+[Report 195](../reports/195-second-reset-reference-maintenance-interim.md) records
+the second reset participant passing 18 cases and preserving inherited evidence.
+Five participants are complete; the final retained participant is running.
+Finish it without runtime changes or task feedback, seal all original results,
+then run the separately labelled representation-adapted check from report 193.
+Assess behavior, evidence preservation, library qualification, finalization and
+recovery separately; this pilot does not establish a comparative vocabulary
+advantage. [Report 194](../reports/194-native-bool-implementation-plan.md) plans
+the next native slice after cohort and supplemental-check closure: Bool-backed
+nominal/refined values with canonical encoding admission, unchanged ABIs and
+fresh ordinary/mailbox conformance checks. It is not yet implemented.
 
 [Report 178](../reports/178-preview-defect-control-calibration.md) calibrates the
 first defect-repair stage: three correct controls pass 37 independent cases,
