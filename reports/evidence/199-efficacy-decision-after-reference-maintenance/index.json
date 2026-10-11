@@ -1,0 +1,57 @@
+{
+  "format": 1,
+  "status": "documentation checkpoint; no new participant or runtime result",
+  "inputRevision": "7243bd477bc2aa2da77f9b2aac8d132302276d79",
+  "inputs": [
+    {
+      "path": "reports/182-efficacy-decision-checkpoint.md",
+      "sha256": "ba0f0709dae6d4a40310ad88220dad7b41477e9812f8b7e402f26c1fb739a09a",
+      "bytes": 7547
+    },
+    {
+      "path": "reports/185-typed-reference-maintenance-results.md",
+      "sha256": "eee6a883af27c7709117c1b8bda937e995d422f5acf46c99704f0773fc466400",
+      "bytes": 4533
+    },
+    {
+      "path": "reports/188-atomic-record-evolution.md",
+      "sha256": "9799e86195b7877938e99e8d24f12a9ee214841943e8d5707500490bc58735a9",
+      "bytes": 8365
+    },
+    {
+      "path": "reports/194-native-bool-implementation-plan.md",
+      "sha256": "c4fd015316bfe8e1a162b76308731644ed81a12eb7d86245f15052522eb95501",
+      "bytes": 3447
+    },
+    {
+      "path": "reports/196-typed-reference-maintenance-cohort-results.md",
+      "sha256": "4171a2cc5a483c6861dd306de20210db2d995c2d5cebe7d26fde46ff3a128f6f",
+      "bytes": 7623
+    },
+    {
+      "path": "reports/197-typed-reference-record-supplement.md",
+      "sha256": "b233a243034260163e3b53f7dc8ff95c5e875aca405e404f87adb819b62ec131",
+      "bytes": 5233
+    },
+    {
+      "path": "reports/evidence/196-typed-reference-maintenance-cohort-results/index.json",
+      "sha256": "a6ea1f01c22f7784e16467123adacbceda1af1138e2f9081be1084badc985c2b",
+      "bytes": 399388
+    },
+    {
+      "path": "reports/evidence/196-typed-reference-maintenance-cohort-results/evidence.zip",
+      "sha256": "098e5ca3cc5c245b2e8f837cbdebff28cd07e2cb1d44b896f02beeaaff560c1c",
+      "bytes": 2341433
+    },
+    {
+      "path": "reports/evidence/197-typed-reference-record-supplement/index.json",
+      "sha256": "649a1f6d747db7092a65b5acf71503244b7d6fcdf928597948c083d995160bd2",
+      "bytes": 69684
+    },
+    {
+      "path": "reports/evidence/197-typed-reference-record-supplement/evidence.zip",
+      "sha256": "163d34077b2413dbe3df28a477257c91a36e7d51c55d59d52ef0acdddb58f566",
+      "bytes": 376790
+    }
+  ]
+}

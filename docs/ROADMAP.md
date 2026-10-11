@@ -37,9 +37,11 @@ not wait for every optional feature or proof of a comparative advantage.
 
 ## 1. Validate reliability beyond easy composition
 
-The [current efficacy decision](../reports/182-efficacy-decision-checkpoint.md)
-incorporates the completed repeated maintenance sequence in report 179 and
-separates native conformance and activation work through 181 from agent outcomes.
+The [current efficacy decision](../reports/199-efficacy-decision-after-reference-maintenance.md)
+incorporates the closed typed-reference cohort and its representation supplement
+in reports 196 and 197. The [previous checkpoint](../reports/182-efficacy-decision-checkpoint.md)
+covers repeated maintenance through 179 and separates native conformance and
+activation work through 181 from agent outcomes.
 It retains the conclusion of the
 [checkpoint through 176](../reports/177-reliability-and-vocabulary-checkpoint.md):
 discovery and reuse are demonstrated on
