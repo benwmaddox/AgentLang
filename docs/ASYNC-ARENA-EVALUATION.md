@@ -38,6 +38,14 @@ fails its 30-second confirmation, and non-monotonic timing prevents a general
 throughput conclusion. Preserve both policies and these limits when planning
 later external-ingress tests; prioritize the next agent-maintenance comparison.
 
+The current backend passes [eleven fresh host smoke cases](../reports/207-mailbox-load-readiness.md).
+The [fixed-point sixteen-slot confirmation](../reports/208-sixteen-slot-confirmation.md)
+runs three 30-second repeats per variant: all pass behavior, F# qualifies in all
+three, and both native policies miss the rejection gate in all three. Native
+process memory is lower at this point; copy counters remain unmeasured. This
+does not establish a throughput win or choose a policy. Isolate driver/polling/
+admission timing before interpreting another internally scheduled ranking.
+
 [Midori research](MIDORI-RESEARCH.md) supplies architectural comparisons, not
 AgentLang performance evidence. Include bounded outstanding work, explicit
 suspension, copy costs and retained-state interleaving in this evaluation.

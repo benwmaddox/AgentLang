@@ -662,6 +662,13 @@ memory is smaller in this fixture; a sixteen-slot KEEP pool recovers throughput
 lost by four slots. Native RETURN's best short point fails the 30-second check,
 so a general throughput advantage remains unproven. The internal arrival driver
 and non-monotonic timing require investigation before service-throughput claims.
+The [current readiness check](../reports/207-mailbox-load-readiness.md) rebuilds
+the accepted native backend and passes eleven host smoke cases. The focused
+[thirty-second sixteen-slot confirmation](../reports/208-sixteen-slot-confirmation.md)
+passes all nine behavior checks, but both native policies miss the rejection
+gate in every repeat while F# qualifies in all three. Native process memory is
+lower in this fixture; copy counters are unmeasured. Preserve both policies and
+investigate dispatch/polling/admission timing before another performance ranking.
 Keep both arena policies available; return to the primary maintenance-efficacy
 comparison below before expanding performance infrastructure. A general actor
 framework is not a prerequisite for either experiment.

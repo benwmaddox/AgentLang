@@ -1,8 +1,13 @@
 #requires -Version 7.0
 [CmdletBinding()]
 param(
-    [switch]$Smoke
+    [switch]$Smoke,
+    [switch]$Confirm16Slot
 )
+
+if ($Smoke -and $Confirm16Slot) {
+    throw 'Smoke and Confirm16Slot are mutually exclusive modes.'
+}
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -77,7 +82,9 @@ $script:report = [ordered]@{
     repository = $repo
     runDirectory = $runRoot
     tempDirectory = $tempRoot
+    mode = if ($Smoke) { 'smoke' } elseif ($Confirm16Slot) { 'confirm-16-slot' } else { 'full-matrix' }
     smoke = [bool]$Smoke
+    confirm16Slot = [bool]$Confirm16Slot
     measurementScope = 'Deterministic open-loop loopback mailbox workload; arrival scheduling overhead is included. The provider is measured in a separate Job Object and excluded from the application process-commit ceiling.'
     ceilings = [ordered]@{ equalLimitBytes = 268435456; nativeFollowupLimitBytes = 335544320; limitType = 'JOB_OBJECT_LIMIT_JOB_MEMORY process commit for the job and descendants; not resident memory' }
     cpu = [ordered]@{ policy = 'All app variants use one selected CPU; the provider uses a distinct available CPU when one exists.' }
@@ -999,6 +1006,61 @@ function Run-ScoredTrials {
     }
 }
 
+function Run-Focused16SlotConfirmation {
+    $rate = 500
+    $delay = 5
+    $warmup = 1000
+    $duration = 30000
+    $limit = 268435456L
+    $phase = 'confirmation-16-slot-30s'
+    $variants = @(
+        [pscustomobject]@{ backend = 'fsharp'; policy = 'gc'; scratchSlots = 0 },
+        [pscustomobject]@{ backend = 'native'; policy = 'return'; scratchSlots = 16 },
+        [pscustomobject]@{ backend = 'native'; policy = 'keep'; scratchSlots = 16 }
+    )
+
+    for ($repeat = 0; $repeat -lt 3; $repeat++) {
+        $order = switch ($repeat % 3) {
+            0 { @($variants[0], $variants[1], $variants[2]) }
+            1 { @($variants[1], $variants[2], $variants[0]) }
+            default { @($variants[2], $variants[0], $variants[1]) }
+        }
+        foreach ($variant in $order) {
+            $slots = if ($variant.backend -ceq 'native') { [int]$variant.scratchSlots } else { 0 }
+            $null = Invoke-Trial $variant.backend $variant.policy $slots $rate $delay $warmup $duration $limit ($repeat + 1) $phase
+        }
+    }
+
+    $focusedTrials = @($script:trialResults | Where-Object { $_.phase -ceq $phase })
+    $groups = @(Get-ScoreGroups $focusedTrials $phase)
+    if ($focusedTrials.Count -ne 9 -or $groups.Count -ne 3 -or
+        @($groups | Where-Object { $_.repeatCount -ne 3 }).Count -ne 0) {
+        throw "Focused 16-slot confirmation expected nine valid trials in three groups of three; found $($focusedTrials.Count) trials and $($groups.Count) groups."
+    }
+
+    $qualifyingTrials = @($focusedTrials | Where-Object { Test-TrialQualifies $_ })
+    $allGroupsQualify = @($groups | Where-Object { -not $_.allRepeatsQualify }).Count -eq 0
+    $script:report.score = [ordered]@{
+        mode = 'confirm-16-slot'
+        scored = $true
+        claimScope = 'One bounded 30-second confirmation point at 500/s with 5ms provider delay; not a highest-rate search, capacity estimate, external-ingress server result, or general throughput advantage.'
+        configuration = [ordered]@{
+            rate = $rate; payloadBytes = 4096; delayMs = $delay; warmupMs = $warmup; durationMs = $duration
+            repeatsPerVariant = 3; applicationLimitBytes = $limit; nativeScratchSlots = 16
+        }
+        expectedTrialCount = 9
+        actualTrialCount = $focusedTrials.Count
+        expectedGroupCount = 3
+        actualGroupCount = $groups.Count
+        qualifyingTrialCount = $qualifyingTrials.Count
+        allGroupsQualify = $allGroupsQualify
+        sustainedClaimAllowed = $allGroupsQualify
+        sustainedClaimStatus = if ($allGroupsQualify) { 'All three variants qualified at this fixed 30-second point.' } else { 'At least one variant did not qualify; retain its measurements without a sustained-point claim.' }
+        groups = $groups
+        rawTrials = $focusedTrials
+    }
+}
+
 try {
     [IO.Directory]::CreateDirectory($runRoot) | Out-Null
     [IO.Directory]::CreateDirectory($tempRoot) | Out-Null
@@ -1084,7 +1146,9 @@ try {
     Save-RunReport
 
     if ($Smoke) {
-        $script:report.score = [ordered]@{ smokeCases = @($script:trialResults | Where-Object { $_.phase -like 'smoke*' } | ForEach-Object { $_.application }); scored = $false; reason = 'Smoke validation is not a scored result.' }
+        $script:report.score = [ordered]@{ mode = 'smoke'; smokeCases = @($script:trialResults | Where-Object { $_.phase -like 'smoke*' } | ForEach-Object { $_.application }); scored = $false; reason = 'Smoke validation is not a scored result.' }
+    } elseif ($Confirm16Slot) {
+        Run-Focused16SlotConfirmation
     } else {
         Run-ScoredTrials
     }

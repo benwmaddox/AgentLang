@@ -1,0 +1,107 @@
+{
+  "kind": "root-raw-smoke-accounting-audit",
+  "runId": "79fce6cb7d004abead68e4b38799755e",
+  "checks": [
+    {
+      "trial": "smoke-fsharp-gc-250-d0-r1-s0",
+      "passed": true,
+      "offered": 63,
+      "admitted": 59,
+      "rejected": 4,
+      "completed": 59,
+      "providerFrames": 84
+    },
+    {
+      "trial": "smoke-native-return-250-d0-r1-s4",
+      "passed": true,
+      "offered": 63,
+      "admitted": 59,
+      "rejected": 4,
+      "completed": 59,
+      "providerFrames": 82
+    },
+    {
+      "trial": "smoke-native-keep-250-d0-r1-s4",
+      "passed": true,
+      "offered": 63,
+      "admitted": 63,
+      "rejected": 0,
+      "completed": 63,
+      "providerFrames": 85
+    },
+    {
+      "trial": "smoke-fsharp-gc-500-d5-r1-s0",
+      "passed": true,
+      "offered": 125,
+      "admitted": 123,
+      "rejected": 2,
+      "completed": 123,
+      "providerFrames": 172
+    },
+    {
+      "trial": "smoke-native-return-500-d5-r1-s4",
+      "passed": true,
+      "offered": 125,
+      "admitted": 111,
+      "rejected": 14,
+      "completed": 111,
+      "providerFrames": 160
+    },
+    {
+      "trial": "smoke-native-keep-500-d5-r1-s4",
+      "passed": true,
+      "offered": 125,
+      "admitted": 34,
+      "rejected": 91,
+      "completed": 34,
+      "providerFrames": 47
+    },
+    {
+      "trial": "smoke-fsharp-gc-64000-d5-r1-s0",
+      "passed": true,
+      "offered": 16000,
+      "admitted": 271,
+      "rejected": 15729,
+      "completed": 271,
+      "providerFrames": 383
+    },
+    {
+      "trial": "smoke-native-return-64000-d5-r1-s4",
+      "passed": true,
+      "offered": 16000,
+      "admitted": 245,
+      "rejected": 15755,
+      "completed": 245,
+      "providerFrames": 350
+    },
+    {
+      "trial": "smoke-native-keep-64000-d5-r1-s4",
+      "passed": true,
+      "offered": 16000,
+      "admitted": 64,
+      "rejected": 15936,
+      "completed": 64,
+      "providerFrames": 92
+    },
+    {
+      "trial": "smoke-capacity-16-slot-native-return-64000-d5-r1-s16",
+      "passed": true,
+      "offered": 16000,
+      "admitted": 217,
+      "rejected": 15783,
+      "completed": 217,
+      "providerFrames": 325
+    },
+    {
+      "trial": "smoke-capacity-16-slot-native-keep-64000-d5-r1-s16",
+      "passed": true,
+      "offered": 16000,
+      "admitted": 239,
+      "rejected": 15761,
+      "completed": 239,
+      "providerFrames": 350
+    }
+  ],
+  "performanceScored": false,
+  "limitation": "Rechecks raw saved counters, latency count, per-mailbox final flags and provider frames; does not rerun handlers or establish sustained throughput."
+}

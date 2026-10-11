@@ -5,6 +5,11 @@ agent-efficacy trial. Reuse `AgentLang.RealIoMailbox/mailbox.flow` and its exact
 initialize/begin/resume transitions. Do not change the established correctness
 fixtures or native runtime to improve benchmark results.
 
+Runner modes: default runs the original full matrix; `-Smoke` runs correctness
+preflight only. The mutually exclusive `-Confirm16Slot` runs that same preflight
+followed by the separately predeclared [fixed-point confirmation](confirmation-208.md).
+It does not rerun or revise the original matrix or choose a highest rate.
+
 ## Implementations
 
 - Native: fresh O2 trusted-generated mailbox DLL and host, with 16 persistent
