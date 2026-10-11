@@ -1,0 +1,10 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Flow.Runtime.Tests",
+  "exitCode": 0,
+  "groupsPassed": 45,
+  "assertionsPassed": 2260,
+  "execution": "local host, freshly rebuilt corrected test project",
+  "coreSha256": "074bc1114e9937f1f8652537f75e0eb2d3c0113582bb8e7645681c5a8de475a1",
+  "testBinarySha256": "13944f18506454f9b6653662126e725d476b6abc675eb3b2eff6f78247688951",
+  "testSourceSha256": "e8f08396d2a0bfb8c1a93cfbbb8d24c84deed11b6cbdeb7c201b07c93b02d5fa"
+}

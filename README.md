@@ -6,12 +6,13 @@ AI agents are external coding tools that use the language. The language runtime 
 
 This repository implements a prototype slice. The compiler checks and lowers source into verified typed semantic IR; the public runtime executes that IR through the interpreter, with no AST execution fallback. File primitives use real project-rooted files during normal execution and isolated virtual files in attached tests. Network and database access remain outside the current primitive set. An optional external experiment harness and a conventional business foundation are included. The [repeated external-agent comparison](reports/064-repeat-agent-purpose-review.md) observes tested vocabulary reuse; an overall efficiency advantage remains unproven. The Customer demo uses binary floating point and is not suitable for exact money. The Email validator below demonstrates a modest local policy and does not claim conformance with the full Internet email standard.
 
-The [current efficacy checkpoint](reports/203-efficacy-decision-after-organic-creation.md)
-records successful bounded discovery/composition without an established
-comparative reliability advantage over F#. The organic creator completes its
-task but creates no eligible shared helper, so no later-agent reuse is observed.
-Earlier studies record failures of reuse and inherited-evidence preservation
-despite passing library qualification. The
+The [current efficacy checkpoint](reports/222-typed-batch-fresh-results.md)
+records a fresh typed-contract maintenance pair: both implementations pass nine
+behavior cases, but only F# preserves the full assigned edit scope. AgentLang
+changes one inherited test fixture. A separate source-punctuation-sensitive
+scorer failure is preserved in the report. No comparative reliability advantage
+is established. Earlier studies record failures of reuse and inherited-evidence
+preservation despite passing library qualification. The
 [I/O testing probe](reports/154-provider-state-assertion-probe.md) shows
 one fresh agent adding state and effect assertions that reject three defects.
 

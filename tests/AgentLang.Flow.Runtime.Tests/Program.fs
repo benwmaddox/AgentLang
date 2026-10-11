@@ -7045,6 +7045,143 @@ test-file self {
             (commit selfEngine "commit" "proof.flip" [ "library", jbool true ])
         |> ignore
 
+    let private testSemanticTypeInspectionAndTestAccounting root =
+        let newlineProject = Path.Combine(root, "semantic-type-newlines")
+        let semicolonProject = Path.Combine(root, "semantic-type-semicolons")
+        let newlineEngine = Runtime.Engine(newlineProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let semicolonEngine = Runtime.Engine(semicolonProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let newlineRecords =
+            "record Leaf {\n"
+            + "    field text: String\n"
+            + "}\n\n"
+            + "record Envelope {\n"
+            + "    field id: Int\n"
+            + "    field leaf: Leaf\n"
+            + "    field nested: List<Option<Result<Leaf, String>>>\n"
+            + "}"
+        let semicolonRecords =
+            "record Leaf { field text: String; }\n\n"
+            + "record Envelope { field id: Int; field leaf: Leaf; field nested: List<Option<Result<Leaf, String>>>; }"
+        let commonTypes =
+            "type Email : String { validate email.valid?; }\n\n"
+            + "type Ratio : Float { }\n\n"
+            + "enum Delivery { case Pending; case Sent; case Delivered; }\n\n"
+            + "fn email.valid?(value: String) -> Bool { true }\n\n"
+            + "test email.valid?/accepts { email.valid?(\"sample\") => true }"
+        let defineSemanticProject engine recordText label =
+            defineFlowProject engine (recordText + "\n\n" + commonTypes) [ "syntaxVersion", jint 2 ]
+            |> expectOk $"stage {label} semantic type fixture"
+            |> ignore
+        defineSemanticProject newlineEngine newlineRecords "newline-separated"
+        defineSemanticProject semicolonEngine semicolonRecords "semicolon-separated"
+        let describeType engine name =
+            dispatch engine "describe" [ "type", jstr name ]
+            |> expectOk $"describe semantic type {name}"
+            |> fun response -> response.["data"]
+        let newlineEnvelope = describeType newlineEngine "Envelope"
+        let semicolonEnvelope = describeType semicolonEngine "Envelope"
+        equal "candidate" (stringValue newlineEnvelope.["status"]) "type semantic metadata remains available while the type is a candidate"
+        equal "record" (stringValue newlineEnvelope.["typeKind"]) "record inspection identifies its semantic type kind"
+        equal (stringValue newlineEnvelope.["typeKind"]) (stringValue semicolonEnvelope.["typeKind"]) "record semantic kind is independent of source separators"
+        equal (newlineEnvelope.["fields"].ToJsonString()) (semicolonEnvelope.["fields"].ToJsonString()) "record semantic fields are independent of source separators"
+        let envelopeFields =
+            newlineEnvelope.["fields"].AsArray()
+            |> Seq.map (fun field -> stringValue field.["name"], stringValue field.["type"])
+            |> Seq.toList
+        equal
+            [ "id", "Int"; "leaf", "Leaf"; "nested", "List<Option<Result<Leaf, String>>>" ]
+            envelopeFields
+            "record inspection preserves field order, nominal field types, and canonical nested type formatting"
+
+        let candidateEmail = describeType newlineEngine "Email"
+        equal "scalar" (stringValue candidateEmail.["typeKind"]) "scalar inspection identifies its semantic type kind"
+        equal "String" (stringValue candidateEmail.["baseType"]) "scalar inspection returns its canonical base type"
+        equal "email.valid?" (stringValue candidateEmail.["validatorName"]) "scalar inspection returns its declared validator name"
+        let candidateRatio = describeType newlineEngine "Ratio"
+        equal "Float" (stringValue candidateRatio.["baseType"]) "an unvalidated scalar returns its canonical base type"
+        check (isNull candidateRatio.["validatorName"]) "an unvalidated scalar has no validator name"
+        let candidateDelivery = describeType newlineEngine "Delivery"
+        equal "enum" (stringValue candidateDelivery.["typeKind"]) "enum inspection identifies its semantic type kind"
+        equal [ "Pending"; "Sent"; "Delivered" ] (jsonArrayStrings candidateDelivery.["cases"]) "enum inspection preserves case order"
+
+        commit newlineEngine "commit" "Envelope" [] |> expectOk "commit the nested record closure" |> ignore
+        commit newlineEngine "commit" "Email" [] |> expectOk "commit the validated scalar and its validator" |> ignore
+        commit newlineEngine "commit" "Ratio" [] |> expectOk "commit the unvalidated scalar" |> ignore
+        commit newlineEngine "commit" "Delivery" [] |> expectOk "commit the enum" |> ignore
+        let reloadedEngine = Runtime.Engine(newlineProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let reloadedEnvelope = describeType reloadedEngine "Envelope"
+        equal "persistent" (stringValue reloadedEnvelope.["status"]) "committed record inspection reports persistent status after reload"
+        equal (newlineEnvelope.["typeKind"].ToJsonString()) (reloadedEnvelope.["typeKind"].ToJsonString()) "record semantic kind survives commit and reload"
+        equal (newlineEnvelope.["fields"].ToJsonString()) (reloadedEnvelope.["fields"].ToJsonString()) "record semantic fields survive commit and reload"
+        let reloadedEmail = describeType reloadedEngine "Email"
+        equal "persistent" (stringValue reloadedEmail.["status"]) "committed scalar inspection reports persistent status after reload"
+        equal "String" (stringValue reloadedEmail.["baseType"]) "committed scalar retains its base type after reload"
+        equal "email.valid?" (stringValue reloadedEmail.["validatorName"]) "committed scalar retains its validator name after reload"
+        let reloadedDelivery = describeType reloadedEngine "Delivery"
+        equal "persistent" (stringValue reloadedDelivery.["status"]) "committed enum inspection reports persistent status after reload"
+        equal [ "Pending"; "Sent"; "Delivered" ] (jsonArrayStrings reloadedDelivery.["cases"]) "committed enum retains its ordered cases after reload"
+        let reloadedRatio = describeType reloadedEngine "Ratio"
+        check (isNull reloadedRatio.["validatorName"]) "unvalidated scalar remains without a validator after reload"
+
+        let accountingProject = Path.Combine(root, "test-accounting-summary")
+        let accountingEngine = Runtime.Engine(accountingProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let accountingSource =
+            "fn accounting.identity(value: Int) -> Int { value }\n\n"
+            + "fn accounting.empty(value: Int) -> Int { value }\n\n"
+            + "test accounting.identity/passing { accounting.identity(1) => value accounting.identity(1) }\n\n"
+            + "test accounting.identity/failing { accounting.identity(1) => value accounting.identity(2) }"
+        defineFlowProject accountingEngine accountingSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "stage test execution accounting fixtures"
+        |> ignore
+        dispatch accountingEngine "task.begin" [ "goal", jstr "verify cumulative test accounting" ]
+        |> expectOk "begin a task for test accounting"
+        |> ignore
+        let assertTestSummary expectedExecuted expectedPassed expectedFailed (response: JsonObject) label =
+            let summary = response.["data"].["testSummary"]
+            equal expectedExecuted (summary.["executed"].GetValue<int>()) $"{label} summary reports the full executed batch"
+            equal expectedPassed (summary.["passed"].GetValue<int>()) $"{label} summary reports passing executions"
+            equal expectedFailed (summary.["failed"].GetValue<int>()) $"{label} summary reports failing executions"
+        let assertTaskCounters expectedExecutions expectedFailures (taskData: JsonNode) label =
+            equal expectedExecutions (taskData.["testsRun"].GetValue<int>()) $"{label} preserves legacy test execution count"
+            equal expectedFailures (taskData.["testsFailed"].GetValue<int>()) $"{label} preserves legacy failed test count"
+            equal expectedExecutions (taskData.["testExecutions"].GetValue<int>()) $"{label} exposes cumulative test executions"
+            equal expectedFailures (taskData.["testFailures"].GetValue<int>()) $"{label} exposes cumulative test failures"
+
+        let targeted = dispatch accountingEngine "test" [ "word", jstr "accounting.identity" ] |> expectOk "run targeted accounting tests"
+        assertTestSummary 2 1 1 targeted "targeted test"
+        let statusAfterTargeted = dispatch accountingEngine "task.status" [] |> expectOk "inspect counts after targeted tests"
+        assertTaskCounters 2 1 (statusAfterTargeted.["data"]) "targeted test status"
+        let allTests = dispatch accountingEngine "test-all" [] |> expectOk "run all accounting tests"
+        assertTestSummary 2 1 1 allTests "test-all"
+        let firstFailed = dispatch accountingEngine "failed-tests" [] |> expectOk "run first failed-tests accounting batch"
+        equal 1 (firstFailed.["data"].["results"].AsArray().Count) "failed-tests keeps its filtered result list"
+        assertTestSummary 2 1 1 firstFailed "failed-tests"
+        let secondFailed = dispatch accountingEngine "failed-tests" [] |> expectOk "repeat failed-tests accounting batch"
+        equal 1 (secondFailed.["data"].["results"].AsArray().Count) "repeated failed-tests keeps its filtered result list"
+        assertTestSummary 2 1 1 secondFailed "repeated failed-tests"
+        let noResults = dispatch accountingEngine "test" [ "word", jstr "accounting.empty" ] |> expectOk "run a target with no attached tests"
+        equal 0 (noResults.["data"].["results"].AsArray().Count) "a test execution with no cases returns no result rows"
+        assertTestSummary 0 0 0 noResults "empty targeted test"
+        let statusBeforeCommit = dispatch accountingEngine "task.status" [] |> expectOk "inspect cumulative tests before commit gating"
+        assertTaskCounters 8 4 (statusBeforeCommit.["data"]) "pre-commit task status"
+        expectError "COMMIT_TESTS_FAILED" (dispatch accountingEngine "commit" [ "word", jstr "accounting.identity" ]) |> ignore
+        let statusAfterCommitGate = dispatch accountingEngine "task.status" [] |> expectOk "inspect counts after commit test gating"
+        assertTaskCounters 10 5 (statusAfterCommitGate.["data"]) "commit test gate task status"
+        let aborted = dispatch accountingEngine "task.abort" [] |> expectOk "close the accounting task"
+        assertTaskCounters 10 5 aborted.["data"] "aborted task log"
+        let logged = dispatch accountingEngine "task.log" [] |> expectOk "read the saved cumulative accounting log"
+        assertTaskCounters 10 5 logged.["data"] "saved task log"
+
+        let passingEngine = Runtime.Engine(Path.Combine(root, "test-accounting-all-passing"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        defineFlowProject passingEngine
+            "fn passing.identity(value: Int) -> Int { value }\n test passing.identity/one { passing.identity(1) => 1 }\n test passing.identity/two { passing.identity(2) => 2 }"
+            [ "syntaxVersion", jint 2 ]
+        |> expectOk "stage an entirely passing suite"
+        |> ignore
+        let noFailures = dispatch passingEngine "failed-tests" [] |> expectOk "rerun an entirely passing suite"
+        equal 0 (noFailures.["data"].["results"].AsArray().Count) "an empty failure list can follow a nonempty execution batch"
+        assertTestSummary 2 2 0 noFailures "all-passing failed-tests"
+
     [<EntryPoint>]
     let main _ =
         let root = newRoot ()
@@ -7090,10 +7227,11 @@ test-file self {
             testFlow2DottedCallsAndRename root
             testFlowValidatorCannotBeRenamedAfterTypeCommit root
             testFlowProjectDocumentTypesCommitAndReload root
+            testSemanticTypeInspectionAndTestAccounting root
             testRecordValidatorRuntimeAndPersistence root
             testEffectCountAssertions root
             testFlowTestFileOverrides root
-            printfn $"Flow Runtime tests passed: 44 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 45 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

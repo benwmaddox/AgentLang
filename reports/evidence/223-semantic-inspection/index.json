@@ -1,0 +1,21 @@
+{
+  "archive": "raw-validation.zip",
+  "sha256": "009b2d32ac34b9878091bb733f5256bb60bf6394c9fc4e38ee2b2eb750861edb",
+  "members": [
+    {
+      "name": "business-policy-preflight.json",
+      "length": 15492655,
+      "sha256": "979a363f4b0eeb705c066efb19dc0311d856ba899904f1029571c3046bc7ec20"
+    },
+    {
+      "name": "full-run-original.json",
+      "length": 30742,
+      "sha256": "d16c9ab1c67662a2d7764663aa376fe2912dc98a023cbb4a9524ce467d033346"
+    },
+    {
+      "name": "initial-build-failure.json",
+      "length": 8228,
+      "sha256": "963846851611546b2517ba99d4a817af9f4475d0e95abe4c82a8eb85e7756088"
+    }
+  ]
+}

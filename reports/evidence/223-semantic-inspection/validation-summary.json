@@ -1,0 +1,15 @@
+{
+  "scope": "37 local Release checks with the corrected Flow runtime suite rerun, plus LLVM tests",
+  "originalFullRunPassed": false,
+  "originalCheckCount": 37,
+  "originallyPassingChecks": 36,
+  "originalFailure": "flow-runtime-acceptance",
+  "correctedCheckExitCode": 0,
+  "correctedRuntimeGroups": 45,
+  "correctedRuntimeAssertions": 2260,
+  "llvmAssertions": 950,
+  "businessPolicyControlOutcomes": 30,
+  "businessPolicyControlChecks": 98,
+  "currentChecksPassed": true,
+  "note": "The original full-run report remains unmodified and false. Only its failed Flow runtime check was rebuilt and rerun after test-fixture corrections; production runtime code and other test bodies were unchanged."
+}

@@ -3050,6 +3050,8 @@ module Runtime =
             node["wordsCreated"] <- jsonNode (task.Created |> Set.toList)
             node["testsRun"] <- jint task.TestsRun
             node["testsFailed"] <- jint task.TestsFailed
+            node["testExecutions"] <- jint task.TestsRun
+            node["testFailures"] <- jint task.TestsFailed
             node["effects"] <- jsonNode (task.EffectCounts |> Map.toSeq |> Map.ofSeq)
             node["errors"] <- jsonNode task.Errors
             match task.LogWarning with
@@ -5879,13 +5881,36 @@ module Runtime =
             payload["sourceHash"] <- jstr exactSource.Reference.Hash
             payload["sourceFormat"] <- sourceFormatJson authored.SourceFormat
             payload["validatorTarget"] <- authored.ValidatorTarget |> Option.map storedCallTargetJson |> Option.defaultValue null
+            match data.Records.TryFind typeName, data.Scalars.TryFind typeName, data.Enums.TryFind typeName with
+            | Some record, _, _ ->
+                payload["typeKind"] <- jstr "record"
+                let fields = JsonArray()
+                for field in record.Definition.Fields do
+                    let fieldNode = JsonObject()
+                    fieldNode["name"] <- jstr field.Name
+                    fieldNode["type"] <- jstr (Types.format field.Type)
+                    fields.Add(fieldNode)
+                payload["fields"] <- fields
+            | _, Some scalar, _ ->
+                payload["typeKind"] <- jstr "scalar"
+                payload["baseType"] <- jstr (Types.format scalar.Definition.BaseType)
+                payload["validatorName"] <- scalar.Definition.Validator |> Option.map jstr |> Option.defaultValue null
+            | _, _, Some enumDefinition ->
+                payload["typeKind"] <- jstr "enum"
+                payload["cases"] <- jsonNode enumDefinition.Definition.Cases
+            | _ -> ()
             payload
 
-        let resultList (snapshot: RuntimeSnapshot) (kind: string) (text: string) (results: TestCaseResult list) (target: string option) =
+        let resultList (snapshot: RuntimeSnapshot) (kind: string) (text: string) (results: TestCaseResult list) (executedResults: TestCaseResult list) (target: string option) =
             let array = JsonArray()
             results |> List.iter (fun result -> array.Add(resultJson snapshot result))
             let dataNode = JsonObject()
             dataNode["results"] <- array
+            let testSummary = JsonObject()
+            testSummary["executed"] <- jint executedResults.Length
+            testSummary["passed"] <- jint (executedResults |> List.filter (fun result -> result.Passed) |> List.length)
+            testSummary["failed"] <- jint (executedResults |> List.filter (fun result -> not result.Passed) |> List.length)
+            dataNode["testSummary"] <- testSummary
             match target with Some word when snapshot.Words.ContainsKey word -> dataNode["coverage"] <- coverageJson snapshot word results | _ -> ()
             success kind text (Some dataNode)
 
@@ -6271,19 +6296,19 @@ module Runtime =
                     let results = runTestsFor snapshot (if target = "" then None else Some target)
                     lastResults <- results
                     recordTestResults results
-                    resultList snapshot "test" $"{results |> List.filter (fun item -> item.Passed) |> List.length}/{results.Length} test(s) passed." results (if target = "" then None else Some target)
+                    resultList snapshot "test" $"{results |> List.filter (fun item -> item.Passed) |> List.length}/{results.Length} test(s) passed." results results (if target = "" then None else Some target)
                 | "test-all" ->
                     let snapshot = currentSnapshot ()
                     let results = runTestsFor snapshot None
                     lastResults <- results
                     recordTestResults results
-                    resultList snapshot "test" $"{results |> List.filter (fun item -> item.Passed) |> List.length}/{results.Length} test(s) passed." results None
+                    resultList snapshot "test" $"{results |> List.filter (fun item -> item.Passed) |> List.length}/{results.Length} test(s) passed." results results None
                 | "failed-tests" ->
                     let snapshot = currentSnapshot ()
                     let allResults = runTestsFor snapshot None
                     recordTestResults allResults
                     let results = allResults |> List.filter (fun result -> not result.Passed)
-                    resultList snapshot "failed-tests" $"{results.Length} failing test(s) on current dictionary." results None
+                    resultList snapshot "failed-tests" $"{results.Length} failing test(s) on current dictionary." results allResults None
                 | "commit" | "commit-word" | "replace-word" | "task.commit" ->
                     let name = readString args "word" ""
                     let library = readBool args "library" false

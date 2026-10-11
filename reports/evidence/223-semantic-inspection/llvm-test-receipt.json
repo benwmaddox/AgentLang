@@ -1,0 +1,9 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Llvm.Tests",
+  "exitCode": 0,
+  "assertionsPassed": 950,
+  "artifacts": ".agentlang/native-validation/tests-0a70d57751bc4a00bf41d0c3abaa66ca",
+  "coreSha256": "074bc1114e9937f1f8652537f75e0eb2d3c0113582bb8e7645681c5a8de475a1",
+  "llvmSha256": "ca2156a5de839ec037b9214da7ce80b9258206b3519ee138c6009f5a79f35369",
+  "execution": "local host, fresh Release solution build"
+}

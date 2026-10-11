@@ -41,8 +41,12 @@ The [fresh comparison result](../reports/222-typed-batch-fresh-results.md) close
 with both implementations passing nine behavior cases, but only F# preserving
 the full assigned edit scope. AgentLang changes one inherited fixture and its
 raw scorer also exposes a separate punctuation-sensitive type gate. No comparative
-reliability advantage is established. Next fix semantic type-contract inspection
-and cumulative test-count clarity; retain explicit fixture preservation review.
+reliability advantage is established. The
+[inspection and accounting update](../reports/223-semantic-type-inspection-and-test-counts.md)
+adds checked semantic type metadata and explicit test execution summaries.
+Future contract checks should consume that metadata; historical frozen oracles
+remain unchanged. Retain explicit fixture preservation review and held-out
+acceptance tests alongside library coverage.
 The [prior efficacy decision](../reports/219-efficacy-after-typed-batch-maintenance.md)
 records correct preserved typed-contract maintenance in both continuation seeds,
 with assisted/failed finalization kept separate from source correctness. It called

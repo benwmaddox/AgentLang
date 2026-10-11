@@ -33,6 +33,15 @@ to inspect signatures and the exact `flowReference` call spelling before
 composing source. Names in protocol queries use dots; nominal types stay
 distinct: a Money value is not an Int, and Email is not String.
 
+Inspect a declared type with `{"op":"describe","type":"Customer"}`.
+Alongside status, revision and exact source hash, the response exposes checked
+semantic structure: `typeKind` is `record`, `scalar` or `enum`. Records include
+ordered `fields` with `name` and canonical `type`; scalars include `baseType` and
+`validatorName` (null when absent); enums include ordered `cases`. These describe
+the current definition, including staged candidates. Use them to check a type
+contract rather than parsing source punctuation. A nominal field type remains
+its declared name rather than becoming its underlying primitive type.
+
 Ask the runtime for authoring instructions through the same JSONL session:
 
 ```json
@@ -53,6 +62,16 @@ provides a complete retrieval budget for sessions with help enabled. The model
 harness's complete per-request context-byte accounting is a separate mechanism.
 
 ## Documentation, tests and examples
+
+Test-run responses expose `data.testSummary` with `executed`, `passed` and `failed`
+for that execution batch. `failed-tests` reruns the entire current suite: its
+`results` array contains only failures, while its summary counts every test run.
+An empty failure list therefore does not mean zero tests executed.
+
+Task status and saved logs expose cumulative `testExecutions` and `testFailures`;
+`testsRun` and `testsFailed` retain the same totals. Repeated runs and commit-gate
+tests count again. These counters measure execution work, not distinct tests or
+suite size. Use the `test-all` response summary for the current suite's size.
 
 Documentation belongs inside the word. Comments do not populate documentation
 metadata, and `documentation` is not a Flow define request field.
