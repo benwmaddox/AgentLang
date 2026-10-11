@@ -49,10 +49,14 @@ their later usefulness needs a separate held-out public-function reuse study.
 Do not confuse that broader endpoint with spontaneous optional-helper creation.
 The [separate public-vocabulary reuse study](../reports/211-public-vocabulary-reuse.md)
 pins the accepted 210 creator project and predeclares its two renewal functions
-as targets for a fresh developer's held-out batch task. Current-runtime and
-adapter preflight pass; no developer outcome is claimed yet. Behavior,
-preservation, discovery and production paths are distinct endpoints, with no
-causal or comparative advantage claim from one instance.
+as targets for a fresh developer's held-out batch task. The developer discovers
+and production-reuses both through a new batch helper. Independent scoring passes
+66/66 original observations, 9/9 held-out batch observations, 152/152 tests and
+39 example owners, preserving inherited evidence and both target definitions.
+This demonstrates task-required public vocabulary reuse; spontaneous helper
+creation and a causal or comparative advantage remain unproven. Next estimate
+retention benefit with a matched reset/retained comparison, keeping behavior,
+preservation, discovery and production paths as separate endpoints.
 The [prior decision](../reports/199-efficacy-decision-after-reference-maintenance.md)
 covers the closed typed-reference cohort and its representation supplement in
 reports 196 and 197. The [previous checkpoint](../reports/182-efficacy-decision-checkpoint.md)

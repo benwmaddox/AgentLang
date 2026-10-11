@@ -1,7 +1,30 @@
 # 211 — Later developer reuse of creator-authored public vocabulary
 
-Status: preflight accepted on 2026-10-11; developer dispatch is next. No developer
-outcome is claimed yet.
+Status: closed on 2026-10-11; independent behavior, preservation and both-target
+public-vocabulary reuse checks pass.
+
+A fresh developer discovered both creator-authored renewal functions and reused
+them in the held-out batch implementation. Independent scoring passes all 66
+original renewal observations and all nine batch observations. The full suite
+passes 152/152 tests, with all 39 inherited example owners passing. Inherited
+definitions, types, tests and examples remain intact, including both targets'
+identities, revisions, signatures, source and own tests. Scoring uses copies and
+leaves the participant project unchanged.
+
+Search returned both exact names before subsequent source lookups for each.
+The summary's separate metadata-inspection field is empty: no target-specific
+tests/examples metadata query was recorded. Current production dependencies reach
+each target through `subscription.renew-batch -> subscription.renew-batch-step`.
+Tests, stale revisions and source-text mentions do not count as these paths.
+The batch and its helper are published library functions, with four and three
+own tests respectively. The closed broker audit records 28 exchanges and
+host/runtime exits 0/0.
+
+This is a positive instance of a later developer using tested typed vocabulary
+built by a prior developer. It does not establish improved reliability or a
+benefit from retention: there is no matched reset/conventional trial here. The
+next useful efficacy comparison should measure retained versus reset vocabulary
+on the same held-out task, rather than repeat easy discovery demonstrations.
 
 This separately named study asks whether a fresh developer discovers and uses
 the two public renewal functions created in trial 210 while implementing the
@@ -53,14 +76,21 @@ the final root checks pass. No runtime executed in that failed check attempt.
 members: study inputs, adapter, imported oracle sources, accepted and initial
 project snapshots, target binding, control receipts and runtime/source pins.
 Every archive member was reopened and its length and SHA256 verified before
-dispatch. Participant output will be kept separately.
+dispatch. Participant output is retained separately in the
+[developer result](evidence/211-public-vocabulary-reuse/developer-result.zip) and
+[index](evidence/211-public-vocabulary-reuse/developer-result.index.json), including
+the final project, closed trace, participant disclosure, independent score copies
+and final source/runtime pin verification. Each member is reopened and checked
+against its length and SHA256 before accepting the sealed archive.
+An [independent read-only review](evidence/211-public-vocabulary-reuse/review.md)
+also checks the closed trace, preservation and current production paths.
 
-Use one fresh Luna/max participant, its assigned broker, a 100-exchange limit,
-virtual I/O and empty external capabilities. External-tool isolation remains
+The trial used one fresh Luna/max participant, its assigned broker, a 100-exchange
+limit, virtual I/O and empty external capabilities. External-tool isolation remains
 prompt-governed; the broker is not an OS sandbox. No new external capability,
 public listener or language escape hatch is introduced.
 
-One accepted reuse instance would demonstrate this chain's feasibility. It would
+This accepted reuse instance demonstrates this chain's feasibility. It does
 not show that retention causes better reliability, fewer tokens or lower marginal
 development cost. A matched reset comparison would still be needed to estimate
 benefit, and service performance remains a separate research track.
