@@ -12,6 +12,7 @@ type IrFormatTarget =
     | GeneratedWordName of string
     | GeneratedWordId of WordId
     | PrimitiveContract of PrimitiveId
+    | HostOperationContract of HostOperationId
 
 /// Stable JSON DTOs used by the verified IR inspection surface.
 module IrFormatting =
@@ -162,15 +163,25 @@ module IrFormatting =
           Outputs: TypePatternDto list
           Effects: string list }
 
+    type HostOperationContractDocumentDto =
+        { FormatVersion: int
+          Kind: string
+          HostOperationId: string
+          Name: string
+          Inputs: TypeDto list
+          Outputs: TypeDto list
+          Effects: string list }
+
     type private Document =
         | FunctionDocument of FunctionDocumentDto
         | GeneratedDocument of GeneratedDocumentDto
         | PrimitiveContractDocument of PrimitiveContractDocumentDto
+        | HostOperationContractDocument of HostOperationContractDocumentDto
 
     // Version 3 adds typed ListFold; version 4 exposes record validators in
     // nominal metadata; version 5 encodes Float literal values as canonical
-    // text so protocol JSON preserves every binary64 value exactly.
-    let private formatVersion = 5
+    // text; version 6 exposes exact registered host-operation contracts.
+    let private formatVersion = 6
     // The formatter rejects deep documents before JsonSerializer or the outer
     // Protocol response can throw. This conservative estimate reserves ten
     // JSON levels for the response envelope and fixed DTO nesting.
@@ -185,6 +196,7 @@ module IrFormatting =
 
     let private wrapWordId (WordId value) = value
     let private wrapPrimitiveId (PrimitiveId value) = value
+    let private wrapHostOperationId (HostOperationId value) = value
     let private wrapTypeKey (ProgramTypeKey value) = value
     let private wrapLocalSlot (LocalSlot value) = value
 
@@ -289,6 +301,8 @@ module IrFormatting =
             { Kind = "user-word"; Id = wrapWordId id; Revision = revision; HasRevision = true }
         | PrimitiveTarget id ->
             { Kind = "primitive"; Id = wrapPrimitiveId id; Revision = 0; HasRevision = false }
+        | HostOperationTarget(HostOperationId id) ->
+            { Kind = "host-operation"; Id = id; Revision = 0; HasRevision = false }
         | GeneratedWordTarget(id, revision) ->
             { Kind = "generated-word"; Id = wrapWordId id; Revision = revision; HasRevision = true }
 
@@ -762,6 +776,15 @@ module IrFormatting =
           Outputs = contract.OutputPatterns |> List.map patternDto
           Effects = IrEffects.names contract.PrimitiveEffects }
 
+    let private hostOperationDocument (program: IrProgram) (id: HostOperationId) (contract: IrHostOperationContract) =
+        { FormatVersion = formatVersion
+          Kind = "host-operation-contract"
+          HostOperationId = wrapHostOperationId id
+          Name = contract.OperationName
+          Inputs = contract.InputTypes |> List.map (typeDto program)
+          Outputs = contract.OutputTypes |> List.map (typeDto program)
+          Effects = IrEffects.names contract.OperationEffects }
+
     let private findByName requested source actual =
         match actual with
         | [] -> fail "IR_FORMAT_TARGET_NOT_FOUND" $"No verified {source} named '{requested}' exists." requested [ source ] [ requested ]
@@ -809,12 +832,19 @@ module IrFormatting =
                 ensureProjectedDepth (wrapPrimitiveId id) (patternDepths |> List.fold max 1) 0
                 PrimitiveContractDocument(primitiveDocument id contract)
             | None -> fail "IR_FORMAT_PRIMITIVE_NOT_FOUND" "No canonical primitive contract has the requested PrimitiveId." (wrapPrimitiveId id) [ "canonical primitive contract" ] []
+        | IrFormatTarget.HostOperationContract id ->
+            match VerifiedIrProgram.hostOperationContracts verified |> Map.tryFind id with
+            | Some contract ->
+                ensureFormatDepth contract.OperationName (contract.InputTypes @ contract.OutputTypes) 0
+                HostOperationContractDocument(hostOperationDocument program id contract)
+            | None -> fail "IR_FORMAT_HOST_OPERATION_NOT_FOUND" "No registered host-operation contract has the requested HostOperationId." (wrapHostOperationId id) [ "registered host-operation contract" ] []
 
     let toData (verified: VerifiedIrProgram) request : JsonNode =
         match resolve verified request with
         | FunctionDocument document -> toNode document
         | GeneratedDocument document -> toNode document
         | PrimitiveContractDocument document -> toNode document
+        | HostOperationContractDocument document -> toNode document
 
     let toJson verified request =
         toData verified request |> fun node -> node.ToJsonString(jsonOptions)
@@ -998,4 +1028,10 @@ module IrFormatting =
               $"signature pattern: {renderPatterns document.Inputs} -> {renderPatterns document.Outputs}"
               $"effects: {formatEffects document.Effects}"
               "kind: generic contract; no executable function body" ]
+            |> String.concat Environment.NewLine
+        | HostOperationContractDocument document ->
+            [ $"host operation {document.Name} [{document.HostOperationId}]"
+              "signature: " + formatTypeList document.Inputs + " -> " + formatTypeList document.Outputs
+              "effects: " + formatEffects document.Effects
+              "kind: registered host contract; no executable function body" ]
             |> String.concat Environment.NewLine

@@ -660,6 +660,11 @@ module OwningStackAot =
     let private unsupported code message owner actual =
         Diagnostics.raiseError code message (Some owner) None [ "Int | Bool | Float | Unit | String | payload-free enum | acyclic inline record | Option<T> | Result<T, E>" ] [ actual ]
 
+    let private rejectHostOperation owner span (operationId: HostOperationId) =
+        Diagnostics.raiseError "IR_NATIVE_HOST_OPERATION_UNSUPPORTED"
+            "Native backends do not execute host operations; use the interpreter with its registered provider."
+            (Some owner) span [ "program without host operations" ] [ sprintf "%A" operationId ]
+
     let private enumDefinition (program: IrProgram) ty =
         match ty with
         | IrNominal key ->
@@ -727,6 +732,7 @@ module OwningStackAot =
             if not (Object.ReferenceEquals(sourceProgram, VerifiedIrBody.program verifiedBody)) then
                 invalidArg (nameof verifiedBodies) "All owning module bodies must share the exact same VerifiedIrProgram instance."
         VerifiedIrProgram.requireBackendRegistry Compiler.primitiveIrCatalog sourceProgram
+        VerifiedIrProgram.requireNoHostOperations sourceProgram
         let checkedBodies = verifiedBodies |> List.map (fun body -> IrVerifier.verifyBody sourceProgram (VerifiedIrBody.inspect body))
         let program = VerifiedIrProgram.inspect sourceProgram
         let bodies = checkedBodies |> List.map VerifiedIrBody.inspect
@@ -1122,6 +1128,7 @@ module OwningStackAot =
                 | IrOperation.Call call ->
                     match call.ResolvedTarget with
                     | PrimitiveTarget(PrimitiveId operation) -> validatePrimitive owner span call operation
+                    | HostOperationTarget operationId -> rejectHostOperation owner span operationId
                     | UserWordTarget _ ->
                         requireEffectFree owner call.ResolvedDeclaredEffects
                         requireEffectFree owner call.ResolvedEffects
@@ -4373,6 +4380,7 @@ module OwningStackAot =
                         match call.ResolvedTarget with
                         | PrimitiveTarget _ | GeneratedWordTarget _ ->
                             emitInlineTargetDepthGuard w call.ResolvedName instructionSpan failBody
+                        | HostOperationTarget operationId -> rejectHostOperation currentOwner instructionSpan operationId
                         | UserWordTarget _ -> ()
                         match call.ResolvedTarget with
                         | PrimitiveTarget(PrimitiveId operation) ->
@@ -4781,6 +4789,7 @@ module OwningStackAot =
                                 resultEntries.Add resultEntry
                             stack <- prefix @ List.ofSeq resultEntries
                             ignore revision
+                        | HostOperationTarget operationId -> rejectHostOperation currentOwner instructionSpan operationId
                         | _ -> invalidOp "Verified dynamic call target is neither a primitive nor a user function."
                     | _ -> invalidOp "Owning validation missed an unsupported dynamic operation."
                     emitCursorCheck stack failBody

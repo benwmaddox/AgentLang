@@ -87,11 +87,11 @@ module Discovery =
             |> Option.bind (fun scalar -> scalar.Definition.Validator)
             |> Option.map Set.singleton
             |> Option.defaultValue Set.empty
-        | Some(BuiltinOp _ | RecordAccessor _ | ScalarAccessor _ | EnumCaseConstructor _) -> Set.empty
+        | Some(BuiltinOp _ | HostOperation _ | RecordAccessor _ | ScalarAccessor _ | EnumCaseConstructor _) -> Set.empty
 
     let private validateBuiltinReference (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (enums: Map<string, EnumEntry>) name builtin =
         match builtin with
-        | None | Some(BuiltinOp _) -> ()
+        | None | Some(BuiltinOp _ | HostOperation _) -> ()
         | Some(RecordConstructor recordName) ->
             if not (records.ContainsKey recordName) then
                 raiseDiscovery "DISCOVERY_UNKNOWN_RECORD" $"Generated word '{name}' references missing record '{recordName}'." (Some name) [ "known record" ] [ recordName ]

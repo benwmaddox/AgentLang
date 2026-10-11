@@ -1368,7 +1368,8 @@ end
               Records = Map.empty
               Scalars = Map.empty
               Enums = Map.empty
-              WordIds = wordIds }
+              WordIds = wordIds
+              HostOperations = Map.empty }
         let sourceOrigins = Map.ofList [ syntheticSpan, authoredSpan ]
         let verifiedProgram = Compiler.compileIrProgramWithSourceOrigins context sourceOrigins
         let program = VerifiedIrProgram.inspect verifiedProgram
@@ -1409,6 +1410,7 @@ end
               RecordBranchOutcome = fun _ site outcome -> branchOutcomes <- Set.add (site, outcome) branchOutcomes
               RecordUse = ignore
               InvokeEffect = fun _ -> EffectUnit
+              InvokeHostOperation = fun _ _ -> Error HostOperationFailure.MissingHandler
               EnterUserFunction = fun _ _ _ -> fun () -> ()
               ReturnUserFunction = fun _ _ _ -> ()
               WordDefinitionSpan = fun _ -> None

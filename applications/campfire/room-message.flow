@@ -1,0 +1,78 @@
+fn campfire.rooms.list-for-user(user-id: UserId, after-room-id: Option<RoomId>, page-size: Int) -> Result<List<RoomRow>, DbError> {
+    effects db.read
+    doc "Pages only rooms linked to the supplied user's memberships."
+
+    campfire.rooms.page-for-user(user-id, after-room-id, page-size)
+}
+
+fn campfire.messages.list-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageRow>, RoomMessageError> {
+    effects db.read
+    doc "Reads a room's last page only after confirming the user has a membership."
+
+    match campfire.membership.exists?(membershipKey.new(user-id = user-id, room-id = room-id)) {
+        error failure => {
+            match failure {
+                unavailable => result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-unavailable())
+                not-found => result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-not-found())
+                constraint-conflict => result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-constraint-conflict())
+                invalid-input => result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-invalid-input())
+            }
+        }
+        ok is-member => {
+            if is-member {
+                match campfire.messages.last-page(room-id) {
+                    ok messages => result.ok<List<MessageRow>, RoomMessageError>(messages)
+                    error failure => {
+                        match failure {
+                            unavailable => result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-unavailable())
+                            not-found => result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-not-found())
+                            constraint-conflict => result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-constraint-conflict())
+                            invalid-input => result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-invalid-input())
+                        }
+                    }
+                }
+            } else {
+                result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.access-denied())
+            }
+        }
+    }
+}
+
+fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: String, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
+    effects db.read, db.write, clock.read
+    doc "Creates a message for a room member, using the caller as its creator."
+
+    match campfire.membership.exists?(membershipKey.new(user-id = user-id, room-id = room-id)) {
+        error failure => {
+            match failure {
+                unavailable => result.error<MessageRow, RoomMessageError>(RoomMessageError.database-unavailable())
+                not-found => result.error<MessageRow, RoomMessageError>(RoomMessageError.database-not-found())
+                constraint-conflict => result.error<MessageRow, RoomMessageError>(RoomMessageError.database-constraint-conflict())
+                invalid-input => result.error<MessageRow, RoomMessageError>(RoomMessageError.database-invalid-input())
+            }
+        }
+        ok is-member => {
+            if is-member {
+                let message = newMessage.new(
+                    room-id = room-id,
+                    creator-id = user-id,
+                    client-message-id = client-message-id,
+                    body = body
+                )
+                match campfire.messages.create(message) {
+                    ok created => result.ok<MessageRow, RoomMessageError>(created)
+                    error failure => {
+                        match failure {
+                            unavailable => result.error<MessageRow, RoomMessageError>(RoomMessageError.database-unavailable())
+                            not-found => result.error<MessageRow, RoomMessageError>(RoomMessageError.database-not-found())
+                            constraint-conflict => result.error<MessageRow, RoomMessageError>(RoomMessageError.database-constraint-conflict())
+                            invalid-input => result.error<MessageRow, RoomMessageError>(RoomMessageError.database-invalid-input())
+                        }
+                    }
+                }
+            } else {
+                result.error<MessageRow, RoomMessageError>(RoomMessageError.access-denied())
+            }
+        }
+    }
+}

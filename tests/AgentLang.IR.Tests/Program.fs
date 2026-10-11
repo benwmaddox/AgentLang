@@ -58,6 +58,7 @@ let private noOpIrHost () : IrInterpreterHost =
       RecordBranchOutcome = fun _ _ _ -> ()
       RecordUse = ignore
       InvokeEffect = fun _ -> EffectUnit
+      InvokeHostOperation = fun _ _ -> Error HostOperationFailure.MissingHandler
       EnterUserFunction = fun _ _ _ -> fun () -> ()
       ReturnUserFunction = fun _ _ _ -> ()
       WordDefinitionSpan = fun _ -> None
@@ -170,7 +171,8 @@ let private loweringContext
       Records = records
       Scalars = scalars
       Enums = Map.empty
-      WordIds = ids }
+      WordIds = ids
+      HostOperations = Map.empty }
 
 let private resolved target name inputs outputs effects =
     { ResolvedTarget = target

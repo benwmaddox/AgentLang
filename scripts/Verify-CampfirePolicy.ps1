@@ -16,6 +16,7 @@ $cliDllPath = (Resolve-Path -LiteralPath $CliDll).Path
 $referenceRoot = Join-Path $repo '.agentlang/campfire-reference'
 $railsReference = Join-Path $referenceRoot 'reference'
 $sourcePath = Join-Path $repo 'applications/campfire/message-policy.flow'
+$typeSourcePath = Join-Path $repo 'applications/campfire/campfire-types.flow'
 $evidenceRoot = Join-Path $repo '.agentlang/campfire-234/runs'
 $expectedRustCommit = '6dae2fd3c1a2dce61ca11beb731bcce2b42b67ad'
 $expectedRailsCommit = '90b330024dec3e757c79b6a7e6568f93da8e3148'
@@ -166,6 +167,9 @@ $report = [ordered]@{
     objective = 'Pure Campfire message-administration policy component only.'
     sourcePath = 'applications/campfire/message-policy.flow'
     sourceSha256 = $null
+    typeSourcePath = 'applications/campfire/campfire-types.flow'
+    typeSourceSha256 = $null
+    combinedSourceSha256 = $null
     reference = [ordered]@{
         rustRepositoryCommit = $expectedRustCommit
         railsReferenceCommit = $expectedRailsCommit
@@ -229,9 +233,16 @@ try {
     if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
         throw "Flow source is missing: '$sourcePath'."
     }
-    $source = Get-Content -LiteralPath $sourcePath -Raw -Encoding utf8
+    if (-not (Test-Path -LiteralPath $typeSourcePath -PathType Leaf)) {
+        throw "Campfire type source is missing: '$typeSourcePath'."
+    }
+    $typeSource = Get-Content -LiteralPath $typeSourcePath -Raw -Encoding utf8
+    $policySource = Get-Content -LiteralPath $sourcePath -Raw -Encoding utf8
+    $source = $typeSource.TrimEnd() + "`n`n" + $policySource
     $sourceSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $sourcePath).Hash.ToLowerInvariant()
     $report.sourceSha256 = $sourceSha256
+    $report.typeSourceSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $typeSourcePath).Hash.ToLowerInvariant()
+    $report.combinedSourceSha256 = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($utf8NoBom.GetBytes($source))).ToLowerInvariant()
 
     $defineRequest = [ordered]@{ op = 'define'; frontend = 'flow'; syntaxVersion = 2; source = $source }
     $setupRequests = @(
@@ -387,4 +398,6 @@ Write-Output (ConvertTo-Json -InputObject ([ordered]@{
     rustCommit = $expectedRustCommit
     railsCommit = $expectedRailsCommit
     sourceSha256 = $report.sourceSha256
+    typeSourceSha256 = $report.typeSourceSha256
+    combinedSourceSha256 = $report.combinedSourceSha256
 }) -Depth 5 -Compress)

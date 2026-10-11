@@ -20,9 +20,11 @@ not proof of a working server. Subsequent gates must exercise real persistence,
 HTTP/WebSockets, cancellation and sustained native operation. The full migration
 remains the objective after the first slice passes.
 
-Finish validation of the pending inherited-test edit guard separately. The first
-application component also passes on the previously accepted runtime, so it can
-be integrated independently; avoid unrelated language research during migration.
+The inherited-test edit guard is integrated. Room/message and session-restoration
+functions now exercise real SQLite through typed host adapters. Cookie compatibility,
+authentication storage, library reload and the resolved regression gates pass local
+component tests. Authenticated HTTP room listing/message creation is next, followed
+by rendering and live delivery. Avoid unrelated language research during migration.
 
 Updated 2026-10-11. This is a delivery order and status map, not a replacement
 for the [PRD](PRD.md). Reliable agent edits, discovery and reuse of accumulated

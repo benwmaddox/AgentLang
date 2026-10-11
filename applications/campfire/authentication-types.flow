@@ -1,0 +1,45 @@
+type SessionId : Int { }
+
+type SessionToken : String { }
+
+type BotKey : String { }
+
+type RemoteIp : String { }
+
+enum AuthUserStatus {
+    case active
+    case deactivated
+    case banned
+}
+
+record AuthUser {
+    field id: UserId
+    field name: String
+    field role: Role
+    field status: AuthUserStatus
+}
+
+record SessionRow {
+    field id: SessionId
+    field user-id: UserId
+    field token: SessionToken
+    field ip-address: Option<RemoteIp>
+    field user-agent: Option<String>
+    field last-active-at: UtcInstant
+    field created-at: UtcInstant
+    field updated-at: UtcInstant
+}
+
+record SessionRefresh {
+    field session-id: SessionId
+    field cutoff: UtcInstant
+    field now: UtcInstant
+    field ip-address: Option<RemoteIp>
+    field user-agent: Option<String>
+}
+
+record RestoredSession {
+    field user: AuthUser
+    field session: SessionRow
+    field refresh-cookie: Bool
+}

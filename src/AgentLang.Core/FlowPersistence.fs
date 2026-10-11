@@ -9,6 +9,8 @@ module FlowPersistence =
             StoredCallTarget.UserWord identity
         | FlowLowering.FlowCallTargetIdentity.Primitive(PrimitiveId identity) ->
             StoredCallTarget.Primitive identity
+        | FlowLowering.FlowCallTargetIdentity.HostOperation(HostOperationId identity) ->
+            StoredCallTarget.HostOperation identity
         | FlowLowering.FlowCallTargetIdentity.GeneratedWord(WordId identity) ->
             StoredCallTarget.GeneratedWord identity
 

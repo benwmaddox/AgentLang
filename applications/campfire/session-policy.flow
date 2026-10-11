@@ -1,0 +1,76 @@
+type UtcInstant : Int {
+    validate utc-instant.valid?
+}
+
+fn utc-instant.valid?(value: Int) -> Bool {
+    effects none
+    doc "Accepts UTC microseconds since Unix epoch within the host's year 1 through year 9999 timestamp range."
+
+    if less-than(value, -62135596800000000) {
+        false
+    } else {
+        if greater-than(value, 253402300799999999) {
+            false
+        } else {
+            true
+        }
+    }
+}
+
+fn campfire.sessions.refresh-due?(last-active-at: UtcInstant, now: UtcInstant) -> Bool {
+    effects none
+    doc "Refreshes activity only when it is strictly more than one hour old. Time inputs are explicit UTC microseconds."
+
+    let cutoff = subtract(UtcInstant.value(now), 3600000000)
+    less-than(UtcInstant.value(last-active-at), cutoff)
+}
+
+test utc-instant.valid?/minimum {
+    utc-instant.valid?(-62135596800000000)
+    => true
+}
+
+test utc-instant.valid?/below-minimum {
+    utc-instant.valid?(-62135596800000001)
+    => false
+}
+
+test utc-instant.valid?/maximum {
+    utc-instant.valid?(253402300799999999)
+    => true
+}
+
+test utc-instant.valid?/above-maximum {
+    utc-instant.valid?(253402300800000000)
+    => false
+}
+
+test campfire.sessions.refresh-due?/exact-hour {
+    campfire.sessions.refresh-due?(UtcInstant.new(0), UtcInstant.new(3600000000))
+    => false
+}
+
+test campfire.sessions.refresh-due?/older-by-one-microsecond {
+    campfire.sessions.refresh-due?(UtcInstant.new(0), UtcInstant.new(3600000001))
+    => true
+}
+
+test campfire.sessions.refresh-due?/younger-by-one-microsecond {
+    campfire.sessions.refresh-due?(UtcInstant.new(1), UtcInstant.new(3600000000))
+    => false
+}
+
+test campfire.sessions.refresh-due?/future-activity {
+    campfire.sessions.refresh-due?(UtcInstant.new(3600000001), UtcInstant.new(3600000000))
+    => false
+}
+
+test campfire.sessions.refresh-due?/minimum-instant {
+    campfire.sessions.refresh-due?(UtcInstant.new(-62135596800000000), UtcInstant.new(-62135596800000000))
+    => false
+}
+
+test campfire.sessions.refresh-due?/maximum-instant {
+    campfire.sessions.refresh-due?(UtcInstant.new(253402297199999998), UtcInstant.new(253402300799999999))
+    => true
+}

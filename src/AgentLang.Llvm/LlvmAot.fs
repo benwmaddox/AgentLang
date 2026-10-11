@@ -632,6 +632,7 @@ module LlvmAot =
     let private reachableFunctions (verifiedBody: VerifiedIrBody) (sourceMap: Map<SourceSiteId, IrSourceSite>) =
         let verifiedProgram = VerifiedIrBody.program verifiedBody
         VerifiedIrProgram.requireBackendRegistry Compiler.primitiveIrCatalog verifiedProgram
+        VerifiedIrProgram.requireNoHostOperations verifiedProgram
         let program = VerifiedIrProgram.inspect verifiedProgram
         let body = VerifiedIrBody.inspect verifiedBody
         let reachable = HashSet<WordId>()
@@ -682,6 +683,10 @@ module LlvmAot =
                     | MakeRecordOperation key -> ensureNativeType program owner span (IrNominal key)
                     | GetRecordFieldOperation(key, _) -> ensureNativeType program owner span (IrNominal key)
                     | MakeEnumCaseOperation(key, _) -> rejectEnum program owner span key
+            | HostOperationTarget operationId ->
+                callDiagnostic "IR_NATIVE_HOST_OPERATION_UNSUPPORTED"
+                    "Native backends do not execute host operations; use the interpreter with its registered provider."
+                    owner span [ "program without host operations" ] [ sprintf "%A" operationId ]
 
         for call, site in callsInBlock program body.BodyBlock do inspectCall body.BodyName site call
         while pending.Count > 0 do
@@ -696,6 +701,10 @@ module LlvmAot =
         for ty in call.InputTypes @ call.OutputTypes do ensureNativeType program owner span ty
         match call.ResolvedTarget with
         | UserWordTarget _ -> ()
+        | HostOperationTarget operationId ->
+            callDiagnostic "IR_NATIVE_HOST_OPERATION_UNSUPPORTED"
+                "Native backends do not execute host operations; use the interpreter with its registered provider."
+                owner span [ "program without host operations" ] [ sprintf "%A" operationId ]
         | GeneratedWordTarget(id, revision) ->
             let target =
                 match program.GeneratedTargetsById.TryFind id with
@@ -922,6 +931,7 @@ module LlvmAot =
     /// primitive contract catalog used by Core.
     let validateProgram (verifiedProgram: VerifiedIrProgram) =
         VerifiedIrProgram.requireBackendRegistry Compiler.primitiveIrCatalog verifiedProgram
+        VerifiedIrProgram.requireNoHostOperations verifiedProgram
 
     let private emitModule (diagnosticSources: NativeDiagnosticSources) (symbols: ModuleEntrySymbols) (verifiedBody: VerifiedIrBody) =
         let verifiedProgram = VerifiedIrBody.program verifiedBody
@@ -1276,6 +1286,10 @@ module LlvmAot =
                     emitDepthGuardAt builder depthValue call
                     match call.ResolvedTarget with
                     | PrimitiveTarget(PrimitiveId operation) -> emitPrimitive builder call operation arguments
+                    | HostOperationTarget operationId ->
+                        callDiagnostic "IR_NATIVE_HOST_OPERATION_UNSUPPORTED"
+                            "Native backends do not execute host operations; use the interpreter with its registered provider."
+                            currentWord callSiteSpan [ "program without host operations" ] [ sprintf "%A" operationId ]
                     | UserWordTarget(id, revision) -> emitUserCall call id revision arguments depthValue
                     | GeneratedWordTarget(id, revision) ->
                         match program.GeneratedTargetsById.TryFind id with

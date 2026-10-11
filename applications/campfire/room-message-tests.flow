@@ -1,0 +1,482 @@
+test-file campfire-room-pages {
+    override fn campfire.rooms.page-for-user(user-id: UserId, after-room-id: Option<RoomId>, page-size: Int) -> Result<List<RoomRow>, DbError> {
+        if user-id == UserId.new(11) {
+            match after-room-id {
+                none => {
+                    if page-size == 10 {
+                        result.ok<List<RoomRow>, DbError>(list.singleton<RoomRow>(roomRow.new(
+                            id = RoomId.new(1),
+                            name = option.none<String>(),
+                            kind = RoomKind.open(),
+                            creator-id = UserId.new(11),
+                            created-at = "2026-10-11 12:00:00",
+                            updated-at = "2026-10-11 12:00:00"
+                        )))
+                    } else {
+                        if page-size == 20 {
+                            result.ok<List<RoomRow>, DbError>(list.singleton<RoomRow>(roomRow.new(
+                                id = RoomId.new(2),
+                                name = option.some<String>("closed room"),
+                                kind = RoomKind.closed(),
+                                creator-id = UserId.new(11),
+                                created-at = "2026-10-11 12:00:00",
+                                updated-at = "2026-10-11 12:00:00"
+                            )))
+                        } else {
+                            if page-size == 40 {
+                                result.error<List<RoomRow>, DbError>(DbError.unavailable())
+                            } else {
+                                if page-size == 41 {
+                                    result.error<List<RoomRow>, DbError>(DbError.not-found())
+                                } else {
+                                    if page-size == 42 {
+                                        result.error<List<RoomRow>, DbError>(DbError.constraint-conflict())
+                                    } else {
+                                        if page-size == 43 {
+                                            result.error<List<RoomRow>, DbError>(DbError.invalid-input())
+                                        } else {
+                                            result.error<List<RoomRow>, DbError>(DbError.invalid-input())
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                some cursor => {
+                    if cursor == RoomId.new(4) {
+                        if page-size == 30 {
+                            result.ok<List<RoomRow>, DbError>(list.singleton<RoomRow>(roomRow.new(
+                                id = RoomId.new(5),
+                                name = option.some<String>("direct room"),
+                                kind = RoomKind.direct(),
+                                creator-id = UserId.new(11),
+                                created-at = "2026-10-11 12:00:00",
+                                updated-at = "2026-10-11 12:00:00"
+                            )))
+                        } else {
+                            result.error<List<RoomRow>, DbError>(DbError.invalid-input())
+                        }
+                    } else {
+                        result.error<List<RoomRow>, DbError>(DbError.invalid-input())
+                    }
+                }
+            }
+        } else {
+            result.error<List<RoomRow>, DbError>(DbError.not-found())
+        }
+    }
+
+    test campfire.rooms.list-for-user/open-first-page {
+        campfire.rooms.list-for-user(UserId.new(11), option.none<RoomId>(), 10)
+        => value result.ok<List<RoomRow>, DbError>(list.singleton<RoomRow>(roomRow.new(
+            id = RoomId.new(1),
+            name = option.none<String>(),
+            kind = RoomKind.open(),
+            creator-id = UserId.new(11),
+            created-at = "2026-10-11 12:00:00",
+            updated-at = "2026-10-11 12:00:00"
+        ))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.rooms.list-for-user/closed-page {
+        campfire.rooms.list-for-user(UserId.new(11), option.none<RoomId>(), 20)
+        => value result.ok<List<RoomRow>, DbError>(list.singleton<RoomRow>(roomRow.new(
+            id = RoomId.new(2),
+            name = option.some<String>("closed room"),
+            kind = RoomKind.closed(),
+            creator-id = UserId.new(11),
+            created-at = "2026-10-11 12:00:00",
+            updated-at = "2026-10-11 12:00:00"
+        ))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.rooms.list-for-user/cursor-page {
+        campfire.rooms.list-for-user(UserId.new(11), option.some<RoomId>(RoomId.new(4)), 30)
+        => value result.ok<List<RoomRow>, DbError>(list.singleton<RoomRow>(roomRow.new(
+            id = RoomId.new(5),
+            name = option.some<String>("direct room"),
+            kind = RoomKind.direct(),
+            creator-id = UserId.new(11),
+            created-at = "2026-10-11 12:00:00",
+            updated-at = "2026-10-11 12:00:00"
+        ))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.rooms.list-for-user/provider-errors {
+        campfire.rooms.list-for-user(UserId.new(11), option.none<RoomId>(), 40)
+        => value result.error<List<RoomRow>, DbError>(DbError.unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.rooms.list-for-user/missing-user {
+        campfire.rooms.list-for-user(UserId.new(99), option.none<RoomId>(), 10)
+        => value result.error<List<RoomRow>, DbError>(DbError.not-found()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.rooms.list-for-user/constraint-error {
+        campfire.rooms.list-for-user(UserId.new(11), option.none<RoomId>(), 42)
+        => value result.error<List<RoomRow>, DbError>(DbError.constraint-conflict()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.rooms.list-for-user/invalid-page {
+        campfire.rooms.list-for-user(UserId.new(11), option.none<RoomId>(), 43)
+        => value result.error<List<RoomRow>, DbError>(DbError.invalid-input()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+}
+
+test-file campfire-message-pages {
+    override fn campfire.membership.exists?(key: MembershipKey) -> Result<Bool, DbError> {
+        if key.user-id == UserId.new(71) {
+            result.error<Bool, DbError>(DbError.unavailable())
+        } else {
+            if key.user-id == UserId.new(72) {
+                result.error<Bool, DbError>(DbError.not-found())
+            } else {
+                if key.user-id == UserId.new(73) {
+                    result.error<Bool, DbError>(DbError.constraint-conflict())
+                } else {
+                    if key.user-id == UserId.new(74) {
+                        result.error<Bool, DbError>(DbError.invalid-input())
+                    } else {
+                        if key.room-id == RoomId.new(20) {
+                            result.ok<Bool, DbError>(false)
+                        } else {
+                            result.ok<Bool, DbError>(true)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fn campfire.messages.last-page(room-id: RoomId) -> Result<List<MessageRow>, DbError> {
+        if room-id == RoomId.new(4) {
+            result.error<List<MessageRow>, DbError>(DbError.unavailable())
+        } else {
+            if room-id == RoomId.new(5) {
+                result.error<List<MessageRow>, DbError>(DbError.not-found())
+            } else {
+                if room-id == RoomId.new(6) {
+                    result.error<List<MessageRow>, DbError>(DbError.constraint-conflict())
+                } else {
+                    if room-id == RoomId.new(7) {
+                        result.error<List<MessageRow>, DbError>(DbError.invalid-input())
+                    } else {
+                        result.ok<List<MessageRow>, DbError>(list.singleton<MessageRow>(messageRow.new(
+                            id = MessageId.new(100),
+                            room-id = room-id,
+                            creator-id = UserId.new(11),
+                            client-message-id = "fixture-message",
+                            body = option.some<String>("<p>stored body</p>"),
+                            created-at = "2026-10-11 12:01:00",
+                            updated-at = "2026-10-11 12:01:00"
+                        )))
+                    }
+                }
+            }
+        }
+    }
+
+    test campfire.messages.list-for-member/member-can-read {
+        campfire.messages.list-for-member(UserId.new(11), RoomId.new(1))
+        => value result.ok<List<MessageRow>, RoomMessageError>(list.singleton<MessageRow>(messageRow.new(
+            id = MessageId.new(100),
+            room-id = RoomId.new(1),
+            creator-id = UserId.new(11),
+            client-message-id = "fixture-message",
+            body = option.some<String>("<p>stored body</p>"),
+            created-at = "2026-10-11 12:01:00",
+            updated-at = "2026-10-11 12:01:00"
+        ))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.list-for-member/non-member-denied {
+        campfire.messages.list-for-member(UserId.new(22), RoomId.new(20))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.access-denied()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.list-for-member/membership-unavailable {
+        campfire.messages.list-for-member(UserId.new(71), RoomId.new(1))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.list-for-member/membership-not-found {
+        campfire.messages.list-for-member(UserId.new(72), RoomId.new(1))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-not-found()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.list-for-member/membership-constraint-error {
+        campfire.messages.list-for-member(UserId.new(73), RoomId.new(1))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-constraint-conflict()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.list-for-member/membership-invalid-input {
+        campfire.messages.list-for-member(UserId.new(74), RoomId.new(1))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-invalid-input()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.list-for-member/page-unavailable {
+        campfire.messages.list-for-member(UserId.new(11), RoomId.new(4))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.list-for-member/page-not-found {
+        campfire.messages.list-for-member(UserId.new(11), RoomId.new(5))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-not-found()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.list-for-member/page-constraint-error {
+        campfire.messages.list-for-member(UserId.new(11), RoomId.new(6))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-constraint-conflict()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.list-for-member/page-invalid-input {
+        campfire.messages.list-for-member(UserId.new(11), RoomId.new(7))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-invalid-input()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+}
+
+test-file campfire-message-create {
+    override fn campfire.membership.exists?(key: MembershipKey) -> Result<Bool, DbError> {
+        if key.user-id == UserId.new(71) {
+            result.error<Bool, DbError>(DbError.unavailable())
+        } else {
+            if key.user-id == UserId.new(72) {
+                result.error<Bool, DbError>(DbError.not-found())
+            } else {
+                if key.user-id == UserId.new(73) {
+                    result.error<Bool, DbError>(DbError.constraint-conflict())
+                } else {
+                    if key.user-id == UserId.new(74) {
+                        result.error<Bool, DbError>(DbError.invalid-input())
+                    } else {
+                        if key.room-id == RoomId.new(20) {
+                            result.ok<Bool, DbError>(false)
+                        } else {
+                            result.ok<Bool, DbError>(true)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fn campfire.messages.create(message: NewMessage) -> Result<MessageRow, DbError> {
+        if message.creator-id == UserId.new(42) {
+            if message.room-id == RoomId.new(1) {
+                if message.client-message-id == "db-unavailable" {
+                    result.error<MessageRow, DbError>(DbError.unavailable())
+                } else {
+                    if message.client-message-id == "db-not-found" {
+                        result.error<MessageRow, DbError>(DbError.not-found())
+                    } else {
+                        if message.client-message-id == "db-constraint" {
+                            result.error<MessageRow, DbError>(DbError.constraint-conflict())
+                        } else {
+                            if message.client-message-id == "db-invalid" {
+                                result.error<MessageRow, DbError>(DbError.invalid-input())
+                            } else {
+                                result.ok<MessageRow, DbError>(messageRow.new(
+                                    id = MessageId.new(800),
+                                    room-id = message.room-id,
+                                    creator-id = message.creator-id,
+                                    client-message-id = message.client-message-id,
+                                    body = message.body,
+                                    created-at = "2026-10-11 12:02:00",
+                                    updated-at = "2026-10-11 12:02:00"
+                                ))
+                            }
+                        }
+                    }
+                }
+            } else {
+                result.error<MessageRow, DbError>(DbError.invalid-input())
+            }
+        } else {
+            result.error<MessageRow, DbError>(DbError.invalid-input())
+        }
+    }
+
+    test campfire.messages.create-for-member/member-body-absent {
+        campfire.messages.create-for-member(UserId.new(42), RoomId.new(1), "created-none", option.none<String>())
+        => value result.ok<MessageRow, RoomMessageError>(messageRow.new(
+            id = MessageId.new(800),
+            room-id = RoomId.new(1),
+            creator-id = UserId.new(42),
+            client-message-id = "created-none",
+            body = option.none<String>(),
+            created-at = "2026-10-11 12:02:00",
+            updated-at = "2026-10-11 12:02:00"
+        )) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.create-for-member/member-empty-body-is-not-rejected {
+        campfire.messages.create-for-member(UserId.new(42), RoomId.new(1), "created-empty", option.some<String>(""))
+        => value result.ok<MessageRow, RoomMessageError>(messageRow.new(
+            id = MessageId.new(800),
+            room-id = RoomId.new(1),
+            creator-id = UserId.new(42),
+            client-message-id = "created-empty",
+            body = option.some<String>(""),
+            created-at = "2026-10-11 12:02:00",
+            updated-at = "2026-10-11 12:02:00"
+        )) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.create-for-member/non-member-does-not-create {
+        campfire.messages.create-for-member(UserId.new(42), RoomId.new(20), "unexpected-create", option.none<String>())
+        => value result.error<MessageRow, RoomMessageError>(RoomMessageError.access-denied()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.create-for-member/membership-unavailable {
+        campfire.messages.create-for-member(UserId.new(71), RoomId.new(1), "unexpected-create", option.none<String>())
+        => value result.error<MessageRow, RoomMessageError>(RoomMessageError.database-unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.create-for-member/membership-not-found {
+        campfire.messages.create-for-member(UserId.new(72), RoomId.new(1), "unexpected-create", option.none<String>())
+        => value result.error<MessageRow, RoomMessageError>(RoomMessageError.database-not-found()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.create-for-member/membership-constraint-error {
+        campfire.messages.create-for-member(UserId.new(73), RoomId.new(1), "unexpected-create", option.none<String>())
+        => value result.error<MessageRow, RoomMessageError>(RoomMessageError.database-constraint-conflict()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.create-for-member/membership-invalid-input {
+        campfire.messages.create-for-member(UserId.new(74), RoomId.new(1), "unexpected-create", option.none<String>())
+        => value result.error<MessageRow, RoomMessageError>(RoomMessageError.database-invalid-input()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.create-for-member/create-unavailable {
+        campfire.messages.create-for-member(UserId.new(42), RoomId.new(1), "db-unavailable", option.none<String>())
+        => value result.error<MessageRow, RoomMessageError>(RoomMessageError.database-unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.create-for-member/create-not-found {
+        campfire.messages.create-for-member(UserId.new(42), RoomId.new(1), "db-not-found", option.none<String>())
+        => value result.error<MessageRow, RoomMessageError>(RoomMessageError.database-not-found()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.create-for-member/create-constraint-error {
+        campfire.messages.create-for-member(UserId.new(42), RoomId.new(1), "db-constraint", option.none<String>())
+        => value result.error<MessageRow, RoomMessageError>(RoomMessageError.database-constraint-conflict()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.create-for-member/create-invalid-input {
+        campfire.messages.create-for-member(UserId.new(42), RoomId.new(1), "db-invalid", option.none<String>())
+        => value result.error<MessageRow, RoomMessageError>(RoomMessageError.database-invalid-input()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+}

@@ -368,7 +368,8 @@ let private compileFlowProgram (source: string) =
           Records = records
           Scalars = Map.empty
           Enums = enums
-          WordIds = wordIds }
+          WordIds = wordIds
+          HostOperations = Map.empty }
     let context: FlowLowering.Context =
         { CompilerContext = compilerContext
           ParameterNames = Map.empty
@@ -971,6 +972,7 @@ let private noOpHost (sources: NativeDiagnosticSources) : IrInterpreterHost =
       RecordBranchOutcome = fun _ _ _ -> ()
       RecordUse = ignore
       InvokeEffect = fun _ -> EffectUnit
+      InvokeHostOperation = fun _ _ -> Error HostOperationFailure.MissingHandler
       EnterUserFunction = fun _ _ _ -> fun () -> ()
       ReturnUserFunction = fun _ _ _ -> ()
       WordDefinitionSpan = fun word -> sources.WordDefinitionSpans.TryFind word
@@ -1464,7 +1466,8 @@ let private nominalIntCompilerContext
       Records = recordMap
       Scalars = scalars
       Enums = Map.empty
-      WordIds = wordIds }
+      WordIds = wordIds
+      HostOperations = Map.empty }
 
 let private refinedStringWordEntry name inputs outputs revision sourceName body =
     let sourceSpan = span ($"<native-value-stack-refined-string-{sourceName}>") 1
@@ -1531,7 +1534,8 @@ let private refinedStringCompilerContext
       Records = recordMap
       Scalars = scalars
       Enums = Map.empty
-      WordIds = wordIds }
+      WordIds = wordIds
+      HostOperations = Map.empty }
 
 let private nominalIntProgramTypeIds (program: VerifiedIrProgram) =
     let typeName = function

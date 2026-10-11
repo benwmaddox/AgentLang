@@ -1,0 +1,72 @@
+type UserId : Int { }
+
+enum Role {
+    case member
+    case administrator
+    case bot
+}
+
+record User {
+    field id: UserId
+    field role: Role
+}
+
+record ExistingMessage {
+    field creator-id: UserId
+}
+
+type RoomId : Int { }
+
+type MessageId : Int { }
+
+enum RoomKind {
+    case open
+    case closed
+    case direct
+}
+
+enum DbError {
+    case unavailable
+    case not-found
+    case constraint-conflict
+    case invalid-input
+}
+
+enum RoomMessageError {
+    case access-denied
+    case database-unavailable
+    case database-not-found
+    case database-constraint-conflict
+    case database-invalid-input
+}
+
+record RoomRow {
+    field id: RoomId
+    field name: Option<String>
+    field kind: RoomKind
+    field creator-id: UserId
+    field created-at: String
+    field updated-at: String
+}
+
+record MembershipKey {
+    field user-id: UserId
+    field room-id: RoomId
+}
+
+record MessageRow {
+    field id: MessageId
+    field room-id: RoomId
+    field creator-id: UserId
+    field client-message-id: String
+    field body: Option<String>
+    field created-at: String
+    field updated-at: String
+}
+
+record NewMessage {
+    field room-id: RoomId
+    field creator-id: UserId
+    field client-message-id: String
+    field body: Option<String>
+}

@@ -79,6 +79,7 @@ type IrType =
 type IrCallTarget =
     | UserWordTarget of WordId * int
     | PrimitiveTarget of PrimitiveId
+    | HostOperationTarget of HostOperationId
     | GeneratedWordTarget of WordId * int
 
 /// A call-site specialization. In particular, multiple calls to one polymorphic
@@ -243,14 +244,26 @@ type IrPrimitiveContract =
 
 type IrPrimitiveCatalog = Map<PrimitiveId, IrPrimitiveContract>
 
+/// Exact, nominally resolved contract retained only on compiler-minted program
+/// handles. A raw IrProgram cannot carry executable host authority.
+type IrHostOperationContract =
+    { OperationId: HostOperationId
+      OperationName: string
+      InputTypes: IrType list
+      OutputTypes: IrType list
+      OperationEffects: Set<IrEffect> }
+
+type IrHostOperationCatalog = Map<HostOperationId, IrHostOperationContract>
+
 /// Immutable verified-program handle. The constructor is assembly-internal so
 /// host backends outside AgentLang.Core cannot forge an executable snapshot.
 /// Backends accept only instances minted by Compiler lowering and must match
 /// the retained catalog against their canonical host registry.
 [<Sealed>]
-type VerifiedIrProgram internal (program: IrProgram, catalog: IrPrimitiveCatalog, backendExecutable: bool, compilerSnapshotFingerprint: string option) =
+type VerifiedIrProgram internal (program: IrProgram, catalog: IrPrimitiveCatalog, hostCatalog: IrHostOperationCatalog, backendExecutable: bool, compilerSnapshotFingerprint: string option) =
     member internal _.Program = program
     member internal _.Catalog = catalog
+    member internal _.HostCatalog = hostCatalog
     member internal _.BackendExecutable = backendExecutable
     member internal _.CompilerSnapshotFingerprint = compilerSnapshotFingerprint
 
@@ -263,6 +276,17 @@ module VerifiedIrProgram =
     /// This flag alone does not grant host access; backends must also compare
     /// the retained catalog with their canonical registry.
     let isBackendExecutable (verified: VerifiedIrProgram) = verified.BackendExecutable
+
+    /// Read-only host contracts do not grant provider access; Runtime separately
+    /// compares them to its exact Engine manifest before dispatch.
+    let hostOperationContracts (verified: VerifiedIrProgram) = verified.HostCatalog
+
+    /// Native backends have no host-operation dispatch path and reject the
+    /// feature explicitly instead of falling through to another executor.
+    let requireNoHostOperations (verified: VerifiedIrProgram) =
+        if not (Map.isEmpty verified.HostCatalog) then
+            Diagnostics.raiseError "IR_NATIVE_HOST_OPERATION_UNSUPPORTED" "Native backends do not execute host operations; use the interpreter with its registered provider." None None
+                [ "program without host operations" ] (verified.HostCatalog |> Map.toList |> List.map (fun (id, _) -> sprintf "%A" id))
 
     let requireBackendRegistry (canonicalCatalog: IrPrimitiveCatalog) (verified: VerifiedIrProgram) =
         if not verified.BackendExecutable then
@@ -362,7 +386,7 @@ module IrVerifier =
         && (List.zip contract.InputPatterns call.InputTypes |> List.forall (fun (pattern, actual) -> unify pattern actual))
         && (List.zip contract.OutputPatterns call.OutputTypes |> List.forall (fun (pattern, actual) -> unify pattern actual))
 
-    let private verifyCall (program: IrProgram) (catalog: IrPrimitiveCatalog) sourceOwner site (call: IrResolvedCall) =
+    let private verifyCall (program: IrProgram) (catalog: IrPrimitiveCatalog) (hostCatalog: IrHostOperationCatalog) sourceOwner site (call: IrResolvedCall) =
         let failCall code expected actual =
             Diagnostics.raiseError code $"Resolved call '{call.ResolvedName}' is inconsistent with its target." (Some sourceOwner) (sourceSpan program site) expected actual
         if String.IsNullOrWhiteSpace call.ResolvedName then
@@ -388,6 +412,20 @@ module IrVerifier =
                     failCall "IR_CALL_SIGNATURE_MISMATCH" [ "valid concrete primitive instantiation" ] (call.InputTypes |> List.map IrTypes.format)
                 if contract.PrimitiveEffects <> call.ResolvedDeclaredEffects || contract.PrimitiveEffects <> call.ResolvedEffects then
                     failCall "IR_CALL_EFFECT_MISMATCH" (IrEffects.names contract.PrimitiveEffects) (IrEffects.names call.ResolvedEffects)
+        | HostOperationTarget id ->
+            match hostCatalog.TryFind id with
+            | None -> failCall "IR_UNKNOWN_HOST_OPERATION_ID" [ "verified host-operation contract" ] [ sprintf "%A" id ]
+            | Some contract ->
+                if contract.OperationId <> id then
+                    failCall "IR_HOST_OPERATION_ID_MISMATCH" [ sprintf "%A" id ] [ sprintf "%A" contract.OperationId ]
+                if call.ResolvedName <> contract.OperationName then
+                    failCall "IR_HOST_OPERATION_NAME_MISMATCH" [ contract.OperationName ] [ call.ResolvedName ]
+                if contract.InputTypes <> call.InputTypes || contract.OutputTypes <> call.OutputTypes then
+                    failCall "IR_HOST_OPERATION_SIGNATURE_MISMATCH"
+                        ((contract.InputTypes |> List.map IrTypes.format) @ [ "->" ] @ (contract.OutputTypes |> List.map IrTypes.format))
+                        ((call.InputTypes |> List.map IrTypes.format) @ [ "->" ] @ (call.OutputTypes |> List.map IrTypes.format))
+                if contract.OperationEffects <> call.ResolvedDeclaredEffects || contract.OperationEffects <> call.ResolvedEffects then
+                    failCall "IR_HOST_OPERATION_EFFECT_MISMATCH" (IrEffects.names contract.OperationEffects) (IrEffects.names call.ResolvedEffects)
         | GeneratedWordTarget(id, revision) ->
             match program.GeneratedTargetsById.TryFind id with
             | None -> failCall "IR_UNKNOWN_GENERATED_ID" [ "known generated WordId" ] [ sprintf "%A" id ]
@@ -398,7 +436,7 @@ module IrVerifier =
                 if target.TargetDeclaredEffects <> call.ResolvedDeclaredEffects || target.TargetEffects <> call.ResolvedEffects then
                     failCall "IR_CALL_EFFECT_MISMATCH" (IrEffects.names target.TargetEffects) (IrEffects.names call.ResolvedEffects)
 
-    let private verifyNominalTypes (program: IrProgram) (catalog: IrPrimitiveCatalog) =
+    let private verifyNominalTypes (program: IrProgram) (catalog: IrPrimitiveCatalog) (hostCatalog: IrHostOperationCatalog) =
         let names = ResizeArray<string>()
         for KeyValue(key, definition) in program.NominalTypesByKey do
             match definition with
@@ -415,11 +453,14 @@ module IrVerifier =
                 for field in record.RecordFields do verifyIrType program (Some record.TypeName) None field.FieldType
                 match record.ValidatorCall with
                 | Some validator ->
+                    match validator.ResolvedTarget with
+                    | HostOperationTarget _ -> failure "IR_TYPE_VALIDATOR_HOST_OPERATION" "Nominal type validators cannot call registered host operations." [ "pure authored function" ] [ validator.ResolvedName ]
+                    | _ -> ()
                     if validator.InputTypes <> [ IrNominal key ] || validator.OutputTypes <> [ IrBool ] then
                         failure "IR_RECORD_VALIDATOR_SIGNATURE" $"Record '{record.TypeName}' validator has a malformed resolved signature." [ IrTypes.format (IrNominal key) + " -> Bool" ] [ String.concat " " (validator.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (validator.OutputTypes |> List.map IrTypes.format) ]
                     if not (Set.isEmpty validator.ResolvedEffects) then
                         failure "IR_RECORD_VALIDATOR_EFFECT" $"Record '{record.TypeName}' validator must be pure." [] (IrEffects.names validator.ResolvedEffects)
-                    verifyCall program catalog record.TypeName (SourceSiteId(None, 0)) validator
+                    verifyCall program catalog hostCatalog record.TypeName (SourceSiteId(None, 0)) validator
                 | None -> ()
             | IrScalarDefinition scalar ->
                 if scalar.TypeKey <> key then failure "IR_TYPE_KEY_MISMATCH" "Scalar type table key does not match its definition." [] []
@@ -434,11 +475,14 @@ module IrVerifier =
                 verifyIrType program (Some scalar.TypeName) None scalar.BaseType
                 match scalar.ValidatorCall with
                 | Some validator ->
+                    match validator.ResolvedTarget with
+                    | HostOperationTarget _ -> failure "IR_TYPE_VALIDATOR_HOST_OPERATION" "Nominal type validators cannot call registered host operations." [ "pure authored function" ] [ validator.ResolvedName ]
+                    | _ -> ()
                     if validator.InputTypes <> [ scalar.BaseType ] || validator.OutputTypes <> [ IrBool ] then
                         failure "IR_SCALAR_VALIDATOR_SIGNATURE" $"Scalar '{scalar.TypeName}' validator has a malformed resolved signature." [ IrTypes.format scalar.BaseType + " -> Bool" ] [ String.concat " " (validator.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (validator.OutputTypes |> List.map IrTypes.format) ]
                     if not (Set.isEmpty validator.ResolvedEffects) then
                         failure "IR_SCALAR_VALIDATOR_EFFECT" $"Scalar '{scalar.TypeName}' validator must be pure." [] (IrEffects.names validator.ResolvedEffects)
-                    verifyCall program catalog scalar.TypeName (SourceSiteId(None, 0)) validator
+                    verifyCall program catalog hostCatalog scalar.TypeName (SourceSiteId(None, 0)) validator
                 | None -> ()
             | IrEnumDefinition enumDefinition ->
                 if enumDefinition.TypeKey <> key then failure "IR_TYPE_KEY_MISMATCH" "Enum type table key does not match its definition." [] []
@@ -458,7 +502,7 @@ module IrVerifier =
         if (Set.ofSeq names).Count <> names.Count then
             failure "IR_TYPE_NAME_COLLISION" "Nominal type names must be unique within one executable snapshot." [ "unique record, scalar, and enum names" ] (List.ofSeq names)
 
-    let private verifyGeneratedTarget (program: IrProgram) (catalog: IrPrimitiveCatalog) (id: WordId) (target: IrGeneratedTarget) =
+    let private verifyGeneratedTarget (program: IrProgram) (catalog: IrPrimitiveCatalog) (hostCatalog: IrHostOperationCatalog) (id: WordId) (target: IrGeneratedTarget) =
         if target.TargetId <> id then failure "IR_GENERATED_ID_MISMATCH" "Generated target map key differs from its identity." [ sprintf "%A" target.TargetId ] [ sprintf "%A" id ]
         let (WordId idText) = id
         if String.IsNullOrWhiteSpace idText || String.IsNullOrWhiteSpace target.TargetName then
@@ -509,9 +553,9 @@ module IrVerifier =
               OutputTypes = target.OutputTypes
               ResolvedDeclaredEffects = target.TargetDeclaredEffects
               ResolvedEffects = target.TargetEffects }
-        verifyCall program catalog target.TargetName sourceSite call
+        verifyCall program catalog hostCatalog target.TargetName sourceSite call
 
-    let private verifyBlock (program: IrProgram) (catalog: IrPrimitiveCatalog) (owner: IrFunction) (sourceOwnerId: WordId option) (block: IrBlock) =
+    let private verifyBlock (program: IrProgram) (catalog: IrPrimitiveCatalog) (hostCatalog: IrHostOperationCatalog) (owner: IrFunction) (sourceOwnerId: WordId option) (block: IrBlock) =
         let verifyShape site shape =
             shape.StackTypes |> List.iter (verifyIrType program (Some owner.FunctionName) (Some site))
             for KeyValue(slot, ty) in shape.LocalTypes do
@@ -567,7 +611,7 @@ module IrVerifier =
                         match call.ResolvedTarget with
                         | GeneratedWordTarget _ -> operationError "IR_GENERATED_OPERATION_REQUIRED" "Generated word calls must lower to their explicit semantic operation." [] [ call.ResolvedName ]
                         | _ -> ()
-                        verifyCall program catalog owner.FunctionName instruction.Site call
+                        verifyCall program catalog hostCatalog owner.FunctionName instruction.Site call
                         let prefix, actuals = pop call.InputTypes.Length
                         if actuals <> call.InputTypes then operationError "IR_CALL_STACK_MISMATCH" "Resolved call signature does not match its actual stack inputs." (call.InputTypes |> List.map IrTypes.format) (actuals |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ call.OutputTypes }, call.ResolvedEffects
@@ -600,21 +644,21 @@ module IrVerifier =
                     | IrOperation.ListMap(callback, item, output) ->
                         verifyIrType program sourceOwner (Some instruction.Site) item
                         verifyIrType program sourceOwner (Some instruction.Site) output
-                        verifyCall program catalog owner.FunctionName instruction.Site callback
+                        verifyCall program catalog hostCatalog owner.FunctionName instruction.Site callback
                         if callback.InputTypes <> [ item ] || callback.OutputTypes <> [ output ] then operationError "IR_CALLBACK_SIGNATURE_MISMATCH" "Map callback must have concrete signature T -> U." [ IrTypes.format item + " -> " + IrTypes.format output ] [ String.concat " " (callback.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (callback.OutputTypes |> List.map IrTypes.format) ]
                         let prefix, actual = pop 1
                         if actual <> [ IrList item ] then operationError "IR_LIST_STACK_MISMATCH" "Map input stack must end in List<T>." [ IrTypes.format (IrList item) ] (actual |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ [ IrList output ] }, callback.ResolvedEffects
                     | IrOperation.ListFilter(callback, item) ->
                         verifyIrType program sourceOwner (Some instruction.Site) item
-                        verifyCall program catalog owner.FunctionName instruction.Site callback
+                        verifyCall program catalog hostCatalog owner.FunctionName instruction.Site callback
                         if callback.InputTypes <> [ item ] || callback.OutputTypes <> [ IrBool ] then operationError "IR_CALLBACK_SIGNATURE_MISMATCH" "Filter callback must have concrete signature T -> Bool." [ IrTypes.format item + " -> Bool" ] [ String.concat " " (callback.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (callback.OutputTypes |> List.map IrTypes.format) ]
                         let prefix, actual = pop 1
                         if actual <> [ IrList item ] then operationError "IR_LIST_STACK_MISMATCH" "Filter input stack must end in List<T>." [ IrTypes.format (IrList item) ] (actual |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ [ IrList item ] }, callback.ResolvedEffects
                     | IrOperation.ListEach(callback, item) ->
                         verifyIrType program sourceOwner (Some instruction.Site) item
-                        verifyCall program catalog owner.FunctionName instruction.Site callback
+                        verifyCall program catalog hostCatalog owner.FunctionName instruction.Site callback
                         if callback.InputTypes <> [ item ] || callback.OutputTypes <> [ IrUnit ] then operationError "IR_CALLBACK_SIGNATURE_MISMATCH" "Each callback must have concrete signature T -> Unit." [ IrTypes.format item + " -> Unit" ] [ String.concat " " (callback.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (callback.OutputTypes |> List.map IrTypes.format) ]
                         let prefix, actual = pop 1
                         if actual <> [ IrList item ] then operationError "IR_LIST_STACK_MISMATCH" "Each input stack must end in List<T>." [ IrTypes.format (IrList item) ] (actual |> List.map IrTypes.format)
@@ -622,7 +666,7 @@ module IrVerifier =
                     | IrOperation.ListFold(callback, item, accumulator) ->
                         verifyIrType program sourceOwner (Some instruction.Site) item
                         verifyIrType program sourceOwner (Some instruction.Site) accumulator
-                        verifyCall program catalog owner.FunctionName instruction.Site callback
+                        verifyCall program catalog hostCatalog owner.FunctionName instruction.Site callback
                         if callback.InputTypes <> [ accumulator; item ] || callback.OutputTypes <> [ accumulator ] then
                             operationError "IR_CALLBACK_SIGNATURE_MISMATCH" "Fold callback must have concrete signature Accumulator Item -> Accumulator."
                                 [ $"{IrTypes.format accumulator} {IrTypes.format item} -> {IrTypes.format accumulator}" ]
@@ -646,12 +690,12 @@ module IrVerifier =
                         let prefix, condition = pop 1
                         if condition <> [ IrBool ] then operationError "IR_IF_CONDITION_TYPE" "IR if requires Bool on top of stack." [ "Bool" ] (condition |> List.map IrTypes.format)
                         let expectedEntry = { shape with StackTypes = prefix }
-                        let thenShape, thenEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site expectedEntry thenBlock
-                        let elseShape, elseEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site expectedEntry elseBlock
+                        let thenShape, thenEffects = verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site expectedEntry thenBlock
+                        let elseShape, elseEffects = verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site expectedEntry elseBlock
                         if thenShape <> elseShape then operationError "IR_BRANCH_JOIN_MISMATCH" "IR if arms do not have the same output stack and local shape." (thenShape.StackTypes |> List.map IrTypes.format) (elseShape.StackTypes |> List.map IrTypes.format)
                         thenShape, Set.union thenEffects elseEffects
                     | IrOperation.Scope innerBlock ->
-                        let innerShape, innerEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site shape innerBlock
+                        let innerShape, innerEffects = verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site shape innerBlock
                         { StackTypes = innerShape.StackTypes; LocalTypes = shape.LocalTypes }, innerEffects
                     | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
                         if not (owner.LocalNames.ContainsKey someLocal) then operationError "IR_UNKNOWN_LOCAL_SLOT" "Option case local is absent from the function layout." [] [ sprintf "%A" someLocal ]
@@ -660,8 +704,8 @@ module IrVerifier =
                         if shape.LocalTypes.ContainsKey someLocal then operationError "IR_CASE_LOCAL_SHADOW" "Option match payload slot shadows an outer local." [] [ sprintf "%A" someLocal ]
                         let someEntry = { StackTypes = prefix; LocalTypes = Map.add someLocal item shape.LocalTypes }
                         let noneEntry = { StackTypes = prefix; LocalTypes = shape.LocalTypes }
-                        let someShape, someEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site someEntry someBlock
-                        let noneShape, noneEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site noneEntry noneBlock
+                        let someShape, someEffects = verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site someEntry someBlock
+                        let noneShape, noneEffects = verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site noneEntry noneBlock
                         if noneShape.LocalTypes.ContainsKey someLocal then operationError "IR_CASE_LOCAL_ESCAPE" "Option payload slot escaped into the None arm." [] [ sprintf "%A" someLocal ]
                         let someJoin = { someShape with LocalTypes = Map.remove someLocal someShape.LocalTypes }
                         if someJoin <> noneShape then operationError "IR_BRANCH_JOIN_MISMATCH" "Option match arms do not have the same output stack and outer-local shape." (someJoin.StackTypes |> List.map IrTypes.format) (noneShape.StackTypes |> List.map IrTypes.format)
@@ -673,8 +717,8 @@ module IrVerifier =
                         if shape.LocalTypes.ContainsKey okLocal || shape.LocalTypes.ContainsKey errorLocal then operationError "IR_CASE_LOCAL_SHADOW" "Result match payload slot shadows an outer local." [] [ sprintf "%A" (okLocal, errorLocal) ]
                         let okEntry = { StackTypes = prefix; LocalTypes = Map.add okLocal okType shape.LocalTypes }
                         let errorEntry = { StackTypes = prefix; LocalTypes = Map.add errorLocal errorType shape.LocalTypes }
-                        let okShape, okEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site okEntry okBlock
-                        let errorShape, errorEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site errorEntry errorBlock
+                        let okShape, okEffects = verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site okEntry okBlock
+                        let errorShape, errorEffects = verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site errorEntry errorBlock
                         if okShape.LocalTypes.ContainsKey errorLocal || errorShape.LocalTypes.ContainsKey okLocal then operationError "IR_CASE_LOCAL_ESCAPE" "Result case payload escaped into the other case arm." [] [ sprintf "%A" (okLocal, errorLocal) ]
                         let okJoin = { okShape with LocalTypes = Map.remove okLocal okShape.LocalTypes }
                         let errorJoin = { errorShape with LocalTypes = Map.remove errorLocal errorShape.LocalTypes }
@@ -698,7 +742,7 @@ module IrVerifier =
                         for caseIndex, caseBlock in caseBlocks do
                             if caseIndex < 0 || caseIndex >= enumDefinition.Cases.Length then
                                 operationError "IR_ENUM_MATCH_CASE_SET" "Enum match contains a case index outside its frozen case table." (expectedIndexes |> List.map string) [ string caseIndex ]
-                            let caseShape, caseEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site expectedEntry caseBlock
+                            let caseShape, caseEffects = verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site expectedEntry caseBlock
                             match joinShape with
                             | None -> joinShape <- Some caseShape
                             | Some previous when previous <> caseShape ->
@@ -707,21 +751,21 @@ module IrVerifier =
                             branchEffects <- Set.union branchEffects caseEffects
                         joinShape |> Option.defaultWith (fun () -> operationError "IR_ENUM_MATCH_CASE_SET" "Enum match has no case blocks." (expectedIndexes |> List.map string) []) |> fun result -> result, branchEffects
                     | IrOperation.MakeEnumCase(call, key, caseIndex) ->
-                        verifyCall program catalog owner.FunctionName instruction.Site call
+                        verifyCall program catalog hostCatalog owner.FunctionName instruction.Site call
                         requireGeneratedOperation (MakeEnumCaseOperation(key, caseIndex)) call
                         match program.NominalTypesByKey.TryFind key with
                         | Some(IrEnumDefinition enumDefinition) when caseIndex >= 0 && caseIndex < enumDefinition.Cases.Length && call.InputTypes = [] && call.OutputTypes = [ IrNominal key ] -> ()
                         | _ -> operationError "IR_ENUM_CONSTRUCTION_TYPE" "Enum case construction must target a valid frozen case with a zero-input signature." [ "() -> enum case" ] [ call.ResolvedName ]
                         { shape with StackTypes = shape.StackTypes @ call.OutputTypes }, call.ResolvedEffects
                     | IrOperation.MakeRecord(call, key, validator) ->
-                        verifyCall program catalog owner.FunctionName instruction.Site call
+                        verifyCall program catalog hostCatalog owner.FunctionName instruction.Site call
                         requireGeneratedOperation (MakeRecordOperation key) call
                         match program.NominalTypesByKey.TryFind key with
                         | Some(IrRecordDefinition record) when call.InputTypes = (record.RecordFields |> List.map (fun field -> field.FieldType)) && call.OutputTypes = [ IrNominal key ] ->
                             if validator <> record.ValidatorCall then operationError "IR_RECORD_VALIDATOR_MISMATCH" "Record construction validator differs from the immutable type table." [] []
                             match validator with
                             | Some checkedCall ->
-                                verifyCall program catalog owner.FunctionName instruction.Site checkedCall
+                                verifyCall program catalog hostCatalog owner.FunctionName instruction.Site checkedCall
                                 if checkedCall.InputTypes <> [ IrNominal key ] || checkedCall.OutputTypes <> [ IrBool ] || not (Set.isEmpty checkedCall.ResolvedEffects) then
                                     operationError "IR_RECORD_VALIDATOR_INVALID" "Record validator must be pure and have signature Record -> Bool." [ IrTypes.format (IrNominal key) + " -> Bool" ] [ String.concat " " (checkedCall.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (checkedCall.OutputTypes |> List.map IrTypes.format) ]
                             | None -> ()
@@ -730,7 +774,7 @@ module IrVerifier =
                         if actual <> call.InputTypes then operationError "IR_CALL_STACK_MISMATCH" "Record constructor inputs do not match the stack." (call.InputTypes |> List.map IrTypes.format) (actual |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ call.OutputTypes }, Set.union call.ResolvedEffects (validator |> Option.map (fun value -> value.ResolvedEffects) |> Option.defaultValue Set.empty)
                     | IrOperation.GetRecordField(call, key, index) ->
-                        verifyCall program catalog owner.FunctionName instruction.Site call
+                        verifyCall program catalog hostCatalog owner.FunctionName instruction.Site call
                         requireGeneratedOperation (GetRecordFieldOperation(key, index)) call
                         match program.NominalTypesByKey.TryFind key with
                         | Some(IrRecordDefinition record) when index >= 0 && index < record.RecordFields.Length && call.InputTypes = [ IrNominal key ] && call.OutputTypes = [ record.RecordFields[index].FieldType ] -> ()
@@ -739,14 +783,14 @@ module IrVerifier =
                         if actual <> call.InputTypes then operationError "IR_CALL_STACK_MISMATCH" "Record accessor input does not match the stack." (call.InputTypes |> List.map IrTypes.format) (actual |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ call.OutputTypes }, call.ResolvedEffects
                     | IrOperation.WrapScalar(call, key, validator) ->
-                        verifyCall program catalog owner.FunctionName instruction.Site call
+                        verifyCall program catalog hostCatalog owner.FunctionName instruction.Site call
                         requireGeneratedOperation (WrapScalarOperation key) call
                         match program.NominalTypesByKey.TryFind key with
                         | Some(IrScalarDefinition scalar) when call.InputTypes = [ scalar.BaseType ] && call.OutputTypes = [ IrNominal key ] ->
                             if validator <> scalar.ValidatorCall then operationError "IR_SCALAR_VALIDATOR_MISMATCH" "Scalar wrapping validator differs from the immutable type table." [] []
                             match validator with
                             | Some checkedCall ->
-                                verifyCall program catalog owner.FunctionName instruction.Site checkedCall
+                                verifyCall program catalog hostCatalog owner.FunctionName instruction.Site checkedCall
                                 if checkedCall.InputTypes <> [ scalar.BaseType ] || checkedCall.OutputTypes <> [ IrBool ] || not (Set.isEmpty checkedCall.ResolvedEffects) then
                                     operationError "IR_SCALAR_VALIDATOR_INVALID" "Scalar validator must be pure and have signature BaseType -> Bool." [ IrTypes.format scalar.BaseType + " -> Bool" ] [ String.concat " " (checkedCall.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (checkedCall.OutputTypes |> List.map IrTypes.format) ]
                             | None -> ()
@@ -755,7 +799,7 @@ module IrVerifier =
                         if actual <> call.InputTypes then operationError "IR_CALL_STACK_MISMATCH" "Scalar constructor input does not match the stack." (call.InputTypes |> List.map IrTypes.format) (actual |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ call.OutputTypes }, Set.union call.ResolvedEffects (validator |> Option.map (fun value -> value.ResolvedEffects) |> Option.defaultValue Set.empty)
                     | IrOperation.UnwrapScalar(call, key) ->
-                        verifyCall program catalog owner.FunctionName instruction.Site call
+                        verifyCall program catalog hostCatalog owner.FunctionName instruction.Site call
                         requireGeneratedOperation (UnwrapScalarOperation key) call
                         match program.NominalTypesByKey.TryFind key with
                         | Some(IrScalarDefinition scalar) when call.InputTypes = [ IrNominal key ] && call.OutputTypes = [ scalar.BaseType ] -> ()
@@ -766,7 +810,7 @@ module IrVerifier =
                 currentShape <- nextShape
                 accumulatedEffects <- Set.union accumulatedEffects effects
             currentShape, accumulatedEffects
-        and verifyBlockNested (program: IrProgram) (catalog: IrPrimitiveCatalog) (owner: IrFunction) (sourceOwnerId: WordId option) (parentSite: SourceSiteId) expectedEntry (block: IrBlock) =
+        and verifyBlockNested (program: IrProgram) (catalog: IrPrimitiveCatalog) (hostCatalog: IrHostOperationCatalog) (owner: IrFunction) (sourceOwnerId: WordId option) (parentSite: SourceSiteId) expectedEntry (block: IrBlock) =
             if block.EntryShape <> expectedEntry then
                 Diagnostics.raiseError "IR_BLOCK_ENTRY_MISMATCH" "Structured IR block entry shape does not match its control-flow edge." (Some owner.FunctionName) (sourceSpan program parentSite) (expectedEntry.StackTypes |> List.map IrTypes.format) (block.EntryShape.StackTypes |> List.map IrTypes.format)
             let actualExit, effects = verifyNested block.Code block.EntryShape
@@ -863,7 +907,8 @@ module IrVerifier =
     let private targetNode = function
         | UserWordTarget(id, _) -> Some(IrFunctionNode id)
         | GeneratedWordTarget(id, _) -> Some(IrGeneratedNode id)
-        | PrimitiveTarget _ -> None
+        | PrimitiveTarget _
+        | HostOperationTarget _ -> None
 
     let private verifyAcyclicCallGraph (program: IrProgram) =
         let functionEdges =
@@ -908,7 +953,7 @@ module IrVerifier =
                 colors[node] <- 2
         for node in graph |> Map.toSeq |> Seq.map fst do visit node
 
-    let private verifyFunction (program: IrProgram) (catalog: IrPrimitiveCatalog) (id: WordId) (fn: IrFunction) =
+    let private verifyFunction (program: IrProgram) (catalog: IrPrimitiveCatalog) (hostCatalog: IrHostOperationCatalog) (id: WordId) (fn: IrFunction) =
         if fn.FunctionId <> id then failure "IR_WORD_ID_MISMATCH" "Function map key differs from its stable identity." [ sprintf "%A" fn.FunctionId ] [ sprintf "%A" id ]
         let (WordId idText) = id
         if String.IsNullOrWhiteSpace idText || String.IsNullOrWhiteSpace fn.FunctionName then
@@ -927,16 +972,31 @@ module IrVerifier =
         let coverage = program.CoverageByWord.TryFind id |> Option.defaultValue { CoveredSites = Set.empty; BranchOutcomes = Map.empty }
         if coverage.CoveredSites <> sites || coverage.BranchOutcomes <> branches then
             failure "IR_COVERAGE_MAP_MISMATCH" $"Function '{fn.FunctionName}' coverage obligations do not match its source operations." [ string sites.Count; string branches.Count ] [ string coverage.CoveredSites.Count; string coverage.BranchOutcomes.Count ]
-        verifyBlock program catalog fn (Some id) fn.FunctionBody
+        verifyBlock program catalog hostCatalog fn (Some id) fn.FunctionBody
 
-    let private verifyProgram (catalog: IrPrimitiveCatalog) (program: IrProgram) =
+    let private verifyHostCatalog (hostCatalog: IrHostOperationCatalog) =
+        let names = ResizeArray<string>()
+        for KeyValue(id, contract) in hostCatalog do
+            let (HostOperationId idText) = id
+            if String.IsNullOrWhiteSpace idText then
+                failure "IR_HOST_OPERATION_ID_INVALID" "Host-operation identities must be nonempty." [ "nonempty operation ID" ] [ idText ]
+            if contract.OperationId <> id then
+                failure "IR_HOST_OPERATION_ID_MISMATCH" "Host-operation catalog key differs from the retained contract identity." [ sprintf "%A" id ] [ sprintf "%A" contract.OperationId ]
+            if String.IsNullOrWhiteSpace contract.OperationName then
+                failure "IR_HOST_OPERATION_NAME_MISSING" "Host-operation display names must be nonempty." [ "nonempty operation name" ] [ contract.OperationName ]
+            names.Add contract.OperationName
+        if (Set.ofSeq names).Count <> names.Count then
+            failure "IR_HOST_OPERATION_NAME_COLLISION" "Host-operation catalog names must be unique." [ "unique operation names" ] (List.ofSeq names)
+
+    let private verifyProgram (catalog: IrPrimitiveCatalog) (hostCatalog: IrHostOperationCatalog) (program: IrProgram) =
         verifyCatalog catalog
-        verifyNominalTypes program catalog
+        verifyHostCatalog hostCatalog
+        verifyNominalTypes program catalog hostCatalog
         let duplicateIds = Set.intersect (program.FunctionsById |> Map.toSeq |> Seq.map fst |> Set.ofSeq) (program.GeneratedTargetsById |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
         if not (Set.isEmpty duplicateIds) then
             failure "IR_WORD_ID_COLLISION" "User and generated targets share stable WordIds." [] (duplicateIds |> Set.toList |> List.map (sprintf "%A"))
-        for KeyValue(id, target) in program.GeneratedTargetsById do verifyGeneratedTarget program catalog id target
-        for KeyValue(id, fn) in program.FunctionsById do verifyFunction program catalog id fn
+        for KeyValue(id, target) in program.GeneratedTargetsById do verifyGeneratedTarget program catalog hostCatalog id target
+        for KeyValue(id, fn) in program.FunctionsById do verifyFunction program catalog hostCatalog id fn
         let functionIds = program.FunctionsById |> Map.toSeq |> Seq.map fst |> Set.ofSeq
         let coverageIds = program.CoverageByWord |> Map.toSeq |> Seq.map fst |> Set.ofSeq
         if functionIds <> coverageIds then
@@ -968,14 +1028,14 @@ module IrVerifier =
     /// Verify manually supplied IR for conformance tests and structural tooling.
     /// The result deliberately cannot be executed by a host backend.
     let verify (catalog: IrPrimitiveCatalog) (program: IrProgram) =
-        verifyProgram catalog program
-        VerifiedIrProgram(program, catalog, false, None)
+        verifyProgram catalog Map.empty program
+        VerifiedIrProgram(program, catalog, Map.empty, false, None)
 
     /// The compiler alone uses this path after lowering with its fixed host
     /// primitive registry. Public raw-IR verification remains non-executable.
-    let internal verifyCompilerProgram (catalog: IrPrimitiveCatalog) snapshotFingerprint (program: IrProgram) =
-        verifyProgram catalog program
-        VerifiedIrProgram(program, catalog, true, Some snapshotFingerprint)
+    let internal verifyCompilerProgram (catalog: IrPrimitiveCatalog) (hostCatalog: IrHostOperationCatalog) snapshotFingerprint (program: IrProgram) =
+        verifyProgram catalog hostCatalog program
+        VerifiedIrProgram(program, catalog, hostCatalog, true, Some snapshotFingerprint)
 
     let coverageObligations (block: IrBlock) =
         let coveredSites, branchOutcomes = expectedCoverage Map.empty Map.empty block
@@ -1037,5 +1097,5 @@ module IrVerifier =
                 failure "IR_BODY_SOURCE_OWNER" "Detached body source sites must use the standalone owner." [ "SiteOwner=None" ] [ sprintf "%A=%A" site source.SiteOwner ]
             if String.IsNullOrWhiteSpace source.SourceKind || String.IsNullOrWhiteSpace source.SiteSpan.File || source.SiteSpan.Line < 1 || source.SiteSpan.Column < 1 || source.SiteSpan.Length < 0 then
                 failure "IR_SOURCE_SPAN_INVALID" "Detached body source map must contain a valid source kind and span." [ "valid SourceSpan and source kind" ] [ sprintf "%A" source.SiteSpan ]
-        verifyBlock program verifiedProgram.Catalog pseudoOwner None body.BodyBlock
+        verifyBlock program verifiedProgram.Catalog verifiedProgram.HostCatalog pseudoOwner None body.BodyBlock
         VerifiedIrBody(verifiedProgram, body)

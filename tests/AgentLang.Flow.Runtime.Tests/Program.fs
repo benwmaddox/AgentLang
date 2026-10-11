@@ -3714,7 +3714,7 @@ test durable.v4-ready/basic {
 
         let store = Storage.create project
         let load () = Storage.load store |> Result.defaultWith (fun problem -> failwith $"load mixed-version manifest: {problem.Code}: {problem.Message}")
-        let currentRevision snapshot =
+        let currentRevision (snapshot: StorageLoadResult) =
             let head = snapshot.Manifest.Value.Words |> List.find (fun item -> item.WordId = ownerId)
             snapshot.Manifest.Value.Revisions |> List.find (fun item -> item.WordId = ownerId && item.Revision = head.CurrentRevision)
         let baseline = load ()
@@ -4605,7 +4605,7 @@ test-file no-fixture-calls {
         let store = Storage.create project
         let before = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
         let ownerId = getWordId engine "rollback.read"
-        let currentRevision snapshot =
+        let currentRevision (snapshot: StorageLoadResult) =
             let head = snapshot.Manifest.Value.Words |> List.find (fun item -> item.WordId = ownerId)
             snapshot.Manifest.Value.Revisions |> List.find (fun item -> item.WordId = ownerId && item.Revision = head.CurrentRevision)
         let beforeRevision = currentRevision before
@@ -7028,7 +7028,7 @@ test-file settings {
 
         let store = Storage.create project
         let load () = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
-        let currentRevision name snapshot =
+        let currentRevision name (snapshot: StorageLoadResult) =
             let head = snapshot.Manifest.Value.Words |> List.find (fun item -> item.CurrentName = name)
             snapshot.Manifest.Value.Revisions |> List.find (fun item -> item.WordId = head.WordId && item.Revision = head.CurrentRevision)
         let beforeRename = load ()
@@ -7322,6 +7322,212 @@ test-file self {
         expectError "LIBRARY_COVERAGE_INCOMPLETE"
             (commit selfEngine "commit" "proof.flip" [ "library", jbool true ])
         |> ignore
+
+    let private testHostOperationNominalBootstrap root =
+        let operationId = HostOperationId "bootstrap.lookup"
+        let definition inputs =
+            { Id = operationId
+              WordName = "bootstrap.lookup"
+              Inputs = inputs
+              Outputs = [ TNamed "RoomRow" ]
+              Effects = Set.empty
+              Documentation = "Looks up a room for bootstrap contract validation." }
+        let provider =
+            { OperationIds = Set.singleton operationId
+              Invoke = fun _ _ -> Ok [ RecordValue("RoomRow", Map.ofList [ "owner", RecordValue("UserId", Map.ofList [ "value", IntValue 7L ]) ]) ]
+              Dispose = ignore }
+        let environment inputs =
+            { Manifest = Map.ofList [ operationId, definition inputs ]
+              ProductionProvider = provider
+              CreateTestProvider = fun () -> Ok provider }
+        let typeSource =
+            "record UserId { field value: Int }\n\n"
+            + "record RoomRow { field owner: UserId }"
+        let wrapperSource =
+            "fn bootstrap.lookup-wrapper(user: UserId) -> RoomRow { bootstrap::lookup(user) }\n\n"
+            + "test bootstrap.lookup-wrapper/returns-room { bootstrap.lookup-wrapper(userId.new(7)) => value roomRow.new(userId.new(7)) }"
+        let source = typeSource + "\n\n" + wrapperSource
+        let bootstrapProject = Path.Combine(root, "host-operation-nominal-bootstrap")
+        let emptyProjectEngine = Runtime.Engine(bootstrapProject, Set.empty, fileSystemMode = FileSystemMode.Virtual, hostOperations = environment [ TNamed "UserId" ])
+        defineFlowProject emptyProjectEngine source [ "syntaxVersion", jint 2 ]
+        |> expectOk "atomically define nominal app types and their host-calling Flow word after an empty-project start"
+        |> ignore
+        assertAllPassed 1 (dispatch emptyProjectEngine "test" [ "word", jstr "bootstrap.lookup-wrapper" ] |> expectOk "run the nominal bootstrap caller case")
+        equal "host-operation"
+            (stringValue (dispatch emptyProjectEngine "describe" [ "word", jstr "bootstrap.lookup" ]
+                          |> expectOk "inspect the registered host operation after nominal bootstrap"
+                          |> fun response -> response.["data"].["kind"]))
+            "atomic type bootstrap exposes the registered host operation in the compiled snapshot"
+        commit emptyProjectEngine "commit" "" [ "library", jbool true ]
+        |> expectOk "persist the complete initially empty host project with its nominal types and Flow caller"
+        |> ignore
+
+        let missingTypeProject = Path.Combine(root, "host-operation-persisted-missing-type")
+        let legacy = Runtime.Engine(missingTypeProject, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        defineFlowProject legacy "record LegacyOnly { field value: Int }" [ "syntaxVersion", jint 2 ]
+        |> expectOk "create a persisted project that does not declare the registered host contract types"
+        |> ignore
+        commit legacy "commit" "LegacyOnly" [] |> expectOk "persist the app-independent legacy project" |> ignore
+        try
+            Runtime.Engine(missingTypeProject, Set.empty, fileSystemMode = FileSystemMode.Virtual, hostOperations = environment [ TNamed "UserId" ]) |> ignore
+            failwith "a persisted project missing a required host-operation type was silently deferred"
+        with
+        | LanguageException diagnostic ->
+            equal "HOST_OPERATION_TYPE_UNAVAILABLE" diagnostic.Code "persisted missing host types fail with a stable contract diagnostic"
+
+        let changedContractProject = bootstrapProject
+        let hostCallManifest = Storage.load(Storage.create changedContractProject) |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal 7 hostCallManifest.Manifest.Value.FormatVersion "persisted host-operation call bindings select manifest version 7"
+        let unchangedReload = Runtime.Engine(changedContractProject, Set.empty, fileSystemMode = FileSystemMode.Virtual, hostOperations = environment [ TNamed "UserId" ])
+        equal "host-operation"
+            (stringValue (dispatch unchangedReload "describe" [ "word", jstr "bootstrap.lookup" ]
+                          |> expectOk "reload the exact persisted host contract"
+                          |> fun response -> response["data"]["kind"]))
+            "the exact host-operation target survives persisted Flow binding reload"
+        try
+            Runtime.Engine(changedContractProject, Set.empty, fileSystemMode = FileSystemMode.Virtual, hostOperations = environment [ TString ]) |> ignore
+            failwith "a persisted host call accepted a changed registered input contract"
+        with
+        | LanguageException diagnostic ->
+            check (diagnostic.Code = "FLOW_ARGUMENT_TYPE" || diagnostic.Code = "FLOW_ARGUMENT_TYPE_MISMATCH" || diagnostic.Code = "FLOW_CALL_TYPE_MISMATCH" || diagnostic.Code = "COMPILER_CALL_TYPE_MISMATCH")
+                $"changed host signature fails through normal call checking, got {diagnostic.Code}"
+        let changedIdentity = HostOperationId "bootstrap.lookup.replaced"
+        let changedIdentityDefinition = { definition [ TNamed "UserId" ] with Id = changedIdentity }
+        let changedIdentityProvider = { provider with OperationIds = Set.singleton changedIdentity }
+        let changedIdentityEnvironment =
+            { Manifest = Map.ofList [ changedIdentity, changedIdentityDefinition ]
+              ProductionProvider = changedIdentityProvider
+              CreateTestProvider = fun () -> Ok changedIdentityProvider }
+        try
+            Runtime.Engine(changedContractProject, Set.empty, fileSystemMode = FileSystemMode.Virtual, hostOperations = changedIdentityEnvironment) |> ignore
+            failwith "a persisted Flow caller accepted a replacement host-operation ID with the same name and signature"
+        with
+        | LanguageException diagnostic ->
+            check (diagnostic.Code.Contains("BINDING", StringComparison.Ordinal) || diagnostic.Code.Contains("HOST_OPERATION", StringComparison.Ordinal) || diagnostic.Code.StartsWith("FLOW_", StringComparison.Ordinal))
+                $"changed host operation identity fails through retained call verification, got {diagnostic.Code}"
+
+        let directStackCall =
+            "word bootstrap.stack-direct : UserId -> RoomRow\n"
+            + "    effects none\n"
+            + "    bootstrap.lookup\n"
+            + "end"
+        defineStack unchangedReload directStackCall []
+        |> expectError "STACK_HOST_OPERATION_UNSUPPORTED"
+        |> ignore
+
+    let private testHostOperationProviderBoundary root =
+        let evalFlow2 (engine: Runtime.Engine) code =
+            dispatch engine "eval" [ "frontend", jstr "flow"; "code", jstr code; "syntaxVersion", jint 2 ]
+        let operationId = HostOperationId "email.read"
+        let definition =
+            { Id = operationId
+              WordName = "host.email.read"
+              Inputs = []
+              Outputs = [ TNamed "Email" ]
+              Effects = Set.singleton "db.read"
+              Documentation = "Reads one test email value through the registered host provider." }
+        let ids = Set.singleton operationId
+        let mutable productionCalls = 0
+        let mutable testFactories = 0
+        let mutable testCalls = 0
+        let mutable testDisposals = 0
+        let validatorAndWrapperSource =
+            "type Email : String { validate email.valid?; }\n\n"
+            + "fn email.valid?(value: String) -> Bool { string::contains(value, \"@\") }\n\n"
+            + "fn app.read-email() -> Email {\n    effects db.read\n\n    .host.email.read()\n}\n\n"
+        let provider output invokeCount dispose =
+            { OperationIds = ids
+              Invoke = fun _ _ ->
+                  invokeCount ()
+                  Ok [ NamedValue("Email", StringValue output) ]
+              Dispose = dispose }
+        let productionProvider = provider "production@example.com" (fun () -> productionCalls <- productionCalls + 1) ignore
+        let environment =
+            { Manifest = Map.ofList [ operationId, definition ]
+              ProductionProvider = productionProvider
+              CreateTestProvider = fun () ->
+                  testFactories <- testFactories + 1
+                  Ok(provider "test@example.com" (fun () -> testCalls <- testCalls + 1) (fun () -> testDisposals <- testDisposals + 1)) }
+        let source =
+            validatorAndWrapperSource
+            + "test app.read-email/valid {\n"
+            + "    Email.value(.app.read-email())\n"
+            + "    => value \"test@example.com\" effects { db.read: 1; db.write: 0 }\n"
+            + "}\n\n"
+            + "test app.read-email/valid-again { .app.read-email() => value Email.new(\"test@example.com\") }"
+        let project = Path.Combine(root, "host-operation-provider-boundary")
+        let engine = Runtime.Engine(project, Set.singleton "db.read", fileSystemMode = FileSystemMode.Virtual, testCapabilities = Set.singleton "db.read", hostOperations = environment)
+        defineFlowProject engine source [ "syntaxVersion", jint 2 ]
+        |> expectOk "atomically bootstrap a refined scalar and a host operation that returns it"
+        |> ignore
+        let described = dispatch engine "describe" [ "word", jstr "host.email.read" ] |> expectOk "describe the registered host operation"
+        equal "email.read" (stringValue described.["data"].["hostOperationId"]) "description preserves the exact host operation ID"
+        equal ".host.email.read" (stringValue described.["data"].["flowReference"]) "description exposes the exact ordinary Flow/2 call reference"
+        let formatted = dispatch engine "ir" [ "word", jstr "host.email.read" ] |> expectOk "inspect the verified host operation contract"
+        equal "host-operation-contract" (stringValue formatted.["data"].["kind"]) "IR inspection exposes a separate host contract"
+        equal [ "db.read" ] (jsonArrayStrings formatted.["data"].["effects"]) "IR inspection reports host effect metadata"
+        equal "\"production@example.com\""
+            (stringValue (evalFlow2 engine "Email.value(.host.email.read())" |> expectOk "invoke the production host provider through its checked scalar contract" |> fun response -> response.["data"].["stack"][0]))
+            "valid refined host output is imported as its declared scalar"
+        equal 1 productionCalls "production host call invokes the registered provider once"
+        assertAllPassed 2 (dispatch engine "test" [ "word", jstr "app.read-email" ] |> expectOk "run valid host-value controls")
+        equal 2 testFactories "each attached case gets a fresh lazy test provider"
+        equal 2 testCalls "both test cases reach their own registered test provider"
+        equal 2 testDisposals "each test provider is disposed after its case"
+        equal 1 productionCalls "attached tests never fall back to the production provider"
+
+        let mutable invalidFactories = 0
+        let mutable invalidCalls = 0
+        let mutable invalidDisposals = 0
+        let invalidEnvironment =
+            { environment with
+                CreateTestProvider = fun () ->
+                    invalidFactories <- invalidFactories + 1
+                    Ok(provider "invalid" (fun () -> invalidCalls <- invalidCalls + 1) (fun () -> invalidDisposals <- invalidDisposals + 1)) }
+        let invalidEngine = Runtime.Engine(Path.Combine(root, "host-operation-invalid-refined-value"), Set.singleton "db.read", fileSystemMode = FileSystemMode.Virtual, testCapabilities = Set.singleton "db.read", hostOperations = invalidEnvironment)
+        let invalidSource = validatorAndWrapperSource + "test app.read-email/invalid { .app.read-email() => error HOST_OPERATION_VALUE_INVALID }"
+        defineFlowProject invalidEngine invalidSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "define the invalid refined host-value control with its own fixed test provider"
+        |> ignore
+        assertAllPassed 1 (dispatch invalidEngine "test" [ "word", jstr "app.read-email" ] |> expectOk "reject an invalid refined host value")
+        equal 1 invalidFactories "invalid-value test creates one fresh test provider"
+        equal 1 invalidCalls "invalid-value test invokes only its own test provider"
+        equal 1 invalidDisposals "invalid-value test provider is disposed after its case"
+        equal 1 productionCalls "invalid-value attached test never falls back to production"
+
+        let mutable deniedCalls = 0
+        let deniedProvider = provider "denied@example.com" (fun () -> deniedCalls <- deniedCalls + 1) ignore
+        let mutable deniedFactories = 0
+        let deniedEnvironment =
+            { environment with
+                ProductionProvider = deniedProvider
+                CreateTestProvider = fun () ->
+                    deniedFactories <- deniedFactories + 1
+                    Ok(provider "fixture@example.com" ignore ignore) }
+        let deniedEngine = Runtime.Engine(Path.Combine(root, "host-operation-capability-denied"), Set.empty, fileSystemMode = FileSystemMode.Virtual, hostOperations = deniedEnvironment)
+        let deniedSource =
+            "type Email : String { validate email.valid?; }\n\n"
+            + "fn email.valid?(value: String) -> Bool { string::contains(value, \"@\") }\n\n"
+            + "fn app.read-email() -> Email {\n    effects db.read\n\n    .host.email.read()\n}\n\n"
+            + "test-file denied-host-override {\n"
+            + "    override fn app.read-email() -> Email {\n        effects none\n\n        Email.new(\"fixture@example.com\")\n    }\n"
+            + "    test app.read-email/override-cannot-skip-capability { .app.read-email() => value Email.new(\"fixture@example.com\") }\n"
+            + "}"
+        defineFlowProject deniedEngine deniedSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "define a pure test override for a host-calling word without granting its declared effect"
+        |> ignore
+        expectError "CAPABILITY_DENIED" (evalFlow2 deniedEngine "Email.value(.host.email.read())") |> ignore
+        equal 0 deniedCalls "capability denial happens before the production provider"
+        let deniedCase =
+            dispatch deniedEngine "test" [ "word", jstr "app.read-email" ]
+            |> expectOk "run the host-operation case with its pure test-file override"
+            |> fun response -> response.["data"].["results"].AsArray()
+            |> Seq.exactlyOne
+            |> fun item -> item.AsObject()
+        check (not (boolValue deniedCase.["passed"])) "a test-file host override cannot bypass the target's declared effect"
+        equal "CAPABILITY_DENIED" (stringValue deniedCase.["errorCode"]) "the host override retains the original capability denial"
+        equal 0 deniedFactories "capability preflight runs before creating a test provider"
+        equal 0 deniedCalls "capability denial happens before any provider invocation"
 
     let private testSemanticTypeInspectionAndTestAccounting root =
         let newlineProject = Path.Combine(root, "semantic-type-newlines")
@@ -7622,11 +7828,13 @@ test-file self {
             testFlow2DottedCallsAndRename root
             testFlowValidatorCannotBeRenamedAfterTypeCommit root
             testFlowProjectDocumentTypesCommitAndReload root
+            testHostOperationNominalBootstrap root
+            testHostOperationProviderBoundary root
             testSemanticTypeInspectionAndTestAccounting root
             testRecordValidatorRuntimeAndPersistence root
             testEffectCountAssertions root
             testFlowTestFileOverrides root
-            printfn $"Flow Runtime tests passed: 45 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 46 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

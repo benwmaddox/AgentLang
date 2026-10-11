@@ -1,20 +1,3 @@
-type UserId : Int { }
-
-enum Role {
-    case member
-    case administrator
-    case bot
-}
-
-record User {
-    field id: UserId
-    field role: Role
-}
-
-record ExistingMessage {
-    field creator-id: UserId
-}
-
 fn user.can-administer?(user: User, creator-id: Option<UserId>, is-new: Bool) -> Bool {
     effects none
     doc "Applies Campfire's administrator, creator, or new-record administration rule."

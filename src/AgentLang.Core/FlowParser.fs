@@ -882,9 +882,15 @@ module FlowParser =
                             let start = consume state
                             let parts = ResizeArray<string>()
                             parts.Add start.Text
-                            while peek state = Some "." do
+                            while peek state = Some "."
+                                  && (current state |> Option.exists (fun dot -> dot.Line = markerLine)) do
                                 consume state |> ignore
-                                parts.Add((expectIdentifier state).Text)
+                                match current state with
+                                | Some segment when segment.Line = markerLine ->
+                                    parts.Add((expectIdentifier state).Text)
+                                | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected an effect name after the namespace separator."
+                                | Some segment ->
+                                    fail state.File segment.Line segment.Column segment.Text.Length "FLOW_EFFECT_NAME_REQUIRED" "An effect namespace separator must be followed by its name on the same header line."
                             names.Add(String.concat "." parts)
                             needName <- false
                         | Some token when token.Line = markerLine -> fail state.File token.Line token.Column token.Text.Length "FLOW_EFFECT_NAME_REQUIRED" "Expected an effect name."

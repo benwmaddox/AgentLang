@@ -1,0 +1,54 @@
+fn campfire.authentication.restore-session(
+    verified-token: SessionToken,
+    now: UtcInstant,
+    remote-ip: Option<RemoteIp>,
+    user-agent: Option<String>
+) -> Result<Option<RestoredSession>, DbError> {
+    effects db.read, db.write
+    doc "Restores an existing session only from a token already verified by the trusted cookie host. Missing sessions or users return none. User role and status are preserved without filtering. A due session is refreshed with the supplied request metadata; refresh-cookie tells the HTTP host to re-sign the verified token. This function does not verify cookies or establish an HTTP response."
+
+    match campfire.sessions.find-by-token(verified-token) {
+        error failure => result.error<Option<RestoredSession>, DbError>(failure)
+        ok maybe-session => {
+            match maybe-session {
+                none => result.ok<Option<RestoredSession>, DbError>(option.none<RestoredSession>())
+                some session => {
+                    match campfire.users.find-by-id(session.user-id) {
+                        error failure => result.error<Option<RestoredSession>, DbError>(failure)
+                        ok maybe-user => {
+                            match maybe-user {
+                                none => result.ok<Option<RestoredSession>, DbError>(option.none<RestoredSession>())
+                                some user => {
+                                    if campfire.sessions.refresh-due?(session.last-active-at, now) {
+                                        let cutoff = UtcInstant.new(subtract(UtcInstant.value(now), 3600000000))
+                                        let refresh = sessionRefresh.new(
+                                            session-id = session.id,
+                                            cutoff = cutoff,
+                                            now = now,
+                                            ip-address = remote-ip,
+                                            user-agent = user-agent
+                                        )
+                                        match campfire.sessions.refresh-before(refresh) {
+                                            error failure => result.error<Option<RestoredSession>, DbError>(failure)
+                                            ok refreshed => result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
+                                                user = user,
+                                                session = refreshed,
+                                                refresh-cookie = true
+                                            )))
+                                        }
+                                    } else {
+                                        result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
+                                            user = user,
+                                            session = session,
+                                            refresh-cookie = false
+                                        )))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -62,7 +62,8 @@ let private contextWith (extraWords: WordEntry list) (records: RecordDefinition 
       Records = recordMap
       Scalars = Map.empty
       Enums = Map.empty
-      WordIds = wordIds }
+      WordIds = wordIds
+      HostOperations = Map.empty }
 
 let private compileBody context name inputs expressions =
     let program = Compiler.compileIrProgram context

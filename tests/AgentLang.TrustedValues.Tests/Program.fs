@@ -351,7 +351,8 @@ let private trustedContext () : Compiler.IrLoweringContext =
       Records = Map.empty
       Scalars = Map.empty
       Enums = Map.empty
-      WordIds = wordIds }
+      WordIds = wordIds
+      HostOperations = Map.empty }
 
 let private noOpHost effectCounter =
     { PreflightEffects = fun _ _ _ -> ()
@@ -361,6 +362,7 @@ let private noOpHost effectCounter =
       InvokeEffect = fun _ ->
           effectCounter ()
           EffectUnit
+      InvokeHostOperation = fun _ _ -> Error HostOperationFailure.MissingHandler
       EnterUserFunction = fun _ _ _ -> fun () -> ()
       ReturnUserFunction = fun _ _ _ -> ()
       WordDefinitionSpan = fun _ -> None

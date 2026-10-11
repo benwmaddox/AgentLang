@@ -55,6 +55,7 @@ type StoredCallForm =
 type StoredCallTarget =
     | UserWord of identity: string
     | Primitive of identity: string
+    | HostOperation of identity: string
     | GeneratedWord of identity: string
 
 /// A storage-neutral resolved call identity bound to one authored source site.
@@ -207,7 +208,7 @@ module Storage =
     // CURRENT and named snapshots remain version 1 independently from manifests.
     let private pointerSnapshotFormatVersion = 1
     let private minimumManifestFormatVersion = 1
-    let private maximumManifestFormatVersion = 6
+    let private maximumManifestFormatVersion = 7
     let private storeDirectoryName = ".agentlang"
     let private storeDirectory = "store"
     let private objectDirectory = "objects"
@@ -587,6 +588,7 @@ module Storage =
     let private storedCallTargetNode = function
         | (StoredCallTarget.UserWord identity
           | StoredCallTarget.Primitive identity
+          | StoredCallTarget.HostOperation identity
           | StoredCallTarget.GeneratedWord identity) as target ->
             let node = JsonObject()
             node["kind"] <-
@@ -594,6 +596,7 @@ module Storage =
                     match target with
                     | StoredCallTarget.UserWord _ -> "userWord"
                     | StoredCallTarget.Primitive _ -> "primitive"
+                    | StoredCallTarget.HostOperation _ -> "hostOperation"
                     | StoredCallTarget.GeneratedWord _ -> "generatedWord")
             node["identity"] <- jsonString identity
             node :> JsonNode
@@ -604,6 +607,7 @@ module Storage =
         match requireString "call binding target kind" value["kind"] with
         | "userWord" -> StoredCallTarget.UserWord identity
         | "primitive" -> StoredCallTarget.Primitive identity
+        | "hostOperation" -> StoredCallTarget.HostOperation identity
         | "generatedWord" -> StoredCallTarget.GeneratedWord identity
         | item -> failure "STORAGE_INVALID_MANIFEST" $"Unknown call binding target kind '{item}'." path
 
@@ -611,7 +615,9 @@ module Storage =
         let value = requireObject "type validator target" node
         if value |> Seq.exists (fun property -> property.Key <> "kind" && property.Key <> "identity") then
             failure "STORAGE_INVALID_MANIFEST" "A type validator target must contain only kind and identity; target revisions are not persisted." path
-        parseStoredCallTarget path (value :> JsonNode)
+        match parseStoredCallTarget path (value :> JsonNode) with
+        | StoredCallTarget.HostOperation _ -> failure "STORAGE_INVALID_MANIFEST" "Nominal type validators cannot target registered host operations." path
+        | target -> target
 
     let private storedCallBindingNode (binding: StoredCallBinding) =
         let node = JsonObject()
@@ -814,7 +820,8 @@ module Storage =
             | 3
             | 4
             | 5
-            | 6 ->
+            | 6
+            | 7 ->
                 if not (value.ContainsKey "sourceFormat") then
                     failure "STORAGE_INVALID_JSON" $"Version-{manifestVersion} word revisions require sourceFormat." path
                 if not (value.ContainsKey "callBindings") then
@@ -878,7 +885,8 @@ module Storage =
             | 3
             | 4
             | 5
-            | 6 ->
+            | 6
+            | 7 ->
                 if not (value.ContainsKey "sourceFormat") then
                     failure "STORAGE_INVALID_JSON" $"Version-{manifestVersion} type sources require sourceFormat." path
                 if not (value.ContainsKey "validatorTarget") then
@@ -895,9 +903,9 @@ module Storage =
     let private parseTypeSourceRevision path node =
         let value = requireObject "type source revision" node
         if not (value.ContainsKey "sourceFormat") then
-            failure "STORAGE_INVALID_JSON" "Version-6 type source revisions require sourceFormat." path
+            failure "STORAGE_INVALID_JSON" "Version-6-and-later type source revisions require sourceFormat." path
         if not (value.ContainsKey "validatorTarget") then
-            failure "STORAGE_INVALID_JSON" "Version-6 type source revisions require validatorTarget (use null when no validator is declared)." path
+            failure "STORAGE_INVALID_JSON" "Version-6-and-later type source revisions require validatorTarget (use null when no validator is declared)." path
         let target = value["validatorTarget"]
         { Name = requireString "type source revision name" value["name"]
           Revision = requireInt "type source revision number" value["revision"]
@@ -930,7 +938,7 @@ module Storage =
         // version-specific revision fields so errors are stable and structured.
         let manifestVersion = requireInt "manifest format version" value["formatVersion"]
         if manifestVersion < minimumManifestFormatVersion || manifestVersion > maximumManifestFormatVersion then
-            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported (expected 1, 2, 3, 4, 5, or 6)." path
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported (expected 1, 2, 3, 4, 5, 6, or 7)." path
         if manifestVersion < 6 && value.ContainsKey "typeRevisions" then
             failure "STORAGE_INVALID_MANIFEST" $"Manifest version {manifestVersion} cannot declare typeRevisions." path
         let revisionNodes = requireArray "manifest revisions" value["revisions"]
@@ -974,7 +982,7 @@ module Storage =
 
     let private validateManifest (manifest: ProjectManifest) path =
         if manifest.FormatVersion < minimumManifestFormatVersion || manifest.FormatVersion > maximumManifestFormatVersion then
-            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifest.FormatVersion} is not supported (expected 1, 2, 3, 4, 5, or 6)." path
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifest.FormatVersion} is not supported (expected 1, 2, 3, 4, 5, 6, or 7)." path
         validateCallBindingBounds path manifest.Revisions
         if manifest.ProjectSource.Kind <> StorageObjectKind.ProjectSource then
             failure "STORAGE_INVALID_MANIFEST" "Manifest projectSource must reference a project-source object." path
@@ -1001,6 +1009,8 @@ module Storage =
             | Some(StoredCallTarget.Primitive identity)
             | Some(StoredCallTarget.GeneratedWord identity) ->
                 validMetadataText "Type validator target identity" 128 path identity
+            | Some(StoredCallTarget.HostOperation _) ->
+                failure "STORAGE_INVALID_MANIFEST" "Nominal type validators cannot target registered host operations." path
             | None -> ()
 
         uniqueBy "type source revision identity" (fun item -> item.Name, item.Revision) manifest.TypeRevisions
@@ -1021,6 +1031,8 @@ module Storage =
             | Some(StoredCallTarget.Primitive identity)
             | Some(StoredCallTarget.GeneratedWord identity) ->
                 validMetadataText "Type source revision validator target identity" 128 path identity
+            | Some(StoredCallTarget.HostOperation _) ->
+                failure "STORAGE_INVALID_MANIFEST" "Nominal type validators cannot target registered host operations." path
             | None -> ()
         for name, revisions in typeRevisionsByName do
             let orderedOrdinals = revisions |> List.map _.Revision |> List.sort
@@ -1096,7 +1108,11 @@ module Storage =
             | None -> ()
             for binding in revision.CallBindings do
                 validMetadataText "Call binding requested name" 256 path binding.RequestedName
-                validMetadataText "Call binding target identity" 128 path (match binding.Target with | StoredCallTarget.UserWord value | StoredCallTarget.Primitive value | StoredCallTarget.GeneratedWord value -> value)
+                validMetadataText "Call binding target identity" 128 path (match binding.Target with | StoredCallTarget.UserWord value | StoredCallTarget.Primitive value | StoredCallTarget.HostOperation value | StoredCallTarget.GeneratedWord value -> value)
+                match binding.Target with
+                | StoredCallTarget.HostOperation _ when manifest.FormatVersion < 7 ->
+                    failure "STORAGE_INVALID_MANIFEST" "Registered host-operation call bindings require manifest version 7." path
+                | _ -> ()
                 let bindingSourceFormat =
                     match binding.BodyRole with
                     | StoredCallBodyRole.Definition -> revision.SourceFormat

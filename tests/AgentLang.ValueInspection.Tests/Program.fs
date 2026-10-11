@@ -75,7 +75,8 @@ let private snapshot () =
           Records = Map.ofList [ "Telemetry", record; "ContainerBox", containers ]
           Scalars = Map.ofList [ "Email", email; "MetersPerSecond", speed ]
           Enums = Map.ofList [ "RenewalState", renewalState ]
-          WordIds = wordIds }
+          WordIds = wordIds
+          HostOperations = Map.empty }
     Compiler.compileIrProgram context
 
 let private prop (name: string) (node: JsonNode) = node[name]

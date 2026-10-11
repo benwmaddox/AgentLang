@@ -168,6 +168,38 @@ module Runtime =
           IsTest: bool
           SuppressTaskEffects: bool }
 
+    /// Lazily created, test-scoped provider. A scoped Flow replacement that
+    /// handles every host call never asks for the real test provider at all.
+    type private TestHostProviderScope(environment: HostOperationEnvironment option) =
+        let mutable attempted = false
+        let mutable outcome: Result<HostOperationProvider, HostOperationFailure> option = None
+
+        member _.GetProvider() =
+            if not attempted then
+                attempted <- true
+                outcome <-
+                    match environment with
+                    | None -> Some(Error HostOperationFailure.TestProviderUnavailable)
+                    | Some configured ->
+                        let expectedIds = configured.Manifest |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+                        try
+                            match configured.CreateTestProvider() with
+                            | Error failure -> Some(Error failure)
+                            | Ok provider when provider.OperationIds = expectedIds -> Some(Ok provider)
+                            | Ok provider ->
+                                try provider.Dispose() with _ -> ()
+                                Some(Error HostOperationFailure.ProviderContractMismatch)
+                        with _ -> Some(Error HostOperationFailure.InvocationFailed)
+            outcome |> Option.defaultValue (Error HostOperationFailure.TestProviderUnavailable)
+
+        interface IDisposable with
+            member _.Dispose() =
+                match outcome with
+                | Some(Ok provider) ->
+                    outcome <- None
+                    try provider.Dispose() with _ -> ()
+                | _ -> outcome <- None
+
     let rec private namedTypeReferences = function
         | TNamed name -> Set.singleton name
         | TList item | TOption item -> namedTypeReferences item
@@ -338,7 +370,7 @@ module Runtime =
 
     let private newWordIdentity () = "word_" + Guid.NewGuid().ToString("N")
 
-    type Engine(projectDirectory: string, capabilities: Set<string>, ?clockValue: string, ?fileSystemMode: FileSystemMode, ?testCapabilities: Set<string>) =
+    type Engine(projectDirectory: string, capabilities: Set<string>, ?clockValue: string, ?fileSystemMode: FileSystemMode, ?testCapabilities: Set<string>, ?hostOperations: HostOperationEnvironment) =
         let projectRoot = if String.IsNullOrWhiteSpace projectDirectory then None else Some(Path.GetFullPath projectDirectory)
         let store = projectRoot |> Option.map Storage.create
         let mutable storageGeneration = 0L
@@ -349,6 +381,7 @@ module Runtime =
         let mutable fixedClock = defaultArg clockValue "2000-01-01T00:00:00Z"
         let engineFileSystemMode = defaultArg fileSystemMode FileSystemMode.Real
         let engineTestCapabilities = defaultArg testCapabilities capabilities
+        let engineHostOperations = hostOperations
         let syntaxDescriptors =
             [ { Name = "list.empty"; Syntax = "list.empty<T>"; Flow2Syntax = None; Inputs = []; Outputs = [ "List<T>" ]; TypeParameters = [ "T" ]; Effects = []; EffectRule = "none"; Documentation = "Constructs an empty List<T>. T must be a declared closed type."; Coverage = [] }
               { Name = "list.singleton"; Syntax = "T list.singleton<T>"; Flow2Syntax = None; Inputs = [ "T" ]; Outputs = [ "List<T>" ]; TypeParameters = [ "T" ]; Effects = []; EffectRule = "none"; Documentation = "Constructs a one-element List<T> after checking the payload against the explicit T."; Coverage = [] }
@@ -540,11 +573,103 @@ module Runtime =
                 | Some(name, _) -> error "NAME_GENERATED_COLLISION" $"Generated type word '{name}' collides with reserved language syntax." (Some name) None [] []
                 | None -> Map.ofList generatedWords
 
-        let effectiveWords (state: DictionaryState) : Map<string, WordEntry> =
+        let privateNamedTypes (types: LangType list) =
+            let rec visit = function
+                | TNamed name -> Set.singleton name
+                | TList item | TOption item -> visit item
+                | TResult(ok, failure) -> Set.union (visit ok) (visit failure)
+                | TInt | TFloat | TBool | TString | TUnit | TVar _ -> Set.empty
+            types |> List.fold (fun found item -> Set.union found (visit item)) Set.empty
+
+        let missingHostOperationTypes (state: DictionaryState) =
+            engineHostOperations
+            |> Option.map (fun environment ->
+                environment.Manifest
+                |> Map.toSeq
+                |> Seq.collect (fun (_, definition) -> privateNamedTypes (definition.Inputs @ definition.Outputs))
+                |> Set.ofSeq
+                |> fun required -> Set.difference required (knownTypes state))
+            |> Option.defaultValue Set.empty
+
+        let makeHostOperationWords (state: DictionaryState) (allowDeferredNominalTypes: bool) : Map<string, WordEntry> =
+            match engineHostOperations with
+            | None -> Map.empty
+            | Some environment ->
+                let missingTypes = missingHostOperationTypes state
+                let requiredTypes = Set.union missingTypes (environment.Manifest |> Map.toSeq |> Seq.collect (fun (_, definition) -> privateNamedTypes (definition.Inputs @ definition.Outputs)) |> Set.ofSeq)
+                let names = ResizeArray<string>()
+                let entries =
+                    environment.Manifest
+                    |> Map.toList
+                    |> List.map (fun (operationId, definition) ->
+                        let (HostOperationId rawId) = operationId
+                        if String.IsNullOrWhiteSpace rawId || definition.Id <> operationId || String.IsNullOrWhiteSpace definition.WordName then
+                            error "HOST_OPERATION_DEFINITION_INVALID" "Host operation IDs and names must be nonempty and match their manifest key." (Some definition.WordName) None
+                                [ sprintf "%A" operationId ] [ sprintf "%A" definition.Id ]
+                        if rawId.Length > 128 then
+                            error "HOST_OPERATION_DEFINITION_INVALID" "Host operation IDs must fit the persisted contract identity limit." (Some definition.WordName) None [ "ID length <= 128" ] [ string rawId.Length ]
+                        let flowReference, _ = FlowParser.describeCallReference definition.WordName
+                        if flowReference.IsNone then
+                            error "HOST_OPERATION_NAME_INVALID" "A registered host operation must have an exact ordinary Flow/2 call spelling." (Some definition.WordName) None [ "exact Flow/2 call reference" ] [ definition.WordName ]
+                        let rec containsInvalidTypeName = function
+                            | TNamed name -> String.IsNullOrWhiteSpace name
+                            | TList item | TOption item -> containsInvalidTypeName item
+                            | TResult(okType, errorType) -> containsInvalidTypeName okType || containsInvalidTypeName errorType
+                            | TInt | TFloat | TBool | TString | TUnit | TVar _ -> false
+                        if definition.Inputs @ definition.Outputs |> List.exists containsInvalidTypeName then
+                            error "HOST_OPERATION_SIGNATURE_INVALID" "Host operation signatures cannot contain empty nominal type names." (Some definition.WordName) None [ "named type" ] []
+                        let rec containsVariable = function
+                            | TVar _ -> true
+                            | TList item | TOption item -> containsVariable item
+                            | TResult(okType, errorType) -> containsVariable okType || containsVariable errorType
+                            | TInt | TFloat | TBool | TString | TUnit | TNamed _ -> false
+                        if definition.Inputs @ definition.Outputs |> List.exists containsVariable then
+                            error "HOST_OPERATION_SIGNATURE_GENERIC" "Host operations require closed concrete input signatures." (Some definition.WordName) None [ "closed signature" ] []
+                        if definition.Effects |> Set.exists (IrEffects.ofName >> Option.isNone) then
+                            error "HOST_OPERATION_EFFECT_INVALID" "Host operations may declare only effects in the closed runtime vocabulary." (Some definition.WordName) None
+                                (IrEffects.names Set.empty) (definition.Effects |> Set.toList |> List.sort)
+                        names.Add definition.WordName
+                        let wordDefinition = wordDef definition.WordName definition.Inputs definition.Outputs definition.Effects definition.Documentation ""
+                        definition.WordName, entry wordDefinition (Some(HostOperation operationId)) Primitive LibraryWord 1)
+                let entryWords = Map.ofList entries
+                if names |> Seq.distinct |> Seq.length <> names.Count then
+                    error "HOST_OPERATION_NAME_COLLISION" "Host operation word names must be unique." None None [] (List.ofSeq names)
+                let reservedCollision = entryWords |> Map.tryPick (fun name _ -> if Compiler.primitives.ContainsKey name || (makeGenerated state).ContainsKey name then Some name else None)
+                match reservedCollision with
+                | Some name -> error "HOST_OPERATION_NAME_COLLISION" $"Host operation '{name}' collides with a standard primitive or generated type word." (Some name) None [] [ name ]
+                | None -> ()
+                let projectWordCollision = entryWords |> Map.tryPick (fun name _ -> state.Words.TryFind name |> Option.filter (fun value -> value.Builtin.IsNone) |> Option.map (fun _ -> name))
+                match projectWordCollision with
+                | Some name -> error "HOST_OPERATION_NAME_COLLISION" $"Host operation '{name}' collides with a project word." (Some name) None [] [ name ]
+                | None -> ()
+                let providerIds = environment.ProductionProvider.OperationIds
+                let manifestIds = environment.Manifest |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+                if providerIds <> manifestIds then
+                    error "HOST_OPERATION_PROVIDER_MISMATCH" "The production provider must implement exactly the registered host operation IDs." None None
+                        (manifestIds |> Set.toList |> List.map (sprintf "%A")) (providerIds |> Set.toList |> List.map (sprintf "%A"))
+                if not (Set.isEmpty missingTypes) && allowDeferredNominalTypes then
+                    // A new project starts before its authored nominal types exist.
+                    // Keep the initial snapshot usable so one atomic define can add
+                    // those types and host-calling words together. Candidate and
+                    // persisted snapshots always use the strict path.
+                    Map.empty
+                else
+                    if not (Set.isEmpty missingTypes) then
+                        let missingText = String.concat ", " (Set.toList missingTypes)
+                        error "HOST_OPERATION_TYPE_UNAVAILABLE" $"The registered host-operation manifest refers to nominal types that are not declared by this project: {missingText}." None None
+                            (Set.toList requiredTypes) (Set.toList missingTypes)
+                    entryWords
+
+        let effectiveWordsWith (allowDeferredNominalTypes: bool) (state: DictionaryState) : Map<string, WordEntry> =
             let generated = makeGenerated state
+            let hostWords = makeHostOperationWords state allowDeferredNominalTypes
             let baseWords = Compiler.primitives
-            let collisions = generated |> Map.exists (fun name _ -> baseWords.ContainsKey name)
-            if collisions then error "NAME_GENERATED_COLLISION" "A generated record/type word collides with a standard primitive." None None [] []
+            let generatedCollisions = generated |> Map.exists (fun name _ -> baseWords.ContainsKey name)
+            if generatedCollisions then error "NAME_GENERATED_COLLISION" "A generated record/type word collides with a standard primitive." None None [] []
+            let reservedCollisions = hostWords |> Map.tryPick (fun name _ -> if baseWords.ContainsKey name || generated.ContainsKey name then Some name else None)
+            match reservedCollisions with
+            | Some name -> error "HOST_OPERATION_NAME_COLLISION" $"Host operation '{name}' collides with a standard primitive or generated type word." (Some name) None [] [ name ]
+            | None -> ()
             let userCollisions =
                 generated
                 |> Map.tryPick (fun name _ ->
@@ -554,9 +679,37 @@ module Runtime =
             match userCollisions with
             | Some name -> error "NAME_GENERATED_COLLISION" $"Generated type word '{name}' collides with a user-defined word." (Some name) None [] []
             | None -> ()
+            let hostUserCollision = hostWords |> Map.tryPick (fun name _ -> state.Words.TryFind name |> Option.filter (fun value -> value.Builtin.IsNone) |> Option.map (fun _ -> name))
+            match hostUserCollision with
+            | Some name -> error "HOST_OPERATION_NAME_COLLISION" $"Host operation '{name}' collides with a project word." (Some name) None [] [ name ]
+            | None -> ()
             let withGenerated = Map.fold (fun found name value -> Map.add name value found) baseWords generated
+            let withHostOperations = Map.fold (fun found name value -> Map.add name value found) withGenerated hostWords
             Map.fold (fun found name value ->
-                if value.Builtin.IsNone then Map.add name value found else found) withGenerated state.Words
+                if value.Builtin.IsNone then Map.add name value found else found) withHostOperations state.Words
+
+        let effectiveWords (state: DictionaryState) : Map<string, WordEntry> = effectiveWordsWith false state
+
+        let mutable hostNominalBootstrapPending = false
+        let isEmptyProjectBootstrapBaseline (state: DictionaryState) =
+            currentManifest.IsNone
+            && Map.isEmpty state.Records
+            && Map.isEmpty state.Scalars
+            && Map.isEmpty state.Enums
+            && Map.isEmpty state.TypeSources
+            && Map.isEmpty state.FlowWords
+            && Map.isEmpty (userWords state)
+        let effectiveWordsForPriorState (state: DictionaryState) =
+            effectiveWordsWith (hostNominalBootstrapPending || isEmptyProjectBootstrapBaseline state) state
+
+        let hostManifestForWords (words: Map<string, WordEntry>) =
+            engineHostOperations
+            |> Option.map (fun environment ->
+                environment.Manifest
+                |> Map.filter (fun operationId definition ->
+                    words.TryFind definition.WordName
+                    |> Option.exists (fun item -> item.Builtin = Some(HostOperation operationId))))
+            |> Option.defaultValue Map.empty
 
         let rejectUnqualifiedLibraryDependencies (words: Map<string, WordEntry>) (wordName: string) =
             match words.TryFind wordName with
@@ -591,6 +744,7 @@ module Runtime =
         let wordIdentity (state: DictionaryState) (item: WordEntry) =
             match item.Builtin with
             | Some(BuiltinOp _) -> "primitive_" + item.Definition.Name
+            | Some(HostOperation(HostOperationId identity)) -> "hostop_" + identity
             | Some _ -> "generated_" + item.Definition.Name
             | None ->
                 match state.WordIds.TryFind item.Definition.Name with
@@ -601,6 +755,7 @@ module Runtime =
             let identity = wordIdentity state item
             match item.Builtin with
             | Some(BuiltinOp _) -> StoredCallTarget.Primitive identity
+            | Some(HostOperation(HostOperationId identity)) -> StoredCallTarget.HostOperation identity
             | Some _ -> StoredCallTarget.GeneratedWord identity
             | None -> StoredCallTarget.UserWord identity
 
@@ -829,7 +984,7 @@ module Runtime =
                     Replacements = Map.empty
                     TypeReplacements = Map.empty
                     TypeEvolutionGroups = Map.empty }
-            let words = effectiveWords projected
+            let words = effectiveWordsForPriorState projected
             let isDurableCase target body = words.ContainsKey target && (Compiler.dependencies body |> Set.forall words.ContainsKey)
             { projected with
                 Tests = restored.Tests |> Map.filter (fun _ test -> isDurableCase test.Word (testExpressions test))
@@ -1144,6 +1299,13 @@ module Runtime =
                 | _ -> ()
             let typeRevisions = retainedTypeRevisions |> Seq.sortBy (fun item -> item.Name, item.Revision) |> Seq.toList
             let manifestVersion =
+                let containsHostOperationBinding (bindings: StoredCallBinding list) =
+                    bindings |> List.exists (fun binding -> match binding.Target with | StoredCallTarget.HostOperation _ -> true | _ -> false)
+                let hasHostOperationBindings =
+                    (durable.FlowWords |> Map.exists (fun _ item -> item.StoredBindings |> Option.exists containsHostOperationBinding))
+                    || (durable.FlowTests |> Map.exists (fun _ item -> item.StoredBindings |> Option.exists containsHostOperationBinding))
+                    || (durable.FlowTestFiles |> Map.exists (fun _ item -> item.StoredBindings |> Option.exists containsHostOperationBinding))
+                    || (durable.FlowExamples |> Map.exists (fun _ item -> item.StoredBindings |> Option.exists containsHostOperationBinding))
                 let hasIndependentFlowAttachmentFormat =
                     let ownerVersion ownerId =
                         durable.FlowWords
@@ -1154,7 +1316,8 @@ module Runtime =
                     (durable.FlowTests |> Map.exists (fun _ item -> differs item.Source.OwnerId item.Source.SyntaxVersion))
                     || (durable.FlowTestFiles |> Map.exists (fun _ item -> differs item.OwnerId item.SyntaxVersion))
                     || (durable.FlowExamples |> Map.exists (fun _ item -> differs item.Source.OwnerId item.Source.SyntaxVersion))
-                if manifestBase.FormatVersion >= 6 || not (List.isEmpty typeRevisions) then 6
+                if manifestBase.FormatVersion >= 7 || hasHostOperationBindings then 7
+                elif manifestBase.FormatVersion >= 6 || not (List.isEmpty typeRevisions) then 6
                 elif manifestBase.FormatVersion >= 5 || hasIndependentFlowAttachmentFormat then 5
                 elif manifestBase.FormatVersion >= 4 || not (Map.isEmpty durable.FlowTestFiles) then 4
                 elif manifestBase.FormatVersion >= 3
@@ -1421,10 +1584,24 @@ module Runtime =
                     currentManifestHash <- committed.ManifestHash
                     lastExportWarning <- committed.ExportWarning
 
-        let validateGraph (state: DictionaryState) =
-            let words = effectiveWords state
+        let validateGraphWith (resolveWords: DictionaryState -> Map<string, WordEntry>) (state: DictionaryState) =
+            let words = resolveWords state
             let user = userWords state
-            for entry in user |> Map.toSeq |> Seq.map snd do Compiler.checkDefinitionWithEnums (knownTypes state) (enumDefinitions state) words entry.Definition |> ignore
+            let flowOwnerNames = state.FlowWords |> Map.toSeq |> Seq.map (fun (_, authored) -> authored.Source.OwnerName) |> Set.ofSeq
+            for KeyValue(name, entry) in user do
+                let checkedDefinition = Compiler.checkDefinitionWithEnums (knownTypes state) (enumDefinitions state) words entry.Definition
+                if not (flowOwnerNames.Contains name) then
+                    let directHostOperation =
+                        checkedDefinition.Dependencies
+                        |> Seq.tryPick (fun dependency ->
+                            match words.TryFind dependency with
+                            | Some { Builtin = Some(HostOperation _) } -> Some dependency
+                            | _ -> None)
+                    match directHostOperation with
+                    | Some dependency ->
+                        error "STACK_HOST_OPERATION_UNSUPPORTED" $"Stack-authored word '{name}' cannot call registered host operation '{dependency}' directly; route host access through a Flow-authored word with retained call bindings." (Some name) (Some entry.Definition.Span)
+                            [ "direct registered host calls are available to Flow-authored words" ] [ dependency ]
+                    | None -> ()
             for record in state.Records |> Map.toSeq |> Seq.map (fun (_, item) -> item.Definition) do
                 let rec validateFieldType (field: RecordField) = function
                     | TNamed name when not ((knownTypes state).Contains name) ->
@@ -1482,22 +1659,27 @@ module Runtime =
                     colors[name] <- 2
             graph |> Map.toSeq |> Seq.iter (fun (name, _) -> visit [] name)
 
-        let compileRuntimeSnapshot (state: DictionaryState) =
+        let validateGraph (state: DictionaryState) = validateGraphWith effectiveWords state
+
+        let compileRuntimeSnapshotWith (allowDeferredHostNominalTypes: bool) (state: DictionaryState) =
+            let resolveWords = effectiveWordsWith allowDeferredHostNominalTypes
             if Map.isEmpty state.FlowWords && (not (Map.isEmpty state.FlowTests) || not (Map.isEmpty state.FlowTestFiles) || not (Map.isEmpty state.FlowExamples)) then
                 error "FLOW_RUNTIME_ORPHAN_ATTACHMENT" "Flow source attachments cannot exist without a Flow-authored owner definition." None None [ "Flow owner" ] []
-            if Map.isEmpty state.FlowWords then validateGraph state
+            if Map.isEmpty state.FlowWords then validateGraphWith resolveWords state
             let flowNames = state.FlowWords |> Map.toSeq |> Seq.map (fun (_, authored) -> authored.Source.OwnerName) |> Set.ofSeq
             let stackBase =
                 { state with
                     Words = state.Words |> Map.filter (fun name _ -> not (flowNames.Contains name))
                     WordIds = state.WordIds |> Map.filter (fun name _ -> not (flowNames.Contains name)) }
-            let baseWords = effectiveWords stackBase
+            let baseWords = resolveWords stackBase
+            let activeHostManifest = hostManifestForWords baseWords
             let baseCompilerContext: Compiler.IrLoweringContext =
                 { Words = baseWords
                   Records = recordDefinitions state
                   Scalars = scalarDefinitions state
                   Enums = enumDefinitions state
-                  WordIds = baseWords |> Map.map (fun name item -> WordId(wordIdentity stackBase item)) }
+                  WordIds = baseWords |> Map.map (fun name item -> WordId(wordIdentity stackBase item))
+                  HostOperations = activeHostManifest }
             let flowContext: FlowLowering.Context =
                 { FlowLowering.CompilerContext = baseCompilerContext
                   ParameterNames = Map.empty
@@ -1872,13 +2054,14 @@ module Runtime =
                 | Some(project, updatedState, loweredContext, verifiedProgram, fileTests, fileExpectations, fileOverlays) ->
                     updatedState, Some loweredContext, Some project, project.WordCompilation.Context.CompilerContext.Words, project.WordCompilation.Context.CompilerContext, verifiedProgram, fileTests, fileExpectations, fileOverlays
                 | None ->
-                    let words = effectiveWords state
+                    let words = resolveWords state
                     let context: Compiler.IrLoweringContext =
                         { Words = words
                           Records = recordDefinitions state
                           Scalars = scalarDefinitions state
                           Enums = enumDefinitions state
-                          WordIds = words |> Map.map (fun name item -> WordId(wordIdentity state item)) }
+                          WordIds = words |> Map.map (fun name item -> WordId(wordIdentity state item))
+                          HostOperations = activeHostManifest }
                     state, Some flowContext, None, words, context, Compiler.compileIrProgram context, Map.empty, Map.empty, Map.empty
             if not (Map.isEmpty finalState.FlowWords) then validateGraph finalState
             IrInterpreter.validateProgram program
@@ -1933,6 +2116,8 @@ module Runtime =
               TestExpectationBodies = testExpectationBodies
               TestFileOverlays = testFileOverlays
               ExampleBodies = exampleBodies }
+
+        let compileRuntimeSnapshot (state: DictionaryState) = compileRuntimeSnapshotWith false state
 
         let sourceSite (snapshot: RuntimeSnapshot) (body: VerifiedIrBody option) (site: SourceSiteId) =
             let bodySource =
@@ -2044,7 +2229,7 @@ module Runtime =
                 error "LIBRARY_COVERAGE_INCOMPLETE" $"Library word '{word}' requires every instruction, case, and declared iteration outcome to be exercised by its own passing attached tests." (Some word) None [] (coverageGapLabels snapshot uncovered missingBranches)
             requireFiniteLibraryCoverage snapshot word ownTests
 
-        let interpreterHost (snapshot: RuntimeSnapshot) (trace: Trace) (body: VerifiedIrBody option) =
+        let interpreterHost (snapshot: RuntimeSnapshot) (trace: Trace) (body: VerifiedIrBody option) (testProviderScope: TestHostProviderScope option) =
             let source site = sourceSite snapshot body site
             let userFunctionScopes = Stack<bool>()
             let finiteObservationPlan =
@@ -2113,6 +2298,29 @@ module Runtime =
                       mutateEffect trace "console.write"
                       trace.Console <- trace.Console @ [ contents ]
                       EffectUnit
+              InvokeHostOperation = fun operationId values ->
+                  let contracts = VerifiedIrProgram.hostOperationContracts snapshot.Program
+                  match contracts.TryFind operationId, engineHostOperations with
+                  | None, _ -> Error HostOperationFailure.MissingHandler
+                  | _, None -> Error HostOperationFailure.MissingHandler
+                  | Some contract, Some environment when environment.Manifest <> snapshot.Context.HostOperations ->
+                      Error HostOperationFailure.ProviderContractMismatch
+                  | Some contract, Some environment ->
+                      let expectedIds = snapshot.Context.HostOperations |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+                      let providerResult =
+                          if trace.IsTest then
+                              match testProviderScope with
+                              | Some scope -> scope.GetProvider()
+                              | None -> Error HostOperationFailure.TestProviderUnavailable
+                          else
+                              Ok environment.ProductionProvider
+                      match providerResult with
+                      | Error failure -> Error failure
+                      | Ok provider when provider.OperationIds <> expectedIds -> Error HostOperationFailure.ProviderContractMismatch
+                      | Ok provider ->
+                          IrEffects.names contract.OperationEffects |> List.iter (mutateEffect trace)
+                          try provider.Invoke operationId values
+                          with _ -> Error HostOperationFailure.InvocationFailed
               EnterUserFunction = fun functionId revision decodeArguments ->
                   let isTarget = trace.TargetIdentity = Some(functionId, revision)
                   let isInTarget = trace.TargetDepth > 0 || isTarget
@@ -2131,8 +2339,8 @@ module Runtime =
               WordDefinitionSpan = definitionSpan
               PrimitiveDefinitionSpan = definitionSpan }
 
-        let executeIRBody (snapshot: RuntimeSnapshot) (executionName: string) (trace: Trace) (body: VerifiedIrBody) =
-            let host = interpreterHost snapshot trace (Some body)
+        let executeIRBody (snapshot: RuntimeSnapshot) (executionName: string) (trace: Trace) (body: VerifiedIrBody) (testProviderScope: TestHostProviderScope option) =
+            let host = interpreterHost snapshot trace (Some body) testProviderScope
             IrInterpreter.executeBody host executionName body
 
         let executeExpression (snapshot: RuntimeSnapshot) (coverageTarget: string option) (traceFileSystemMode: FileSystemMode) (fileSystem: Map<string, string>) (expressions: Expr list) =
@@ -2140,12 +2348,13 @@ module Runtime =
             let sourceOrigins = snapshot.FlowContext |> Option.map (fun flowContext -> flowContext.SourceOrigins) |> Option.defaultValue Map.empty
             let body = Compiler.compileIrBodyAgainstProgramWithSourceOrigins snapshot.Context snapshot.Program "<eval>" [] expressions sourceOrigins
             let trace = createTrace coverageTarget traceFileSystemMode false false fileSystem
-            let stack = executeIRBody snapshot "<eval>" trace body
+            let stack = executeIRBody snapshot "<eval>" trace body None
             stack, trace
 
         let activateRuntimeSnapshot (snapshot: RuntimeSnapshot) =
             data <- snapshot.State
             activeSnapshot <- Some snapshot
+            hostNominalBootstrapPending <- not (Set.isEmpty (missingHostOperationTypes snapshot.State))
 
         let validateStoredProject (projectStore: Store) (manifest: ProjectManifest option) (manifestHash: string option) (projectSource: string option) =
             match manifest with
@@ -2175,8 +2384,9 @@ module Runtime =
                     match parsed with
                     | None -> emptyState
                     | Some source -> parsedState source emptyState Map.empty
-                validateGraph proposed
-                compileRuntimeSnapshot proposed
+                let allowDeferredHostNominalTypes = projectSource.IsNone
+                validateGraphWith (effectiveWordsWith allowDeferredHostNominalTypes) proposed
+                compileRuntimeSnapshotWith allowDeferredHostNominalTypes proposed
             | Some value ->
                 let mismatch message word = error "STORAGE_PROJECT_MISMATCH" message word None [] []
                 let headsById = value.Words |> List.map (fun head -> head.WordId, head) |> Map.ofList
@@ -2660,7 +2870,7 @@ module Runtime =
 
         let loadProject () =
             match store with
-            | None -> pendingLoadedSnapshot <- Some(compileRuntimeSnapshot data)
+            | None -> pendingLoadedSnapshot <- Some(compileRuntimeSnapshotWith true data)
             | Some projectStore ->
                 match Storage.load projectStore with
                 | Error storageError -> raiseStorageError storageError
@@ -2686,6 +2896,7 @@ module Runtime =
             |> String.concat ","
 
         let checkedByTest (snapshot: RuntimeSnapshot) (test: TestDefinition) =
+            use testProviderScope = new TestHostProviderScope(engineHostOperations)
             let sites, branches = coverageObligations snapshot test.Word
             let trace = createTrace (Some test.Word) FileSystemMode.Virtual true false Map.empty
             let bodyKey = $"{test.Word}/{test.Name}"
@@ -2697,10 +2908,10 @@ module Runtime =
             let executeTestBody executionName bodyTrace verifiedBody =
                 match testFileOverlay with
                 | Some overlay ->
-                    let host = interpreterHost executionSnapshot bodyTrace (Some verifiedBody)
+                    let host = interpreterHost executionSnapshot bodyTrace (Some verifiedBody) (Some testProviderScope)
                     use result = IrInterpreter.executeBodyWithTestDispatch host executionName snapshot.Program overlay.Dispatch verifiedBody None []
                     result.Decode()
-                | None -> executeIRBody snapshot executionName bodyTrace verifiedBody
+                | None -> executeIRBody snapshot executionName bodyTrace verifiedBody (Some testProviderScope)
             let body =
                 snapshot.TestBodies.TryFind bodyKey
                 |> Option.defaultWith (fun () ->
@@ -2954,7 +3165,7 @@ module Runtime =
                         snapshot.ExampleBodies.TryFind key
                         |> Option.defaultWith (fun () -> error "EXAMPLE_BODY_MISSING" "The example has no body compiled against the active verified program." (Some key) (Some example.Span) [] [])
                     let trace = createTrace (Some example.Word) engineFileSystemMode false true virtualFiles
-                    let actual = executeIRBody snapshot key trace body
+                    let actual = executeIRBody snapshot key trace body None
                     let passed = actual = [ Types.literalValue example.Expected ]
                     result["passed"] <- jbool passed
                     result["actual"] <- jsonNode (actual |> List.map Types.formatValue)
@@ -3220,6 +3431,7 @@ module Runtime =
                 let kind =
                     match item.Builtin with
                     | Some(BuiltinOp _) -> "primitive"
+                    | Some(HostOperation _) -> "host-operation"
                     | Some _ -> "generated"
                     | None -> "word"
                 let obj = JsonObject()
@@ -3254,6 +3466,9 @@ module Runtime =
                 obj["effects"] <- jsonNode (definition.Effects |> Set.toList)
                 obj["documentation"] <- jstr definition.Documentation
                 obj["id"] <- jstr (wordIdentity state item)
+                match item.Builtin with
+                | Some(HostOperation(HostOperationId identity)) -> obj["hostOperationId"] <- jstr identity
+                | _ -> ()
                 obj["dependencies"] <- jsonNode (direct |> Set.toList)
                 obj["transitiveDependencies"] <- jsonNode (transitive |> Set.toList)
                 obj["callers"] <- jsonNode callers
@@ -3536,7 +3751,7 @@ module Runtime =
                 | Some value ->
                     let signatures = value.Definition.Inputs @ value.Definition.Outputs |> List.map namedTypes |> Set.unionMany
                     let generatedDependencies =
-                        let words = effectiveWords state
+                        let words = effectiveWordsForPriorState state
                         Compiler.dependencies value.Definition.Body
                         |> Set.toList
                         |> List.choose (ownerOfGeneratedWordIn words)
@@ -3772,7 +3987,7 @@ module Runtime =
                 |> List.map (fun group -> group.Types)
                 |> Set.unionMany
             let generatedWordsForTypes (state: DictionaryState) =
-                let words = effectiveWords state
+                let words = effectiveWordsForPriorState state
                 words
                 |> Map.toSeq
                 |> Seq.choose (fun (name, _) ->
@@ -4758,7 +4973,15 @@ module Runtime =
             for name in typeNames do
                 if (knownTypes old).Contains name then
                     error "FLOW_PROJECT_TYPE_ALREADY_EXISTS" $"Type '{name}' already exists; project documents do not replace type sources." (Some name) None [ "unused type name" ] [ name ]
-            let existingWords = effectiveWords old
+            let isInitialEmptyProjectBootstrap =
+                currentManifest.IsNone
+                && Map.isEmpty old.Records
+                && Map.isEmpty old.Scalars
+                && Map.isEmpty old.Enums
+                && Map.isEmpty old.TypeSources
+                && Map.isEmpty old.FlowWords
+                && Map.isEmpty (userWords old)
+            let existingWords = effectiveWordsWith (hostNominalBootstrapPending || isInitialEmptyProjectBootstrap) old
             let typeCollisionState =
                 let records: Map<string, RecordEntry> =
                     document.Records
@@ -4992,7 +5215,7 @@ module Runtime =
             let proposed = { proposed with TypeSources = stableTypeSources }
             validateTypeSourceMetadata proposed
             let executable = compileRuntimeSnapshot proposed
-            let frozen = frozenValidatorWords old (effectiveWords old)
+            let frozen = frozenValidatorWords old (effectiveWordsWith (hostNominalBootstrapPending || isInitialEmptyProjectBootstrap) old)
             let changedWords = Set.ofList wordNames
             match Set.intersect frozen changedWords |> Set.toList with
             | name :: _ -> error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{name}' while a nominal type is persistent." (Some name) None [] [ name ]
@@ -5939,6 +6162,9 @@ module Runtime =
             | StoredCallTarget.Primitive identity ->
                 payload["kind"] <- jstr "primitive"
                 payload["identity"] <- jstr identity
+            | StoredCallTarget.HostOperation identity ->
+                payload["kind"] <- jstr "hostOperation"
+                payload["identity"] <- jstr identity
             | StoredCallTarget.GeneratedWord identity ->
                 payload["kind"] <- jstr "generatedWord"
                 payload["identity"] <- jstr identity
@@ -6003,6 +6229,8 @@ module Runtime =
                 | Some(EnumCaseConstructor(_, caseName)) ->
                     operation["kind"] <- jstr "enum-case-constructor"
                     operation["case"] <- jstr caseName
+                | Some(HostOperation _) ->
+                    error "DISCOVERY_HOST_OPERATION_NOT_GENERATED" "A registered host operation cannot appear in a nominal type's generated-operation list." (Some definition.Name) None [] [ definition.Name ]
                 | Some(BuiltinOp _) | None -> ()
                 generatedOperations.Add(operation)
             let typeStatus =
@@ -6098,7 +6326,7 @@ module Runtime =
                             let compiled = FlowLowering.compileExpressionWithVersion syntaxVersion flowContext expression
                             let evalSnapshot = { snapshot with Program = compiled.Program }
                             let trace = createTrace None engineFileSystemMode false false virtualFiles
-                            let result = executeIRBody evalSnapshot "<flow-eval>" trace compiled.Body
+                            let result = executeIRBody evalSnapshot "<flow-eval>" trace compiled.Body None
                             let structuredStack = if structured then Some(ValueInspection.toData compiled.Program result) else None
                             virtualFiles <- trace.FileSystem
                             let values = JsonArray()
@@ -6346,6 +6574,11 @@ module Runtime =
                                         let inputText = String.concat " " (item.Definition.Inputs |> List.map Types.format)
                                         let outputText = String.concat " " (item.Definition.Outputs |> List.map Types.format)
                                         $"primitive {name} : {inputText} -> {outputText}"
+                                    | None, Some(HostOperation(HostOperationId identity)) ->
+                                        let inputText = String.concat " " (item.Definition.Inputs |> List.map Types.format)
+                                        let outputText = String.concat " " (item.Definition.Outputs |> List.map Types.format)
+                                        let effectText = String.concat "," (item.Definition.Effects |> Set.toList |> List.sort)
+                                        $"host operation {identity}\n{name} : {inputText} -> {outputText}\neffects {effectText}"
                                     | None, Some _ -> sourceForAgent item.Definition.SourceText
                                     | None, None -> sourceForAgent item.Definition.SourceText
                                 success "source" source (Some(jstr source))
@@ -6380,12 +6613,14 @@ module Runtime =
                         let target =
                             match value.Builtin with
                             | Some(BuiltinOp operation) -> IrFormatTarget.PrimitiveContract(PrimitiveId operation)
+                            | Some(HostOperation operationId) -> IrFormatTarget.HostOperationContract operationId
                             | Some _ -> IrFormatTarget.GeneratedWordId(WordId(wordIdentity snapshot.State value))
                             | None -> IrFormatTarget.UserWordId(WordId(wordIdentity snapshot.State value))
                         let formatted = IrFormatting.toData snapshot.Program target
                         let label =
                             match value.Builtin with
                             | Some(BuiltinOp _) -> "Canonical primitive contract"
+                            | Some(HostOperation _) -> "Registered host-operation contract"
                             | _ -> "Verified executable IR"
                         success "ir" $"{label} for '{name}'." (Some formatted)
                 | "tests" ->

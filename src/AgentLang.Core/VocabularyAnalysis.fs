@@ -59,11 +59,11 @@ module VocabularyAnalysis =
             |> Option.bind (fun scalar -> scalar.Definition.Validator)
             |> Option.map Set.singleton
             |> Option.defaultValue Set.empty
-        | Some(BuiltinOp _ | RecordAccessor _ | ScalarAccessor _ | EnumCaseConstructor _) -> Set.empty
+        | Some(BuiltinOp _ | HostOperation _ | RecordAccessor _ | ScalarAccessor _ | EnumCaseConstructor _) -> Set.empty
 
     let private validateGeneratedReference (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (enums: Map<string, EnumEntry>) wordName builtin =
         match builtin with
-        | None | Some(BuiltinOp _) -> ()
+        | None | Some(BuiltinOp _ | HostOperation _) -> ()
         | Some(RecordConstructor recordName) ->
             if not (records.ContainsKey recordName) then
                 raiseVocabulary "VOCABULARY_UNKNOWN_RECORD" $"Generated word '{wordName}' references missing record '{recordName}'." (Some wordName) [ "known record" ] [ recordName ]
@@ -131,6 +131,9 @@ module VocabularyAnalysis =
         | Some(BuiltinOp operation) ->
             writer.Write 2uy
             writeString writer operation
+        | Some(HostOperation(HostOperationId identity)) ->
+            writer.Write 8uy
+            writeString writer identity
         | Some(RecordConstructor recordName) ->
             writer.Write 3uy
             writeString writer recordName
@@ -399,7 +402,7 @@ module VocabularyAnalysis =
                 let nextActive = Set.add name active
                 let computed =
                     match entry.Builtin with
-                    | Some(BuiltinOp _) -> { emptyExpansion with PrimitiveCallSites = BigInteger.One }
+                    | Some(BuiltinOp _ | HostOperation _) -> { emptyExpansion with PrimitiveCallSites = BigInteger.One }
                     | Some(RecordConstructor recordName) ->
                         let constructor = addGeneratedInvocation emptyExpansion
                         match index.Records[recordName].Definition.Validator with

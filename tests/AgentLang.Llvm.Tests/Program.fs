@@ -178,7 +178,8 @@ let private contextWithDefinitions
       Records = records
       Scalars = scalarMap
       Enums = Map.empty
-      WordIds = wordIds }
+      WordIds = wordIds
+      HostOperations = Map.empty }
 
 let private contextWithScalarDefinitions extraWords scalarDefinitions =
     contextWithDefinitions extraWords Map.empty scalarDefinitions
@@ -230,7 +231,8 @@ let private contextWithEnums (extraWords: WordEntry list) (definitions: EnumDefi
       Records = Map.empty
       Scalars = Map.empty
       Enums = definitions |> List.map (fun definition -> definition.Name, definition) |> Map.ofList
-      WordIds = wordIds }
+      WordIds = wordIds
+      HostOperations = Map.empty }
 
 let private compileBody context name expressions =
     let verifiedProgram = Compiler.compileIrProgram context
@@ -246,6 +248,7 @@ let private noOpHost () : IrInterpreterHost =
       RecordBranchOutcome = fun _ _ _ -> ()
       RecordUse = ignore
       InvokeEffect = fun _ -> EffectUnit
+      InvokeHostOperation = fun _ _ -> Error HostOperationFailure.MissingHandler
       EnterUserFunction = fun _ _ _ -> fun () -> ()
       ReturnUserFunction = fun _ _ _ -> ()
       WordDefinitionSpan = fun _ -> None
@@ -5963,6 +5966,49 @@ let private testNativeModuleValidationBeforeTools () =
         | LanguageException diagnostic -> diagnostic.Code = "IR_LLVM_EFFECT_UNSUPPORTED"
         | _ -> false
     check "effectful module entries are rejected before tool invocation" unsupportedEffectRejected
+
+    let hostOperationId = HostOperationId "llvm.test.lookup"
+    let hostOperationDefinition =
+        { Id = hostOperationId
+          WordName = "llvm.test-lookup"
+          Inputs = []
+          Outputs = [ TInt ]
+          Effects = Set.empty
+          Documentation = "Native backend rejection control." }
+    let hostWord =
+        wordEntry hostOperationDefinition.WordName [] hostOperationDefinition.Outputs Set.empty []
+        |> fun word -> { word with Builtin = Some(HostOperation hostOperationId) }
+    let hostContext =
+        let context = contextWith [ hostWord ]
+        { context with
+            WordIds = Map.add hostOperationDefinition.WordName (WordId "hostop_llvm.test.lookup") context.WordIds
+            HostOperations = Map.ofList [ hostOperationId, hostOperationDefinition ] }
+    let hostSpan = span "module-host-operation.agent" 1
+    let hostBody = compileBody hostContext "host-operation-entry" [ Call(hostOperationDefinition.WordName, hostSpan) ]
+    let hostOperationRejected (compile: unit -> unit) =
+        try
+            compile ()
+            false
+        with
+        | LanguageException diagnostic ->
+            diagnostic.Code = "IR_NATIVE_HOST_OPERATION_UNSUPPORTED"
+            && diagnostic.Message = "Native backends do not execute host operations; use the interpreter with its registered provider."
+            && diagnostic.Word.IsNone
+            && diagnostic.Span.IsNone
+            && diagnostic.Expected = [ "program without host operations" ]
+            && diagnostic.Actual = [ sprintf "%A" hostOperationId ]
+        | _ -> false
+    check "scalar LLVM rejects a checked host-operation call before tool invocation" (
+        hostOperationRejected (fun () ->
+            LlvmAot.compile unavailableToolchain LlvmOptimization.O0
+                (Path.Combine(artifactRoot, "native-host-operation-unsupported"))
+                NativeDiagnosticSources.empty hostBody
+            |> ignore))
+    check "owning-stack LLVM rejects a checked host-operation call before tool invocation" (
+        hostOperationRejected (fun () ->
+            OwningStackAot.compile unavailableToolchain LlvmOptimization.O0
+                (Path.Combine(artifactRoot, "owning-host-operation-unsupported")) hostBody
+            |> ignore))
 
 let private testNativeModuleCompilation () =
     let record = recordDefinition "NativePoint" [ recordField "x" TInt; recordField "visible" TBool ]

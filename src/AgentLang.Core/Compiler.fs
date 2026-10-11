@@ -474,7 +474,7 @@ module Compiler =
     let checkExpressionWithEnums knownTypes enums words body =
         inferBody knownTypes enums words "<eval>" None [] Map.empty body |> checkedExpression
 
-    let private checkDefinitionDetailed knownTypes knownEnums words definition =
+    let private checkDefinitionDetailed knownTypes knownEnums words (definition: WordDefinition) =
         for typeValue in definition.Inputs @ definition.Outputs do validateType false knownTypes (Some definition.Span) definition.Name typeValue
         let inferred = inferBody knownTypes knownEnums words definition.Name (Some definition.Span) definition.Inputs Map.empty definition.Body
         if inferred.InferredBody.ExitStack <> definition.Outputs then
@@ -640,7 +640,8 @@ module Compiler =
           Records: Map<string, RecordDefinition>
           Scalars: Map<string, ScalarTypeDefinition>
           Enums: Map<string, EnumDefinition>
-          WordIds: Map<string, WordId> }
+          WordIds: Map<string, WordId>
+          HostOperations: Map<HostOperationId, HostOperationDefinition> }
 
     let private irFailure code message word span expected actual =
         Diagnostics.raiseError code message word span expected actual
@@ -729,7 +730,7 @@ module Compiler =
             PrimitiveId operation, primitiveContractOfEntry canonical operation)
         |> Map.ofList
 
-    let private verifyBuiltinMetadata (words: Map<string, WordEntry>) name (entry: WordEntry) =
+    let private verifyBuiltinMetadata (words: Map<string, WordEntry>) (hostOperations: Map<HostOperationId, HostOperationDefinition>) name (entry: WordEntry) =
         match entry.Builtin with
         | Some(BuiltinOp operation) ->
             match primitiveIrCatalog.TryFind(PrimitiveId operation),
@@ -741,6 +742,22 @@ module Compiler =
                     irFailure "IR_PRIMITIVE_METADATA_MISMATCH" $"Primitive alias '{name}' does not match the trusted contract for BuiltinOp '{operation}'." (Some name) (Some entry.Definition.Span) [ String.concat " " (canonical.Definition.Inputs |> List.map Types.format) + " -> " + String.concat " " (canonical.Definition.Outputs |> List.map Types.format); String.concat ", " canonical.Definition.Effects ] [ String.concat " " (entry.Definition.Inputs |> List.map Types.format) + " -> " + String.concat " " (entry.Definition.Outputs |> List.map Types.format); String.concat ", " entry.Definition.Effects ]
             | _ ->
                 irFailure "IR_UNKNOWN_PRIMITIVE_ID" $"BuiltinOp '{operation}' is not in the fixed trusted primitive registry." (Some name) (Some entry.Definition.Span) (primitiveIrCatalog |> Map.toList |> List.map (fun (id, _) -> sprintf "%A" id)) [ operation ]
+        | Some(HostOperation operationId) ->
+            match hostOperations.TryFind operationId with
+            | None ->
+                irFailure "IR_UNKNOWN_HOST_OPERATION_ID" $"Host operation '{name}' is absent from the exact lowering manifest." (Some name) (Some entry.Definition.Span)
+                    (hostOperations |> Map.toList |> List.map (fun (id, _) -> sprintf "%A" id)) [ sprintf "%A" operationId ]
+            | Some definition ->
+                let expected = definition.Inputs, definition.Outputs, definition.Effects, definition.WordName
+                let actual = entry.Definition.Inputs, entry.Definition.Outputs, entry.Definition.Effects, name
+                if definition.Id <> operationId || definition.WordName <> name || expected <> actual then
+                    irFailure "IR_HOST_OPERATION_METADATA_MISMATCH" $"Host operation word '{name}' differs from its exact registered definition." (Some name) (Some entry.Definition.Span)
+                        [ definition.WordName
+                          String.concat " " (definition.Inputs |> List.map Types.format) + " -> " + String.concat " " (definition.Outputs |> List.map Types.format)
+                          String.concat ", " (definition.Effects |> Set.toList |> List.sort) ]
+                        [ name
+                          String.concat " " (entry.Definition.Inputs |> List.map Types.format) + " -> " + String.concat " " (entry.Definition.Outputs |> List.map Types.format)
+                          String.concat ", " (entry.Definition.Effects |> Set.toList |> List.sort) ]
         | _ -> ()
         if entry.Definition.Name <> name then
             irFailure "IR_WORD_NAME_MISMATCH" "Dictionary key differs from its source word name." (Some name) (Some entry.Definition.Span) [ name ] [ entry.Definition.Name ]
@@ -798,8 +815,40 @@ module Compiler =
         for KeyValue(name, WordId rawId) in context.WordIds do
             if String.IsNullOrWhiteSpace rawId then irFailure "IR_WORD_ID_INVALID" "Stable word IDs must be nonempty." (Some name) None [ "nonempty WordId" ] [ rawId ]
         for KeyValue(name, entry) in context.Words do
-            verifyBuiltinMetadata context.Words name entry
+            verifyBuiltinMetadata context.Words context.HostOperations name entry
             if entry.Revision < 0 then irFailure "IR_INVALID_REVISION" "Dictionary word revisions cannot be negative." (Some name) (Some entry.Definition.Span) [ "nonnegative revision" ] [ string entry.Revision ]
+        let hostEntries =
+            context.Words
+            |> Map.toList
+            |> List.choose (fun (name, entry) ->
+                match entry.Builtin with
+                | Some(HostOperation id) -> Some(id, name)
+                | _ -> None)
+        let duplicateHostIds = hostEntries |> List.groupBy fst |> List.choose (fun (id, values) -> if values.Length > 1 then Some(sprintf "%A" id) else None)
+        let hostIds = hostEntries |> List.map fst |> Set.ofList
+        let manifestIds = context.HostOperations |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        if hostIds <> manifestIds then
+            irFailure "IR_HOST_OPERATION_WORD_SET_MISMATCH" "Every registered host operation must have exactly one effective builtin word." None None
+                (manifestIds |> Set.toList |> List.map (sprintf "%A")) (hostIds |> Set.toList |> List.map (sprintf "%A"))
+        if not duplicateHostIds.IsEmpty then
+            irFailure "IR_HOST_OPERATION_ID_COLLISION" "A host operation ID cannot be exposed by more than one word." None None [ "unique operation IDs" ] duplicateHostIds
+        let duplicateHostNames = hostEntries |> List.groupBy snd |> List.choose (fun (name, values) -> if values.Length > 1 then Some name else None)
+        if not duplicateHostNames.IsEmpty then
+            irFailure "IR_HOST_OPERATION_NAME_COLLISION" "A host operation word name cannot be exposed more than once." None None [ "unique operation names" ] duplicateHostNames
+        for KeyValue(id, definition) in context.HostOperations do
+            let (HostOperationId rawId) = id
+            if String.IsNullOrWhiteSpace rawId || definition.Id <> id || String.IsNullOrWhiteSpace definition.WordName then
+                irFailure "IR_HOST_OPERATION_DEFINITION_INVALID" "Host operation IDs and names must be nonempty and map to their exact manifest key." (Some definition.WordName) None [ sprintf "%A" id ] [ sprintf "%A" definition.Id ]
+            for typeValue in definition.Inputs @ definition.Outputs do
+                let rec ensureClosed = function
+                    | TVar variable -> irFailure "IR_HOST_OPERATION_GENERIC_UNSUPPORTED" "Host operations require closed concrete signatures." (Some definition.WordName) None [ "closed type" ] [ variable ]
+                    | TList item | TOption item -> ensureClosed item
+                    | TResult(ok, error) -> ensureClosed ok; ensureClosed error
+                    | _ -> ()
+                ensureClosed typeValue
+            for effect in definition.Effects do
+                if IrEffects.ofName effect |> Option.isNone then
+                    irFailure "IR_UNKNOWN_EFFECT" $"Host operation '{definition.WordName}' declares an effect outside the closed executable vocabulary." (Some definition.WordName) None (IrEffects.names Set.empty) [ effect ]
         contextTypes context
 
     let private snapshotFingerprint (context: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) =
@@ -885,6 +934,7 @@ module Compiler =
         let appendBuiltin = function
             | None -> appendText "user-word"
             | Some(BuiltinOp operation) -> appendText "primitive"; appendText operation
+            | Some(HostOperation(HostOperationId identity)) -> appendText "host-operation"; appendText identity
             | Some(RecordConstructor name) -> appendText "record-constructor"; appendText name
             | Some(RecordAccessor(name, field)) -> appendText "record-accessor"; appendText name; appendText field
             | Some(ScalarConstructor name) -> appendText "scalar-constructor"; appendText name
@@ -892,7 +942,7 @@ module Compiler =
             | Some(EnumCaseConstructor(typeName, caseName)) -> appendText "enum-case-constructor"; appendText typeName; appendText caseName
         let appendMaturity = function | ProjectWord -> appendText "project" | LibraryWord -> appendText "library"
         let appendStatus = function | Primitive -> appendText "primitive" | Candidate -> appendText "candidate" | Temporary -> appendText "temporary" | Persistent -> appendText "persistent"
-        appendText "agentlang-ir-snapshot-v3"
+        appendText "agentlang-ir-snapshot-v4"
         for KeyValue(name, entry) in context.Words do
             appendText "word"
             appendText name
@@ -912,6 +962,14 @@ module Compiler =
             appendText entry.Definition.SourceText
             appendSpan entry.Definition.Span
             appendExpressions entry.Definition.Body
+        for KeyValue(HostOperationId identity, definition) in context.HostOperations do
+            appendText "host-operation-manifest"
+            appendText identity
+            appendText definition.WordName
+            appendTypes definition.Inputs
+            appendTypes definition.Outputs
+            appendEffects definition.Effects
+            appendText definition.Documentation
         for KeyValue(name, record) in context.Records do
             appendText "record"
             appendText name
@@ -960,6 +1018,16 @@ module Compiler =
             |> Seq.sort
             |> Seq.toList
         names |> List.mapi (fun index name -> name, ProgramTypeKey index) |> Map.ofList
+
+    let private hostCatalogForContext (context: IrLoweringContext) (typeKeys: Map<string, ProgramTypeKey>) : IrHostOperationCatalog =
+        context.HostOperations
+        |> Map.map (fun operationId definition ->
+            let effects = irEffectsForWord definition.WordName None definition.Effects
+            { OperationId = operationId
+              OperationName = definition.WordName
+              InputTypes = definition.Inputs |> List.map (closedIrType typeKeys definition.WordName None)
+              OutputTypes = definition.Outputs |> List.map (closedIrType typeKeys definition.WordName None)
+              OperationEffects = effects })
 
     let private buildGeneratedTargets (context: IrLoweringContext) (typeKeys: Map<string, ProgramTypeKey>) =
         let sourceMap = ResizeArray<SourceSiteId * IrSourceSite>()
@@ -1033,7 +1101,7 @@ module Compiler =
             let id = context.WordIds[name]
             match entry.Builtin with
             | Some(BuiltinOp operation) ->
-                verifyBuiltinMetadata context.Words name entry
+                verifyBuiltinMetadata context.Words context.HostOperations name entry
                 let contract = primitiveIrCatalog[PrimitiveId operation]
                 { ResolvedTarget = PrimitiveTarget(PrimitiveId operation)
                   ResolvedName = name
@@ -1041,6 +1109,16 @@ module Compiler =
                   OutputTypes = outputTypes |> List.map (closedIrType typeKeys name span)
                   ResolvedDeclaredEffects = contract.PrimitiveEffects
                   ResolvedEffects = contract.PrimitiveEffects }
+            | Some(HostOperation operationId) ->
+                verifyBuiltinMetadata context.Words context.HostOperations name entry
+                let contract = context.HostOperations[operationId]
+                let effects = irEffectsForWord name span contract.Effects
+                { ResolvedTarget = HostOperationTarget operationId
+                  ResolvedName = name
+                  InputTypes = inputTypes |> List.map (closedIrType typeKeys name span)
+                  OutputTypes = outputTypes |> List.map (closedIrType typeKeys name span)
+                  ResolvedDeclaredEffects = effects
+                  ResolvedEffects = effects }
             | None ->
                 let effects = irEffectsForWord name span entry.Definition.Effects
                 { ResolvedTarget = UserWordTarget(id, entry.Revision)
@@ -1274,7 +1352,7 @@ module Compiler =
                                     | Some caseIndex -> IrOperation.MakeEnumCase(call, key, caseIndex)
                                     | None -> irFailure "IR_GENERATED_CASE_UNKNOWN" $"Enum constructor '{name}' refers to unknown case '{caseName}'." (Some name) (Some span) enumDefinition.Cases [ caseName ]
                                 | _ -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Enum constructor '{name}' has no nominal type key." (Some name) (Some span) [] [ typeName ]
-                            | Some(BuiltinOp _) -> IrOperation.Call call
+                            | Some(BuiltinOp _ | HostOperation _) -> IrOperation.Call call
                             | None -> IrOperation.Call call
                         | ConstructContainer(kind, arguments, _) ->
                             let args = arguments |> List.map (irType ownerName (Some span))
@@ -1408,6 +1486,7 @@ module Compiler =
         for KeyValue(_, record) in context.Records do checkRecordValidator knownTypes context.Words record |> ignore
         for KeyValue(_, scalar) in context.Scalars do checkScalarValidator knownTypes context.Words scalar |> ignore
         let typeKeys = typeKeysForContext context
+        let hostCatalog = hostCatalogForContext context typeKeys
         let generatedByName, generatedById, generatedSourceMap = buildGeneratedTargets context typeKeys
         let nominalTypes = buildNominalTypes context typeKeys generatedByName
         let functions = ResizeArray<WordId * IrFunction>()
@@ -1442,18 +1521,18 @@ module Compiler =
               GeneratedTargetsById = generatedById
               SourceMap = Map.ofSeq sourceMap
               CoverageByWord = Map.ofSeq coverage }
-        program, snapshotFingerprint context sourceOrigins
+        program, hostCatalog, snapshotFingerprint context sourceOrigins
 
     let compileIrProgram (context: IrLoweringContext) =
-        let program, fingerprint = compileProgram context Map.empty
-        IrVerifier.verifyCompilerProgram primitiveIrCatalog fingerprint program
+        let program, hostCatalog, fingerprint = compileProgram context Map.empty
+        IrVerifier.verifyCompilerProgram primitiveIrCatalog hostCatalog fingerprint program
 
     /// Compile a source snapshot with explicit private-marker to authored-span
     /// mappings. Only the verified source map is exported; marker coordinates
     /// remain part of the compiler input fingerprint but never reach IR.
     let compileIrProgramWithSourceOrigins (context: IrLoweringContext) sourceOrigins =
-        let program, fingerprint = compileProgram context sourceOrigins
-        IrVerifier.verifyCompilerProgram primitiveIrCatalog fingerprint program
+        let program, hostCatalog, fingerprint = compileProgram context sourceOrigins
+        IrVerifier.verifyCompilerProgram primitiveIrCatalog hostCatalog fingerprint program
 
     let private bodyFromInference (context: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) (verifiedProgram: VerifiedIrProgram) (name: string) (initialStack: LangType list) (effects: Set<string>) (typed: TypedBody) =
         validateLoweringContext context |> ignore

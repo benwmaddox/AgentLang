@@ -29,6 +29,9 @@ type IrInterpreterHost =
       RecordBranchOutcome: string -> SourceSiteId -> string -> unit
       RecordUse: string -> unit
       InvokeEffect: IrEffectCommand -> IrEffectResult
+      /// Closed application operations are dispatched only from verified IR
+      /// contracts after the normal effect preflight has succeeded.
+      InvokeHostOperation: HostOperationId -> Value list -> Result<Value list, HostOperationFailure>
       /// Called at verified user-function entry with a deferred snapshot of the
       /// actual input values. The host may ignore the decoder. The returned scope
       /// exit action is always called from a finally block.
@@ -257,7 +260,9 @@ module IrInterpreter =
     let validateProgram (verified: VerifiedIrProgram) =
         requireBackendRegistry verified
 
-    let private ensureProgramContainsOriginalSnapshot (original: IrProgram) (expanded: IrProgram) =
+    let private ensureProgramContainsOriginalSnapshot (originalProgram: VerifiedIrProgram) (expandedProgram: VerifiedIrProgram) =
+        let original = VerifiedIrProgram.inspect originalProgram
+        let expanded = VerifiedIrProgram.inspect expandedProgram
         let requireSubset label (source: Map<'key, 'value>) (target: Map<'key, 'value>) =
             for KeyValue(key, value) in source do
                 match target.TryFind key with
@@ -271,6 +276,7 @@ module IrInterpreter =
         requireSubset "user function" original.FunctionsById expanded.FunctionsById
         requireSubset "generated target" original.GeneratedTargetsById expanded.GeneratedTargetsById
         requireSubset "nominal type" original.NominalTypesByKey expanded.NominalTypesByKey
+        requireSubset "host-operation contract" (VerifiedIrProgram.hostOperationContracts originalProgram) (VerifiedIrProgram.hostOperationContracts expandedProgram)
         requireSubset "source map" original.SourceMap expanded.SourceMap
         requireSubset "coverage" original.CoverageByWord expanded.CoverageByWord
 
@@ -278,7 +284,7 @@ module IrInterpreter =
         | ConcreteTargetContract of IrType list * IrType list * Set<IrEffect>
         | PrimitiveTargetContract of IrTypePattern list * IrTypePattern list * Set<IrEffect>
 
-    let private targetContract (program: IrProgram) (target: IrCallTarget) =
+    let private targetContract (program: IrProgram) (hostCatalog: IrHostOperationCatalog) (target: IrCallTarget) =
         match target with
         | UserWordTarget(wordId, revision) ->
             match program.FunctionsById.TryFind wordId with
@@ -288,6 +294,9 @@ module IrInterpreter =
         | PrimitiveTarget primitiveId ->
             Compiler.primitiveIrCatalog.TryFind primitiveId
             |> Option.map (fun contract -> PrimitiveTargetContract(contract.InputPatterns, contract.OutputPatterns, contract.PrimitiveEffects))
+        | HostOperationTarget operationId ->
+            hostCatalog.TryFind operationId
+            |> Option.map (fun contract -> ConcreteTargetContract(contract.InputTypes, contract.OutputTypes, contract.OperationEffects))
         | GeneratedWordTarget _ -> None
 
     let private primitiveSignatureMatches (inputPatterns: IrTypePattern list) (outputPatterns: IrTypePattern list) (inputs: IrType list) (outputs: IrType list) =
@@ -321,13 +330,15 @@ module IrInterpreter =
         requireBackendRegistry expandedProgram
         let original = VerifiedIrProgram.inspect originalProgram
         let expanded = VerifiedIrProgram.inspect expandedProgram
-        ensureProgramContainsOriginalSnapshot original expanded
+        ensureProgramContainsOriginalSnapshot originalProgram expandedProgram
+        let originalHostCatalog = VerifiedIrProgram.hostOperationContracts originalProgram
+        let expandedHostCatalog = VerifiedIrProgram.hostOperationContracts expandedProgram
         let fixtureTargets = ResizeArray<WordId>()
         for KeyValue(originalTarget, fixtureTarget) in dispatch do
-            match targetContract original originalTarget with
+            match targetContract original originalHostCatalog originalTarget with
             | None ->
-                fail "IR_TEST_DISPATCH_ORIGINAL_TARGET" "Test dispatch supports only an authored user word or trusted primitive at its active identity; generated targets are not replaceable." None None
-                    [ "active authored user-word or primitive target" ] [ sprintf "%A" originalTarget ]
+                fail "IR_TEST_DISPATCH_ORIGINAL_TARGET" "Test dispatch supports only an authored user word, trusted primitive, or registered host operation at its active identity; generated targets are not replaceable." None None
+                    [ "active authored user-word, primitive, or registered host-operation target" ] [ sprintf "%A" originalTarget ]
             | Some contract ->
                 match contract with
                 | PrimitiveTargetContract(inputPatterns, outputPatterns, _) when not (primitiveContractIsClosed inputPatterns outputPatterns) ->
@@ -396,6 +407,7 @@ module IrInterpreter =
         requireExactKeys "generated-target" (keySet original.GeneratedTargetsById) (keySet expanded.GeneratedTargetsById)
         requireExactKeys "nominal-type" (keySet original.NominalTypesByKey) (keySet expanded.NominalTypesByKey)
         requireExactKeys "coverage" (Set.union (keySet original.CoverageByWord) fixtureIdSet) (keySet expanded.CoverageByWord)
+        requireExactKeys "host-operation contract" (keySet originalHostCatalog) (keySet expandedHostCatalog)
         let unexpectedSourceSites =
             expanded.SourceMap
             |> Map.toSeq
@@ -618,6 +630,94 @@ module IrInterpreter =
         let checkRuntimeValueRoots currentWord site values =
             aggregateRuntimeValues currentWord site values |> ignore
 
+        let validateHostTypeMetadata currentWord site rootType =
+            let pending = Stack<LangType * int>()
+            if isNull (box rootType) then
+                fail "HOST_OPERATION_VALUE_INVALID" "Host value contains null container type metadata." (Some currentWord) (site |> Option.bind sourceSpan) [ "declared container type" ] [ "null" ]
+            pending.Push((rootType, 1))
+            let mutable nodes = 0L
+            while pending.Count > 0 do
+                let current, depth = pending.Pop()
+                if isNull (box current) then
+                    fail "HOST_OPERATION_VALUE_INVALID" "Host value contains null nested type metadata." (Some currentWord) (site |> Option.bind sourceSpan) [ "declared container type" ] [ "null" ]
+                nodes <- saturatingAdd maxRuntimeValueNodes nodes 1L
+                if depth > maxRuntimeValueDepth || nodes > maxRuntimeValueNodes then
+                    fail "RUNTIME_VALUE_LIMIT" "Host value type metadata exceeds the bounded type traversal limit." (Some currentWord) (site |> Option.bind sourceSpan)
+                        [ $"type depth <= {maxRuntimeValueDepth} and nodes <= {maxRuntimeValueNodes}" ] [ $"depth={depth};nodes={nodes}" ]
+                match current with
+                | TList item | TOption item -> pending.Push((item, depth + 1))
+                | TResult(okType, errorType) -> pending.Push((errorType, depth + 1)); pending.Push((okType, depth + 1))
+                | TNamed name when String.IsNullOrWhiteSpace name ->
+                    fail "HOST_OPERATION_VALUE_INVALID" "Host value contains an empty nominal type name." (Some currentWord) (site |> Option.bind sourceSpan) [ "declared type name" ] [ "empty" ]
+                | TInt | TFloat | TBool | TString | TUnit | TNamed _ | TVar _ -> ()
+
+        let validateHostValueBudget currentWord site (roots: Value list) =
+            let invalid actual =
+                fail "HOST_OPERATION_VALUE_INVALID" "Host operation returned a malformed value payload." (Some currentWord) (site |> Option.bind sourceSpan) [ "well-formed declared Flow value" ] [ actual ]
+            if isNull (box roots) then invalid "null output collection"
+            if roots.Length > maxCollectionLength then
+                fail "RUNTIME_VALUE_LIMIT" "Host operation returned too many output values." (Some currentWord) (site |> Option.bind sourceSpan)
+                    [ $"output count <= {maxCollectionLength}" ] [ string roots.Length ]
+            let pending = Stack<Value * int>()
+            for value in roots do pending.Push((value, 1))
+            let mutable nodes = 0L
+            let mutable outputBytes = 0L
+            let addBytes count =
+                outputBytes <- saturatingAdd maxRuntimeValueOutputBytes outputBytes count
+                if outputBytes > maxRuntimeValueOutputBytes then
+                    fail "RUNTIME_VALUE_LIMIT" "Host value payload exceeds the bounded output-size limit." (Some currentWord) (site |> Option.bind sourceSpan)
+                        [ $"estimated output bytes <= {maxRuntimeValueOutputBytes}" ] [ string outputBytes ]
+            while pending.Count > 0 do
+                let value, depth = pending.Pop()
+                if isNull (box value) then invalid "null nested value"
+                nodes <- saturatingAdd maxRuntimeValueNodes nodes 1L
+                if depth > maxRuntimeValueDepth || nodes > maxRuntimeValueNodes then
+                    fail "RUNTIME_VALUE_LIMIT" "Host value payload exceeds the bounded depth or node limit." (Some currentWord) (site |> Option.bind sourceSpan)
+                        [ $"depth <= {maxRuntimeValueDepth}; nodes <= {maxRuntimeValueNodes}" ] [ $"depth={depth};nodes={nodes}" ]
+                addBytes 64L
+                let push child = pending.Push((child, depth + 1))
+                match value with
+                | StringValue text ->
+                    if isNull text then invalid "null string"
+                    addBytes (int64 text.Length * 6L)
+                | FloatValue number when not (Double.IsFinite number) -> invalid "non-finite float"
+                | FloatValue _ -> ()
+                | ListValue(itemType, values) ->
+                    validateHostTypeMetadata currentWord site itemType
+                    if isNull (box values) then invalid "null list payload"
+                    if values.Length > maxCollectionLength then
+                        fail "RUNTIME_VALUE_LIMIT" "Host list exceeds the bounded collection limit." (Some currentWord) (site |> Option.bind sourceSpan)
+                            [ $"list length <= {maxCollectionLength}" ] [ string values.Length ]
+                    addBytes (int64 values.Length * 2L)
+                    values |> List.iter push
+                | OptionValue(itemType, value) ->
+                    validateHostTypeMetadata currentWord site itemType
+                    value |> Option.iter push
+                | ResultValue(okType, errorType, value) ->
+                    validateHostTypeMetadata currentWord site okType
+                    validateHostTypeMetadata currentWord site errorType
+                    if isNull (box value) then invalid "null result arm"
+                    match value with Ok item | Error item -> push item
+                | RecordValue(typeName, fields) ->
+                    if String.IsNullOrWhiteSpace typeName then invalid "empty record type name"
+                    if isNull (box fields) then invalid "null record fields"
+                    if fields.Count > maxCollectionLength then
+                        fail "RUNTIME_VALUE_LIMIT" "Host record exceeds the bounded field limit." (Some currentWord) (site |> Option.bind sourceSpan)
+                            [ $"record fields <= {maxCollectionLength}" ] [ string fields.Count ]
+                    addBytes (int64 typeName.Length * 6L)
+                    for KeyValue(fieldName, fieldValue) in fields do
+                        if String.IsNullOrWhiteSpace fieldName then invalid "empty record field name"
+                        addBytes (int64 fieldName.Length * 6L)
+                        push fieldValue
+                | NamedValue(typeName, inner) ->
+                    if String.IsNullOrWhiteSpace typeName then invalid "empty scalar type name"
+                    addBytes (int64 typeName.Length * 6L)
+                    push inner
+                | EnumValue(typeName, caseName) ->
+                    if String.IsNullOrWhiteSpace typeName || String.IsNullOrWhiteSpace caseName then invalid "empty enum type or case name"
+                    addBytes (int64 (typeName.Length + caseName.Length) * 6L)
+                | IntValue _ | BoolValue _ | UnitValue -> ()
+
         let mutable chargedSteps = 0
         let chargeInstruction currentWord site =
             chargedSteps <- chargedSteps + 1
@@ -679,6 +779,124 @@ module IrInterpreter =
                     fail "IR_BACKEND_PRIMITIVE_UNIMPLEMENTED" "Verified program refers to a primitive with no fixed interpreter implementation." (Some call.ResolvedName) (site |> Option.bind sourceSpan) [] [ operation ]
                 host.RecordUse call.ResolvedName
                 executePrimitive operation call arguments site
+            | HostOperationTarget operationId ->
+                let catalog = VerifiedIrProgram.hostOperationContracts verifiedProgram
+                match catalog.TryFind operationId with
+                | None ->
+                    fail "IR_BACKEND_HOST_OPERATION_MISSING" "Verified call refers to a host operation absent from its retained program contract." (Some call.ResolvedName) (site |> Option.bind sourceSpan) [] [ sprintf "%A" operationId ]
+                | Some contract ->
+                    if contract.OperationId <> operationId
+                       || contract.OperationName <> call.ResolvedName
+                       || contract.InputTypes <> call.InputTypes
+                       || contract.OutputTypes <> call.OutputTypes
+                       || contract.OperationEffects <> call.ResolvedDeclaredEffects
+                       || contract.OperationEffects <> call.ResolvedEffects then
+                        fail "IR_BACKEND_HOST_OPERATION_CONTRACT" "Host call does not match the exact contract retained by its verified program." (Some call.ResolvedName) (site |> Option.bind sourceSpan)
+                            [ contract.OperationName; (contract.InputTypes |> List.map (formatType program) |> String.concat ",") ]
+                            [ call.ResolvedName; (call.InputTypes |> List.map (formatType program) |> String.concat ",") ]
+                    if arguments.Length <> contract.InputTypes.Length then
+                        fail "IR_BACKEND_HOST_OPERATION_ARITY" "Host call argument count differs from its retained contract." (Some call.ResolvedName) (site |> Option.bind sourceSpan)
+                            [ string contract.InputTypes.Length ] [ string arguments.Length ]
+                    checkRuntimeValueRoots call.ResolvedName site arguments
+                    let checkedInputs =
+                        List.zip contract.InputTypes arguments
+                        |> List.map (fun (expectedType, argument) -> importHostValue depth call.ResolvedName site expectedType (decodeValue argument))
+                    checkRuntimeValueRoots call.ResolvedName site checkedInputs
+                    let publicInputs = checkedInputs |> List.map decodeValue
+                    host.RecordUse call.ResolvedName
+                    let providerResult = host.InvokeHostOperation operationId publicInputs
+                    if isNull (box providerResult) then
+                        fail "HOST_OPERATION_PROVIDER_INVALID" "The host operation adapter returned no result envelope." (Some call.ResolvedName) (site |> Option.bind sourceSpan) [ "provider result" ] [ "null" ]
+                    match providerResult with
+                    | Error HostOperationFailure.MissingHandler ->
+                        fail "HOST_OPERATION_HANDLER_MISSING" "The registered host operation has no active provider handler." (Some call.ResolvedName) (site |> Option.bind sourceSpan) [ "registered provider handler" ] []
+                    | Error HostOperationFailure.InvocationFailed ->
+                        fail "HOST_OPERATION_FAILED" "The host operation provider failed without a language-level result." (Some call.ResolvedName) (site |> Option.bind sourceSpan) [ "successful provider invocation or declared domain result" ] []
+                    | Error HostOperationFailure.ProviderContractMismatch ->
+                        fail "HOST_OPERATION_PROVIDER_MISMATCH" "The active provider does not match the registered host-operation contract." (Some call.ResolvedName) (site |> Option.bind sourceSpan) [ sprintf "%A" operationId ] []
+                    | Error HostOperationFailure.TestProviderUnavailable ->
+                        fail "HOST_OPERATION_TEST_PROVIDER_UNAVAILABLE" "The test host-operation provider is unavailable; production providers are never used for tests." (Some call.ResolvedName) (site |> Option.bind sourceSpan) [ "test provider factory" ] []
+                    | Ok publicOutputs ->
+                        validateHostValueBudget call.ResolvedName site publicOutputs
+                        if publicOutputs.Length <> contract.OutputTypes.Length then
+                            fail "HOST_OPERATION_OUTPUT_ARITY" "Host operation output count differs from its retained contract." (Some call.ResolvedName) (site |> Option.bind sourceSpan)
+                                [ string contract.OutputTypes.Length ] [ string publicOutputs.Length ]
+                        let outputs =
+                            List.zip contract.OutputTypes publicOutputs
+                            |> List.map (fun (expectedType, value) -> importHostValue depth call.ResolvedName site expectedType value)
+                        checkRuntimeValueRoots call.ResolvedName site outputs
+                        outputs
+
+        and importHostValue (depth: int) (currentWord: string) (site: SourceSiteId option) (expectedType: IrType) (value: Value) : RuntimeValue =
+            let invalid actual =
+                fail "HOST_OPERATION_VALUE_INVALID" "Host operation value does not satisfy its exact verified Flow type and refinements." (Some currentWord) (site |> Option.bind sourceSpan)
+                    [ formatType program expectedType ] [ actual ]
+            if isNull (box value) then invalid "null value"
+            let rec toLangType = function
+                | IrInt -> TInt
+                | IrFloat -> TFloat
+                | IrBool -> TBool
+                | IrString -> TString
+                | IrUnit -> TUnit
+                | IrList item -> TList(toLangType item)
+                | IrOption item -> TOption(toLangType item)
+                | IrResult(okType, errorType) -> TResult(toLangType okType, toLangType errorType)
+                | IrNominal key -> TNamed(typeName program key)
+            let requireContainerType actual =
+                validateHostTypeMetadata currentWord site actual
+                if actual <> toLangType expectedType then invalid "container metadata does not match the exact contract"
+            let runValidator validator value =
+                match validator with
+                | None -> value
+                | Some checkedCall ->
+                    match invokeResolved (depth + 1) checkedCall [ value ] site with
+                    | [ RuntimeBool true ] -> value
+                    | [ RuntimeBool false ] -> invalid "nominal refinement validator returned false"
+                    | _ -> invalid "nominal refinement validator returned a non-Bool result"
+            match expectedType, value with
+            | IrInt, IntValue number -> RuntimeInt number
+            | IrFloat, FloatValue number when Double.IsFinite number -> RuntimeFloat number
+            | IrBool, BoolValue flag -> RuntimeBool flag
+            | IrString, StringValue text when not (isNull text) -> RuntimeString text
+            | IrUnit, UnitValue -> RuntimeUnit
+            | IrList itemType, ListValue(actualType, values) ->
+                requireContainerType (TList actualType)
+                if values.Length > maxCollectionLength then invalid "list payload is outside the collection limit"
+                RuntimeList(itemType, values |> List.map (importHostValue depth currentWord site itemType))
+            | IrOption itemType, OptionValue(actualType, value) ->
+                requireContainerType (TOption actualType)
+                RuntimeOption(itemType, Option.map (importHostValue depth currentWord site itemType) value)
+            | IrResult(okType, errorType), ResultValue(actualOk, actualError, value) ->
+                requireContainerType (TResult(actualOk, actualError))
+                RuntimeResult(okType, errorType, Result.map (importHostValue depth currentWord site okType) value
+                              |> Result.mapError (importHostValue depth currentWord site errorType))
+            | IrNominal key, RecordValue(actualName, fields) ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrRecordDefinition definition) when definition.TypeName = actualName && not (isNull (box fields)) ->
+                    let declaredFields = definition.RecordFields |> List.sortBy (fun field -> field.FieldIndex)
+                    if fields.Count <> declaredFields.Length || declaredFields |> List.exists (fun field -> not (fields.ContainsKey field.FieldName)) then
+                        invalid "record field set differs from the verified layout"
+                    let values = declaredFields |> List.map (fun field -> importHostValue depth currentWord site field.FieldType fields[field.FieldName])
+                    runValidator definition.ValidatorCall (RuntimeRecord(key, values))
+                | Some(IrRecordDefinition _) -> invalid "record name or payload differs from the verified nominal type"
+                | _ -> invalid "expected nominal type is not a record"
+            | IrNominal key, NamedValue(actualName, inner) ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrScalarDefinition definition) when definition.TypeName = actualName ->
+                    let payload = importHostValue depth currentWord site definition.BaseType inner
+                    runValidator definition.ValidatorCall payload |> ignore
+                    RuntimeScalar(key, payload)
+                | Some(IrScalarDefinition _) -> invalid "scalar name differs from the verified nominal type"
+                | _ -> invalid "expected nominal type is not a scalar"
+            | IrNominal key, EnumValue(actualName, caseName) ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrEnumDefinition definition) when definition.TypeName = actualName ->
+                    match definition.Cases |> List.tryFindIndex ((=) caseName) with
+                    | Some caseIndex -> RuntimeEnum(key, caseIndex)
+                    | None -> invalid "enum case is not declared by the verified nominal type"
+                | Some(IrEnumDefinition _) -> invalid "enum name differs from the verified nominal type"
+                | _ -> invalid "expected nominal type is not an enum"
+            | _ -> invalid "value kind differs from the verified contract"
 
         and executeFunction (callerDepth: int) (functionValue: IrFunction) (arguments: RuntimeValue list) =
             let entryDepth = callerDepth + 1

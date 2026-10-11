@@ -1,0 +1,83 @@
+test-file campfire-real-session-restoration {
+    test campfire.authentication.restore-session/restores-cookie-verified-token-without-status-filter {
+        campfire.authentication.restore-session(
+            SessionToken.new("{{VERIFIED_SESSION_TOKEN}}"),
+            UtcInstant.new(1767268800000000),
+            option.some<RemoteIp>(RemoteIp.new("203.0.113.8")),
+            option.some<String>("request-agent")
+        )
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
+            user = authUser.new(id = UserId.new(1), name = "deactivated-member", role = Role.member(), status = AuthUserStatus.deactivated()),
+            session = sessionRow.new(
+                id = SessionId.new(10),
+                user-id = UserId.new(1),
+                token = SessionToken.new("{{VERIFIED_SESSION_TOKEN}}"),
+                ip-address = option.some<RemoteIp>(RemoteIp.new("198.51.100.8")),
+                user-agent = option.some<String>("stored-agent"),
+                last-active-at = UtcInstant.new(1767265200000000),
+                created-at = UtcInstant.new(1735689600000000),
+                updated-at = UtcInstant.new(1735689600000000)
+            ),
+            refresh-cookie = false
+        ))) effects {
+            db.read: 2
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/refreshes-due-session-and-requests-cookie-update {
+        campfire.authentication.restore-session(
+            SessionToken.new("due-token"),
+            UtcInstant.new(1767268800000000),
+            option.some<RemoteIp>(RemoteIp.new("203.0.113.8")),
+            option.some<String>("refreshed-agent")
+        )
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
+            user = authUser.new(id = UserId.new(1), name = "deactivated-member", role = Role.member(), status = AuthUserStatus.deactivated()),
+            session = sessionRow.new(
+                id = SessionId.new(11),
+                user-id = UserId.new(1),
+                token = SessionToken.new("due-token"),
+                ip-address = option.some<RemoteIp>(RemoteIp.new("203.0.113.8")),
+                user-agent = option.some<String>("refreshed-agent"),
+                last-active-at = UtcInstant.new(1767268800000000),
+                created-at = UtcInstant.new(1735689600000000),
+                updated-at = UtcInstant.new(1767268800000000)
+            ),
+            refresh-cookie = true
+        ))) effects {
+            db.read: 2
+            db.write: 1
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/missing-token-is-ordinary-absence {
+        campfire.authentication.restore-session(
+            SessionToken.new("not-in-database"),
+            UtcInstant.new(1767268800000000),
+            option.none<RemoteIp>(),
+            option.none<String>()
+        )
+        => value result.ok<Option<RestoredSession>, DbError>(option.none<RestoredSession>()) effects {
+            db.read: 1
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/refresh-storage-error-propagates {
+        campfire.authentication.restore-session(
+            SessionToken.new("blocked-refresh-token"),
+            UtcInstant.new(1767268800000000),
+            option.some<RemoteIp>(RemoteIp.new("203.0.113.8")),
+            option.some<String>("refreshed-agent")
+        )
+        => value result.error<Option<RestoredSession>, DbError>(DbError.unavailable()) effects {
+            db.read: 2
+            db.write: 1
+            clock.read: 0
+        }
+    }
+}

@@ -103,6 +103,7 @@ module FlowLowering =
     type FlowCallTargetIdentity =
         | UserWord of WordId
         | Primitive of PrimitiveId
+        | HostOperation of HostOperationId
         | GeneratedWord of WordId
 
     type FlowCallSite =
@@ -227,6 +228,7 @@ module FlowLowering =
     [<RequireQualifiedAccess>]
     type private SignatureKind =
         | TrustedPrimitive of string
+        | HostOperation of HostOperationId
         | Generated of Builtin
         | UserWord
 
@@ -387,6 +389,7 @@ module FlowLowering =
         let kind =
             match entry.Builtin with
             | Some(BuiltinOp operation) -> SignatureKind.TrustedPrimitive operation
+            | Some(HostOperation operationId) -> SignatureKind.HostOperation operationId
             | Some generated -> SignatureKind.Generated generated
             | None -> SignatureKind.UserWord
         { Name = name
@@ -1319,6 +1322,7 @@ module FlowLowering =
     let private targetIdentityOfCandidate ownerName (candidate: Candidate) =
         match candidate.Kind with
         | SignatureKind.TrustedPrimitive operation -> FlowCallTargetIdentity.Primitive(PrimitiveId operation)
+        | SignatureKind.HostOperation operationId -> FlowCallTargetIdentity.HostOperation operationId
         | SignatureKind.Generated _ ->
             match candidate.Identity with
             | Some identity -> FlowCallTargetIdentity.GeneratedWord identity
@@ -1330,7 +1334,8 @@ module FlowLowering =
 
     let private revisionOfCandidate (candidate: Candidate) =
         match candidate.Kind with
-        | SignatureKind.TrustedPrimitive _ -> None
+        | SignatureKind.TrustedPrimitive _
+        | SignatureKind.HostOperation _ -> None
         | SignatureKind.Generated _ | SignatureKind.UserWord -> Some candidate.Revision
 
     let private callSiteOfEvent ownerName (event: FlowCallEvent) : FlowCallSite =
@@ -1345,13 +1350,15 @@ module FlowLowering =
         match call.ResolvedTarget with
         | UserWordTarget(identity, _) -> FlowCallTargetIdentity.UserWord identity
         | PrimitiveTarget identity -> FlowCallTargetIdentity.Primitive identity
+        | HostOperationTarget identity -> FlowCallTargetIdentity.HostOperation identity
         | GeneratedWordTarget(identity, _) -> FlowCallTargetIdentity.GeneratedWord identity
 
     let private revisionOfResolvedCall (call: IrResolvedCall) =
         match call.ResolvedTarget with
         | UserWordTarget(_, revision)
         | GeneratedWordTarget(_, revision) -> Some revision
-        | PrimitiveTarget _ -> None
+        | PrimitiveTarget _
+        | HostOperationTarget _ -> None
 
     let private operationMatchesCandidate form (candidate: Candidate) operation =
         match form with
@@ -1375,7 +1382,7 @@ module FlowLowering =
             | SignatureKind.Generated(ScalarAccessor _), IrOperation.UnwrapScalar _ -> true
             | SignatureKind.Generated(EnumCaseConstructor _), IrOperation.MakeEnumCase _ -> true
             | SignatureKind.Generated _, _ -> false
-            | (SignatureKind.TrustedPrimitive _ | SignatureKind.UserWord), IrOperation.Call _ -> true
+            | (SignatureKind.TrustedPrimitive _ | SignatureKind.HostOperation _ | SignatureKind.UserWord), IrOperation.Call _ -> true
             | _ -> false
 
     let private expectedSourceKind = function
@@ -2138,7 +2145,7 @@ module FlowLowering =
             for effect in entry.Definition.Effects do
                 if IrEffects.ofName effect |> Option.isNone then
                     fail "FLOW_BATCH_UNKNOWN_EFFECT" $"Base word '{name}' declares an effect outside the closed effect vocabulary." (Some name) (Some entry.Definition.Span) (IrEffects.names Set.empty) [ effect ]
-            let isPrimitive = match entry.Builtin with | Some(BuiltinOp _) -> true | _ -> false
+            let isPrimitive = match entry.Builtin with | Some(BuiltinOp _ | HostOperation _) -> true | _ -> false
             for typeValue in entry.Definition.Inputs @ entry.Definition.Outputs do
                 validateBatchType known name entry.Definition.Span isPrimitive typeValue
             match entryParameterNames context name entry with
@@ -2774,6 +2781,8 @@ module FlowLowering =
                     fail "FLOW_TEST_OVERRIDE_POLYMORPHIC_TARGET" "This test-file overlay supports only primitives with one closed signature; polymorphic targets could resolve to incompatible specializations at different call sites." (Some settings.ScopeName) span
                         [ "closed primitive signature" ] [ operation ]
                 FlowCallTargetIdentity.Primitive identity, PrimitiveTarget identity, None
+            | Some(HostOperation operationId) ->
+                FlowCallTargetIdentity.HostOperation operationId, HostOperationTarget operationId, None
             | Some _ ->
                 fail "FLOW_TEST_OVERRIDE_GENERATED_TARGET" "Test-file overrides currently support trusted primitives and authored user words; generated constructors and accessors cannot be replaced." (Some settings.ScopeName) span
                     [ "trusted primitive or authored user word" ] [ name ]
@@ -2801,6 +2810,45 @@ module FlowLowering =
             if not (Compiler.primitiveIrCatalog.ContainsKey identity) then
                 fail "FLOW_TEST_OVERRIDE_PRIMITIVE_UNKNOWN" "The original verified program has no trusted contract for the override target." (Some settings.ScopeName) span
                     [ sprintf "%A" identity ] []
+        | HostOperationTarget identity ->
+            let hostContract =
+                VerifiedIrProgram.hostOperationContracts originalProgram
+                |> Map.tryFind identity
+                |> Option.defaultWith (fun () ->
+                    fail "FLOW_TEST_OVERRIDE_HOST_OPERATION_UNKNOWN" "The original verified program has no exact host-operation contract for this replacement." (Some settings.ScopeName) span
+                        [ sprintf "%A" identity ] [])
+            let typeKeys =
+                originalData.NominalTypesByKey
+                |> Map.toList
+                |> List.map (fun (key, definition) ->
+                    let typeName =
+                        match definition with
+                        | IrRecordDefinition value -> value.TypeName
+                        | IrScalarDefinition value -> value.TypeName
+                        | IrEnumDefinition value -> value.TypeName
+                    typeName, key)
+                |> Map.ofList
+            let rec lowerType = function
+                | TInt -> IrInt
+                | TFloat -> IrFloat
+                | TBool -> IrBool
+                | TString -> IrString
+                | TUnit -> IrUnit
+                | TList item -> IrList(lowerType item)
+                | TOption item -> IrOption(lowerType item)
+                | TResult(ok, error) -> IrResult(lowerType ok, lowerType error)
+                | TNamed typeName ->
+                    typeKeys.TryFind typeName
+                    |> Option.map IrNominal
+                    |> Option.defaultWith (fun () -> fail "FLOW_TEST_OVERRIDE_HOST_OPERATION_TYPE" "The host-operation contract names a type absent from the original verified snapshot." (Some settings.ScopeName) span [ typeName ] [])
+                | TVar variable -> fail "FLOW_TEST_OVERRIDE_HOST_OPERATION_TYPE" "A host-operation replacement requires a closed concrete signature." (Some settings.ScopeName) span [ "closed type" ] [ variable ]
+            let expectedInputs = entry.Definition.Inputs |> List.map lowerType
+            let expectedOutputs = entry.Definition.Outputs |> List.map lowerType
+            let expectedEffects = entry.Definition.Effects |> Set.toList |> List.map IrEffects.ofName |> List.choose id |> Set.ofList
+            if hostContract.OperationName <> name || hostContract.InputTypes <> expectedInputs || hostContract.OutputTypes <> expectedOutputs || hostContract.OperationEffects <> expectedEffects then
+                fail "FLOW_TEST_OVERRIDE_HOST_OPERATION_STALE" "The active manifest entry differs from the original verified host-operation contract." (Some settings.ScopeName) span
+                    [ name; String.concat " " (expectedInputs |> List.map IrTypes.format); String.concat " " (expectedOutputs |> List.map IrTypes.format); String.concat ", " (IrEffects.names expectedEffects) ]
+                    [ hostContract.OperationName; String.concat " " (hostContract.InputTypes |> List.map IrTypes.format); String.concat " " (hostContract.OutputTypes |> List.map IrTypes.format); String.concat ", " (IrEffects.names hostContract.OperationEffects) ]
         | GeneratedWordTarget _ ->
             fail "FLOW_TEST_OVERRIDE_GENERATED_TARGET" "Generated targets cannot be replaced by this test-file overlay." (Some settings.ScopeName) span
                 [ "trusted primitive or authored user word" ] [ name ]

@@ -63,7 +63,8 @@ let private contextWith (records: Map<string, RecordDefinition>) (extraWords: Wo
       Records = records
       Scalars = Map.empty
       Enums = Map.empty
-      WordIds = wordIds }
+      WordIds = wordIds
+      HostOperations = Map.empty }
 
 let private contextWithEnums
     (records: Map<string, RecordDefinition>)
@@ -79,6 +80,7 @@ let private host preflight charge invoke recordUse =
       RecordBranchOutcome = fun _ _ _ -> ()
       RecordUse = recordUse
       InvokeEffect = invoke
+      InvokeHostOperation = fun _ _ -> Error HostOperationFailure.MissingHandler
       EnterUserFunction = fun _ _ _ -> fun () -> ()
       ReturnUserFunction = fun _ _ _ -> ()
       WordDefinitionSpan = fun _ -> None

@@ -1,0 +1,118 @@
+test-file campfire-real-room-pages {
+    test campfire.rooms.list-for-user/real-member-page {
+        campfire.rooms.list-for-user(UserId.new(1), option.none<RoomId>(), 10)
+        => value result.ok<List<RoomRow>, DbError>(list.singleton<RoomRow>(roomRow.new(
+            id = RoomId.new(1),
+            name = option.some<String>("Room 1"),
+            kind = RoomKind.open(),
+            creator-id = UserId.new(1),
+            created-at = "2020-01-01 00:00:00",
+            updated-at = "2020-01-01 00:00:00"
+        ))) effects {
+            db.read: 1
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.rooms.list-for-user/real-invalid-page-size {
+        campfire.rooms.list-for-user(UserId.new(1), option.none<RoomId>(), 0)
+        => value result.error<List<RoomRow>, DbError>(DbError.invalid-input()) effects {
+            db.read: 1
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.rooms.list-for-user/real-missing-user {
+        campfire.rooms.list-for-user(UserId.new(777), option.none<RoomId>(), 10)
+        => value result.error<List<RoomRow>, DbError>(DbError.not-found()) effects {
+            db.read: 1
+            db.write: 0
+            clock.read: 0
+        }
+    }
+}
+
+test-file campfire-real-message-pages {
+    test campfire.messages.list-for-member/real-member-page {
+        campfire.messages.list-for-member(UserId.new(1), RoomId.new(1))
+        => value result.ok<List<MessageRow>, RoomMessageError>(list.singleton<MessageRow>(messageRow.new(
+            id = MessageId.new(100),
+            room-id = RoomId.new(1),
+            creator-id = UserId.new(1),
+            client-message-id = "fixture-message",
+            body = option.some<String>("fixture body"),
+            created-at = "2020-01-01 00:00:00",
+            updated-at = "2020-01-01 00:00:00"
+        ))) effects {
+            db.read: 2
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.list-for-member/real-non-member-denied {
+        campfire.messages.list-for-member(UserId.new(2), RoomId.new(1))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.access-denied()) effects {
+            db.read: 1
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.list-for-member/real-orphan-membership-room-missing {
+        campfire.messages.list-for-member(UserId.new(9), RoomId.new(99))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-not-found()) effects {
+            db.read: 2
+            db.write: 0
+            clock.read: 0
+        }
+    }
+}
+
+test-file campfire-real-message-create {
+    test campfire.messages.create-for-member/real-member-create {
+        campfire.messages.create-for-member(UserId.new(1), RoomId.new(1), "real-bodyless-create", option.none<String>())
+        => value result.ok<MessageRow, RoomMessageError>(messageRow.new(
+            id = MessageId.new(101),
+            room-id = RoomId.new(1),
+            creator-id = UserId.new(1),
+            client-message-id = "real-bodyless-create",
+            body = option.none<String>(),
+            created-at = "2025-01-01 00:00:00",
+            updated-at = "2025-01-01 00:00:00"
+        )) effects {
+            db.read: 1
+            db.write: 1
+            clock.read: 1
+        }
+    }
+
+    test campfire.messages.create-for-member/real-non-member-does-not-create {
+        campfire.messages.create-for-member(UserId.new(2), RoomId.new(1), "real-denied-create", option.none<String>())
+        => value result.error<MessageRow, RoomMessageError>(RoomMessageError.access-denied()) effects {
+            db.read: 1
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.messages.create-for-member/real-body-failure-rolls-back {
+        campfire.messages.create-for-member(UserId.new(1), RoomId.new(1), "real-abort-create", option.some<String>("abort-after-insert"))
+        => value result.error<MessageRow, RoomMessageError>(RoomMessageError.database-unavailable()) effects {
+            db.read: 1
+            db.write: 1
+            clock.read: 1
+        }
+    }
+
+    test campfire.messages.create-for-member/real-unique-conflict-rolls-back {
+        campfire.messages.create-for-member(UserId.new(1), RoomId.new(1), "real-unique-create", option.some<String>("unique-conflict-body"))
+        => value result.error<MessageRow, RoomMessageError>(RoomMessageError.database-constraint-conflict()) effects {
+            db.read: 1
+            db.write: 1
+            clock.read: 1
+        }
+    }
+}

@@ -1,6 +1,14 @@
 # Campfire implementation
 
-The first language component is the pure message-administration policy below. `Persistence/` now contains a standalone trusted SQLite adapter for bounded room/message reads and transactional message creation. It is not yet callable from language code; the typed host bridge is the next integration step. Authorization, HTTP handling and browser behavior remain application work.
+`room-message.flow` now calls real SQLite storage through the typed `Host/` adapter. It pages a user's rooms and checks membership before listing or creating messages. `campfire-types.flow` contains the shared model; the administration policy below uses it too. HTTP authentication, response rendering and browser behavior remain application work.
+
+After restoring dependencies, run the combined local component gate with:
+
+```powershell
+pwsh -NoProfile -File scripts/Verify-Campfire.ps1 -NoRestore
+```
+
+It builds the CLI and five application test executables, runs their suites, and checks administration, request-forgery and session-refresh policies in fresh CLI projects. The storage integration uses fresh project directories on each execution, scoped replacements without database access, and isolated real SQLite fixtures. See [integration report](../../reports/236-campfire-host-integration.md) for the results and remaining gates.
 
 Run the storage component's local checks with:
 
@@ -35,8 +43,10 @@ dotnet run --project tests/AgentLang.Campfire.Cookies.Tests/AgentLang.Campfire.C
 ```
 ## Authentication storage
 
-`Authentication.Persistence/` provides six fixed SQLite operations for session/user lookup, conditional session refresh, active bot keys, banned IPs and membership-scoped room lookup. They are locally tested but not yet registered with the runtime or connected to HTTP. See [authentication storage report](../../reports/239-campfire-authentication-storage.md).
+`Authentication.Persistence/` provides six fixed SQLite operations for session/user lookup, conditional session refresh, active bot keys, banned IPs and membership-scoped room lookup. See [authentication storage report](../../reports/239-campfire-authentication-storage.md) for their fixed contracts and tests.
 
 ```powershell
 dotnet run --project tests/AgentLang.Campfire.Authentication.Persistence.Tests/AgentLang.Campfire.Authentication.Persistence.Tests.fsproj --configuration Release
 ```
+
+`Authentication.Host/` now registers those six operations for language code. `authentication.flow` restores a session after trusted cookie verification and applies the strict-hour refresh policy with explicit time and optional request metadata. Its scoped and real SQLite/cookie tests pass 349 assertions; HTTP callback ordering and cookie responses remain pending. See [session-restoration report](../../reports/241-campfire-session-restoration.md).

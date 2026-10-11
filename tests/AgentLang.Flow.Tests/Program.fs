@@ -232,7 +232,8 @@ let private loweringContextWith (records: Map<string, RecordDefinition>) (scalar
           Records = records
           Scalars = scalars
           Enums = Map.empty
-          WordIds = ids }
+          WordIds = ids
+          HostOperations = Map.empty }
       ParameterNames = parameters
       Flow2OwnerIds = Set.empty
       SourceOrigins = Map.empty }
@@ -285,6 +286,7 @@ let private host (events: ResizeArray<string>) =
       InvokeEffect = function
           | WriteVirtualConsole(_, contents) -> events.Add(contents); EffectUnit
           | other -> failwithf "Unexpected effect command: %A" other
+      InvokeHostOperation = fun _ _ -> Error HostOperationFailure.MissingHandler
       EnterUserFunction = fun _ _ _ -> fun () -> ()
       ReturnUserFunction = fun _ _ _ -> ()
       WordDefinitionSpan = fun _ -> None
@@ -500,6 +502,24 @@ let private testFlow2Frontend () =
     check "Flow/2 renderer inserts a blank line after metadata" (renderedExplicit.Contains("    doc \"Flow/2 metadata\"\n\n    true", StringComparison.Ordinal))
     equal "Flow/2 word renderer round-trips metadata shape" renderedExplicit
         (renderedExplicit |> parseWordV2 |> FlowSource.renderWord)
+
+    for withBlankLine in [ false; true ] do
+        let separator = if withBlankLine then "\n" else ""
+        let source =
+            "fn sample.host-call() -> String {\n    effects db.read\n"
+            + separator
+            + "    .host.email.read()\n}"
+        let parsed = parseWordV2 source
+        equal "Flow/2 host call following effects keeps only the header capability"
+            (Set.singleton "db.read") parsed.Effects
+        match parsed.Body with
+        | [ FlowStatement.Evaluate(FlowExpression.Call("host.email.read", [], _)) ] ->
+            check "Flow/2 host call after effects remains the exact leading-dot dictionary call" true
+        | other -> failwithf "Expected one exact host call after effects, got %A" other
+
+    match FlowParser.parseWordWithVersion 2 "<flow2-test>" "fn sample.incomplete-effect() -> Int {\n    effects db." with
+    | Error diagnostic -> equal "same-line trailing effect separator retains incomplete-input diagnostic" "FLOW_INCOMPLETE_INPUT" diagnostic.Code
+    | Ok parsed -> failwithf "Expected incomplete effect namespace separator to fail, got %A" parsed
 
     let legacySource = "word legacy() -> Int {\n    effects none\n    1\n}"
     let legacy =
@@ -1172,13 +1192,13 @@ let private testEffectCountAssertionsFrontend () =
     let source =
         "test effect.owner/counts {\n"
         + "    1\n"
-        + "    => 1 effects { fs.read: 2; fs.write: 0; clock.read: 0; console.write: 3; }\n"
+        + "    => 1 effects { fs.read: 2; fs.write: 0; clock.read: 0; console.write: 3; db.read: 0; db.write: 0; }\n"
         + "}"
     let parsed = parseTestV2 source
     let expectedCounts =
-        Map.ofList [ "clock.read", 0; "console.write", 3; "fs.read", 2; "fs.write", 0 ]
+        Map.ofList [ "clock.read", 0; "console.write", 3; "db.read", 0; "db.write", 0; "fs.read", 2; "fs.write", 0 ]
     let assertion = parsed.EffectAssertion |> Option.defaultWith (fun () -> failwith "Expected a parsed effect-count assertion.")
-    equal "Flow/2 effect assertions parse all four observable categories" expectedCounts assertion.Counts
+    equal "Flow/2 effect assertions parse all six observable categories" expectedCounts assertion.Counts
     let annotationStart = source.IndexOf("effects {", StringComparison.Ordinal)
     let annotationEnd = source.IndexOf('}', annotationStart) + 1
     let annotationLineStart = source.LastIndexOf('\n', annotationStart)
@@ -1187,7 +1207,7 @@ let private testEffectCountAssertionsFrontend () =
         assertion.Span
     let canonical = FlowSource.renderTest parsed
     check "effect assertion renderer emits a canonical suffix"
-        (canonical.EndsWith("    effects {\n        clock.read: 0\n        console.write: 3\n        fs.read: 2\n        fs.write: 0\n    }\n}", StringComparison.Ordinal))
+        (canonical.EndsWith("    effects {\n        clock.read: 0\n        console.write: 3\n        db.read: 0\n        db.write: 0\n        fs.read: 2\n        fs.write: 0\n    }\n}", StringComparison.Ordinal))
     equal "effect assertion parse/render round-trips canonically" canonical
         (canonical |> parseTestV2 |> FlowSource.renderTest)
     equal "effect assertion round-trip preserves exact category counts" expectedCounts
@@ -1213,7 +1233,7 @@ let private testEffectCountAssertionsFrontend () =
         "effects { fs.read: 0; fs.read: 1; }"
     expectV2Error "unknown effect keys are rejected" "FLOW_EFFECT_ASSERTION_UNSUPPORTED"
         "effects { mystery.call: 0; }"
-    for effectName in [ "db.read"; "db.write"; "network.read"; "network.write"; "process.execute"; "random.read" ] do
+    for effectName in [ "network.read"; "network.write"; "process.execute"; "random.read" ] do
         expectV2Error ($"unobservable declared effect '{effectName}' is rejected") "FLOW_EFFECT_ASSERTION_UNSUPPORTED"
             ($"effects {{ {effectName}: 0; }}")
     expectV2Error "negative effect counts are rejected" "FLOW_EFFECT_ASSERTION_COUNT_INVALID"
@@ -4927,6 +4947,7 @@ let private testFlowRewrite () =
     let storedTarget = function
         | FlowCallTargetIdentity.UserWord(WordId identity) -> StoredCallTarget.UserWord identity
         | FlowCallTargetIdentity.Primitive(PrimitiveId identity) -> StoredCallTarget.Primitive identity
+        | FlowCallTargetIdentity.HostOperation(HostOperationId identity) -> StoredCallTarget.HostOperation identity
         | FlowCallTargetIdentity.GeneratedWord(WordId identity) -> StoredCallTarget.GeneratedWord identity
 
     let bindingForSite (source: SourceRef) caseName bodyRole (site: FlowCallSite) : StoredCallBinding =

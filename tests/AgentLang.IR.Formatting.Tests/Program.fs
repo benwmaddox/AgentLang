@@ -127,7 +127,8 @@ let private contextAndProgram () =
           Records = Map.ofList [ "Customer", record ]
           Scalars = Map.ofList [ "Email", scalar ]
           Enums = Map.empty
-          WordIds = wordIds }
+          WordIds = wordIds
+          HostOperations = Map.empty }
     context, Compiler.compileIrProgram context
 
 let private prop (key: string) (node: JsonNode) = node[key]
@@ -142,7 +143,7 @@ let private testUserFunctionJson () =
     let context, verified = contextAndProgram ()
     let document = IrFormatting.toData verified (IrFormatTarget.UserWordName "customer.active?")
     check "user target serializes as function DTO" (stringField "kind" document = "function")
-    check "record validator metadata is exposed under schema version 5" (intField "formatVersion" document = 5)
+    check "record validator metadata is exposed under schema version 6" (intField "formatVersion" document = 6)
     let (WordId activeId) = context.WordIds["customer.active?"]
     check "function retains stable ID and revision" (stringField "wordId" document = activeId && intField "revision" document = 2)
     check "function signature uses nominal display name" (document |> prop "inputs" |> at 0 |> stringField "display" = "Customer")
@@ -180,7 +181,7 @@ let private testUserFunctionJson () =
     let scopedProgram = Compiler.compileIrProgram scopedContext
     let scopedDocument = IrFormatting.toData scopedProgram (IrFormatTarget.UserWordName "customer.scoped")
     check "Scope operation is emitted under the explicit version 5 schema"
-        (intField "formatVersion" scopedDocument = 5
+        (intField "formatVersion" scopedDocument = 6
          && (scopedDocument |> prop "body" |> prop "instructions" |> at 0 |> prop "operation" |> stringField "kind") = "scope")
 
     let fold = IrFormatting.toData scopedProgram (IrFormatTarget.UserWordName "customers.fold-email")
@@ -237,7 +238,7 @@ let private testGeneratedAndPrimitiveDocuments () =
     check "generated target includes source declaration location" (stringField "file" sourceSpanNode = "formatting.agent" && intField "line" sourceSpanNode = 2)
 
     let primitive = IrFormatting.toData verified (IrFormatTarget.PrimitiveContract(PrimitiveId "equals"))
-    check "primitive contracts use the same current top-level schema version" (intField "formatVersion" primitive = 5)
+    check "primitive contracts use the same current top-level schema version" (intField "formatVersion" primitive = 6)
     check "primitive output is explicitly a contract, not executable code" (stringField "kind" primitive = "primitive-contract" && prop "body" primitive = null)
     let inputPatterns = primitive |> prop "inputs" |> fun node -> node.AsArray()
     check "primitive contract retains generic type variable pattern" (stringField "kind" inputPatterns[0] = "variable" && intField "variableIndex" inputPatterns[0] = 0 && intField "variableIndex" inputPatterns[1] = 0)

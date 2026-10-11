@@ -91,9 +91,10 @@ type EffectCountAssertion =
       Span: SourceSpan }
 
 module EffectCountAssertion =
-    /// The first assertion slice counts the four provider categories that the
-    /// current virtual host actually observes.
-    let observableEffects = set [ "clock.read"; "console.write"; "fs.read"; "fs.write" ]
+    /// Provider categories observed by the host, including the typed database
+    /// bridge. Domain outcomes remain language values; these counts measure only
+    /// whether the host boundary was crossed.
+    let observableEffects = set [ "clock.read"; "console.write"; "db.read"; "db.write"; "fs.read"; "fs.write" ]
 
     /// The interpreter's per-body step limit bounds how many provider calls one
     /// authored test can make.
@@ -164,8 +165,47 @@ type ParsedSource =
 
 type WordStatus = Primitive | Candidate | Temporary | Persistent
 
+/// Stable identity for a closed, Engine-registered host operation. It is
+/// separate from PrimitiveId: application operations are nominal, per-Engine
+/// contracts and are not part of the standard primitive ABI.
+[<Struct>]
+type HostOperationId = HostOperationId of string
+
+/// Exact source-level contract for one registered host operation.
+type HostOperationDefinition =
+    { Id: HostOperationId
+      WordName: string
+      Inputs: LangType list
+      Outputs: LangType list
+      Effects: Set<string>
+      Documentation: string }
+
+/// Stable host-boundary failures. Provider details must not be interpolated
+/// into language diagnostics; ordinary domain failures belong in a declared
+/// operation result value instead.
+[<RequireQualifiedAccess>]
+type HostOperationFailure =
+    | MissingHandler
+    | InvocationFailed
+    | ProviderContractMismatch
+    | TestProviderUnavailable
+
+/// A host-owned operation table. Production-provider lifetime belongs to its
+/// creator; test providers are Engine-created and disposed per attached test.
+type HostOperationProvider =
+    { OperationIds: Set<HostOperationId>
+      Invoke: HostOperationId -> Value list -> Result<Value list, HostOperationFailure>
+      Dispose: unit -> unit }
+
+/// Optional closed manifest and its separate production/test provider paths.
+type HostOperationEnvironment =
+    { Manifest: Map<HostOperationId, HostOperationDefinition>
+      ProductionProvider: HostOperationProvider
+      CreateTestProvider: unit -> Result<HostOperationProvider, HostOperationFailure> }
+
 type Builtin =
     | BuiltinOp of string
+    | HostOperation of HostOperationId
     | RecordConstructor of string
     | RecordAccessor of string * string
     | ScalarConstructor of string

@@ -1,0 +1,608 @@
+test-file campfire-session-restoration {
+    override fn campfire.sessions.find-by-token(token: SessionToken) -> Result<Option<SessionRow>, DbError> {
+        if token == SessionToken.new("lookup-unavailable") {
+            result.error<Option<SessionRow>, DbError>(DbError.unavailable())
+        } else {
+            if token == SessionToken.new("lookup-not-found") {
+                result.error<Option<SessionRow>, DbError>(DbError.not-found())
+            } else {
+                if token == SessionToken.new("lookup-constraint") {
+                    result.error<Option<SessionRow>, DbError>(DbError.constraint-conflict())
+                } else {
+                    if token == SessionToken.new("lookup-invalid") {
+                        result.error<Option<SessionRow>, DbError>(DbError.invalid-input())
+                    } else {
+                        if token == SessionToken.new("missing") {
+                            result.ok<Option<SessionRow>, DbError>(option.none<SessionRow>())
+                        } else {
+                            if token == SessionToken.new("user-missing") {
+                                result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(sessionRow.new(
+                                    id = SessionId.new(10),
+                                    user-id = UserId.new(99),
+                                    token = token,
+                                    ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")),
+                                    user-agent = option.some<String>("stored-agent"),
+                                    last-active-at = UtcInstant.new(10000000000),
+                                    created-at = UtcInstant.new(100),
+                                    updated-at = UtcInstant.new(200)
+                                )))
+                            } else {
+                                if token == SessionToken.new("user-error-unavailable") {
+                                    result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(sessionRow.new(
+                                        id = SessionId.new(11), user-id = UserId.new(71), token = token,
+                                        ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")),
+                                        user-agent = option.some<String>("stored-agent"),
+                                        last-active-at = UtcInstant.new(10000000000),
+                                        created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)
+                                    )))
+                                } else {
+                                    if token == SessionToken.new("user-error-not-found") {
+                                        result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(sessionRow.new(
+                                            id = SessionId.new(12), user-id = UserId.new(72), token = token,
+                                            ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")),
+                                            user-agent = option.some<String>("stored-agent"),
+                                            last-active-at = UtcInstant.new(10000000000),
+                                            created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)
+                                        )))
+                                    } else {
+                                        if token == SessionToken.new("user-error-constraint") {
+                                            result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(sessionRow.new(
+                                                id = SessionId.new(13), user-id = UserId.new(73), token = token,
+                                                ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")),
+                                                user-agent = option.some<String>("stored-agent"),
+                                                last-active-at = UtcInstant.new(10000000000),
+                                                created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)
+                                            )))
+                                        } else {
+                                            if token == SessionToken.new("user-error-invalid") {
+                                                result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(sessionRow.new(
+                                                    id = SessionId.new(14), user-id = UserId.new(74), token = token,
+                                                    ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")),
+                                                    user-agent = option.some<String>("stored-agent"),
+                                                    last-active-at = UtcInstant.new(10000000000),
+                                                    created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)
+                                                )))
+                                            } else {
+                                                if token == SessionToken.new("refresh-error-unavailable") {
+                                                    result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(sessionRow.new(
+                                                        id = SessionId.new(51), user-id = UserId.new(11), token = token,
+                                                        ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")),
+                                                        user-agent = option.some<String>("stored-agent"),
+                                                        last-active-at = UtcInstant.new(0),
+                                                        created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)
+                                                    )))
+                                                } else {
+                                                    if token == SessionToken.new("refresh-error-not-found") {
+                                                        result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(sessionRow.new(
+                                                            id = SessionId.new(52), user-id = UserId.new(11), token = token,
+                                                            ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")),
+                                                            user-agent = option.some<String>("stored-agent"),
+                                                            last-active-at = UtcInstant.new(0),
+                                                            created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)
+                                                        )))
+                                                    } else {
+                                                        if token == SessionToken.new("refresh-error-constraint") {
+                                                            result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(sessionRow.new(
+                                                                id = SessionId.new(53), user-id = UserId.new(11), token = token,
+                                                                ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")),
+                                                                user-agent = option.some<String>("stored-agent"),
+                                                                last-active-at = UtcInstant.new(0),
+                                                                created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)
+                                                            )))
+                                                        } else {
+                                                            if token == SessionToken.new("refresh-error-invalid") {
+                                                                result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(sessionRow.new(
+                                                                    id = SessionId.new(54), user-id = UserId.new(11), token = token,
+                                                                    ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")),
+                                                                    user-agent = option.some<String>("stored-agent"),
+                                                                    last-active-at = UtcInstant.new(0),
+                                                                    created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)
+                                                                )))
+                                                            } else {
+                                                                let id =
+                                                                    if token == SessionToken.new("due-one-microsecond") {
+                                                                        30
+                                                                    } else {
+                                                                        if token == SessionToken.new("due-no-metadata") { 30 } else {
+                                                                            if token == SessionToken.new("refresh-error-unavailable") { 51 } else {
+                                                                                if token == SessionToken.new("refresh-error-not-found") { 52 } else {
+                                                                                    if token == SessionToken.new("refresh-error-constraint") { 53 } else {
+                                                                                        if token == SessionToken.new("refresh-error-invalid") { 54 } else {
+                                                                                            if token == SessionToken.new("status-1") { 101 } else {
+                                                                                                if token == SessionToken.new("status-2") { 102 } else {
+                                                                                                    if token == SessionToken.new("status-3") { 103 } else {
+                                                                                                        if token == SessionToken.new("status-4") { 104 } else {
+                                                                                                            if token == SessionToken.new("status-5") { 105 } else {
+                                                                                                                if token == SessionToken.new("status-6") { 106 } else {
+                                                                                                                    if token == SessionToken.new("status-7") { 107 } else {
+                                                                                                                        if token == SessionToken.new("status-8") { 108 } else {
+                                                                                                                            if token == SessionToken.new("status-9") { 109 } else {
+                                                                                                                                if token == SessionToken.new("exact-hour") { 20 } else { 21 }
+                                                                                                                            }
+                                                                                                                        }
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            }
+                                                                                                        }
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                let user-id =
+                                                                    if token == SessionToken.new("user-error-unavailable") { UserId.new(71) } else {
+                                                                        if token == SessionToken.new("user-error-not-found") { UserId.new(72) } else {
+                                                                            if token == SessionToken.new("user-error-constraint") { UserId.new(73) } else {
+                                                                                if token == SessionToken.new("user-error-invalid") { UserId.new(74) } else {
+                                                                                    if token == SessionToken.new("user-missing") { UserId.new(99) } else {
+                                                                                        if token == SessionToken.new("status-1") { UserId.new(101) } else {
+                                                                                            if token == SessionToken.new("status-2") { UserId.new(102) } else {
+                                                                                                if token == SessionToken.new("status-3") { UserId.new(103) } else {
+                                                                                                    if token == SessionToken.new("status-4") { UserId.new(104) } else {
+                                                                                                        if token == SessionToken.new("status-5") { UserId.new(105) } else {
+                                                                                                            if token == SessionToken.new("status-6") { UserId.new(106) } else {
+                                                                                                                if token == SessionToken.new("status-7") { UserId.new(107) } else {
+                                                                                                                    if token == SessionToken.new("status-8") { UserId.new(108) } else {
+                                                                                                                        if token == SessionToken.new("status-9") { UserId.new(109) } else { UserId.new(11) }
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            }
+                                                                                                        }
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                let last-active =
+                                                                    if token == SessionToken.new("due-one-microsecond") {
+                                                                        0
+                                                                    } else {
+                                                                        if token == SessionToken.new("due-no-metadata") { 0 } else {
+                                                                            if token == SessionToken.new("refresh-error-unavailable") { 0 } else {
+                                                                                if token == SessionToken.new("refresh-error-not-found") { 0 } else {
+                                                                                    if token == SessionToken.new("refresh-error-constraint") { 0 } else {
+                                                                                        if token == SessionToken.new("refresh-error-invalid") { 0 } else {
+                                                                                            if token == SessionToken.new("exact-hour") { 0 } else {
+                                                                                                if token == SessionToken.new("preserve-fields") { 6400000000 } else { 10000000000 }
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(sessionRow.new(
+                                                                    id = SessionId.new(id),
+                                                                    user-id = user-id,
+                                                                    token = token,
+                                                                    ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")),
+                                                                    user-agent = option.some<String>("stored-agent"),
+                                                                    last-active-at = UtcInstant.new(last-active),
+                                                                    created-at = UtcInstant.new(100),
+                                                                    updated-at = UtcInstant.new(200)
+                                                                )))
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fn campfire.users.find-by-id(user-id: UserId) -> Result<Option<AuthUser>, DbError> {
+        if user-id == UserId.new(71) {
+            result.error<Option<AuthUser>, DbError>(DbError.unavailable())
+        } else {
+            if user-id == UserId.new(72) {
+                result.error<Option<AuthUser>, DbError>(DbError.not-found())
+            } else {
+                if user-id == UserId.new(73) {
+                    result.error<Option<AuthUser>, DbError>(DbError.constraint-conflict())
+                } else {
+                    if user-id == UserId.new(74) {
+                        result.error<Option<AuthUser>, DbError>(DbError.invalid-input())
+                    } else {
+                        if user-id == UserId.new(99) {
+                            result.ok<Option<AuthUser>, DbError>(option.none<AuthUser>())
+                        } else {
+                            if user-id == UserId.new(101) {
+                                result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(id = user-id, name = "user-101", role = Role.member(), status = AuthUserStatus.active())))
+                            } else {
+                                if user-id == UserId.new(102) {
+                                    result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(id = user-id, name = "user-102", role = Role.member(), status = AuthUserStatus.deactivated())))
+                                } else {
+                                    if user-id == UserId.new(103) {
+                                        result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(id = user-id, name = "user-103", role = Role.member(), status = AuthUserStatus.banned())))
+                                    } else {
+                                        if user-id == UserId.new(104) {
+                                            result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(id = user-id, name = "user-104", role = Role.administrator(), status = AuthUserStatus.active())))
+                                        } else {
+                                            if user-id == UserId.new(105) {
+                                                result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(id = user-id, name = "user-105", role = Role.administrator(), status = AuthUserStatus.deactivated())))
+                                            } else {
+                                                if user-id == UserId.new(106) {
+                                                    result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(id = user-id, name = "user-106", role = Role.administrator(), status = AuthUserStatus.banned())))
+                                                } else {
+                                                    if user-id == UserId.new(107) {
+                                                        result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(id = user-id, name = "user-107", role = Role.bot(), status = AuthUserStatus.active())))
+                                                    } else {
+                                                        if user-id == UserId.new(108) {
+                                                            result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(id = user-id, name = "user-108", role = Role.bot(), status = AuthUserStatus.deactivated())))
+                                                        } else {
+                                                            if user-id == UserId.new(109) {
+                                                                result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(id = user-id, name = "user-109", role = Role.bot(), status = AuthUserStatus.banned())))
+                                                            } else {
+                                                                result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(id = user-id, name = "campfire-user", role = Role.member(), status = AuthUserStatus.active())))
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fn campfire.sessions.refresh-before(refresh: SessionRefresh) -> Result<SessionRow, DbError> {
+        if refresh.session-id == SessionId.new(51) {
+            result.error<SessionRow, DbError>(DbError.unavailable())
+        } else {
+            if refresh.session-id == SessionId.new(52) {
+                result.error<SessionRow, DbError>(DbError.not-found())
+            } else {
+                if refresh.session-id == SessionId.new(53) {
+                    result.error<SessionRow, DbError>(DbError.constraint-conflict())
+                } else {
+                    if refresh.session-id == SessionId.new(54) {
+                        result.error<SessionRow, DbError>(DbError.invalid-input())
+                    } else {
+                        if refresh.cutoff == UtcInstant.new(1) {
+                            if refresh.now == UtcInstant.new(3600000001) {
+                                if refresh.ip-address == option.some<RemoteIp>(RemoteIp.new("203.0.113.8")) {
+                                    if refresh.user-agent == option.some<String>("new-agent") {
+                                        result.ok<SessionRow, DbError>(sessionRow.new(
+                                            id = refresh.session-id,
+                                            user-id = UserId.new(11),
+                                            token = SessionToken.new("due-one-microsecond"),
+                                            ip-address = refresh.ip-address,
+                                            user-agent = refresh.user-agent,
+                                            last-active-at = refresh.now,
+                                            created-at = UtcInstant.new(100),
+                                            updated-at = refresh.now
+                                        ))
+                                    } else {
+                                        result.error<SessionRow, DbError>(DbError.invalid-input())
+                                    }
+                                } else {
+                                    result.error<SessionRow, DbError>(DbError.invalid-input())
+                                }
+                            } else {
+                                result.error<SessionRow, DbError>(DbError.invalid-input())
+                            }
+                        } else {
+                            if refresh.cutoff == UtcInstant.new(6400000000) {
+                                if refresh.now == UtcInstant.new(10000000000) {
+                                    if refresh.ip-address == option.none<RemoteIp>() {
+                                        if refresh.user-agent == option.none<String>() {
+                                            result.ok<SessionRow, DbError>(sessionRow.new(
+                                                id = refresh.session-id,
+                                                user-id = UserId.new(11),
+                                                token = SessionToken.new("due-no-metadata"),
+                                                ip-address = option.none<RemoteIp>(),
+                                                user-agent = option.none<String>(),
+                                                last-active-at = refresh.now,
+                                                created-at = UtcInstant.new(100),
+                                                updated-at = refresh.now
+                                            ))
+                                        } else {
+                                            result.error<SessionRow, DbError>(DbError.invalid-input())
+                                        }
+                                    } else {
+                                        result.error<SessionRow, DbError>(DbError.invalid-input())
+                                    }
+                                } else {
+                                    result.error<SessionRow, DbError>(DbError.invalid-input())
+                                }
+                            } else {
+                                result.error<SessionRow, DbError>(DbError.invalid-input())
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fn campfire.users.authenticate-bot-key(key: BotKey) -> Result<Option<AuthUser>, DbError> {
+        result.ok<Option<AuthUser>, DbError>(option.none<AuthUser>())
+    }
+
+    override fn campfire.bans.ip-banned?(remote-ip: RemoteIp) -> Result<Bool, DbError> {
+        result.ok<Bool, DbError>(false)
+    }
+
+    override fn campfire.rooms.find-for-user(user-id: UserId, room-id: RoomId) -> Result<Option<RoomRow>, DbError> {
+        result.ok<Option<RoomRow>, DbError>(option.none<RoomRow>())
+    }
+
+    test campfire.authentication.restore-session/missing-session {
+        campfire.authentication.restore-session(SessionToken.new("missing"), UtcInstant.new(3600000001), option.none<RemoteIp>(), option.none<String>())
+        => value result.ok<Option<RestoredSession>, DbError>(option.none<RestoredSession>()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/missing-user-does-not-refresh {
+        campfire.authentication.restore-session(SessionToken.new("user-missing"), UtcInstant.new(3600000001), option.none<RemoteIp>(), option.none<String>())
+        => value result.ok<Option<RestoredSession>, DbError>(option.none<RestoredSession>()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/session-lookup-errors {
+        campfire.authentication.restore-session(SessionToken.new("lookup-unavailable"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<RestoredSession>, DbError>(DbError.unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/session-lookup-not-found {
+        campfire.authentication.restore-session(SessionToken.new("lookup-not-found"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<RestoredSession>, DbError>(DbError.not-found()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/session-lookup-constraint {
+        campfire.authentication.restore-session(SessionToken.new("lookup-constraint"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<RestoredSession>, DbError>(DbError.constraint-conflict()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/session-lookup-invalid {
+        campfire.authentication.restore-session(SessionToken.new("lookup-invalid"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<RestoredSession>, DbError>(DbError.invalid-input()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/user-lookup-unavailable {
+        campfire.authentication.restore-session(SessionToken.new("user-error-unavailable"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<RestoredSession>, DbError>(DbError.unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/user-lookup-not-found {
+        campfire.authentication.restore-session(SessionToken.new("user-error-not-found"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<RestoredSession>, DbError>(DbError.not-found()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/user-lookup-constraint {
+        campfire.authentication.restore-session(SessionToken.new("user-error-constraint"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<RestoredSession>, DbError>(DbError.constraint-conflict()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/user-lookup-invalid {
+        campfire.authentication.restore-session(SessionToken.new("user-error-invalid"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<RestoredSession>, DbError>(DbError.invalid-input()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/refresh-unavailable {
+        campfire.authentication.restore-session(SessionToken.new("refresh-error-unavailable"), UtcInstant.new(3600000001), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<RestoredSession>, DbError>(DbError.unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/refresh-not-found {
+        campfire.authentication.restore-session(SessionToken.new("refresh-error-not-found"), UtcInstant.new(3600000001), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<RestoredSession>, DbError>(DbError.not-found()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/refresh-constraint {
+        campfire.authentication.restore-session(SessionToken.new("refresh-error-constraint"), UtcInstant.new(3600000001), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<RestoredSession>, DbError>(DbError.constraint-conflict()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/refresh-invalid {
+        campfire.authentication.restore-session(SessionToken.new("refresh-error-invalid"), UtcInstant.new(3600000001), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<RestoredSession>, DbError>(DbError.invalid-input()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/exactly-one-hour-does-not-refresh {
+        campfire.authentication.restore-session(SessionToken.new("exact-hour"), UtcInstant.new(3600000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
+            user = authUser.new(id = UserId.new(11), name = "campfire-user", role = Role.member(), status = AuthUserStatus.active()),
+            session = sessionRow.new(id = SessionId.new(20), user-id = UserId.new(11), token = SessionToken.new("exact-hour"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(0), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)),
+            refresh-cookie = false
+        ))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/one-microsecond-due-refresh-preserves-metadata {
+        campfire.authentication.restore-session(SessionToken.new("due-one-microsecond"), UtcInstant.new(3600000001), option.some<RemoteIp>(RemoteIp.new("203.0.113.8")), option.some<String>("new-agent"))
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
+            user = authUser.new(id = UserId.new(11), name = "campfire-user", role = Role.member(), status = AuthUserStatus.active()),
+            session = sessionRow.new(id = SessionId.new(30), user-id = UserId.new(11), token = SessionToken.new("due-one-microsecond"), ip-address = option.some<RemoteIp>(RemoteIp.new("203.0.113.8")), user-agent = option.some<String>("new-agent"), last-active-at = UtcInstant.new(3600000001), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(3600000001)),
+            refresh-cookie = true
+        ))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/due-refresh-preserves-absent-metadata {
+        campfire.authentication.restore-session(SessionToken.new("due-no-metadata"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
+            user = authUser.new(id = UserId.new(11), name = "campfire-user", role = Role.member(), status = AuthUserStatus.active()),
+            session = sessionRow.new(id = SessionId.new(30), user-id = UserId.new(11), token = SessionToken.new("due-no-metadata"), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>(), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(10000000000)),
+            refresh-cookie = true
+        ))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/preserves-session-identity-and-times {
+        campfire.authentication.restore-session(SessionToken.new("preserve-fields"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
+            user = authUser.new(id = UserId.new(11), name = "campfire-user", role = Role.member(), status = AuthUserStatus.active()),
+            session = sessionRow.new(id = SessionId.new(21), user-id = UserId.new(11), token = SessionToken.new("preserve-fields"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(6400000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)),
+            refresh-cookie = false
+        ))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/member-active-is-restored {
+        campfire.authentication.restore-session(SessionToken.new("status-1"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(101), name = "user-101", role = Role.member(), status = AuthUserStatus.active()), session = sessionRow.new(id = SessionId.new(101), user-id = UserId.new(101), token = SessionToken.new("status-1"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/member-deactivated-is-restored {
+        campfire.authentication.restore-session(SessionToken.new("status-2"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(102), name = "user-102", role = Role.member(), status = AuthUserStatus.deactivated()), session = sessionRow.new(id = SessionId.new(102), user-id = UserId.new(102), token = SessionToken.new("status-2"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/member-banned-is-restored {
+        campfire.authentication.restore-session(SessionToken.new("status-3"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(103), name = "user-103", role = Role.member(), status = AuthUserStatus.banned()), session = sessionRow.new(id = SessionId.new(103), user-id = UserId.new(103), token = SessionToken.new("status-3"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/administrator-active-is-restored {
+        campfire.authentication.restore-session(SessionToken.new("status-4"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(104), name = "user-104", role = Role.administrator(), status = AuthUserStatus.active()), session = sessionRow.new(id = SessionId.new(104), user-id = UserId.new(104), token = SessionToken.new("status-4"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/administrator-deactivated-is-restored {
+        campfire.authentication.restore-session(SessionToken.new("status-5"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(105), name = "user-105", role = Role.administrator(), status = AuthUserStatus.deactivated()), session = sessionRow.new(id = SessionId.new(105), user-id = UserId.new(105), token = SessionToken.new("status-5"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/administrator-banned-is-restored {
+        campfire.authentication.restore-session(SessionToken.new("status-6"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(106), name = "user-106", role = Role.administrator(), status = AuthUserStatus.banned()), session = sessionRow.new(id = SessionId.new(106), user-id = UserId.new(106), token = SessionToken.new("status-6"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/bot-active-is-restored {
+        campfire.authentication.restore-session(SessionToken.new("status-7"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(107), name = "user-107", role = Role.bot(), status = AuthUserStatus.active()), session = sessionRow.new(id = SessionId.new(107), user-id = UserId.new(107), token = SessionToken.new("status-7"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/bot-deactivated-is-restored {
+        campfire.authentication.restore-session(SessionToken.new("status-8"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(108), name = "user-108", role = Role.bot(), status = AuthUserStatus.deactivated()), session = sessionRow.new(id = SessionId.new(108), user-id = UserId.new(108), token = SessionToken.new("status-8"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/bot-banned-is-restored {
+        campfire.authentication.restore-session(SessionToken.new("status-9"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(109), name = "user-109", role = Role.bot(), status = AuthUserStatus.banned()), session = sessionRow.new(id = SessionId.new(109), user-id = UserId.new(109), token = SessionToken.new("status-9"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+        }
+    }
+}
