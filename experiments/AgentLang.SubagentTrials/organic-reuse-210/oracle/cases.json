@@ -1,0 +1,8114 @@
+{
+  "creator": [
+    {
+      "id": "subscription.renew-monthly/mid-period-boundary",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/at-original-start",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 0,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 0,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/at-original-expiry",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 4,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 4,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 4,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/after-original-expiry",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 5,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 5,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 5,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/third-party-overlap",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "basic",
+            "start": 6,
+            "finish": 10,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_OVERLAP",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/touching-future-boundary",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "basic",
+            "start": 8,
+            "finish": 10,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 8,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 8,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/touching-past-boundary",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 2,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 2,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 2,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 2,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/other-customer-not-conflict",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "bob",
+            "product": "basic",
+            "start": 6,
+            "finish": 10,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "bob",
+              "product": "basic",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "bob",
+              "product": "basic",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/other-product-not-conflict",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "other",
+            "start": 6,
+            "finish": 10,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "other",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "other",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/cancelled-third-ends-at-boundary",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 2,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 10,
+            "status": "cancelled",
+            "cancelled": 2,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 10,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 10,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/empty-third-occupancy",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "basic",
+            "start": 6,
+            "finish": 10,
+            "status": "cancelled",
+            "cancelled": 6,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 6,
+              "finish": 10,
+              "status": "cancelled",
+              "cancelled": 6,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 6,
+              "finish": 10,
+              "status": "cancelled",
+              "cancelled": 6,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/replacement-id-is-old",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "old",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "DUPLICATE_SUBSCRIPTION",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/replacement-id-exists",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "other",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "third",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "DUPLICATE_SUBSCRIPTION",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "other",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/blank-term",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/empty-replacement-period",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 2
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/reversed-replacement-period",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 1
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/missing-old",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "missing",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/already-cancelled-old",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "cancelled",
+            "cancelled": 1,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_ALREADY_CANCELLED",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 1,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/already-cancelled-before-start",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "cancelled",
+            "cancelled": 1,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": -1,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_ALREADY_CANCELLED",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 1,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/before-original-start",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 3,
+            "finish": 5,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "CANCEL_BEFORE_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 3,
+              "finish": 5,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/missing-old-precedes-duplicate",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "missing",
+        "newId": "old",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/cancelled-old-precedes-duplicate",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "cancelled",
+            "cancelled": 1,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "old",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_ALREADY_CANCELLED",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 1,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/before-start-precedes-duplicate",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 3,
+            "finish": 5,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "old",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "CANCEL_BEFORE_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 3,
+              "finish": 5,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/duplicate-precedes-blank-term",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "old",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "DUPLICATE_SUBSCRIPTION",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/blank-term-precedes-bad-period",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 2
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/bad-period-precedes-overlap",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "basic",
+            "start": 6,
+            "finish": 10,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 2
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/old-customer-missing",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "ghost",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "CUSTOMER_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "ghost",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/old-product-missing",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "ghost",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "PRODUCT_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "ghost",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/old-customer-and-product-missing",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "ghost",
+            "product": "ghost-product",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "CUSTOMER_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "ghost",
+              "product": "ghost-product",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/blank-term-precedes-missing-customer",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "ghost",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "CUSTOMER_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "ghost",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/bad-period-precedes-missing-customer",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "ghost",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 2
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "ghost",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/missing-product-precedes-overlap",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "ghost-product",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "ghost-product",
+            "start": 6,
+            "finish": 10,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "PRODUCT_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "ghost-product",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "ghost-product",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-monthly/duplicate-precedes-missing-customer",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "ghost",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "old",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-monthly",
+      "fixedTerm": "monthly",
+      "expected": {
+        "tag": "error",
+        "code": "DUPLICATE_SUBSCRIPTION",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "ghost",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/mid-period-boundary",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/at-original-start",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 0,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 0,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/at-original-expiry",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 4,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 4,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 4,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/after-original-expiry",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 5,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 5,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 5,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/third-party-overlap",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "basic",
+            "start": 6,
+            "finish": 10,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_OVERLAP",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/touching-future-boundary",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "basic",
+            "start": 8,
+            "finish": 10,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 8,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 8,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/touching-past-boundary",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 2,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 2,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 2,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 2,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/other-customer-not-conflict",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "bob",
+            "product": "basic",
+            "start": 6,
+            "finish": 10,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "bob",
+              "product": "basic",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "bob",
+              "product": "basic",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/other-product-not-conflict",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "other",
+            "start": 6,
+            "finish": 10,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "other",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "other",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/cancelled-third-ends-at-boundary",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 2,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 10,
+            "status": "cancelled",
+            "cancelled": 2,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 10,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 10,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/empty-third-occupancy",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "basic",
+            "start": 6,
+            "finish": 10,
+            "status": "cancelled",
+            "cancelled": 6,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 6,
+              "finish": 10,
+              "status": "cancelled",
+              "cancelled": 6,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 6,
+              "finish": 10,
+              "status": "cancelled",
+              "cancelled": 6,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/replacement-id-is-old",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "old",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "DUPLICATE_SUBSCRIPTION",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/replacement-id-exists",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "other",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "third",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "DUPLICATE_SUBSCRIPTION",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "other",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/blank-term",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/empty-replacement-period",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 2
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/reversed-replacement-period",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 1
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/missing-old",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "missing",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/already-cancelled-old",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "cancelled",
+            "cancelled": 1,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_ALREADY_CANCELLED",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 1,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/already-cancelled-before-start",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "cancelled",
+            "cancelled": 1,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": -1,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_ALREADY_CANCELLED",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 1,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/before-original-start",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 3,
+            "finish": 5,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "CANCEL_BEFORE_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 3,
+              "finish": 5,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/missing-old-precedes-duplicate",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "missing",
+        "newId": "old",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/cancelled-old-precedes-duplicate",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "cancelled",
+            "cancelled": 1,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "old",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_ALREADY_CANCELLED",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 1,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/before-start-precedes-duplicate",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 3,
+            "finish": 5,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "old",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "CANCEL_BEFORE_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 3,
+              "finish": 5,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/duplicate-precedes-blank-term",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "old",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "DUPLICATE_SUBSCRIPTION",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/blank-term-precedes-bad-period",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 2
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/bad-period-precedes-overlap",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "basic",
+            "start": 6,
+            "finish": 10,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 2
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/old-customer-missing",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "ghost",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "CUSTOMER_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "ghost",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/old-product-missing",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "ghost",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "PRODUCT_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "ghost",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/old-customer-and-product-missing",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "ghost",
+            "product": "ghost-product",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "CUSTOMER_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "ghost",
+              "product": "ghost-product",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/blank-term-precedes-missing-customer",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "ghost",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "CUSTOMER_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "ghost",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/bad-period-precedes-missing-customer",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "ghost",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 2
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "ghost",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/missing-product-precedes-overlap",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "ghost-product",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "ghost-product",
+            "start": 6,
+            "finish": 10,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "new",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "PRODUCT_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "ghost-product",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "ghost-product",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "subscription.renew-annual/duplicate-precedes-missing-customer",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "ghost",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "oldId": "old",
+        "newId": "old",
+        "at": 2,
+        "expiry": 8
+      },
+      "operation": "subscription.renew-annual",
+      "fixedTerm": "annual",
+      "expected": {
+        "tag": "error",
+        "code": "DUPLICATE_SUBSCRIPTION",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "ghost",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    }
+  ],
+  "successor": [
+    {
+      "id": "empty-list",
+      "operation": "subscription.renew-batch",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "at": 2,
+        "changes": []
+      },
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "one-monthly-item",
+      "operation": "subscription.renew-batch",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "at": 2,
+        "changes": [
+          {
+            "oldId": "old",
+            "newId": "new",
+            "plan": "monthly",
+            "expiry": 8
+          }
+        ]
+      },
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "two-valid-plans",
+      "operation": "subscription.renew-batch",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "bob",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "at": 2,
+        "changes": [
+          {
+            "oldId": "old",
+            "newId": "new",
+            "plan": "monthly",
+            "expiry": 8
+          },
+          {
+            "oldId": "third",
+            "newId": "new2",
+            "plan": "annual",
+            "expiry": 9
+          }
+        ]
+      },
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "bob",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            },
+            {
+              "id": "new2",
+              "customer": "bob",
+              "product": "basic",
+              "start": 2,
+              "finish": 9,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "bob",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "later-item-fails-after-valid-prefix",
+      "operation": "subscription.renew-batch",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "bob",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "at": 2,
+        "changes": [
+          {
+            "oldId": "old",
+            "newId": "new",
+            "plan": "monthly",
+            "expiry": 8
+          },
+          {
+            "oldId": "third",
+            "newId": "new2",
+            "plan": "annual",
+            "expiry": 2
+          }
+        ]
+      },
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "bob",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "first-error-precedes-later-expiry",
+      "operation": "subscription.renew-batch",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "bob",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "at": 2,
+        "changes": [
+          {
+            "oldId": "missing",
+            "newId": "new",
+            "plan": "monthly",
+            "expiry": 8
+          },
+          {
+            "oldId": "third",
+            "newId": "new2",
+            "plan": "annual",
+            "expiry": 2
+          }
+        ]
+      },
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_NOT_FOUND",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "bob",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "repeated-replacement-id-fails-second",
+      "operation": "subscription.renew-batch",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "bob",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "at": 2,
+        "changes": [
+          {
+            "oldId": "old",
+            "newId": "new",
+            "plan": "monthly",
+            "expiry": 8
+          },
+          {
+            "oldId": "third",
+            "newId": "new",
+            "plan": "annual",
+            "expiry": 9
+          }
+        ]
+      },
+      "expected": {
+        "tag": "error",
+        "code": "DUPLICATE_SUBSCRIPTION",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "bob",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "unrelated-active-overlap",
+      "operation": "subscription.renew-batch",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "third",
+            "customer": "alice",
+            "product": "basic",
+            "start": 6,
+            "finish": 10,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "at": 2,
+        "changes": [
+          {
+            "oldId": "old",
+            "newId": "new",
+            "plan": "monthly",
+            "expiry": 8
+          }
+        ]
+      },
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_OVERLAP",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "customer": "alice",
+              "product": "basic",
+              "start": 6,
+              "finish": 10,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "repeated-old-id-fails-second",
+      "operation": "subscription.renew-batch",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "at": 2,
+        "changes": [
+          {
+            "oldId": "old",
+            "newId": "new",
+            "plan": "monthly",
+            "expiry": 8
+          },
+          {
+            "oldId": "old",
+            "newId": "new2",
+            "plan": "annual",
+            "expiry": 9
+          }
+        ]
+      },
+      "expected": {
+        "tag": "error",
+        "code": "SUBSCRIPTION_ALREADY_CANCELLED",
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    },
+    {
+      "id": "preserves-store-and-subscription-order",
+      "operation": "subscription.renew-batch",
+      "store": {
+        "customers": [
+          "alice",
+          "bob"
+        ],
+        "products": [
+          "basic",
+          "other"
+        ],
+        "subscriptions": [
+          {
+            "id": "third",
+            "customer": "bob",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "old2",
+            "customer": "alice",
+            "product": "other",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          },
+          {
+            "id": "old",
+            "customer": "alice",
+            "product": "basic",
+            "start": 0,
+            "finish": 4,
+            "status": "active",
+            "cancelled": null,
+            "term": "original"
+          }
+        ],
+        "invoices": [
+          "invoice-marker"
+        ],
+        "payments": [
+          "payment-marker"
+        ],
+        "outbox": [
+          "outbox-marker"
+        ],
+        "sent": [
+          "sent-marker"
+        ]
+      },
+      "request": {
+        "at": 2,
+        "changes": [
+          {
+            "oldId": "old2",
+            "newId": "new2",
+            "plan": "annual",
+            "expiry": 8
+          },
+          {
+            "oldId": "old",
+            "newId": "new",
+            "plan": "monthly",
+            "expiry": 9
+          }
+        ]
+      },
+      "expected": {
+        "tag": "ok",
+        "store": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "third",
+              "customer": "bob",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "old2",
+              "customer": "alice",
+              "product": "other",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "cancelled",
+              "cancelled": 2,
+              "term": "original"
+            },
+            {
+              "id": "new2",
+              "customer": "alice",
+              "product": "other",
+              "start": 2,
+              "finish": 8,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            },
+            {
+              "id": "new",
+              "customer": "alice",
+              "product": "basic",
+              "start": 2,
+              "finish": 9,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        },
+        "input": {
+          "customers": [
+            "alice",
+            "bob"
+          ],
+          "products": [
+            "basic",
+            "other"
+          ],
+          "subscriptions": [
+            {
+              "id": "third",
+              "customer": "bob",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "old2",
+              "customer": "alice",
+              "product": "other",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "old",
+              "customer": "alice",
+              "product": "basic",
+              "start": 0,
+              "finish": 4,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ],
+          "invoices": [
+            "invoice-marker"
+          ],
+          "payments": [
+            "payment-marker"
+          ],
+          "outbox": [
+            "outbox-marker"
+          ],
+          "sent": [
+            "sent-marker"
+          ]
+        }
+      }
+    }
+  ]
+}

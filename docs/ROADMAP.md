@@ -40,7 +40,11 @@ not wait for every optional feature or proof of a comparative advantage.
 The [current efficacy decision](../reports/203-efficacy-decision-after-organic-creation.md)
 incorporates the organic creator's correct implementation without an eligible
 new helper. No successor was dispatched and organic accumulation remains
-unproven. The [prior decision](../reports/199-efficacy-decision-after-reference-maintenance.md)
+unproven. A separately recorded [fresh replication](../reports/210-organic-reuse-replication.md)
+of the organic creator opportunity. Its current-runtime preflight passes; the
+same optional-helper rule and conditional successor remain frozen. Preparation
+is not an agent outcome, and the historical no-helper result remains unchanged.
+The [prior decision](../reports/199-efficacy-decision-after-reference-maintenance.md)
 covers the closed typed-reference cohort and its representation supplement in
 reports 196 and 197. The [previous checkpoint](../reports/182-efficacy-decision-checkpoint.md)
 covers repeated maintenance through 179 and separates native conformance and
