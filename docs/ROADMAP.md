@@ -37,7 +37,10 @@ not wait for every optional feature or proof of a comparative advantage.
 
 ## 1. Validate reliability beyond easy composition
 
-The [current efficacy decision](../reports/212-efficacy-after-public-vocabulary-reuse.md)
+The [current efficacy decision](../reports/215-efficacy-after-paired-vocabulary-pilot.md)
+records correct reset and retained edits with successful public-vocabulary reuse,
+while preserving the earlier negative helper-creation and preservation findings.
+The [previous handoff checkpoint](../reports/212-efficacy-after-public-vocabulary-reuse.md)
 records a successful later-agent handoff through creator-authored public functions.
 Retention benefit and comparative reliability remain unproven. The
 [previous decision](../reports/203-efficacy-decision-after-organic-creation.md)
@@ -68,6 +71,11 @@ evidence, not a reliability rate, token saving or causal speedup claim. Trial 21
 is historical evidence, not its matched retained arm. Next use another small
 held-out task to test harder edits, with conventional comparisons and repeated
 outcomes required before claiming superior reliability.
+The next [typed batch failure maintenance study](../experiments/AgentLang.SubagentTrials/typed-batch-failure-216/PLAN.md)
+is in preflight: structured first-failure index/ID/cause, preserved success and
+input state, and explicitly reviewed inherited test adaptations. It uses both
+accepted terminal 213 projects as unequal continuation seeds. No participant
+has been dispatched and no causal retention comparison is claimed.
 The [prior decision](../reports/199-efficacy-decision-after-reference-maintenance.md)
 covers the closed typed-reference cohort and its representation supplement in
 reports 196 and 197. The [previous checkpoint](../reports/182-efficacy-decision-checkpoint.md)

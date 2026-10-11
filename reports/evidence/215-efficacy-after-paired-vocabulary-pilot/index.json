@@ -1,0 +1,126 @@
+{
+  "status": "evidence checkpoint; no new participant or native result",
+  "inputs": [
+    {
+      "path": "reports/179-preview-repair-and-record-migration.md",
+      "bytes": 9322,
+      "sha256": "a2134bf6a1ec95062145b4d75c08d2e77cae807fa42104d985d577b827905fb4",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "reports/196-typed-reference-maintenance-cohort-results.md",
+      "bytes": 7623,
+      "sha256": "4171a2cc5a483c6861dd306de20210db2d995c2d5cebe7d26fde46ff3a128f6f",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "reports/197-typed-reference-record-supplement.md",
+      "bytes": 5233,
+      "sha256": "b233a243034260163e3b53f7dc8ff95c5e875aca405e404f87adb819b62ec131",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "reports/199-efficacy-decision-after-reference-maintenance.md",
+      "bytes": 5216,
+      "sha256": "85cc81634401f1ad362e2bd628944b53970f14c1f4aa2d93bbce848cb9a726aa",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "reports/200-organic-vocabulary-reuse.md",
+      "bytes": 5809,
+      "sha256": "91ba393ef28723ff95eab001a33476ab8071a6ea4955e9931a96516467ee904c",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "reports/210-organic-reuse-replication.md",
+      "bytes": 6140,
+      "sha256": "280d62047e89ba511ffdb5082b1c1809841daf5a868096acdccf28b77941351b",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "reports/211-public-vocabulary-reuse.md",
+      "bytes": 6313,
+      "sha256": "56aeac4b8f65f62713c790d16eb1e5de00f6b84a9f1097b33dfad55e0614b98e",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "reports/212-efficacy-after-public-vocabulary-reuse.md",
+      "bytes": 5492,
+      "sha256": "7cc217ad7f99a5527a0fdfde83205dd366d06ab0e75c09275d6aa67addcad8db",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "reports/213-paired-vocabulary-availability.md",
+      "bytes": 6813,
+      "sha256": "d6dc95ee251da7e864307f30f1ce08ae7e270be829975de84ff317d57ae9cbeb",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "reports/214-completion-service-diagnostic.md",
+      "bytes": 4017,
+      "sha256": "78ccb74ffa40397861097e4ce32fa393e16b6d08c9e3aaaae6f8230423e484fd",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "reports/evidence/213-paired-vocabulary-availability/paired-summary.json",
+      "bytes": 9938,
+      "sha256": "518b2a3630fb1c506cccf203027659c069f3510554f84336df4fb682d02c114e",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "reports/evidence/213-paired-vocabulary-availability/paired.index.json",
+      "bytes": 1458,
+      "sha256": "c7b06b52e6b45a7505ee9a7cef5c73fb41be7b8941b5c1d6dd8762aa9f42c9e5",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "reports/evidence/213-paired-vocabulary-availability/preflight.zip",
+      "bytes": 2179858,
+      "sha256": "dcf5dd5eb2b81bc5898e6d8bbcf98274c3bf9c343d96babcb37d257478990087",
+      "bytePolicy": "raw archive bytes"
+    },
+    {
+      "path": "reports/evidence/213-paired-vocabulary-availability/reset-result.zip",
+      "bytes": 1027677,
+      "sha256": "10b65dbbed43c7a719e86db33dcc5a821e676ddf7e47c9f9d3a82732db285473",
+      "bytePolicy": "raw archive bytes"
+    },
+    {
+      "path": "reports/evidence/213-paired-vocabulary-availability/retained-result.zip",
+      "bytes": 1235991,
+      "sha256": "08273a11365f487b9cb70bbd126e38495becfbaba31be090085bbdae29801eb7",
+      "bytePolicy": "raw archive bytes"
+    },
+    {
+      "path": "reports/evidence/214-completion-service-diagnostic/validation.zip",
+      "bytes": 1093233,
+      "sha256": "c1153c8c30370b4fa65722771bd885cec35cfb9fc0af0313016e8c836346ac9a",
+      "bytePolicy": "raw archive bytes"
+    },
+    {
+      "path": "reports/evidence/214-completion-service-diagnostic/validation.index.json",
+      "bytes": 99352,
+      "sha256": "116bee50030672e3345445e88dc79245f2e2b139901cfba301b05674c193c3a8",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "reports/evidence/214-completion-service-diagnostic/terminal-report-review.md",
+      "bytes": 997,
+      "sha256": "dad08bce964540e639dcd9983c04a6595c8b983f20e6209f462e860a1f5cd044",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/typed-batch-failure-216/PLAN.md",
+      "bytes": 4930,
+      "sha256": "583fddadc5603eb5bb66ce65810f442da4ef96d938ff78e90ae4fbbacce2d221",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/typed-batch-failure-216/preparation/task-packet.md",
+      "bytes": 1923,
+      "sha256": "42e48fb5207a7a0e2bc5ff8086d304c70fd677b589a159588aa4afc3e0352366",
+      "bytePolicy": "UTF-8 text with CRLF normalized to LF"
+    }
+  ],
+  "limits": "No pooled reliability rate, causal retention effect, provider tokens, context-size or native throughput claim. Study216 is preflight only."
+}
