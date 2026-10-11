@@ -1,0 +1,178 @@
+{
+  "format": 1,
+  "kind": "read-only native Bool admission review",
+  "date": "2026-10-10",
+  "checkoutHead": "c1bb93b4059826d316ea11bab5a68861b169139a",
+  "report194IndexRevision": "392d167",
+  "sourcePins": [
+    {
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "sha256": "4ccdfa232bc1448a9953e82edb1a68e3d2152bfc3ef5c6c1b4a2284628c05627",
+      "matchesReport194Index": true
+    },
+    {
+      "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+      "sha256": "408482ab19135cc893b0f6cb4be8d0a89643a2645038189aaa1d68d16d7a4fee",
+      "matchesReport194Index": true
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+      "sha256": "c9034d10daa99ae8ec5dd854d1b55c029612551d4e105151f25c086b8036676d",
+      "matchesReport194Index": null
+    },
+    {
+      "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+      "sha256": "2fabba20fba1becbe985409fd271440245aabd4de91d55ab2452ec6397870e4c",
+      "matchesReport194Index": true
+    }
+  ],
+  "findings": [
+    {
+      "id": "raw-bool-canonical-encoding-gap",
+      "status": "confirmed-source-gap",
+      "location": {
+        "path": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+        "lines": "1200-1207",
+        "function": "al_owning_scan_value"
+      },
+      "evidence": "Bool descriptor shape is fixed to 8-byte payload and extent at lines 700-708, but the scalar scan branch only checks readability and returns sizes.",
+      "recommendation": "After al_owning_scan_readable_in_owner confirms all eight bytes are available, decode little-endian and accept exactly 0 or 1. Keep the check in the Bool leaf path so primitive, nominal, and nested active Bool values share it."
+    },
+    {
+      "id": "nested-active-payload-boundaries",
+      "status": "existing-structure-to-preserve",
+      "locations": [
+        {
+          "path": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+          "lines": "1116-1179",
+          "function": "al_owning_scan_value"
+        },
+        {
+          "path": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+          "lines": "1231-1305",
+          "function": "al_owning_scan_value"
+        },
+        {
+          "path": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+          "lines": "550-592",
+          "function": "al_owning_scan_readable_in_owner"
+        }
+      ],
+      "evidence": "Sum tags and active children are bounded before loads; record child ranges are computed and recursively scanned. Only the active sum payload is traversed.",
+      "recommendation": "Test malformed active Bool leaves under record, Option Some, Result Ok and Result Error. Include a one-byte-short owner extent and malformed bytes in inactive branches to confirm short reads reject and inactive values remain unexamined."
+    },
+    {
+      "id": "nominal-bool-identity-emission",
+      "status": "planned-aot-admission-gap",
+      "locations": [
+        {
+          "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+          "lines": "615-624",
+          "function": "makeProgramInfoForBodies"
+        },
+        {
+          "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+          "lines": "2729-2745",
+          "function": "typeKind"
+        },
+        {
+          "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+          "lines": "2820-2838",
+          "function": "emitDynamicModule"
+        },
+        {
+          "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+          "lines": "1333-1345",
+          "function": "measureValue"
+        },
+        {
+          "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+          "lines": "1452-1467",
+          "function": "encodeValues"
+        }
+      ],
+      "evidence": "Primitive Bool uses TypeId 2 and nominal types have separate ordered IDs, but nominal scalar typeKind and host measure/encode currently accept only Int and String.",
+      "recommendation": "Map nominal Bool to kind 2; preserve its existing distinct nominal TypeId and 8-byte sizes. Add exact-name BoolValue host handling and assert two wrappers differ from primitive Bool and each other. Do not expect raw payload bytes to encode nominal identity; scanner callers select a type index."
+    },
+    {
+      "id": "failure-publication-order",
+      "status": "existing-contract-to-preserve",
+      "locations": [
+        {
+          "path": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+          "lines": "1386-1457",
+          "function": "al_owning_measure_value and al_owning_measure_external_value"
+        },
+        {
+          "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+          "lines": "4245-4254",
+          "function": "emitMailboxCallback"
+        },
+        {
+          "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+          "lines": "4260-4311",
+          "function": "emitMailboxCallback"
+        },
+        {
+          "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+          "lines": "4388-4398",
+          "function": "emitMailboxCallback"
+        }
+      ],
+      "evidence": "Scanner result fields are assigned only after successful scans. Mailbox scans all external inputs before reserving/copying them; after preflight it intentionally invalidates output metadata and publishes valid metadata only after output validation.",
+      "recommendation": "On malformed raw Bool, assert scanner output canaries and stack state remain unchanged; for mailbox callbacks assert failure status, the established invalid output marker, no callback-body commit, and unchanged parked roots/pending state where applicable."
+    }
+  ],
+  "coverage": {
+    "alreadyCovered": [
+      {
+        "path": "src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+        "lines": "118-122, 483-505",
+        "covers": "Bool descriptor shape is declared and primitive true storage is exercised; no scanner call uses AL_TEST_LAYOUT_BOOL."
+      },
+      {
+        "path": "src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+        "lines": "1760-1807, 2109-2122, 2141-2325",
+        "covers": "External malformed String sentinel behavior, nested active String scanning, Option/Result tag checks, and short extents."
+      },
+      {
+        "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+        "lines": "2201-2216, 2580-2584, 2631-2670",
+        "covers": "Nested refined String failures preserve retained output; raw malformed String invalidates mailbox outputs; active/inactive Option/Result Int refinement behavior."
+      },
+      {
+        "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+        "lines": "3114-3137, 1512-1517",
+        "covers": "Canonical 0/1 validator-result check and host Bool decoder validation. Neither validates raw native scanner ingress."
+      }
+    ],
+    "gaps": [
+      {
+        "path": "src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+        "covers": "No primitive or nominal Bool scan vectors for noncanonical values, short ranges, nested active children, or unchanged output canaries."
+      },
+      {
+        "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+        "lines": "1382-1390, 1833-1846, 2280-2288",
+        "covers": "Current Bool wrapper cases only assert that Bool remains unsupported; there is no positive nominal Bool/native identity matrix."
+      },
+      {
+        "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+        "covers": "No raw mailbox noncanonical Bool input or retained-root Bool remeasurement test; host Bool encoding only produces 0/1."
+      }
+    ]
+  },
+  "compatibility": {
+    "layoutSchema": 3,
+    "stackAbi": 1,
+    "mailboxAbi": 1,
+    "moduleAbi": 1,
+    "requiresVersionBump": false
+  },
+  "validation": {
+    "testsRun": 0,
+    "buildsRun": 0,
+    "runtimeExecution": false,
+    "sourceInspectionOnly": true
+  }
+}

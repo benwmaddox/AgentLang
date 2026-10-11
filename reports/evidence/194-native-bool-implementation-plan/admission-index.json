@@ -1,0 +1,39 @@
+{
+  "format": 1,
+  "stage": "read-only admission addendum; implementation and executable validation pending",
+  "sourceRevision": "c1bb93b4059826d316ea11bab5a68861b169139a",
+  "sourcePins": [
+    {
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "sha256": "4ccdfa232bc1448a9953e82edb1a68e3d2152bfc3ef5c6c1b4a2284628c05627",
+      "matchesReport194Index": true
+    },
+    {
+      "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+      "sha256": "408482ab19135cc893b0f6cb4be8d0a89643a2645038189aaa1d68d16d7a4fee",
+      "matchesReport194Index": true
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+      "sha256": "c9034d10daa99ae8ec5dd854d1b55c029612551d4e105151f25c086b8036676d",
+      "matchesReport194Index": null
+    },
+    {
+      "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+      "sha256": "2fabba20fba1becbe985409fd271440245aabd4de91d55ab2452ec6397870e4c",
+      "matchesReport194Index": true
+    }
+  ],
+  "files": [
+    {
+      "path": "admission-review.md",
+      "sha256": "6d232dfc7b2f70252d4de0d2d85717a0f5f76a04bb267e4126149ccd54b35272",
+      "bytes": 8670
+    },
+    {
+      "path": "admission-review.json",
+      "sha256": "4119aca6a346819db881eea27f19e00ffd1396496c70d5713bd8b7d6f7c16cbc",
+      "bytes": 7723
+    }
+  ]
+}
