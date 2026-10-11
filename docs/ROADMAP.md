@@ -42,7 +42,10 @@ records correct preserved typed-contract maintenance in both continuation seeds,
 with assisted/failed finalization kept separate from source correctness. Next compare
 fresh retained and conventional F# edits using existing brokers and the same semantic cases;
 disclose transport controls before future dispatch. No comparative reliability
-advantage is established. The [prior decision](../reports/215-efficacy-after-paired-vocabulary-pilot.md)
+advantage is established. The [comparison readiness checkpoint](../reports/220-typed-batch-comparison-readiness.md)
+now accepts corrected language/F# controls and equivalent inherited scenarios.
+Fresh participant packets and their complete freeze remain next; no participant
+has run in this pair. The [prior decision](../reports/215-efficacy-after-paired-vocabulary-pilot.md)
 preserves the earlier negative helper-creation and preservation findings.
 The [previous handoff checkpoint](../reports/212-efficacy-after-public-vocabulary-reuse.md)
 records a successful later-agent handoff through creator-authored public functions.

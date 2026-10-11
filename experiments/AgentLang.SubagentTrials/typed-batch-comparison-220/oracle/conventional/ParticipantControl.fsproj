@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(ParticipantSourceDir)\Domain.fs" Link="Domain.fs" />
+    <Compile Include="$(ParticipantSourceDir)\Operations.fs" Link="Operations.fs" />
+    <Compile Include="StoreReflection.fs" />
+    <Compile Include="Scorer.fs" />
+    <Compile Include="ParticipantProgram.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../../AgentLang.Business/AgentLang.Business.fsproj" />
+  </ItemGroup>
+</Project>
