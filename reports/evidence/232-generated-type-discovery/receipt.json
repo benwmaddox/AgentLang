@@ -1,0 +1,14 @@
+{
+  "archiveBytes": 2026608,
+  "archivePath": "reports/evidence/232-generated-type-discovery/evidence.zip",
+  "archiveSha256": "d7fa39bc63e3cb862e759b8f2880f6aeda3d25f51a44999f52d37db159785ad7",
+  "gitDiffCheckOutput": "source-diff/git-diff-check.txt",
+  "gitDiffCheckPassed": true,
+  "manifestBytes": 34074,
+  "manifestPath": "reports/evidence/232-generated-type-discovery/manifest.json",
+  "manifestSha256": "2baf0698871e9d45e9cc150bac2a5ef0fd6d1219cb0198df5682231a79966b62",
+  "memberCount": 88,
+  "membersByteVerified": true,
+  "schema": "type-discovery-232-evidence-seal-v1",
+  "traversalSymlinkAndGeneratedArtifactChecksPassed": true
+}

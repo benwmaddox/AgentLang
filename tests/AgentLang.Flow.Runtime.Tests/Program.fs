@@ -7060,10 +7060,15 @@ test-file self {
             + "    field id: Int\n"
             + "    field leaf: Leaf\n"
             + "    field nested: List<Option<Result<Leaf, String>>>\n"
+            + "}\n\n"
+            + "record RenewalTiming {\n"
+            + "    field At: Int\n"
+            + "    field ExpiresAt: Int\n"
             + "}"
         let semicolonRecords =
             "record Leaf { field text: String; }\n\n"
-            + "record Envelope { field id: Int; field leaf: Leaf; field nested: List<Option<Result<Leaf, String>>>; }"
+            + "record Envelope { field id: Int; field leaf: Leaf; field nested: List<Option<Result<Leaf, String>>>; }\n\n"
+            + "record RenewalTiming { field At: Int; field ExpiresAt: Int; }"
         let commonTypes =
             "type Email : String { validate email.valid?; }\n\n"
             + "type Ratio : Float { }\n\n"
@@ -7071,11 +7076,22 @@ test-file self {
             + "fn email.valid?(value: String) -> Bool { true }\n\n"
             + "test email.valid?/accepts { email.valid?(\"sample\") => true }"
         let defineSemanticProject engine recordText label =
-            defineFlowProject engine (recordText + "\n\n" + commonTypes) [ "syntaxVersion", jint 2 ]
-            |> expectOk $"stage {label} semantic type fixture"
-            |> ignore
-        defineSemanticProject newlineEngine newlineRecords "newline-separated"
-        defineSemanticProject semicolonEngine semicolonRecords "semicolon-separated"
+            let response =
+                defineFlowProject engine (recordText + "\n\n" + commonTypes) [ "syntaxVersion", jint 2 ]
+                |> expectOk $"stage {label} semantic type fixture"
+            let payload = response.["data"]
+            let declaredWords =
+                payload.["words"].AsArray()
+                |> Seq.map (fun item -> stringValue item.["name"])
+                |> Seq.toList
+            equal [ "email.valid?" ] declaredWords $"{label} define response reports authored words only"
+            let declaredTypes = jsonArrayStrings payload.["types"]
+            check (List.contains "RenewalTiming" declaredTypes) $"{label} define response reports the declared RenewalTiming type"
+            check (declaredWords |> List.forall (fun name -> not (name.StartsWith("renewalTiming.", StringComparison.Ordinal))))
+                $"{label} define response does not pretend generated operations were authored words"
+            response
+        defineSemanticProject newlineEngine newlineRecords "newline-separated" |> ignore
+        defineSemanticProject semicolonEngine semicolonRecords "semicolon-separated" |> ignore
         let describeType engine name =
             dispatch engine "describe" [ "type", jstr name ]
             |> expectOk $"describe semantic type {name}"
@@ -7095,18 +7111,110 @@ test-file self {
             envelopeFields
             "record inspection preserves field order, nominal field types, and canonical nested type formatting"
 
+        let operationsOf (description: JsonNode) : JsonNode list = description.["generatedOperations"].AsArray() |> Seq.toList
+        let operationNames (description: JsonNode) = operationsOf description |> List.map (fun operation -> stringValue operation.["name"])
+        let evalFlow2 engine code =
+            dispatch engine "eval" [ "frontend", jstr "flow"; "syntaxVersion", jint 2; "code", jstr code ]
+            |> expectOk $"evaluate advertised Flow/2 reference: {code}"
+        let crossCheckOperations (description: JsonNode) =
+            for operation in operationsOf description do
+                let name = stringValue operation.["name"]
+                let word: JsonNode =
+                    dispatch newlineEngine "describe" [ "word", jstr name ]
+                    |> expectOk $"describe generated word {name}"
+                    |> fun (response: JsonObject) -> response.["data"]
+                equal "generated" (stringValue word.["kind"]) $"{name} remains a generated dictionary operation"
+                for property in [ "inputs"; "outputs"; "effects"; "flowReference"; "flowReferenceSyntaxVersion"; "flowReferenceUnavailableReason" ] do
+                    let describedValue = word.[property]
+                    let typeValue = operation.[property]
+                    if isNull describedValue || isNull typeValue then
+                        check (isNull describedValue && isNull typeValue) $"{name} {property} agrees with describe(word)"
+                    else
+                        equal (describedValue.ToJsonString()) (typeValue.ToJsonString()) $"{name} {property} agrees with describe(word)"
+
+        let renewalTiming = describeType newlineEngine "RenewalTiming"
+        let renewalTimingFields =
+            renewalTiming.["fields"].AsArray()
+            |> Seq.map (fun field -> stringValue field.["name"], stringValue field.["type"])
+            |> Seq.toList
+        equal [ "At", "Int"; "ExpiresAt", "Int" ] renewalTimingFields
+            "RenewalTiming description preserves ordered named fields"
+        let renewalTimingOperations = operationsOf renewalTiming
+        equal [ "record-constructor"; "record-accessor"; "record-accessor" ]
+            (renewalTimingOperations |> List.map (fun operation -> stringValue operation.["kind"]))
+            "record generated operations are ordered constructor first and then by declared field order"
+        equal [ "renewalTiming.new"; "renewalTiming.At"; "renewalTiming.ExpiresAt" ]
+            (operationNames renewalTiming)
+            "record introspection reports generated names from the effective dictionary"
+        let renewalConstructor = renewalTimingOperations.[0]
+        equal [ "Int"; "Int" ] (jsonArrayStrings renewalConstructor.["inputs"])
+            "record constructor metadata retains its actual input signature"
+        let renewalParameters =
+            renewalConstructor.["parameters"].AsArray()
+            |> Seq.map (fun parameter -> stringValue parameter.["name"], stringValue parameter.["type"])
+            |> Seq.toList
+        equal [ "At", "Int"; "ExpiresAt", "Int" ] renewalParameters
+            "record constructor metadata supplies field names for its ordered arguments"
+        equal [ "At"; "ExpiresAt" ]
+            (renewalTimingOperations |> List.skip 1 |> List.map (fun operation -> stringValue operation.["field"]))
+            "record accessors identify the exact declared field they read"
+        crossCheckOperations renewalTiming
+        for operation in renewalTimingOperations do
+            let operationName = stringValue operation.["name"]
+            equal 2 (operation.["flowReferenceSyntaxVersion"].GetValue<int>())
+                $"{operationName} has an explicitly versioned Flow/2 call reference"
+            check (not (isNull operation.["flowReference"])) $"{operationName} has a usable Flow/2 call reference"
+        let renewalConstructorReference = stringValue renewalConstructor.["flowReference"]
+        equal ".renewalTiming.new" renewalConstructorReference
+            "type inspection exposes the lower-camel record constructor reference"
+        let renewalCreated = evalFlow2 newlineEngine $"{renewalConstructorReference}(ExpiresAt = 2, At = 1)"
+        equal "RenewalTiming" (stringValue renewalCreated.["data"].["stackTypes"].[0])
+            "the advertised record constructor accepts its named field arguments"
+        let atAccessorReference = stringValue renewalTimingOperations.[1].["flowReference"]
+        let renewalAt = evalFlow2 newlineEngine $"{atAccessorReference}({renewalConstructorReference}(ExpiresAt = 2, At = 1))"
+        equal "1" (stringValue renewalAt.["data"].["stack"].[0])
+            "the advertised At accessor reads the named record field"
+        let expiryAccessorReference = stringValue renewalTimingOperations.[2].["flowReference"]
+        let renewalExpiry = evalFlow2 newlineEngine $"{expiryAccessorReference}({renewalConstructorReference}(ExpiresAt = 2, At = 1))"
+        equal "2" (stringValue renewalExpiry.["data"].["stack"].[0])
+            "the advertised ExpiresAt accessor reads the named record field"
+
         let candidateEmail = describeType newlineEngine "Email"
         equal "scalar" (stringValue candidateEmail.["typeKind"]) "scalar inspection identifies its semantic type kind"
         equal "String" (stringValue candidateEmail.["baseType"]) "scalar inspection returns its canonical base type"
         equal "email.valid?" (stringValue candidateEmail.["validatorName"]) "scalar inspection returns its declared validator name"
+        equal [ "Email.new"; "Email.value" ] (operationNames candidateEmail)
+            "scalar inspection reports its generated constructor and accessor in deterministic order"
+        equal [ "scalar-constructor"; "scalar-accessor" ]
+            (operationsOf candidateEmail |> List.map (fun operation -> stringValue operation.["kind"]))
+            "scalar generated operations expose their semantic roles"
+        crossCheckOperations candidateEmail
+        let emailOperations = operationsOf candidateEmail
+        let emailConstructorReference = stringValue emailOperations.[0].["flowReference"]
+        let emailAccessorReference = stringValue emailOperations.[1].["flowReference"]
+        let emailValue = evalFlow2 newlineEngine $"{emailAccessorReference}({emailConstructorReference}(\"sample\"))"
+        equal "\"sample\"" (stringValue emailValue.["data"].["stack"].[0])
+            "advertised scalar constructor and accessor references execute"
         let candidateRatio = describeType newlineEngine "Ratio"
         equal "Float" (stringValue candidateRatio.["baseType"]) "an unvalidated scalar returns its canonical base type"
         check (isNull candidateRatio.["validatorName"]) "an unvalidated scalar has no validator name"
         let candidateDelivery = describeType newlineEngine "Delivery"
         equal "enum" (stringValue candidateDelivery.["typeKind"]) "enum inspection identifies its semantic type kind"
         equal [ "Pending"; "Sent"; "Delivered" ] (jsonArrayStrings candidateDelivery.["cases"]) "enum inspection preserves case order"
+        equal [ "Delivery.Pending"; "Delivery.Sent"; "Delivery.Delivered" ] (operationNames candidateDelivery)
+            "enum inspection reports generated case constructors in declaration order"
+        equal [ "Pending"; "Sent"; "Delivered" ]
+            (operationsOf candidateDelivery |> List.map (fun operation -> stringValue operation.["case"]))
+            "enum generated operations identify their exact cases"
+        crossCheckOperations candidateDelivery
+        for operation in operationsOf candidateDelivery do
+            let reference = stringValue operation.["flowReference"]
+            let constructed = evalFlow2 newlineEngine (reference + "()")
+            equal "Delivery" (stringValue constructed.["data"].["stackTypes"].[0])
+                $"advertised enum case reference {reference} constructs Delivery"
 
         commit newlineEngine "commit" "Envelope" [] |> expectOk "commit the nested record closure" |> ignore
+        commit newlineEngine "commit" "RenewalTiming" [] |> expectOk "commit the generated-operation type fixture" |> ignore
         commit newlineEngine "commit" "Email" [] |> expectOk "commit the validated scalar and its validator" |> ignore
         commit newlineEngine "commit" "Ratio" [] |> expectOk "commit the unvalidated scalar" |> ignore
         commit newlineEngine "commit" "Delivery" [] |> expectOk "commit the enum" |> ignore
@@ -7115,13 +7223,21 @@ test-file self {
         equal "persistent" (stringValue reloadedEnvelope.["status"]) "committed record inspection reports persistent status after reload"
         equal (newlineEnvelope.["typeKind"].ToJsonString()) (reloadedEnvelope.["typeKind"].ToJsonString()) "record semantic kind survives commit and reload"
         equal (newlineEnvelope.["fields"].ToJsonString()) (reloadedEnvelope.["fields"].ToJsonString()) "record semantic fields survive commit and reload"
+        let reloadedRenewalTiming = describeType reloadedEngine "RenewalTiming"
+        equal "persistent" (stringValue reloadedRenewalTiming.["status"]) "committed RenewalTiming metadata reports persistent status after reload"
+        equal (renewalTiming.["generatedOperations"].ToJsonString()) (reloadedRenewalTiming.["generatedOperations"].ToJsonString())
+            "generated record names, signatures, and order survive persistence and reload"
         let reloadedEmail = describeType reloadedEngine "Email"
         equal "persistent" (stringValue reloadedEmail.["status"]) "committed scalar inspection reports persistent status after reload"
         equal "String" (stringValue reloadedEmail.["baseType"]) "committed scalar retains its base type after reload"
         equal "email.valid?" (stringValue reloadedEmail.["validatorName"]) "committed scalar retains its validator name after reload"
+        equal (candidateEmail.["generatedOperations"].ToJsonString()) (reloadedEmail.["generatedOperations"].ToJsonString())
+            "generated scalar operations survive persistence and reload"
         let reloadedDelivery = describeType reloadedEngine "Delivery"
         equal "persistent" (stringValue reloadedDelivery.["status"]) "committed enum inspection reports persistent status after reload"
         equal [ "Pending"; "Sent"; "Delivered" ] (jsonArrayStrings reloadedDelivery.["cases"]) "committed enum retains its ordered cases after reload"
+        equal (candidateDelivery.["generatedOperations"].ToJsonString()) (reloadedDelivery.["generatedOperations"].ToJsonString())
+            "generated enum case operations survive persistence and reload"
         let reloadedRatio = describeType reloadedEngine "Ratio"
         check (isNull reloadedRatio.["validatorName"]) "unvalidated scalar remains without a validator after reload"
 

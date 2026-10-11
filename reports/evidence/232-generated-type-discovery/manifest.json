@@ -1,0 +1,792 @@
+{
+  "archive": "evidence.zip",
+  "deterministicZipMetadata": "Sorted member order, fixed 1980 timestamps, normalized ZIP metadata, and content hashes.",
+  "diagnosticSecretScan": {
+    "categoriesChecked": [
+      "credential assignments",
+      "bearer tokens",
+      "URI credentials",
+      "private-key markers",
+      "environment-secret assignments"
+    ],
+    "file": "implementation/restore-diagnostic.log",
+    "matchedValuesEmitted": false,
+    "status": "retained raw after a private pattern scan found no credential-like matches"
+  },
+  "filters": {
+    "directories": [
+      ".git",
+      ".mypy_cache",
+      ".pytest_cache",
+      ".vs",
+      "__pycache__",
+      "artifacts",
+      "bin",
+      "cache",
+      "caches",
+      "obj",
+      "runtime",
+      "scratch",
+      "temp",
+      "tmp"
+    ],
+    "privateCredentialsOrUnrelatedFilesIncluded": false,
+    "suffixes": [
+      ".a",
+      ".cache",
+      ".class",
+      ".dll",
+      ".dylib",
+      ".exe",
+      ".lib",
+      ".lock",
+      ".nupkg",
+      ".o",
+      ".obj",
+      ".pdb",
+      ".pyc",
+      ".so",
+      ".wasm"
+    ]
+  },
+  "git": {
+    "branch": "feature/type-discovery-232",
+    "gitDiffCheckExitCode": 0,
+    "head": "a97d82e284f0cef0bf222b8d61d675f541eab91e"
+  },
+  "gitDiffCheckPassed": true,
+  "groupCounts": {
+    "git-diff-check-output": 1,
+    "git-source-state": 1,
+    "implementation": 16,
+    "plan": 1,
+    "probe": 47,
+    "probe-grader": 1,
+    "source-snapshot": 3,
+    "staged-source-diff": 1,
+    "tentative-follow-up-plan": 1,
+    "unstaged-source-diff": 1,
+    "validation": 15
+  },
+  "inclusion": [
+    "plan.md; implementation receipts/logs excluding temp/tmp/cache/build outputs",
+    "next-replacement-boundary-plan.md if present, explicitly labeled tentative and not implemented",
+    "grade_probe.py plus top-level pin/audit/dispatch/termination/result receipts",
+    "probe inputs, freeze, setup, packets, launchers, attempts, traces, actor snapshots and results; runtime and scratch trees excluded",
+    "full-host validation JSON/logs excluding temp/scratch/build outputs",
+    "three final source snapshots, staged and unstaged git diffs, and full-worktree git diff --check output"
+  ],
+  "memberCount": 88,
+  "members": [
+    {
+      "bytes": 2862,
+      "group": "probe-grader",
+      "member": "grade_probe.py",
+      "phase": "final-probe-grader",
+      "sha256": "c95e8402c91c124fdde1f9b3ddb077ff7fbfa85ac418c17e7aba1c26f854ccb5",
+      "source": ".agentlang/type-discovery-232/grade_probe.py"
+    },
+    {
+      "bytes": 139,
+      "group": "implementation",
+      "member": "implementation/diff-check.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "053ca1c38f2481050a999bfa436f82aff8cbac0b4ca6b1eb6168e771ad1c17ba",
+      "source": ".agentlang/type-discovery-232/implementation/diff-check.log"
+    },
+    {
+      "bytes": 2171,
+      "group": "implementation",
+      "member": "implementation/final-receipt.md",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "bce97702f395c716bf03d5d92038b22920823751e420e02bb2958b0a65c2966c",
+      "source": ".agentlang/type-discovery-232/implementation/final-receipt.md"
+    },
+    {
+      "bytes": 411,
+      "group": "implementation",
+      "member": "implementation/flow-runtime-build-final.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "4e468f2fb5b72a9cf40b5bef96d407a087f2cbe5a279420656ca19f1ebd044a0",
+      "source": ".agentlang/type-discovery-232/implementation/flow-runtime-build-final.log"
+    },
+    {
+      "bytes": 411,
+      "group": "implementation",
+      "member": "implementation/flow-runtime-build-final2.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "a027fbfb88ca8c110ccaa13df200409c20a72d4d3cf56a84283fa9f16d2b584a",
+      "source": ".agentlang/type-discovery-232/implementation/flow-runtime-build-final2.log"
+    },
+    {
+      "bytes": 97209,
+      "group": "implementation",
+      "member": "implementation/flow-runtime-build-no-restore.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "9da88d1d12ec2dc99228b22d6906674f4111297a12aa29c64dc9498640c3a4aa",
+      "source": ".agentlang/type-discovery-232/implementation/flow-runtime-build-no-restore.log"
+    },
+    {
+      "bytes": 14929,
+      "group": "implementation",
+      "member": "implementation/flow-runtime-build-retry.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "55bb018583bad3c3c0f82b0d6c843639aa2bf62d5aff17bfa107dd503492a47f",
+      "source": ".agentlang/type-discovery-232/implementation/flow-runtime-build-retry.log"
+    },
+    {
+      "bytes": 822,
+      "group": "implementation",
+      "member": "implementation/flow-runtime-build-typed.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "17dcf641287d0475fbed7a9288089574f115afc134df4128e99fc7aa4918f96b",
+      "source": ".agentlang/type-discovery-232/implementation/flow-runtime-build-typed.log"
+    },
+    {
+      "bytes": 57,
+      "group": "implementation",
+      "member": "implementation/flow-runtime-release-final.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "1f308d4592758031aa9106e320cd289909bffd621726394cfc804a599e3f92ee",
+      "source": ".agentlang/type-discovery-232/implementation/flow-runtime-release-final.log"
+    },
+    {
+      "bytes": 57,
+      "group": "implementation",
+      "member": "implementation/flow-runtime-release-no-restore-retry.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "1f308d4592758031aa9106e320cd289909bffd621726394cfc804a599e3f92ee",
+      "source": ".agentlang/type-discovery-232/implementation/flow-runtime-release-no-restore-retry.log"
+    },
+    {
+      "bytes": 57,
+      "group": "implementation",
+      "member": "implementation/flow-runtime-release-no-restore.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "1f308d4592758031aa9106e320cd289909bffd621726394cfc804a599e3f92ee",
+      "source": ".agentlang/type-discovery-232/implementation/flow-runtime-release-no-restore.log"
+    },
+    {
+      "bytes": 57,
+      "group": "implementation",
+      "member": "implementation/flow-runtime-release.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "1f308d4592758031aa9106e320cd289909bffd621726394cfc804a599e3f92ee",
+      "source": ".agentlang/type-discovery-232/implementation/flow-runtime-release.log"
+    },
+    {
+      "bytes": 655,
+      "group": "implementation",
+      "member": "implementation/flow-runtime-run-no-build.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "178e543565b49f43ad4fc1f863c24d55ec732f414b9850f4d3c2e4edc557651a",
+      "source": ".agentlang/type-discovery-232/implementation/flow-runtime-run-no-build.log"
+    },
+    {
+      "bytes": 56,
+      "group": "implementation",
+      "member": "implementation/flow-runtime-run-workspace-temp-final.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "1294b0d3fbeb6c6d03eff151c6416d907914b763817c24efb4e849b7a52df62f",
+      "source": ".agentlang/type-discovery-232/implementation/flow-runtime-run-workspace-temp-final.log"
+    },
+    {
+      "bytes": 616,
+      "group": "implementation",
+      "member": "implementation/flow-runtime-run-workspace-temp.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "70fe30929c82a50cbff6e0cc008d8a7c109113ee5d6cbc4d4f8deb8e98ae4d4d",
+      "source": ".agentlang/type-discovery-232/implementation/flow-runtime-run-workspace-temp.log"
+    },
+    {
+      "bytes": 1550394,
+      "group": "implementation",
+      "member": "implementation/restore-diagnostic.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "c78f5928b6fd6a749c613a3cf9e51470f8c86dc20d0fb5734def2dc7b70a1e11",
+      "source": ".agentlang/type-discovery-232/implementation/restore-diagnostic.log"
+    },
+    {
+      "bytes": 492,
+      "group": "implementation",
+      "member": "implementation/restore-normal.log",
+      "phase": "implementation-receipts-and-logs",
+      "sha256": "4256b9360d3922691b8677b31da67dbdd725a646ae7444aba8a170aa64f3577a",
+      "source": ".agentlang/type-discovery-232/implementation/restore-normal.log"
+    },
+    {
+      "bytes": 4693,
+      "group": "tentative-follow-up-plan",
+      "member": "next-replacement-boundary-plan.md",
+      "phase": "tentative-not-implemented",
+      "sha256": "f380c7da5493a4beae11caa90ec7c889bcb5d86c1fd39213a97813031b42499b",
+      "source": ".agentlang/type-discovery-232/next-replacement-boundary-plan.md"
+    },
+    {
+      "bytes": 5998,
+      "group": "plan",
+      "member": "plan.md",
+      "phase": "implementation-plan",
+      "sha256": "27149f36d9a1861a2e2ca931d9df1c98fecabbd61b4d6d6f8fad1e294ed54f2e",
+      "source": ".agentlang/type-discovery-232/plan.md"
+    },
+    {
+      "bytes": 1134,
+      "group": "probe",
+      "member": "probe/PLAN.md",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "c1db2051d8e069efc2b4d73f23e10b5858781505a119c9f6c4139d885959394a",
+      "source": ".agentlang/type-discovery-232/probe/PLAN.md"
+    },
+    {
+      "bytes": 134,
+      "group": "probe",
+      "member": "probe/actors/current/.agentlang/store/CURRENT",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "e5ec5023378c4d301c28e50736d3061bf731bf1ea985b2a6a2556bdac2017d57",
+      "source": ".agentlang/type-discovery-232/probe/actors/current/.agentlang/store/CURRENT"
+    },
+    {
+      "bytes": 380,
+      "group": "probe",
+      "member": "probe/actors/current/.agentlang/store/manifests/27f616aa855c34ab69f29677e139943af1aa8e61e76ebd08329f5a22591733c9.json",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "27f616aa855c34ab69f29677e139943af1aa8e61e76ebd08329f5a22591733c9",
+      "source": ".agentlang/type-discovery-232/probe/actors/current/.agentlang/store/manifests/27f616aa855c34ab69f29677e139943af1aa8e61e76ebd08329f5a22591733c9.json"
+    },
+    {
+      "bytes": 90,
+      "group": "probe",
+      "member": "probe/actors/current/.agentlang/store/objects/0ff0aca35f852b65e2430ee3179f8f659c160d9a35ed08cb30dd42a7ccf70586.agent",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "0ff0aca35f852b65e2430ee3179f8f659c160d9a35ed08cb30dd42a7ccf70586",
+      "source": ".agentlang/type-discovery-232/probe/actors/current/.agentlang/store/objects/0ff0aca35f852b65e2430ee3179f8f659c160d9a35ed08cb30dd42a7ccf70586.agent"
+    },
+    {
+      "bytes": 68,
+      "group": "probe",
+      "member": "probe/actors/current/.agentlang/store/objects/d1fb7190b2d3c75cbe07d77231e04bfc88abd1201740eb8d842dfe78969b3c97.agent",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "d1fb7190b2d3c75cbe07d77231e04bfc88abd1201740eb8d842dfe78969b3c97",
+      "source": ".agentlang/type-discovery-232/probe/actors/current/.agentlang/store/objects/d1fb7190b2d3c75cbe07d77231e04bfc88abd1201740eb8d842dfe78969b3c97.agent"
+    },
+    {
+      "bytes": 90,
+      "group": "probe",
+      "member": "probe/actors/current/dictionary.agent",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "0ff0aca35f852b65e2430ee3179f8f659c160d9a35ed08cb30dd42a7ccf70586",
+      "source": ".agentlang/type-discovery-232/probe/actors/current/dictionary.agent"
+    },
+    {
+      "bytes": 134,
+      "group": "probe",
+      "member": "probe/actors/previous/.agentlang/store/CURRENT",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "e5ec5023378c4d301c28e50736d3061bf731bf1ea985b2a6a2556bdac2017d57",
+      "source": ".agentlang/type-discovery-232/probe/actors/previous/.agentlang/store/CURRENT"
+    },
+    {
+      "bytes": 380,
+      "group": "probe",
+      "member": "probe/actors/previous/.agentlang/store/manifests/27f616aa855c34ab69f29677e139943af1aa8e61e76ebd08329f5a22591733c9.json",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "27f616aa855c34ab69f29677e139943af1aa8e61e76ebd08329f5a22591733c9",
+      "source": ".agentlang/type-discovery-232/probe/actors/previous/.agentlang/store/manifests/27f616aa855c34ab69f29677e139943af1aa8e61e76ebd08329f5a22591733c9.json"
+    },
+    {
+      "bytes": 90,
+      "group": "probe",
+      "member": "probe/actors/previous/.agentlang/store/objects/0ff0aca35f852b65e2430ee3179f8f659c160d9a35ed08cb30dd42a7ccf70586.agent",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "0ff0aca35f852b65e2430ee3179f8f659c160d9a35ed08cb30dd42a7ccf70586",
+      "source": ".agentlang/type-discovery-232/probe/actors/previous/.agentlang/store/objects/0ff0aca35f852b65e2430ee3179f8f659c160d9a35ed08cb30dd42a7ccf70586.agent"
+    },
+    {
+      "bytes": 68,
+      "group": "probe",
+      "member": "probe/actors/previous/.agentlang/store/objects/d1fb7190b2d3c75cbe07d77231e04bfc88abd1201740eb8d842dfe78969b3c97.agent",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "d1fb7190b2d3c75cbe07d77231e04bfc88abd1201740eb8d842dfe78969b3c97",
+      "source": ".agentlang/type-discovery-232/probe/actors/previous/.agentlang/store/objects/d1fb7190b2d3c75cbe07d77231e04bfc88abd1201740eb8d842dfe78969b3c97.agent"
+    },
+    {
+      "bytes": 90,
+      "group": "probe",
+      "member": "probe/actors/previous/dictionary.agent",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "0ff0aca35f852b65e2430ee3179f8f659c160d9a35ed08cb30dd42a7ccf70586",
+      "source": ".agentlang/type-discovery-232/probe/actors/previous/dictionary.agent"
+    },
+    {
+      "bytes": 4975,
+      "group": "probe",
+      "member": "probe/attempts/01-invalid-define-field/prepare.py",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "0683fde0765173a8ec8ae24f319760431c6d7a808ade2596451fe0afafa9bfcd",
+      "source": ".agentlang/type-discovery-232/probe/attempts/01-invalid-define-field/prepare.py"
+    },
+    {
+      "bytes": 219,
+      "group": "probe",
+      "member": "probe/attempts/01-invalid-define-field/seed-requests.jsonl",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "54314a1e0677eb659edf8aa48b4ddc7ab43dfcd27be3a816bc177f69f3cb6b79",
+      "source": ".agentlang/type-discovery-232/probe/attempts/01-invalid-define-field/seed-requests.jsonl"
+    },
+    {
+      "bytes": 1164,
+      "group": "probe",
+      "member": "probe/attempts/01-invalid-define-field/seed-responses.jsonl",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "283fe077cd50fef690d2f703143b7cc88975259ad99124a251e2d9427855b12a",
+      "source": ".agentlang/type-discovery-232/probe/attempts/01-invalid-define-field/seed-responses.jsonl"
+    },
+    {
+      "bytes": 0,
+      "group": "probe",
+      "member": "probe/attempts/01-invalid-define-field/seed-stderr.txt",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/type-discovery-232/probe/attempts/01-invalid-define-field/seed-stderr.txt"
+    },
+    {
+      "bytes": 5025,
+      "group": "probe",
+      "member": "probe/attempts/02-record-field-syntax/prepare.py",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "6f8a9d26159cb3a37b13343f7b6fe35bab8b68c4a4c6d651168a08b4ab759390",
+      "source": ".agentlang/type-discovery-232/probe/attempts/02-record-field-syntax/prepare.py"
+    },
+    {
+      "bytes": 221,
+      "group": "probe",
+      "member": "probe/attempts/02-record-field-syntax/seed-requests.jsonl",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "dad3ad54080846dc7cf2f5dccabaf7cc12db8ae0cd13a235e98b59cf28a95449",
+      "source": ".agentlang/type-discovery-232/probe/attempts/02-record-field-syntax/seed-requests.jsonl"
+    },
+    {
+      "bytes": 1035,
+      "group": "probe",
+      "member": "probe/attempts/02-record-field-syntax/seed-responses.jsonl",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "8ebb2b87a3c40913ee031ef38f180ceb42c5d4d17651ed20783ad4958c8bcf97",
+      "source": ".agentlang/type-discovery-232/probe/attempts/02-record-field-syntax/seed-responses.jsonl"
+    },
+    {
+      "bytes": 0,
+      "group": "probe",
+      "member": "probe/attempts/02-record-field-syntax/seed-stderr.txt",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/type-discovery-232/probe/attempts/02-record-field-syntax/seed-stderr.txt"
+    },
+    {
+      "bytes": 92,
+      "group": "probe",
+      "member": "probe/current-termination.txt",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "a518d8cda34a45f6fd1f8f51322c3dff41fce1f717cff1028455841b7edc7cd6",
+      "source": ".agentlang/type-discovery-232/probe/current-termination.txt"
+    },
+    {
+      "bytes": 485,
+      "group": "probe",
+      "member": "probe/dispatch.json",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "dcf85fd5139102eca689cb9518de8bbb1bd481d079e712c2662e6cfb3dcbcbca",
+      "source": ".agentlang/type-discovery-232/probe/dispatch.json"
+    },
+    {
+      "bytes": 4671,
+      "group": "probe",
+      "member": "probe/freeze.json",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "ea17249565bea3c0f7edee66c0e364186716b534a840d1e9cec1e416450cf50c",
+      "source": ".agentlang/type-discovery-232/probe/freeze.json"
+    },
+    {
+      "bytes": 828,
+      "group": "probe",
+      "member": "probe/launchers/current.ps1",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "a8eeb940d6db4f4100b2dd7776d572cb58f1157a840cf91e73ff2ee4f5e7ee6e",
+      "source": ".agentlang/type-discovery-232/probe/launchers/current.ps1"
+    },
+    {
+      "bytes": 832,
+      "group": "probe",
+      "member": "probe/launchers/previous.ps1",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "58c2a44bddc867fc78978a82a5842140ff4ca8f2cdacccd5ec2301969df90e22",
+      "source": ".agentlang/type-discovery-232/probe/launchers/previous.ps1"
+    },
+    {
+      "bytes": 1351,
+      "group": "probe",
+      "member": "probe/packets/current.md",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "a682f9da895ee0ce59a9ba9a05979923b47bec185a0a22e33354c6ec89a6dfd6",
+      "source": ".agentlang/type-discovery-232/probe/packets/current.md"
+    },
+    {
+      "bytes": 1352,
+      "group": "probe",
+      "member": "probe/packets/previous.md",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "4a169fc290e2016848e22a0b9cf5cddee431af1d7677b219d150990659b533f8",
+      "source": ".agentlang/type-discovery-232/probe/packets/previous.md"
+    },
+    {
+      "bytes": 269,
+      "group": "probe",
+      "member": "probe/preflight-current.requests.jsonl",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "36a9bfc5e1a381f30004454d5ecc183828d8edcb2721467361f1f1683c6b0e48",
+      "source": ".agentlang/type-discovery-232/probe/preflight-current.requests.jsonl"
+    },
+    {
+      "bytes": 1610,
+      "group": "probe",
+      "member": "probe/preflight-current.responses.jsonl",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "16ea10f7e5db4c0bdc9bfdde6225b37d5d920659a33ba360153e83d7d86514c6",
+      "source": ".agentlang/type-discovery-232/probe/preflight-current.responses.jsonl"
+    },
+    {
+      "bytes": 0,
+      "group": "probe",
+      "member": "probe/preflight-current.stderr.txt",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/type-discovery-232/probe/preflight-current.stderr.txt"
+    },
+    {
+      "bytes": 269,
+      "group": "probe",
+      "member": "probe/preflight-previous.requests.jsonl",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "36a9bfc5e1a381f30004454d5ecc183828d8edcb2721467361f1f1683c6b0e48",
+      "source": ".agentlang/type-discovery-232/probe/preflight-previous.requests.jsonl"
+    },
+    {
+      "bytes": 800,
+      "group": "probe",
+      "member": "probe/preflight-previous.responses.jsonl",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "ee8a9835d521642977ef11ac8fe0863462536c9ad23461d0a9e74ac6260a2509",
+      "source": ".agentlang/type-discovery-232/probe/preflight-previous.responses.jsonl"
+    },
+    {
+      "bytes": 0,
+      "group": "probe",
+      "member": "probe/preflight-previous.stderr.txt",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/type-discovery-232/probe/preflight-previous.stderr.txt"
+    },
+    {
+      "bytes": 642,
+      "group": "probe",
+      "member": "probe/preflight.json",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "221a95f9548e7cc59c2ae5f3dac3ea4e504640b5c4a1fff1c9794b85542b585c",
+      "source": ".agentlang/type-discovery-232/probe/preflight.json"
+    },
+    {
+      "bytes": 5037,
+      "group": "probe",
+      "member": "probe/prepare.py",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "a2d6179138a55df234dbca8ba2c4ac0a63a23800ee62d0ca6b2b3926777df6cb",
+      "source": ".agentlang/type-discovery-232/probe/prepare.py"
+    },
+    {
+      "bytes": 92,
+      "group": "probe",
+      "member": "probe/previous-termination.txt",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "e32b92545bf6f57666338dab8a3d23165d26f5add39dcb23516d1d3fee7bc56a",
+      "source": ".agentlang/type-discovery-232/probe/previous-termination.txt"
+    },
+    {
+      "bytes": 10174,
+      "group": "probe",
+      "member": "probe/results.json",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "3a97c2888b66945cdffe8551e9c7b60df527f27f654b3939ec5acdfd2a91add0",
+      "source": ".agentlang/type-discovery-232/probe/results.json"
+    },
+    {
+      "bytes": 233,
+      "group": "probe",
+      "member": "probe/seed-requests.jsonl",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "316e6d71d979dd59c34c932570d18afaae073ce3df98762cd7e53f163819e84d",
+      "source": ".agentlang/type-discovery-232/probe/seed-requests.jsonl"
+    },
+    {
+      "bytes": 710,
+      "group": "probe",
+      "member": "probe/seed-responses.jsonl",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "bde058c593d3de355032c497f9126f7fdeb1b35c2a00cb871308f78e830f9757",
+      "source": ".agentlang/type-discovery-232/probe/seed-responses.jsonl"
+    },
+    {
+      "bytes": 0,
+      "group": "probe",
+      "member": "probe/seed-stderr.txt",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": ".agentlang/type-discovery-232/probe/seed-stderr.txt"
+    },
+    {
+      "bytes": 134,
+      "group": "probe",
+      "member": "probe/seed/.agentlang/store/CURRENT",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "e5ec5023378c4d301c28e50736d3061bf731bf1ea985b2a6a2556bdac2017d57",
+      "source": ".agentlang/type-discovery-232/probe/seed/.agentlang/store/CURRENT"
+    },
+    {
+      "bytes": 380,
+      "group": "probe",
+      "member": "probe/seed/.agentlang/store/manifests/27f616aa855c34ab69f29677e139943af1aa8e61e76ebd08329f5a22591733c9.json",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "27f616aa855c34ab69f29677e139943af1aa8e61e76ebd08329f5a22591733c9",
+      "source": ".agentlang/type-discovery-232/probe/seed/.agentlang/store/manifests/27f616aa855c34ab69f29677e139943af1aa8e61e76ebd08329f5a22591733c9.json"
+    },
+    {
+      "bytes": 90,
+      "group": "probe",
+      "member": "probe/seed/.agentlang/store/objects/0ff0aca35f852b65e2430ee3179f8f659c160d9a35ed08cb30dd42a7ccf70586.agent",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "0ff0aca35f852b65e2430ee3179f8f659c160d9a35ed08cb30dd42a7ccf70586",
+      "source": ".agentlang/type-discovery-232/probe/seed/.agentlang/store/objects/0ff0aca35f852b65e2430ee3179f8f659c160d9a35ed08cb30dd42a7ccf70586.agent"
+    },
+    {
+      "bytes": 68,
+      "group": "probe",
+      "member": "probe/seed/.agentlang/store/objects/d1fb7190b2d3c75cbe07d77231e04bfc88abd1201740eb8d842dfe78969b3c97.agent",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "d1fb7190b2d3c75cbe07d77231e04bfc88abd1201740eb8d842dfe78969b3c97",
+      "source": ".agentlang/type-discovery-232/probe/seed/.agentlang/store/objects/d1fb7190b2d3c75cbe07d77231e04bfc88abd1201740eb8d842dfe78969b3c97.agent"
+    },
+    {
+      "bytes": 90,
+      "group": "probe",
+      "member": "probe/seed/dictionary.agent",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "0ff0aca35f852b65e2430ee3179f8f659c160d9a35ed08cb30dd42a7ccf70586",
+      "source": ".agentlang/type-discovery-232/probe/seed/dictionary.agent"
+    },
+    {
+      "bytes": 4345,
+      "group": "probe",
+      "member": "probe/setup.json",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "bbf7bac7bb6424eea5dd068ab1071ed6e1a6c16c5aff8763d01a65c338a55192",
+      "source": ".agentlang/type-discovery-232/probe/setup.json"
+    },
+    {
+      "bytes": 25264,
+      "group": "probe",
+      "member": "probe/traces/current.jsonl",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "f5a8901aec2fb43343923bdd7d8f79d129550b6b6b63304ea9de959c3b0f9bfc",
+      "source": ".agentlang/type-discovery-232/probe/traces/current.jsonl"
+    },
+    {
+      "bytes": 61559,
+      "group": "probe",
+      "member": "probe/traces/previous.jsonl",
+      "phase": "probe-inputs-controls-traces-and-results",
+      "sha256": "08b61c3f76edb4ae46f4dcfe15e424aef4606b9254e22380fe632035a7d1a044",
+      "source": ".agentlang/type-discovery-232/probe/traces/previous.jsonl"
+    },
+    {
+      "bytes": 0,
+      "group": "git-diff-check-output",
+      "member": "source-diff/git-diff-check.txt",
+      "phase": "final-source-diff-and-check",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "generated-from-git:git-diff-check-output"
+    },
+    {
+      "bytes": 128,
+      "group": "git-source-state",
+      "member": "source-diff/git-state.json",
+      "phase": "final-source-diff-and-check",
+      "sha256": "18604bca2c8c67bf7e27ac2dc531dceda500719779417c9dbca967c1520c4c33",
+      "source": "generated-from-git:git-source-state"
+    },
+    {
+      "bytes": 0,
+      "group": "staged-source-diff",
+      "member": "source-diff/staged.patch",
+      "phase": "final-source-diff-and-check",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "generated-from-git:staged-source-diff"
+    },
+    {
+      "bytes": 23114,
+      "group": "unstaged-source-diff",
+      "member": "source-diff/unstaged.patch",
+      "phase": "final-source-diff-and-check",
+      "sha256": "01369fadb4d786b0a135ab1e5c784deea016809ecffa47a3539a32dc57c2e8fa",
+      "source": "generated-from-git:unstaged-source-diff"
+    },
+    {
+      "bytes": 50295,
+      "group": "source-snapshot",
+      "member": "source-snapshots/src/AgentLang.Core/AuthoringHelp.fs",
+      "phase": "final-working-tree-source",
+      "sha256": "db317373a47a05273ea6af5b734a91e0773d8fca0519bd8b4f4e05726d54ae11",
+      "source": "src/AgentLang.Core/AuthoringHelp.fs"
+    },
+    {
+      "bytes": 550948,
+      "group": "source-snapshot",
+      "member": "source-snapshots/src/AgentLang.Core/Runtime.fs",
+      "phase": "final-working-tree-source",
+      "sha256": "de5b646265ff1bd9b28ca5012f9317fe757f3f721c609df62b5be0f638ff468e",
+      "source": "src/AgentLang.Core/Runtime.fs"
+    },
+    {
+      "bytes": 579618,
+      "group": "source-snapshot",
+      "member": "source-snapshots/tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "phase": "final-working-tree-source",
+      "sha256": "d73c25ead2aa163fb00d63614ac5b1b6404fad16025c33b659eedeb160e25c6a",
+      "source": "tests/AgentLang.Flow.Runtime.Tests/Program.fs"
+    },
+    {
+      "bytes": 15492635,
+      "group": "validation",
+      "member": "validation/full-host.business-policy-preflight.json",
+      "phase": "full-host-validation",
+      "sha256": "43719db4ae8f2d58cefb6e69a61ea2ad447226c7e26ac002253144c53f028dcf",
+      "source": ".agentlang/type-discovery-232/validation/full-host.business-policy-preflight.json"
+    },
+    {
+      "bytes": 175112,
+      "group": "validation",
+      "member": "validation/full-host.early-agent-negative.json",
+      "phase": "full-host-validation",
+      "sha256": "79193245d09197d7d6dfb976efbeadccaedbfd9373fcc5df9f627b65f13b8b08",
+      "source": ".agentlang/type-discovery-232/validation/full-host.early-agent-negative.json"
+    },
+    {
+      "bytes": 230835,
+      "group": "validation",
+      "member": "validation/full-host.flow-matched-fixtures.json",
+      "phase": "full-host-validation",
+      "sha256": "a61b7589df1091c2fedaea4122b40389562657d4e9f1d32398e72f7951e3393a",
+      "source": ".agentlang/type-discovery-232/validation/full-host.flow-matched-fixtures.json"
+    },
+    {
+      "bytes": 30328,
+      "group": "validation",
+      "member": "validation/full-host.json",
+      "phase": "full-host-validation",
+      "sha256": "2f6a7ddd9cc33e0d91f7ab14a351b5c8e59030c0d828398cec1d710e549c872c",
+      "source": ".agentlang/type-discovery-232/validation/full-host.json"
+    },
+    {
+      "bytes": 17422,
+      "group": "validation",
+      "member": "validation/full-host.log",
+      "phase": "full-host-validation",
+      "sha256": "c9a1b0bfb9cfdbf7b038ffc539d7b9014c900d17554ae87faaaa3fb3e2630045",
+      "source": ".agentlang/type-discovery-232/validation/full-host.log"
+    },
+    {
+      "bytes": 100201,
+      "group": "validation",
+      "member": "validation/full-host.matched-fixtures.json",
+      "phase": "full-host-validation",
+      "sha256": "4abcf63c3e89abca3c74432fa48ad5bd23df63908d255bdb66ef74c799f63b9a",
+      "source": ".agentlang/type-discovery-232/validation/full-host.matched-fixtures.json"
+    },
+    {
+      "bytes": 341973,
+      "group": "validation",
+      "member": "validation/full-host.matched-snapshots.json",
+      "phase": "full-host-validation",
+      "sha256": "43cc1de8851b0bc5705a2695224b60b5a797071a20a2366d0d5da2279cfa5eee",
+      "source": ".agentlang/type-discovery-232/validation/full-host.matched-snapshots.json"
+    },
+    {
+      "bytes": 3186,
+      "group": "validation",
+      "member": "validation/full-host.parser-limits.json",
+      "phase": "full-host-validation",
+      "sha256": "b77ee7da2bab8c3d69444ea654ed27353cb75600a27fb024bc7c232fd4930068",
+      "source": ".agentlang/type-discovery-232/validation/full-host.parser-limits.json"
+    },
+    {
+      "bytes": 125230,
+      "group": "validation",
+      "member": "validation/full-host.projection.json",
+      "phase": "full-host-validation",
+      "sha256": "5c56503db8280b9da80c7804b08745c079de8e8001851dee419bf9e912cc136e",
+      "source": ".agentlang/type-discovery-232/validation/full-host.projection.json"
+    },
+    {
+      "bytes": 1039706,
+      "group": "validation",
+      "member": "validation/full-host.renewal-acceptance-gate.json",
+      "phase": "full-host-validation",
+      "sha256": "37220e1a15699c8d083bd75c49354820b4727320d6b97015f598b4309b9e1d34",
+      "source": ".agentlang/type-discovery-232/validation/full-host.renewal-acceptance-gate.json"
+    },
+    {
+      "bytes": 311190,
+      "group": "validation",
+      "member": "validation/full-host.renewal-replay.json",
+      "phase": "full-host-validation",
+      "sha256": "9011be22878885fe9263b83f03ec05677f3f2704f7bb69b5bca725b24149c4d5",
+      "source": ".agentlang/type-discovery-232/validation/full-host.renewal-replay.json"
+    },
+    {
+      "bytes": 25382,
+      "group": "validation",
+      "member": "validation/full-host.subagent-host-v2.json",
+      "phase": "full-host-validation",
+      "sha256": "be066db8d19f1f48259384a6cec7086d494f4b90e453eb7963c059115bac1d3b",
+      "source": ".agentlang/type-discovery-232/validation/full-host.subagent-host-v2.json"
+    },
+    {
+      "bytes": 350254,
+      "group": "validation",
+      "member": "validation/full-host.subagent-host.json",
+      "phase": "full-host-validation",
+      "sha256": "86d28c7d1d283f73f61e7b66b289be2d419cbb7f68ae4641fab23b076d0b5acc",
+      "source": ".agentlang/type-discovery-232/validation/full-host.subagent-host.json"
+    },
+    {
+      "bytes": 1924,
+      "group": "validation",
+      "member": "validation/full.json",
+      "phase": "full-host-validation",
+      "sha256": "67c86724de4fd739080f40336617362f6804ec61285a533b100d03dc801d6393",
+      "source": ".agentlang/type-discovery-232/validation/full.json"
+    },
+    {
+      "bytes": 1014,
+      "group": "validation",
+      "member": "validation/full.log",
+      "phase": "full-host-validation",
+      "sha256": "8150b9554b2ce1052449634744de3e3a802fe30ee4221ac5f362b714ca960db0",
+      "source": ".agentlang/type-discovery-232/validation/full.log"
+    }
+  ],
+  "reproducibilityLimits": {
+    "launcherScratch": "Launchers are included and recreate per-arm TEMP/TMP directories, but scratch contents are excluded. This archive preserves evidence, not the exact prior scratch environment.",
+    "preparePy": "probe/prepare.py and all input/setup pins are included, but its copied private runtime binaries are excluded; replay requires the recorded runtime/source artifacts to be available and setup pin hashes to match.",
+    "prepareVersusFinalLaunchers": "The final launcher files include scratch-environment setup not emitted by prepare.py's launcher template; prepare.py alone does not reproduce the final launcher bytes. Both the final launchers and preparation templates are archived."
+  },
+  "schema": "type-discovery-232-evidence-manifest-v1"
+}

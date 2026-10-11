@@ -5845,6 +5845,64 @@ module Runtime =
         let describeTypeJson typeName =
             if not ((knownTypes data).Contains typeName) then
                 error "DISCOVERY_UNKNOWN_TYPE" $"Type source '{typeName}' is not defined." (Some typeName) None [ "declared record, scalar, or enum type" ] []
+            let snapshot = currentSnapshot ()
+            let generatedEntries =
+                let operationOrder (entry: WordEntry) =
+                    match entry.Builtin with
+                    | Some(RecordConstructor owner) when owner = typeName -> Some(0, 0)
+                    | Some(RecordAccessor(owner, fieldName)) when owner = typeName ->
+                        data.Records.TryFind owner
+                        |> Option.bind (fun record -> record.Definition.Fields |> List.tryFindIndex (fun field -> field.Name = fieldName))
+                        |> Option.map (fun fieldIndex -> 1, fieldIndex)
+                    | Some(ScalarConstructor owner) when owner = typeName -> Some(0, 0)
+                    | Some(ScalarAccessor owner) when owner = typeName -> Some(1, 0)
+                    | Some(EnumCaseConstructor(owner, caseName)) when owner = typeName ->
+                        data.Enums.TryFind owner
+                        |> Option.bind (fun enumDefinition -> enumDefinition.Definition.Cases |> List.tryFindIndex ((=) caseName))
+                        |> Option.map (fun caseIndex -> 0, caseIndex)
+                    | _ -> None
+                snapshot.Words
+                |> Map.toList
+                |> List.choose (fun (_, entry) -> operationOrder entry |> Option.map (fun order -> order, entry))
+                |> List.sortBy (fun ((group, index), entry) -> group, index, entry.Definition.Name)
+            let generatedOperations = JsonArray()
+            for (_, entry) in generatedEntries do
+                let definition = entry.Definition
+                let operation = JsonObject()
+                operation["name"] <- jstr definition.Name
+                operation["inputs"] <- jsonNode (definition.Inputs |> List.map Types.format)
+                operation["outputs"] <- jsonNode (definition.Outputs |> List.map Types.format)
+                operation["effects"] <- jsonNode (definition.Effects |> Set.toList)
+                let flowReference, flowReferenceUnavailableReason = FlowParser.describeCallReference definition.Name
+                operation["flowReferenceSyntaxVersion"] <- jint 2
+                operation["flowReference"] <- flowReference |> Option.map jstr |> Option.defaultValue null
+                operation["flowReferenceUnavailableReason"] <- flowReferenceUnavailableReason |> Option.map jstr |> Option.defaultValue null
+                match entry.Builtin with
+                | Some(RecordConstructor recordName) ->
+                    operation["kind"] <- jstr "record-constructor"
+                    let record =
+                        data.Records.TryFind recordName
+                        |> Option.defaultWith (fun () -> error "DISCOVERY_GENERATED_TYPE_MISSING" $"Generated constructor '{definition.Name}' has no record schema." (Some definition.Name) None [ "record schema" ] [ recordName ])
+                    if record.Definition.Fields.Length <> definition.Inputs.Length then
+                        error "DISCOVERY_GENERATED_SIGNATURE_MISMATCH" $"Generated constructor '{definition.Name}' does not match its record fields." (Some definition.Name) None [ string record.Definition.Fields.Length + " inputs" ] [ string definition.Inputs.Length + " inputs" ]
+                    let parameters = JsonArray()
+                    List.zip record.Definition.Fields definition.Inputs
+                    |> List.iter (fun (field, inputType) ->
+                        let parameter = JsonObject()
+                        parameter["name"] <- jstr field.Name
+                        parameter["type"] <- jstr (Types.format inputType)
+                        parameters.Add(parameter))
+                    operation["parameters"] <- parameters
+                | Some(RecordAccessor(_, fieldName)) ->
+                    operation["kind"] <- jstr "record-accessor"
+                    operation["field"] <- jstr fieldName
+                | Some(ScalarConstructor _) -> operation["kind"] <- jstr "scalar-constructor"
+                | Some(ScalarAccessor _) -> operation["kind"] <- jstr "scalar-accessor"
+                | Some(EnumCaseConstructor(_, caseName)) ->
+                    operation["kind"] <- jstr "enum-case-constructor"
+                    operation["case"] <- jstr caseName
+                | Some(BuiltinOp _) | None -> ()
+                generatedOperations.Add(operation)
             let typeStatus =
                 match data.Records.TryFind typeName, data.Scalars.TryFind typeName, data.Enums.TryFind typeName with
                 | Some item, _, _ -> Some item.Status
@@ -5881,6 +5939,7 @@ module Runtime =
             payload["sourceHash"] <- jstr exactSource.Reference.Hash
             payload["sourceFormat"] <- sourceFormatJson authored.SourceFormat
             payload["validatorTarget"] <- authored.ValidatorTarget |> Option.map storedCallTargetJson |> Option.defaultValue null
+            payload["generatedOperations"] <- generatedOperations
             match data.Records.TryFind typeName, data.Scalars.TryFind typeName, data.Enums.TryFind typeName with
             | Some record, _, _ ->
                 payload["typeKind"] <- jstr "record"
