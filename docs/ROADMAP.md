@@ -669,6 +669,12 @@ passes all nine behavior checks, but both native policies miss the rejection
 gate in every repeat while F# qualifies in all three. Native process memory is
 lower in this fixture; copy counters are unmeasured. Preserve both policies and
 investigate dispatch/polling/admission timing before another performance ranking.
+The [diagnostic slice](../reports/209-mailbox-diagnostics.md) passes eleven fresh
+smoke cases with rejection reasons and independently checked logical copy counts.
+KEEP avoids suspension-boundary copies but construction copies remain substantial.
+The observed overload rejection categories do not establish the cause of the
+earlier sixteen-slot confirmation result. Preserve both policies; a bounded
+driver-servicing experiment precedes any new performance ranking.
 Keep both arena policies available; return to the primary maintenance-efficacy
 comparison below before expanding performance infrastructure. A general actor
 framework is not a prerequisite for either experiment.

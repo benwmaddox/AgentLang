@@ -98,6 +98,16 @@ integers; raw samples permit an independent nearest-rank percentile calculation.
 Native may add native runtime/copy stats. F# may add GC counts/allocation bytes.
 Keep output and timing instrumentation outside the handler implementation.
 
+Current native diagnostics report `rejectionReasons`: active/unavailable mailbox,
+runtime busy, scratch/retained/text capacity, and missed deadline. Their sum must
+equal rejected, and missed deadline must equal missed arrivals. `owningStats`
+snapshots existing runtime counters after measured drain, before disposal. Its
+scope includes the sixteen fresh mailbox initializations and measurement/drain,
+excluding warmup. Publication includes begin publication; input imports include
+resume root imports. These overlapping counters must not be added as independent
+traffic, and they describe logical copied bytes rather than measured hardware
+bandwidth. They do not change the established admission or completion policy.
+
 ## Measurement contract
 
 Use a small Windows Job Object launcher, create children suspended, apply an

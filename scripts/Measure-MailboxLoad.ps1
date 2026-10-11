@@ -552,6 +552,62 @@ int wmain(int argc, wchar_t **argv) {
     Save-RunReport
 }
 
+function Validate-NativeDiagnostics($Result, [string]$Policy, [int]$PayloadBytes) {
+    $reasons = Get-ExactField $Result 'rejectionReasons' 'native diagnostics'
+    $reasonFields = @('activeMailbox', 'unavailableMailbox', 'runtimeBusy', 'scratchCapacity', 'retainedCapacity', 'textCapacity', 'missedDeadline')
+    $reasonValues = [ordered]@{}
+    $reasonTotal = 0L
+    foreach ($field in $reasonFields) {
+        $reasonValues[$field] = Require-Integer (Get-ExactField $reasons $field 'native rejection reasons') "rejectionReasons.$field"
+        $reasonTotal += $reasonValues[$field]
+    }
+    if ($reasonTotal -ne $Result.rejected -or $reasonValues.missedDeadline -ne $Result.missedArrivals) {
+        throw 'Native rejection reasons do not reconcile with rejected/missed arrivals.'
+    }
+    $stats = Get-ExactField $Result 'owningStats' 'native diagnostics'
+    if ((Require-Integer (Get-ExactField $stats 'schemaVersion' 'owning stats') 'owningStats.schemaVersion') -ne 1 -or
+        (Get-ExactField $stats 'scope' 'owning stats') -cne 'post-warmup runtime initialization plus measured phase and drain') {
+        throw 'Unexpected native owning stats contract.'
+    }
+    $statValues = [ordered]@{}
+    foreach ($field in @('handlerInvocations', 'handlerFailures', 'returnedOutputDescriptors', 'inputImportBytes', 'publicationCopyBytes', 'beginPublicationCopyBytes', 'resumeRootImportBytes', 'deepCopyBytes', 'moveBytes', 'utf8InputBytes', 'utf16StagingBytes', 'scratchLeaseAcquisitions', 'scratchLeaseReturns', 'outstandingScratchLeases', 'pendingMailboxes', 'pinnedScratchSlots', 'pinnedScratchBytes')) {
+        $statValues[$field] = Require-Integer (Get-ExactField $stats $field 'owning stats') "owningStats.$field"
+    }
+    # Independent fixture oracle: empty String = 8 bytes; State = two Ints plus
+    # latest String; Continuation = request String. ASCII echo doubles latest.
+    # Each mailbox starts with empty latest exactly once; counters exclude warmup.
+    $usedMailboxes = @($Result.mailboxes | Where-Object { $_.attempted -gt 0 }).Count
+    $requestExtent = [long](8 + 2 * $PayloadBytes + 7) -band -8L
+    $finalStateExtent = 16L + ([long](8 + 4 * $PayloadBytes + 7) -band -8L)
+    $beginRoots = [long]$Result.admitted * ($finalStateExtent + $requestExtent) - $usedMailboxes * ($finalStateExtent - 24L)
+    $expectedBeginPublication = if ($Policy -ceq 'return') { $beginRoots } else { 0L }
+    $expectedResumeImport = $expectedBeginPublication
+    $expectedPublication = 16L * 24L + [long]$Result.completed * $finalStateExtent + $expectedBeginPublication
+    # Retained-capacity rejection can occur after the begin callback validates
+    # its two outputs, before publication commits. It counts as a handler
+    # invocation/failure without becoming an admitted provider request.
+    $failedBegins = $reasonValues.retainedCapacity
+    $expected = [ordered]@{
+        handlerInvocations = 16L + 2L * $Result.admitted + $failedBegins
+        handlerFailures = $failedBegins
+        returnedOutputDescriptors = 16L + 3L * $Result.admitted + 2L * $failedBegins
+        publicationCopyBytes = $expectedPublication
+        beginPublicationCopyBytes = $expectedBeginPublication
+        resumeRootImportBytes = $expectedResumeImport
+        outstandingScratchLeases = 0L
+        pendingMailboxes = 0L
+        pinnedScratchSlots = 0L
+        pinnedScratchBytes = 0L
+    }
+    foreach ($field in $expected.Keys) {
+        if ($statValues[$field] -ne $expected[$field]) { throw "Native owning stats oracle mismatch for ${field}: expected=$($expected[$field]) actual=$($statValues[$field])." }
+    }
+    if ($statValues.scratchLeaseAcquisitions -ne $statValues.scratchLeaseReturns -or
+        $statValues.resumeRootImportBytes -gt $statValues.inputImportBytes -or
+        $statValues.beginPublicationCopyBytes -gt $statValues.publicationCopyBytes) { throw 'Native owning stats lifecycle/subset counters do not reconcile.' }
+    return [ordered]@{ rejectionReasons = $reasonValues; owningStats = $statValues; scope = $stats.scope; fixtureOracle = $expected }
+}
+
 function Validate-AppResult($Result, [string]$Backend, [string]$Policy, [int]$Rate, [int]$PayloadBytes, [int]$DelayMs, [int]$WarmupMs, [int]$DurationMs, [int]$ScratchSlots) {
     $schema = Require-Integer (Get-ExactField $Result 'schemaVersion' 'application result') 'schemaVersion'
     if ($schema -ne 1) { throw "Unsupported application result schemaVersion $schema." }
@@ -620,6 +676,7 @@ function Validate-AppResult($Result, [string]$Backend, [string]$Policy, [int]$Ra
     }
     if ($Backend -ceq 'native' -and $Policy -ceq 'keep' -and $ScratchSlots -eq 4 -and $values.peakPending -gt 4) { throw 'Native four-slot KEEP mode exceeded its declared retained-scratch capacity.' }
 
+    $nativeDiagnostics = if ($Backend -ceq 'native') { Validate-NativeDiagnostics $Result $Policy $PayloadBytes } else { $null }
     $p99 = Get-Percentile ([long[]]$latencies.ToArray()) 0.99
     $rejectionFraction = if ($values.offered -eq 0) { 0.0 } else { [double]$values.rejected / [double]$values.offered }
     $throughput = [double]$values.completedWithinWindow * 1000.0 / [double]$DurationMs
@@ -633,6 +690,7 @@ function Validate-AppResult($Result, [string]$Backend, [string]$Policy, [int]$Ra
         errors = $values.errors; timedOut = $values.timedOut; pendingAtEnd = $values.pendingAtEnd; peakPending = $values.peakPending
         missedArrivals = $values.missedArrivals; maxDispatchLatenessMicroseconds = $values.maxDispatchLatenessMicroseconds
         verified = $verified; storageReservedBytes = $storageBytes; mailboxAttempted = $attemptedTotal; mailboxCompleted = $completedTotal
+        nativeDiagnostics = $nativeDiagnostics
         qualifies = $qualifies; qualification = [ordered]@{ p99AtMost50ms = $null -ne $p99 -and $p99 -le 50000; rejectionAtMost1Percent = $rejectionFraction -le 0.01; correctness = $verified -and $values.errors -eq 0 -and $values.timedOut -eq 0 -and $values.pendingAtEnd -eq 0 }
     }
 }

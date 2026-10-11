@@ -93,6 +93,15 @@ typedef struct run_result {
   uint64_t latency_count;
   uint64_t latency_capacity;
   uint64_t *latencies;
+  struct {
+    uint64_t active_mailbox;
+    uint64_t unavailable_mailbox;
+    uint64_t runtime_busy;
+    uint64_t scratch_capacity;
+    uint64_t retained_capacity;
+    uint64_t text_capacity;
+    uint64_t missed_deadline;
+  } rejection_reasons;
   uint32_t verified;
   uint32_t failed;
 } run_result;
@@ -803,8 +812,13 @@ static int accept_arrival(uint32_t mailbox_id, uint64_t scheduled_qpc,
   }
   if (mailbox->active != 0u || mailbox->faulted != 0u ||
       mailbox->socket == INVALID_SOCKET) {
-    if (g_measured_phase != 0u)
+    if (g_measured_phase != 0u) {
       ++g_result.rejected;
+      if (mailbox->active != 0u)
+        ++g_result.rejection_reasons.active_mailbox;
+      else
+        ++g_result.rejection_reasons.unavailable_mailbox;
+    }
     return 1;
   }
   memset(&mailbox->token, 0, sizeof(mailbox->token));
@@ -812,12 +826,33 @@ static int accept_arrival(uint32_t mailbox_id, uint64_t scheduled_qpc,
     return failf("call info initialization failed");
   result = al_mailbox_begin_text(g_fixture.runtime, mailbox_id, g_payload,
                                  g_payload_bytes, &mailbox->token, &info);
-  if (result == AL_MAILBOX_BUSY || result == AL_MAILBOX_SCRATCH_CAPACITY ||
-      result == AL_MAILBOX_RETAINED_CAPACITY ||
-      result == AL_MAILBOX_TEXT_CAPACITY) {
-    if (g_measured_phase != 0u)
+  switch (result) {
+  case AL_MAILBOX_BUSY:
+    if (g_measured_phase != 0u) {
       ++g_result.rejected;
+      ++g_result.rejection_reasons.runtime_busy;
+    }
     return 1;
+  case AL_MAILBOX_SCRATCH_CAPACITY:
+    if (g_measured_phase != 0u) {
+      ++g_result.rejected;
+      ++g_result.rejection_reasons.scratch_capacity;
+    }
+    return 1;
+  case AL_MAILBOX_RETAINED_CAPACITY:
+    if (g_measured_phase != 0u) {
+      ++g_result.rejected;
+      ++g_result.rejection_reasons.retained_capacity;
+    }
+    return 1;
+  case AL_MAILBOX_TEXT_CAPACITY:
+    if (g_measured_phase != 0u) {
+      ++g_result.rejected;
+      ++g_result.rejection_reasons.text_capacity;
+    }
+    return 1;
+  default:
+    break;
   }
   if (result != AL_MAILBOX_OK)
     return failf("Begin failed for mailbox %u (%d, handler %d)", mailbox_id,
@@ -934,6 +969,7 @@ static int run_phase(uint32_t duration_ms, uint32_t measured,
       g_result.offered += remaining;
       g_result.rejected += remaining;
       g_result.missed_arrivals += remaining;
+      g_result.rejection_reasons.missed_deadline += remaining;
       sequence = total_arrivals;
     }
     if (g_active_count == 0u)
@@ -1042,6 +1078,14 @@ static int verify_final_state(void) {
   int verified = 1;
   uint64_t attempted = 0u;
   uint64_t completed = 0u;
+  uint64_t rejected_by_reason =
+      g_result.rejection_reasons.active_mailbox +
+      g_result.rejection_reasons.unavailable_mailbox +
+      g_result.rejection_reasons.runtime_busy +
+      g_result.rejection_reasons.scratch_capacity +
+      g_result.rejection_reasons.retained_capacity +
+      g_result.rejection_reasons.text_capacity +
+      g_result.rejection_reasons.missed_deadline;
   for (mailbox_id = 0u; mailbox_id < MAILBOX_COUNT; ++mailbox_id) {
     if (!verify_mailbox_state(mailbox_id))
       verified = 0;
@@ -1050,6 +1094,9 @@ static int verify_final_state(void) {
   }
   if (attempted != g_result.admitted || completed != g_result.completed ||
       g_result.offered != g_result.admitted + g_result.rejected ||
+      g_result.rejected != rejected_by_reason ||
+      g_result.missed_arrivals !=
+          g_result.rejection_reasons.missed_deadline ||
       g_result.admitted !=
           g_result.completed + g_result.errors + g_result.timed_out ||
       g_result.pending_at_end != 0u || g_result.errors != 0u ||
@@ -1065,9 +1112,18 @@ static int write_result(const options *parsed) {
   FILE *output = NULL;
   uint32_t mailbox_id;
   uint64_t index;
+  al_mailbox_owning_stats owning_stats;
+  al_mailbox_result stats_result;
   const char *policy = parsed->policy == AL_MAILBOX_OWNING_POLICY_RETURN
                            ? "return"
                            : "keep";
+  memset(&owning_stats, 0, sizeof(owning_stats));
+  owning_stats.control_abi_version = AL_MAILBOX_CONTROL_ABI_VERSION;
+  owning_stats.struct_size = (uint32_t)sizeof(owning_stats);
+  stats_result = al_mailbox_get_owning_stats(g_fixture.runtime,
+                                              &owning_stats);
+  if (stats_result != AL_MAILBOX_OK)
+    return failf("owning stats snapshot failed (%d)", (int)stats_result);
   if (fopen_s(&output, parsed->output_path, "wb") != 0 || output == NULL)
     return failf("could not open result file (errno %d)", errno);
   fprintf(output,
@@ -1081,6 +1137,11 @@ static int write_result(const options *parsed) {
           ",\"maxDispatchLatenessMicroseconds\":%" PRIu64
           ",\"errors\":%" PRIu64 ",\"timedOut\":%" PRIu64
           ",\"pendingAtEnd\":%" PRIu64 ",\"peakPending\":%" PRIu64
+          ",\"rejectionReasons\":{\"activeMailbox\":%" PRIu64
+          ",\"unavailableMailbox\":%" PRIu64
+          ",\"runtimeBusy\":%" PRIu64 ",\"scratchCapacity\":%" PRIu64
+          ",\"retainedCapacity\":%" PRIu64 ",\"textCapacity\":%" PRIu64
+          ",\"missedDeadline\":%" PRIu64 "}"
           ",\"verified\":%s,\"latencyMicroseconds\":[",
           policy, parsed->rate, parsed->payload_bytes, parsed->delay_ms,
           parsed->warmup_ms, parsed->duration_ms, parsed->scratch_slots,
@@ -1089,6 +1150,13 @@ static int write_result(const options *parsed) {
           g_result.warmup_completed, g_result.missed_arrivals,
           g_result.max_dispatch_lateness_us, g_result.errors,
           g_result.timed_out, g_result.pending_at_end, g_result.peak_pending,
+          g_result.rejection_reasons.active_mailbox,
+          g_result.rejection_reasons.unavailable_mailbox,
+          g_result.rejection_reasons.runtime_busy,
+          g_result.rejection_reasons.scratch_capacity,
+          g_result.rejection_reasons.retained_capacity,
+          g_result.rejection_reasons.text_capacity,
+          g_result.rejection_reasons.missed_deadline,
           g_result.verified != 0u ? "true" : "false");
   for (index = 0u; index < g_result.latency_count; ++index) {
     if (index != 0u)
@@ -1106,8 +1174,38 @@ static int write_result(const options *parsed) {
             mailbox_id, mailbox->attempted, mailbox->completed,
             verify_mailbox_state(mailbox_id) ? "true" : "false");
   }
-  fprintf(output, "],\"storageReservedBytes\":%" PRIu64 "}\n",
-          g_fixture.requirements.storage_bytes);
+  fprintf(output,
+          "],\"storageReservedBytes\":%" PRIu64
+          ",\"owningStats\":{\"schemaVersion\":1"
+          ",\"scope\":\"post-warmup runtime initialization plus measured phase and drain\""
+          ",\"handlerInvocations\":%" PRIu64
+          ",\"handlerFailures\":%" PRIu64
+          ",\"returnedOutputDescriptors\":%" PRIu64
+          ",\"inputImportBytes\":%" PRIu64
+          ",\"publicationCopyBytes\":%" PRIu64
+          ",\"beginPublicationCopyBytes\":%" PRIu64
+          ",\"resumeRootImportBytes\":%" PRIu64
+          ",\"deepCopyBytes\":%" PRIu64 ",\"moveBytes\":%" PRIu64
+          ",\"utf8InputBytes\":%" PRIu64
+          ",\"utf16StagingBytes\":%" PRIu64
+          ",\"scratchLeaseAcquisitions\":%" PRIu64
+          ",\"scratchLeaseReturns\":%" PRIu64
+          ",\"outstandingScratchLeases\":%u"
+          ",\"pendingMailboxes\":%u,\"pinnedScratchSlots\":%u"
+          ",\"pinnedScratchBytes\":%" PRIu64 "}}\n",
+          g_fixture.requirements.storage_bytes, owning_stats.handler_invocations,
+          owning_stats.handler_failures,
+          owning_stats.returned_output_descriptors,
+          owning_stats.input_import_bytes, owning_stats.publication_copy_bytes,
+          owning_stats.begin_publication_copy_bytes,
+          owning_stats.resume_root_import_bytes, owning_stats.deep_copy_bytes,
+          owning_stats.move_bytes, owning_stats.utf8_input_bytes,
+          owning_stats.utf16_staging_bytes,
+          owning_stats.scratch_lease_acquisitions,
+          owning_stats.scratch_lease_returns,
+          owning_stats.outstanding_scratch_leases,
+          owning_stats.pending_mailboxes, owning_stats.pinned_scratch_slots,
+          owning_stats.pinned_scratch_bytes);
   if (fclose(output) != 0)
     return failf("writing result file failed (errno %d)", errno);
   return 1;

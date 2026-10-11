@@ -1,0 +1,1367 @@
+{
+  "archiveSha256": "420367ab0fb22a73973896989f49d61106c75f8aa065710158810721477f7994",
+  "verification": "Root reopened and verified all entry lengths and SHA256 hashes",
+  "memberCount": 272,
+  "members": [
+    {
+      "bytes": 4046,
+      "path": "review/Calibrate-Oracles.ps1",
+      "sha256": "f44e748a6478a631745fe2f0662f789365a36c49cc70867a09b3e842388d39bc"
+    },
+    {
+      "bytes": 703,
+      "path": "review/freeze-final.json",
+      "sha256": "81a1afe891ddfd08f903a24501192d8f5b54f9360d8c8640457638f2462c95ea"
+    },
+    {
+      "bytes": 689,
+      "path": "review/freeze.json",
+      "sha256": "4310fdfa39128cb3d2aa001bbc8abfb6c8ab977899aadee5e36c6ed1c34d83a7"
+    },
+    {
+      "bytes": 6762,
+      "path": "review/investigation.md",
+      "sha256": "5ad07f7f690a76c13e1408d3fff08b8370fcc2df0f1a9364754380b5337edb9e"
+    },
+    {
+      "bytes": 6564,
+      "path": "review/oracle-review.md",
+      "sha256": "69150a6d52c8f3202c4e4251edefd69d6f7a85356118686ffc7624d803a64c9b"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-capacity-16-slot-native-keep-64000-d5-r1-s16.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-capacity-16-slot-native-keep-64000-d5-r1-s16.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-capacity-16-slot-native-return-64000-d5-r1-s16.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-capacity-16-slot-native-return-64000-d5-r1-s16.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-fsharp-gc-250-d0-r1-s0.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-fsharp-gc-250-d0-r1-s0.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-fsharp-gc-500-d5-r1-s0.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-fsharp-gc-500-d5-r1-s0.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-fsharp-gc-64000-d5-r1-s0.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-fsharp-gc-64000-d5-r1-s0.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-native-keep-250-d0-r1-s4.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-native-keep-250-d0-r1-s4.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-native-keep-500-d5-r1-s4.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-native-keep-500-d5-r1-s4.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-native-keep-64000-d5-r1-s4.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-native-keep-64000-d5-r1-s4.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-native-return-250-d0-r1-s4.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-native-return-250-d0-r1-s4.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-native-return-500-d5-r1-s4.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-native-return-500-d5-r1-s4.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-native-return-64000-d5-r1-s4.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/app-smoke-native-return-64000-d5-r1-s4.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/build-fsharp-baseline-release.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 464,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/build-fsharp-baseline-release.stdout.txt",
+      "sha256": "bb2ae0bccd2905c69559434f865051f9f749a85d01ef13990a14616c5c4db6ba"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/build-launcher-control-probe.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/build-launcher-control-probe.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/build-limit-runner.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/build-limit-runner.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/build-native-load-host-O2-trusted-generated.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/build-native-load-host-O2-trusted-generated.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/build-owning-mailbox-bootstrap-release.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 968,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/build-owning-mailbox-bootstrap-release.stdout.txt",
+      "sha256": "e80ca12115cde46b094ceea0a48f956044949115c498e97fa1d72f61991ef6d1"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/build-provider-release.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 475,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/build-provider-release.stdout.txt",
+      "sha256": "925980f10552a03fb921e362d209b0b5d606f8f65483f400b61e585980ba7340"
+    },
+    {
+      "bytes": 70308,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/commands.json",
+      "sha256": "4515d640bf1f88e5e4da5d51ba2bf88069763d43a96445dcf54e5b4a22e9914a"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/compile-mailbox-flow-O2-trusted-generated.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 51585,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/compile-mailbox-flow-O2-trusted-generated.stdout.txt",
+      "sha256": "c34bb5af52013546dbebbf5f275cf00df3ad922cb3f0f7797dd0c6a12fbd0910"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/control-cap-positive.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/control-cap-positive.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/control-cap.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/control-cap.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/control-exit.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/control-exit.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/control-timeout.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/control-timeout.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 802,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/controls/cap-negative/runner.json",
+      "sha256": "ea321a66c40fdacc833e8bd47872c18fb19941e65580f3152f9cfffd376899e0"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/controls/cap-negative/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 117,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/controls/cap-negative/stdout.txt",
+      "sha256": "5a1b3cd7df596456cfdd9ffbcfaeb045f75bec0052e275a835223af9bd711889"
+    },
+    {
+      "bytes": 803,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/controls/cap-positive/runner.json",
+      "sha256": "0a758d7755ccd170cd64d0f9011d31df2ec326078f4743edc72383f08d8d1183"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/controls/cap-positive/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 102,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/controls/cap-positive/stdout.txt",
+      "sha256": "5b7fe7d76ec35eebc0ef35268eaba8d2b9da191cd1450ed7f6f233f802f935e4"
+    },
+    {
+      "bytes": 797,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/controls/exit-code/runner.json",
+      "sha256": "af918485b2e560af725ab5e95dccd68fb84a3eee0c7ddb016ae1d2450e2e19d1"
+    },
+    {
+      "bytes": 26,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/controls/exit-code/stderr.txt",
+      "sha256": "cc00d9383dc1143f76c1273ee962e5b5ccfaa4202c61aa21c9245790968917f9"
+    },
+    {
+      "bytes": 26,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/controls/exit-code/stdout.txt",
+      "sha256": "23fb523db1030ca9006599b67b49fece1e86281369ba722e1590c08aa69dc31b"
+    },
+    {
+      "bytes": 792,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/controls/timeout/runner.json",
+      "sha256": "f3775638d936bb22612d717c71e4e4379de175a6dd4bf4d62eec1594fa01c668"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/controls/timeout/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 40,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/controls/timeout/stdout.txt",
+      "sha256": "348a343c0c367095dcb0e5d62f7e08bef204c0218d1183f7326ba1e0f88a0b7c"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/dotnet-version.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 9,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/dotnet-version.stdout.txt",
+      "sha256": "cf50f3f17fe821e5df2c97efab82bf8ec585bbd55e3cea51015a84a1b71ff0d9"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/provider.launcher.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/provider.launcher.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 10655,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/root-oracle-calibration.json",
+      "sha256": "2790408b15b9f63bb7c0c03f48c4339bfd953f27cf2758c0ab2db01bc8e5c7c8"
+    },
+    {
+      "bytes": 397704,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/run-report.json",
+      "sha256": "4411de2d63e0c0c8ebedeefde873ebc62ec7496402a3f746e7660e54d1946ee2"
+    },
+    {
+      "bytes": 3672,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16/application-result.json",
+      "sha256": "51bc04eaf8cb710881dd8ec8ce2d88705ba31bcf9befdf2d6cba7c1bda435a89"
+    },
+    {
+      "bytes": 833,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16/application-runner.json",
+      "sha256": "c9241bca6d655e4ce929f81a2e5c1ad84e6a7cd789471679f8262877e709b741"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16/application.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16/application.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1379,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16/configuration.json",
+      "sha256": "8d04eaf25ca0e53e3c70930ca5f49ae0796e34f69d0b9878a489467ddd527332"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16/provider/provider.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 197,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16/provider/provider.stdout.txt",
+      "sha256": "00547a98d8d72a584d94f44975df03e4aff6cb9e81ba07ef06eb2670ced7f892"
+    },
+    {
+      "bytes": 234,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16/provider/ready.json",
+      "sha256": "7b26e0218f888a1cf063a2ae00719a42763a2fe8a8b3e4575f96eaf7c9169633"
+    },
+    {
+      "bytes": 777,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16/provider/runner.json",
+      "sha256": "8f7387ff51b47a8b89ffd00eb22ce44eea7dcfef5cb06c8d968817216e66bc30"
+    },
+    {
+      "bytes": 10249,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-keep-64000-d5-r1-s16/trial-summary.json",
+      "sha256": "fbcfea0298785b92f7406612bb4baed0443d75ea8f4401dab0b4b1829d50b70c"
+    },
+    {
+      "bytes": 3683,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16/application-result.json",
+      "sha256": "b7a8ad194895c4df15ddd84823b064ae4206b924344984963338b041a64e0f96"
+    },
+    {
+      "bytes": 835,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16/application-runner.json",
+      "sha256": "ab878d60d650a299cb4ec9a5d838d115859c1e35f83ee5d5f91da18f1b163edf"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16/application.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16/application.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1393,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16/configuration.json",
+      "sha256": "cda64dfc5099567b626160e458ca97ee00d7ee6e791b9d1b989240f922b72334"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16/provider/provider.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 197,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16/provider/provider.stdout.txt",
+      "sha256": "5aba00852755e28a90f8ab16f6838d7c0c341f3ccd1b8020056de7edb47eb623"
+    },
+    {
+      "bytes": 234,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16/provider/ready.json",
+      "sha256": "10974750f306587782a1b5de5ede8244961f6f625d486bcc89159608396bc3dd"
+    },
+    {
+      "bytes": 779,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16/provider/runner.json",
+      "sha256": "1e2f973d14746304fb5468bbbef3fc0be3d0102a0ef390612736b3e16fabbeb3"
+    },
+    {
+      "bytes": 10315,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-capacity-16-slot-native-return-64000-d5-r1-s16/trial-summary.json",
+      "sha256": "4dab72a89bdcae2a8daa3262c1464073ec70196945b5be123d19eeab47b292a1"
+    },
+    {
+      "bytes": 1708,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-250-d0-r1-s0/application-result.json",
+      "sha256": "ef78a4812b2069747267ddccce1428f6f1830687b7f253ceec6162d7906711fd"
+    },
+    {
+      "bytes": 745,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-250-d0-r1-s0/application-runner.json",
+      "sha256": "8baaf42e48642adba85f8f4f4579f27f8e7258d3b8c10ad95514d8835db99b13"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-250-d0-r1-s0/application.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-250-d0-r1-s0/application.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1228,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-250-d0-r1-s0/configuration.json",
+      "sha256": "cc00eee01f444c6cbe59293696e73bb5cabdb64492da44ca1ba7f274e0aedf57"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-250-d0-r1-s0/provider/provider.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 194,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-250-d0-r1-s0/provider/provider.stdout.txt",
+      "sha256": "80d3dda7a1f3e8eecb87be53160d81302d11a4ebbfbcab7e56647d281cdc6b8a"
+    },
+    {
+      "bytes": 234,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-250-d0-r1-s0/provider/ready.json",
+      "sha256": "fb76a3e7ff701aa97bc0fc208bf43d8a4c4de749e056bf336bd20e3dda07d9c0"
+    },
+    {
+      "bytes": 755,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-250-d0-r1-s0/provider/runner.json",
+      "sha256": "7a386b1c7a8006c1f3a12b0e87bdbbb02a432b141f1a1dede3589b7a021115d6"
+    },
+    {
+      "bytes": 8284,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-250-d0-r1-s0/trial-summary.json",
+      "sha256": "91f44309d84e3eac9f7e2348983b4dc9441080cd10c61845426aaaea9cbdc5c3"
+    },
+    {
+      "bytes": 2133,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-500-d5-r1-s0/application-result.json",
+      "sha256": "f458f09b433285afbec432884f681bd209c794a66b942b14afd85d10e5bb074b"
+    },
+    {
+      "bytes": 745,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-500-d5-r1-s0/application-runner.json",
+      "sha256": "093dcb8c94fd02f22ba13a27aaf6d86ca61de58b27adfe78d65ab112ccdba26a"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-500-d5-r1-s0/application.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-500-d5-r1-s0/application.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1228,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-500-d5-r1-s0/configuration.json",
+      "sha256": "08cf9b4f57c99a5bc6b9855b96c40b10d2cf89fed5e9024a62b450e46681de80"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-500-d5-r1-s0/provider/provider.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 197,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-500-d5-r1-s0/provider/provider.stdout.txt",
+      "sha256": "4abd477bbf5f03a68162d0f7efdff6d5daa5619c248097adf50b362c9804d6d4"
+    },
+    {
+      "bytes": 234,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-500-d5-r1-s0/provider/ready.json",
+      "sha256": "1add933f188c65f477254a2de3179d9bfd4a89074e86a9503791f1e834f696eb"
+    },
+    {
+      "bytes": 755,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-500-d5-r1-s0/provider/runner.json",
+      "sha256": "75e556bd42a186343ac07f1fb51a91273e75d4ea5412526cf685f58642194ffe"
+    },
+    {
+      "bytes": 8278,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-500-d5-r1-s0/trial-summary.json",
+      "sha256": "ce1f4eaa312bcb865dc5fee33373a6e70d137abfdddde11d1907231779c43999"
+    },
+    {
+      "bytes": 3056,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-64000-d5-r1-s0/application-result.json",
+      "sha256": "2c1e9c29ae4a4c97ff9c1d3b416d83139e14f9fa42c42e27c9b2ca27b816216e"
+    },
+    {
+      "bytes": 747,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-64000-d5-r1-s0/application-runner.json",
+      "sha256": "247151f14de385d69eb5243eb9fe1adb28526b5c8bde1cd1b63ae1e06648dda5"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-64000-d5-r1-s0/application.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-64000-d5-r1-s0/application.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1242,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-64000-d5-r1-s0/configuration.json",
+      "sha256": "16bf330dbe7fe9f09eccda6f8960e36aea342505af7d274b4b7857090f17b93d"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-64000-d5-r1-s0/provider/provider.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 197,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-64000-d5-r1-s0/provider/provider.stdout.txt",
+      "sha256": "5e0def97791c4ae0cdfb84bd6efe50cbd7d7ffe083d4e8fab02f9a4ca4ed1ffd"
+    },
+    {
+      "bytes": 234,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-64000-d5-r1-s0/provider/ready.json",
+      "sha256": "4c46086acfc573570065a41a146f3482ff260367de83f4150f234e1b9a361d10"
+    },
+    {
+      "bytes": 757,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-64000-d5-r1-s0/provider/runner.json",
+      "sha256": "57681fd018f0dffa35f32438ff95e0b53ca571c23141216fd86b150505f721d7"
+    },
+    {
+      "bytes": 8332,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-fsharp-gc-64000-d5-r1-s0/trial-summary.json",
+      "sha256": "b1f803b2b02e0c860746243224e468e32a80f149ef00501322b272cfe7a41345"
+    },
+    {
+      "bytes": 2415,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-250-d0-r1-s4/application-result.json",
+      "sha256": "daf93ca5e74051cd4450f7ca99d8efddf83eddacbe13d1d908c008d961d1ab8e"
+    },
+    {
+      "bytes": 813,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-250-d0-r1-s4/application-runner.json",
+      "sha256": "912826c87a9b305c384e42019df72aa93cf803ed5adfcef28de7a7800dd2ba79"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-250-d0-r1-s4/application.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-250-d0-r1-s4/application.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1239,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-250-d0-r1-s4/configuration.json",
+      "sha256": "54caee8c967d6b8b7a67a3cb5ea7fe218c1713b30f2b497218a1ca82ecad18a8"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-250-d0-r1-s4/provider/provider.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 194,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-250-d0-r1-s4/provider/provider.stdout.txt",
+      "sha256": "5cce5286e23b6367dc38d28920d809394cb1116704cd387f0450d9bd49f58232"
+    },
+    {
+      "bytes": 234,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-250-d0-r1-s4/provider/ready.json",
+      "sha256": "2585a182d5480f39fbbc3a14da9b8a9dfbd6124f139af5e519690b436af4b2b2"
+    },
+    {
+      "bytes": 757,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-250-d0-r1-s4/provider/runner.json",
+      "sha256": "c264106d5c615fbc6d90d22b5e48d4091b048afc14504335e142368435ac415b"
+    },
+    {
+      "bytes": 9843,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-250-d0-r1-s4/trial-summary.json",
+      "sha256": "637d2511c9b233de57fb9cfe5eb61ddcbbe742d3b0ef66dd19cf2d57a917975d"
+    },
+    {
+      "bytes": 2288,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-500-d5-r1-s4/application-result.json",
+      "sha256": "251621bd288df976c088c19909cb665082719ced2cf6d047cb92d792b27425e3"
+    },
+    {
+      "bytes": 813,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-500-d5-r1-s4/application-runner.json",
+      "sha256": "e5feaf586003c3550fdc3e1fd7904ecc3c6343809b74b880689f54966a3286d5"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-500-d5-r1-s4/application.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-500-d5-r1-s4/application.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1239,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-500-d5-r1-s4/configuration.json",
+      "sha256": "24e53e68ff5aa74bf7359515765dbf3a477dda729f63d0517d8c92a930bafee9"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-500-d5-r1-s4/provider/provider.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 194,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-500-d5-r1-s4/provider/provider.stdout.txt",
+      "sha256": "ef034f7b5020cbc43025cfa909e0a5834b1afb818ecd8bcb6d2fce5bdfd28d05"
+    },
+    {
+      "bytes": 234,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-500-d5-r1-s4/provider/ready.json",
+      "sha256": "785f9cc0c38108f8bc23dddd07fb8b262a2f9e811ba84bf4c6323614e27aaeb6"
+    },
+    {
+      "bytes": 757,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-500-d5-r1-s4/provider/runner.json",
+      "sha256": "eaf09e79e36e1522f61ecb6b31c6895abc8d46f6fe3216397ec93b453f55e14a"
+    },
+    {
+      "bytes": 9828,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-500-d5-r1-s4/trial-summary.json",
+      "sha256": "aa7b305d58162e5f7e4e12bc48da428809d6d04a73c3bc25af8b19d57177477c"
+    },
+    {
+      "bytes": 2525,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-64000-d5-r1-s4/application-result.json",
+      "sha256": "d3bc34c74537e9b14684c85cfaaefc0d77ad7c1da2ff36f316e38ee98e2fdea3"
+    },
+    {
+      "bytes": 815,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-64000-d5-r1-s4/application-runner.json",
+      "sha256": "db324244338eb347dbb867cfe885712f84b452c5a5f75cee20b5e009b0713291"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-64000-d5-r1-s4/application.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-64000-d5-r1-s4/application.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1253,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-64000-d5-r1-s4/configuration.json",
+      "sha256": "2d865d412b84b937b1c1162ee55b4dcdac24f2b3087750e2625709a6b5f93a6f"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-64000-d5-r1-s4/provider/provider.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 194,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-64000-d5-r1-s4/provider/provider.stdout.txt",
+      "sha256": "ccd19d22edb98838a3145a7dc31b25da40677e8dd31b49801b9bea22ecc92ee0"
+    },
+    {
+      "bytes": 234,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-64000-d5-r1-s4/provider/ready.json",
+      "sha256": "220ad45ea13d33bb2e0191b085d6fc4f29d4213ffb3e2f381d64023a1c4f1245"
+    },
+    {
+      "bytes": 759,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-64000-d5-r1-s4/provider/runner.json",
+      "sha256": "52d55c26e4d1f9b52806f86bedc0d7b33fa76f932dcd7caae708af76fb55725c"
+    },
+    {
+      "bytes": 9891,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-keep-64000-d5-r1-s4/trial-summary.json",
+      "sha256": "46f76e62d112580688b411d6bdc5a586aca1c023ef1a577950ea4837138916a7"
+    },
+    {
+      "bytes": 2452,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-250-d0-r1-s4/application-result.json",
+      "sha256": "d379c1569eb118aa94cb22d8831f744f05879d7fe073e2a6290d39eb5853fc69"
+    },
+    {
+      "bytes": 815,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-250-d0-r1-s4/application-runner.json",
+      "sha256": "deb3a3b75c38618cf43ca6496e176e253247e814313ebf3c60915f7b30f37910"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-250-d0-r1-s4/application.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-250-d0-r1-s4/application.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1253,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-250-d0-r1-s4/configuration.json",
+      "sha256": "bfe43a6b8755a9db051bdd109c9c4a610e2a9547f1fa45e9c0846c579abaf445"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-250-d0-r1-s4/provider/provider.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 194,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-250-d0-r1-s4/provider/provider.stdout.txt",
+      "sha256": "9f6ebb279c26ae7842f0d3d0a47248dc0505715ed1d3af7ea0cb9f659097c4dd"
+    },
+    {
+      "bytes": 234,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-250-d0-r1-s4/provider/ready.json",
+      "sha256": "947d6f76069ef7745b15dd96847ae210f61909b13127898bbb9778ac7dd93d8d"
+    },
+    {
+      "bytes": 759,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-250-d0-r1-s4/provider/runner.json",
+      "sha256": "1992db806cf81c6e417d11352187657e636c3c52b98067e82d758258edb1d60a"
+    },
+    {
+      "bytes": 9892,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-250-d0-r1-s4/trial-summary.json",
+      "sha256": "9c21be6c968c21f4a834779f5688d9cda8f1cb4d9086a2d4cade5bf1ee00bd38"
+    },
+    {
+      "bytes": 2863,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-500-d5-r1-s4/application-result.json",
+      "sha256": "7d711041aaef646fc8f1095881321d9325737fba4fafb2b0bb1975f2c3cf3ba1"
+    },
+    {
+      "bytes": 815,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-500-d5-r1-s4/application-runner.json",
+      "sha256": "c20f454ae3ec587e764dddf744d5288643e95659369642cd0e3db71dd0ef62e6"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-500-d5-r1-s4/application.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-500-d5-r1-s4/application.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1253,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-500-d5-r1-s4/configuration.json",
+      "sha256": "616be75602d3edd6eae9f1127b84a5eabcc217c83b62f485277018a495a1eca5"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-500-d5-r1-s4/provider/provider.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 197,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-500-d5-r1-s4/provider/provider.stdout.txt",
+      "sha256": "0cb310f370d5afc91b59b3400971dac303f0e31585d9bf68cd627274023517fe"
+    },
+    {
+      "bytes": 234,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-500-d5-r1-s4/provider/ready.json",
+      "sha256": "0a4e6c3996e0955a9fe2305c0a562687637c052c182692fca8fb5a1d3bb47056"
+    },
+    {
+      "bytes": 759,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-500-d5-r1-s4/provider/runner.json",
+      "sha256": "6a60317897fc7cc99dd0ca2e3be15e6b15bd4592fae8af7a4e17be3e1a8ecb21"
+    },
+    {
+      "bytes": 9909,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-500-d5-r1-s4/trial-summary.json",
+      "sha256": "563d91c1db16471fe4e0650b5e5f5db94017f6cac48f2a837a1d60b7fc3bc276"
+    },
+    {
+      "bytes": 3706,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-64000-d5-r1-s4/application-result.json",
+      "sha256": "0665e077b15ddb7416ea1c3553aafd7f77cc46a4ab840b4bc10821790913b166"
+    },
+    {
+      "bytes": 818,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-64000-d5-r1-s4/application-runner.json",
+      "sha256": "f5e8f5873c3c7119d81a4f345c228701cf1d78b7bbbdac4548363579d00a0de2"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-64000-d5-r1-s4/application.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-64000-d5-r1-s4/application.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1267,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-64000-d5-r1-s4/configuration.json",
+      "sha256": "26c135b996472d1192214d2da1f1b73cfe0d5ddaef0fd4018e9d86781bc6420d"
+    },
+    {
+      "bytes": 0,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-64000-d5-r1-s4/provider/provider.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 197,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-64000-d5-r1-s4/provider/provider.stdout.txt",
+      "sha256": "e5960e6ade039073cc6e84fe50df654d4d8e61ab33a639ca087e70cf8e7d4ecc"
+    },
+    {
+      "bytes": 234,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-64000-d5-r1-s4/provider/ready.json",
+      "sha256": "29d5634e1398935f3cd34d5b4e9392e67ce4026f5779e52970cefeb1d7fdecb3"
+    },
+    {
+      "bytes": 761,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-64000-d5-r1-s4/provider/runner.json",
+      "sha256": "e1b6de3c5ee8538dc8fc281e95867edd9ef05e1bda6aa6cc16d0c69c7ed613f6"
+    },
+    {
+      "bytes": 9972,
+      "path": "runs/12a96f6436ca4411971465f9f8221007/trials/smoke-native-return-64000-d5-r1-s4/trial-summary.json",
+      "sha256": "70c7782e31db3f5c845d02c2043454575af6fbaf78cdcb6da6ddbc5cf26272e4"
+    },
+    {
+      "bytes": 43601,
+      "path": "source/AgentLang.sln",
+      "sha256": "880648cba529b30c8e46b38222f807ce25470a6b86259f159a0cbe0daaf467d6"
+    },
+    {
+      "bytes": 284,
+      "path": "source/experiments/AgentLang.MailboxLoad/Baseline/AgentLang.MailboxLoad.Baseline.fsproj",
+      "sha256": "35d7db899486bbfca16cb26f62281a5c0c855e292ca88c5a8b9f501ed7e6f3df"
+    },
+    {
+      "bytes": 23498,
+      "path": "source/experiments/AgentLang.MailboxLoad/Baseline/Program.fs",
+      "sha256": "12457c0836ba1b0ce4786717426738c9c8a9a81f8e31812b86587dfbd5122644"
+    },
+    {
+      "bytes": 10088,
+      "path": "source/experiments/AgentLang.MailboxLoad/CONTRACT.md",
+      "sha256": "f156db585e038043a8a468b801596514d12566f8476171dbaeadd70afd2d9ba0"
+    },
+    {
+      "bytes": 28012,
+      "path": "source/experiments/AgentLang.MailboxLoad/limit_runner.c",
+      "sha256": "9b6ec186a7c12f9f5a3db063ad55e5f2b53c9b240d2c89f5e140c677f8190434"
+    },
+    {
+      "bytes": 50193,
+      "path": "source/experiments/AgentLang.MailboxLoad/load_host.c",
+      "sha256": "d5e1b4507d70dcbc12f7ecc7b4817368e111329833638d55b923147ef3306724"
+    },
+    {
+      "bytes": 690,
+      "path": "source/experiments/AgentLang.OwningMailbox/AgentLang.OwningMailbox.fsproj",
+      "sha256": "859b902094d17b333e42e47417d55ed1938aab667ddda64b6f5266bd019f9bdb"
+    },
+    {
+      "bytes": 28873,
+      "path": "source/experiments/AgentLang.OwningMailbox/Program.fs",
+      "sha256": "c67af99acf52f475f00d9c750bf3ede80237e86762f9ee15ea4e473192482d43"
+    },
+    {
+      "bytes": 284,
+      "path": "source/experiments/AgentLang.RealIoMailbox/Provider/AgentLang.RealIoMailbox.Provider.fsproj",
+      "sha256": "35d7db899486bbfca16cb26f62281a5c0c855e292ca88c5a8b9f501ed7e6f3df"
+    },
+    {
+      "bytes": 19067,
+      "path": "source/experiments/AgentLang.RealIoMailbox/Provider/Program.fs",
+      "sha256": "a53b2bd1e1b737099b8b35d8ae6c1af9a80e6f220566855bf168e6055ed878fe"
+    },
+    {
+      "bytes": 1341,
+      "path": "source/experiments/AgentLang.RealIoMailbox/mailbox.flow",
+      "sha256": "d8d98a660dcf5acf4fd73736d112a47f2602506752f2b8e0fea29710ba95712a"
+    },
+    {
+      "bytes": 84881,
+      "path": "source/scripts/Measure-MailboxLoad.ps1",
+      "sha256": "bfa99b3aa9a826b837fb601d83a772875ed685060ef7867e95cee8123cb0ea66"
+    },
+    {
+      "bytes": 1356,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/dev-obj/AgentLang.Core.fsproj.nuget.g.props",
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "bytes": 150,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/dev-obj/AgentLang.Core.fsproj.nuget.g.targets",
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "bytes": 191,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/dev-obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "bytes": 724,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/dev-obj/Release/net9.0/AgentLang.Core.AssemblyInfo.fs",
+      "sha256": "54a76c83a7dc03c6fa8ba8d59aeca0e29a68dd06a7ea667b347844d641a56adb"
+    },
+    {
+      "bytes": 1356,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj/AgentLang.Core.fsproj.nuget.g.props",
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "bytes": 150,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj/AgentLang.Core.fsproj.nuget.g.targets",
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "bytes": 191,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "bytes": 724,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj/Release/net9.0/AgentLang.Core.AssemblyInfo.fs",
+      "sha256": "54a76c83a7dc03c6fa8ba8d59aeca0e29a68dd06a7ea667b347844d641a56adb"
+    },
+    {
+      "bytes": 1356,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj2/AgentLang.Core.fsproj.nuget.g.props",
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "bytes": 150,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj2/AgentLang.Core.fsproj.nuget.g.targets",
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "bytes": 191,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj2/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "bytes": 724,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj2/Release/net9.0/AgentLang.Core.AssemblyInfo.fs",
+      "sha256": "54a76c83a7dc03c6fa8ba8d59aeca0e29a68dd06a7ea667b347844d641a56adb"
+    },
+    {
+      "bytes": 1356,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj3/AgentLang.Core.fsproj.nuget.g.props",
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "bytes": 150,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj3/AgentLang.Core.fsproj.nuget.g.targets",
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "bytes": 191,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj3/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "bytes": 724,
+      "path": "source/src/AgentLang.Core/.agentlang/owning-stack-002/smoke-obj3/Release/net9.0/AgentLang.Core.AssemblyInfo.fs",
+      "sha256": "54a76c83a7dc03c6fa8ba8d59aeca0e29a68dd06a7ea667b347844d641a56adb"
+    },
+    {
+      "bytes": 1150,
+      "path": "source/src/AgentLang.Core/AgentLang.Core.fsproj",
+      "sha256": "8ca96104d8b3490409b63bc61bb499aeaa1c5c97f0069adef6cf024463537666"
+    },
+    {
+      "bytes": 48683,
+      "path": "source/src/AgentLang.Core/AuthoringHelp.fs",
+      "sha256": "da7f95ef47a9e34cee518f7ac7c93addc23f2c861d0feb7311764852c050cdd6"
+    },
+    {
+      "bytes": 116257,
+      "path": "source/src/AgentLang.Core/Compiler.fs",
+      "sha256": "22d5f12ca4f68b199314db04b6f49658516e85765ba989e14c0aca3960929486"
+    },
+    {
+      "bytes": 8402,
+      "path": "source/src/AgentLang.Core/Core.fs",
+      "sha256": "57fe2d9512afa26fc920c06a8b4558bdf965157e27a2bd35ceda64dfabb85428"
+    },
+    {
+      "bytes": 31779,
+      "path": "source/src/AgentLang.Core/Discovery.fs",
+      "sha256": "4150b0ee8ca3791f176ed696b1886ab29b917930dbdb815809029130a94b9d34"
+    },
+    {
+      "bytes": 10745,
+      "path": "source/src/AgentLang.Core/FileSystem.fs",
+      "sha256": "4068dd856384978a1a7894b9560eebd7fa632662efb9861d959f8d03479018d7"
+    },
+    {
+      "bytes": 24435,
+      "path": "source/src/AgentLang.Core/FiniteCoverage.fs",
+      "sha256": "cb3f072280035d004bcd573648e6da5b1b396c8ab6d0c2760cbf243793695e3c"
+    },
+    {
+      "bytes": 14022,
+      "path": "source/src/AgentLang.Core/FlowLint.fs",
+      "sha256": "5ba6a10171f4d67cff6f43d32ddce8b9e7aa33eb3f97d407aee3bcd76bfb5ccf"
+    },
+    {
+      "bytes": 234056,
+      "path": "source/src/AgentLang.Core/FlowLowering.fs",
+      "sha256": "4bc28660f17645807e6d8dd75b8042985bb9f949e39ca59ad00b6d435e576b01"
+    },
+    {
+      "bytes": 94395,
+      "path": "source/src/AgentLang.Core/FlowParser.fs",
+      "sha256": "ba8fed209badc72cd4709c8d02f40b32ac910d84ea9376d2cf12d49804683be1"
+    },
+    {
+      "bytes": 4724,
+      "path": "source/src/AgentLang.Core/FlowPersistence.fs",
+      "sha256": "13288baaaf6812d5949c05e2d5942ad5a6cd286d245d793efef676f5aa4e587d"
+    },
+    {
+      "bytes": 57359,
+      "path": "source/src/AgentLang.Core/FlowRewrite.fs",
+      "sha256": "9445ddb9ca47aac590e3852cdbc3c9a67f6288d4d5aaff1ee2c13f4121d20e01"
+    },
+    {
+      "bytes": 62305,
+      "path": "source/src/AgentLang.Core/FlowSyntax.fs",
+      "sha256": "d84fc27aa22ef21628d5bb863b24ca6d240d303b1010bc536c136d883f62d7a8"
+    },
+    {
+      "bytes": 52796,
+      "path": "source/src/AgentLang.Core/IrFormatting.fs",
+      "sha256": "9f219735b931f4503ec0f8e5a217630b2fc8a38b8fb84931a17c5959316ecdb7"
+    },
+    {
+      "bytes": 87565,
+      "path": "source/src/AgentLang.Core/IrInterpreter.fs",
+      "sha256": "e5dd2985cd984c791261db4bc90d324a37514031d6c8425c617e8f219400dfd0"
+    },
+    {
+      "bytes": 44492,
+      "path": "source/src/AgentLang.Core/Parser.fs",
+      "sha256": "996140b145d04314da8ae9755e926323ff71852d36a49383f75b0941aa304521"
+    },
+    {
+      "bytes": 3314,
+      "path": "source/src/AgentLang.Core/Protocol.fs",
+      "sha256": "d1dfb67c82760aa5b6663162c31f1dfce70441275c073fd344a13a00e34f27e5"
+    },
+    {
+      "bytes": 544879,
+      "path": "source/src/AgentLang.Core/Runtime.fs",
+      "sha256": "e1442c614f6c41abd1657b18b9095027010d1282fb2dc29b916e1cd05c509117"
+    },
+    {
+      "bytes": 11285,
+      "path": "source/src/AgentLang.Core/Source.fs",
+      "sha256": "f661d907d27be0627197e20cc0b008bbd562b7b14a33c0dd9a6ffd17c092f9fc"
+    },
+    {
+      "bytes": 106195,
+      "path": "source/src/AgentLang.Core/Storage.fs",
+      "sha256": "b5322215792397293e5adec2b3efd3705459bacdc0561996385a04ce7bbcf3ec"
+    },
+    {
+      "bytes": 8978,
+      "path": "source/src/AgentLang.Core/TrustedValues.fs",
+      "sha256": "c26edc9681c879c5f0a410274901d6e1cfc3c515f7628f139235747daad57659"
+    },
+    {
+      "bytes": 83533,
+      "path": "source/src/AgentLang.Core/TypedIR.fs",
+      "sha256": "e564bcb0785ea7c71030848934ae9cc6af331d5a74add3d87ff0f51cc0152dc1"
+    },
+    {
+      "bytes": 29556,
+      "path": "source/src/AgentLang.Core/ValueInspection.fs",
+      "sha256": "cf323570d8898de919bea520aa290645f2c722b988da91a7879b9ef893a7a645"
+    },
+    {
+      "bytes": 26114,
+      "path": "source/src/AgentLang.Core/VocabularyAnalysis.fs",
+      "sha256": "0be80d5bc6f5774151cc054e2c4225297c4bbfcb8d09d5f91b447f4d295bd826"
+    },
+    {
+      "bytes": 1356,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/dev-obj/AgentLang.Llvm.fsproj.nuget.g.props",
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "bytes": 150,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/dev-obj/AgentLang.Llvm.fsproj.nuget.g.targets",
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "bytes": 191,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/dev-obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "bytes": 814,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/dev-obj/Release/net9.0/AgentLang.Llvm.AssemblyInfo.fs",
+      "sha256": "883c395dbfe293cca22c2ab8ea45f61cc237d37b0e32952393ead60093881360"
+    },
+    {
+      "bytes": 1356,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj/AgentLang.Llvm.fsproj.nuget.g.props",
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "bytes": 150,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj/AgentLang.Llvm.fsproj.nuget.g.targets",
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "bytes": 191,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "bytes": 814,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj/Release/net9.0/AgentLang.Llvm.AssemblyInfo.fs",
+      "sha256": "883c395dbfe293cca22c2ab8ea45f61cc237d37b0e32952393ead60093881360"
+    },
+    {
+      "bytes": 1356,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj2/AgentLang.Llvm.fsproj.nuget.g.props",
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "bytes": 150,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj2/AgentLang.Llvm.fsproj.nuget.g.targets",
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "bytes": 191,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj2/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "bytes": 814,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj2/Release/net9.0/AgentLang.Llvm.AssemblyInfo.fs",
+      "sha256": "883c395dbfe293cca22c2ab8ea45f61cc237d37b0e32952393ead60093881360"
+    },
+    {
+      "bytes": 1356,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj3/AgentLang.Llvm.fsproj.nuget.g.props",
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "bytes": 150,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj3/AgentLang.Llvm.fsproj.nuget.g.targets",
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "bytes": 191,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj3/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "bytes": 814,
+      "path": "source/src/AgentLang.Llvm/.agentlang/owning-stack-002/smoke-obj3/Release/net9.0/AgentLang.Llvm.AssemblyInfo.fs",
+      "sha256": "883c395dbfe293cca22c2ab8ea45f61cc237d37b0e32952393ead60093881360"
+    },
+    {
+      "bytes": 1433,
+      "path": "source/src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+      "sha256": "a20481964b8f8dea28801c255ab18d6644cf43a8a82b263c308a55bca094b85e"
+    },
+    {
+      "bytes": 20186,
+      "path": "source/src/AgentLang.Llvm/ArenaLifetime.fs",
+      "sha256": "05eabe2a0e90f5aed418a5f8869075ab234cff1fd212d208f32672c8a63ec385"
+    },
+    {
+      "bytes": 131678,
+      "path": "source/src/AgentLang.Llvm/LlvmAot.fs",
+      "sha256": "efaf238d55167d2870c5eebd2b67a77759224fdd69bacbac0d0a266765ce9c80"
+    },
+    {
+      "bytes": 13709,
+      "path": "source/src/AgentLang.Llvm/LlvmToolchain.fs",
+      "sha256": "e2c4611fe8c234fda1d3b40a84c9cf71a01becaa0af228a2afd73c268d70bf4f"
+    },
+    {
+      "bytes": 5317,
+      "path": "source/src/AgentLang.Llvm/NativeAbi.fs",
+      "sha256": "4c2504edcff2bf4d52ccfb0ec920c92ff9298f347278e996a2de46828199791a"
+    },
+    {
+      "bytes": 12945,
+      "path": "source/src/AgentLang.Llvm/NativeValueMetrics.fs",
+      "sha256": "e0e4f8d764a3bcc2abeb29a7ddfb4c7500b8c3bd01fc89104840b1a9eb593b25"
+    },
+    {
+      "bytes": 16129,
+      "path": "source/src/AgentLang.Llvm/NativeValues.fs",
+      "sha256": "a5a2898a23d98c6f52b48cc471f111f757d4560dc9e30aed8fe40bb54dd93957"
+    },
+    {
+      "bytes": 430313,
+      "path": "source/src/AgentLang.Llvm/OwningStackAot.fs",
+      "sha256": "7dafc3aa039333b145a3327e71c058d4c5712fd0edc8153c0ad4cdc7a0dc98f5"
+    },
+    {
+      "bytes": 46738,
+      "path": "source/src/AgentLang.Llvm/native/arena_runtime.c",
+      "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+    },
+    {
+      "bytes": 10596,
+      "path": "source/src/AgentLang.Llvm/native/arena_runtime.h",
+      "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+    },
+    {
+      "bytes": 157340,
+      "path": "source/src/AgentLang.Llvm/native/mailbox_runtime.c",
+      "sha256": "bb82ae6925c9c880adfebe9743f5b25dc929012b5d412a0cb91b442532d06ab3"
+    },
+    {
+      "bytes": 19300,
+      "path": "source/src/AgentLang.Llvm/native/mailbox_runtime.h",
+      "sha256": "f2efc5cbaecb803c9fd8c1df1bd3de3b07a09ce9f485b85682a937b69902c3af"
+    },
+    {
+      "bytes": 45955,
+      "path": "source/src/AgentLang.Llvm/native/mailbox_runtime_test.c",
+      "sha256": "35c2f2f55109cc3499b799cd04f695c962264e4da42b79fad42221f911e5e41a"
+    },
+    {
+      "bytes": 1092,
+      "path": "source/src/AgentLang.Llvm/native/mailbox_runtime_windows.c",
+      "sha256": "97ca4a9fdca6f5fdb2a7347272158cfcd722da62adb4737f0bb207a5577685d9"
+    },
+    {
+      "bytes": 4310,
+      "path": "source/src/AgentLang.Llvm/native/module_abi.h",
+      "sha256": "dd39d846c17758674f9dfe77e9c5ebce05adfe555a539c37f5e1be710a2ac5a5"
+    },
+    {
+      "bytes": 24571,
+      "path": "source/src/AgentLang.Llvm/native/owning_bank.c",
+      "sha256": "301330fb04c197d812a71d7f27f851c249b73aa0503158386a8c7ce1069c085b"
+    },
+    {
+      "bytes": 5976,
+      "path": "source/src/AgentLang.Llvm/native/owning_bank.h",
+      "sha256": "63fd3b3deda0adad7c50b67307e760458692c46f4ca1d4a8a34ead929bb5e43a"
+    },
+    {
+      "bytes": 33046,
+      "path": "source/src/AgentLang.Llvm/native/owning_bank_test.c",
+      "sha256": "c7400b42687a89c9562554dffa967dbb14b936308094a5c9a33ccbee4d8f7fb5"
+    },
+    {
+      "bytes": 5845,
+      "path": "source/src/AgentLang.Llvm/native/owning_mailbox_abi.h",
+      "sha256": "5ee9b31d74a0e7dcc07bd4e53f9d34044f4e56a58b8f83caab4cb8554401238d"
+    },
+    {
+      "bytes": 15297,
+      "path": "source/src/AgentLang.Llvm/native/owning_mailbox_release_test.c",
+      "sha256": "66a3f07a46da93c1c379b3c3e7320c13fb78766f38d59d82e3a551b8094bb08a"
+    },
+    {
+      "bytes": 71533,
+      "path": "source/src/AgentLang.Llvm/native/owning_mailbox_test.c",
+      "sha256": "687746f01d951116bc8d477674d79d2e4d518b28c3ad5183ed4deb6b9e18021c"
+    },
+    {
+      "bytes": 14516,
+      "path": "source/src/AgentLang.Llvm/native/owning_release_runtime_test.c",
+      "sha256": "75606eef1796e2a882b67f646ec5a4df14eacb402fefea478f851706a4a92847"
+    },
+    {
+      "bytes": 102998,
+      "path": "source/src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "sha256": "8634b6bd2e24692cb967285504ec8293081422cb06f29a28601bfbafce477aba"
+    },
+    {
+      "bytes": 12295,
+      "path": "source/src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "sha256": "0a81f2a3a1e70f967f9e1d6cb01cf405b5edc92f01987ad0701873c895652f99"
+    },
+    {
+      "bytes": 159705,
+      "path": "source/src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+      "sha256": "3f3c63c7434b09e258effa1c04426f04db5d3b9a973f38214f9ecb8b51b0351e"
+    },
+    {
+      "bytes": 64314,
+      "path": "source/src/AgentLang.Llvm/native/runtime_test.c",
+      "sha256": "9cc2600b4ace7fcb92f9bcca1ac7c743f2be246657410bdb09f1171b78cccb2a"
+    }
+  ]
+}

@@ -46,6 +46,13 @@ process memory is lower at this point; copy counters remain unmeasured. This
 does not establish a throughput win or choose a policy. Isolate driver/polling/
 admission timing before interpreting another internally scheduled ranking.
 
+[Report 209](../reports/209-mailbox-diagnostics.md) adds rejection categories and
+owning-copy counters without changing the drivers. Eleven fresh smoke cases pass.
+KEEP avoids suspension-boundary copies, while internal construction copies remain
+substantial. Four-slot KEEP shows scratch scarcity; sixteen-slot overload primarily
+rejects active identities. This unscored smoke does not explain report 208's result
+or select a policy. Copy counters are logical bytes with overlapping subsets.
+
 [Midori research](MIDORI-RESEARCH.md) supplies architectural comparisons, not
 AgentLang performance evidence. Include bounded outstanding work, explicit
 suspension, copy costs and retained-state interleaving in this evaluation.
