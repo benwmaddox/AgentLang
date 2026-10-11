@@ -142,3 +142,7 @@ reports/evidence/140-matched-mailbox-load/** -text -whitespace
 # Frozen maintenance study inputs and evidence retain exact checksum bytes.
 experiments/AgentLang.SubagentTrials/paid-invoice-maintenance-141/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 reports/evidence/141-paid-invoice-maintenance/** -text -whitespace
+
+# Preserve frozen grouped-timing trial inputs and evidence byte hashes.
+experiments/AgentLang.SubagentTrials/replacement-trial-230/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+reports/evidence/230-grouped-renewal-timing-preflight/** -text -whitespace

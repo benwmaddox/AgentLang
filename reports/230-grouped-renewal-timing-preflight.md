@@ -1,6 +1,6 @@
 # 230 — Grouped renewal timing replacement preflight
 
-Status: input preparation complete; calibration pending; no participants dispatched.
+Status: calibrated and frozen; F# trial completed and AgentLang trial underway.
 
 The next comparison tests replacement of an existing function contract and
 preservation of its callers. Both fresh agents will group monthly renewal's
@@ -48,6 +48,52 @@ baselines and that all 22 files in each private runtime match the recorded
 hashes. The review covers preparation only; oracle and control review remain
 separate gates.
 
+The F# behavioral controls now produced nine observations each. The correct
+control matched all nine expected outcomes; the swapped-timestamp control
+diverged from correct behavior in six cases, exactly as the model predicted.
+These are coordinator calibration results, not agent results. The first
+control attempt failed because its directory depth changed a relative project
+reference; its raw failure logs were retained before retrying at the original
+depth with the project file unchanged.
+
+Provisional oracle review found preservation gaps: whitespace normalization
+could alter quoted expectations, some valid local record constructions were
+rejected, generated dictionary entries were allowed by name alone, and F#
+needed a separate audit of its six source files and inherited assertions.
+The AgentLang gaps were fixed and validated. The F# audit now accepts local
+bindings, either record-field order, inline result assertions, match-based
+assertions and regression placement after the annual scenario. Its 12 pure
+source controls passed. Production behavior and source scope are checked
+separately: swapped timestamps pass the permitted edit scope and fail six
+behavior cases.
+
+The F# audit remains lexical. It preserves inherited tokens and quoted literals
+but does not prove equivalent assertion execution when indentation or inserted
+control flow changes. Before dispatch, acceptance therefore explicitly requires
+independent review of final sources for inherited assertion execution/scope and
+the complete non-generated file delta. The same independent final review also
+checks the AgentLang submission. Static failures remain visible and must be
+resolved against the original requirements; no preservation requirement is
+relaxed. This is a material automation limit, not an agent result.
+
+The correct AgentLang control published the three revised functions with their
+existing identities after all 160 attached tests passed (159 inherited and one
+new regression). Its six direct monthly test calls were migrated. The new
+record's generated constructor/accessors are runtime entries, with no added
+persisted function identities. Separate independent scoring now matched all
+nine common cases and all 66 inherited creator cases. Preservation verified
+284 inherited source/test/example objects, prior revisions and unrelated
+definitions; all three replaced functions remained library-qualified. The
+swapped candidate produced exactly six predicted behavior mismatches. The
+corrected old-caller control returned `FLOW_ARGUMENT_ARITY` (expected four,
+received five) without advancing the monthly revision or changing its
+manifest. Weakened-assertion and semantic type controls also passed calibration.
+
+The disposable F# control builds enabled NuGet audit but could not fetch
+advisory data in the sandbox (`NU1900`). Their receipts explicitly report
+unavailable audit data; a successful build does not establish an audit pass.
+No new package was introduced and no participant code was executed on the host.
+
 The first proposed task added a third argument to a list callback. Inspection
 rejected it because current callbacks cannot capture caller locals, and the
 two seeds did not share the assumed caller graph. The grouped-time contract is
@@ -65,4 +111,7 @@ retain the pinned baselines, private runtime files, task packets, launchers,
 setup, preparation receipt, review and actual smoke traces. Archive SHA-256:
 `6ed9a50842f34a0af4a477f635459a5fa7e43401efb0578f16c7aced1c42b1db`.
 The archived report predates this footer and status update. This snapshot does
-not freeze the oracle or authorize dispatch; those gates remain pending.
+not freeze the oracle or authorize dispatch. Those later gates are recorded in the preflight archive below.
+
+
+The [sealed preflight archive](evidence/230-grouped-renewal-timing-preflight/preflight-230-20261011T191419.684150Z.zip) and [member index](evidence/230-grouped-renewal-timing-preflight/preflight-230-20261011T191419.684150Z.members.json) preserve the 48 frozen inputs and 10,079 verified evidence/source members. Archive SHA-256: `1728f033de7052955b4450d25c95105df33cb858403193b39786f77e016fe34c`. This preflight-only archive includes zero participants; it was sealed after dispatch from frozen pre-dispatch inputs. The archived report predates this footer. Both trials use fresh Luna/max agents, F# first, under sandbox-only execution. Participant results will be reported separately.

@@ -1,0 +1,1271 @@
+{
+  "status": "model-controls-passed",
+  "caseCount": 9,
+  "casesEvaluatedPerVariant": {
+    "correct": 9,
+    "shared-instant": 9,
+    "sort-by-at": 9,
+    "last-error": 9,
+    "partial-success": 9,
+    "swap-monthly-timing": 9
+  },
+  "expectedSuccesses": 5,
+  "minuteCellContract": "integer cells are exact minute offsets from 2026-01-01T12:00:00Z",
+  "discrimination": {
+    "shared-instant": [
+      "monthly-annual-distinct-instants",
+      "chained-renewal-replacement-later",
+      "reverse-chronological-independent-items",
+      "chained-second-before-first-start"
+    ],
+    "sort-by-at": [
+      "missing-old-first-beats-later-failure",
+      "chained-second-before-first-start"
+    ],
+    "last-error": [
+      "missing-old-first-beats-later-failure"
+    ],
+    "partial-success": [
+      "valid-prefix-then-missing-old-is-atomic",
+      "chained-second-before-first-start"
+    ],
+    "swap-monthly-timing": [
+      "monthly-annual-distinct-instants",
+      "chained-renewal-replacement-later",
+      "reverse-chronological-independent-items",
+      "valid-prefix-then-missing-old-is-atomic",
+      "chained-second-before-first-start",
+      "monthly-grouped-time-direct"
+    ]
+  },
+  "listOrderOnlyDifferences": {
+    "shared-instant": [],
+    "sort-by-at": [
+      "reverse-chronological-independent-items"
+    ],
+    "last-error": [],
+    "partial-success": [],
+    "swap-monthly-timing": []
+  },
+  "comparisonContract": "canonical full Store contents sorted by entity ID; list-order behavior remains observable in list-backed AgentLang stores",
+  "perCaseControlResults": [
+    {
+      "caseId": "empty-list",
+      "correct": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ]
+        }
+      },
+      "shared-instant": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ]
+        }
+      },
+      "sort-by-at": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ]
+        }
+      },
+      "last-error": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ]
+        }
+      },
+      "partial-success": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ]
+        }
+      },
+      "swap-monthly-timing": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "caseId": "monthly-annual-distinct-instants",
+      "correct": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 75,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 140,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 75,
+              "finish": 240,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            },
+            {
+              "id": "new2",
+              "start": 140,
+              "finish": 420,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ]
+        }
+      },
+      "shared-instant": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 75,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 75,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 75,
+              "finish": 240,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            },
+            {
+              "id": "new2",
+              "start": 75,
+              "finish": 420,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ]
+        }
+      },
+      "sort-by-at": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 75,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 140,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 75,
+              "finish": 240,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            },
+            {
+              "id": "new2",
+              "start": 140,
+              "finish": 420,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ]
+        }
+      },
+      "last-error": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 75,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 140,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 75,
+              "finish": 240,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            },
+            {
+              "id": "new2",
+              "start": 140,
+              "finish": 420,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ]
+        }
+      },
+      "partial-success": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 75,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 140,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 75,
+              "finish": 240,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            },
+            {
+              "id": "new2",
+              "start": 140,
+              "finish": 420,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ]
+        }
+      },
+      "swap-monthly-timing": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+          "message": "Subscription expiry must be later than its start."
+        }
+      }
+    },
+    {
+      "caseId": "chained-renewal-replacement-later",
+      "correct": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 60,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 60,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 180,
+              "term": "monthly"
+            },
+            {
+              "id": "new2",
+              "start": 180,
+              "finish": 480,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ]
+        }
+      },
+      "shared-instant": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 60,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 60,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 60,
+              "term": "monthly"
+            },
+            {
+              "id": "new2",
+              "start": 60,
+              "finish": 480,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ]
+        }
+      },
+      "sort-by-at": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 60,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 60,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 180,
+              "term": "monthly"
+            },
+            {
+              "id": "new2",
+              "start": 180,
+              "finish": 480,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ]
+        }
+      },
+      "last-error": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 60,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 60,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 180,
+              "term": "monthly"
+            },
+            {
+              "id": "new2",
+              "start": 180,
+              "finish": 480,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ]
+        }
+      },
+      "partial-success": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 60,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 60,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 180,
+              "term": "monthly"
+            },
+            {
+              "id": "new2",
+              "start": 180,
+              "finish": 480,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ]
+        }
+      },
+      "swap-monthly-timing": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+          "message": "Subscription expiry must be later than its start."
+        }
+      }
+    },
+    {
+      "caseId": "reverse-chronological-independent-items",
+      "correct": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 180,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 60,
+              "term": "original"
+            },
+            {
+              "id": "new2",
+              "start": 180,
+              "finish": 420,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            },
+            {
+              "id": "new",
+              "start": 60,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ]
+        }
+      },
+      "shared-instant": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 180,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 180,
+              "term": "original"
+            },
+            {
+              "id": "new2",
+              "start": 180,
+              "finish": 420,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            },
+            {
+              "id": "new",
+              "start": 180,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ]
+        }
+      },
+      "sort-by-at": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 180,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 60,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 60,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            },
+            {
+              "id": "new2",
+              "start": 180,
+              "finish": 420,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ]
+        }
+      },
+      "last-error": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 180,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 60,
+              "term": "original"
+            },
+            {
+              "id": "new2",
+              "start": 180,
+              "finish": 420,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            },
+            {
+              "id": "new",
+              "start": 60,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ]
+        }
+      },
+      "partial-success": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 180,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 60,
+              "term": "original"
+            },
+            {
+              "id": "new2",
+              "start": 180,
+              "finish": 420,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            },
+            {
+              "id": "new",
+              "start": 60,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ]
+        }
+      },
+      "swap-monthly-timing": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+          "message": "Subscription expiry must be later than its start."
+        }
+      }
+    },
+    {
+      "caseId": "missing-old-first-beats-later-failure",
+      "correct": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_NOT_FOUND",
+          "message": "The subscription does not exist."
+        }
+      },
+      "shared-instant": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_NOT_FOUND",
+          "message": "The subscription does not exist."
+        }
+      },
+      "sort-by-at": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+          "message": "Subscription expiry must be later than its start."
+        }
+      },
+      "last-error": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+          "message": "Subscription expiry must be later than its start."
+        }
+      },
+      "partial-success": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_NOT_FOUND",
+          "message": "The subscription does not exist."
+        }
+      },
+      "swap-monthly-timing": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_NOT_FOUND",
+          "message": "The subscription does not exist."
+        }
+      }
+    },
+    {
+      "caseId": "valid-prefix-then-missing-old-is-atomic",
+      "correct": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_NOT_FOUND",
+          "message": "The subscription does not exist."
+        }
+      },
+      "shared-instant": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_NOT_FOUND",
+          "message": "The subscription does not exist."
+        }
+      },
+      "sort-by-at": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_NOT_FOUND",
+          "message": "The subscription does not exist."
+        }
+      },
+      "last-error": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_NOT_FOUND",
+          "message": "The subscription does not exist."
+        }
+      },
+      "partial-success": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 60,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 60,
+              "finish": 240,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ]
+        }
+      },
+      "swap-monthly-timing": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+          "message": "Subscription expiry must be later than its start."
+        }
+      }
+    },
+    {
+      "caseId": "chained-second-before-first-start",
+      "correct": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "CANCEL_BEFORE_START",
+          "message": "A subscription cannot be cancelled before it starts."
+        }
+      },
+      "shared-instant": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 180,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 180,
+              "finish": 360,
+              "status": "cancelled",
+              "cancelled": 180,
+              "term": "monthly"
+            },
+            {
+              "id": "new2",
+              "start": 180,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "annual"
+            }
+          ]
+        }
+      },
+      "sort-by-at": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_NOT_FOUND",
+          "message": "The subscription does not exist."
+        }
+      },
+      "last-error": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "CANCEL_BEFORE_START",
+          "message": "A subscription cannot be cancelled before it starts."
+        }
+      },
+      "partial-success": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 180,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 180,
+              "finish": 360,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ]
+        }
+      },
+      "swap-monthly-timing": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+          "message": "Subscription expiry must be later than its start."
+        }
+      }
+    },
+    {
+      "caseId": "monthly-grouped-time-direct",
+      "correct": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 75,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "old2",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 75,
+              "finish": 240,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ]
+        }
+      },
+      "shared-instant": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 75,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "old2",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 75,
+              "finish": 240,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ]
+        }
+      },
+      "sort-by-at": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 75,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "old2",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 75,
+              "finish": 240,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ]
+        }
+      },
+      "last-error": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 75,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "old2",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 75,
+              "finish": 240,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ]
+        }
+      },
+      "partial-success": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "ok",
+          "subscriptions": [
+            {
+              "id": "old",
+              "start": 0,
+              "finish": 300,
+              "status": "cancelled",
+              "cancelled": 75,
+              "term": "original"
+            },
+            {
+              "id": "third",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "old2",
+              "start": 0,
+              "finish": 300,
+              "status": "active",
+              "cancelled": null,
+              "term": "original"
+            },
+            {
+              "id": "new",
+              "start": 75,
+              "finish": 240,
+              "status": "active",
+              "cancelled": null,
+              "term": "monthly"
+            }
+          ]
+        }
+      },
+      "swap-monthly-timing": {
+        "matchesCorrect": false,
+        "matchesCorrectWithListOrder": false,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+          "message": "Subscription expiry must be later than its start."
+        }
+      }
+    },
+    {
+      "caseId": "monthly-expiry-equals-at-exact-error",
+      "correct": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+          "message": "Subscription expiry must be later than its start."
+        }
+      },
+      "shared-instant": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+          "message": "Subscription expiry must be later than its start."
+        }
+      },
+      "sort-by-at": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+          "message": "Subscription expiry must be later than its start."
+        }
+      },
+      "last-error": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+          "message": "Subscription expiry must be later than its start."
+        }
+      },
+      "partial-success": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+          "message": "Subscription expiry must be later than its start."
+        }
+      },
+      "swap-monthly-timing": {
+        "matchesCorrect": true,
+        "matchesCorrectWithListOrder": true,
+        "outcome": {
+          "tag": "error",
+          "code": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+          "message": "Subscription expiry must be later than its start."
+        }
+      }
+    }
+  ],
+  "errorContract": "Result errors expose the exact BusinessError code and message; errors return no partial Store."
+}

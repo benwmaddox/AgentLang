@@ -1,6 +1,6 @@
 # Replacement trial 230: group monthly renewal timing
 
-Status: preparation in progress; no participants dispatched. Report 229 is accepted on
+Status: calibration complete; final readiness review pending; no participants dispatched. Report 229 is accepted on
 `main` at `74cc644` with 37 full checks and 1,008 native assertions passing.
 Build and hash a fresh 230 runtime from that accepted revision; leave all 226
 and 228 pins and evidence untouched.
@@ -68,6 +68,16 @@ scheduled step callers. Do not interpret that architecture difference as a
 language effect.
 
 ## Acceptance, preservation, and controls
+
+The F# lexical preservation audit is a triage check, not proof that retained
+assertions still execute. Acceptance additionally requires independent source
+review of both final submissions. For F#, that review must verify inherited
+assertion execution and scope, including indentation/control flow, and the
+complete non-generated file delta. A static scope failure must be retained and
+resolved against these unchanged requirements, never silently overridden.
+Behavior remains graded by the frozen nine-case scorer. This mandatory review
+is declared before dispatch; preserving assertions and limiting edits remain
+requirements rather than advisory checks.
 
 Use the existing seven 228 scheduled cases unchanged in both arms, and add two
 held-out direct cases for `renew-monthly`/`renewMonthly`:
