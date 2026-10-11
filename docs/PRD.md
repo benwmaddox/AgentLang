@@ -27,6 +27,15 @@ and historical reports so prior conclusions remain auditable; that does not
 require keeping old implementations in the current runtime.
 ## Purpose and hypothesis
 
+Delivery priority, 2026-10-11: implement Campfire in this language. Language
+features and runtime work should serve the next application requirement. Use
+application implementation and subsequent maintenance to investigate reliability,
+discoverability and vocabulary reuse; standalone research infrastructure is no
+longer the primary deliverable. The full application, native runtime and its
+memory/behavior validation remain required beyond initial component slices.
+See [Campfire implementation](CAMPFIRE-IMPLEMENTATION.md) for the pinned reference
+and delivery sequence.
+
 AgentLang tests whether a small, inspectable programming environment can retain project understanding as executable vocabulary. An agent discovers existing operations, creates and tests a reusable word, uses it to complete a task, and leaves it available to a later agent.
 
 The primary hypothesis is that accumulated, discoverable, strongly typed vocabulary helps fresh AI coding agents make reliable changes, find established behavior, catch violations before committing, and recover from errors. Forth/Lisp-style vocabulary growth is valuable when later builders can discover and safely compose project concepts. Lower token, turn and interaction costs are secondary benefits to measure. Conventional F# is a strong correctness baseline; the experiment tests definition-level change boundaries, discoverability and reusable behavioral contracts as well as static checking. Implementing a language is an enabling step, not evidence for the hypothesis.

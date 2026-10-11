@@ -1,5 +1,10 @@
 # Technical prerequisites for a Campfire migration
 
+Historical assessment. The 2026-10-11 delivery priority now starts the Campfire
+implementation; see [the active plan](../docs/CAMPFIRE-IMPLEMENTATION.md). The
+implementation gaps below describe the 2026-10-07 snapshot, not current runtime
+capabilities. Preserve them as the original readiness assessment.
+
 Assessment, 2026-10-07. Proposed late-stage roadmap, not new V1 scope or a claim
 that the interpreter can currently host this application.
 

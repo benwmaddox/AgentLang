@@ -1,0 +1,163 @@
+type UserId : Int { }
+
+enum Role {
+    case member
+    case administrator
+    case bot
+}
+
+record User {
+    field id: UserId
+    field role: Role
+}
+
+record ExistingMessage {
+    field creator-id: UserId
+}
+
+fn user.can-administer?(user: User, creator-id: Option<UserId>, is-new: Bool) -> Bool {
+    effects none
+    doc "Applies Campfire's administrator, creator, or new-record administration rule."
+
+    if user.role == Role.administrator() {
+        true
+    } else {
+        match creator-id {
+            some record-creator-id => {
+                if record-creator-id == user.id {
+                    true
+                } else {
+                    is-new
+                }
+            }
+            none => is-new
+        }
+    }
+}
+
+test user.can-administer?/member-self-existing {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.member()), option.some<UserId>(UserId.new(11)), false)
+    => true
+}
+
+test user.can-administer?/member-self-new {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.member()), option.some<UserId>(UserId.new(11)), true)
+    => true
+}
+
+test user.can-administer?/member-other-existing {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.member()), option.some<UserId>(UserId.new(22)), false)
+    => false
+}
+
+test user.can-administer?/member-other-new {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.member()), option.some<UserId>(UserId.new(22)), true)
+    => true
+}
+
+test user.can-administer?/member-no-creator-existing {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.member()), option.none<UserId>(), false)
+    => false
+}
+
+test user.can-administer?/member-no-creator-new {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.member()), option.none<UserId>(), true)
+    => true
+}
+
+test user.can-administer?/administrator-self-existing {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.administrator()), option.some<UserId>(UserId.new(11)), false)
+    => true
+}
+
+test user.can-administer?/administrator-self-new {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.administrator()), option.some<UserId>(UserId.new(11)), true)
+    => true
+}
+
+test user.can-administer?/administrator-other-existing {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.administrator()), option.some<UserId>(UserId.new(22)), false)
+    => true
+}
+
+test user.can-administer?/administrator-other-new {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.administrator()), option.some<UserId>(UserId.new(22)), true)
+    => true
+}
+
+test user.can-administer?/administrator-no-creator-existing {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.administrator()), option.none<UserId>(), false)
+    => true
+}
+
+test user.can-administer?/administrator-no-creator-new {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.administrator()), option.none<UserId>(), true)
+    => true
+}
+
+test user.can-administer?/bot-self-existing {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.bot()), option.some<UserId>(UserId.new(11)), false)
+    => true
+}
+
+test user.can-administer?/bot-self-new {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.bot()), option.some<UserId>(UserId.new(11)), true)
+    => true
+}
+
+test user.can-administer?/bot-other-existing {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.bot()), option.some<UserId>(UserId.new(22)), false)
+    => false
+}
+
+test user.can-administer?/bot-other-new {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.bot()), option.some<UserId>(UserId.new(22)), true)
+    => true
+}
+
+test user.can-administer?/bot-no-creator-existing {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.bot()), option.none<UserId>(), false)
+    => false
+}
+
+test user.can-administer?/bot-no-creator-new {
+    user.can-administer?(user.new(id = UserId.new(11), role = Role.bot()), option.none<UserId>(), true)
+    => true
+}
+
+fn message.can-administer?(user: User, message: ExistingMessage) -> Bool {
+    effects none
+    doc "Applies the shared policy to an existing message using its creator ID."
+
+    user.can-administer?(option.some<UserId>(message.creator-id), false)
+}
+
+test message.can-administer?/member-own-message {
+    message.can-administer?(user.new(id = UserId.new(11), role = Role.member()), existingMessage.new(creator-id = UserId.new(11)))
+    => true
+}
+
+test message.can-administer?/member-other-message {
+    message.can-administer?(user.new(id = UserId.new(11), role = Role.member()), existingMessage.new(creator-id = UserId.new(22)))
+    => false
+}
+
+test message.can-administer?/administrator-own-message {
+    message.can-administer?(user.new(id = UserId.new(11), role = Role.administrator()), existingMessage.new(creator-id = UserId.new(11)))
+    => true
+}
+
+test message.can-administer?/administrator-other-message {
+    message.can-administer?(user.new(id = UserId.new(11), role = Role.administrator()), existingMessage.new(creator-id = UserId.new(22)))
+    => true
+}
+
+test message.can-administer?/bot-own-message {
+    message.can-administer?(user.new(id = UserId.new(11), role = Role.bot()), existingMessage.new(creator-id = UserId.new(11)))
+    => true
+}
+
+test message.can-administer?/bot-other-message {
+    message.can-administer?(user.new(id = UserId.new(11), role = Role.bot()), existingMessage.new(creator-id = UserId.new(22)))
+    => false
+}

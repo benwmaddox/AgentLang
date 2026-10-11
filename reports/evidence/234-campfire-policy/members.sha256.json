@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "archive": "campfire-policy-evidence.zip",
+  "memberCount": 23,
+  "members": [
+    {
+      "path": "runs/default-release/requests-responses/define-test-commit.stderr.txt",
+      "length": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runs/default-release/requests-responses/define-test-commit.stdin.jsonl",
+      "length": 5868,
+      "sha256": "69aa8e808995a4d99d468c56ea5654e36187c76a25ccaf8afcd73d74dbf60e3f"
+    },
+    {
+      "path": "runs/default-release/requests-responses/define-test-commit.stdout.jsonl",
+      "length": 4592,
+      "sha256": "4df6fa14e18ebab6e701e9f560fb36513480b308dd2434cafd8dc0e1c80e4b6a"
+    },
+    {
+      "path": "runs/default-release/requests-responses/fresh-test-and-independent-oracle.stderr.txt",
+      "length": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runs/default-release/requests-responses/fresh-test-and-independent-oracle.stdin.jsonl",
+      "length": 3558,
+      "sha256": "0ff967139e5bfca7893b31be1f0c32fe4cd8176f3f8e952f589d866af23d1996"
+    },
+    {
+      "path": "runs/default-release/requests-responses/fresh-test-and-independent-oracle.stdout.jsonl",
+      "length": 9730,
+      "sha256": "a31366e3e1a858905c2fdd57aad44abfbf0a1eccb840ee84977ce2930e8e9f52"
+    },
+    {
+      "path": "runs/default-release/verification.json",
+      "length": 13458,
+      "sha256": "d5e781b739043496b6970807b3b6ea0b86c102db08fd8b00c91037271218d0d4"
+    },
+    {
+      "path": "runs/initial-verifier-error/define-test-commit.stdout.jsonl",
+      "length": 4592,
+      "sha256": "0645164cca2db604c573258f261747168b21669376ae2824286b6b6f35448d0b"
+    },
+    {
+      "path": "runs/initial-verifier-error/diagnostic.json",
+      "length": 659,
+      "sha256": "c5b0c3e6072aeb295edb3584f72a4eba7148d7571f0d3de3ef2258a6b5d59979"
+    },
+    {
+      "path": "runs/initial-verifier-error/verification.json",
+      "length": 2893,
+      "sha256": "7dd5ae4dfe2471fdeb017a6f4784127c8102ecb728f6543347f3ee95a60a9223"
+    },
+    {
+      "path": "runs/preserved-previous-release/requests-responses/define-test-commit.stderr.txt",
+      "length": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runs/preserved-previous-release/requests-responses/define-test-commit.stdin.jsonl",
+      "length": 5868,
+      "sha256": "69aa8e808995a4d99d468c56ea5654e36187c76a25ccaf8afcd73d74dbf60e3f"
+    },
+    {
+      "path": "runs/preserved-previous-release/requests-responses/define-test-commit.stdout.jsonl",
+      "length": 4592,
+      "sha256": "4da316eae3bf7fddbf72ddab7d4548daa8e606b196fc995d550bcab213eacee9"
+    },
+    {
+      "path": "runs/preserved-previous-release/requests-responses/fresh-test-and-independent-oracle.stderr.txt",
+      "length": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runs/preserved-previous-release/requests-responses/fresh-test-and-independent-oracle.stdin.jsonl",
+      "length": 3558,
+      "sha256": "0ff967139e5bfca7893b31be1f0c32fe4cd8176f3f8e952f589d866af23d1996"
+    },
+    {
+      "path": "runs/preserved-previous-release/requests-responses/fresh-test-and-independent-oracle.stdout.jsonl",
+      "length": 9730,
+      "sha256": "2076c4c9164d470ebb6190d94d0766f396abf07c34871a46a162f1086276c095"
+    },
+    {
+      "path": "runs/preserved-previous-release/verification.json",
+      "length": 13590,
+      "sha256": "31e68ddfae7eaae42a3eaf9545129938c6c82c8d9fc4ea64cb8d07923c442c06"
+    },
+    {
+      "path": "runtime-hashes.json",
+      "length": 2185,
+      "sha256": "3cec4cb70d947f49c00fad846676c6800cb832958216edcc0e76e820a70e89b6"
+    },
+    {
+      "path": "source-hashes.json",
+      "length": 471,
+      "sha256": "775e63ef9e3f357a1d3f877a4f9ab49d0f239296cce6546cea6ccdd48d10c28f"
+    },
+    {
+      "path": "source/message-policy.flow",
+      "length": 5494,
+      "sha256": "64057aae104f085cf73828a5385bc7dd7ecef88c002f3a125da805601bcdb77e"
+    },
+    {
+      "path": "source/README.md",
+      "length": 2165,
+      "sha256": "0be01b8274fe6f28cd83d6ab58b978daff65ccefa4c27077719f8da50e18c760"
+    },
+    {
+      "path": "source/report.md",
+      "length": 4666,
+      "sha256": "05b30da91447f6cb9c0054ff93efd9b54da363a80b999838d3957b6dc364a6ec"
+    },
+    {
+      "path": "source/Verify-CampfirePolicy.ps1",
+      "length": 20229,
+      "sha256": "36cba58202c3e38cc8c6173826d142711608c20974974830ef05478538075896"
+    }
+  ]
+}

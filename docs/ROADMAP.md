@@ -1,5 +1,29 @@
 # Current delivery roadmap
 
+## Active delivery priority: Campfire implementation
+
+As of 2026-10-11, the primary deliverable is implementing Campfire in this
+language. Add language and runtime features when the next application step
+requires them. The earlier standalone efficacy studies remain evidence; new
+reliability observations should come from building and maintaining the application.
+
+The local reference is pinned to `basecamp/once-campfire-rust` revision
+`6dae2fd3c1a2dce61ca11beb731bcce2b42b67ad`. Start with message administration
+policy, then integrate authenticated room access, message listing and creation,
+SQLite persistence, rendering and live delivery. Preserve the reference's data,
+cookie and protocol contracts; record deliberate differences explicitly.
+
+Application code belongs in `applications/campfire/`. Keep business decisions
+in inspectable language functions and use narrow trusted adapters for storage,
+transport and established cryptography. Pure policy tests are an initial component,
+not proof of a working server. Subsequent gates must exercise real persistence,
+HTTP/WebSockets, cancellation and sustained native operation. The full migration
+remains the objective after the first slice passes.
+
+Finish validation of the pending inherited-test edit guard separately. The first
+application component also passes on the previously accepted runtime, so it can
+be integrated independently; avoid unrelated language research during migration.
+
 Updated 2026-10-11. This is a delivery order and status map, not a replacement
 for the [PRD](PRD.md). Reliable agent edits, discovery and reuse of accumulated
 typed vocabulary remain the primary research question. Runtime performance and

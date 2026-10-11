@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "createdAtUtc": "2026-10-11T21:00:23.7761402Z",
+  "archive": "campfire-policy-evidence.zip",
+  "archiveLength": 26585,
+  "archiveSha256": "32cd29693f7143cc4313c205d05c9cfb4de71fc1fc5f65fbc64d8d71f7af35c6",
+  "memberManifest": "members.sha256.json",
+  "memberManifestSha256": "09bb13398bcd6290831b97e53fc5d20eb76ff7e59b1ce6e5fb5c2eb8a824adbc",
+  "memberCount": 23,
+  "verificationRuns": [
+    "20261011T205847Z-23b54e95",
+    "20261011T205856Z-ece92e53"
+  ],
+  "failedVerifierAttempt": "20261011T204828Z-10adc2da",
+  "flowSha256": "64057aae104f085cf73828a5385bc7dd7ecef88c002f3a125da805601bcdb77e",
+  "rustCommit": "6dae2fd3c1a2dce61ca11beb731bcce2b42b67ad",
+  "railsCommit": "90b330024dec3e757c79b6a7e6568f93da8e3148",
+  "excludedContent": [
+    "runtime DLLs/PDBs",
+    "CLI project and dictionary stores",
+    "process temp directories",
+    "upstream third-party checkout"
+  ]
+}
