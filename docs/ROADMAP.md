@@ -115,6 +115,15 @@ payloads before execution; ABIs are unchanged. Retained preparation failures
 and receipt gaps remain explicit. This adds no agent efficacy or throughput
 result.
 
+
+[Report 200](../reports/200-organic-vocabulary-reuse.md) freezes the next organic
+creation-and-reuse pilot. Its seed, current Flow/2 fold guidance and six
+correct/faulty runtime controls pass preflight. A creator may choose an optional
+shared library helper; only an independently accepted qualifying helper permits
+a fresh successor task. These preparation results add no comparative efficacy
+claim. Keep returned-name discovery, known-helper metadata inspection,
+production reuse, behavior and inherited-evidence preservation separate.
+
 [Report 178](../reports/178-preview-defect-control-calibration.md) calibrates the
 first defect-repair stage: three correct controls pass 37 independent cases,
 and three faulty controls fail the same eight cases despite passing their saved

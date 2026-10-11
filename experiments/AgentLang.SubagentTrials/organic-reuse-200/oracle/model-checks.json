@@ -1,0 +1,82 @@
+{
+  "status": "model-only; runtime and control execution still require current pinned CLI preflight",
+  "creatorCaseCount": 66,
+  "creatorExpectedSuccesses": 22,
+  "fixedTermOverrides": {
+    "monthly": 33,
+    "annual": 33
+  },
+  "blankFixtureRowsBecomeSuccessfulUnderFixedTerms": [
+    "subscription.renew-monthly/blank-term",
+    "subscription.renew-annual/blank-term"
+  ],
+  "creatorControls": {
+    "start-before-cancel": [
+      "subscription.renew-monthly/mid-period-boundary",
+      "subscription.renew-monthly/at-original-start",
+      "subscription.renew-monthly/touching-future-boundary",
+      "subscription.renew-monthly/touching-past-boundary",
+      "subscription.renew-monthly/other-customer-not-conflict",
+      "subscription.renew-monthly/other-product-not-conflict",
+      "subscription.renew-monthly/cancelled-third-ends-at-boundary",
+      "subscription.renew-monthly/empty-third-occupancy",
+      "subscription.renew-monthly/blank-term",
+      "subscription.renew-annual/mid-period-boundary",
+      "subscription.renew-annual/at-original-start",
+      "subscription.renew-annual/touching-future-boundary",
+      "subscription.renew-annual/touching-past-boundary",
+      "subscription.renew-annual/other-customer-not-conflict",
+      "subscription.renew-annual/other-product-not-conflict",
+      "subscription.renew-annual/cancelled-third-ends-at-boundary",
+      "subscription.renew-annual/empty-third-occupancy",
+      "subscription.renew-annual/blank-term"
+    ],
+    "leak-intermediate-as-ok": [
+      "subscription.renew-monthly/third-party-overlap",
+      "subscription.renew-monthly/replacement-id-is-old",
+      "subscription.renew-monthly/replacement-id-exists",
+      "subscription.renew-monthly/empty-replacement-period",
+      "subscription.renew-monthly/reversed-replacement-period",
+      "subscription.renew-monthly/duplicate-precedes-blank-term",
+      "subscription.renew-monthly/blank-term-precedes-bad-period",
+      "subscription.renew-monthly/bad-period-precedes-overlap",
+      "subscription.renew-monthly/old-customer-missing",
+      "subscription.renew-monthly/old-product-missing",
+      "subscription.renew-monthly/old-customer-and-product-missing",
+      "subscription.renew-monthly/blank-term-precedes-missing-customer",
+      "subscription.renew-monthly/bad-period-precedes-missing-customer",
+      "subscription.renew-monthly/missing-product-precedes-overlap",
+      "subscription.renew-monthly/duplicate-precedes-missing-customer",
+      "subscription.renew-annual/third-party-overlap",
+      "subscription.renew-annual/replacement-id-is-old",
+      "subscription.renew-annual/replacement-id-exists",
+      "subscription.renew-annual/empty-replacement-period",
+      "subscription.renew-annual/reversed-replacement-period",
+      "subscription.renew-annual/duplicate-precedes-blank-term",
+      "subscription.renew-annual/blank-term-precedes-bad-period",
+      "subscription.renew-annual/bad-period-precedes-overlap",
+      "subscription.renew-annual/old-customer-missing",
+      "subscription.renew-annual/old-product-missing",
+      "subscription.renew-annual/old-customer-and-product-missing",
+      "subscription.renew-annual/blank-term-precedes-missing-customer",
+      "subscription.renew-annual/bad-period-precedes-missing-customer",
+      "subscription.renew-annual/missing-product-precedes-overlap",
+      "subscription.renew-annual/duplicate-precedes-missing-customer"
+    ]
+  },
+  "successorCaseCount": 9,
+  "successorExpectedSuccesses": 4,
+  "successorControls": {
+    "ok-with-partial-store-after-later-error": [
+      "later-item-fails-after-valid-prefix",
+      "repeated-replacement-id-fails-second",
+      "repeated-old-id-fails-second"
+    ],
+    "reverse-item-order-error": [
+      "two-valid-plans",
+      "first-error-precedes-later-expiry",
+      "preserves-store-and-subscription-order"
+    ]
+  },
+  "errorPayloadContract": "Result<Store, BusinessError> errors carry only the BusinessError; wrong-OK controls expose any returned partial Store."
+}
