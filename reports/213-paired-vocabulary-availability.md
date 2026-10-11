@@ -1,7 +1,28 @@
 # 213 — Fresh retained/reset vocabulary availability pilot
 
-Status: preflight accepted on 2026-10-11. Neither participant has been dispatched;
-no participant outcome or comparative benefit is claimed.
+Status: interim on 2026-10-11. Reset is independently accepted; the fresh retained
+participant is running. No paired outcome or comparative benefit is claimed.
+
+The reset participant passes all nine independent full-result/error cases,
+137 common inherited tests, 148 total tests and 39 example owners. The batch and
+its fold helper are library functions with five and six own tests respectively.
+All 47 inherited words and 29 types preserve their source, maturity, tests and
+examples. Independent read-only review verifies the stored object hashes and
+unchanged actor fingerprint. The broker audit passes with 39 exchanges and exits
+0/0. Reset does not create or call either retained renewal target; it composes
+the inherited subscription operations directly.
+
+The participant reports correcting noncanonical IDs in initial helper test
+fixtures before publishing both functions. Root sent one lifecycle-only check
+after a process probe could not see the recorded PIDs; the trace subsequently
+advanced. No restart or score/implementation feedback was supplied. This
+administrative intervention is retained as a limitation of procedural symmetry.
+
+[Reset result](evidence/213-paired-vocabulary-availability/reset-result.zip) and
+[index](evidence/213-paired-vocabulary-availability/reset-result.index.json) retain
+the terminal project, trace, disclosure, audit, independent score/copy and review.
+Every member is reopened and verified by length and SHA256. This first arm is
+kept separate from preflight fixtures and the still-running retained arm.
 
 The [efficacy checkpoint](212-efficacy-after-public-vocabulary-reuse.md) separates
 the demonstrated public-function handoff from unproven retention benefit. This
