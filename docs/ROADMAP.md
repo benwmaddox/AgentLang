@@ -145,8 +145,15 @@ retaining active/inactive sum behavior and unchanged layouts. The implemented
 slice passes the 50-check native verifier, 52/704 C scanner cases/checks at O0,
 O2 and UBSan trap mode, and 777 full LLVM assertions. Default build and normal
 UBSan-link limitations remain recorded; the accepted full LLVM build is serial
-and audit-disabled. Float transport remains deferred
-until entry contracts and signed-zero equality are resolved.
+and audit-disabled. The [reviewed Float plan](../reports/205-native-float-implementation-plan.md)
+defines finite numeric support for owning AOT, typed aggregate equality, complete
+diagnostic parity and the coordinated ABI audit. Implementation is next; legacy
+graph AOT and native Float formatting remain deferred.
+
+[Report 204](../reports/204-git-control-plane-boundary.md) extends the real-file
+boundary to root Git metadata, including pointer files. A fresh solution build,
+305 CLI assertions and 2,191 runtime assertions pass. This bounded path policy
+does not protect nested repositories or hostile concurrent filesystem changes.
 
 [Report 178](../reports/178-preview-defect-control-calibration.md) calibrates the
 first defect-repair stage: three correct controls pass 37 independent cases,

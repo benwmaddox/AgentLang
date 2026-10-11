@@ -51,7 +51,7 @@ module internal FileSystem =
         failure "EFFECT_FILE_PATH_INVALID" $"File path '{path}' must be an unambiguous relative path beneath the project directory." [ "unambiguous relative path within project directory" ] [ path ]
 
     let private reservedPathFailure path =
-        failure "EFFECT_FILE_PATH_RESERVED" $"File path '{path}' targets AgentLang-managed project metadata." [ "ordinary project file outside AgentLang-managed storage paths" ] [ path ]
+        failure "EFFECT_FILE_PATH_RESERVED" $"File path '{path}' targets host-managed project metadata." [ "ordinary project file outside host-managed metadata paths" ] [ path ]
 
     // Windows accepts several spellings for the same path (including trailing
     // dots/spaces, alternate data stream suffixes, and DOS short names). Keep
@@ -88,6 +88,7 @@ module internal FileSystem =
         let comparison = StringComparison.OrdinalIgnoreCase
         segments.Length > 0
         && (String.Equals(segments[0], ".agentlang", comparison)
+            || String.Equals(segments[0], ".git", comparison)
             || (segments.Length = 1 && String.Equals(segments[0], "dictionary.agent", comparison)))
 
     let private rootUnavailable () =

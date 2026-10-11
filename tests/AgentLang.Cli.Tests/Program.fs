@@ -655,6 +655,14 @@ test fixture.read/fresh-state {
                 File.WriteAllText(legacyExportPath, source, UTF8Encoding(false))
             let legacyExportExisted = File.Exists legacyExportPath
             let legacyExportBytes = File.ReadAllBytes legacyExportPath
+            let gitHooksPath = Path.Combine(project, ".git", "hooks")
+            Directory.CreateDirectory(gitHooksPath) |> ignore
+            let gitConfigPath = Path.Combine(project, ".git", "config")
+            let gitHookPath = Path.Combine(gitHooksPath, "pre-commit")
+            let gitConfigBytes = Encoding.UTF8.GetBytes("[core]\n\trepositoryformatversion = 0\n")
+            let gitHookBytes = Encoding.UTF8.GetBytes("synthetic hook fixture; never executed\n")
+            File.WriteAllBytes(gitConfigPath, gitConfigBytes)
+            File.WriteAllBytes(gitHookPath, gitHookBytes)
             let protectedPaths =
                 [ ".agentlang/store/CURRENT"
                   "./.agentlang/store/CURRENT"
@@ -664,7 +672,14 @@ test fixture.read/fresh-state {
                   "dictionary.agent"
                   "ordinary/../dictionary.agent"
                   ".AGENTLANG/store/CURRENT"
-                  "DICTIONARY.AGENT" ]
+                  "DICTIONARY.AGENT"
+                  ".git"
+                  ".git/config"
+                  ".git/hooks/pre-commit"
+                  "./.git/config"
+                  "ordinary/../.git/config"
+                  ".GIT/CONFIG"
+                  "ordinary/../.GIT/HOOKS/pre-commit" ]
             let protectedOperations (path: string) =
                 let quotedPath = JsonSerializer.Serialize(path)
                 [ eval $"file.read({quotedPath})"
@@ -677,6 +692,8 @@ test fixture.read/fresh-state {
             equal (protectedPaths.Length * 3) protectedAttempts.Length "each protected path is checked by read, write, and exists"
             for response in protectedAttempts do
                 equal "EFFECT_FILE_PATH_RESERVED" ((response.["error"]["code"]).GetValue<string>()) "managed metadata paths have a structured reserved-path error"
+            equal gitConfigBytes (File.ReadAllBytes gitConfigPath) "reserved Git config operations preserve synthetic bytes"
+            equal gitHookBytes (File.ReadAllBytes gitHookPath) "reserved Git hook operations preserve synthetic bytes"
 
             if OperatingSystem.IsWindows() then
                 let ambiguousPaths =
@@ -684,7 +701,11 @@ test fixture.read/fresh-state {
                       ".agentlang /store/CURRENT"
                       ".agentlang:stream/store/CURRENT"
                       ".AGENTL~1/store/CURRENT"
-                      "DICTIO~1.AGE" ]
+                      "DICTIO~1.AGE"
+                      ".git./config"
+                      ".git /config"
+                      ".git:stream/config"
+                      ".GIT~1/config" ]
                 let ambiguousAttempts =
                     runCli project [ "--allow"; "fs.read,fs.write"; "--test-allow"; "fs.read,fs.write"; "--jsonl" ]
                         (ambiguousPaths |> List.collect protectedOperations) 20000
@@ -694,12 +715,15 @@ test fixture.read/fresh-state {
                     equal "EFFECT_FILE_PATH_INVALID" ((response.["error"]["code"]).GetValue<string>()) "ambiguous Windows path spelling has a structured invalid-path error"
 
             Directory.CreateDirectory(Path.Combine(project, ".agentlang-data")) |> ignore
+            Directory.CreateDirectory(Path.Combine(project, ".git-data")) |> ignore
             let siblingIo =
                 runCli project [ "--allow"; "fs.read,fs.write"; "--test-allow"; "fs.read,fs.write"; "--jsonl" ]
                     [ eval "file.write(\".agentlang-data/ordinary.txt\", \"sibling Ω\")"
                       eval "file.read(\".agentlang-data/ordinary.txt\")"
                       eval "file.write(\"dictionary.agent.backup\", \"ordinary sibling\")"
-                      eval "file.read(\"dictionary.agent.backup\")" ] 15000
+                      eval "file.read(\"dictionary.agent.backup\")"
+                      eval "file.write(\".git-data/ordinary.txt\", \"git sibling\")"
+                      eval "file.read(\".git-data/ordinary.txt\")" ] 15000
                 |> checkedResponses "ordinary files beside protected names remain available"
             for response in siblingIo do check ((response.["ok"]).GetValue<bool>()) "ordinary sibling file operation succeeds"
             let siblingValue (response: JsonNode) =
@@ -707,6 +731,7 @@ test fixture.read/fresh-state {
                 JsonSerializer.Deserialize<string>(rendered)
             equal "sibling Ω" (siblingValue siblingIo[1]) "reserved directory name uses a segment boundary"
             equal "ordinary sibling" (siblingValue siblingIo[3]) "reserved export name uses an exact root-name boundary"
+            equal "git sibling" (siblingValue siblingIo[5]) "root Git reservation uses an exact segment boundary"
 
             let freshReload =
                 runCli project [ "--allow"; "fs.read"; "--test-allow"; "fs.read,fs.write"; "--jsonl" ] [ eval "fixture.read(\"shared.txt\")" ] 15000
@@ -757,6 +782,35 @@ test fixture.read/fresh-state {
             let invalid = runCli project [ "--filesystem"; "unknown" ] [] 10000
             expectExit 2 invalid "unknown filesystem mode is rejected")
 
+    let private testGitPointerFileBoundary () =
+        withProject (fun project ->
+            let gitFilePath = Path.Combine(project, ".git")
+            let pointerBytes = Encoding.UTF8.GetBytes("gitdir: ../.git/worktrees/example\n")
+            File.WriteAllBytes(gitFilePath, pointerBytes)
+            let request (operation: string) (fields: (string * JsonNode) list) =
+                let node = JsonObject()
+                node["op"] <- JsonValue.Create(operation: string)
+                node["frontend"] <- JsonValue.Create("flow")
+                node["syntaxVersion"] <- JsonValue.Create(2)
+                for name, value in fields do node[name] <- value
+                node.ToJsonString()
+            let eval code = request "eval" [ "code", JsonValue.Create(code: string) :> JsonNode ]
+            let protectedOperations (path: string) =
+                let quotedPath = JsonSerializer.Serialize(path)
+                [ eval $"file.read({quotedPath})"
+                  eval $"file.write({quotedPath}, \"replacement pointer\")"
+                  eval $"file.exists?({quotedPath})" ]
+            let protectedPaths = [ ".git"; "./.git"; ".GIT"; ".git/config"; "ordinary/../.GIT/config" ]
+            let invocation =
+                runCli project [ "--allow"; "fs.read,fs.write"; "--jsonl" ]
+                    (protectedPaths |> List.collect protectedOperations) 20000
+            expectExit 0 invocation "real I/O rejects Git pointer-file paths"
+            let responses = responseLines invocation.StandardOutput |> List.map JsonNode.Parse
+            equal (protectedPaths.Length * 3) responses.Length "each Git pointer-file path is checked by read, write, and exists"
+            for response in responses do
+                equal "EFFECT_FILE_PATH_RESERVED" ((response.["error"]["code"]).GetValue<string>()) "Git pointer-file paths have a structured reserved-path error"
+            equal pointerBytes (File.ReadAllBytes gitFilePath) "reserved Git pointer-file operations preserve synthetic bytes")
+
     [<EntryPoint>]
     let main _ =
         try
@@ -772,6 +826,7 @@ test fixture.read/fresh-state {
             group "Flow/2 CLI selection, properties, temporary functions and reload" testFlow2Cli
             group "Flow/2 human formatting is an explicit nonmutating operation" testFlow2Formatting
             group "real filesystem default and isolated test providers" testFileSystemBoundary
+            group "root Git pointer-file paths are reserved" testGitPointerFileBoundary
             printfn "PASS %d groups, %d assertions" groups assertions
             0
         with ex ->

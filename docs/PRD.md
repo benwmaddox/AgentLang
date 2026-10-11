@@ -296,12 +296,15 @@ and dependency identities. The R02 result shows why complete structural
 coverage and self-authored passing expectations alone cannot prove behavior.
 
 Normal filesystem primitives must read and write real project-rooted files.
-The project's host-managed `.agentlang` subtree and root `dictionary.agent`
+The project's host-managed `.agentlang` subtree, root `dictionary.agent`, and
+root `.git` path/subtree (including a linked-checkout pointer file)
 must remain inaccessible to real language file operations, even when the
 corresponding filesystem effect is granted. Author dictionary changes through
 the runtime's semantic commands. Reserve those names case-insensitively on all
-platforms. Reject ambiguous Windows path aliases rather
-than permitting alternate spellings to bypass the reserved namespace. This
+platforms. Git metadata is managed by host tooling. This reservation covers
+the configured project root, not all nested repositories. Reject ambiguous
+Windows path aliases rather than permitting alternate spellings to bypass the
+reserved namespace. This
 path-based prototype policy does not establish protection from concurrent
 host filesystem changes or pre-existing hard links.
 Attached tests, including setup, expectation evaluation, publication gates and

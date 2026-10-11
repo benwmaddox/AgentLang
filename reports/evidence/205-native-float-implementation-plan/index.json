@@ -1,0 +1,13 @@
+{
+  "status": "source-only planning; no implementation tests",
+  "files": [
+    {
+      "path": "plan.md",
+      "sha256": "1e46bbfde0e6c4b066b87ff9aa7a63ddb5abdbfab8452d063d65578c1dee5544"
+    },
+    {
+      "path": "review.md",
+      "sha256": "fc419db0190cb41f633bfab6082f87c1c834ebd9b05bfa67da710578d9cb7d8c"
+    }
+  ]
+}

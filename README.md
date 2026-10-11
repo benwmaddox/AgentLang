@@ -6,11 +6,12 @@ AI agents are external coding tools that use the language. The language runtime 
 
 This repository implements a prototype slice. The compiler checks and lowers source into verified typed semantic IR; the public runtime executes that IR through the interpreter, with no AST execution fallback. File primitives use real project-rooted files during normal execution and isolated virtual files in attached tests. Network and database access remain outside the current primitive set. An optional external experiment harness and a conventional business foundation are included. The [repeated external-agent comparison](reports/064-repeat-agent-purpose-review.md) observes tested vocabulary reuse; an overall efficiency advantage remains unproven. The Customer demo uses binary floating point and is not suitable for exact money. The Email validator below demonstrates a modest local policy and does not claim conformance with the full Internet email standard.
 
-The [efficacy checkpoint](reports/182-efficacy-decision-checkpoint.md) records
-successful discovery/reuse and repeated repair and typed-result migration in
-retained, reset-rich and F# projects. All six sequences preserve inherited
-evidence; no comparative reliability advantage over F# is established. Earlier
-studies also record failures of reuse and evidence preservation. The
+The [current efficacy checkpoint](reports/203-efficacy-decision-after-organic-creation.md)
+records successful bounded discovery/composition without an established
+comparative reliability advantage over F#. The organic creator completes its
+task but creates no eligible shared helper, so no later-agent reuse is observed.
+Earlier studies record failures of reuse and inherited-evidence preservation
+despite passing library qualification. The
 [I/O testing probe](reports/154-provider-state-assertion-probe.md) shows
 one fresh agent adding state and effect assertions that reject three defects.
 
@@ -352,7 +353,7 @@ Language programs can invoke only trusted primitives. A primitive's declared eff
 dotnet run --project src/AgentLang.Cli -- --allow fs.read,fs.write,console.write --jsonl
 ~~~
 
-Normal file operations use real UTF-8 files beneath the configured project directory. The root `.agentlang` subtree and root `dictionary.agent` are reserved for host-managed dictionary storage: language reads, writes and existence checks return `EFFECT_FILE_PATH_RESERVED` for those paths. Reserved names are case-insensitive on every platform. Windows real-file paths reject ambiguous trailing dots/spaces, alternate-stream colons and DOS short-name alias spellings. Ordinary neighboring names such as `.agentlang-data` remain available. This path policy is not an operating-system sandbox against hostile concurrent filesystem changes or pre-existing hard links.
+Normal file operations use real UTF-8 files beneath the configured project directory. The root `.agentlang` subtree, root `dictionary.agent`, and root `.git` path/subtree are reserved for host-managed dictionary and Git metadata: language reads, writes and existence checks return `EFFECT_FILE_PATH_RESERVED` for those paths. A `.git` pointer file is reserved too. Reserved names are case-insensitive on every platform. Windows real-file paths reject ambiguous trailing dots/spaces, alternate-stream colons and DOS short-name alias spellings. Ordinary neighboring names such as `.agentlang-data` and `.git-data` remain available. This path policy is not an operating-system sandbox against hostile concurrent filesystem changes or pre-existing hard links.
 
 Attached tests always use fresh virtual files, including during library publication. Use --filesystem virtual to simulate an entire session explicitly. Capabilities are required in both contexts; --test-allow can explicitly grant isolated tests permissions separately from production --allow. Task abort and snapshots do not undo real external writes. The clock provider remains deterministic; --clock sets the value returned by clock.now.
 
