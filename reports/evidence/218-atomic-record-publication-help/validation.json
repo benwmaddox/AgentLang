@@ -1,0 +1,43 @@
+{
+  "status": "fresh local validation passed",
+  "date": "2026-10-11",
+  "sdk": "9.0.308",
+  "build": {
+    "command": "dotnet build tests/AgentLang.Flow.Runtime.Tests/AgentLang.Flow.Runtime.Tests.fsproj --configuration Release -m:1 -nr:false -p:MSBuildEnableWorkloadResolver=false",
+    "exitCode": 0,
+    "warnings": "6 NU1900 warnings: sandbox could not retrieve vulnerability data from api.nuget.org",
+    "errors": 0,
+    "freshCoreCliAndTestArtifacts": true
+  },
+  "suite": {
+    "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Flow.Runtime.Tests",
+    "environment": {
+      "MSBuildEnableWorkloadResolver": "false",
+      "TEMP": "D:/code/AgentLang/.agentlang/atomic-publication-help-218/tmp",
+      "TMP": "D:/code/AgentLang/.agentlang/atomic-publication-help-218/tmp"
+    },
+    "exitCode": 0,
+    "groups": 44,
+    "assertions": 2195,
+    "stdout": "Flow Runtime tests passed: 44 groups, 2195 assertions."
+  },
+  "priorAttempts": [
+    "Ordinary sandbox build stopped before compilation with zero reported warnings/errors; no stale-output suite run accepted.",
+    "SDK info separately reported service-control access denied; workaround success does not isolate the exact initial build cause.",
+    "Initial fresh suite run returned STORAGE_ACCESS_DENIED before workspace TEMP/TMP redirection."
+  ],
+  "hostAdvisoryChecks": {
+    "commandTemplate": "dotnet list <project> package --vulnerable --include-transitive --format json",
+    "source": "https://api.nuget.org/v3/index.json",
+    "projects": [
+      { "path": "src/AgentLang.Core/AgentLang.Core.fsproj", "exitCode": 0, "listedAdvisories": 0 },
+      { "path": "src/AgentLang.Cli/AgentLang.Cli.fsproj", "exitCode": 0, "listedAdvisories": 0 },
+      { "path": "tests/AgentLang.Flow.Runtime.Tests/AgentLang.Flow.Runtime.Tests.fsproj", "exitCode": 0, "listedAdvisories": 0 }
+    ],
+    "scope": "resolved declared package graphs, direct/transitive; no package updates; not a general security audit"
+  },
+  "diffCheck": "passed",
+  "ciRun": false,
+  "agentEfficacyClaim": false,
+  "runtimeValidationRulesChanged": false
+}

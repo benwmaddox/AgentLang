@@ -82,9 +82,11 @@ closes with correct preserved edits in both: 9/9 migration cases each, 152 retai
 tests, 150 reset tests and 66 retained creator regressions. Retained closure needed
 a disclosed lifecycle-only instruction; reset sent Ctrl+C and fails its normal
 finalization gate. These unequal continuation seeds do not establish a causal
-retention effect or reliability superiority. Next clarify atomic-publication help
-without changing validation gates, and disclose transport controls/operation
-limits in future trial bootstrap instructions.
+retention effect or reliability superiority. The [publication-help improvement](../reports/218-atomic-record-publication-help.md)
+now explains same-session group commit and complete record CAS metadata, with
+44 local test groups passing and unchanged validation gates. This post-trial
+change adds no efficacy outcome. Disclose transport controls/operation limits in
+future trial bootstrap instructions; keep those controls outside language semantics.
 The [prior decision](../reports/199-efficacy-decision-after-reference-maintenance.md)
 covers the closed typed-reference cohort and its representation supplement in
 reports 196 and 197. The [previous checkpoint](../reports/182-efficacy-decision-checkpoint.md)

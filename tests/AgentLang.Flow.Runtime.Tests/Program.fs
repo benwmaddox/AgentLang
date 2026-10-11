@@ -282,6 +282,14 @@ module Program =
         check ((stringValue typeReplacementLimitation.["alternative"]).Contains("unused name", StringComparison.Ordinal)) "structured replacement help gives the supported type-kind path"
         for guidance in [ "record-field evolution"; "FLOW_TYPE_EVOLUTION_KIND_UNSUPPORTED"; "existing scalar"; "record validator declarations"; "unused name" ] do
             check ((stringValue replacementHelp.["documentation"]).Contains(guidance, StringComparison.Ordinal)) $"replacement help explains {guidance}"
+        let recordEvolutionCommitRequest =
+            replacementHelp.["requestExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "commit-record-evolution-group")
+            |> fun item -> item.["request"]
+        equal "commit" (stringValue recordEvolutionCommitRequest.["op"]) "record-evolution publication example uses commit"
+        check (boolValue recordEvolutionCommitRequest.["library"]) "record-evolution publication example requests library publication"
+        check (not (recordEvolutionCommitRequest.AsObject().ContainsKey("word"))) "record-evolution group publication example is untargeted"
+        equal 2 (recordEvolutionCommitRequest.AsObject().Count) "record-evolution publication example contains only op and library"
         check
             (defineData.["requestExamples"].AsArray()
              |> Seq.forall (fun item -> stringValue item.["name"] <> "define-tutorial-span-validator"))
