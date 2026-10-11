@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "kind": "native-owning-value-stack",
   "source": {
     "fixture": "experiments/AgentLang.NativeValueStack/value-stack.flow",
@@ -134,8 +134,8 @@
     }
   },
   "sumConformance": {
-    "layoutAbiVersion": 3,
-    "layoutSchemaVersion": 3,
+    "layoutAbiVersion": 4,
+    "layoutSchemaVersion": 4,
     "cases": [
       {
         "name": "option-none-int",
@@ -491,7 +491,7 @@
     },
     "graphAbi3Scope": {
       "backend": "LlvmAot shared graph ABI 3",
-      "optionResultParity": "unsupported and kept outside this owning-layout ABI 3 conformance suite",
+      "optionResultParity": "unsupported and kept outside this owning-layout ABI 4 conformance suite",
       "fixedOnlyControlRemainsSeparate": true
     }
   },
@@ -1107,8 +1107,8 @@
   },
   "storageRuntimeTestOracle": {
     "suite": "owning_stack_runtime_storage_v2",
-    "cases": 52,
-    "checks": 704,
+    "cases": 54,
+    "checks": 751,
     "rawFrameBoundary": {
       "successfulHelperEnters": 66,
       "nextEnterDiagnosticDepth": 66,
@@ -1125,11 +1125,11 @@
       "peakCursorBytes": 56,
       "maxStackCapacityBytes": 64
     },
-    "dynamicCases": { "cases": 36, "checks": 515 },
+    "dynamicCases": { "cases": 38, "checks": 562 },
     "abi": {
       "eventSizeBytes": 40,
       "eventChecksumOffsetBytes": 32,
-      "contextSizeBytes": 168,
+      "contextSizeBytes": 176,
       "contextOffsetsBytes": {
         "stack_data": 104,
         "init_bitmap": 112,
@@ -1138,9 +1138,10 @@
         "deep_copy_bytes": 136,
         "move_bytes": 144,
         "input_copy_bytes": 152,
-        "retained_copy_bytes": 160
+        "retained_copy_bytes": 160,
+        "diagnostic_float_bits": 168
       },
-      "layoutAbiVersion": 3,
+      "layoutAbiVersion": 4,
       "layoutSizeBytes": 40,
       "layoutOffsetsBytes": { "types": 8, "type_count": 16, "fields": 24, "field_count": 32 },
       "typeDescriptorSizeBytes": 36,

@@ -11,9 +11,9 @@
 #error "AL_OWNING_TRUSTED_GENERATED must be 0 or 1"
 #endif
 
-#define AL_OWNING_STACK_ABI_VERSION 1u
+#define AL_OWNING_STACK_ABI_VERSION 2u
 
-#define AL_OWNING_LAYOUT_ABI_VERSION 3u
+#define AL_OWNING_LAYOUT_ABI_VERSION 4u
 #define AL_OWNING_LAYOUT_DYNAMIC_U32 UINT32_MAX
 #define AL_OWNING_LAYOUT_MAX_DEPTH 64u
 #define AL_OWNING_LAYOUT_MAX_TYPES 4096u
@@ -27,7 +27,8 @@ enum {
   AL_OWNING_TYPE_STRING = 5u,
   AL_OWNING_TYPE_ENUM = 6u,
   AL_OWNING_TYPE_OPTION = 7u,
-  AL_OWNING_TYPE_RESULT = 8u
+  AL_OWNING_TYPE_RESULT = 8u,
+  AL_OWNING_TYPE_F64 = 9u
 };
 
 enum { AL_OWNING_FIELD_ZERO_WIDTH = 1u };
@@ -116,6 +117,7 @@ typedef struct al_owning_stack_context {
   uint64_t move_bytes;
   uint64_t input_copy_bytes;
   uint64_t retained_copy_bytes;
+  uint64_t diagnostic_float_bits;
 } al_owning_stack_context;
 
 enum {
@@ -258,6 +260,13 @@ void al_owning_swap(al_owning_stack_context *ctx, uint32_t left_offset,
                     uint32_t left_type_id, uint32_t right_type_id);
 int32_t al_owning_equal(al_owning_stack_context *ctx, uint32_t left_offset,
                         uint32_t right_offset, uint32_t byte_count);
+int32_t al_owning_equal_typed(al_owning_stack_context *ctx,
+                              const al_owning_layout *layout,
+                              uint32_t type_index, uint32_t left_offset,
+                              uint32_t left_extent_bytes,
+                              uint32_t right_offset,
+                              uint32_t right_extent_bytes,
+                              uint32_t error_id);
 void al_owning_publish(al_owning_stack_context *ctx, uint8_t *retained,
                        uint32_t retained_capacity, uint32_t source_offset,
                        uint32_t byte_count, uint32_t type_id);

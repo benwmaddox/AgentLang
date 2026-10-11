@@ -136,7 +136,7 @@ static const char *const required_check_names[] = {
     "malformed active tag and payload through mailbox APIs preserve pending roots and token in every profile",
     "an invalid inactive Result alternative is rejected with scanner and controller output sentinels unchanged",
     "ordinary calls and matches report zero payload moves",
-    "Layout ABI remains 3 and stack ABI remains 1"};
+    "Layout ABI is 4 and stack ABI is 2"};
 
 static const char *const hex_unicode_initialize =
     "0000000000000000030000000000000041003dd842de0000";
@@ -1183,7 +1183,7 @@ int main(int argc, char **argv) {
                      associated_evidence.empty_error_to_ok_final.root_count == 1u;
     abi_ok = module->abi_version == AL_OWNING_MAILBOX_ABI_VERSION &&
              module->layout->abi_version == AL_OWNING_LAYOUT_ABI_VERSION &&
-             stack_abi == 1u && sizeof(al_owning_type_descriptor) == 36u &&
+             stack_abi == 2u && sizeof(al_owning_type_descriptor) == 36u &&
              sizeof(al_owning_field_descriptor) == 16u &&
              sizeof(al_owning_layout) == 40u;
   } else {

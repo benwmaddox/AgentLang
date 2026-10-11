@@ -147,8 +147,11 @@ O2 and UBSan trap mode, and 777 full LLVM assertions. Default build and normal
 UBSan-link limitations remain recorded; the accepted full LLVM build is serial
 and audit-disabled. The [reviewed Float plan](../reports/205-native-float-implementation-plan.md)
 defines finite numeric support for owning AOT, typed aggregate equality, complete
-diagnostic parity and the coordinated ABI audit. Implementation is next; legacy
-graph AOT and native Float formatting remain deferred.
+diagnostic parity and the coordinated ABI audit. [Implementation 206](../reports/206-native-float-conformance.md)
+is accepted: finite interpreter inputs pass 155 assertions; owning Float passes
+176 focused assertions, the full LLVM suite passes 950, and the 50-check value-stack
+gate and owning mailbox integration pass with the coordinated ABI changes. Legacy graph AOT and native Float
+formatting remain deferred.
 
 [Report 204](../reports/204-git-control-plane-boundary.md) extends the real-file
 boundary to root Git metadata, including pointer files. A fresh solution build,

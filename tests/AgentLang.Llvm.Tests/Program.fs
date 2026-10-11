@@ -1,6 +1,7 @@
 module AgentLang.Llvm.Tests
 
 open System
+open System.Diagnostics
 open System.IO
 open System.Runtime.InteropServices
 open System.Text
@@ -23,6 +24,9 @@ type private OwningMailboxEntryDelegate = delegate of nativeint * nativeint * ui
 
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
 type private OwningMailboxAssociatedResumeDelegate = delegate of nativeint * nativeint * uint32 * nativeint * uint32 * nativeint * uint32 -> int32
+
+[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+type private FloatMailboxLifecycleDelegate = delegate of nativeint * uint32 * nativeint -> int32
 
 [<Struct; StructLayout(LayoutKind.Sequential, Pack = 8)>]
 type private RawMailboxExternalSlice =
@@ -314,6 +318,74 @@ let private compileOwningNative toolchain (name: string) (optimization: LlvmOpti
     let directory = Path.Combine(artifactRoot, name, string optimization)
     OwningStackAot.compile toolchain optimization directory body
 
+let private runNativeTestTool executable arguments workingDirectory =
+    let startInfo = ProcessStartInfo(executable)
+    startInfo.WorkingDirectory <- workingDirectory
+    startInfo.UseShellExecute <- false
+    startInfo.RedirectStandardOutput <- true
+    startInfo.RedirectStandardError <- true
+    for argument in arguments do
+        startInfo.ArgumentList.Add argument
+    use child = new Process(StartInfo = startInfo)
+    if not (child.Start()) then
+        raise (InvalidOperationException($"Could not start native test tool '{executable}'."))
+    let stdoutTask = child.StandardOutput.ReadToEndAsync()
+    let stderrTask = child.StandardError.ReadToEndAsync()
+    child.WaitForExit()
+    let stdout = stdoutTask.GetAwaiter().GetResult()
+    let stderr = stderrTask.GetAwaiter().GetResult()
+    if child.ExitCode <> 0 then
+        let joinedArguments = String.concat " " arguments
+        raise (InvalidOperationException(
+            $"Native test tool failed ({child.ExitCode}): {executable} {joinedArguments}{Environment.NewLine}{stdout}{stderr}"))
+
+let private compileOwningFloatMailboxLifecycleHelper (toolchain: LlvmToolchain) optimization =
+    let directory = Path.Combine(artifactRoot, "owning-float-mailbox-lifecycle-helper", string optimization)
+    Directory.CreateDirectory directory |> ignore
+    let nativeDirectory =
+        Path.GetFullPath(Path.Combine([| __SOURCE_DIRECTORY__; ".."; ".."; "src"; "AgentLang.Llvm"; "native" |]))
+    let helperSource = Path.Combine(__SOURCE_DIRECTORY__, "native_float_mailbox_test.c")
+    let runtimeSources = [
+        helperSource
+        Path.Combine(nativeDirectory, "arena_runtime.c")
+        Path.Combine(nativeDirectory, "mailbox_runtime.c")
+        Path.Combine(nativeDirectory, "mailbox_runtime_windows.c")
+        Path.Combine(nativeDirectory, "owning_stack_runtime.c")
+        Path.Combine(nativeDirectory, "owning_bank.c")
+    ]
+    let optimizationArgument = "-" + string optimization
+    let objectPaths =
+        runtimeSources
+        |> List.mapi (fun index sourcePath ->
+            if not (File.Exists sourcePath) then
+                raise (FileNotFoundException("Native Float mailbox lifecycle source is missing.", sourcePath))
+            let objectPath = Path.Combine(directory, $"native-float-mailbox-{index}.obj")
+            File.Delete objectPath
+            runNativeTestTool toolchain.ClangPath [
+                "--target=x86_64-pc-windows-msvc"
+                "-std=c11"
+                "-ffreestanding"
+                "-fno-builtin"
+                "-Wall"
+                "-Wextra"
+                "-Werror"
+                optimizationArgument
+                "-c"
+                Path.GetFullPath sourcePath
+                "-I"
+                nativeDirectory
+                "-o"
+                objectPath
+            ] directory
+            objectPath)
+    let libraryPath = Path.Combine(directory, "native-float-mailbox-test.dll")
+    File.Delete libraryPath
+    runNativeTestTool toolchain.ClangPath (
+        [ "--target=x86_64-pc-windows-msvc"; "-shared" ]
+        @ objectPaths
+        @ [ "-o"; libraryPath ]) directory
+    libraryPath
+
 type private RawMailboxInvocation =
     { Status: int32
       Context: NativeOwningContext
@@ -324,6 +396,17 @@ type private RawMailboxInvocation =
       PoisonBitmap: byte array
       TraceBytes: byte array
       Diagnostic: OwningMailboxDiagnosticInfo option }
+
+let private describeRawMailboxInvocation (invocation: RawMailboxInvocation) =
+    let diagnostic =
+        invocation.Diagnostic
+        |> Option.map (fun item ->
+            let word = sprintf "%A" item.Word
+            let expected = sprintf "%A" item.Expected
+            let actual = sprintf "%A" item.Actual
+            $"{item.Code}: {item.Message}; word={word}; expected={expected}; actual={actual}")
+        |> Option.defaultValue "<none>"
+    $"status={invocation.Status}; contextStatus={invocation.Context.Status}; errorId={invocation.Context.ErrorId}; diagnostic={diagnostic}"
 
 let private mailboxIntBytes (value: int64) = BitConverter.GetBytes value
 
@@ -347,10 +430,11 @@ let private invokeRawMailboxEntry (native: OwningMailboxCompiledModule) entryInd
     let outputDescriptors = Marshal.AllocHGlobal(max 1 (outputCapacity * Marshal.SizeOf<RawMailboxOutputSlice>()))
     let contextPointer = Marshal.AllocHGlobal(Marshal.SizeOf<NativeOwningContext>())
     let stackCapacity = 4096
-    let bitmapBytes = stackCapacity / 8
+    let bitmapStorageBytes = stackCapacity / 8
+    let bitmapBytes = if native.RuntimeProfile = OwningRuntimeProfile.Diagnostic then bitmapStorageBytes else 0
     let stack = Marshal.AllocHGlobal stackCapacity
-    let initialized = Marshal.AllocHGlobal bitmapBytes
-    let poison = Marshal.AllocHGlobal bitmapBytes
+    let initialized = Marshal.AllocHGlobal bitmapStorageBytes
+    let poison = Marshal.AllocHGlobal bitmapStorageBytes
     let traceCapacity = 8192
     let trace = Marshal.AllocHGlobal(traceCapacity * 40)
     try
@@ -366,18 +450,18 @@ let private invokeRawMailboxEntry (native: OwningMailboxCompiledModule) entryInd
         let outputBytes = max 1 (outputCapacity * Marshal.SizeOf<RawMailboxOutputSlice>())
         Marshal.Copy(Array.create outputBytes 0xA5uy, 0, outputDescriptors, outputBytes)
         Marshal.Copy(Array.zeroCreate<byte> stackCapacity, 0, stack, stackCapacity)
-        Marshal.Copy(Array.zeroCreate<byte> bitmapBytes, 0, initialized, bitmapBytes)
-        Marshal.Copy(Array.zeroCreate<byte> bitmapBytes, 0, poison, bitmapBytes)
+        Marshal.Copy(Array.zeroCreate<byte> bitmapStorageBytes, 0, initialized, bitmapStorageBytes)
+        Marshal.Copy(Array.zeroCreate<byte> bitmapStorageBytes, 0, poison, bitmapStorageBytes)
         Marshal.Copy(Array.zeroCreate<byte> (traceCapacity * 40), 0, trace, traceCapacity * 40)
         let mutable context = Unchecked.defaultof<NativeOwningContext>
-        context.AbiVersion <- 1u
+        context.AbiVersion <- 2u
         context.StackCapacityBytes <- uint32 stackCapacity
         context.AvailableBytes <- uint32 stackCapacity
         context.TraceEventCapacity <- uint32 traceCapacity
         context.InitBitmapBytes <- uint32 bitmapBytes
         context.StackData <- stack
-        context.InitBitmap <- initialized
-        context.PoisonBitmap <- poison
+        context.InitBitmap <- if bitmapBytes = 0 then IntPtr.Zero else initialized
+        context.PoisonBitmap <- if bitmapBytes = 0 then IntPtr.Zero else poison
         context.TraceEvents <- trace
         Marshal.StructureToPtr(context, contextPointer, false)
         let export = Marshal.GetDelegateForFunctionPointer<OwningMailboxModuleExport>(NativeLibrary.GetExport(library, "agentlang_owning_mailbox_module"))
@@ -389,9 +473,10 @@ let private invokeRawMailboxEntry (native: OwningMailboxCompiledModule) entryInd
         let stackBytes = Array.zeroCreate<byte> stackCapacity
         Marshal.Copy(stack, stackBytes, 0, stackCapacity)
         let initializedBytes = Array.zeroCreate<byte> bitmapBytes
-        Marshal.Copy(initialized, initializedBytes, 0, bitmapBytes)
         let poisonBytes = Array.zeroCreate<byte> bitmapBytes
-        Marshal.Copy(poison, poisonBytes, 0, bitmapBytes)
+        if bitmapBytes > 0 then
+            Marshal.Copy(initialized, initializedBytes, 0, bitmapBytes)
+            Marshal.Copy(poison, poisonBytes, 0, bitmapBytes)
         let traceBytes = Array.zeroCreate<byte> (traceCapacity * 40)
         Marshal.Copy(trace, traceBytes, 0, traceBytes.Length)
         let outputSize = Marshal.SizeOf<RawMailboxOutputSlice>()
@@ -482,7 +567,7 @@ let private invokeRawMailboxAssociatedResumeWithRetry
         Marshal.StructureToPtr(context, contextPointer, false)
         let export = Marshal.GetDelegateForFunctionPointer<OwningMailboxModuleExport>(NativeLibrary.GetExport(library, "agentlang_owning_mailbox_module"))
         let modulePointer = export.Invoke()
-        // ABI v1 places three fixed-size entry records before the associated callback pointer.
+        // ABI v2 places three fixed-size entry records before the associated callback pointer.
         let associatedPointer = Marshal.ReadIntPtr(modulePointer, 16 + 3 * 40)
         let associated = Marshal.GetDelegateForFunctionPointer<OwningMailboxAssociatedResumeDelegate>(associatedPointer)
         let capture status =
@@ -567,7 +652,7 @@ let private invokeRawOwningEntryForMetrics
         Marshal.Copy(Array.zeroCreate<byte> bitmapBytes, 0, poison, bitmapBytes)
         Marshal.Copy(Array.zeroCreate<byte> (traceCapacity * 40), 0, trace, traceCapacity * 40)
         let mutable context = Unchecked.defaultof<NativeOwningContext>
-        context.AbiVersion <- 1u
+        context.AbiVersion <- 2u
         context.StackCapacityBytes <- uint32 stackCapacity
         context.TraceEventCapacity <- uint32 traceCapacity
         context.InitBitmapBytes <- uint32 bitmapBytes
@@ -1470,7 +1555,7 @@ let private testOwningNominalIntSlice () =
                     16)
             check ($"{optimization} {label} exact nominal host roundtrip") (
                 result.Values = [ NamedValue("Meters", IntValue number); NamedValue("OrderId", IntValue number) ]
-                && result.LayoutSchemaVersion = 3
+                && result.LayoutSchemaVersion = 4
                 && result.RetainedBytesWritten = 16
                 && Convert.ToHexString(result.RetainedOutputBytes).ToLowerInvariant() = rawBytes + rawBytes)
 
@@ -1585,21 +1670,6 @@ let private testOwningNominalIntSlice () =
             && not result.Metrics.TraceTruncated
             && preservesFullOwnerEnd)
 
-    let rejectScalar name baseType =
-        let context = contextWithScalars [] [ scalarDefinition name baseType None ]
-        let body = compileBodyWithInputs context ("unsupported-" + name) [ TNamed name ] []
-        let diagnostic = errorOf (fun () -> compileOwningNative toolchain ("unsupported-" + name) LlvmOptimization.O0 body |> ignore)
-        check ($"{name} remains outside the owning nominal Int/String slice") (
-            diagnostic.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-            && diagnostic.Message.Contains("Float and other scalar bases remain unsupported", StringComparison.OrdinalIgnoreCase))
-    rejectScalar "FloatTag" TFloat
-    let inactiveContext = contextWithScalars [] [ scalarDefinition "InactiveFloat" TFloat None ]
-    let inactiveBody = compileBodyWithInputs inactiveContext "unsupported-inactive-result-alternative" [ TResult(TInt, TNamed "InactiveFloat") ] []
-    let inactiveError = errorOf (fun () -> compileOwningNative toolchain "unsupported-inactive-result-alternative" LlvmOptimization.O0 inactiveBody |> ignore)
-    check "unsupported scalar is rejected in an inactive Result alternative" (
-        inactiveError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-        && inactiveError.Message.Contains("Float and other scalar bases remain unsupported", StringComparison.OrdinalIgnoreCase))
-
 let private testOwningNominalBoolSlice () =
     let toolchain = LlvmToolchain.discover()
     let scalarContext =
@@ -1643,7 +1713,7 @@ let private testOwningNominalBoolSlice () =
             let values = [ NamedValue("BoolTag", BoolValue flag); NamedValue("PeerBoolTag", BoolValue flag) ]
             let actual = identity.Execute(values, 4096, 16)
             check ($"{optimization} {flag} exact-name nominal Bool host roundtrip") (
-                actual.Values = values && actual.LayoutSchemaVersion = 3
+                actual.Values = values && actual.LayoutSchemaVersion = 4
                 && actual.RetainedBytesWritten = 16
                 && Convert.ToHexString(actual.RetainedOutputBytes).ToLowerInvariant() = raw flag + raw flag)
 
@@ -1740,7 +1810,7 @@ let private testOwningCanonicalUnitSlice () =
             invokeRawOwningEntryForMetrics native Array.empty<byte> Array.empty<int>
         check ($"{optimization} canonical Unit and Option<Unit> values match the interpreter") (
             actual.Values = interpreted && actual.Values = expected
-            && actual.LayoutSchemaVersion = 3
+            && actual.LayoutSchemaVersion = 4
             && actual.RetainedBytesWritten = 32
             && Convert.ToHexString(actual.RetainedOutputBytes).ToLowerInvariant() = expectedBytes)
         check ($"{optimization} canonical Unit and Option<Unit> preserve instruction fuel") (
@@ -2571,8 +2641,9 @@ let private testOwningRefinedIntSlice () =
             If(
                 [ Call("drop", span "owning-unsupported-validator.agent" 2)
                   Push(LFloat 1.5, span "owning-unsupported-validator.agent" 3)
-                  Call("drop", span "owning-unsupported-validator.agent" 4)
-                  Push(LBool true, span "owning-unsupported-validator.agent" 5) ],
+                  Call("float.to-string", span "owning-unsupported-validator.agent" 4)
+                  Call("drop", span "owning-unsupported-validator.agent" 5)
+                  Push(LBool true, span "owning-unsupported-validator.agent" 6) ],
                 [ Call("drop", span "owning-unsupported-validator.agent" 6)
                   Push(LBool false, span "owning-unsupported-validator.agent" 7) ],
                 span "owning-unsupported-validator.agent" 1)
@@ -2584,8 +2655,8 @@ let private testOwningRefinedIntSlice () =
     let unsupportedBranchBody = compileBodyWithInputs unsupportedBranchContext "owning-validator-type-only-closure" [ TNamed "UntakenBranchId" ] []
     let unsupportedBranch = errorOf (fun () -> compileOwningNative toolchain "owning-validator-type-only-closure" LlvmOptimization.O0 unsupportedBranchBody |> ignore)
     check "validator-only closure scans unsupported IR in an untaken branch" (
-        unsupportedBranch.Code = "IR_OWNING_STACK_CONSTANT_UNSUPPORTED"
-        && unsupportedBranch.Span = Some(span "owning-unsupported-validator.agent" 3))
+        unsupportedBranch.Code = "IR_OWNING_STACK_PRIMITIVE_UNSUPPORTED"
+        && unsupportedBranch.Span = Some(span "owning-unsupported-validator.agent" 4))
 
     let missingConstructorContext =
         { unsupportedBranchContext with
@@ -2713,7 +2784,7 @@ let private testOwningRefinedStringSlice () =
             Marshal.Copy(Array.zeroCreate<byte> bitmapBytes, 0, poison, bitmapBytes)
             Marshal.Copy(Array.zeroCreate<byte> (traceCapacity * 40), 0, trace, traceCapacity * 40)
             let mutable context = Unchecked.defaultof<NativeOwningContext>
-            context.AbiVersion <- 1u
+            context.AbiVersion <- 2u
             context.StackCapacityBytes <- uint32 stackCapacity
             context.TraceEventCapacity <- uint32 traceCapacity
             context.InitBitmapBytes <- uint32 bitmapBytes
@@ -2971,20 +3042,6 @@ let private testOwningRefinedStringSlice () =
         ]
         check ($"{optimization} None and Result alternatives without refined String do not invoke its validator") (
             inactive.Execute(inactiveValues, 4096, 32).Values = inactiveValues)
-
-    let floatValidator = wordEntry "accept-float?" [ TFloat ] [ TBool ] Set.empty [
-        Call("drop", span "owning-string-float-validator.agent" 1)
-        Push(LBool true, span "owning-string-float-validator.agent" 2)
-    ]
-    for scalarName, baseType, validatorName in [ "FloatTag", TFloat, "accept-float?" ] do
-        let context =
-            contextWithScalarDefinitions [ floatValidator ] [
-                scalarDefinition scalarName baseType (Some validatorName), scalarName + ".construct", scalarName + ".unwrap"
-            ]
-        let body = compileBodyWithInputs context ("owning-unsupported-string-related-" + scalarName) [ TNamed scalarName ] []
-        let diagnostic = errorOf (fun () -> compileOwningNative toolchain ("owning-unsupported-string-related-" + scalarName) LlvmOptimization.O0 body |> ignore)
-        check ($"{scalarName} refinements remain unsupported beside the refined String slice") (
-            diagnostic.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED")
 
     let mailboxContext =
         contextWithRecordDefinitions [ nonEmptyValidator ] [
@@ -3281,6 +3338,951 @@ let private testOwningNominalStringSlice () =
             failedTurn.Status <> 0
             && (failedTurn.Diagnostic |> Option.exists (fun diagnostic -> diagnostic.EntryRole = Some "begin"))
             && (failedTurn.Outputs |> List.forall (fun output -> output.TypeIndex = UInt32.MaxValue && output.OffsetBytes = 0u && output.OwnerEndBytes = 0u)))
+
+let private testOwningFloatSlice () =
+    let toolchain = LlvmToolchain.discover()
+    let doubleFromBits (bits: int64) = BitConverter.Int64BitsToDouble bits
+    let bitsOf (value: float) = BitConverter.DoubleToInt64Bits value
+    let bytesOfBits (bits: int64) : byte array = BitConverter.GetBytes bits
+    let bytesOfFloat (value: float) : byte array = bytesOfBits (bitsOf value)
+    let hex (bytes: byte array) = Convert.ToHexString(bytes).ToLowerInvariant()
+    let negativeZero = doubleFromBits Int64.MinValue
+    let maxFiniteBits = 0x7FEFFFFFFFFFFFFFL
+    let negativeMaxFiniteBits = Int64.MinValue ||| maxFiniteBits
+    let quietNaNBits = 0x7FF8000000000000L
+    let signalingNaNBits = 0x7FF0000000000001L
+    let positiveInfinityBits = 0x7FF0000000000000L
+    let negativeInfinityBits = Int64.MinValue ||| positiveInfinityBits
+    let negativeQuietNaNBits = Int64.MinValue ||| quietNaNBits
+    let nonFiniteBits = [ quietNaNBits; signalingNaNBits; positiveInfinityBits; negativeInfinityBits; negativeQuietNaNBits ]
+    let finiteBitVectors = [
+        "positive-zero", 0L
+        "negative-zero", Int64.MinValue
+        "least-subnormal", 1L
+        "largest-subnormal", 0x000FFFFFFFFFFFFFL
+        "smallest-normal", 0x0010000000000000L
+        "largest-finite", maxFiniteBits
+        "negative-largest-finite", negativeMaxFiniteBits
+    ]
+    let finiteValues = finiteBitVectors |> List.map (snd >> doubleFromBits)
+    let finiteExpected = finiteValues |> List.map FloatValue
+    let finiteRawBytes = finiteBitVectors |> List.map (snd >> bytesOfBits) |> Array.concat
+    let finiteRawHex = hex finiteRawBytes
+    let rec floatBitsInValue (value: Value) =
+        match value with
+        | FloatValue value -> [ bitsOf value ]
+        | NamedValue(_, value) -> floatBitsInValue value
+        | RecordValue(_, fields) -> fields |> Map.toList |> List.collect (snd >> floatBitsInValue)
+        | ListValue(_, values) -> values |> List.collect floatBitsInValue
+        | OptionValue(_, Some value) -> floatBitsInValue value
+        | OptionValue(_, None) -> []
+        | ResultValue(_, _, Ok value) -> floatBitsInValue value
+        | ResultValue(_, _, Error value) -> floatBitsInValue value
+        | _ -> []
+    let exactFloatBits (actual: Value list) (expected: Value list) =
+        actual = expected
+        && (actual |> List.collect floatBitsInValue) = (expected |> List.collect floatBitsInValue)
+    let floatArgs (values: float list) = values |> List.map IrEntryArgument.FloatArgument
+    let floatInputValues (values: float list) = values |> List.map FloatValue
+    let checkRawExecution
+        (label: string)
+        (native: OwningStackCompiledProgram)
+        (inputBytes: byte array)
+        (inputExtents: int array)
+        (expectedOutputBytes: byte array)
+        (expectedSteps: int) =
+        let rawStatus, rawContext, rawRetained = invokeRawOwningEntryForMetrics native inputBytes inputExtents
+        let outputLengthValid = expectedOutputBytes.Length <= rawRetained.Length
+        let publishedBytes =
+            if not outputLengthValid || expectedOutputBytes.Length = 0 then Array.empty
+            else rawRetained[0 .. expectedOutputBytes.Length - 1]
+        let trailingBytes =
+            if not outputLengthValid || expectedOutputBytes.Length = rawRetained.Length then Array.empty
+            else rawRetained[expectedOutputBytes.Length ..]
+        check label (
+            rawStatus = 0
+            && rawContext.StepsConsumed = uint32 expectedSteps
+            && outputLengthValid
+            && publishedBytes = expectedOutputBytes
+            && (trailingBytes |> Array.forall ((=) 0xA5uy)))
+    let describeDiagnostic (diagnostic: Diagnostic) =
+        [ "code=" + diagnostic.Code
+          "message=" + sprintf "%A" diagnostic.Message
+          "word=" + sprintf "%A" diagnostic.Word
+          "span=" + sprintf "%A" diagnostic.Span
+          "expected=" + sprintf "%A" diagnostic.Expected
+          "actual=" + sprintf "%A" diagnostic.Actual ]
+        |> String.concat "; "
+    let interpreterFailure
+        (sources: NativeDiagnosticSources)
+        (executionName: string)
+        (body: VerifiedIrBody)
+        (values: float list)
+        : Diagnostic * int =
+        let mutable steps = 0
+        let host =
+            { noOpHost () with
+                ChargeInstruction = fun _ _ -> steps <- steps + 1
+                WordDefinitionSpan = fun word -> sources.WordDefinitionSpans.TryFind word
+                PrimitiveDefinitionSpan = fun word -> sources.PrimitiveDefinitionSpans.TryFind word }
+        let diagnostic = errorOf (fun () ->
+            use result = IrInterpreter.executeBodyWithInputs host executionName body None (floatArgs values)
+            result.Decode() |> ignore)
+        diagnostic, steps
+
+    let literalBody =
+        finiteValues
+        |> List.mapi (fun index value -> Push(LFloat value, span "owning-float-literals.agent" (index + 1)))
+        |> compileBody (contextWith []) "owning-float-literals"
+    let directContext = contextWith []
+    let directBody = compileBodyWithInputs directContext "owning-float-direct-roundtrip" (List.replicate finiteValues.Length TFloat) []
+    let rawFloatScanBody = compileBodyWithInputs directContext "owning-float-raw-scan" [ TFloat ] []
+    let interpretedDirect, directSteps = interpreterResultWithInputsAndSteps "owning-float-direct-roundtrip" directBody (floatArgs finiteValues)
+    check "interpreter FloatArgument inputs preserve every finite bit-vector" (exactFloatBits interpretedDirect finiteExpected)
+
+    let effectContext = contextWith []
+    let effectEntryBody = compileBodyWithInputs effectContext "owning-float-entry-validation" [ TFloat ] [
+        Push(LString "entry validation must precede host hooks", span "owning-float-entry-validation.agent" 1)
+        Call("console.write", span "owning-float-entry-validation.agent" 2)
+        Call("drop", span "owning-float-entry-validation.agent" 3)
+    ]
+    for value in [ Double.NaN; Double.PositiveInfinity; Double.NegativeInfinity ] do
+        let mutable steps = 0
+        let mutable preflightCalls = 0
+        let mutable effectCalls = 0
+        let executionName = "owning-float-entry-validation"
+        let host = {
+            noOpHost () with
+                PreflightEffects = fun _ _ _ -> preflightCalls <- preflightCalls + 1
+                ChargeInstruction = fun _ _ -> steps <- steps + 1
+                InvokeEffect = fun _ -> effectCalls <- effectCalls + 1; EffectUnit
+        }
+        let diagnostic = errorOf (fun () ->
+            use result = IrInterpreter.executeBodyWithInputs host executionName effectEntryBody None [ IrEntryArgument.FloatArgument value ]
+            result.Decode() |> ignore)
+        check "non-finite Float entry argument has the frozen pre-body diagnostic" (
+            diagnostic.Code = "IR_BACKEND_ENTRY_ARGUMENT_NONFINITE"
+            && diagnostic.Message = "Float entry arguments must be finite."
+            && diagnostic.Word = Some executionName
+            && diagnostic.Span.IsNone
+            && diagnostic.Expected = [ "finite Float" ]
+            && diagnostic.Actual = [ string value ]
+            && steps = 0
+            && preflightCalls = 0
+            && effectCalls = 0)
+
+    let legacyEntryBody = compileBodyWithInputs (contextWith []) "legacy-float-entry-rejection" [ TInt ] []
+    use legacyNative = compileNative "legacy-float-entry-rejection" LlvmOptimization.O0 legacyEntryBody
+    let legacyFloatInput = errorOf (fun () ->
+        legacyNative.ExecuteRetainedWithInputs(
+            "legacy-float-entry-rejection",
+            None,
+            [ IrEntryArgument.FloatArgument 1.0 ])
+        |> ignore)
+    let legacyWrongCount = errorOf (fun () ->
+        legacyNative.ExecuteRetainedWithInputs("legacy-float-entry-rejection", None, []) |> ignore)
+    check "legacy shared-graph AOT explicitly rejects Float entry values before signature mismatch handling" (
+        legacyFloatInput.Code = "IR_BACKEND_ENTRY_ARGUMENT_UNSUPPORTED"
+        && legacyFloatInput.Message = "The legacy LLVM backend does not support Float entry arguments."
+        && legacyFloatInput.Word = Some "legacy-float-entry-rejection"
+        && legacyFloatInput.Span.IsNone
+        && legacyFloatInput.Expected = [ "legacy-supported entry argument: Int, Bool, Unit, or retained root" ]
+        && legacyFloatInput.Actual = [ "Float"]
+        && legacyWrongCount.Code = "IR_BACKEND_ENTRY_ARGUMENT_COUNT"
+        && legacyWrongCount.Expected = [ "1" ]
+        && legacyWrongCount.Actual = [ "0" ])
+
+    for label, valueBits in finiteBitVectors do
+        let decoded = OwningStackAot.decodeFloatValue (bytesOfBits valueBits) 0
+        check (label + " production output codec preserves exact Float bits") (
+            match decoded with
+            | FloatValue value -> bitsOf value = valueBits
+            | _ -> false)
+    for malformedBits in nonFiniteBits do
+        let mutable rejected = false
+        try
+            OwningStackAot.decodeFloatValue (bytesOfBits malformedBits) 0 |> ignore
+        with :? InvalidDataException -> rejected <- true
+        check "production output codec rejects every NaN and infinity encoding" rejected
+    for length in 0 .. 7 do
+        let mutable rejected = false
+        try
+            OwningStackAot.decodeFloatValue (Array.zeroCreate<byte> length) 0 |> ignore
+        with :? InvalidDataException -> rejected <- true
+        check ("production Float output codec rejects a truncated slot of " + string length + " bytes") rejected
+    for invalidOffset in [ -1; 1; 8 ] do
+        let mutable rejected = false
+        try
+            OwningStackAot.decodeFloatValue (bytesOfBits 0L) invalidOffset |> ignore
+        with :? InvalidDataException -> rejected <- true
+        check ("production Float output codec rejects invalid offset " + string invalidOffset) rejected
+    let offsetDecoded = OwningStackAot.decodeFloatValue (Array.concat [ [| 0xA5uy |]; bytesOfBits Int64.MinValue; [| 0x5Auy |] ]) 1
+    check "production Float output codec preserves the signed-zero bits at a nonzero offset" (
+        match offsetDecoded with
+        | FloatValue value -> bitsOf value = Int64.MinValue
+        | _ -> false)
+
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use literals = compileOwningNative toolchain "owning-float-literals" optimization literalBody
+        let literalResult: OwningStackExecutionResult = literals.Execute([], 4096, finiteValues.Length * 8)
+        check (string optimization + " Float literals preserve signed zero, subnormal, and max-finite bits") (
+            exactFloatBits literalResult.Values finiteExpected
+            && literalResult.RetainedBytesWritten = finiteValues.Length * 8
+            && hex literalResult.RetainedOutputBytes = finiteRawHex)
+        checkRawExecution
+            (string optimization + " raw Float literals preserve output bytes and fuel")
+            literals
+            Array.empty
+            [||]
+            literalResult.RetainedOutputBytes
+            finiteValues.Length
+
+        use direct = compileOwningNative toolchain "owning-float-direct-roundtrip" optimization directBody
+        use rawFloatScan = compileOwningNative toolchain "owning-float-raw-scan" optimization rawFloatScanBody
+        let directResult: OwningStackExecutionResult = direct.Execute(finiteExpected, 4096, finiteValues.Length * 8)
+        check (string optimization + " direct host Float inputs and results preserve exact bits") (
+            exactFloatBits directResult.Values interpretedDirect
+            && directResult.RetainedBytesWritten = finiteValues.Length * 8
+            && hex directResult.RetainedOutputBytes = finiteRawHex
+            && directResult.LayoutSchemaVersion = 4)
+        checkRawExecution
+            (string optimization + " raw direct Float inputs preserve output bytes and fuel")
+            direct
+            finiteRawBytes
+            (Array.create finiteValues.Length 8)
+            directResult.RetainedOutputBytes
+            directSteps
+        let retainedSentinel = Array.create (finiteValues.Length * 8) 0xA5uy
+        for value in [ Double.NaN; Double.PositiveInfinity; Double.NegativeInfinity ] do
+            let mutable rejected = false
+            try
+                direct.ExecuteInto([ FloatValue value ] @ finiteExpected.Tail, 4096, retainedSentinel) |> ignore
+            with :? ArgumentException -> rejected <- true
+            check (string optimization + " non-finite Float host input is rejected before publication") (
+                rejected && retainedSentinel = Array.create retainedSentinel.Length 0xA5uy)
+        for malformedBits in nonFiniteBits do
+            let rawStatus, rawContext, rawRetained = invokeRawOwningEntryForMetrics rawFloatScan (bytesOfBits malformedBits) [| 8 |]
+            check (string optimization + " non-finite raw Float input fails before body fuel or output publication") (
+                rawStatus <> 0
+                && rawContext.StepsConsumed = 0u
+                && rawContext.DiagnosticFloatBits = 0UL
+                && rawRetained = Array.create rawRetained.Length 0xA5uy)
+        for shortExtent in 0 .. 7 do
+            let rawStatus, rawContext, rawRetained = invokeRawOwningEntryForMetrics rawFloatScan (bytesOfBits 0L) [| shortExtent |]
+            check (string optimization + " raw Float owner extent " + string shortExtent + " rejects before reading or charging") (
+                rawStatus <> 0
+                && rawContext.StepsConsumed = 0u
+                && rawRetained = Array.create rawRetained.Length 0xA5uy)
+
+    let identityWord = wordEntry "float-identity" [ TFloat ] [ TFloat ] Set.empty []
+    let localContext = contextWith [ identityWord ]
+    let branchBody branchFlag bodyName =
+        compileBodyWithInputs localContext bodyName [ TFloat ] [
+            Let("saved", span (bodyName + ".agent") 1)
+            Push(LBool branchFlag, span (bodyName + ".agent") 2)
+            If(
+                [ Load("saved", span (bodyName + ".agent") 3); Call("float-identity", span (bodyName + ".agent") 4) ],
+                [ Load("saved", span (bodyName + ".agent") 5) ],
+                span (bodyName + ".agent") 2)
+        ]
+    for branchFlag in [ true; false ] do
+        let bodyName = if branchFlag then "owning-float-local-call-true-branch" else "owning-float-local-call-false-branch"
+        let body = branchBody branchFlag bodyName
+        let interpreted, expectedSteps = interpreterResultWithInputsAndSteps bodyName body [ IrEntryArgument.FloatArgument negativeZero ]
+        check (bodyName + " interpreter local and branch preserves the negative-zero sign") (
+            exactFloatBits interpreted [ FloatValue negativeZero ])
+        for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+            use native = compileOwningNative toolchain bodyName optimization body
+            let result: OwningStackExecutionResult = native.Execute([ FloatValue negativeZero ], 4096, 8)
+            check (string optimization + " " + bodyName + " preserves local, user-call, and branch bits/fuel") (
+                exactFloatBits result.Values interpreted
+                && hex result.RetainedOutputBytes = "0000000000000080")
+            checkRawExecution
+                (string optimization + " " + bodyName + " raw output/fuel")
+                native
+                (bytesOfFloat negativeZero)
+                [| 8 |]
+                result.RetainedOutputBytes
+                expectedSteps
+
+    let numericBody = compileBody (contextWith []) "owning-float-numeric" [
+        Push(LFloat 1.5, span "owning-float-numeric.agent" 1)
+        Push(LFloat 2.25, span "owning-float-numeric.agent" 2)
+        Call("float.add", span "owning-float-numeric.agent" 3)
+        Push(LFloat 2.25, span "owning-float-numeric.agent" 4)
+        Push(LFloat 1.5, span "owning-float-numeric.agent" 5)
+        Call("float.subtract", span "owning-float-numeric.agent" 6)
+        Push(LFloat 1.5, span "owning-float-numeric.agent" 7)
+        Push(LFloat 2.0, span "owning-float-numeric.agent" 8)
+        Call("float.multiply", span "owning-float-numeric.agent" 9)
+        Push(LFloat 3.0, span "owning-float-numeric.agent" 10)
+        Push(LFloat 2.0, span "owning-float-numeric.agent" 11)
+        Call("float.divide", span "owning-float-numeric.agent" 12)
+        Push(LFloat 1.0, span "owning-float-numeric.agent" 13)
+        Push(LFloat 2.0, span "owning-float-numeric.agent" 14)
+        Call("float.less-than", span "owning-float-numeric.agent" 15)
+        Push(LFloat 2.0, span "owning-float-numeric.agent" 16)
+        Push(LFloat 1.0, span "owning-float-numeric.agent" 17)
+        Call("float.greater-than", span "owning-float-numeric.agent" 18)
+        Push(LFloat 2.0, span "owning-float-numeric.agent" 19)
+        Push(LFloat 2.0, span "owning-float-numeric.agent" 20)
+        Call("float.less-or-equal", span "owning-float-numeric.agent" 21)
+        Push(LFloat 2.0, span "owning-float-numeric.agent" 22)
+        Push(LFloat 2.0, span "owning-float-numeric.agent" 23)
+        Call("float.greater-or-equal", span "owning-float-numeric.agent" 24)
+        Push(LFloat 0.0, span "owning-float-numeric.agent" 25)
+        Push(LFloat negativeZero, span "owning-float-numeric.agent" 26)
+        Call("equals", span "owning-float-numeric.agent" 27)
+        Push(LFloat (doubleFromBits 1L), span "owning-float-numeric.agent" 28)
+        Push(LFloat 1.0, span "owning-float-numeric.agent" 29)
+        Call("float.multiply", span "owning-float-numeric.agent" 30)
+        Push(LFloat (doubleFromBits maxFiniteBits), span "owning-float-numeric.agent" 31)
+        Push(LFloat 1.0, span "owning-float-numeric.agent" 32)
+        Call("float.multiply", span "owning-float-numeric.agent" 33)
+        Push(LFloat negativeZero, span "owning-float-numeric.agent" 34)
+        Push(LFloat 1.0, span "owning-float-numeric.agent" 35)
+        Call("float.multiply", span "owning-float-numeric.agent" 36)
+    ]
+    let numericExpected = [
+        FloatValue 3.75; FloatValue 0.75; FloatValue 3.0; FloatValue 1.5
+        BoolValue true; BoolValue true; BoolValue true; BoolValue true; BoolValue true
+        FloatValue(doubleFromBits 1L); FloatValue(doubleFromBits maxFiniteBits); FloatValue negativeZero
+    ]
+    let numericInterpreted, numericSteps = interpreterResultAndSteps "owning-float-numeric" numericBody
+    check "interpreter Float arithmetic and all ordered comparisons match independent expected values" (
+        exactFloatBits numericInterpreted numericExpected)
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native = compileOwningNative toolchain "owning-float-numeric" optimization numericBody
+        let result: OwningStackExecutionResult = native.Execute([], 4096, 128)
+        check (string optimization + " strict Float arithmetic/comparisons match the interpreter and preserve subnormals") (
+            exactFloatBits result.Values numericInterpreted)
+        checkRawExecution
+            (string optimization + " raw Float arithmetic/comparison output bytes and fuel")
+            native
+            Array.empty
+            [||]
+            result.RetainedOutputBytes
+            numericSteps
+
+    let upperInt64 = doubleFromBits 0x43E0000000000000L
+    let upperInt64Predecessor = Math.BitDecrement upperInt64
+    let lowerInt64 = -upperInt64
+    let lowerInt64Predecessor = Math.BitDecrement lowerInt64
+    let justBelowPositiveHalf = Math.BitDecrement 0.5
+    let justAbovePositiveHalf = Math.BitIncrement 0.5
+    let justAboveNegativeHalf = Math.BitIncrement(-0.5)
+    let justBelowNegativeHalf = Math.BitDecrement(-0.5)
+    let largeExactInteger = double 4503599627370497L
+    let conversionBody = compileBody (contextWith []) "owning-float-conversions" [
+        Push(LInt Int64.MinValue, span "owning-float-conversions.agent" 1)
+        Call("int.to-float", span "owning-float-conversions.agent" 2)
+        Push(LInt Int64.MaxValue, span "owning-float-conversions.agent" 3)
+        Call("int.to-float", span "owning-float-conversions.agent" 4)
+        Push(LFloat lowerInt64, span "owning-float-conversions.agent" 5)
+        Call("float.to-int", span "owning-float-conversions.agent" 6)
+        Push(LFloat upperInt64Predecessor, span "owning-float-conversions.agent" 7)
+        Call("float.to-int", span "owning-float-conversions.agent" 8)
+        Push(LFloat -4.9, span "owning-float-conversions.agent" 9)
+        Call("float.to-int", span "owning-float-conversions.agent" 10)
+        Push(LFloat 4.9, span "owning-float-conversions.agent" 11)
+        Call("float.to-int", span "owning-float-conversions.agent" 12)
+        Push(LFloat 1.5, span "owning-float-conversions.agent" 13)
+        Call("float.round", span "owning-float-conversions.agent" 14)
+        Push(LFloat -1.5, span "owning-float-conversions.agent" 15)
+        Call("float.round", span "owning-float-conversions.agent" 16)
+        Push(LFloat 2.5, span "owning-float-conversions.agent" 17)
+        Call("float.round", span "owning-float-conversions.agent" 18)
+        Push(LFloat -2.5, span "owning-float-conversions.agent" 19)
+        Call("float.round", span "owning-float-conversions.agent" 20)
+        Push(LFloat lowerInt64, span "owning-float-conversions.agent" 21)
+        Call("float.round", span "owning-float-conversions.agent" 22)
+        Push(LFloat upperInt64Predecessor, span "owning-float-conversions.agent" 23)
+        Call("float.round", span "owning-float-conversions.agent" 24)
+        Push(LFloat justBelowPositiveHalf, span "owning-float-conversions.agent" 25)
+        Call("float.round", span "owning-float-conversions.agent" 26)
+        Push(LFloat justAboveNegativeHalf, span "owning-float-conversions.agent" 27)
+        Call("float.round", span "owning-float-conversions.agent" 28)
+        Push(LFloat justAbovePositiveHalf, span "owning-float-conversions.agent" 29)
+        Call("float.round", span "owning-float-conversions.agent" 30)
+        Push(LFloat justBelowNegativeHalf, span "owning-float-conversions.agent" 31)
+        Call("float.round", span "owning-float-conversions.agent" 32)
+        Push(LFloat(doubleFromBits 1L), span "owning-float-conversions.agent" 33)
+        Call("float.round", span "owning-float-conversions.agent" 34)
+        Push(LFloat largeExactInteger, span "owning-float-conversions.agent" 35)
+        Call("float.round", span "owning-float-conversions.agent" 36)
+        Push(LFloat(-largeExactInteger), span "owning-float-conversions.agent" 37)
+        Call("float.round", span "owning-float-conversions.agent" 38)
+    ]
+    let conversionExpected = [
+        FloatValue(float Int64.MinValue); FloatValue(float Int64.MaxValue)
+        IntValue Int64.MinValue; IntValue 9223372036854774784L
+        IntValue -4L; IntValue 4L
+        IntValue 2L; IntValue -2L; IntValue 3L; IntValue -3L
+        IntValue Int64.MinValue; IntValue 9223372036854774784L
+        IntValue 0L; IntValue 0L; IntValue 1L; IntValue -1L
+        IntValue 0L; IntValue 4503599627370497L; IntValue -4503599627370497L
+    ]
+    let conversionOutputCapacity = conversionExpected.Length * sizeof<int64>
+    let conversionInterpreted, conversionSteps = interpreterResultAndSteps "owning-float-conversions" conversionBody
+    check "interpreter conversion oracle covers half-open Int64 edges, truncation, and round-away-from-zero" (
+        exactFloatBits conversionInterpreted conversionExpected)
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native = compileOwningNative toolchain "owning-float-conversions" optimization conversionBody
+        let result: OwningStackExecutionResult = native.Execute([], 4096, conversionOutputCapacity)
+        check (string optimization + " Float conversion boundaries and midpoint rounding match the interpreter") (
+            exactFloatBits result.Values conversionInterpreted
+            && result.RetainedBytesWritten = conversionOutputCapacity)
+        checkRawExecution
+            (string optimization + " raw Float conversion output bytes and fuel")
+            native
+            Array.empty
+            [||]
+            result.RetainedOutputBytes
+            conversionSteps
+
+    let compareFailure (executionName: string) (values: float list) (operation: string) =
+        let source = span (executionName + ".agent") 17
+        let context = contextWith []
+        let sources = NativeDiagnosticSources.fromLoweringContext context
+        let body = compileBodyWithInputs context executionName (List.replicate values.Length TFloat) [ Call(operation, source) ]
+        let expected, expectedSteps = interpreterFailure sources executionName body values
+        let expectedDiagnosticFloatBits =
+            match operation with
+            | "float.divide" -> 0UL
+            | "float.to-int"
+            | "float.round" -> bitsOf values.Head |> uint64
+            | "float.multiply" -> bitsOf (values[0] * values[1]) |> uint64
+            | _ -> failwith ("Unexpected Float failure operation: " + operation)
+        if operation = "float.to-int" || operation = "float.round" then
+            check (executionName + " interpreter range diagnostic uses the original finite input") (
+                expected.Actual = [ string values.Head ])
+        for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+            use native = compileOwningNative toolchain executionName optimization body
+            let stagedOutput = Array.create 64 0xA5uy
+            let failure =
+                try
+                    native.ExecuteInto(floatInputValues values, 4096, stagedOutput) |> ignore
+                    failwith "Expected a finite Float runtime diagnostic."
+                with :? OwningStackExecutionException as error -> error
+            let rawInput = values |> List.map bytesOfFloat |> Array.concat
+            let rawStatus, rawContext, rawRetained = invokeRawOwningEntryForMetrics native rawInput (Array.create values.Length 8)
+            check (string optimization + " " + executionName + " complete diagnostic and fuel parity") (
+                failure.Diagnostic.Code = expected.Code
+                && failure.Diagnostic.Message = expected.Message
+                && failure.Diagnostic.Word = expected.Word
+                && failure.Diagnostic.Span = expected.Span
+                && failure.Diagnostic.Expected = expected.Expected
+                && failure.Diagnostic.Actual = expected.Actual
+                && failure.Metrics.FinalCursorBytes = 0
+                && failure.Metrics.HostRetainedCommitBytes = 0
+                && stagedOutput = Array.create stagedOutput.Length 0xA5uy
+                && rawStatus <> 0
+                && rawContext.StepsConsumed = uint32 expectedSteps
+                && rawContext.DiagnosticFloatBits = expectedDiagnosticFloatBits
+                && rawRetained = Array.create rawRetained.Length 0xA5uy)
+
+    compareFailure "owning-float-divide-positive-zero" [ 1.0; 0.0 ] "float.divide"
+    compareFailure "owning-float-divide-negative-zero" [ 1.0; negativeZero ] "float.divide"
+    compareFailure "owning-float-divide-zero-over-zero" [ 0.0; 0.0 ] "float.divide"
+    compareFailure "owning-float-positive-overflow" [ doubleFromBits maxFiniteBits; 2.0 ] "float.multiply"
+    compareFailure "owning-float-negative-overflow" [ doubleFromBits negativeMaxFiniteBits; 2.0 ] "float.multiply"
+    compareFailure "owning-float-to-int-upper-range" [ upperInt64 ] "float.to-int"
+    compareFailure "owning-float-to-int-lower-range" [ lowerInt64Predecessor ] "float.to-int"
+    compareFailure "owning-float-round-upper-range" [ upperInt64 ] "float.round"
+    compareFailure "owning-float-round-lower-range" [ lowerInt64Predecessor ] "float.round"
+
+    let floatIdentity = wordEntry "float.identity" [ TFloat ] [ TFloat ] Set.empty []
+    let envelope = recordDefinition "FloatEnvelope" [ recordField "value" TFloat; recordField "flag" TBool ]
+    let floatText = recordDefinition "FloatText" [ recordField "value" TFloat; recordField "text" TString ]
+    let emptyFloatWitness = recordDefinition "EmptyFloatWitness" []
+    let transportContext = contextWithRecordDefinitions [ floatIdentity ] [ envelope; floatText; emptyFloatWitness ] [
+        scalarDefinition "FloatTag" TFloat None, "FloatTag.make", "FloatTag.value"
+    ]
+    let transportProgram = Compiler.compileIrProgram transportContext
+    let transportBody = Compiler.compileIrBodyAgainstProgram transportContext transportProgram "owning-float-aggregate-transport" [ TFloat ] [
+        Let("saved", span "owning-float-aggregate-transport.agent" 1)
+        Load("saved", span "owning-float-aggregate-transport.agent" 2)
+        Call("float.identity", span "owning-float-aggregate-transport.agent" 3)
+        Load("saved", span "owning-float-aggregate-transport.agent" 4)
+        Call("FloatTag.make", span "owning-float-aggregate-transport.agent" 5)
+        Load("saved", span "owning-float-aggregate-transport.agent" 6)
+        Push(LBool true, span "owning-float-aggregate-transport.agent" 7)
+        Call("floatEnvelope.new", span "owning-float-aggregate-transport.agent" 8)
+        Load("saved", span "owning-float-aggregate-transport.agent" 9)
+        ConstructContainer(OptionSome, [ TFloat ], span "owning-float-aggregate-transport.agent" 10)
+        Load("saved", span "owning-float-aggregate-transport.agent" 11)
+        ConstructContainer(ResultOk, [ TFloat; TInt ], span "owning-float-aggregate-transport.agent" 13)
+        Push(LInt 11L, span "owning-float-aggregate-transport.agent" 14)
+        ConstructContainer(ResultError, [ TFloat; TInt ], span "owning-float-aggregate-transport.agent" 15)
+    ]
+    let transportInput = [ FloatValue negativeZero ]
+    let transportExpected = [
+        FloatValue negativeZero
+        NamedValue("FloatTag", FloatValue negativeZero)
+        RecordValue("FloatEnvelope", Map.ofList [ "value", FloatValue negativeZero; "flag", BoolValue true ])
+        OptionValue(TFloat, Some(FloatValue negativeZero))
+        ResultValue(TFloat, TInt, Ok(FloatValue negativeZero))
+        ResultValue(TFloat, TInt, Error(IntValue 11L))
+    ]
+    let transportInterpreted, transportSteps = interpreterResultWithInputsAndSteps "owning-float-aggregate-transport" transportBody [ IrEntryArgument.FloatArgument negativeZero ]
+    check "interpreter Float transport oracle preserves the local value through nominal, record, Option, and Result paths" (
+        exactFloatBits transportInterpreted transportExpected)
+    let transportExpectedBytes = Array.concat [
+        bytesOfFloat negativeZero
+        bytesOfFloat negativeZero
+        bytesOfFloat negativeZero; BitConverter.GetBytes 1L
+        BitConverter.GetBytes 0L; bytesOfFloat negativeZero
+        BitConverter.GetBytes 0L; bytesOfFloat negativeZero
+        BitConverter.GetBytes 1L; BitConverter.GetBytes 11L
+    ]
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native = compileOwningNative toolchain "owning-float-aggregate-transport" optimization transportBody
+        let result: OwningStackExecutionResult = native.Execute(transportInput, 4096, transportExpectedBytes.Length)
+        check (string optimization + " Float result/local/call and aggregate payloads preserve exact bits") (
+            exactFloatBits result.Values transportInterpreted
+            && result.RetainedOutputBytes = transportExpectedBytes
+            && result.RetainedBytesWritten = transportExpectedBytes.Length)
+        checkRawExecution
+            (string optimization + " raw Float aggregate output bytes and fuel")
+            native
+            (bytesOfFloat negativeZero)
+            [| 8 |]
+            transportExpectedBytes
+            transportSteps
+
+    let floatPeerContext = contextWithScalarDefinitions [] [
+        scalarDefinition "FloatTag" TFloat None, "FloatTag.make", "FloatTag.value"
+        scalarDefinition "PeerFloatTag" TFloat None, "PeerFloatTag.make", "PeerFloatTag.value"
+    ]
+    let floatPeerBody = compileBodyWithInputs floatPeerContext "owning-float-wrapper-identities" [ TNamed "FloatTag"; TNamed "PeerFloatTag" ] []
+    let peerInput = [ NamedValue("FloatTag", FloatValue 1.25); NamedValue("PeerFloatTag", FloatValue negativeZero) ]
+    let peerInputBytes = Array.concat [ bytesOfFloat 1.25; bytesOfFloat negativeZero ]
+    let peerExpectedHex = hex peerInputBytes
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native = compileOwningNative toolchain "owning-float-wrapper-identities" optimization floatPeerBody
+        let floatLayout = native.Layouts |> List.find (fun layout -> layout.TypeName = "FloatTag")
+        let peerLayout = native.Layouts |> List.find (fun layout -> layout.TypeName = "PeerFloatTag")
+        check (string optimization + " distinct Float wrappers keep separate nominal identities and F64 descriptor IDs") (
+            floatLayout.Type = IrNominal(ProgramTypeKey 0)
+            && peerLayout.Type = IrNominal(ProgramTypeKey 1)
+            && floatLayout.Type <> peerLayout.Type
+            && native.LlvmIr.Contains("i32 9, i32 4,", StringComparison.Ordinal)
+            && native.LlvmIr.Contains("i32 9, i32 5,", StringComparison.Ordinal)
+            && native.LlvmIr.Contains("i32 9, i32 7,", StringComparison.Ordinal))
+        let valid: OwningStackExecutionResult = native.Execute(peerInput, 4096, 16)
+        check (string optimization + " nominal Float wrappers preserve distinct values and signed-zero bits") (
+            exactFloatBits valid.Values peerInput
+            && hex valid.RetainedOutputBytes = peerExpectedHex)
+        checkRawExecution
+            (string optimization + " raw Float wrapper roots preserve output bytes and fuel")
+            native
+            peerInputBytes
+            [| 8; 8 |]
+            valid.RetainedOutputBytes
+            0
+        let sentinel = Array.create 16 0xA5uy
+        let mutable swappedRejected = false
+        try
+            native.ExecuteInto([ peerInput[1]; peerInput[0] ], 4096, sentinel) |> ignore
+        with :? ArgumentException -> swappedRejected <- true
+        check (string optimization + " Float wrappers cannot be substituted across host input roots") (
+            swappedRejected && sentinel = Array.create 16 0xA5uy)
+
+    let positiveFloatValidator = wordEntry "float-is-positive?" [ TFloat ] [ TBool ] Set.empty [
+        Push(LFloat 0.0, span "owning-float-validator.agent" 1)
+        Call("float.greater-than", span "owning-float-validator.agent" 2)
+    ]
+    let refinedContext =
+        contextWithScalarDefinitions [ positiveFloatValidator ] [
+            scalarDefinition "PositiveFloat" TFloat (Some "float-is-positive?"), "PositiveFloat.construct", "PositiveFloat.unwrap"
+            scalarDefinition "PeerFloat" TFloat None, "PeerFloat.construct", "PeerFloat.unwrap"
+        ]
+        |> fun context ->
+            let scalarSpan = context.Scalars["PositiveFloat"].Span
+            let constructor = context.Words["PositiveFloat.construct"]
+            { context with Words = Map.add "PositiveFloat.construct" { constructor with Definition = { constructor.Definition with Span = scalarSpan } } context.Words }
+    let refinedProgram = Compiler.compileIrProgram refinedContext
+    let refinedSources = NativeDiagnosticSources.fromLoweringContext refinedContext
+    let refinedConstructor = Compiler.compileIrBodyAgainstProgram refinedContext refinedProgram "owning-float-refined-constructor" [ TFloat ] [
+        Call("PositiveFloat.construct", span "owning-float-refined-constructor.agent" 1)
+    ]
+    let refinedIdentity = Compiler.compileIrBodyAgainstProgram refinedContext refinedProgram "owning-float-refined-host-input" [ TNamed "PositiveFloat"; TNamed "PeerFloat" ] []
+    let acceptedExpected, acceptedSteps =
+        interpreterResultWithInputsAndSteps
+            "owning-float-refined-constructor"
+            refinedConstructor
+            [ IrEntryArgument.FloatArgument 1.5 ]
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use constructor = compileOwningNative toolchain "owning-float-refined-constructor" optimization refinedConstructor
+        let accepted: OwningStackExecutionResult = constructor.Execute([ FloatValue 1.5 ], 4096, 8)
+        check (string optimization + " frozen pure Float validator accepts a positive constructor input") (
+            exactFloatBits accepted.Values acceptedExpected
+            && hex accepted.RetainedOutputBytes = hex (bytesOfFloat 1.5))
+        checkRawExecution
+            (string optimization + " raw refined Float constructor output bytes and fuel")
+            constructor
+            (bytesOfFloat 1.5)
+            [| 8 |]
+            accepted.RetainedOutputBytes
+            acceptedSteps
+        let rejectedConstructor =
+            let retained = Array.create 8 0xA5uy
+            let error =
+                try
+                    constructor.ExecuteInto([ FloatValue -1.5 ], 4096, retained) |> ignore
+                    failwith "Expected the frozen Float validator to reject the constructor input."
+                with :? OwningStackExecutionException as failure -> failure
+            error, retained
+        let constructorFailure, constructorOutput = rejectedConstructor
+        let constructorDiagnostic, constructorSteps =
+            interpreterFailure refinedSources "owning-float-refined-constructor" refinedConstructor [ -1.5 ]
+        check
+            (string optimization
+             + " failing Float constructor diagnostic parity: expected {"
+             + describeDiagnostic constructorDiagnostic
+             + "}, actual {"
+             + describeDiagnostic constructorFailure.Diagnostic
+             + "}")
+            (constructorFailure.Diagnostic = constructorDiagnostic)
+        check
+            (string optimization + " failing Float constructor diagnostic retains the expected code and word")
+            (constructorFailure.Diagnostic.Code = "REFINEMENT_FAILED"
+             && constructorFailure.Diagnostic.Word = Some "PositiveFloat.construct")
+        check
+            (string optimization + " failing Float constructor leaves cursor and retained-output commit empty")
+            (constructorFailure.Metrics.FinalCursorBytes = 0
+             && constructorFailure.Metrics.HostRetainedCommitBytes = 0)
+        check
+            (string optimization + " failing Float constructor preserves the staged output bytes")
+            (constructorOutput = Array.create 8 0xA5uy)
+        let _, rawConstructorContext, rawConstructorOutput =
+            invokeRawOwningEntryForMetrics constructor (bytesOfFloat -1.5) [| 8 |]
+        check
+            (string optimization + " raw failing Float constructor consumes the interpreter's instruction fuel")
+            (rawConstructorContext.StepsConsumed = uint32 constructorSteps)
+        check
+            (string optimization + " raw failing Float constructor preserves retained output")
+            (rawConstructorOutput = Array.create rawConstructorOutput.Length 0xA5uy)
+
+        use identity = compileOwningNative toolchain "owning-float-refined-host-input" optimization refinedIdentity
+        let refinedInputs = [ NamedValue("PositiveFloat", FloatValue 1.5); NamedValue("PeerFloat", FloatValue negativeZero) ]
+        let validInput = identity.Execute(refinedInputs, 4096, 16)
+        check (string optimization + " validator-only host roots admit the frozen Float wrapper and preserve both wrappers") (
+            exactFloatBits validInput.Values refinedInputs
+            && validInput.RetainedBytesWritten = 16
+            && validInput.Metrics.FinalCursorBytes = 0)
+        let refinedInputBytes = Array.concat [ bytesOfFloat 1.5; bytesOfFloat negativeZero ]
+        let validRawStatus, validRawContext, validRawOutput =
+            invokeRawOwningEntryForMetrics identity refinedInputBytes [| 8; 8 |]
+        check (string optimization + " raw refined Float host roots preserve output bytes and charge frozen validation") (
+            validRawStatus = 0
+            && validRawContext.StepsConsumed > 0u
+            && validRawOutput[..15] = refinedInputBytes
+            && (validRawOutput[16..] |> Array.forall ((=) 0xA5uy)))
+        let badHostOutput = Array.create 16 0xA5uy
+        let badHost =
+            try
+                identity.ExecuteInto([ NamedValue("PositiveFloat", FloatValue -1.5); refinedInputs[1] ], 4096, badHostOutput) |> ignore
+                None
+            with :? OwningStackExecutionException as failure -> Some failure
+        check (string optimization + " refined Float host input runs the same frozen validator before body/output publication") (
+            (badHost |> Option.exists (fun failure ->
+                failure.Diagnostic.Code = "REFINEMENT_FAILED"
+                && failure.Diagnostic.Word = Some "PositiveFloat.construct"
+                && failure.Diagnostic.Expected = [ "validator returns true" ]
+                && failure.Diagnostic.Actual = [ "false" ]
+                && failure.Metrics.FinalCursorBytes = 0
+                && failure.Metrics.HostRetainedCommitBytes = 0))
+            && badHostOutput = Array.create 16 0xA5uy)
+        let countMismatchStatus, countMismatchContext, countMismatchOutput =
+            invokeRawOwningEntryForMetrics identity (bytesOfFloat -1.5) [| 8 |]
+        check (string optimization + " raw refined Float input-count mismatch is rejected before validation or fuel") (
+            countMismatchStatus <> 0
+            && countMismatchContext.Status = 4u
+            && countMismatchContext.StepsConsumed = 0u
+            && countMismatchOutput = Array.create countMismatchOutput.Length 0xA5uy)
+        let invalidRefinedInputs = Array.concat [ bytesOfFloat -1.5; bytesOfFloat negativeZero ]
+        let rawStatus, rawContext, rawOutput =
+            invokeRawOwningEntryForMetrics identity invalidRefinedInputs [| 8; 8 |]
+        check (string optimization + " raw refined Float host root is rejected by preflight validation") (
+            rawStatus <> 0
+            && rawContext.Status = 1u
+            && rawContext.StepsConsumed > 0u
+            && rawOutput = Array.create rawOutput.Length 0xA5uy)
+        let wrongTypeOutput = Array.create 16 0xA5uy
+        let mutable wrongTypeRejected = false
+        try
+            identity.ExecuteInto([ NamedValue("PeerFloat", FloatValue 1.5); refinedInputs[1] ], 4096, wrongTypeOutput) |> ignore
+        with :? ArgumentException -> wrongTypeRejected <- true
+        check (string optimization + " distinct refined Float wrapper substitution is rejected atomically") (
+            wrongTypeRejected && wrongTypeOutput = Array.create 16 0xA5uy)
+
+    let equalityContext = contextWithRecordDefinitions [] [ envelope; floatText; emptyFloatWitness ] [
+        scalarDefinition "FloatTag" TFloat None, "FloatTag.make", "FloatTag.value"
+    ]
+    let equalityBody = compileBody equalityContext "owning-float-typed-equality" [
+        Push(LFloat 0.0, span "owning-float-equality.agent" 1)
+        Push(LFloat negativeZero, span "owning-float-equality.agent" 2)
+        Call("equals", span "owning-float-equality.agent" 3)
+        Push(LFloat 0.0, span "owning-float-equality.agent" 4)
+        Call("FloatTag.make", span "owning-float-equality.agent" 5)
+        Push(LFloat negativeZero, span "owning-float-equality.agent" 6)
+        Call("FloatTag.make", span "owning-float-equality.agent" 7)
+        Call("equals", span "owning-float-equality.agent" 8)
+        Push(LFloat 0.0, span "owning-float-equality.agent" 9)
+        Push(LBool true, span "owning-float-equality.agent" 10)
+        Call("floatEnvelope.new", span "owning-float-equality.agent" 11)
+        Push(LFloat negativeZero, span "owning-float-equality.agent" 12)
+        Push(LBool true, span "owning-float-equality.agent" 13)
+        Call("floatEnvelope.new", span "owning-float-equality.agent" 14)
+        Call("equals", span "owning-float-equality.agent" 15)
+        Push(LFloat negativeZero, span "owning-float-equality.agent" 16)
+        Push(LBool true, span "owning-float-equality.agent" 17)
+        Call("floatEnvelope.new", span "owning-float-equality.agent" 18)
+        Push(LFloat negativeZero, span "owning-float-equality.agent" 19)
+        Push(LBool false, span "owning-float-equality.agent" 20)
+        Call("floatEnvelope.new", span "owning-float-equality.agent" 21)
+        Call("equals", span "owning-float-equality.agent" 22)
+        Push(LFloat 0.0, span "owning-float-equality.agent" 23)
+        Push(LString "same", span "owning-float-equality.agent" 24)
+        Call("floatText.new", span "owning-float-equality.agent" 25)
+        Push(LFloat negativeZero, span "owning-float-equality.agent" 26)
+        Push(LString "same", span "owning-float-equality.agent" 27)
+        Call("floatText.new", span "owning-float-equality.agent" 28)
+        Call("equals", span "owning-float-equality.agent" 29)
+        Push(LFloat 0.0, span "owning-float-equality.agent" 30)
+        ConstructContainer(OptionSome, [ TFloat ], span "owning-float-equality.agent" 31)
+        Push(LFloat negativeZero, span "owning-float-equality.agent" 32)
+        ConstructContainer(OptionSome, [ TFloat ], span "owning-float-equality.agent" 33)
+        Call("equals", span "owning-float-equality.agent" 34)
+        ConstructContainer(OptionNone, [ TFloat ], span "owning-float-equality.agent" 35)
+        ConstructContainer(OptionNone, [ TFloat ], span "owning-float-equality.agent" 36)
+        Call("equals", span "owning-float-equality.agent" 37)
+        Push(LFloat 0.0, span "owning-float-equality.agent" 38)
+        ConstructContainer(ResultOk, [ TFloat; TInt ], span "owning-float-equality.agent" 39)
+        Push(LFloat negativeZero, span "owning-float-equality.agent" 40)
+        ConstructContainer(ResultOk, [ TFloat; TInt ], span "owning-float-equality.agent" 41)
+        Call("equals", span "owning-float-equality.agent" 42)
+        Push(LInt -7L, span "owning-float-equality.agent" 43)
+        ConstructContainer(ResultError, [ TFloat; TInt ], span "owning-float-equality.agent" 44)
+        Push(LInt -7L, span "owning-float-equality.agent" 45)
+        ConstructContainer(ResultError, [ TFloat; TInt ], span "owning-float-equality.agent" 46)
+        Call("equals", span "owning-float-equality.agent" 47)
+        Call("emptyFloatWitness.new", span "owning-float-equality.agent" 48)
+        Call("emptyFloatWitness.new", span "owning-float-equality.agent" 49)
+        Call("equals", span "owning-float-equality.agent" 50)
+    ]
+    let equalityExpected = [
+        BoolValue true; BoolValue true; BoolValue true; BoolValue false; BoolValue true
+        BoolValue true; BoolValue true; BoolValue true; BoolValue true; BoolValue true
+    ]
+    let equalityInterpreted, equalitySteps = interpreterResultAndSteps "owning-float-typed-equality" equalityBody
+    check "interpreter structural equality oracle covers signed zero and the active aggregate values" (equalityInterpreted = equalityExpected)
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native = compileOwningNative toolchain "owning-float-typed-equality" optimization equalityBody
+        let result: OwningStackExecutionResult = native.Execute([], 8192, 128)
+        check (string optimization + " typed equality handles fixed/dynamic Float aggregates and empty records") (
+            result.Values = equalityInterpreted)
+        checkRawExecution
+            (string optimization + " raw typed Float equality output bytes and fuel")
+            native
+            Array.empty
+            [||]
+            result.RetainedOutputBytes
+            equalitySteps
+
+    let inactiveProgram = Compiler.compileIrProgram equalityContext
+    let optionType = TOption TFloat
+    let optionOwnerBody = Compiler.compileIrBodyAgainstProgram equalityContext inactiveProgram "owning-float-none-owner" [] [
+        ConstructContainer(OptionNone, [ TFloat ], span "owning-float-inactive.agent" 1)
+        ConstructContainer(OptionNone, [ TFloat ], span "owning-float-inactive.agent" 2)
+    ]
+    let optionCompareBody = Compiler.compileIrBodyAgainstProgram equalityContext inactiveProgram "owning-float-none-compare" [ optionType; optionType ] [
+        Call("equals", span "owning-float-inactive.agent" 3)
+    ]
+    let resultType = TResult(TFloat, TInt)
+    let resultOwnerBody = Compiler.compileIrBodyAgainstProgram equalityContext inactiveProgram "owning-float-error-owner" [] [
+        Push(LInt -2251799813685248L, span "owning-float-inactive.agent" 4)
+        ConstructContainer(ResultError, [ TFloat; TInt ], span "owning-float-inactive.agent" 5)
+        Push(LInt -2251799813685248L, span "owning-float-inactive.agent" 6)
+        ConstructContainer(ResultError, [ TFloat; TInt ], span "owning-float-inactive.agent" 7)
+    ]
+    let resultCompareBody = Compiler.compileIrBodyAgainstProgram equalityContext inactiveProgram "owning-float-error-compare" [ resultType; resultType ] [
+        Call("equals", span "owning-float-inactive.agent" 8)
+    ]
+    use optionOwner = IrInterpreter.executeBodyWithInputs (noOpHost ()) "owning-float-none-owner" optionOwnerBody None []
+    let optionInterpreted, optionSteps =
+        interpreterResultWithOwnerAndSteps
+            "owning-float-none-compare"
+            optionCompareBody
+            (Some optionOwner)
+            [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    check "interpreter inactive Option Float payloads are ignored by equality" (
+        optionInterpreted = [ BoolValue true ] && optionSteps = 1)
+    use resultOwner = IrInterpreter.executeBodyWithInputs (noOpHost ()) "owning-float-error-owner" resultOwnerBody None []
+    let resultInterpreted, resultSteps =
+        interpreterResultWithOwnerAndSteps
+            "owning-float-error-compare"
+            resultCompareBody
+            (Some resultOwner)
+            [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    check "interpreter Result Error equality compares its active Int payload only" (
+        resultInterpreted = [ BoolValue true ] && resultSteps = 1)
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use optionCompare = compileOwningNative toolchain "owning-float-none-compare" optimization optionCompareBody
+        let noneLeft = Array.concat [ BitConverter.GetBytes 1L; bytesOfBits negativeQuietNaNBits ]
+        let noneRight = Array.concat [ BitConverter.GetBytes 1L; bytesOfBits positiveInfinityBits ]
+        let canonicalNoneLeft = BitConverter.GetBytes 1L
+        let canonicalNoneRight = BitConverter.GetBytes 1L
+        let optionStatus, optionContext, optionRetained =
+            invokeRawOwningEntryForMetrics
+                optionCompare
+                (Array.concat [ canonicalNoneLeft; canonicalNoneRight ])
+                [| 8; 8 |]
+        check (string optimization + " canonical None equality compares matching tags") (
+            optionStatus = 0
+            && optionContext.StepsConsumed = uint32 optionSteps
+            && optionRetained[..7] = BitConverter.GetBytes 1L)
+        let oversizedNoneStatus, oversizedNoneContext, oversizedNoneRetained =
+            invokeRawOwningEntryForMetrics optionCompare (Array.concat [ noneLeft; noneRight ]) [| 16; 16 |]
+        check (string optimization + " None owner with inactive Float backing bytes is rejected as noncanonical before equality") (
+            oversizedNoneStatus <> 0
+            && oversizedNoneContext.Status = 4u
+            && oversizedNoneContext.StepsConsumed = 0u
+            && oversizedNoneRetained = Array.create oversizedNoneRetained.Length 0xA5uy)
+
+        use resultCompare = compileOwningNative toolchain "owning-float-error-compare" optimization resultCompareBody
+        let resultLeft = Array.concat [ BitConverter.GetBytes 1L; BitConverter.GetBytes -2251799813685248L ]
+        let resultRight = Array.concat [ BitConverter.GetBytes 1L; BitConverter.GetBytes -2251799813685248L ]
+        let resultStatus, resultContext, resultRetained = invokeRawOwningEntryForMetrics resultCompare (Array.concat [ resultLeft; resultRight ]) [| 16; 16 |]
+        check (string optimization + " Result Error equality compares the active Int and ignores its inactive Float interpretation") (
+            resultStatus = 0
+            && resultContext.StepsConsumed = uint32 resultSteps
+            && resultRetained[..7] = BitConverter.GetBytes 1L)
+        let unequalRight = Array.concat [ BitConverter.GetBytes 1L; BitConverter.GetBytes(-2251799813685247L) ]
+        let unequalStatus, unequalContext, unequalRetained = invokeRawOwningEntryForMetrics resultCompare (Array.concat [ resultLeft; unequalRight ]) [| 16; 16 |]
+        check (string optimization + " Result Error equality observes differing active payloads") (
+            unequalStatus = 0 && unequalContext.StepsConsumed = uint32 resultSteps
+            && unequalRetained[..7] = BitConverter.GetBytes 0L)
+
+    let unsupportedTextBody = compileBody (contextWith []) "owning-float-to-string-unsupported" [
+        Push(LFloat 1.5, span "owning-float-to-string-unsupported.agent" 1)
+        Call("float.to-string", span "owning-float-to-string-unsupported.agent" 2)
+    ]
+    let absentTools = LlvmToolchain("missing-float-test-clang", "missing-float-test-lld", None)
+    let unsupportedText = errorOf (fun () ->
+        OwningStackAot.compile absentTools LlvmOptimization.O0 (Path.Combine(artifactRoot, "owning-float-to-string-unsupported")) unsupportedTextBody
+        |> ignore)
+    check "float.to-string remains explicitly unsupported and fails before any native tool invocation" (
+        unsupportedText.Code = "IR_OWNING_STACK_PRIMITIVE_UNSUPPORTED"
+        && not (Directory.Exists(Path.Combine(artifactRoot, "owning-float-to-string-unsupported"))))
+
+    let mailboxContext = contextWithRecords [] [
+        recordDefinition "FloatMailboxState" [ recordField "value" TFloat ]
+        recordDefinition "FloatMailboxContinuation" [ recordField "marker" TInt ]
+    ]
+    let mailboxProgram = Compiler.compileIrProgram mailboxContext
+    let mailboxInitialize = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-float-mailbox-initialize" [ TString ] [
+        Call("drop", span "owning-float-mailbox.agent" 1)
+        Push(LFloat negativeZero, span "owning-float-mailbox.agent" 2)
+        Call("floatMailboxState.new", span "owning-float-mailbox.agent" 3)
+    ]
+    let mailboxBegin = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-float-mailbox-begin" [ TNamed "FloatMailboxState"; TString ] [
+        Call("drop", span "owning-float-mailbox.agent" 4)
+        Push(LInt 23L, span "owning-float-mailbox.agent" 5)
+        Call("floatMailboxContinuation.new", span "owning-float-mailbox.agent" 6)
+    ]
+    let mailboxResume = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-float-mailbox-resume" [ TNamed "FloatMailboxState"; TNamed "FloatMailboxContinuation"; TString ] [
+        Call("drop", span "owning-float-mailbox.agent" 7)
+        Call("drop", span "owning-float-mailbox.agent" 8)
+    ]
+    let mailboxSlice (invocation: RawMailboxInvocation) index =
+        let output = invocation.Outputs[index]
+        invocation.StackBytes[int output.OffsetBytes .. int output.OwnerEndBytes - 1]
+    let invokeFloatMailboxLifecycle (native: OwningMailboxCompiledModule) helperPath suspensionPolicy =
+        let moduleLibrary = NativeLibrary.Load native.LibraryPath
+        let helperLibrary = NativeLibrary.Load helperPath
+        let reportPointer = Marshal.AllocHGlobal(24 * sizeof<int64>)
+        try
+            Marshal.Copy(Array.zeroCreate<byte> (24 * sizeof<int64>), 0, reportPointer, 24 * sizeof<int64>)
+            let moduleExport =
+                Marshal.GetDelegateForFunctionPointer<OwningMailboxModuleExport>(
+                    NativeLibrary.GetExport(moduleLibrary, "agentlang_owning_mailbox_module"))
+            let modulePointer = moduleExport.Invoke()
+            let lifecycle =
+                Marshal.GetDelegateForFunctionPointer<FloatMailboxLifecycleDelegate>(
+                    NativeLibrary.GetExport(helperLibrary, "agentlang_test_owning_float_mailbox_lifecycle"))
+            let helperStatus = lifecycle.Invoke(modulePointer, suspensionPolicy, reportPointer)
+            let report = Array.init 24 (fun index -> Marshal.ReadInt64(reportPointer, index * sizeof<int64>))
+            helperStatus, report
+        finally
+            Marshal.FreeHGlobal reportPointer
+            NativeLibrary.Free helperLibrary
+            NativeLibrary.Free moduleLibrary
+
+    for profile in [ OwningRuntimeProfile.Diagnostic; OwningRuntimeProfile.TrustedGenerated ] do
+        let profileName = if profile = OwningRuntimeProfile.Diagnostic then "diagnostic" else "trusted-generated"
+        let requireSuccessfulCallback callbackName (invocation: RawMailboxInvocation) =
+            if invocation.Status <> 0 || invocation.Context.Status <> 0u then
+                failwith ($"{profileName} raw mailbox {callbackName} failed ({describeRawMailboxInvocation invocation})")
+        let mailbox =
+            OwningStackAot.compileMailboxWithProfile
+                toolchain LlvmOptimization.O0 profile
+                (Path.Combine(artifactRoot, "owning-float-mailbox-callbacks-" + profileName))
+                mailboxInitialize mailboxBegin mailboxResume
+        let initialize = invokeRawMailboxEntry mailbox 0 [ mailboxStringBytes "start" ]
+        requireSuccessfulCallback "initialize" initialize
+        let stateBytes = mailboxSlice initialize 0
+        let beginTurn = invokeRawMailboxEntry mailbox 1 [ stateBytes; mailboxStringBytes "turn" ]
+        requireSuccessfulCallback "begin" beginTurn
+        let beginState = mailboxSlice beginTurn 0
+        let continuationBytes = mailboxSlice beginTurn 1
+        let resume = invokeRawMailboxEntry mailbox 2 [ beginState; continuationBytes; mailboxStringBytes "finish" ]
+        requireSuccessfulCallback "resume" resume
+        let resumedState = mailboxSlice resume 0
+        check (profileName + " raw mailbox callbacks carry Float state through initialize, begin, and resume") (
+            initialize.Status = 0
+            && beginTurn.Status = 0
+            && resume.Status = 0
+            && initialize.Outputs.Length = 1
+            && beginTurn.Outputs.Length = 2
+            && resume.Outputs.Length = 1
+            && beginTurn.Context.CallDepth = 0u
+            && resume.Context.CallDepth = 0u
+            && hex stateBytes = "0000000000000080"
+            && beginState = stateBytes
+            && resumedState = stateBytes)
+        let malformedState = bytesOfBits quietNaNBits
+        let malformedBegin = invokeRawMailboxEntry mailbox 1 [ malformedState; mailboxStringBytes "turn" ]
+        check (profileName + " malformed raw Float mailbox state fails preflight before fuel/output publication (" + describeRawMailboxInvocation malformedBegin + ")") (
+            malformedBegin.Status <> 0
+            && malformedBegin.Context.StepsConsumed = 0u
+            && (malformedBegin.Outputs |> List.forall (fun output ->
+                output.TypeIndex = UInt32.MaxValue && output.OffsetBytes = 0u && output.OwnerEndBytes = 0u)))
+
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        let mailbox =
+            OwningStackAot.compileMailboxWithProfile
+                toolchain optimization OwningRuntimeProfile.Diagnostic
+                (Path.Combine(artifactRoot, "owning-float-mailbox-lifecycle", string optimization))
+                mailboxInitialize mailboxBegin mailboxResume
+        let lifecycleHelper = compileOwningFloatMailboxLifecycleHelper toolchain optimization
+        for policyName, suspensionPolicy in [ "RETURN", 0u; "KEEP_ASSOCIATED", 1u ] do
+            let helperStatus, report = invokeFloatMailboxLifecycle mailbox lifecycleHelper suspensionPolicy
+            let expectedPending = [| 0L; 1L; 0L |]
+            let expectedPinned = if suspensionPolicy = 0u then [| 0L; 0L; 0L |] else [| 0L; 1L; 0L |]
+            check ($"{optimization} actual owning mailbox {policyName} lifecycle preserves Float state across initialize, begin, and resume") (
+                helperStatus = 0
+                && report[0..2] = [| 0L; 0L; 0L |]
+                && report[3..5] = expectedPending
+                && report[6..8] = expectedPinned
+                && report[9..11] = expectedPinned
+                && (report[12..14] |> Array.forall (fun bits -> uint64 bits = 0x8000000000000000UL))
+                && (report[15..17] |> Array.forall (fun steps -> steps > 0L))
+                && report[18..20] = [| 0L; 0L; 0L |]
+                && report[21] = int64 suspensionPolicy
+                && report[22] = 0L
+                && report[23] = 0L)
 
 let private testOwningRefinedMailboxVariants () =
     let toolchain = LlvmToolchain.discover()
@@ -5055,6 +6057,8 @@ let private runFullSuite () =
         testOwningRefinedStringSlice ()
         printStage "owning backend unvalidated nominal String identity, bytes, and mailbox callbacks"
         testOwningNominalStringSlice ()
+        printStage "owning backend Float transport, diagnostics, equality, and mailbox lifecycle"
+        testOwningFloatSlice ()
         testNominalScalarDiagnosticsAndRejections ()
         testNominalScalarDepth ()
         printStage "record construction, accessors, aliases, and equality"
@@ -5107,6 +6111,15 @@ let main args =
             printStage "owning backend refined Int constructors and host admission"
             testOwningRefinedIntSlice ()
             printfn "AgentLang.Llvm.Tests owning refined Int checks: %d assertions passed; artifacts: %s" assertions artifactRoot
+            0
+        with ex ->
+            eprintfn "%s" (ex.ToString())
+            1
+    elif args |> Array.contains "--owning-float" then
+        try
+            printStage "owning backend Float transport, diagnostics, equality, and mailbox lifecycle"
+            testOwningFloatSlice ()
+            printfn "AgentLang.Llvm.Tests owning Float checks: %d assertions passed; artifacts: %s" assertions artifactRoot
             0
         with ex ->
             eprintfn "%s" (ex.ToString())

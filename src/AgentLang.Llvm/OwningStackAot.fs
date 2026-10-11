@@ -122,7 +122,8 @@ type OwningMailboxDiagnosticInfo =
       Column: int option
       Length: int option
       Expected: string list
-      Actual: string list }
+      Actual: string list
+      DynamicFloatActual: bool }
 
 [<Sealed>]
 type OwningMailboxCompiledModule internal
@@ -236,6 +237,7 @@ type internal NativeOwningContext =
     val mutable MoveBytes: uint64
     val mutable InputCopyBytes: uint64
     val mutable RetainedCopyBytes: uint64
+    val mutable DiagnosticFloatBits: uint64
 
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
 type private OwningExecuteDelegate = delegate of nativeint * nativeint * uint32 * nativeint * uint32 * nativeint * uint32 -> int32
@@ -266,7 +268,8 @@ type internal OwningProgramInfo =
 
 type internal OwningDiagnosticInfo =
     { Diagnostic: Diagnostic
-      EntryRole: string option }
+      EntryRole: string option
+      DynamicFloatActual: bool }
 
 type private OwningLocalSlotPlan =
     { OffsetBytes: int
@@ -337,6 +340,70 @@ type private OwningLlvmWriter() =
         serial <- serial + 1
         value
     member _.Text = output.ToString()
+    member this.EmitFloatRoundAwayFromZero(inputBits: string) =
+        // Binary64 values with exponents >= 52 are already integral. For smaller
+        // values, split the significand at its exact binary point and increment
+        // when the discarded portion is at least one half. This implements
+        // ties-away-from-zero without a platform libm call or an inexact +/-0.5.
+        let negative = this.Fresh "float.round.negative"
+        this.Inst($"{negative} = icmp slt i64 {inputBits}, 0")
+        let signValue = this.Fresh "float.round.sign.value"
+        this.Inst($"{signValue} = zext i1 {negative} to i64")
+        let signMask = this.Fresh "float.round.sign.mask"
+        this.Inst($"{signMask} = shl i64 {signValue}, 63")
+        let magnitudeBits = this.Fresh "float.round.magnitude.bits"
+        this.Inst($"{magnitudeBits} = and i64 {inputBits}, 9223372036854775807")
+        let exponentShifted = this.Fresh "float.round.exponent.shifted"
+        this.Inst($"{exponentShifted} = lshr i64 {magnitudeBits}, 52")
+        let exponent = this.Fresh "float.round.exponent"
+        this.Inst($"{exponent} = and i64 {exponentShifted}, 2047")
+        let exponentAtLeastHalf = this.Fresh "float.round.exponent.at.least.half"
+        this.Inst($"{exponentAtLeastHalf} = icmp uge i64 {exponent}, 1022")
+        let exponentBelowIntegral = this.Fresh "float.round.exponent.below.integral"
+        this.Inst($"{exponentBelowIntegral} = icmp ult i64 {exponent}, 1075")
+        let roundFractional = this.Fresh "float.round.fractional.range"
+        this.Inst($"{roundFractional} = and i1 {exponentAtLeastHalf}, {exponentBelowIntegral}")
+        let alreadyIntegral = this.Fresh "float.round.already.integral"
+        this.Inst($"{alreadyIntegral} = icmp uge i64 {exponent}, 1075")
+        let safeExponent = this.Fresh "float.round.safe.exponent"
+        this.Inst($"{safeExponent} = select i1 {roundFractional}, i64 {exponent}, i64 1074")
+        let shift = this.Fresh "float.round.shift"
+        this.Inst($"{shift} = sub i64 1075, {safeExponent}")
+        let fractionBits = this.Fresh "float.round.fraction.bits"
+        this.Inst($"{fractionBits} = and i64 {magnitudeBits}, 4503599627370495")
+        let significand = this.Fresh "float.round.significand"
+        this.Inst($"{significand} = or i64 {fractionBits}, 4503599627370496")
+        let quotient = this.Fresh "float.round.quotient"
+        this.Inst($"{quotient} = lshr i64 {significand}, {shift}")
+        let remainderMaskBase = this.Fresh "float.round.remainder.mask.base"
+        this.Inst($"{remainderMaskBase} = shl i64 1, {shift}")
+        let remainderMask = this.Fresh "float.round.remainder.mask"
+        this.Inst($"{remainderMask} = sub i64 {remainderMaskBase}, 1")
+        let remainder = this.Fresh "float.round.remainder"
+        this.Inst($"{remainder} = and i64 {significand}, {remainderMask}")
+        let halfShift = this.Fresh "float.round.half.shift"
+        this.Inst($"{halfShift} = sub i64 {shift}, 1")
+        let half = this.Fresh "float.round.half"
+        this.Inst($"{half} = shl i64 1, {halfShift}")
+        let roundUp = this.Fresh "float.round.round.up"
+        this.Inst($"{roundUp} = icmp uge i64 {remainder}, {half}")
+        let increment = this.Fresh "float.round.increment"
+        this.Inst($"{increment} = zext i1 {roundUp} to i64")
+        let roundedTruncation = this.Fresh "float.round.rounded.truncation"
+        this.Inst($"{roundedTruncation} = add i64 {quotient}, {increment}")
+        let roundedMagnitude = this.Fresh "float.round.rounded.magnitude"
+        this.Inst($"{roundedMagnitude} = select i1 {roundFractional}, i64 {roundedTruncation}, i64 0")
+        let roundedSmallFloat = this.Fresh "float.round.rounded.small.float"
+        this.Inst($"{roundedSmallFloat} = uitofp i64 {roundedMagnitude} to double")
+        let roundedSmallBits = this.Fresh "float.round.rounded.small.bits"
+        this.Inst($"{roundedSmallBits} = bitcast double {roundedSmallFloat} to i64")
+        let roundedMagnitudeBits = this.Fresh "float.round.rounded.magnitude.bits"
+        this.Inst($"{roundedMagnitudeBits} = select i1 {alreadyIntegral}, i64 {magnitudeBits}, i64 {roundedSmallBits}")
+        let roundedBits = this.Fresh "float.round.rounded.bits"
+        this.Inst($"{roundedBits} = or i64 {signMask}, {roundedMagnitudeBits}")
+        let roundedValue = this.Fresh "float.round.rounded.value"
+        this.Inst($"{roundedValue} = bitcast i64 {roundedBits} to double")
+        roundedValue
 
 [<Sealed>]
 type OwningStackCompiledProgram internal
@@ -351,7 +418,7 @@ type OwningStackCompiledProgram internal
      decodeValues: OwningProgramInfo -> IrType list -> byte array -> Value list,
      readEvents: nativeint -> uint32 -> OwningStackLayoutEvent list,
      readMetrics: int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int64 -> int -> NativeOwningContext -> OwningStackMetrics,
-     diagnosticForError: OwningDiagnosticInfo array -> uint32 -> Diagnostic) as this =
+     diagnosticForError: OwningDiagnosticInfo array -> uint32 -> uint64 -> Diagnostic) as this =
     let mutable libraryHandle = IntPtr.Zero
     let mutable executeDelegate: OwningExecuteDelegate option = None
     let lifetimeGate = obj ()
@@ -391,8 +458,8 @@ type OwningStackCompiledProgram internal
         let eventAllocationBytes = traceCapacity * Marshal.SizeOf<NativeOwningEvent>()
         let inputAllocationBytes = max 1 inputLength
         let contextBytes = Marshal.SizeOf<NativeOwningContext>()
-        if IntPtr.Size <> 8 || contextBytes <> 168 || Marshal.SizeOf<NativeOwningEvent>() <> 40 then
-            invalidOp "Owning-stack ABI1 requires the verified x64 context/event layout."
+        if IntPtr.Size <> 8 || contextBytes <> 176 || Marshal.SizeOf<NativeOwningEvent>() <> 40 then
+            invalidOp "Owning-stack ABI2 requires the verified x64 context/event layout."
 
         let allocate (bytes: int) = Marshal.AllocHGlobal bytes
         let mutable contextPointer = IntPtr.Zero
@@ -419,7 +486,7 @@ type OwningStackCompiledProgram internal
 
             let retainedPointer = retainedStagePointer
             let mutable context = Unchecked.defaultof<NativeOwningContext>
-            context.AbiVersion <- 1u
+            context.AbiVersion <- 2u
             context.StackCapacityBytes <- uint32 stackByteCapacity
             context.TraceEventCapacity <- uint32 traceCapacity
             context.InitBitmapBytes <- uint32 stackBitBytes
@@ -460,7 +527,7 @@ type OwningStackCompiledProgram internal
                         "OWNING_RETAINED_CAPACITY", "retained-output",
                         int64 context.RequiredBytes, int64 context.AvailableBytes, metrics))
                 | 1u ->
-                    let diagnostic = diagnosticForError diagnostics context.ErrorId
+                    let diagnostic = diagnosticForError diagnostics context.ErrorId context.DiagnosticFloatBits
                     raise (OwningStackExecutionException(diagnostic, metrics))
                 | _ ->
                     let recentEvents =
@@ -495,7 +562,7 @@ type OwningStackCompiledProgram internal
             if writtenBytes > 0 then Array.Copy(resultBytes, 0, retainedOutput, 0, writtenBytes)
             let committedMetrics = { metrics with HostRetainedCommitBytes = writtenBytes }
             { Values = values
-              LayoutSchemaVersion = 3
+              LayoutSchemaVersion = 4
               Metrics = committedMetrics
               RetainedBytesWritten = writtenBytes
               RetainedOutputBytes = resultBytes
@@ -534,7 +601,7 @@ type OwningStackCompiledProgram internal
 [<RequireQualifiedAccess>]
 module OwningStackAot =
     let private unsupported code message owner actual =
-        Diagnostics.raiseError code message (Some owner) None [ "Int | Bool | Unit | String | payload-free enum | acyclic inline record | Option<T> | Result<T, E>" ] [ actual ]
+        Diagnostics.raiseError code message (Some owner) None [ "Int | Bool | Float | Unit | String | payload-free enum | acyclic inline record | Option<T> | Result<T, E>" ] [ actual ]
 
     let private enumDefinition (program: IrProgram) ty =
         match ty with
@@ -568,6 +635,7 @@ module OwningStackAot =
         | IrInt -> "Int"
         | IrBool -> "Bool"
         | IrUnit -> "Unit"
+        | IrFloat -> "Float"
         | IrString -> "String"
         | IrOption item -> $"Option<{typeName program item}>"
         | IrResult(okType, errorType) -> $"Result<{typeName program okType}, {typeName program errorType}>"
@@ -583,6 +651,7 @@ module OwningStackAot =
         | IrInt -> TInt
         | IrBool -> TBool
         | IrUnit -> TUnit
+        | IrFloat -> TFloat
         | IrString -> TString
         | IrOption item -> TOption(langTypeFor program item)
         | IrResult(okType, errorType) -> TResult(langTypeFor program okType, langTypeFor program errorType)
@@ -616,12 +685,14 @@ module OwningStackAot =
             program.NominalTypesByKey
             |> Map.toList
             |> List.mapi (fun index (key, _) -> IrNominal key, uint32 (index + 4))
+        let stringTypeId = uint32 (nominalTypeIds.Length + 4)
+        let floatTypeId = stringTypeId + 1u
         let mutable typeIds =
             ([ IrInt, 1u; IrBool, 2u; IrUnit, 3u ]
              @ nominalTypeIds
-             @ [ IrString, uint32 (nominalTypeIds.Length + 4) ])
+             @ [ IrString, stringTypeId; IrFloat, floatTypeId ])
             |> Map.ofList
-        let mutable nextCompoundTypeId = uint32 (nominalTypeIds.Length + 5)
+        let mutable nextCompoundTypeId = floatTypeId + 1u
         let ensureCompoundTypeId ty =
             match typeIds.TryFind ty with
             | Some value -> value
@@ -638,8 +709,8 @@ module OwningStackAot =
         let active = HashSet<IrType>()
         let unsupportedScalarMessage, unsupportedScalarExpected =
             if allowValidatedScalars then
-                "Owning-stack supports nominal Int, Bool, and String scalar wrappers with optional pure frozen validators; Float and other scalar bases remain unsupported.",
-                [ "nominal Int scalar"; "nominal Bool scalar"; "nominal String scalar" ]
+                "Owning-stack supports nominal Int, Bool, Float, and String scalar wrappers with optional pure frozen validators.",
+                [ "nominal Int scalar"; "nominal Bool scalar"; "nominal Float scalar"; "nominal String scalar" ]
             else
                 "Owning-stack supports only unvalidated nominal Int scalar wrappers.",
                 [ "unvalidated Int scalar" ]
@@ -647,7 +718,7 @@ module OwningStackAot =
             match scalar.ValidatorCall with
             | None -> ()
             | Some validator ->
-                if not allowValidatedScalars || (scalar.BaseType <> IrInt && scalar.BaseType <> IrBool && scalar.BaseType <> IrString) then
+                if not allowValidatedScalars || (scalar.BaseType <> IrInt && scalar.BaseType <> IrBool && scalar.BaseType <> IrFloat && scalar.BaseType <> IrString) then
                     Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
                         unsupportedScalarMessage
                         (Some owner) None unsupportedScalarExpected [ scalar.TypeName ]
@@ -720,7 +791,7 @@ module OwningStackAot =
                 if depth >= 64 then
                     unsupported "IR_OWNING_STACK_LAYOUT_DEPTH" "Owning record layout exceeds the bounded 64-level descriptor depth." owner (IrTypes.format ty)
                 match ty with
-                | IrInt | IrBool | IrUnit ->
+                | IrInt | IrBool | IrUnit | IrFloat ->
                     let value =
                         { Type = ty
                           TypeId = typeIdFor typeIds ty
@@ -836,6 +907,7 @@ module OwningStackAot =
                             match scalar.BaseType, scalar.ValidatorCall with
                             | IrInt, _
                             | IrBool, _
+                            | IrFloat, _
                             | IrString, _ ->
                                 validateScalarValidator owner scalar
                                 scalar.ValidatorCall
@@ -933,6 +1005,9 @@ module OwningStackAot =
         let supportedPrimitives =
             set [ "add"; "subtract"; "multiply"; "divide"
                   "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
+                  "float.add"; "float.subtract"; "float.multiply"; "float.divide"
+                  "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
+                  "int.to-float"; "float.to-int"; "float.round"
                   "equals"; "bool.and"; "bool.or"; "bool.not"; "dup"; "drop"; "swap"
                   "string.concat"; "string.length" ]
 
@@ -948,6 +1023,10 @@ module OwningStackAot =
                 match operation, call.InputTypes, call.OutputTypes with
                 | ("add" | "subtract" | "multiply" | "divide"), [ IrInt; IrInt ], [ IrInt ] -> true
                 | ("int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"), [ IrInt; IrInt ], [ IrBool ] -> true
+                | ("float.add" | "float.subtract" | "float.multiply" | "float.divide"), [ IrFloat; IrFloat ], [ IrFloat ] -> true
+                | ("float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal"), [ IrFloat; IrFloat ], [ IrBool ] -> true
+                | "int.to-float", [ IrInt ], [ IrFloat ] -> true
+                | ("float.to-int" | "float.round"), [ IrFloat ], [ IrInt ] -> true
                 | "equals", [ left; right ], [ IrBool ] -> left = right
                 | "bool.and", [ IrBool; IrBool ], [ IrBool ] -> true
                 | "bool.or", [ IrBool; IrBool ], [ IrBool ] -> true
@@ -976,11 +1055,12 @@ module OwningStackAot =
                 | IrOperation.Constant(LInt _, IrInt)
                 | IrOperation.Constant(LBool _, IrBool)
                 | IrOperation.Constant(LUnit, IrUnit)
+                | IrOperation.Constant(LFloat _, IrFloat)
                 | IrOperation.Constant(LString _, IrString) -> ()
                 | IrOperation.Constant(literal, ty) ->
                     Diagnostics.raiseError "IR_OWNING_STACK_CONSTANT_UNSUPPORTED"
-                        "Owning-stack backend supports Int, Bool, Unit, and String constants only."
-                        (Some owner) span [ "Int"; "Bool"; "Unit"; "String" ] [ sprintf "%A : %s" literal (IrTypes.format ty) ]
+                        "Owning-stack backend supports Int, Bool, Float, Unit, and String constants only."
+                        (Some owner) span [ "Int"; "Bool"; "Float"; "Unit"; "String" ] [ sprintf "%A : %s" literal (IrTypes.format ty) ]
                 | IrOperation.Call call ->
                     match call.ResolvedTarget with
                     | PrimitiveTarget(PrimitiveId operation) -> validatePrimitive owner span call operation
@@ -1057,14 +1137,14 @@ module OwningStackAot =
                 | IrOperation.If(thenBlock, elseBlock) -> validateBlock owner thenBlock; validateBlock owner elseBlock
                 | operation ->
                     Diagnostics.raiseError "IR_OWNING_STACK_OPERATION_UNSUPPORTED"
-                        "Owning-stack backend supports constants, calls, records, nominal Int, Bool, and String scalars with optional pure frozen predicates, payload-free enums, Option/Result values, locals, Scope, If, and exhaustive matches."
+                        "Owning-stack backend supports constants, calls, records, nominal Int, Bool, Float, and String scalars with optional pure frozen predicates, payload-free enums, Option/Result values, locals, Scope, If, and exhaustive matches."
                         (Some owner) span [ "Constant"; "Call"; "MakeRecord"; "GetRecordField"; "WrapScalar"; "UnwrapScalar"; "MakeEnumCase"; "OptionNone"; "OptionSome"; "ResultOk"; "ResultError"; "MatchOption"; "MatchResult"; "MatchEnum"; "StoreLocal"; "LoadLocal"; "Scope"; "If" ]
                         [ sprintf "%A" operation ]
 
         and validateScalarCall owner span (call: IrResolvedCall) key expectedOperation inputTypes outputTypes =
             match program.NominalTypesByKey.TryFind key with
             | Some(IrScalarDefinition scalar)
-                when scalar.BaseType = IrInt || scalar.BaseType = IrBool || scalar.BaseType = IrString ->
+                when scalar.BaseType = IrInt || scalar.BaseType = IrBool || scalar.BaseType = IrFloat || scalar.BaseType = IrString ->
                 validateScalarValidator owner scalar
             | _ ->
                 Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
@@ -1278,6 +1358,18 @@ module OwningStackAot =
         for index in 0 .. 7 do bits <- bits ||| (uint64 bytes[offset + index] <<< (index * 8))
         int64 bits
 
+    /// Decode one finite IEEE-754 binary64 scalar from a bounded little-endian slot.
+    /// Kept internal so the friend test assembly can exercise the production codec
+    /// against malformed native output bytes.
+    let internal decodeFloatValue (bytes: byte array) offset =
+        if isNull bytes then nullArg (nameof bytes)
+        if offset < 0 || offset > bytes.Length - 8 then
+            raise (InvalidDataException("Owning-stack Float value is truncated."))
+        let value = BitConverter.Int64BitsToDouble(readInt64 bytes offset)
+        if not (Double.IsFinite value) then
+            raise (InvalidDataException("Owning-stack Float output was nonfinite."))
+        FloatValue value
+
     let private checkedHostAdd name left right =
         let total = Checked.(+) (int64 left) (int64 right)
         if total < 0L || total > int64 Int32.MaxValue then
@@ -1298,6 +1390,8 @@ module OwningStackAot =
             | IrInt, IntValue _ -> 8, 8
             | IrBool, BoolValue _ -> 8, 8
             | IrUnit, UnitValue -> 8, 8
+            | IrFloat, FloatValue number when Double.IsFinite number -> 8, 8
+            | IrFloat, FloatValue _ -> invalidArg (nameof values) "Owning-stack Float inputs must be finite."
             | IrString, StringValue text when not (isNull text) ->
                 let payload64 = 8L + 2L * int64 text.Length
                 if payload64 > int64 Int32.MaxValue then
@@ -1338,6 +1432,12 @@ module OwningStackAot =
             | IrNominal _, NamedValue(actualName, BoolValue _) when
                 (scalarDefinition info.Program ty
                  |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrBool)) ->
+                8, 8
+            | IrNominal _, NamedValue(actualName, FloatValue number) when
+                (scalarDefinition info.Program ty
+                 |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrFloat)) ->
+                if not (Double.IsFinite number) then
+                    invalidArg (nameof values) "Owning-stack nominal Float inputs must be finite."
                 8, 8
             | IrNominal _, NamedValue(actualName, StringValue text) when
                 not (isNull text)
@@ -1415,6 +1515,10 @@ module OwningStackAot =
             | IrInt, IntValue number -> writeInt64 bytes offset number; 8
             | IrBool, BoolValue flag -> writeInt64 bytes offset (if flag then 1L else 0L); 8
             | IrUnit, UnitValue -> writeInt64 bytes offset 0L; 8
+            | IrFloat, FloatValue number ->
+                if not (Double.IsFinite number) then invalidArg (nameof values) "Owning-stack Float inputs must be finite."
+                writeInt64 bytes offset (BitConverter.DoubleToInt64Bits number)
+                8
             | IrString, StringValue text ->
                 if isNull text then invalidArg (nameof values) "Owning-stack String inputs cannot be null."
                 writeUInt32 offset (uint32 text.Length)
@@ -1463,6 +1567,12 @@ module OwningStackAot =
                 (scalarDefinition info.Program ty
                  |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrBool)) ->
                 writeInt64 bytes offset (if flag then 1L else 0L)
+                8
+            | IrNominal _, NamedValue(actualName, FloatValue number) when
+                (scalarDefinition info.Program ty
+                 |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrFloat)) ->
+                if not (Double.IsFinite number) then invalidArg (nameof values) "Owning-stack nominal Float inputs must be finite."
+                writeInt64 bytes offset (BitConverter.DoubleToInt64Bits number)
                 8
             | IrNominal _, NamedValue(actualName, StringValue text) when
                 not (isNull text)
@@ -1529,6 +1639,8 @@ module OwningStackAot =
                 ensureRange offset 8 "Unit token"
                 if readInt64 bytes offset <> 0L then raise (InvalidDataException("Owning-stack Unit token was not zeroed."))
                 UnitValue, 8, 8
+            | IrFloat ->
+                decodeFloatValue bytes offset, 8, 8
             | IrString ->
                 if offset < 0 || offset > bytes.Length - 8 then raise (InvalidDataException("Owning-stack String header is truncated."))
                 let count = readUInt32 offset
@@ -1587,6 +1699,9 @@ module OwningStackAot =
                 | IrInt ->
                     ensureRange offset 8 "nominal Int"
                     NamedValue(definition.TypeName, IntValue(readInt64 bytes offset)), 8, 8
+                | IrFloat ->
+                    let value, childExtent, payload = decode false offset IrFloat
+                    NamedValue(definition.TypeName, value), childExtent, payload
                 | IrBool ->
                     let value, childExtent, payload = decode false offset IrBool
                     NamedValue(definition.TypeName, value), childExtent, payload
@@ -1691,7 +1806,7 @@ module OwningStackAot =
           FinalCursorBytes = int context.CursorBytes
           FinalLiveStackBytes = None }
 
-    let private diagnosticForError (diagnostics: OwningDiagnosticInfo array) errorId =
+    let private diagnosticForError (diagnostics: OwningDiagnosticInfo array) errorId floatBits =
         if errorId = 0u || int errorId > diagnostics.Length then
             { Code = "OWNING_STACK_DIAGNOSTIC_UNKNOWN"
               Message = "Owning-stack execution reported an unmapped diagnostic id."
@@ -1699,7 +1814,12 @@ module OwningStackAot =
               Span = None
               Expected = [ "mapped owning-stack runtime diagnostic" ]
               Actual = [ string errorId ] }
-        else diagnostics[int errorId - 1].Diagnostic
+        else
+            let item = diagnostics[int errorId - 1]
+            if item.DynamicFloatActual then
+                let value = BitConverter.Int64BitsToDouble(int64 floatBits)
+                { item.Diagnostic with Actual = [ string value ] }
+            else item.Diagnostic
 
     let private slotValue (LocalSlot value) = value
 
@@ -1915,7 +2035,17 @@ module OwningStackAot =
                   Span = span
                   Expected = expected
                   Actual = actual }
-            diagnostics.Add { Diagnostic = item; EntryRole = None }
+            diagnostics.Add { Diagnostic = item; EntryRole = None; DynamicFloatActual = false }
+            uint32 diagnostics.Count
+        let addFloatActualDiagnostic code message word span expected =
+            let item =
+                { Code = code
+                  Message = message
+                  Word = Some word
+                  Span = span
+                  Expected = expected
+                  Actual = [] }
+            diagnostics.Add { Diagnostic = item; EntryRole = None; DynamicFloatActual = true }
             uint32 diagnostics.Count
         let spanFor site = sourceMap.TryFind site |> Option.map (fun source -> source.SiteSpan)
         let functionSymbols =
@@ -1940,6 +2070,10 @@ module OwningStackAot =
         let emitContextStore (w: OwningLlvmWriter) context fieldIndex value =
             let pointer = emitContextFieldPointer w context fieldIndex
             w.Inst($"store i32 {value}, ptr {pointer}, align 4")
+        let emitStoreDiagnosticFloatBits (w: OwningLlvmWriter) bits =
+            let pointer = w.Fresh "context.diagnostic.float.bits.pointer"
+            w.Inst($"{pointer} = getelementptr inbounds %%AlOwningContext, ptr %%ctx, i32 0, i32 33")
+            w.Inst($"store i64 {bits}, ptr {pointer}, align 8")
         let emitOffset (w: OwningLlvmWriter) (baseValue: string) relative =
             // Context cursors and previously checked live offsets are at most the configured
             // Int32 stack capacity; every planned relative is also Int32-bounded. Their sum
@@ -1984,6 +2118,47 @@ module OwningStackAot =
         let typeId ty = typeIdFor info.TypeIds ty
         let payload ty = (infoFor info ty).PayloadBytes
         let extentOf ty = (infoFor info ty).ExtentBytes
+        let typeInfos = info.TypeInfos |> Map.toList |> List.map snd |> List.sortBy (fun item -> item.TypeId)
+        let typeIndexes = typeInfos |> List.mapi (fun index item -> item.Type, uint32 index) |> Map.ofList
+        let typeIndex ty = typeIndexes.TryFind ty |> Option.defaultWith (fun () -> invalidOp $"Missing fixed owning layout descriptor for {IrTypes.format ty}.")
+        let typeKind = function
+            | IrInt -> 1u
+            | IrBool -> 2u
+            | IrUnit -> 3u
+            | IrFloat -> 9u
+            | IrString -> 5u
+            | IrOption _ -> 7u
+            | IrResult _ -> 8u
+            | IrNominal _ as ty ->
+                match scalarDefinition program ty with
+                | Some scalar when scalar.BaseType = IrInt -> 1u
+                | Some scalar when scalar.BaseType = IrBool -> 2u
+                | Some scalar when scalar.BaseType = IrFloat -> 9u
+                | Some scalar when scalar.BaseType = IrString -> 5u
+                | Some _ -> invalidOp $"Unsupported nominal scalar reached owning descriptor emission: {IrTypes.format ty}."
+                | None ->
+                    match enumDefinition program ty with
+                    | Some _ -> 6u
+                    | None -> 4u
+            | ty -> invalidOp $"Unsupported fixed descriptor type {IrTypes.format ty}."
+        let typeCaseCount ty =
+            match ty with
+            | IrOption _ | IrResult _ -> uint32 (infoFor info ty).Cases.Length
+            | _ -> enumDefinition program ty |> Option.map (fun definition -> uint32 definition.Cases.Length) |> Option.defaultValue 0u
+        let firstFields = Dictionary<IrType, int>()
+        let descriptorFields = ResizeArray<uint32 * uint32 * uint32 * uint32>()
+        for item in typeInfos do
+            firstFields[item.Type] <- descriptorFields.Count
+            if not item.Cases.IsEmpty then
+                for _, payloadType, fixedOffset in item.Cases do
+                    match payloadType with
+                    | None -> descriptorFields.Add(UInt32.MaxValue, uint32 fixedOffset, 0u, 0u)
+                    | Some childType -> descriptorFields.Add(typeIndex childType, uint32 fixedOffset, 0u, 0u)
+            else
+                for _, childType, fixedOffset in item.Fields do
+                    let child = infoFor info childType
+                    let isZeroWidth = not child.IsDynamic && child.PayloadBytes = 0
+                    descriptorFields.Add(typeIndex childType, (if fixedOffset < 0 then UInt32.MaxValue else uint32 fixedOffset), (if isZeroWidth then 1u else 0u), 0u)
         let rec makeBindings (env: OwningLocalEnvPlan) (outer: Map<LocalSlot, OwningLocalBinding>) =
             env.Slots
             |> Map.fold (fun bindings slot slotPlan ->
@@ -2151,12 +2326,13 @@ module OwningStackAot =
                     w.Line($"{stepNext}:")
                     match instruction.Operation with
                     | IrOperation.Constant(literal, ty)
-                        when ty = IrInt || ty = IrBool || ty = IrUnit ->
+                        when ty = IrInt || ty = IrBool || ty = IrUnit || ty = IrFloat ->
                         let bits =
                             match literal, ty with
                             | LInt value, IrInt -> value
                             | LBool flag, IrBool -> if flag then 1L else 0L
                             | LUnit, IrUnit -> 0L
+                            | LFloat value, IrFloat -> BitConverter.DoubleToInt64Bits value
                             | _ -> invalidOp "Owning validation accepted a mismatched scalar constant."
                         let destination = emitOffset w operandBase (stackBytes info stack)
                         let next = emitOffset w destination 8
@@ -2338,7 +2514,8 @@ module OwningStackAot =
                                 let leftOffset = emitOffset w operandBase left.RelativeOffset
                                 let rightOffset = emitOffset w operandBase right.RelativeOffset
                                 let compare = w.Fresh "equals.result"
-                                w.Inst($"{compare} = call i32 @al_owning_equal(ptr %%ctx, i32 {leftOffset}, i32 {rightOffset}, i32 {extentOf left.Type})")
+                                let equalityError = addDiagnostic "OWNING_STACK_INTERNAL" "Typed equality encountered malformed owning value data." currentOwner instructionSpan [] []
+                                w.Inst($"{compare} = call i32 @al_owning_equal_typed(ptr %%ctx, ptr @al_owning_layout, i32 {typeIndex left.Type}, i32 {leftOffset}, i32 {extentOf left.Type}, i32 {rightOffset}, i32 {extentOf right.Type}, i32 {equalityError})")
                                 emitRuntimeStatus w "%ctx" failBody
                                 let raw = w.Fresh "equals.bool"
                                 w.Inst($"{raw} = icmp ne i32 {compare}, 0")
@@ -2388,6 +2565,185 @@ module OwningStackAot =
                                 emitCallAndCheck w "%ctx" $"call void @al_owning_store_i64(ptr %%ctx, i32 {resultStart}, i64 {result}, i32 {typeId IrBool})" failBody
                                 emitUpdateLive 8
                                 stack <- pushTypes prefix [ IrBool ]
+                            | ("float.add" | "float.subtract" | "float.multiply" | "float.divide"), [ left; right ] ->
+                                let leftOffset = emitOffset w operandBase left.RelativeOffset
+                                let rightOffset = emitOffset w operandBase right.RelativeOffset
+                                let aBits = w.Fresh "float.left.bits"
+                                let bBits = w.Fresh "float.right.bits"
+                                w.Inst($"{aBits} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {leftOffset})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                w.Inst($"{bBits} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {rightOffset})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let a = w.Fresh "float.left"
+                                let b = w.Fresh "float.right"
+                                w.Inst($"{a} = bitcast i64 {aBits} to double")
+                                w.Inst($"{b} = bitcast i64 {bBits} to double")
+                                if primitive = "float.divide" then
+                                    let zero = w.Fresh "float.divide.zero"
+                                    w.Inst($"{zero} = fcmp oeq double {b}, 0.000000e+00")
+                                    let zeroId = addDiagnostic "RUNTIME_DIVIDE_BY_ZERO" "Float division by zero." primitive None [] []
+                                    let zeroFail = w.Label "float.divide.zero.failure"
+                                    let nonZero = w.Label "float.divide.nonzero"
+                                    w.Inst($"br i1 {zero}, label %%{zeroFail}, label %%{nonZero}")
+                                    w.Line($"{zeroFail}:")
+                                    w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {zeroId}, i32 0, i32 0)")
+                                    w.Inst($"br label %%{failBody}")
+                                    w.Line($"{nonZero}:")
+                                let opcode =
+                                    match primitive with
+                                    | "float.add" -> "fadd"
+                                    | "float.subtract" -> "fsub"
+                                    | "float.multiply" -> "fmul"
+                                    | _ -> "fdiv"
+                                let result = w.Fresh "float.result"
+                                w.Inst($"{result} = {opcode} double {a}, {b}")
+                                let resultBits = w.Fresh "float.result.bits"
+                                w.Inst($"{resultBits} = bitcast double {result} to i64")
+                                let exponent = w.Fresh "float.result.exponent"
+                                w.Inst($"{exponent} = and i64 {resultBits}, 9218868437227405312")
+                                let nonFinite = w.Fresh "float.result.nonfinite"
+                                w.Inst($"{nonFinite} = icmp eq i64 {exponent}, 9218868437227405312")
+                                let errorId = addFloatActualDiagnostic "RUNTIME_NONFINITE_FLOAT" "Float operation produced a nonfinite value." primitive None [ "finite Float" ]
+                                let bad = w.Label "float.result.nonfinite.failure"
+                                let good = w.Label "float.result.finite"
+                                w.Inst($"br i1 {nonFinite}, label %%{bad}, label %%{good}")
+                                w.Line($"{bad}:")
+                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {errorId}, i32 0, i32 0)")
+                                emitStoreDiagnosticFloatBits w resultBits
+                                w.Inst($"br label %%{failBody}")
+                                w.Line($"{good}:")
+                                let resultStart = emitOffset w operandBase (stackBytes info prefix)
+                                for item in List.rev values do emitDropEntry item
+                                let next = emitOffset w resultStart 8
+                                let reserveId = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a finite Float result." currentOwner instructionSpan [] []
+                                emitReserve w "%ctx" next reserveId failBody
+                                emitCallAndCheck w "%ctx" $"call void @al_owning_store_i64(ptr %%ctx, i32 {resultStart}, i64 {resultBits}, i32 {typeId IrFloat})" failBody
+                                emitUpdateLive 8
+                                stack <- pushTypes prefix [ IrFloat ]
+                            | ("float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal"), [ left; right ] ->
+                                let leftOffset = emitOffset w operandBase left.RelativeOffset
+                                let rightOffset = emitOffset w operandBase right.RelativeOffset
+                                let aBits = w.Fresh "float.compare.left.bits"
+                                let bBits = w.Fresh "float.compare.right.bits"
+                                w.Inst($"{aBits} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {leftOffset})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                w.Inst($"{bBits} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {rightOffset})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let a = w.Fresh "float.compare.left"
+                                let b = w.Fresh "float.compare.right"
+                                w.Inst($"{a} = bitcast i64 {aBits} to double")
+                                w.Inst($"{b} = bitcast i64 {bBits} to double")
+                                let predicate =
+                                    match primitive with
+                                    | "float.less-than" -> "olt"
+                                    | "float.greater-than" -> "ogt"
+                                    | "float.less-or-equal" -> "ole"
+                                    | _ -> "oge"
+                                let comparison = w.Fresh "float.comparison.result"
+                                w.Inst($"{comparison} = fcmp {predicate} double {a}, {b}")
+                                let result = w.Fresh "float.comparison.bool"
+                                w.Inst($"{result} = zext i1 {comparison} to i64")
+                                let resultStart = emitOffset w operandBase (stackBytes info prefix)
+                                for item in List.rev values do emitDropEntry item
+                                let next = emitOffset w resultStart 8
+                                let reserveId = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a Float comparison result." currentOwner instructionSpan [] []
+                                emitReserve w "%ctx" next reserveId failBody
+                                emitCallAndCheck w "%ctx" $"call void @al_owning_store_i64(ptr %%ctx, i32 {resultStart}, i64 {result}, i32 {typeId IrBool})" failBody
+                                emitUpdateLive 8
+                                stack <- pushTypes prefix [ IrBool ]
+                            | "int.to-float", [ value ] ->
+                                let source = emitOffset w operandBase value.RelativeOffset
+                                let raw = w.Fresh "int.to.float.input"
+                                w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {source})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let converted = w.Fresh "int.to.float.value"
+                                w.Inst($"{converted} = sitofp i64 {raw} to double")
+                                let bits = w.Fresh "int.to.float.bits"
+                                w.Inst($"{bits} = bitcast double {converted} to i64")
+                                let resultStart = emitOffset w operandBase (stackBytes info prefix)
+                                emitDropEntry value
+                                let next = emitOffset w resultStart 8
+                                let reserveId = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve an Int-to-Float result." currentOwner instructionSpan [] []
+                                emitReserve w "%ctx" next reserveId failBody
+                                emitCallAndCheck w "%ctx" $"call void @al_owning_store_i64(ptr %%ctx, i32 {resultStart}, i64 {bits}, i32 {typeId IrFloat})" failBody
+                                emitUpdateLive 8
+                                stack <- pushTypes prefix [ IrFloat ]
+                            | "float.to-int", [ value ] ->
+                                let source = emitOffset w operandBase value.RelativeOffset
+                                let raw = w.Fresh "float.to.int.input.bits"
+                                w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {source})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let converted = w.Fresh "float.to.int.input"
+                                w.Inst($"{converted} = bitcast i64 {raw} to double")
+                                let lowerOkay = w.Fresh "float.to.int.lower.ok"
+                                let upperOkay = w.Fresh "float.to.int.upper.ok"
+                                let inRange = w.Fresh "float.to.int.in.range"
+                                w.Inst($"{lowerOkay} = fcmp oge double {converted}, 0xC3E0000000000000")
+                                w.Inst($"{upperOkay} = fcmp olt double {converted}, 0x43E0000000000000")
+                                w.Inst($"{inRange} = and i1 {lowerOkay}, {upperOkay}")
+                                let rangeError = addFloatActualDiagnostic "RUNTIME_RANGE" "Float value is outside the Int64 range." primitive None [ "finite Int64 range" ]
+                                let invalid = w.Label "float.to.int.range.failure"
+                                let valid = w.Label "float.to.int.range.valid"
+                                w.Inst($"br i1 {inRange}, label %%{valid}, label %%{invalid}")
+                                w.Line($"{invalid}:")
+                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {rangeError}, i32 0, i32 0)")
+                                emitStoreDiagnosticFloatBits w raw
+                                w.Inst($"br label %%{failBody}")
+                                w.Line($"{valid}:")
+                                let result = w.Fresh "float.to.int.result"
+                                w.Inst($"{result} = fptosi double {converted} to i64")
+                                let resultStart = emitOffset w operandBase (stackBytes info prefix)
+                                emitDropEntry value
+                                let next = emitOffset w resultStart 8
+                                let reserveId = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a Float-to-Int result." currentOwner instructionSpan [] []
+                                emitReserve w "%ctx" next reserveId failBody
+                                emitCallAndCheck w "%ctx" $"call void @al_owning_store_i64(ptr %%ctx, i32 {resultStart}, i64 {result}, i32 {typeId IrInt})" failBody
+                                emitUpdateLive 8
+                                stack <- pushTypes prefix [ IrInt ]
+                            | "float.round", [ value ] ->
+                                let source = emitOffset w operandBase value.RelativeOffset
+                                let raw = w.Fresh "float.round.input.bits"
+                                w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {source})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let inputExponent = w.Fresh "float.round.input.exponent"
+                                w.Inst($"{inputExponent} = and i64 {raw}, 9218868437227405312")
+                                let inputFinite = w.Fresh "float.round.input.finite"
+                                w.Inst($"{inputFinite} = icmp ne i64 {inputExponent}, 9218868437227405312")
+                                let nonfiniteError = addFloatActualDiagnostic "RUNTIME_RANGE" "Float value is outside the Int64 range." primitive None [ "finite Int64 range" ]
+                                let nonfinite = w.Label "float.round.nonfinite.failure"
+                                let finite = w.Label "float.round.input.finite"
+                                w.Inst($"br i1 {inputFinite}, label %%{finite}, label %%{nonfinite}")
+                                w.Line($"{nonfinite}:")
+                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {nonfiniteError}, i32 0, i32 0)")
+                                emitStoreDiagnosticFloatBits w raw
+                                w.Inst($"br label %%{failBody}")
+                                w.Line($"{finite}:")
+                                let rounded = w.EmitFloatRoundAwayFromZero raw
+                                let lowerOkay = w.Fresh "float.round.lower.ok"
+                                let upperOkay = w.Fresh "float.round.upper.ok"
+                                let inRange = w.Fresh "float.round.in.range"
+                                w.Inst($"{lowerOkay} = fcmp oge double {rounded}, 0xC3E0000000000000")
+                                w.Inst($"{upperOkay} = fcmp olt double {rounded}, 0x43E0000000000000")
+                                w.Inst($"{inRange} = and i1 {lowerOkay}, {upperOkay}")
+                                let rangeError = addFloatActualDiagnostic "RUNTIME_RANGE" "Rounded Float value is outside the Int64 range." primitive None [ "finite Int64 range" ]
+                                let invalid = w.Label "float.round.range.failure"
+                                let valid = w.Label "float.round.range.valid"
+                                w.Inst($"br i1 {inRange}, label %%{valid}, label %%{invalid}")
+                                w.Line($"{invalid}:")
+                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {rangeError}, i32 0, i32 0)")
+                                emitStoreDiagnosticFloatBits w raw
+                                w.Inst($"br label %%{failBody}")
+                                w.Line($"{valid}:")
+                                let result = w.Fresh "float.round.result"
+                                w.Inst($"{result} = fptosi double {rounded} to i64")
+                                let resultStart = emitOffset w operandBase (stackBytes info prefix)
+                                emitDropEntry value
+                                let next = emitOffset w resultStart 8
+                                let reserveId = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a rounded Float-to-Int result." currentOwner instructionSpan [] []
+                                emitReserve w "%ctx" next reserveId failBody
+                                emitCallAndCheck w "%ctx" $"call void @al_owning_store_i64(ptr %%ctx, i32 {resultStart}, i64 {result}, i32 {typeId IrInt})" failBody
+                                emitUpdateLive 8
+                                stack <- pushTypes prefix [ IrInt ]
                             | ("add" | "subtract" | "multiply"), [ left; right ] ->
                                 let leftOffset = emitOffset w operandBase left.RelativeOffset
                                 let rightOffset = emitOffset w operandBase right.RelativeOffset
@@ -2568,7 +2924,29 @@ module OwningStackAot =
             ignore outputBytes
             w.Text
 
-        writer.Line("%AlOwningContext = type { i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, ptr, ptr, ptr, ptr, i64, i64, i64, i64 }")
+        writer.Line("%AlOwningTypeDescriptor = type { i32, i32, i32, i32, i32, i32, i32, i32, i32 }")
+        writer.Line("%AlOwningFieldDescriptor = type { i32, i32, i32, i32 }")
+        writer.Line("%AlOwningLayout = type { i32, ptr, i32, ptr, i32 }")
+        let fixedFieldArraySize = max 1 descriptorFields.Count
+        let fixedTypeDescriptors =
+            typeInfos
+            |> List.map (fun item ->
+                let first = firstFields[item.Type]
+                let fieldCount = if item.Cases.IsEmpty then item.Fields.Length else item.Cases.Length
+                let fixedPayload = if item.IsDynamic then UInt32.MaxValue else uint32 item.PayloadBytes
+                let fixedExtent = if item.IsDynamic then UInt32.MaxValue else uint32 item.ExtentBytes
+                $"%%AlOwningTypeDescriptor {{ i32 {typeKind item.Type}, i32 {item.TypeId}, i32 {first}, i32 {fieldCount}, i32 {fixedPayload}, i32 {fixedExtent}, i32 {item.MinimumPayloadBytes}, i32 {item.MinimumExtentBytes}, i32 {typeCaseCount item.Type} }}")
+            |> String.concat ", "
+        let fixedRenderedFields =
+            if descriptorFields.Count = 0 then "%AlOwningFieldDescriptor { i32 0, i32 0, i32 0, i32 0 }"
+            else
+                descriptorFields
+                |> Seq.map (fun (child, offset, flags, reserved) -> $"%%AlOwningFieldDescriptor {{ i32 {child}, i32 {offset}, i32 {flags}, i32 {reserved} }}")
+                |> String.concat ", "
+        writer.Line($"@al_owning_types = private constant [{typeInfos.Length} x %%AlOwningTypeDescriptor] [{fixedTypeDescriptors}], align 4")
+        writer.Line($"@al_owning_fields = private constant [{fixedFieldArraySize} x %%AlOwningFieldDescriptor] [{fixedRenderedFields}], align 4")
+        writer.Line($"@al_owning_layout = private constant %%AlOwningLayout {{ i32 4, ptr @al_owning_types, i32 {typeInfos.Length}, ptr @al_owning_fields, i32 {descriptorFields.Count} }}, align 8")
+        writer.Line("%AlOwningContext = type { i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, ptr, ptr, ptr, ptr, i64, i64, i64, i64, i64 }")
         writer.Line("declare void @al_owning_begin(ptr)")
         writer.Line("declare i32 @al_owning_enter_frame(ptr, i32)")
         writer.Line("declare void @al_owning_leave_frame(ptr)")
@@ -2590,7 +2968,7 @@ module OwningStackAot =
         writer.Line("declare void @al_owning_update_live(ptr, i32, i32)")
         writer.Line("declare void @al_owning_record_layout(ptr, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_swap(ptr, i32, i32, i32, i32, i32)")
-        writer.Line("declare i32 @al_owning_equal(ptr, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_equal_typed(ptr, ptr, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_publish(ptr, ptr, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_check_cursor(ptr, i32)")
         writer.Line("declare i32 @al_owning_charge_step(ptr, i32)")
@@ -2720,6 +3098,7 @@ module OwningStackAot =
         let addDiagnostic code message word span expected actual =
             diagnostics.Add
                 { EntryRole = diagnosticRole
+                  DynamicFloatActual = false
                   Diagnostic =
                     { Code = code
                       Message = message
@@ -2727,6 +3106,18 @@ module OwningStackAot =
                       Span = span
                       Expected = expected
                       Actual = actual } }
+            uint32 diagnostics.Count
+        let addFloatActualDiagnostic code message word span expected =
+            diagnostics.Add
+                { EntryRole = diagnosticRole
+                  DynamicFloatActual = true
+                  Diagnostic =
+                    { Code = code
+                      Message = message
+                      Word = Some word
+                      Span = span
+                      Expected = expected
+                      Actual = [] } }
             uint32 diagnostics.Count
         let spanFor site = sourceMap.TryFind site |> Option.map (fun source -> source.SiteSpan)
         let functions = info.ReachableFunctions |> List.sortBy (fun fn -> fn.FunctionName, fn.FunctionRevision)
@@ -2743,6 +3134,7 @@ module OwningStackAot =
             | IrInt -> 1u
             | IrBool -> 2u
             | IrUnit -> 3u
+            | IrFloat -> 9u
             | IrString -> 5u
             | IrOption _ -> 7u
             | IrResult _ -> 8u
@@ -2750,6 +3142,7 @@ module OwningStackAot =
                 match scalarDefinition info.Program ty with
                 | Some scalar when scalar.BaseType = IrInt -> 1u
                 | Some scalar when scalar.BaseType = IrBool -> 2u
+                | Some scalar when scalar.BaseType = IrFloat -> 9u
                 | Some scalar when scalar.BaseType = IrString -> 5u
                 | Some _ -> invalidOp $"Unsupported nominal scalar reached owning descriptor emission: {IrTypes.format ty}."
                 | None ->
@@ -2820,7 +3213,7 @@ module OwningStackAot =
                         0u)
 
         let writer = OwningLlvmWriter()
-        writer.Line("%AlOwningContext = type { i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, ptr, ptr, ptr, ptr, i64, i64, i64, i64 }")
+        writer.Line("%AlOwningContext = type { i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, ptr, ptr, ptr, ptr, i64, i64, i64, i64, i64 }")
         writer.Line("%AlOwningTypeDescriptor = type { i32, i32, i32, i32, i32, i32, i32, i32, i32 }")
         writer.Line("%AlOwningFieldDescriptor = type { i32, i32, i32, i32 }")
         writer.Line("%AlOwningLayout = type { i32, ptr, i32, ptr, i32 }")
@@ -2849,7 +3242,7 @@ module OwningStackAot =
         writer.Line($"@al_owning_types = private constant [{typeInfos.Length} x %%AlOwningTypeDescriptor] [{renderedTypeDescriptors}], align 4")
         writer.Line($"@al_owning_fields = private constant [{fieldArraySize} x %%AlOwningFieldDescriptor] [{renderedFields}], align 4")
         let layoutLinkage = if mailboxMode then "" else "private "
-        writer.Line($"{layoutSymbol} = {layoutLinkage}constant %%AlOwningLayout {{ i32 3, ptr @al_owning_types, i32 {typeInfos.Length}, ptr @al_owning_fields, i32 {descriptorFields.Count} }}, align 8")
+        writer.Line($"{layoutSymbol} = {layoutLinkage}constant %%AlOwningLayout {{ i32 4, ptr @al_owning_types, i32 {typeInfos.Length}, ptr @al_owning_fields, i32 {descriptorFields.Count} }}, align 8")
         for value in stringValues do
             let bytes, _, _ = encodeLiteral value
             writer.Line($"{stringGlobal value} = private unnamed_addr constant [{bytes.Length} x i8] c\"{llvmByteString bytes}\", align 8")
@@ -2885,7 +3278,7 @@ module OwningStackAot =
         writer.Line("declare void @al_owning_local_release(ptr, i32)")
         writer.Line("declare void @al_owning_record_layout(ptr, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_swap(ptr, i32, i32, i32, i32, i32)")
-        writer.Line("declare i32 @al_owning_equal(ptr, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_equal_typed(ptr, ptr, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_publish(ptr, ptr, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_set_failure(ptr, i32, i32, i32, i32)")
         if mailboxMode then
@@ -2905,6 +3298,10 @@ module OwningStackAot =
             let value = w.Fresh "context.value"
             w.Inst($"{value} = load i32, ptr {pointer}, align 4")
             value
+        let emitStoreDiagnosticFloatBits (w: OwningLlvmWriter) bits =
+            let pointer = w.Fresh "context.diagnostic.float.bits.pointer"
+            w.Inst($"{pointer} = getelementptr inbounds %%AlOwningContext, ptr %%ctx, i32 0, i32 33")
+            w.Inst($"store i64 {bits}, ptr {pointer}, align 8")
         let emitRuntimeStatus (w: OwningLlvmWriter) context failureLabel =
             let status = emitContextLoad w context 19
             let okay = w.Fresh "runtime.ok"
@@ -3472,12 +3869,13 @@ module OwningStackAot =
                     w.Inst($"{stepStatus} = call i32 @al_owning_charge_step(ptr %%ctx, i32 {stepId})")
                     emitStatusResult w stepStatus failBody
                     match instruction.Operation with
-                    | IrOperation.Constant(literal, ty) when ty = IrInt || ty = IrBool || ty = IrUnit ->
+                    | IrOperation.Constant(literal, ty) when ty = IrInt || ty = IrBool || ty = IrUnit || ty = IrFloat ->
                         let bits =
                             match literal, ty with
                             | LInt value, IrInt -> value
                             | LBool value, IrBool -> if value then 1L else 0L
                             | LUnit, IrUnit -> 0L
+                            | LFloat value, IrFloat -> BitConverter.DoubleToInt64Bits value
                             | _ -> invalidOp "Verified dynamic scalar constant had an inconsistent literal."
                         let cursor = emitContextLoad w "%ctx" 2
                         let destination = cursor
@@ -3990,26 +4388,12 @@ module OwningStackAot =
                             | "equals", [ left; right ] ->
                                 let rightOffset = right.Offset
                                 let leftOffset = left.Offset
-                                let sameExtent = w.Fresh "equals.same.extent"
-                                w.Inst($"{sameExtent} = icmp eq i32 {left.Extent}, {right.Extent}")
-                                let compareLabel = w.Label "equals.compare"
-                                let differentLabel = w.Label "equals.different"
-                                let joinLabel = w.Label "equals.join"
-                                w.Inst($"br i1 {sameExtent}, label %%{compareLabel}, label %%{differentLabel}")
-                                w.Line($"{compareLabel}:")
                                 let equal = w.Fresh "equals.result"
-                                w.Inst($"{equal} = call i32 @al_owning_equal(ptr %%ctx, i32 {leftOffset}, i32 {rightOffset}, i32 {left.Extent})")
+                                let equalityError = addDiagnostic "OWNING_STACK_INTERNAL" "Typed equality encountered malformed owning value data." currentOwner instructionSpan [] []
+                                w.Inst($"{equal} = call i32 @al_owning_equal_typed(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex left.Type}, i32 {leftOffset}, i32 {left.Extent}, i32 {rightOffset}, i32 {right.Extent}, i32 {equalityError})")
                                 emitRuntimeStatus w "%ctx" failBody
-                                let comparePredecessor = w.CurrentBlock
-                                w.Inst($"br label %%{joinLabel}")
-                                w.Line($"{differentLabel}:")
-                                let differentPredecessor = w.CurrentBlock
-                                w.Inst($"br label %%{joinLabel}")
-                                w.Line($"{joinLabel}:")
-                                let result = w.Fresh "equals.value"
-                                w.Inst($"{result} = phi i32 [ {equal}, %%{comparePredecessor} ], [ 0, %%{differentPredecessor} ]")
                                 let asBool = w.Fresh "equals.bool"
-                                w.Inst($"{asBool} = icmp ne i32 {result}, 0")
+                                w.Inst($"{asBool} = icmp ne i32 {equal}, 0")
                                 let asInt = w.Fresh "equals.i64"
                                 w.Inst($"{asInt} = zext i1 {asBool} to i64")
                                 emitScalarResult IrBool asInt
@@ -4034,6 +4418,143 @@ module OwningStackAot =
                                 let opcode = if operation = "bool.and" then "and" else "or"
                                 w.Inst($"{result} = {opcode} i64 {a}, {b}")
                                 emitScalarResult IrBool result
+                            | ("float.add" | "float.subtract" | "float.multiply" | "float.divide"), [ left; right ] ->
+                                let leftBits = w.Fresh "float.left.bits"
+                                let rightBits = w.Fresh "float.right.bits"
+                                w.Inst($"{leftBits} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {left.Offset})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                w.Inst($"{rightBits} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {right.Offset})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let leftValue = w.Fresh "float.left"
+                                let rightValue = w.Fresh "float.right"
+                                w.Inst($"{leftValue} = bitcast i64 {leftBits} to double")
+                                w.Inst($"{rightValue} = bitcast i64 {rightBits} to double")
+                                if operation = "float.divide" then
+                                    let zero = w.Fresh "float.divide.zero"
+                                    w.Inst($"{zero} = fcmp oeq double {rightValue}, 0.000000e+00")
+                                    let zeroError = addDiagnostic "RUNTIME_DIVIDE_BY_ZERO" "Float division by zero." operation None [] []
+                                    let zeroLabel = w.Label "float.divide.zero"
+                                    let nonzeroLabel = w.Label "float.divide.nonzero"
+                                    w.Inst($"br i1 {zero}, label %%{zeroLabel}, label %%{nonzeroLabel}")
+                                    w.Line($"{zeroLabel}:")
+                                    w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {zeroError}, i32 0, i32 0)")
+                                    w.Inst($"br label %%{failBody}")
+                                    w.Line($"{nonzeroLabel}:")
+                                let opcode =
+                                    match operation with
+                                    | "float.add" -> "fadd"
+                                    | "float.subtract" -> "fsub"
+                                    | "float.multiply" -> "fmul"
+                                    | _ -> "fdiv"
+                                let result = w.Fresh "float.result"
+                                w.Inst($"{result} = {opcode} double {leftValue}, {rightValue}")
+                                let resultBits = w.Fresh "float.result.bits"
+                                w.Inst($"{resultBits} = bitcast double {result} to i64")
+                                let exponent = w.Fresh "float.result.exponent"
+                                w.Inst($"{exponent} = and i64 {resultBits}, 9218868437227405312")
+                                let nonFinite = w.Fresh "float.result.nonfinite"
+                                w.Inst($"{nonFinite} = icmp eq i64 {exponent}, 9218868437227405312")
+                                let errorId = addFloatActualDiagnostic "RUNTIME_NONFINITE_FLOAT" "Float operation produced a nonfinite value." operation None [ "finite Float" ]
+                                let bad = w.Label "float.result.nonfinite.failure"
+                                let good = w.Label "float.result.finite"
+                                w.Inst($"br i1 {nonFinite}, label %%{bad}, label %%{good}")
+                                w.Line($"{bad}:")
+                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {errorId}, i32 0, i32 0)")
+                                emitStoreDiagnosticFloatBits w resultBits
+                                w.Inst($"br label %%{failBody}")
+                                w.Line($"{good}:")
+                                emitScalarResult IrFloat resultBits
+                            | ("float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal"), [ left; right ] ->
+                                let leftBits = w.Fresh "float.compare.left.bits"
+                                let rightBits = w.Fresh "float.compare.right.bits"
+                                w.Inst($"{leftBits} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {left.Offset})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                w.Inst($"{rightBits} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {right.Offset})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let leftValue = w.Fresh "float.compare.left"
+                                let rightValue = w.Fresh "float.compare.right"
+                                w.Inst($"{leftValue} = bitcast i64 {leftBits} to double")
+                                w.Inst($"{rightValue} = bitcast i64 {rightBits} to double")
+                                let predicate =
+                                    match operation with
+                                    | "float.less-than" -> "olt"
+                                    | "float.greater-than" -> "ogt"
+                                    | "float.less-or-equal" -> "ole"
+                                    | _ -> "oge"
+                                let comparison = w.Fresh "float.comparison.result"
+                                w.Inst($"{comparison} = fcmp {predicate} double {leftValue}, {rightValue}")
+                                let result = w.Fresh "float.comparison.bool"
+                                w.Inst($"{result} = zext i1 {comparison} to i64")
+                                emitScalarResult IrBool result
+                            | "int.to-float", [ value ] ->
+                                let raw = w.Fresh "int.to.float.input"
+                                w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {value.Offset})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let converted = w.Fresh "int.to.float.value"
+                                w.Inst($"{converted} = sitofp i64 {raw} to double")
+                                let bits = w.Fresh "int.to.float.bits"
+                                w.Inst($"{bits} = bitcast double {converted} to i64")
+                                emitScalarResult IrFloat bits
+                            | "float.to-int", [ value ] ->
+                                let raw = w.Fresh "float.to.int.input.bits"
+                                w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {value.Offset})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let converted = w.Fresh "float.to.int.input"
+                                w.Inst($"{converted} = bitcast i64 {raw} to double")
+                                let lowerOkay = w.Fresh "float.to.int.lower.ok"
+                                let upperOkay = w.Fresh "float.to.int.upper.ok"
+                                let inRange = w.Fresh "float.to.int.in.range"
+                                w.Inst($"{lowerOkay} = fcmp oge double {converted}, 0xC3E0000000000000")
+                                w.Inst($"{upperOkay} = fcmp olt double {converted}, 0x43E0000000000000")
+                                w.Inst($"{inRange} = and i1 {lowerOkay}, {upperOkay}")
+                                let rangeError = addFloatActualDiagnostic "RUNTIME_RANGE" "Float value is outside the Int64 range." operation None [ "finite Int64 range" ]
+                                let invalid = w.Label "float.to.int.range.failure"
+                                let valid = w.Label "float.to.int.range.valid"
+                                w.Inst($"br i1 {inRange}, label %%{valid}, label %%{invalid}")
+                                w.Line($"{invalid}:")
+                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {rangeError}, i32 0, i32 0)")
+                                emitStoreDiagnosticFloatBits w raw
+                                w.Inst($"br label %%{failBody}")
+                                w.Line($"{valid}:")
+                                let result = w.Fresh "float.to.int.result"
+                                w.Inst($"{result} = fptosi double {converted} to i64")
+                                emitScalarResult IrInt result
+                            | "float.round", [ value ] ->
+                                let raw = w.Fresh "float.round.input.bits"
+                                w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {value.Offset})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let inputExponent = w.Fresh "float.round.input.exponent"
+                                w.Inst($"{inputExponent} = and i64 {raw}, 9218868437227405312")
+                                let inputFinite = w.Fresh "float.round.input.finite"
+                                w.Inst($"{inputFinite} = icmp ne i64 {inputExponent}, 9218868437227405312")
+                                let nonfiniteError = addFloatActualDiagnostic "RUNTIME_RANGE" "Float value is outside the Int64 range." operation None [ "finite Int64 range" ]
+                                let nonfinite = w.Label "float.round.nonfinite.failure"
+                                let finite = w.Label "float.round.input.finite"
+                                w.Inst($"br i1 {inputFinite}, label %%{finite}, label %%{nonfinite}")
+                                w.Line($"{nonfinite}:")
+                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {nonfiniteError}, i32 0, i32 0)")
+                                emitStoreDiagnosticFloatBits w raw
+                                w.Inst($"br label %%{failBody}")
+                                w.Line($"{finite}:")
+                                let rounded = w.EmitFloatRoundAwayFromZero raw
+                                let lowerOkay = w.Fresh "float.round.lower.ok"
+                                let upperOkay = w.Fresh "float.round.upper.ok"
+                                let inRange = w.Fresh "float.round.in.range"
+                                w.Inst($"{lowerOkay} = fcmp oge double {rounded}, 0xC3E0000000000000")
+                                w.Inst($"{upperOkay} = fcmp olt double {rounded}, 0x43E0000000000000")
+                                w.Inst($"{inRange} = and i1 {lowerOkay}, {upperOkay}")
+                                let rangeError = addFloatActualDiagnostic "RUNTIME_RANGE" "Rounded Float value is outside the Int64 range." operation None [ "finite Int64 range" ]
+                                let invalid = w.Label "float.round.range.failure"
+                                let valid = w.Label "float.round.range.valid"
+                                w.Inst($"br i1 {inRange}, label %%{valid}, label %%{invalid}")
+                                w.Line($"{invalid}:")
+                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {rangeError}, i32 0, i32 0)")
+                                emitStoreDiagnosticFloatBits w raw
+                                w.Inst($"br label %%{failBody}")
+                                w.Line($"{valid}:")
+                                let result = w.Fresh "float.round.result"
+                                w.Inst($"{result} = fptosi double {rounded} to i64")
+                                emitScalarResult IrInt result
                             | ("add" | "subtract" | "multiply" | "divide" | "int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"), [ left; right ] ->
                                 let rightOffset = right.Offset
                                 let leftOffset = left.Offset
@@ -5463,11 +5984,13 @@ module OwningStackAot =
                      | IrInt -> "Int"
                      | IrBool -> "Bool"
                      | IrUnit -> "Unit"
+                     | IrFloat -> "Float"
                      | IrString -> "String"
                      | IrOption _ -> "Option"
                      | IrResult _ -> "Result"
                      | IrNominal _ as ty when Option.isSome (enumDefinition programInfo.Program ty) -> "Enum"
                      | IrNominal _ as ty when (scalarDefinition programInfo.Program ty |> Option.exists (fun scalar -> scalar.BaseType = IrInt)) -> "Int"
+                     | IrNominal _ as ty when (scalarDefinition programInfo.Program ty |> Option.exists (fun scalar -> scalar.BaseType = IrFloat)) -> "Float"
                      | IrNominal _ as ty when (scalarDefinition programInfo.Program ty |> Option.exists (fun scalar -> scalar.BaseType = IrString)) -> "String"
                      | IrNominal _ -> "Record"
                      | other -> IrTypes.format other)
@@ -5523,7 +6046,8 @@ module OwningStackAot =
                    column = diagnostic.Span |> Option.map (fun span -> span.Column) |> Option.defaultValue 0
                    length = diagnostic.Span |> Option.map (fun span -> span.Length) |> Option.defaultValue 0
                    expected = diagnostic.Expected
-                   actual = diagnostic.Actual |})
+                   actual = diagnostic.Actual
+                   dynamicActual = item.DynamicFloatActual |})
             |> Array.toList
         let entryManifest =
             entryMetadata
@@ -5561,8 +6085,8 @@ module OwningStackAot =
             |> List.map (fun (path, hash) -> {| path = path.Replace('\\', '/'); sha256 = hash |})
         let manifestCore =
             {| formatVersion = 1
-               abiVersion = 1
-               layoutAbiVersion = 3
+               abiVersion = 2
+               layoutAbiVersion = 4
                typeDescriptorSizeBytes = 36
                optimization = optimizationName
                runtimeProfile = runtimeProfileName
@@ -5603,7 +6127,8 @@ module OwningStackAot =
                   Column = diagnostic.Span |> Option.map (fun span -> span.Column)
                   Length = diagnostic.Span |> Option.map (fun span -> span.Length)
                   Expected = diagnostic.Expected
-                  Actual = diagnostic.Actual })
+                  Actual = diagnostic.Actual
+                  DynamicFloatActual = item.DynamicFloatActual })
             |> Array.toList
         new OwningMailboxCompiledModule(
             compiledPath,

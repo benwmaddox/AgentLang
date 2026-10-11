@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 enum {
-  AL_OWNING_MAILBOX_ABI_VERSION = 1u,
+  AL_OWNING_MAILBOX_ABI_VERSION = 2u,
   AL_OWNING_MAILBOX_ENTRY_COUNT = 3u,
   AL_OWNING_MAILBOX_MAX_INPUTS = 3u,
   AL_OWNING_MAILBOX_MAX_OUTPUTS = 2u,
@@ -99,7 +99,7 @@ agentlang_owning_mailbox_module(void);
 #endif
 
 AL_OWNING_MAILBOX_ASSERT(sizeof(void *) == 8,
-                         "owning mailbox ABI v1 requires x64 pointers");
+                         "owning mailbox ABI v2 requires x64 pointers");
 AL_OWNING_MAILBOX_ASSERT(sizeof(al_owning_external_slice) == 16,
                          "external slice size");
 AL_OWNING_MAILBOX_ASSERT(offsetof(al_owning_external_slice, bytes) == 0,

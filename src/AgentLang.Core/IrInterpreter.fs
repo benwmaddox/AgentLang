@@ -45,6 +45,7 @@ type IrEntryArgument =
     | RetainedRoot of int
     /// Supply a primitive message value. These cannot stand in for nominal types.
     | IntArgument of int64
+    | FloatArgument of double
     | BoolArgument of bool
     | UnitArgument
 
@@ -461,12 +462,19 @@ module IrInterpreter =
                             [ $"root index in [0, {retainedRoots.Length})" ] [ string index ]
                     retainedRoots[index]
                 | IrEntryArgument.IntArgument value -> RuntimeInt value
+                | IrEntryArgument.FloatArgument value -> RuntimeFloat value
                 | IrEntryArgument.BoolArgument value -> RuntimeBool value
                 | IrEntryArgument.UnitArgument -> RuntimeUnit)
         let actualInputTypes = initialStack |> List.map runtimeValueType
         if actualInputTypes <> body.BodyInputTypes then
             fail "IR_BACKEND_ENTRY_ARGUMENT_TYPE" "Entry argument types do not match the verified body input signature." (Some executionName) None
                 (body.BodyInputTypes |> List.map (formatType program)) (runtimeTypeNames program initialStack)
+        for value in initialStack do
+            match value with
+            | RuntimeFloat number when not (Double.IsFinite number) ->
+                fail "IR_BACKEND_ENTRY_ARGUMENT_NONFINITE" "Float entry arguments must be finite." (Some executionName) None
+                    [ "finite Float" ] [ string number ]
+            | _ -> ()
 
         let sourceMap = Map.fold (fun found site source -> Map.add site source found) program.SourceMap body.BodySourceMap
 

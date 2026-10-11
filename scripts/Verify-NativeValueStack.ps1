@@ -29,6 +29,7 @@ $nativeUnitRuns = [Collections.Generic.List[object]]::new()
 $sourceInputPaths = @(
     $runnerProject,
     $arenaLifetimeTestProject,
+    (Join-Path $repo 'tests/AgentLang.Llvm.Tests/native_float_mailbox_test.c'),
     (Join-Path $repo 'experiments/AgentLang.NativeValueStack/Program.fs'),
     (Join-Path $repo 'experiments/AgentLang.NativeValueStack/value-stack.flow'),
     (Join-Path $repo 'scripts/Verify-NativeValueStack.ps1'),
@@ -483,13 +484,13 @@ try {
         $nominalErrorsPassed = [string]$nominalErrors['hostInputExceptionType'] -ceq 'System.ArgumentException' -and
             [string]$nominalErrors['hostInputParameterName'] -ceq 'values' -and
             [string]$nominalErrors['wrongAccessorDiagnosticCode'] -ceq 'TYPE_STACK_MISMATCH'
-        $nominalOraclePassed = [int]$nativeFixture['schemaVersion'] -eq 3 -and
+        $nominalOraclePassed = [int]$nativeFixture['schemaVersion'] -eq 4 -and
             $nominalIdentityIdsPassed -and $nominalSignedBytesPassed -and
             ($nominalFixtureSignedNames -join ',') -ceq ($nominalExpectedSignedNames -join ',') -and
             $nominalOwnerPassed -and $nominalOwnerRangePassed -and $nominalAggregateBytesPassed -and $nominalErrorsPassed
     }
-    Add-Check 'nominal Int fixture pins schema 3, distinct TypeIds, signed bytes, aggregate bytes, and owner-range oracle' $nominalOraclePassed ([ordered]@{
-        expectedSchemaVersion = 3
+    Add-Check 'nominal Int fixture pins schema 4, distinct TypeIds, signed bytes, aggregate bytes, and owner-range oracle' $nominalOraclePassed ([ordered]@{
+        expectedSchemaVersion = 4
         actualSchemaVersion = $nativeFixture['schemaVersion']
         expectedTypeIds = [ordered]@{ Meters = 4; OrderId = 5 }
         expectedSignedFixtures = $nominalSignedExpected
@@ -507,7 +508,7 @@ try {
     $nominalExpectedScalarExtent = 8
     $nominalRunsMissingCoverage = @($nominalRuns | Where-Object {
         $_['signedFixtureCount'] -ne $nominalExpectedSignedNames.Count -or
-        $_['unsupportedDefinitionCount'] -ne 1 -or
+        $_['unsupportedDefinitionCount'] -ne 0 -or
         $_['ownerRangeTransferCount'] -lt 1 -or
         $_['ownerEndBytes'] -ne $nominalExpectedOwnerEnd -or
         $_['scalarPayloadExtentBytes'] -ne $nominalExpectedScalarExtent
@@ -518,7 +519,7 @@ try {
     Add-Check 'nominal Int report has complete O0/O2 signed, unsupported, and owner-range summaries' $nominalRunCoveragePassed ([ordered]@{
         expectedOptimizations = @('O0', 'O2')
         expectedSignedFixtureCount = $nominalExpectedSignedNames.Count
-        expectedUnsupportedDefinitionCount = 1
+        expectedUnsupportedDefinitionCount = 0
         expectedOwnerEndBytes = $nominalExpectedOwnerEnd
         expectedScalarPayloadExtentBytes = $nominalExpectedScalarExtent
         actualOptimizationNames = $nominalRunOptimizationNames
@@ -565,9 +566,6 @@ try {
         $nominalCaseSuffixes.Add("$caseName/host-identity-trace")
         $nominalCaseSuffixes.Add("$caseName/wrap-unwrap-retags")
     }
-    foreach ($unsupportedName in @('FloatTag')) {
-        $nominalCaseSuffixes.Add("unsupported-$unsupportedName-is-explicit")
-    }
     $nominalExpectedCheckNames = [Collections.Generic.List[string]]::new()
     foreach ($optimizationName in @('O0', 'O2')) {
         foreach ($suffix in $nominalCaseSuffixes) {
@@ -585,9 +583,10 @@ try {
         if ($matchingChecks.Count -ne 1) { $nominalMissingChecks.Add("$expectedName (count=$($matchingChecks.Count))") }
         elseif (-not [bool]$matchingChecks[0]['passed']) { $nominalFailingChecks.Add($expectedName) }
     }
-    $nominalCheckCoveragePassed = $nominalCaseSuffixes.Count -eq 44 -and
+    $nominalCheckCoveragePassed = $nominalCaseSuffixes.Count -eq 43 -and
+        $nominalEvidenceChecks.Count -eq $nominalExpectedCheckNames.Count -and
         $nominalMissingChecks.Count -eq 0 -and $nominalFailingChecks.Count -eq 0
-    Add-Check 'nominal Int case checks cover every pinned O0/O2 identity, wrap, aggregate, owner, capacity, rejection, and non-Int unsupported case' $nominalCheckCoveragePassed ([ordered]@{
+    Add-Check 'nominal Int case checks cover every pinned O0/O2 identity, wrap, aggregate, owner, capacity, and type rejection case' $nominalCheckCoveragePassed ([ordered]@{
         expectedCasesPerOptimization = $nominalCaseSuffixes.Count
         expectedTotalCheckCount = $nominalExpectedCheckNames.Count
         actualNominalCheckCount = $nominalEvidenceChecks.Count
@@ -636,7 +635,7 @@ try {
         $bodyFailureSpan = $bodyFailureDiagnostic['span']
         $nested = $positiveOracle['nestedHostInputs']
         $positiveFixturePassed =
-            [int]$nativeFixture['schemaVersion'] -eq 3 -and
+            [int]$nativeFixture['schemaVersion'] -eq 4 -and
             [int]$positiveIds['OrderId'] -eq 4 -and [int]$positiveIds['PositiveId'] -eq 5 -and
             [int]$positiveIds['payloadBytes'] -eq 8 -and
             [string]$positiveOracle['identityProgram']['pairBytesHex'] -ceq '0100000000000000d6ffffffffffffff' -and
@@ -919,7 +918,7 @@ try {
         'validator-runtime-failure-preserves-classification',
         'refined-field-owner-end-project-unwrap-no-extra-copy',
         'owner-range-trace-complete',
-        'unsupported-FloatTag-is-explicit',
+        'float-refinement-admission-is-explicit',
         'refined-string-mailbox-compiled-admission-is-explicit'
     )
     $refinedRuns = @()
@@ -1054,7 +1053,7 @@ try {
     Add-Check 'fixed three-way controls share one compiler-authorized program instance' ([bool]$experimentEvidence.fixedControlVerifiedProgramInstance) $experimentEvidence.backendScope
     Add-Check 'String interpreter and owning O0/O2 share one compiler-authorized program instance' ([bool]$experimentEvidence.stringVerifiedProgramInstance -and $experimentEvidence.stringBackendScope -match 'ABI3 String parity is unavailable') $experimentEvidence.stringBackendScope
     Add-Check 'String comparison records nested runtime Value input and no ABI3 String claim' ($experimentEvidence.stringBackendScope -match 'runtime Value input' -and $experimentEvidence.stringBackendScope -match 'ABI3 String parity is unavailable') $experimentEvidence.stringBackendScope
-    Add-Check 'Option/Result parity is scoped to owning layout ABI3 and excludes older sharedgraph ABI3' ([bool]$experimentEvidence.sumVerifiedProgramInstance -and $experimentEvidence.sumBackendScope -match 'owning-stack physical layout contract' -and $experimentEvidence.sumBackendScope -match 'older LlvmAot sharedgraph ABI3' -and $experimentEvidence.sumBackendScope -match 'does not claim Option/Result support') $experimentEvidence.sumBackendScope
+    Add-Check 'Option/Result parity is scoped to owning layout ABI4 and excludes older sharedgraph ABI3' ([bool]$experimentEvidence.sumVerifiedProgramInstance -and $experimentEvidence.sumBackendScope -match 'owning-stack physical layout contract' -and $experimentEvidence.sumBackendScope -match 'older LlvmAot sharedgraph ABI3' -and $experimentEvidence.sumBackendScope -match 'does not claim Option/Result support') $experimentEvidence.sumBackendScope
     Add-Check 'two-turn retained publication boundary is accurately scoped' ($experimentEvidence.turnBoundaryScope -match 'not a persistent native controller') $experimentEvidence.turnBoundaryScope
     Add-Check 'fixture declares no final memory-policy or throughput conclusion' (@($experimentEvidence.limitations | Where-Object { $_ -match 'No final memory-policy|throughput' }).Count -ge 1) $experimentEvidence.limitations
 

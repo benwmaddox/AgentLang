@@ -70,8 +70,8 @@ _Static_assert(AL_OWNING_LAYOUT_MAX_TYPES == 4096u,
 _Static_assert(AL_OWNING_LAYOUT_MAX_FIELDS == 65536u,
                "Layout ABI field descriptor ceiling changed");
 #if UINTPTR_MAX == UINT64_MAX
-_Static_assert(sizeof(al_owning_stack_context) == 168u,
-               "ABI 1 64-bit context size changed");
+_Static_assert(sizeof(al_owning_stack_context) == 176u,
+               "ABI 2 64-bit context size changed");
 _Static_assert(sizeof(al_owning_layout) == 40u,
                "Layout ABI 3 layout descriptor size changed");
 _Static_assert(offsetof(al_owning_layout, abi_version) == 0u,
@@ -85,21 +85,24 @@ _Static_assert(offsetof(al_owning_layout, fields) == 24u,
 _Static_assert(offsetof(al_owning_layout, field_count) == 32u,
                "Layout ABI 3 field count offset changed");
 _Static_assert(offsetof(al_owning_stack_context, stack_data) == 104u,
-               "ABI 1 stack pointer offset changed");
+               "ABI 2 stack pointer offset changed");
 _Static_assert(offsetof(al_owning_stack_context, init_bitmap) == 112u,
-               "ABI 1 init bitmap pointer offset changed");
+               "ABI 2 init bitmap pointer offset changed");
 _Static_assert(offsetof(al_owning_stack_context, poison_bitmap) == 120u,
-               "ABI 1 poison bitmap pointer offset changed");
+               "ABI 2 poison bitmap pointer offset changed");
 _Static_assert(offsetof(al_owning_stack_context, trace_events) == 128u,
-               "ABI 1 trace pointer offset changed");
+               "ABI 2 trace pointer offset changed");
 _Static_assert(offsetof(al_owning_stack_context, deep_copy_bytes) == 136u,
-               "ABI 1 deep copy counter offset changed");
+               "ABI 2 deep copy counter offset changed");
 _Static_assert(offsetof(al_owning_stack_context, move_bytes) == 144u,
-               "ABI 1 move counter offset changed");
+               "ABI 2 move counter offset changed");
 _Static_assert(offsetof(al_owning_stack_context, input_copy_bytes) == 152u,
-               "ABI 1 input copy counter offset changed");
+               "ABI 2 input copy counter offset changed");
 _Static_assert(offsetof(al_owning_stack_context, retained_copy_bytes) == 160u,
-               "ABI 1 retained copy counter offset changed");
+               "ABI 2 retained copy counter offset changed");
+_Static_assert(offsetof(al_owning_stack_context, diagnostic_float_bits) ==
+                   168u,
+               "ABI 2 Float diagnostic payload offset changed");
 #endif
 
 enum {
@@ -325,6 +328,68 @@ static const al_owning_layout al_test_unit_layout = {
     al_test_unit_fields,
     (uint32_t)(sizeof(al_test_unit_fields) /
                sizeof(al_test_unit_fields[0]))};
+
+enum {
+  AL_TEST_FLOAT_LAYOUT_F64 = 0u,
+  AL_TEST_FLOAT_LAYOUT_INT = 1u,
+  AL_TEST_FLOAT_LAYOUT_EMPTY = 2u,
+  AL_TEST_FLOAT_LAYOUT_RECORD = 3u,
+  AL_TEST_FLOAT_LAYOUT_OPTION = 4u,
+  AL_TEST_FLOAT_LAYOUT_RESULT = 5u,
+  AL_TEST_FLOAT_LAYOUT_RESULT_EMPTY_ERROR = 6u,
+  AL_TEST_FLOAT_LAYOUT_RECORD_OPTION_INT = 7u,
+  AL_TEST_FLOAT_LAYOUT_STRING = 8u,
+  AL_TEST_FLOAT_LAYOUT_STRING_RECORD = 9u,
+  AL_TEST_FLOAT_LAYOUT_NOMINAL_A = 10u,
+  AL_TEST_FLOAT_LAYOUT_NOMINAL_B = 11u,
+  AL_TEST_FLOAT_LAYOUT_RECORD_FLOAT_INT = 12u,
+  AL_TEST_FLOAT_LAYOUT_EMPTY_WRAPPER = 13u,
+  AL_TEST_FLOAT_LAYOUT_TYPE_COUNT = 14u,
+  AL_TEST_FLOAT_ERROR_ID = 221u
+};
+
+static const al_owning_type_descriptor al_test_float_types[] = {
+    {AL_OWNING_TYPE_F64, 801u, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_I64, 802u, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_RECORD, 803u, 0u, 0u, 0u, 8u, 0u, 8u, 0u},
+    {AL_OWNING_TYPE_RECORD, 804u, 0u, 1u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_OPTION, 805u, 1u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 2u},
+    {AL_OWNING_TYPE_RESULT, 806u, 3u, 2u, 16u, 16u, 16u, 16u, 2u},
+    {AL_OWNING_TYPE_RESULT, 807u, 5u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 16u, 2u},
+    {AL_OWNING_TYPE_RECORD, 808u, 7u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u, 0u},
+    {AL_OWNING_TYPE_STRING, 809u, 0u, 0u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_RECORD, 810u, 9u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u, 0u},
+    {AL_OWNING_TYPE_F64, 811u, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_F64, 812u, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_RECORD, 813u, 11u, 2u, 16u, 16u, 16u, 16u, 0u},
+    {AL_OWNING_TYPE_RECORD, 814u, 13u, 1u, 0u, 8u, 0u, 8u, 0u}};
+
+static const al_owning_field_descriptor al_test_float_fields[] = {
+    {AL_TEST_FLOAT_LAYOUT_F64, 0u, 0u, 0u},
+    {AL_TEST_FLOAT_LAYOUT_F64, 8u, 0u, 0u},
+    {AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 0u, 0u},
+    {AL_TEST_FLOAT_LAYOUT_F64, 8u, 0u, 0u},
+    {AL_TEST_FLOAT_LAYOUT_F64, 8u, 0u, 0u},
+    {AL_TEST_FLOAT_LAYOUT_F64, 8u, 0u, 0u},
+    {AL_TEST_FLOAT_LAYOUT_EMPTY, 8u, 0u, 0u},
+    {AL_TEST_FLOAT_LAYOUT_OPTION, 0u, 0u, 0u},
+    {AL_TEST_FLOAT_LAYOUT_INT, AL_OWNING_LAYOUT_DYNAMIC_U32, 0u, 0u},
+    {AL_TEST_FLOAT_LAYOUT_STRING, 0u, 0u, 0u},
+    {AL_TEST_FLOAT_LAYOUT_F64, AL_OWNING_LAYOUT_DYNAMIC_U32, 0u, 0u},
+    {AL_TEST_FLOAT_LAYOUT_F64, 0u, 0u, 0u},
+    {AL_TEST_FLOAT_LAYOUT_INT, 8u, 0u, 0u},
+    {AL_TEST_FLOAT_LAYOUT_EMPTY, 0u, AL_OWNING_FIELD_ZERO_WIDTH, 0u}};
+
+static const al_owning_layout al_test_float_layout = {
+    AL_OWNING_LAYOUT_ABI_VERSION, al_test_float_types,
+    AL_TEST_FLOAT_LAYOUT_TYPE_COUNT, al_test_float_fields,
+    (uint32_t)(sizeof(al_test_float_fields) /
+               sizeof(al_test_float_fields[0]))};
 
 typedef struct al_test_fixture {
   uint8_t raw[AL_TEST_DYNAMIC_STACK_CAPACITY + 2u * AL_TEST_GUARD_BYTES];
@@ -2924,6 +2989,336 @@ failed:
   return 0;
 }
 
+static void al_test_store_u64_bits(al_owning_stack_context *ctx,
+                                   uint32_t offset, uint64_t bits,
+                                   uint32_t type_id) {
+  int64_t signed_bits;
+  (void)memcpy(&signed_bits, &bits, sizeof(signed_bits));
+  al_owning_store_i64(ctx, offset, signed_bits, type_id);
+}
+
+static int al_test_float_finite_scanner(void) {
+  static const uint64_t finite_bits[] = {
+      UINT64_C(0x0000000000000000), UINT64_C(0x8000000000000000),
+      UINT64_C(0x0000000000000001), UINT64_C(0x7fefffffffffffff)};
+  static const uint64_t nonfinite_bits[] = {
+      UINT64_C(0x7ff8000000000001), UINT64_C(0x7ff0000000000001),
+      UINT64_C(0x7ff0000000000000), UINT64_C(0xfff0000000000000)};
+  al_test_fixture fixture;
+  al_owning_stack_context *ctx;
+  uint8_t bytes[24] = {0u};
+  uint8_t malformed_record[8] = {0u};
+  uint8_t malformed_some[16] = {0u};
+  uint8_t malformed_ok[16] = {0u};
+  uint8_t inactive_none[16] = {0u};
+  uint8_t inactive_error[24] = {0u};
+  al_owning_value_size measured;
+  uint32_t payload;
+  uint32_t extent;
+  uint32_t index;
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  ctx->diagnostic_float_bits = UINT64_C(0x7ff8000000000001);
+  al_owning_begin(ctx);
+  AL_CHECK(ctx->status == AL_OWNING_STATUS_OK &&
+           ctx->diagnostic_float_bits == 0u);
+  ctx->diagnostic_float_bits = UINT64_C(0x7ff8000000000001);
+  al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL,
+                        AL_TEST_FLOAT_ERROR_ID, 8u, 0u);
+  AL_CHECK(ctx->status == AL_OWNING_STATUS_INTERNAL &&
+           ctx->diagnostic_float_bits == 0u);
+
+  for (index = 0u; index < (uint32_t)(sizeof(finite_bits) /
+                                       sizeof(finite_bits[0]));
+       ++index) {
+    al_test_write_u64_le(bytes, 0u, finite_bits[index]);
+    payload = UINT32_C(0xDEADBEEF);
+    extent = UINT32_C(0xC0FFEE00);
+    al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+    ctx = &fixture.ctx;
+    AL_CHECK(al_owning_measure_external_value(
+                 ctx, &al_test_float_layout, AL_TEST_FLOAT_LAYOUT_F64, bytes,
+                 8u, 0u, AL_TEST_FLOAT_ERROR_ID, &payload, &extent) == 0 &&
+             ctx->status == AL_OWNING_STATUS_OK && payload == 8u &&
+             extent == 8u);
+  }
+
+  for (index = 0u; index < (uint32_t)(sizeof(nonfinite_bits) /
+                                       sizeof(nonfinite_bits[0]));
+       ++index) {
+    al_test_write_u64_le(bytes, 0u, nonfinite_bits[index]);
+    payload = UINT32_C(0xDEADBEEF);
+    extent = UINT32_C(0xC0FFEE00);
+    al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+    ctx = &fixture.ctx;
+    AL_CHECK(al_owning_measure_external_value(
+                 ctx, &al_test_float_layout, AL_TEST_FLOAT_LAYOUT_F64, bytes,
+                 8u, 0u, AL_TEST_FLOAT_ERROR_ID, &payload, &extent) != 0 &&
+             ctx->status == AL_OWNING_STATUS_INVALID_REQUEST &&
+             ctx->error_id == AL_TEST_FLOAT_ERROR_ID &&
+             payload == UINT32_C(0xDEADBEEF) &&
+             extent == UINT32_C(0xC0FFEE00));
+  }
+
+  al_test_write_u64_le(bytes, 0u, finite_bits[0]);
+  for (index = 0u; index < 8u; ++index) {
+    payload = UINT32_C(0xDEADBEEF);
+    extent = UINT32_C(0xC0FFEE00);
+    al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+    ctx = &fixture.ctx;
+    AL_CHECK(al_owning_measure_external_value(
+                 ctx, &al_test_float_layout, AL_TEST_FLOAT_LAYOUT_F64, bytes,
+                 index, 0u, AL_TEST_FLOAT_ERROR_ID, &payload, &extent) != 0 &&
+             ctx->status == AL_OWNING_STATUS_INVALID_REQUEST &&
+             ctx->error_id == AL_TEST_FLOAT_ERROR_ID &&
+             payload == UINT32_C(0xDEADBEEF) &&
+             extent == UINT32_C(0xC0FFEE00));
+  }
+
+  for (index = 0u; index < 8u; ++index) {
+    al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+    ctx = &fixture.ctx;
+    if (al_owning_reserve_to(ctx, index, AL_TEST_FLOAT_ERROR_ID) != 0)
+      goto failed;
+    measured.payload_bytes = UINT32_C(0xDEADBEEF);
+    measured.extent_bytes = UINT32_C(0xC0FFEE00);
+    AL_CHECK(al_owning_measure_value(
+                 ctx, &al_test_float_layout, AL_TEST_FLOAT_LAYOUT_F64, 0u,
+                 index, AL_TEST_FLOAT_ERROR_ID,
+                 &measured) != 0 &&
+             ctx->status == AL_OWNING_STATUS_INTERNAL &&
+             ctx->error_id == AL_TEST_FLOAT_ERROR_ID &&
+             measured.payload_bytes == UINT32_C(0xDEADBEEF) &&
+             measured.extent_bytes == UINT32_C(0xC0FFEE00));
+  }
+
+  al_test_write_u64_le(malformed_record, 0u, nonfinite_bits[0]);
+  al_test_write_u64_le(malformed_some, 0u, 0u);
+  al_test_write_u64_le(malformed_some, 8u, nonfinite_bits[0]);
+  al_test_write_u64_le(malformed_ok, 0u, 0u);
+  al_test_write_u64_le(malformed_ok, 8u, nonfinite_bits[2]);
+  {
+    const struct {
+      const uint8_t *bytes;
+      uint32_t length;
+      uint32_t type_index;
+    } active_values[] = {{malformed_record, 8u, AL_TEST_FLOAT_LAYOUT_RECORD},
+                         {malformed_some, 16u, AL_TEST_FLOAT_LAYOUT_OPTION},
+                         {malformed_ok, 16u, AL_TEST_FLOAT_LAYOUT_RESULT}};
+    for (index = 0u;
+         index < (uint32_t)(sizeof(active_values) / sizeof(active_values[0]));
+         ++index) {
+      payload = UINT32_C(0xDEADBEEF);
+      extent = UINT32_C(0xC0FFEE00);
+      al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+      ctx = &fixture.ctx;
+      AL_CHECK(al_owning_measure_external_value(
+                   ctx, &al_test_float_layout, active_values[index].type_index,
+                   active_values[index].bytes, active_values[index].length, 0u,
+                   AL_TEST_FLOAT_ERROR_ID, &payload, &extent) != 0 &&
+               ctx->status == AL_OWNING_STATUS_INVALID_REQUEST &&
+               payload == UINT32_C(0xDEADBEEF) &&
+               extent == UINT32_C(0xC0FFEE00));
+    }
+  }
+
+  al_test_write_u64_le(inactive_none, 0u, 1u);
+  al_test_write_u64_le(inactive_none, 8u, nonfinite_bits[0]);
+  payload = UINT32_C(0xDEADBEEF);
+  extent = UINT32_C(0xC0FFEE00);
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_float_layout, AL_TEST_FLOAT_LAYOUT_OPTION,
+               inactive_none, sizeof(inactive_none), 0u,
+               AL_TEST_FLOAT_ERROR_ID, &payload, &extent) == 0 &&
+           ctx->status == AL_OWNING_STATUS_OK && payload == 8u &&
+           extent == 8u);
+
+  al_test_write_u64_le(inactive_error, 0u, 1u);
+  al_test_write_u64_le(inactive_error, 8u, 0u);
+  al_test_write_u64_le(inactive_error, 16u, nonfinite_bits[0]);
+  payload = UINT32_C(0xDEADBEEF);
+  extent = UINT32_C(0xC0FFEE00);
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  AL_CHECK(al_owning_measure_external_value(
+               ctx, &al_test_float_layout,
+               AL_TEST_FLOAT_LAYOUT_RESULT_EMPTY_ERROR, inactive_error,
+               sizeof(inactive_error), 0u, AL_TEST_FLOAT_ERROR_ID, &payload,
+               &extent) == 0 &&
+           ctx->status == AL_OWNING_STATUS_OK && payload == 8u &&
+           extent == 16u);
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ++al_test_cases;
+  al_test_capture_metrics(&fixture);
+  return 1;
+failed:
+  return 0;
+}
+
+static int al_test_float_typed_equality(void) {
+  al_test_fixture fixture;
+  al_owning_stack_context *ctx;
+  uint8_t text_a[24] = {0u};
+  uint8_t text_a_negative_zero[24] = {0u};
+  uint8_t text_b[24] = {0u};
+  uint64_t positive_zero = UINT64_C(0x0000000000000000);
+  uint64_t negative_zero = UINT64_C(0x8000000000000000);
+  uint64_t one = UINT64_C(0x3ff0000000000000);
+  uint32_t error_id = AL_TEST_FLOAT_ERROR_ID;
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  if (al_owning_reserve_to(ctx, 128u, error_id) != 0)
+    goto failed;
+  al_test_store_u64_bits(ctx, 0u, positive_zero, 801u);
+  al_test_store_u64_bits(ctx, 8u, negative_zero, 801u);
+  al_test_store_u64_bits(ctx, 16u, positive_zero, 811u);
+  al_test_store_u64_bits(ctx, 24u, negative_zero, 811u);
+  al_test_store_u64_bits(ctx, 32u, positive_zero, 812u);
+  al_test_store_u64_bits(ctx, 40u, negative_zero, 812u);
+  al_test_store_u64_bits(ctx, 48u, positive_zero, 801u);
+  al_test_store_u64_bits(ctx, 56u, 7u, 802u);
+  al_test_store_u64_bits(ctx, 64u, negative_zero, 801u);
+  al_test_store_u64_bits(ctx, 72u, 7u, 802u);
+  al_test_store_u64_bits(ctx, 80u, negative_zero, 801u);
+  al_test_store_u64_bits(ctx, 88u, 8u, 802u);
+  al_test_store_u64_bits(ctx, 96u, 0u, 803u);
+  al_test_store_u64_bits(ctx, 104u, 0u, 814u);
+  al_test_store_u64_bits(ctx, 112u, one, 801u);
+  al_test_store_u64_bits(ctx, 120u, 0u, 803u);
+  AL_CHECK(al_owning_equal_typed(ctx, &al_test_float_layout,
+                                 AL_TEST_FLOAT_LAYOUT_F64, 0u, 8u, 8u, 8u,
+                                 error_id) == 1 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+  AL_CHECK(al_owning_equal_typed(ctx, &al_test_float_layout,
+                                 AL_TEST_FLOAT_LAYOUT_F64, 0u, 8u, 112u, 8u,
+                                 error_id) == 0 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+  AL_CHECK(al_owning_equal_typed(ctx, &al_test_float_layout,
+                                 AL_TEST_FLOAT_LAYOUT_NOMINAL_A, 16u, 8u, 24u,
+                                 8u, error_id) == 1 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+  AL_CHECK(al_test_float_types[AL_TEST_FLOAT_LAYOUT_NOMINAL_A].type_id !=
+               al_test_float_types[AL_TEST_FLOAT_LAYOUT_NOMINAL_B].type_id &&
+           al_test_float_types[AL_TEST_FLOAT_LAYOUT_F64].type_id !=
+               al_test_float_types[AL_TEST_FLOAT_LAYOUT_INT].type_id);
+  AL_CHECK(al_owning_equal_typed(
+               ctx, &al_test_float_layout,
+               AL_TEST_FLOAT_LAYOUT_RECORD_FLOAT_INT, 48u, 16u, 64u, 16u,
+               error_id) == 1 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+  AL_CHECK(al_owning_equal_typed(
+               ctx, &al_test_float_layout,
+               AL_TEST_FLOAT_LAYOUT_RECORD_FLOAT_INT, 48u, 16u, 80u, 16u,
+               error_id) == 0 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+  AL_CHECK(al_owning_equal_typed(
+               ctx, &al_test_float_layout, AL_TEST_FLOAT_LAYOUT_EMPTY, 96u,
+               8u, 120u, 8u, error_id) == 1 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+  AL_CHECK(al_owning_equal_typed(
+               ctx, &al_test_float_layout,
+               AL_TEST_FLOAT_LAYOUT_EMPTY_WRAPPER, 104u, 8u, 120u, 8u,
+               error_id) == 1 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  if (al_owning_reserve_to(ctx, 128u, error_id) != 0)
+    goto failed;
+  al_test_store_u64_bits(ctx, 0u, 0u, 805u);
+  al_test_store_u64_bits(ctx, 8u, positive_zero, 801u);
+  al_test_store_u64_bits(ctx, 16u, 0u, 805u);
+  al_test_store_u64_bits(ctx, 24u, negative_zero, 801u);
+  al_test_store_u64_bits(ctx, 32u, 1u, 805u);
+  al_test_store_u64_bits(ctx, 40u, 1u, 805u);
+  al_test_store_u64_bits(ctx, 48u, 0u, 806u);
+  al_test_store_u64_bits(ctx, 56u, positive_zero, 801u);
+  al_test_store_u64_bits(ctx, 64u, 0u, 807u);
+  al_test_store_u64_bits(ctx, 72u, negative_zero, 801u);
+  al_test_store_u64_bits(ctx, 80u, 1u, 807u);
+  al_test_store_u64_bits(ctx, 88u, 0u, 803u);
+  al_test_store_u64_bits(ctx, 96u, 1u, 807u);
+  al_test_store_u64_bits(ctx, 104u, 0u, 803u);
+  AL_CHECK(al_owning_equal_typed(
+               ctx, &al_test_float_layout, AL_TEST_FLOAT_LAYOUT_OPTION, 0u,
+               16u, 16u, 16u, error_id) == 1 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+  AL_CHECK(al_owning_equal_typed(
+               ctx, &al_test_float_layout, AL_TEST_FLOAT_LAYOUT_OPTION, 32u,
+               8u, 40u, 8u, error_id) == 1 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+  AL_CHECK(al_owning_equal_typed(
+               ctx, &al_test_float_layout, AL_TEST_FLOAT_LAYOUT_RESULT, 48u,
+               16u, 64u, 16u, error_id) == 1 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+  AL_CHECK(al_owning_equal_typed(
+               ctx, &al_test_float_layout,
+               AL_TEST_FLOAT_LAYOUT_RESULT_EMPTY_ERROR, 80u, 16u, 96u, 16u,
+               error_id) == 1 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+  AL_CHECK(al_owning_equal_typed(
+               ctx, &al_test_float_layout,
+               AL_TEST_FLOAT_LAYOUT_RESULT_EMPTY_ERROR, 48u, 16u, 96u, 16u,
+               error_id) == 0 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+
+  al_test_write_u32_le(text_a, 0u, 1u);
+  text_a[8u] = (uint8_t)'A';
+  al_test_write_u64_le(text_a, 16u, positive_zero);
+  al_test_write_u32_le(text_a_negative_zero, 0u, 1u);
+  text_a_negative_zero[8u] = (uint8_t)'A';
+  al_test_write_u64_le(text_a_negative_zero, 16u, negative_zero);
+  al_test_write_u32_le(text_b, 0u, 1u);
+  text_b[8u] = (uint8_t)'B';
+  al_test_write_u64_le(text_b, 16u, positive_zero);
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  if (al_owning_reserve_to(ctx, 72u, error_id) != 0 ||
+      al_owning_copy_external_bounded(ctx, 0u, text_a, sizeof(text_a), 0u,
+                                      18u, sizeof(text_a), 810u, error_id) !=
+          0 ||
+      al_owning_copy_external_bounded(
+          ctx, 24u, text_a_negative_zero, sizeof(text_a_negative_zero), 0u,
+          18u, sizeof(text_a_negative_zero), 810u, error_id) != 0 ||
+      al_owning_copy_external_bounded(ctx, 48u, text_b, sizeof(text_b), 0u,
+                                      18u, sizeof(text_b), 810u, error_id) !=
+          0)
+    goto failed;
+  AL_CHECK(al_owning_equal_typed(
+               ctx, &al_test_float_layout,
+               AL_TEST_FLOAT_LAYOUT_STRING_RECORD, 0u, 24u, 24u, 24u,
+               error_id) == 1 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+  AL_CHECK(al_owning_equal_typed(
+               ctx, &al_test_float_layout,
+               AL_TEST_FLOAT_LAYOUT_STRING_RECORD, 0u, 24u, 48u, 24u,
+               error_id) == 0 &&
+           ctx->status == AL_OWNING_STATUS_OK);
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  if (al_owning_reserve_to(ctx, 8u, error_id) != 0)
+    goto failed;
+  al_test_store_u64_bits(ctx, 0u, one, 801u);
+  AL_CHECK(al_owning_equal_typed(
+               ctx, &al_test_float_layout, AL_TEST_FLOAT_LAYOUT_F64, 0u, 8u,
+               8u, 8u, error_id) == 0 &&
+           ctx->status == AL_OWNING_STATUS_INTERNAL &&
+           ctx->error_id == error_id);
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ++al_test_cases;
+  al_test_capture_metrics(&fixture);
+  return 1;
+failed:
+  return 0;
+}
+
 int main(int argc, char **argv) {
   if (argc == 2 && strcmp(argv[1], "--bool-scanner-only") == 0) {
     if (!al_test_bool_canonical_scanner())
@@ -2970,7 +3365,9 @@ int main(int argc, char **argv) {
       !al_test_closed_enum_descriptor_validation() ||
       !al_test_closed_enum_abi2_rejected() ||
       !al_test_option_result_layout_and_scanner() ||
-      !al_test_record_copy_preserves_source()) {
+      !al_test_record_copy_preserves_source() ||
+      !al_test_float_finite_scanner() ||
+      !al_test_float_typed_equality()) {
     return 1;
   }
   {
@@ -2990,7 +3387,7 @@ int main(int argc, char **argv) {
       "zu,"
       "\"init_bitmap\":%zu,\"poison_bitmap\":%zu,\"trace_events\":%zu,"
       "\"deep_copy_bytes\":%zu,\"move_bytes\":%zu,\"input_copy_bytes\":%zu,"
-      "\"retained_copy_bytes\":%zu},\"layout_abi_version\":%u,\"layout_size_"
+      "\"retained_copy_bytes\":%zu,\"diagnostic_float_bits\":%zu},\"layout_abi_version\":%u,\"layout_size_"
       "bytes\":%zu,\"layout_offsets_bytes\":{\"types\":%zu,\"type_count\":%zu,"
       "\"fields\":%zu,\"field_count\":%zu},\"type_descriptor_size_bytes\":%zu,"
       "\"field_descriptor_size_bytes\":%zu,\"value_size_bytes\":%zu,"
@@ -3023,6 +3420,7 @@ int main(int argc, char **argv) {
       offsetof(al_owning_stack_context, move_bytes),
       offsetof(al_owning_stack_context, input_copy_bytes),
       offsetof(al_owning_stack_context, retained_copy_bytes),
+      offsetof(al_owning_stack_context, diagnostic_float_bits),
       AL_OWNING_LAYOUT_ABI_VERSION, sizeof(al_owning_layout),
       offsetof(al_owning_layout, types), offsetof(al_owning_layout, type_count),
       offsetof(al_owning_layout, fields),

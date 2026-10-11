@@ -19,8 +19,8 @@ enum {
   AL_TEST_ERROR_ID = 139u
 };
 
-_Static_assert(sizeof(al_owning_stack_context) == 168u,
-               "ABI 1 context size changed");
+_Static_assert(sizeof(al_owning_stack_context) == 176u,
+               "ABI 2 context size changed");
 _Static_assert(offsetof(al_owning_stack_context, stack_data) == 104u,
                "ABI 1 stack pointer offset changed");
 _Static_assert(offsetof(al_owning_stack_context, init_bitmap) == 112u,
@@ -28,7 +28,10 @@ _Static_assert(offsetof(al_owning_stack_context, init_bitmap) == 112u,
 _Static_assert(offsetof(al_owning_stack_context, poison_bitmap) == 120u,
                "ABI 1 poison bitmap pointer offset changed");
 _Static_assert(offsetof(al_owning_stack_context, trace_events) == 128u,
-               "ABI 1 trace pointer offset changed");
+               "ABI 2 trace pointer offset changed");
+_Static_assert(offsetof(al_owning_stack_context, diagnostic_float_bits) ==
+                   168u,
+               "ABI 2 Float diagnostic payload offset changed");
 
 static const al_owning_type_descriptor al_test_types[] = {
     {AL_OWNING_TYPE_RECORD, AL_TEST_TYPE_EMPTY, 0u, 0u, 0u, 8u, 0u, 8u, 0u},

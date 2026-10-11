@@ -163,6 +163,138 @@ let private testPublicBoundaryAndEmptyEntryOnly () =
         IrInterpreter.executeBody host "requires-input" nonemptyInputBody |> ignore)
     check "unsupported public input is rejected before any host hook" (preflightCount = 0 && chargeCount = 0)
 
+let private testDirectFloatEntry () =
+    let source = span "float-entry.agent"
+    let callback =
+        wordEntry "float.entry-callback" [ TFloat ] [ TFloat ] Set.empty
+            [ Call("drop", source); Push(LFloat 6.25, source) ] None
+    let context = contextWith Map.empty [ callback ]
+    let program = Compiler.compileIrProgram context
+    let passThrough = Compiler.compileIrBodyAgainstProgram context program "float-entry-pass-through" [ TFloat ] []
+    let callbackBody =
+        Compiler.compileIrBodyAgainstProgram context program "float-entry-hook-boundary" [ TFloat ]
+            [ Call("float.entry-callback", source) ]
+    let twoFloatBody = Compiler.compileIrBodyAgainstProgram context program "float-entry-two-values" [ TFloat; TFloat ] []
+    let intBody = Compiler.compileIrBodyAgainstProgram context program "float-entry-int-value" [ TInt ] []
+
+    let exactCases =
+        [ "positive zero", 0.0, 0L
+          "negative zero", BitConverter.Int64BitsToDouble(Int64.MinValue), Int64.MinValue
+          "minimum subnormal", Double.Epsilon, BitConverter.DoubleToInt64Bits Double.Epsilon
+          "negative minimum subnormal", -Double.Epsilon, BitConverter.DoubleToInt64Bits(-Double.Epsilon)
+          "largest subnormal", BitConverter.Int64BitsToDouble(0x000FFFFFFFFFFFFFL), 0x000FFFFFFFFFFFFFL
+          "maximum finite", Double.MaxValue, BitConverter.DoubleToInt64Bits Double.MaxValue
+          "negative maximum finite", -Double.MaxValue, BitConverter.DoubleToInt64Bits(-Double.MaxValue) ]
+    for (name, number, expectedBits) in exactCases do
+        use result =
+            IrInterpreter.executeBodyWithInputs
+                (noOpHost ()) ("float-entry-" + name) passThrough None [ IrEntryArgument.FloatArgument number ]
+        match result.Decode() with
+        | [ FloatValue actual ] ->
+            check ($"direct Float entry preserves {name} bits")
+                (BitConverter.DoubleToInt64Bits actual = expectedBits)
+        | values -> failwith $"direct Float entry for {name} returned an unexpected value shape: {values.Length} values"
+
+    let mutable preflightCount = 0
+    let mutable chargeCount = 0
+    let mutable enterHookCount = 0
+    let mutable returnHookCount = 0
+    let mutable exitHookCount = 0
+    let mutable recordUseCount = 0
+    let trackedHost =
+        { noOpHost () with
+            PreflightEffects = fun _ _ _ -> preflightCount <- preflightCount + 1
+            ChargeInstruction = fun _ _ -> chargeCount <- chargeCount + 1
+            EnterUserFunction = fun _ _ _ ->
+                enterHookCount <- enterHookCount + 1
+                fun () -> exitHookCount <- exitHookCount + 1
+            ReturnUserFunction = fun _ _ _ -> returnHookCount <- returnHookCount + 1
+            RecordUse = fun _ -> recordUseCount <- recordUseCount + 1 }
+
+    let captureDiagnostic name action =
+        try
+            action ()
+            failwith $"{name}: expected a diagnostic"
+        with
+        | LanguageException diagnostic -> diagnostic
+
+    let nonfiniteCases =
+        [ "nan", Double.NaN
+          "signaling-nan", BitConverter.Int64BitsToDouble(0x7FF0000000000001L)
+          "positive-infinity", Double.PositiveInfinity
+          "negative-infinity", Double.NegativeInfinity ]
+    for (name, number) in nonfiniteCases do
+        let executionName = "float-entry-" + name
+        let diagnostic =
+            captureDiagnostic executionName (fun () ->
+                IrInterpreter.executeBodyWithInputs
+                    trackedHost executionName callbackBody None [ IrEntryArgument.FloatArgument number ]
+                |> ignore)
+        check ($"{name} entry uses the frozen non-finite diagnostic code")
+            (diagnostic.Code = "IR_BACKEND_ENTRY_ARGUMENT_NONFINITE")
+        check ($"{name} entry diagnostic is attributed to the attempted execution")
+            (diagnostic.Word = Some executionName && diagnostic.Span.IsNone)
+        check ($"{name} entry diagnostic has the frozen finite expectation")
+            (diagnostic.Expected = [ "finite Float" ])
+        check ($"{name} entry diagnostic uses the interpreter Float formatting path")
+            (diagnostic.Actual = [ string number ])
+        check ($"{name} entry diagnostic message is stable")
+            (diagnostic.Message = "Float entry arguments must be finite.")
+
+    let countDiagnostic =
+        captureDiagnostic "float-entry-count-before-value-validation" (fun () ->
+            IrInterpreter.executeBodyWithInputs trackedHost "float-entry-count-before-value-validation" twoFloatBody None
+                [ IrEntryArgument.FloatArgument Double.NaN ]
+            |> ignore)
+    check "entry count validation precedes non-finite Float validation"
+        (countDiagnostic.Code = "IR_BACKEND_ENTRY_ARGUMENT_COUNT")
+
+    use retainedFloat =
+        IrInterpreter.executeBodyWithInputs
+            (noOpHost ()) "float-entry-retained-owner" passThrough None
+            [ IrEntryArgument.FloatArgument Double.Epsilon ]
+    let rootDiagnostic =
+        captureDiagnostic "float-entry-root-before-value-validation" (fun () ->
+            IrInterpreter.executeBodyWithInputs trackedHost "float-entry-root-before-value-validation" twoFloatBody
+                (Some retainedFloat)
+                [ IrEntryArgument.FloatArgument Double.NaN; IrEntryArgument.RetainedRoot 7 ]
+            |> ignore)
+    check "retained root selection precedes non-finite Float validation"
+        (rootDiagnostic.Code = "IR_BACKEND_ENTRY_ROOT_INDEX")
+
+    let disposedOwner =
+        IrInterpreter.executeBodyWithInputs
+            (noOpHost ()) "float-entry-disposed-owner" passThrough None
+            [ IrEntryArgument.FloatArgument 1.0 ]
+    disposedOwner.Dispose()
+    let ownerDiagnostic =
+        captureDiagnostic "float-entry-owner-before-count" (fun () ->
+            IrInterpreter.executeBodyWithInputs trackedHost "float-entry-owner-before-count" twoFloatBody
+                (Some disposedOwner) [ IrEntryArgument.FloatArgument Double.PositiveInfinity ]
+            |> ignore)
+    check "retained owner validation precedes count and non-finite Float validation"
+        (ownerDiagnostic.Code = "IR_BACKEND_ENTRY_OWNER_DISPOSED")
+
+    let typeDiagnostic =
+        captureDiagnostic "float-entry-type-before-value-validation" (fun () ->
+            IrInterpreter.executeBodyWithInputs trackedHost "float-entry-type-before-value-validation" intBody None
+                [ IrEntryArgument.FloatArgument Double.PositiveInfinity ]
+            |> ignore)
+    check "input type validation precedes non-finite Float validation"
+        (typeDiagnostic.Code = "IR_BACKEND_ENTRY_ARGUMENT_TYPE")
+    check "non-finite entry failures do not run body hooks or charge fuel"
+        (preflightCount = 0 && chargeCount = 0 && enterHookCount = 0
+         && returnHookCount = 0 && exitHookCount = 0 && recordUseCount = 0)
+
+    use validResult =
+        IrInterpreter.executeBodyWithInputs trackedHost "float-entry-valid-hook-boundary" callbackBody None
+            [ IrEntryArgument.FloatArgument Double.Epsilon ]
+    check "a finite Float entry reaches the verified user function"
+        (validResult.Decode() = [ FloatValue 6.25 ])
+    check "successful finite entry reaches normal preflight, fuel, and user hooks"
+        (preflightCount > 0 && chargeCount > 0 && enterHookCount = 1
+         && returnHookCount = 1 && exitHookCount = 1 && recordUseCount > 0)
+
 let private testVerifiedUserFunctionHooks () =
     let source = span "function-hook.agent"
     let revisionedBase =
@@ -1254,6 +1386,7 @@ let private testClosedEnumExecution () =
 let main _ =
     testProgramTrustAndSnapshotBinding ()
     testPublicBoundaryAndEmptyEntryOnly ()
+    testDirectFloatEntry ()
     testVerifiedUserFunctionHooks ()
     testTestFileReplacementDispatch ()
     testOpaqueTypedInterpreterReentry ()

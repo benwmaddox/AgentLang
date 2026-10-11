@@ -164,7 +164,7 @@ static const char *const check_names[] = {
     "retry completes with no pending mailbox or retained scratch lease",
     "native lifecycle emitted independent step and raw statistics for both policies",
     "all controller raw-byte, copy, publication, import, and descriptor metrics are present",
-    "stack ABI remains 1 and the owning layout ABI remains 3"};
+    "stack ABI is 2 and the owning layout ABI is 4"};
 
 static void record_check(size_t index, int passed) {
   if (index >= sizeof(check_names) / sizeof(check_names[0])) {
@@ -1081,7 +1081,7 @@ int main(int argc, char **argv) {
                                &associated_evidence);
     abi_ok = module->abi_version == AL_OWNING_MAILBOX_ABI_VERSION &&
              module->layout->abi_version == AL_OWNING_LAYOUT_ABI_VERSION &&
-             stack_abi == 1u && sizeof(al_owning_type_descriptor) == 36u &&
+             stack_abi == 2u && sizeof(al_owning_type_descriptor) == 36u &&
              sizeof(al_owning_field_descriptor) == 16u &&
              sizeof(al_owning_layout) == 40u &&
              sizeof(al_owning_mailbox_module) == 144u;

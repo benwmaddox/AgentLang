@@ -227,6 +227,7 @@ type private RawOwningStackContext =
     val mutable MoveBytes: uint64
     val mutable InputCopyBytes: uint64
     val mutable RetainedCopyBytes: uint64
+    val mutable DiagnosticFloatBits: uint64
 
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
 type private RawOwningExecuteDelegate = delegate of nativeint * nativeint * uint32 * nativeint * uint32 * nativeint * uint32 -> int32
@@ -1698,32 +1699,8 @@ let private compileNominalIntEntries () =
               Push(LInt 0L, site "failure-divisor" 6)
               Call("divide", site "failure-divide" 7) ]
 
-    let unsupportedCase name baseType validator containerKind =
-        let scalar = nominalIntScalarDefinition name baseType validator
-        let contextWords =
-            validator
-            |> Option.map (fun validatorName ->
-                nominalIntWordEntry validatorName [ baseType ] [ TBool ]
-                    [ Call("drop", site (name + "-validator-drop-input") 1)
-                      Push(LBool true, site (name + "-validator-result") 2) ])
-            |> Option.toList
-        let context = nominalIntCompilerContext contextWords [] [ scalar, name + ".new", name + ".value" ]
-        let program = Compiler.compileIrProgramWithSourceOrigins context Map.empty
-        let bodyExpressions =
-            match containerKind with
-            | "option-none" -> [ ConstructContainer(OptionNone, [ TNamed name ], site (name + "-inactive-option") 1) ]
-            | "result-ok" ->
-                [ Push(LInt 1L, site (name + "-active-int") 1)
-                  ConstructContainer(ResultOk, [ TInt; TNamed name ], site (name + "-inactive-error") 2) ]
-            | "result-error" ->
-                [ Push(LInt 1L, site (name + "-active-int") 1)
-                  ConstructContainer(ResultError, [ TNamed name; TInt ], site (name + "-inactive-ok") 2) ]
-            | other -> invalidOp $"Unknown nominal Int unsupported case container '{other}'."
-        let body =
-            Compiler.compileIrBodyAgainstProgramWithSourceOrigins context program ("native-value-stack-unsupported-" + name) [] bodyExpressions Map.empty
-        name, program, body
-    let unsupportedCases =
-        [ unsupportedCase "FloatTag" TFloat (Some "accept-float?") "result-error" ]
+    // All supported nominal scalar bases now compile in owning AOT.
+    let unsupportedCases = []
 
     let coreBodies =
         [ metersConstruct; orderIdConstruct; hostIdentityPair; hostIdentityPairConstruct
@@ -2209,7 +2186,8 @@ let private inspectRawOwningContextAbi (abiOracle: JsonElement) =
         "deep_copy_bytes", "DeepCopyBytes"
         "move_bytes", "MoveBytes"
         "input_copy_bytes", "InputCopyBytes"
-        "retained_copy_bytes", "RetainedCopyBytes" ]
+        "retained_copy_bytes", "RetainedCopyBytes"
+        "diagnostic_float_bits", "DiagnosticFloatBits" ]
     for oracleName, fieldName in contextFields do
         let expected = expectedOffsets.GetProperty(oracleName).GetInt32()
         let actual = Marshal.OffsetOf<RawOwningStackContext>(fieldName).ToInt32()
@@ -2270,7 +2248,7 @@ let private invokeRawOwningEntry
             Marshal.WriteInt32(extentsPointer, index * sizeof<uint32>, int extent)
         Marshal.Copy(retainedOutput, 0, outputPointer, retainedOutput.Length)
         let mutable context = Unchecked.defaultof<RawOwningStackContext>
-        context.AbiVersion <- 1u
+        context.AbiVersion <- 2u
         context.StackCapacityBytes <- uint32 stackCapacity
         context.TraceEventCapacity <- uint32 traceCapacity
         context.InitBitmapBytes <- uint32 bitmapBytes
@@ -4615,7 +4593,7 @@ let private runStringWorkload
             "metrics", jsonNode options (metricSummary metrics)
             "layoutEvents", jsonNode options (layoutEventDetails events) ]))
 
-    recordCheck checks failures $"owning-stack/{optimizationName}/String/layout-schema-v3" (layoutSchemaVersion = 3L) (jsonObject [ "expected", box 3; "actual", box layoutSchemaVersion ])
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/layout-schema-v4" (layoutSchemaVersion = 4L) (jsonObject [ "expected", box 4; "actual", box layoutSchemaVersion ])
     let dynamicLayoutChecks, dynamicLayoutFailures, dynamicLayoutSummary =
         validateDynamicTypeLayouts [ "String"; "TextLeaf"; "TextEnvelope"; "TextState" ] fixture dynamicLayouts
     for details in dynamicLayoutChecks do checks.Add details
@@ -6031,8 +6009,8 @@ let private runSumConformance
         && (result.LayoutEvents |> List.forall (fun event -> event.Kind <> "local-compact" && event.Kind <> "call-input-move" && event.Kind <> "call-return-move"))
     let expectedLayoutAbi = oracle.GetProperty("layoutAbiVersion").GetInt32()
     let nativeLayoutAbi = contextAbiOracle.GetProperty("layoutAbiVersion").GetInt32()
-    recordCheck checks failures $"sum/{optimizationName}/owning-layout-abi-v3"
-        (expectedLayoutAbi = 3 && nativeLayoutAbi = expectedLayoutAbi)
+    recordCheck checks failures $"sum/{optimizationName}/owning-layout-abi-v4"
+        (expectedLayoutAbi = 4 && nativeLayoutAbi = expectedLayoutAbi)
         (jsonObject [ "fixtureLayoutAbiVersion", box expectedLayoutAbi; "nativeLayoutAbiVersion", box nativeLayoutAbi ])
     let mutable schemaChecked = false
     for caseName in caseNames do
@@ -6091,8 +6069,8 @@ let private runSumConformance
         if not schemaChecked then
             let actualSchema = constructorResult.LayoutSchemaVersion
             let expectedSchema = oracle.GetProperty("layoutSchemaVersion").GetInt32()
-            recordCheck checks failures $"sum/{optimizationName}/independent-layout-oracle-and-schema-v3"
-                (expectedSchema = 3 && actualSchema = expectedSchema)
+            recordCheck checks failures $"sum/{optimizationName}/independent-layout-oracle-and-schema-v4"
+                (expectedSchema = 4 && actualSchema = expectedSchema)
                 (jsonObject [
                     "expectedSchemaVersion", box expectedSchema
                     "actualSchemaVersion", box actualSchema ])
@@ -8307,54 +8285,31 @@ let private runRefinedStringConformance
         "events", box (layoutEventDetails ownerProjection.LayoutEvents) ])
     checkTraceUsable checks failures $"refined-string/{optimizationName}/owner-range-trace-complete" ownerProjection.Metrics ownerProjection.LayoutEvents |> ignore
 
-    let unsupportedScalar name baseType validatorName =
-        let unsupportedScalarDefinition =
-            { Name = name
-              BaseType = baseType
-              Validator = validatorName
-              SourceText = "unsupported scalar conformance type"
-              Span = span ($"<native-value-stack-scalar-{name}>") 1 }
-        let validatorEntries =
-            validatorName
-            |> Option.map (fun name ->
-                [ refinedStringWordEntry name [ baseType ] [ TBool ] 1 (name + "-validator")
-                    [ Call("drop", span ($"<native-value-stack-refined-string-{name}-drop>") 1)
-                      Push(LBool true, span ($"<native-value-stack-refined-string-{name}-result>") 2) ] ])
-            |> Option.defaultValue []
-        let context =
-            refinedStringCompilerContext validatorEntries []
-                [ unsupportedScalarDefinition, name + ".construct", name + ".unwrap" ]
-        let program = Compiler.compileIrProgramWithSourceOrigins context Map.empty
-        let literal =
-            match baseType with
-            | TBool -> LBool true
-            | TFloat -> LFloat 1.0
-            | TString -> LString "ok"
-            | _ -> invalidOp $"Unexpected unsupported scalar base type {baseType}."
-        let body =
-            Compiler.compileIrBodyAgainstProgramWithSourceOrigins context program
-                ("native-value-stack-refined-string-unsupported-" + name) []
-                [ Push(literal, span ($"<native-value-stack-refined-string-{name}-literal>") 1)
-                  Call(name + ".construct", span ($"<native-value-stack-refined-string-{name}-construct>") 2) ] Map.empty
-        let compileError =
-            captureError (fun () ->
-                use _unexpectedlyCompiled = compile ("unsupported-" + name) body
-                ())
-        let code = compileError |> Option.map diagnosticCode |> Option.defaultValue ""
-        let message = compileError |> Option.bind diagnosticOf |> Option.map (fun diagnostic -> diagnostic.Message) |> Option.defaultValue ""
-        let expectedMessage =
-            None
-        let messageMatches = expectedMessage |> Option.forall ((=) message)
-        code = "IR_OWNING_STACK_TYPE_UNSUPPORTED" && messageMatches, code, message, expectedMessage
-    for name, baseType, validatorName in [
-        "FloatTag", TFloat, Some "accept-float?" ] do
-        let rejected, code, message, expectedMessage = unsupportedScalar name baseType validatorName
-        record ($"unsupported-{name}-is-explicit") rejected (jsonObject [
-            "rejectedBeforeExecution", box (code = "IR_OWNING_STACK_TYPE_UNSUPPORTED")
-            "expectedDiagnosticCode", box "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-            "actualDiagnosticCode", box code
-            "expectedDiagnosticMessage", box (expectedMessage |> Option.defaultValue "")
-            "actualDiagnosticMessage", box message ])
+    let floatValidator =
+        refinedStringWordEntry "accept-float?" [ TFloat ] [ TBool ] 1 "float-admission-validator"
+            [ Call("drop", span "<float-admission-drop>" 1)
+              Push(LBool true, span "<float-admission-result>" 2) ]
+    let floatDefinition =
+        { Name = "FloatTag"
+          BaseType = TFloat
+          Validator = Some "accept-float?"
+          SourceText = "finite Float refinement admission"
+          Span = span "<float-admission-type>" 1 }
+    let floatContext =
+        refinedStringCompilerContext [ floatValidator ] []
+            [ floatDefinition, "FloatTag.construct", "FloatTag.unwrap" ]
+    let floatProgram = Compiler.compileIrProgramWithSourceOrigins floatContext Map.empty
+    let floatBody =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins floatContext floatProgram
+            "native-value-stack-float-refinement-admission" []
+            [ Push(LFloat 1.0, span "<float-admission-literal>" 1)
+              Call("FloatTag.construct", span "<float-admission-construct>" 2) ] Map.empty
+    use floatCompiled = compile "float-refinement-admission" floatBody
+    let floatResult = floatCompiled.Execute([], 4096, 8)
+    record "float-refinement-admission-is-explicit"
+        (floatResult.Values = [ NamedValue("FloatTag", FloatValue 1.0) ]
+         && floatResult.RetainedOutputBytes = BitConverter.GetBytes(1.0))
+        (jsonObject [ "expected", box "FloatTag(1.0)"; "actualRetainedBytesHex", box (bytesHex floatResult.RetainedOutputBytes) ])
 
     let mailboxProgram = VerifiedIrBody.program entries.MailboxBodies[0]
     let mailboxIr = VerifiedIrProgram.inspect mailboxProgram
@@ -8476,8 +8431,8 @@ let private runRefinedStringConformance
         && exactCallbacks
         && mailboxManifestIdsPassed
         && mailboxManifestFormatVersion = 1
-        && mailboxAbiVersion = 1
-        && mailboxLayoutAbiVersion = 3
+        && mailboxAbiVersion = 2
+        && mailboxLayoutAbiVersion = 4
     record "refined-string-mailbox-compiled-admission-is-explicit" mailboxAdmissionPassed (jsonObject [
         "compiledModule", box true
         "backendExecutableProgram", box (VerifiedIrProgram.isBackendExecutable mailboxProgram)
@@ -8500,9 +8455,9 @@ let private runRefinedStringConformance
         "moduleFormatVersion", box mailboxManifestFormatVersion
         "expectedModuleFormatVersion", box 1
         "moduleAbiVersion", box mailboxAbiVersion
-        "expectedModuleAbiVersion", box 1
+        "expectedModuleAbiVersion", box 2
         "layoutAbiVersion", box mailboxLayoutAbiVersion
-        "expectedLayoutAbiVersion", box 3
+        "expectedLayoutAbiVersion", box 4
         "associatedResumeSymbol", box mailboxModule.AssociatedResumeSymbol ])
 
     jsonObject [
@@ -8542,8 +8497,8 @@ let main argv =
         let sourceHash = hashFile sourcePath
         use fixtureDocument = JsonDocument.Parse(File.ReadAllText fixturePath)
         let fixture = fixtureDocument.RootElement
-        if fixture.GetProperty("schemaVersion").GetInt32() <> 3 then
-            invalidOp "The current native-value-stack fixture must use schemaVersion 3."
+        if fixture.GetProperty("schemaVersion").GetInt32() <> 4 then
+            invalidOp "The current native-value-stack fixture must use schemaVersion 4."
         let expectedSourceHash = fixture.GetProperty("source").GetProperty("sha256").GetString()
         recordCheck checks failures "fixture/source-hash" (String.Equals(sourceHash, expectedSourceHash, StringComparison.Ordinal)) (jsonObject [ "expected", box expectedSourceHash; "actual", box sourceHash ])
         let repetitions = fixture.GetProperty("repetitions").EnumerateArray() |> Seq.map (fun item -> item.GetInt32()) |> Seq.toArray
@@ -8623,7 +8578,7 @@ let main argv =
         recordCheck checks failures "verified-ir/dynamic-scope-shadow-same-local-slot" dynamicScopeShadowPassed dynamicScopeShadowDetails
         report["stringScopeShadowIr"] <- dynamicScopeShadowDetails
         report["stringVerifiedProgramInstance"] <- box true
-        report["stringBackendScope"] <- box "String cases share one compiler-authorized VerifiedIrProgram and exact VerifiedIrBody between interpreter and owning LLVM O0/O2. The older LlvmAot sharedgraph ABI3 String parity is unavailable because its closed native type registry rejects String and string.concat; fixed controls remain the three-way comparison. Interpreter fixture inputs are produced by compiler-verified literal factory bodies because its entry API accepts only Int/Bool/Unit arguments, while owning execution receives each varying nested TextState as a runtime Value input."
+        report["stringBackendScope"] <- box "String cases share one compiler-authorized VerifiedIrProgram and exact VerifiedIrBody between interpreter and owning LLVM O0/O2. The older LlvmAot sharedgraph ABI3 String parity is unavailable because its closed native type registry rejects String and string.concat; fixed controls remain the three-way comparison. Interpreter fixture inputs are produced by compiler-verified literal factory bodies because its direct primitive entry API accepts Int/Float/Bool/Unit arguments rather than nested String values, while owning execution receives each varying nested TextState as a runtime Value input."
         let stringRuns = ResizeArray<obj>()
         let layoutDepthRuns = ResizeArray<obj>()
         for optimization, optimizationName in optimizationPairs do
@@ -8640,7 +8595,7 @@ let main argv =
         report["enumRuns"] <- enumRuns.ToArray()
         let sumEntries = compileSumEntries fixture
         report["sumVerifiedProgramInstance"] <- box true
-        report["sumBackendScope"] <- box "The same compiler-authorized VerifiedIrProgram and exact VerifiedIrBody instances run through the interpreter and owning-stack LLVM at O0/O2, including runtime Value input encoding and output decoding. Layout ABI3 here is the owning-stack physical layout contract. The older LlvmAot sharedgraph ABI3 path remains a separate fixed-only control and does not claim Option/Result support."
+        report["sumBackendScope"] <- box "The same compiler-authorized VerifiedIrProgram and exact VerifiedIrBody instances run through the interpreter and owning-stack LLVM at O0/O2, including runtime Value input encoding and output decoding. Layout ABI4 here is the owning-stack physical layout contract. The older LlvmAot sharedgraph ABI3 path remains a separate fixed-only control and does not claim Option/Result support."
         let sumRuns = ResizeArray<obj>()
         for optimization, optimizationName in optimizationPairs do
             sumRuns.Add(box (runSumConformance checks failures fixture artifactsRoot optimization optimizationName sumEntries))

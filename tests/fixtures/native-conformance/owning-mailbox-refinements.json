@@ -135,9 +135,9 @@
     }
   },
   "sourceFixture": "experiments/AgentLang.OwningMailbox/owning-mailbox-refinements.flow",
-  "moduleAbiVersion": 1,
-  "stackAbiVersion": 1,
-  "layoutAbiVersion": 3,
+  "moduleAbiVersion": 2,
+  "stackAbiVersion": 2,
+  "layoutAbiVersion": 4,
   "entryOrder": ["initialize", "begin", "resume"],
   "roles": {
     "initialize": { "inputs": ["String"], "outputs": ["State"] },
@@ -423,7 +423,7 @@
     "frozen validator target identity and revision match source-derived fixture",
     "source-derived copy and step counts match runtime evidence without predicate counter instrumentation",
     "O0 and O2 diagnostic, fast-reset, and trusted-generated profiles agree",
-    "Layout ABI remains 3 and stack ABI remains 1"
+    "Layout ABI is 4 and stack ABI is 2"
   ],
   "limitations": [
     "Controller lifecycle guarantees and direct raw-callback admission controls are separate evidence paths.",

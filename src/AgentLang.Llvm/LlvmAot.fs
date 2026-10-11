@@ -341,15 +341,21 @@ type NativeCompiledProgram internal
          ?options: NativeExecutionOptions) : NativeRetainedResult =
         if String.IsNullOrWhiteSpace executionName then invalidArg (nameof executionName) "Execution name must be nonempty."
         let selectedOptions = defaultArg options NativeExecutionOptions.defaults
+        let rejectFloatEntryArgument () =
+            Diagnostics.raiseError "IR_BACKEND_ENTRY_ARGUMENT_UNSUPPORTED" "The legacy LLVM backend does not support Float entry arguments." (Some executionName) None
+                [ "legacy-supported entry argument: Int, Bool, Unit, or retained root" ] [ "Float" ]
         let executeWithInputData (inputOwnerPointer: IntPtr) (inputRootValues: int64 array) (inputOwnerRootTypeIds: uint32 array) =
             if arguments.Length <> inputTypes.Length then
                 Diagnostics.raiseError "IR_BACKEND_ENTRY_ARGUMENT_COUNT" "Entry argument count does not match the verified body input signature." (Some executionName) None
                     [ string inputTypes.Length ] [ string arguments.Length ]
+            if arguments |> List.exists (function IrEntryArgument.FloatArgument _ -> true | _ -> false) then
+                rejectFloatEntryArgument ()
 
             let rootSelections =
                 arguments
                 |> List.choose (function
                     | IrEntryArgument.RetainedRoot index -> Some index
+                    | IrEntryArgument.FloatArgument _ -> rejectFloatEntryArgument ()
                     | IrEntryArgument.IntArgument _
                     | IrEntryArgument.BoolArgument _
                     | IrEntryArgument.UnitArgument -> None)
@@ -368,6 +374,7 @@ type NativeCompiledProgram internal
                 |> List.map (function
                     | IrEntryArgument.RetainedRoot index -> typeForId inputOwnerRootTypeIds[index]
                     | IrEntryArgument.IntArgument _ -> IrInt
+                    | IrEntryArgument.FloatArgument _ -> rejectFloatEntryArgument ()
                     | IrEntryArgument.BoolArgument _ -> IrBool
                     | IrEntryArgument.UnitArgument -> IrUnit)
 
@@ -389,6 +396,7 @@ type NativeCompiledProgram internal
                 |> List.map (function
                     | IrEntryArgument.RetainedRoot index -> inputOwnerRootTypeIds[index]
                     | IrEntryArgument.IntArgument _ -> NativeAbi.TypeIdInt
+                    | IrEntryArgument.FloatArgument _ -> rejectFloatEntryArgument ()
                     | IrEntryArgument.BoolArgument _ -> NativeAbi.TypeIdBool
                     | IrEntryArgument.UnitArgument -> NativeAbi.TypeIdUnit)
                 |> List.toArray
@@ -397,6 +405,7 @@ type NativeCompiledProgram internal
                 |> List.map (function
                     | IrEntryArgument.RetainedRoot index -> inputRootValues[index]
                     | IrEntryArgument.IntArgument value -> value
+                    | IrEntryArgument.FloatArgument _ -> rejectFloatEntryArgument ()
                     | IrEntryArgument.BoolArgument value -> if value then 1L else 0L
                     | IrEntryArgument.UnitArgument -> 0L)
                 |> List.toArray

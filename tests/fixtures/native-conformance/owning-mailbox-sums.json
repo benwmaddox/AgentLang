@@ -10,10 +10,10 @@
     "layoutIndexes": "The C runner receives layout indexes from the emitted bootstrap metadata, keyed by typeName and layoutIndex; the fixture contains no hardcoded descriptor index convention."
   },
   "abi": {
-    "moduleAbiVersion": 1,
+    "moduleAbiVersion": 2,
     "moduleStructSizeBytes": 144,
-    "layoutAbiVersion": 3,
-    "stackAbiVersion": 1,
+    "layoutAbiVersion": 4,
+    "stackAbiVersion": 2,
     "typeDescriptorSizeBytes": 36,
     "fieldDescriptorSizeBytes": 16,
     "layoutDescriptorSizeBytes": 40
@@ -254,7 +254,7 @@
     "malformed active tag and payload through mailbox APIs preserve pending roots and token in every profile",
     "an invalid inactive Result alternative is rejected with scanner and controller output sentinels unchanged",
     "ordinary calls and matches report zero payload moves",
-    "Layout ABI remains 3 and stack ABI remains 1"
+    "Layout ABI is 4 and stack ABI is 2"
   ],
   "limitations": [
     "This is a bounded mailbox integration fixture for one nominal record payload closure, not new language or runtime architecture.",

@@ -532,7 +532,7 @@ static al_mailbox_result al_validate_owning_module(
     const al_owning_type_descriptor *type = &layout->types[index];
     uint32_t prior;
     if (type->kind < AL_OWNING_TYPE_I64 ||
-        type->kind > AL_OWNING_TYPE_RESULT ||
+        type->kind > AL_OWNING_TYPE_F64 ||
         (type->kind == AL_OWNING_TYPE_ENUM &&
          (type->case_count == 0u || type->field_count != 0u)) ||
         ((type->kind == AL_OWNING_TYPE_OPTION ||
@@ -2192,6 +2192,7 @@ static void al_owning_context_restore_storage(
   context->move_bytes = 0u;
   context->input_copy_bytes = 0u;
   context->retained_copy_bytes = 0u;
+  context->diagnostic_float_bits = 0u;
 }
 
 static al_mailbox_result al_owning_scratch_slot_checkout(

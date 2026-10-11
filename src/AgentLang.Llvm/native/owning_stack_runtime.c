@@ -162,6 +162,7 @@ void al_owning_set_failure(al_owning_stack_context *ctx, uint32_t status,
   ctx->error_id = error_id;
   ctx->required_bytes = required_bytes;
   ctx->available_bytes = available_bytes;
+  ctx->diagnostic_float_bits = 0u;
 }
 
 int32_t al_owning_build_profile_valid(const al_owning_stack_context *ctx) {
@@ -207,6 +208,7 @@ void al_owning_begin(al_owning_stack_context *ctx) {
   ctx->move_bytes = 0u;
   ctx->input_copy_bytes = 0u;
   ctx->retained_copy_bytes = 0u;
+  ctx->diagnostic_float_bits = 0u;
   if (!al_owning_build_profile_valid(ctx)) {
 #if AL_OWNING_TRUSTED_GENERATED
     const uint32_t required_bitmap_bytes = 0u;
@@ -677,6 +679,7 @@ static int32_t al_owning_validate_type_descriptor(
   if (payload_dynamic != extent_dynamic ||
       (type->kind != AL_OWNING_TYPE_I64 && type->kind != AL_OWNING_TYPE_BOOL &&
        type->kind != AL_OWNING_TYPE_UNIT &&
+       type->kind != AL_OWNING_TYPE_F64 &&
        type->kind != AL_OWNING_TYPE_RECORD &&
        type->kind != AL_OWNING_TYPE_STRING &&
        type->kind != AL_OWNING_TYPE_ENUM &&
@@ -699,6 +702,7 @@ static int32_t al_owning_validate_type_descriptor(
   }
   if ((type->kind == AL_OWNING_TYPE_I64 || type->kind == AL_OWNING_TYPE_BOOL ||
        type->kind == AL_OWNING_TYPE_UNIT ||
+       type->kind == AL_OWNING_TYPE_F64 ||
        type->kind == AL_OWNING_TYPE_ENUM) &&
       (type->field_count != 0u || payload_dynamic ||
        type->fixed_payload_bytes != 8u || type->fixed_extent_bytes != 8u ||
@@ -1199,12 +1203,14 @@ static int32_t al_owning_scan_value(al_owning_scan_view *view,
     extent = 8u;
   } else if (type->kind == AL_OWNING_TYPE_I64 ||
              type->kind == AL_OWNING_TYPE_BOOL ||
-             type->kind == AL_OWNING_TYPE_UNIT) {
+             type->kind == AL_OWNING_TYPE_UNIT ||
+             type->kind == AL_OWNING_TYPE_F64) {
+    uint64_t encoded;
     if (!al_owning_scan_readable_in_owner(view, offset,
                                           containing_owner_end, 8u))
       return 0;
+    encoded = al_owning_read_u64_le(view->bytes, offset);
     if (type->kind == AL_OWNING_TYPE_BOOL) {
-      const uint64_t encoded = al_owning_read_u64_le(view->bytes, offset);
       if (encoded > 1u) {
         al_owning_scan_failure(view,
                                encoded > UINT32_MAX ? UINT32_MAX
@@ -1212,9 +1218,13 @@ static int32_t al_owning_scan_value(al_owning_scan_view *view,
                                1u);
         return 0;
       }
-    } else if (type->kind == AL_OWNING_TYPE_UNIT &&
-               al_owning_read_u64_le(view->bytes, offset) != 0u) {
+    } else if (type->kind == AL_OWNING_TYPE_UNIT && encoded != 0u) {
       al_owning_scan_failure(view, 1u, 0u);
+      return 0;
+    } else if (type->kind == AL_OWNING_TYPE_F64 &&
+               (encoded & UINT64_C(0x7ff0000000000000)) ==
+                   UINT64_C(0x7ff0000000000000)) {
+      al_owning_scan_failure(view, 8u, 0u);
       return 0;
     }
     payload = 8u;
@@ -1469,6 +1479,268 @@ int32_t al_owning_measure_external_value(
   *out_payload_bytes = payload;
   *out_extent_bytes = extent;
   return 0;
+}
+
+static int32_t al_owning_equal_typed_scan(
+    al_owning_scan_view *view, const al_owning_layout *layout,
+    uint32_t type_index, uint32_t offset, uint32_t owner_end,
+    uint32_t *out_payload, uint32_t *out_extent) {
+  uint32_t payload = 0u;
+  uint32_t extent = 0u;
+  if (!al_owning_scan_value(view, layout, type_index, offset, owner_end, 0u,
+                            &payload, &extent, 0))
+    return 0;
+  *out_payload = payload;
+  *out_extent = extent;
+  return 1;
+}
+
+static int32_t al_owning_equal_typed_inner(
+    al_owning_stack_context *ctx, const al_owning_layout *layout,
+    al_owning_scan_view *left_view, al_owning_scan_view *right_view,
+    uint32_t type_index, uint32_t left_offset, uint32_t left_extent,
+    uint32_t right_offset, uint32_t right_extent, uint32_t depth,
+    uint32_t error_id) {
+  const al_owning_type_descriptor *type;
+  uint32_t index;
+  if (depth >= AL_OWNING_LAYOUT_MAX_DEPTH || type_index >= layout->type_count) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          depth >= AL_OWNING_LAYOUT_MAX_DEPTH ? depth + 1u
+                                                              : type_index,
+                          depth >= AL_OWNING_LAYOUT_MAX_DEPTH
+                              ? AL_OWNING_LAYOUT_MAX_DEPTH
+                              : layout->type_count);
+    return 0;
+  }
+  type = &layout->types[type_index];
+  if (left_extent != right_extent)
+    return 0;
+
+  if (type->kind == AL_OWNING_TYPE_F64) {
+    uint64_t left_bits;
+    uint64_t right_bits;
+    if (!al_owning_scan_readable_in_owner(left_view, left_offset,
+                                          left_view->length, 8u) ||
+        !al_owning_scan_readable_in_owner(right_view, right_offset,
+                                          right_view->length, 8u))
+      return 0;
+    left_bits = al_owning_read_u64_le(left_view->bytes, left_offset);
+    right_bits = al_owning_read_u64_le(right_view->bytes, right_offset);
+    if (left_bits == right_bits)
+      return 1;
+    return (left_bits & UINT64_C(0x7fffffffffffffff)) == 0u &&
+           (right_bits & UINT64_C(0x7fffffffffffffff)) == 0u;
+  }
+
+  if (type->kind == AL_OWNING_TYPE_I64 ||
+      type->kind == AL_OWNING_TYPE_BOOL ||
+      type->kind == AL_OWNING_TYPE_UNIT ||
+      type->kind == AL_OWNING_TYPE_ENUM) {
+    if (!al_owning_scan_readable_in_owner(left_view, left_offset,
+                                          left_view->length, 8u) ||
+        !al_owning_scan_readable_in_owner(right_view, right_offset,
+                                          right_view->length, 8u))
+      return 0;
+    return al_owning_read_u64_le(left_view->bytes, left_offset) ==
+           al_owning_read_u64_le(right_view->bytes, right_offset);
+  }
+
+  if (type->kind == AL_OWNING_TYPE_STRING) {
+    uint32_t index;
+    if (left_extent != right_extent)
+      return 0;
+    if (!al_owning_scan_readable_in_owner(left_view, left_offset,
+                                          left_view->length, left_extent) ||
+        !al_owning_scan_readable_in_owner(right_view, right_offset,
+                                          right_view->length, right_extent))
+      return 0;
+    for (index = 0u; index < left_extent; ++index) {
+      if (left_view->bytes[left_offset + index] !=
+          right_view->bytes[right_offset + index])
+        return 0;
+    }
+    return 1;
+  }
+
+  if (type->kind == AL_OWNING_TYPE_OPTION ||
+      type->kind == AL_OWNING_TYPE_RESULT) {
+    uint64_t left_tag;
+    uint64_t right_tag;
+    const al_owning_field_descriptor *case_field;
+    uint32_t child_payload_left = 0u;
+    uint32_t child_extent_left = 0u;
+    uint32_t child_payload_right = 0u;
+    uint32_t child_extent_right = 0u;
+    if (left_extent < 8u || right_extent < 8u ||
+        !al_owning_scan_readable_in_owner(left_view, left_offset,
+                                          left_view->length, 8u) ||
+        !al_owning_scan_readable_in_owner(right_view, right_offset,
+                                          right_view->length, 8u))
+      return 0;
+    left_tag = al_owning_read_u64_le(left_view->bytes, left_offset);
+    right_tag = al_owning_read_u64_le(right_view->bytes, right_offset);
+    if (left_tag != right_tag)
+      return 0;
+    if (left_tag > 1u) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                            left_tag > UINT32_MAX ? UINT32_MAX
+                                                  : (uint32_t)left_tag,
+                            2u);
+      return 0;
+    }
+    case_field = &layout->fields[type->first_field + (uint32_t)left_tag];
+    if (case_field->child_type_index == AL_OWNING_LAYOUT_DYNAMIC_U32)
+      return type->kind == AL_OWNING_TYPE_OPTION && left_tag == 1u;
+    if (left_offset > UINT32_MAX - 8u || right_offset > UINT32_MAX - 8u ||
+        !al_owning_equal_typed_scan(
+            left_view, layout, case_field->child_type_index, left_offset + 8u,
+            left_view->length, &child_payload_left, &child_extent_left) ||
+        !al_owning_equal_typed_scan(
+            right_view, layout, case_field->child_type_index,
+            right_offset + 8u, right_view->length, &child_payload_right,
+            &child_extent_right))
+      return 0;
+    if (child_extent_left != left_extent - 8u ||
+        child_extent_right != right_extent - 8u) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                            child_extent_left > child_extent_right
+                                ? child_extent_left + 8u
+                                : child_extent_right + 8u,
+                            left_extent > right_extent ? left_extent
+                                                       : right_extent);
+      return 0;
+    }
+    return al_owning_equal_typed_inner(
+        ctx, layout, left_view, right_view, case_field->child_type_index,
+        left_offset + 8u, child_extent_left, right_offset + 8u,
+        child_extent_right, depth + 1u, error_id);
+  }
+
+  if (type->kind == AL_OWNING_TYPE_RECORD) {
+    uint32_t left_cursor = 0u;
+    uint32_t right_cursor = 0u;
+    int32_t has_payload_field = 0;
+    for (index = 0u; index < type->field_count; ++index) {
+      const al_owning_field_descriptor *field =
+          &layout->fields[type->first_field + index];
+      uint32_t left_child_offset;
+      uint32_t right_child_offset;
+      uint32_t child_payload_left = 0u;
+      uint32_t child_extent_left = 0u;
+      uint32_t child_payload_right = 0u;
+      uint32_t child_extent_right = 0u;
+      if (field->flags == AL_OWNING_FIELD_ZERO_WIDTH)
+        continue;
+      if (field->flags != 0u || field->child_type_index >= layout->type_count ||
+          left_cursor > left_extent || right_cursor > right_extent ||
+          left_offset > UINT32_MAX - left_cursor ||
+          right_offset > UINT32_MAX - right_cursor) {
+        al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                              index, type->field_count);
+        return 0;
+      }
+      has_payload_field = 1;
+      left_child_offset = left_offset + left_cursor;
+      right_child_offset = right_offset + right_cursor;
+      if (!al_owning_equal_typed_scan(
+              left_view, layout, field->child_type_index, left_child_offset,
+              left_view->length, &child_payload_left, &child_extent_left) ||
+          !al_owning_equal_typed_scan(
+              right_view, layout, field->child_type_index,
+              right_child_offset, right_view->length, &child_payload_right,
+              &child_extent_right))
+        return 0;
+      if (child_extent_left > left_extent - left_cursor ||
+          child_extent_right > right_extent - right_cursor) {
+        al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                              child_extent_left > child_extent_right
+                                  ? child_extent_left
+                                  : child_extent_right,
+                              left_extent - left_cursor);
+        return 0;
+      }
+      if (!al_owning_equal_typed_inner(
+              ctx, layout, left_view, right_view, field->child_type_index,
+              left_child_offset, child_extent_left, right_child_offset,
+              child_extent_right, depth + 1u, error_id))
+        return 0;
+      left_cursor += child_extent_left;
+      right_cursor += child_extent_right;
+    }
+    if (!has_payload_field)
+      return left_extent == 8u && right_extent == 8u;
+    return left_cursor == left_extent && right_cursor == right_extent;
+  }
+
+  al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                        type->kind, AL_OWNING_TYPE_F64);
+  return 0;
+}
+
+int32_t al_owning_equal_typed(al_owning_stack_context *ctx,
+                              const al_owning_layout *layout,
+                              uint32_t type_index, uint32_t left_offset,
+                              uint32_t left_extent_bytes,
+                              uint32_t right_offset,
+                              uint32_t right_extent_bytes,
+                              uint32_t error_id) {
+  al_owning_scan_view left_view;
+  al_owning_scan_view right_view;
+  uint32_t left_payload = 0u;
+  uint32_t left_extent = 0u;
+  uint32_t right_payload = 0u;
+  uint32_t right_extent = 0u;
+  uint32_t left_owner_end;
+  uint32_t right_owner_end;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 0;
+  if (layout == 0 || !al_owning_build_profile_valid(ctx) ||
+      left_offset > UINT32_MAX - left_extent_bytes ||
+      right_offset > UINT32_MAX - right_extent_bytes) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
+    return 0;
+  }
+  left_owner_end = left_offset + left_extent_bytes;
+  right_owner_end = right_offset + right_extent_bytes;
+  if (left_owner_end > ctx->cursor_bytes ||
+      left_owner_end > ctx->stack_capacity_bytes ||
+      right_owner_end > ctx->cursor_bytes ||
+      right_owner_end > ctx->stack_capacity_bytes) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          left_owner_end > right_owner_end ? left_owner_end
+                                                           : right_owner_end,
+                          ctx->cursor_bytes);
+    return 0;
+  }
+  if (!al_owning_validate_layout_header(ctx, layout, error_id))
+    return 0;
+  left_view.ctx = ctx;
+  left_view.bytes = ctx->stack_data;
+  left_view.length = left_owner_end;
+  left_view.error_id = error_id;
+  left_view.external = 0;
+  right_view = left_view;
+  right_view.length = right_owner_end;
+  if (!al_owning_validate_type_graph(&left_view, layout, type_index) ||
+      !al_owning_equal_typed_scan(&left_view, layout, type_index,
+                                  left_offset, left_owner_end, &left_payload,
+                                  &left_extent) ||
+      !al_owning_equal_typed_scan(&right_view, layout, type_index,
+                                  right_offset, right_owner_end,
+                                  &right_payload, &right_extent))
+    return 0;
+  if (left_extent != left_extent_bytes || right_extent != right_extent_bytes) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          left_extent > right_extent ? left_extent
+                                                     : right_extent,
+                          left_extent_bytes > right_extent_bytes
+                              ? left_extent_bytes
+                              : right_extent_bytes);
+    return 0;
+  }
+  return al_owning_equal_typed_inner(
+      ctx, layout, &left_view, &right_view, type_index, left_offset,
+      left_extent, right_offset, right_extent, 0u, error_id);
 }
 
 int32_t al_owning_locate_field(al_owning_stack_context *ctx,

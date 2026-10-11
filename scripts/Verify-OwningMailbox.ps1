@@ -622,7 +622,10 @@ function Test-RefinementOracle($Bootstrap, $Fixture, [string]$Label) {
     $initialHash = [string](Get-Field $provenance 'initialFrozenSnapshotSha256')
     $firstRunId = [string](Get-Field $firstEvidence 'runId')
     $firstEvidencePath = [string](Get-Field $firstEvidence 'relativePath')
-    $expectedFinalFixtureHash = 'A22BB448EE864713903D5EE7946C785CD7C8978CF54DA02E0F2E0B86911CBBB1'
+    # Milestone 206 changes only module/layout ABI expectations and labels.
+    # Historical post-execution oracle corrections above remain unchanged.
+    $historicalFixtureHash = 'A22BB448EE864713903D5EE7946C785CD7C8978CF54DA02E0F2E0B86911CBBB1'
+    $expectedFinalFixtureHash = '6965D1F3684BB2B94C4E40B390CA1B0ECDC9C50EFB1E01AF30874126AE4D92E9'
     $actualFixtureHash = (Get-FileHash -LiteralPath $script:refinementsFixturePath -Algorithm SHA256).Hash.ToUpperInvariant()
     $expectedPriorHash = $initialHash
     $correctionKinds = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
@@ -665,7 +668,7 @@ function Test-RefinementOracle($Bootstrap, $Fixture, [string]$Label) {
         $correctionKinds.Contains('copy-accounting') -and
         [string]::IsNullOrWhiteSpace($lastCorrectionAfterHash) -and
         $actualFixtureHash -ceq $expectedFinalFixtureHash
-    Add-Check "$Label fixture provenance links the initial freeze and corrections to the pinned current fixture bytes" $provenanceOkay ([ordered]@{ frozenBeforeNativeExecution = Get-Field $Fixture 'frozenBeforeNativeExecution'; initialFrozenSnapshotSha256 = $initialHash; terminalCorrectionPriorSha256 = $expectedPriorHash; actualFixtureSha256 = $actualFixtureHash; expectedFixtureSha256 = $expectedFinalFixtureHash; provenance = $provenance })
+    Add-Check "$Label fixture provenance links the initial freeze and corrections to the pinned current fixture bytes" $provenanceOkay ([ordered]@{ frozenBeforeNativeExecution = Get-Field $Fixture 'frozenBeforeNativeExecution'; initialFrozenSnapshotSha256 = $initialHash; terminalCorrectionPriorSha256 = $expectedPriorHash; historicalFixtureSha256 = $historicalFixtureHash; abiTransition = '206 module ABI 2 / layout ABI 4; value, step and copy oracles unchanged'; actualFixtureSha256 = $actualFixtureHash; expectedFixtureSha256 = $expectedFinalFixtureHash; provenance = $provenance })
 
     $oracle = Get-Field $Bootstrap 'sourceDerivedRefinementOracle'
     $expected = Get-Field $Fixture 'sourceDerivedStepOracle'
