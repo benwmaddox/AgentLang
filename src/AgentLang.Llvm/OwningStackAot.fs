@@ -638,8 +638,8 @@ module OwningStackAot =
         let active = HashSet<IrType>()
         let unsupportedScalarMessage, unsupportedScalarExpected =
             if allowValidatedScalars then
-                "Owning-stack supports nominal Int and String scalar wrappers with optional pure frozen validators; Bool, Float, and other scalar bases remain unsupported.",
-                [ "nominal Int scalar"; "nominal String scalar" ]
+                "Owning-stack supports nominal Int, Bool, and String scalar wrappers with optional pure frozen validators; Float and other scalar bases remain unsupported.",
+                [ "nominal Int scalar"; "nominal Bool scalar"; "nominal String scalar" ]
             else
                 "Owning-stack supports only unvalidated nominal Int scalar wrappers.",
                 [ "unvalidated Int scalar" ]
@@ -647,7 +647,7 @@ module OwningStackAot =
             match scalar.ValidatorCall with
             | None -> ()
             | Some validator ->
-                if not allowValidatedScalars || (scalar.BaseType <> IrInt && scalar.BaseType <> IrString) then
+                if not allowValidatedScalars || (scalar.BaseType <> IrInt && scalar.BaseType <> IrBool && scalar.BaseType <> IrString) then
                     Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
                         unsupportedScalarMessage
                         (Some owner) None unsupportedScalarExpected [ scalar.TypeName ]
@@ -835,6 +835,7 @@ module OwningStackAot =
                         | Some(IrScalarDefinition scalar) ->
                             match scalar.BaseType, scalar.ValidatorCall with
                             | IrInt, _
+                            | IrBool, _
                             | IrString, _ ->
                                 validateScalarValidator owner scalar
                                 scalar.ValidatorCall
@@ -1056,14 +1057,14 @@ module OwningStackAot =
                 | IrOperation.If(thenBlock, elseBlock) -> validateBlock owner thenBlock; validateBlock owner elseBlock
                 | operation ->
                     Diagnostics.raiseError "IR_OWNING_STACK_OPERATION_UNSUPPORTED"
-                        "Owning-stack backend supports constants, calls, records, nominal Int and String scalars with optional pure frozen predicates, payload-free enums, Option/Result values, locals, Scope, If, and exhaustive matches."
+                        "Owning-stack backend supports constants, calls, records, nominal Int, Bool, and String scalars with optional pure frozen predicates, payload-free enums, Option/Result values, locals, Scope, If, and exhaustive matches."
                         (Some owner) span [ "Constant"; "Call"; "MakeRecord"; "GetRecordField"; "WrapScalar"; "UnwrapScalar"; "MakeEnumCase"; "OptionNone"; "OptionSome"; "ResultOk"; "ResultError"; "MatchOption"; "MatchResult"; "MatchEnum"; "StoreLocal"; "LoadLocal"; "Scope"; "If" ]
                         [ sprintf "%A" operation ]
 
         and validateScalarCall owner span (call: IrResolvedCall) key expectedOperation inputTypes outputTypes =
             match program.NominalTypesByKey.TryFind key with
             | Some(IrScalarDefinition scalar)
-                when scalar.BaseType = IrInt || scalar.BaseType = IrString ->
+                when scalar.BaseType = IrInt || scalar.BaseType = IrBool || scalar.BaseType = IrString ->
                 validateScalarValidator owner scalar
             | _ ->
                 Diagnostics.raiseError "IR_OWNING_STACK_TYPE_UNSUPPORTED"
@@ -1334,6 +1335,10 @@ module OwningStackAot =
                 (scalarDefinition info.Program ty
                  |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrInt)) ->
                 8, 8
+            | IrNominal _, NamedValue(actualName, BoolValue _) when
+                (scalarDefinition info.Program ty
+                 |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrBool)) ->
+                8, 8
             | IrNominal _, NamedValue(actualName, StringValue text) when
                 not (isNull text)
                 && (scalarDefinition info.Program ty
@@ -1453,6 +1458,11 @@ module OwningStackAot =
                 (scalarDefinition info.Program ty
                  |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrInt)) ->
                 writeInt64 bytes offset number
+                8
+            | IrNominal _, NamedValue(actualName, BoolValue flag) when
+                (scalarDefinition info.Program ty
+                 |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrBool)) ->
+                writeInt64 bytes offset (if flag then 1L else 0L)
                 8
             | IrNominal _, NamedValue(actualName, StringValue text) when
                 not (isNull text)
@@ -1577,6 +1587,9 @@ module OwningStackAot =
                 | IrInt ->
                     ensureRange offset 8 "nominal Int"
                     NamedValue(definition.TypeName, IntValue(readInt64 bytes offset)), 8, 8
+                | IrBool ->
+                    let value, childExtent, payload = decode false offset IrBool
+                    NamedValue(definition.TypeName, value), childExtent, payload
                 | IrString ->
                     let value, childExtent, payload = decode false offset IrString
                     NamedValue(definition.TypeName, value), childExtent, payload
@@ -2736,6 +2749,7 @@ module OwningStackAot =
             | IrNominal _ as ty ->
                 match scalarDefinition info.Program ty with
                 | Some scalar when scalar.BaseType = IrInt -> 1u
+                | Some scalar when scalar.BaseType = IrBool -> 2u
                 | Some scalar when scalar.BaseType = IrString -> 5u
                 | Some _ -> invalidOp $"Unsupported nominal scalar reached owning descriptor emission: {IrTypes.format ty}."
                 | None ->

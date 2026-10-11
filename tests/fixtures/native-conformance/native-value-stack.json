@@ -1107,8 +1107,8 @@
   },
   "storageRuntimeTestOracle": {
     "suite": "owning_stack_runtime_storage_v2",
-    "cases": 50,
-    "checks": 612,
+    "cases": 51,
+    "checks": 667,
     "rawFrameBoundary": {
       "successfulHelperEnters": 66,
       "nextEnterDiagnosticDepth": 66,
@@ -1125,7 +1125,7 @@
       "peakCursorBytes": 56,
       "maxStackCapacityBytes": 64
     },
-    "dynamicCases": { "cases": 34, "checks": 423 },
+    "dynamicCases": { "cases": 35, "checks": 478 },
     "abi": {
       "eventSizeBytes": 40,
       "eventChecksumOffsetBytes": 32,

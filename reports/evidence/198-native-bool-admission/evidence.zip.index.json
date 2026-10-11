@@ -1,0 +1,1754 @@
+{
+  "format": 1,
+  "task": "native-bool-198",
+  "status": "verified",
+  "acceptance": {
+    "manifestStatus": "accepted",
+    "retainedAttemptsComplete": true,
+    "acceptedGates": [
+      {
+        "name": "fresh-build-attempt20",
+        "status": "passed",
+        "terminal": true,
+        "exitCode": 0,
+        "counts": {
+          "warnings": 0,
+          "errors": 0
+        },
+        "paths": [
+          ".agentlang/native-bool-198/build-attempt20.log",
+          ".agentlang/native-bool-198/validation.json"
+        ]
+      },
+      {
+        "name": "focused-nominal-bool",
+        "status": "passed",
+        "terminal": true,
+        "exitCode": 0,
+        "counts": {
+          "assertions": 22,
+          "optimizationModes": [
+            "O0",
+            "O2"
+          ]
+        },
+        "paths": [
+          ".agentlang/native-bool-198/focused/nominal-attempt20.log",
+          ".agentlang/native-bool-198/validation.json"
+        ]
+      },
+      {
+        "name": "focused-refined-bool",
+        "status": "passed",
+        "terminal": true,
+        "exitCode": 0,
+        "counts": {
+          "assertions": 58,
+          "optimizationModes": [
+            "O0",
+            "O2"
+          ]
+        },
+        "paths": [
+          ".agentlang/native-bool-198/focused/refined-attempt20.log",
+          ".agentlang/native-bool-198/validation.json"
+        ]
+      },
+      {
+        "name": "direct-native-c-attempt5",
+        "status": "passed",
+        "terminal": true,
+        "exitCode": 0,
+        "counts": {
+          "O0": {
+            "scannerCases": 1,
+            "scannerChecks": 55,
+            "storageCases": 51,
+            "storageChecks": 667
+          },
+          "O2": {
+            "scannerCases": 1,
+            "scannerChecks": 55,
+            "storageCases": 51,
+            "storageChecks": 667
+          },
+          "fixedStorageBaseline": {
+            "cases": 16,
+            "checks": 189
+          },
+          "dynamicStorage": {
+            "cases": 35,
+            "checks": 478
+          }
+        },
+        "paths": [
+          ".agentlang/native-bool-198/parent-native-attempt-5/receipt.json",
+          ".agentlang/native-bool-198/parent-native-attempt-5/build-O0.log",
+          ".agentlang/native-bool-198/parent-native-attempt-5/build-O2.log",
+          ".agentlang/native-bool-198/parent-native-attempt-5/scanner-O0.log",
+          ".agentlang/native-bool-198/parent-native-attempt-5/scanner-O2.log",
+          ".agentlang/native-bool-198/parent-native-attempt-5/storage-O0.log",
+          ".agentlang/native-bool-198/parent-native-attempt-5/storage-O2.log",
+          ".agentlang/native-bool-198/parent-count-audit.json"
+        ]
+      },
+      {
+        "name": "full-llvm-suite",
+        "status": "passed",
+        "terminal": true,
+        "exitCode": 0,
+        "counts": {
+          "assertions": 771
+        },
+        "paths": [
+          ".agentlang/native-bool-198/full-llvm.log",
+          ".agentlang/native-bool-198/parent-gate-lifecycle.json"
+        ]
+      },
+      {
+        "name": "mailbox-integration",
+        "status": "passed",
+        "terminal": true,
+        "exitCode": 0,
+        "counts": {
+          "checks": 2255
+        },
+        "paths": [
+          ".agentlang/owning-mailbox-001/integration-run-4e0456859ade4a5cb9348f39f16ae0a7/integration-evidence.json"
+        ]
+      },
+      {
+        "name": "mailbox-policy-regression",
+        "status": "passed",
+        "terminal": true,
+        "exitCode": 0,
+        "counts": {
+          "checks": 741
+        },
+        "paths": [
+          ".agentlang/owning-mailbox-002/policy-run-4de2016023c247d08ed9246df3f29956/policy-evidence.json"
+        ]
+      },
+      {
+        "name": "focused-refined-mailbox",
+        "status": "passed",
+        "terminal": true,
+        "exitCode": 0,
+        "counts": {
+          "assertions": 5
+        },
+        "paths": [
+          ".agentlang/native-bool-198/refined-mailbox.log"
+        ]
+      },
+      {
+        "name": "workspace-temp-acceptance",
+        "status": "passed",
+        "terminal": true,
+        "exitCode": 0,
+        "counts": {
+          "groups": 35,
+          "assertions": 642
+        },
+        "paths": [
+          ".agentlang/native-bool-198/workspace-temp-acceptance.log"
+        ]
+      },
+      {
+        "name": "full-release-attempt2",
+        "status": "passed",
+        "terminal": true,
+        "exitCode": 0,
+        "counts": {
+          "checks": 37,
+          "failedChecks": 0,
+          "policyPreflightOutcomes": 30,
+          "policyPreflightAssertions": 98
+        },
+        "paths": [
+          ".agentlang/native-bool-198/full-validation-attempt2.json",
+          ".agentlang/native-bool-198/full-validation-attempt2.log"
+        ]
+      },
+      {
+        "name": "native-value-stack-verifier-attempt3",
+        "status": "passed",
+        "terminal": true,
+        "exitCode": 0,
+        "counts": {
+          "verifierChecks": 50,
+          "runnerChecks": 1450,
+          "runnerFailureCount": 0,
+          "sourceInputsStable": true
+        },
+        "paths": [
+          ".agentlang/owning-stack-003/verification-0329a819a4d74bb0aa448784d6421b94/verification-evidence.json",
+          ".agentlang/owning-stack-003/verification-0329a819a4d74bb0aa448784d6421b94/native-value-stack-evidence.json",
+          ".agentlang/native-bool-198/native-verifier-attempt3.log",
+          ".agentlang/native-bool-198/parent-gate-lifecycle.json"
+        ]
+      }
+    ],
+    "retainedAttempts": [
+      {
+        "name": "build-attempt-1",
+        "status": "failed",
+        "terminal": true,
+        "reason": "The first build command returned nonzero with NuGet vulnerability-service NU1900 warnings despite reporting zero compiler errors.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/native-bool-198/build-command.txt",
+          ".agentlang/native-bool-198/build-exit-code.txt",
+          ".agentlang/native-bool-198/build.log"
+        ]
+      },
+      {
+        "name": "build-attempt-2",
+        "status": "failed",
+        "terminal": true,
+        "reason": "The no-restore attempt returned nonzero with NU1900 vulnerability-service diagnostics.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/native-bool-198/build-attempt-2-command.txt",
+          ".agentlang/native-bool-198/build-attempt-2-exit-code.txt",
+          ".agentlang/native-bool-198/build-attempt-2.log"
+        ]
+      },
+      {
+        "name": "build-attempt-3",
+        "status": "failed",
+        "terminal": true,
+        "reason": "The F# test project failed with FS0072 at Program.fs:1781 while the refined Bool step assertion was under-typed.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/native-bool-198/build-attempt-3-command.txt",
+          ".agentlang/native-bool-198/build-attempt-3-exit-code.txt",
+          ".agentlang/native-bool-198/build-attempt-3.log"
+        ]
+      },
+      {
+        "name": "build-attempt-4",
+        "status": "failed",
+        "terminal": true,
+        "reason": "The F# test project again failed with FS0072 at Program.fs:1781 before the result type was constrained.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/native-bool-198/build-attempt-4-command.txt",
+          ".agentlang/native-bool-198/build-attempt-4-exit-code.txt",
+          ".agentlang/native-bool-198/build-attempt-4.log"
+        ]
+      },
+      {
+        "name": "build-attempt-5",
+        "status": "superseded",
+        "terminal": true,
+        "exitCode": 0,
+        "reason": "An intermediate-source build succeeded cleanly, then was superseded by subsequent test and source revisions.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/native-bool-198/build-attempt-5-command.txt",
+          ".agentlang/native-bool-198/build-attempt-5-exit-code.txt",
+          ".agentlang/native-bool-198/build-attempt-5.log"
+        ]
+      },
+      {
+        "name": "build-attempt-6",
+        "status": "superseded",
+        "terminal": true,
+        "exitCode": 0,
+        "reason": "An intermediate-source build succeeded cleanly, then was superseded by subsequent test and source revisions.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/native-bool-198/build-attempt-6-command.txt",
+          ".agentlang/native-bool-198/build-attempt-6-exit-code.txt",
+          ".agentlang/native-bool-198/build-attempt-6.log"
+        ]
+      },
+      {
+        "name": "build-attempt-7",
+        "status": "unverified",
+        "terminal": true,
+        "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded.",
+        "receiptAvailability": "missing",
+        "paths": []
+      },
+      {
+        "name": "build-attempt-8",
+        "status": "unverified",
+        "terminal": true,
+        "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded.",
+        "receiptAvailability": "missing",
+        "paths": []
+      },
+      {
+        "name": "build-attempt-9",
+        "status": "unverified",
+        "terminal": true,
+        "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded.",
+        "receiptAvailability": "missing",
+        "paths": []
+      },
+      {
+        "name": "build-attempt-10",
+        "status": "unverified",
+        "terminal": true,
+        "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded.",
+        "receiptAvailability": "missing",
+        "paths": []
+      },
+      {
+        "name": "build-attempt-11",
+        "status": "unverified",
+        "terminal": true,
+        "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded.",
+        "receiptAvailability": "missing",
+        "paths": []
+      },
+      {
+        "name": "build-attempt-12",
+        "status": "unverified",
+        "terminal": true,
+        "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded.",
+        "receiptAvailability": "missing",
+        "paths": []
+      },
+      {
+        "name": "build-attempt-13",
+        "status": "unverified",
+        "terminal": true,
+        "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded.",
+        "receiptAvailability": "missing",
+        "paths": []
+      },
+      {
+        "name": "build-attempt-14",
+        "status": "unverified",
+        "terminal": true,
+        "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded.",
+        "receiptAvailability": "missing",
+        "paths": []
+      },
+      {
+        "name": "build-attempt-15",
+        "status": "unverified",
+        "terminal": true,
+        "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded.",
+        "receiptAvailability": "missing",
+        "paths": []
+      },
+      {
+        "name": "build-attempt-16",
+        "status": "unverified",
+        "terminal": true,
+        "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded.",
+        "receiptAvailability": "missing",
+        "paths": []
+      },
+      {
+        "name": "build-attempt-17",
+        "status": "failed",
+        "terminal": true,
+        "reason": "Build succeeded, but the refined selector failed because the raw retained-state retry copied from the wrong source and did not repair the Bool field.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/native-bool-198/focused/refined-attempt17.log",
+          ".agentlang/native-bool-198/validation.json"
+        ]
+      },
+      {
+        "name": "build-attempt-18",
+        "status": "failed",
+        "terminal": true,
+        "reason": "Build succeeded and retry appended completion, but the refined selector expected the pre-append cursor and failed its assertion.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/native-bool-198/focused/refined-attempt18.log",
+          ".agentlang/native-bool-198/validation.json"
+        ]
+      },
+      {
+        "name": "build-attempt-19",
+        "status": "failed",
+        "terminal": true,
+        "reason": "F# compilation failed because the step-count assertion resolved to OwningStackExecutionResult, which has no StepsConsumed member.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/native-bool-198/build-attempt19.log",
+          ".agentlang/native-bool-198/validation.json"
+        ]
+      },
+      {
+        "name": "direct-native-c-attempt1",
+        "status": "failed",
+        "terminal": true,
+        "reason": "The first native C build hit a temporary-file rename permission failure in the host temp directory.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/native-bool-198/parent-native/build-O0.log"
+        ]
+      },
+      {
+        "name": "direct-native-c-attempt2",
+        "status": "failed",
+        "terminal": true,
+        "reason": "The scanner fixture expected an incorrect inactive String Result payload extent (18 rather than the audited 20 bytes).",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/native-bool-198/parent-native-attempt-2/scanner-O0.log"
+        ]
+      },
+      {
+        "name": "direct-native-c-attempt3",
+        "status": "failed",
+        "terminal": true,
+        "reason": "The descriptor-mutation helper measured primitive Bool index 0 while the mutated case targeted a nominal Bool descriptor at index 1.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/native-bool-198/parent-native-attempt-3/build-O0.log",
+          ".agentlang/native-bool-198/parent-native-attempt-3/scanner-O0.log"
+        ]
+      },
+      {
+        "name": "direct-native-c-attempt4",
+        "status": "superseded",
+        "terminal": true,
+        "reason": "Functional scanner and storage cases passed, but the C test main reset saved case/check counters and hid the new scanner checks; attempt 5 removed that suppression and reports truthful totals.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/native-bool-198/parent-native-attempt-4/receipt.json",
+          ".agentlang/native-bool-198/parent-native-attempt-4/build-O0.log",
+          ".agentlang/native-bool-198/parent-native-attempt-4/build-O2.log",
+          ".agentlang/native-bool-198/parent-native-attempt-4/scanner-O0.log",
+          ".agentlang/native-bool-198/parent-native-attempt-4/scanner-O2.log",
+          ".agentlang/native-bool-198/parent-native-attempt-4/storage-O0.log",
+          ".agentlang/native-bool-198/parent-native-attempt-4/storage-O2.log"
+        ]
+      },
+      {
+        "name": "native-verifier-attempt1",
+        "status": "failed",
+        "terminal": true,
+        "reason": "Four historical negative controls still expected BoolTag rejection in nominal-Int and refined-String verifier matrices after Bool support was added.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/owning-stack-003/verification-a94d00435d3e47928868175bd4420e13/verification-evidence.json",
+          ".agentlang/owning-stack-003/verification-a94d00435d3e47928868175bd4420e13/native-value-stack-evidence.json"
+        ]
+      },
+      {
+        "name": "native-verifier-attempt2",
+        "status": "failed",
+        "terminal": true,
+        "reason": "The refined-String run returned caseCount 28 per optimization while the audited expected count was 27; the returned case-count literal was corrected before attempt 3.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/owning-stack-003/verification-5a4167484c544a6c9d9f3ef415179c31/verification-evidence.json",
+          ".agentlang/owning-stack-003/verification-5a4167484c544a6c9d9f3ef415179c31/native-value-stack-evidence.json",
+          ".agentlang/native-bool-198/native-verifier-attempt2.log",
+          ".agentlang/native-bool-198/validation.json"
+        ]
+      },
+      {
+        "name": "full-release-attempt1",
+        "status": "failed",
+        "terminal": true,
+        "reason": "The initial 37-check Release gate ended with 9 failures after host temporary-project commits returned STORAGE_ACCESS_DENIED; workspace-temp acceptance later passed, but this attempt remains a separate environment failure.",
+        "receiptAvailability": "present",
+        "paths": [
+          ".agentlang/native-bool-198/full-validation.json",
+          ".agentlang/native-bool-198/full-validation.early-agent-negative.json",
+          ".agentlang/native-bool-198/full-validation.flow-matched-fixtures.json",
+          ".agentlang/native-bool-198/full-validation.matched-fixtures.json",
+          ".agentlang/native-bool-198/full-validation.matched-snapshots.json",
+          ".agentlang/native-bool-198/full-validation.parser-limits.json",
+          ".agentlang/native-bool-198/full-validation.projection.json",
+          ".agentlang/native-bool-198/full-validation.renewal-acceptance-gate.json",
+          ".agentlang/native-bool-198/full-validation.renewal-replay.json",
+          ".agentlang/native-bool-198/full-validation.subagent-host-v2.json",
+          ".agentlang/native-bool-198/full-validation.subagent-host.json"
+        ]
+      }
+    ]
+  },
+  "receiptGaps": [
+    {
+      "name": "build-attempt-7",
+      "status": "unverified",
+      "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded."
+    },
+    {
+      "name": "build-attempt-8",
+      "status": "unverified",
+      "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded."
+    },
+    {
+      "name": "build-attempt-9",
+      "status": "unverified",
+      "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded."
+    },
+    {
+      "name": "build-attempt-10",
+      "status": "unverified",
+      "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded."
+    },
+    {
+      "name": "build-attempt-11",
+      "status": "unverified",
+      "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded."
+    },
+    {
+      "name": "build-attempt-12",
+      "status": "unverified",
+      "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded."
+    },
+    {
+      "name": "build-attempt-13",
+      "status": "unverified",
+      "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded."
+    },
+    {
+      "name": "build-attempt-14",
+      "status": "unverified",
+      "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded."
+    },
+    {
+      "name": "build-attempt-15",
+      "status": "unverified",
+      "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded."
+    },
+    {
+      "name": "build-attempt-16",
+      "status": "unverified",
+      "reason": "The historical build-attempt directory exists, but no text command, exit-code, or log receipt was saved; its generated build tree is excluded."
+    }
+  ],
+  "sourceFreeze": "attempt20 core/test sources plus final native runner case-count correction",
+  "archive": {
+    "path": "reports/evidence/198-native-bool-admission/evidence.zip",
+    "bytes": 1779541,
+    "sha256": "4f5e5ba6255cb0988cffe6304811efbb1adb107919f8fb7cf4bcd95356c4c764"
+  },
+  "memberCount": 104,
+  "exclusions": {
+    "directoryParts": [
+      ".git",
+      ".nuget",
+      "__pycache__",
+      "bin",
+      "build",
+      "dist",
+      "node_modules",
+      "obj",
+      "packages",
+      "target",
+      "temp",
+      "tmp",
+      "vendor"
+    ],
+    "buildDirectoryPrefix": "build-",
+    "suffixes": [
+      ".7z",
+      ".a",
+      ".dll",
+      ".exe",
+      ".lib",
+      ".nupkg",
+      ".o",
+      ".obj",
+      ".pdb",
+      ".pyc",
+      ".so",
+      ".zip"
+    ],
+    "allowedTextSuffixes": [
+      ".c",
+      ".cc",
+      ".csv",
+      ".diff",
+      ".flow",
+      ".fs",
+      ".fsx",
+      ".h",
+      ".json",
+      ".jsonl",
+      ".ll",
+      ".log",
+      ".md",
+      ".patch",
+      ".ps1",
+      ".py",
+      ".rst",
+      ".sh",
+      ".toml",
+      ".txt",
+      ".xml",
+      ".yaml",
+      ".yml"
+    ],
+    "skippedSelectedFiles": []
+  },
+  "manifest": {
+    "path": ".agentlang/native-bool-198/package-manifest.json",
+    "bytes": 24745,
+    "sha256": "a87e7d13158323bdf3178a115f44a23ea74fe794d65b238020bf83afdd677b0c"
+  },
+  "files": [
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-2-command.txt",
+      "bytes": 163,
+      "sha256": "047e5c1e6bb85cfb445ad05fb7c7e67c434b9d0798dcd9caa2ccfef880878b1d",
+      "roles": [
+        "retained-attempt:build-attempt-2"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-2-exit-code.txt",
+      "bytes": 3,
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04",
+      "roles": [
+        "retained-attempt:build-attempt-2"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-2.log",
+      "bytes": 541,
+      "sha256": "e534f9cc4c3bb3897287de49f8e5f8a3545e388e03386ef977e86ed176fcbc58",
+      "roles": [
+        "retained-attempt:build-attempt-2"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-3-command.txt",
+      "bytes": 155,
+      "sha256": "e9577ca08196c3abb4a26cd0239c2b8eaf8536a4a380060167038627b46cca56",
+      "roles": [
+        "retained-attempt:build-attempt-3"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-3-exit-code.txt",
+      "bytes": 3,
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04",
+      "roles": [
+        "retained-attempt:build-attempt-3"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-3.log",
+      "bytes": 1389,
+      "sha256": "bd3d5dea5e3ab1725db9d2767ab85de78548394290b2259ec4338a7b3ed32ef9",
+      "roles": [
+        "retained-attempt:build-attempt-3"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-4-command.txt",
+      "bytes": 155,
+      "sha256": "e9577ca08196c3abb4a26cd0239c2b8eaf8536a4a380060167038627b46cca56",
+      "roles": [
+        "retained-attempt:build-attempt-4"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-4-exit-code.txt",
+      "bytes": 3,
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04",
+      "roles": [
+        "retained-attempt:build-attempt-4"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-4.log",
+      "bytes": 1167,
+      "sha256": "7f8b3a6c7235ae15d345953bcc46242c532be3764118f837ba1b77c35ce5346a",
+      "roles": [
+        "retained-attempt:build-attempt-4"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-5-command.txt",
+      "bytes": 155,
+      "sha256": "e9577ca08196c3abb4a26cd0239c2b8eaf8536a4a380060167038627b46cca56",
+      "roles": [
+        "retained-attempt:build-attempt-5"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-5-exit-code.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "roles": [
+        "retained-attempt:build-attempt-5"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-5.log",
+      "bytes": 536,
+      "sha256": "65af5f4c99de27c242c9ff9c95902e837ff8c96ce1b0d916b1f82e189b26617e",
+      "roles": [
+        "retained-attempt:build-attempt-5"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-6-command.txt",
+      "bytes": 155,
+      "sha256": "e9577ca08196c3abb4a26cd0239c2b8eaf8536a4a380060167038627b46cca56",
+      "roles": [
+        "retained-attempt:build-attempt-6"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-6-exit-code.txt",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "roles": [
+        "retained-attempt:build-attempt-6"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt-6.log",
+      "bytes": 536,
+      "sha256": "2c659a7f598f84b5e77e9e0130b4af5942b296aaa8f95239ddd36ab589d8da52",
+      "roles": [
+        "retained-attempt:build-attempt-6"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt19.log",
+      "bytes": 3689,
+      "sha256": "02db86006c9b0a39f6eaf5f03197eb20613da6efba87ba30933b16fa4ac827c9",
+      "roles": [
+        "retained-attempt:build-attempt-19"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-attempt20.log",
+      "bytes": 788,
+      "sha256": "1b8e286535611f1a8de75ff314cb6e93dcf812d0c8d051ddd347fb76f792bee5",
+      "roles": [
+        "accepted-gate:fresh-build-attempt20"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-command.txt",
+      "bytes": 130,
+      "sha256": "f49946921e78f6742d516d0892a20bc09e4b8a41768ce88d22d110775aaea6d6",
+      "roles": [
+        "retained-attempt:build-attempt-1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build-exit-code.txt",
+      "bytes": 3,
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04",
+      "roles": [
+        "retained-attempt:build-attempt-1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/build.log",
+      "bytes": 2475,
+      "sha256": "3ae9053cc073ad8d83bb7fc9704c9c2b0a86ad63a0f6c4e2aa6c49c92bf1bd7d",
+      "roles": [
+        "retained-attempt:build-attempt-1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/focused/nominal-attempt20.log",
+      "bytes": 238,
+      "sha256": "36347b2a75f3fcafc6e9f63c01ceecb8eb3e8d76eb1d9d9f851bb531da50a5ae",
+      "roles": [
+        "accepted-gate:focused-nominal-bool"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/focused/refined-attempt17.log",
+      "bytes": 82,
+      "sha256": "b5a5a4f512a6fb156989c20e6607930dd82a4dceb8d941633796374ea55a7825",
+      "roles": [
+        "retained-attempt:build-attempt-17"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/focused/refined-attempt18.log",
+      "bytes": 749,
+      "sha256": "dcc3cf29e22729a08d5c21761e380b326833ebf1fc712eec396405b9a4a7ebc4",
+      "roles": [
+        "retained-attempt:build-attempt-18"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/focused/refined-attempt20.log",
+      "bytes": 236,
+      "sha256": "d9ff2e71db410cbe389cc311ba0371a6f84fec792ffc81da61bc17c44acb59c5",
+      "roles": [
+        "accepted-gate:focused-refined-bool"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/full-llvm.log",
+      "bytes": 1376,
+      "sha256": "635d3a251a4803b39f190a1a577b5acf336d013a7dab42817c4b0e1f15c46f5c",
+      "roles": [
+        "accepted-gate:full-llvm-suite"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/full-validation-attempt2.json",
+      "bytes": 30187,
+      "sha256": "2497419bd543894cc090aeeb619e18702cdb4a3c6fb4cbf71dce6589f87b82c4",
+      "roles": [
+        "accepted-gate:full-release-attempt2"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/full-validation-attempt2.log",
+      "bytes": 17311,
+      "sha256": "79dbe98b62ffdb17444b4cea174a2748abb74c8e2b9db8da40187adc25f21b11",
+      "roles": [
+        "accepted-gate:full-release-attempt2"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/full-validation.early-agent-negative.json",
+      "bytes": 172934,
+      "sha256": "97a680d809be297c1c352562c666ed6a6754e69708c0f51901f4690b7c9343d4",
+      "roles": [
+        "retained-attempt:full-release-attempt1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/full-validation.flow-matched-fixtures.json",
+      "bytes": 230020,
+      "sha256": "2865f55b9c427fabbaf273f569932709b8dbdbf5057e9f6bfe8181a34b44422b",
+      "roles": [
+        "retained-attempt:full-release-attempt1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/full-validation.json",
+      "bytes": 57788,
+      "sha256": "83cbb02728f544b149c2bc2093599a04b4387f6799cf311c04c33d67df87f6cc",
+      "roles": [
+        "retained-attempt:full-release-attempt1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/full-validation.matched-fixtures.json",
+      "bytes": 99883,
+      "sha256": "f1863d95ad68f489eb66b281dd9bff96240c48f999be8845004b138a658b324b",
+      "roles": [
+        "retained-attempt:full-release-attempt1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/full-validation.matched-snapshots.json",
+      "bytes": 85956,
+      "sha256": "eb193afce0741b77170c5ee976b2a94811b9faa2bb2b8cd236733951c8915351",
+      "roles": [
+        "retained-attempt:full-release-attempt1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/full-validation.parser-limits.json",
+      "bytes": 3186,
+      "sha256": "35a6d5eccf240aab4b408947f1694dfd6db9597e9596b9777b1dc1629e23c2c7",
+      "roles": [
+        "retained-attempt:full-release-attempt1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/full-validation.projection.json",
+      "bytes": 123935,
+      "sha256": "8cf15b209f87f92594305ea727a04287b1797ed143b23407bd09073b1a9e2eea",
+      "roles": [
+        "retained-attempt:full-release-attempt1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/full-validation.renewal-acceptance-gate.json",
+      "bytes": 1025134,
+      "sha256": "86f6398574fd9171ed1ab55cba1676ee0ae0a731df540c444224dda3e78f249c",
+      "roles": [
+        "retained-attempt:full-release-attempt1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/full-validation.renewal-replay.json",
+      "bytes": 307012,
+      "sha256": "b264a70a48c520817ce25b0b2e22d023c2f3ff43dab971895aab15dfe26be175",
+      "roles": [
+        "retained-attempt:full-release-attempt1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/full-validation.subagent-host-v2.json",
+      "bytes": 25382,
+      "sha256": "4ee46381f324d9a01742b1d32769a239296758711ad44367429c6ca168d814ea",
+      "roles": [
+        "retained-attempt:full-release-attempt1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/full-validation.subagent-host.json",
+      "bytes": 348074,
+      "sha256": "6e5fefbd0ce6ca728197b95e90e559559be4c11863b562cfc14eef8c3d432624",
+      "roles": [
+        "retained-attempt:full-release-attempt1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/native-verifier-attempt2.log",
+      "bytes": 2096,
+      "sha256": "cdfb39ab2fa57b21fd13ffda1f79b158358eff024c5534b0a06b2470a93adeac",
+      "roles": [
+        "retained-attempt:native-verifier-attempt2"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/native-verifier-attempt3.log",
+      "bytes": 177,
+      "sha256": "6347b35e1325c81c7842d659c49f4379fdaaf48a3343692720e629ed00a3ee78",
+      "roles": [
+        "accepted-gate:native-value-stack-verifier-attempt3"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/package-manifest.json",
+      "bytes": 24745,
+      "sha256": "a87e7d13158323bdf3178a115f44a23ea74fe794d65b238020bf83afdd677b0c",
+      "roles": [
+        "packaging-manifest"
+      ],
+      "classifications": [
+        "manifest"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/package_evidence.py",
+      "bytes": 19825,
+      "sha256": "18fe00f2a75ad67d35efe55152a1273027a3c75f6cf960e0b3c427ba8725bd55",
+      "roles": [
+        "evidence-packaging-helper"
+      ],
+      "classifications": [
+        "frozen"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-abi-audit.json",
+      "bytes": 1963,
+      "sha256": "56b5001ddb9e6e3fdb42b05f1eeee08ccdaa1f5ba040b799fa58b272729f26c1",
+      "roles": [
+        "abi-audit"
+      ],
+      "classifications": [
+        "frozen"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-count-audit.json",
+      "bytes": 938,
+      "sha256": "8254f7b855e7e757dc7833978f1e1c24a293b2131d91e3aa8b539a119e94bcb8",
+      "roles": [
+        "accepted-gate:direct-native-c-attempt5",
+        "native-count-audit"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-gate-lifecycle.json",
+      "bytes": 3676,
+      "sha256": "48e25843d98e3d9509651b510332d7f7ed11755eb915eaac80f12501dddc0919",
+      "roles": [
+        "accepted-gate:full-llvm-suite",
+        "accepted-gate:native-value-stack-verifier-attempt3",
+        "gate-lifecycle"
+      ],
+      "classifications": [
+        "accepted",
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-2/scanner-O0.log",
+      "bytes": 175,
+      "sha256": "7405561bc3dc098e79869d7d7123ec2ab02f85e6e727970a659a0d7c9cdd8248",
+      "roles": [
+        "retained-attempt:direct-native-c-attempt2"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-3/build-O0.log",
+      "bytes": 2,
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "roles": [
+        "retained-attempt:direct-native-c-attempt3"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-3/scanner-O0.log",
+      "bytes": 128,
+      "sha256": "4c1963459a5eb70631ad12a92e9bd17ffa72d569da7b262805382572cb3a2f3f",
+      "roles": [
+        "retained-attempt:direct-native-c-attempt3"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-4/build-O0.log",
+      "bytes": 2,
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "roles": [
+        "retained-attempt:direct-native-c-attempt4"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-4/build-O2.log",
+      "bytes": 2,
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "roles": [
+        "retained-attempt:direct-native-c-attempt4"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-4/receipt.json",
+      "bytes": 10413,
+      "sha256": "37f8c3f5457b287c623bd2ed48da6e68cbdce9099af5c86828b0f69e3521411a",
+      "roles": [
+        "retained-attempt:direct-native-c-attempt4"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-4/scanner-O0.log",
+      "bytes": 1367,
+      "sha256": "ad9605b70100ff27482c095755895edb3778690d281bb9a9b33bb5deee9013f5",
+      "roles": [
+        "retained-attempt:direct-native-c-attempt4"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-4/scanner-O2.log",
+      "bytes": 1367,
+      "sha256": "ad9605b70100ff27482c095755895edb3778690d281bb9a9b33bb5deee9013f5",
+      "roles": [
+        "retained-attempt:direct-native-c-attempt4"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-4/storage-O0.log",
+      "bytes": 1367,
+      "sha256": "ad9605b70100ff27482c095755895edb3778690d281bb9a9b33bb5deee9013f5",
+      "roles": [
+        "retained-attempt:direct-native-c-attempt4"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-4/storage-O2.log",
+      "bytes": 1367,
+      "sha256": "ad9605b70100ff27482c095755895edb3778690d281bb9a9b33bb5deee9013f5",
+      "roles": [
+        "retained-attempt:direct-native-c-attempt4"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-5/build-O0.log",
+      "bytes": 2,
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "roles": [
+        "accepted-gate:direct-native-c-attempt5"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-5/build-O2.log",
+      "bytes": 2,
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "roles": [
+        "accepted-gate:direct-native-c-attempt5"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-5/receipt.json",
+      "bytes": 6233,
+      "sha256": "056234a11958ccf3ce6ac9424a1902e5fc7527b1a7a2900641c3830b339391b8",
+      "roles": [
+        "accepted-gate:direct-native-c-attempt5",
+        "direct-native-c-final-receipt"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-5/scanner-O0.log",
+      "bytes": 88,
+      "sha256": "79df37cf2a90fb86b6cc06de4c71c243581aef9c27edc84df99bc316e05dc8c1",
+      "roles": [
+        "accepted-gate:direct-native-c-attempt5"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-5/scanner-O2.log",
+      "bytes": 88,
+      "sha256": "79df37cf2a90fb86b6cc06de4c71c243581aef9c27edc84df99bc316e05dc8c1",
+      "roles": [
+        "accepted-gate:direct-native-c-attempt5"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-5/storage-O0.log",
+      "bytes": 1367,
+      "sha256": "ad9605b70100ff27482c095755895edb3778690d281bb9a9b33bb5deee9013f5",
+      "roles": [
+        "accepted-gate:direct-native-c-attempt5"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native-attempt-5/storage-O2.log",
+      "bytes": 1367,
+      "sha256": "ad9605b70100ff27482c095755895edb3778690d281bb9a9b33bb5deee9013f5",
+      "roles": [
+        "accepted-gate:direct-native-c-attempt5"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/parent-native/build-O0.log",
+      "bytes": 710,
+      "sha256": "e0588e3ebd39eadb8129f12a96e2279464f488bc0f965de04e7d784fbca059ed",
+      "roles": [
+        "retained-attempt:direct-native-c-attempt1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/refined-mailbox.log",
+      "bytes": 228,
+      "sha256": "aa5b84e617848c145dba561f86bddb804012bc33dbd5afca24bf54721eb8e41a",
+      "roles": [
+        "accepted-gate:focused-refined-mailbox"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/review.md",
+      "bytes": 7468,
+      "sha256": "a4416ad2c80342e6a7518b2859663156f49a182aad63be173a15c35ae3800212",
+      "roles": [
+        "independent-source-review"
+      ],
+      "classifications": [
+        "frozen"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/validation.json",
+      "bytes": 6909,
+      "sha256": "ad07563700a4acffe0b9ac1b8925808c91bf9fe75c8057381c8479934e44921d",
+      "roles": [
+        "accepted-gate:focused-nominal-bool",
+        "accepted-gate:focused-refined-bool",
+        "accepted-gate:fresh-build-attempt20",
+        "implementation-validation-history",
+        "retained-attempt:build-attempt-17",
+        "retained-attempt:build-attempt-18",
+        "retained-attempt:build-attempt-19",
+        "retained-attempt:native-verifier-attempt2"
+      ],
+      "classifications": [
+        "accepted",
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/native-bool-198/workspace-temp-acceptance.log",
+      "bytes": 1398,
+      "sha256": "2c6ef0c3c2fdff691b9e9ff3cb3e32f13ab1f4fcb460f2d79c481d9afbbe7ef8",
+      "roles": [
+        "accepted-gate:workspace-temp-acceptance"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/owning-mailbox-001/integration-run-4e0456859ade4a5cb9348f39f16ae0a7/integration-evidence.json",
+      "bytes": 10725459,
+      "sha256": "ad247560bcc7da2312093f23c78638412dda9641945e6c393c5f74ad2a4456ee",
+      "roles": [
+        "accepted-gate:mailbox-integration"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/owning-mailbox-002/policy-run-4de2016023c247d08ed9246df3f29956/policy-evidence.json",
+      "bytes": 1290858,
+      "sha256": "64827c531e6556eb5268bed6509fa1046d609eb21d3d82c66145c4008b6d8f02",
+      "roles": [
+        "accepted-gate:mailbox-policy-regression"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-0329a819a4d74bb0aa448784d6421b94/native-value-stack-evidence.json",
+      "bytes": 3396833,
+      "sha256": "4fc6297293accf4bb1c915303b168be3968acc9da13b42297d4b80a63a16a20a",
+      "roles": [
+        "accepted-gate:native-value-stack-verifier-attempt3"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-0329a819a4d74bb0aa448784d6421b94/verification-evidence.json",
+      "bytes": 1305233,
+      "sha256": "8fbb59092f9571c6a59379126e46d460b3ec6069212848793797e37ae0bb5866",
+      "roles": [
+        "accepted-gate:native-value-stack-verifier-attempt3"
+      ],
+      "classifications": [
+        "accepted"
+      ]
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-5a4167484c544a6c9d9f3ef415179c31/native-value-stack-evidence.json",
+      "bytes": 3396833,
+      "sha256": "06a630379e40d95773ca4b84352a6f387b367fa2bd26ba4a1f784d3057706913",
+      "roles": [
+        "retained-attempt:native-verifier-attempt2"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-5a4167484c544a6c9d9f3ef415179c31/verification-evidence.json",
+      "bytes": 125842,
+      "sha256": "a674c54f64a74183f76738bc39f05a20aabfbb7c9bd6ca6e51c906733d101b5f",
+      "roles": [
+        "retained-attempt:native-verifier-attempt2"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-a94d00435d3e47928868175bd4420e13/native-value-stack-evidence.json",
+      "bytes": 3398511,
+      "sha256": "a664c3b9f106580afa8e399ce8a3d44e83c7fec4b96024faf504a19f92124296",
+      "roles": [
+        "retained-attempt:native-verifier-attempt1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": ".agentlang/owning-stack-003/verification-a94d00435d3e47928868175bd4420e13/verification-evidence.json",
+      "bytes": 110078,
+      "sha256": "8d162acfc923c484fbb9bffda355c65de42b091f1d95090d4dc0f7bdacf9efd7",
+      "roles": [
+        "retained-attempt:native-verifier-attempt1"
+      ],
+      "classifications": [
+        "retained"
+      ]
+    },
+    {
+      "path": "docs/NATIVE-NOMINALS-IMPLEMENTATION.md",
+      "bytes": 11656,
+      "sha256": "c057257d175386ef46155bbf21cc884504307471db00e2ab465451fa4b9e2d6a",
+      "roles": [
+        "native-nominal-status"
+      ],
+      "classifications": [
+        "frozen"
+      ]
+    },
+    {
+      "path": "docs/ROADMAP.md",
+      "bytes": 64590,
+      "sha256": "ea16be62250c4ccf1642c487ef6fc954badbd7b2c0e51f3a288ae9cb690fd780",
+      "roles": [
+        "roadmap-status"
+      ],
+      "classifications": [
+        "frozen"
+      ]
+    },
+    {
+      "path": "experiments/AgentLang.NativeValueStack/Program.fs",
+      "bytes": 601652,
+      "sha256": "0be5386623a0389a1718ff68cdb15e820bca92befa9343374b8f43d1ed3fe83c",
+      "roles": [
+        "frozenTests"
+      ],
+      "classifications": [
+        "frozen-test"
+      ]
+    },
+    {
+      "path": "reports/194-native-bool-implementation-plan.md",
+      "bytes": 3447,
+      "sha256": "c4fd015316bfe8e1a162b76308731644ed81a12eb7d86245f15052522eb95501",
+      "roles": [
+        "implementation-plan-context"
+      ],
+      "classifications": [
+        "frozen"
+      ]
+    },
+    {
+      "path": "reports/198-native-bool-admission.md",
+      "bytes": 7810,
+      "sha256": "8b40fff30f5cfdda1b45ace517c7a0373195159da1bec25b9cffe1a91165462a",
+      "roles": [
+        "implementation-report-accepted-release-gate"
+      ],
+      "classifications": [
+        "frozen"
+      ]
+    },
+    {
+      "path": "reports/evidence/194-native-bool-implementation-plan/admission-index.json",
+      "bytes": 1341,
+      "sha256": "3dfbc25885d2c1034260a94229776b611865d8b6fe55d156962920f5a69523b9",
+      "roles": [
+        "admission-review-index"
+      ],
+      "classifications": [
+        "frozen"
+      ]
+    },
+    {
+      "path": "reports/evidence/194-native-bool-implementation-plan/admission-review.md",
+      "bytes": 8670,
+      "sha256": "6d232dfc7b2f70252d4de0d2d85717a0f5f76a04bb267e4126149ccd54b35272",
+      "roles": [
+        "admission-review-source"
+      ],
+      "classifications": [
+        "frozen"
+      ]
+    },
+    {
+      "path": "reports/evidence/194-native-bool-implementation-plan/plan.md",
+      "bytes": 8953,
+      "sha256": "0f5099c5b98b6499113b47dc803a7984d7652649640fa52a9f226d53289aa90f",
+      "roles": [
+        "admission-plan-source"
+      ],
+      "classifications": [
+        "frozen"
+      ]
+    },
+    {
+      "path": "scripts/Validate.ps1",
+      "bytes": 10201,
+      "sha256": "1ae5d6539fe7ebe8c5629c50d201a6509a11a1dc5fe81782a1dcde8f40ce4ecd",
+      "roles": [
+        "frozenTests"
+      ],
+      "classifications": [
+        "frozen-test"
+      ]
+    },
+    {
+      "path": "scripts/Verify-NativeValueStack.ps1",
+      "bytes": 76143,
+      "sha256": "e6383a218135e47fdd265d475523b165f0d33eeeaeaf52dc531ddd55b0ee2bf3",
+      "roles": [
+        "frozenTests"
+      ],
+      "classifications": [
+        "frozen-test"
+      ]
+    },
+    {
+      "path": "scripts/Verify-OwningMailbox.ps1",
+      "bytes": 150059,
+      "sha256": "9df12016f827c8837701aa2237bfbf5152de2c140060ade430486afa0af731f1",
+      "roles": [
+        "frozenTests"
+      ],
+      "classifications": [
+        "frozen-test"
+      ]
+    },
+    {
+      "path": "scripts/Verify-OwningMailboxPolicy.ps1",
+      "bytes": 51255,
+      "sha256": "e156c0a453692adfb0437070dbc1ac0e04f9889e20b8a9eb39f387100c31ff77",
+      "roles": [
+        "frozenTests"
+      ],
+      "classifications": [
+        "frozen-test"
+      ]
+    },
+    {
+      "path": "src/AgentLang.Llvm/OwningStackAot.fs",
+      "bytes": 389058,
+      "sha256": "7e12142eba945a5ee87f51751c3ca2f5c37eadccfc40300957191a20aa556ba5",
+      "roles": [
+        "sourcePins"
+      ],
+      "classifications": [
+        "frozen-source"
+      ]
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_bank.h",
+      "bytes": 5976,
+      "sha256": "63fd3b3deda0adad7c50b67307e760458692c46f4ca1d4a8a34ead929bb5e43a",
+      "roles": [
+        "abiSnapshots"
+      ],
+      "classifications": [
+        "abi-snapshot"
+      ]
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_mailbox_abi.h",
+      "bytes": 5845,
+      "sha256": "e0fb00ab40f4b9842c3cfc0047d936927f9ba11ae4f29e9542375bed2abf772c",
+      "roles": [
+        "abiSnapshots"
+      ],
+      "classifications": [
+        "abi-snapshot"
+      ]
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "bytes": 90801,
+      "sha256": "e5026d12fba6c151f4d2e721fc8178116f46baad47f8b2db5a7619e55f5482d8",
+      "roles": [
+        "sourcePins"
+      ],
+      "classifications": [
+        "frozen-source"
+      ]
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "bytes": 11819,
+      "sha256": "83e47a3a655c1fb3f27559c138a44bfd3b1bdd086b6e604659802346296683e0",
+      "roles": [
+        "abiSnapshots"
+      ],
+      "classifications": [
+        "abi-snapshot"
+      ]
+    },
+    {
+      "path": "src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+      "bytes": 133895,
+      "sha256": "ab6f9578fb3e86740580b823f18d941994dd64a70f200ab73a06cd6b104af286",
+      "roles": [
+        "sourcePins"
+      ],
+      "classifications": [
+        "frozen-source"
+      ]
+    },
+    {
+      "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+      "bytes": 328657,
+      "sha256": "2c3b36f23ef2ed24fdb7a8c825fa32678c3a0b2fdfe66dcf674121cae53766b9",
+      "roles": [
+        "frozenTests"
+      ],
+      "classifications": [
+        "frozen-test"
+      ]
+    },
+    {
+      "path": "tests/fixtures/native-conformance/abi-v1.json",
+      "bytes": 3035,
+      "sha256": "ff6324bb46d6cd3fc101ae074a59806cb17be04452e64eeb9c6fe35bb22d4615",
+      "roles": [
+        "abiSnapshots"
+      ],
+      "classifications": [
+        "abi-snapshot"
+      ]
+    },
+    {
+      "path": "tests/fixtures/native-conformance/abi-v2.json",
+      "bytes": 7322,
+      "sha256": "b738f4e1b540ba00bd161eaa9d08c41aadac4f18da5fff997157a7a86ca64a33",
+      "roles": [
+        "abiSnapshots"
+      ],
+      "classifications": [
+        "abi-snapshot"
+      ]
+    },
+    {
+      "path": "tests/fixtures/native-conformance/abi-v3.json",
+      "bytes": 2940,
+      "sha256": "4c9f138ac623217636c44f4a95248c0d1557e7f3edb0c626ca46b7c2d7cd726f",
+      "roles": [
+        "abiSnapshots"
+      ],
+      "classifications": [
+        "abi-snapshot"
+      ]
+    },
+    {
+      "path": "tests/fixtures/native-conformance/mailbox-abi-v1.json",
+      "bytes": 2275,
+      "sha256": "c8f4e45db3e1d0e6e7f81589a13cb4bf2475c6a027cfd5ace7e81c0519e07ae3",
+      "roles": [
+        "abiSnapshots"
+      ],
+      "classifications": [
+        "abi-snapshot"
+      ]
+    },
+    {
+      "path": "tests/fixtures/native-conformance/module-abi-v1.json",
+      "bytes": 583,
+      "sha256": "9641902a9797a9f929342e79ff5c93d7731394c794d2da5de8a0d43005cb9d5a",
+      "roles": [
+        "abiSnapshots"
+      ],
+      "classifications": [
+        "abi-snapshot"
+      ]
+    },
+    {
+      "path": "tests/fixtures/native-conformance/native-dispatch-v1.json",
+      "bytes": 1909,
+      "sha256": "5ca654b34a4cb2fc5cfb1548229631c0be3a400ed4ea12ee9ac72ba3e3e1c846",
+      "roles": [
+        "abiSnapshots"
+      ],
+      "classifications": [
+        "abi-snapshot"
+      ]
+    },
+    {
+      "path": "tests/fixtures/native-conformance/native-value-stack.json",
+      "bytes": 75743,
+      "sha256": "7d40ab1cd593f38005964785b573ea2c147f20ae69825dcc8a27cb98ee29966e",
+      "roles": [
+        "fixtureSnapshots"
+      ],
+      "classifications": [
+        "fixture-snapshot"
+      ]
+    },
+    {
+      "path": "tests/fixtures/native-conformance/owning-mailbox-policy.json",
+      "bytes": 9906,
+      "sha256": "432b6cf4441ef57c740048b1970af6a2f42b0d3d8f8ce52ab3d525504e009381",
+      "roles": [
+        "fixtureSnapshots"
+      ],
+      "classifications": [
+        "fixture-snapshot"
+      ]
+    },
+    {
+      "path": "tests/fixtures/native-conformance/owning-mailbox-refinements.json",
+      "bytes": 22668,
+      "sha256": "a22bb448ee864713903d5ee7946c785cd7c8978cf54da02e0f2e0b86911cbbb1",
+      "roles": [
+        "fixtureSnapshots"
+      ],
+      "classifications": [
+        "fixture-snapshot"
+      ]
+    },
+    {
+      "path": "tests/fixtures/native-conformance/owning-mailbox.json",
+      "bytes": 10759,
+      "sha256": "0be8115f64fca26f36e9aacb9611f9e581d3366933b1c3224c3d859c0772d0d0",
+      "roles": [
+        "fixtureSnapshots"
+      ],
+      "classifications": [
+        "fixture-snapshot"
+      ]
+    }
+  ]
+}

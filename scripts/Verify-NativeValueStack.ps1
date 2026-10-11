@@ -507,7 +507,7 @@ try {
     $nominalExpectedScalarExtent = 8
     $nominalRunsMissingCoverage = @($nominalRuns | Where-Object {
         $_['signedFixtureCount'] -ne $nominalExpectedSignedNames.Count -or
-        $_['unsupportedDefinitionCount'] -ne 2 -or
+        $_['unsupportedDefinitionCount'] -ne 1 -or
         $_['ownerRangeTransferCount'] -lt 1 -or
         $_['ownerEndBytes'] -ne $nominalExpectedOwnerEnd -or
         $_['scalarPayloadExtentBytes'] -ne $nominalExpectedScalarExtent
@@ -518,7 +518,7 @@ try {
     Add-Check 'nominal Int report has complete O0/O2 signed, unsupported, and owner-range summaries' $nominalRunCoveragePassed ([ordered]@{
         expectedOptimizations = @('O0', 'O2')
         expectedSignedFixtureCount = $nominalExpectedSignedNames.Count
-        expectedUnsupportedDefinitionCount = 2
+        expectedUnsupportedDefinitionCount = 1
         expectedOwnerEndBytes = $nominalExpectedOwnerEnd
         expectedScalarPayloadExtentBytes = $nominalExpectedScalarExtent
         actualOptimizationNames = $nominalRunOptimizationNames
@@ -565,7 +565,7 @@ try {
         $nominalCaseSuffixes.Add("$caseName/host-identity-trace")
         $nominalCaseSuffixes.Add("$caseName/wrap-unwrap-retags")
     }
-    foreach ($unsupportedName in @('BoolTag', 'FloatTag')) {
+    foreach ($unsupportedName in @('FloatTag')) {
         $nominalCaseSuffixes.Add("unsupported-$unsupportedName-is-explicit")
     }
     $nominalExpectedCheckNames = [Collections.Generic.List[string]]::new()
@@ -585,7 +585,7 @@ try {
         if ($matchingChecks.Count -ne 1) { $nominalMissingChecks.Add("$expectedName (count=$($matchingChecks.Count))") }
         elseif (-not [bool]$matchingChecks[0]['passed']) { $nominalFailingChecks.Add($expectedName) }
     }
-    $nominalCheckCoveragePassed = $nominalCaseSuffixes.Count -eq 45 -and
+    $nominalCheckCoveragePassed = $nominalCaseSuffixes.Count -eq 44 -and
         $nominalMissingChecks.Count -eq 0 -and $nominalFailingChecks.Count -eq 0
     Add-Check 'nominal Int case checks cover every pinned O0/O2 identity, wrap, aggregate, owner, capacity, rejection, and non-Int unsupported case' $nominalCheckCoveragePassed ([ordered]@{
         expectedCasesPerOptimization = $nominalCaseSuffixes.Count
@@ -919,7 +919,6 @@ try {
         'validator-runtime-failure-preserves-classification',
         'refined-field-owner-end-project-unwrap-no-extra-copy',
         'owner-range-trace-complete',
-        'unsupported-BoolTag-is-explicit',
         'unsupported-FloatTag-is-explicit',
         'refined-string-mailbox-compiled-admission-is-explicit'
     )
@@ -967,8 +966,8 @@ try {
         if ($matchingChecks.Count -ne 1) { $refinedMissingChecks.Add("$expectedName (count=$($matchingChecks.Count))") }
         elseif (-not [bool]$matchingChecks[0]['passed']) { $refinedFailingChecks.Add($expectedName) }
     }
-    $refinedCheckCoveragePassed = $refinedCaseSuffixes.Count -eq 28 -and
-        $refinedExpectedCheckNames.Count -eq 56 -and
+    $refinedCheckCoveragePassed = $refinedCaseSuffixes.Count -eq 27 -and
+        $refinedExpectedCheckNames.Count -eq 54 -and
         $refinedEvidenceChecks.Count -eq $refinedExpectedCheckNames.Count -and
         $refinedMissingChecks.Count -eq 0 -and $refinedFailingChecks.Count -eq 0
     Add-Check 'NonEmptyString matrix has exactly one passing check per pinned O0/O2 case and no missing, duplicate, or unexpected cases' $refinedCheckCoveragePassed ([ordered]@{

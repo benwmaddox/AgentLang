@@ -1723,8 +1723,7 @@ let private compileNominalIntEntries () =
             Compiler.compileIrBodyAgainstProgramWithSourceOrigins context program ("native-value-stack-unsupported-" + name) [] bodyExpressions Map.empty
         name, program, body
     let unsupportedCases =
-        [ unsupportedCase "BoolTag" TBool (Some "accept-bool?") "option-none"
-          unsupportedCase "FloatTag" TFloat (Some "accept-float?") "result-error" ]
+        [ unsupportedCase "FloatTag" TFloat (Some "accept-float?") "result-error" ]
 
     let coreBodies =
         [ metersConstruct; orderIdConstruct; hostIdentityPair; hostIdentityPairConstruct
@@ -8348,7 +8347,6 @@ let private runRefinedStringConformance
         let messageMatches = expectedMessage |> Option.forall ((=) message)
         code = "IR_OWNING_STACK_TYPE_UNSUPPORTED" && messageMatches, code, message, expectedMessage
     for name, baseType, validatorName in [
-        "BoolTag", TBool, Some "accept-bool?"
         "FloatTag", TFloat, Some "accept-float?" ] do
         let rejected, code, message, expectedMessage = unsupportedScalar name baseType validatorName
         record ($"unsupported-{name}-is-explicit") rejected (jsonObject [
@@ -8512,7 +8510,7 @@ let private runRefinedStringConformance
         "nonEmptyStringTypeId", box nonEmptyTypeId
         "stringTypeId", box stringTypeId
         "refinedEnvelopeTypeId", box envelopeTypeId
-        "caseCount", box 28
+        "caseCount", box 27
         "rawInvalidInputCount", box 1
         "rawBodyFailureControlCount", box 1
         "recursiveRecordInputCount", box 2

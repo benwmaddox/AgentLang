@@ -257,6 +257,51 @@ static const al_owning_layout al_test_sum_layout = {
     (uint32_t)(sizeof(al_test_sum_fields) /
                sizeof(al_test_sum_fields[0]))};
 
+enum {
+  AL_TEST_BOOL_LAYOUT_BOOL = 0u,
+  AL_TEST_BOOL_LAYOUT_NOMINAL = 1u,
+  AL_TEST_BOOL_LAYOUT_STRING = 2u,
+  AL_TEST_BOOL_LAYOUT_RECORD = 3u,
+  AL_TEST_BOOL_LAYOUT_NOMINAL_RECORD = 4u,
+  AL_TEST_BOOL_LAYOUT_OPTION = 5u,
+  AL_TEST_BOOL_LAYOUT_RESULT_BOOL_STRING = 6u,
+  AL_TEST_BOOL_LAYOUT_RESULT_STRING_BOOL = 7u,
+  AL_TEST_BOOL_LAYOUT_TYPE_COUNT = 8u,
+  AL_TEST_BOOL_ERROR_ID = 219u
+};
+
+static const al_owning_type_descriptor al_test_bool_types[] = {
+    {AL_OWNING_TYPE_BOOL, 601u, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_BOOL, 602u, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_STRING, 603u, 0u, 0u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_RECORD, 604u, 0u, 1u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_RECORD, 608u, 1u, 1u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_OPTION, 605u, 2u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 2u},
+    {AL_OWNING_TYPE_RESULT, 606u, 4u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u, 2u},
+    {AL_OWNING_TYPE_RESULT, 607u, 6u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u, 2u}};
+
+static const al_owning_field_descriptor al_test_bool_fields[] = {
+    {AL_TEST_BOOL_LAYOUT_BOOL, 0u, 0u, 0u},
+    {AL_TEST_BOOL_LAYOUT_NOMINAL, 0u, 0u, 0u},
+    {AL_TEST_BOOL_LAYOUT_BOOL, 8u, 0u, 0u},
+    {AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 0u, 0u},
+    {AL_TEST_BOOL_LAYOUT_BOOL, 8u, 0u, 0u},
+    {AL_TEST_BOOL_LAYOUT_STRING, 8u, 0u, 0u},
+    {AL_TEST_BOOL_LAYOUT_STRING, 8u, 0u, 0u},
+    {AL_TEST_BOOL_LAYOUT_NOMINAL, 8u, 0u, 0u}};
+
+static const al_owning_layout al_test_bool_layout = {
+    AL_OWNING_LAYOUT_ABI_VERSION,
+    al_test_bool_types,
+    AL_TEST_BOOL_LAYOUT_TYPE_COUNT,
+    al_test_bool_fields,
+    (uint32_t)(sizeof(al_test_bool_fields) /
+               sizeof(al_test_bool_fields[0]))};
+
 typedef struct al_test_fixture {
   uint8_t raw[AL_TEST_DYNAMIC_STACK_CAPACITY + 2u * AL_TEST_GUARD_BYTES];
   uint8_t init_bitmap[16u];
@@ -2121,6 +2166,229 @@ static int al_test_sum_external_rejected(const al_owning_layout *layout,
          payload == UINT32_C(0xAABBCCDD) && extent == UINT32_C(0x11223344);
 }
 
+static int al_test_bool_external_rejected(uint32_t type_index,
+                                          const uint8_t *bytes,
+                                          uint32_t byte_count,
+                                          uint32_t source_offset) {
+  al_test_fixture fixture;
+  uint8_t before[sizeof(fixture.raw)];
+  uint32_t payload = UINT32_C(0xAABBCCDD);
+  uint32_t extent = UINT32_C(0x11223344);
+  al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+  (void)memcpy(before, fixture.raw, sizeof(before));
+  return al_owning_measure_external_value(
+             &fixture.ctx, &al_test_bool_layout, type_index, bytes,
+             byte_count, source_offset, AL_TEST_BOOL_ERROR_ID, &payload,
+             &extent) != 0 &&
+         fixture.ctx.status == AL_OWNING_STATUS_INVALID_REQUEST &&
+         fixture.ctx.error_id == AL_TEST_BOOL_ERROR_ID &&
+         fixture.ctx.cursor_bytes == 0u &&
+         payload == UINT32_C(0xAABBCCDD) &&
+         extent == UINT32_C(0x11223344) &&
+         memcmp(before, fixture.raw, sizeof(before)) == 0 &&
+         al_test_fixture_guards_ok(&fixture);
+}
+
+static int al_test_bool_external_valid(uint32_t type_index,
+                                       const uint8_t *bytes,
+                                       uint32_t byte_count,
+                                       uint32_t expected_payload,
+                                       uint32_t expected_extent) {
+  al_test_fixture fixture;
+  uint32_t payload = UINT32_C(0xAABBCCDD);
+  uint32_t extent = UINT32_C(0x11223344);
+  al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+  return al_owning_measure_external_value(
+             &fixture.ctx, &al_test_bool_layout, type_index, bytes,
+             byte_count, 0u, AL_TEST_BOOL_ERROR_ID, &payload, &extent) == 0 &&
+         fixture.ctx.status == AL_OWNING_STATUS_OK &&
+         fixture.ctx.cursor_bytes == 0u && payload == expected_payload &&
+         extent == expected_extent && al_test_fixture_guards_ok(&fixture);
+}
+
+static int al_test_bool_stack_rejected(const uint8_t bytes[8]) {
+  al_test_fixture fixture;
+  uint8_t before[8];
+  al_owning_value_size measured = {UINT32_C(0xAABBCCDD),
+                                   UINT32_C(0x11223344)};
+  al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+  if (al_owning_reserve_to(&fixture.ctx, 8u, AL_TEST_BOOL_ERROR_ID) != 0)
+    return 0;
+  al_owning_copy_external(&fixture.ctx, 0u, bytes, 8u, 8u, 601u);
+  if (fixture.ctx.status != AL_OWNING_STATUS_OK)
+    return 0;
+  (void)memcpy(before, fixture.ctx.stack_data, sizeof(before));
+  return al_owning_measure_value(
+             &fixture.ctx, &al_test_bool_layout, AL_TEST_BOOL_LAYOUT_BOOL,
+             0u, 8u, AL_TEST_BOOL_ERROR_ID, &measured) != 0 &&
+         fixture.ctx.status == AL_OWNING_STATUS_INTERNAL &&
+         fixture.ctx.cursor_bytes == 8u &&
+         measured.payload_bytes == UINT32_C(0xAABBCCDD) &&
+         measured.extent_bytes == UINT32_C(0x11223344) &&
+         memcmp(before, fixture.ctx.stack_data, sizeof(before)) == 0 &&
+         al_test_fixture_guards_ok(&fixture);
+}
+
+static int al_test_bool_stack_short_owner_rejected(const uint8_t bytes[8],
+                                                   uint32_t owner_end) {
+  al_test_fixture fixture;
+  uint8_t before[8];
+  al_owning_value_size measured = {UINT32_C(0xAABBCCDD),
+                                   UINT32_C(0x11223344)};
+  al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+  if (al_owning_reserve_to(&fixture.ctx, 8u, AL_TEST_BOOL_ERROR_ID) != 0)
+    return 0;
+  al_owning_copy_external(&fixture.ctx, 0u, bytes, 8u, 8u, 601u);
+  if (fixture.ctx.status != AL_OWNING_STATUS_OK)
+    return 0;
+  (void)memcpy(before, fixture.ctx.stack_data, sizeof(before));
+  return al_owning_measure_value(
+             &fixture.ctx, &al_test_bool_layout, AL_TEST_BOOL_LAYOUT_BOOL,
+             0u, owner_end, AL_TEST_BOOL_ERROR_ID, &measured) != 0 &&
+         fixture.ctx.status == AL_OWNING_STATUS_INTERNAL &&
+         fixture.ctx.cursor_bytes == 8u &&
+         measured.payload_bytes == UINT32_C(0xAABBCCDD) &&
+         measured.extent_bytes == UINT32_C(0x11223344) &&
+         memcmp(before, fixture.ctx.stack_data, sizeof(before)) == 0 &&
+         al_test_fixture_guards_ok(&fixture);
+}
+
+static int al_test_bool_descriptor_rejected(
+    const al_owning_type_descriptor *types, uint32_t bool_type_index) {
+  al_owning_layout layout = al_test_bool_layout;
+  al_test_fixture fixture;
+  uint8_t bytes[8] = {0u};
+  uint32_t payload = UINT32_C(0xAABBCCDD);
+  uint32_t extent = UINT32_C(0x11223344);
+  layout.types = types;
+  al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+  return al_owning_measure_external_value(
+             &fixture.ctx, &layout, bool_type_index, bytes,
+             sizeof(bytes), 0u, AL_TEST_BOOL_ERROR_ID, &payload, &extent) !=
+             0 &&
+         fixture.ctx.status == AL_OWNING_STATUS_INTERNAL &&
+         payload == UINT32_C(0xAABBCCDD) &&
+         extent == UINT32_C(0x11223344);
+}
+
+static int al_test_bool_canonical_scanner(void) {
+  al_test_fixture fixture;
+  al_owning_type_descriptor bad_types[AL_TEST_BOOL_LAYOUT_TYPE_COUNT];
+  uint8_t bytes[32] = {0u};
+  uint8_t short_source[8] = {0u};
+  uint8_t aligned_short_source[15] = {0u};
+  uint8_t malformed_source[32];
+  const uint64_t bad_values[] = {
+      UINT64_C(2), UINT64_C(0x0100000000000000),
+      UINT64_C(0x8000000000000000), UINT64_MAX};
+  uint32_t index;
+
+  for (index = 0u; index < 2u; ++index) {
+    al_test_write_u64_le(bytes, 0u, index);
+    AL_CHECK(al_test_bool_external_valid(AL_TEST_BOOL_LAYOUT_BOOL, bytes,
+                                         8u, 8u, 8u));
+    AL_CHECK(al_test_bool_external_valid(AL_TEST_BOOL_LAYOUT_NOMINAL, bytes,
+                                         8u, 8u, 8u));
+  }
+
+  for (index = 0u;
+       index < sizeof(bad_values) / sizeof(bad_values[0]); ++index) {
+    al_test_write_u64_le(bytes, 0u, bad_values[index]);
+    AL_CHECK(al_test_bool_external_rejected(AL_TEST_BOOL_LAYOUT_BOOL, bytes,
+                                            8u, 0u));
+    AL_CHECK(al_test_bool_external_rejected(AL_TEST_BOOL_LAYOUT_NOMINAL,
+                                            bytes, 8u, 0u));
+    AL_CHECK(al_test_bool_stack_rejected(bytes));
+  }
+
+  al_test_write_u64_le(short_source, 0u, 1u);
+  for (index = 0u; index < 8u; ++index) {
+    AL_CHECK(al_test_bool_external_rejected(AL_TEST_BOOL_LAYOUT_BOOL,
+                                            short_source, index, 0u));
+    AL_CHECK(al_test_bool_stack_short_owner_rejected(short_source, index));
+  }
+  AL_CHECK(al_test_bool_external_rejected(AL_TEST_BOOL_LAYOUT_BOOL,
+                                          short_source, sizeof(short_source),
+                                          1u));
+  al_test_write_u64_le(aligned_short_source, 8u, 1u);
+  AL_CHECK(al_test_bool_external_rejected(AL_TEST_BOOL_LAYOUT_BOOL,
+                                          aligned_short_source,
+                                          sizeof(aligned_short_source), 8u));
+
+  al_test_write_u64_le(bytes, 0u, bad_values[0]);
+  AL_CHECK(al_test_bool_external_rejected(AL_TEST_BOOL_LAYOUT_RECORD, bytes,
+                                          8u, 0u));
+  AL_CHECK(al_test_bool_external_rejected(
+      AL_TEST_BOOL_LAYOUT_NOMINAL_RECORD, bytes, 8u, 0u));
+  al_test_write_u64_le(bytes, 0u, 0u);
+  al_test_write_u64_le(bytes, 8u, bad_values[0]);
+  AL_CHECK(al_test_bool_external_rejected(AL_TEST_BOOL_LAYOUT_OPTION, bytes,
+                                          16u, 0u));
+  AL_CHECK(al_test_bool_external_rejected(AL_TEST_BOOL_LAYOUT_OPTION, bytes,
+                                          15u, 0u));
+  AL_CHECK(al_test_bool_external_rejected(
+      AL_TEST_BOOL_LAYOUT_RESULT_BOOL_STRING, bytes, 16u, 0u));
+  al_test_write_u64_le(bytes, 0u, 1u);
+  AL_CHECK(al_test_bool_external_rejected(
+      AL_TEST_BOOL_LAYOUT_RESULT_STRING_BOOL, bytes, 16u, 0u));
+
+  /* A None tag leaves its inactive payload unexamined. */
+  al_test_write_u64_le(bytes, 0u, 1u);
+  al_test_write_u64_le(bytes, 8u, bad_values[0]);
+  AL_CHECK(al_test_bool_external_valid(AL_TEST_BOOL_LAYOUT_OPTION, bytes,
+                                       16u, 8u, 8u));
+
+  /* A selected String alternative may begin with 2, although that bit pattern
+   * would be an invalid Bool in the overlapping inactive alternative. */
+  (void)memset(bytes, 0, sizeof(bytes));
+  al_test_write_u64_le(bytes, 0u, 1u);
+  al_test_write_u32_le(bytes, 8u, 2u);
+  bytes[16u] = 0x6fu;
+  bytes[18u] = 0x6bu;
+  (void)memcpy(malformed_source, bytes, sizeof(bytes));
+  AL_CHECK(al_test_bool_external_valid(
+      AL_TEST_BOOL_LAYOUT_RESULT_BOOL_STRING, bytes, 24u, 20u, 24u));
+  al_test_write_u64_le(bytes, 0u, 0u);
+  AL_CHECK(al_test_bool_external_valid(
+      AL_TEST_BOOL_LAYOUT_RESULT_STRING_BOOL, bytes, 24u, 20u, 24u));
+  AL_CHECK(memcmp(bytes + 8u, malformed_source + 8u, 16u) == 0);
+
+  for (index = 0u; index < 2u; ++index) {
+    const uint32_t bool_type_index = index == 0u
+                                         ? AL_TEST_BOOL_LAYOUT_BOOL
+                                         : AL_TEST_BOOL_LAYOUT_NOMINAL;
+    uint32_t size_field;
+    for (size_field = 0u; size_field < 4u; ++size_field) {
+      (void)memcpy(bad_types, al_test_bool_types, sizeof(bad_types));
+      switch (size_field) {
+      case 0u:
+        bad_types[bool_type_index].fixed_payload_bytes = 16u;
+        break;
+      case 1u:
+        bad_types[bool_type_index].fixed_extent_bytes = 16u;
+        break;
+      case 2u:
+        bad_types[bool_type_index].minimum_payload_bytes = 16u;
+        break;
+      default:
+        bad_types[bool_type_index].minimum_extent_bytes = 16u;
+        break;
+      }
+      AL_CHECK(al_test_bool_descriptor_rejected(bad_types, bool_type_index));
+    }
+    (void)memcpy(bad_types, al_test_bool_types, sizeof(bad_types));
+    bad_types[bool_type_index].field_count = 1u;
+    AL_CHECK(al_test_bool_descriptor_rejected(bad_types, bool_type_index));
+  }
+
+  al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
+  AL_CHECK(al_test_fixture_guards_ok(&fixture));
+  ++al_test_cases;
+  return 1;
+failed:
+  return 0;
+}
+
 static int al_test_sum_descriptor_rejected(
     const al_owning_type_descriptor *types,
     const al_owning_field_descriptor *fields, uint32_t type_index,
@@ -2478,7 +2746,15 @@ failed:
   return 0;
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "--bool-scanner-only") == 0) {
+    if (!al_test_bool_canonical_scanner())
+      return 1;
+    (void)printf(
+        "{\"suite\":\"owning_stack_runtime_bool_scanner_v1\",\"status\":\"pass\",\"cases\":%u,\"checks\":%u}\n",
+        al_test_cases, al_test_checks);
+    return 0;
+  }
   if (!al_test_duplicate_drop_reuse() || !al_test_primitive_slots() ||
       !al_test_inline_nested_and_empty() ||
       !al_test_field_extract_overlap_and_return_widths() ||
@@ -2518,6 +2794,10 @@ int main(void) {
       !al_test_option_result_layout_and_scanner() ||
       !al_test_record_copy_preserves_source()) {
     return 1;
+  }
+  {
+    if (!al_test_bool_canonical_scanner())
+      return 1;
   }
   (void)printf(
       "{\"suite\":\"owning_stack_runtime_storage_v2\",\"status\":\"pass\","

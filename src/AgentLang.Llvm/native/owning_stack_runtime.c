@@ -1203,6 +1203,16 @@ static int32_t al_owning_scan_value(al_owning_scan_view *view,
     if (!al_owning_scan_readable_in_owner(view, offset,
                                           containing_owner_end, 8u))
       return 0;
+    if (type->kind == AL_OWNING_TYPE_BOOL) {
+      const uint64_t encoded = al_owning_read_u64_le(view->bytes, offset);
+      if (encoded > 1u) {
+        al_owning_scan_failure(view,
+                               encoded > UINT32_MAX ? UINT32_MAX
+                                                    : (uint32_t)encoded,
+                               1u);
+        return 0;
+      }
+    }
     payload = 8u;
     extent = 8u;
   } else {

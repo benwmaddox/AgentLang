@@ -158,6 +158,28 @@ accepted validation and remaining limits are tracked in
 [report 183](../reports/183-native-nominal-string.md); use its status as the
 completion record.
 
+## Bool-backed nominal and refined values (report 198)
+
+The bounded Bool implementation and its acceptance status are tracked in
+[report 198](../reports/198-native-bool-admission.md), following the reviewed
+[plan 194](../reports/194-native-bool-implementation-plan.md). It extends the
+selected owning descriptor backend and host codecs to exact-name Bool wrappers
+with optional pure frozen predicates. The physical payload remains eight-byte
+little-endian 0 or 1 with distinct nominal TypeIds. Full-payload canonicalization
+must occur after the owner-bounded readability check, including active nested
+values. Wrapping and unwrapping retain their retag-only behavior.
+
+Mailbox State and Continuation remain nominal records; request and completion
+inputs remain String. Test Bool ingress inside those records and directly in
+ordinary native entry, rather than broadening the lifecycle signature. RETURN
+reimports and validates roots; KEEP retains admitted roots without predicate
+replay. Failed callbacks must publish no valid output or committed state.
+
+This slice preserves layout schema 3 and stack/mailbox/module ABI 1. It adds no
+host capability, dependency or allocator mechanism. Float/List support, general
+JIT and service performance remain separate work. The earlier sections describe
+their original delivery boundaries; report 198 is the current Bool status.
+
 ## Investigation references
 
 Read-only planning inspected `TypedIR.fs` scalar definitions and generated-target

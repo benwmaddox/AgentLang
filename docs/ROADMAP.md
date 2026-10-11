@@ -107,8 +107,13 @@ recovery separately; this pilot does not establish a comparative vocabulary
 advantage. [Report 194](../reports/194-native-bool-implementation-plan.md) plans
 the next native slice after cohort and supplemental-check closure: Bool-backed
 nominal/refined values with canonical encoding admission, unchanged ABIs and
-fresh ordinary/mailbox conformance checks. Implementation is now underway;
-fresh focused and full local validation remain required before acceptance.
+fresh ordinary/mailbox conformance checks.
+[Report 198](../reports/198-native-bool-admission.md) accepts this slice after
+fresh focused checks, full LLVM/native/mailbox regressions and all 37 local
+Release gates. Canonical Bool admission checks full owner-bounded eight-byte
+payloads before execution; ABIs are unchanged. Retained preparation failures
+and receipt gaps remain explicit. This adds no agent efficacy or throughput
+result.
 
 [Report 178](../reports/178-preview-defect-control-calibration.md) calibrates the
 first defect-repair stage: three correct controls pass 37 independent cases,

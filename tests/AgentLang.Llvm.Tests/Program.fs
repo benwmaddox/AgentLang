@@ -21,6 +21,9 @@ type private OwningMailboxModuleExport = delegate of unit -> nativeint
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
 type private OwningMailboxEntryDelegate = delegate of nativeint * nativeint * uint32 * nativeint * uint32 -> int32
 
+[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+type private OwningMailboxAssociatedResumeDelegate = delegate of nativeint * nativeint * uint32 * nativeint * uint32 * nativeint * uint32 -> int32
+
 [<Struct; StructLayout(LayoutKind.Sequential, Pack = 8)>]
 type private RawMailboxExternalSlice =
     val mutable Bytes: nativeint
@@ -315,7 +318,11 @@ type private RawMailboxInvocation =
     { Status: int32
       Context: NativeOwningContext
       Outputs: RawMailboxOutputSlice list
+      RetainedInputs: RawMailboxOutputSlice list
       StackBytes: byte array
+      InitializedBitmap: byte array
+      PoisonBitmap: byte array
+      TraceBytes: byte array
       Diagnostic: OwningMailboxDiagnosticInfo option }
 
 let private mailboxIntBytes (value: int64) = BitConverter.GetBytes value
@@ -381,6 +388,12 @@ let private invokeRawMailboxEntry (native: OwningMailboxCompiledModule) entryInd
         let finalContext = Marshal.PtrToStructure<NativeOwningContext>(contextPointer)
         let stackBytes = Array.zeroCreate<byte> stackCapacity
         Marshal.Copy(stack, stackBytes, 0, stackCapacity)
+        let initializedBytes = Array.zeroCreate<byte> bitmapBytes
+        Marshal.Copy(initialized, initializedBytes, 0, bitmapBytes)
+        let poisonBytes = Array.zeroCreate<byte> bitmapBytes
+        Marshal.Copy(poison, poisonBytes, 0, bitmapBytes)
+        let traceBytes = Array.zeroCreate<byte> (traceCapacity * 40)
+        Marshal.Copy(trace, traceBytes, 0, traceBytes.Length)
         let outputSize = Marshal.SizeOf<RawMailboxOutputSlice>()
         let outputValues =
             [ for index in 0 .. outputCapacity - 1 do
@@ -389,7 +402,11 @@ let private invokeRawMailboxEntry (native: OwningMailboxCompiledModule) entryInd
         { Status = status
           Context = finalContext
           Outputs = outputValues
+          RetainedInputs = []
           StackBytes = stackBytes
+          InitializedBitmap = initializedBytes
+          PoisonBitmap = poisonBytes
+          TraceBytes = traceBytes
           Diagnostic = diagnostic }
     finally
         NativeLibrary.Free library
@@ -402,6 +419,195 @@ let private invokeRawMailboxEntry (native: OwningMailboxCompiledModule) entryInd
         Marshal.FreeHGlobal inputDescriptors
         for buffer in inputBuffers do
             if buffer <> IntPtr.Zero then Marshal.FreeHGlobal buffer
+
+let private invokeRawMailboxAssociatedResumeWithRetry
+    (native: OwningMailboxCompiledModule)
+    (parkedLease: RawMailboxInvocation)
+    (invalidRetainedState: byte array)
+    (validButSemanticallyInvalidRetainedState: byte array)
+    (completionBytes: byte array) =
+    if invalidRetainedState.Length <> 8 || validButSemanticallyInvalidRetainedState.Length <> 8 then
+        invalidArg (nameof invalidRetainedState) "The focused associated-resume fixture expects an eight-byte Bool-backed field."
+    if parkedLease.Outputs.Length <> 2 || parkedLease.Context.CallDepth <> 0u then
+        invalidArg (nameof parkedLease) "The associated-resume fixture requires a completed begin lease with two parked roots."
+    let library = NativeLibrary.Load native.LibraryPath
+    let inputBuffer = Marshal.AllocHGlobal(max 1 completionBytes.Length)
+    let completionDescriptor = Marshal.AllocHGlobal(Marshal.SizeOf<RawMailboxExternalSlice>())
+    let retainedDescriptors = Marshal.AllocHGlobal(2 * Marshal.SizeOf<RawMailboxOutputSlice>())
+    let outputDescriptor = Marshal.AllocHGlobal(Marshal.SizeOf<RawMailboxOutputSlice>())
+    let contextPointer = Marshal.AllocHGlobal(Marshal.SizeOf<NativeOwningContext>())
+    let stackCapacity = int parkedLease.Context.StackCapacityBytes
+    let bitmapBytes = parkedLease.InitializedBitmap.Length
+    let traceBytes = parkedLease.TraceBytes.Length
+    let traceCapacity = traceBytes / 40
+    let stack = Marshal.AllocHGlobal stackCapacity
+    let initialized = Marshal.AllocHGlobal bitmapBytes
+    let poison = Marshal.AllocHGlobal bitmapBytes
+    let trace = Marshal.AllocHGlobal(traceBytes)
+    try
+        Marshal.Copy(completionBytes, 0, inputBuffer, completionBytes.Length)
+        let mutable completion = Unchecked.defaultof<RawMailboxExternalSlice>
+        completion.Bytes <- inputBuffer
+        completion.ExtentBytes <- uint32 completionBytes.Length
+        completion.TypeIndex <- native.Entries[2].InputTypeIndexes[2]
+        Marshal.StructureToPtr(completion, completionDescriptor, false)
+
+        for index, descriptor in parkedLease.Outputs |> List.indexed do
+            Marshal.StructureToPtr(descriptor, IntPtr.Add(retainedDescriptors, index * Marshal.SizeOf<RawMailboxOutputSlice>()), false)
+
+        let stateLayout =
+            native.Layouts
+            |> List.find (fun layout -> layout.Type = native.Entries[2].InputTypes[0])
+        let stateFieldOffset = parkedLease.Outputs[0].OffsetBytes + uint32 stateLayout.Fields.Head.OffsetBytes
+        let parkedCursor = parkedLease.Context.CursorBytes
+        if uint64 parkedCursor + uint64 completionBytes.Length > uint64 stackCapacity then
+            invalidArg (nameof parkedLease) "The completed begin lease has no room for the focused completion sentinel."
+        Marshal.Copy(Array.create (Marshal.SizeOf<RawMailboxOutputSlice>()) 0xA5uy, 0, outputDescriptor, Marshal.SizeOf<RawMailboxOutputSlice>())
+        let initialStack = Array.copy parkedLease.StackBytes
+        Array.Copy(invalidRetainedState, 0, initialStack, int stateFieldOffset, invalidRetainedState.Length)
+        Array.Fill(initialStack, 0xCDuy, int parkedCursor, completionBytes.Length)
+        Marshal.Copy(initialStack, 0, stack, stackCapacity)
+        Marshal.Copy(parkedLease.InitializedBitmap, 0, initialized, bitmapBytes)
+        Marshal.Copy(parkedLease.PoisonBitmap, 0, poison, bitmapBytes)
+        Marshal.Copy(parkedLease.TraceBytes, 0, trace, traceBytes)
+        let mutable context = parkedLease.Context
+        context.StackCapacityBytes <- uint32 stackCapacity
+        context.TraceEventCapacity <- uint32 traceCapacity
+        context.InitBitmapBytes <- uint32 bitmapBytes
+        context.AvailableBytes <- uint32 stackCapacity - context.CursorBytes
+        context.StackData <- stack
+        context.InitBitmap <- initialized
+        context.PoisonBitmap <- poison
+        context.TraceEvents <- trace
+        Marshal.StructureToPtr(context, contextPointer, false)
+        let export = Marshal.GetDelegateForFunctionPointer<OwningMailboxModuleExport>(NativeLibrary.GetExport(library, "agentlang_owning_mailbox_module"))
+        let modulePointer = export.Invoke()
+        // ABI v1 places three fixed-size entry records before the associated callback pointer.
+        let associatedPointer = Marshal.ReadIntPtr(modulePointer, 16 + 3 * 40)
+        let associated = Marshal.GetDelegateForFunctionPointer<OwningMailboxAssociatedResumeDelegate>(associatedPointer)
+        let capture status =
+            let finalContext = Marshal.PtrToStructure<NativeOwningContext>(contextPointer)
+            let stackBytes = Array.zeroCreate<byte> stackCapacity
+            Marshal.Copy(stack, stackBytes, 0, stackCapacity)
+            let initializedBytes = Array.zeroCreate<byte> bitmapBytes
+            Marshal.Copy(initialized, initializedBytes, 0, bitmapBytes)
+            let poisonBytes = Array.zeroCreate<byte> bitmapBytes
+            Marshal.Copy(poison, poisonBytes, 0, bitmapBytes)
+            let traceBytes = Array.zeroCreate<byte> (traceCapacity * 40)
+            Marshal.Copy(trace, traceBytes, 0, traceBytes.Length)
+            let output = Marshal.PtrToStructure<RawMailboxOutputSlice>(outputDescriptor)
+            let retained = [
+                Marshal.PtrToStructure<RawMailboxOutputSlice>(retainedDescriptors)
+                Marshal.PtrToStructure<RawMailboxOutputSlice>(IntPtr.Add(retainedDescriptors, Marshal.SizeOf<RawMailboxOutputSlice>()))
+            ]
+            let diagnostic = native.Diagnostics |> List.tryFind (fun item -> uint32 item.Id = finalContext.ErrorId)
+            { Status = status
+              Context = finalContext
+              Outputs = [ output ]
+              RetainedInputs = retained
+              StackBytes = stackBytes
+              InitializedBitmap = initializedBytes
+              PoisonBitmap = poisonBytes
+              TraceBytes = traceBytes
+              Diagnostic = diagnostic }
+        let firstStatus = associated.Invoke(contextPointer, retainedDescriptors, 2u, completionDescriptor, parkedCursor, outputDescriptor, 1u)
+        let first = capture firstStatus
+
+        // Retry the same parked lease after correcting only the raw Bool bytes.
+        // False is canonical but fails TrueTag's frozen validator, so success
+        // also demonstrates that KEEP does not replay semantic validation.
+        Marshal.Copy(validButSemanticallyInvalidRetainedState, 0, IntPtr.Add(stack, int stateFieldOffset), validButSemanticallyInvalidRetainedState.Length)
+        let mutable retryContext = Marshal.PtrToStructure<NativeOwningContext>(contextPointer)
+        retryContext.Status <- 0u
+        retryContext.ErrorId <- 0u
+        retryContext.RequiredBytes <- 0u
+        retryContext.AvailableBytes <- uint32 stackCapacity - retryContext.CursorBytes
+        Marshal.StructureToPtr(retryContext, contextPointer, false)
+        Marshal.Copy(Array.create (Marshal.SizeOf<RawMailboxOutputSlice>()) 0xA5uy, 0, outputDescriptor, Marshal.SizeOf<RawMailboxOutputSlice>())
+        let retryStatus = associated.Invoke(contextPointer, retainedDescriptors, 2u, completionDescriptor, parkedCursor, outputDescriptor, 1u)
+        first, capture retryStatus
+    finally
+        NativeLibrary.Free library
+        Marshal.FreeHGlobal trace
+        Marshal.FreeHGlobal poison
+        Marshal.FreeHGlobal initialized
+        Marshal.FreeHGlobal stack
+        Marshal.FreeHGlobal contextPointer
+        Marshal.FreeHGlobal outputDescriptor
+        Marshal.FreeHGlobal retainedDescriptors
+        Marshal.FreeHGlobal completionDescriptor
+        Marshal.FreeHGlobal inputBuffer
+
+let private invokeRawOwningEntryForMetrics
+    (native: OwningStackCompiledProgram)
+    (inputBytes: byte array)
+    (inputExtents: int array) =
+    let library = NativeLibrary.Load native.LibraryPath
+    let input = Marshal.AllocHGlobal(max 1 inputBytes.Length)
+    let extents = Marshal.AllocHGlobal(max sizeof<int32> (inputExtents.Length * sizeof<int32>))
+    let retainedCapacity = 4096
+    let retained = Marshal.AllocHGlobal(retainedCapacity)
+    let contextPointer = Marshal.AllocHGlobal(Marshal.SizeOf<NativeOwningContext>())
+    let stackCapacity = 4096
+    let bitmapBytes = stackCapacity / 8
+    let stack = Marshal.AllocHGlobal stackCapacity
+    let initialized = Marshal.AllocHGlobal bitmapBytes
+    let poison = Marshal.AllocHGlobal bitmapBytes
+    let traceCapacity = 8192
+    let trace = Marshal.AllocHGlobal(traceCapacity * 40)
+    try
+        if inputBytes.Length > 0 then Marshal.Copy(inputBytes, 0, input, inputBytes.Length)
+        if inputExtents.Length > 0 then
+            Marshal.Copy(Array.zeroCreate<byte> (inputExtents.Length * sizeof<int32>), 0, extents, inputExtents.Length * sizeof<int32>)
+        for index, extent in inputExtents |> Array.toList |> List.indexed do
+            Marshal.WriteInt32(extents, index * sizeof<int32>, extent)
+        Marshal.Copy(Array.create retainedCapacity 0xA5uy, 0, retained, retainedCapacity)
+        Marshal.Copy(Array.zeroCreate<byte> stackCapacity, 0, stack, stackCapacity)
+        Marshal.Copy(Array.zeroCreate<byte> bitmapBytes, 0, initialized, bitmapBytes)
+        Marshal.Copy(Array.zeroCreate<byte> bitmapBytes, 0, poison, bitmapBytes)
+        Marshal.Copy(Array.zeroCreate<byte> (traceCapacity * 40), 0, trace, traceCapacity * 40)
+        let mutable context = Unchecked.defaultof<NativeOwningContext>
+        context.AbiVersion <- 1u
+        context.StackCapacityBytes <- uint32 stackCapacity
+        context.TraceEventCapacity <- uint32 traceCapacity
+        context.InitBitmapBytes <- uint32 bitmapBytes
+        context.StackData <- stack
+        context.InitBitmap <- initialized
+        context.PoisonBitmap <- poison
+        context.TraceEvents <- trace
+        Marshal.StructureToPtr(context, contextPointer, false)
+        let execute = Marshal.GetDelegateForFunctionPointer<RawOwningExecuteDelegate>(NativeLibrary.GetExport(library, "agentlang_owning_execute"))
+        let status = execute.Invoke(contextPointer, input, inputBytes.Length, extents, inputExtents.Length, retained, retainedCapacity)
+        let finalContext = Marshal.PtrToStructure<NativeOwningContext>(contextPointer)
+        let retainedBytes = Array.zeroCreate<byte> retainedCapacity
+        Marshal.Copy(retained, retainedBytes, 0, retainedCapacity)
+        status, finalContext, retainedBytes
+    finally
+        NativeLibrary.Free library
+        Marshal.FreeHGlobal trace
+        Marshal.FreeHGlobal poison
+        Marshal.FreeHGlobal initialized
+        Marshal.FreeHGlobal stack
+        Marshal.FreeHGlobal contextPointer
+        Marshal.FreeHGlobal retained
+        Marshal.FreeHGlobal extents
+        Marshal.FreeHGlobal input
+
+let private interpreterResultWithInputsAndSteps (executionName: string) (body: VerifiedIrBody) (arguments: IrEntryArgument list) =
+    let mutable steps = 0
+    let host = { noOpHost () with ChargeInstruction = fun _ _ -> steps <- steps + 1 }
+    use result = IrInterpreter.executeBodyWithInputs host executionName body None arguments
+    result.Decode(), steps
+
+let private interpreterResultWithOwnerAndSteps
+    (executionName: string)
+    (body: VerifiedIrBody)
+    (inputOwner: IrInterpreterResult option)
+    (arguments: IrEntryArgument list) =
+    let mutable steps = 0
+    let host = { noOpHost () with ChargeInstruction = fun _ _ -> steps <- steps + 1 }
+    use result = IrInterpreter.executeBodyWithInputs host executionName body inputOwner arguments
+    result.Decode(), steps
 
 let private compareSuccessfulCase (fixtureName: string) (executionName: string) (body: VerifiedIrBody) (expected: Value list) =
     check (fixtureName + " independent expected result") (formatValues expected = fixtureValues fixtureName)
@@ -1385,15 +1591,489 @@ let private testOwningNominalIntSlice () =
         let diagnostic = errorOf (fun () -> compileOwningNative toolchain ("unsupported-" + name) LlvmOptimization.O0 body |> ignore)
         check ($"{name} remains outside the owning nominal Int/String slice") (
             diagnostic.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-            && diagnostic.Message.Contains("Bool, Float, and other scalar bases remain unsupported", StringComparison.OrdinalIgnoreCase))
-    rejectScalar "BoolTag" TBool
+            && diagnostic.Message.Contains("Float and other scalar bases remain unsupported", StringComparison.OrdinalIgnoreCase))
     rejectScalar "FloatTag" TFloat
     let inactiveContext = contextWithScalars [] [ scalarDefinition "InactiveFloat" TFloat None ]
     let inactiveBody = compileBodyWithInputs inactiveContext "unsupported-inactive-result-alternative" [ TResult(TInt, TNamed "InactiveFloat") ] []
     let inactiveError = errorOf (fun () -> compileOwningNative toolchain "unsupported-inactive-result-alternative" LlvmOptimization.O0 inactiveBody |> ignore)
     check "unsupported scalar is rejected in an inactive Result alternative" (
         inactiveError.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-        && inactiveError.Message.Contains("Bool, Float, and other scalar bases remain unsupported", StringComparison.OrdinalIgnoreCase))
+        && inactiveError.Message.Contains("Float and other scalar bases remain unsupported", StringComparison.OrdinalIgnoreCase))
+
+let private testOwningNominalBoolSlice () =
+    let toolchain = LlvmToolchain.discover()
+    let scalarContext =
+        contextWithScalarDefinitions [] [
+            scalarDefinition "BoolTag" TBool None, "BoolTag.make", "BoolTag.value"
+            scalarDefinition "PeerBoolTag" TBool None, "PeerBoolTag.make", "PeerBoolTag.value"
+        ]
+    let boolTagType = IrNominal(ProgramTypeKey 0)
+    let peerBoolTagType = IrNominal(ProgramTypeKey 1)
+    let identityBody = compileBodyWithInputs scalarContext "owning-nominal-bool-identity" [ TNamed "BoolTag"; TNamed "PeerBoolTag" ] []
+    let parityBody = compileBodyWithInputs scalarContext "owning-nominal-bool-interpreter-parity" [] [
+        Push(LBool true, span "owning-nominal-bool-parity.agent" 1)
+        Call("BoolTag.make", span "owning-nominal-bool-parity.agent" 2)
+        Call("BoolTag.value", span "owning-nominal-bool-parity.agent" 3)
+        Push(LBool false, span "owning-nominal-bool-parity.agent" 4)
+        Call("PeerBoolTag.make", span "owning-nominal-bool-parity.agent" 5)
+        Call("PeerBoolTag.value", span "owning-nominal-bool-parity.agent" 6)
+    ]
+    let wrapUnwrapBody = compileBodyWithInputs scalarContext "owning-nominal-bool-wrap-unwrap" [ TBool ] [
+        Call("BoolTag.make", span "owning-nominal-bool.agent" 1)
+        Call("BoolTag.value", span "owning-nominal-bool.agent" 2)
+    ]
+    let raw flag = if flag then "0100000000000000" else "0000000000000000"
+    let sentinel = Array.create 16 0xA5uy
+
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use identity = compileOwningNative toolchain "owning-nominal-bool-identity" optimization identityBody
+        let boolLayout = identity.Layouts |> List.find (fun layout -> layout.TypeName = "BoolTag")
+        let peerLayout = identity.Layouts |> List.find (fun layout -> layout.TypeName = "PeerBoolTag")
+        check ($"{optimization} BoolTag keeps a fixed eight-byte nominal layout") (
+            boolLayout.Type = boolTagType && boolLayout.PayloadBytes = 8 && boolLayout.ExtentBytes = 8
+            && boolLayout.MinimumPayloadBytes = 8 && boolLayout.MinimumExtentBytes = 8 && not boolLayout.IsDynamic)
+        check ($"{optimization} peer Bool wrappers keep separate exact identities") (
+            peerLayout.Type = peerBoolTagType && peerLayout.Type <> boolLayout.Type
+            && peerLayout.PayloadBytes = 8 && peerLayout.ExtentBytes = 8)
+        check ($"{optimization} Bool wrappers use kind 2 and distinct nominal TypeIds") (
+            identity.LlvmIr.Contains("i32 2, i32 4, i32 0, i32 0, i32 8, i32 8, i32 8, i32 8, i32 0", StringComparison.Ordinal)
+            && identity.LlvmIr.Contains("i32 2, i32 5, i32 0, i32 0, i32 8, i32 8, i32 8, i32 8, i32 0", StringComparison.Ordinal))
+
+        for flag in [ false; true ] do
+            let values = [ NamedValue("BoolTag", BoolValue flag); NamedValue("PeerBoolTag", BoolValue flag) ]
+            let actual = identity.Execute(values, 4096, 16)
+            check ($"{optimization} {flag} exact-name nominal Bool host roundtrip") (
+                actual.Values = values && actual.LayoutSchemaVersion = 3
+                && actual.RetainedBytesWritten = 16
+                && Convert.ToHexString(actual.RetainedOutputBytes).ToLowerInvariant() = raw flag + raw flag)
+
+        use wrapUnwrap = compileOwningNative toolchain "owning-nominal-bool-wrap-unwrap" optimization wrapUnwrapBody
+        for flag in [ false; true ] do
+            let actual = wrapUnwrap.Execute([ BoolValue flag ], 4096, 8)
+            check ($"{optimization} {flag} Bool wrap and unwrap retag without payload movement") (
+                actual.Values = [ BoolValue flag ]
+                && Convert.ToHexString(actual.RetainedOutputBytes).ToLowerInvariant() = raw flag
+                && actual.Metrics.DeepCopyBytes = 0UL && actual.Metrics.MoveBytes = 0UL)
+
+        use parity = compileOwningNative toolchain "owning-nominal-bool-interpreter-parity" optimization parityBody
+        let interpreted = interpreterResult "owning-nominal-bool-interpreter-parity" parityBody
+        let nativeParity = parity.Execute([], 4096, 16)
+        check ($"{optimization} nominal Bool wrap/unwrap native execution agrees with interpreter results") (
+            nativeParity.Values = interpreted && nativeParity.Values = [ BoolValue true; BoolValue false ]
+            && Convert.ToHexString(nativeParity.RetainedOutputBytes).ToLowerInvariant() = raw true + raw false)
+
+        for label, wrongValue in [ "bare Bool", BoolValue false; "peer wrapper", NamedValue("PeerBoolTag", BoolValue false) ] do
+            let rejected =
+                try
+                    identity.ExecuteInto([ wrongValue; NamedValue("PeerBoolTag", BoolValue true) ], 4096, sentinel) |> ignore
+                    false
+                with :? ArgumentException -> true
+            check ($"{optimization} host rejects {label} for BoolTag") (rejected && sentinel = Array.create 16 0xA5uy)
+
+    let boolEnvelope = recordDefinition "BoolEnvelope" [
+        recordField "owner" (TNamed "BoolTag")
+        recordField "plain" TBool
+    ]
+    let nestedContext =
+        contextWithRecordDefinitions [] [ boolEnvelope ] [
+            scalarDefinition "BoolTag" TBool None, "BoolTag.make", "BoolTag.value"
+            scalarDefinition "PeerBoolTag" TBool None, "PeerBoolTag.make", "PeerBoolTag.value"
+        ]
+    let nestedTypes = [
+        TNamed "BoolEnvelope"
+        TOption(TNamed "BoolTag")
+        TOption(TNamed "BoolTag")
+        TResult(TNamed "BoolTag", TNamed "PeerBoolTag")
+        TResult(TNamed "BoolTag", TNamed "PeerBoolTag")
+        TResult(TNamed "PeerBoolTag", TNamed "BoolTag")
+    ]
+    let nestedBody = compileBodyWithInputs nestedContext "owning-nominal-bool-nested" nestedTypes []
+    let boolTag flag = NamedValue("BoolTag", BoolValue flag)
+    let peerBoolTag flag = NamedValue("PeerBoolTag", BoolValue flag)
+    let nestedValues = [
+        RecordValue("BoolEnvelope", Map.ofList [ "owner", boolTag true; "plain", BoolValue false ])
+        OptionValue(TNamed "BoolTag", Some(boolTag false))
+        OptionValue(TNamed "BoolTag", None)
+        ResultValue(TNamed "BoolTag", TNamed "PeerBoolTag", Ok(boolTag true))
+        ResultValue(TNamed "BoolTag", TNamed "PeerBoolTag", Error(peerBoolTag true))
+        ResultValue(TNamed "PeerBoolTag", TNamed "BoolTag", Error(boolTag false))
+    ]
+    let zero = raw false
+    let one = raw true
+    let expectedBytes = String.concat "" [ one; zero; zero; zero; one; zero; one; one; one; one; zero ]
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use nested = compileOwningNative toolchain "owning-nominal-bool-nested" optimization nestedBody
+        let actual = nested.Execute(nestedValues, 4096, 88)
+        check ($"{optimization} nominal Bool survives record, Option, and both active Result arms") (
+            actual.Values = nestedValues && actual.RetainedBytesWritten = 88
+            && Convert.ToHexString(actual.RetainedOutputBytes).ToLowerInvariant() = expectedBytes)
+
+let private testOwningRefinedBoolSlice () =
+    let toolchain = LlvmToolchain.discover()
+    let owningException action =
+        try
+            action ()
+            failwith "Expected an OwningStackExecutionException."
+        with :? OwningStackExecutionException as error -> error
+    let owningError action = (owningException action).Diagnostic
+    let trueValidator = wordEntry "is-true?" [ TBool ] [ TBool ] Set.empty [
+        Call("bool.not", span "owning-bool-validator.agent" 1)
+        Call("bool.not", span "owning-bool-validator.agent" 2)
+    ]
+    let falseValidator = wordEntry "is-false?" [ TBool ] [ TBool ] Set.empty [ Call("bool.not", span "owning-bool-validator.agent" 1) ]
+    let scalarDefinitions = [
+        scalarDefinition "TrueTag" TBool (Some "is-true?"), "TrueTag.make", "TrueTag.unwrap"
+        scalarDefinition "FalseTag" TBool (Some "is-false?"), "FalseTag.make", "FalseTag.unwrap"
+    ]
+    let context = contextWithScalarDefinitions [ trueValidator; falseValidator ] scalarDefinitions
+    // ProgramTypeKey allocation is name-sorted, so FalseTag precedes TrueTag.
+    let trueTagType = IrNominal(ProgramTypeKey 1)
+    let falseTagType = IrNominal(ProgramTypeKey 0)
+    let trueValue = NamedValue("TrueTag", BoolValue true)
+    let falseValue = NamedValue("FalseTag", BoolValue false)
+    let raw flag = if flag then Convert.FromHexString "0100000000000000" else Array.zeroCreate<byte> 8
+    let constructorBodies = [
+        "TrueTag", "TrueTag.make", compileBodyWithInputs context "owning-refined-bool-true-constructor" [ TBool ] [ Call("TrueTag.make", span "owning-refined-bool.agent" 1) ]
+        "FalseTag", "FalseTag.make", compileBodyWithInputs context "owning-refined-bool-false-constructor" [ TBool ] [ Call("FalseTag.make", span "owning-refined-bool.agent" 2) ]
+    ]
+    let identityBody = compileBodyWithInputs context "owning-refined-bool-input-only" [ TNamed "TrueTag"; TNamed "FalseTag" ] []
+    let trueTagValidatorStepModel = compileBodyWithInputs context "owning-refined-bool-true-admission-step-model" [ TBool ] [
+        Call("bool.not", span "owning-refined-bool-validator.agent" 1)
+        Call("bool.not", span "owning-refined-bool-validator.agent" 2)
+    ]
+    let falseTagValidatorStepModel = compileBodyWithInputs context "owning-refined-bool-false-admission-step-model" [ TBool ] [
+        Call("bool.not", span "owning-refined-bool-validator.agent" 3)
+    ]
+    let _, trueTagAdmissionSteps =
+        interpreterResultWithInputsAndSteps "owning-refined-bool-true-admission-step-model" trueTagValidatorStepModel [ IrEntryArgument.BoolArgument true ]
+    let _, falseTagAdmissionSteps =
+        interpreterResultWithInputsAndSteps "owning-refined-bool-false-admission-step-model" falseTagValidatorStepModel [ IrEntryArgument.BoolArgument false ]
+    let expectedIdentityAdmissionSteps = uint32 (trueTagAdmissionSteps + falseTagAdmissionSteps)
+    check "refined Bool input validators have an independent combined step oracle" (trueTagAdmissionSteps = 2 && falseTagAdmissionSteps = 1)
+    let validatorParityBody = compileBodyWithInputs context "owning-refined-bool-interpreter-parity" [] [
+        Push(LBool true, span "owning-refined-bool-parity.agent" 1)
+        Call("TrueTag.make", span "owning-refined-bool-parity.agent" 2)
+        Push(LBool false, span "owning-refined-bool-parity.agent" 3)
+        Call("FalseTag.make", span "owning-refined-bool-parity.agent" 4)
+    ]
+    let roundtripBody = compileBodyWithInputs context "owning-refined-bool-wrap-unwrap" [ TBool ] [
+        Call("TrueTag.make", span "owning-refined-bool.agent" 3)
+        Call("TrueTag.unwrap", span "owning-refined-bool.agent" 4)
+    ]
+
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        for scalarName, constructorName, body in constructorBodies do
+            use constructor = compileOwningNative toolchain ("owning-refined-bool-" + scalarName) optimization body
+            let nominalLayout = constructor.Layouts |> List.find (fun layout -> layout.TypeName = scalarName)
+            check ($"{optimization} {scalarName} keeps its nominal Bool identity and fixed eight-byte layout") (
+                nominalLayout.Type = (if scalarName = "TrueTag" then trueTagType else falseTagType)
+                && nominalLayout.PayloadBytes = 8 && nominalLayout.ExtentBytes = 8
+                && nominalLayout.MinimumPayloadBytes = 8 && nominalLayout.MinimumExtentBytes = 8)
+            let expectedNominalTypeId = if scalarName = "TrueTag" then 5 else 4
+            check ($"{optimization} {scalarName} descriptor uses Bool kind 2 and a distinct nominal TypeId") (
+                constructor.LlvmIr.Contains("i32 2, i32 2, i32 0, i32 0, i32 8, i32 8, i32 8, i32 8, i32 0", StringComparison.Ordinal)
+                && constructor.LlvmIr.Contains(
+                    $"i32 2, i32 {expectedNominalTypeId}, i32 0, i32 0, i32 8, i32 8, i32 8, i32 8, i32 0",
+                    StringComparison.Ordinal))
+            let acceptedFlag = scalarName = "TrueTag"
+            let constructed = constructor.Execute([ BoolValue acceptedFlag ], 4096, 8)
+            let interpretedConstructor, interpreterSteps =
+                interpreterResultWithInputsAndSteps constructorName body [ IrEntryArgument.BoolArgument acceptedFlag ]
+            let rawStatus, rawContext, _ = invokeRawOwningEntryForMetrics constructor (raw acceptedFlag) [| 8 |]
+            check ($"{optimization} {constructorName} independently accepts its matching Bool") (
+                constructed.Values = [ NamedValue(scalarName, BoolValue acceptedFlag) ]
+                && constructed.Values = interpretedConstructor
+                && rawStatus = 0 && rawContext.Status = 0u
+                && rawContext.StepsConsumed = uint32 interpreterSteps
+                && constructed.RetainedOutputBytes = raw acceptedFlag
+                && constructed.Metrics.DeepCopyBytes = 0UL && constructed.Metrics.MoveBytes = 0UL)
+            let rejectedFlag = not acceptedFlag
+            let rejection = owningError (fun () -> constructor.Execute([ BoolValue rejectedFlag ], 4096, 8) |> ignore)
+            check ($"{optimization} {constructorName} independently rejects the opposite Bool") (
+                rejection.Code = "REFINEMENT_FAILED" && rejection.Word = Some constructorName)
+
+        use identity = compileOwningNative toolchain "owning-refined-bool-input-only" optimization identityBody
+        let trueLayout = identity.Layouts |> List.find (fun layout -> layout.TypeName = "TrueTag")
+        let falseLayout = identity.Layouts |> List.find (fun layout -> layout.TypeName = "FalseTag")
+        check ($"{optimization} refined Bool wrappers remain distinct exact nominal types") (
+            trueLayout.Type = trueTagType && falseLayout.Type = falseTagType
+            && trueLayout.Type <> falseLayout.Type && trueLayout.PayloadBytes = 8 && falseLayout.PayloadBytes = 8)
+        let identityResult = identity.Execute([ trueValue; falseValue ], 4096, 16)
+        check ($"{optimization} valid refined Bool wrappers host-encode and roundtrip exact bytes") (
+            identityResult.Values = [ trueValue; falseValue ]
+            && identityResult.RetainedOutputBytes = Array.append (raw true) (raw false))
+        let identityRawStatus, identityRawContext, _ =
+            invokeRawOwningEntryForMetrics identity (Array.append (raw true) (raw false)) [| 8; 8 |]
+        check ($"{optimization} typed-root admission runs TrueTag and FalseTag validators exactly once (steps={identityRawContext.StepsConsumed}/{expectedIdentityAdmissionSteps})") (
+            identityRawStatus = 0 && identityRawContext.Status = 0u
+            && identityRawContext.StepsConsumed = expectedIdentityAdmissionSteps)
+        use validatorParity = compileOwningNative toolchain "owning-refined-bool-interpreter-parity" optimization validatorParityBody
+        let interpretedValidators = interpreterResult "owning-refined-bool-interpreter-parity" validatorParityBody
+        let nativeValidators = validatorParity.Execute([], 4096, 16)
+        check ($"{optimization} frozen refined Bool validator calls agree with interpreter results") (
+            nativeValidators.Values = interpretedValidators
+            && nativeValidators.Values = [ trueValue; falseValue ]
+            && nativeValidators.RetainedOutputBytes = Array.append (raw true) (raw false))
+        for label, badValue in [ "bare Bool", BoolValue true; "wrong peer wrapper", NamedValue("FalseTag", BoolValue true) ] do
+            let retained = Array.create 16 0xA5uy
+            let mutable rejected = false
+            try
+                identity.ExecuteInto([ badValue; falseValue ], 4096, retained) |> ignore
+            with :? ArgumentException -> rejected <- true
+            check ($"{optimization} refined Bool host rejects {label} for TrueTag") (rejected && retained = Array.create 16 0xA5uy)
+        let semanticRetained = Array.create 16 0xA5uy
+        let semanticFailure = owningException (fun () -> identity.ExecuteInto([ NamedValue("TrueTag", BoolValue false); falseValue ], 4096, semanticRetained) |> ignore)
+        check ($"{optimization} raw canonical False fails TrueTag input revalidation atomically") (
+            semanticFailure.Diagnostic.Code = "REFINEMENT_FAILED"
+            && semanticRetained = Array.create 16 0xA5uy
+            && semanticFailure.Metrics.FinalCursorBytes = 0
+            && semanticFailure.Metrics.HostRetainedCommitBytes = 0)
+
+        use roundtrip = compileOwningNative toolchain "owning-refined-bool-wrap-unwrap" optimization roundtripBody
+        let wrapped = roundtrip.Execute([ BoolValue true ], 4096, 8)
+        let interpretedRoundtrip, roundtripInterpreterSteps =
+            interpreterResultWithInputsAndSteps "owning-refined-bool-wrap-unwrap" roundtripBody [ IrEntryArgument.BoolArgument true ]
+        let roundtripRawStatus, roundtripRawContext, _ = invokeRawOwningEntryForMetrics roundtrip (raw true) [| 8 |]
+        check ($"{optimization} refined Bool wrap/unwrap retags without moving payload") (
+            wrapped.Values = [ BoolValue true ] && wrapped.Values = interpretedRoundtrip
+            && roundtripRawStatus = 0 && roundtripRawContext.Status = 0u
+            && roundtripRawContext.StepsConsumed = uint32 roundtripInterpreterSteps
+            && wrapped.RetainedOutputBytes = raw true
+            && wrapped.Metrics.DeepCopyBytes = 0UL && wrapped.Metrics.MoveBytes = 0UL)
+
+        let nestedTypes = [
+            TOption(TNamed "TrueTag")
+            TOption(TNamed "TrueTag")
+            TResult(TNamed "TrueTag", TString)
+            TResult(TString, TNamed "TrueTag")
+        ]
+        let nestedBody = compileBodyWithInputs context "owning-refined-bool-nested" nestedTypes []
+        use nested = compileOwningNative toolchain "owning-refined-bool-nested" optimization nestedBody
+        let inactiveNestedValues = [
+            OptionValue(TNamed "TrueTag", None)
+            OptionValue(TNamed "TrueTag", Some trueValue)
+            ResultValue(TNamed "TrueTag", TString, Error(StringValue "inactive"))
+            ResultValue(TString, TNamed "TrueTag", Ok(StringValue "inactive"))
+        ]
+        check ($"{optimization} inactive Option and Result Bool arms skip the frozen validator") (
+            nested.Execute(inactiveNestedValues, 4096, 88).Values = inactiveNestedValues)
+        for label, invalidValue in [
+            "Option Some", OptionValue(TNamed "TrueTag", Some(NamedValue("TrueTag", BoolValue false)))
+            "Result Ok", ResultValue(TNamed "TrueTag", TString, Ok(NamedValue("TrueTag", BoolValue false)))
+            "Result Error", ResultValue(TString, TNamed "TrueTag", Error(NamedValue("TrueTag", BoolValue false)))
+        ] do
+            let invalidIndex = if label = "Option Some" then 1 elif label = "Result Ok" then 2 else 3
+            let values = inactiveNestedValues |> List.mapi (fun index value -> if index = invalidIndex then invalidValue else value)
+            let error = owningError (fun () -> nested.Execute(values, 4096, 88) |> ignore)
+            check ($"{optimization} active {label} runs the frozen Bool validator") (error.Code = "REFINEMENT_FAILED")
+
+    let mailboxContext =
+        contextWithRecordDefinitions [ trueValidator ] [
+            recordDefinition "MailboxState" [ recordField "owner" (TNamed "TrueTag") ]
+            recordDefinition "MailboxContinuation" [ recordField "marker" TInt ]
+        ] [ scalarDefinitions[0] ]
+    let mailboxProgram = Compiler.compileIrProgram mailboxContext
+    let initialize = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-refined-bool-mailbox-initialize" [ TString ] [
+        Call("drop", span "owning-refined-bool-mailbox.agent" 1)
+        Push(LBool true, span "owning-refined-bool-mailbox.agent" 2)
+        Call("TrueTag.make", span "owning-refined-bool-mailbox.agent" 3)
+        Call("mailboxState.new", span "owning-refined-bool-mailbox.agent" 4)
+    ]
+    let beginTurn = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-refined-bool-mailbox-begin" [ TNamed "MailboxState"; TString ] [
+        Call("drop", span "owning-refined-bool-mailbox.agent" 5)
+        Push(LInt 1L, span "owning-refined-bool-mailbox.agent" 6)
+        Call("mailboxContinuation.new", span "owning-refined-bool-mailbox.agent" 7)
+    ]
+    let beginStepModel = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-refined-bool-mailbox-begin-step-model" [ TNamed "MailboxState"; TBool ] [
+        Call("drop", span "owning-refined-bool-mailbox.agent" 5)
+        Push(LInt 1L, span "owning-refined-bool-mailbox.agent" 6)
+        Call("mailboxContinuation.new", span "owning-refined-bool-mailbox.agent" 7)
+    ]
+    let resume = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-refined-bool-mailbox-resume" [ TNamed "MailboxState"; TNamed "MailboxContinuation"; TString ] [
+        Call("drop", span "owning-refined-bool-mailbox.agent" 8)
+        Call("drop", span "owning-refined-bool-mailbox.agent" 9)
+    ]
+    let resumeStepModel = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-refined-bool-mailbox-resume-step-model" [ TNamed "MailboxState"; TNamed "MailboxContinuation"; TUnit ] [
+        Call("drop", span "owning-refined-bool-mailbox.agent" 8)
+        Call("drop", span "owning-refined-bool-mailbox.agent" 9)
+    ]
+    let predicateStepBody = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-refined-bool-validator-step-model" [ TBool ] [
+        Call("bool.not", span "owning-refined-bool-validator.agent" 1)
+        Call("bool.not", span "owning-refined-bool-validator.agent" 2)
+    ]
+    let _, frozenValidatorSteps =
+        interpreterResultWithInputsAndSteps "owning-refined-bool-validator-step-model" predicateStepBody [ IrEntryArgument.BoolArgument true ]
+    let expectedValidatorSteps = uint32 frozenValidatorSteps
+    check "two-instruction frozen TrueTag validator step oracle" (frozenValidatorSteps = 2)
+
+    let trueTagOwnerBody = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-refined-bool-mailbox-state-owner" [] [
+        Push(LBool true, span "owning-refined-bool-mailbox-owner.agent" 1)
+        Call("TrueTag.make", span "owning-refined-bool-mailbox-owner.agent" 2)
+        Call("mailboxState.new", span "owning-refined-bool-mailbox-owner.agent" 3)
+    ]
+    let resumeOwnerBody = Compiler.compileIrBodyAgainstProgram mailboxContext mailboxProgram "owning-refined-bool-mailbox-resume-owner" [] [
+        Push(LBool true, span "owning-refined-bool-mailbox-owner.agent" 4)
+        Call("TrueTag.make", span "owning-refined-bool-mailbox-owner.agent" 5)
+        Call("mailboxState.new", span "owning-refined-bool-mailbox-owner.agent" 6)
+        Push(LInt 1L, span "owning-refined-bool-mailbox-owner.agent" 7)
+        Call("mailboxContinuation.new", span "owning-refined-bool-mailbox-owner.agent" 8)
+    ]
+    let noReplayContext =
+        contextWithRecordDefinitions [] [
+            recordDefinition "MailboxState" [ recordField "owner" (TNamed "TrueTag") ]
+            recordDefinition "MailboxContinuation" [ recordField "marker" TInt ]
+        ] [ scalarDefinition "TrueTag" TBool None, "TrueTag.make", "TrueTag.unwrap" ]
+    let noReplayProgram = Compiler.compileIrProgram noReplayContext
+    let noReplayResume = Compiler.compileIrBodyAgainstProgram noReplayContext noReplayProgram "owning-refined-bool-mailbox-resume-no-validator" [ TNamed "MailboxState"; TNamed "MailboxContinuation"; TUnit ] [
+        Call("drop", span "owning-refined-bool-mailbox.agent" 8)
+        Call("drop", span "owning-refined-bool-mailbox.agent" 9)
+    ]
+    let noReplayOwnerBody = Compiler.compileIrBodyAgainstProgram noReplayContext noReplayProgram "owning-refined-bool-mailbox-resume-owner-no-validator" [] [
+        Push(LBool false, span "owning-refined-bool-mailbox-owner.agent" 9)
+        Call("TrueTag.make", span "owning-refined-bool-mailbox-owner.agent" 10)
+        Call("mailboxState.new", span "owning-refined-bool-mailbox-owner.agent" 11)
+        Push(LInt 1L, span "owning-refined-bool-mailbox-owner.agent" 12)
+        Call("mailboxContinuation.new", span "owning-refined-bool-mailbox-owner.agent" 13)
+    ]
+    use noReplayOwner = IrInterpreter.executeBodyWithInputs (noOpHost ()) "owning-refined-bool-mailbox-resume-owner-no-validator" noReplayOwnerBody None []
+    let _, noReplayResumeSteps =
+        interpreterResultWithOwnerAndSteps
+            "owning-refined-bool-mailbox-resume-no-validator"
+            noReplayResume
+            (Some noReplayOwner)
+            [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1; IrEntryArgument.UnitArgument ]
+    let expectedNoReplaySteps = uint32 noReplayResumeSteps
+
+    let malformedRawBoolBody = compileBodyWithInputs context "owning-refined-bool-raw-malformed-entry" [ TBool ] [
+        Call("drop", span "owning-refined-bool-malformed.agent" 1)
+    ]
+
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use malformedRawBool = compileOwningNative toolchain "owning-refined-bool-raw-malformed-entry" optimization malformedRawBoolBody
+        let rawBadBoolStatus, rawBadBoolContext, rawBadBoolRetained =
+            invokeRawOwningEntryForMetrics malformedRawBool (Convert.FromHexString "0200000000000000") [| 8 |]
+        check ($"{optimization} raw primitive Bool import rejects noncanonical eight-byte value before body") (
+            rawBadBoolStatus <> 0 && rawBadBoolContext.Status <> 0u
+            && rawBadBoolContext.CursorBytes = 0u && rawBadBoolContext.StepsConsumed = 0u
+            && rawBadBoolRetained = Array.create rawBadBoolRetained.Length 0xA5uy)
+
+        let mailbox =
+            OwningStackAot.compileMailboxWithProfile
+                toolchain optimization OwningRuntimeProfile.Diagnostic
+                (Path.Combine(artifactRoot, "owning-refined-bool-mailbox", string optimization))
+                initialize beginTurn resume
+        check ($"{optimization} mailbox layout admits refined Bool roots without ABI revision") (
+            mailbox.Entries.Length = 3
+            && (mailbox.Layouts |> List.exists (fun layout -> layout.TypeName = "TrueTag"))
+            && mailbox.AssociatedResumeSymbol = "agentlang_mailbox_resume_associated")
+        let completion = mailboxStringBytes "turn"
+        let expectedResumeInputCursor =
+            mailbox.Entries[2].InputTypes
+            |> List.sumBy (fun inputType ->
+                match inputType with
+                | IrString -> completion.Length
+                | _ ->
+                    mailbox.Layouts
+                    |> List.find (fun layout -> layout.Type = inputType)
+                    |> fun layout -> layout.ExtentBytes)
+        // RETURN imports every entry root before semantic validation. The
+        // frozen Bool->Bool validator frame holds one input and one result.
+        let validatorBoolExtent =
+            mailbox.Layouts
+            |> List.find (fun layout -> layout.Type = IrBool)
+            |> fun layout -> layout.ExtentBytes
+        let expectedSemanticReturnCursor = expectedResumeInputCursor + 2 * validatorBoolExtent
+        let goodState = raw true
+        let badCanonicalState = raw false
+        let malformedState = Convert.FromHexString "0200000000000000"
+        use beginOwner = IrInterpreter.executeBodyWithInputs (noOpHost ()) "owning-refined-bool-mailbox-state-owner" trueTagOwnerBody None []
+        let _, expectedBeginSteps =
+            interpreterResultWithOwnerAndSteps
+                "owning-refined-bool-mailbox-begin"
+                beginStepModel
+                (Some beginOwner)
+                [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.BoolArgument true ]
+        let successfulBegin = invokeRawMailboxEntry mailbox 1 [ goodState; completion ]
+        check ($"{optimization} mailbox begin imports a valid refined Bool state (status={successfulBegin.Status}, callDepth={successfulBegin.Context.CallDepth}, steps={successfulBegin.Context.StepsConsumed}/{expectedBeginSteps + int expectedValidatorSteps}, outputs={successfulBegin.Outputs |> List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex, output.OffsetBytes, output.OwnerEndBytes, output.Reserved)})") (
+            successfulBegin.Status = 0 && successfulBegin.Context.CallDepth = 0u
+            && successfulBegin.Context.StepsConsumed = uint32 expectedBeginSteps + expectedValidatorSteps
+            && List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex) successfulBegin.Outputs = mailbox.Entries[1].OutputTypeIndexes
+            && (successfulBegin.Outputs |> List.forall (fun (output: RawMailboxOutputSlice) -> output.Reserved = 0u)))
+        let malformedBegin = invokeRawMailboxEntry mailbox 1 [ malformedState; completion ]
+        check ($"{optimization} malformed refined Bool state is rejected before mailbox output commit") (
+            malformedBegin.Status <> 0
+            && (malformedBegin.Diagnostic |> Option.exists (fun diagnostic -> diagnostic.EntryRole = Some "begin"))
+            && malformedBegin.Context.CursorBytes = 0u
+            && malformedBegin.Context.StepsConsumed = 0u
+            && (malformedBegin.Outputs |> List.forall (fun (output: RawMailboxOutputSlice) -> output.TypeIndex = UInt32.MaxValue && output.OffsetBytes = 0u && output.OwnerEndBytes = 0u && output.Reserved = 0u))
+            && (malformedBegin.StackBytes |> Array.forall ((=) 0uy)))
+
+        let semanticReturn = invokeRawMailboxEntry mailbox 2 [ badCanonicalState; mailboxIntBytes 1L; completion ]
+        check ($"{optimization} RETURN resume revalidates a canonical but semantically false Bool root (status={semanticReturn.Status}, diagnostic={semanticReturn.Diagnostic |> Option.map (fun diagnostic -> diagnostic.EntryRole, diagnostic.Code)}, steps={semanticReturn.Context.StepsConsumed}/{expectedValidatorSteps}, cursor={semanticReturn.Context.CursorBytes}/{expectedSemanticReturnCursor}, outputs={semanticReturn.Outputs |> List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex, output.OffsetBytes, output.OwnerEndBytes, output.Reserved)})") (
+            semanticReturn.Status <> 0
+            && (semanticReturn.Diagnostic |> Option.exists (fun diagnostic -> diagnostic.EntryRole = Some "resume" && diagnostic.Code = "REFINEMENT_FAILED"))
+            && semanticReturn.Context.StepsConsumed = expectedValidatorSteps
+            && semanticReturn.Context.CursorBytes = uint32 expectedSemanticReturnCursor
+            && (semanticReturn.Outputs |> List.forall (fun (output: RawMailboxOutputSlice) -> output.TypeIndex = UInt32.MaxValue && output.OffsetBytes = 0u && output.OwnerEndBytes = 0u && output.Reserved = 0u)))
+
+        use resumeOwner = IrInterpreter.executeBodyWithInputs (noOpHost ()) "owning-refined-bool-mailbox-resume-owner" resumeOwnerBody None []
+        let _, expectedResumeSteps =
+            interpreterResultWithOwnerAndSteps
+                "owning-refined-bool-mailbox-resume"
+                resumeStepModel
+                (Some resumeOwner)
+                [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1; IrEntryArgument.UnitArgument ]
+        let successfulReturn = invokeRawMailboxEntry mailbox 2 [ goodState; mailboxIntBytes 1L; completion ]
+        check ($"{optimization} valid RETURN imports and executes the frozen resume body once") (
+            successfulReturn.Status = 0
+            && successfulReturn.Context.StepsConsumed = uint32 expectedResumeSteps + expectedValidatorSteps
+            && successfulReturn.Outputs.Length = 1
+            && successfulReturn.Outputs.Head.TypeIndex = mailbox.Entries[2].OutputTypeIndexes.Head
+            && successfulReturn.Outputs.Head.OffsetBytes = 0u
+            && successfulReturn.Outputs.Head.OwnerEndBytes = 8u
+            && successfulReturn.Outputs.Head.Reserved = 0u)
+
+        let associatedFailure, associatedRetry =
+            invokeRawMailboxAssociatedResumeWithRetry mailbox successfulBegin malformedState badCanonicalState completion
+        let parkedCursor = successfulBegin.Context.CursorBytes
+        let parkedState = successfulBegin.Outputs[0]
+        let parkedContinuation = successfulBegin.Outputs[1]
+        let stateFieldOffset =
+            parkedState.OffsetBytes
+            + uint32 ((mailbox.Layouts |> List.find (fun layout -> layout.Type = mailbox.Entries[2].InputTypes[0])).Fields.Head.OffsetBytes)
+        let retainedShape (invocation: RawMailboxInvocation) =
+            invocation.RetainedInputs
+            |> List.map (fun descriptor -> descriptor.TypeIndex, descriptor.OffsetBytes, descriptor.OwnerEndBytes, descriptor.Reserved)
+        let expectedRetainedShape = [ parkedState; parkedContinuation ] |> List.map (fun descriptor -> descriptor.TypeIndex, descriptor.OffsetBytes, descriptor.OwnerEndBytes, descriptor.Reserved)
+        let stateEnd = int (parkedState.OffsetBytes + (parkedState.OwnerEndBytes - parkedState.OffsetBytes)) - 1
+        let continuationStart = int parkedContinuation.OffsetBytes
+        let continuationEnd = int parkedContinuation.OwnerEndBytes - 1
+        let sentinelStart = int parkedCursor
+        let sentinelEnd = sentinelStart + completion.Length - 1
+        let expectedContinuationBytes = successfulBegin.StackBytes[continuationStart..continuationEnd]
+        let expectedParkedTail = Array.create completion.Length 0xCDuy
+        let expectedRetryCursor = parkedCursor + uint32 completion.Length
+        check ($"{optimization} KEEP rejects malformed retained Bool bytes before appending completion (status={associatedFailure.Status}, steps={associatedFailure.Context.StepsConsumed}, cursor={associatedFailure.Context.CursorBytes}/{parkedCursor}, outputs={associatedFailure.Outputs |> List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex, output.OffsetBytes, output.OwnerEndBytes, output.Reserved)}, state={Convert.ToHexString(associatedFailure.StackBytes[int stateFieldOffset..(int stateFieldOffset + 7)])}, continuation={Convert.ToHexString(associatedFailure.StackBytes[continuationStart..continuationEnd])}, tail={Convert.ToHexString(associatedFailure.StackBytes[sentinelStart..sentinelEnd])}, retained={retainedShape associatedFailure})") (
+            associatedFailure.Status <> 0 && associatedFailure.Context.CursorBytes = parkedCursor
+            && associatedFailure.Context.StepsConsumed = 0u
+            && (associatedFailure.Outputs |> List.forall (fun (output: RawMailboxOutputSlice) -> output.TypeIndex = UInt32.MaxValue && output.OffsetBytes = 0u && output.OwnerEndBytes = 0u && output.Reserved = 0u))
+            && associatedFailure.StackBytes[int stateFieldOffset..stateEnd] = malformedState
+            && associatedFailure.StackBytes[continuationStart..continuationEnd] = expectedContinuationBytes
+            && associatedFailure.StackBytes[sentinelStart..sentinelEnd] = expectedParkedTail
+            && retainedShape associatedFailure = expectedRetainedShape)
+        check ($"{optimization} KEEP retry preserves its parked roots and skips semantic validator replay (status={associatedRetry.Status}/{associatedRetry.Context.Status}, cursor={associatedRetry.Context.CursorBytes}/{expectedRetryCursor}, steps={associatedRetry.Context.StepsConsumed}/{expectedNoReplaySteps}, outputs={associatedRetry.Outputs |> List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex, output.OffsetBytes, output.OwnerEndBytes, output.Reserved)}, state={Convert.ToHexString(associatedRetry.StackBytes[int stateFieldOffset..stateEnd])}, continuation={Convert.ToHexString(associatedRetry.StackBytes[continuationStart..continuationEnd])}, retained={retainedShape associatedRetry})") (
+            associatedRetry.Status = 0 && associatedRetry.Context.Status = 0u
+            && associatedRetry.Context.CursorBytes = expectedRetryCursor
+            && associatedRetry.Context.StepsConsumed = expectedNoReplaySteps
+            && associatedRetry.Outputs.Length = 1
+            && associatedRetry.Outputs.Head.TypeIndex = mailbox.Entries[2].OutputTypeIndexes.Head
+            && associatedRetry.Outputs.Head.OffsetBytes = parkedState.OffsetBytes
+            && associatedRetry.Outputs.Head.OwnerEndBytes = parkedState.OwnerEndBytes
+            && associatedRetry.Outputs.Head.Reserved = 0u
+            && associatedRetry.StackBytes[int stateFieldOffset..stateEnd] = badCanonicalState
+            && associatedRetry.StackBytes[continuationStart..continuationEnd] = expectedContinuationBytes
+            && associatedRetry.StackBytes[int parkedCursor..(int expectedRetryCursor - 1)] = completion
+            && retainedShape associatedRetry = expectedRetainedShape)
 
 let private testOwningRefinedIntSlice () =
     let toolchain = LlvmToolchain.discover()
@@ -1830,21 +2510,6 @@ let private testOwningRefinedIntSlice () =
                 && diagnostic.Word = Some "PositiveId.construct"
                 && retained = Array.create 256 0xA5uy)
 
-    let boolValidator =
-        wordEntry "identity-bool?" [ TBool ] [ TBool ] Set.empty [
-            Call("bool.not", span "owning-bool-validator.agent" 1)
-            Call("bool.not", span "owning-bool-validator.agent" 2)
-        ]
-    let unsupportedBoolContext =
-        contextWithScalarDefinitions [ boolValidator ] [
-            scalarDefinition "BoolTag" TBool (Some "identity-bool?"), "BoolTag.construct", "BoolTag.unwrap"
-        ]
-    let unsupportedBoolBody = compileBodyWithInputs unsupportedBoolContext "owning-unsupported-refined-bool" [ TNamed "BoolTag" ] []
-    let unsupportedBool = errorOf (fun () -> compileOwningNative toolchain "owning-unsupported-refined-bool" LlvmOptimization.O0 unsupportedBoolBody |> ignore)
-    check "predicate-bearing non-Int scalars remain outside the owning refined slice" (
-        unsupportedBool.Code = "IR_OWNING_STACK_TYPE_UNSUPPORTED"
-        && unsupportedBool.Message.Contains("Bool, Float, and other scalar bases remain unsupported", StringComparison.OrdinalIgnoreCase))
-
     let effectfulValidator =
         wordEntry "effectful-positive?" [ TInt ] [ TBool ] (Set.singleton "console.write") [
             Push(LInt 0L, span "owning-effectful-validator.agent" 1)
@@ -2269,17 +2934,13 @@ let private testOwningRefinedStringSlice () =
         check ($"{optimization} None and Result alternatives without refined String do not invoke its validator") (
             inactive.Execute(inactiveValues, 4096, 32).Values = inactiveValues)
 
-    let boolValidator = wordEntry "identity-bool?" [ TBool ] [ TBool ] Set.empty [
-        Call("bool.not", span "owning-string-bool-validator.agent" 1)
-        Call("bool.not", span "owning-string-bool-validator.agent" 2)
-    ]
     let floatValidator = wordEntry "accept-float?" [ TFloat ] [ TBool ] Set.empty [
         Call("drop", span "owning-string-float-validator.agent" 1)
         Push(LBool true, span "owning-string-float-validator.agent" 2)
     ]
-    for scalarName, baseType, validatorName in [ "BoolTag", TBool, "identity-bool?"; "FloatTag", TFloat, "accept-float?" ] do
+    for scalarName, baseType, validatorName in [ "FloatTag", TFloat, "accept-float?" ] do
         let context =
-            contextWithScalarDefinitions [ boolValidator; floatValidator ] [
+            contextWithScalarDefinitions [ floatValidator ] [
                 scalarDefinition scalarName baseType (Some validatorName), scalarName + ".construct", scalarName + ".unwrap"
             ]
         let body = compileBodyWithInputs context ("owning-unsupported-string-related-" + scalarName) [ TNamed scalarName ] []
@@ -4342,6 +5003,10 @@ let private runFullSuite () =
         testLargeStackFrame ()
         printStage "nominal scalar support and limits"
         testNominalScalarSupport ()
+        printStage "owning backend nominal Bool layouts, host codecs, and nesting"
+        testOwningNominalBoolSlice ()
+        printStage "owning backend frozen Bool refinements and mailbox policies"
+        testOwningRefinedBoolSlice ()
         printStage "owning backend nominal Int layouts and host codecs"
         testOwningNominalIntSlice ()
         printStage "owning backend refined Int constructors and host admission"
@@ -4402,6 +5067,24 @@ let main args =
             printStage "owning backend refined Int constructors and host admission"
             testOwningRefinedIntSlice ()
             printfn "AgentLang.Llvm.Tests owning refined Int checks: %d assertions passed; artifacts: %s" assertions artifactRoot
+            0
+        with ex ->
+            eprintfn "%s" (ex.ToString())
+            1
+    elif args |> Array.contains "--owning-nominal-bool" then
+        try
+            printStage "owning backend nominal Bool layouts, host codecs, and nesting"
+            testOwningNominalBoolSlice ()
+            printfn "AgentLang.Llvm.Tests owning nominal Bool checks: %d assertions passed; artifacts: %s" assertions artifactRoot
+            0
+        with ex ->
+            eprintfn "%s" (ex.ToString())
+            1
+    elif args |> Array.contains "--owning-refined-bool" then
+        try
+            printStage "owning backend frozen Bool refinements and mailbox policies"
+            testOwningRefinedBoolSlice ()
+            printfn "AgentLang.Llvm.Tests owning refined Bool checks: %d assertions passed; artifacts: %s" assertions artifactRoot
             0
         with ex ->
             eprintfn "%s" (ex.ToString())
