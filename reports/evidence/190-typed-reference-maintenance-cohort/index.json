@@ -1,0 +1,1498 @@
+{
+  "format": 1,
+  "stage": "pre-dispatch freeze",
+  "participantsDispatched": 0,
+  "runtimeRevision": "56dafc1",
+  "actorManifestSha256": "38b2ec78e2feeae199cbc99699576bd6b0cf123a2a8a0554406b3f71203e1ea0",
+  "archive": "evidence.zip",
+  "archiveSha256": "35f05c17ddb7f611bd569a7adddb21149ccefffaa8e3d33e3e738783770b7d10",
+  "archiveBytes": 409503,
+  "memberCount": 297,
+  "files": [
+    {
+      "path": ".agentlang/efficacy-maintenance-190/conventional-build-exit.json",
+      "sha256": "b84b354a798de14c0a8bf395d1a4eea623de2785f9bf621f5c74a2bf9c03e33c",
+      "bytes": 580
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/oracle-source-pins.json",
+      "sha256": "317cb595d12c29ae1b939f3fc23d7fdb35858919c41071635608c42c3b428a9f",
+      "bytes": 994
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/preparation-attempt-001.json",
+      "sha256": "887e8cf12fe999818869b5b980d71fdb91e261e2505e198704b70a1d096641c3",
+      "bytes": 410
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/smoke/failure-summary.json",
+      "sha256": "490b519e1bc7324f5337a5530311d2b17ea252fba702bf10c9a624bb7a164cdb",
+      "bytes": 315
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/smoke/reset-rich.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/smoke/reset-rich.stdout.txt",
+      "sha256": "2695ffd92d001bc959691782065d49ec6537bdd1e82cb9e68db8a82f06e72c6f",
+      "bytes": 2108
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/smoke/retained.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/smoke/retained.stdout.txt",
+      "sha256": "39c1d8ca48d4391db8595faeaa57f2142a036b8f42f5d0fa194f7ffcf7d141c4",
+      "bytes": 2419
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/smoke-002/fsharp.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/smoke-002/fsharp.stdout.txt",
+      "sha256": "e576aa9f58ab2f3a463084186243059736fb3f40aaf42c11c041ecd86ce34528",
+      "bytes": 443
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/smoke-002/receipt.json",
+      "sha256": "79a32a9483e4e4fd1e4417577c126b168da3e135f7079b008c75f4edff8a7e2f",
+      "bytes": 12792
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/smoke-002/reset-rich.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/smoke-002/reset-rich.stdout.txt",
+      "sha256": "2695ffd92d001bc959691782065d49ec6537bdd1e82cb9e68db8a82f06e72c6f",
+      "bytes": 2108
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/smoke-002/retained.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/smoke-002/retained.stdout.txt",
+      "sha256": "39c1d8ca48d4391db8595faeaa57f2142a036b8f42f5d0fa194f7ffcf7d141c4",
+      "bytes": 2419
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/smoke.py",
+      "sha256": "91baa38c5b5159abbdd0116d9570d07d8993b15d8dc80a4a43acffc54883974c",
+      "bytes": 2330
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/fsharp-1/business/AgentLang.TypedReference.Business.fsproj",
+      "sha256": "b195fa6a90fd4b20d13fffb8f6aca5a13a0f24fe2207f5cfa2adb991a1c91449",
+      "bytes": 315
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/fsharp-1/business/Business.fs",
+      "sha256": "b66b6b2e19d1268e3c36cfaf88ee9c85fb7bb298396e928b6f59644ebbee3ea8",
+      "bytes": 3298
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/fsharp-1/tests/AgentLang.TypedReference.Tests.fsproj",
+      "sha256": "4faa0540778fd5fc36dad2105a1ef065396a0b41e76139d7735ce43bbf2de7c9",
+      "bytes": 400
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/fsharp-1/tests/Program.fs",
+      "sha256": "cab2d077a2b2bc00274b530e9e2817d99eb812f15831b852376b2aafdeba8e5a",
+      "bytes": 3384
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/fsharp-2/business/AgentLang.TypedReference.Business.fsproj",
+      "sha256": "b195fa6a90fd4b20d13fffb8f6aca5a13a0f24fe2207f5cfa2adb991a1c91449",
+      "bytes": 315
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/fsharp-2/business/Business.fs",
+      "sha256": "b66b6b2e19d1268e3c36cfaf88ee9c85fb7bb298396e928b6f59644ebbee3ea8",
+      "bytes": 3298
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/fsharp-2/tests/AgentLang.TypedReference.Tests.fsproj",
+      "sha256": "4faa0540778fd5fc36dad2105a1ef065396a0b41e76139d7735ce43bbf2de7c9",
+      "bytes": 400
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/fsharp-2/tests/Program.fs",
+      "sha256": "cab2d077a2b2bc00274b530e9e2817d99eb812f15831b852376b2aafdeba8e5a",
+      "bytes": 3384
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/CURRENT",
+      "sha256": "28870fffad8d946f98ad83a4bedfe1a998b486e6bac2db848b6a3020cbdd8f16",
+      "bytes": 134
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/manifests/183d8b4e38be2dfc02c22523eb53f26e84b86516c65e14113b178461bd940d5f.json",
+      "sha256": "183d8b4e38be2dfc02c22523eb53f26e84b86516c65e14113b178461bd940d5f",
+      "bytes": 56059
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/manifests/2e841ad5b65b10f6a468a7ef1abd05ab72ff6105041e21df80cde32c9b6cc5e0.json",
+      "sha256": "2e841ad5b65b10f6a468a7ef1abd05ab72ff6105041e21df80cde32c9b6cc5e0",
+      "bytes": 99639
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/manifests/35ec6adfdcb8ed5b3df68d4bd18b57ae3ea6ec67a1fa9de5b2837ac0fa5ad5e5.json",
+      "sha256": "35ec6adfdcb8ed5b3df68d4bd18b57ae3ea6ec67a1fa9de5b2837ac0fa5ad5e5",
+      "bytes": 23195
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/manifests/506c26250c4a3ebf78127f869934a4e5a23ed813fd3a5c8afa4bbcd09c25bb09.json",
+      "sha256": "506c26250c4a3ebf78127f869934a4e5a23ed813fd3a5c8afa4bbcd09c25bb09",
+      "bytes": 10807
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/manifests/5e6cbd0030940b4814b86511d83bb2aa36328e64a3c043a4a13cf7c6877177ef.json",
+      "sha256": "5e6cbd0030940b4814b86511d83bb2aa36328e64a3c043a4a13cf7c6877177ef",
+      "bytes": 113162
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/manifests/8ce46cf4f63449014300388bc9d20f8f69fb672a12af897ce4e3894a3b8eaa45.json",
+      "sha256": "8ce46cf4f63449014300388bc9d20f8f69fb672a12af897ce4e3894a3b8eaa45",
+      "bytes": 72086
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/manifests/94b987f261601488bf43d653a9c3f61cc5d30fd421aa22032fa7c0dad0874166.json",
+      "sha256": "94b987f261601488bf43d653a9c3f61cc5d30fd421aa22032fa7c0dad0874166",
+      "bytes": 29784
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/manifests/af8f501b3d2b2d2e848e2989af6d289bafb5790480a08520efddc79b759ab85a.json",
+      "sha256": "af8f501b3d2b2d2e848e2989af6d289bafb5790480a08520efddc79b759ab85a",
+      "bytes": 47668
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/manifests/c474cf0efc744352baf29e11682a6384fe0655422b5f6d15f0bfac69e0cabfaf.json",
+      "sha256": "c474cf0efc744352baf29e11682a6384fe0655422b5f6d15f0bfac69e0cabfaf",
+      "bytes": 89688
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/01c80110bb4f4e33fe1caef3ca76d86ee294e97fc152a327454f6575b66591e5.agent",
+      "sha256": "01c80110bb4f4e33fe1caef3ca76d86ee294e97fc152a327454f6575b66591e5",
+      "bytes": 454
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/072746bb8a2af2ba05d1bf728eba18a6f48b485a363f04ae70a7c139a39920ad.agent",
+      "sha256": "072746bb8a2af2ba05d1bf728eba18a6f48b485a363f04ae70a7c139a39920ad",
+      "bytes": 1051
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/1187cdf670ec3b0591b2aff89c26cbb43928bdb6e90658d1251e0479fb806ae0.agent",
+      "sha256": "1187cdf670ec3b0591b2aff89c26cbb43928bdb6e90658d1251e0479fb806ae0",
+      "bytes": 547
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/15ebbdd75103701a09c388a7b06eba33c3288819b01535f4f17ce81da6aea363.agent",
+      "sha256": "15ebbdd75103701a09c388a7b06eba33c3288819b01535f4f17ce81da6aea363",
+      "bytes": 750
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/1752a9f860cac6c0965413876e69374de5618f74b229a85467f0440748744d87.agent",
+      "sha256": "1752a9f860cac6c0965413876e69374de5618f74b229a85467f0440748744d87",
+      "bytes": 444
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/17dffa4659e852b9080c694e38bf9ea46343f5a4bc357744eb15d1f005a75cd0.agent",
+      "sha256": "17dffa4659e852b9080c694e38bf9ea46343f5a4bc357744eb15d1f005a75cd0",
+      "bytes": 102
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/1aba95860779a813310596497f68b39c95bc0bddc90f328718da54fab77f0e2e.agent",
+      "sha256": "1aba95860779a813310596497f68b39c95bc0bddc90f328718da54fab77f0e2e",
+      "bytes": 553
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/2168bf852a4aa017dc17b3d93299fb9ab8a8b41d324f21c27a7543644ccbbd36.agent",
+      "sha256": "2168bf852a4aa017dc17b3d93299fb9ab8a8b41d324f21c27a7543644ccbbd36",
+      "bytes": 5453
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/21f1fcec28acd17d3bac832bf6645fa568445d3c3e29c55f2ad5cb5f4fd20a39.agent",
+      "sha256": "21f1fcec28acd17d3bac832bf6645fa568445d3c3e29c55f2ad5cb5f4fd20a39",
+      "bytes": 534
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/2625fc51e12129d47c43c17e24c2d1b5ebd625b861e82aad9ad9c1533094bd00.agent",
+      "sha256": "2625fc51e12129d47c43c17e24c2d1b5ebd625b861e82aad9ad9c1533094bd00",
+      "bytes": 13530
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/2913ed74e20bd1d279416c0c9a9513e7536e94dc9d54080ac7fd0f8274321c61.agent",
+      "sha256": "2913ed74e20bd1d279416c0c9a9513e7536e94dc9d54080ac7fd0f8274321c61",
+      "bytes": 14977
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/2df107765e3326bf5c0acbd76a23376af50899fbd65240d5aab592a5efb812ec.agent",
+      "sha256": "2df107765e3326bf5c0acbd76a23376af50899fbd65240d5aab592a5efb812ec",
+      "bytes": 545
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/2f6562b4a45321934194a195baa3acacba1981faf333f4958e402eb8a1c71fb9.agent",
+      "sha256": "2f6562b4a45321934194a195baa3acacba1981faf333f4958e402eb8a1c71fb9",
+      "bytes": 351
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/35cf9882fd8fd402a9c6343ee4539ac65e7dc2bcc812a0cbc1fa9a81d0d50a32.agent",
+      "sha256": "35cf9882fd8fd402a9c6343ee4539ac65e7dc2bcc812a0cbc1fa9a81d0d50a32",
+      "bytes": 65
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/3d5ab84b5711c9f73a00023369aeb0a717665c43427ffcca93b3dea6b3b4dff2.agent",
+      "sha256": "3d5ab84b5711c9f73a00023369aeb0a717665c43427ffcca93b3dea6b3b4dff2",
+      "bytes": 325
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/410e292146ac65782c796a98e7f0fb53a348ef4eb16e4427e69b24466d16fc53.agent",
+      "sha256": "410e292146ac65782c796a98e7f0fb53a348ef4eb16e4427e69b24466d16fc53",
+      "bytes": 17316
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/45355c0935426d972737b39fb492f7ffcd83d55e61d837a00f6e0dc56338a274.agent",
+      "sha256": "45355c0935426d972737b39fb492f7ffcd83d55e61d837a00f6e0dc56338a274",
+      "bytes": 525
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/454be75d6ae91922693524cd70fc58e3369ebc1c95285956f6c99ede84054174.agent",
+      "sha256": "454be75d6ae91922693524cd70fc58e3369ebc1c95285956f6c99ede84054174",
+      "bytes": 84
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/45e7fa689e56d653d9083f8c86ff59471d6d15a26f32e057535abeae4a464d4d.agent",
+      "sha256": "45e7fa689e56d653d9083f8c86ff59471d6d15a26f32e057535abeae4a464d4d",
+      "bytes": 152
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/508d27f7a0aaf4832f4c0ebe3ab483d7d50905d500576e1280ac856e3c977591.agent",
+      "sha256": "508d27f7a0aaf4832f4c0ebe3ab483d7d50905d500576e1280ac856e3c977591",
+      "bytes": 440
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/513098c63f235842e156efd7baea135d1693a9cd32785d7d1bdb256a2e4c306f.agent",
+      "sha256": "513098c63f235842e156efd7baea135d1693a9cd32785d7d1bdb256a2e4c306f",
+      "bytes": 341
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/587ce12704741d970f697dba74574b9de48f92fb4f50bfa895c0a66b34311dc9.agent",
+      "sha256": "587ce12704741d970f697dba74574b9de48f92fb4f50bfa895c0a66b34311dc9",
+      "bytes": 337
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/5aeef284eac74663aa3732df3e1bd338a026dec477c117e6cf9ea78711da02c8.agent",
+      "sha256": "5aeef284eac74663aa3732df3e1bd338a026dec477c117e6cf9ea78711da02c8",
+      "bytes": 329
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/5f0454f7d9c3f857796b091d332dceccd35b7b2cff51ae0b8a0d47e8ddf71863.agent",
+      "sha256": "5f0454f7d9c3f857796b091d332dceccd35b7b2cff51ae0b8a0d47e8ddf71863",
+      "bytes": 107
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/65797f99fe01de9490b4da4ba8799cfc412b7653be9cce92585162f3d9cfcb6c.agent",
+      "sha256": "65797f99fe01de9490b4da4ba8799cfc412b7653be9cce92585162f3d9cfcb6c",
+      "bytes": 8719
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/76854b5ee21406380e7bafc0bfe580f7f1a946b5cab18551200a499911bb7a4b.agent",
+      "sha256": "76854b5ee21406380e7bafc0bfe580f7f1a946b5cab18551200a499911bb7a4b",
+      "bytes": 362
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/77eab590ae4d1390f963f9148f912ada6ee727ebbfc091e9dbae199c43ce0667.agent",
+      "sha256": "77eab590ae4d1390f963f9148f912ada6ee727ebbfc091e9dbae199c43ce0667",
+      "bytes": 285
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/842b973bd7eeaa962e0c8d2fe89e474907d55517069406f417440b5fcf2b1b95.agent",
+      "sha256": "842b973bd7eeaa962e0c8d2fe89e474907d55517069406f417440b5fcf2b1b95",
+      "bytes": 441
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/8fbfdc8d7181bb17a196a79ce29791ce63a2fe71964a37d988baafc6c4868d51.agent",
+      "sha256": "8fbfdc8d7181bb17a196a79ce29791ce63a2fe71964a37d988baafc6c4868d51",
+      "bytes": 675
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/9111e025ee0407f6b526efc72e72f529c95fb0a00d97e6c76215a195663ea68f.agent",
+      "sha256": "9111e025ee0407f6b526efc72e72f529c95fb0a00d97e6c76215a195663ea68f",
+      "bytes": 4166
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/9d03fd3f3801a743486af5cad44e71edacb9f6946a441d75e8bd1403006483a0.agent",
+      "sha256": "9d03fd3f3801a743486af5cad44e71edacb9f6946a441d75e8bd1403006483a0",
+      "bytes": 1022
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/a1d779b6221634808cf30d4d89163be37740a64fe8de3b2e70569b1226fffdf2.agent",
+      "sha256": "a1d779b6221634808cf30d4d89163be37740a64fe8de3b2e70569b1226fffdf2",
+      "bytes": 546
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/a1fae7b7f861b58526da083d9d3cdcb6c1d7cd3a381e9425f3f62bf9dab83146.agent",
+      "sha256": "a1fae7b7f861b58526da083d9d3cdcb6c1d7cd3a381e9425f3f62bf9dab83146",
+      "bytes": 1044
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/a525bbd715b6f815dbd4cd66094fd01200779948e10edc561c5215f037e83dde.agent",
+      "sha256": "a525bbd715b6f815dbd4cd66094fd01200779948e10edc561c5215f037e83dde",
+      "bytes": 1002
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/a9c29e99e1e0e93b2364190c1c110a1fe5bf161a8e10aa343595db137b1af88e.agent",
+      "sha256": "a9c29e99e1e0e93b2364190c1c110a1fe5bf161a8e10aa343595db137b1af88e",
+      "bytes": 735
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/b17829234f7426c7d0af069f7645fb3ee1cef45e0e1e953bdf6e37d0767e02d6.agent",
+      "sha256": "b17829234f7426c7d0af069f7645fb3ee1cef45e0e1e953bdf6e37d0767e02d6",
+      "bytes": 68
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/b9205203ae2a4995ae9e42aa1cbc6b9c3003cab3375362d4105d7cd1d577b55e.agent",
+      "sha256": "b9205203ae2a4995ae9e42aa1cbc6b9c3003cab3375362d4105d7cd1d577b55e",
+      "bytes": 646
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/ba740ff9e3b04aa8c880b96931f2aed273d7f482e5c74eb442b2d728b83e8491.agent",
+      "sha256": "ba740ff9e3b04aa8c880b96931f2aed273d7f482e5c74eb442b2d728b83e8491",
+      "bytes": 806
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/bd6033bd6d96d9d7def8e8a732db84973d2f8398edaacca6e1caaebce64548fd.agent",
+      "sha256": "bd6033bd6d96d9d7def8e8a732db84973d2f8398edaacca6e1caaebce64548fd",
+      "bytes": 10246
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/c16f7cd7c4444e2d6ce43bfe74558c1180145ae1cbb4ed379d1446e413f89d88.agent",
+      "sha256": "c16f7cd7c4444e2d6ce43bfe74558c1180145ae1cbb4ed379d1446e413f89d88",
+      "bytes": 28
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/c4a07ab84b5b09718e9b6bf9b4693098aa91a611249799c54ed5eae97f68745e.agent",
+      "sha256": "c4a07ab84b5b09718e9b6bf9b4693098aa91a611249799c54ed5eae97f68745e",
+      "bytes": 68
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/cc228583dfc73977a29e3ce2e9649e53c2fae99a61a6f84d8de398c98d1a6c56.agent",
+      "sha256": "cc228583dfc73977a29e3ce2e9649e53c2fae99a61a6f84d8de398c98d1a6c56",
+      "bytes": 1894
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/cc3d49579a1433f8aaa9451064640fbed4f037c95b58767f78b9ac5256acf78d.agent",
+      "sha256": "cc3d49579a1433f8aaa9451064640fbed4f037c95b58767f78b9ac5256acf78d",
+      "bytes": 272
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/d6f93ae493716af2b0a0bde6cf9d87f68527a7e40b8a0444e520dd132204ce50.agent",
+      "sha256": "d6f93ae493716af2b0a0bde6cf9d87f68527a7e40b8a0444e520dd132204ce50",
+      "bytes": 96
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/d8acb5623a7cc6b5358c5e748dc1b78f476e1a99bc637d0e45e4d66f463eece4.agent",
+      "sha256": "d8acb5623a7cc6b5358c5e748dc1b78f476e1a99bc637d0e45e4d66f463eece4",
+      "bytes": 7455
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/da1c323f6d40d63eba7b415e762be2d4b62bf34e721ff37577e40d5ebc3dbdaa.agent",
+      "sha256": "da1c323f6d40d63eba7b415e762be2d4b62bf34e721ff37577e40d5ebc3dbdaa",
+      "bytes": 549
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/ea0d90826fd3b51cfef33fb1173cdd908f8564dc86f52b15beea4cf35bdeef8a.agent",
+      "sha256": "ea0d90826fd3b51cfef33fb1173cdd908f8564dc86f52b15beea4cf35bdeef8a",
+      "bytes": 706
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/objects/ffe156e250f5e1456e4724bf98f9732af4841cb472268b08e35b2b7d8cd6409c.agent",
+      "sha256": "ffe156e250f5e1456e4724bf98f9732af4841cb472268b08e35b2b7d8cd6409c",
+      "bytes": 96
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/dictionary.agent",
+      "sha256": "410e292146ac65782c796a98e7f0fb53a348ef4eb16e4427e69b24466d16fc53",
+      "bytes": 17316
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-1/history/task-0001.json",
+      "sha256": "51d5d1aceb2b8d0f5770f1a4804bae18b11e80544920d54ca28447f4b3e1510a",
+      "bytes": 1967
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/CURRENT",
+      "sha256": "28870fffad8d946f98ad83a4bedfe1a998b486e6bac2db848b6a3020cbdd8f16",
+      "bytes": 134
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/manifests/183d8b4e38be2dfc02c22523eb53f26e84b86516c65e14113b178461bd940d5f.json",
+      "sha256": "183d8b4e38be2dfc02c22523eb53f26e84b86516c65e14113b178461bd940d5f",
+      "bytes": 56059
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/manifests/2e841ad5b65b10f6a468a7ef1abd05ab72ff6105041e21df80cde32c9b6cc5e0.json",
+      "sha256": "2e841ad5b65b10f6a468a7ef1abd05ab72ff6105041e21df80cde32c9b6cc5e0",
+      "bytes": 99639
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/manifests/35ec6adfdcb8ed5b3df68d4bd18b57ae3ea6ec67a1fa9de5b2837ac0fa5ad5e5.json",
+      "sha256": "35ec6adfdcb8ed5b3df68d4bd18b57ae3ea6ec67a1fa9de5b2837ac0fa5ad5e5",
+      "bytes": 23195
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/manifests/506c26250c4a3ebf78127f869934a4e5a23ed813fd3a5c8afa4bbcd09c25bb09.json",
+      "sha256": "506c26250c4a3ebf78127f869934a4e5a23ed813fd3a5c8afa4bbcd09c25bb09",
+      "bytes": 10807
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/manifests/5e6cbd0030940b4814b86511d83bb2aa36328e64a3c043a4a13cf7c6877177ef.json",
+      "sha256": "5e6cbd0030940b4814b86511d83bb2aa36328e64a3c043a4a13cf7c6877177ef",
+      "bytes": 113162
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/manifests/8ce46cf4f63449014300388bc9d20f8f69fb672a12af897ce4e3894a3b8eaa45.json",
+      "sha256": "8ce46cf4f63449014300388bc9d20f8f69fb672a12af897ce4e3894a3b8eaa45",
+      "bytes": 72086
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/manifests/94b987f261601488bf43d653a9c3f61cc5d30fd421aa22032fa7c0dad0874166.json",
+      "sha256": "94b987f261601488bf43d653a9c3f61cc5d30fd421aa22032fa7c0dad0874166",
+      "bytes": 29784
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/manifests/af8f501b3d2b2d2e848e2989af6d289bafb5790480a08520efddc79b759ab85a.json",
+      "sha256": "af8f501b3d2b2d2e848e2989af6d289bafb5790480a08520efddc79b759ab85a",
+      "bytes": 47668
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/manifests/c474cf0efc744352baf29e11682a6384fe0655422b5f6d15f0bfac69e0cabfaf.json",
+      "sha256": "c474cf0efc744352baf29e11682a6384fe0655422b5f6d15f0bfac69e0cabfaf",
+      "bytes": 89688
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/01c80110bb4f4e33fe1caef3ca76d86ee294e97fc152a327454f6575b66591e5.agent",
+      "sha256": "01c80110bb4f4e33fe1caef3ca76d86ee294e97fc152a327454f6575b66591e5",
+      "bytes": 454
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/072746bb8a2af2ba05d1bf728eba18a6f48b485a363f04ae70a7c139a39920ad.agent",
+      "sha256": "072746bb8a2af2ba05d1bf728eba18a6f48b485a363f04ae70a7c139a39920ad",
+      "bytes": 1051
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/1187cdf670ec3b0591b2aff89c26cbb43928bdb6e90658d1251e0479fb806ae0.agent",
+      "sha256": "1187cdf670ec3b0591b2aff89c26cbb43928bdb6e90658d1251e0479fb806ae0",
+      "bytes": 547
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/15ebbdd75103701a09c388a7b06eba33c3288819b01535f4f17ce81da6aea363.agent",
+      "sha256": "15ebbdd75103701a09c388a7b06eba33c3288819b01535f4f17ce81da6aea363",
+      "bytes": 750
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/1752a9f860cac6c0965413876e69374de5618f74b229a85467f0440748744d87.agent",
+      "sha256": "1752a9f860cac6c0965413876e69374de5618f74b229a85467f0440748744d87",
+      "bytes": 444
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/17dffa4659e852b9080c694e38bf9ea46343f5a4bc357744eb15d1f005a75cd0.agent",
+      "sha256": "17dffa4659e852b9080c694e38bf9ea46343f5a4bc357744eb15d1f005a75cd0",
+      "bytes": 102
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/1aba95860779a813310596497f68b39c95bc0bddc90f328718da54fab77f0e2e.agent",
+      "sha256": "1aba95860779a813310596497f68b39c95bc0bddc90f328718da54fab77f0e2e",
+      "bytes": 553
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/2168bf852a4aa017dc17b3d93299fb9ab8a8b41d324f21c27a7543644ccbbd36.agent",
+      "sha256": "2168bf852a4aa017dc17b3d93299fb9ab8a8b41d324f21c27a7543644ccbbd36",
+      "bytes": 5453
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/21f1fcec28acd17d3bac832bf6645fa568445d3c3e29c55f2ad5cb5f4fd20a39.agent",
+      "sha256": "21f1fcec28acd17d3bac832bf6645fa568445d3c3e29c55f2ad5cb5f4fd20a39",
+      "bytes": 534
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/2625fc51e12129d47c43c17e24c2d1b5ebd625b861e82aad9ad9c1533094bd00.agent",
+      "sha256": "2625fc51e12129d47c43c17e24c2d1b5ebd625b861e82aad9ad9c1533094bd00",
+      "bytes": 13530
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/2913ed74e20bd1d279416c0c9a9513e7536e94dc9d54080ac7fd0f8274321c61.agent",
+      "sha256": "2913ed74e20bd1d279416c0c9a9513e7536e94dc9d54080ac7fd0f8274321c61",
+      "bytes": 14977
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/2df107765e3326bf5c0acbd76a23376af50899fbd65240d5aab592a5efb812ec.agent",
+      "sha256": "2df107765e3326bf5c0acbd76a23376af50899fbd65240d5aab592a5efb812ec",
+      "bytes": 545
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/2f6562b4a45321934194a195baa3acacba1981faf333f4958e402eb8a1c71fb9.agent",
+      "sha256": "2f6562b4a45321934194a195baa3acacba1981faf333f4958e402eb8a1c71fb9",
+      "bytes": 351
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/35cf9882fd8fd402a9c6343ee4539ac65e7dc2bcc812a0cbc1fa9a81d0d50a32.agent",
+      "sha256": "35cf9882fd8fd402a9c6343ee4539ac65e7dc2bcc812a0cbc1fa9a81d0d50a32",
+      "bytes": 65
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/3d5ab84b5711c9f73a00023369aeb0a717665c43427ffcca93b3dea6b3b4dff2.agent",
+      "sha256": "3d5ab84b5711c9f73a00023369aeb0a717665c43427ffcca93b3dea6b3b4dff2",
+      "bytes": 325
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/410e292146ac65782c796a98e7f0fb53a348ef4eb16e4427e69b24466d16fc53.agent",
+      "sha256": "410e292146ac65782c796a98e7f0fb53a348ef4eb16e4427e69b24466d16fc53",
+      "bytes": 17316
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/45355c0935426d972737b39fb492f7ffcd83d55e61d837a00f6e0dc56338a274.agent",
+      "sha256": "45355c0935426d972737b39fb492f7ffcd83d55e61d837a00f6e0dc56338a274",
+      "bytes": 525
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/454be75d6ae91922693524cd70fc58e3369ebc1c95285956f6c99ede84054174.agent",
+      "sha256": "454be75d6ae91922693524cd70fc58e3369ebc1c95285956f6c99ede84054174",
+      "bytes": 84
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/45e7fa689e56d653d9083f8c86ff59471d6d15a26f32e057535abeae4a464d4d.agent",
+      "sha256": "45e7fa689e56d653d9083f8c86ff59471d6d15a26f32e057535abeae4a464d4d",
+      "bytes": 152
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/508d27f7a0aaf4832f4c0ebe3ab483d7d50905d500576e1280ac856e3c977591.agent",
+      "sha256": "508d27f7a0aaf4832f4c0ebe3ab483d7d50905d500576e1280ac856e3c977591",
+      "bytes": 440
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/513098c63f235842e156efd7baea135d1693a9cd32785d7d1bdb256a2e4c306f.agent",
+      "sha256": "513098c63f235842e156efd7baea135d1693a9cd32785d7d1bdb256a2e4c306f",
+      "bytes": 341
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/587ce12704741d970f697dba74574b9de48f92fb4f50bfa895c0a66b34311dc9.agent",
+      "sha256": "587ce12704741d970f697dba74574b9de48f92fb4f50bfa895c0a66b34311dc9",
+      "bytes": 337
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/5aeef284eac74663aa3732df3e1bd338a026dec477c117e6cf9ea78711da02c8.agent",
+      "sha256": "5aeef284eac74663aa3732df3e1bd338a026dec477c117e6cf9ea78711da02c8",
+      "bytes": 329
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/5f0454f7d9c3f857796b091d332dceccd35b7b2cff51ae0b8a0d47e8ddf71863.agent",
+      "sha256": "5f0454f7d9c3f857796b091d332dceccd35b7b2cff51ae0b8a0d47e8ddf71863",
+      "bytes": 107
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/65797f99fe01de9490b4da4ba8799cfc412b7653be9cce92585162f3d9cfcb6c.agent",
+      "sha256": "65797f99fe01de9490b4da4ba8799cfc412b7653be9cce92585162f3d9cfcb6c",
+      "bytes": 8719
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/76854b5ee21406380e7bafc0bfe580f7f1a946b5cab18551200a499911bb7a4b.agent",
+      "sha256": "76854b5ee21406380e7bafc0bfe580f7f1a946b5cab18551200a499911bb7a4b",
+      "bytes": 362
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/77eab590ae4d1390f963f9148f912ada6ee727ebbfc091e9dbae199c43ce0667.agent",
+      "sha256": "77eab590ae4d1390f963f9148f912ada6ee727ebbfc091e9dbae199c43ce0667",
+      "bytes": 285
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/842b973bd7eeaa962e0c8d2fe89e474907d55517069406f417440b5fcf2b1b95.agent",
+      "sha256": "842b973bd7eeaa962e0c8d2fe89e474907d55517069406f417440b5fcf2b1b95",
+      "bytes": 441
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/8fbfdc8d7181bb17a196a79ce29791ce63a2fe71964a37d988baafc6c4868d51.agent",
+      "sha256": "8fbfdc8d7181bb17a196a79ce29791ce63a2fe71964a37d988baafc6c4868d51",
+      "bytes": 675
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/9111e025ee0407f6b526efc72e72f529c95fb0a00d97e6c76215a195663ea68f.agent",
+      "sha256": "9111e025ee0407f6b526efc72e72f529c95fb0a00d97e6c76215a195663ea68f",
+      "bytes": 4166
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/9d03fd3f3801a743486af5cad44e71edacb9f6946a441d75e8bd1403006483a0.agent",
+      "sha256": "9d03fd3f3801a743486af5cad44e71edacb9f6946a441d75e8bd1403006483a0",
+      "bytes": 1022
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/a1d779b6221634808cf30d4d89163be37740a64fe8de3b2e70569b1226fffdf2.agent",
+      "sha256": "a1d779b6221634808cf30d4d89163be37740a64fe8de3b2e70569b1226fffdf2",
+      "bytes": 546
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/a1fae7b7f861b58526da083d9d3cdcb6c1d7cd3a381e9425f3f62bf9dab83146.agent",
+      "sha256": "a1fae7b7f861b58526da083d9d3cdcb6c1d7cd3a381e9425f3f62bf9dab83146",
+      "bytes": 1044
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/a525bbd715b6f815dbd4cd66094fd01200779948e10edc561c5215f037e83dde.agent",
+      "sha256": "a525bbd715b6f815dbd4cd66094fd01200779948e10edc561c5215f037e83dde",
+      "bytes": 1002
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/a9c29e99e1e0e93b2364190c1c110a1fe5bf161a8e10aa343595db137b1af88e.agent",
+      "sha256": "a9c29e99e1e0e93b2364190c1c110a1fe5bf161a8e10aa343595db137b1af88e",
+      "bytes": 735
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/b17829234f7426c7d0af069f7645fb3ee1cef45e0e1e953bdf6e37d0767e02d6.agent",
+      "sha256": "b17829234f7426c7d0af069f7645fb3ee1cef45e0e1e953bdf6e37d0767e02d6",
+      "bytes": 68
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/b9205203ae2a4995ae9e42aa1cbc6b9c3003cab3375362d4105d7cd1d577b55e.agent",
+      "sha256": "b9205203ae2a4995ae9e42aa1cbc6b9c3003cab3375362d4105d7cd1d577b55e",
+      "bytes": 646
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/ba740ff9e3b04aa8c880b96931f2aed273d7f482e5c74eb442b2d728b83e8491.agent",
+      "sha256": "ba740ff9e3b04aa8c880b96931f2aed273d7f482e5c74eb442b2d728b83e8491",
+      "bytes": 806
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/bd6033bd6d96d9d7def8e8a732db84973d2f8398edaacca6e1caaebce64548fd.agent",
+      "sha256": "bd6033bd6d96d9d7def8e8a732db84973d2f8398edaacca6e1caaebce64548fd",
+      "bytes": 10246
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/c16f7cd7c4444e2d6ce43bfe74558c1180145ae1cbb4ed379d1446e413f89d88.agent",
+      "sha256": "c16f7cd7c4444e2d6ce43bfe74558c1180145ae1cbb4ed379d1446e413f89d88",
+      "bytes": 28
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/c4a07ab84b5b09718e9b6bf9b4693098aa91a611249799c54ed5eae97f68745e.agent",
+      "sha256": "c4a07ab84b5b09718e9b6bf9b4693098aa91a611249799c54ed5eae97f68745e",
+      "bytes": 68
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/cc228583dfc73977a29e3ce2e9649e53c2fae99a61a6f84d8de398c98d1a6c56.agent",
+      "sha256": "cc228583dfc73977a29e3ce2e9649e53c2fae99a61a6f84d8de398c98d1a6c56",
+      "bytes": 1894
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/cc3d49579a1433f8aaa9451064640fbed4f037c95b58767f78b9ac5256acf78d.agent",
+      "sha256": "cc3d49579a1433f8aaa9451064640fbed4f037c95b58767f78b9ac5256acf78d",
+      "bytes": 272
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/d6f93ae493716af2b0a0bde6cf9d87f68527a7e40b8a0444e520dd132204ce50.agent",
+      "sha256": "d6f93ae493716af2b0a0bde6cf9d87f68527a7e40b8a0444e520dd132204ce50",
+      "bytes": 96
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/d8acb5623a7cc6b5358c5e748dc1b78f476e1a99bc637d0e45e4d66f463eece4.agent",
+      "sha256": "d8acb5623a7cc6b5358c5e748dc1b78f476e1a99bc637d0e45e4d66f463eece4",
+      "bytes": 7455
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/da1c323f6d40d63eba7b415e762be2d4b62bf34e721ff37577e40d5ebc3dbdaa.agent",
+      "sha256": "da1c323f6d40d63eba7b415e762be2d4b62bf34e721ff37577e40d5ebc3dbdaa",
+      "bytes": 549
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/ea0d90826fd3b51cfef33fb1173cdd908f8564dc86f52b15beea4cf35bdeef8a.agent",
+      "sha256": "ea0d90826fd3b51cfef33fb1173cdd908f8564dc86f52b15beea4cf35bdeef8a",
+      "bytes": 706
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/objects/ffe156e250f5e1456e4724bf98f9732af4841cb472268b08e35b2b7d8cd6409c.agent",
+      "sha256": "ffe156e250f5e1456e4724bf98f9732af4841cb472268b08e35b2b7d8cd6409c",
+      "bytes": 96
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/dictionary.agent",
+      "sha256": "410e292146ac65782c796a98e7f0fb53a348ef4eb16e4427e69b24466d16fc53",
+      "bytes": 17316
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/reset-2/history/task-0001.json",
+      "sha256": "51d5d1aceb2b8d0f5770f1a4804bae18b11e80544920d54ca28447f4b3e1510a",
+      "bytes": 1967
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/CURRENT",
+      "sha256": "35392f0dd027efc2f145f146b8e9e02b50088cde2dda309da25c818ce320a80f",
+      "bytes": 135
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/manifests/0e8fd2c2fec977aaa09c39408c1c08f9fc1a39a15501d6d52a634d55d7df20af.json",
+      "sha256": "0e8fd2c2fec977aaa09c39408c1c08f9fc1a39a15501d6d52a634d55d7df20af",
+      "bytes": 56059
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/manifests/146f84587da86377acf5f83f5e60ebbd9c95fd10f29f23574226cdc5a8a01197.json",
+      "sha256": "146f84587da86377acf5f83f5e60ebbd9c95fd10f29f23574226cdc5a8a01197",
+      "bytes": 47668
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/manifests/492818d711c346051a5807f991f6e9a058000ff25fd9d1d7ae0ebb175e6f118c.json",
+      "sha256": "492818d711c346051a5807f991f6e9a058000ff25fd9d1d7ae0ebb175e6f118c",
+      "bytes": 29784
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/manifests/5047912f4f0bbbe162262d21c9739ee52d97e70c9ef313d14bc2eded7b9f3541.json",
+      "sha256": "5047912f4f0bbbe162262d21c9739ee52d97e70c9ef313d14bc2eded7b9f3541",
+      "bytes": 72086
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/manifests/640d8ee93de92260037d17ef4bc7ba0929d132d47e9d6a7bb6efd7e2d250b7d0.json",
+      "sha256": "640d8ee93de92260037d17ef4bc7ba0929d132d47e9d6a7bb6efd7e2d250b7d0",
+      "bytes": 23195
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/manifests/755f37e9cd93839e9a164187d3671fe10b37e9401b3fad1cc14fd17e890fc5b6.json",
+      "sha256": "755f37e9cd93839e9a164187d3671fe10b37e9401b3fad1cc14fd17e890fc5b6",
+      "bytes": 10807
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/manifests/775263a6607796e09eae17eea34085c923b4eaf0898a9d2de1290b89eabed5db.json",
+      "sha256": "775263a6607796e09eae17eea34085c923b4eaf0898a9d2de1290b89eabed5db",
+      "bytes": 89688
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/manifests/c33d5d278496478a7ffd55a9382503234201db2fbcafc3f75252d619de1c3562.json",
+      "sha256": "c33d5d278496478a7ffd55a9382503234201db2fbcafc3f75252d619de1c3562",
+      "bytes": 113162
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/manifests/dd0accc1a4afbb463d0439fb48e92a22e45edeccf2f64b2feace8bac7e254cee.json",
+      "sha256": "dd0accc1a4afbb463d0439fb48e92a22e45edeccf2f64b2feace8bac7e254cee",
+      "bytes": 99639
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/manifests/f6ddf24bb78014908fc45d1e4f464baeb6c6b3b2cff693b7c140d18eacd29a6f.json",
+      "sha256": "f6ddf24bb78014908fc45d1e4f464baeb6c6b3b2cff693b7c140d18eacd29a6f",
+      "bytes": 123984
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/01c80110bb4f4e33fe1caef3ca76d86ee294e97fc152a327454f6575b66591e5.agent",
+      "sha256": "01c80110bb4f4e33fe1caef3ca76d86ee294e97fc152a327454f6575b66591e5",
+      "bytes": 454
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/072746bb8a2af2ba05d1bf728eba18a6f48b485a363f04ae70a7c139a39920ad.agent",
+      "sha256": "072746bb8a2af2ba05d1bf728eba18a6f48b485a363f04ae70a7c139a39920ad",
+      "bytes": 1051
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/1187cdf670ec3b0591b2aff89c26cbb43928bdb6e90658d1251e0479fb806ae0.agent",
+      "sha256": "1187cdf670ec3b0591b2aff89c26cbb43928bdb6e90658d1251e0479fb806ae0",
+      "bytes": 547
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/15ebbdd75103701a09c388a7b06eba33c3288819b01535f4f17ce81da6aea363.agent",
+      "sha256": "15ebbdd75103701a09c388a7b06eba33c3288819b01535f4f17ce81da6aea363",
+      "bytes": 750
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/1752a9f860cac6c0965413876e69374de5618f74b229a85467f0440748744d87.agent",
+      "sha256": "1752a9f860cac6c0965413876e69374de5618f74b229a85467f0440748744d87",
+      "bytes": 444
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/17dffa4659e852b9080c694e38bf9ea46343f5a4bc357744eb15d1f005a75cd0.agent",
+      "sha256": "17dffa4659e852b9080c694e38bf9ea46343f5a4bc357744eb15d1f005a75cd0",
+      "bytes": 102
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/19769e37660fd0541411786eabd085832b71d204cb659a7b3510ec25ab76e5eb.agent",
+      "sha256": "19769e37660fd0541411786eabd085832b71d204cb659a7b3510ec25ab76e5eb",
+      "bytes": 351
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/1aba95860779a813310596497f68b39c95bc0bddc90f328718da54fab77f0e2e.agent",
+      "sha256": "1aba95860779a813310596497f68b39c95bc0bddc90f328718da54fab77f0e2e",
+      "bytes": 553
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/2168bf852a4aa017dc17b3d93299fb9ab8a8b41d324f21c27a7543644ccbbd36.agent",
+      "sha256": "2168bf852a4aa017dc17b3d93299fb9ab8a8b41d324f21c27a7543644ccbbd36",
+      "bytes": 5453
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/21f1fcec28acd17d3bac832bf6645fa568445d3c3e29c55f2ad5cb5f4fd20a39.agent",
+      "sha256": "21f1fcec28acd17d3bac832bf6645fa568445d3c3e29c55f2ad5cb5f4fd20a39",
+      "bytes": 534
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/228d35945892c59e0cb682b1fb85549053718f99ab53cf75fafc42e14a723e20.agent",
+      "sha256": "228d35945892c59e0cb682b1fb85549053718f99ab53cf75fafc42e14a723e20",
+      "bytes": 19202
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/2625fc51e12129d47c43c17e24c2d1b5ebd625b861e82aad9ad9c1533094bd00.agent",
+      "sha256": "2625fc51e12129d47c43c17e24c2d1b5ebd625b861e82aad9ad9c1533094bd00",
+      "bytes": 13530
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/2913ed74e20bd1d279416c0c9a9513e7536e94dc9d54080ac7fd0f8274321c61.agent",
+      "sha256": "2913ed74e20bd1d279416c0c9a9513e7536e94dc9d54080ac7fd0f8274321c61",
+      "bytes": 14977
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/2df107765e3326bf5c0acbd76a23376af50899fbd65240d5aab592a5efb812ec.agent",
+      "sha256": "2df107765e3326bf5c0acbd76a23376af50899fbd65240d5aab592a5efb812ec",
+      "bytes": 545
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/2f169c86f0f1cb52608a719223eb8d5c8eba113c9a16c8d7c7eb700e9d8c5bb8.agent",
+      "sha256": "2f169c86f0f1cb52608a719223eb8d5c8eba113c9a16c8d7c7eb700e9d8c5bb8",
+      "bytes": 313
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/2f6562b4a45321934194a195baa3acacba1981faf333f4958e402eb8a1c71fb9.agent",
+      "sha256": "2f6562b4a45321934194a195baa3acacba1981faf333f4958e402eb8a1c71fb9",
+      "bytes": 351
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/35cf9882fd8fd402a9c6343ee4539ac65e7dc2bcc812a0cbc1fa9a81d0d50a32.agent",
+      "sha256": "35cf9882fd8fd402a9c6343ee4539ac65e7dc2bcc812a0cbc1fa9a81d0d50a32",
+      "bytes": 65
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/3d5ab84b5711c9f73a00023369aeb0a717665c43427ffcca93b3dea6b3b4dff2.agent",
+      "sha256": "3d5ab84b5711c9f73a00023369aeb0a717665c43427ffcca93b3dea6b3b4dff2",
+      "bytes": 325
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/410e292146ac65782c796a98e7f0fb53a348ef4eb16e4427e69b24466d16fc53.agent",
+      "sha256": "410e292146ac65782c796a98e7f0fb53a348ef4eb16e4427e69b24466d16fc53",
+      "bytes": 17316
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/45355c0935426d972737b39fb492f7ffcd83d55e61d837a00f6e0dc56338a274.agent",
+      "sha256": "45355c0935426d972737b39fb492f7ffcd83d55e61d837a00f6e0dc56338a274",
+      "bytes": 525
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/454be75d6ae91922693524cd70fc58e3369ebc1c95285956f6c99ede84054174.agent",
+      "sha256": "454be75d6ae91922693524cd70fc58e3369ebc1c95285956f6c99ede84054174",
+      "bytes": 84
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/45e7fa689e56d653d9083f8c86ff59471d6d15a26f32e057535abeae4a464d4d.agent",
+      "sha256": "45e7fa689e56d653d9083f8c86ff59471d6d15a26f32e057535abeae4a464d4d",
+      "bytes": 152
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/508d27f7a0aaf4832f4c0ebe3ab483d7d50905d500576e1280ac856e3c977591.agent",
+      "sha256": "508d27f7a0aaf4832f4c0ebe3ab483d7d50905d500576e1280ac856e3c977591",
+      "bytes": 440
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/513098c63f235842e156efd7baea135d1693a9cd32785d7d1bdb256a2e4c306f.agent",
+      "sha256": "513098c63f235842e156efd7baea135d1693a9cd32785d7d1bdb256a2e4c306f",
+      "bytes": 341
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/587ce12704741d970f697dba74574b9de48f92fb4f50bfa895c0a66b34311dc9.agent",
+      "sha256": "587ce12704741d970f697dba74574b9de48f92fb4f50bfa895c0a66b34311dc9",
+      "bytes": 337
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/595cdcb1d21c5038459e598ca4ffe4f595666083c82766f3742d4c3a9cd66c4b.agent",
+      "sha256": "595cdcb1d21c5038459e598ca4ffe4f595666083c82766f3742d4c3a9cd66c4b",
+      "bytes": 423
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/5a4ba156c175d2f4287503fd3c2f36f706375c00221e3b77e1a29bf98e50af05.agent",
+      "sha256": "5a4ba156c175d2f4287503fd3c2f36f706375c00221e3b77e1a29bf98e50af05",
+      "bytes": 338
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/5aeef284eac74663aa3732df3e1bd338a026dec477c117e6cf9ea78711da02c8.agent",
+      "sha256": "5aeef284eac74663aa3732df3e1bd338a026dec477c117e6cf9ea78711da02c8",
+      "bytes": 329
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/5f0454f7d9c3f857796b091d332dceccd35b7b2cff51ae0b8a0d47e8ddf71863.agent",
+      "sha256": "5f0454f7d9c3f857796b091d332dceccd35b7b2cff51ae0b8a0d47e8ddf71863",
+      "bytes": 107
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/65797f99fe01de9490b4da4ba8799cfc412b7653be9cce92585162f3d9cfcb6c.agent",
+      "sha256": "65797f99fe01de9490b4da4ba8799cfc412b7653be9cce92585162f3d9cfcb6c",
+      "bytes": 8719
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/76854b5ee21406380e7bafc0bfe580f7f1a946b5cab18551200a499911bb7a4b.agent",
+      "sha256": "76854b5ee21406380e7bafc0bfe580f7f1a946b5cab18551200a499911bb7a4b",
+      "bytes": 362
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/77eab590ae4d1390f963f9148f912ada6ee727ebbfc091e9dbae199c43ce0667.agent",
+      "sha256": "77eab590ae4d1390f963f9148f912ada6ee727ebbfc091e9dbae199c43ce0667",
+      "bytes": 285
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/842b973bd7eeaa962e0c8d2fe89e474907d55517069406f417440b5fcf2b1b95.agent",
+      "sha256": "842b973bd7eeaa962e0c8d2fe89e474907d55517069406f417440b5fcf2b1b95",
+      "bytes": 441
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/8fbfdc8d7181bb17a196a79ce29791ce63a2fe71964a37d988baafc6c4868d51.agent",
+      "sha256": "8fbfdc8d7181bb17a196a79ce29791ce63a2fe71964a37d988baafc6c4868d51",
+      "bytes": 675
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/9111e025ee0407f6b526efc72e72f529c95fb0a00d97e6c76215a195663ea68f.agent",
+      "sha256": "9111e025ee0407f6b526efc72e72f529c95fb0a00d97e6c76215a195663ea68f",
+      "bytes": 4166
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/9d03fd3f3801a743486af5cad44e71edacb9f6946a441d75e8bd1403006483a0.agent",
+      "sha256": "9d03fd3f3801a743486af5cad44e71edacb9f6946a441d75e8bd1403006483a0",
+      "bytes": 1022
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/a1d779b6221634808cf30d4d89163be37740a64fe8de3b2e70569b1226fffdf2.agent",
+      "sha256": "a1d779b6221634808cf30d4d89163be37740a64fe8de3b2e70569b1226fffdf2",
+      "bytes": 546
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/a1fae7b7f861b58526da083d9d3cdcb6c1d7cd3a381e9425f3f62bf9dab83146.agent",
+      "sha256": "a1fae7b7f861b58526da083d9d3cdcb6c1d7cd3a381e9425f3f62bf9dab83146",
+      "bytes": 1044
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/a525bbd715b6f815dbd4cd66094fd01200779948e10edc561c5215f037e83dde.agent",
+      "sha256": "a525bbd715b6f815dbd4cd66094fd01200779948e10edc561c5215f037e83dde",
+      "bytes": 1002
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/a9c29e99e1e0e93b2364190c1c110a1fe5bf161a8e10aa343595db137b1af88e.agent",
+      "sha256": "a9c29e99e1e0e93b2364190c1c110a1fe5bf161a8e10aa343595db137b1af88e",
+      "bytes": 735
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/b17829234f7426c7d0af069f7645fb3ee1cef45e0e1e953bdf6e37d0767e02d6.agent",
+      "sha256": "b17829234f7426c7d0af069f7645fb3ee1cef45e0e1e953bdf6e37d0767e02d6",
+      "bytes": 68
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/b9205203ae2a4995ae9e42aa1cbc6b9c3003cab3375362d4105d7cd1d577b55e.agent",
+      "sha256": "b9205203ae2a4995ae9e42aa1cbc6b9c3003cab3375362d4105d7cd1d577b55e",
+      "bytes": 646
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/ba740ff9e3b04aa8c880b96931f2aed273d7f482e5c74eb442b2d728b83e8491.agent",
+      "sha256": "ba740ff9e3b04aa8c880b96931f2aed273d7f482e5c74eb442b2d728b83e8491",
+      "bytes": 806
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/bd6033bd6d96d9d7def8e8a732db84973d2f8398edaacca6e1caaebce64548fd.agent",
+      "sha256": "bd6033bd6d96d9d7def8e8a732db84973d2f8398edaacca6e1caaebce64548fd",
+      "bytes": 10246
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/c16f7cd7c4444e2d6ce43bfe74558c1180145ae1cbb4ed379d1446e413f89d88.agent",
+      "sha256": "c16f7cd7c4444e2d6ce43bfe74558c1180145ae1cbb4ed379d1446e413f89d88",
+      "bytes": 28
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/c4a07ab84b5b09718e9b6bf9b4693098aa91a611249799c54ed5eae97f68745e.agent",
+      "sha256": "c4a07ab84b5b09718e9b6bf9b4693098aa91a611249799c54ed5eae97f68745e",
+      "bytes": 68
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/cc228583dfc73977a29e3ce2e9649e53c2fae99a61a6f84d8de398c98d1a6c56.agent",
+      "sha256": "cc228583dfc73977a29e3ce2e9649e53c2fae99a61a6f84d8de398c98d1a6c56",
+      "bytes": 1894
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/cc3d49579a1433f8aaa9451064640fbed4f037c95b58767f78b9ac5256acf78d.agent",
+      "sha256": "cc3d49579a1433f8aaa9451064640fbed4f037c95b58767f78b9ac5256acf78d",
+      "bytes": 272
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/d6f93ae493716af2b0a0bde6cf9d87f68527a7e40b8a0444e520dd132204ce50.agent",
+      "sha256": "d6f93ae493716af2b0a0bde6cf9d87f68527a7e40b8a0444e520dd132204ce50",
+      "bytes": 96
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/d8acb5623a7cc6b5358c5e748dc1b78f476e1a99bc637d0e45e4d66f463eece4.agent",
+      "sha256": "d8acb5623a7cc6b5358c5e748dc1b78f476e1a99bc637d0e45e4d66f463eece4",
+      "bytes": 7455
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/da1c323f6d40d63eba7b415e762be2d4b62bf34e721ff37577e40d5ebc3dbdaa.agent",
+      "sha256": "da1c323f6d40d63eba7b415e762be2d4b62bf34e721ff37577e40d5ebc3dbdaa",
+      "bytes": 549
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/ea0d90826fd3b51cfef33fb1173cdd908f8564dc86f52b15beea4cf35bdeef8a.agent",
+      "sha256": "ea0d90826fd3b51cfef33fb1173cdd908f8564dc86f52b15beea4cf35bdeef8a",
+      "bytes": 706
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/faeaf08fc0716307002c3d11c2c8c3b993c4c37114091935c020606008064787.agent",
+      "sha256": "faeaf08fc0716307002c3d11c2c8c3b993c4c37114091935c020606008064787",
+      "bytes": 494
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/objects/ffe156e250f5e1456e4724bf98f9732af4841cb472268b08e35b2b7d8cd6409c.agent",
+      "sha256": "ffe156e250f5e1456e4724bf98f9732af4841cb472268b08e35b2b7d8cd6409c",
+      "bytes": 96
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/dictionary.agent",
+      "sha256": "228d35945892c59e0cb682b1fb85549053718f99ab53cf75fafc42e14a723e20",
+      "bytes": 19202
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-1/history/task-0001.json",
+      "sha256": "5bc69cdc849a9284aaea089d5d0d0696e1693efff81f521bfece6bf0a0392ee3",
+      "bytes": 2019
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/CURRENT",
+      "sha256": "35392f0dd027efc2f145f146b8e9e02b50088cde2dda309da25c818ce320a80f",
+      "bytes": 135
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/manifests/0e8fd2c2fec977aaa09c39408c1c08f9fc1a39a15501d6d52a634d55d7df20af.json",
+      "sha256": "0e8fd2c2fec977aaa09c39408c1c08f9fc1a39a15501d6d52a634d55d7df20af",
+      "bytes": 56059
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/manifests/146f84587da86377acf5f83f5e60ebbd9c95fd10f29f23574226cdc5a8a01197.json",
+      "sha256": "146f84587da86377acf5f83f5e60ebbd9c95fd10f29f23574226cdc5a8a01197",
+      "bytes": 47668
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/manifests/492818d711c346051a5807f991f6e9a058000ff25fd9d1d7ae0ebb175e6f118c.json",
+      "sha256": "492818d711c346051a5807f991f6e9a058000ff25fd9d1d7ae0ebb175e6f118c",
+      "bytes": 29784
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/manifests/5047912f4f0bbbe162262d21c9739ee52d97e70c9ef313d14bc2eded7b9f3541.json",
+      "sha256": "5047912f4f0bbbe162262d21c9739ee52d97e70c9ef313d14bc2eded7b9f3541",
+      "bytes": 72086
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/manifests/640d8ee93de92260037d17ef4bc7ba0929d132d47e9d6a7bb6efd7e2d250b7d0.json",
+      "sha256": "640d8ee93de92260037d17ef4bc7ba0929d132d47e9d6a7bb6efd7e2d250b7d0",
+      "bytes": 23195
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/manifests/755f37e9cd93839e9a164187d3671fe10b37e9401b3fad1cc14fd17e890fc5b6.json",
+      "sha256": "755f37e9cd93839e9a164187d3671fe10b37e9401b3fad1cc14fd17e890fc5b6",
+      "bytes": 10807
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/manifests/775263a6607796e09eae17eea34085c923b4eaf0898a9d2de1290b89eabed5db.json",
+      "sha256": "775263a6607796e09eae17eea34085c923b4eaf0898a9d2de1290b89eabed5db",
+      "bytes": 89688
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/manifests/c33d5d278496478a7ffd55a9382503234201db2fbcafc3f75252d619de1c3562.json",
+      "sha256": "c33d5d278496478a7ffd55a9382503234201db2fbcafc3f75252d619de1c3562",
+      "bytes": 113162
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/manifests/dd0accc1a4afbb463d0439fb48e92a22e45edeccf2f64b2feace8bac7e254cee.json",
+      "sha256": "dd0accc1a4afbb463d0439fb48e92a22e45edeccf2f64b2feace8bac7e254cee",
+      "bytes": 99639
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/manifests/f6ddf24bb78014908fc45d1e4f464baeb6c6b3b2cff693b7c140d18eacd29a6f.json",
+      "sha256": "f6ddf24bb78014908fc45d1e4f464baeb6c6b3b2cff693b7c140d18eacd29a6f",
+      "bytes": 123984
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/01c80110bb4f4e33fe1caef3ca76d86ee294e97fc152a327454f6575b66591e5.agent",
+      "sha256": "01c80110bb4f4e33fe1caef3ca76d86ee294e97fc152a327454f6575b66591e5",
+      "bytes": 454
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/072746bb8a2af2ba05d1bf728eba18a6f48b485a363f04ae70a7c139a39920ad.agent",
+      "sha256": "072746bb8a2af2ba05d1bf728eba18a6f48b485a363f04ae70a7c139a39920ad",
+      "bytes": 1051
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/1187cdf670ec3b0591b2aff89c26cbb43928bdb6e90658d1251e0479fb806ae0.agent",
+      "sha256": "1187cdf670ec3b0591b2aff89c26cbb43928bdb6e90658d1251e0479fb806ae0",
+      "bytes": 547
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/15ebbdd75103701a09c388a7b06eba33c3288819b01535f4f17ce81da6aea363.agent",
+      "sha256": "15ebbdd75103701a09c388a7b06eba33c3288819b01535f4f17ce81da6aea363",
+      "bytes": 750
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/1752a9f860cac6c0965413876e69374de5618f74b229a85467f0440748744d87.agent",
+      "sha256": "1752a9f860cac6c0965413876e69374de5618f74b229a85467f0440748744d87",
+      "bytes": 444
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/17dffa4659e852b9080c694e38bf9ea46343f5a4bc357744eb15d1f005a75cd0.agent",
+      "sha256": "17dffa4659e852b9080c694e38bf9ea46343f5a4bc357744eb15d1f005a75cd0",
+      "bytes": 102
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/19769e37660fd0541411786eabd085832b71d204cb659a7b3510ec25ab76e5eb.agent",
+      "sha256": "19769e37660fd0541411786eabd085832b71d204cb659a7b3510ec25ab76e5eb",
+      "bytes": 351
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/1aba95860779a813310596497f68b39c95bc0bddc90f328718da54fab77f0e2e.agent",
+      "sha256": "1aba95860779a813310596497f68b39c95bc0bddc90f328718da54fab77f0e2e",
+      "bytes": 553
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/2168bf852a4aa017dc17b3d93299fb9ab8a8b41d324f21c27a7543644ccbbd36.agent",
+      "sha256": "2168bf852a4aa017dc17b3d93299fb9ab8a8b41d324f21c27a7543644ccbbd36",
+      "bytes": 5453
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/21f1fcec28acd17d3bac832bf6645fa568445d3c3e29c55f2ad5cb5f4fd20a39.agent",
+      "sha256": "21f1fcec28acd17d3bac832bf6645fa568445d3c3e29c55f2ad5cb5f4fd20a39",
+      "bytes": 534
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/228d35945892c59e0cb682b1fb85549053718f99ab53cf75fafc42e14a723e20.agent",
+      "sha256": "228d35945892c59e0cb682b1fb85549053718f99ab53cf75fafc42e14a723e20",
+      "bytes": 19202
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/2625fc51e12129d47c43c17e24c2d1b5ebd625b861e82aad9ad9c1533094bd00.agent",
+      "sha256": "2625fc51e12129d47c43c17e24c2d1b5ebd625b861e82aad9ad9c1533094bd00",
+      "bytes": 13530
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/2913ed74e20bd1d279416c0c9a9513e7536e94dc9d54080ac7fd0f8274321c61.agent",
+      "sha256": "2913ed74e20bd1d279416c0c9a9513e7536e94dc9d54080ac7fd0f8274321c61",
+      "bytes": 14977
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/2df107765e3326bf5c0acbd76a23376af50899fbd65240d5aab592a5efb812ec.agent",
+      "sha256": "2df107765e3326bf5c0acbd76a23376af50899fbd65240d5aab592a5efb812ec",
+      "bytes": 545
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/2f169c86f0f1cb52608a719223eb8d5c8eba113c9a16c8d7c7eb700e9d8c5bb8.agent",
+      "sha256": "2f169c86f0f1cb52608a719223eb8d5c8eba113c9a16c8d7c7eb700e9d8c5bb8",
+      "bytes": 313
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/2f6562b4a45321934194a195baa3acacba1981faf333f4958e402eb8a1c71fb9.agent",
+      "sha256": "2f6562b4a45321934194a195baa3acacba1981faf333f4958e402eb8a1c71fb9",
+      "bytes": 351
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/35cf9882fd8fd402a9c6343ee4539ac65e7dc2bcc812a0cbc1fa9a81d0d50a32.agent",
+      "sha256": "35cf9882fd8fd402a9c6343ee4539ac65e7dc2bcc812a0cbc1fa9a81d0d50a32",
+      "bytes": 65
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/3d5ab84b5711c9f73a00023369aeb0a717665c43427ffcca93b3dea6b3b4dff2.agent",
+      "sha256": "3d5ab84b5711c9f73a00023369aeb0a717665c43427ffcca93b3dea6b3b4dff2",
+      "bytes": 325
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/410e292146ac65782c796a98e7f0fb53a348ef4eb16e4427e69b24466d16fc53.agent",
+      "sha256": "410e292146ac65782c796a98e7f0fb53a348ef4eb16e4427e69b24466d16fc53",
+      "bytes": 17316
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/45355c0935426d972737b39fb492f7ffcd83d55e61d837a00f6e0dc56338a274.agent",
+      "sha256": "45355c0935426d972737b39fb492f7ffcd83d55e61d837a00f6e0dc56338a274",
+      "bytes": 525
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/454be75d6ae91922693524cd70fc58e3369ebc1c95285956f6c99ede84054174.agent",
+      "sha256": "454be75d6ae91922693524cd70fc58e3369ebc1c95285956f6c99ede84054174",
+      "bytes": 84
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/45e7fa689e56d653d9083f8c86ff59471d6d15a26f32e057535abeae4a464d4d.agent",
+      "sha256": "45e7fa689e56d653d9083f8c86ff59471d6d15a26f32e057535abeae4a464d4d",
+      "bytes": 152
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/508d27f7a0aaf4832f4c0ebe3ab483d7d50905d500576e1280ac856e3c977591.agent",
+      "sha256": "508d27f7a0aaf4832f4c0ebe3ab483d7d50905d500576e1280ac856e3c977591",
+      "bytes": 440
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/513098c63f235842e156efd7baea135d1693a9cd32785d7d1bdb256a2e4c306f.agent",
+      "sha256": "513098c63f235842e156efd7baea135d1693a9cd32785d7d1bdb256a2e4c306f",
+      "bytes": 341
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/587ce12704741d970f697dba74574b9de48f92fb4f50bfa895c0a66b34311dc9.agent",
+      "sha256": "587ce12704741d970f697dba74574b9de48f92fb4f50bfa895c0a66b34311dc9",
+      "bytes": 337
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/595cdcb1d21c5038459e598ca4ffe4f595666083c82766f3742d4c3a9cd66c4b.agent",
+      "sha256": "595cdcb1d21c5038459e598ca4ffe4f595666083c82766f3742d4c3a9cd66c4b",
+      "bytes": 423
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/5a4ba156c175d2f4287503fd3c2f36f706375c00221e3b77e1a29bf98e50af05.agent",
+      "sha256": "5a4ba156c175d2f4287503fd3c2f36f706375c00221e3b77e1a29bf98e50af05",
+      "bytes": 338
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/5aeef284eac74663aa3732df3e1bd338a026dec477c117e6cf9ea78711da02c8.agent",
+      "sha256": "5aeef284eac74663aa3732df3e1bd338a026dec477c117e6cf9ea78711da02c8",
+      "bytes": 329
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/5f0454f7d9c3f857796b091d332dceccd35b7b2cff51ae0b8a0d47e8ddf71863.agent",
+      "sha256": "5f0454f7d9c3f857796b091d332dceccd35b7b2cff51ae0b8a0d47e8ddf71863",
+      "bytes": 107
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/65797f99fe01de9490b4da4ba8799cfc412b7653be9cce92585162f3d9cfcb6c.agent",
+      "sha256": "65797f99fe01de9490b4da4ba8799cfc412b7653be9cce92585162f3d9cfcb6c",
+      "bytes": 8719
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/76854b5ee21406380e7bafc0bfe580f7f1a946b5cab18551200a499911bb7a4b.agent",
+      "sha256": "76854b5ee21406380e7bafc0bfe580f7f1a946b5cab18551200a499911bb7a4b",
+      "bytes": 362
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/77eab590ae4d1390f963f9148f912ada6ee727ebbfc091e9dbae199c43ce0667.agent",
+      "sha256": "77eab590ae4d1390f963f9148f912ada6ee727ebbfc091e9dbae199c43ce0667",
+      "bytes": 285
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/842b973bd7eeaa962e0c8d2fe89e474907d55517069406f417440b5fcf2b1b95.agent",
+      "sha256": "842b973bd7eeaa962e0c8d2fe89e474907d55517069406f417440b5fcf2b1b95",
+      "bytes": 441
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/8fbfdc8d7181bb17a196a79ce29791ce63a2fe71964a37d988baafc6c4868d51.agent",
+      "sha256": "8fbfdc8d7181bb17a196a79ce29791ce63a2fe71964a37d988baafc6c4868d51",
+      "bytes": 675
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/9111e025ee0407f6b526efc72e72f529c95fb0a00d97e6c76215a195663ea68f.agent",
+      "sha256": "9111e025ee0407f6b526efc72e72f529c95fb0a00d97e6c76215a195663ea68f",
+      "bytes": 4166
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/9d03fd3f3801a743486af5cad44e71edacb9f6946a441d75e8bd1403006483a0.agent",
+      "sha256": "9d03fd3f3801a743486af5cad44e71edacb9f6946a441d75e8bd1403006483a0",
+      "bytes": 1022
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/a1d779b6221634808cf30d4d89163be37740a64fe8de3b2e70569b1226fffdf2.agent",
+      "sha256": "a1d779b6221634808cf30d4d89163be37740a64fe8de3b2e70569b1226fffdf2",
+      "bytes": 546
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/a1fae7b7f861b58526da083d9d3cdcb6c1d7cd3a381e9425f3f62bf9dab83146.agent",
+      "sha256": "a1fae7b7f861b58526da083d9d3cdcb6c1d7cd3a381e9425f3f62bf9dab83146",
+      "bytes": 1044
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/a525bbd715b6f815dbd4cd66094fd01200779948e10edc561c5215f037e83dde.agent",
+      "sha256": "a525bbd715b6f815dbd4cd66094fd01200779948e10edc561c5215f037e83dde",
+      "bytes": 1002
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/a9c29e99e1e0e93b2364190c1c110a1fe5bf161a8e10aa343595db137b1af88e.agent",
+      "sha256": "a9c29e99e1e0e93b2364190c1c110a1fe5bf161a8e10aa343595db137b1af88e",
+      "bytes": 735
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/b17829234f7426c7d0af069f7645fb3ee1cef45e0e1e953bdf6e37d0767e02d6.agent",
+      "sha256": "b17829234f7426c7d0af069f7645fb3ee1cef45e0e1e953bdf6e37d0767e02d6",
+      "bytes": 68
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/b9205203ae2a4995ae9e42aa1cbc6b9c3003cab3375362d4105d7cd1d577b55e.agent",
+      "sha256": "b9205203ae2a4995ae9e42aa1cbc6b9c3003cab3375362d4105d7cd1d577b55e",
+      "bytes": 646
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/ba740ff9e3b04aa8c880b96931f2aed273d7f482e5c74eb442b2d728b83e8491.agent",
+      "sha256": "ba740ff9e3b04aa8c880b96931f2aed273d7f482e5c74eb442b2d728b83e8491",
+      "bytes": 806
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/bd6033bd6d96d9d7def8e8a732db84973d2f8398edaacca6e1caaebce64548fd.agent",
+      "sha256": "bd6033bd6d96d9d7def8e8a732db84973d2f8398edaacca6e1caaebce64548fd",
+      "bytes": 10246
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/c16f7cd7c4444e2d6ce43bfe74558c1180145ae1cbb4ed379d1446e413f89d88.agent",
+      "sha256": "c16f7cd7c4444e2d6ce43bfe74558c1180145ae1cbb4ed379d1446e413f89d88",
+      "bytes": 28
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/c4a07ab84b5b09718e9b6bf9b4693098aa91a611249799c54ed5eae97f68745e.agent",
+      "sha256": "c4a07ab84b5b09718e9b6bf9b4693098aa91a611249799c54ed5eae97f68745e",
+      "bytes": 68
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/cc228583dfc73977a29e3ce2e9649e53c2fae99a61a6f84d8de398c98d1a6c56.agent",
+      "sha256": "cc228583dfc73977a29e3ce2e9649e53c2fae99a61a6f84d8de398c98d1a6c56",
+      "bytes": 1894
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/cc3d49579a1433f8aaa9451064640fbed4f037c95b58767f78b9ac5256acf78d.agent",
+      "sha256": "cc3d49579a1433f8aaa9451064640fbed4f037c95b58767f78b9ac5256acf78d",
+      "bytes": 272
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/d6f93ae493716af2b0a0bde6cf9d87f68527a7e40b8a0444e520dd132204ce50.agent",
+      "sha256": "d6f93ae493716af2b0a0bde6cf9d87f68527a7e40b8a0444e520dd132204ce50",
+      "bytes": 96
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/d8acb5623a7cc6b5358c5e748dc1b78f476e1a99bc637d0e45e4d66f463eece4.agent",
+      "sha256": "d8acb5623a7cc6b5358c5e748dc1b78f476e1a99bc637d0e45e4d66f463eece4",
+      "bytes": 7455
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/da1c323f6d40d63eba7b415e762be2d4b62bf34e721ff37577e40d5ebc3dbdaa.agent",
+      "sha256": "da1c323f6d40d63eba7b415e762be2d4b62bf34e721ff37577e40d5ebc3dbdaa",
+      "bytes": 549
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/ea0d90826fd3b51cfef33fb1173cdd908f8564dc86f52b15beea4cf35bdeef8a.agent",
+      "sha256": "ea0d90826fd3b51cfef33fb1173cdd908f8564dc86f52b15beea4cf35bdeef8a",
+      "bytes": 706
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/faeaf08fc0716307002c3d11c2c8c3b993c4c37114091935c020606008064787.agent",
+      "sha256": "faeaf08fc0716307002c3d11c2c8c3b993c4c37114091935c020606008064787",
+      "bytes": 494
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/objects/ffe156e250f5e1456e4724bf98f9732af4841cb472268b08e35b2b7d8cd6409c.agent",
+      "sha256": "ffe156e250f5e1456e4724bf98f9732af4841cb472268b08e35b2b7d8cd6409c",
+      "bytes": 96
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/.agentlang/store/WRITE.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/dictionary.agent",
+      "sha256": "228d35945892c59e0cb682b1fb85549053718f99ab53cf75fafc42e14a723e20",
+      "bytes": 19202
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors/retained-2/history/task-0001.json",
+      "sha256": "5bc69cdc849a9284aaea089d5d0d0696e1693efff81f521bfece6bf0a0392ee3",
+      "bytes": 2019
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/actors.json",
+      "sha256": "38b2ec78e2feeae199cbc99699576bd6b0cf123a2a8a0554406b3f71203e1ea0",
+      "bytes": 105660
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/prompts/fsharp-1.md",
+      "sha256": "565a2caa923e62cf4aa1f7c7b3c2f4d8dbd342d858499a8125f544fcbfb5112a",
+      "bytes": 4159
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/prompts/fsharp-2.md",
+      "sha256": "e7c8341473eb334f0b7d898ecd3a9aec246f448f379830fa82ea19a362f0dbbd",
+      "bytes": 4159
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/prompts/reset-1.md",
+      "sha256": "a2c15ea35397de0418e1f2280169e6e67e0f67a6bc15f1351c5af3069a4eda24",
+      "bytes": 4705
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/prompts/reset-2.md",
+      "sha256": "372dc2f81f9b4b3d988a57d16429ff8d6635ff6b44d2279e473604ded066004f",
+      "bytes": 4705
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/prompts/retained-1.md",
+      "sha256": "10b34bae67c422472234eacc8a2cd77bbef59563b56612fdc468f8c38988b8ab",
+      "bytes": 4721
+    },
+    {
+      "path": ".agentlang/efficacy-maintenance-190/trials/prompts/retained-2.md",
+      "sha256": "68ffb9b425314ca687afc35dab17bd7c2b707a64d54d7e0470283361353ea516",
+      "bytes": 4721
+    },
+    {
+      "path": ".agentlang/type-evolution-188/accepted-runtime-pins.json",
+      "sha256": "89cc407b0b81726d904d681a2b4c7195af38687d5d8b00fe73a5745a5223aac3",
+      "bytes": 1605
+    },
+    {
+      "path": ".agentlang/type-evolution-188/readiness-control/runs/readiness-002/evidence/readiness-control-receipt.json",
+      "sha256": "c3242e18c24e37f1f06088023ceeb0878470d95e5936b347e9e9d7ac0f2722bb",
+      "bytes": 1205
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/typed-reference-maintenance-190/capture_candidate.py",
+      "sha256": "23c1fc5189b20c8c1eea5996132deb763ad67a2abfb0b96bfcf29c2adaf0b36c",
+      "bytes": 2799
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/typed-reference-maintenance-190/oracle/cases.json",
+      "sha256": "1ff64efdff553279d835137cdff7ceaa6e27c3d4d74ff7f1621dc6f02beb5e22",
+      "bytes": 24622
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/typed-reference-maintenance-190/oracle/model.py",
+      "sha256": "ce7f674ac361139476c1b21c7ec9a32158babac32b385efeb26c1a552cba61a8",
+      "bytes": 11073
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/typed-reference-maintenance-190/oracle/score_reference.py",
+      "sha256": "cdce83df8f8ec2b45f64fff0b41a52cb1d58d439906dbd24c30d9aace40d437c",
+      "bytes": 55603
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/typed-reference-maintenance-190/prepare_trials.py",
+      "sha256": "c536e8405458e73d05131ecacac16fb69c27da985d818d1a39857734725e8450",
+      "bytes": 10866
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/typed-reference-maintenance-190/study-plan.md",
+      "sha256": "7b0727745129d2a2276905e0baf67ec9c40b7fe0df21fe4dc7d4e013fb23550c",
+      "bytes": 2107
+    }
+  ]
+}
