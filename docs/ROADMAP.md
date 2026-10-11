@@ -37,10 +37,12 @@ not wait for every optional feature or proof of a comparative advantage.
 
 ## 1. Validate reliability beyond easy composition
 
-The [current efficacy decision](../reports/203-efficacy-decision-after-organic-creation.md)
-incorporates the organic creator's correct implementation without an eligible
-new helper. No successor was dispatched and organic accumulation remains
-unproven. A separately recorded [fresh replication](../reports/210-organic-reuse-replication.md)
+The [current efficacy decision](../reports/212-efficacy-after-public-vocabulary-reuse.md)
+records a successful later-agent handoff through creator-authored public functions.
+Retention benefit and comparative reliability remain unproven. The
+[previous decision](../reports/203-efficacy-decision-after-organic-creation.md)
+records the organic creator without an eligible optional helper and no successor.
+A separately recorded [fresh replication](../reports/210-organic-reuse-replication.md)
 of the organic creator opportunity closes with another correct creator: 66/66
 independent observations, 145/145 tests and preserved inherited evidence, but no
 eligible optional helper. Its frozen stop rule prevents successor dispatch.

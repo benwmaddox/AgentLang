@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "checkpoint": "212",
+  "kind": "evidence synthesis; no participant rerun",
+  "inputs": [
+    {
+      "path": "reports/199-efficacy-decision-after-reference-maintenance.md",
+      "bytes": 5216,
+      "sha256": "85cc81634401f1ad362e2bd628944b53970f14c1f4aa2d93bbce848cb9a726aa"
+    },
+    {
+      "path": "reports/203-efficacy-decision-after-organic-creation.md",
+      "bytes": 4692,
+      "sha256": "c8d50e56fdb34984501b4478bba64ad36c834696bc9900363f5b86583e73aa34"
+    },
+    {
+      "path": "reports/210-organic-reuse-replication.md",
+      "bytes": 6140,
+      "sha256": "280d62047e89ba511ffdb5082b1c1809841daf5a868096acdccf28b77941351b"
+    },
+    {
+      "path": "reports/211-public-vocabulary-reuse.md",
+      "bytes": 6313,
+      "sha256": "56aeac4b8f65f62713c790d16eb1e5de00f6b84a9f1097b33dfad55e0614b98e"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/organic-reuse-210/PLAN.md",
+      "bytes": 7104,
+      "sha256": "24eff5b4a18171976d8d26dc523bb6b7c33267f89e949c6cb17f9e4ec9f7117c"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/public-vocabulary-reuse-211/PLAN.md",
+      "bytes": 3467,
+      "sha256": "ccb2dddebcfe246295cbfc8b5ad0843f7c82252842c30248e9bb31997984ba6a"
+    },
+    {
+      "path": "reports/evidence/211-public-vocabulary-reuse/review.md",
+      "bytes": 1318,
+      "sha256": "5f95f81d51e3b05897269e34786864d36acea8203086e747762f1d8f123b13c9"
+    },
+    {
+      "path": "reports/evidence/210-organic-reuse-replication/preflight.zip",
+      "bytes": 2782150,
+      "sha256": "994d7d9d527a26e20482217b193045244babc8eeddb20b338328ef456a4035af"
+    },
+    {
+      "path": "reports/evidence/210-organic-reuse-replication/preflight.index.json",
+      "bytes": 661040,
+      "sha256": "5dfafef2f721082e5fc9a512fa837525bd412c8df9fce9bfc8d05e9f0e9e196a"
+    },
+    {
+      "path": "reports/evidence/210-organic-reuse-replication/creator-result.zip",
+      "bytes": 980863,
+      "sha256": "6473ab771bdf0942430c1dd7d96822c6d3f070ac409357d5bdd3c03559693574"
+    },
+    {
+      "path": "reports/evidence/210-organic-reuse-replication/creator-result.index.json",
+      "bytes": 164266,
+      "sha256": "5a7f4cc200b5fe0d6bcaa4ecbdf3b12ef1f215efe56539232b0d69f241d1fcf5"
+    },
+    {
+      "path": "reports/evidence/211-public-vocabulary-reuse/preflight.zip",
+      "bytes": 2752366,
+      "sha256": "3a11fb208be0d1e14364da08edeb03bad3d69a96bf17622343ec9574d6b04d06"
+    },
+    {
+      "path": "reports/evidence/211-public-vocabulary-reuse/preflight.index.json",
+      "bytes": 486110,
+      "sha256": "82aa7b2742f38786ea3f5861d1488a6a35e2df61a57b0b1afd0a341ece9544d0"
+    },
+    {
+      "path": "reports/evidence/211-public-vocabulary-reuse/developer-result.zip",
+      "bytes": 1909107,
+      "sha256": "333f20db97acca8d4f3d4f1ffe607972486e141c6e3640239bc4cc6ef9cf9649"
+    },
+    {
+      "path": "reports/evidence/211-public-vocabulary-reuse/developer-result.index.json",
+      "bytes": 290851,
+      "sha256": "5a918c9898073137a084f272ec94a1cba03c2e5969a719a2d451262fb71a8d8e"
+    }
+  ],
+  "sealedArchiveChecks": [
+    {
+      "archive": "reports/evidence/210-organic-reuse-replication/preflight.zip",
+      "membersVerified": 1918,
+      "status": "passed"
+    },
+    {
+      "archive": "reports/evidence/210-organic-reuse-replication/creator-result.zip",
+      "membersVerified": 564,
+      "status": "passed"
+    },
+    {
+      "archive": "reports/evidence/211-public-vocabulary-reuse/preflight.zip",
+      "membersVerified": 1453,
+      "status": "passed"
+    },
+    {
+      "archive": "reports/evidence/211-public-vocabulary-reuse/developer-result.zip",
+      "membersVerified": 899,
+      "status": "passed"
+    }
+  ]
+}
