@@ -157,3 +157,6 @@ reports/evidence/236-campfire-host-integration/** -text -whitespace
 
 # Preserve authenticated Campfire HTTP validation receipts and source byte hashes.
 reports/evidence/242-campfire-authenticated-http/** -text -whitespace
+
+# Preserve Campfire sign-in foundation validation/source byte hashes.
+reports/evidence/243-campfire-sign-in-foundation/** -text -whitespace

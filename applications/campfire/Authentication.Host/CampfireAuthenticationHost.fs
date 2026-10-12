@@ -10,13 +10,25 @@ exception private AdapterContractMismatch
 module CampfireAuthenticationHost =
     let private sessionFindId = HostOperationId "campfire.sessions.find-by-token"
     let private sessionRefreshId = HostOperationId "campfire.sessions.refresh-before"
+    let private sessionStartId = HostOperationId "campfire.sessions.start"
     let private userFindId = HostOperationId "campfire.users.find-by-id"
+    let private userAnyId = HostOperationId "campfire.users.any?"
     let private botKeyId = HostOperationId "campfire.users.authenticate-bot-key"
+    let private passwordAuthenticateId = HostOperationId "campfire.users.authenticate-password"
     let private ipBannedId = HostOperationId "campfire.bans.ip-banned?"
     let private roomFindId = HostOperationId "campfire.rooms.find-for-user"
 
     let operationIds =
-        Set.ofList [ sessionFindId; sessionRefreshId; userFindId; botKeyId; ipBannedId; roomFindId ]
+        Set.ofList
+            [ sessionFindId
+              sessionRefreshId
+              sessionStartId
+              userFindId
+              userAnyId
+              botKeyId
+              passwordAuthenticateId
+              ipBannedId
+              roomFindId ]
 
     let manifest =
         [ sessionFindId,
@@ -33,6 +45,13 @@ module CampfireAuthenticationHost =
             Outputs = [ TResult(TNamed "SessionRow", TNamed "DbError") ]
             Effects = Set.singleton "db.write"
             Documentation = "Conditionally refreshes one session before the Flow-selected UTC cutoff." }
+          sessionStartId,
+          { Id = sessionStartId
+            WordName = "campfire.sessions.start"
+            Inputs = [ TNamed "SessionStart" ]
+            Outputs = [ TResult(TNamed "SessionRow", TNamed "DbError") ]
+            Effects = Set.ofList [ "db.write"; "random.read" ]
+            Documentation = "Creates a persisted session for the authenticated user and trusted request metadata." }
           userFindId,
           { Id = userFindId
             WordName = "campfire.users.find-by-id"
@@ -40,6 +59,13 @@ module CampfireAuthenticationHost =
             Outputs = [ TResult(TOption(TNamed "AuthUser"), TNamed "DbError") ]
             Effects = Set.singleton "db.read"
             Documentation = "Finds a user by primary key without applying role or status filtering." }
+          userAnyId,
+          { Id = userAnyId
+            WordName = "campfire.users.any?"
+            Inputs = []
+            Outputs = [ TResult(TBool, TNamed "DbError") ]
+            Effects = Set.singleton "db.read"
+            Documentation = "Reports whether the persisted users table contains any users." }
           botKeyId,
           { Id = botKeyId
             WordName = "campfire.users.authenticate-bot-key"
@@ -47,6 +73,13 @@ module CampfireAuthenticationHost =
             Outputs = [ TResult(TOption(TNamed "AuthUser"), TNamed "DbError") ]
             Effects = Set.singleton "db.read"
             Documentation = "Looks up an active bot by the exact bot key supplied by a trusted caller." }
+          passwordAuthenticateId,
+          { Id = passwordAuthenticateId
+            WordName = "campfire.users.authenticate-password"
+            Inputs = [ TString; TString ]
+            Outputs = [ TResult(TOption(TNamed "AuthUser"), TNamed "DbError") ]
+            Effects = Set.singleton "db.read"
+            Documentation = "Authenticates an account using its supplied email address and password." }
           ipBannedId,
           { Id = ipBannedId
             WordName = "campfire.bans.ip-banned?"
@@ -195,6 +228,14 @@ module CampfireAuthenticationHost =
           IpAddress = field fields "ip-address" |> asOptionRemoteIp |> Option.map (fun (RemoteIp ip) -> ip)
           UserAgent = field fields "user-agent" |> asOptionString }
 
+    let private asSessionStart value =
+        let fields = recordFields "SessionStart" [ "user-id"; "now"; "ip-address"; "user-agent" ] value
+        let userId = asNamedInt "UserId" (field fields "user-id")
+        { UserId = UserId userId
+          Now = fromUtcInstant (field fields "now")
+          IpAddress = field fields "ip-address" |> asOptionRemoteIp |> Option.map (fun (RemoteIp ip) -> ip)
+          UserAgent = field fields "user-agent" |> asOptionString }
+
     let private invoke (provider: AuthenticationSqliteProvider) operationId values =
         try
             match operationId, values with
@@ -208,14 +249,29 @@ module CampfireAuthenticationHost =
                 provider.RefreshSessionBefore refresh
                 |> resultValue (TNamed "SessionRow") sessionRowValue
                 |> oneValue
+            | id, [ startValue ] when id = sessionStartId ->
+                let start = asSessionStart startValue
+                provider.StartSession start
+                |> resultValue (TNamed "SessionRow") sessionRowValue
+                |> oneValue
             | id, [ userValue ] when id = userFindId ->
                 let (UserId userId) = UserId(asNamedInt "UserId" userValue)
                 provider.FindUserById(UserId userId)
                 |> resultValue (TOption(TNamed "AuthUser")) (fun maybe -> OptionValue(TNamed "AuthUser", Option.map authUserValue maybe))
                 |> oneValue
+            | id, [] when id = userAnyId ->
+                provider.AnyUsers()
+                |> resultValue TBool BoolValue
+                |> oneValue
             | id, [ keyValue ] when id = botKeyId ->
                 let key = asNamedString "BotKey" keyValue |> BotKey
                 provider.AuthenticateBotKey key
+                |> resultValue (TOption(TNamed "AuthUser")) (fun maybe -> OptionValue(TNamed "AuthUser", Option.map authUserValue maybe))
+                |> oneValue
+            | id, [ emailValue; passwordValue ] when id = passwordAuthenticateId ->
+                let email = asString emailValue
+                let password = asString passwordValue
+                provider.AuthenticatePassword(email, password)
                 |> resultValue (TOption(TNamed "AuthUser")) (fun maybe -> OptionValue(TNamed "AuthUser", Option.map authUserValue maybe))
                 |> oneValue
             | id, [ ipValue ] when id = ipBannedId ->

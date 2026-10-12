@@ -881,6 +881,10 @@ module Program =
         let environment, providerProbe, testFactoryCalls = createEnvironment databasePath (clock :> IClock) cookies
         let sourceDirectory = Path.Combine(repositoryRoot, "applications", "campfire")
         let application = Application.create projectDirectory sourceDirectory environment
+        let descriptionArgs = JsonObject()
+        descriptionArgs["word"] <- JsonValue.Create("campfire.authentication.sign-in")
+        let signInDescription = application.Engine.Dispatch("describe", descriptionArgs)
+        check ((signInDescription["ok"]).GetValue<bool>() && (signInDescription["data"]["maturity"]).GetValue<string>() = "library") "startup makes the tested sign-in library discoverable"
         equal 0 (testFactoryCalls()) "fully scoped startup qualification never creates a provider or falls back to production"
 
         let options =

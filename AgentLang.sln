@@ -93,6 +93,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AgentLang.Campfire.Browser.
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AgentLang.Campfire.Http.Tests", "tests\AgentLang.Campfire.Http.Tests\AgentLang.Campfire.Http.Tests.fsproj", "{04B57F75-F596-4FA7-BF05-E400A8D4051A}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AgentLang.Campfire.SignIn.Tests", "tests\AgentLang.Campfire.SignIn.Tests\AgentLang.Campfire.SignIn.Tests.fsproj", "{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -571,6 +573,18 @@ Global
 		{04B57F75-F596-4FA7-BF05-E400A8D4051A}.Release|x64.Build.0 = Release|Any CPU
 		{04B57F75-F596-4FA7-BF05-E400A8D4051A}.Release|x86.ActiveCfg = Release|Any CPU
 		{04B57F75-F596-4FA7-BF05-E400A8D4051A}.Release|x86.Build.0 = Release|Any CPU
+		{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF}.Debug|x64.Build.0 = Debug|Any CPU
+		{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF}.Debug|x86.Build.0 = Debug|Any CPU
+		{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF}.Release|x64.ActiveCfg = Release|Any CPU
+		{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF}.Release|x64.Build.0 = Release|Any CPU
+		{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF}.Release|x86.ActiveCfg = Release|Any CPU
+		{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -617,5 +631,6 @@ Global
 		{57E74678-5560-4178-9773-C4773FDCBE07} = {1D3572CD-6591-7540-E30D-135F4F613FFF}
 		{965EDBD8-F75D-407A-9CAA-7BE6533ACF8F} = {1D3572CD-6591-7540-E30D-135F4F613FFF}
 		{04B57F75-F596-4FA7-BF05-E400A8D4051A} = {1D3572CD-6591-7540-E30D-135F4F613FFF}
+		{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

@@ -30,6 +30,11 @@ not proof of a working server. Subsequent gates must exercise real persistence,
 HTTP/WebSockets, cancellation and sustained native operation. The full migration
 remains the objective after the first slice passes.
 
+The [sign-in foundation](../reports/243-campfire-sign-in-foundation.md) now passes
+strict library qualification and real SQLite/bcrypt checks. New Campfire
+dictionaries expose it as a discoverable library. Public sign-in routes, rate
+limiting, rendering and cookie finalization are the next application slice.
+
 The inherited-test edit guard is integrated. Room/message and session-restoration
 functions now exercise real SQLite through typed host adapters. Cookie compatibility,
 authentication storage, library reload and the resolved regression gates pass local

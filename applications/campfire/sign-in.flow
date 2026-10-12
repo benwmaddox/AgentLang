@@ -1,0 +1,31 @@
+fn campfire.authentication.sign-in(
+    email-address: String,
+    password: String,
+    now: UtcInstant,
+    ip-address: Option<RemoteIp>,
+    user-agent: Option<String>
+) -> Result<Option<SessionRow>, DbError> {
+    effects db.read, db.write, random.read
+    doc "Authenticates an account and starts a session with the supplied UTC instant and request metadata. Invalid credentials return none, while provider errors propagate."
+
+    match campfire.users.authenticate-password(email-address, password) {
+        error failure => result.error<Option<SessionRow>, DbError>(failure)
+        ok maybe-user => {
+            match maybe-user {
+                none => result.ok<Option<SessionRow>, DbError>(option.none<SessionRow>())
+                some user => {
+                    let start = sessionStart.new(
+                        user-id = user.id,
+                        now = now,
+                        ip-address = ip-address,
+                        user-agent = user-agent
+                    )
+                    match campfire.sessions.start(start) {
+                        error failure => result.error<Option<SessionRow>, DbError>(failure)
+                        ok session => result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(session))
+                    }
+                }
+            }
+        }
+    }
+}

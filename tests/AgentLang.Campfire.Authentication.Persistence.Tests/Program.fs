@@ -3,6 +3,7 @@ namespace AgentLang.Campfire.Authentication.Persistence.Tests
 open System
 open System.Globalization
 open System.IO
+open System.Text.Json
 open System.Threading.Tasks
 open Microsoft.Data.Sqlite
 open AgentLang.Campfire.Persistence
@@ -44,7 +45,7 @@ module Program =
         connection.Open()
         use command = connection.CreateCommand()
         command.CommandText <-
-            "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, role INTEGER NOT NULL, status INTEGER NOT NULL, bot_token TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
+            "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, role INTEGER NOT NULL, status INTEGER NOT NULL, bot_token TEXT, email_address TEXT, password_digest TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE UNIQUE INDEX users_bot_token_unique ON users(bot_token); " +
             "CREATE TABLE sessions (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), token TEXT NOT NULL UNIQUE, ip_address TEXT, user_agent TEXT, last_active_at TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE TABLE bans (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), ip_address TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
@@ -91,6 +92,17 @@ module Program =
               "$token", (match botToken with Some value -> box value | None -> box DBNull.Value) ]
         |> ignore
 
+    let private seedAuthUser (connection: SqliteConnection) id name emailAddress role status digest =
+        execute connection
+            "INSERT INTO users(id, name, role, status, email_address, password_digest, created_at, updated_at) VALUES ($id, $name, $role, $status, $email, $digest, '2025-01-01 00:00:00', '2025-01-01 00:00:00')"
+            [ "$id", box id
+              "$name", box name
+              "$email", box emailAddress
+              "$role", box role
+              "$status", box status
+              "$digest", (match digest with Some value -> box value | None -> box DBNull.Value) ]
+        |> ignore
+
     let private seedSession (connection: SqliteConnection) id userId token ipAddress userAgent lastActive created updated =
         execute connection
             "INSERT INTO sessions(id, user_id, token, ip_address, user_agent, last_active_at, created_at, updated_at) VALUES ($id, $user, $token, $ip, $agent, $last, $created, $updated)"
@@ -131,6 +143,11 @@ module Program =
         match AuthenticationSqliteProvider.OpenExisting(path) with
         | Ok provider -> provider
         | Error error -> failwith $"open existing test database failed: {error}"
+
+    let private openStoreWith path passwordVerifier tokenGenerator =
+        match AuthenticationSqliteProvider.OpenExisting(path, passwordVerifier, tokenGenerator) with
+        | Ok provider -> provider
+        | Error error -> failwith $"open existing test database with injected dependencies failed: {error}"
 
     let private expectOk label result =
         match result with
@@ -461,6 +478,243 @@ module Program =
         let provider = openStore path
         check (provider.IsIpBanned(RemoteIp "192.0.2.9") |> expectOk "fixed ban lookup") "only the fixed typed operation is exposed"
 
+    let private passwordVectorDocument =
+        lazy (
+            let path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "rails-password-vectors.json")
+            JsonDocument.Parse(File.ReadAllText(path)))
+
+    let private passwordVector name =
+        let vectors = passwordVectorDocument.Value.RootElement.GetProperty("vectors")
+        vectors.EnumerateArray()
+        |> Seq.find (fun vector -> vector.GetProperty("name").GetString() = name)
+
+    let private requiredString (element: JsonElement) (propertyName: string) =
+        match element.GetProperty(propertyName).GetString() with
+        | null -> failwith $"password vector field {propertyName} was null"
+        | value -> value
+
+    let private stringArray (element: JsonElement) (propertyName: string) =
+        element.GetProperty(propertyName).EnumerateArray()
+        |> Seq.map (fun item -> item.GetString())
+        |> Seq.toArray
+
+    let private authenticateWithDefault path email password =
+        (openStore path).AuthenticatePassword(email, password)
+        |> expectOk "authenticate with the default Rails bcrypt verifier"
+
+    let private railsBcryptGoldenAuthentication () =
+        let secret = passwordVector "secret"
+        let unicode = passwordVector "unicode"
+        let first72 = passwordVector "first-72-bytes"
+        let malformedDigest = "not-a-bcrypt-digest"
+        let path =
+            createFixture "rails-password-goldens" (fun connection ->
+                seedAuthUser connection 1L "Secret User" "secret@example.test" 0L 0L (Some(requiredString secret "digest"))
+                seedAuthUser connection 2L "Unicode User" "unicode@example.test" 1L 0L (Some(requiredString unicode "digest"))
+                seedAuthUser connection 3L "Long Password User" "long@example.test" 2L 0L (Some(requiredString first72 "digest"))
+                seedAuthUser connection 4L "Malformed User" "malformed@example.test" 0L 0L (Some malformedDigest))
+
+        for password in stringArray secret "valid" do
+            match authenticateWithDefault path "secret@example.test" password with
+            | Some user ->
+                equal (UserId 1L) user.Id "Rails bcrypt vector authenticates its known secret"
+                equal AuthUserRole.Member user.Role "password authentication returns only the auth projection"
+            | None -> failwith "a Rails bcrypt known-secret vector did not authenticate"
+        for password in stringArray secret "invalid" do
+            equal None (authenticateWithDefault path "secret@example.test" password) "wrong password is rejected"
+
+        for password in stringArray unicode "valid" do
+            match authenticateWithDefault path "unicode@example.test" password with
+            | Some user ->
+                equal (UserId 2L) user.Id "Rails UTF-8 bcrypt vector authenticates"
+                equal AuthUserRole.Administrator user.Role "an active administrator authenticates with a stored digest"
+            | None -> failwith "a Rails UTF-8 bcrypt vector did not authenticate"
+        for password in stringArray unicode "invalid" do
+            equal None (authenticateWithDefault path "unicode@example.test" password) "a different UTF-8 password is rejected"
+
+        for password in stringArray first72 "valid" do
+            match authenticateWithDefault path "long@example.test" password with
+            | Some user ->
+                equal (UserId 3L) user.Id "Rails bcrypt checks the first 72 password bytes"
+                equal AuthUserRole.Bot user.Role "an active bot role authenticates when it has a password digest"
+            | None -> failwith "a Rails first-72-byte bcrypt vector did not authenticate"
+        for password in stringArray first72 "invalid" do
+            equal None (authenticateWithDefault path "long@example.test" password) "a different first-72-byte prefix is rejected"
+
+        equal None (authenticateWithDefault path "malformed@example.test" (requiredString secret "password")) "malformed digest fails closed"
+        equal 0L (scalarLong path "SELECT COUNT(*) FROM sessions") "successful and failed credential checks do not create sessions"
+        equal 4L (scalarLong path "SELECT COUNT(*) FROM users") "credential checks do not mutate their synthetic users"
+
+    let private passwordLookupPolicyAndDummyVerification () =
+        let path =
+            createFixture "password-lookup-policy" (fun connection ->
+                seedAuthUser connection 1L "Member" "Exact@Example.test" 0L 0L (Some "opaque-test-digest")
+                seedAuthUser connection 2L "Administrator" "admin@example.test" 1L 0L (Some "opaque-test-digest")
+                seedAuthUser connection 3L "Bot" "bot@example.test" 2L 0L (Some "opaque-test-digest")
+                seedAuthUser connection 4L "Inactive" "inactive@example.test" 0L 1L (Some "opaque-test-digest")
+                seedAuthUser connection 5L "Banned" "banned@example.test" 1L 2L (Some "opaque-test-digest")
+                seedAuthUser connection 6L "No Digest" "no-digest@example.test" 0L 0L None
+                seedAuthUser connection 7L "Empty Digest" "empty-digest@example.test" 2L 0L (Some ""))
+        let calls = ResizeArray<string * string>()
+        let verifier password digest =
+            calls.Add((password, digest))
+            password = "accepted" && digest = "opaque-test-digest"
+        let provider = openStoreWith path verifier (fun () -> "123456789ABCDEFGHJKLMNPQ")
+        check (provider.AnyUsers() |> expectOk "nonempty user table") "any-users reports existing accounts"
+
+        let expectUser expectedId expectedName expectedRole email =
+            let user =
+                provider.AuthenticatePassword(email, "accepted")
+                |> expectOk "authenticate an active account"
+                |> Option.defaultWith (fun () -> failwith "an active account with a verified password was rejected")
+            equal
+                { Id = UserId expectedId; Name = expectedName; Role = expectedRole; Status = AuthUserStatus.Active }
+                user
+                "authentication returns an active user without the stored digest"
+
+        expectUser 1L "Member" AuthUserRole.Member "Exact@Example.test"
+        expectUser 2L "Administrator" AuthUserRole.Administrator "admin@example.test"
+        expectUser 3L "Bot" AuthUserRole.Bot "bot@example.test"
+        equal 3 calls.Count "each active role is verified exactly once"
+
+        let dummyDigestAt index =
+            let _, digest = calls[index]
+            check (digest.StartsWith("$2a$12$", StringComparison.Ordinal) && digest.Length = 60) "unmatched credentials are checked against a cost-12 bcrypt dummy"
+            digest
+
+        equal None (provider.AuthenticatePassword("exact@example.test", "accepted") |> expectOk "case-sensitive email lookup") "email case is significant"
+        let firstDummy = dummyDigestAt 3
+        equal None (provider.AuthenticatePassword(" Exact@Example.test ", "accepted") |> expectOk "untrimmed email lookup") "email whitespace is not removed"
+        equal firstDummy (dummyDigestAt 4) "case mismatch uses the shared dummy digest"
+        equal None (provider.AuthenticatePassword("missing@example.test", "accepted") |> expectOk "missing email lookup") "missing email does not authenticate"
+        equal firstDummy (dummyDigestAt 5) "missing email uses the same dummy digest"
+        equal None (provider.AuthenticatePassword("inactive@example.test", "accepted") |> expectOk "inactive account lookup") "deactivated account cannot authenticate"
+        equal firstDummy (dummyDigestAt 6) "inactive account uses the same dummy digest"
+        equal None (provider.AuthenticatePassword("banned@example.test", "accepted") |> expectOk "banned account lookup") "banned account cannot authenticate"
+        equal firstDummy (dummyDigestAt 7) "banned account uses the same dummy digest"
+
+        let beforeNoDigest = calls.Count
+        equal None (provider.AuthenticatePassword("no-digest@example.test", "accepted") |> expectOk "account without password digest") "an account without a digest cannot authenticate"
+        equal (beforeNoDigest + 1) calls.Count "a null stored digest still performs dummy verification"
+        equal firstDummy (dummyDigestAt beforeNoDigest) "passwordless accounts use the shared dummy digest"
+        equal None (provider.AuthenticatePassword("empty-digest@example.test", "accepted") |> expectOk "account with empty password digest") "empty digests cannot authenticate"
+        equal firstDummy (dummyDigestAt (beforeNoDigest + 1)) "empty digests also perform dummy verification"
+        equal 0L (scalarLong path "SELECT COUNT(*) FROM sessions") "credential checks never persist a session"
+
+    let private emptyPasswordSkipsSqliteAndVerifier () =
+        let path =
+            createFixture "empty-password" (fun connection ->
+                seedAuthUser connection 1L "Member" "member@example.test" 0L 0L (Some "opaque-test-digest"))
+        let calls = ResizeArray<string * string>()
+        let provider =
+            openStoreWith path (fun password digest -> calls.Add((password, digest)); true) (fun () -> "123456789ABCDEFGHJKLMNPQ")
+        File.Delete(path)
+        equal None (provider.AuthenticatePassword("member@example.test", "") |> expectOk "empty password after database removal") "an empty password is a normal failed sign-in"
+        equal 0 calls.Count "empty password bypasses password verification"
+
+    let private passwordVerifierRunsWithoutDatabaseLock () =
+        let path = createFixture "password-verifier-lock" (fun connection -> seedAuthUser connection 1L "Original" "lock@example.test" 0L 0L (Some "synthetic-digest"))
+        let mutable calls = 0
+        let verifier _ _ =
+            calls <- calls + 1
+            let builder = SqliteConnectionStringBuilder(DataSource = path, Mode = SqliteOpenMode.ReadWrite, Pooling = false, DefaultTimeout = 1)
+            use connection = new SqliteConnection(builder.ToString())
+            connection.Open()
+            execute connection "BEGIN EXCLUSIVE; UPDATE users SET name = 'Updated outside lookup' WHERE id = 1; COMMIT;" [] |> ignore
+            true
+        let provider = openStoreWith path verifier (fun () -> "123456789ABCDEFGHJKLMNPQR")
+        let user = provider.AuthenticatePassword("lock@example.test", "synthetic-password") |> expectOk "verify after releasing lookup connection"
+        equal 1 calls "password verification occurs once after the lookup"
+        equal (Some "Original") (user |> Option.map _.Name) "the safe user projection was captured before verification"
+        equal "Updated outside lookup" (scalarString path "SELECT name FROM users WHERE id = 1") "an exclusive writer can commit during verification"
+        let broken = openStoreWith path (fun _ _ -> failwith "synthetic private verifier failure") (fun () -> "123456789ABCDEFGHJKLMNPQR")
+        expectError Unavailable "unexpected verifier failures are structured" (broken.AuthenticatePassword("lock@example.test", "synthetic-password"))
+        expectError Unavailable "dummy verifier failures are structured" (broken.AuthenticatePassword("absent@example.test", "synthetic-password"))
+
+    let private anyUsersOnEmptyDatabase () =
+        let path = createFixture "any-users-empty" ignore
+        let provider = openStore path
+        check (not (provider.AnyUsers() |> expectOk "empty user table")) "any-users is false for an empty table"
+
+    let private validSessionToken (token: string) =
+        let alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+        not (isNull token) && token.Length = 24 && (token |> Seq.forall (fun character -> alphabet.IndexOf(character) >= 0))
+
+    let private startSession (provider: AuthenticationSqliteProvider) userId now ipAddress userAgent =
+        provider.StartSession
+            { UserId = UserId userId
+              Now = now
+              IpAddress = ipAddress
+              UserAgent = userAgent }
+
+    let private sessionCreationPersistsAndReopens () =
+        let path = createFixture "session-create-reopen" (fun connection -> seedUser connection 1L "member" 0L 0L None)
+        let provider = openStore path
+        let inputTime = DateTimeOffset(2025, 1, 2, 3, 4, 5, TimeSpan.FromHours(-4.0)).AddTicks(1_234_567L)
+        let expectedTime = DateTimeOffset(2025, 1, 2, 7, 4, 5, TimeSpan.Zero).AddTicks(1_234_560L)
+        expectError InvalidInput "null session-start record" (provider.StartSession(Unchecked.defaultof<SessionStart>))
+        expectError InvalidInput "null IP option value" (startSession provider 1L inputTime (Some null) None)
+        expectError InvalidInput "null user-agent option value" (startSession provider 1L inputTime None (Some null))
+        equal 0L (scalarLong path "SELECT COUNT(*) FROM sessions") "invalid metadata is rejected before insertion"
+        let created =
+            startSession provider 1L inputTime (Some "2001:db8::8") (Some "test user-agent")
+            |> expectOk "create session with explicit metadata"
+        check (validSessionToken (let (SessionToken value) = created.Token in value)) "default token uses the 24-character base58 contract"
+        equal (UserId 1L) created.UserId "new session is linked to the requested user"
+        equal (Some "2001:db8::8") created.IpAddress "new session returns the supplied IP"
+        equal (Some "test user-agent") created.UserAgent "new session returns the supplied user-agent"
+        equal expectedTime created.LastActiveAt "session activity time is UTC-normalized and truncated to microseconds"
+        equal expectedTime created.CreatedAt "session creation time uses the same explicit UTC instant"
+        equal expectedTime created.UpdatedAt "session update time uses the same explicit UTC instant"
+
+        let tokenString = let (SessionToken value) = created.Token in value
+        equal "2025-01-02 07:04:05.123456" (scalarString path "SELECT last_active_at FROM sessions WHERE id = 1") "stored session time keeps six fractional digits"
+        equal "2025-01-02 07:04:05.123456" (scalarString path "SELECT created_at FROM sessions WHERE id = 1") "stored created time uses the normalized value"
+        equal "2025-01-02 07:04:05.123456" (scalarString path "SELECT updated_at FROM sessions WHERE id = 1") "stored updated time uses the normalized value"
+
+        let withoutMetadata =
+            startSession provider 1L inputTime None None
+            |> expectOk "create session with nullable metadata"
+        let (SessionToken secondToken) = withoutMetadata.Token
+        check (tokenString <> secondToken) "separate sessions receive unique default tokens"
+        check (validSessionToken secondToken) "second default token uses the base58 contract"
+        equal None withoutMetadata.IpAddress "None IP remains null in the returned row"
+        equal None withoutMetadata.UserAgent "None user-agent remains null in the returned row"
+        equal 1L (scalarLong path "SELECT COUNT(*) FROM sessions WHERE id = 2 AND ip_address IS NULL AND user_agent IS NULL") "None metadata is persisted as SQL NULL"
+
+        let reopened = openStore path
+        let loaded =
+            reopened.FindSessionByToken(created.Token)
+            |> expectOk "reopen and find a created session"
+            |> Option.defaultWith (fun () -> failwith "created session did not survive reopening")
+        equal created loaded "session owner, token, metadata and timestamps survive reopening"
+        equal (Some withoutMetadata) (reopened.FindSessionByToken(withoutMetadata.Token) |> expectOk "reopen nullable-metadata session") "nullable-metadata session survives reopening"
+
+    let private sessionCreationRejectsBadTokensAndRollsBack () =
+        let path =
+            createFixture "session-create-errors" (fun connection ->
+                seedUser connection 1L "member" 0L 0L None
+                seedSession connection 1L 1L "123456789ABCDEFGHJKLMNPQ" None None
+                    "2025-01-01 00:00:00" "2025-01-01 00:00:00" "2025-01-01 00:00:00"
+                execute connection
+                    "CREATE TRIGGER reject_session_insert BEFORE INSERT ON sessions WHEN NEW.token = '23456789ABCDEFGHJKLMNPQR' BEGIN SELECT RAISE(ABORT, 'private trigger detail'); END"
+                    []
+                |> ignore)
+        let now = DateTimeOffset(2025, 2, 3, 4, 5, 6, TimeSpan.Zero)
+        let invoke generator userId =
+            openStoreWith path (fun _ _ -> false) generator
+            |> fun provider -> startSession provider userId now None None
+
+        expectError Unavailable "token generator exception maps to closed unavailable result" (invoke (fun () -> failwith "private generator detail") 1L)
+        expectError Unavailable "malformed generated token is rejected" (invoke (fun () -> "short") 1L)
+        expectError ConstraintConflict "token collision maps to a closed conflict" (invoke (fun () -> "123456789ABCDEFGHJKLMNPQ") 1L)
+        expectError NotFound "missing session owner maps to not found" (invoke (fun () -> "3456789ABCDEFGHJKLMNPQRS") 999L)
+        expectError Unavailable "aborting trigger maps to closed unavailable result" (invoke (fun () -> "23456789ABCDEFGHJKLMNPQR") 1L)
+        equal 1L (scalarLong path "SELECT COUNT(*) FROM sessions") "failed session starts leave no partial rows"
+        equal 0L (scalarLong path "SELECT COUNT(*) FROM sessions WHERE token = '23456789ABCDEFGHJKLMNPQR'") "trigger failure rolls back its generated-token insert"
+        let reopened = openStore path
+        equal None (reopened.FindSessionByToken(SessionToken "23456789ABCDEFGHJKLMNPQR") |> expectOk "read after failed insert") "rolled-back session token is absent after reopening"
+
     [<EntryPoint>]
     let main _ =
         try
@@ -472,6 +726,13 @@ module Program =
             assertGroup "refresh rollback and malformed timestamps" refreshRollbackAndMalformedTimestamp
             assertGroup "concurrent refresh ordering" newerConcurrentRefreshCannotBeOverwritten
             assertGroup "open-existing path boundary" openExistingDoesNotCreateOrExposeDatabase
+            assertGroup "Rails bcrypt golden authentication" railsBcryptGoldenAuthentication
+            assertGroup "password lookup policy and dummy verification" passwordLookupPolicyAndDummyVerification
+            assertGroup "empty password skips SQLite and verification" emptyPasswordSkipsSqliteAndVerifier
+            assertGroup "password verifier releases lookup locks" passwordVerifierRunsWithoutDatabaseLock
+            assertGroup "any-users empty database" anyUsersOnEmptyDatabase
+            assertGroup "session creation persistence and reopen" sessionCreationPersistsAndReopens
+            assertGroup "session token failures and rollback" sessionCreationRejectsBadTokensAndRollsBack
             printfn "PASS %d groups, %d assertions" groups assertions
             0
         with error ->

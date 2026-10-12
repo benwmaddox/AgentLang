@@ -3,6 +3,7 @@ namespace AgentLang.Campfire.Authentication.Persistence
 open System
 open System.Globalization
 open System.IO
+open System.Security.Cryptography
 open Microsoft.Data.Sqlite
 open AgentLang.Campfire.Persistence
 
@@ -39,6 +40,12 @@ type SessionRow =
       LastActiveAt: DateTimeOffset
       CreatedAt: DateTimeOffset
       UpdatedAt: DateTimeOffset }
+
+type SessionStart =
+    { UserId: UserId
+      Now: DateTimeOffset
+      IpAddress: string option
+      UserAgent: string option }
 
 type SessionRefresh =
     { SessionId: SessionId
@@ -169,6 +176,19 @@ module private SqliteDetails =
     let addNullableString (command: SqliteCommand) name value =
         addParameter command name (match value with Some text -> box text | None -> box DBNull.Value)
 
+    let private sessionTokenAlphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+
+    let generateSessionToken () =
+        let characters = Array.zeroCreate<char> 24
+        for index in 0 .. characters.Length - 1 do
+            characters[index] <- sessionTokenAlphabet[RandomNumberGenerator.GetInt32(sessionTokenAlphabet.Length)]
+        String(characters)
+
+    let isValidSessionToken (token: string) =
+        not (isNull token)
+        && token.Length = 24
+        && (token |> Seq.forall (fun character -> sessionTokenAlphabet.IndexOf(character) >= 0))
+
     let nullableString (reader: SqliteDataReader) index =
         if reader.IsDBNull(index) then None else Some(reader.GetString(index))
 
@@ -193,7 +213,8 @@ module private SqliteDetails =
         | 2L -> AuthUserStatus.Banned
         | _ -> raise (ProviderFailure Unavailable)
 
-type AuthenticationSqliteProvider private (path: string) =
+type AuthenticationSqliteProvider private
+    (path: string, passwordVerifier: string -> string -> bool, tokenGenerator: unit -> string) =
     let connectionString = SqliteDetails.openConnectionString path
 
     let run operation =
@@ -236,15 +257,115 @@ type AuthenticationSqliteProvider private (path: string) =
           Role = SqliteDetails.parseRole (reader.GetInt64(2))
           Status = SqliteDetails.parseStatus (reader.GetInt64(3)) }
 
+    let readPasswordCandidate (reader: SqliteDataReader) =
+        readUser reader,
+        (if reader.IsDBNull(4) then None else Some(reader.GetString(4)))
+
     static member OpenExisting(path: string) : Result<AuthenticationSqliteProvider, DbError> =
+        AuthenticationSqliteProvider.OpenExisting(path, PasswordVerification.verify, SqliteDetails.generateSessionToken)
+
+    static member OpenExisting
+        (path: string, passwordVerifier: string -> string -> bool, tokenGenerator: unit -> string)
+        : Result<AuthenticationSqliteProvider, DbError> =
         if String.IsNullOrWhiteSpace path then
+            Error InvalidInput
+        elif obj.ReferenceEquals(box passwordVerifier, null) || obj.ReferenceEquals(box tokenGenerator, null) then
             Error InvalidInput
         else
             try
                 let fullPath = Path.GetFullPath(path)
-                if File.Exists(fullPath) then Ok(AuthenticationSqliteProvider(fullPath))
+                if File.Exists(fullPath) then Ok(AuthenticationSqliteProvider(fullPath, passwordVerifier, tokenGenerator))
                 else Error Unavailable
             with _ -> Error Unavailable
+
+    member _.AuthenticatePassword(emailAddress: string, password: string) : Result<AuthUser option, DbError> =
+        if isNull emailAddress || isNull password then
+            Error InvalidInput
+        elif password.Length = 0 then
+            Ok None
+        else
+            let candidate =
+                run (fun connection ->
+                    use command = connection.CreateCommand()
+                    command.CommandText <-
+                        "SELECT id, name, role, status, password_digest FROM users " +
+                        "WHERE status = 0 AND email_address = $emailAddress LIMIT 1"
+                    SqliteDetails.addParameter command "$emailAddress" (box emailAddress)
+                    command.Prepare()
+                    use reader = command.ExecuteReader()
+                    if reader.Read() then Some(readPasswordCandidate reader) else None)
+
+            match candidate with
+            | Error error -> Error error
+            | Ok None
+            | Ok(Some(_, None))
+            | Ok(Some(_, Some "")) ->
+                // Missing password digests (including passwordless bots) must
+                // not reveal account existence by skipping verification work.
+                try
+                    passwordVerifier password PasswordVerification.DummyDigest |> ignore
+                    Ok None
+                with _ -> Error Unavailable
+            | Ok(Some(user, Some digest)) ->
+                try
+                    if passwordVerifier password digest then Ok(Some user) else Ok None
+                with _ -> Error Unavailable
+
+    member _.AnyUsers() : Result<bool, DbError> =
+        run (fun connection ->
+            use command = connection.CreateCommand()
+            command.CommandText <- "SELECT EXISTS (SELECT 1 FROM users LIMIT 1)"
+            command.Prepare()
+            Convert.ToInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture) <> 0L)
+
+    member _.StartSession(start: SessionStart) : Result<SessionRow, DbError> =
+        if obj.ReferenceEquals(box start, null)
+           || Option.exists isNull start.IpAddress
+           || Option.exists isNull start.UserAgent then
+            Error InvalidInput
+        else
+            let normalizedNow =
+                try
+                    let utc = start.Now.ToUniversalTime()
+                    let ticks = utc.Ticks - utc.Ticks % 10L
+                    Ok(DateTimeOffset(ticks, TimeSpan.Zero))
+                with _ -> Error InvalidInput
+
+            match normalizedNow with
+            | Error error -> Error error
+            | Ok now ->
+                let generatedToken =
+                    try Some(tokenGenerator())
+                    with _ -> None
+                match generatedToken with
+                | None -> Error Unavailable
+                | Some token when not (SqliteDetails.isValidSessionToken token) -> Error Unavailable
+                | Some token ->
+                    run (fun connection ->
+                        let (UserId userId) = start.UserId
+                        let formattedNow = SqliteDetails.formatTimestamp now
+                        use transaction = connection.BeginTransaction()
+                        use command = connection.CreateCommand()
+                        command.Transaction <- transaction
+                        command.CommandText <-
+                            "INSERT INTO sessions (user_id, token, ip_address, user_agent, last_active_at, created_at, updated_at) " +
+                            "VALUES ($userId, $token, $ipAddress, $userAgent, $now, $now, $now) RETURNING id"
+                        SqliteDetails.addParameter command "$userId" (box userId)
+                        SqliteDetails.addParameter command "$token" (box token)
+                        SqliteDetails.addNullableString command "$ipAddress" start.IpAddress
+                        SqliteDetails.addNullableString command "$userAgent" start.UserAgent
+                        SqliteDetails.addParameter command "$now" (box formattedNow)
+                        command.Prepare()
+                        let sessionId = Convert.ToInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture)
+                        transaction.Commit()
+                        { Id = SessionId sessionId
+                          UserId = start.UserId
+                          Token = SessionToken token
+                          IpAddress = start.IpAddress
+                          UserAgent = start.UserAgent
+                          LastActiveAt = now
+                          CreatedAt = now
+                          UpdatedAt = now })
 
     member _.FindSessionByToken(SessionToken token) =
         if isNull token then

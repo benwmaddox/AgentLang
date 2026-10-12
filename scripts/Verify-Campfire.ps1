@@ -13,7 +13,7 @@ $repo = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $startedAt = [DateTimeOffset]::UtcNow
 if ([string]::IsNullOrWhiteSpace($EvidencePath)) {
     $runName = $startedAt.ToString('yyyyMMddTHHmmssZ') + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 8)
-    $EvidencePath = Join-Path $repo ".agentlang/campfire-http-242/verification/$runName/receipt.json"
+    $EvidencePath = Join-Path $repo ".agentlang/campfire-login-243/verification/$runName/receipt.json"
 } elseif (-not [IO.Path]::IsPathRooted($EvidencePath)) {
     $EvidencePath = Join-Path $repo $EvidencePath
 }
@@ -74,13 +74,14 @@ try {
         'authentication-integration' = 'tests/AgentLang.Campfire.Authentication.Integration.Tests/AgentLang.Campfire.Authentication.Integration.Tests.fsproj'
         'browser' = 'tests/AgentLang.Campfire.Browser.Tests/AgentLang.Campfire.Browser.Tests.fsproj'
         'http' = 'tests/AgentLang.Campfire.Http.Tests/AgentLang.Campfire.Http.Tests.fsproj'
+        'sign-in' = 'tests/AgentLang.Campfire.SignIn.Tests/AgentLang.Campfire.SignIn.Tests.fsproj'
     }
     foreach ($name in $projects.Keys) {
         $arguments = @('build', $projects[$name], '--configuration', $Configuration, '-m:1', '-nr:false')
         if ($NoRestore) { $arguments += '--no-restore' }
         Invoke-Check "build-$name" 'dotnet' $arguments
     }
-    foreach ($name in @('persistence', 'integration', 'cookies', 'authentication-storage', 'authentication-integration', 'browser', 'http')) {
+    foreach ($name in @('persistence', 'integration', 'cookies', 'authentication-storage', 'authentication-integration', 'browser', 'http', 'sign-in')) {
         Invoke-Check "test-$name" 'dotnet' @('run', '--project', $projects[$name], '--configuration', $Configuration, '--no-build', '--no-restore')
     }
     $cliPath = Join-Path $repo "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
@@ -129,6 +130,14 @@ try {
         'tests/AgentLang.Campfire.Authentication.Persistence.Tests/Program.fs',
         'applications/campfire/authentication-types.flow',
         'applications/campfire/authentication.flow',
+        'applications/campfire/sign-in.flow',
+        'applications/campfire/sign-in-tests.flow',
+        'applications/campfire/Authentication.Persistence/PasswordVerification.fs',
+        'applications/campfire/Authentication.Persistence/AgentLang.Campfire.Authentication.Persistence.fsproj',
+        'tests/AgentLang.Campfire.Authentication.Persistence.Tests/Fixtures/rails-password-vectors.json',
+        'tests/AgentLang.Campfire.Authentication.Persistence.Tests/AgentLang.Campfire.Authentication.Persistence.Tests.fsproj',
+        'tests/AgentLang.Campfire.SignIn.Tests/Program.fs',
+        'tests/AgentLang.Campfire.SignIn.Tests/AgentLang.Campfire.SignIn.Tests.fsproj',
         'applications/campfire/authentication-tests.flow',
         'applications/campfire/Authentication.Host/CampfireAuthenticationHost.fs',
         'tests/AgentLang.Campfire.Authentication.Integration.Tests/Program.fs',

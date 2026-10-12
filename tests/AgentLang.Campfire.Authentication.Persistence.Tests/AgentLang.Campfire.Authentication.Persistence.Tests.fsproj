@@ -10,4 +10,9 @@
   <ItemGroup>
     <Compile Include="Program.fs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Fixtures\rails-password-vectors.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\README.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\MIT-LICENSE" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

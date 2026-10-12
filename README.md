@@ -438,3 +438,7 @@ delayed-I/O point, native RETURN uses about 5.2 MiB peak commit versus F#'s
 pool at about 8.1 MiB. Native RETURN's high short-run rate fails its 30-second
 confirmation. These bounded host results do not establish general server
 throughput or improved agent edit reliability.
+
+The [Campfire sign-in foundation](reports/243-campfire-sign-in-foundation.md)
+adds a tested, discoverable language library over fixed bcrypt and transactional
+session adapters. Public HTTP sign-in routing remains the next migration slice.

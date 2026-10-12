@@ -1,0 +1,429 @@
+test-file campfire-sign-in {
+    override fn campfire.users.authenticate-password(email-address: String, password: String) -> Result<Option<AuthUser>, DbError> {
+        if password == "synthetic-password" {
+            if email-address == "auth-unavailable@example.test" {
+                result.error<Option<AuthUser>, DbError>(DbError.unavailable())
+            } else {
+                if email-address == "auth-not-found@example.test" {
+                    result.error<Option<AuthUser>, DbError>(DbError.not-found())
+                } else {
+                    if email-address == "auth-constraint@example.test" {
+                        result.error<Option<AuthUser>, DbError>(DbError.constraint-conflict())
+                    } else {
+                        if email-address == "auth-invalid@example.test" {
+                            result.error<Option<AuthUser>, DbError>(DbError.invalid-input())
+                        } else {
+                            if email-address == "member@example.test" {
+                                result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(
+                                    id = UserId.new(11),
+                                    name = "Member",
+                                    role = Role.member(),
+                                    status = AuthUserStatus.active()
+                                )))
+                            } else {
+                                if email-address == "administrator@example.test" {
+                                    result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(
+                                        id = UserId.new(12),
+                                        name = "Administrator",
+                                        role = Role.administrator(),
+                                        status = AuthUserStatus.active()
+                                    )))
+                                } else {
+                                    if email-address == "bot@example.test" {
+                                        result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(
+                                            id = UserId.new(13),
+                                            name = "Bot",
+                                            role = Role.bot(),
+                                            status = AuthUserStatus.active()
+                                        )))
+                                    } else {
+                                        if email-address == "no-metadata@example.test" {
+                                            result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(
+                                                id = UserId.new(14),
+                                                name = "No Metadata",
+                                                role = Role.member(),
+                                                status = AuthUserStatus.active()
+                                            )))
+                                        } else {
+                                            if email-address == "start-unavailable@example.test" {
+                                                result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(
+                                                    id = UserId.new(51),
+                                                    name = "Start Unavailable",
+                                                    role = Role.member(),
+                                                    status = AuthUserStatus.active()
+                                                )))
+                                            } else {
+                                                if email-address == "start-not-found@example.test" {
+                                                    result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(
+                                                        id = UserId.new(52),
+                                                        name = "Start Not Found",
+                                                        role = Role.member(),
+                                                        status = AuthUserStatus.active()
+                                                    )))
+                                                } else {
+                                                    if email-address == "start-constraint@example.test" {
+                                                        result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(
+                                                            id = UserId.new(53),
+                                                            name = "Start Constraint",
+                                                            role = Role.member(),
+                                                            status = AuthUserStatus.active()
+                                                        )))
+                                                    } else {
+                                                        if email-address == "start-invalid@example.test" {
+                                                            result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(
+                                                                id = UserId.new(54),
+                                                                name = "Start Invalid",
+                                                                role = Role.member(),
+                                                                status = AuthUserStatus.active()
+                                                            )))
+                                                        } else {
+                                                            result.ok<Option<AuthUser>, DbError>(option.none<AuthUser>())
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            result.ok<Option<AuthUser>, DbError>(option.none<AuthUser>())
+        }
+    }
+
+    override fn campfire.sessions.start(start: SessionStart) -> Result<SessionRow, DbError> {
+        if start.user-id == UserId.new(11) {
+            if start.now == UtcInstant.new(10000000000) {
+                if start.ip-address == option.some<RemoteIp>(RemoteIp.new("203.0.113.11")) {
+                    if start.user-agent == option.some<String>("synthetic-member-agent") {
+                        result.ok<SessionRow, DbError>(sessionRow.new(
+                            id = SessionId.new(301),
+                            user-id = UserId.new(11),
+                            token = SessionToken.new("synthetic-member-session"),
+                            ip-address = option.some<RemoteIp>(RemoteIp.new("203.0.113.11")),
+                            user-agent = option.some<String>("synthetic-member-agent"),
+                            last-active-at = UtcInstant.new(10000000000),
+                            created-at = UtcInstant.new(100),
+                            updated-at = UtcInstant.new(10000000000)
+                        ))
+                    } else {
+                        result.error<SessionRow, DbError>(DbError.invalid-input())
+                    }
+                } else {
+                    result.error<SessionRow, DbError>(DbError.invalid-input())
+                }
+            } else {
+                result.error<SessionRow, DbError>(DbError.invalid-input())
+            }
+        } else {
+            if start.user-id == UserId.new(12) {
+                if start.now == UtcInstant.new(10000000000) {
+                    if start.ip-address == option.none<RemoteIp>() {
+                        if start.user-agent == option.some<String>("synthetic-admin-agent") {
+                            result.ok<SessionRow, DbError>(sessionRow.new(
+                                id = SessionId.new(302),
+                                user-id = UserId.new(12),
+                                token = SessionToken.new("synthetic-admin-session"),
+                                ip-address = option.none<RemoteIp>(),
+                                user-agent = option.some<String>("synthetic-admin-agent"),
+                                last-active-at = UtcInstant.new(10000000000),
+                                created-at = UtcInstant.new(100),
+                                updated-at = UtcInstant.new(10000000000)
+                            ))
+                        } else {
+                            result.error<SessionRow, DbError>(DbError.invalid-input())
+                        }
+                    } else {
+                        result.error<SessionRow, DbError>(DbError.invalid-input())
+                    }
+                } else {
+                    result.error<SessionRow, DbError>(DbError.invalid-input())
+                }
+            } else {
+                if start.user-id == UserId.new(13) {
+                    if start.now == UtcInstant.new(10000000000) {
+                        if start.ip-address == option.some<RemoteIp>(RemoteIp.new("203.0.113.13")) {
+                            if start.user-agent == option.none<String>() {
+                                result.ok<SessionRow, DbError>(sessionRow.new(
+                                    id = SessionId.new(303),
+                                    user-id = UserId.new(13),
+                                    token = SessionToken.new("synthetic-bot-session"),
+                                    ip-address = option.some<RemoteIp>(RemoteIp.new("203.0.113.13")),
+                                    user-agent = option.none<String>(),
+                                    last-active-at = UtcInstant.new(10000000000),
+                                    created-at = UtcInstant.new(100),
+                                    updated-at = UtcInstant.new(10000000000)
+                                ))
+                            } else {
+                                result.error<SessionRow, DbError>(DbError.invalid-input())
+                            }
+                        } else {
+                            result.error<SessionRow, DbError>(DbError.invalid-input())
+                        }
+                    } else {
+                        result.error<SessionRow, DbError>(DbError.invalid-input())
+                    }
+                } else {
+                    if start.user-id == UserId.new(14) {
+                        if start.now == UtcInstant.new(10000000000) {
+                            if start.ip-address == option.none<RemoteIp>() {
+                                if start.user-agent == option.none<String>() {
+                                    result.ok<SessionRow, DbError>(sessionRow.new(
+                                        id = SessionId.new(304),
+                                        user-id = UserId.new(14),
+                                        token = SessionToken.new("synthetic-no-metadata-session"),
+                                        ip-address = option.none<RemoteIp>(),
+                                        user-agent = option.none<String>(),
+                                        last-active-at = UtcInstant.new(10000000000),
+                                        created-at = UtcInstant.new(100),
+                                        updated-at = UtcInstant.new(10000000000)
+                                    ))
+                                } else {
+                                    result.error<SessionRow, DbError>(DbError.invalid-input())
+                                }
+                            } else {
+                                result.error<SessionRow, DbError>(DbError.invalid-input())
+                            }
+                        } else {
+                            result.error<SessionRow, DbError>(DbError.invalid-input())
+                        }
+                    } else {
+                        if start.user-id == UserId.new(51) {
+                            result.error<SessionRow, DbError>(DbError.unavailable())
+                        } else {
+                            if start.user-id == UserId.new(52) {
+                                result.error<SessionRow, DbError>(DbError.not-found())
+                            } else {
+                                if start.user-id == UserId.new(53) {
+                                    result.error<SessionRow, DbError>(DbError.constraint-conflict())
+                                } else {
+                                    if start.user-id == UserId.new(54) {
+                                        result.error<SessionRow, DbError>(DbError.invalid-input())
+                                    } else {
+                                        result.error<SessionRow, DbError>(DbError.invalid-input())
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    test campfire.authentication.sign-in/member-session {
+        campfire.authentication.sign-in(
+            "member@example.test",
+            "synthetic-password",
+            UtcInstant.new(10000000000),
+            option.some<RemoteIp>(RemoteIp.new("203.0.113.11")),
+            option.some<String>("synthetic-member-agent")
+        )
+        => value result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(sessionRow.new(
+            id = SessionId.new(301),
+            user-id = UserId.new(11),
+            token = SessionToken.new("synthetic-member-session"),
+            ip-address = option.some<RemoteIp>(RemoteIp.new("203.0.113.11")),
+            user-agent = option.some<String>("synthetic-member-agent"),
+            last-active-at = UtcInstant.new(10000000000),
+            created-at = UtcInstant.new(100),
+            updated-at = UtcInstant.new(10000000000)
+        ))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-in/administrator-session {
+        campfire.authentication.sign-in(
+            "administrator@example.test",
+            "synthetic-password",
+            UtcInstant.new(10000000000),
+            option.none<RemoteIp>(),
+            option.some<String>("synthetic-admin-agent")
+        )
+        => value result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(sessionRow.new(
+            id = SessionId.new(302),
+            user-id = UserId.new(12),
+            token = SessionToken.new("synthetic-admin-session"),
+            ip-address = option.none<RemoteIp>(),
+            user-agent = option.some<String>("synthetic-admin-agent"),
+            last-active-at = UtcInstant.new(10000000000),
+            created-at = UtcInstant.new(100),
+            updated-at = UtcInstant.new(10000000000)
+        ))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-in/bot-session {
+        campfire.authentication.sign-in(
+            "bot@example.test",
+            "synthetic-password",
+            UtcInstant.new(10000000000),
+            option.some<RemoteIp>(RemoteIp.new("203.0.113.13")),
+            option.none<String>()
+        )
+        => value result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(sessionRow.new(
+            id = SessionId.new(303),
+            user-id = UserId.new(13),
+            token = SessionToken.new("synthetic-bot-session"),
+            ip-address = option.some<RemoteIp>(RemoteIp.new("203.0.113.13")),
+            user-agent = option.none<String>(),
+            last-active-at = UtcInstant.new(10000000000),
+            created-at = UtcInstant.new(100),
+            updated-at = UtcInstant.new(10000000000)
+        ))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-in/session-without-metadata {
+        campfire.authentication.sign-in(
+            "no-metadata@example.test",
+            "synthetic-password",
+            UtcInstant.new(10000000000),
+            option.none<RemoteIp>(),
+            option.none<String>()
+        )
+        => value result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(sessionRow.new(
+            id = SessionId.new(304),
+            user-id = UserId.new(14),
+            token = SessionToken.new("synthetic-no-metadata-session"),
+            ip-address = option.none<RemoteIp>(),
+            user-agent = option.none<String>(),
+            last-active-at = UtcInstant.new(10000000000),
+            created-at = UtcInstant.new(100),
+            updated-at = UtcInstant.new(10000000000)
+        ))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-in/invalid-password-does-not-start-session {
+        campfire.authentication.sign-in(
+            "member@example.test",
+            "synthetic-wrong-password",
+            UtcInstant.new(10000000000),
+            option.none<RemoteIp>(),
+            option.none<String>()
+        )
+        => value result.ok<Option<SessionRow>, DbError>(option.none<SessionRow>()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-in/missing-user-does-not-start-session {
+        campfire.authentication.sign-in(
+            "missing@example.test",
+            "synthetic-password",
+            UtcInstant.new(10000000000),
+            option.none<RemoteIp>(),
+            option.none<String>()
+        )
+        => value result.ok<Option<SessionRow>, DbError>(option.none<SessionRow>()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-in/auth-unavailable {
+        campfire.authentication.sign-in("auth-unavailable@example.test", "synthetic-password", UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<SessionRow>, DbError>(DbError.unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-in/auth-not-found {
+        campfire.authentication.sign-in("auth-not-found@example.test", "synthetic-password", UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<SessionRow>, DbError>(DbError.not-found()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-in/auth-constraint-conflict {
+        campfire.authentication.sign-in("auth-constraint@example.test", "synthetic-password", UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<SessionRow>, DbError>(DbError.constraint-conflict()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-in/auth-invalid-input {
+        campfire.authentication.sign-in("auth-invalid@example.test", "synthetic-password", UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<SessionRow>, DbError>(DbError.invalid-input()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-in/start-unavailable {
+        campfire.authentication.sign-in("start-unavailable@example.test", "synthetic-password", UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<SessionRow>, DbError>(DbError.unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-in/start-not-found {
+        campfire.authentication.sign-in("start-not-found@example.test", "synthetic-password", UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<SessionRow>, DbError>(DbError.not-found()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-in/start-constraint-conflict {
+        campfire.authentication.sign-in("start-constraint@example.test", "synthetic-password", UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<SessionRow>, DbError>(DbError.constraint-conflict()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-in/start-invalid-input {
+        campfire.authentication.sign-in("start-invalid@example.test", "synthetic-password", UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
+        => value result.error<Option<SessionRow>, DbError>(DbError.invalid-input()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+}

@@ -449,7 +449,7 @@ module Program =
         | other -> failwith $"unexpected host result value: {other}"
 
     let private adapterContract verifiedToken =
-        equal 6 CampfireAuthenticationHost.manifest.Count "manifest publishes exactly six closed authentication operations"
+        equal 9 CampfireAuthenticationHost.manifest.Count "manifest publishes exactly nine closed authentication operations"
         equal CampfireAuthenticationHost.operationIds (CampfireAuthenticationHost.manifest |> Map.toSeq |> Seq.map fst |> Set.ofSeq) "manifest and operation IDs are identical"
         for KeyValue(operationId, definition) in CampfireAuthenticationHost.manifest do
             equal operationId definition.Id $"manifest entry {definition.WordName} carries its own ID"

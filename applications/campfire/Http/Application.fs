@@ -73,11 +73,13 @@ module Application =
             define engine (readMany
                 [ "message-policy.flow"; "room-message.flow"; "room-message-tests.flow"
                   "authentication.flow"; "authentication-tests.flow"
+                  "sign-in.flow"; "sign-in-tests.flow"
                   "browser-policy.flow"; "browser-tests.flow"; "http.flow"; "http-tests.flow" ])
             for name in
                 [ "user.can-administer?"; "message.can-administer?"
                   "campfire.rooms.list-for-user"; "campfire.messages.list-for-member"
                   "campfire.messages.create-for-member"; "campfire.authentication.restore-session"
+                  "campfire.authentication.sign-in"
                   "campfire.browser.supported?" ] do
                 commit engine name true
             invokeCommand engine "commit" [] |> ignore

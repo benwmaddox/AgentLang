@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+    <ProjectReference Include="../../src/AgentLang.Core/AgentLang.Core.fsproj" />
+    <ProjectReference Include="../../applications/campfire/Authentication.Host/AgentLang.Campfire.Authentication.Host.fsproj" />
+  </ItemGroup>
+</Project>

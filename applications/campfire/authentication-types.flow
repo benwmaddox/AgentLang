@@ -30,6 +30,13 @@ record SessionRow {
     field updated-at: UtcInstant
 }
 
+record SessionStart {
+    field user-id: UserId
+    field now: UtcInstant
+    field ip-address: Option<RemoteIp>
+    field user-agent: Option<String>
+}
+
 record SessionRefresh {
     field session-id: SessionId
     field cutoff: UtcInstant
