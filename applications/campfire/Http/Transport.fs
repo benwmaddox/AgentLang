@@ -171,6 +171,41 @@ module Transport =
                 return loginFormError (if failure.StatusCode = 413 then "body-too-large" else "invalid-form")
     }
 
+    let private logoutFormValue (request: HttpRequest) = task {
+        let error caseName = ResultValue(TOption(TNamed "HttpLogoutInput"), TNamed "HttpFormError", Error(EnumValue("HttpFormError", caseName)))
+        let ok endpoint =
+            let input = endpoint |> Option.map (fun value -> RecordValue("HttpLogoutInput", Map.ofList [ "push-subscription-endpoint", stringOption (Some value) ]))
+            ResultValue(TOption(TNamed "HttpLogoutInput"), TNamed "HttpFormError", Ok(OptionValue(TNamed "HttpLogoutInput", input)))
+        let fromQuery () =
+            match request.Query.TryGetValue "push_subscription_endpoint" with
+            | true, values when values.Count = 1 -> ok (Some(string values[0]))
+            | true, _ -> error "invalid-form"
+            | false, _ -> ok None
+        // DELETE needs no form. The route's bounded pre-read makes this
+        // seekable check reliable even when the sender omitted Content-Length.
+        if request.Body.CanSeek && request.Body.Length = 0L then return fromQuery ()
+        else
+            let mediaType = if isNull request.ContentType then "" else request.ContentType.Split(';', 2) |> Array.head |> fun value -> value.Trim()
+            if not (mediaType.Equals("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase)) then
+                return error "unsupported-media"
+            else
+                try
+                    let options = FormOptions(ValueCountLimit = 32, KeyLengthLimit = 128, ValueLengthLimit = 32768)
+                    request.HttpContext.Features.Set<IFormFeature>(FormFeature(request, options))
+                    let! form = request.ReadFormAsync(request.HttpContext.RequestAborted)
+                    if form |> Seq.exists (fun pair -> pair.Value.Count <> 1) then return error "invalid-form"
+                    else
+                        // Inspect query duplicates only when the form supplied no
+                        // endpoint. A form scalar overrides the query entirely.
+                        match form.TryGetValue "push_subscription_endpoint" with
+                        | true, values -> return ok (Some(string values[0]))
+                        | false, _ -> return fromQuery ()
+                with
+                | :? InvalidDataException -> return error "invalid-form"
+                | :? BadHttpRequestException as failure ->
+                    return error (if failure.StatusCode = 413 then "body-too-large" else "invalid-form")
+    }
+
     let private buildRequest (options: HttpApplicationOptions) (context: HttpContext) route methodName roomId cookies (now: DateTimeOffset) = task {
         let request = context.Request
         let! messageForm =
@@ -181,6 +216,9 @@ module Transport =
             | "session-new" -> Task.FromResult(loginQueryValue request)
             | "session-create" -> loginFormValue request
             | _ -> Task.FromResult(loginFormOk None)
+        let! logoutForm =
+            if route = "session-destroy" then logoutFormValue request
+            else Task.FromResult(ResultValue(TOption(TNamed "HttpLogoutInput"), TNamed "HttpFormError", Ok(OptionValue(TNamed "HttpLogoutInput", None))))
         let agent = header "User-Agent" request
         let queryKey = request.Query.TryGetValue "bot_key"
         let botKey =
@@ -208,6 +246,7 @@ module Transport =
               "bot-key", optional (TNamed "BotKey") (fun value -> NamedValue("BotKey", StringValue value)) botKey
               "message-form", messageForm
               "login-form", loginForm
+              "logout-form", logoutForm
               "accepts-turbo", BoolValue(acceptsTurbo request)
               "accepts-html", BoolValue(acceptsHtml request)
               "last-room", stringOption (Map.tryFind "last_room" cookies)
@@ -254,10 +293,14 @@ module Transport =
                 let secure = if options.PublicBaseUri.Scheme = "https" || options.ForceSsl then "; Secure" else ""
                 let visibility = if httpOnly then "; HttpOnly" else ""
                 Ok($"{name}={escaped}; Path=/; SameSite=Lax{expires}{secure}{visibility}")
+        let expire name =
+            let secure = if options.PublicBaseUri.Scheme = "https" || options.ForceSsl then "; Secure" else ""
+            $"{name}=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax{secure}"
         let sessionMutation = rendered.RememberReturnTo || rendered.Alert.IsSome || rendered.CompleteLogin
         let mutable finalLocation = rendered.Location
         let sessionCookie =
-            if sessionMutation then
+            if rendered.CompleteLogout then Ok(Some(expire "_campfire_session"))
+            elif sessionMutation then
                 let state =
                     Map.tryFind "_campfire_session" cookies
                     |> Option.bind (fun raw -> options.Cookies.DecryptRailsSession(raw, now))
@@ -284,12 +327,14 @@ module Transport =
                 |> Result.map Some
             else Ok None
         let tokenCookie =
-            match rendered.RefreshToken with
-            | None -> Ok None
-            | Some token -> options.Cookies.SignSessionToken(token, now)
-                            |> Result.mapError (fun _ -> "HTTP_COOKIE_LIMIT")
-                            |> Result.bind (fun raw -> wire "session_token" raw true true)
-                            |> Result.map Some
+            match rendered.CompleteLogout, rendered.RefreshToken with
+            | true, _ -> Ok(Some(expire "session_token"))
+            | false, None -> Ok None
+            | false, Some token ->
+                options.Cookies.SignSessionToken(token, now)
+                |> Result.mapError (fun _ -> "HTTP_COOKIE_LIMIT")
+                |> Result.bind (fun raw -> wire "session_token" raw true true)
+                |> Result.map Some
         let lastCookie =
             match rendered.LastRoom with
             | None -> Ok None
@@ -304,7 +349,7 @@ module Transport =
                 match Map.tryFind name fields with
                 | Some(ResultValue(_, _, Error(EnumValue("HttpFormError", "body-too-large")))) -> true
                 | _ -> false
-            tooLarge "message-form" || tooLarge "login-form"
+            tooLarge "message-form" || tooLarge "login-form" || tooLarge "logout-form"
         | _ -> false
 
     /// Buffer form request bodies entirely in memory before parsing. The extra
@@ -396,7 +441,7 @@ module Transport =
                                 for cookie in cookieHeaders do context.Response.Headers.Append("Set-Cookie", StringValues cookie)
                                 if request.Method <> "HEAD" then do! context.Response.WriteAsync(rendered.Body, context.RequestAborted)
                     }
-                    if route = "message-create" || route = "session-create" then
+                    if route = "message-create" || route = "session-create" || route = "session-destroy" then
                         let! buffered = withBoundedBufferedBody request (fun () -> handleNormalizedRequest() :> Task)
                         match buffered with
                         | Error status -> context.Response.StatusCode <- status
@@ -410,3 +455,4 @@ module Transport =
         app.MapMethods("/session/new", [| "GET"; "HEAD" |], Func<HttpContext, Task>(fun context ->
             handle "session-new" (if context.Request.Method = "HEAD" then "head" else "get") context :> Task)) |> ignore
         app.MapPost("/session", Func<HttpContext, Task>(fun context -> handle "session-create" "unsafe" context :> Task)) |> ignore
+        app.MapMethods("/session", [| "DELETE" |], Func<HttpContext, Task>(fun context -> handle "session-destroy" "unsafe" context :> Task)) |> ignore

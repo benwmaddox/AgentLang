@@ -1,0 +1,103 @@
+# Native Campfire delivery
+
+Updated 2026-10-12. Primary deliverable: complete Campfire implemented in the
+language, compiled through LLVM AOT, with comparable application performance
+measurements. The interpreter is a semantic and test reference. A release must
+run without the interpreter, compiler, F# assemblies or .NET runtime.
+
+## Current boundary
+
+The application currently executes through the interpreter and .NET adapters.
+Its tested SQLite, cookie, browser and HTTP behavior is useful reference evidence,
+but there is no native Campfire endpoint or measured AOT Campfire throughput.
+Report 140's native mailbox load fixture is not a Campfire benchmark; approximately
+500 completed requests/sec was an offered-load point with simulated I/O, not
+maximum application throughput.
+
+Use `OwningStackAot.fs` and the owning arena runtime as the native base. They
+already lower strings, nominal strings, records, enums, Option/Result and matches.
+The older scalar backend cannot represent the application's request/response
+types. The owning backend currently rejects effects and host calls and has no
+list support. Its fixed initialize/begin/resume mailbox exports are not a general
+application host interface. These are verified blockers, not performance estimates.
+
+## Delivery order
+
+1. Export a compiler-minted verified entry body from a committed Flow dictionary.
+   Reuse the existing binding's exact identity, revision, source and signature
+   checks. Export is build-time only. Keep semantic IR authoritative.
+2. Add typed native host calls with a fixed build-time contract and effect allowlist.
+   Start with the existing `campfire.rooms.find-for-user` nominal/record/Option/Result
+   signature. Pin required operation identities, signatures, effects, type layout
+   and runtime profile in the module descriptor. Missing or mismatched providers
+   must fail before invocation. Default pure compilation remains restrictive.
+   This first compiler milestone is not an application endpoint.
+3. Add the list layout/instructions and `int.to-string` required by room display.
+   Emit a general owning module descriptor and entry ABI. Audit every affected
+   version, offset, capacity, layout fixture and deterministic oracle. Preserve
+   conservative compiler-proven rewinds; do not add automatic compaction.
+4. Compile a complete GET/HEAD room path. A separately bound Flow entry may share
+   existing authentication and room-policy helpers while excluding unrelated
+   write/login routes from its static closure. Prove parity with the generic
+   dispatcher for that endpoint; avoid a second native implementation of policy.
+5. Supply narrow native SQLite, cookie/crypto, browser, rendering and HTTP adapters.
+   Use established native libraries/OS facilities, parameterized SQL and bounded
+   input/output. Preserve existing SQLite data and Rails-compatible cookies.
+   Produce an executable/native dependency manifest and verify the release loads
+   without .NET. Windows clang/lld and CNG import libraries are available; the
+   existing packaged native SQLite library is a candidate pending version,
+   options, licensing and packaging verification. Dependency selection is not
+   completed merely by finding a DLL.
+6. Run real loopback HTTP parity, then measure the native room endpoint. Continue
+   native migration through login, messages, logout, setup, live delivery and the
+   remaining application inventory. A native room page is the first performance
+   checkpoint, not the completion definition.
+
+## Value and effect boundary
+
+Native callbacks take typed inputs borrowed only for the duration of the call.
+Outputs must become arena-owned values before language execution resumes. Prefer
+direct construction through a bounded reserve/validate/commit interface; copy
+temporary provider data only where its lifetime requires an ownership transfer.
+Measure those copied bytes. Do not return retained SQLite pointers, references to
+released callback buffers or arbitrary pointers into older stack data.
+
+Validate output type, tags, extent, capacities and layout. Distinguish host-boundary
+failure from a valid language `Result.error`. Keep temporary allocation rollback
+separate from external database effects: a failed response cannot undo a committed
+write by rewinding an arena. Trusted adapters must not implement opaque route or
+authorization decisions. No request-selected imports or arbitrary library calls.
+
+## Acceptance before performance claims
+
+Native conformance covers O0/O2, allowed/denied effects, unknown and mismatched
+host contracts, malformed/capacity-failing outputs, ownership and rewind behavior,
+and interpreter parity for the actual typed Campfire signature. Existing pure and
+mailbox native gates must continue to pass.
+
+The room HTTP corpus must cover signed/tampered/expired cookies, session refresh,
+missing users and bot keys, browser gating, Origin/Fetch-Site policy, member and
+nonmember rooms, unavailable storage, newest-message ordering, HTML escaping,
+last-room cookies, HEAD, malformed/oversized input and bounded output failures.
+Compare status, body and cookie/header semantics; compare decoded encrypted state
+when nonces differ. Use the existing schema and seeded SQLite fixtures.
+
+## Performance comparison
+
+Reproduce the reference workload's endpoint, data volume, response content,
+authentication, cache behavior, keepalive/compression, concurrency and warmup.
+Record hardware, OS, compiler/profile, process configuration and native dependencies.
+Report completed correct requests/sec, failures, p50/p95/p99, whole-process memory,
+arena capacity/peak and copied bytes. Use sustained runs and repeat selected points.
+Do not use an offered-load point as a saturation limit.
+
+The pinned Campfire README reports room-page rates of 4,101/sec for Rails and
+106,494/sec for Rust. These published rates are comparison targets, not portable
+baselines on this workstation. Prefer rerunning the same harness locally against
+reference implementations; otherwise label differences and avoid a speedup claim.
+Native kernels and interpreter timings remain separate evidence. Save raw results,
+methodology and a report alongside every completed milestone, validate locally,
+and merge/push the tested source and report together.
+
+The full scope remains the [177-row route inventory](campfire-route-inventory.json),
+plus live protocols, assets, stored files, jobs, data migration and deployment.

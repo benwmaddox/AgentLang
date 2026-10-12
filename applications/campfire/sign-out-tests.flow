@@ -1,0 +1,171 @@
+test-file campfire-authentication-sign-out {
+    override fn campfire.push-subscriptions.destroy-for-user(user-id: UserId, endpoint: String) -> Result<Unit, DbError> {
+        if user-id == UserId.new(7) {
+            if endpoint == "push-unavailable" {
+                result.error<Unit, DbError>(DbError.unavailable())
+            } else {
+                if endpoint == "push-not-found" {
+                    result.error<Unit, DbError>(DbError.not-found())
+                } else {
+                    if endpoint == "push-conflict" {
+                        result.error<Unit, DbError>(DbError.constraint-conflict())
+                    } else {
+                        if endpoint == "push-invalid" {
+                            result.error<Unit, DbError>(DbError.invalid-input())
+                        } else {
+                            if endpoint == "push-ok" {
+                                result.ok<Unit, DbError>(unit)
+                            } else {
+                                result.error<Unit, DbError>(DbError.invalid-input())
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            result.error<Unit, DbError>(DbError.invalid-input())
+        }
+    }
+
+    override fn campfire.sessions.destroy(session-id: SessionId) -> Result<Unit, DbError> {
+        if SessionId.value(session-id) == 1 {
+            result.ok<Unit, DbError>(unit)
+        } else {
+            if SessionId.value(session-id) == 2 {
+                result.ok<Unit, DbError>(unit)
+            } else {
+                if SessionId.value(session-id) == 10 {
+                    result.error<Unit, DbError>(DbError.unavailable())
+                } else {
+                    if SessionId.value(session-id) == 11 {
+                        result.error<Unit, DbError>(DbError.not-found())
+                    } else {
+                        if SessionId.value(session-id) == 12 {
+                            result.error<Unit, DbError>(DbError.constraint-conflict())
+                        } else {
+                            if SessionId.value(session-id) == 13 {
+                                result.error<Unit, DbError>(DbError.invalid-input())
+                            } else {
+                                if SessionId.value(session-id) == 14 {
+                                    result.error<Unit, DbError>(DbError.unavailable())
+                                } else {
+                                    result.error<Unit, DbError>(DbError.invalid-input())
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    test campfire.authentication.sign-out/without-push-endpoint-destroys-session {
+        campfire.authentication.sign-out(UserId.new(7), SessionId.new(1), option.none<String>())
+        => value result.ok<Unit, DbError>(unit) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-out/with-push-endpoint-revokes-before-destroy {
+        campfire.authentication.sign-out(UserId.new(7), SessionId.new(2), option.some<String>("push-ok"))
+        => value result.ok<Unit, DbError>(unit) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-out/push-unavailable-short-circuits-session {
+        campfire.authentication.sign-out(UserId.new(7), SessionId.new(2), option.some<String>("push-unavailable"))
+        => value result.error<Unit, DbError>(DbError.unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-out/push-not-found-short-circuits-session {
+        campfire.authentication.sign-out(UserId.new(7), SessionId.new(2), option.some<String>("push-not-found"))
+        => value result.error<Unit, DbError>(DbError.not-found()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-out/push-conflict-short-circuits-session {
+        campfire.authentication.sign-out(UserId.new(7), SessionId.new(2), option.some<String>("push-conflict"))
+        => value result.error<Unit, DbError>(DbError.constraint-conflict()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-out/push-invalid-input-short-circuits-session {
+        campfire.authentication.sign-out(UserId.new(7), SessionId.new(2), option.some<String>("push-invalid"))
+        => value result.error<Unit, DbError>(DbError.invalid-input()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-out/session-unavailable {
+        campfire.authentication.sign-out(UserId.new(7), SessionId.new(10), option.none<String>())
+        => value result.error<Unit, DbError>(DbError.unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-out/session-not-found {
+        campfire.authentication.sign-out(UserId.new(7), SessionId.new(11), option.none<String>())
+        => value result.error<Unit, DbError>(DbError.not-found()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-out/session-conflict {
+        campfire.authentication.sign-out(UserId.new(7), SessionId.new(12), option.none<String>())
+        => value result.error<Unit, DbError>(DbError.constraint-conflict()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-out/session-invalid-input {
+        campfire.authentication.sign-out(UserId.new(7), SessionId.new(13), option.none<String>())
+        => value result.error<Unit, DbError>(DbError.invalid-input()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.authentication.sign-out/session-failure-after-push-revocation {
+        campfire.authentication.sign-out(UserId.new(7), SessionId.new(14), option.some<String>("push-ok"))
+        => value result.error<Unit, DbError>(DbError.unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+}

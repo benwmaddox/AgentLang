@@ -13,7 +13,8 @@ type RenderedResponse =
       RememberReturnTo: bool
       LastRoom: int64 option
       Alert: string option
-      CompleteLogin: bool }
+      CompleteLogin: bool
+      CompleteLogout: bool }
 
 /// Only fixed templates are executable HTML. Every application string is
 /// encoded, including existing rich-text rows; Action Text parity is later work.
@@ -75,6 +76,8 @@ module ResponseRenderer =
                     "text/html; charset=utf-8", "", None, None
                 | "redirect-first-run" when status = 302 && noRouteData && text = "" && not remember && token.IsNone && lastRoom.IsNone ->
                     "text/html; charset=utf-8", "", Some "/first_run", None
+                | "redirect-signed-out" when status = 302 && noRouteData && text = "" && not remember && token.IsNone && lastRoom.IsNone ->
+                    "text/html; charset=utf-8", "", Some "/", None
                 | "incompatible-browser" when status = 200 && noRouteData && not remember && lastRoom.IsNone && text = "" ->
                     "text/html; charset=utf-8", "<!doctype html><html><body><p>Please upgrade your browser.</p></body></html>", None, None
                 | "room" when status = 200 && room.IsSome && message.IsNone && not remember && text = "" ->
@@ -98,5 +101,6 @@ module ResponseRenderer =
                 | _ -> fail ()
             Ok { Status = status; ContentType = contentType; Body = body; Location = location
                  RefreshToken = token; RememberReturnTo = remember; LastRoom = lastRoom; Alert = alert
-                 CompleteLogin = view = "redirect-authenticated" }
+                 CompleteLogin = view = "redirect-authenticated"
+                 CompleteLogout = view = "redirect-signed-out" }
         with _ -> Error "HTTP_RESPONSE_CONTRACT_MISMATCH"

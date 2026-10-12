@@ -9,8 +9,10 @@ exception private AdapterContractMismatch
 
 module CampfireAuthenticationHost =
     let private sessionFindId = HostOperationId "campfire.sessions.find-by-token"
+    let private sessionDestroyId = HostOperationId "campfire.sessions.destroy"
     let private sessionRefreshId = HostOperationId "campfire.sessions.refresh-before"
     let private sessionStartId = HostOperationId "campfire.sessions.start"
+    let private pushSubscriptionsDestroyForUserId = HostOperationId "campfire.push-subscriptions.destroy-for-user"
     let private userFindId = HostOperationId "campfire.users.find-by-id"
     let private userAnyId = HostOperationId "campfire.users.any?"
     let private botKeyId = HostOperationId "campfire.users.authenticate-bot-key"
@@ -21,8 +23,10 @@ module CampfireAuthenticationHost =
     let operationIds =
         Set.ofList
             [ sessionFindId
+              sessionDestroyId
               sessionRefreshId
               sessionStartId
+              pushSubscriptionsDestroyForUserId
               userFindId
               userAnyId
               botKeyId
@@ -38,6 +42,13 @@ module CampfireAuthenticationHost =
             Outputs = [ TResult(TOption(TNamed "SessionRow"), TNamed "DbError") ]
             Effects = Set.singleton "db.read"
             Documentation = "Finds a persisted session by the exact already-verified Rails session token." }
+          sessionDestroyId,
+          { Id = sessionDestroyId
+            WordName = "campfire.sessions.destroy"
+            Inputs = [ TNamed "SessionId" ]
+            Outputs = [ TResult(TUnit, TNamed "DbError") ]
+            Effects = Set.singleton "db.write"
+            Documentation = "Destroys exactly one persisted session by its primary key; a missing session is already destroyed." }
           sessionRefreshId,
           { Id = sessionRefreshId
             WordName = "campfire.sessions.refresh-before"
@@ -52,6 +63,13 @@ module CampfireAuthenticationHost =
             Outputs = [ TResult(TNamed "SessionRow", TNamed "DbError") ]
             Effects = Set.ofList [ "db.write"; "random.read" ]
             Documentation = "Creates a persisted session for the authenticated user and trusted request metadata." }
+          pushSubscriptionsDestroyForUserId,
+          { Id = pushSubscriptionsDestroyForUserId
+            WordName = "campfire.push-subscriptions.destroy-for-user"
+            Inputs = [ TNamed "UserId"; TString ]
+            Outputs = [ TResult(TUnit, TNamed "DbError") ]
+            Effects = Set.singleton "db.write"
+            Documentation = "Destroys every push subscription with the exact endpoint owned by the supplied user." }
           userFindId,
           { Id = userFindId
             WordName = "campfire.users.find-by-id"
@@ -244,6 +262,11 @@ module CampfireAuthenticationHost =
                 provider.FindSessionByToken token
                 |> resultValue (TOption(TNamed "SessionRow")) (fun maybe -> OptionValue(TNamed "SessionRow", Option.map sessionRowValue maybe))
                 |> oneValue
+            | id, [ sessionIdInput ] when id = sessionDestroyId ->
+                let sessionId = asNamedInt "SessionId" sessionIdInput |> SessionId
+                provider.DeleteSession sessionId
+                |> resultValue TUnit (fun () -> UnitValue)
+                |> oneValue
             | id, [ refreshValue ] when id = sessionRefreshId ->
                 let refresh = asSessionRefresh refreshValue
                 provider.RefreshSessionBefore refresh
@@ -253,6 +276,12 @@ module CampfireAuthenticationHost =
                 let start = asSessionStart startValue
                 provider.StartSession start
                 |> resultValue (TNamed "SessionRow") sessionRowValue
+                |> oneValue
+            | id, [ userIdInput; endpointValue ] when id = pushSubscriptionsDestroyForUserId ->
+                let userId = asNamedInt "UserId" userIdInput |> UserId
+                let endpoint = asString endpointValue
+                provider.DestroyPushSubscriptions(userId, endpoint)
+                |> resultValue TUnit (fun () -> UnitValue)
                 |> oneValue
             | id, [ userValue ] when id = userFindId ->
                 let (UserId userId) = UserId(asNamedInt "UserId" userValue)

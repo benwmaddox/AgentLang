@@ -1,13 +1,16 @@
 # Campfire implementation
 
-The active deliverable is a complete Campfire migration implemented in the language,
-with language/runtime additions driven by the next application requirement.
+The active deliverable is a complete Campfire migration implemented in the language
+using LLVM AOT, with measured endpoint performance compared to reported Campfire workloads.
+Language/runtime additions are driven by the next native application requirement.
 This supersedes the earlier scheduling of Campfire as a final research exercise.
-It does not establish application readiness or change the intended native release
-runtime, arena allocation or mailbox execution model.
+It does not establish application readiness. Native release execution, arena allocation
+and mailbox behavior must be verified on the application. The interpreter remains
+a reference. Follow the [AOT delivery plan](CAMPFIRE-AOT-PLAN.md) before expanding
+interpreter-only routes.
 
-The four-handler HTTP slice (room listing, message creation, login page and
-login submission) is a delivery milestone, not the final
+The HTTP slice (room listing, message creation, login page/submission and logout)
+is a delivery milestone, not the final
 scope. Completion still requires the full application's observable behavior,
 existing-data migration, compatible cookies/assets/live protocols, deployment
 and native runtime work described below. Where a requirement appears infeasible,
@@ -19,7 +22,7 @@ the pinned Rails route vectors, including aliases and possibly absent reference
 actions. It is a compatibility checklist, not 177 implemented features or a
 percentage-complete measure. Rows require executable evidence before being
 marked validated; live protocols, assets, jobs, stored files and deployment also
-need separate acceptance evidence. The current four base route rows are in progress
+need separate acceptance evidence. The current five base route rows are in progress
 pending broader compatibility; GET/HEAD login and POST login now pass a focused
 302-assertion local HTTP suite. See [report 244](../reports/244-campfire-public-login-http.md).
 

@@ -44,6 +44,38 @@ fn campfire.http.login-form-error(request: CampfireHttpRequest) -> CampfireHttpR
     }
 }
 
+fn campfire.http.logout(request: CampfireHttpRequest, user: AuthUser, session-id: SessionId, refresh: Option<SessionToken>) -> CampfireHttpResponse {
+    effects db.write
+    doc "Validates the parsed logout form before revoking this restored user's optional push subscription and current session. Successful sign-out returns a fixed root redirect without refreshing the session cookie; failures preserve any refresh directive already produced during restoration."
+
+    match request.method {
+        get => campfire.http.response(500, HttpView.empty(), "", refresh)
+        head => campfire.http.response(500, HttpView.empty(), "", refresh)
+        unsafe => {
+            match request.logout-form {
+                error failure => {
+                    match failure {
+                        invalid-form => campfire.http.response(400, HttpView.empty(), "", refresh)
+                        unsupported-media => campfire.http.response(415, HttpView.empty(), "", refresh)
+                        unsupported-attachment => campfire.http.response(422, HttpView.empty(), "", refresh)
+                        body-too-large => campfire.http.response(413, HttpView.empty(), "", refresh)
+                    }
+                }
+                ok maybe-input => {
+                    let push-endpoint = match maybe-input {
+                        none => option.none<String>()
+                        some input => input.push-subscription-endpoint
+                    }
+                    match campfire.authentication.sign-out(user.id, session-id, push-endpoint) {
+                        error failure => campfire.http.response(500, HttpView.empty(), "", refresh)
+                        ok finished => campfire.http.response(302, HttpView.redirect-signed-out(), "", option.none<SessionToken>())
+                    }
+                }
+            }
+        }
+    }
+}
+
 fn campfire.http.login-submit(request: CampfireHttpRequest) -> CampfireHttpResponse {
     effects db.read, db.write, random.read
     doc "Consumes the per-IP login-attempt budget before inspecting parsed credentials, then delegates sign-in to the authentication policy."
@@ -142,6 +174,7 @@ fn campfire.http.session-login-route(request: CampfireHttpRequest) -> CampfireHt
                         head => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
                     }
                 }
+                session-destroy => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
                 room-show => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
                 message-create => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
             }
@@ -160,6 +193,7 @@ fn campfire.http.dispatch-after-ban(request: CampfireHttpRequest) -> CampfireHtt
     match request.route {
         room-show => campfire.http.authenticate(request)
         message-create => campfire.http.authenticate(request)
+        session-destroy => campfire.http.authenticate(request)
         session-new => campfire.http.session-login-route(request)
         session-create => campfire.http.session-login-route(request)
     }

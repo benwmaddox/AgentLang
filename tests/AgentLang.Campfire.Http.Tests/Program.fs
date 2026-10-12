@@ -121,7 +121,7 @@ module Program =
     let private runId =
         DateTimeOffset.UtcNow.ToString("yyyyMMddTHHmmssfffZ", CultureInfo.InvariantCulture)
         + "-" + Guid.NewGuid().ToString("N")
-    let private runDirectory = Path.Combine(repositoryRoot, ".agentlang", "campfire-http-242", "http-tests", "runs", runId)
+    let private runDirectory = Path.Combine(repositoryRoot, ".agentlang", "campfire-logout-245", "http-tests", "runs", runId)
     let private projectDirectory = Path.Combine(runDirectory, "project")
     let private databasePath = Path.Combine(runDirectory, "campfire.sqlite3")
     let private transcriptPath = Path.Combine(runDirectory, "http-transcript.jsonl")
@@ -131,6 +131,9 @@ module Program =
     let private now = DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero)
     let private goodAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
     let private invalidMarkup = "<script>alert('unsafe')</script>"
+    let private logoutFormEndpoint = "https://push.example.test/subscriptions/form"
+    let private logoutQueryEndpoint = "https://push.example.test/subscriptions/query"
+    let private logoutFailureEndpoint = "https://push.example.test/subscriptions/failure"
     let mutable private failureMessage: string option = None
 
     let private jsonStringNode (value: string) : JsonNode = JsonValue.Create(value) :> JsonNode
@@ -155,7 +158,12 @@ module Program =
     let private appendTranscript (request: RequestSpec) (response: HttpExchange) =
         let requestNode = JsonObject()
         requestNode["method"] <- JsonValue.Create(request.Method.Method)
-        requestNode["path"] <- JsonValue.Create(request.Path)
+        let safePath =
+            if request.Path.StartsWith("/session", StringComparison.Ordinal) then
+                let query = request.Path.IndexOf('?')
+                if query >= 0 then request.Path.Substring(0, query) + "?<redacted>" else request.Path
+            else request.Path
+        requestNode["path"] <- JsonValue.Create safePath
         requestNode["cookieNames"] <-
             (if request.CookieHeaderOverride.IsSome then
                  let values = JsonArray()
@@ -172,7 +180,7 @@ module Program =
         requestNode["fetchSite"] <- optionalStringNode request.FetchSite
         requestNode["body"] <-
             if request.Path.StartsWith("/session", StringComparison.Ordinal) && request.Body.IsSome then
-                jsonStringNode "<redacted-login-form>"
+                jsonStringNode "<redacted-session-form>"
             else optionalStringNode request.Body
 
         let responseNode = JsonObject()
@@ -181,7 +189,7 @@ module Program =
         responseNode["contentType"] <- optionalStringNode response.ContentType
         responseNode["body"] <-
             JsonValue.Create(
-                if request.Path.StartsWith("/session", StringComparison.Ordinal) then "<redacted-login-response>"
+                if request.Path.StartsWith("/session", StringComparison.Ordinal) then "<redacted-session-response>"
                 else response.Body)
         let cookies = JsonArray()
         for header in response.SetCookies do
@@ -223,6 +231,8 @@ module Program =
             "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, role INTEGER NOT NULL, status INTEGER NOT NULL, bot_token TEXT, email_address TEXT, password_digest TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE UNIQUE INDEX users_bot_token_unique ON users(bot_token); " +
             "CREATE TABLE sessions (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), token TEXT NOT NULL UNIQUE, ip_address TEXT, user_agent TEXT, last_active_at TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
+            "CREATE TABLE push_subscriptions (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), endpoint TEXT NOT NULL, p256dh_key TEXT NOT NULL, auth_key TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
+            "CREATE INDEX push_subscriptions_user_endpoint_index ON push_subscriptions(user_id, endpoint); " +
             "CREATE TABLE bans (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), ip_address TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE TABLE rooms (id INTEGER PRIMARY KEY, created_at TEXT NOT NULL, creator_id INTEGER NOT NULL, name TEXT, type TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE TABLE memberships (id INTEGER PRIMARY KEY, room_id INTEGER NOT NULL, user_id INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
@@ -233,6 +243,7 @@ module Program =
             "CREATE INDEX sessions_token_index ON sessions(token); " +
             "CREATE INDEX bans_ip_address_index ON bans(ip_address); " +
             "CREATE TRIGGER reject_blocked_refresh BEFORE UPDATE ON sessions WHEN OLD.token = 'blocked-refresh-token' BEGIN SELECT RAISE(ABORT, 'test-only refresh failure'); END; " +
+            "CREATE TRIGGER reject_test_push_subscription_delete BEFORE DELETE ON push_subscriptions WHEN OLD.endpoint = 'https://push.example.test/subscriptions/failure' BEGIN SELECT RAISE(ABORT, 'test-only push subscription delete failure'); END; " +
             "CREATE TRIGGER reject_test_body BEFORE INSERT ON action_text_rich_texts WHEN NEW.body = 'abort-after-insert' BEGIN SELECT RAISE(ABORT, 'test-only message write failure'); END"
         command.ExecuteNonQuery() |> ignore
 
@@ -262,6 +273,20 @@ module Program =
         execute connection "PRAGMA foreign_keys = OFF" [] |> ignore
         insertSession 14 99 "orphan-token" (Some "198.51.100.14") (Some "orphan-agent") "2025-12-31 00:00:00"
         execute connection "PRAGMA foreign_keys = ON" [] |> ignore
+        insertSession 15 1 "logout-form-token" (Some "198.51.100.15") (Some "logout-agent") "2026-01-01 12:00:00"
+        insertSession 16 1 "logout-query-token" (Some "198.51.100.16") (Some "logout-agent") "2026-01-01 12:00:00"
+        insertSession 17 1 "logout-failure-token" (Some "198.51.100.17") (Some "logout-agent") "2026-01-01 12:00:00"
+        insertSession 18 1 "logout-blank-token" (Some "198.51.100.18") (Some "logout-agent") "2026-01-01 12:00:00"
+
+        for id, userId, endpoint in
+            [ 1, 1, logoutFormEndpoint
+              2, 2, logoutFormEndpoint
+              3, 1, logoutQueryEndpoint
+              4, 1, logoutFailureEndpoint ] do
+            execute connection
+                "INSERT INTO push_subscriptions(id, user_id, endpoint, p256dh_key, auth_key, created_at, updated_at) VALUES ($id, $user, $endpoint, 'test-p256dh-key', 'test-auth-key', '2025-01-01 00:00:00', '2025-01-01 00:00:00')"
+                [ "$id", box id; "$user", box userId; "$endpoint", box endpoint ]
+            |> ignore
 
         execute connection
             "INSERT INTO rooms(id, created_at, creator_id, name, type, updated_at) VALUES (1, '2025-01-01 00:00:00', 1, 'Main room', 'Rooms::Open', '2025-01-01 00:00:00'), (2, '2025-01-01 00:00:00', 2, 'Private room', 'Rooms::Closed', '2025-01-01 00:00:00')"
@@ -310,6 +335,7 @@ module Program =
         let tables =
             [ "users", "id"
               "sessions", "id"
+              "push_subscriptions", "id"
               "bans", "id"
               "rooms", "id"
               "memberships", "id"
@@ -462,6 +488,19 @@ module Program =
         let header = exchange.SetCookies |> List.find (fun item -> item.StartsWith(cookieName + "=", StringComparison.Ordinal))
         check (header.Split(';') |> Array.exists (fun part -> part.Trim().Equals(flag, StringComparison.OrdinalIgnoreCase))) $"{cookieName} cookie includes {flag}"
 
+    let private assertCookieExpired (exchange: HttpExchange) cookieName =
+        let header = exchange.SetCookies |> List.find (fun item -> item.StartsWith(cookieName + "=", StringComparison.Ordinal))
+        let pair = header.Split(';', 2)[0]
+        equal (cookieName + "=") pair $"{cookieName} cookie is cleared with an empty value"
+        check (header.Contains("Max-Age=0", StringComparison.OrdinalIgnoreCase)) $"{cookieName} cookie has Max-Age=0"
+        check
+            (header.Contains("Expires=Thu, 01 Jan 1970 00:00:00 GMT", StringComparison.OrdinalIgnoreCase))
+            $"{cookieName} cookie expires at the epoch"
+        check
+            (header.Split(';') |> Array.exists (fun part -> part.Trim().Equals("Path=/", StringComparison.OrdinalIgnoreCase)))
+            $"{cookieName} cookie clears the root path"
+        assertCookieHasFlag exchange cookieName "SameSite=Lax"
+
     let private sourceHashes () =
         let files =
             [ "tests/AgentLang.Campfire.Http.Tests/AgentLang.Campfire.Http.Tests.fsproj"
@@ -472,6 +511,9 @@ module Program =
               "applications/campfire/http-tests.flow"
               "applications/campfire/http-login.flow"
               "applications/campfire/http-login-tests.flow"
+              "applications/campfire/sign-out.flow"
+              "applications/campfire/sign-out-tests.flow"
+              "applications/campfire/http-logout-tests.flow"
               "applications/campfire/browser-types.flow"
               "applications/campfire/Http/Application.fs"
               "applications/campfire/Http/CookieHost.fs"
@@ -1217,6 +1259,219 @@ module Program =
         expectStatus 401 expired
         expectTrace probe loginAttempt
 
+    let private checkLogoutHttpBehavior (client: HttpClient) (cookies: CookieService) (probe: ProviderProbe) =
+        let token name = createSignedCookie cookies name
+        let form endpoint = formPair "push_subscription_endpoint" endpoint
+        let validGateTrace =
+            [ "campfire.bans.ip-banned?"
+              "campfire.cookies.verify-session-token"
+              "campfire.sessions.find-by-token"
+              "campfire.users.find-by-id"
+              "campfire.browser.version-at-least?" ]
+        let revocationTrace endpoint = validGateTrace @ [ endpoint; "campfire.sessions.destroy" ]
+        let signedOut response =
+            expectStatus 302 response
+            equal (Some "/") response.Location "successful logout redirects to the fixed root"
+            equal "" response.Body "successful logout has an empty response body"
+            equal 2 response.SetCookies.Length "successful logout emits exactly two cookie directives"
+            assertCookieExpired response "session_token"
+            assertCookieExpired response "_campfire_session"
+            check (response.SetCookies |> List.forall (fun value -> not (value.StartsWith("last_room=", StringComparison.Ordinal)))) "logout leaves last_room untouched"
+
+        let sessionExists sessionToken =
+            scalarLong databasePath "SELECT COUNT(*) FROM sessions WHERE token = $token" [ "$token", box sessionToken ]
+
+        let subscriptionCount userId endpoint =
+            scalarLong databasePath "SELECT COUNT(*) FROM push_subscriptions WHERE user_id = $user AND endpoint = $endpoint"
+                [ "$user", box userId; "$endpoint", box endpoint ]
+
+        let assertFixtureUnchanged label =
+            equal 1L (sessionExists "logout-form-token") $"{label} preserves the form logout session"
+            equal 1L (sessionExists "logout-query-token") $"{label} preserves the query logout session"
+            equal 1L (sessionExists "logout-failure-token") $"{label} preserves the failure logout session"
+            equal 1L (sessionExists "logout-blank-token") $"{label} preserves the blank logout session"
+            equal 4L (scalarLong databasePath "SELECT COUNT(*) FROM push_subscriptions" []) $"{label} preserves all push subscriptions"
+            equal 1L (subscriptionCount 1 logoutFormEndpoint) $"{label} preserves the member's matching endpoint"
+            equal 1L (subscriptionCount 2 logoutFormEndpoint) $"{label} preserves another user's identical endpoint"
+            equal 1L (subscriptionCount 1 logoutQueryEndpoint) $"{label} preserves the member's query endpoint"
+            equal 1L (subscriptionCount 1 logoutFailureEndpoint) $"{label} preserves the failure endpoint"
+
+        let request tokenName path contentType body origin fetchSite userAgent cookiesForRequest =
+            { (baseSpec "DELETE" path) with
+                Cookies = [ "session_token", token tokenName ] @ cookiesForRequest
+                ContentType = contentType
+                Body = body
+                Origin = origin
+                FetchSite = fetchSite
+                UserAgent = userAgent }
+
+        let formRequest tokenName endpoint =
+            request tokenName "/session" (Some "application/x-www-form-urlencoded") (Some(form endpoint))
+                (Some(publicUri.GetLeftPart(UriPartial.Authority))) (Some "same-origin") (Some goodAgent) []
+
+        let checkGateRejection label expectedStatus spec expectedTrace =
+            currentCheck <- label
+            probe.Clear()
+            let response = send client spec
+            expectStatus expectedStatus response
+            expectTrace probe expectedTrace
+            assertFixtureUnchanged label
+            response
+
+        let formSessionCookie = token "logout-form-token"
+        let initialState = JsonObject()
+        initialState["retained-marker"] <- JsonValue.Create("must-not-survive-logout")
+        initialState["return_to_after_authenticating"] <- JsonValue.Create("https://campfire.test/private?after=logout")
+        initialState["flash"] <- JsonObject()
+        let encryptedState = cookies.EncryptRailsSession(initialState, now) |> expectOk "encrypt logout starting Rails session"
+
+        currentCheck <- "unauthenticated DELETE cannot revoke a session or push endpoint"
+        probe.Clear()
+        let unauthenticated =
+            send client
+                { (formRequest "logout-form-token" logoutFormEndpoint) with
+                    Cookies = [] }
+        expectStatus 302 unauthenticated
+        equal (Some "/session/new") unauthenticated.Location "unauthenticated logout follows the login redirect"
+        expectTrace probe [ "campfire.bans.ip-banned?" ]
+        assertFixtureUnchanged "unauthenticated logout"
+
+        let forged =
+            checkGateRejection
+                "forged logout stops after authentication and before browser or provider deletion"
+                422
+                { (formRequest "logout-form-token" logoutFormEndpoint) with
+                    Cookies = [ "session_token", formSessionCookie ]
+                    Origin = Some "https://attacker.invalid"
+                    FetchSite = Some "cross-site" }
+                [ "campfire.bans.ip-banned?"; "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id" ]
+        equal "" forged.Body "forged logout response is empty"
+
+        let oldBrowser = Some "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)"
+        let incompatible =
+            checkGateRejection
+                "old browser logout stops before push and session deletion"
+                200
+                { (formRequest "logout-form-token" logoutFormEndpoint) with
+                    Cookies = [ "session_token", formSessionCookie ]
+                    UserAgent = oldBrowser }
+                [ "campfire.bans.ip-banned?"; "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token";
+                  "campfire.users.find-by-id" ]
+        check (incompatible.Body.Contains("Please upgrade your browser.", StringComparison.Ordinal)) "old browser logout returns the fixed compatibility page"
+
+        let duplicateForm =
+            request "logout-form-token" "/session" (Some "application/x-www-form-urlencoded")
+                (Some(form logoutFormEndpoint + "&" + form logoutQueryEndpoint))
+                (Some(publicUri.GetLeftPart(UriPartial.Authority))) (Some "same-origin") (Some goodAgent) []
+        checkGateRejection
+            "duplicate logout form fields fail without mutation"
+            400
+            duplicateForm
+            (validGateTrace)
+        |> ignore
+
+        let duplicateQueryPath =
+            "/session?push_subscription_endpoint=" + Uri.EscapeDataString logoutFormEndpoint
+            + "&push_subscription_endpoint=" + Uri.EscapeDataString logoutQueryEndpoint
+        let duplicateQuery =
+            request "logout-form-token" duplicateQueryPath None None
+                (Some(publicUri.GetLeftPart(UriPartial.Authority))) (Some "same-origin") (Some goodAgent) []
+        checkGateRejection
+            "duplicate logout query fields fail without mutation"
+            400
+            duplicateQuery
+            validGateTrace
+        |> ignore
+
+        let unsupportedMedia =
+            request "logout-form-token" "/session" (Some "application/json") (Some(form logoutFormEndpoint))
+                (Some(publicUri.GetLeftPart(UriPartial.Authority))) (Some "same-origin") (Some goodAgent) []
+        checkGateRejection
+            "unsupported logout form media fails without mutation"
+            415
+            unsupportedMedia
+            validGateTrace
+        |> ignore
+
+        let tooLargeBody = String('x', int Transport.MaximumBodyBytes + 1)
+        let oversized =
+            request "logout-form-token" "/session" (Some "application/x-www-form-urlencoded") (Some tooLargeBody)
+                (Some(publicUri.GetLeftPart(UriPartial.Authority))) (Some "same-origin") (Some goodAgent) []
+        currentCheck <- "oversized logout form is rejected before provider dispatch"
+        probe.Clear()
+        let oversizedResponse = send client oversized
+        expectStatus 413 oversizedResponse
+        expectTrace probe []
+        assertFixtureUnchanged currentCheck
+
+        let chunkedOversized =
+            { oversized with Chunked = true }
+        currentCheck <- "chunked oversized logout form is bounded before provider dispatch"
+        probe.Clear()
+        let chunkedResponse = send client chunkedOversized
+        expectStatus 413 chunkedResponse
+        expectTrace probe []
+        assertFixtureUnchanged currentCheck
+
+        currentCheck <- "push deletion failure retains the authenticated session and emits no sign-out cookies"
+        probe.Clear()
+        let failedPush = send client (formRequest "logout-failure-token" logoutFailureEndpoint)
+        expectStatus 500 failedPush
+        equal "" failedPush.Body "push provider failure returns an empty response"
+        check failedPush.SetCookies.IsEmpty "push provider failure emits no cookie directive"
+        equal 1L (sessionExists "logout-failure-token") "push provider failure preserves the session"
+        equal 1L (subscriptionCount 1 logoutFailureEndpoint) "push provider failure preserves the push row"
+        expectTrace probe (validGateTrace @ [ "campfire.push-subscriptions.destroy-for-user" ])
+
+        currentCheck <- "valid form logout overrides duplicate query endpoints and deletes only this user's matching endpoint"
+        probe.Clear()
+        let loggedOut =
+            send client
+                { (formRequest "logout-form-token" logoutFormEndpoint) with
+                    Path = duplicateQueryPath
+                    Cookies =
+                        [ "session_token", formSessionCookie
+                          "_campfire_session", encryptedState
+                          "last_room", "42" ] }
+        signedOut loggedOut
+        expectTrace probe (revocationTrace "campfire.push-subscriptions.destroy-for-user")
+        equal 0L (sessionExists "logout-form-token") "successful logout destroys the persisted current session"
+        equal 0L (subscriptionCount 1 logoutFormEndpoint) "logout removes the requesting user's matching push endpoint"
+        equal 1L (subscriptionCount 2 logoutFormEndpoint) "logout leaves another user's identical endpoint intact"
+        equal 1L (subscriptionCount 1 logoutQueryEndpoint) "logout leaves the requesting user's unrelated endpoint intact"
+        equal 1L (subscriptionCount 1 logoutFailureEndpoint) "logout leaves the unrequested failure endpoint intact"
+        equal 3L (scalarLong databasePath "SELECT COUNT(*) FROM push_subscriptions" []) "form logout deletes only its one matching subscription"
+        check (getCookie loggedOut "_campfire_session" = Some "") "logout expires the encrypted state cookie instead of returning prior flash or return state"
+        check (getCookie loggedOut "session_token" = Some "") "logout does not refresh the signed session token"
+
+        currentCheck <- "query logout accepts a blank form body and revokes its matching endpoint"
+        probe.Clear()
+        let queryPath = "/session?push_subscription_endpoint=" + Uri.EscapeDataString logoutQueryEndpoint
+        let queryLogout =
+            send client
+                { (request "logout-query-token" queryPath None None
+                    (Some(publicUri.GetLeftPart(UriPartial.Authority))) (Some "same-origin") (Some goodAgent) []) with
+                    Cookies = [ "session_token", token "logout-query-token" ] }
+        signedOut queryLogout
+        expectTrace probe (revocationTrace "campfire.push-subscriptions.destroy-for-user")
+        equal 0L (sessionExists "logout-query-token") "query logout destroys the persisted current session"
+        equal 0L (subscriptionCount 1 logoutQueryEndpoint) "query logout removes the requesting user's matching endpoint"
+        equal 1L (subscriptionCount 2 logoutFormEndpoint) "query logout leaves the other user's same-endpoint subscription intact"
+        equal 2L (scalarLong databasePath "SELECT COUNT(*) FROM push_subscriptions" []) "query logout deletes only its one matching subscription"
+
+        currentCheck <- "blank logout without a push endpoint destroys only the current session"
+        probe.Clear()
+        let blankLogout =
+            send client
+                { (request "logout-blank-token" "/session" None None
+                    (Some(publicUri.GetLeftPart(UriPartial.Authority))) (Some "same-origin") (Some goodAgent) []) with
+                    Cookies = [ "session_token", token "logout-blank-token" ] }
+        signedOut blankLogout
+        expectTrace probe (validGateTrace @ [ "campfire.sessions.destroy" ])
+        equal 0L (sessionExists "logout-blank-token") "blank logout destroys the persisted current session"
+        equal 2L (scalarLong databasePath "SELECT COUNT(*) FROM push_subscriptions" []) "blank logout does not touch any push subscription"
+        token "logout-form-token"
+
     let private checkBannedHttpBehavior (client: HttpClient) (cookies: CookieService) (probe: ProviderProbe) =
         let token name = createSignedCookie cookies name
         currentCheck <- "unsafe-IP ban precedes cookie verification while GET omits ban lookup"
@@ -1263,7 +1518,7 @@ module Program =
         seedFixture emptyDatabase
         executeAtPath
             emptyDatabase
-            "DELETE FROM messages; DELETE FROM action_text_rich_texts; DELETE FROM memberships; DELETE FROM rooms; DELETE FROM sessions; DELETE FROM bans; DELETE FROM users;"
+            "DROP TRIGGER reject_test_push_subscription_delete; DELETE FROM messages; DELETE FROM action_text_rich_texts; DELETE FROM memberships; DELETE FROM rooms; DELETE FROM sessions; DELETE FROM push_subscriptions; DELETE FROM bans; DELETE FROM users;"
             []
         |> ignore
         let environment, probe, _ = createEnvironment emptyDatabase (clock :> IClock) cookies
@@ -1345,6 +1600,7 @@ module Program =
             checkHttpBehavior client cookies providerProbe clock
             let issuedLoginCookie = checkLoginHttpBehavior client cookies providerProbe clock
             checkLoginRateBoundary client providerProbe clock
+            let revokedLogoutCookie = checkLogoutHttpBehavior client cookies providerProbe
             checkBannedHttpBehavior client cookies providerProbe
             checkEmptyUsersHttpBehavior sourceDirectory clock cookies
 
@@ -1407,6 +1663,16 @@ module Program =
                         [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
                           "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"
                           "campfire.messages.last-page" ]
+
+                    currentCheck <- "revoked signed logout token stays rejected after application restart"
+                    restartedProbe.Clear()
+                    let rejectedRevokedToken =
+                        send restartClient
+                            { (baseSpec "GET" "/rooms/1") with
+                                Cookies = [ "session_token", revokedLogoutCookie ] }
+                    expectStatus 302 rejectedRevokedToken
+                    equal (Some "/session/new") rejectedRevokedToken.Location "revoked persisted token cannot restore after restart"
+                    expectTrace restartedProbe [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token" ]
                 finally
                     restartWeb.StopAsync().GetAwaiter().GetResult()
             finally

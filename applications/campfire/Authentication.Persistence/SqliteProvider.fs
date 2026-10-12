@@ -381,6 +381,27 @@ type AuthenticationSqliteProvider private
                 use reader = command.ExecuteReader()
                 if reader.Read() then Some(fst (readSession reader)) else None)
 
+    member _.DeleteSession(SessionId sessionId) : Result<unit, DbError> =
+        run (fun connection ->
+            use command = connection.CreateCommand()
+            command.CommandText <- "DELETE FROM sessions WHERE id = $sessionId"
+            SqliteDetails.addParameter command "$sessionId" (box sessionId)
+            command.Prepare()
+            command.ExecuteNonQuery() |> ignore)
+
+    member _.DestroyPushSubscriptions(UserId userId, endpoint: string) : Result<unit, DbError> =
+        if isNull endpoint then
+            Error InvalidInput
+        else
+            run (fun connection ->
+                use command = connection.CreateCommand()
+                command.CommandText <-
+                    "DELETE FROM push_subscriptions WHERE endpoint = $endpoint AND user_id = $userId"
+                SqliteDetails.addParameter command "$endpoint" (box endpoint)
+                SqliteDetails.addParameter command "$userId" (box userId)
+                command.Prepare()
+                command.ExecuteNonQuery() |> ignore)
+
     member _.RefreshSessionBefore(refresh: SessionRefresh) =
         if obj.ReferenceEquals(refresh, null) then
             Error InvalidInput

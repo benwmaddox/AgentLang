@@ -2,6 +2,13 @@
 
 ## Active delivery priority: Campfire implementation
 
+User steering, 2026-10-12: prioritize **AOT Campfire and real endpoint performance**.
+Finish the bounded logout work already underway, then unblock the owning native
+backend and deliver real GET/HEAD room HTTP without F#/.NET in the release process.
+The interpreter is a reference, not the performance target. Follow
+[the native delivery plan](CAMPFIRE-AOT-PLAN.md). Earlier sequencing below is
+historical where it conflicts with this priority; the full migration scope remains.
+
 As of 2026-10-11, the primary deliverable is a complete Campfire migration in
 this language. Add language and runtime features when the next application step
 requires them. The earlier standalone efficacy studies remain evidence; new

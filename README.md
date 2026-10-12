@@ -441,4 +441,9 @@ throughput or improved agent edit reliability.
 
 The [Campfire sign-in foundation](reports/243-campfire-sign-in-foundation.md)
 adds a tested, discoverable language library over fixed bcrypt and transactional
-session adapters. [Public HTTP login](reports/244-campfire-public-login-http.md) now passes 302 focused integration assertions. Logout, first-run setup and complete rendering/live delivery remain migration work.
+session adapters. [Public HTTP login](reports/244-campfire-public-login-http.md) now passes 302 focused integration assertions. [Logout](reports/245-campfire-logout-and-native-delivery.md) now passes its reference gate; first-run setup and complete rendering/live delivery remain migration work.
+
+AOT Campfire is now the primary delivery target. The interpreter application is
+a semantic reference; [the native delivery plan](docs/CAMPFIRE-AOT-PLAN.md) lists
+required typed host calls, lists and native adapters before endpoint performance
+can be compared with reported Campfire workloads.

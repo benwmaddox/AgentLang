@@ -13,7 +13,7 @@ $repo = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $startedAt = [DateTimeOffset]::UtcNow
 if ([string]::IsNullOrWhiteSpace($EvidencePath)) {
     $runName = $startedAt.ToString('yyyyMMddTHHmmssZ') + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 8)
-    $EvidencePath = Join-Path $repo ".agentlang/campfire-login-http-244/verification/$runName/receipt.json"
+    $EvidencePath = Join-Path $repo ".agentlang/campfire-logout-245/verification/$runName/receipt.json"
 } elseif (-not [IO.Path]::IsPathRooted($EvidencePath)) {
     $EvidencePath = Join-Path $repo $EvidencePath
 }
@@ -138,6 +138,9 @@ try {
         'applications/campfire/authentication.flow',
         'applications/campfire/sign-in.flow',
         'applications/campfire/sign-in-tests.flow',
+        'applications/campfire/sign-out.flow',
+        'applications/campfire/sign-out-tests.flow',
+        'applications/campfire/http-logout-tests.flow',
         'applications/campfire/Authentication.Persistence/PasswordVerification.fs',
         'applications/campfire/Authentication.Persistence/AgentLang.Campfire.Authentication.Persistence.fsproj',
         'tests/AgentLang.Campfire.Authentication.Persistence.Tests/Fixtures/rails-password-vectors.json',

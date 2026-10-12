@@ -139,8 +139,10 @@
       "path": "/session(.:format)",
       "endpoint": "sessions#destroy",
       "defaults": {},
-      "status": "not-validated",
-      "evidence": []
+      "status": "implementation-in-progress",
+      "evidence": [
+        "reports/245-campfire-logout-and-native-delivery.md"
+      ]
     },
     {
       "verb": "POST",

@@ -119,6 +119,7 @@ fn campfire.http.route(request: CampfireHttpRequest, user: AuthUser, refresh: Op
                         message-create => campfire.http.response(200, HttpView.room-not-found(), "This room was deleted.", refresh)
                         session-new => campfire.http.response(500, HttpView.empty(), "", refresh)
                         session-create => campfire.http.response(500, HttpView.empty(), "", refresh)
+                        session-destroy => campfire.http.response(500, HttpView.empty(), "", refresh)
                     }
                 }
                 some room => {
@@ -127,6 +128,7 @@ fn campfire.http.route(request: CampfireHttpRequest, user: AuthUser, refresh: Op
                         message-create => campfire.http.create-message(request, user, room, refresh)
                         session-new => campfire.http.response(500, HttpView.empty(), "", refresh)
                         session-create => campfire.http.response(500, HttpView.empty(), "", refresh)
+                        session-destroy => campfire.http.response(500, HttpView.empty(), "", refresh)
                     }
                 }
             }
@@ -147,7 +149,15 @@ fn campfire.http.authenticated(request: CampfireHttpRequest, restored: RestoredS
         if campfire.browser.supported?(request.browser) {
             match restored.user {
                 none => campfire.http.response(500, HttpView.empty(), "", refresh)
-                some user => campfire.http.route(request, user, refresh)
+                some user => {
+                    match request.route {
+                        session-destroy => campfire.http.logout(request, user, restored.session.id, refresh)
+                        room-show => campfire.http.route(request, user, refresh)
+                        message-create => campfire.http.route(request, user, refresh)
+                        session-new => campfire.http.route(request, user, refresh)
+                        session-create => campfire.http.route(request, user, refresh)
+                    }
+                }
             }
         } else {
             campfire.http.response(200, HttpView.incompatible-browser(), "", refresh)

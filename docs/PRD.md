@@ -5,6 +5,13 @@
 - Primary user: an AI coding agent
 - Secondary user: a developer inspecting and controlling that agent
 
+Current delivery priority (2026-10-12): implement complete Campfire in this
+language using LLVM AOT, then measure its real endpoints against the reported
+Campfire workloads. Retain the interpreter as a semantic/testing reference.
+Language/runtime additions should unblock the next native application step.
+Do not substitute interpreter timings or arena/mailbox microbenchmarks for AOT
+Campfire results. See [native delivery plan](CAMPFIRE-AOT-PLAN.md).
+
 Naming remains undecided. Use AgentLang as the project placeholder and
 data-flow syntax as a description. Existing Flow/Flow2 identifiers and historical
 reports are provisional implementation labels, not a selected product name.

@@ -3,6 +3,7 @@ enum HttpRoute {
     case message-create
     case session-new
     case session-create
+    case session-destroy
 }
 
 enum HttpFormError {
@@ -22,6 +23,10 @@ record HttpLoginInput {
     field password: Option<String>
 }
 
+record HttpLogoutInput {
+    field push-subscription-endpoint: Option<String>
+}
+
 record CampfireHttpRequest {
     field route: HttpRoute
     field method: RequestMethod
@@ -38,6 +43,7 @@ record CampfireHttpRequest {
     field bot-key: Option<BotKey>
     field message-form: Result<Option<HttpMessageInput>, HttpFormError>
     field login-form: Result<Option<HttpLoginInput>, HttpFormError>
+    field logout-form: Result<Option<HttpLogoutInput>, HttpFormError>
     field accepts-turbo: Bool
     field accepts-html: Bool
     field last-room: Option<String>
@@ -55,6 +61,7 @@ enum HttpView {
     case login-page
     case redirect-authenticated
     case redirect-first-run
+    case redirect-signed-out
 }
 
 record CampfireHttpResponse {

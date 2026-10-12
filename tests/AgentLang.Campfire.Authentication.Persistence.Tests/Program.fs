@@ -48,6 +48,9 @@ module Program =
             "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, role INTEGER NOT NULL, status INTEGER NOT NULL, bot_token TEXT, email_address TEXT, password_digest TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE UNIQUE INDEX users_bot_token_unique ON users(bot_token); " +
             "CREATE TABLE sessions (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), token TEXT NOT NULL UNIQUE, ip_address TEXT, user_agent TEXT, last_active_at TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
+            "CREATE TABLE push_subscriptions (id INTEGER PRIMARY KEY, auth_key TEXT, created_at TEXT NOT NULL, endpoint TEXT, p256dh_key TEXT, updated_at TEXT NOT NULL, user_agent TEXT, user_id INTEGER NOT NULL REFERENCES users(id)); " +
+            "CREATE INDEX push_subscriptions_endpoint_keys_index ON push_subscriptions(endpoint, p256dh_key, auth_key); " +
+            "CREATE INDEX push_subscriptions_user_id_index ON push_subscriptions(user_id); " +
             "CREATE TABLE bans (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), ip_address TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE TABLE rooms (id INTEGER PRIMARY KEY, created_at TEXT NOT NULL, creator_id INTEGER NOT NULL, name TEXT, type TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE TABLE memberships (id INTEGER PRIMARY KEY, room_id INTEGER NOT NULL, user_id INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
@@ -114,6 +117,14 @@ module Program =
               "$last", box lastActive
               "$created", box created
               "$updated", box updated ]
+        |> ignore
+
+    let private seedPushSubscription (connection: SqliteConnection) id userId endpoint =
+        execute connection
+            "INSERT INTO push_subscriptions(id, user_id, endpoint, created_at, updated_at) VALUES ($id, $user, $endpoint, '2025-01-01 00:00:00', '2025-01-01 00:00:00')"
+            [ "$id", box id
+              "$user", box userId
+              "$endpoint", (match endpoint with Some value -> box value | None -> box DBNull.Value) ]
         |> ignore
 
     let private seedRoom (connection: SqliteConnection) id creatorId name kind created updated =
@@ -715,6 +726,75 @@ module Program =
         let reopened = openStore path
         equal None (reopened.FindSessionByToken(SessionToken "23456789ABCDEFGHJKLMNPQR") |> expectOk "read after failed insert") "rolled-back session token is absent after reopening"
 
+    let private sessionDestroyIsTargetedIdempotentAndAtomic () =
+        let path =
+            createFixture "session-destroy" (fun connection ->
+                seedUser connection 1L "first user" 0L 0L None
+                seedUser connection 2L "second user" 0L 0L None
+                seedSession connection 20L 1L "destroy-target" None None
+                    "2025-01-01 00:00:00" "2025-01-01 00:00:00" "2025-01-01 00:00:00"
+                seedSession connection 21L 1L "same-user-session" None None
+                    "2025-01-01 00:00:00" "2025-01-01 00:00:00" "2025-01-01 00:00:00"
+                seedSession connection 22L 2L "other-user-session" None None
+                    "2025-01-01 00:00:00" "2025-01-01 00:00:00" "2025-01-01 00:00:00")
+        let provider = openStore path
+        equal () (provider.DeleteSession(SessionId 20L) |> expectOk "delete one session") "session destruction returns Unit"
+        equal () (provider.DeleteSession(SessionId 20L) |> expectOk "repeat session destruction") "destroying a missing session is an idempotent success"
+        equal 0L (scalarLong path "SELECT COUNT(*) FROM sessions WHERE id = 20") "only the selected session row is deleted"
+        equal 2L (scalarLong path "SELECT COUNT(*) FROM sessions") "other users' and same-user sessions remain"
+        let reopened = openStore path
+        equal None (reopened.FindSessionByToken(SessionToken "destroy-target") |> expectOk "reopen after session destroy") "deleted session stays revoked after reopening"
+        check (reopened.FindSessionByToken(SessionToken "same-user-session") |> expectOk "reopen same-user session" |> Option.isSome) "same user's other session remains after reopening"
+        check (reopened.FindSessionByToken(SessionToken "other-user-session") |> expectOk "reopen other-user session" |> Option.isSome) "another user's session remains after reopening"
+
+        let failingPath =
+            createFixture "session-destroy-failure" (fun connection ->
+                seedUser connection 1L "member" 0L 0L None
+                seedSession connection 30L 1L "blocked-destroy" None None
+                    "2025-01-01 00:00:00" "2025-01-01 00:00:00" "2025-01-01 00:00:00"
+                execute connection
+                    "CREATE TRIGGER reject_session_delete BEFORE DELETE ON sessions WHEN OLD.id = 30 BEGIN SELECT RAISE(ABORT, 'private trigger detail'); END"
+                    []
+                |> ignore)
+        expectError Unavailable "session delete provider errors map to a closed result" (openStore failingPath |> fun failing -> failing.DeleteSession(SessionId 30L))
+        equal 1L (scalarLong failingPath "SELECT COUNT(*) FROM sessions WHERE id = 30") "failed session deletion preserves its row atomically"
+
+    let private pushSubscriptionDestroyIsUserScopedAndAtomic () =
+        let endpoint = "https://push.example.test/subscriptions/1"
+        let otherEndpoint = "https://push.example.test/subscriptions/2"
+        let path =
+            createFixture "push-subscription-destroy" (fun connection ->
+                seedUser connection 1L "first user" 0L 0L None
+                seedUser connection 2L "second user" 0L 0L None
+                seedPushSubscription connection 1L 1L (Some endpoint)
+                seedPushSubscription connection 2L 1L (Some endpoint)
+                seedPushSubscription connection 3L 2L (Some endpoint)
+                seedPushSubscription connection 4L 1L (Some otherEndpoint))
+        let provider = openStore path
+        equal () (provider.DestroyPushSubscriptions(UserId 1L, endpoint) |> expectOk "delete one user's endpoint") "push destruction returns Unit"
+        equal 0L (scalarLong path "SELECT COUNT(*) FROM push_subscriptions WHERE user_id = 1 AND endpoint = 'https://push.example.test/subscriptions/1'") "all duplicate matches for the supplied user and endpoint are removed"
+        equal 1L (scalarLong path "SELECT COUNT(*) FROM push_subscriptions WHERE user_id = 2 AND endpoint = 'https://push.example.test/subscriptions/1'") "matching endpoint owned by another user remains"
+        equal 1L (scalarLong path "SELECT COUNT(*) FROM push_subscriptions WHERE user_id = 1 AND endpoint = 'https://push.example.test/subscriptions/2'") "other endpoints owned by the supplied user remain"
+        equal () (provider.DestroyPushSubscriptions(UserId 1L, endpoint) |> expectOk "repeat push endpoint destruction") "missing push matches are an idempotent success"
+        equal () (provider.DestroyPushSubscriptions(UserId 1L, "https://push.example.test/missing") |> expectOk "destroy a missing endpoint") "an absent endpoint is an ordinary success"
+        expectError InvalidInput "null push endpoint is rejected" (provider.DestroyPushSubscriptions(UserId 1L, null))
+        let reopened = openStore path
+        equal 0L (scalarLong path "SELECT COUNT(*) FROM push_subscriptions WHERE user_id = 1 AND endpoint = 'https://push.example.test/subscriptions/1'") "scoped endpoint deletion survives reopening"
+        equal 1L (scalarLong path "SELECT COUNT(*) FROM push_subscriptions WHERE user_id = 2 AND endpoint = 'https://push.example.test/subscriptions/1'") "other user's endpoint survives reopening"
+
+        let failingPath =
+            createFixture "push-subscription-destroy-failure" (fun connection ->
+                seedUser connection 1L "member" 0L 0L None
+                seedPushSubscription connection 10L 1L (Some "https://push.example.test/blocked")
+                seedPushSubscription connection 11L 1L (Some "https://push.example.test/blocked")
+                execute connection
+                    "CREATE TRIGGER reject_push_subscription_delete BEFORE DELETE ON push_subscriptions WHEN OLD.endpoint = 'https://push.example.test/blocked' BEGIN SELECT RAISE(ABORT, 'private trigger detail'); END"
+                    []
+                |> ignore)
+        expectError Unavailable "push delete provider errors map to a closed result"
+            (openStore failingPath |> fun failing -> failing.DestroyPushSubscriptions(UserId 1L, "https://push.example.test/blocked"))
+        equal 2L (scalarLong failingPath "SELECT COUNT(*) FROM push_subscriptions WHERE endpoint = 'https://push.example.test/blocked'") "failed multi-row push deletion preserves all matches atomically"
+
     [<EntryPoint>]
     let main _ =
         try
@@ -733,6 +813,8 @@ module Program =
             assertGroup "any-users empty database" anyUsersOnEmptyDatabase
             assertGroup "session creation persistence and reopen" sessionCreationPersistsAndReopens
             assertGroup "session token failures and rollback" sessionCreationRejectsBadTokensAndRollsBack
+            assertGroup "targeted session destruction and atomic failure" sessionDestroyIsTargetedIdempotentAndAtomic
+            assertGroup "user-scoped push-subscription destruction and atomic failure" pushSubscriptionDestroyIsUserScopedAndAtomic
             printfn "PASS %d groups, %d assertions" groups assertions
             0
         with error ->

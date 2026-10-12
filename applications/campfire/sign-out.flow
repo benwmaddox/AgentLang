@@ -1,0 +1,14 @@
+fn campfire.authentication.sign-out(user-id: UserId, session-id: SessionId, push-endpoint: Option<String>) -> Result<Unit, DbError> {
+    effects db.write
+    doc "Revokes the supplied user's exact push endpoint before destroying the current session. A push failure leaves the session untouched; no endpoint skips push-subscription storage."
+
+    match push-endpoint {
+        none => campfire.sessions.destroy(session-id)
+        some endpoint => {
+            match campfire.push-subscriptions.destroy-for-user(user-id, endpoint) {
+                error failure => result.error<Unit, DbError>(failure)
+                ok destroyed => campfire.sessions.destroy(session-id)
+            }
+        }
+    }
+}

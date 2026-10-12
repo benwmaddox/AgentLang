@@ -226,13 +226,18 @@ module Program =
             "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, role INTEGER NOT NULL, status INTEGER NOT NULL, bot_token TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE UNIQUE INDEX users_bot_token_unique ON users(bot_token); " +
             "CREATE TABLE sessions (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), token TEXT NOT NULL UNIQUE, ip_address TEXT, user_agent TEXT, last_active_at TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
+            "CREATE TABLE push_subscriptions (id INTEGER PRIMARY KEY, auth_key TEXT, created_at TEXT NOT NULL, endpoint TEXT, p256dh_key TEXT, updated_at TEXT NOT NULL, user_agent TEXT, user_id INTEGER NOT NULL REFERENCES users(id)); " +
+            "CREATE INDEX push_subscriptions_endpoint_keys_index ON push_subscriptions(endpoint, p256dh_key, auth_key); " +
+            "CREATE INDEX push_subscriptions_user_id_index ON push_subscriptions(user_id); " +
             "CREATE TABLE bans (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), ip_address TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE TABLE rooms (id INTEGER PRIMARY KEY, created_at TEXT NOT NULL, creator_id INTEGER NOT NULL, name TEXT, type TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE TABLE memberships (id INTEGER PRIMARY KEY, room_id INTEGER NOT NULL, user_id INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE INDEX sessions_token_index ON sessions(token); " +
             "CREATE INDEX bans_ip_address_index ON bans(ip_address); " +
             "CREATE UNIQUE INDEX memberships_room_user_unique ON memberships(room_id, user_id); " +
-            "CREATE TRIGGER reject_blocked_refresh BEFORE UPDATE ON sessions WHEN OLD.token = 'blocked-refresh-token' BEGIN SELECT RAISE(ABORT, 'test-only refresh failure'); END"
+            "CREATE TRIGGER reject_blocked_refresh BEFORE UPDATE ON sessions WHEN OLD.token = 'blocked-refresh-token' BEGIN SELECT RAISE(ABORT, 'test-only refresh failure'); END; " +
+            "CREATE TRIGGER reject_session_delete BEFORE DELETE ON sessions WHEN OLD.id = 15 BEGIN SELECT RAISE(ABORT, 'test-only session delete failure'); END; " +
+            "CREATE TRIGGER reject_push_subscription_delete BEFORE DELETE ON push_subscriptions WHEN OLD.endpoint = 'https://push.example.test/blocked' BEGIN SELECT RAISE(ABORT, 'test-only push delete failure'); END"
         command.ExecuteNonQuery() |> ignore
 
         for id in 1..9 do
@@ -262,6 +267,17 @@ module Program =
         insertSession 14 99 "orphan-due-token" (Some "198.51.100.99") (Some "orphan-stored-agent") "2025-12-31 00:00:00" "2025-01-01 00:00:00" "2025-12-31 00:00:00"
         execute connection "PRAGMA foreign_keys = ON" [] |> ignore
         insertSession 15 1 "user-error-after-refresh-token" (Some "198.51.100.15") (Some "pre-refresh-agent") "2025-12-31 00:00:00" "2025-01-01 00:00:00" "2025-12-31 00:00:00"
+        let insertPushSubscription id userId endpoint =
+            execute connection
+                "INSERT INTO push_subscriptions(id, user_id, endpoint, created_at, updated_at) VALUES ($id, $user, $endpoint, '2025-01-01 00:00:00', '2025-01-01 00:00:00')"
+                [ "$id", box id; "$user", box userId; "$endpoint", box endpoint ]
+            |> ignore
+        insertPushSubscription 1 1 "https://push.example.test/current"
+        insertPushSubscription 2 1 "https://push.example.test/current"
+        insertPushSubscription 3 2 "https://push.example.test/current"
+        insertPushSubscription 4 1 "https://push.example.test/other"
+        insertPushSubscription 5 1 "https://push.example.test/blocked"
+        insertPushSubscription 6 1 "https://push.example.test/blocked"
         execute connection
             "INSERT INTO bans(id, user_id, ip_address, created_at, updated_at) VALUES (1, 1, '203.0.113.99', '2025-01-01 00:00:00', '2025-01-01 00:00:00')"
             []
@@ -449,7 +465,7 @@ module Program =
         | other -> failwith $"unexpected host result value: {other}"
 
     let private adapterContract verifiedToken =
-        equal 9 CampfireAuthenticationHost.manifest.Count "manifest publishes exactly nine closed authentication operations"
+        equal 11 CampfireAuthenticationHost.manifest.Count "manifest publishes exactly eleven closed authentication operations"
         equal CampfireAuthenticationHost.operationIds (CampfireAuthenticationHost.manifest |> Map.toSeq |> Seq.map fst |> Set.ofSeq) "manifest and operation IDs are identical"
         for KeyValue(operationId, definition) in CampfireAuthenticationHost.manifest do
             equal operationId definition.Id $"manifest entry {definition.WordName} carries its own ID"
@@ -465,7 +481,23 @@ module Program =
 
         let malformed = provider.Invoke (id "campfire.sessions.find-by-token") [ StringValue "wrong metadata" ]
         equal (Error HostOperationFailure.ProviderContractMismatch) malformed "session adapter rejects a malformed nominal input"
+        equal (Error HostOperationFailure.ProviderContractMismatch)
+            (provider.Invoke (id "campfire.sessions.destroy") [ IntValue 11L ])
+            "session destroy rejects an unwrapped session ID"
+        equal (Error HostOperationFailure.ProviderContractMismatch)
+            (provider.Invoke (id "campfire.push-subscriptions.destroy-for-user") [ IntValue 1L; StringValue "https://push.example.test/current" ])
+            "push destroy rejects an unwrapped user ID"
         equal (Error HostOperationFailure.MissingHandler) (provider.Invoke (id "campfire.raw-sql") []) "adapter rejects an unknown operation"
+
+        let expectUnitSuccess label result =
+            match result with
+            | Ok [ ResultValue(TUnit, TNamed "DbError", Ok UnitValue) ] -> check true label
+            | other -> failwith $"{label}: expected typed Unit success, got {other}"
+
+        let expectUnavailable label result =
+            match result with
+            | Ok [ ResultValue(TUnit, TNamed "DbError", Error(EnumValue("DbError", "unavailable"))) ] -> check true label
+            | other -> failwith $"{label}: expected structured DbError.Unavailable, got {other}"
 
         let sessionValue =
             provider.Invoke (id "campfire.sessions.find-by-token") [ NamedValue("SessionToken", StringValue verifiedToken) ]
@@ -543,6 +575,28 @@ module Program =
         | OptionValue(TNamed "RoomRow", Some(RecordValue("RoomRow", fields))) ->
             equal (Some(EnumValue("RoomKind", "open"))) (fields.TryFind "kind") "room lookup preserves closed room kind"
         | other -> failwith $"room lookup returned an unexpected Option payload: {other}"
+
+        let destroySession = id "campfire.sessions.destroy"
+        let sessionArguments = [ NamedValue("SessionId", IntValue 11L) ]
+        expectUnitSuccess "session destroy returns a typed Unit result" (provider.Invoke destroySession sessionArguments)
+        expectUnitSuccess "session destroy treats a missing row as success" (provider.Invoke destroySession sessionArguments)
+        equal 0L (scalarLong path "SELECT COUNT(*) FROM sessions WHERE id = $id" [ "$id", box 11L ]) "host session destroy removes exactly its target row"
+        equal 1L (scalarLong path "SELECT COUNT(*) FROM sessions WHERE id = $id" [ "$id", box 10L ]) "host session destroy leaves another session intact"
+        expectUnavailable "session destroy maps SQLite trigger failure to DbError.Unavailable"
+            (provider.Invoke destroySession [ NamedValue("SessionId", IntValue 15L) ])
+        equal 1L (scalarLong path "SELECT COUNT(*) FROM sessions WHERE id = $id" [ "$id", box 15L ]) "failed host session destroy preserves its row"
+
+        let destroyPush = id "campfire.push-subscriptions.destroy-for-user"
+        let currentEndpoint = "https://push.example.test/current"
+        let pushArguments = [ NamedValue("UserId", IntValue 1L); StringValue currentEndpoint ]
+        expectUnitSuccess "push destroy returns a typed Unit result" (provider.Invoke destroyPush pushArguments)
+        expectUnitSuccess "push destroy treats missing matches as success" (provider.Invoke destroyPush pushArguments)
+        equal 0L (scalarLong path "SELECT COUNT(*) FROM push_subscriptions WHERE user_id = $user AND endpoint = $endpoint" [ "$user", box 1L; "$endpoint", box currentEndpoint ]) "host push destroy removes every duplicate match for that user"
+        equal 1L (scalarLong path "SELECT COUNT(*) FROM push_subscriptions WHERE user_id = $user AND endpoint = $endpoint" [ "$user", box 2L; "$endpoint", box currentEndpoint ]) "host push destroy leaves another user's matching endpoint"
+        equal 1L (scalarLong path "SELECT COUNT(*) FROM push_subscriptions WHERE user_id = $user AND endpoint = $endpoint" [ "$user", box 1L; "$endpoint", box "https://push.example.test/other" ]) "host push destroy leaves the user's other endpoint"
+        expectUnavailable "push destroy maps SQLite trigger failure to DbError.Unavailable"
+            (provider.Invoke destroyPush [ NamedValue("UserId", IntValue 1L); StringValue "https://push.example.test/blocked" ])
+        equal 2L (scalarLong path "SELECT COUNT(*) FROM push_subscriptions WHERE user_id = $user AND endpoint = $endpoint" [ "$user", box 1L; "$endpoint", box "https://push.example.test/blocked" ]) "failed multi-row host push destroy preserves every matching row"
         provider.Dispose()
 
         // Negative Unix microseconds exercise the reverse conversion as well as the DB timestamp parser.
