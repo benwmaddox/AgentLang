@@ -1,0 +1,334 @@
+test-file campfire-http-restore-request-session {
+    override fn campfire.cookies.verify-session-token(signed: String, now: UtcInstant) -> Option<SessionToken> {
+        if signed == "invalid" { option.none<SessionToken>() } else { option.some<SessionToken>(SessionToken.new(signed)) }
+    }
+
+    override fn campfire.authentication.restore-session(verified-token: SessionToken, now: UtcInstant, remote-ip: Option<RemoteIp>, user-agent: Option<String>) -> Result<Option<RestoredSession>, DbError> {
+        if SessionToken.value(verified-token) == "missing" {
+            result.ok<Option<RestoredSession>, DbError>(option.none<RestoredSession>())
+        } else {
+            result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
+                user = option.some<AuthUser>(authUser.new(id = UserId.new(7), name = "member", role = Role.member(), status = AuthUserStatus.active())),
+                session = sessionRow.new(id = SessionId.new(8), user-id = UserId.new(7), token = verified-token, ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.5")), user-agent = option.some<String>("agent"), last-active-at = UtcInstant.new(100), created-at = UtcInstant.new(1), updated-at = UtcInstant.new(100)),
+                refresh-cookie = true
+            )))
+        }
+    }
+
+    test campfire.http.restore-request-session/invalid-cookie-stays-missing {
+        campfire.http.restore-request-session(campfireHttpRequest.new(
+            route = HttpRoute.room-show(), method = RequestMethod.get(), room-id = RoomId.new(9), now = UtcInstant.new(100),
+            remote-ip = RemoteIp.new("192.0.2.5"), user-agent = option.some<String>("agent"), base-url = "https://chat.test", request-is-ssl = true, force-ssl = false,
+            origin = option.none<String>(), fetch-site = option.some<String>("same-origin"), session-token = option.some<String>("invalid"), bot-key = option.none<BotKey>(),
+            message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()), login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false, accepts-html = true, last-room = option.none<String>(),
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+        ))
+        => value result.ok<Option<RestoredSession>, DbError>(option.none<RestoredSession>()) effects {
+            db.read: 0
+            db.write: 0
+        }
+    }
+
+    test campfire.http.restore-request-session/valid-cookie-restores-session {
+        campfire.http.restore-request-session(campfireHttpRequest.new(
+            route = HttpRoute.room-show(), method = RequestMethod.head(), room-id = RoomId.new(9), now = UtcInstant.new(100),
+            remote-ip = RemoteIp.new("192.0.2.5"), user-agent = option.some<String>("agent"), base-url = "https://chat.test", request-is-ssl = true, force-ssl = false,
+            origin = option.none<String>(), fetch-site = option.some<String>("same-origin"), session-token = option.some<String>("restored"), bot-key = option.none<BotKey>(),
+            message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()), login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false, accepts-html = true, last-room = option.none<String>(),
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+        ))
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
+            user = option.some<AuthUser>(authUser.new(id = UserId.new(7), name = "member", role = Role.member(), status = AuthUserStatus.active())),
+            session = sessionRow.new(id = SessionId.new(8), user-id = UserId.new(7), token = SessionToken.new("restored"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.5")), user-agent = option.some<String>("agent"), last-active-at = UtcInstant.new(100), created-at = UtcInstant.new(1), updated-at = UtcInstant.new(100)),
+            refresh-cookie = true
+        ))) effects {
+            db.read: 0
+            db.write: 0
+        }
+    }
+}
+
+test-file campfire-http-refresh-token {
+    test campfire.http.refresh-token/due-refresh-returns-session-token {
+        campfire.http.refresh-token(restoredSession.new(
+            user = option.none<AuthUser>(),
+            session = sessionRow.new(id = SessionId.new(8), user-id = UserId.new(7), token = SessionToken.new("refresh-me"), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>(), last-active-at = UtcInstant.new(100), created-at = UtcInstant.new(1), updated-at = UtcInstant.new(100)),
+            refresh-cookie = true
+        ))
+        => value option.some<SessionToken>(SessionToken.new("refresh-me"))
+    }
+
+    test campfire.http.refresh-token/no-refresh-returns-none {
+        campfire.http.refresh-token(restoredSession.new(
+            user = option.none<AuthUser>(),
+            session = sessionRow.new(id = SessionId.new(8), user-id = UserId.new(7), token = SessionToken.new("keep-current"), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>(), last-active-at = UtcInstant.new(100), created-at = UtcInstant.new(1), updated-at = UtcInstant.new(100)),
+            refresh-cookie = false
+        ))
+        => value option.none<SessionToken>()
+    }
+}
+
+test-file campfire-http-authenticated-user {
+    override fn campfire.request.forgery-check-passed?(method: RequestMethod, origin: Option<String>, fetch-site: Option<String>, base-url: String, origin-check-enabled: Bool, request-is-ssl: Bool, force-ssl: Bool) -> Bool {
+        method == RequestMethod.get()
+    }
+
+    override fn campfire.browser.supported?(info: BrowserInfo) -> Bool {
+        if info.family == BrowserFamily.internet-explorer() { false } else { true }
+    }
+
+    test campfire.http.authenticated-user/csrf-failure-precedes-browser-failure {
+        let outcome = campfire.http.authenticated-user(
+            campfireHttpRequest.new(
+                route = HttpRoute.room-show(), method = RequestMethod.unsafe(), room-id = RoomId.new(9), now = UtcInstant.new(100),
+                remote-ip = RemoteIp.new("allowed"), user-agent = option.none<String>(), base-url = "https://chat.test", request-is-ssl = true, force-ssl = false,
+                origin = option.none<String>(), fetch-site = option.some<String>("same-origin"), session-token = option.none<String>(), bot-key = option.none<BotKey>(),
+                message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()), login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+                logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false, accepts-html = true, last-room = option.none<String>(),
+                browser = browserInfo.new(family = BrowserFamily.internet-explorer(), version = option.none<String>(), is-bot = false)
+            ),
+            restoredSession.new(user = option.some<AuthUser>(authUser.new(id = UserId.new(7), name = "member", role = Role.member(), status = AuthUserStatus.active())), session = sessionRow.new(id = SessionId.new(8), user-id = UserId.new(7), token = SessionToken.new("refresh-me"), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>(), last-active-at = UtcInstant.new(100), created-at = UtcInstant.new(1), updated-at = UtcInstant.new(100)), refresh-cookie = true),
+            option.some<SessionToken>(SessionToken.new("refresh-me"))
+        )
+        match outcome {
+            error response => if response.status == 422 { response.refresh-session-token == option.some<SessionToken>(SessionToken.new("refresh-me")) } else { false }
+            ok user => false
+        }
+        => true
+    }
+
+    test campfire.http.authenticated-user/browser-failure-precedes-user-lookup {
+        let outcome = campfire.http.authenticated-user(
+            campfireHttpRequest.new(
+                route = HttpRoute.room-show(), method = RequestMethod.get(), room-id = RoomId.new(9), now = UtcInstant.new(100),
+                remote-ip = RemoteIp.new("allowed"), user-agent = option.none<String>(), base-url = "https://chat.test", request-is-ssl = true, force-ssl = false,
+                origin = option.none<String>(), fetch-site = option.some<String>("same-origin"), session-token = option.none<String>(), bot-key = option.none<BotKey>(),
+                message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()), login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+                logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false, accepts-html = true, last-room = option.none<String>(),
+                browser = browserInfo.new(family = BrowserFamily.internet-explorer(), version = option.none<String>(), is-bot = false)
+            ),
+            restoredSession.new(user = option.none<AuthUser>(), session = sessionRow.new(id = SessionId.new(8), user-id = UserId.new(7), token = SessionToken.new("refresh-me"), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>(), last-active-at = UtcInstant.new(100), created-at = UtcInstant.new(1), updated-at = UtcInstant.new(100)), refresh-cookie = true),
+            option.some<SessionToken>(SessionToken.new("refresh-me"))
+        )
+        match outcome {
+            error response => if response.status == 200 { response.view == HttpView.incompatible-browser() } else { false }
+            ok user => false
+        }
+        => true
+    }
+
+    test campfire.http.authenticated-user/supported-browser-returns-current-user {
+        let outcome = campfire.http.authenticated-user(
+            campfireHttpRequest.new(
+                route = HttpRoute.room-show(), method = RequestMethod.get(), room-id = RoomId.new(9), now = UtcInstant.new(100),
+                remote-ip = RemoteIp.new("allowed"), user-agent = option.none<String>(), base-url = "https://chat.test", request-is-ssl = true, force-ssl = false,
+                origin = option.none<String>(), fetch-site = option.some<String>("same-origin"), session-token = option.none<String>(), bot-key = option.none<BotKey>(),
+                message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()), login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+                logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false, accepts-html = true, last-room = option.none<String>(),
+                browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+            ),
+            restoredSession.new(user = option.some<AuthUser>(authUser.new(id = UserId.new(7), name = "member", role = Role.member(), status = AuthUserStatus.active())), session = sessionRow.new(id = SessionId.new(8), user-id = UserId.new(7), token = SessionToken.new("current"), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>(), last-active-at = UtcInstant.new(100), created-at = UtcInstant.new(1), updated-at = UtcInstant.new(100)), refresh-cookie = false),
+            option.none<SessionToken>()
+        )
+        match outcome {
+            error response => 0
+            ok user => UserId.value(user.id)
+        }
+        => 7
+    }
+}
+
+test-file campfire-http-room-read-route {
+    override fn campfire.rooms.find-for-user(user-id: UserId, room-id: RoomId) -> Result<Option<RoomRow>, DbError> {
+        if room-id == RoomId.new(404) {
+            result.ok<Option<RoomRow>, DbError>(option.none<RoomRow>())
+        } else {
+            if room-id == RoomId.new(500) {
+                result.error<Option<RoomRow>, DbError>(DbError.unavailable())
+            } else {
+                result.ok<Option<RoomRow>, DbError>(option.some<RoomRow>(roomRow.new(id = RoomId.new(9), name = option.some<String>("Nine"), kind = RoomKind.open(), creator-id = UserId.new(7), created-at = "2026-01-01", updated-at = "2026-01-01")))
+            }
+        }
+    }
+
+    override fn campfire.messages.list-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageRow>, RoomMessageError> {
+        result.ok<List<MessageRow>, RoomMessageError>(list.empty<MessageRow>())
+    }
+
+    test campfire.http.room-read-route/member-room-renders {
+        let response = campfire.http.room-read-route(
+            campfireHttpRequest.new(
+                route = HttpRoute.room-show(), method = RequestMethod.get(), room-id = RoomId.new(9), now = UtcInstant.new(100),
+                remote-ip = RemoteIp.new("allowed"), user-agent = option.none<String>(), base-url = "https://chat.test", request-is-ssl = true, force-ssl = false,
+                origin = option.none<String>(), fetch-site = option.some<String>("same-origin"), session-token = option.none<String>(), bot-key = option.none<BotKey>(),
+                message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()), login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+                logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false, accepts-html = true, last-room = option.some<String>("9"),
+                browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+            ),
+            authUser.new(id = UserId.new(7), name = "member", role = Role.member(), status = AuthUserStatus.active()),
+            option.some<SessionToken>(SessionToken.new("refresh-me"))
+        )
+        if response.status == 200 {
+            if response.view == HttpView.room() {
+                if response.last-room == option.none<RoomId>() { response.refresh-session-token == option.some<SessionToken>(SessionToken.new("refresh-me")) } else { false }
+            } else { false }
+        } else { false }
+        => true effects {
+            db.read: 0
+        }
+    }
+
+    test campfire.http.room-read-route/missing-room-redirects {
+        let response = campfire.http.room-read-route(
+            campfireHttpRequest.new(
+                route = HttpRoute.room-show(), method = RequestMethod.get(), room-id = RoomId.new(404), now = UtcInstant.new(100),
+                remote-ip = RemoteIp.new("allowed"), user-agent = option.none<String>(), base-url = "https://chat.test", request-is-ssl = true, force-ssl = false,
+                origin = option.none<String>(), fetch-site = option.some<String>("same-origin"), session-token = option.none<String>(), bot-key = option.none<BotKey>(),
+                message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()), login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+                logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false, accepts-html = true, last-room = option.none<String>(),
+                browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+            ),
+            authUser.new(id = UserId.new(7), name = "member", role = Role.member(), status = AuthUserStatus.active()),
+            option.none<SessionToken>()
+        )
+        if response.status == 302 {
+            if response.view == HttpView.redirect-root() { response.text == "Room not found or inaccessible" } else { false }
+        } else { false }
+        => true effects {
+            db.read: 0
+        }
+    }
+
+    test campfire.http.room-read-route/database-failure-preserves-refresh {
+        let response = campfire.http.room-read-route(
+            campfireHttpRequest.new(
+                route = HttpRoute.room-show(), method = RequestMethod.get(), room-id = RoomId.new(500), now = UtcInstant.new(100),
+                remote-ip = RemoteIp.new("allowed"), user-agent = option.none<String>(), base-url = "https://chat.test", request-is-ssl = true, force-ssl = false,
+                origin = option.none<String>(), fetch-site = option.some<String>("same-origin"), session-token = option.none<String>(), bot-key = option.none<BotKey>(),
+                message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()), login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+                logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false, accepts-html = true, last-room = option.none<String>(),
+                browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+            ),
+            authUser.new(id = UserId.new(7), name = "member", role = Role.member(), status = AuthUserStatus.active()),
+            option.some<SessionToken>(SessionToken.new("refresh-me"))
+        )
+        if response.status == 500 {
+            response.refresh-session-token == option.some<SessionToken>(SessionToken.new("refresh-me"))
+        } else { false }
+        => true effects {
+            db.read: 0
+        }
+    }
+}
+
+test-file campfire-http-room-read {
+    override fn campfire.http.restore-request-session(request: CampfireHttpRequest) -> Result<Option<RestoredSession>, DbError> {
+        if request.session-token == option.none<String>() {
+            result.ok<Option<RestoredSession>, DbError>(option.none<RestoredSession>())
+        } else {
+            result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
+                user = option.some<AuthUser>(authUser.new(id = UserId.new(7), name = "member", role = Role.member(), status = AuthUserStatus.active())),
+                session = sessionRow.new(id = SessionId.new(8), user-id = UserId.new(7), token = SessionToken.new("restored"), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>(), last-active-at = UtcInstant.new(100), created-at = UtcInstant.new(1), updated-at = UtcInstant.new(100)),
+                refresh-cookie = true
+            )))
+        }
+    }
+
+    override fn campfire.http.authenticated-user(request: CampfireHttpRequest, restored: RestoredSession, refresh: Option<SessionToken>) -> Result<AuthUser, CampfireHttpResponse> {
+        result.ok<AuthUser, CampfireHttpResponse>(authUser.new(id = UserId.new(7), name = "member", role = Role.member(), status = AuthUserStatus.active()))
+    }
+
+    override fn campfire.http.room-read-route(request: CampfireHttpRequest, user: AuthUser, refresh: Option<SessionToken>) -> CampfireHttpResponse {
+        campfire.http.response(206, HttpView.room(), "read", refresh)
+    }
+
+    override fn campfire.http.bot-or-redirect(request: CampfireHttpRequest) -> CampfireHttpResponse {
+        campfire.http.response(302, HttpView.redirect-session(), "login", option.none<SessionToken>())
+    }
+
+    test campfire.http.room-read/get-enters-room-read-route {
+        let response = campfire.http.room-read(campfireHttpRequest.new(
+            route = HttpRoute.room-show(), method = RequestMethod.get(), room-id = RoomId.new(9), now = UtcInstant.new(100),
+            remote-ip = RemoteIp.new("allowed"), user-agent = option.none<String>(), base-url = "https://chat.test", request-is-ssl = true, force-ssl = false,
+            origin = option.none<String>(), fetch-site = option.some<String>("same-origin"), session-token = option.some<String>("cookie"), bot-key = option.none<BotKey>(),
+            message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()), login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false, accepts-html = true, last-room = option.none<String>(),
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+        ))
+        if response.status == 206 {
+            if response.view == HttpView.room() {
+                if response.text == "read" { response.refresh-session-token == option.some<SessionToken>(SessionToken.new("restored")) } else { false }
+            } else { false }
+        } else { false }
+        => true effects {
+            db.read: 0
+            db.write: 0
+        }
+    }
+
+    test campfire.http.room-read/head-enters-room-read-route {
+        let response = campfire.http.room-read(campfireHttpRequest.new(
+            route = HttpRoute.room-show(), method = RequestMethod.head(), room-id = RoomId.new(9), now = UtcInstant.new(100),
+            remote-ip = RemoteIp.new("allowed"), user-agent = option.none<String>(), base-url = "https://chat.test", request-is-ssl = true, force-ssl = false,
+            origin = option.none<String>(), fetch-site = option.some<String>("same-origin"), session-token = option.some<String>("cookie"), bot-key = option.none<BotKey>(),
+            message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()), login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false, accepts-html = true, last-room = option.none<String>(),
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+        ))
+        response.status
+        => 206 effects {
+            db.read: 0
+            db.write: 0
+        }
+    }
+
+    test campfire.http.room-read/unrelated-route-is-rejected-before-authentication {
+        let response = campfire.http.room-read(campfireHttpRequest.new(
+            route = HttpRoute.message-create(), method = RequestMethod.get(), room-id = RoomId.new(9), now = UtcInstant.new(100),
+            remote-ip = RemoteIp.new("allowed"), user-agent = option.none<String>(), base-url = "https://chat.test", request-is-ssl = true, force-ssl = false,
+            origin = option.none<String>(), fetch-site = option.some<String>("same-origin"), session-token = option.some<String>("cookie"), bot-key = option.none<BotKey>(),
+            message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()), login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false, accepts-html = true, last-room = option.none<String>(),
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+        ))
+        response.status
+        => 500 effects {
+            db.read: 0
+            db.write: 0
+        }
+    }
+
+    test campfire.http.room-read/unsafe-method-is-rejected-before-authentication {
+        let response = campfire.http.room-read(campfireHttpRequest.new(
+            route = HttpRoute.room-show(), method = RequestMethod.unsafe(), room-id = RoomId.new(9), now = UtcInstant.new(100),
+            remote-ip = RemoteIp.new("allowed"), user-agent = option.none<String>(), base-url = "https://chat.test", request-is-ssl = true, force-ssl = false,
+            origin = option.none<String>(), fetch-site = option.some<String>("same-origin"), session-token = option.some<String>("cookie"), bot-key = option.none<BotKey>(),
+            message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()), login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false, accepts-html = true, last-room = option.none<String>(),
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+        ))
+        response.status
+        => 500 effects {
+            db.read: 0
+            db.write: 0
+        }
+    }
+
+    test campfire.http.room-read/missing-session-falls-back-to-bot-or-login-policy {
+        let response = campfire.http.room-read(campfireHttpRequest.new(
+            route = HttpRoute.room-show(), method = RequestMethod.get(), room-id = RoomId.new(9), now = UtcInstant.new(100),
+            remote-ip = RemoteIp.new("allowed"), user-agent = option.none<String>(), base-url = "https://chat.test", request-is-ssl = true, force-ssl = false,
+            origin = option.none<String>(), fetch-site = option.some<String>("same-origin"), session-token = option.none<String>(), bot-key = option.none<BotKey>(),
+            message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()), login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false, accepts-html = true, last-room = option.none<String>(),
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+        ))
+        if response.status == 302 { response.text == "login" } else { false }
+        => true effects {
+            db.read: 0
+            db.write: 0
+        }
+    }
+}

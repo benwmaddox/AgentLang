@@ -175,3 +175,6 @@ reports/evidence/248-typed-native-room-host/** -text -whitespace
 
 # Preserve native SQLite validation/source byte hashes.
 reports/evidence/249-native-sqlite-room-adapter/** -text -whitespace
+
+# Preserve shared room-read validation/source byte hashes.
+reports/evidence/250-shared-room-read-entry/** -text -whitespace

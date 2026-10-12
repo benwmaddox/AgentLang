@@ -136,34 +136,78 @@ fn campfire.http.route(request: CampfireHttpRequest, user: AuthUser, refresh: Op
     }
 }
 
-fn campfire.http.authenticated(request: CampfireHttpRequest, restored: RestoredSession) -> CampfireHttpResponse {
-    effects db.read, db.write, clock.read, random.read
-    doc "Preserves session refresh on later failures. CSRF precedes browser checks and the route's current-user requirement. Session-authenticated bot roles are not bot-key authentication."
+fn campfire.http.room-read-route(request: CampfireHttpRequest, user: AuthUser, refresh: Option<SessionToken>) -> CampfireHttpResponse {
+    effects db.read
+    doc "Finds a room through the requesting user's membership before rendering it. Missing or inaccessible rooms retain the room-show redirect."
 
-    let refresh = if restored.refresh-cookie {
+    match campfire.rooms.find-for-user(user.id, request.room-id) {
+        error failure => campfire.http.response(500, HttpView.empty(), "", refresh)
+        ok maybe-room => {
+            match maybe-room {
+                none => campfire.http.response(302, HttpView.redirect-root(), "Room not found or inaccessible", refresh)
+                some room => campfire.http.show-room(request, user, room, refresh)
+            }
+        }
+    }
+}
+
+fn campfire.http.restore-request-session(request: CampfireHttpRequest) -> Result<Option<RestoredSession>, DbError> {
+    effects db.read, db.write
+    doc "Verifies the signed session cookie and restores its session. Missing or invalid cookies return none; bot-key policy remains with the caller."
+
+    let token = match request.session-token {
+        none => option.none<SessionToken>()
+        some signed => campfire.cookies.verify-session-token(signed, request.now)
+    }
+    match token {
+        none => result.ok<Option<RestoredSession>, DbError>(option.none<RestoredSession>())
+        some verified => campfire.authentication.restore-session(verified, request.now, option.some<RemoteIp>(request.remote-ip), request.user-agent)
+    }
+}
+
+fn campfire.http.refresh-token(restored: RestoredSession) -> Option<SessionToken> {
+    doc "Returns the session token only when restoration refreshed the session."
+
+    if restored.refresh-cookie {
         option.some<SessionToken>(restored.session.token)
     } else {
         option.none<SessionToken>()
     }
+}
+
+fn campfire.http.authenticated-user(request: CampfireHttpRequest, restored: RestoredSession, refresh: Option<SessionToken>) -> Result<AuthUser, CampfireHttpResponse> {
+    doc "Applies CSRF, browser, and current-user gates in their established order, preserving any pending session refresh on failures."
+
     if campfire.request.forgery-check-passed?(request.method, request.origin, request.fetch-site, request.base-url, true, request.request-is-ssl, request.force-ssl) {
         if campfire.browser.supported?(request.browser) {
             match restored.user {
-                none => campfire.http.response(500, HttpView.empty(), "", refresh)
-                some user => {
-                    match request.route {
-                        session-destroy => campfire.http.logout(request, user, restored.session.id, refresh)
-                        room-show => campfire.http.route(request, user, refresh)
-                        message-create => campfire.http.route(request, user, refresh)
-                        session-new => campfire.http.route(request, user, refresh)
-                        session-create => campfire.http.route(request, user, refresh)
-                    }
-                }
+                none => result.error<AuthUser, CampfireHttpResponse>(campfire.http.response(500, HttpView.empty(), "", refresh))
+                some user => result.ok<AuthUser, CampfireHttpResponse>(user)
             }
         } else {
-            campfire.http.response(200, HttpView.incompatible-browser(), "", refresh)
+            result.error<AuthUser, CampfireHttpResponse>(campfire.http.response(200, HttpView.incompatible-browser(), "", refresh))
         }
     } else {
-        campfire.http.response(422, HttpView.empty(), "", refresh)
+        result.error<AuthUser, CampfireHttpResponse>(campfire.http.response(422, HttpView.empty(), "", refresh))
+    }
+}
+
+fn campfire.http.authenticated(request: CampfireHttpRequest, restored: RestoredSession) -> CampfireHttpResponse {
+    effects db.read, db.write, clock.read, random.read
+    doc "Preserves session refresh on later failures. CSRF precedes browser checks and the route's current-user requirement. Session-authenticated bot roles are not bot-key authentication."
+
+    let refresh = campfire.http.refresh-token(restored)
+    match campfire.http.authenticated-user(request, restored, refresh) {
+        error response => response
+        ok user => {
+            match request.route {
+                session-destroy => campfire.http.logout(request, user, restored.session.id, refresh)
+                room-show => campfire.http.route(request, user, refresh)
+                message-create => campfire.http.route(request, user, refresh)
+                session-new => campfire.http.route(request, user, refresh)
+                session-create => campfire.http.route(request, user, refresh)
+            }
+        }
     }
 }
 
@@ -191,23 +235,52 @@ fn campfire.http.authenticate(request: CampfireHttpRequest) -> CampfireHttpRespo
     effects db.read, db.write, clock.read, random.read
     doc "Verifies the signed cookie using the fixed trusted adapter before restoring a session. Only a missing session falls back to bot-key authentication."
 
-    let token = match request.session-token {
-        none => option.none<SessionToken>()
-        some signed => campfire.cookies.verify-session-token(signed, request.now)
-    }
-    match token {
-        none => campfire.http.bot-or-redirect(request)
-        some verified => {
-            match campfire.authentication.restore-session(verified, request.now, option.some<RemoteIp>(request.remote-ip), request.user-agent) {
-                error failure => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
-                ok maybe-session => {
-                    match maybe-session {
-                        none => campfire.http.bot-or-redirect(request)
-                        some restored => campfire.http.authenticated(request, restored)
-                    }
-                }
+    match campfire.http.restore-request-session(request) {
+        error failure => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+        ok maybe-session => {
+            match maybe-session {
+                none => campfire.http.bot-or-redirect(request)
+                some restored => campfire.http.authenticated(request, restored)
             }
         }
+    }
+}
+
+fn campfire.http.room-read(request: CampfireHttpRequest) -> CampfireHttpResponse {
+    effects db.read, db.write
+    doc "A narrow shared GET/HEAD entry for room reads. It rejects unrelated routes and unsafe methods before cookie, session, bot, or room providers are called."
+
+    match request.route {
+        room-show => {
+            let is-read-method = match request.method {
+                get => true
+                head => true
+                unsafe => false
+            }
+            if is-read-method {
+                match campfire.http.restore-request-session(request) {
+                    error failure => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+                    ok maybe-session => {
+                        match maybe-session {
+                            none => campfire.http.bot-or-redirect(request)
+                            some restored => {
+                                let refresh = campfire.http.refresh-token(restored)
+                                match campfire.http.authenticated-user(request, restored, refresh) {
+                                    error response => response
+                                    ok user => campfire.http.room-read-route(request, user, refresh)
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+            }
+        }
+        message-create => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+        session-new => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+        session-create => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+        session-destroy => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
     }
 }
 
@@ -216,8 +289,24 @@ fn campfire.http.dispatch(request: CampfireHttpRequest) -> CampfireHttpResponse 
     doc "Fixed HTTP entrypoint. Unsafe-IP rejection runs first for unsafe methods. Protected room routes keep cookie authentication; public session routes bypass session and bot lookup, then apply forgery and browser gates before login actions. Only the trusted host may bind this entrypoint; request data never selects code."
 
     match request.method {
-        get => campfire.http.dispatch-after-ban(request)
-        head => campfire.http.dispatch-after-ban(request)
+        get => {
+            match request.route {
+                room-show => campfire.http.room-read(request)
+                message-create => campfire.http.dispatch-after-ban(request)
+                session-new => campfire.http.dispatch-after-ban(request)
+                session-create => campfire.http.dispatch-after-ban(request)
+                session-destroy => campfire.http.dispatch-after-ban(request)
+            }
+        }
+        head => {
+            match request.route {
+                room-show => campfire.http.room-read(request)
+                message-create => campfire.http.dispatch-after-ban(request)
+                session-new => campfire.http.dispatch-after-ban(request)
+                session-create => campfire.http.dispatch-after-ban(request)
+                session-destroy => campfire.http.dispatch-after-ban(request)
+            }
+        }
         unsafe => {
             match campfire.bans.ip-banned?(request.remote-ip) {
                 error failure => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())

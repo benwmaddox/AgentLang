@@ -354,6 +354,7 @@ let main args =
             let toolchain = LlvmToolchain.discover()
             verifyPureExport toolchain
             verifyActualCampfireExport toolchain
+            RoomReadEntryTests.run runRoot check |> ignore
             NativeSqliteTests.run toolchain runRoot (nativeSqliteDependencies toolchain) check
         with error -> failure <- Some(error.ToString())
         let receipt = JsonObject()
@@ -378,7 +379,11 @@ let main args =
             "applications/campfire/Native/room_sqlite_adapter.h"
             "applications/campfire/Native/sqlite_subset.h"
             "applications/campfire/Native/e_sqlite3.def"
+            "applications/campfire/http.flow"
             "tests/AgentLang.Aot.EntryExport.Tests/NativeSqliteTests.fs"
+            "tests/AgentLang.Aot.EntryExport.Tests/RoomReadEntryTests.fs"
+            "tests/AgentLang.Aot.EntryExport.Tests/fixtures/room-read-reference-http.flow"
+            "applications/campfire/http-room-read-tests.flow"
             "tests/AgentLang.Aot.EntryExport.Tests/native/room_sqlite_smoke.c"
         ] do
             pins[relative] <- JsonValue.Create(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(repo, relative)))).ToLowerInvariant())

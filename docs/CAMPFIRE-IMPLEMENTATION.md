@@ -16,6 +16,12 @@ See [report 248](../reports/248-typed-native-room-host.md). The subsequent
 real membership-filtered room lookup through the AOT entry without .NET at runtime.
 Other native SQL contracts and real HTTP still need implementation and parity checks.
 
+The [shared room-read entry](../reports/250-shared-room-read-entry.md) provides a
+fixed GET/HEAD application boundary with independently checked behavior and a
+narrow host closure. It reuses session/browser/user policy in the language and
+keeps unrelated mutation routes out of that closure. Its whole-page native lowering
+still needs bounded lists, Int64 formatting and the remaining native adapters.
+
 The HTTP slice (room listing, message creation, login page/submission and logout)
 is a delivery milestone, not the final
 scope. Completion still requires the full application's observable behavior,

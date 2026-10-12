@@ -21,6 +21,12 @@ executes the room lookup without .NET. The remaining SQL/room-path contracts, li
 and full native room HTTP remain required. Earlier sequencing below is
 historical where it conflicts with this priority; the full migration scope remains.
 
+The [shared GET/HEAD room entry](../reports/250-shared-room-read-entry.md) now
+has independent parity against the previous dispatcher and an exact nine-operation
+IR closure. Implement bounded native message lists and Int64 formatting next, then
+the remaining closed host contracts and native HTTP transport/rendering. This is
+application preparation for AOT, not a native endpoint performance result.
+
 As of 2026-10-11, the primary deliverable is a complete Campfire migration in
 this language. Add language and runtime features when the next application step
 requires them. The earlier standalone efficacy studies remain evidence; new

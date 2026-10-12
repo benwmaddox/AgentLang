@@ -514,6 +514,7 @@ module Program =
               "applications/campfire/sign-out.flow"
               "applications/campfire/sign-out-tests.flow"
               "applications/campfire/http-logout-tests.flow"
+              "applications/campfire/http-room-read-tests.flow"
               "applications/campfire/browser-types.flow"
               "applications/campfire/Http/Application.fs"
               "applications/campfire/Http/CookieHost.fs"

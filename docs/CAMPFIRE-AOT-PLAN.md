@@ -92,6 +92,11 @@ initialize/begin/resume mailbox exports are not a general application host inter
    existing authentication and room-policy helpers while excluding unrelated
    write/login routes from its static closure. Prove parity with the generic
    dispatcher for that endpoint; avoid a second native implementation of policy.
+   [The shared room-read entry](../reports/250-shared-room-read-entry.md) now
+   matches the prechange generic dispatcher in 24 injected-provider cases. Its
+   compiler-minted closure contains exactly nine host operations and db.read/write
+   effects. This verifies the application boundary; list layout, integer formatting
+   and admission/implementation of those native contracts still block native HTTP.
 5. Supply narrow native SQLite, cookie/crypto, browser, rendering and HTTP adapters.
    Use established native libraries/OS facilities, parameterized SQL and bounded
    input/output. Preserve existing SQLite data and Rails-compatible cookies.

@@ -1,0 +1,234 @@
+fn campfire.http.response(status: Int, view: HttpView, text: String, refresh: Option<SessionToken>) -> CampfireHttpResponse {
+    doc "Constructs a response without route data or cookie mutations other than a pending authenticated session refresh."
+
+    campfireHttpResponse.new(
+        status = status,
+        view = view,
+        text = text,
+        room = option.none<RoomRow>(),
+        messages = list.empty<MessageRow>(),
+        message = option.none<MessageRow>(),
+        refresh-session-token = refresh,
+        remember-return-to = false,
+        last-room = option.none<RoomId>()
+    )
+}
+
+fn campfire.http.unauthenticated() -> CampfireHttpResponse {
+    doc "Requests the fixed login redirect and a host-owned encrypted return-to mutation. The host uses the validated request URL."
+
+    campfireHttpResponse.new(
+        status = 302,
+        view = HttpView.redirect-session(),
+        text = "",
+        room = option.none<RoomRow>(),
+        messages = list.empty<MessageRow>(),
+        message = option.none<MessageRow>(),
+        refresh-session-token = option.none<SessionToken>(),
+        remember-return-to = true,
+        last-room = option.none<RoomId>()
+    )
+}
+
+fn campfire.http.show-room(request: CampfireHttpRequest, user: AuthUser, room: RoomRow, refresh: Option<SessionToken>) -> CampfireHttpResponse {
+    effects db.read
+    doc "Lists the authorized room's newest forty messages. A last-room directive is emitted only when the incoming cookie differs."
+
+    match campfire.messages.list-for-member(user.id, room.id) {
+        error failure => campfire.http.response(500, HttpView.empty(), "", refresh)
+        ok messages => {
+            let remember-room = match request.last-room {
+                none => option.some<RoomId>(room.id)
+                some prior => {
+                    if prior == int.to-string(RoomId.value(room.id)) {
+                        option.none<RoomId>()
+                    } else {
+                        option.some<RoomId>(room.id)
+                    }
+                }
+            }
+            campfireHttpResponse.new(
+                status = 200,
+                view = HttpView.room(),
+                text = "",
+                room = option.some<RoomRow>(room),
+                messages = messages,
+                message = option.none<MessageRow>(),
+                refresh-session-token = refresh,
+                remember-return-to = false,
+                last-room = remember-room
+            )
+        }
+    }
+}
+
+fn campfire.http.create-message(request: CampfireHttpRequest, user: AuthUser, room: RoomRow, refresh: Option<SessionToken>) -> CampfireHttpResponse {
+    effects db.read, db.write, clock.read, random.read
+    doc "Creates only after scoped room lookup. Missing message root fails. Turbo negotiation follows persistence, matching the pinned controller. Rendering treats bodies as encoded plain text until Action Text support is implemented."
+
+    match request.message-form {
+        error failure => {
+            match failure {
+                invalid-form => campfire.http.response(400, HttpView.empty(), "", refresh)
+                unsupported-media => campfire.http.response(415, HttpView.empty(), "", refresh)
+                unsupported-attachment => campfire.http.response(422, HttpView.empty(), "", refresh)
+                body-too-large => campfire.http.response(413, HttpView.empty(), "", refresh)
+            }
+        }
+        ok maybe-message => {
+            match maybe-message {
+                none => campfire.http.response(400, HttpView.empty(), "", refresh)
+                some message => {
+                    match campfire.messages.create-for-member(user.id, room.id, message.client-message-id, message.body) {
+                        error failure => campfire.http.response(500, HttpView.empty(), "", refresh)
+                        ok created => {
+                            if request.accepts-turbo {
+                                campfireHttpResponse.new(
+                                    status = 200,
+                                    view = HttpView.append-message(),
+                                    text = "",
+                                    room = option.some<RoomRow>(room),
+                                    messages = list.empty<MessageRow>(),
+                                    message = option.some<MessageRow>(created),
+                                    refresh-session-token = refresh,
+                                    remember-return-to = false,
+                                    last-room = option.none<RoomId>()
+                                )
+                            } else {
+                                campfire.http.response(406, HttpView.empty(), "", refresh)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.http.route(request: CampfireHttpRequest, user: AuthUser, refresh: Option<SessionToken>) -> CampfireHttpResponse {
+    effects db.read, db.write, clock.read, random.read
+    doc "Finds the requested room through its user's membership before route processing. IDs are not required to be positive."
+
+    match campfire.rooms.find-for-user(user.id, request.room-id) {
+        error failure => campfire.http.response(500, HttpView.empty(), "", refresh)
+        ok maybe-room => {
+            match maybe-room {
+                none => {
+                    match request.route {
+                        room-show => campfire.http.response(302, HttpView.redirect-root(), "Room not found or inaccessible", refresh)
+                        message-create => campfire.http.response(200, HttpView.room-not-found(), "This room was deleted.", refresh)
+                        session-new => campfire.http.response(500, HttpView.empty(), "", refresh)
+                        session-create => campfire.http.response(500, HttpView.empty(), "", refresh)
+                        session-destroy => campfire.http.response(500, HttpView.empty(), "", refresh)
+                    }
+                }
+                some room => {
+                    match request.route {
+                        room-show => campfire.http.show-room(request, user, room, refresh)
+                        message-create => campfire.http.create-message(request, user, room, refresh)
+                        session-new => campfire.http.response(500, HttpView.empty(), "", refresh)
+                        session-create => campfire.http.response(500, HttpView.empty(), "", refresh)
+                        session-destroy => campfire.http.response(500, HttpView.empty(), "", refresh)
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.http.authenticated(request: CampfireHttpRequest, restored: RestoredSession) -> CampfireHttpResponse {
+    effects db.read, db.write, clock.read, random.read
+    doc "Preserves session refresh on later failures. CSRF precedes browser checks and the route's current-user requirement. Session-authenticated bot roles are not bot-key authentication."
+
+    let refresh = if restored.refresh-cookie {
+        option.some<SessionToken>(restored.session.token)
+    } else {
+        option.none<SessionToken>()
+    }
+    if campfire.request.forgery-check-passed?(request.method, request.origin, request.fetch-site, request.base-url, true, request.request-is-ssl, request.force-ssl) {
+        if campfire.browser.supported?(request.browser) {
+            match restored.user {
+                none => campfire.http.response(500, HttpView.empty(), "", refresh)
+                some user => {
+                    match request.route {
+                        session-destroy => campfire.http.logout(request, user, restored.session.id, refresh)
+                        room-show => campfire.http.route(request, user, refresh)
+                        message-create => campfire.http.route(request, user, refresh)
+                        session-new => campfire.http.route(request, user, refresh)
+                        session-create => campfire.http.route(request, user, refresh)
+                    }
+                }
+            }
+        } else {
+            campfire.http.response(200, HttpView.incompatible-browser(), "", refresh)
+        }
+    } else {
+        campfire.http.response(422, HttpView.empty(), "", refresh)
+    }
+}
+
+fn campfire.http.bot-or-redirect(request: CampfireHttpRequest) -> CampfireHttpResponse {
+    effects db.read
+    doc "A valid active bot key establishes bot-key authentication, which these ordinary routes deny. The transport performs Ruby-compatible ASCII stripping."
+
+    match request.bot-key {
+        none => campfire.http.unauthenticated()
+        some key => {
+            match campfire.users.authenticate-bot-key(key) {
+                error failure => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+                ok maybe-bot => {
+                    match maybe-bot {
+                        none => campfire.http.unauthenticated()
+                        some bot => campfire.http.response(403, HttpView.empty(), "", option.none<SessionToken>())
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.http.authenticate(request: CampfireHttpRequest) -> CampfireHttpResponse {
+    effects db.read, db.write, clock.read, random.read
+    doc "Verifies the signed cookie using the fixed trusted adapter before restoring a session. Only a missing session falls back to bot-key authentication."
+
+    let token = match request.session-token {
+        none => option.none<SessionToken>()
+        some signed => campfire.cookies.verify-session-token(signed, request.now)
+    }
+    match token {
+        none => campfire.http.bot-or-redirect(request)
+        some verified => {
+            match campfire.authentication.restore-session(verified, request.now, option.some<RemoteIp>(request.remote-ip), request.user-agent) {
+                error failure => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+                ok maybe-session => {
+                    match maybe-session {
+                        none => campfire.http.bot-or-redirect(request)
+                        some restored => campfire.http.authenticated(request, restored)
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.http.dispatch(request: CampfireHttpRequest) -> CampfireHttpResponse {
+    effects db.read, db.write, clock.read, random.read
+    doc "Fixed HTTP entrypoint. Unsafe-IP rejection runs first for unsafe methods. Protected room routes keep cookie authentication; public session routes bypass session and bot lookup, then apply forgery and browser gates before login actions. Only the trusted host may bind this entrypoint; request data never selects code."
+
+    match request.method {
+        get => campfire.http.dispatch-after-ban(request)
+        head => campfire.http.dispatch-after-ban(request)
+        unsafe => {
+            match campfire.bans.ip-banned?(request.remote-ip) {
+                error failure => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+                ok banned => {
+                    if banned {
+                        campfire.http.response(429, HttpView.empty(), "", option.none<SessionToken>())
+                    } else {
+                        campfire.http.dispatch-after-ban(request)
+                    }
+                }
+            }
+        }
+    }
+}

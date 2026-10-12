@@ -141,6 +141,7 @@ try {
         'applications/campfire/sign-out.flow',
         'applications/campfire/sign-out-tests.flow',
         'applications/campfire/http-logout-tests.flow',
+        'applications/campfire/http-room-read-tests.flow',
         'applications/campfire/Authentication.Persistence/PasswordVerification.fs',
         'applications/campfire/Authentication.Persistence/AgentLang.Campfire.Authentication.Persistence.fsproj',
         'tests/AgentLang.Campfire.Authentication.Persistence.Tests/Fixtures/rails-password-vectors.json',
