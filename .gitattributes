@@ -154,3 +154,6 @@ reports/evidence/237-campfire-request-policy/** -text -whitespace
 reports/evidence/238-campfire-cookie-compatibility/** -text -whitespace
 reports/evidence/239-campfire-authentication-storage/** -text -whitespace
 reports/evidence/236-campfire-host-integration/** -text -whitespace
+
+# Preserve authenticated Campfire HTTP validation receipts and source byte hashes.
+reports/evidence/242-campfire-authenticated-http/** -text -whitespace

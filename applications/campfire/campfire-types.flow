@@ -67,6 +67,6 @@ record MessageRow {
 record NewMessage {
     field room-id: RoomId
     field creator-id: UserId
-    field client-message-id: String
+    field client-message-id: Option<String>
     field body: Option<String>
 }

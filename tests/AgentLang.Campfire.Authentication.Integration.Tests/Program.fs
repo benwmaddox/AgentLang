@@ -25,7 +25,15 @@ type private ProviderProbe(path: string, provider: HostOperationProvider) =
         let invoke operationId values =
             let (HostOperationId name) = operationId
             calls.Add(name, values)
-            provider.Invoke operationId values
+            let injectedUserFailure =
+                name = "campfire.users.find-by-id"
+                && (match calls |> Seq.tryHead with
+                    | Some("campfire.sessions.find-by-token", [ NamedValue("SessionToken", StringValue "user-error-after-refresh-token") ]) -> true
+                    | _ -> false)
+            if injectedUserFailure then
+                Ok [ ResultValue(TOption(TNamed "AuthUser"), TNamed "DbError", Error(EnumValue("DbError", "unavailable"))) ]
+            else
+                provider.Invoke operationId values
         let dispose () =
             disposeCalls <- disposeCalls + 1
             provider.Dispose()
@@ -45,7 +53,7 @@ module Program =
         if expected <> actual then failwith $"{message}: expected {expected}, got {actual}"
 
     let private repositoryRoot = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", ".."))
-    let private privateRoot = Path.Combine(repositoryRoot, ".agentlang", "campfire-auth-integration-241")
+    let private privateRoot = Path.Combine(repositoryRoot, ".agentlang", "campfire-http-242", "auth-order")
     let private runDirectory =
         Path.Combine(privateRoot, "runs", $"{DateTime.UtcNow:yyyyMMddTHHmmssfffZ}-{Guid.NewGuid():N}")
     let private runtimeDirectory = Path.Combine(runDirectory, "runtime")
@@ -250,6 +258,10 @@ module Program =
         insertSession 11 1 "due-token" (Some "198.51.100.8") (Some "stored-agent") "2025-12-31 00:00:00" "2025-01-01 00:00:00" "2025-12-31 00:00:00"
         insertSession 12 1 "blocked-refresh-token" (Some "198.51.100.8") (Some "stored-agent") "2025-12-31 00:00:00" "2025-01-01 00:00:00" "2025-12-31 00:00:00"
         insertSession 13 2 "pre-epoch-token" None None "1969-12-31 22:59:59.999998" "1969-12-31 23:59:59.999999" "1969-12-31 23:59:59.999999"
+        execute connection "PRAGMA foreign_keys = OFF" [] |> ignore
+        insertSession 14 99 "orphan-due-token" (Some "198.51.100.99") (Some "orphan-stored-agent") "2025-12-31 00:00:00" "2025-01-01 00:00:00" "2025-12-31 00:00:00"
+        execute connection "PRAGMA foreign_keys = ON" [] |> ignore
+        insertSession 15 1 "user-error-after-refresh-token" (Some "198.51.100.15") (Some "pre-refresh-agent") "2025-12-31 00:00:00" "2025-01-01 00:00:00" "2025-12-31 00:00:00"
         execute connection
             "INSERT INTO bans(id, user_id, ip_address, created_at, updated_at) VALUES (1, 1, '203.0.113.99', '2025-01-01 00:00:00', '2025-01-01 00:00:00')"
             []
@@ -320,25 +332,29 @@ module Program =
         let engine = createEngine project environment
         defineFlow engine app |> ignore
         let results = dispatch engine "test-all" [] |> expectAllPassed "Campfire auth scoped and real SQLite suites"
-        equal 41 results.Count "suite includes ten session-policy, 27 scoped-restoration, and four real SQLite cases"
-        equal 4 (factoryCalls ()) "real attached tests create one isolated provider per case"
+        equal 43 results.Count "suite includes ten session-policy, 27 scoped-restoration, and six real SQLite cases"
+        equal 6 (factoryCalls ()) "real attached tests create one isolated provider per case"
         equal 0 productionCalls.Value "tests never invoke the production provider"
 
-        let scoped = results |> Seq.filter (fun result -> result["word"].GetValue<string>() = "campfire.authentication.restore-session" && result["name"].GetValue<string>() <> "restores-cookie-verified-token-without-status-filter" && result["name"].GetValue<string>() <> "refreshes-due-session-and-requests-cookie-update" && result["name"].GetValue<string>() <> "missing-token-is-ordinary-absence" && result["name"].GetValue<string>() <> "refresh-storage-error-propagates") |> Seq.toList
+        let scoped = results |> Seq.filter (fun result -> result["word"].GetValue<string>() = "campfire.authentication.restore-session" && result["name"].GetValue<string>() <> "restores-cookie-verified-token-without-status-filter" && result["name"].GetValue<string>() <> "refreshes-due-session-and-requests-cookie-update" && result["name"].GetValue<string>() <> "orphaned-user-session-still-refreshes" && result["name"].GetValue<string>() <> "user-lookup-error-after-refresh-propagates" && result["name"].GetValue<string>() <> "missing-token-is-ordinary-absence" && result["name"].GetValue<string>() <> "refresh-storage-error-propagates") |> Seq.toList
         equal 27 scoped.Length "all restoration policy cases run under scoped provider substitutions"
         for result in scoped do assertEffectCounts result 0 0 0
+        let statusCases = scoped |> List.filter (fun result -> result["name"].GetValue<string>().EndsWith("-is-restored", StringComparison.Ordinal))
+        equal 9 statusCases.Length "all nine role/status combinations remain covered without filtering"
 
         let realExpected =
             [ "restores-cookie-verified-token-without-status-filter", 2, 0, 0
               "refreshes-due-session-and-requests-cookie-update", 2, 1, 0
+              "orphaned-user-session-still-refreshes", 2, 1, 0
+              "user-lookup-error-after-refresh-propagates", 2, 1, 0
               "missing-token-is-ordinary-absence", 1, 0, 0
-              "refresh-storage-error-propagates", 2, 1, 0 ]
+              "refresh-storage-error-propagates", 1, 1, 0 ]
         for name, reads, writes, clocks in realExpected do
             resultByName results name |> fun result -> assertEffectCounts result reads writes clocks
 
         let allProbes = probes |> Seq.toList
-        equal 4 allProbes.Length "one probe retained per real attached test"
-        equal 4 (allProbes |> List.map (fun probe -> probe.Path) |> Set.ofList |> Set.count) "each attached test has a unique SQLite fixture"
+        equal 6 allProbes.Length "one probe retained per real attached test"
+        equal 6 (allProbes |> List.map (fun probe -> probe.Path) |> Set.ofList |> Set.count) "each attached test has a unique SQLite fixture"
         for probe in allProbes do equal 1 probe.DisposeCalls $"test provider disposed once for {Path.GetFileName(probe.Path)}"
 
         let expectedCalls token =
@@ -346,7 +362,9 @@ module Program =
             | value when value = verifiedToken -> [ "campfire.sessions.find-by-token"; "campfire.users.find-by-id" ]
             | "not-in-database" -> [ "campfire.sessions.find-by-token" ]
             | "due-token"
-            | "blocked-refresh-token" -> [ "campfire.sessions.find-by-token"; "campfire.users.find-by-id"; "campfire.sessions.refresh-before" ]
+            | "orphan-due-token"
+            | "user-error-after-refresh-token" -> [ "campfire.sessions.find-by-token"; "campfire.sessions.refresh-before"; "campfire.users.find-by-id" ]
+            | "blocked-refresh-token" -> [ "campfire.sessions.find-by-token"; "campfire.sessions.refresh-before" ]
             | other -> failwith $"unexpected real test token in provider probe: {other}"
         for probe in allProbes do
             equal (expectedCalls (probeToken probe)) (operationNames probe) $"{probeToken probe} follows the Flow-selected operation order"
@@ -356,6 +374,18 @@ module Program =
         equal "refreshed-agent" (scalarString dueProbe.Path "SELECT user_agent FROM sessions WHERE id = 11" []) "due refresh persists request user-agent"
         equal "2026-01-01 12:00:00" (scalarString dueProbe.Path "SELECT last_active_at FROM sessions WHERE id = 11" []) "due refresh persists supplied UTC time"
         equal "2026-01-01 12:00:00" (scalarString dueProbe.Path "SELECT updated_at FROM sessions WHERE id = 11" []) "due refresh updates the timestamp"
+
+        let orphanProbe = allProbes |> List.find (fun probe -> probeToken probe = "orphan-due-token")
+        equal 0L (scalarLong orphanProbe.Path "SELECT COUNT(*) FROM users WHERE id = 99" []) "orphan fixture has no user row after the SQLite connection is reopened"
+        equal "203.0.113.9" (scalarString orphanProbe.Path "SELECT ip_address FROM sessions WHERE id = 14" []) "orphan session refresh persists request IP"
+        equal "orphan-agent" (scalarString orphanProbe.Path "SELECT user_agent FROM sessions WHERE id = 14" []) "orphan session refresh persists request user-agent"
+        equal "2026-01-01 12:00:00" (scalarString orphanProbe.Path "SELECT last_active_at FROM sessions WHERE id = 14" []) "orphan session refresh persists supplied UTC time after the test connection closes"
+        equal "2026-01-01 12:00:00" (scalarString orphanProbe.Path "SELECT updated_at FROM sessions WHERE id = 14" []) "orphan session updated_at persists after reopening SQLite"
+
+        let userErrorProbe = allProbes |> List.find (fun probe -> probeToken probe = "user-error-after-refresh-token")
+        equal "203.0.113.15" (scalarString userErrorProbe.Path "SELECT ip_address FROM sessions WHERE id = 15" []) "session refresh remains committed when the following user lookup returns an error"
+        equal "error-agent" (scalarString userErrorProbe.Path "SELECT user_agent FROM sessions WHERE id = 15" []) "request metadata remains committed before the user lookup error"
+        equal "2026-01-01 12:00:00" (scalarString userErrorProbe.Path "SELECT last_active_at FROM sessions WHERE id = 15" []) "refreshed session remains persisted after user lookup error and connection reopen"
 
         let freshProbe = allProbes |> List.find (fun probe -> probeToken probe = verifiedToken)
         equal "198.51.100.8" (scalarString freshProbe.Path "SELECT ip_address FROM sessions WHERE id = 10" []) "fresh session retains stored IP"
@@ -371,12 +401,12 @@ module Program =
         |> expectOk "qualify the session-restoration word as a library"
         |> ignore
         let qualificationProbes = probes |> Seq.skip beforeLibraryQualificationProbeCount |> Seq.toList
-        equal 4 qualificationProbes.Length "library qualification reruns the four real attached restoration cases"
+        equal 6 qualificationProbes.Length "library qualification reruns the six real attached restoration cases"
         for probe in qualificationProbes do equal 1 probe.DisposeCalls $"qualification test provider disposed once for {Path.GetFileName(probe.Path)}"
         equal 0 productionCalls.Value "library qualification does not call production provider"
         let reloaded = createEngine project environment
         let reloadValidationProbes = probes |> Seq.skip (beforeLibraryQualificationProbeCount + qualificationProbes.Length) |> Seq.toList
-        equal 4 reloadValidationProbes.Length "fresh engine library validation creates isolated providers for real cases"
+        equal 6 reloadValidationProbes.Length "fresh engine library validation creates isolated providers for real cases"
         for probe in reloadValidationProbes do equal 1 probe.DisposeCalls $"reload validation provider disposed once for {Path.GetFileName(probe.Path)}"
         let reloadedWords = dispatch reloaded "words" [] |> expectOk "inspect auth library after fresh engine reload"
         let wordNames = (reloadedWords["data"]["words"]).AsArray() |> Seq.map (fun item -> item["name"].GetValue<string>()) |> Set.ofSeq
@@ -390,8 +420,8 @@ module Program =
         let beforeReloadFactoryCount = factoryCalls ()
         let beforeReloadProbeCount = probes.Count
         let reloadResults = dispatch reloaded "test-all" [] |> expectAllPassed "reloaded Campfire auth suite"
-        equal 41 reloadResults.Count "fresh engine retains all policy and integration cases"
-        equal (beforeReloadFactoryCount + 4) (factoryCalls ()) "reloaded real cases each construct a fresh provider"
+        equal 43 reloadResults.Count "fresh engine retains all policy and integration cases"
+        equal (beforeReloadFactoryCount + 6) (factoryCalls ()) "reloaded real cases each construct a fresh provider"
         equal 0 productionCalls.Value "fresh reloaded suite does not call production provider"
         let reloadScopes =
             reloadResults
@@ -399,14 +429,16 @@ module Program =
                 result["word"].GetValue<string>() = "campfire.authentication.restore-session"
                 && result["name"].GetValue<string>() <> "restores-cookie-verified-token-without-status-filter"
                 && result["name"].GetValue<string>() <> "refreshes-due-session-and-requests-cookie-update"
+                && result["name"].GetValue<string>() <> "orphaned-user-session-still-refreshes"
+                && result["name"].GetValue<string>() <> "user-lookup-error-after-refresh-propagates"
                 && result["name"].GetValue<string>() <> "missing-token-is-ordinary-absence"
                 && result["name"].GetValue<string>() <> "refresh-storage-error-propagates")
             |> Seq.toList
         equal 27 reloadScopes.Length "all scoped restoration cases survive library reload"
         for result in reloadScopes do assertEffectCounts result 0 0 0
         let reloadProbes = probes |> Seq.skip beforeReloadProbeCount |> Seq.toList
-        equal 4 reloadProbes.Length "fresh engine creates one new provider per real attached test"
-        equal 16 (probes |> Seq.map (fun probe -> probe.Path) |> Set.ofSeq |> Set.count) "all test, qualification, and reload provider fixtures are isolated"
+        equal 6 reloadProbes.Length "fresh engine creates one new provider per real attached test"
+        equal 24 (probes |> Seq.map (fun probe -> probe.Path) |> Set.ofSeq |> Set.count) "all test, qualification, and reload provider fixtures are isolated"
         for probe in probes do
             equal 1 probe.DisposeCalls $"every test provider is disposed once for {Path.GetFileName(probe.Path)}"
             equal (expectedCalls (probeToken probe)) (operationNames probe) $"{probeToken probe} keeps the expected call order across tests and reloads"

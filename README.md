@@ -4,7 +4,13 @@ AgentLang is a small F# prototype for building a persistent, typed vocabulary th
 
 AI agents are external coding tools that use the language. The language runtime contains no AI agents or model calls and works without an API key. Humans and ordinary scripts use the same commands. Model integration is an optional, separate experiment harness under `experiments/`; task sessions are dictionary transactions and logs.
 
-This repository implements a prototype slice. The compiler checks and lowers source into verified typed semantic IR; the public runtime executes that IR through the interpreter, with no AST execution fallback. File primitives use real project-rooted files during normal execution and isolated virtual files in attached tests. Network and database access remain outside the current primitive set. An optional external experiment harness and a conventional business foundation are included. The [repeated external-agent comparison](reports/064-repeat-agent-purpose-review.md) observes tested vocabulary reuse; an overall efficiency advantage remains unproven. The Customer demo uses binary floating point and is not suitable for exact money. The Email validator below demonstrates a modest local policy and does not claim conformance with the full Internet email standard.
+This repository implements a prototype slice. The compiler checks and lowers source into verified typed semantic IR; the public runtime executes that IR through the interpreter, with no AST execution fallback. File primitives use real project-rooted files during normal execution and isolated virtual files in attached tests. Database and HTTP access are not part of the Core standard primitive vocabulary; the Campfire application now uses narrow trusted SQLite and Kestrel host adapters around typed Flow functions. An optional external experiment harness and a conventional business foundation are included. The [repeated external-agent comparison](reports/064-repeat-agent-purpose-review.md) observes tested vocabulary reuse; an overall efficiency advantage remains unproven. The Customer demo uses binary floating point and is not suitable for exact money. The Email validator below demonstrates a modest local policy and does not claim conformance with the full Internet email standard.
+
+The current [Campfire implementation report](reports/242-campfire-authenticated-http.md)
+records a locally passing authenticated HTTP slice for room display and message
+creation, with real SQLite and loopback Kestrel tests. This is an early migration
+milestone; route, rendering, live-update, deployment and native-runtime parity
+remain open.
 
 The [current efficacy checkpoint](reports/222-typed-batch-fresh-results.md)
 records a fresh typed-contract maintenance pair: both implementations pass nine

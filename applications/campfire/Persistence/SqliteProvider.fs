@@ -49,7 +49,7 @@ type MessageRow =
 type NewMessage =
     { RoomId: RoomId
       CreatorId: UserId
-      ClientMessageId: string
+      ClientMessageId: string option
       Body: string option }
 
 type IClock =
@@ -103,7 +103,7 @@ module private SqliteDetails =
         command.Prepare()
         Convert.ToInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture) <> 0L
 
-type SqliteProvider private (path: string, clock: IClock) =
+type SqliteProvider private (path: string, clock: IClock, guidSource: unit -> Guid) =
     let connectionString = SqliteDetails.openConnectionString path
 
     let run operation =
@@ -117,13 +117,18 @@ type SqliteProvider private (path: string, clock: IClock) =
         | _ -> Error Unavailable
 
     static member OpenExisting(path: string, clock: IClock) =
-        if String.IsNullOrWhiteSpace(path) || obj.ReferenceEquals(clock, null) then
+        SqliteProvider.OpenExisting(path, clock, fun () -> Guid.NewGuid())
+
+    static member OpenExisting(path: string, clock: IClock, guidSource: unit -> Guid) =
+        if String.IsNullOrWhiteSpace(path)
+           || obj.ReferenceEquals(clock, null)
+           || obj.ReferenceEquals(box guidSource, null) then
             Error InvalidInput
         else
             try
                 let fullPath = Path.GetFullPath(path)
                 if not (File.Exists(fullPath)) then Error Unavailable
-                else Ok(SqliteProvider(fullPath, clock))
+                else Ok(SqliteProvider(fullPath, clock, guidSource))
             with
             | _ -> Error Unavailable
 
@@ -208,13 +213,17 @@ type SqliteProvider private (path: string, clock: IClock) =
 
     member _.CreateMessage(message: NewMessage) =
         if obj.ReferenceEquals(box message, null) ||
-           isNull message.ClientMessageId ||
+           (message.ClientMessageId |> Option.exists isNull) ||
            (message.Body |> Option.exists isNull) then
             Error InvalidInput
         else
             run (fun connection ->
                 use transaction = connection.BeginTransaction()
                 let now = SqliteDetails.formatTimestamp (clock.UtcNow())
+                let clientMessageId =
+                    match message.ClientMessageId with
+                    | Some supplied -> supplied
+                    | None -> guidSource().ToString("D", CultureInfo.InvariantCulture).ToLowerInvariant()
                 let (RoomId roomId) = message.RoomId
                 let (UserId creatorId) = message.CreatorId
 
@@ -223,7 +232,7 @@ type SqliteProvider private (path: string, clock: IClock) =
                 insert.CommandText <-
                     "INSERT INTO messages (client_message_id, created_at, creator_id, room_id, updated_at) " +
                     "VALUES ($clientMessageId, $now, $creatorId, $roomId, $now) RETURNING id"
-                SqliteDetails.addParameter insert "$clientMessageId" (box message.ClientMessageId)
+                SqliteDetails.addParameter insert "$clientMessageId" (box clientMessageId)
                 SqliteDetails.addParameter insert "$now" (box now)
                 SqliteDetails.addParameter insert "$creatorId" (box creatorId)
                 SqliteDetails.addParameter insert "$roomId" (box roomId)
@@ -264,7 +273,7 @@ type SqliteProvider private (path: string, clock: IClock) =
                 { Id = MessageId messageId
                   RoomId = message.RoomId
                   CreatorId = message.CreatorId
-                  ClientMessageId = message.ClientMessageId
+                  ClientMessageId = clientMessageId
                   Body = message.Body
                   CreatedAt = now
                   UpdatedAt = now })

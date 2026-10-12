@@ -7,7 +7,7 @@ test-file campfire-real-session-restoration {
             option.some<String>("request-agent")
         )
         => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
-            user = authUser.new(id = UserId.new(1), name = "deactivated-member", role = Role.member(), status = AuthUserStatus.deactivated()),
+            user = option.some<AuthUser>(authUser.new(id = UserId.new(1), name = "deactivated-member", role = Role.member(), status = AuthUserStatus.deactivated())),
             session = sessionRow.new(
                 id = SessionId.new(10),
                 user-id = UserId.new(1),
@@ -34,7 +34,7 @@ test-file campfire-real-session-restoration {
             option.some<String>("refreshed-agent")
         )
         => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
-            user = authUser.new(id = UserId.new(1), name = "deactivated-member", role = Role.member(), status = AuthUserStatus.deactivated()),
+            user = option.some<AuthUser>(authUser.new(id = UserId.new(1), name = "deactivated-member", role = Role.member(), status = AuthUserStatus.deactivated())),
             session = sessionRow.new(
                 id = SessionId.new(11),
                 user-id = UserId.new(1),
@@ -47,6 +47,47 @@ test-file campfire-real-session-restoration {
             ),
             refresh-cookie = true
         ))) effects {
+            db.read: 2
+            db.write: 1
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/orphaned-user-session-still-refreshes {
+        campfire.authentication.restore-session(
+            SessionToken.new("orphan-due-token"),
+            UtcInstant.new(1767268800000000),
+            option.some<RemoteIp>(RemoteIp.new("203.0.113.9")),
+            option.some<String>("orphan-agent")
+        )
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
+            user = option.none<AuthUser>(),
+            session = sessionRow.new(
+                id = SessionId.new(14),
+                user-id = UserId.new(99),
+                token = SessionToken.new("orphan-due-token"),
+                ip-address = option.some<RemoteIp>(RemoteIp.new("203.0.113.9")),
+                user-agent = option.some<String>("orphan-agent"),
+                last-active-at = UtcInstant.new(1767268800000000),
+                created-at = UtcInstant.new(1735689600000000),
+                updated-at = UtcInstant.new(1767268800000000)
+            ),
+            refresh-cookie = true
+        ))) effects {
+            db.read: 2
+            db.write: 1
+            clock.read: 0
+        }
+    }
+
+    test campfire.authentication.restore-session/user-lookup-error-after-refresh-propagates {
+        campfire.authentication.restore-session(
+            SessionToken.new("user-error-after-refresh-token"),
+            UtcInstant.new(1767268800000000),
+            option.some<RemoteIp>(RemoteIp.new("203.0.113.15")),
+            option.some<String>("error-agent")
+        )
+        => value result.error<Option<RestoredSession>, DbError>(DbError.unavailable()) effects {
             db.read: 2
             db.write: 1
             clock.read: 0
@@ -75,7 +116,7 @@ test-file campfire-real-session-restoration {
             option.some<String>("refreshed-agent")
         )
         => value result.error<Option<RestoredSession>, DbError>(DbError.unavailable()) effects {
-            db.read: 2
+            db.read: 1
             db.write: 1
             clock.read: 0
         }

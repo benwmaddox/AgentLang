@@ -1,0 +1,58 @@
+enum HttpRoute {
+    case room-show
+    case message-create
+}
+
+enum HttpFormError {
+    case invalid-form
+    case unsupported-media
+    case unsupported-attachment
+    case body-too-large
+}
+
+record HttpMessageInput {
+    field client-message-id: Option<String>
+    field body: Option<String>
+}
+
+record CampfireHttpRequest {
+    field route: HttpRoute
+    field method: RequestMethod
+    field room-id: RoomId
+    field now: UtcInstant
+    field remote-ip: RemoteIp
+    field user-agent: Option<String>
+    field base-url: String
+    field request-is-ssl: Bool
+    field force-ssl: Bool
+    field origin: Option<String>
+    field fetch-site: Option<String>
+    field session-token: Option<String>
+    field bot-key: Option<BotKey>
+    field message-form: Result<Option<HttpMessageInput>, HttpFormError>
+    field accepts-turbo: Bool
+    field last-room: Option<String>
+    field browser: BrowserInfo
+}
+
+enum HttpView {
+    case empty
+    case room
+    case append-message
+    case redirect-root
+    case redirect-session
+    case incompatible-browser
+    case room-not-found
+}
+
+record CampfireHttpResponse {
+    field status: Int
+    field view: HttpView
+    field text: String
+    field room: Option<RoomRow>
+    field messages: List<MessageRow>
+    field message: Option<MessageRow>
+    field refresh-session-token: Option<SessionToken>
+    field remember-return-to: Bool
+    field last-room: Option<RoomId>
+}

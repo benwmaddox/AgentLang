@@ -2,16 +2,26 @@
 
 ## Active delivery priority: Campfire implementation
 
-As of 2026-10-11, the primary deliverable is implementing Campfire in this
-language. Add language and runtime features when the next application step
+As of 2026-10-11, the primary deliverable is a complete Campfire migration in
+this language. Add language and runtime features when the next application step
 requires them. The earlier standalone efficacy studies remain evidence; new
 reliability observations should come from building and maintaining the application.
 
-The local reference is pinned to `basecamp/once-campfire-rust` revision
-`6dae2fd3c1a2dce61ca11beb731bcce2b42b67ad`. Start with message administration
-policy, then integrate authenticated room access, message listing and creation,
-SQLite persistence, rendering and live delivery. Preserve the reference's data,
-cookie and protocol contracts; record deliberate differences explicitly.
+The local references are pinned to `basecamp/once-campfire-rust` revision
+`6dae2fd3c1a2dce61ca11beb731bcce2b42b67ad` and its Rails source at
+`90b330024dec3e757c79b6a7e6568f93da8e3148`. Message administration policy,
+session restoration, SQLite-backed message operations and a first authenticated
+Kestrel path are implemented. Report 242 passes its focused local gate for
+`GET /rooms/:id` and `POST /rooms/:room_id/messages`; the route inventory still
+contains 177 reference rows, and these two handlers remain in progress pending
+broader compatibility evidence. Do not read the two tested routes as a migration
+percentage.
+
+Next, complete compatible rendering and login/session issuance, then implement
+live delivery over the Campfire protocol. Continue through the remaining route,
+asset, data-migration, background-job and deployment requirements. Preserve the
+reference's data, cookie and protocol contracts; record deliberate differences
+explicitly. The full migration remains the objective.
 
 Application code belongs in `applications/campfire/`. Keep business decisions
 in inspectable language functions and use narrow trusted adapters for storage,

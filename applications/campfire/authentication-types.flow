@@ -39,7 +39,7 @@ record SessionRefresh {
 }
 
 record RestoredSession {
-    field user: AuthUser
+    field user: Option<AuthUser>
     field session: SessionRow
     field refresh-cookie: Bool
 }

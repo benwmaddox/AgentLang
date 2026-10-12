@@ -22,7 +22,7 @@ test-file campfire-session-restoration {
                                     token = token,
                                     ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")),
                                     user-agent = option.some<String>("stored-agent"),
-                                    last-active-at = UtcInstant.new(10000000000),
+                                    last-active-at = UtcInstant.new(0),
                                     created-at = UtcInstant.new(100),
                                     updated-at = UtcInstant.new(200)
                                 )))
@@ -32,7 +32,7 @@ test-file campfire-session-restoration {
                                         id = SessionId.new(11), user-id = UserId.new(71), token = token,
                                         ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")),
                                         user-agent = option.some<String>("stored-agent"),
-                                        last-active-at = UtcInstant.new(10000000000),
+                                        last-active-at = UtcInstant.new(0),
                                         created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)
                                     )))
                                 } else {
@@ -266,7 +266,63 @@ test-file campfire-session-restoration {
     }
 
     override fn campfire.sessions.refresh-before(refresh: SessionRefresh) -> Result<SessionRow, DbError> {
-        if refresh.session-id == SessionId.new(51) {
+        if refresh.session-id == SessionId.new(10) {
+            if refresh.cutoff == UtcInstant.new(1) {
+                if refresh.now == UtcInstant.new(3600000001) {
+                    if refresh.ip-address == option.none<RemoteIp>() {
+                        if refresh.user-agent == option.none<String>() {
+                            result.ok<SessionRow, DbError>(sessionRow.new(
+                                id = SessionId.new(10),
+                                user-id = UserId.new(99),
+                                token = SessionToken.new("user-missing"),
+                                ip-address = option.none<RemoteIp>(),
+                                user-agent = option.none<String>(),
+                                last-active-at = refresh.now,
+                                created-at = UtcInstant.new(100),
+                                updated-at = refresh.now
+                            ))
+                        } else {
+                            result.error<SessionRow, DbError>(DbError.invalid-input())
+                        }
+                    } else {
+                        result.error<SessionRow, DbError>(DbError.invalid-input())
+                    }
+                } else {
+                    result.error<SessionRow, DbError>(DbError.invalid-input())
+                }
+            } else {
+                result.error<SessionRow, DbError>(DbError.invalid-input())
+            }
+        } else {
+            if refresh.session-id == SessionId.new(11) {
+                if refresh.cutoff == UtcInstant.new(6400000000) {
+                    if refresh.now == UtcInstant.new(10000000000) {
+                        if refresh.ip-address == option.none<RemoteIp>() {
+                            if refresh.user-agent == option.none<String>() {
+                                result.ok<SessionRow, DbError>(sessionRow.new(
+                                    id = SessionId.new(11),
+                                    user-id = UserId.new(71),
+                                    token = SessionToken.new("user-error-unavailable"),
+                                    ip-address = option.none<RemoteIp>(),
+                                    user-agent = option.none<String>(),
+                                    last-active-at = refresh.now,
+                                    created-at = UtcInstant.new(100),
+                                    updated-at = refresh.now
+                                ))
+                            } else {
+                                result.error<SessionRow, DbError>(DbError.invalid-input())
+                            }
+                        } else {
+                            result.error<SessionRow, DbError>(DbError.invalid-input())
+                        }
+                    } else {
+                        result.error<SessionRow, DbError>(DbError.invalid-input())
+                    }
+                } else {
+                    result.error<SessionRow, DbError>(DbError.invalid-input())
+                }
+            } else {
+                if refresh.session-id == SessionId.new(51) {
             result.error<SessionRow, DbError>(DbError.unavailable())
         } else {
             if refresh.session-id == SessionId.new(52) {
@@ -333,6 +389,8 @@ test-file campfire-session-restoration {
                 }
             }
         }
+            }
+        }
     }
 
     override fn campfire.users.authenticate-bot-key(key: BotKey) -> Result<Option<AuthUser>, DbError> {
@@ -356,9 +414,22 @@ test-file campfire-session-restoration {
         }
     }
 
-    test campfire.authentication.restore-session/missing-user-does-not-refresh {
+    test campfire.authentication.restore-session/missing-user-preserves-due-refresh-session {
         campfire.authentication.restore-session(SessionToken.new("user-missing"), UtcInstant.new(3600000001), option.none<RemoteIp>(), option.none<String>())
-        => value result.ok<Option<RestoredSession>, DbError>(option.none<RestoredSession>()) effects {
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
+            user = option.none<AuthUser>(),
+            session = sessionRow.new(
+                id = SessionId.new(10),
+                user-id = UserId.new(99),
+                token = SessionToken.new("user-missing"),
+                ip-address = option.none<RemoteIp>(),
+                user-agent = option.none<String>(),
+                last-active-at = UtcInstant.new(3600000001),
+                created-at = UtcInstant.new(100),
+                updated-at = UtcInstant.new(3600000001)
+            ),
+            refresh-cookie = true
+        ))) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -476,7 +547,7 @@ test-file campfire-session-restoration {
     test campfire.authentication.restore-session/exactly-one-hour-does-not-refresh {
         campfire.authentication.restore-session(SessionToken.new("exact-hour"), UtcInstant.new(3600000000), option.none<RemoteIp>(), option.none<String>())
         => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
-            user = authUser.new(id = UserId.new(11), name = "campfire-user", role = Role.member(), status = AuthUserStatus.active()),
+            user = option.some<AuthUser>(authUser.new(id = UserId.new(11), name = "campfire-user", role = Role.member(), status = AuthUserStatus.active())),
             session = sessionRow.new(id = SessionId.new(20), user-id = UserId.new(11), token = SessionToken.new("exact-hour"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(0), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)),
             refresh-cookie = false
         ))) effects {
@@ -489,7 +560,7 @@ test-file campfire-session-restoration {
     test campfire.authentication.restore-session/one-microsecond-due-refresh-preserves-metadata {
         campfire.authentication.restore-session(SessionToken.new("due-one-microsecond"), UtcInstant.new(3600000001), option.some<RemoteIp>(RemoteIp.new("203.0.113.8")), option.some<String>("new-agent"))
         => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
-            user = authUser.new(id = UserId.new(11), name = "campfire-user", role = Role.member(), status = AuthUserStatus.active()),
+            user = option.some<AuthUser>(authUser.new(id = UserId.new(11), name = "campfire-user", role = Role.member(), status = AuthUserStatus.active())),
             session = sessionRow.new(id = SessionId.new(30), user-id = UserId.new(11), token = SessionToken.new("due-one-microsecond"), ip-address = option.some<RemoteIp>(RemoteIp.new("203.0.113.8")), user-agent = option.some<String>("new-agent"), last-active-at = UtcInstant.new(3600000001), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(3600000001)),
             refresh-cookie = true
         ))) effects {
@@ -502,7 +573,7 @@ test-file campfire-session-restoration {
     test campfire.authentication.restore-session/due-refresh-preserves-absent-metadata {
         campfire.authentication.restore-session(SessionToken.new("due-no-metadata"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
         => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
-            user = authUser.new(id = UserId.new(11), name = "campfire-user", role = Role.member(), status = AuthUserStatus.active()),
+            user = option.some<AuthUser>(authUser.new(id = UserId.new(11), name = "campfire-user", role = Role.member(), status = AuthUserStatus.active())),
             session = sessionRow.new(id = SessionId.new(30), user-id = UserId.new(11), token = SessionToken.new("due-no-metadata"), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>(), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(10000000000)),
             refresh-cookie = true
         ))) effects {
@@ -515,7 +586,7 @@ test-file campfire-session-restoration {
     test campfire.authentication.restore-session/preserves-session-identity-and-times {
         campfire.authentication.restore-session(SessionToken.new("preserve-fields"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
         => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(
-            user = authUser.new(id = UserId.new(11), name = "campfire-user", role = Role.member(), status = AuthUserStatus.active()),
+            user = option.some<AuthUser>(authUser.new(id = UserId.new(11), name = "campfire-user", role = Role.member(), status = AuthUserStatus.active())),
             session = sessionRow.new(id = SessionId.new(21), user-id = UserId.new(11), token = SessionToken.new("preserve-fields"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(6400000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)),
             refresh-cookie = false
         ))) effects {
@@ -527,7 +598,7 @@ test-file campfire-session-restoration {
 
     test campfire.authentication.restore-session/member-active-is-restored {
         campfire.authentication.restore-session(SessionToken.new("status-1"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
-        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(101), name = "user-101", role = Role.member(), status = AuthUserStatus.active()), session = sessionRow.new(id = SessionId.new(101), user-id = UserId.new(101), token = SessionToken.new("status-1"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = option.some<AuthUser>(authUser.new(id = UserId.new(101), name = "user-101", role = Role.member(), status = AuthUserStatus.active())), session = sessionRow.new(id = SessionId.new(101), user-id = UserId.new(101), token = SessionToken.new("status-1"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -536,7 +607,7 @@ test-file campfire-session-restoration {
 
     test campfire.authentication.restore-session/member-deactivated-is-restored {
         campfire.authentication.restore-session(SessionToken.new("status-2"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
-        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(102), name = "user-102", role = Role.member(), status = AuthUserStatus.deactivated()), session = sessionRow.new(id = SessionId.new(102), user-id = UserId.new(102), token = SessionToken.new("status-2"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = option.some<AuthUser>(authUser.new(id = UserId.new(102), name = "user-102", role = Role.member(), status = AuthUserStatus.deactivated())), session = sessionRow.new(id = SessionId.new(102), user-id = UserId.new(102), token = SessionToken.new("status-2"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -545,7 +616,7 @@ test-file campfire-session-restoration {
 
     test campfire.authentication.restore-session/member-banned-is-restored {
         campfire.authentication.restore-session(SessionToken.new("status-3"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
-        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(103), name = "user-103", role = Role.member(), status = AuthUserStatus.banned()), session = sessionRow.new(id = SessionId.new(103), user-id = UserId.new(103), token = SessionToken.new("status-3"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = option.some<AuthUser>(authUser.new(id = UserId.new(103), name = "user-103", role = Role.member(), status = AuthUserStatus.banned())), session = sessionRow.new(id = SessionId.new(103), user-id = UserId.new(103), token = SessionToken.new("status-3"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -554,7 +625,7 @@ test-file campfire-session-restoration {
 
     test campfire.authentication.restore-session/administrator-active-is-restored {
         campfire.authentication.restore-session(SessionToken.new("status-4"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
-        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(104), name = "user-104", role = Role.administrator(), status = AuthUserStatus.active()), session = sessionRow.new(id = SessionId.new(104), user-id = UserId.new(104), token = SessionToken.new("status-4"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = option.some<AuthUser>(authUser.new(id = UserId.new(104), name = "user-104", role = Role.administrator(), status = AuthUserStatus.active())), session = sessionRow.new(id = SessionId.new(104), user-id = UserId.new(104), token = SessionToken.new("status-4"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -563,7 +634,7 @@ test-file campfire-session-restoration {
 
     test campfire.authentication.restore-session/administrator-deactivated-is-restored {
         campfire.authentication.restore-session(SessionToken.new("status-5"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
-        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(105), name = "user-105", role = Role.administrator(), status = AuthUserStatus.deactivated()), session = sessionRow.new(id = SessionId.new(105), user-id = UserId.new(105), token = SessionToken.new("status-5"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = option.some<AuthUser>(authUser.new(id = UserId.new(105), name = "user-105", role = Role.administrator(), status = AuthUserStatus.deactivated())), session = sessionRow.new(id = SessionId.new(105), user-id = UserId.new(105), token = SessionToken.new("status-5"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -572,7 +643,7 @@ test-file campfire-session-restoration {
 
     test campfire.authentication.restore-session/administrator-banned-is-restored {
         campfire.authentication.restore-session(SessionToken.new("status-6"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
-        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(106), name = "user-106", role = Role.administrator(), status = AuthUserStatus.banned()), session = sessionRow.new(id = SessionId.new(106), user-id = UserId.new(106), token = SessionToken.new("status-6"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = option.some<AuthUser>(authUser.new(id = UserId.new(106), name = "user-106", role = Role.administrator(), status = AuthUserStatus.banned())), session = sessionRow.new(id = SessionId.new(106), user-id = UserId.new(106), token = SessionToken.new("status-6"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -581,7 +652,7 @@ test-file campfire-session-restoration {
 
     test campfire.authentication.restore-session/bot-active-is-restored {
         campfire.authentication.restore-session(SessionToken.new("status-7"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
-        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(107), name = "user-107", role = Role.bot(), status = AuthUserStatus.active()), session = sessionRow.new(id = SessionId.new(107), user-id = UserId.new(107), token = SessionToken.new("status-7"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = option.some<AuthUser>(authUser.new(id = UserId.new(107), name = "user-107", role = Role.bot(), status = AuthUserStatus.active())), session = sessionRow.new(id = SessionId.new(107), user-id = UserId.new(107), token = SessionToken.new("status-7"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -590,7 +661,7 @@ test-file campfire-session-restoration {
 
     test campfire.authentication.restore-session/bot-deactivated-is-restored {
         campfire.authentication.restore-session(SessionToken.new("status-8"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
-        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(108), name = "user-108", role = Role.bot(), status = AuthUserStatus.deactivated()), session = sessionRow.new(id = SessionId.new(108), user-id = UserId.new(108), token = SessionToken.new("status-8"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = option.some<AuthUser>(authUser.new(id = UserId.new(108), name = "user-108", role = Role.bot(), status = AuthUserStatus.deactivated())), session = sessionRow.new(id = SessionId.new(108), user-id = UserId.new(108), token = SessionToken.new("status-8"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -599,7 +670,7 @@ test-file campfire-session-restoration {
 
     test campfire.authentication.restore-session/bot-banned-is-restored {
         campfire.authentication.restore-session(SessionToken.new("status-9"), UtcInstant.new(10000000000), option.none<RemoteIp>(), option.none<String>())
-        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = authUser.new(id = UserId.new(109), name = "user-109", role = Role.bot(), status = AuthUserStatus.banned()), session = sessionRow.new(id = SessionId.new(109), user-id = UserId.new(109), token = SessionToken.new("status-9"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
+        => value result.ok<Option<RestoredSession>, DbError>(option.some<RestoredSession>(restoredSession.new(user = option.some<AuthUser>(authUser.new(id = UserId.new(109), name = "user-109", role = Role.bot(), status = AuthUserStatus.banned())), session = sessionRow.new(id = SessionId.new(109), user-id = UserId.new(109), token = SessionToken.new("status-9"), ip-address = option.some<RemoteIp>(RemoteIp.new("192.0.2.1")), user-agent = option.some<String>("stored-agent"), last-active-at = UtcInstant.new(10000000000), created-at = UtcInstant.new(100), updated-at = UtcInstant.new(200)), refresh-cookie = false))) effects {
             db.read: 0
             db.write: 0
             clock.read: 0

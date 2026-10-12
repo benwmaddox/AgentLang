@@ -437,7 +437,8 @@ module IrInterpreter =
         (testOriginalProgram: VerifiedIrProgram option)
         (testDispatch: Map<IrCallTarget, IrCallTarget>)
         (inputOwner: IrInterpreterResult option)
-        (arguments: IrEntryArgument list) : IrInterpreterResult =
+        (arguments: IrEntryArgument list)
+        (valueArguments: Value list option) : IrInterpreterResult =
         let verifiedProgram = VerifiedIrBody.program verifiedBody
         requireBackendRegistry verifiedProgram
         match testOriginalProgram with
@@ -461,32 +462,46 @@ module IrInterpreter =
             match inputOwner with
             | Some owner -> owner.AcquireRootsFor(verifiedProgram, executionName)
             | None -> [||]
-        if arguments.Length <> body.BodyInputTypes.Length then
+        match valueArguments with
+        | Some values when isNull (box values) ->
+            fail "IR_BACKEND_ENTRY_ARGUMENT_INVALID" "Flow entrypoint arguments must be a non-null value list." (Some executionName) None
+                [ "value list" ] [ "null" ]
+        | Some values when values.Length <> body.BodyInputTypes.Length ->
+            fail "IR_BACKEND_ENTRY_ARGUMENT_COUNT" "Entry argument count does not match the verified body input signature." (Some executionName) None
+                [ string body.BodyInputTypes.Length ] [ string values.Length ]
+        | None when arguments.Length <> body.BodyInputTypes.Length ->
             fail "IR_BACKEND_ENTRY_ARGUMENT_COUNT" "Entry argument count does not match the verified body input signature." (Some executionName) None
                 [ string body.BodyInputTypes.Length ] [ string arguments.Length ]
+        | _ -> ()
 
-        let initialStack =
-            arguments
-            |> List.map (function
-                | IrEntryArgument.RetainedRoot index ->
-                    if index < 0 || index >= retainedRoots.Length then
-                        fail "IR_BACKEND_ENTRY_ROOT_INDEX" "Entry argument selects a root outside the retained input owner." (Some executionName) None
-                            [ $"root index in [0, {retainedRoots.Length})" ] [ string index ]
-                    retainedRoots[index]
-                | IrEntryArgument.IntArgument value -> RuntimeInt value
-                | IrEntryArgument.FloatArgument value -> RuntimeFloat value
-                | IrEntryArgument.BoolArgument value -> RuntimeBool value
-                | IrEntryArgument.UnitArgument -> RuntimeUnit)
-        let actualInputTypes = initialStack |> List.map runtimeValueType
-        if actualInputTypes <> body.BodyInputTypes then
-            fail "IR_BACKEND_ENTRY_ARGUMENT_TYPE" "Entry argument types do not match the verified body input signature." (Some executionName) None
-                (body.BodyInputTypes |> List.map (formatType program)) (runtimeTypeNames program initialStack)
-        for value in initialStack do
-            match value with
-            | RuntimeFloat number when not (Double.IsFinite number) ->
-                fail "IR_BACKEND_ENTRY_ARGUMENT_NONFINITE" "Float entry arguments must be finite." (Some executionName) None
-                    [ "finite Float" ] [ string number ]
-            | _ -> ()
+        let primitiveInputStack =
+            match valueArguments with
+            | Some _ -> []
+            | None ->
+                arguments
+                |> List.map (function
+                    | IrEntryArgument.RetainedRoot index ->
+                        if index < 0 || index >= retainedRoots.Length then
+                            fail "IR_BACKEND_ENTRY_ROOT_INDEX" "Entry argument selects a root outside the retained input owner." (Some executionName) None
+                                [ $"root index in [0, {retainedRoots.Length})" ] [ string index ]
+                        retainedRoots[index]
+                    | IrEntryArgument.IntArgument value -> RuntimeInt value
+                    | IrEntryArgument.FloatArgument value -> RuntimeFloat value
+                    | IrEntryArgument.BoolArgument value -> RuntimeBool value
+                    | IrEntryArgument.UnitArgument -> RuntimeUnit)
+        match valueArguments with
+        | Some _ -> ()
+        | None ->
+            let actualInputTypes = primitiveInputStack |> List.map runtimeValueType
+            if actualInputTypes <> body.BodyInputTypes then
+                fail "IR_BACKEND_ENTRY_ARGUMENT_TYPE" "Entry argument types do not match the verified body input signature." (Some executionName) None
+                    (body.BodyInputTypes |> List.map (formatType program)) (runtimeTypeNames program primitiveInputStack)
+            for value in primitiveInputStack do
+                match value with
+                | RuntimeFloat number when not (Double.IsFinite number) ->
+                    fail "IR_BACKEND_ENTRY_ARGUMENT_NONFINITE" "Float entry arguments must be finite." (Some executionName) None
+                        [ "finite Float" ] [ string number ]
+                | _ -> ()
 
         let sourceMap = Map.fold (fun found site source -> Map.add site source found) program.SourceMap body.BodySourceMap
 
@@ -1332,6 +1347,30 @@ module IrInterpreter =
                 checkRuntimeValueRoots currentWord (Some instruction.Site) (Seq.append stack (locals |> Map.toSeq |> Seq.map snd))
             stack, locals
 
+        let initialStack =
+            match valueArguments with
+            | None -> primitiveInputStack
+            | Some values ->
+                let contextualizeEntryValidation action =
+                    try action ()
+                    with
+                    | LanguageException diagnostic when diagnostic.Code = "HOST_OPERATION_VALUE_INVALID" ->
+                        raise (LanguageException
+                            { diagnostic with
+                                Code = "IR_BACKEND_ENTRY_ARGUMENT_INVALID"
+                                Message = "Flow entrypoint argument does not satisfy its exact verified type and refinements." })
+                    | LanguageException diagnostic when diagnostic.Code = "RUNTIME_VALUE_LIMIT" ->
+                        raise (LanguageException
+                            { diagnostic with
+                                Message = "Flow entrypoint argument exceeds the bounded value limit." })
+                contextualizeEntryValidation (fun () -> validateHostValueBudget executionName None values)
+                let imported =
+                    List.zip body.BodyInputTypes values
+                    |> List.map (fun (expectedType, value) ->
+                        contextualizeEntryValidation (fun () -> importHostValue 0 executionName None expectedType value))
+                checkRuntimeValueRoots executionName None imported
+                imported
+
         host.PreflightEffects body.BodyInferredEffects None None
         let result, _ = executeBlock 0 executionName body.BodyLocalNames body.BodyBlock initialStack Map.empty
         checkRuntimeValueRoots executionName None result
@@ -1352,7 +1391,7 @@ module IrInterpreter =
         (verifiedBody: VerifiedIrBody)
         (inputOwner: IrInterpreterResult option)
         (arguments: IrEntryArgument list) : IrInterpreterResult =
-        executeBodyWithInputsAndDispatch host executionName verifiedBody (Some originalProgram) dispatch inputOwner arguments
+        executeBodyWithInputsAndDispatch host executionName verifiedBody (Some originalProgram) dispatch inputOwner arguments None
 
     /// Execute an ordinary detached body without test-scoped replacement routing.
     let executeBodyWithInputs
@@ -1361,7 +1400,17 @@ module IrInterpreter =
         (verifiedBody: VerifiedIrBody)
         (inputOwner: IrInterpreterResult option)
         (arguments: IrEntryArgument list) : IrInterpreterResult =
-        executeBodyWithInputsAndDispatch host executionName verifiedBody None Map.empty inputOwner arguments
+        executeBodyWithInputsAndDispatch host executionName verifiedBody None Map.empty inputOwner arguments None
+
+    /// Execute a verified body with checked public Values as its initial stack.
+    /// This stays internal to the Engine boundary; callers cannot forge IR or
+    /// bypass the import/refinement and aggregate-budget checks above.
+    let internal executeBodyWithValues
+        (host: IrInterpreterHost)
+        (executionName: string)
+        (verifiedBody: VerifiedIrBody)
+        (values: Value list) : IrInterpreterResult =
+        executeBodyWithInputsAndDispatch host executionName verifiedBody None Map.empty None [] (Some values)
 
     /// Compatibility entry point for callers that only execute zero-input
     /// bodies and immediately observe public Values.

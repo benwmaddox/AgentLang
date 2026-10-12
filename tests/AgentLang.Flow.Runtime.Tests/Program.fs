@@ -6808,6 +6808,94 @@ test marker.mutant/value-and-effect-failures {
         equal "TEST_EFFECT_ASSERTION_FAILED" (stringValue bothFailures.["effectAssertion"].["error"].["code"]) "effect failure is preserved beside the value diagnostic"
         equal 1 (bothFailures.["effectAssertion"].["actual"].["fs.write"].GetValue<int>()) "extra write appears in structured actual counts"
 
+        // random.read here describes a registered provider boundary effect.
+        // This fixed provider returns 17 and deliberately makes no random
+        // value/ID, so the assertion cannot be mistaken for a GUID call count.
+        let randomOperationId = HostOperationId "test.random.read"
+        let randomOperation =
+            { Id = randomOperationId
+              WordName = "host.random.read"
+              Inputs = []
+              Outputs = [ TInt ]
+              Effects = Set.singleton "random.read"
+              Documentation = "Test-only boundary used to verify observable random effect counts." }
+        let randomIds = Set.singleton randomOperationId
+        let mutable productionRandomBoundaryCalls = 0
+        let mutable testRandomBoundaryCalls = 0
+        let mutable randomTestFactories = 0
+        let makeRandomBoundaryProvider increment =
+            { OperationIds = randomIds
+              Invoke = fun _ values ->
+                  increment ()
+                  if List.isEmpty values then Ok [ IntValue 17 ] else Error HostOperationFailure.ProviderContractMismatch
+              Dispose = ignore }
+        let randomEnvironment =
+            { Manifest = Map.ofList [ randomOperationId, randomOperation ]
+              ProductionProvider = makeRandomBoundaryProvider (fun () -> productionRandomBoundaryCalls <- productionRandomBoundaryCalls + 1)
+              CreateTestProvider = fun () ->
+                  randomTestFactories <- randomTestFactories + 1
+                  Ok(makeRandomBoundaryProvider (fun () -> testRandomBoundaryCalls <- testRandomBoundaryCalls + 1)) }
+        let randomEngine =
+            Runtime.Engine(
+                Path.Combine(root, "effect-count-random-boundary"),
+                Set.singleton "random.read",
+                fileSystemMode = FileSystemMode.Virtual,
+                testCapabilities = Set.singleton "random.read",
+                hostOperations = randomEnvironment)
+        let randomSource =
+            """fn marker.random-boundary() -> Int {
+    effects random.read
+
+    .host.random.read()
+}
+
+test marker.random-boundary/counted {
+    marker::random-boundary()
+    => 17 effects { random.read: 1 }
+}
+
+test marker.random-boundary/missing-count {
+    marker::random-boundary()
+    => 17 effects {}
+}"""
+        defineFlowProject randomEngine randomSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "stage random.read boundary-count assertion controls"
+        |> ignore
+        let randomSuite =
+            dispatch randomEngine "test" [ "word", jstr "marker.random-boundary" ]
+            |> expectOk "run both random.read boundary-count cases once"
+            |> fun response -> response.["data"].["results"].AsArray()
+        let randomResult caseName =
+            randomSuite
+            |> Seq.find (fun item -> stringValue (item.["name"]) = caseName)
+            |> fun item -> item.AsObject()
+        let randomCounted = randomResult "counted"
+        check (boolValue randomCounted.["passed"]) "random.read is accepted and counted as an observable provider effect"
+        equal 1 (randomCounted.["effectAssertion"].["actual"].["random.read"].GetValue<int>()) "random.read count is one registered boundary invocation"
+        let randomCountMissing = randomResult "missing-count"
+        check (not (boolValue randomCountMissing.["passed"])) "omitting a performed random.read boundary call fails the exact count"
+        equal 1 (randomCountMissing.["effectAssertion"].["actual"].["random.read"].GetValue<int>()) "failed assertion preserves the attempted boundary call count"
+        equal 2 testRandomBoundaryCalls "both tests reach their own fresh registered test provider"
+        equal 2 randomTestFactories "each attached random boundary test creates a fresh provider"
+        equal 0 productionRandomBoundaryCalls "attached random boundary tests never use the production provider"
+        let deniedRandomEngine =
+            Runtime.Engine(
+                Path.Combine(root, "effect-count-random-boundary-denied"),
+                Set.empty,
+                fileSystemMode = FileSystemMode.Virtual,
+                hostOperations = randomEnvironment)
+        defineFlowProject deniedRandomEngine randomSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "stage a random.read entrypoint with no granted runtime capability"
+        |> ignore
+        dispatch deniedRandomEngine "eval"
+            [ "frontend", jstr "flow"
+              "syntaxVersion", jint 2
+              "code", jstr "marker::random-boundary()" ]
+        |> expectError "CAPABILITY_DENIED"
+        |> ignore
+        equal 0 productionRandomBoundaryCalls "random.read capability preflight still blocks the production provider"
+        equal 2 testRandomBoundaryCalls "denied random.read invocation does not alter attached-test provider counts"
+
         let persistenceProject = Path.Combine(root, "effect-count-persist-rewrite")
         let persistenceEngine = Runtime.Engine(persistenceProject, capabilities, "2041-02-03T04:05:06Z", fileSystemMode = FileSystemMode.Virtual)
         let persistenceSource =
@@ -7529,6 +7617,227 @@ test-file self {
         equal 0 deniedFactories "capability preflight runs before creating a test provider"
         equal 0 deniedCalls "capability denial happens before any provider invocation"
 
+    let private testTypedFlowEntryPoint root =
+        let operationId = HostOperationId "email.lookup"
+        let definition =
+            { Id = operationId
+              WordName = "host.email.lookup"
+              Inputs = [ TNamed "Request"; TOption(TNamed "Email") ]
+              Outputs = [ TNamed "Reply" ]
+              Effects = Set.singleton "db.read"
+              Documentation = "Looks up a reply for one typed request." }
+        let ids = Set.singleton operationId
+        let mutable providerCalls = 0
+        let mutable testFactoryCalls = 0
+        let mutable testProviderCalls = 0
+        let lookupReply inputs =
+            match inputs with
+            | [ RecordValue("Request", fields); OptionValue(TNamed "Email", _) ] ->
+                Ok [ RecordValue("Reply", Map.ofList [ "email", fields["email"]; "label", fields["label"] ]) ]
+            | _ -> Error HostOperationFailure.InvocationFailed
+        let productionProvider =
+            { OperationIds = ids
+              Invoke = fun _ inputs ->
+                  providerCalls <- providerCalls + 1
+                  lookupReply inputs
+              Dispose = ignore }
+        let environment =
+            { Manifest = Map.ofList [ operationId, definition ]
+              ProductionProvider = productionProvider
+              CreateTestProvider = fun () ->
+                  testFactoryCalls <- testFactoryCalls + 1
+                  Ok
+                      { OperationIds = ids
+                        Invoke = fun _ inputs ->
+                            testProviderCalls <- testProviderCalls + 1
+                            lookupReply inputs
+                        Dispose = ignore } }
+        let types =
+            "type Email : String { validate email.valid?; }\n\n"
+            + "record Request { field email: Email; field label: String; }\n\n"
+            + "record Reply { field email: Email; field label: String; }\n\n"
+            + "fn email.valid?(value: String) -> Bool { string::contains(value, \"@\") }\n\n"
+        let entrySource suffix =
+            "fn app.lookup(request: Request, previous: Option<Email>) -> Reply {\n"
+            + "    effects db.read, console.write\n"
+            + "    console::write(\"" + suffix + "\");\n"
+            + "    .host.email.lookup(request, previous)\n"
+            + "}\n\n"
+        let initialSource =
+            types
+            + entrySource "v1"
+            + "fn app.candidate(value: Int) -> Int {\n    effects none\n    value\n}\n\n"
+            + "test app.lookup/basic {\n"
+            + "    app.lookup(request.new(email = Email.new(\"member@example.com\"), label = \"profile\"), option::none<Email>())\n"
+            + "    => value reply.new(email = Email.new(\"member@example.com\"), label = \"profile\")\n"
+            + "}\n\n"
+            + "test email.valid?/valid { email.valid?(\"member@example.com\") => true }\n"
+        let project = Path.Combine(root, "typed-flow-entrypoint")
+        let engine =
+            Runtime.Engine(
+                project,
+                Set.ofList [ "db.read"; "console.write" ],
+                fileSystemMode = FileSystemMode.Virtual,
+                hostOperations = environment)
+        defineFlowProject engine initialSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "define typed entrypoint, nominal types, host contract, and an uncommitted candidate"
+        |> ignore
+        commit engine "commit" "app.lookup" []
+        |> expectOk "commit the non-library Flow entrypoint and its nominal signature types"
+        |> ignore
+        equal 0 providerCalls "commit-time attached test never falls back to the production provider"
+        equal 1 testFactoryCalls "the attached commit test gets one scoped provider"
+        equal 1 testProviderCalls "the attached commit test invokes the scoped provider once"
+
+        let inputs = [ TNamed "Request"; TOption(TNamed "Email") ]
+        let outputs = [ TNamed "Reply" ]
+        let bind name inputTypes outputTypes =
+            engine.BindFlowEntryPoint(name, inputTypes, outputTypes)
+        let expectBindError expectedCode action =
+            try
+                action () |> ignore
+                failwith $"expected bind diagnostic {expectedCode}"
+            with
+            | LanguageException diagnostic -> equal expectedCode diagnostic.Code "Flow entrypoint bind diagnostic"
+        expectBindError "FLOW_ENTRYPOINT_SIGNATURE_MISMATCH" (fun () -> bind "app.lookup" [ TString; TOption(TNamed "Email") ] outputs)
+        expectBindError "FLOW_ENTRYPOINT_SIGNATURE_MISMATCH" (fun () -> bind "app.lookup" inputs [ TString ])
+        expectBindError "FLOW_ENTRYPOINT_NOT_COMMITTED" (fun () -> bind "app.candidate" [ TInt ] [ TInt ])
+        expectBindError "FLOW_ENTRYPOINT_NOT_FLOW_AUTHORED" (fun () -> bind "host.email.lookup" definition.Inputs definition.Outputs)
+        let entryPoint = bind "app.lookup" inputs outputs
+        dispatch engine "task.begin" [ "goal", jstr "exercise typed Flow entrypoint input and task logging boundaries" ]
+        |> expectOk "begin task before direct entrypoint invocation"
+        |> ignore
+
+        let request email label =
+            RecordValue(
+                "Request",
+                Map.ofList [ "email", email; "label", StringValue label ])
+        let validEmail = NamedValue("Email", StringValue "member@example.com")
+        let validInput optional =
+            [ request validEmail "profile"; OptionValue(TNamed "Email", optional) ]
+        let expectInvocationError expectedCode label values =
+            match entryPoint.Invoke values with
+            | Error diagnostic -> equal expectedCode diagnostic.Code $"{label} diagnostic"
+            | Ok result -> failwith $"{label}: expected {expectedCode}, got {result.Values}"
+
+        expectInvocationError "IR_BACKEND_ENTRY_ARGUMENT_COUNT" "entrypoint arity check" [ request validEmail "profile" ]
+        expectInvocationError "IR_BACKEND_ENTRY_ARGUMENT_INVALID" "entrypoint kind check"
+            [ StringValue "not a Request"; OptionValue(TNamed "Email", None) ]
+        expectInvocationError "IR_BACKEND_ENTRY_ARGUMENT_INVALID" "entrypoint refinement check"
+            [ request (NamedValue("Email", StringValue "invalid")) "profile"; OptionValue(TNamed "Email", None) ]
+        expectInvocationError "IR_BACKEND_ENTRY_ARGUMENT_INVALID" "entrypoint null argument list"
+            (Unchecked.defaultof<Value list>)
+        expectInvocationError "IR_BACKEND_ENTRY_ARGUMENT_INVALID" "entrypoint nested null value"
+            [ request (Unchecked.defaultof<Value>) "profile"; OptionValue(TNamed "Email", None) ]
+        expectInvocationError "RUNTIME_VALUE_LIMIT" "entrypoint oversized nested string"
+            [ request validEmail (String('x', 1_400_000)); OptionValue(TNamed "Email", None) ]
+        equal 0 providerCalls "bad arity, nominal kind, and scalar refinement are rejected before the host provider"
+
+        let invokeAndCheck label optional expectedConsole =
+            match entryPoint.Invoke(validInput optional) with
+            | Error diagnostic -> failwith $"{label}: invocation failed with {diagnostic.Code}: {diagnostic.Message}"
+            | Ok result ->
+                equal
+                    [ RecordValue("Reply", Map.ofList [ "email", validEmail; "label", StringValue "profile" ]) ]
+                    result.Values
+                    $"{label} returns the checked nominal record"
+                equal [ expectedConsole ] result.Console $"{label} returns captured console output"
+                equal (Map.ofList [ "console.write", 1; "db.read", 1 ]) result.Effects $"{label} reports exact effect counts"
+        invokeAndCheck "valid Some input" (Some validEmail) "v1"
+        let activeTaskStatus =
+            dispatch engine "task.status" []
+            |> expectOk "inspect task accounting after direct entrypoint success and failures"
+            |> fun response -> response.["data"]
+        let taskUsedWords = jsonArrayStrings activeTaskStatus.["wordsUsed"]
+        for wordName in [ "app.lookup"; "console.write"; "email.valid?"; "host.email.lookup" ] do
+            check (List.contains wordName taskUsedWords) $"direct invocation records use of {wordName}"
+        equal 1 (activeTaskStatus.["effects"].["db.read"].GetValue<int>()) "task logging records the registered host boundary effect once"
+        equal 1 (activeTaskStatus.["effects"].["console.write"].GetValue<int>()) "task logging records the console effect once"
+        equal
+            [ "IR_BACKEND_ENTRY_ARGUMENT_COUNT"
+              "IR_BACKEND_ENTRY_ARGUMENT_INVALID"
+              "IR_BACKEND_ENTRY_ARGUMENT_INVALID"
+              "IR_BACKEND_ENTRY_ARGUMENT_INVALID"
+              "IR_BACKEND_ENTRY_ARGUMENT_INVALID"
+              "RUNTIME_VALUE_LIMIT" ]
+            (jsonArrayStrings activeTaskStatus.["errors"])
+            "each failed direct invocation adds exactly one diagnostic to active task logging"
+        invokeAndCheck "valid None input" None "v1"
+        equal 2 providerCalls "both structurally valid option cases invoke the production provider"
+        equal 1 testFactoryCalls "normal entrypoint invocation never creates another scoped test provider"
+        equal 1 testProviderCalls "normal entrypoint invocation never dispatches through the scoped test provider"
+
+        let replacementSource = entrySource "v2"
+        defineFlowProject engine replacementSource
+            [ "syntaxVersion", jint 2
+              "replace", jbool true
+              "expectedRevision", jint 1 ]
+        |> expectOk "stage a same-signature Flow replacement after binding the original snapshot"
+        |> ignore
+        dispatch engine "replace-word" [ "word", jstr "app.lookup" ]
+        |> expectOk "commit the replacement while retaining the original opaque handle"
+        |> ignore
+        invokeAndCheck "frozen old snapshot after replacement" (Some validEmail) "v1"
+        let rebound = bind "app.lookup" inputs outputs
+        match rebound.Invoke(validInput (Some validEmail)) with
+        | Error diagnostic -> failwith $"rebound entrypoint failed with {diagnostic.Code}: {diagnostic.Message}"
+        | Ok result -> equal [ "v2" ] result.Console "explicit rebind captures the new committed body"
+        equal 4 providerCalls "frozen and rebound handles both retain checked production provider dispatch"
+
+        let mutable deniedProviderCalls = 0
+        let mutable deniedFactories = 0
+        let deniedEnvironment =
+            { environment with
+                ProductionProvider =
+                    { productionProvider with
+                        Invoke = fun _ _ ->
+                            deniedProviderCalls <- deniedProviderCalls + 1
+                            Ok [ RecordValue("Reply", Map.ofList [ "email", validEmail; "label", StringValue "denied" ]) ] }
+                CreateTestProvider = fun () ->
+                    deniedFactories <- deniedFactories + 1
+                    Error HostOperationFailure.TestProviderUnavailable }
+        let deniedEngine =
+            Runtime.Engine(
+                Path.Combine(root, "typed-flow-entrypoint-denied"),
+                Set.empty,
+                fileSystemMode = FileSystemMode.Virtual,
+                hostOperations = deniedEnvironment)
+        let deniedSource =
+            types
+            + entrySource "denied"
+            + "test email.valid?/valid { email.valid?(\"member@example.com\") => true }\n\n"
+            + "test app.lookup/capability-denied { app.lookup(request.new(email = Email.new(\"member@example.com\"), label = \"profile\"), option::none<Email>()) => error CAPABILITY_DENIED }"
+        defineFlowProject deniedEngine deniedSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "define a Flow entrypoint whose declared capabilities will be denied at invocation"
+        |> ignore
+        commit deniedEngine "commit" "app.lookup" []
+        |> expectOk "commit denied entrypoint for the runtime capability control"
+        |> ignore
+        let deniedHandle = deniedEngine.BindFlowEntryPoint("app.lookup", inputs, outputs)
+        match deniedHandle.Invoke(validInput None) with
+        | Error diagnostic -> equal "CAPABILITY_DENIED" diagnostic.Code "entrypoint preserves ordinary capability preflight"
+        | Ok _ -> failwith "entrypoint with missing capabilities unexpectedly ran"
+        equal 0 deniedProviderCalls "effect denial occurs before production provider invocation"
+        equal 0 deniedFactories "effect denial does not create a test provider"
+
+        let stackEngine = Runtime.Engine(Path.Combine(root, "typed-flow-entrypoint-stack"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
+        let stackSource =
+            "word legacy.entry : Int -> Int\n"
+            + "    effects none\n"
+            + "    dup drop\n"
+            + "end\n\n"
+            + "test legacy.entry/basic\n"
+            + "    41 legacy.entry\n"
+            + "    => 41\n"
+            + "end"
+        defineStack stackEngine stackSource []
+        |> expectOk "define a Stack-authored word for the typed Flow entrypoint ownership check"
+        |> ignore
+        commit stackEngine "commit" "legacy.entry" []
+        |> expectOk "commit the Stack-authored word before attempting to bind it"
+        |> ignore
+        expectBindError "FLOW_ENTRYPOINT_NOT_FLOW_AUTHORED" (fun () -> stackEngine.BindFlowEntryPoint("legacy.entry", [ TInt ], [ TInt ]))
+
     let private testSemanticTypeInspectionAndTestAccounting root =
         let newlineProject = Path.Combine(root, "semantic-type-newlines")
         let semicolonProject = Path.Combine(root, "semantic-type-semicolons")
@@ -7830,11 +8139,12 @@ test-file self {
             testFlowProjectDocumentTypesCommitAndReload root
             testHostOperationNominalBootstrap root
             testHostOperationProviderBoundary root
+            testTypedFlowEntryPoint root
             testSemanticTypeInspectionAndTestAccounting root
             testRecordValidatorRuntimeAndPersistence root
             testEffectCountAssertions root
             testFlowTestFileOverrides root
-            printfn $"Flow Runtime tests passed: 46 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 47 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

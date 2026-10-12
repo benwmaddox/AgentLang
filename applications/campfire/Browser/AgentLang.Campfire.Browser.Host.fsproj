@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\AgentLang.Core\AgentLang.Core.fsproj" />
+    <ProjectReference Include="AgentLang.Campfire.Browser.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BrowserHost.fs" />
+  </ItemGroup>
+</Project>

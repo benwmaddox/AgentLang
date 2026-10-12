@@ -1,0 +1,14 @@
+enum BrowserFamily {
+    case safari
+    case chrome
+    case firefox
+    case opera
+    case internet-explorer
+    case other
+}
+
+record BrowserInfo {
+    field family: BrowserFamily
+    field version: Option<String>
+    field is-bot: Bool
+}

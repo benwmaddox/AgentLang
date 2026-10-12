@@ -35,8 +35,8 @@ module Program =
                 "..",
                 "..",
                 ".agentlang",
-                "campfire-235",
-                "implementation",
+                "campfire-http-242",
+                "message-id",
                 "test-data"))
 
     let private createFixture label seed =
@@ -138,6 +138,11 @@ module Program =
         match SqliteProvider.OpenExisting(path, clock) with
         | Ok provider -> provider
         | Error error -> failwith $"open existing test database failed: {error}"
+
+    let private openStoreWithGuidSource path clock (guidSource: unit -> Guid) =
+        match SqliteProvider.OpenExisting(path, clock, guidSource) with
+        | Ok provider -> provider
+        | Error error -> failwith $"open existing test database with GUID source failed: {error}"
 
     let private expectOk label result =
         match result with
@@ -281,7 +286,7 @@ module Program =
             firstStore.CreateMessage
                 { RoomId = RoomId 1L
                   CreatorId = UserId 1L
-                  ClientMessageId = clientId
+                  ClientMessageId = Some clientId
                   Body = Some body }
             |> expectOk "create message with body"
         equal (MessageId 1L) first.Id "first message receives generated database ID"
@@ -296,7 +301,7 @@ module Program =
             firstStore.CreateMessage
                 { RoomId = RoomId 1L
                   CreatorId = UserId 1L
-                  ClientMessageId = clientId
+                  ClientMessageId = Some clientId
                   Body = None }
             |> expectOk "create bodyless message with duplicate client ID"
         equal (MessageId 2L) second.Id "second message receives database ID"
@@ -320,13 +325,13 @@ module Program =
         reopened.CreateMessage
             { RoomId = RoomId 1L
               CreatorId = UserId 1L
-              ClientMessageId = null
+              ClientMessageId = Some null
               Body = None }
         |> expectError InvalidInput "null client ID rejected as typed input error"
         reopened.CreateMessage
             { RoomId = RoomId 1L
               CreatorId = UserId 1L
-              ClientMessageId = "null-body"
+              ClientMessageId = Some "null-body"
               Body = Some null }
         |> expectError InvalidInput "null body rejected as typed input error"
 
@@ -340,13 +345,13 @@ module Program =
         store.CreateMessage
             { RoomId = RoomId 999L
               CreatorId = UserId 1L
-              ClientMessageId = "missing-room"
+              ClientMessageId = Some "missing-room"
               Body = None }
         |> expectError NotFound "foreign key missing room"
         store.CreateMessage
             { RoomId = RoomId 1L
               CreatorId = UserId 999L
-              ClientMessageId = "missing-user"
+              ClientMessageId = Some "missing-user"
               Body = None }
         |> expectError NotFound "foreign key missing creator"
         let missingPath = Path.Combine(evidenceDirectory, $"missing-{Guid.NewGuid():N}.db")
@@ -366,7 +371,7 @@ module Program =
         conflictStore.CreateMessage
             { RoomId = RoomId 1L
               CreatorId = UserId 1L
-              ClientMessageId = "unique-conflict"
+              ClientMessageId = Some "unique-conflict"
               Body = Some "body" }
         |> expectError ConstraintConflict "rich-text unique index maps to conflict"
         equal 0L (scalarLongAtPath conflictPath "SELECT COUNT(*) FROM messages") "unique failure rolls message back"
@@ -385,7 +390,7 @@ module Program =
         triggerStore.CreateMessage
             { RoomId = RoomId 1L
               CreatorId = UserId 1L
-              ClientMessageId = "trigger-abort"
+              ClientMessageId = Some "trigger-abort"
               Body = Some "body" }
         |> expectError Unavailable "trigger abort is unavailable"
         equal 0L (scalarLongAtPath triggerPath "SELECT COUNT(*) FROM messages") "trigger failure rolls message back"
@@ -404,12 +409,86 @@ module Program =
         roomTouchStore.CreateMessage
             { RoomId = RoomId 1L
               CreatorId = UserId 1L
-              ClientMessageId = "room-touch-abort"
+              ClientMessageId = Some "room-touch-abort"
               Body = Some "body" }
         |> expectError Unavailable "room touch abort is unavailable"
         equal 0L (scalarLongAtPath roomTouchPath "SELECT COUNT(*) FROM messages") "room touch abort rolls message back"
         equal 0L (scalarLongAtPath roomTouchPath "SELECT COUNT(*) FROM action_text_rich_texts") "room touch abort rolls rich-text back"
         equal "2000-01-01 00:00:00" (scalarString roomTouchPath "SELECT updated_at FROM rooms WHERE id = 1") "room touch abort leaves room unchanged"
+
+    let private optionalClientIds () =
+        let path =
+            createFixture "optional-client-id" (fun connection ->
+                seedUser connection 1L
+                seedRoom connection 1L 1L "Rooms::Open" "2000-01-01 00:00:00" "2000-01-01 00:00:00")
+        let clock = FixedClock(DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero))
+        let generated = Guid.Parse("12345678-90ab-cdef-1234-567890abcdef")
+        let mutable generationCalls = 0
+        let source () =
+            generationCalls <- generationCalls + 1
+            generated
+        let store = openStoreWithGuidSource path (clock :> IClock) source
+
+        let blank =
+            store.CreateMessage
+                { RoomId = RoomId 1L
+                  CreatorId = UserId 1L
+                  ClientMessageId = Some ""
+                  Body = None }
+            |> expectOk "create with supplied empty client ID"
+        equal "" blank.ClientMessageId "a supplied empty client ID is preserved"
+        equal 0 generationCalls "a supplied empty client ID does not call the GUID source"
+
+        let supplied =
+            store.CreateMessage
+                { RoomId = RoomId 1L
+                  CreatorId = UserId 1L
+                  ClientMessageId = Some "client supplied id"
+                  Body = None }
+            |> expectOk "create with supplied client ID"
+        equal "client supplied id" supplied.ClientMessageId "a supplied client ID is preserved exactly"
+        equal 0 generationCalls "a supplied client ID does not call the GUID source"
+
+        let generatedMessage =
+            store.CreateMessage
+                { RoomId = RoomId 1L
+                  CreatorId = UserId 1L
+                  ClientMessageId = None
+                  Body = None }
+            |> expectOk "create with absent client ID"
+        equal "12345678-90ab-cdef-1234-567890abcdef" generatedMessage.ClientMessageId "absent client ID becomes a canonical lowercase UUID"
+        equal 1 generationCalls "an absent client ID calls the GUID source once"
+        equal
+            [ ""; "client supplied id"; "12345678-90ab-cdef-1234-567890abcdef" ]
+            (store.LastPage(RoomId 1L)
+             |> expectOk "read all optional-ID creates"
+             |> List.sortBy (fun row -> let (MessageId id) = row.Id in id)
+             |> List.map (fun row -> row.ClientMessageId))
+            "all three ID forms persist in insertion order"
+
+        let failedPath =
+            createFixture "optional-client-id-failure" (fun connection ->
+                seedUser connection 1L
+                seedRoom connection 1L 1L "Rooms::Open" "2000-01-01 00:00:00" "2000-01-01 00:00:00")
+        let failingSource () = failwith "test GUID source failure"
+        let failingStore = openStoreWithGuidSource failedPath (clock :> IClock) failingSource
+        failingStore.CreateMessage
+            { RoomId = RoomId 1L
+              CreatorId = UserId 1L
+              ClientMessageId = None
+              Body = Some "must roll back" }
+        |> expectError Unavailable "GUID source failure maps to unavailable"
+        equal 0L (scalarLongAtPath failedPath "SELECT COUNT(*) FROM messages") "GUID failure writes no message"
+        equal 0L (scalarLongAtPath failedPath "SELECT COUNT(*) FROM action_text_rich_texts") "GUID failure writes no rich-text row"
+        equal "2000-01-01 00:00:00" (scalarString failedPath "SELECT updated_at FROM rooms WHERE id = 1") "GUID failure leaves the room unchanged"
+
+        failingStore.CreateMessage
+            { RoomId = RoomId 1L
+              CreatorId = UserId 1L
+              ClientMessageId = Some null
+              Body = None }
+        |> expectError InvalidInput "Some null client ID remains invalid"
+        equal 0L (scalarLongAtPath failedPath "SELECT COUNT(*) FROM messages") "invalid supplied ID still writes no message"
 
     [<EntryPoint>]
     let main _ =
@@ -418,6 +497,7 @@ module Program =
             assertGroup "last message page" messagePage
             assertGroup "message create and reopen" createAndReopen
             assertGroup "typed errors and transaction rollback" typedErrorsAndRollback
+            assertGroup "optional client IDs and UUID fallback" optionalClientIds
             printfn "PASS %d groups, %d assertions" groups assertions
             0
         with error ->

@@ -94,7 +94,7 @@ module EffectCountAssertion =
     /// Provider categories observed by the host, including the typed database
     /// bridge. Domain outcomes remain language values; these counts measure only
     /// whether the host boundary was crossed.
-    let observableEffects = set [ "clock.read"; "console.write"; "db.read"; "db.write"; "fs.read"; "fs.write" ]
+    let observableEffects = set [ "clock.read"; "console.write"; "db.read"; "db.write"; "fs.read"; "fs.write"; "random.read" ]
 
     /// The interpreter's per-body step limit bounds how many provider calls one
     /// authored test can make.

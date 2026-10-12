@@ -1192,13 +1192,13 @@ let private testEffectCountAssertionsFrontend () =
     let source =
         "test effect.owner/counts {\n"
         + "    1\n"
-        + "    => 1 effects { fs.read: 2; fs.write: 0; clock.read: 0; console.write: 3; db.read: 0; db.write: 0; }\n"
+        + "    => 1 effects { fs.read: 2; fs.write: 0; clock.read: 0; console.write: 3; db.read: 0; db.write: 0; random.read: 1; }\n"
         + "}"
     let parsed = parseTestV2 source
     let expectedCounts =
-        Map.ofList [ "clock.read", 0; "console.write", 3; "db.read", 0; "db.write", 0; "fs.read", 2; "fs.write", 0 ]
+        Map.ofList [ "clock.read", 0; "console.write", 3; "db.read", 0; "db.write", 0; "fs.read", 2; "fs.write", 0; "random.read", 1 ]
     let assertion = parsed.EffectAssertion |> Option.defaultWith (fun () -> failwith "Expected a parsed effect-count assertion.")
-    equal "Flow/2 effect assertions parse all six observable categories" expectedCounts assertion.Counts
+    equal "Flow/2 effect assertions parse all seven observable categories" expectedCounts assertion.Counts
     let annotationStart = source.IndexOf("effects {", StringComparison.Ordinal)
     let annotationEnd = source.IndexOf('}', annotationStart) + 1
     let annotationLineStart = source.LastIndexOf('\n', annotationStart)
@@ -1207,7 +1207,7 @@ let private testEffectCountAssertionsFrontend () =
         assertion.Span
     let canonical = FlowSource.renderTest parsed
     check "effect assertion renderer emits a canonical suffix"
-        (canonical.EndsWith("    effects {\n        clock.read: 0\n        console.write: 3\n        db.read: 0\n        db.write: 0\n        fs.read: 2\n        fs.write: 0\n    }\n}", StringComparison.Ordinal))
+        (canonical.EndsWith("    effects {\n        clock.read: 0\n        console.write: 3\n        db.read: 0\n        db.write: 0\n        fs.read: 2\n        fs.write: 0\n        random.read: 1\n    }\n}", StringComparison.Ordinal))
     equal "effect assertion parse/render round-trips canonically" canonical
         (canonical |> parseTestV2 |> FlowSource.renderTest)
     equal "effect assertion round-trip preserves exact category counts" expectedCounts
@@ -1233,7 +1233,7 @@ let private testEffectCountAssertionsFrontend () =
         "effects { fs.read: 0; fs.read: 1; }"
     expectV2Error "unknown effect keys are rejected" "FLOW_EFFECT_ASSERTION_UNSUPPORTED"
         "effects { mystery.call: 0; }"
-    for effectName in [ "network.read"; "network.write"; "process.execute"; "random.read" ] do
+    for effectName in [ "network.read"; "network.write"; "process.execute" ] do
         expectV2Error ($"unobservable declared effect '{effectName}' is rejected") "FLOW_EFFECT_ASSERTION_UNSUPPORTED"
             ($"effects {{ {effectName}: 0; }}")
     expectV2Error "negative effect counts are rejected" "FLOW_EFFECT_ASSERTION_COUNT_INVALID"

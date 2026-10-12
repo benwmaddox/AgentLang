@@ -1,5 +1,6 @@
 namespace AgentLang.Campfire.Host
 
+open System
 open AgentLang
 open AgentLang.Campfire.Persistence
 
@@ -41,8 +42,8 @@ module CampfireHost =
             WordName = "campfire.messages.create"
             Inputs = [ TNamed "NewMessage" ]
             Outputs = [ TResult(TNamed "MessageRow", TNamed "DbError") ]
-            Effects = Set.ofList [ "db.write"; "clock.read" ]
-            Documentation = "Persists one message and optional rich-text body atomically." } ]
+            Effects = Set.ofList [ "db.write"; "clock.read"; "random.read" ]
+            Documentation = "Persists one message and optional rich-text body atomically; generates a client ID only when absent." } ]
         |> Map.ofList
 
     let private mismatch () = raise AdapterContractMismatch
@@ -68,10 +69,6 @@ module CampfireHost =
         | NamedValue("RoomId", IntValue value) -> RoomId value
         | _ -> mismatch ()
 
-    let private asString = function
-        | StringValue value when not (isNull value) -> value
-        | _ -> mismatch ()
-
     let private asInt64 = function
         | IntValue value -> value
         | _ -> mismatch ()
@@ -95,7 +92,7 @@ module CampfireHost =
         let fields = recordFields "NewMessage" [ "room-id"; "creator-id"; "client-message-id"; "body" ] value
         { RoomId = field fields "room-id" |> asRoomId
           CreatorId = field fields "creator-id" |> asUserId
-          ClientMessageId = field fields "client-message-id" |> asString
+          ClientMessageId = field fields "client-message-id" |> asOptionString
           Body = field fields "body" |> asOptionString }
 
     let private roomKindValue = function
@@ -159,12 +156,15 @@ module CampfireHost =
         | AdapterContractMismatch -> Error HostOperationFailure.ProviderContractMismatch
         | _ -> Error HostOperationFailure.InvocationFailed
 
-    let createProvider databasePath (clock: IClock) =
-        SqliteProvider.OpenExisting(databasePath, clock)
+    let createProviderWithGuidSource databasePath (clock: IClock) (guidSource: unit -> Guid) =
+        SqliteProvider.OpenExisting(databasePath, clock, guidSource)
         |> Result.map (fun store ->
             { OperationIds = operationIds
               Invoke = invoke store
               Dispose = ignore })
+
+    let createProvider databasePath (clock: IClock) =
+        createProviderWithGuidSource databasePath clock (fun () -> Guid.NewGuid())
 
     let createEnvironment productionProvider createTestProvider : HostOperationEnvironment =
         { Manifest = manifest

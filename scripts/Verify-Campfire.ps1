@@ -13,7 +13,7 @@ $repo = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $startedAt = [DateTimeOffset]::UtcNow
 if ([string]::IsNullOrWhiteSpace($EvidencePath)) {
     $runName = $startedAt.ToString('yyyyMMddTHHmmssZ') + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 8)
-    $EvidencePath = Join-Path $repo ".agentlang/campfire-host-236/verification/$runName/receipt.json"
+    $EvidencePath = Join-Path $repo ".agentlang/campfire-http-242/verification/$runName/receipt.json"
 } elseif (-not [IO.Path]::IsPathRooted($EvidencePath)) {
     $EvidencePath = Join-Path $repo $EvidencePath
 }
@@ -26,6 +26,8 @@ $pins = [Collections.Generic.List[object]]::new()
 $previousAudit = $env:NuGetAudit
 $previousTemp = $env:TEMP
 $previousTmp = $env:TMP
+$previousWorkloadResolver = $env:MSBuildEnableWorkloadResolver
+$previousNodeReuse = $env:MSBUILDDISABLENODEREUSE
 $temporaryDirectory = Join-Path $evidenceDirectory 'temp'
 $null = New-Item -ItemType Directory -Force -Path $temporaryDirectory
 $failed = $false
@@ -55,6 +57,8 @@ function Invoke-Check([string]$Name, [string]$Executable, [string[]]$Arguments) 
 Push-Location -LiteralPath $repo
 try {
     $env:NuGetAudit = 'true'
+    $env:MSBuildEnableWorkloadResolver = 'false'
+    $env:MSBUILDDISABLENODEREUSE = '1'
     $env:TEMP = $temporaryDirectory
     $env:TMP = $temporaryDirectory
     $revisionOutput = @(& git rev-parse HEAD)
@@ -68,13 +72,15 @@ try {
         'cookies' = 'tests/AgentLang.Campfire.Cookies.Tests/AgentLang.Campfire.Cookies.Tests.fsproj'
         'authentication-storage' = 'tests/AgentLang.Campfire.Authentication.Persistence.Tests/AgentLang.Campfire.Authentication.Persistence.Tests.fsproj'
         'authentication-integration' = 'tests/AgentLang.Campfire.Authentication.Integration.Tests/AgentLang.Campfire.Authentication.Integration.Tests.fsproj'
+        'browser' = 'tests/AgentLang.Campfire.Browser.Tests/AgentLang.Campfire.Browser.Tests.fsproj'
+        'http' = 'tests/AgentLang.Campfire.Http.Tests/AgentLang.Campfire.Http.Tests.fsproj'
     }
     foreach ($name in $projects.Keys) {
-        $arguments = @('build', $projects[$name], '--configuration', $Configuration, '-m:1')
+        $arguments = @('build', $projects[$name], '--configuration', $Configuration, '-m:1', '-nr:false')
         if ($NoRestore) { $arguments += '--no-restore' }
         Invoke-Check "build-$name" 'dotnet' $arguments
     }
-    foreach ($name in @('persistence', 'integration', 'cookies', 'authentication-storage', 'authentication-integration')) {
+    foreach ($name in @('persistence', 'integration', 'cookies', 'authentication-storage', 'authentication-integration', 'browser', 'http')) {
         Invoke-Check "test-$name" 'dotnet' @('run', '--project', $projects[$name], '--configuration', $Configuration, '--no-build', '--no-restore')
     }
     $cliPath = Join-Path $repo "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
@@ -84,12 +90,34 @@ try {
     foreach ($relativePath in @(
         "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Core.dll",
         "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll",
+        'src/AgentLang.Core/Runtime.fs',
+        'src/AgentLang.Core/IrInterpreter.fs',
+        'src/AgentLang.Core/Core.fs',
+        'src/AgentLang.Core/AuthoringHelp.fs',
+        'tests/AgentLang.Flow.Runtime.Tests/Program.fs',
         'applications/campfire/message-policy.flow',
         'applications/campfire/campfire-types.flow',
         'applications/campfire/request-policy.flow',
         'applications/campfire/session-policy.flow',
         'applications/campfire/room-message.flow',
         'applications/campfire/room-message-tests.flow',
+        'applications/campfire/http-types.flow',
+        'applications/campfire/http.flow',
+        'applications/campfire/http-tests.flow',
+        'applications/campfire/browser-types.flow',
+        'applications/campfire/browser-policy.flow',
+        'applications/campfire/browser-tests.flow',
+        'applications/campfire/Browser/UserAgentNormalizer.fs',
+        'applications/campfire/Browser/RubyVersion.fs',
+        'applications/campfire/Browser/BrowserHost.fs',
+        'applications/campfire/Http/Application.fs',
+        'applications/campfire/Http/CookieHost.fs',
+        'applications/campfire/Http/ResponseRenderer.fs',
+        'applications/campfire/Http/Transport.fs',
+        'tests/AgentLang.Campfire.Browser.Tests/Program.fs',
+        'tests/AgentLang.Campfire.Browser.Tests/real-browser-tests.flow',
+        'tests/AgentLang.Campfire.Browser.Tests/Fixtures/campfire_user_agents.json',
+        'tests/AgentLang.Campfire.Http.Tests/Program.fs',
         'applications/campfire/Host/CampfireHost.fs',
         'applications/campfire/Persistence/SqliteProvider.fs',
         'tests/AgentLang.Campfire.Integration.Tests/Program.fs',
@@ -117,7 +145,7 @@ try {
 } finally {
     $receipt = [ordered]@{
         formatVersion = 1
-        scope = 'Campfire interpreter storage integration, host cookies/authentication storage and pure application policies'
+        scope = 'Campfire interpreter storage/authentication, browser compatibility, authenticated loopback HTTP and pure application policies'
         passed = -not $failed
         revision = $revision
         configuration = $Configuration
@@ -132,6 +160,8 @@ try {
     $env:NuGetAudit = $previousAudit
     $env:TEMP = $previousTemp
     $env:TMP = $previousTmp
+    $env:MSBuildEnableWorkloadResolver = $previousWorkloadResolver
+    $env:MSBUILDDISABLENODEREUSE = $previousNodeReuse
     Pop-Location
 }
 Write-Host "Receipt: $EvidencePath"

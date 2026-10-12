@@ -1,0 +1,37 @@
+test-file campfire-browser-live-policy {
+    test campfire.browser.supported?/live-safari-below-minimum {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.safari(),
+            version = option.some<String>("17.1"),
+            is-bot = false
+        ))
+        => value false
+    }
+
+    test campfire.browser.supported?/live-chrome-at-minimum {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.chrome(),
+            version = option.some<String>("120"),
+            is-bot = false
+        ))
+        => value true
+    }
+
+    test campfire.browser.supported?/live-firefox-below-minimum {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.firefox(),
+            version = option.some<String>("120"),
+            is-bot = false
+        ))
+        => value false
+    }
+
+    test campfire.browser.supported?/live-opera-at-minimum {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.opera(),
+            version = option.some<String>("104"),
+            is-bot = false
+        ))
+        => value true
+    }
+}

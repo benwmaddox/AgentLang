@@ -12,6 +12,7 @@ test-file campfire-real-room-pages {
             db.read: 1
             db.write: 0
             clock.read: 0
+            random.read: 0
         }
     }
 
@@ -21,6 +22,7 @@ test-file campfire-real-room-pages {
             db.read: 1
             db.write: 0
             clock.read: 0
+            random.read: 0
         }
     }
 
@@ -30,6 +32,7 @@ test-file campfire-real-room-pages {
             db.read: 1
             db.write: 0
             clock.read: 0
+            random.read: 0
         }
     }
 }
@@ -49,6 +52,7 @@ test-file campfire-real-message-pages {
             db.read: 2
             db.write: 0
             clock.read: 0
+            random.read: 0
         }
     }
 
@@ -58,6 +62,7 @@ test-file campfire-real-message-pages {
             db.read: 1
             db.write: 0
             clock.read: 0
+            random.read: 0
         }
     }
 
@@ -67,18 +72,19 @@ test-file campfire-real-message-pages {
             db.read: 2
             db.write: 0
             clock.read: 0
+            random.read: 0
         }
     }
 }
 
 test-file campfire-real-message-create {
     test campfire.messages.create-for-member/real-member-create {
-        campfire.messages.create-for-member(UserId.new(1), RoomId.new(1), "real-bodyless-create", option.none<String>())
+        campfire.messages.create-for-member(UserId.new(1), RoomId.new(1), option.none<String>(), option.none<String>())
         => value result.ok<MessageRow, RoomMessageError>(messageRow.new(
             id = MessageId.new(101),
             room-id = RoomId.new(1),
             creator-id = UserId.new(1),
-            client-message-id = "real-bodyless-create",
+            client-message-id = "12345678-90ab-cdef-1234-567890abcdef",
             body = option.none<String>(),
             created-at = "2025-01-01 00:00:00",
             updated-at = "2025-01-01 00:00:00"
@@ -86,33 +92,55 @@ test-file campfire-real-message-create {
             db.read: 1
             db.write: 1
             clock.read: 1
+            random.read: 1
+        }
+    }
+
+    test campfire.messages.create-for-member/real-supplied-empty-client-id {
+        campfire.messages.create-for-member(UserId.new(1), RoomId.new(1), option.some<String>(""), option.none<String>())
+        => value result.ok<MessageRow, RoomMessageError>(messageRow.new(
+            id = MessageId.new(101),
+            room-id = RoomId.new(1),
+            creator-id = UserId.new(1),
+            client-message-id = "",
+            body = option.none<String>(),
+            created-at = "2025-01-01 00:00:00",
+            updated-at = "2025-01-01 00:00:00"
+        )) effects {
+            db.read: 1
+            db.write: 1
+            clock.read: 1
+            random.read: 1
         }
     }
 
     test campfire.messages.create-for-member/real-non-member-does-not-create {
-        campfire.messages.create-for-member(UserId.new(2), RoomId.new(1), "real-denied-create", option.none<String>())
+        campfire.messages.create-for-member(UserId.new(2), RoomId.new(1), option.none<String>(), option.none<String>())
         => value result.error<MessageRow, RoomMessageError>(RoomMessageError.access-denied()) effects {
             db.read: 1
             db.write: 0
             clock.read: 0
+            random.read: 0
         }
     }
 
     test campfire.messages.create-for-member/real-body-failure-rolls-back {
-        campfire.messages.create-for-member(UserId.new(1), RoomId.new(1), "real-abort-create", option.some<String>("abort-after-insert"))
+        campfire.messages.create-for-member(UserId.new(1), RoomId.new(1), option.some<String>("real-abort-create"), option.some<String>("abort-after-insert"))
         => value result.error<MessageRow, RoomMessageError>(RoomMessageError.database-unavailable()) effects {
             db.read: 1
             db.write: 1
             clock.read: 1
+            random.read: 1
         }
     }
 
     test campfire.messages.create-for-member/real-unique-conflict-rolls-back {
-        campfire.messages.create-for-member(UserId.new(1), RoomId.new(1), "real-unique-create", option.some<String>("unique-conflict-body"))
+        campfire.messages.create-for-member(UserId.new(1), RoomId.new(1), option.some<String>("real-unique-create"), option.some<String>("unique-conflict-body"))
         => value result.error<MessageRow, RoomMessageError>(RoomMessageError.database-constraint-conflict()) effects {
             db.read: 1
             db.write: 1
             clock.read: 1
+            random.read: 1
         }
     }
 }

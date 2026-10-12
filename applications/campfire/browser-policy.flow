@@ -1,0 +1,42 @@
+fn campfire.browser.supported?(info: BrowserInfo) -> Bool {
+    effects none
+    doc "Allows missing versions, bots, and unguarded browser families; otherwise applies Campfire's pinned minimum browser versions using the pure Ruby-version comparator."
+
+    if info.is-bot {
+        true
+    } else {
+        match info.family {
+            safari => {
+                match info.version {
+                    none => true
+                    some version => campfire.browser.version-at-least?(version, "17.2")
+                }
+            }
+            chrome => {
+                match info.version {
+                    none => true
+                    some version => campfire.browser.version-at-least?(version, "120")
+                }
+            }
+            firefox => {
+                match info.version {
+                    none => true
+                    some version => campfire.browser.version-at-least?(version, "121")
+                }
+            }
+            opera => {
+                match info.version {
+                    none => true
+                    some version => campfire.browser.version-at-least?(version, "104")
+                }
+            }
+            internet-explorer => {
+                match info.version {
+                    none => true
+                    some _ => false
+                }
+            }
+            other => true
+        }
+    }
+}

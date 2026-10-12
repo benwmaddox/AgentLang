@@ -1,10 +1,24 @@
 # Campfire implementation
 
-The active deliverable is a Campfire application implemented in the language,
+The active deliverable is a complete Campfire migration implemented in the language,
 with language/runtime additions driven by the next application requirement.
 This supersedes the earlier scheduling of Campfire as a final research exercise.
 It does not establish application readiness or change the intended native release
 runtime, arena allocation or mailbox execution model.
+
+The authenticated two-route HTTP slice is a delivery milestone, not the final
+scope. Completion still requires the full application's observable behavior,
+existing-data migration, compatible cookies/assets/live protocols, deployment
+and native runtime work described below. Where a requirement appears infeasible,
+record the specific evidence and migration consequence; do not substitute a
+smaller chat demonstration for the requested application.
+
+[The route inventory](campfire-route-inventory.json) retains all 177 rows from
+the pinned Rails route vectors, including aliases and possibly absent reference
+actions. It is a compatibility checklist, not 177 implemented features or a
+percentage-complete measure. Rows require executable evidence before being
+marked validated; live protocols, assets, jobs, stored files and deployment also
+need separate acceptance evidence. The current two route rows are in progress.
 
 ## Reference and compatibility
 

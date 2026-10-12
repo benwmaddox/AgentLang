@@ -1,0 +1,1487 @@
+{
+  "rustReference": "6dae2fd3c1a2dce61ca11beb731bcce2b42b67ad",
+  "railsReference": "90b330024dec3e757c79b6a7e6568f93da8e3148",
+  "routeVectorSha256": "268b41e9c3c17ff73d58810f23bebb50dbc4c23095799b93c88d79fa24050874",
+  "scope": "Pinned Rails route inventory, including aliases and routes whose actions may be absent in the reference. Route presence alone does not prove behavior, live protocols, assets, data migration or production readiness.",
+  "routes": [
+    {
+      "verb": "GET",
+      "path": "/",
+      "endpoint": "welcome#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/first_run/new(.:format)",
+      "endpoint": "first_runs#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/first_run/edit(.:format)",
+      "endpoint": "first_runs#edit",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/first_run(.:format)",
+      "endpoint": "first_runs#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/first_run(.:format)",
+      "endpoint": "first_runs#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/first_run(.:format)",
+      "endpoint": "first_runs#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/first_run(.:format)",
+      "endpoint": "first_runs#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/first_run(.:format)",
+      "endpoint": "first_runs#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/session/transfers/:id(.:format)",
+      "endpoint": "sessions/transfers#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/session/transfers/:id(.:format)",
+      "endpoint": "sessions/transfers#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/session/transfers/:id(.:format)",
+      "endpoint": "sessions/transfers#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/session/new(.:format)",
+      "endpoint": "sessions#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/session/edit(.:format)",
+      "endpoint": "sessions#edit",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/session(.:format)",
+      "endpoint": "sessions#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/session(.:format)",
+      "endpoint": "sessions#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/session(.:format)",
+      "endpoint": "sessions#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/session(.:format)",
+      "endpoint": "sessions#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/session(.:format)",
+      "endpoint": "sessions#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/account/users(.:format)",
+      "endpoint": "accounts/users#index",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/account/users(.:format)",
+      "endpoint": "accounts/users#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/account/users/new(.:format)",
+      "endpoint": "accounts/users#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/account/users/:id/edit(.:format)",
+      "endpoint": "accounts/users#edit",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/account/users/:id(.:format)",
+      "endpoint": "accounts/users#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/account/users/:id(.:format)",
+      "endpoint": "accounts/users#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/account/users/:id(.:format)",
+      "endpoint": "accounts/users#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/account/users/:id(.:format)",
+      "endpoint": "accounts/users#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/account/bots/:bot_id/key(.:format)",
+      "endpoint": "accounts/bots/keys#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/account/bots/:bot_id/key(.:format)",
+      "endpoint": "accounts/bots/keys#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/account/bots(.:format)",
+      "endpoint": "accounts/bots#index",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/account/bots(.:format)",
+      "endpoint": "accounts/bots#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/account/bots/new(.:format)",
+      "endpoint": "accounts/bots#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/account/bots/:id/edit(.:format)",
+      "endpoint": "accounts/bots#edit",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/account/bots/:id(.:format)",
+      "endpoint": "accounts/bots#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/account/bots/:id(.:format)",
+      "endpoint": "accounts/bots#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/account/bots/:id(.:format)",
+      "endpoint": "accounts/bots#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/account/bots/:id(.:format)",
+      "endpoint": "accounts/bots#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/account/join_code(.:format)",
+      "endpoint": "accounts/join_codes#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/account/logo(.:format)",
+      "endpoint": "accounts/logos#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/account/logo(.:format)",
+      "endpoint": "accounts/logos#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/account/custom_styles/edit(.:format)",
+      "endpoint": "accounts/custom_styles#edit",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/account/custom_styles(.:format)",
+      "endpoint": "accounts/custom_styles#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/account/custom_styles(.:format)",
+      "endpoint": "accounts/custom_styles#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/account/new(.:format)",
+      "endpoint": "accounts#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/account/edit(.:format)",
+      "endpoint": "accounts#edit",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/account(.:format)",
+      "endpoint": "accounts#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/account(.:format)",
+      "endpoint": "accounts#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/account(.:format)",
+      "endpoint": "accounts#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/account(.:format)",
+      "endpoint": "accounts#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/account(.:format)",
+      "endpoint": "accounts#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/join/:join_code(.:format)",
+      "endpoint": "users#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/join/:join_code(.:format)",
+      "endpoint": "users#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/qr_code/:id(.:format)",
+      "endpoint": "qr_code#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/avatar(.:format)",
+      "endpoint": "users/avatars#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/users/:user_id/avatar(.:format)",
+      "endpoint": "users/avatars#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/users/:user_id/ban(.:format)",
+      "endpoint": "users/bans#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/users/:user_id/ban(.:format)",
+      "endpoint": "users/bans#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/sidebar(.:format)",
+      "endpoint": "users/sidebars#show",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/profile/new(.:format)",
+      "endpoint": "users/profiles#new",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/profile/edit(.:format)",
+      "endpoint": "users/profiles#edit",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/profile(.:format)",
+      "endpoint": "users/profiles#show",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/users/:user_id/profile(.:format)",
+      "endpoint": "users/profiles#update",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/users/:user_id/profile(.:format)",
+      "endpoint": "users/profiles#update",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/users/:user_id/profile(.:format)",
+      "endpoint": "users/profiles#destroy",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/users/:user_id/profile(.:format)",
+      "endpoint": "users/profiles#create",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/users/:user_id/push_subscriptions/:push_subscription_id/test_notifications(.:format)",
+      "endpoint": "users/push_subscriptions/test_notifications#create",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/push_subscriptions(.:format)",
+      "endpoint": "users/push_subscriptions#index",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/users/:user_id/push_subscriptions(.:format)",
+      "endpoint": "users/push_subscriptions#create",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/push_subscriptions/new(.:format)",
+      "endpoint": "users/push_subscriptions#new",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/push_subscriptions/:id/edit(.:format)",
+      "endpoint": "users/push_subscriptions#edit",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/push_subscriptions/:id(.:format)",
+      "endpoint": "users/push_subscriptions#show",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/users/:user_id/push_subscriptions/:id(.:format)",
+      "endpoint": "users/push_subscriptions#update",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/users/:user_id/push_subscriptions/:id(.:format)",
+      "endpoint": "users/push_subscriptions#update",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/users/:user_id/push_subscriptions/:id(.:format)",
+      "endpoint": "users/push_subscriptions#destroy",
+      "defaults": {
+        "user_id": "me"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:id(.:format)",
+      "endpoint": "users#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/autocompletable/users(.:format)",
+      "endpoint": "autocompletable/users#index",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/messages(.:format)",
+      "endpoint": "messages#index",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/:room_id/messages(.:format)",
+      "endpoint": "messages#create",
+      "defaults": {},
+      "status": "implementation-in-progress",
+      "evidence": [
+        "reports/242-campfire-authenticated-http.md"
+      ]
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/messages/new(.:format)",
+      "endpoint": "messages#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/messages/:id/edit(.:format)",
+      "endpoint": "messages#edit",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/messages/:id(.:format)",
+      "endpoint": "messages#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/:room_id/messages/:id(.:format)",
+      "endpoint": "messages#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/:room_id/messages/:id(.:format)",
+      "endpoint": "messages#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/:room_id/messages/:id(.:format)",
+      "endpoint": "messages#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/:room_id/:bot_key/messages/:message_id/boosts(.:format)",
+      "endpoint": "messages/boosts/by_bots#create",
+      "defaults": {
+        "format": "json"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/:room_id/:bot_key/messages/:message_id/boosts/:id(.:format)",
+      "endpoint": "messages/boosts/by_bots#destroy",
+      "defaults": {
+        "format": "json"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/:bot_key/messages(.:format)",
+      "endpoint": "messages/by_bots#index",
+      "defaults": {
+        "format": "json"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/:room_id/:bot_key/messages(.:format)",
+      "endpoint": "messages/by_bots#create",
+      "defaults": {
+        "format": "json"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/:room_id/:bot_key/messages/:id(.:format)",
+      "endpoint": "messages/by_bots#update",
+      "defaults": {
+        "format": "json"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/:room_id/:bot_key/messages/:id(.:format)",
+      "endpoint": "messages/by_bots#update",
+      "defaults": {
+        "format": "json"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/:room_id/:bot_key/messages/:id(.:format)",
+      "endpoint": "messages/by_bots#destroy",
+      "defaults": {
+        "format": "json"
+      },
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/refresh(.:format)",
+      "endpoint": "rooms/refreshes#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/settings(.:format)",
+      "endpoint": "rooms/settings#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/involvement(.:format)",
+      "endpoint": "rooms/involvements#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/:room_id/involvement(.:format)",
+      "endpoint": "rooms/involvements#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/:room_id/involvement(.:format)",
+      "endpoint": "rooms/involvements#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/@:message_id(.:format)",
+      "endpoint": "rooms#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms(.:format)",
+      "endpoint": "rooms#index",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms(.:format)",
+      "endpoint": "rooms#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/new(.:format)",
+      "endpoint": "rooms#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:id/edit(.:format)",
+      "endpoint": "rooms#edit",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:id(.:format)",
+      "endpoint": "rooms#show",
+      "defaults": {},
+      "status": "implementation-in-progress",
+      "evidence": [
+        "reports/242-campfire-authenticated-http.md"
+      ]
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/:id(.:format)",
+      "endpoint": "rooms#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/:id(.:format)",
+      "endpoint": "rooms#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/:id(.:format)",
+      "endpoint": "rooms#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/opens(.:format)",
+      "endpoint": "rooms/opens#index",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/opens(.:format)",
+      "endpoint": "rooms/opens#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/opens/new(.:format)",
+      "endpoint": "rooms/opens#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/opens/:id/edit(.:format)",
+      "endpoint": "rooms/opens#edit",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/opens/:id(.:format)",
+      "endpoint": "rooms/opens#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/opens/:id(.:format)",
+      "endpoint": "rooms/opens#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/opens/:id(.:format)",
+      "endpoint": "rooms/opens#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/opens/:id(.:format)",
+      "endpoint": "rooms/opens#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/closeds(.:format)",
+      "endpoint": "rooms/closeds#index",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/closeds(.:format)",
+      "endpoint": "rooms/closeds#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/closeds/new(.:format)",
+      "endpoint": "rooms/closeds#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/closeds/:id/edit(.:format)",
+      "endpoint": "rooms/closeds#edit",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/closeds/:id(.:format)",
+      "endpoint": "rooms/closeds#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/closeds/:id(.:format)",
+      "endpoint": "rooms/closeds#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/closeds/:id(.:format)",
+      "endpoint": "rooms/closeds#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/closeds/:id(.:format)",
+      "endpoint": "rooms/closeds#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/directs(.:format)",
+      "endpoint": "rooms/directs#index",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/directs(.:format)",
+      "endpoint": "rooms/directs#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/directs/new(.:format)",
+      "endpoint": "rooms/directs#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/directs/:id/edit(.:format)",
+      "endpoint": "rooms/directs#edit",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/directs/:id(.:format)",
+      "endpoint": "rooms/directs#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/directs/:id(.:format)",
+      "endpoint": "rooms/directs#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/directs/:id(.:format)",
+      "endpoint": "rooms/directs#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/directs/:id(.:format)",
+      "endpoint": "rooms/directs#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/:message_id/boosts(.:format)",
+      "endpoint": "messages/boosts#index",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/messages/:message_id/boosts(.:format)",
+      "endpoint": "messages/boosts#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/:message_id/boosts/new(.:format)",
+      "endpoint": "messages/boosts#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/:message_id/boosts/:id/edit(.:format)",
+      "endpoint": "messages/boosts#edit",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/:message_id/boosts/:id(.:format)",
+      "endpoint": "messages/boosts#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/messages/:message_id/boosts/:id(.:format)",
+      "endpoint": "messages/boosts#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/messages/:message_id/boosts/:id(.:format)",
+      "endpoint": "messages/boosts#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/messages/:message_id/boosts/:id(.:format)",
+      "endpoint": "messages/boosts#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/messages(.:format)",
+      "endpoint": "messages#index",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/messages(.:format)",
+      "endpoint": "messages#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/new(.:format)",
+      "endpoint": "messages#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/:id/edit(.:format)",
+      "endpoint": "messages#edit",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/:id(.:format)",
+      "endpoint": "messages#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PATCH",
+      "path": "/messages/:id(.:format)",
+      "endpoint": "messages#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/messages/:id(.:format)",
+      "endpoint": "messages#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/messages/:id(.:format)",
+      "endpoint": "messages#destroy",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "DELETE",
+      "path": "/searches/clear(.:format)",
+      "endpoint": "searches#clear",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/searches(.:format)",
+      "endpoint": "searches#index",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/searches(.:format)",
+      "endpoint": "searches#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/unfurl_link(.:format)",
+      "endpoint": "unfurl_links#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/webmanifest(.:format)",
+      "endpoint": "pwa#manifest",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/service-worker(.:format)",
+      "endpoint": "pwa#service_worker",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/up(.:format)",
+      "endpoint": "rails/health#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/recede_historical_location(.:format)",
+      "endpoint": "turbo/native/navigation#recede",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/resume_historical_location(.:format)",
+      "endpoint": "turbo/native/navigation#resume",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/refresh_historical_location(.:format)",
+      "endpoint": "turbo/native/navigation#refresh",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/action_mailbox/postmark/inbound_emails(.:format)",
+      "endpoint": "action_mailbox/ingresses/postmark/inbound_emails#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/action_mailbox/relay/inbound_emails(.:format)",
+      "endpoint": "action_mailbox/ingresses/relay/inbound_emails#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/action_mailbox/sendgrid/inbound_emails(.:format)",
+      "endpoint": "action_mailbox/ingresses/sendgrid/inbound_emails#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/action_mailbox/mandrill/inbound_emails(.:format)",
+      "endpoint": "action_mailbox/ingresses/mandrill/inbound_emails#health_check",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/action_mailbox/mandrill/inbound_emails(.:format)",
+      "endpoint": "action_mailbox/ingresses/mandrill/inbound_emails#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/action_mailbox/mailgun/inbound_emails/mime(.:format)",
+      "endpoint": "action_mailbox/ingresses/mailgun/inbound_emails#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/conductor/action_mailbox/inbound_emails(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/inbound_emails#index",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/conductor/action_mailbox/inbound_emails(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/inbound_emails#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/conductor/action_mailbox/inbound_emails/new(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/inbound_emails#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/conductor/action_mailbox/inbound_emails/:id(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/inbound_emails#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/conductor/action_mailbox/inbound_emails/sources/new(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/inbound_emails/sources#new",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/conductor/action_mailbox/inbound_emails/sources(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/inbound_emails/sources#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/conductor/action_mailbox/:inbound_email_id/reroute(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/reroutes#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/conductor/action_mailbox/:inbound_email_id/incinerate(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/incinerates#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/blobs/redirect/:signed_id/*filename(.:format)",
+      "endpoint": "active_storage/blobs/redirect#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/blobs/proxy/:signed_id/*filename(.:format)",
+      "endpoint": "active_storage/blobs/proxy#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/blobs/:signed_id/*filename(.:format)",
+      "endpoint": "active_storage/blobs/redirect#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/representations/redirect/:signed_blob_id/:variation_key/*filename(.:format)",
+      "endpoint": "active_storage/representations/redirect#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/representations/proxy/:signed_blob_id/:variation_key/*filename(.:format)",
+      "endpoint": "active_storage/representations/proxy#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/representations/:signed_blob_id/:variation_key/*filename(.:format)",
+      "endpoint": "active_storage/representations/redirect#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/disk/:encoded_key/*filename(.:format)",
+      "endpoint": "active_storage/disk#show",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "PUT",
+      "path": "/rails/active_storage/disk/:encoded_token(.:format)",
+      "endpoint": "active_storage/disk#update",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/active_storage/direct_uploads(.:format)",
+      "endpoint": "active_storage/direct_uploads#create",
+      "defaults": {},
+      "status": "not-validated",
+      "evidence": []
+    }
+  ],
+  "nonRouteRequirements": [
+    "Action Cable and live updates",
+    "Action Text and attachments",
+    "Browser assets and page layouts",
+    "Background jobs and notifications",
+    "Existing SQLite data and stored files",
+    "Configuration and deployment",
+    "Native LLVM application execution",
+    "Arena/mailbox integration",
+    "Sustained workload and migration acceptance"
+  ]
+}

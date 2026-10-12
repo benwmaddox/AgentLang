@@ -21,12 +21,13 @@ type private FixedClock(instant: DateTimeOffset) =
             instant
 
 [<Sealed>]
-type private ProviderProbe(path: string, clock: FixedClock, provider: HostOperationProvider) =
+type private ProviderProbe(path: string, clock: FixedClock, provider: HostOperationProvider, guidSourceCalls: unit -> int) =
     let calls = ResizeArray<string * Value list>()
     let mutable disposeCalls = 0
 
     member _.Path = path
     member _.Clock = clock
+    member _.GuidSourceCalls = guidSourceCalls ()
     member _.Calls = calls |> Seq.toList
     member _.DisposeCalls = disposeCalls
 
@@ -94,8 +95,8 @@ module Program =
         Path.Combine(
             repositoryRoot,
             ".agentlang",
-            "campfire-host-236",
-            "application",
+            "campfire-http-242",
+            "message-id",
             "runs",
             DateTimeOffset.UtcNow.ToString("yyyyMMddTHHmmssZ", CultureInfo.InvariantCulture)
                 + "-" + Guid.NewGuid().ToString("N"))
@@ -131,19 +132,20 @@ module Program =
         Directory.CreateDirectory(path) |> ignore
         path
 
-    let private capabilitySet = Set.ofList [ "db.read"; "db.write"; "clock.read" ]
+    let private capabilitySet = Set.ofList [ "db.read"; "db.write"; "clock.read"; "random.read" ]
 
     let private effectCount (result: JsonNode) effectName =
         let actual = result.["effectAssertion"].["actual"].AsObject()
         let mutable value = Unchecked.defaultof<JsonNode>
         if actual.TryGetPropertyValue(effectName, &value) then value.GetValue<int>() else 0
 
-    let private assertEffectCounts (result: JsonNode) reads writes clocks =
+    let private assertEffectCounts (result: JsonNode) reads writes clocks randoms =
         let caseName = result.["name"].GetValue<string>()
         check (result.["effectAssertion"].["passed"].GetValue<bool>()) "effect assertion passes"
         equal reads (effectCount result "db.read") $"{caseName} database read count"
         equal writes (effectCount result "db.write") $"{caseName} database write count"
         equal clocks (effectCount result "clock.read") $"{caseName} clock read count"
+        equal randoms (effectCount result "random.read") $"{caseName} random effect count"
 
     let private createEngine project env =
         Runtime.Engine(
@@ -192,10 +194,10 @@ module Program =
         defineFlow engine source |> ignore
 
         let firstRun = dispatch engine "test-all" [] |> expectAllPassed "scoped test suite"
-        equal 52 firstRun.Count "scoped suite includes policy, page, list, and create cases"
+        equal 54 firstRun.Count "scoped suite includes policy, page, list, and create cases"
         let scopedEffects = firstRun |> Seq.filter (fun result -> not (isNull result.["effectAssertion"])) |> Seq.toList
-        equal 28 scopedEffects.Length "all 28 operation-backed scoped cases carry effect assertions"
-        for result in scopedEffects do assertEffectCounts result 0 0 0
+        equal 30 scopedEffects.Length "all operation-backed scoped cases carry effect assertions"
+        for result in scopedEffects do assertEffectCounts result 0 0 0 0
         equal 0 productionCalls.Value "scoped test suite never invokes the production provider"
         equal 0 testFactoryCalls "scoped replacements never construct a real provider"
 
@@ -227,10 +229,10 @@ module Program =
             check (names.Contains word) $"fresh runtime loads qualified library word {word}"
 
         let reloadedRun = dispatch reloaded "test-all" [] |> expectAllPassed "fresh-runtime scoped suite"
-        equal 52 reloadedRun.Count "fresh-runtime suite retains all scoped cases"
+        equal 54 reloadedRun.Count "fresh-runtime suite retains all scoped cases"
         let reloadedEffects = reloadedRun |> Seq.filter (fun result -> not (isNull result.["effectAssertion"])) |> Seq.toList
-        equal 28 reloadedEffects.Length "reloaded scoped cases retain all effect assertions"
-        for result in reloadedEffects do assertEffectCounts result 0 0 0
+        equal 30 reloadedEffects.Length "reloaded scoped cases retain all effect assertions"
+        for result in reloadedEffects do assertEffectCounts result 0 0 0 0
         equal 0 productionCalls.Value "fresh-runtime library qualification does not use production provider"
         equal 0 testFactoryCalls "fresh-runtime library qualification does not construct providers"
 
@@ -328,10 +330,14 @@ module Program =
             let path = Path.Combine(runtimeDirectory, $"test-provider-{Guid.NewGuid():N}.db")
             seedFixture path
             let clock = FixedClock(DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero))
-            match CampfireHost.createProvider path (clock :> IClock) with
+            let mutable guidSourceCalls = 0
+            let guidSource () =
+                guidSourceCalls <- guidSourceCalls + 1
+                Guid.Parse("12345678-90ab-cdef-1234-567890abcdef")
+            match CampfireHost.createProviderWithGuidSource path (clock :> IClock) guidSource with
             | Error _ -> Error HostOperationFailure.InvocationFailed
             | Ok provider ->
-                let probe = ProviderProbe(path, clock, provider)
+                let probe = ProviderProbe(path, clock, provider, fun () -> guidSourceCalls)
                 probes.Add probe
                 Ok probe.AsProvider
         probes, (fun () -> factoryCalls), factory
@@ -345,6 +351,10 @@ module Program =
         check
             (CampfireHost.manifest |> Map.forall (fun id definition -> id = definition.Id))
             "manifest keys and embedded IDs agree"
+        equal
+            (Set.ofList [ "db.write"; "clock.read"; "random.read" ])
+            CampfireHost.manifest.[HostOperationId "campfire.messages.create"].Effects
+            "message create declares the bounded UUID source effect"
 
         let path = Path.Combine(runtimeDirectory, $"adapter-contract-{Guid.NewGuid():N}.db")
         seedFixture path
@@ -399,7 +409,8 @@ module Program =
                 match arguments with
                 | [ RecordValue("NewMessage", fields) ] ->
                     match fields.TryFind "client-message-id" with
-                    | Some(StringValue value) -> Some value
+                    | Some(OptionValue(TString, None)) -> Some None
+                    | Some(OptionValue(TString, Some(StringValue value))) -> Some(Some value)
                     | _ -> None
                 | _ -> None)
         |> List.tryHead
@@ -433,28 +444,29 @@ module Program =
         defineFlow engine (readApplicationSource true) |> ignore
 
         let results = dispatch engine "test-all" [] |> expectAllPassed "real SQLite integration suite"
-        equal 62 results.Count "integration suite includes scoped, policy, and ten real SQLite cases"
-        equal 10 (factoryCalls ()) "one lazy test-provider factory call per real attached test"
+        equal 65 results.Count "integration suite includes scoped, policy, and eleven real SQLite cases"
+        equal 11 (factoryCalls ()) "one lazy test-provider factory call per real attached test"
         equal 0 productionCalls.Value "attached tests use only the disposable test-provider path"
 
         let expectedRealEffects =
-            [ "campfire.rooms.list-for-user", "real-member-page", 1, 0, 0
-              "campfire.rooms.list-for-user", "real-invalid-page-size", 1, 0, 0
-              "campfire.rooms.list-for-user", "real-missing-user", 1, 0, 0
-              "campfire.messages.list-for-member", "real-member-page", 2, 0, 0
-              "campfire.messages.list-for-member", "real-non-member-denied", 1, 0, 0
-              "campfire.messages.list-for-member", "real-orphan-membership-room-missing", 2, 0, 0
-              "campfire.messages.create-for-member", "real-member-create", 1, 1, 1
-              "campfire.messages.create-for-member", "real-non-member-does-not-create", 1, 0, 0
-              "campfire.messages.create-for-member", "real-body-failure-rolls-back", 1, 1, 1
-              "campfire.messages.create-for-member", "real-unique-conflict-rolls-back", 1, 1, 1 ]
+            [ "campfire.rooms.list-for-user", "real-member-page", 1, 0, 0, 0
+              "campfire.rooms.list-for-user", "real-invalid-page-size", 1, 0, 0, 0
+              "campfire.rooms.list-for-user", "real-missing-user", 1, 0, 0, 0
+              "campfire.messages.list-for-member", "real-member-page", 2, 0, 0, 0
+              "campfire.messages.list-for-member", "real-non-member-denied", 1, 0, 0, 0
+              "campfire.messages.list-for-member", "real-orphan-membership-room-missing", 2, 0, 0, 0
+              "campfire.messages.create-for-member", "real-member-create", 1, 1, 1, 1
+              "campfire.messages.create-for-member", "real-supplied-empty-client-id", 1, 1, 1, 1
+              "campfire.messages.create-for-member", "real-non-member-does-not-create", 1, 0, 0, 0
+              "campfire.messages.create-for-member", "real-body-failure-rolls-back", 1, 1, 1, 1
+              "campfire.messages.create-for-member", "real-unique-conflict-rolls-back", 1, 1, 1, 1 ]
 
-        for word, caseName, reads, writes, clocks in expectedRealEffects do
-            resultByName results word caseName |> fun result -> assertEffectCounts result reads writes clocks
+        for word, caseName, reads, writes, clocks, randoms in expectedRealEffects do
+            resultByName results word caseName |> fun result -> assertEffectCounts result reads writes clocks randoms
 
         let allProbes = probes |> Seq.toList
-        equal 10 allProbes.Length "all real tests got distinct provider probes"
-        equal 10 (allProbes |> List.map (fun probe -> probe.Path) |> Set.ofList |> Set.count) "each test used a distinct fixture database"
+        equal 11 allProbes.Length "all real tests got distinct provider probes"
+        equal 11 (allProbes |> List.map (fun probe -> probe.Path) |> Set.ofList |> Set.count) "each test used a distinct fixture database"
         for probe in allProbes do
             let providerName = Path.GetFileName(probe.Path)
             equal 1 probe.DisposeCalls $"provider from {providerName} is disposed once"
@@ -465,33 +477,40 @@ module Program =
             |> List.countBy fst
             |> Map.ofList
         equal 3 (aggregatedCalls.["campfire.rooms.page-for-user"]) "real room pages use the bounded page operation"
-        equal 7 (aggregatedCalls.["campfire.membership.exists?"]) "each member-scoped operation checks exact membership"
+        equal 8 (aggregatedCalls.["campfire.membership.exists?"]) "each member-scoped operation checks exact membership"
         equal 2 (aggregatedCalls.["campfire.messages.last-page"]) "only two authorized message reads reach last-page"
-        equal 3 (aggregatedCalls.["campfire.messages.create"]) "only three authorized message creates reach persistence"
-        equal 15 (aggregatedCalls |> Map.toSeq |> Seq.sumBy snd) "real suite makes only the four registered fixed operations"
-        equal 3 (allProbes |> List.sumBy (fun probe -> probe.Clock.Calls)) "clock is read only by actual message-create attempts"
+        equal 4 (aggregatedCalls.["campfire.messages.create"]) "only four authorized message creates reach persistence"
+        equal 17 (aggregatedCalls |> Map.toSeq |> Seq.sumBy snd) "real suite makes only the four registered fixed operations"
+        equal 4 (allProbes |> List.sumBy (fun probe -> probe.Clock.Calls)) "clock is read only by actual message-create attempts"
+        equal 1 (allProbes |> List.sumBy (fun probe -> probe.GuidSourceCalls)) "only a missing client ID invokes the injected GUID source"
         let createProbes = allProbes |> List.filter (fun probe -> createMessageClientId probe |> Option.isSome)
-        equal 3 createProbes.Length "all successful-member create attempts reach the host adapter"
+        equal 4 createProbes.Length "all successful-member create attempts reach the host adapter"
         for probe in createProbes do
             equal [ 1L ] (creatorIdsInMessageCalls probe) "Flow derives the persisted creator from the supplied authenticated caller"
+            let expectedGuidCalls = if createMessageClientId probe = Some None then 1 else 0
+            equal expectedGuidCalls probe.GuidSourceCalls "only a missing ID invokes the GUID source for this create"
 
         let deniedProbes = allProbes |> List.filter (fun probe -> userIdsInMembershipCalls probe = [ 2L ])
         equal 2 deniedProbes.Length "the two denied cases still perform their membership lookup"
         for probe in deniedProbes do
             let names = probe.Calls |> List.map fst
             equal [ "campfire.membership.exists?" ] names "denied calls stop before last-page or message-create"
+            equal 0 probe.GuidSourceCalls "denied membership never calls the GUID source"
+            equal 1L (scalarLong probe.Path "SELECT COUNT(*) FROM messages" []) "denied membership leaves fixture messages unchanged"
+            equal 2L (scalarLong probe.Path "SELECT COUNT(*) FROM action_text_rich_texts" []) "denied membership leaves rich-text rows unchanged"
+            equal "2020-01-01 00:00:00" (scalarString probe.Path "SELECT updated_at FROM rooms WHERE id = 1" []) "denied membership leaves room timestamps unchanged"
 
-        let abortedProbe = allProbes |> List.find (fun probe -> createMessageClientId probe = Some "real-abort-create")
+        let abortedProbe = allProbes |> List.find (fun probe -> createMessageClientId probe = Some(Some "real-abort-create"))
         equal 0L (scalarLong abortedProbe.Path "SELECT COUNT(*) FROM messages WHERE client_message_id = $id" [ "$id", box "real-abort-create" ]) "body-trigger failure rolls back message row"
         equal 0L (scalarLong abortedProbe.Path "SELECT COUNT(*) FROM action_text_rich_texts WHERE body = $body" [ "$body", box "abort-after-insert" ]) "body-trigger failure leaves no rich-text row"
         equal "2020-01-01 00:00:00" (scalarString abortedProbe.Path "SELECT updated_at FROM rooms WHERE id = 1" []) "body-trigger failure does not touch room"
 
-        let conflictProbe = allProbes |> List.find (fun probe -> createMessageClientId probe = Some "real-unique-create")
+        let conflictProbe = allProbes |> List.find (fun probe -> createMessageClientId probe = Some(Some "real-unique-create"))
         equal 0L (scalarLong conflictProbe.Path "SELECT COUNT(*) FROM messages WHERE client_message_id = $id" [ "$id", box "real-unique-create" ]) "unique conflict rolls back message row"
         equal "2020-01-01 00:00:00" (scalarString conflictProbe.Path "SELECT updated_at FROM rooms WHERE id = 1" []) "unique conflict does not touch room"
 
-        let bodylessProbe = allProbes |> List.find (fun probe -> createMessageClientId probe = Some "real-bodyless-create")
-        equal 1L (scalarLong bodylessProbe.Path "SELECT COUNT(*) FROM messages WHERE client_message_id = $id" [ "$id", box "real-bodyless-create" ]) "bodyless create persists after provider scope closes"
+        let bodylessProbe = allProbes |> List.find (fun probe -> createMessageClientId probe = Some None)
+        equal 1L (scalarLong bodylessProbe.Path "SELECT COUNT(*) FROM messages WHERE client_message_id = $id" [ "$id", box "12345678-90ab-cdef-1234-567890abcdef" ]) "generated-ID create persists after provider scope closes"
         equal 2L (scalarLong bodylessProbe.Path "SELECT COUNT(*) FROM action_text_rich_texts WHERE record_type = 'Message' AND name = 'body'" []) "bodyless create adds no rich-text row to the two-row fixture"
         equal "2025-01-01 00:00:00" (scalarString bodylessProbe.Path "SELECT updated_at FROM rooms WHERE id = 1" []) "bodyless create still touches its room"
         bodylessProbe.Path
@@ -509,7 +528,7 @@ module Program =
             match CampfireHost.createProvider databasePath (clock :> IClock) with
             | Ok provider -> provider
             | Error error -> failwith $"reopen attached-test database through host adapter: {error}"
-        let probe = ProviderProbe(databasePath, clock, underlying)
+        let probe = ProviderProbe(databasePath, clock, underlying, fun () -> 0)
         let mutable testFactoryCalls = 0
         let environment =
             CampfireHost.createEnvironment probe.AsProvider (fun () ->
@@ -538,7 +557,7 @@ module Program =
             |> Seq.find (fun field -> field.["name"].GetValue<string>() = name)
         let createdClientMessageId = createdField "client-message-id"
         equal
-            "real-bodyless-create"
+            "12345678-90ab-cdef-1234-567890abcdef"
             (createdClientMessageId.["value"].["value"].GetValue<string>())
             "reopened Flow read returns the persisted client message ID"
         let createdBody = createdField "body"
@@ -568,7 +587,7 @@ module Program =
             match CampfireHost.createProvider path (clock :> IClock) with
             | Ok provider -> provider
             | Error error -> failwith $"create explicit production provider: {error}"
-        let productionProbe = ProviderProbe(path, clock, underlying)
+        let productionProbe = ProviderProbe(path, clock, underlying, fun () -> -1)
         let mutable testFactoryCalls = 0
         let environment =
             CampfireHost.createEnvironment productionProbe.AsProvider (fun () ->
@@ -583,7 +602,7 @@ module Program =
                 [ "frontend", jstr "flow"
                   "syntaxVersion", jint 2
                   "structured", jbool true
-                  "code", jstr "campfire.messages.create-for-member(UserId.new(1), RoomId.new(1), \"production-bodyless\", option.none<String>())" ]
+                  "code", jstr "campfire.messages.create-for-member(UserId.new(1), RoomId.new(1), option.none<String>(), option.none<String>())" ]
             |> expectOk "call the explicit production provider through the Flow application"
 
         let stack = evaluated.["data"].["structuredStack"].["values"].AsArray()
@@ -601,12 +620,70 @@ module Program =
             "production wrapper performs membership before one fixed create operation"
         equal 1 clock.Calls "production creation reads the injected host clock once"
         equal 0 testFactoryCalls "normal evaluation uses no test provider factory"
-        equal 1L (scalarLong path "SELECT COUNT(*) FROM messages WHERE client_message_id = $id AND creator_id = 1" [ "$id", box "production-bodyless" ]) "production message persists for the supplied caller"
+        let generatedClientId =
+            stack[0].["value"].["fields"].AsArray()
+            |> Seq.find (fun field -> field.["name"].GetValue<string>() = "client-message-id")
+            |> fun field -> field.["value"].["value"].GetValue<string>()
+        let parsedClientId = Guid.ParseExact(generatedClientId, "D")
+        equal (parsedClientId.ToString("D").ToLowerInvariant()) generatedClientId "default host source returns a canonical lowercase UUID"
+        equal generatedClientId (scalarString path "SELECT client_message_id FROM messages WHERE id = 101" []) "production message persists its generated client ID"
+        equal 1 (evaluated.["data"].["effects"].["random.read"].GetValue<int>()) "host operation exposes the declared random effect"
         equal 2L (scalarLong path "SELECT COUNT(*) FROM action_text_rich_texts WHERE record_type = 'Message' AND name = 'body'" []) "production bodyless create adds no rich-text row"
         equal 0 productionProbe.DisposeCalls "Engine does not dispose a host-owned production provider"
         let hostOwnedProductionProvider = productionProbe.AsProvider
         hostOwnedProductionProvider.Dispose()
         equal 1 productionProbe.DisposeCalls "host owner can explicitly release its production provider"
+
+    let private guidGeneratorFailureIntegration () =
+        let path = Path.Combine(runtimeDirectory, $"guid-failure-{Guid.NewGuid():N}.db")
+        seedFixture path
+        let clock = FixedClock(DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero))
+        let mutable guidSourceCalls = 0
+        let guidSource () =
+            guidSourceCalls <- guidSourceCalls + 1
+            failwith "test-only GUID source failure"
+        let underlying =
+            match CampfireHost.createProviderWithGuidSource path (clock :> IClock) guidSource with
+            | Ok provider -> provider
+            | Error error -> failwith $"open GUID-failure provider: {error}"
+        let probe = ProviderProbe(path, clock, underlying, fun () -> guidSourceCalls)
+        let mutable testFactoryCalls = 0
+        let environment =
+            CampfireHost.createEnvironment probe.AsProvider (fun () ->
+                testFactoryCalls <- testFactoryCalls + 1
+                Error HostOperationFailure.TestProviderUnavailable)
+        let project = createProjectDirectory "guid-failure"
+        seedNominalTypes project
+        let engine = createEngine project environment
+        defineFlow engine (readApplicationSource false) |> ignore
+        let evaluated =
+            dispatch engine "eval"
+                [ "frontend", jstr "flow"
+                  "syntaxVersion", jint 2
+                  "structured", jbool true
+                  "code", jstr "campfire.messages.create-for-member(UserId.new(1), RoomId.new(1), option.none<String>(), option.none<String>())" ]
+            |> expectOk "evaluate creation when the host GUID source fails"
+
+        let stack = evaluated.["data"].["structuredStack"].["values"].AsArray()
+        equal 1 stack.Count "failed generation still returns one Flow result"
+        equal "result" (stack[0].["kind"].GetValue<string>()) "failed generation remains a typed Result"
+        equal "error" (stack[0].["case"].GetValue<string>()) "failed generation is an application error"
+        equal "database-unavailable" (stack[0].["value"].["case"].GetValue<string>()) "provider failure maps to the declared application error"
+        equal [ "campfire.membership.exists?"; "campfire.messages.create" ] (probe.Calls |> List.map fst) "authorized creation reaches the generator once through its fixed host call"
+        equal (Some None) (createMessageClientId probe) "the host receives the absent client ID"
+        equal 1 guidSourceCalls "the injected generator was called exactly once"
+        equal 1 clock.Calls "the create attempt reads the supplied clock once"
+        equal 1 (evaluated.["data"].["effects"].["db.read"].GetValue<int>()) "failed generation follows one membership read"
+        equal 1 (evaluated.["data"].["effects"].["db.write"].GetValue<int>()) "failed generation enters one create operation"
+        equal 1 (evaluated.["data"].["effects"].["clock.read"].GetValue<int>()) "failed generation still consumes one create timestamp"
+        equal 1 (evaluated.["data"].["effects"].["random.read"].GetValue<int>()) "the host call retains its declared random effect even when generation fails"
+        equal 0 testFactoryCalls "the production invocation does not create a scoped test provider"
+        equal 1L (scalarLong path "SELECT COUNT(*) FROM messages" []) "generator failure leaves fixture messages unchanged"
+        equal 2L (scalarLong path "SELECT COUNT(*) FROM action_text_rich_texts" []) "generator failure writes no rich-text body"
+        equal "2020-01-01 00:00:00" (scalarString path "SELECT updated_at FROM rooms WHERE id = 1" []) "generator failure leaves the room timestamp unchanged"
+        equal 0 probe.DisposeCalls "Engine leaves the explicitly owned provider open"
+        probe.AsProvider.Dispose()
+        equal 1 probe.DisposeCalls "the host owner disposes the provider after the failure check"
 
     [<EntryPoint>]
     let main _ =
@@ -620,6 +697,7 @@ module Program =
             let persistedMessageDatabase = realSqliteIntegration ()
             reopenedMessageRead persistedMessageDatabase
             productionProviderCall ()
+            guidGeneratorFailureIntegration ()
             printfn "PASS Campfire Host integration: %d assertions" assertions
             0
         with error ->

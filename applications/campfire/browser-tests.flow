@@ -1,0 +1,199 @@
+test-file campfire-browser-policy {
+    override fn campfire.browser.version-at-least?(version: String, minimum: String) -> Bool {
+        if minimum == "17.2" {
+            if version == "17.1" {
+                false
+            } else {
+                true
+            }
+        } else {
+            if minimum == "120" {
+                if version == "119" {
+                    false
+                } else {
+                    true
+                }
+            } else {
+                if minimum == "121" {
+                    if version == "120" {
+                        false
+                    } else {
+                        true
+                    }
+                } else {
+                    if minimum == "104" {
+                        if version == "103" {
+                            false
+                        } else {
+                            true
+                        }
+                    } else {
+                        false
+                    }
+                }
+            }
+        }
+    }
+
+    test campfire.browser.supported?/safari-below-minimum {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.safari(),
+            version = option.some<String>("17.1"),
+            is-bot = false
+        ))
+        => value false
+    }
+
+    test campfire.browser.supported?/safari-at-minimum {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.safari(),
+            version = option.some<String>("17.2"),
+            is-bot = false
+        ))
+        => value true
+    }
+
+    test campfire.browser.supported?/safari-above-minimum {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.safari(),
+            version = option.some<String>("17.3"),
+            is-bot = false
+        ))
+        => value true
+    }
+
+    test campfire.browser.supported?/safari-missing-version {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.safari(),
+            version = option.none<String>(),
+            is-bot = false
+        ))
+        => value true
+    }
+
+    test campfire.browser.supported?/chrome-below-minimum {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.chrome(),
+            version = option.some<String>("119"),
+            is-bot = false
+        ))
+        => value false
+    }
+
+    test campfire.browser.supported?/chrome-at-minimum {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.chrome(),
+            version = option.some<String>("120"),
+            is-bot = false
+        ))
+        => value true
+    }
+
+    test campfire.browser.supported?/chrome-missing-version {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.chrome(),
+            version = option.none<String>(),
+            is-bot = false
+        ))
+        => value true
+    }
+
+    test campfire.browser.supported?/firefox-below-minimum {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.firefox(),
+            version = option.some<String>("120"),
+            is-bot = false
+        ))
+        => value false
+    }
+
+    test campfire.browser.supported?/firefox-at-minimum {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.firefox(),
+            version = option.some<String>("121"),
+            is-bot = false
+        ))
+        => value true
+    }
+
+    test campfire.browser.supported?/firefox-missing-version {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.firefox(),
+            version = option.none<String>(),
+            is-bot = false
+        ))
+        => value true
+    }
+
+    test campfire.browser.supported?/opera-below-minimum {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.opera(),
+            version = option.some<String>("103"),
+            is-bot = false
+        ))
+        => value false
+    }
+
+    test campfire.browser.supported?/opera-at-minimum {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.opera(),
+            version = option.some<String>("104"),
+            is-bot = false
+        ))
+        => value true
+    }
+
+    test campfire.browser.supported?/opera-missing-version {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.opera(),
+            version = option.none<String>(),
+            is-bot = false
+        ))
+        => value true
+    }
+
+    test campfire.browser.supported?/internet-explorer-versioned {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.internet-explorer(),
+            version = option.some<String>("11.0"),
+            is-bot = false
+        ))
+        => value false
+    }
+
+    test campfire.browser.supported?/internet-explorer-missing-version {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.internet-explorer(),
+            version = option.none<String>(),
+            is-bot = false
+        ))
+        => value true
+    }
+
+    test campfire.browser.supported?/other-family {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.other(),
+            version = option.some<String>("1"),
+            is-bot = false
+        ))
+        => value true
+    }
+
+    test campfire.browser.supported?/other-family-missing-version {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.other(),
+            version = option.none<String>(),
+            is-bot = false
+        ))
+        => value true
+    }
+
+    test campfire.browser.supported?/bot-bypasses-version-check {
+        campfire.browser.supported?(browserInfo.new(
+            family = BrowserFamily.internet-explorer(),
+            version = option.some<String>("11"),
+            is-bot = true
+        ))
+        => value true
+    }
+}

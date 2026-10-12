@@ -107,6 +107,19 @@ module Runtime =
           TestFileOverlays: Map<string, TestFileOverlay>
           ExampleBodies: Map<string, VerifiedIrBody> }
 
+    /// Successful output from invoking one fixed, checked Flow word.
+    type FlowEntryPointResult =
+        { Values: Value list
+          Console: string list
+          Effects: Map<string, int> }
+
+    /// Opaque callable compiled from one committed Flow definition and its
+    /// immutable executable snapshot. Callers can provide Values, but cannot
+    /// select a word, host operation, or replacement program at invocation.
+    [<Sealed>]
+    type FlowEntryPoint internal (invoke: Value list -> Result<FlowEntryPointResult, Diagnostic>) =
+        member _.Invoke(arguments: Value list) = invoke arguments
+
     type private TaskSession =
         { Id: string
           Goal: string
@@ -6307,6 +6320,127 @@ module Runtime =
         member _.Capabilities = capabilities
         member _.TestCapabilities = engineTestCapabilities
         member _.FileSystemMode = engineFileSystemMode
+
+        /// Bind one exact committed Flow definition for typed, value-only host
+        /// invocation. Binding compiles the named call against this snapshot;
+        /// replacing the word later does not mutate an already returned handle.
+        member _.BindFlowEntryPoint(wordName: string, expectedInputs: LangType list, expectedOutputs: LangType list) =
+            if String.IsNullOrWhiteSpace wordName then
+                error "FLOW_ENTRYPOINT_NAME_INVALID" "A Flow entrypoint requires a nonempty committed word name." None None [ "committed Flow word name" ] [ "empty" ]
+            if isNull (box expectedInputs) || isNull (box expectedOutputs) then
+                error "FLOW_ENTRYPOINT_SIGNATURE_INVALID" "Flow entrypoint input and output signatures must be non-null lists." (Some wordName) None
+                    [ "input and output type lists" ] [ "null" ]
+            let rec isClosedType typeValue =
+                if isNull (box typeValue) then false
+                else
+                    match typeValue with
+                    | TVar _ -> false
+                    | TList item | TOption item -> isClosedType item
+                    | TResult(okType, errorType) -> isClosedType okType && isClosedType errorType
+                    | TInt | TFloat | TBool | TString | TUnit | TNamed _ -> true
+            if (expectedInputs @ expectedOutputs) |> List.exists (isClosedType >> not) then
+                error "FLOW_ENTRYPOINT_SIGNATURE_INVALID" "Flow entrypoint signatures must contain closed, non-null language types." (Some wordName) None
+                    [ "closed input and output types" ] ((expectedInputs @ expectedOutputs) |> List.map Types.format)
+
+            let snapshot = currentSnapshot ()
+            let entry =
+                snapshot.Words.TryFind wordName
+                |> Option.defaultWith (fun () -> error "FLOW_ENTRYPOINT_WORD_UNKNOWN" $"Flow entrypoint word '{wordName}' is not present in the active snapshot." (Some wordName) None [ "known committed Flow word" ] [ wordName ])
+            if entry.Builtin.IsSome then
+                error "FLOW_ENTRYPOINT_NOT_FLOW_AUTHORED" $"'{wordName}' is a builtin or generated operation, not a Flow-authored entrypoint." (Some wordName) (Some entry.Definition.Span)
+                    [ "Flow-authored user word" ] [ "builtin or generated word" ]
+            if entry.Status <> Persistent then
+                error "FLOW_ENTRYPOINT_NOT_COMMITTED" $"Flow entrypoint '{wordName}' must be committed before it can be bound." (Some wordName) (Some entry.Definition.Span)
+                    [ "persistent committed word" ] [ string entry.Status ]
+
+            let ownerIdText =
+                snapshot.State.WordIds.TryFind wordName
+                |> Option.defaultWith (fun () -> error "FLOW_ENTRYPOINT_WORD_ID_MISSING" $"Committed Flow word '{wordName}' has no stable identity." (Some wordName) (Some entry.Definition.Span) [] [])
+            let ownerId = WordId ownerIdText
+            let authored =
+                snapshot.State.FlowWords.TryFind ownerIdText
+                |> Option.defaultWith (fun () ->
+                    error "FLOW_ENTRYPOINT_NOT_FLOW_AUTHORED" $"'{wordName}' is not backed by a committed Flow source definition." (Some wordName) (Some entry.Definition.Span)
+                        [ "committed Flow-authored definition" ] [ "no Flow source" ])
+            if authored.Source.OwnerId <> ownerId
+               || authored.Source.OwnerName <> wordName
+               || authored.Source.OwnerRevision <> entry.Definition.Revision
+               || authored.Definition.Name <> wordName
+               || authored.Definition.SyntaxVersion <> authored.Source.SyntaxVersion then
+                error "FLOW_ENTRYPOINT_SOURCE_MISMATCH" $"Flow source ownership for '{wordName}' does not match its committed dictionary identity and revision." (Some wordName) (Some entry.Definition.Span)
+                    [ ownerIdText; string entry.Definition.Revision ] [ string authored.Source.OwnerId; string authored.Source.OwnerRevision ]
+
+            let authoredInputs = authored.Definition.Parameters |> List.map (fun parameter -> parameter.Type)
+            if authoredInputs <> expectedInputs
+               || authored.Definition.Outputs <> expectedOutputs
+               || entry.Definition.Inputs <> expectedInputs
+               || entry.Definition.Outputs <> expectedOutputs then
+                error "FLOW_ENTRYPOINT_SIGNATURE_MISMATCH" $"Flow entrypoint '{wordName}' does not have the exact requested input and output signature." (Some wordName) (Some authored.Definition.Span)
+                    ((authoredInputs |> List.map Types.format) @ (authored.Definition.Outputs |> List.map Types.format))
+                    ((expectedInputs |> List.map Types.format) @ (expectedOutputs |> List.map Types.format))
+
+            let program = VerifiedIrProgram.inspect snapshot.Program
+            let functionValue =
+                program.FunctionsById.TryFind ownerId
+                |> Option.defaultWith (fun () ->
+                    error "FLOW_ENTRYPOINT_FUNCTION_MISSING" $"Committed Flow word '{wordName}' is absent from its verified executable snapshot." (Some wordName) (Some entry.Definition.Span)
+                        [ ownerIdText ] [])
+            if functionValue.FunctionName <> wordName
+               || functionValue.FunctionRevision <> entry.Definition.Revision then
+                error "FLOW_ENTRYPOINT_FUNCTION_MISMATCH" $"Verified function identity for '{wordName}' does not match the committed dictionary entry." (Some wordName) (Some entry.Definition.Span)
+                    [ wordName; string entry.Definition.Revision ] [ functionValue.FunctionName; string functionValue.FunctionRevision ]
+
+            let executionName = $"<flow-entrypoint:{wordName}>"
+            let flowContext =
+                snapshot.FlowContext
+                |> Option.defaultWith (fun () -> error "FLOW_ENTRYPOINT_CONTEXT_MISSING" "The active snapshot has no Flow source-origin context for compiling a bound entrypoint." (Some wordName) (Some entry.Definition.Span) [] [])
+            let body =
+                Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                    snapshot.Context
+                    snapshot.Program
+                    executionName
+                    expectedInputs
+                    [ Call(wordName, authored.Definition.Span) ]
+                    flowContext.SourceOrigins
+            let checkedBody = VerifiedIrBody.inspect body
+            if checkedBody.BodyInputTypes <> functionValue.InputTypes
+               || checkedBody.BodyOutputTypes <> functionValue.OutputTypes then
+                error "FLOW_ENTRYPOINT_VERIFIED_SIGNATURE_MISMATCH" $"Checked call body for '{wordName}' differs from its committed verified function signature." (Some wordName) (Some entry.Definition.Span)
+                    ((functionValue.InputTypes |> List.map IrTypes.format) @ (functionValue.OutputTypes |> List.map IrTypes.format))
+                    ((checkedBody.BodyInputTypes |> List.map IrTypes.format) @ (checkedBody.BodyOutputTypes |> List.map IrTypes.format))
+            match checkedBody.BodyBlock.Code with
+            | [ instruction ] ->
+                match instruction.Operation with
+                | IrOperation.Call call when call.ResolvedName = wordName && call.ResolvedTarget = UserWordTarget(ownerId, entry.Definition.Revision) -> ()
+                | _ ->
+                    error
+                        "FLOW_ENTRYPOINT_CALL_TARGET_MISMATCH"
+                        $"Checked entrypoint call for '{wordName}' does not resolve to that exact committed Flow identity."
+                        (Some wordName)
+                        (Some entry.Definition.Span)
+                        [ ownerIdText + "@" + string entry.Definition.Revision ]
+                        [ "different verified call target" ]
+            | instructions ->
+                error
+                    "FLOW_ENTRYPOINT_CALL_SHAPE_MISMATCH"
+                    $"Checked entrypoint shim for '{wordName}' is not a single direct call."
+                    (Some wordName)
+                    (Some entry.Definition.Span)
+                    [ "one checked call" ]
+                    [ string instructions.Length ]
+
+            FlowEntryPoint(fun arguments ->
+                try
+                    let trace = createTrace None engineFileSystemMode false false virtualFiles
+                    let host = interpreterHost snapshot trace (Some body) None
+                    use result = IrInterpreter.executeBodyWithValues host executionName body arguments
+                    let values = result.Decode()
+                    virtualFiles <- trace.FileSystem
+                    Ok { Values = values; Console = trace.Console; Effects = trace.Effects }
+                with
+                | LanguageException diagnostic ->
+                    log "error" diagnostic.Code
+                    Error diagnostic)
 
         member _.Dispatch(operation: string, args: JsonObject) =
             try
