@@ -181,3 +181,6 @@ reports/evidence/250-shared-room-read-entry/** -text -whitespace
 
 # Preserve native owning-list validation/source byte hashes.
 reports/evidence/251-native-owning-lists/** -text -whitespace
+
+# Preserve native room-read validation/source byte hashes.
+reports/evidence/252-native-room-read-host/** -text -whitespace

@@ -264,12 +264,14 @@ module LlvmToolchain =
         (llvmIrPath: string)
         (runtimeSourcePath: string)
         (adapterSourcePath: string)
+        (hostAbiHeaderPath: string)
         (linkLibraryPaths: string list)
         (runtimeIncludeDirectory: string)
         (outputDllPath: string) =
         let irPath = Path.GetFullPath llvmIrPath
         let runtimePath = Path.GetFullPath runtimeSourcePath
         let adapterPath = Path.GetFullPath adapterSourcePath
+        let hostHeader = Path.GetFullPath hostAbiHeaderPath
         let includeDirectory = Path.GetFullPath runtimeIncludeDirectory
         let dllPath = Path.GetFullPath outputDllPath
         let workingDirectory = Path.GetDirectoryName dllPath
@@ -278,6 +280,7 @@ module LlvmToolchain =
         if not (File.Exists irPath) then invalidArg (nameof llvmIrPath) "LLVM IR input does not exist."
         if not (File.Exists runtimePath) then invalidArg (nameof runtimeSourcePath) "Native runtime source does not exist."
         if not (File.Exists adapterPath) then invalidArg (nameof adapterSourcePath) "Native host adapter source does not exist."
+        if not (File.Exists hostHeader) then invalidArg (nameof hostAbiHeaderPath) "Native host ABI header does not exist."
         if not (Directory.Exists includeDirectory) then invalidArg (nameof runtimeIncludeDirectory) "Native runtime include directory does not exist."
         let llvmObjectPath = Path.Combine(workingDirectory, "agentlang-native.obj")
         let runtimeObjectPath = Path.Combine(workingDirectory, "agentlang-arena-runtime.obj")
@@ -286,7 +289,6 @@ module LlvmToolchain =
         compileCObject toolchain optimization OwningRuntimeProfile.Diagnostic true runtimePath includeDirectory runtimeObjectPath workingDirectory
         // Force the contract declaration even when an adapter forgets to include
         // it itself. COFF symbol names alone cannot detect incompatible C types.
-        let hostHeader = Path.Combine(includeDirectory, "campfire_room_host_abi.h")
         compileCObjectCore (Some hostHeader) toolchain optimization OwningRuntimeProfile.Diagnostic true adapterPath includeDirectory adapterObjectPath workingDirectory
         for path in linkLibraryPaths do
             if not (File.Exists path) then invalidArg (nameof linkLibraryPaths) "Native host link dependency does not exist."
@@ -294,7 +296,8 @@ module LlvmToolchain =
 
     let compileLibraryWithRuntimeAndNativeHostAdapterAndNativeStackScreen toolchain optimization llvmIrPath runtimeSourcePath adapterSourcePath runtimeIncludeDirectory outputDllPath =
         compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreen
-            toolchain optimization llvmIrPath runtimeSourcePath adapterSourcePath [] runtimeIncludeDirectory outputDllPath
+            toolchain optimization llvmIrPath runtimeSourcePath adapterSourcePath
+                (Path.Combine(runtimeIncludeDirectory, "campfire_room_host_abi.h")) [] runtimeIncludeDirectory outputDllPath
 
     /// Compile a deterministic set of per-entry LLVM objects, one immutable
     /// module-metadata C object, and one arena runtime object into a DLL.

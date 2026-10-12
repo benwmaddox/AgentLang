@@ -44,6 +44,13 @@ memory. Include uneven load, slow clients and cancellation. Bound queued request
 and bytes; retain response ownership until writes complete. Check that dispatch
 does not serialize otherwise independent workers behind a global execution lock.
 
+Give each executing worker its own cookie/crypto scratch context as well as its
+SQLite context. Do not share mutable crypto workspace behind a process-wide lock
+in the intended pooled path. Initialize keys before serving requests, clear each
+context when its owning worker exits, and count the extra workspace/key storage
+in per-worker and whole-process memory. Existing CNG context APIs already permit
+separate instances; this is host ownership, not a new language capability.
+
 Preserve one active turn per mailbox and worker/thread ownership of SQL connections
 and prepared statements. Measure database contention separately, including reads
 and writes; SQLite write serialization must not be mistaken for dispatcher cost.
@@ -104,19 +111,36 @@ initialize/begin/resume mailbox exports are not a general application host inter
    [The shared room-read entry](../reports/250-shared-room-read-entry.md) now
    matches the prechange generic dispatcher in 24 injected-provider cases. Its
    compiler-minted closure contains exactly nine host operations and db.read/write
-   effects. Implement those nine operations, connect a native message-list adapter,
-   and then prove the complete endpoint through native HTTP; report 251 is compiler
-   and generic runtime evidence, not room-page evidence.
+   effects. [Report 252](../reports/252-native-room-read-host.md) now validates
+   all nine native providers and the compiled entry with 234 assertions at O0/O2,
+   including typed message pages and standalone no-CLR execution. Native HTTP
+   endpoint parity remains required; this provider gate is not an HTTP benchmark.
 5. Supply narrow native SQLite, cookie/crypto, browser, rendering and HTTP adapters.
    Use established native libraries/OS facilities, parameterized SQL and bounded
    input/output. Preserve existing SQLite data and Rails-compatible cookies.
+   Follow the [strict SQLite policy](SQLITE-POLICY.md): provision WAL before
+   workers start, verify FULL durability and connection isolation settings,
+   use short deferred read snapshots and immediate read-modify-write
+   transactions, and verify cleanup before connection reuse. Include actual
+   reader/writer contention tests in native validation and report the settings
+   with performance measurements.
    Produce an executable/native dependency manifest and verify the release loads
    without .NET. Windows clang/lld and CNG import libraries are available; the
    room adapter uses the pinned SQLitePCLRaw.lib.e_sqlite3 2.1.12 native library
    (SQLite 3.53.3), with version/options and package-byte verification. Standalone
    C smoke tests execute the compiled room entry without .NET at O0/O2. See
    [the native SQLite milestone](../reports/249-native-sqlite-room-adapter.md).
-   Remaining operation contracts and HTTP/cookie/browser adapters are still required.
+   The complete room-read provider contracts now pass report 252. HTTP transport,
+   browser normalization, rendering and response-cookie finalization remain required.
+   Response finalization must include Rails encrypted-session mutations:
+   missing/invalid authentication redirects to `/session/new` and remembers the
+   requested return URL; a `redirect-root` response with an alert replaces flash.
+   Both update `_campfire_session`. Signing `session_token` alone is insufficient.
+   Build the return URL from configured public authority plus request path/query,
+   never arbitrary Host/forwarded headers. Preserve unrelated session properties
+   when decrypting/merging state, and compare decoded encrypted state in parity
+   tests because AES-GCM nonces vary. Native browser
+   normalization and HTML escaping must also match the current trusted adapters.
 6. Run real loopback HTTP parity, then measure the native room endpoint. Continue
    native migration through login, messages, logout, setup, live delivery and the
    remaining application inventory. A native room page is the first performance
@@ -159,6 +183,14 @@ Record hardware, OS, compiler/profile, process configuration and native dependen
 Report completed correct requests/sec, failures, p50/p95/p99, whole-process memory,
 arena capacity/peak and copied bytes. Use sustained runs and repeat selected points.
 Do not use an offered-load point as a saturation limit.
+Record whether ownership bitmaps, runtime invariant checks and trace events are
+enabled. Initial measurements may use the current checked runtime; label that
+configuration explicitly. Any later reduced-instrumentation release profile must
+pass the same endpoint conformance corpus before its timings are compared.
+If the first Windows host uses HTTP.sys, disable response caching so measured
+requests execute the language entry. Record request-queue bounds and kernel HTTP
+buffering separately from process memory; process RSS alone cannot account for
+those buffers. Include the transport choice when comparing reference servers.
 
 The pinned Campfire README reports room-page rates of 4,101/sec for Rails and
 106,494/sec for Rust. These published rates are comparison targets, not portable

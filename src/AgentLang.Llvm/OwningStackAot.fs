@@ -107,12 +107,30 @@ type OwningStackExecutionResult =
 [<RequireQualifiedAccess>]
 type OwningNativeHostProfile =
     | CampfireRoomFindForUserV1
+    | CampfireRoomReadV1
 
 /// Trusted build inputs, never selected by language code or request data.
 type OwningNativeHostDependencies =
     { HeaderPaths: string list
       LinkLibraryPaths: string list
       RuntimeLibraryPaths: string list }
+
+type private OwningNativeHostOperation =
+    { Id: HostOperationId
+      Name: string
+      Tag: uint32
+      InputTypes: string list
+      OutputTypes: string list
+      Effects: Set<IrEffect> }
+
+type private UtcInstantValidatorNode =
+    | UtcValidatorParameterStore
+    | UtcValidatorParameter
+    | UtcValidatorInt of int64
+    | UtcValidatorBool of bool
+    | UtcValidatorCall of string * IrCallTarget * IrType list * IrType list * Set<IrEffect>
+    | UtcValidatorIf of UtcInstantValidatorNode list * UtcInstantValidatorNode list
+    | UtcValidatorOther of string
 
 type OwningMailboxEntryMetadata =
     { Role: string
@@ -358,9 +376,14 @@ type private OwningLlvmWriter() =
             else
                 let countText = other.Substring(1, separator - 1)
                 let mutable count = 0L
-                Int64.TryParse(countText, &count)
-                && count >= 0L
-                && isSupportedAllocaType (other.Substring(separator + 3, other.Length - separator - 4))
+                let elementType = other.Substring(separator + 3, other.Length - separator - 4)
+                if not (Int64.TryParse(countText, &count)) then false
+                elif elementType = "%AlCampfireRoomReadInput" then
+                    // The closed room-read profile has at most two input values.
+                    // Its borrowed descriptor is exactly 16 bytes on the x64 ABI.
+                    count >= 1L && count <= 2L
+                elif elementType.Contains("%AlCampfireRoomReadInput", StringComparison.Ordinal) then false
+                else count >= 0L && isSupportedAllocaType elementType
         | _ -> false
 
     let addEntryAlloca (value: string) =
@@ -658,7 +681,21 @@ type OwningStackCompiledProgram internal
                 raise (InvalidDataException("Native owning-stack output exceeded its bounded staging or caller buffer."))
             let resultBytes = Array.zeroCreate<byte> writtenBytes
             if writtenBytes > 0 then Marshal.Copy(retainedStagePointer, resultBytes, 0, writtenBytes)
-            let values = decodeValues programInfo programInfo.Body.BodyOutputTypes resultBytes
+            let values =
+                try decodeValues programInfo programInfo.Body.BodyOutputTypes resultBytes
+                with :? InvalidDataException as decodeError ->
+                    let outputTypes =
+                        programInfo.Body.BodyOutputTypes
+                        |> List.map IrTypes.format
+                        |> String.concat ", "
+                    // Keep this failure-path diagnostic bounded and avoid logging
+                    // arbitrary response payloads. The first eight bytes are
+                    // enough to distinguish absent publication from a malformed
+                    // root scalar/tag while preserving the verified decoder.
+                    let prefixHex = resultBytes |> Array.truncate 8 |> Convert.ToHexString
+                    raise (InvalidDataException(
+                        $"Native owning-stack output decoding failed (writtenBytes={writtenBytes}; outputTypes=[{outputTypes}]; firstBytesHex={prefixHex}).",
+                        decodeError))
             if writtenBytes > 0 then Array.Copy(resultBytes, 0, retainedOutput, 0, writtenBytes)
             let committedMetrics = { metrics with HostRetainedCommitBytes = writtenBytes }
             { Values = values
@@ -848,6 +885,277 @@ module OwningStackAot =
     let private nativeHostAdapterSymbol = "al_host_campfire_rooms_find_for_user_v1"
     let private nativeHostOutputLimit = 65536u
 
+    let private nativeRoomReadAdapterSymbol = "al_host_campfire_room_read_v1"
+    let private nativeRoomReadOutputLimit = 16777216u
+    let private nativeRoomReadAllowedEffects = Set.ofList [ IrEffect.DatabaseRead; IrEffect.DatabaseWrite ]
+    let private nativeRoomReadOperations =
+        let read = Set.singleton IrEffect.DatabaseRead
+        let write = Set.singleton IrEffect.DatabaseWrite
+        [ { Id = HostOperationId "campfire.cookies.verify-session-token"
+            Name = "campfire.cookies.verify-session-token"
+            Tag = 1u
+            InputTypes = [ "String"; "UtcInstant" ]
+            OutputTypes = [ "Option<SessionToken>" ]
+            Effects = Set.empty }
+          { Id = HostOperationId "campfire.sessions.find-by-token"
+            Name = "campfire.sessions.find-by-token"
+            Tag = 2u
+            InputTypes = [ "SessionToken" ]
+            OutputTypes = [ "Result<Option<SessionRow>, DbError>" ]
+            Effects = read }
+          { Id = HostOperationId "campfire.sessions.refresh-before"
+            Name = "campfire.sessions.refresh-before"
+            Tag = 3u
+            InputTypes = [ "SessionRefresh" ]
+            OutputTypes = [ "Result<SessionRow, DbError>" ]
+            Effects = write }
+          { Id = HostOperationId "campfire.users.find-by-id"
+            Name = "campfire.users.find-by-id"
+            Tag = 4u
+            InputTypes = [ "UserId" ]
+            OutputTypes = [ "Result<Option<AuthUser>, DbError>" ]
+            Effects = read }
+          { Id = HostOperationId "campfire.users.authenticate-bot-key"
+            Name = "campfire.users.authenticate-bot-key"
+            Tag = 5u
+            InputTypes = [ "BotKey" ]
+            OutputTypes = [ "Result<Option<AuthUser>, DbError>" ]
+            Effects = read }
+          { Id = HostOperationId "campfire.browser.version-at-least?"
+            Name = "campfire.browser.version-at-least?"
+            Tag = 6u
+            InputTypes = [ "String"; "String" ]
+            OutputTypes = [ "Bool" ]
+            Effects = Set.empty }
+          { Id = nativeHostOperationId
+            Name = nativeHostOperationName
+            Tag = 7u
+            InputTypes = [ "UserId"; "RoomId" ]
+            OutputTypes = [ "Result<Option<RoomRow>, DbError>" ]
+            Effects = read }
+          { Id = HostOperationId "campfire.membership.exists?"
+            Name = "campfire.membership.exists?"
+            Tag = 8u
+            InputTypes = [ "MembershipKey" ]
+            OutputTypes = [ "Result<Bool, DbError>" ]
+            Effects = read }
+          { Id = HostOperationId "campfire.messages.last-page"
+            Name = "campfire.messages.last-page"
+            Tag = 9u
+            InputTypes = [ "RoomId" ]
+            OutputTypes = [ "Result<List<MessageRow>, DbError>" ]
+            Effects = read } ]
+
+    let private nativeRoomReadOperationForId operationId =
+        nativeRoomReadOperations |> List.tryFind (fun operation -> operation.Id = operationId)
+
+    let private nativeHostHeaderResourceFor = function
+        | OwningNativeHostProfile.CampfireRoomFindForUserV1 -> "AgentLang.Llvm.native.campfire_room_host_abi.h"
+        | OwningNativeHostProfile.CampfireRoomReadV1 -> "AgentLang.Llvm.native.campfire_room_read_host_abi.h"
+
+    let private nativeHostHeaderNameFor = function
+        | OwningNativeHostProfile.CampfireRoomFindForUserV1 -> "campfire_room_host_abi.h"
+        | OwningNativeHostProfile.CampfireRoomReadV1 -> "campfire_room_read_host_abi.h"
+
+    let private nativeHostAdapterFileFor = function
+        | OwningNativeHostProfile.CampfireRoomFindForUserV1 -> "campfire_room_host_adapter.c"
+        | OwningNativeHostProfile.CampfireRoomReadV1 -> "campfire_room_read_host_adapter.c"
+
+    let private validateCampfireRoomReadHostProfile (verifiedProgram: VerifiedIrProgram) (program: IrProgram) =
+        let contracts = VerifiedIrProgram.hostOperationContracts verifiedProgram
+        let contractText (contract: IrHostOperationContract) =
+            let inputs = contract.InputTypes |> List.map (typeName program) |> String.concat " "
+            let outputs = contract.OutputTypes |> List.map (typeName program) |> String.concat " "
+            let effects = IrEffects.names contract.OperationEffects |> String.concat ","
+            $"{contract.OperationName}: {inputs} -> {outputs}; effects={effects}"
+        for expected in nativeRoomReadOperations do
+            match contracts.TryFind expected.Id with
+            | Some contract
+                when contract.OperationName = expected.Name
+                     && (contract.InputTypes |> List.map (typeName program)) = expected.InputTypes
+                     && (contract.OutputTypes |> List.map (typeName program)) = expected.OutputTypes
+                     && contract.OperationEffects = expected.Effects -> ()
+            | Some contract ->
+                let expectedInputs = String.concat " " expected.InputTypes
+                let expectedOutputs = String.concat " " expected.OutputTypes
+                let expectedEffects = IrEffects.names expected.Effects |> String.concat ","
+                failNativeHostProfile
+                    $"{expected.Name}: {expectedInputs} -> {expectedOutputs}; effects={expectedEffects}"
+                    (contractText contract)
+            | None ->
+                failNativeHostProfile $"verified host catalog contains {expected.Name}" "operation absent"
+
+        let namedDefinitions =
+            program.NominalTypesByKey
+            |> Map.toList
+            |> List.map snd
+            |> List.map (function
+                | IrRecordDefinition definition -> definition.TypeName, IrRecordDefinition definition
+                | IrScalarDefinition definition -> definition.TypeName, IrScalarDefinition definition
+                | IrEnumDefinition definition -> definition.TypeName, IrEnumDefinition definition)
+        let lookup name =
+            match namedDefinitions |> List.filter (fun (actualName, _) -> actualName = name) with
+            | [ _, definition ] -> definition
+            | matches ->
+                failNativeHostProfile
+                    $"one nominal definition named {name}"
+                    (if matches.IsEmpty then "definition absent" else $"{matches.Length} definitions")
+                IrEnumDefinition { TypeKey = ProgramTypeKey -1; TypeName = ""; Cases = [] }
+        let requireScalar name baseType validatorName =
+            match lookup name with
+            | IrScalarDefinition scalar
+                when scalar.BaseType = baseType
+                     && (scalar.ValidatorCall |> Option.map (fun call -> call.ResolvedName)) = validatorName -> ()
+            | IrScalarDefinition scalar ->
+                let expectedValidator = validatorName |> Option.defaultValue "none"
+                let actualValidator = scalar.ValidatorCall |> Option.map (fun call -> call.ResolvedName) |> Option.defaultValue "none"
+                failNativeHostProfile
+                    $"{name}: {IrTypes.format baseType} scalar; validator={expectedValidator}"
+                    $"{name}: {IrTypes.format scalar.BaseType}; validator={actualValidator}"
+            | _ -> failNativeHostProfile $"{name}: scalar" "different nominal definition kind"
+        let validateUtcInstantValidator () =
+            let functions =
+                program.FunctionsById
+                |> Map.toList
+                |> List.map snd
+                |> List.filter (fun fn -> fn.FunctionName = "utc-instant.valid?")
+            let normalizeCall (call: IrResolvedCall) =
+                UtcValidatorCall(call.ResolvedName, call.ResolvedTarget, call.InputTypes, call.OutputTypes, call.ResolvedEffects)
+            let rec normalizeBlock (parameterSlot: LocalSlot) (block: IrBlock) =
+                block.Code
+                |> List.collect (fun instruction ->
+                    match instruction.Operation with
+                    | IrOperation.Scope inner -> normalizeBlock parameterSlot inner
+                    | IrOperation.If(thenBlock, elseBlock) -> [ UtcValidatorIf(normalizeBlock parameterSlot thenBlock, normalizeBlock parameterSlot elseBlock) ]
+                    | IrOperation.StoreLocal slot when slot = parameterSlot -> [ UtcValidatorParameterStore ]
+                    | IrOperation.LoadLocal slot when slot = parameterSlot -> [ UtcValidatorParameter ]
+                    | IrOperation.LoadLocal slot -> [ UtcValidatorOther(sprintf "LoadLocal %A" slot) ]
+                    | IrOperation.Constant(LInt value, IrInt) -> [ UtcValidatorInt value ]
+                    | IrOperation.Constant(LBool value, IrBool) -> [ UtcValidatorBool value ]
+                    | IrOperation.Call call -> [ normalizeCall call ]
+                    | operation -> [ UtcValidatorOther(sprintf "%A" operation) ])
+            let expectedLess = UtcValidatorCall("int.less-than", PrimitiveTarget(PrimitiveId "int.less-than"), [ IrInt; IrInt ], [ IrBool ], Set.empty)
+            let expectedGreater = UtcValidatorCall("int.greater-than", PrimitiveTarget(PrimitiveId "int.greater-than"), [ IrInt; IrInt ], [ IrBool ], Set.empty)
+            let expectedBody =
+                [ UtcValidatorParameterStore
+                  UtcValidatorParameter
+                  UtcValidatorInt(-62135596800000000L)
+                  expectedLess
+                  UtcValidatorIf(
+                      [ UtcValidatorBool false ],
+                      [ UtcValidatorParameter
+                        UtcValidatorInt(253402300799999999L)
+                        expectedGreater
+                        UtcValidatorIf([ UtcValidatorBool false ], [ UtcValidatorBool true ]) ]) ]
+            match lookup "UtcInstant", functions with
+            | IrScalarDefinition scalar, [ fn ] ->
+                let parameterSlot =
+                    match fn.FunctionBody.EntryShape.StackTypes, fn.FunctionBody.EntryShape.LocalTypes, fn.FunctionBody.Code with
+                    | [ IrInt ], localTypes, firstInstruction :: _ when Map.isEmpty localTypes ->
+                        match firstInstruction.Operation with
+                        | IrOperation.StoreLocal slot when fn.LocalNames.Count = 1 && fn.LocalNames.ContainsKey slot -> Some slot
+                        | _ -> None
+                    | _ -> None
+                match scalar.ValidatorCall with
+                | Some validator
+                    when validator.ResolvedName = fn.FunctionName
+                         && validator.ResolvedTarget = UserWordTarget(fn.FunctionId, fn.FunctionRevision)
+                         && validator.InputTypes = [ IrInt ]
+                         && validator.OutputTypes = [ IrBool ]
+                         && Set.isEmpty validator.ResolvedDeclaredEffects
+                         && Set.isEmpty validator.ResolvedEffects
+                         && fn.InputTypes = [ IrInt ]
+                         && fn.OutputTypes = [ IrBool ]
+                         && Set.isEmpty fn.FunctionDeclaredEffects
+                         && Set.isEmpty fn.FunctionInferredEffects
+                          && parameterSlot.IsSome
+                          && normalizeBlock parameterSlot.Value fn.FunctionBody = expectedBody -> ()
+                | _ ->
+                    let actual =
+                        match parameterSlot with
+                        | Some slot -> normalizeBlock slot fn.FunctionBody |> sprintf "%A"
+                        | None ->
+                            sprintf "parameter binding shape differs; entry stack=%A; entry locals=%A; local slots=%A; body=%A"
+                                fn.FunctionBody.EntryShape.StackTypes fn.FunctionBody.EntryShape.LocalTypes fn.LocalNames fn.FunctionBody.Code
+                    failNativeHostProfile
+                        "UtcInstant validator is pure utc-instant.valid?(Int) -> Bool with exact microsecond bounds -62135596800000000 through 253402300799999999"
+                        actual
+            | _ ->
+                failNativeHostProfile
+                    "one validated UtcInstant scalar and one utc-instant.valid? function"
+                    $"UtcInstant definition or validator count differs ({functions.Length})"
+        let requireEnum name cases =
+            match lookup name with
+            | IrEnumDefinition definition when definition.Cases = cases -> ()
+            | IrEnumDefinition definition ->
+                let expectedCases = String.concat "," cases
+                let actualCases = String.concat "," definition.Cases
+                failNativeHostProfile $"{name} cases={expectedCases}" $"{name} cases={actualCases}"
+            | _ -> failNativeHostProfile $"{name}: enum" "different nominal definition kind"
+        let requireRecord name expectedFields =
+            match lookup name with
+            | IrRecordDefinition definition ->
+                let actual = definition.RecordFields |> List.map (fun field -> field.FieldName, typeName program field.FieldType)
+                let formatFields fields = fields |> List.map (fun (fieldName, ty) -> fieldName + ":" + ty) |> String.concat ","
+                if definition.ValidatorCall.IsSome || actual <> expectedFields then
+                    failNativeHostProfile
+                        $"{name} fields={formatFields expectedFields}; no validator"
+                        $"{name} fields={formatFields actual}; validator={definition.ValidatorCall.IsSome}"
+            | _ -> failNativeHostProfile $"{name}: record" "different nominal definition kind"
+
+        // These are all nominal types that cross the request/response or one of
+        // the nine host-operation boundaries. UtcInstant is intentionally pinned
+        // to the validated microsecond representation used by the application.
+        [ "SessionId", IrInt, None
+          "UserId", IrInt, None
+          "RoomId", IrInt, None
+          "MessageId", IrInt, None
+          "SessionToken", IrString, None
+          "BotKey", IrString, None
+          "RemoteIp", IrString, None
+          "UtcInstant", IrInt, Some "utc-instant.valid?" ]
+        |> List.iter (fun (name, baseType, validator) -> requireScalar name baseType validator)
+        validateUtcInstantValidator ()
+
+        [ "Role", [ "member"; "administrator"; "bot" ]
+          "AuthUserStatus", [ "active"; "deactivated"; "banned" ]
+          "RoomKind", [ "open"; "closed"; "direct" ]
+          "DbError", [ "unavailable"; "not-found"; "constraint-conflict"; "invalid-input" ]
+          "BrowserFamily", [ "safari"; "chrome"; "firefox"; "opera"; "internet-explorer"; "other" ]
+          "HttpRoute", [ "room-show"; "message-create"; "session-new"; "session-create"; "session-destroy" ]
+          "RequestMethod", [ "get"; "head"; "unsafe" ]
+          "HttpFormError", [ "invalid-form"; "unsupported-media"; "unsupported-attachment"; "body-too-large" ]
+          "HttpView", [ "empty"; "room"; "append-message"; "redirect-root"; "redirect-session"; "incompatible-browser"; "room-not-found"; "login-page"; "redirect-authenticated"; "redirect-first-run"; "redirect-signed-out" ] ]
+        |> List.iter (fun (name, cases) -> requireEnum name cases)
+
+        [ "AuthUser",
+          [ "id", "UserId"; "name", "String"; "role", "Role"; "status", "AuthUserStatus" ]
+          "SessionRow",
+          [ "id", "SessionId"; "user-id", "UserId"; "token", "SessionToken"; "ip-address", "Option<RemoteIp>"; "user-agent", "Option<String>"; "last-active-at", "UtcInstant"; "created-at", "UtcInstant"; "updated-at", "UtcInstant" ]
+          "SessionRefresh",
+          [ "session-id", "SessionId"; "cutoff", "UtcInstant"; "now", "UtcInstant"; "ip-address", "Option<RemoteIp>"; "user-agent", "Option<String>" ]
+          "MembershipKey",
+          [ "user-id", "UserId"; "room-id", "RoomId" ]
+          "MessageRow",
+          [ "id", "MessageId"; "room-id", "RoomId"; "creator-id", "UserId"; "client-message-id", "String"; "body", "Option<String>"; "created-at", "String"; "updated-at", "String" ]
+          "RoomRow",
+          [ "id", "RoomId"; "name", "Option<String>"; "kind", "RoomKind"; "creator-id", "UserId"; "created-at", "String"; "updated-at", "String" ]
+          "BrowserInfo",
+          [ "family", "BrowserFamily"; "version", "Option<String>"; "is-bot", "Bool" ]
+          "HttpMessageInput",
+          [ "client-message-id", "Option<String>"; "body", "Option<String>" ]
+          "HttpLoginInput",
+          [ "email-address", "Option<String>"; "password", "Option<String>" ]
+          "HttpLogoutInput",
+          [ "push-subscription-endpoint", "Option<String>" ]
+          "RestoredSession",
+          [ "user", "Option<AuthUser>"; "session", "SessionRow"; "refresh-cookie", "Bool" ]
+          "CampfireHttpRequest",
+          [ "route", "HttpRoute"; "method", "RequestMethod"; "room-id", "RoomId"; "now", "UtcInstant"; "remote-ip", "RemoteIp"; "user-agent", "Option<String>"; "base-url", "String"; "request-is-ssl", "Bool"; "force-ssl", "Bool"; "origin", "Option<String>"; "fetch-site", "Option<String>"; "session-token", "Option<String>"; "bot-key", "Option<BotKey>"; "message-form", "Result<Option<HttpMessageInput>, HttpFormError>"; "login-form", "Result<Option<HttpLoginInput>, HttpFormError>"; "logout-form", "Result<Option<HttpLogoutInput>, HttpFormError>"; "accepts-turbo", "Bool"; "accepts-html", "Bool"; "last-room", "Option<String>"; "browser", "BrowserInfo" ]
+          "CampfireHttpResponse",
+          [ "status", "Int"; "view", "HttpView"; "text", "String"; "room", "Option<RoomRow>"; "messages", "List<MessageRow>"; "message", "Option<MessageRow>"; "refresh-session-token", "Option<SessionToken>"; "remember-return-to", "Bool"; "last-room", "Option<RoomId>" ] ]
+        |> List.iter (fun (name, fields) -> requireRecord name fields)
+
     let rec private langTypeFor (program: IrProgram) = function
         | IrInt -> TInt
         | IrBool -> TBool
@@ -876,8 +1184,54 @@ module OwningStackAot =
         match nativeHostProfile with
         | None -> VerifiedIrProgram.requireNoHostOperations sourceProgram
         | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 -> validateCampfireRoomHostProfile sourceProgram program
+        | Some OwningNativeHostProfile.CampfireRoomReadV1 -> validateCampfireRoomReadHostProfile sourceProgram program
         let bodies = checkedBodies |> List.map VerifiedIrBody.inspect
         let body = List.head bodies
+
+        match nativeHostProfile with
+        | Some OwningNativeHostProfile.CampfireRoomReadV1 ->
+            let expectedInputs = [ "CampfireHttpRequest" ]
+            let expectedOutputs = [ "CampfireHttpResponse" ]
+            if body.BodyName <> "<flow-entrypoint:campfire.http.room-read>"
+               || (body.BodyInputTypes |> List.map (typeName program)) <> expectedInputs
+               || (body.BodyOutputTypes |> List.map (typeName program)) <> expectedOutputs
+               || body.BodyDeclaredEffects <> nativeRoomReadAllowedEffects
+               || body.BodyInferredEffects <> nativeRoomReadAllowedEffects then
+                let bodyInputs = body.BodyInputTypes |> List.map (typeName program) |> String.concat " "
+                let bodyOutputs = body.BodyOutputTypes |> List.map (typeName program) |> String.concat " "
+                let bodyEffects = IrEffects.names body.BodyInferredEffects |> String.concat ","
+                failNativeHostProfile
+                    "compiler-minted campfire.http.room-read: CampfireHttpRequest -> CampfireHttpResponse; effects=db.read,db.write"
+                    $"{body.BodyName}: {bodyInputs} -> {bodyOutputs}; effects={bodyEffects}"
+            let entryFunction =
+                program.FunctionsById
+                |> Map.toList
+                |> List.map snd
+                |> List.filter (fun fn -> fn.FunctionName = "campfire.http.room-read")
+            match entryFunction, body.BodyBlock.Code with
+            | [ fn ], [ instruction ] ->
+                match instruction.Operation with
+                | IrOperation.Call call
+                    when call.ResolvedName = "campfire.http.room-read"
+                         && call.InputTypes = fn.InputTypes
+                         && call.OutputTypes = fn.OutputTypes
+                         && call.ResolvedDeclaredEffects = nativeRoomReadAllowedEffects
+                         && call.ResolvedEffects = nativeRoomReadAllowedEffects
+                         && call.ResolvedTarget = UserWordTarget(fn.FunctionId, fn.FunctionRevision) -> ()
+                | _ -> failNativeHostProfile "direct call to the committed campfire.http.room-read definition" "different entry shim call"
+                if (fn.InputTypes |> List.map (typeName program)) <> expectedInputs
+                   || (fn.OutputTypes |> List.map (typeName program)) <> expectedOutputs
+                   || fn.FunctionDeclaredEffects <> nativeRoomReadAllowedEffects
+                   || fn.FunctionInferredEffects <> nativeRoomReadAllowedEffects then
+                    let functionInputs = fn.InputTypes |> List.map (typeName program) |> String.concat " "
+                    let functionOutputs = fn.OutputTypes |> List.map (typeName program) |> String.concat " "
+                    let functionEffects = IrEffects.names fn.FunctionInferredEffects |> String.concat ","
+                    failNativeHostProfile
+                        "campfire.http.room-read definition: CampfireHttpRequest -> CampfireHttpResponse; effects=db.read,db.write"
+                        $"{fn.FunctionName}: {functionInputs} -> {functionOutputs}; effects={functionEffects}"
+            | _ -> failNativeHostProfile "one compiler-minted campfire.http.room-read entry definition and direct shim" "entry definition or shim shape differs"
+        | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 -> ()
+        | None -> ()
 
         let requireEffectFree owner effects =
             if not (Set.isEmpty effects) then
@@ -894,8 +1248,14 @@ module OwningStackAot =
                     Diagnostics.raiseError "IR_OWNING_STACK_EFFECT_UNSUPPORTED"
                         "The Campfire native-host profile permits only its fixed db.read capability."
                         (Some owner) None (IrEffects.names allowedEffects) (IrEffects.names effects)
+            | Some OwningNativeHostProfile.CampfireRoomReadV1 ->
+                if not (Set.isSubset effects nativeRoomReadAllowedEffects) then
+                    Diagnostics.raiseError "IR_OWNING_STACK_EFFECT_UNSUPPORTED"
+                        "The Campfire room-read native-host profile permits only its fixed db.read and db.write capabilities."
+                        (Some owner) None (IrEffects.names nativeRoomReadAllowedEffects) (IrEffects.names effects)
 
         let mutable nativeHostCallSeen = false
+        let mutable nativeHostCalls = Set.empty<HostOperationId>
         let validateHostCall owner span (call: IrResolvedCall) (operationId: HostOperationId) =
             match nativeHostProfile with
             | Some OwningNativeHostProfile.CampfireRoomFindForUserV1
@@ -906,7 +1266,20 @@ module OwningStackAot =
                      && call.ResolvedDeclaredEffects = Set.singleton IrEffect.DatabaseRead
                      && call.ResolvedEffects = Set.singleton IrEffect.DatabaseRead ->
                 nativeHostCallSeen <- true
-            | _ -> rejectHostOperation owner span operationId
+                nativeHostCalls <- Set.add operationId nativeHostCalls
+            | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 -> rejectHostOperation owner span operationId
+            | Some OwningNativeHostProfile.CampfireRoomReadV1 ->
+                match nativeRoomReadOperationForId operationId with
+                | Some expected
+                    when call.ResolvedName = expected.Name
+                         && (call.InputTypes |> List.map (typeName program)) = expected.InputTypes
+                         && (call.OutputTypes |> List.map (typeName program)) = expected.OutputTypes
+                         && call.ResolvedDeclaredEffects = expected.Effects
+                         && call.ResolvedEffects = expected.Effects ->
+                    nativeHostCalls <- Set.add operationId nativeHostCalls
+                | Some _ -> rejectHostOperation owner span operationId
+                | None -> rejectHostOperation owner span operationId
+            | None -> rejectHostOperation owner span operationId
 
         let nominalTypeIds =
             program.NominalTypesByKey
@@ -1509,9 +1882,19 @@ module OwningStackAot =
             inspectCalls current.BodyName current.BodyBlock
         while pending.Count > 0 do checkFunction (pending.Dequeue())
         match nativeHostProfile with
-        | Some _ when not nativeHostCallSeen ->
+        | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 when not nativeHostCallSeen ->
             failNativeHostProfile "reachable call to campfire.rooms.find-for-user" "host operation is not reachable from the compiled entry"
-        | _ -> ()
+        | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 -> ()
+        | Some OwningNativeHostProfile.CampfireRoomReadV1 when nativeHostCalls <> (nativeRoomReadOperations |> List.map (fun operation -> operation.Id) |> Set.ofList) ->
+            let expected = nativeRoomReadOperations |> List.map (fun operation -> operation.Name) |> List.sort
+            let actual = nativeHostCalls |> Set.toList |> List.map string |> List.sort
+            let expectedText = String.concat "," expected
+            let actualText = String.concat "," actual
+            failNativeHostProfile
+                $"reachable host-operation closure={expectedText}"
+                $"reachable host-operation closure={actualText}"
+        | Some OwningNativeHostProfile.CampfireRoomReadV1 -> ()
+        | None -> ()
         let typeInfos = typeInfos
         if typeInfos.Count > 4096 then
             Diagnostics.raiseError "IR_OWNING_STACK_LAYOUT_TYPE_COUNT"
@@ -3521,6 +3904,8 @@ module OwningStackAot =
         writer.Line("%AlOwningDescriptor = type { i32, i32, i32, i32, i32 }")
         writer.Line("%AlOwningExternalSlice = type { ptr, i32, i32 }")
         writer.Line("%AlOwningMailboxOutputSlice = type { i32, i32, i32, i32 }")
+        if nativeHostProfile = Some OwningNativeHostProfile.CampfireRoomReadV1 then
+            writer.Line("%AlCampfireRoomReadInput = type { ptr, i32, i32 }")
 
         let fieldArraySize = max 1 descriptorFields.Count
         let renderedTypeDescriptors =
@@ -3565,7 +3950,12 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_locate_sum_case(ptr, ptr, i32, i32, i32, i32, ptr, ptr)")
         if nativeHostProfile.IsSome then
             writer.Line("declare i32 @al_owning_commit_host_output(ptr, ptr, i32, i32, i32, i32, i32, i32, ptr)")
-            writer.Line($"declare i32 @{nativeHostAdapterSymbol}(ptr, i64, i64, ptr, i32, ptr)")
+            match nativeHostProfile with
+            | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 ->
+                writer.Line($"declare i32 @{nativeHostAdapterSymbol}(ptr, i64, i64, ptr, i32, ptr)")
+            | Some OwningNativeHostProfile.CampfireRoomReadV1 ->
+                writer.Line($"declare i32 @{nativeRoomReadAdapterSymbol}(ptr, i32, ptr, ptr, i32, i32, ptr, i32, ptr)")
+            | None -> invalidOp "Native host profile presence changed during declaration emission."
         writer.Line("declare i32 @al_owning_string_length(ptr, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_plan(ptr, i32, i32, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32)")
@@ -3811,7 +4201,8 @@ module OwningStackAot =
             let callStatus = w.Fresh "validator.status"
             match validator.ResolvedTarget with
             | UserWordTarget(id, _) ->
-                w.Inst($"{callStatus} = call i32 {symbolFor id}(ptr %%ctx, ptr {arguments}, ptr {results}, i32 {callError})")
+                let hiddenHostContext = if nativeHostProfile.IsSome then "ptr %provider.context, " else ""
+                w.Inst($"{callStatus} = call i32 {symbolFor id}(ptr %%ctx, {hiddenHostContext}ptr {arguments}, ptr {results}, i32 {callError})")
             | _ -> invalidOp "Owning refined scalar validator was not frozen to a user-word target."
             emitStatusResult w callStatus failureLabel
             let resultPointer = emitDescriptorElementPointer w results 0
@@ -4043,8 +4434,16 @@ module OwningStackAot =
                 let argument, actualType = emitLoadDescriptor w argumentPointer argumentType
                 let typeValid = w.Fresh "argument.type.valid"
                 let typeOkay = w.Label "argument.type.ok"
+                let typeInvalid = w.Label "argument.type.invalid"
                 w.Inst($"{typeValid} = icmp eq i32 {actualType}, {typeId argumentType}")
-                w.Inst($"br i1 {typeValid}, label %%{typeOkay}, label %%{failBody}")
+                w.Inst($"br i1 {typeValid}, label %%{typeOkay}, label %%{typeInvalid}")
+                w.Line($"{typeInvalid}:")
+                if nativeHostProfile.IsSome then
+                    // A malformed descriptor must not leave a native-profile
+                    // call with status 0, even when the callee's frame guard
+                    // rejects the argument before touching its payload.
+                    w.Inst("call void @al_owning_set_failure(ptr %ctx, i32 5, i32 0, i32 0, i32 0)")
+                w.Inst($"br label %%{failBody}")
                 w.Line($"{typeOkay}:")
                 emitDescriptorBounds w argument (Some(string (typeId argumentType))) failBody
                 argumentEntries.Add argument
@@ -4637,7 +5036,10 @@ module OwningStackAot =
                         | HostOperationTarget operationId ->
                             match nativeHostProfile with
                             | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 when operationId = nativeHostOperationId -> ()
-                            | _ -> rejectHostOperation currentOwner instructionSpan operationId
+                            | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 -> rejectHostOperation currentOwner instructionSpan operationId
+                            | Some OwningNativeHostProfile.CampfireRoomReadV1 when Option.isSome (nativeRoomReadOperationForId operationId) -> ()
+                            | Some OwningNativeHostProfile.CampfireRoomReadV1 -> rejectHostOperation currentOwner instructionSpan operationId
+                            | None -> rejectHostOperation currentOwner instructionSpan operationId
                         | UserWordTarget _ -> ()
                         match call.ResolvedTarget with
                         | PrimitiveTarget(PrimitiveId operation) ->
@@ -5100,7 +5502,89 @@ module OwningStackAot =
                                 resultEntries.Add resultEntry
                             stack <- prefix @ List.ofSeq resultEntries
                             ignore revision
-                        | HostOperationTarget operationId when nativeHostProfile.IsSome && operationId = nativeHostOperationId ->
+                        | HostOperationTarget operationId when nativeHostProfile = Some OwningNativeHostProfile.CampfireRoomReadV1 ->
+                            let operation =
+                                nativeRoomReadOperationForId operationId
+                                |> Option.defaultWith (fun () -> invalidOp "Owning validation admitted an operation outside the closed Campfire room-read profile.")
+                            let values, prefix = pop call.InputTypes.Length
+                            if values.IsEmpty || values.Length <> operation.InputTypes.Length then
+                                invalidOp "Verified Campfire room-read operation did not retain its fixed input count."
+                            let outputType =
+                                match call.OutputTypes with
+                                | [ ty ] when (call.OutputTypes |> List.map (typeName info.Program)) = operation.OutputTypes -> ty
+                                | _ -> invalidOp "Verified Campfire room-read operation did not retain its fixed output type."
+                            let cursor = emitContextLoad w "%ctx" 2
+                            let stackCapacity = emitContextLoad w "%ctx" 1
+                            let remaining = emitSub w stackCapacity cursor
+                            let belowHostLimit = w.Fresh "room.read.output.below.limit"
+                            let capacity = w.Fresh "room.read.output.capacity"
+                            w.Inst($"{belowHostLimit} = icmp ult i32 {remaining}, {nativeRoomReadOutputLimit}")
+                            w.Inst($"{capacity} = select i1 {belowHostLimit}, i32 {remaining}, i32 {nativeRoomReadOutputLimit}")
+                            let minimumExtent = (typeInfo outputType).MinimumExtentBytes
+                            let enoughForMinimum = w.Fresh "room.read.output.minimum.fits"
+                            let enoughLabel = w.Label "room.read.output.minimum.fits"
+                            let tooSmallLabel = w.Label "room.read.output.minimum.too.small"
+                            w.Inst($"{enoughForMinimum} = icmp uge i32 {capacity}, {minimumExtent}")
+                            w.Inst($"br i1 {enoughForMinimum}, label %%{enoughLabel}, label %%{tooSmallLabel}")
+                            w.Line($"{tooSmallLabel}:")
+                            let capacityError = addDiagnostic "OWNING_STACK_CAPACITY" "Insufficient owning-stack capacity for the minimum Campfire room-read host result." call.ResolvedName instructionSpan [ string minimumExtent ] []
+                            let minimumEnd = emitOffset w cursor (string minimumExtent)
+                            emitReserve w minimumEnd capacityError failBody
+                            w.Inst($"br label %%{failBody}")
+                            w.Line($"{enoughLabel}:")
+                            let reservedEnd = emitOffset w cursor capacity
+                            let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve bounded arena output for the Campfire room-read operation." call.ResolvedName instructionSpan [] []
+                            emitReserve w reservedEnd reserveError failBody
+
+                            // Reserve the output before deriving any borrowed input
+                            // pointers. The callback may write only into this suffix;
+                            // every input remains live until it returns.
+                            let inputArray = w.Fresh "room.read.inputs"
+                            w.Inst($"{inputArray} = alloca [{values.Length} x %%AlCampfireRoomReadInput], align 8")
+                            let stackDataField = w.Fresh "room.read.stack.data.field"
+                            let stackData = w.Fresh "room.read.stack.data"
+                            let outputPointer = w.Fresh "room.read.output.pointer"
+                            w.Inst($"{stackDataField} = getelementptr inbounds %%AlOwningContext, ptr %%ctx, i32 0, i32 25")
+                            w.Inst($"{stackData} = load ptr, ptr {stackDataField}, align 8")
+                            w.Inst($"{outputPointer} = getelementptr inbounds i8, ptr {stackData}, i32 {cursor}")
+                            for index, value in values |> List.indexed do
+                                let element = w.Fresh "room.read.input.element"
+                                let dataField = w.Fresh "room.read.input.data.field"
+                                let extentField = w.Fresh "room.read.input.extent.field"
+                                let typeField = w.Fresh "room.read.input.type.field"
+                                let inputPointer = w.Fresh "room.read.input.pointer"
+                                w.Inst($"{element} = getelementptr inbounds %%AlCampfireRoomReadInput, ptr {inputArray}, i32 {index}")
+                                w.Inst($"{dataField} = getelementptr inbounds %%AlCampfireRoomReadInput, ptr {element}, i32 0, i32 0")
+                                w.Inst($"{extentField} = getelementptr inbounds %%AlCampfireRoomReadInput, ptr {element}, i32 0, i32 1")
+                                w.Inst($"{typeField} = getelementptr inbounds %%AlCampfireRoomReadInput, ptr {element}, i32 0, i32 2")
+                                w.Inst($"{inputPointer} = getelementptr inbounds i8, ptr {stackData}, i32 {value.Offset}")
+                                w.Inst($"store ptr {inputPointer}, ptr {dataField}, align 8")
+                                w.Inst($"store i32 {value.Extent}, ptr {extentField}, align 4")
+                                w.Inst($"store i32 {typeIndex value.Type}, ptr {typeField}, align 4")
+                            let outputExtentPointer = w.Fresh "room.read.output.extent.pointer"
+                            let hostStatus = w.Fresh "room.read.call.status"
+                            w.Inst($"{outputExtentPointer} = alloca i32, align 4")
+                            w.Inst($"store i32 0, ptr {outputExtentPointer}, align 4")
+                            w.Inst($"{hostStatus} = call i32 @{nativeRoomReadAdapterSymbol}(ptr %%provider.context, i32 {operation.Tag}, ptr {layoutSymbol}, ptr {inputArray}, i32 {values.Length}, i32 {typeIndex outputType}, ptr {outputPointer}, i32 {capacity}, ptr {outputExtentPointer})")
+                            let outputExtent = w.Fresh "room.read.output.extent"
+                            let outputPayloadPointer = w.Fresh "room.read.output.payload.pointer"
+                            let outputPayload = w.Fresh "room.read.output.payload"
+                            w.Inst($"{outputExtent} = load i32, ptr {outputExtentPointer}, align 4")
+                            w.Inst($"{outputPayloadPointer} = alloca i32, align 4")
+                            w.Inst($"store i32 0, ptr {outputPayloadPointer}, align 4")
+                            let outputTypeNames = String.concat " " operation.OutputTypes
+                            let boundaryError = addDiagnostic "NATIVE_HOST_BOUNDARY" "The native Campfire room-read adapter failed or returned a malformed bounded value." call.ResolvedName instructionSpan [ $"valid {outputTypeNames} layout" ] [ "adapter failure or invalid serialized output" ]
+                            let commitStatus = w.Fresh "room.read.output.commit.status"
+                            w.Inst($"{commitStatus} = call i32 @al_owning_commit_host_output(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex outputType}, i32 {cursor}, i32 {reservedEnd}, i32 {outputExtent}, i32 {hostStatus}, i32 {boundaryError}, ptr {outputPayloadPointer})")
+                            emitStatusResult w commitStatus failBody
+                            w.Inst($"{outputPayload} = load i32, ptr {outputPayloadPointer}, align 4")
+                            for index in 0 .. values.Length - 1 do
+                                emitDropEntry stack (stack.Length - 1 - index)
+                            let outputOwnerEnd = emitOffset w cursor outputExtent
+                            stack <- push prefix outputType cursor outputExtent outputPayload outputOwnerEnd
+                        | HostOperationTarget operationId
+                            when nativeHostProfile = Some OwningNativeHostProfile.CampfireRoomFindForUserV1
+                                 && operationId = nativeHostOperationId ->
                             let values, prefix = pop call.InputTypes.Length
                             let userId, roomId =
                                 match values with
@@ -5245,6 +5729,7 @@ module OwningStackAot =
                         | "%AlOwningFieldLocation" -> 12L
                         | "%AlOwningDescriptor" -> 20L
                         | "%AlOwningExternalSlice" | "%AlOwningMailboxOutputSlice" -> 16L
+                        | "%AlCampfireRoomReadInput" -> 16L
                         | other when other.StartsWith("[", StringComparison.Ordinal) && other.EndsWith("]", StringComparison.Ordinal) ->
                             let separator = other.IndexOf(" x ", StringComparison.Ordinal)
                             if separator <= 1 then invalidOp $"Unable to account for emitted LLVM alloca type '{other}'."
@@ -5252,7 +5737,13 @@ module OwningStackAot =
                             let mutable count = 0L
                             if not (Int64.TryParse(countText, &count)) || count < 0L then
                                 invalidOp $"Unable to account for emitted LLVM array count '{other}'."
-                            Checked.(*) count (llvmTypeSize (other.Substring(separator + 3, other.Length - separator - 4)))
+                            let elementType = other.Substring(separator + 3, other.Length - separator - 4)
+                            if elementType = "%AlCampfireRoomReadInput" && (count < 1L || count > 2L) then
+                                invalidOp $"Unable to account for out-of-profile Campfire input descriptor array '{other}'."
+                            if elementType.Contains("%AlCampfireRoomReadInput", StringComparison.Ordinal)
+                               && elementType <> "%AlCampfireRoomReadInput" then
+                                invalidOp $"Unable to account for nested Campfire input descriptor array '{other}'."
+                            Checked.(*) count (llvmTypeSize elementType)
                         | other -> invalidOp $"Unable to account for emitted LLVM alloca type '{other}'."
                     let size = llvmTypeSize typeName
                     let aligned = ((totalBytes + int64 alignment - 1L) / int64 alignment) * int64 alignment
@@ -6441,17 +6932,19 @@ module OwningStackAot =
         let runtimeHeaderPath = Path.Combine(runtimeDirectory, "owning_stack_runtime.h")
         let runtimeSourcePath = Path.Combine(runtimeDirectory, "owning_stack_runtime.c")
         let floatFormatHeaderPath = Path.Combine(runtimeDirectory, "float_format.h")
-        let hostAbiHeaderPath = Path.Combine(runtimeDirectory, "campfire_room_host_abi.h")
-        let adapterCopyPath = Path.Combine(runtimeDirectory, "campfire_room_host_adapter.c")
+        let hostAbiHeaderName = nativeHostHeaderNameFor profile
+        let hostAbiHeaderPath = Path.Combine(runtimeDirectory, hostAbiHeaderName)
+        let adapterCopyName = nativeHostAdapterFileFor profile
+        let adapterCopyPath = Path.Combine(runtimeDirectory, adapterCopyName)
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.h" runtimeHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.c" runtimeSourcePath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.float_format.h" floatFormatHeaderPath
-        writeEmbeddedResource assembly "AgentLang.Llvm.native.campfire_room_host_abi.h" hostAbiHeaderPath
+        writeEmbeddedResource assembly (nativeHostHeaderResourceFor profile) hostAbiHeaderPath
         File.WriteAllBytes(adapterCopyPath, File.ReadAllBytes fullAdapterSourcePath)
 
         let dependencyDirectory = Path.Combine(fullDirectory, "native-dependencies")
         let usedNames = HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        for name in [ "owning_stack_runtime.h"; "owning_stack_runtime.c"; "float_format.h"; "campfire_room_host_abi.h"; "campfire_room_host_adapter.c"; "owning-stack-native-host.dll" ] do
+        for name in [ "owning_stack_runtime.h"; "owning_stack_runtime.c"; "float_format.h"; hostAbiHeaderName; adapterCopyName; "owning-stack-native-host.dll" ] do
             usedNames.Add name |> ignore
         let copyInputs extension targetDirectory paths =
             paths |> List.map (fun path ->
@@ -6483,7 +6976,7 @@ module OwningStackAot =
 
         let compiledPath =
             LlvmToolchain.compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreen
-                toolchain optimization llvmIrPath runtimeSourcePath adapterCopyPath linkCopies runtimeDirectory libraryPath
+                toolchain optimization llvmIrPath runtimeSourcePath adapterCopyPath hostAbiHeaderPath linkCopies runtimeDirectory libraryPath
         let hashBytes (bytes: byte array) =
             SHA256.HashData bytes
             |> Convert.ToHexString
@@ -6538,46 +7031,98 @@ module OwningStackAot =
               "native-runtime/owning_stack_runtime.c", hashFile runtimeSourcePath
               "native-runtime/owning_stack_runtime.h", hashFile runtimeHeaderPath
               "native-runtime/float_format.h", hashFile floatFormatHeaderPath
-              "native-runtime/campfire_room_host_abi.h", hashFile hostAbiHeaderPath
-              "native-runtime/campfire_room_host_adapter.c", hashFile adapterCopyPath ]
+              Path.Combine("native-runtime", hostAbiHeaderName).Replace('\\', '/'), hashFile hostAbiHeaderPath
+              Path.Combine("native-runtime", adapterCopyName).Replace('\\', '/'), hashFile adapterCopyPath ]
             @ (headerCopies @ linkCopies @ runtimeCopies
                |> List.map (fun path -> Path.GetRelativePath(fullDirectory, path).Replace('\\', '/'), hashFile path))
             |> List.sortBy fst
             |> List.map (fun (path, hash) -> {| path = path; sha256 = hash |})
-        let manifestCore =
-            {| formatVersion = 2
-               profileId = "campfire-room-find-for-user-v1"
-               runtimeProfile = "diagnostic"
-               operationId = "campfire.rooms.find-for-user"
-               operationName = "campfire.rooms.find-for-user"
-               adapterSymbol = nativeHostAdapterSymbol
-               adapterSourceFile = Path.GetFileName fullAdapterSourcePath
-               adapterSourceSha256 = hashFile adapterCopyPath
-               hostAbiVersion = 1
-               owningRuntimeAbiVersion = 2
-               layoutSchemaVersion = 5
-               layoutAbiVersion = 5
-               exportName = "agentlang_owning_execute_with_host_context"
-               inputTypes = [ "UserId"; "RoomId" ]
-               outputTypes = [ "Result<Option<RoomRow>, DbError>" ]
-               effects = [ "db.read" ]
-               fixedEffectAllowlist = [ "db.read" ]
-               outputLimitBytes = nativeHostOutputLimit
-               optimization = optimizationName
-               nativeDependencies =
-                {| headers = headerCopies |> List.map (fun path -> Path.GetRelativePath(fullDirectory, path).Replace('\\', '/'))
-                   linkLibraries = linkCopies |> List.map (fun path -> Path.GetRelativePath(fullDirectory, path).Replace('\\', '/'))
-                   runtimeLibraries = runtimeCopies |> List.map (fun path -> Path.GetRelativePath(fullDirectory, path).Replace('\\', '/')) |}
-               sharedLayout = layouts
-               sourceHashes = sourceHashes |}
         let jsonOptions = JsonSerializerOptions(WriteIndented = true)
         jsonOptions.PropertyNamingPolicy <- JsonNamingPolicy.CamelCase
-        let manifestCoreJson = JsonSerializer.Serialize(manifestCore, jsonOptions)
+        let dependencyManifest =
+            {| headers = headerCopies |> List.map (fun path -> Path.GetRelativePath(fullDirectory, path).Replace('\\', '/'))
+               linkLibraries = linkCopies |> List.map (fun path -> Path.GetRelativePath(fullDirectory, path).Replace('\\', '/'))
+               runtimeLibraries = runtimeCopies |> List.map (fun path -> Path.GetRelativePath(fullDirectory, path).Replace('\\', '/')) |}
+        let manifestCoreJson =
+            match profile with
+            | OwningNativeHostProfile.CampfireRoomFindForUserV1 ->
+                let manifestCore =
+                    {| formatVersion = 2
+                       profileId = "campfire-room-find-for-user-v1"
+                       runtimeProfile = "diagnostic"
+                       operationId = "campfire.rooms.find-for-user"
+                       operationName = "campfire.rooms.find-for-user"
+                       adapterSymbol = nativeHostAdapterSymbol
+                       adapterSourceFile = Path.GetFileName fullAdapterSourcePath
+                       adapterSourceSha256 = hashFile adapterCopyPath
+                       hostAbiVersion = 1
+                       owningRuntimeAbiVersion = 2
+                       layoutSchemaVersion = 5
+                       layoutAbiVersion = 5
+                       exportName = "agentlang_owning_execute_with_host_context"
+                       inputTypes = [ "UserId"; "RoomId" ]
+                       outputTypes = [ "Result<Option<RoomRow>, DbError>" ]
+                       effects = [ "db.read" ]
+                       fixedEffectAllowlist = [ "db.read" ]
+                       outputLimitBytes = nativeHostOutputLimit
+                       optimization = optimizationName
+                       nativeDependencies = dependencyManifest
+                       sharedLayout = layouts
+                       sourceHashes = sourceHashes |}
+                JsonSerializer.Serialize(manifestCore, jsonOptions)
+            | OwningNativeHostProfile.CampfireRoomReadV1 ->
+                let operationManifest =
+                    nativeRoomReadOperations
+                    |> List.map (fun operation ->
+                        {| tag = operation.Tag
+                           operationId = operation.Name
+                           operationName = operation.Name
+                           inputTypes = operation.InputTypes
+                           outputTypes = operation.OutputTypes
+                           effects = IrEffects.names operation.Effects |})
+                let boundarySchemaNames =
+                    Set.ofList
+                        [ "CampfireHttpRequest"; "CampfireHttpResponse"
+                          "AuthUser"; "SessionRow"; "SessionRefresh"; "RestoredSession"
+                          "MembershipKey"; "MessageRow"; "RoomRow"; "BrowserInfo"
+                          "HttpMessageInput"; "HttpLoginInput"; "HttpLogoutInput"
+                          "SessionId"; "UserId"; "RoomId"; "MessageId"; "SessionToken"
+                          "BotKey"; "RemoteIp"; "UtcInstant"; "Role"; "AuthUserStatus"
+                          "RoomKind"; "DbError"; "BrowserFamily"; "HttpRoute"; "RequestMethod"
+                          "HttpFormError"; "HttpView" ]
+                let boundarySchemas = layouts |> List.filter (fun layout -> boundarySchemaNames.Contains layout.typeName)
+                let manifestCore =
+                    {| formatVersion = 2
+                       profileId = "campfire-room-read-v1"
+                       runtimeProfile = "diagnostic"
+                       operationId = "campfire.http.room-read"
+                       operationName = "campfire.http.room-read"
+                       adapterSymbol = nativeRoomReadAdapterSymbol
+                       adapterSourceFile = Path.GetFileName fullAdapterSourcePath
+                       adapterSourceSha256 = hashFile adapterCopyPath
+                       hostAbiVersion = 1
+                       owningRuntimeAbiVersion = 2
+                       layoutSchemaVersion = 5
+                       layoutAbiVersion = 5
+                       exportName = "agentlang_owning_execute_with_host_context"
+                       inputTypes = [ "CampfireHttpRequest" ]
+                       outputTypes = [ "CampfireHttpResponse" ]
+                       effects = IrEffects.names nativeRoomReadAllowedEffects
+                       fixedEffectAllowlist = IrEffects.names nativeRoomReadAllowedEffects
+                       outputLimitBytes = nativeRoomReadOutputLimit
+                       optimization = optimizationName
+                       nativeDependencies = dependencyManifest
+                       operations = operationManifest
+                       boundarySchemas = boundarySchemas
+                       sharedLayout = layouts
+                       sourceHashes = sourceHashes |}
+                JsonSerializer.Serialize(manifestCore, jsonOptions)
         let fingerprint = hashBytes(Encoding.UTF8.GetBytes manifestCoreJson)
+        use manifestCoreDocument = JsonDocument.Parse(manifestCoreJson)
         let serializedManifest =
             JsonSerializer.Serialize(
                 {| fingerprint = fingerprint
-                   moduleInfo = manifestCore |},
+                   moduleInfo = manifestCoreDocument.RootElement.Clone() |},
                 jsonOptions)
         File.WriteAllText(manifestPath, serializedManifest, UTF8Encoding(false))
         new OwningStackCompiledProgram(
