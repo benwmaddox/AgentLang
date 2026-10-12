@@ -30,6 +30,28 @@ the same native handler. Cache evaluation follows the SQL baseline, with bounded
 storage and explicit invalidation/authentication checks. Multiple stage transfers
 are optional diagnostic comparisons, not the intended application architecture.
 
+The second performance checkpoint scales the same path to a pool:
+**inbound request → one of X worker mailboxes → direct SQL/cache access → response**.
+Each request still runs in one worker; the pool is not a pipeline of mailbox hops.
+Sweep worker counts from one through available CPU capacity and beyond it where
+useful, recording mailbox count, executor-thread count and affinity separately.
+More mailboxes alone do not establish parallel execution.
+
+Compare the same correctness-checked workload, data, request mix and memory budget.
+Measure sustained successful requests/sec, p50/p95/p99, dispatch/queue wait,
+per-worker utilization and queue depth, rejections, copied bytes and whole-process
+memory. Include uneven load, slow clients and cancellation. Bound queued requests
+and bytes; retain response ownership until writes complete. Check that dispatch
+does not serialize otherwise independent workers behind a global execution lock.
+
+Preserve one active turn per mailbox and worker/thread ownership of SQL connections
+and prepared statements. Measure database contention separately, including reads
+and writes; SQLite write serialization must not be mistaken for dispatcher cost.
+Evaluate cache-disabled SQL first, then bounded caching with correct invalidation
+and authentication. Report speedup and efficiency relative to the one-worker
+baseline, the saturation point and the cause of any regression. Do not assume
+linear scaling or choose a production worker count before measuring.
+
 Use `OwningStackAot.fs` and the owning arena runtime as the native base. They
 already lower strings, nominal strings, records, enums, Option/Result and matches.
 The older scalar backend cannot represent the application's request/response

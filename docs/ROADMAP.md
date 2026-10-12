@@ -2,6 +2,13 @@
 
 ## Active delivery priority: Campfire implementation
 
+The first AOT performance checkpoint uses one worker mailbox with direct SQL and
+response handling. The second dispatches each request to one of X worker mailboxes
+and verifies pool scaling, bounded queues, dispatch contention, tail latency and
+memory against the same one-worker baseline. Each request stays within its chosen
+worker; SQL/cache access does not introduce another mailbox hop. See
+[the performance requirements](../reports/247-worker-pool-performance-requirements.md).
+
 User steering, 2026-10-12: prioritize **AOT Campfire and real endpoint performance**.
 Finish the bounded logout work already underway, then unblock the owning native
 backend and deliver real GET/HEAD room HTTP without F#/.NET in the release process.
