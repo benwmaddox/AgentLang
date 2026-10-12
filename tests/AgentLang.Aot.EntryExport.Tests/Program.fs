@@ -11,9 +11,10 @@ open AgentLang.Campfire.Http
 open AgentLang.Campfire.Host
 open AgentLang.Campfire.Authentication.Host
 open AgentLang.Campfire.Browser.Host
+open AgentLang.Aot.EntryExport
 
 let private repo = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "../.."))
-let private runRoot = Path.Combine(repo, ".agentlang", "campfire-aot-export-246", "runs", DateTimeOffset.UtcNow.ToString("yyyyMMddTHHmmssfffZ") + "-" + Guid.NewGuid().ToString("N"))
+let private runRoot = Path.Combine(repo, ".agentlang", "campfire-native-host-248", "entry-tests", "runs", DateTimeOffset.UtcNow.ToString("yyyyMMddTHHmmssfffZ") + "-" + Guid.NewGuid().ToString("N"))
 let mutable private assertions = 0
 
 let private check message condition =
@@ -88,9 +89,13 @@ let private verifyActualCampfireExport toolchain =
     let manifest = HostComposition.manifest [ CampfireHost.manifest; CampfireAuthenticationHost.manifest; CookieHost.manifest; BrowserHost.manifest; LoginHost.manifest ]
     let mutable providerCalls = 0
     let mutable testFactoryCalls = 0
+    let mutable roomMode = 0
     let provider: HostOperationProvider =
         { OperationIds = manifest |> Map.toSeq |> Seq.map fst |> Set.ofSeq
-          Invoke = fun _ _ -> providerCalls <- providerCalls + 1; Error HostOperationFailure.InvocationFailed
+          Invoke = fun id values ->
+              providerCalls <- providerCalls + 1
+              if id = HostOperationId "campfire.rooms.find-for-user" then NativeHostTests.interpretRoom roomMode values
+              else Error HostOperationFailure.InvocationFailed
           Dispose = ignore }
     let environment: HostOperationEnvironment =
         { Manifest = manifest
@@ -119,6 +124,7 @@ let private verifyActualCampfireExport toolchain =
         File.WriteAllText(Path.Combine(runRoot, "campfire-native-blocker.json"), blocker.ToJsonString() + Environment.NewLine)
     check "rejected native Campfire emits no executable" (not (File.Exists(Path.Combine(rejectedDirectory, "owning-stack-native.dll"))))
     check "native rejection does not fall back to provider execution" (providerCalls = 0)
+    NativeHostTests.run toolchain runRoot application.Engine (fun mode -> roomMode <- mode) check
 
 [<EntryPoint>]
 let main _ =
@@ -134,11 +140,24 @@ let main _ =
     receipt["assertions"] <- JsonValue.Create(assertions)
     receipt["failure"] <- (match failure with Some text -> JsonValue.Create(text) :> JsonNode | None -> null)
     let pins = JsonObject()
-    for relative in [ "src/AgentLang.Core/Runtime.fs"; "tests/AgentLang.Aot.EntryExport.Tests/Program.fs"; "src/AgentLang.Llvm/OwningStackAot.fs"; "applications/campfire/Http/Application.fs" ] do
+    for relative in [
+        "src/AgentLang.Core/Runtime.fs"
+        "tests/AgentLang.Aot.EntryExport.Tests/Program.fs"
+        "tests/AgentLang.Aot.EntryExport.Tests/NativeHostTests.fs"
+        "tests/AgentLang.Aot.EntryExport.Tests/native/room_find_fixture.c"
+        "tests/AgentLang.Aot.EntryExport.Tests/AgentLang.Aot.EntryExport.Tests.fsproj"
+        "src/AgentLang.Llvm/OwningStackAot.fs"
+        "src/AgentLang.Llvm/LlvmToolchain.fs"
+        "src/AgentLang.Llvm/AgentLang.Llvm.fsproj"
+        "src/AgentLang.Llvm/native/owning_stack_runtime.h"
+        "src/AgentLang.Llvm/native/owning_stack_runtime.c"
+        "src/AgentLang.Llvm/native/campfire_room_host_abi.h"
+        "applications/campfire/Http/Application.fs"
+    ] do
         pins[relative] <- JsonValue.Create(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(repo, relative)))).ToLowerInvariant())
     receipt["sourceSha256"] <- pins
     File.WriteAllText(Path.Combine(runRoot, "receipt.json"), receipt.ToJsonString() + Environment.NewLine)
-    printfn "AOT entry export: %d assertions; passed=%b; evidence=%s" assertions failure.IsNone runRoot
+    printfn "AOT entry export/native host: %d assertions; passed=%b; evidence=%s" assertions failure.IsNone runRoot
     match failure with
     | None -> 0
     | Some text -> eprintfn "%s" text; 1

@@ -145,7 +145,7 @@ module LlvmToolchain =
         run toolchain.ClangPath arguments workingDirectory
         if screenNativeStackUsage then NativeStackUsage.verifyFreshFile stackUsagePath
 
-    let private compileCObject (toolchain: LlvmToolchain) optimization (runtimeProfile: OwningRuntimeProfile) screenNativeStackUsage (sourcePath: string) (includeDirectory: string) (objectPath: string) workingDirectory =
+    let private compileCObjectCore forcedHeader (toolchain: LlvmToolchain) optimization (runtimeProfile: OwningRuntimeProfile) screenNativeStackUsage (sourcePath: string) (includeDirectory: string) (objectPath: string) workingDirectory =
         if File.Exists objectPath then File.Delete objectPath
         let stackUsagePath = stackUsageSidecarPath objectPath
         if screenNativeStackUsage && File.Exists stackUsagePath then File.Delete stackUsagePath
@@ -154,6 +154,7 @@ module LlvmToolchain =
             | OwningRuntimeProfile.Diagnostic -> []
             | OwningRuntimeProfile.TrustedGenerated -> [ "-DAL_OWNING_TRUSTED_GENERATED=1" ]
         let stackUsageArguments = if screenNativeStackUsage then [ "-fstack-usage" ] else []
+        let headerArguments = forcedHeader |> Option.map (fun path -> [ "-include"; Path.GetFullPath path ]) |> Option.defaultValue []
         let arguments =
             [ "--target=x86_64-pc-windows-msvc"
               "-std=c11"
@@ -165,12 +166,16 @@ module LlvmToolchain =
               optimizationArgument optimization ]
             @ stackUsageArguments
             @ profileArguments
+            @ headerArguments
             @ [
               "-c"; Path.GetFullPath sourcePath
               "-I"; Path.GetFullPath includeDirectory
               "-o"; objectPath ]
         run toolchain.ClangPath arguments workingDirectory
         if screenNativeStackUsage then NativeStackUsage.verifyFreshFile stackUsagePath
+
+    let private compileCObject toolchain optimization runtimeProfile screenNativeStackUsage sourcePath includeDirectory objectPath workingDirectory =
+        compileCObjectCore None toolchain optimization runtimeProfile screenNativeStackUsage sourcePath includeDirectory objectPath workingDirectory
 
     let private linkObjects (toolchain: LlvmToolchain) (outputDllPath: string) (objectPaths: string list) =
         if File.Exists outputDllPath then File.Delete outputDllPath
@@ -249,6 +254,40 @@ module LlvmToolchain =
         (outputDllPath: string) =
         compileLibraryWithRuntimeCore
             toolchain optimization true llvmIrPath runtimeSourcePath runtimeIncludeDirectory outputDllPath
+
+    /// Compile a trusted, build-time native adapter beside the owning runtime
+    /// and generated LLVM object. The adapter is statically linked into this
+    /// artifact; language IR cannot select imports or symbols.
+    let compileLibraryWithRuntimeAndNativeHostAdapterAndNativeStackScreen
+        (toolchain: LlvmToolchain)
+        optimization
+        (llvmIrPath: string)
+        (runtimeSourcePath: string)
+        (adapterSourcePath: string)
+        (runtimeIncludeDirectory: string)
+        (outputDllPath: string) =
+        let irPath = Path.GetFullPath llvmIrPath
+        let runtimePath = Path.GetFullPath runtimeSourcePath
+        let adapterPath = Path.GetFullPath adapterSourcePath
+        let includeDirectory = Path.GetFullPath runtimeIncludeDirectory
+        let dllPath = Path.GetFullPath outputDllPath
+        let workingDirectory = Path.GetDirectoryName dllPath
+        Directory.CreateDirectory workingDirectory |> ignore
+        if File.Exists dllPath then File.Delete dllPath
+        if not (File.Exists irPath) then invalidArg (nameof llvmIrPath) "LLVM IR input does not exist."
+        if not (File.Exists runtimePath) then invalidArg (nameof runtimeSourcePath) "Native runtime source does not exist."
+        if not (File.Exists adapterPath) then invalidArg (nameof adapterSourcePath) "Native host adapter source does not exist."
+        if not (Directory.Exists includeDirectory) then invalidArg (nameof runtimeIncludeDirectory) "Native runtime include directory does not exist."
+        let llvmObjectPath = Path.Combine(workingDirectory, "agentlang-native.obj")
+        let runtimeObjectPath = Path.Combine(workingDirectory, "agentlang-arena-runtime.obj")
+        let adapterObjectPath = Path.Combine(workingDirectory, "agentlang-native-host-adapter.obj")
+        compileLlvmObject toolchain optimization true irPath llvmObjectPath workingDirectory |> ignore
+        compileCObject toolchain optimization OwningRuntimeProfile.Diagnostic true runtimePath includeDirectory runtimeObjectPath workingDirectory
+        // Force the contract declaration even when an adapter forgets to include
+        // it itself. COFF symbol names alone cannot detect incompatible C types.
+        let hostHeader = Path.Combine(includeDirectory, "campfire_room_host_abi.h")
+        compileCObjectCore (Some hostHeader) toolchain optimization OwningRuntimeProfile.Diagnostic true adapterPath includeDirectory adapterObjectPath workingDirectory
+        linkObjects toolchain dllPath [ llvmObjectPath; runtimeObjectPath; adapterObjectPath ]
 
     /// Compile a deterministic set of per-entry LLVM objects, one immutable
     /// module-metadata C object, and one arena runtime object into a DLL.

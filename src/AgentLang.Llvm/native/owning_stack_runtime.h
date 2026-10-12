@@ -195,6 +195,16 @@ int32_t al_owning_measure_external_value(
     uint32_t type_index, const uint8_t *source, uint32_t source_length,
     uint32_t source_offset, uint32_t error_id, uint32_t *out_payload_bytes,
     uint32_t *out_extent_bytes);
+/* Commit a host-written, serialized value in the most recently reserved arena
+ * suffix. Validate the exact value extent before marking it initialized; no
+ * payload is copied. On failure, rewind only that reservation and preserve the
+ * original diagnostic. A prior host failure also triggers the same rollback.
+ * The caller owns all older values and must pass the exact reserved cursor. */
+int32_t al_owning_commit_host_output(
+    al_owning_stack_context *ctx, const al_owning_layout *layout,
+    uint32_t type_index, uint32_t start, uint32_t reserved_end,
+    uint32_t output_extent, int32_t host_status, uint32_t error_id,
+    uint32_t *out_payload);
 int32_t al_owning_locate_field(al_owning_stack_context *ctx,
                                const al_owning_layout *layout,
                                uint32_t parent_type_index,

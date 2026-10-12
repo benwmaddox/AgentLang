@@ -9,6 +9,11 @@ and mailbox behavior must be verified on the application. The interpreter remain
 a reference. Follow the [AOT delivery plan](CAMPFIRE-AOT-PLAN.md) before expanding
 interpreter-only routes.
 
+The owning AOT compiler now has an explicit profile for the existing typed room
+lookup, with per-execution native provider state and direct arena-owned output.
+See [report 248](../reports/248-typed-native-room-host.md). Its adapter is a test
+fixture; native SQLite and real HTTP still need implementation and parity checks.
+
 The HTTP slice (room listing, message creation, login page/submission and logout)
 is a delivery milestone, not the final
 scope. Completion still requires the full application's observable behavior,

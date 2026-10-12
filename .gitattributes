@@ -169,3 +169,6 @@ reports/evidence/245-campfire-logout-and-native-delivery/** -text -whitespace
 
 # Preserve verified entry IR export validation/source byte hashes.
 reports/evidence/246-verified-entry-ir-export/** -text -whitespace
+
+# Preserve typed native room-host validation/source byte hashes.
+reports/evidence/248-typed-native-room-host/** -text -whitespace

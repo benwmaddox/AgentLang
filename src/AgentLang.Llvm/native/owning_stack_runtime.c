@@ -1482,6 +1482,61 @@ int32_t al_owning_measure_external_value(
   return 0;
 }
 
+int32_t al_owning_commit_host_output(
+    al_owning_stack_context *ctx, const al_owning_layout *layout,
+    uint32_t type_index, uint32_t start, uint32_t reserved_end,
+    uint32_t output_extent, int32_t host_status, uint32_t error_id,
+    uint32_t *out_payload) {
+  uint32_t payload = 0u;
+  uint32_t extent = 0u;
+  if (ctx == 0)
+    return 1;
+  /* Never rewind an unverified range supplied by the boundary caller. */
+  if (start > reserved_end || reserved_end != ctx->cursor_bytes ||
+      reserved_end > ctx->stack_capacity_bytes || (start & 7u) != 0u ||
+      ctx->stack_data == 0) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          reserved_end, ctx->cursor_bytes);
+    return 1;
+  }
+  if (ctx->status == AL_OWNING_STATUS_OK && host_status != 0)
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id, 0u, 0u);
+  if (ctx->status == AL_OWNING_STATUS_OK) {
+    if (out_payload == 0 || output_extent < 8u ||
+        (output_extent & 7u) != 0u || output_extent > reserved_end - start) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id,
+                            output_extent, reserved_end - start);
+    } else if (al_owning_measure_external_value(
+                   ctx, layout, type_index, ctx->stack_data + start,
+                   output_extent, 0u, error_id, &payload, &extent) == 0 &&
+               extent != output_extent) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id,
+                            extent, output_extent);
+    }
+    /* The scanner reports raw layout/input faults. At this boundary those are
+     * adapter failures, attributed to the verified host call rather than entry
+     * input validation. Preserve its measured bounds and source diagnostic. */
+    if (ctx->status != AL_OWNING_STATUS_OK)
+      ctx->status = AL_OWNING_STATUS_DIAGNOSTIC;
+  }
+  if (ctx->status != AL_OWNING_STATUS_OK) {
+    al_owning_release_to(ctx, start, 0u, 0u, 0u);
+    return 1;
+  }
+  al_owning_release_to(ctx, start + extent, 0u, 0u, 0u);
+  al_owning_mark(ctx, start, extent, 1, 0);
+  al_owning_update_live(ctx, (int32_t)payload, 0);
+  if (ctx->status != AL_OWNING_STATUS_OK) {
+    al_owning_release_to(ctx, start, 0u, 0u, 0u);
+    return 1;
+  }
+  al_owning_event(ctx, AL_OWNING_EVENT_ALLOCATE,
+                  layout->types[type_index].type_id, start, extent, payload,
+                  0u, 0u, 0u);
+  *out_payload = payload;
+  return 0;
+}
+
 static int32_t al_owning_equal_typed_scan(
     al_owning_scan_view *view, const al_owning_layout *layout,
     uint32_t type_index, uint32_t offset, uint32_t owner_end,

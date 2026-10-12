@@ -10,12 +10,14 @@ worker; SQL/cache access does not introduce another mailbox hop. See
 [the performance requirements](../reports/247-worker-pool-performance-requirements.md).
 
 User steering, 2026-10-12: prioritize **AOT Campfire and real endpoint performance**.
-Finish the bounded logout work already underway, then unblock the owning native
+Logout is delivered in the interpreter reference. Unblock the owning native
 backend and deliver real GET/HEAD room HTTP without F#/.NET in the release process.
 The interpreter is a reference, not the performance target. Follow
 [the native delivery plan](CAMPFIRE-AOT-PLAN.md). The
-[verified entry export](../reports/246-verified-entry-ir-export.md) is the first
-compiler step; native host calls and full room HTTP remain required. Earlier sequencing below is
+[verified entry export](../reports/246-verified-entry-ir-export.md) and
+[typed native room-host profile](../reports/248-typed-native-room-host.md) are
+compiler steps. Real SQLite adapters, the remaining room-path contracts, lists
+and full native room HTTP remain required. Earlier sequencing below is
 historical where it conflicts with this priority; the full migration scope remains.
 
 As of 2026-10-11, the primary deliverable is a complete Campfire migration in

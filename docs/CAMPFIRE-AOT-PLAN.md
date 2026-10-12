@@ -55,9 +55,12 @@ linear scaling or choose a production worker count before measuring.
 Use `OwningStackAot.fs` and the owning arena runtime as the native base. They
 already lower strings, nominal strings, records, enums, Option/Result and matches.
 The older scalar backend cannot represent the application's request/response
-types. The owning backend currently rejects effects and host calls and has no
-list support. Its fixed initialize/begin/resume mailbox exports are not a general
-application host interface. These are verified blockers, not performance estimates.
+types. Default owning compilation still rejects effects and host calls. An explicit
+native profile now lowers the exact `campfire.rooms.find-for-user` contract to a
+statically linked adapter, carrying worker-owned provider state per execution.
+The first adapter is a synthetic boundary fixture, not SQLite or an HTTP endpoint.
+Broader host contracts and list support remain required. The fixed
+initialize/begin/resume mailbox exports are not a general application host interface.
 
 ## Delivery order
 
@@ -71,7 +74,14 @@ application host interface. These are verified blockers, not performance estimat
    signature. Pin required operation identities, signatures, effects, type layout
    and runtime profile in the module descriptor. Missing or mismatched providers
    must fail before invocation. Default pure compilation remains restrictive.
-   This first compiler milestone is not an application endpoint.
+   [The first native host profile](../reports/248-typed-native-room-host.md) pins
+   the exact nominal schema and statically linked adapter source. It writes bounded
+   output directly into the arena, validates the serialized value, and commits
+   without a payload copy; failed output reservations rewind. A missing adapter
+   symbol fails at link time. A general provider descriptor/handshake is still
+   future work; this profile does not claim one. This compiler milestone is not an
+   application endpoint. Expand native contracts to the shared room-path closure,
+   including conditional session-refresh writes, before measuring that endpoint.
 3. Add the list layout/instructions and `int.to-string` required by room display.
    Emit a general owning module descriptor and entry ABI. Audit every affected
    version, offset, capacity, layout fixture and deterministic oracle. Preserve
