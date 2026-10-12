@@ -58,7 +58,9 @@ The older scalar backend cannot represent the application's request/response
 types. Default owning compilation still rejects effects and host calls. An explicit
 native profile now lowers the exact `campfire.rooms.find-for-user` contract to a
 statically linked adapter, carrying worker-owned provider state per execution.
-The first adapter is a synthetic boundary fixture, not SQLite or an HTTP endpoint.
+The synthetic boundary fixture remains a test. A native SQLite adapter now executes
+the room lookup through the same typed AOT entry, with a worker-owned connection
+and reusable prepared statement. This is not yet an HTTP endpoint.
 Broader host contracts and list support remain required. The fixed
 initialize/begin/resume mailbox exports are not a general application host interface.
 
@@ -95,9 +97,11 @@ initialize/begin/resume mailbox exports are not a general application host inter
    input/output. Preserve existing SQLite data and Rails-compatible cookies.
    Produce an executable/native dependency manifest and verify the release loads
    without .NET. Windows clang/lld and CNG import libraries are available; the
-   existing packaged native SQLite library is a candidate pending version,
-   options, licensing and packaging verification. Dependency selection is not
-   completed merely by finding a DLL.
+   room adapter uses the pinned SQLitePCLRaw.lib.e_sqlite3 2.1.12 native library
+   (SQLite 3.53.3), with version/options and package-byte verification. Standalone
+   C smoke tests execute the compiled room entry without .NET at O0/O2. See
+   [the native SQLite milestone](../reports/249-native-sqlite-room-adapter.md).
+   Remaining operation contracts and HTTP/cookie/browser adapters are still required.
 6. Run real loopback HTTP parity, then measure the native room endpoint. Continue
    native migration through login, messages, logout, setup, live delivery and the
    remaining application inventory. A native room page is the first performance

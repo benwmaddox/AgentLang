@@ -108,6 +108,12 @@ type OwningStackExecutionResult =
 type OwningNativeHostProfile =
     | CampfireRoomFindForUserV1
 
+/// Trusted build inputs, never selected by language code or request data.
+type OwningNativeHostDependencies =
+    { HeaderPaths: string list
+      LinkLibraryPaths: string list
+      RuntimeLibraryPaths: string list }
+
 type OwningMailboxEntryMetadata =
     { Role: string
       FunctionSymbol: string
@@ -493,7 +499,15 @@ type OwningStackCompiledProgram internal
     let lifetimeGate = obj ()
 
     do
-        let handle = NativeLibrary.Load libraryPath
+        let handle =
+            if OperatingSystem.IsWindows() then
+                let searchPath = DllImportSearchPath.UseDllDirectoryForDependencies ||| DllImportSearchPath.SafeDirectories
+                NativeLibrary.Load(
+                    libraryPath,
+                    typeof<OwningStackCompiledProgram>.Assembly,
+                    Nullable<DllImportSearchPath>(searchPath))
+            else
+                NativeLibrary.Load libraryPath
         try
             match nativeHostManifestPath with
             | None ->
@@ -6264,17 +6278,21 @@ module OwningStackAot =
     /// Compile a verified entry with the closed Campfire room-lookup adapter
     /// statically linked into a separate host-context export. The adapter C
     /// source is copied into the artifact directory before hashing and build.
-    let compileWithNativeHostProfile
+    let compileWithNativeHostDependencies
         (toolchain: LlvmToolchain)
         optimization
         (profile: OwningNativeHostProfile)
         (adapterSourcePath: string)
+        (dependencies: OwningNativeHostDependencies)
         outputDirectory
         (verifiedBody: VerifiedIrBody) =
         if String.IsNullOrWhiteSpace outputDirectory then invalidArg (nameof outputDirectory) "Output directory must be nonempty."
         if String.IsNullOrWhiteSpace adapterSourcePath then invalidArg (nameof adapterSourcePath) "Native host adapter source path must be nonempty."
         let fullAdapterSourcePath = Path.GetFullPath adapterSourcePath
         if not (File.Exists fullAdapterSourcePath) then invalidArg (nameof adapterSourcePath) "Native host adapter source does not exist."
+        if isNull (box dependencies) then nullArg (nameof dependencies)
+        for paths in [ dependencies.HeaderPaths; dependencies.LinkLibraryPaths; dependencies.RuntimeLibraryPaths ] do
+            if isNull (box paths) then invalidArg (nameof dependencies) "Native dependency lists cannot be null."
         let programInfo = makeProgramInfoForBodies true (Some profile) [ verifiedBody ]
         let checkedBody = IrVerifier.verifyBody (VerifiedIrBody.program verifiedBody) (VerifiedIrBody.inspect verifiedBody)
         let bodyAnalysis = ArenaLifetime.analyzeBody checkedBody
@@ -6302,9 +6320,41 @@ module OwningStackAot =
         writeEmbeddedResource assembly "AgentLang.Llvm.native.campfire_room_host_abi.h" hostAbiHeaderPath
         File.WriteAllBytes(adapterCopyPath, File.ReadAllBytes fullAdapterSourcePath)
 
+        let dependencyDirectory = Path.Combine(fullDirectory, "native-dependencies")
+        let usedNames = HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        for name in [ "owning_stack_runtime.h"; "owning_stack_runtime.c"; "float_format.h"; "campfire_room_host_abi.h"; "campfire_room_host_adapter.c"; "owning-stack-native-host.dll" ] do
+            usedNames.Add name |> ignore
+        let copyInputs extension targetDirectory paths =
+            paths |> List.map (fun path ->
+                if String.IsNullOrWhiteSpace path || not (File.Exists path) then
+                    invalidArg (nameof dependencies) "Every native dependency must be an existing file."
+                let name = Path.GetFileName path
+                if not (String.Equals(Path.GetExtension name, extension, StringComparison.OrdinalIgnoreCase)) then
+                    invalidArg (nameof dependencies) $"Expected native dependency extension {extension}: {name}"
+                if not (usedNames.Add name) then
+                    invalidArg (nameof dependencies) $"Duplicate or reserved native dependency filename: {name}"
+                Directory.CreateDirectory targetDirectory |> ignore
+                let destination = Path.Combine(targetDirectory, name)
+                let bytes = File.ReadAllBytes path
+                File.WriteAllBytes(destination, bytes)
+                destination)
+        let headerCopies = copyInputs ".h" runtimeDirectory dependencies.HeaderPaths
+        let linkCopies = copyInputs ".lib" dependencyDirectory dependencies.LinkLibraryPaths
+        for path in dependencies.RuntimeLibraryPaths do
+            if String.IsNullOrWhiteSpace path || not (File.Exists path) then
+                invalidArg (nameof dependencies) "Native runtime dependency does not exist."
+            use file = File.OpenRead path
+            use pe = new System.Reflection.PortableExecutable.PEReader(file)
+            if isNull pe.PEHeaders.PEHeader
+               || not (pe.PEHeaders.CoffHeader.Characteristics.HasFlag(System.Reflection.PortableExecutable.Characteristics.Dll))
+               || pe.PEHeaders.CoffHeader.Machine <> System.Reflection.PortableExecutable.Machine.Amd64
+               || not (isNull pe.PEHeaders.CorHeader) then
+                invalidArg (nameof dependencies) "Native host runtime dependencies must be unmanaged x64 PE images."
+        let runtimeCopies = copyInputs ".dll" fullDirectory dependencies.RuntimeLibraryPaths
+
         let compiledPath =
-            LlvmToolchain.compileLibraryWithRuntimeAndNativeHostAdapterAndNativeStackScreen
-                toolchain optimization llvmIrPath runtimeSourcePath adapterCopyPath runtimeDirectory libraryPath
+            LlvmToolchain.compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreen
+                toolchain optimization llvmIrPath runtimeSourcePath adapterCopyPath linkCopies runtimeDirectory libraryPath
         let hashBytes (bytes: byte array) =
             SHA256.HashData bytes
             |> Convert.ToHexString
@@ -6361,10 +6411,12 @@ module OwningStackAot =
               "native-runtime/float_format.h", hashFile floatFormatHeaderPath
               "native-runtime/campfire_room_host_abi.h", hashFile hostAbiHeaderPath
               "native-runtime/campfire_room_host_adapter.c", hashFile adapterCopyPath ]
+            @ (headerCopies @ linkCopies @ runtimeCopies
+               |> List.map (fun path -> Path.GetRelativePath(fullDirectory, path).Replace('\\', '/'), hashFile path))
             |> List.sortBy fst
             |> List.map (fun (path, hash) -> {| path = path; sha256 = hash |})
         let manifestCore =
-            {| formatVersion = 1
+            {| formatVersion = 2
                profileId = "campfire-room-find-for-user-v1"
                runtimeProfile = "diagnostic"
                operationId = "campfire.rooms.find-for-user"
@@ -6383,6 +6435,10 @@ module OwningStackAot =
                fixedEffectAllowlist = [ "db.read" ]
                outputLimitBytes = nativeHostOutputLimit
                optimization = optimizationName
+               nativeDependencies =
+                {| headers = headerCopies |> List.map (fun path -> Path.GetRelativePath(fullDirectory, path).Replace('\\', '/'))
+                   linkLibraries = linkCopies |> List.map (fun path -> Path.GetRelativePath(fullDirectory, path).Replace('\\', '/'))
+                   runtimeLibraries = runtimeCopies |> List.map (fun path -> Path.GetRelativePath(fullDirectory, path).Replace('\\', '/')) |}
                sharedLayout = layouts
                sourceHashes = sourceHashes |}
         let jsonOptions = JsonSerializerOptions(WriteIndented = true)
@@ -6398,6 +6454,12 @@ module OwningStackAot =
         new OwningStackCompiledProgram(
             compiledPath, Some manifestPath, programInfo, diagnostics, llvmIr, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
             encodeValues, decodeValues, readEvents, readMetrics, diagnosticForError)
+
+    /// Existing dependency-free host profile entry remains explicitly opt-in.
+    let compileWithNativeHostProfile toolchain optimization profile adapterSourcePath outputDirectory verifiedBody =
+        compileWithNativeHostDependencies toolchain optimization profile adapterSourcePath
+            { HeaderPaths = []; LinkLibraryPaths = []; RuntimeLibraryPaths = [] }
+            outputDirectory verifiedBody
 
     /// Compile the fixed initialize/begin/resume lifecycle into one immutable
     /// owning module with a shared type-index layout, ordinary mailbox callbacks,

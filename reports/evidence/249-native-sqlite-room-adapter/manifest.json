@@ -1,0 +1,1812 @@
+{
+  "members": [
+    {
+      "sha256": "e29b7e5d4f3762df7d7bae9195ecc61b261b2e9e388cbe126f57473b3a33a804",
+      "bytes": 5575,
+      "path": "source/.agentlang/owning-stack-003/acceptance-plan.md"
+    },
+    {
+      "sha256": "dcf602afba4027bcc528c3103f765264d42a01733df8c28be485caa214fba1bf",
+      "bytes": 13173,
+      "path": "source/.agentlang/owning-stack-003/implementation-plan.md"
+    },
+    {
+      "sha256": "be4b9fd0022d3d5031596949a97334db1258f388550c6e40dd812ace0624693d",
+      "bytes": 52314,
+      "path": "source/applications/campfire/authentication-tests.flow"
+    },
+    {
+      "sha256": "3677ee62fc7bfe2436ec9bedd36642d0c1b222be3409b89f3fc5572b590c87c9",
+      "bytes": 1055,
+      "path": "source/applications/campfire/authentication-types.flow"
+    },
+    {
+      "sha256": "be2ba959673ac5878b1a4755a44b1e35d70eddd49db02c7724f26b4c36d85ccc",
+      "bytes": 2777,
+      "path": "source/applications/campfire/authentication.flow"
+    },
+    {
+      "sha256": "c0b4e878c76bc94b9bf83f0213b03a9d9022511bca45a5cba25ba20c294712b4",
+      "bytes": 16972,
+      "path": "source/applications/campfire/Authentication.Host/CampfireAuthenticationHost.fs"
+    },
+    {
+      "sha256": "e7cbb54acafa9424a6c6c1af20b092b0d6b2b6929e6f3251dca8aa9178da1228",
+      "bytes": 566,
+      "path": "source/applications/campfire/Authentication.Persistence/AgentLang.Campfire.Authentication.Persistence.fsproj"
+    },
+    {
+      "sha256": "39101ba5db2a12008e36db6c60e7e23a07ab6a5f7f38d929cfa7e72442fdeb0c",
+      "bytes": 747,
+      "path": "source/applications/campfire/Authentication.Persistence/PasswordVerification.fs"
+    },
+    {
+      "sha256": "bb1911239ec518f00cb18e44362c4bd9300f079bd809e94e62a43d3e898f8e3a",
+      "bytes": 23746,
+      "path": "source/applications/campfire/Authentication.Persistence/SqliteProvider.fs"
+    },
+    {
+      "sha256": "30dcc27bd1ecc1a66648b257854c1f19cce2885b58cac01af0b66450e53c363e",
+      "bytes": 1397,
+      "path": "source/applications/campfire/browser-policy.flow"
+    },
+    {
+      "sha256": "2b297c65063a4bce4e9e4657df565de87fb9a2d9557ae8bdb2a8ceb8baa7c3ab",
+      "bytes": 6017,
+      "path": "source/applications/campfire/browser-tests.flow"
+    },
+    {
+      "sha256": "ffb064531d02d8e14f455e005e127596f3157404c46784e1f21151409023dc3f",
+      "bytes": 242,
+      "path": "source/applications/campfire/browser-types.flow"
+    },
+    {
+      "sha256": "38188a1c651bb01e24e35321b8f183013eb39b88e8663332fb65751a3c08b8d3",
+      "bytes": 2749,
+      "path": "source/applications/campfire/Browser/BrowserHost.fs"
+    },
+    {
+      "sha256": "207a699a83cb29e6aa3af35dda0cc2c95d7e401e9a7355c2c881a64b67eca11b",
+      "bytes": 4797,
+      "path": "source/applications/campfire/Browser/RubyVersion.fs"
+    },
+    {
+      "sha256": "ed5d29721e7dfb7e7a2423f4c76ffa57a109d8a943b91efae719ad1b1fc0cbc5",
+      "bytes": 24211,
+      "path": "source/applications/campfire/Browser/UserAgentNormalizer.fs"
+    },
+    {
+      "sha256": "48f478456df344a37ab32381c8b9886b182296357d552e85a36be40b9c8485e8",
+      "bytes": 1249,
+      "path": "source/applications/campfire/campfire-types.flow"
+    },
+    {
+      "sha256": "84b7e5d871acc294e846fb339fb9b120ec917092faaff27d6f95977994c56d0e",
+      "bytes": 27367,
+      "path": "source/applications/campfire/Cookies/CookieService.fs"
+    },
+    {
+      "sha256": "2f0e5549a1a23ab09b5a901c39103848b14d299564815f8e2d8fd2fbf9e0e471",
+      "bytes": 8614,
+      "path": "source/applications/campfire/Host/CampfireHost.fs"
+    },
+    {
+      "sha256": "fee88271cb6fbbc903615de068abfb9e21f7846a74910b7131a2efceec6b4596",
+      "bytes": 40580,
+      "path": "source/applications/campfire/http-login-tests.flow"
+    },
+    {
+      "sha256": "bf7751bd8a6c7c812ce2297d0ab40aeb5b964b302ca96cf75c7b706aa401e30a",
+      "bytes": 10807,
+      "path": "source/applications/campfire/http-login.flow"
+    },
+    {
+      "sha256": "c65d08e98f457e0c07ec08ac9aa4f723bf3aaf3adda4c541c4dcbc651ded8a68",
+      "bytes": 29653,
+      "path": "source/applications/campfire/http-logout-tests.flow"
+    },
+    {
+      "sha256": "9e0bf6be1bcc1b26716891f50715257995cda11c1656473694da6489da7dd3dc",
+      "bytes": 74921,
+      "path": "source/applications/campfire/http-tests.flow"
+    },
+    {
+      "sha256": "9d39e50b6092a5e2c061fd16fca6f56e5c2396ad7ceb58206491c153ae4dd159",
+      "bytes": 1941,
+      "path": "source/applications/campfire/http-types.flow"
+    },
+    {
+      "sha256": "53799b068ff329a1e5c4f2c8e907818408504876a77c3c1a2aad1def71a3a7dd",
+      "bytes": 11493,
+      "path": "source/applications/campfire/http.flow"
+    },
+    {
+      "sha256": "5df1d986a18871f653af6fd9119c67b6b792189c6bbfd29a4302a2212ef16ec6",
+      "bytes": 5395,
+      "path": "source/applications/campfire/Http/Application.fs"
+    },
+    {
+      "sha256": "f4931df5397a8b971f4caca1a3c63c6ee90336c29200287cae8f84fd86ab4b94",
+      "bytes": 3117,
+      "path": "source/applications/campfire/Http/CookieHost.fs"
+    },
+    {
+      "sha256": "a14fc2cee4a81d1196f8b309f0bb7bbfa034a2ca93ad767c8c8cd4bf69aa883f",
+      "bytes": 2947,
+      "path": "source/applications/campfire/Http/LoginHost.fs"
+    },
+    {
+      "sha256": "4e87448c9ec7cc0f35bd94c2e3e2174b7e1f40f75acbc825d28d058387c63193",
+      "bytes": 7921,
+      "path": "source/applications/campfire/Http/ResponseRenderer.fs"
+    },
+    {
+      "sha256": "db91ec723d615320016018e4abba3415088e2389887ec462243d3f830d222b31",
+      "bytes": 27506,
+      "path": "source/applications/campfire/Http/Transport.fs"
+    },
+    {
+      "sha256": "f9e48ef343d1d4d7965873f1a740083ec18ad8da8ef4565edac48edda2c19726",
+      "bytes": 5288,
+      "path": "source/applications/campfire/message-policy.flow"
+    },
+    {
+      "sha256": "7cbb16854fe16868b1e144245c9139977998c0f0275ff4163f50e38dc6918703",
+      "bytes": 464,
+      "path": "source/applications/campfire/Native/e_sqlite3.def"
+    },
+    {
+      "sha256": "1e4e2155d3a0756d0712c45dbc0994de2caf5ce24c6547c18095da26b50942cc",
+      "bytes": 2911,
+      "path": "source/applications/campfire/Native/README.md"
+    },
+    {
+      "sha256": "4530329b50aef3940e278e9f221fb7c758944f5f300dfddbaebadb14f13c6c60",
+      "bytes": 23675,
+      "path": "source/applications/campfire/Native/room_sqlite_adapter.c"
+    },
+    {
+      "sha256": "efc2fe6d291bf108b6518331025e91d6291a1105853cfd7a65374e170a7d7bb0",
+      "bytes": 2548,
+      "path": "source/applications/campfire/Native/room_sqlite_adapter.h"
+    },
+    {
+      "sha256": "2e27ee943b5a5f51c908bfb5bef38815a63b136ba819a7ab5983505873981754",
+      "bytes": 2772,
+      "path": "source/applications/campfire/Native/sqlite_subset.h"
+    },
+    {
+      "sha256": "ec86d1b93ef46a9d75c76950ef231c2626eec4c3d83f19c302a857123fe78446",
+      "bytes": 12117,
+      "path": "source/applications/campfire/Persistence/SqliteProvider.fs"
+    },
+    {
+      "sha256": "2183bf86e8fe510f6433612941dcef1f65cdde9652a5ecd7bf4ced925ed7f357",
+      "bytes": 9551,
+      "path": "source/applications/campfire/request-policy.flow"
+    },
+    {
+      "sha256": "7dad65057ea0cf3d0f836aa4c389208b6896ca8ad707ff3dd057b152c25c7997",
+      "bytes": 23001,
+      "path": "source/applications/campfire/room-message-tests.flow"
+    },
+    {
+      "sha256": "29dbce11f8572b0329adeec82627d1f4fce02869dfdca43591323739245c20b5",
+      "bytes": 4512,
+      "path": "source/applications/campfire/room-message.flow"
+    },
+    {
+      "sha256": "b14b14519af4ac0c2beeffcc2686fc18d22c95175a1c70b52518938a1a8f62ee",
+      "bytes": 2143,
+      "path": "source/applications/campfire/session-policy.flow"
+    },
+    {
+      "sha256": "7561d7a4861a8fe9b4addca2de92c7d9773d0bfa35723f7564776bc38d48dfa2",
+      "bytes": 21948,
+      "path": "source/applications/campfire/sign-in-tests.flow"
+    },
+    {
+      "sha256": "e2b8881a1ee32884a5033e3225845dfbb32424547928245fab1bc41eb8a89e0c",
+      "bytes": 1342,
+      "path": "source/applications/campfire/sign-in.flow"
+    },
+    {
+      "sha256": "ddf3e159d893bde438c05fe294611548d4eded00e2a086ffb831196fc8377534",
+      "bytes": 6831,
+      "path": "source/applications/campfire/sign-out-tests.flow"
+    },
+    {
+      "sha256": "248c2c6fa154418c67ed6b771ed8fbfd8ce171e41d575339efdfb087d49d266f",
+      "bytes": 706,
+      "path": "source/applications/campfire/sign-out.flow"
+    },
+    {
+      "sha256": "ff9105e3c6373d359a31974a122a8208a16cbf82b173e3b63a1eee2e1c438219",
+      "bytes": 10412,
+      "path": "source/docs/CAMPFIRE-AOT-PLAN.md"
+    },
+    {
+      "sha256": "cd5c18c66bff979ffcbbf64efe7b2d3a90adb4f474f902423beebf89a1b2452b",
+      "bytes": 4785,
+      "path": "source/docs/CAMPFIRE-IMPLEMENTATION.md"
+    },
+    {
+      "sha256": "c057257d175386ef46155bbf21cc884504307471db00e2ab465451fa4b9e2d6a",
+      "bytes": 11656,
+      "path": "source/docs/NATIVE-NOMINALS-IMPLEMENTATION.md"
+    },
+    {
+      "sha256": "751aa6cbc17123ed5525f3a82f0432daf3d8278d67ee2b3015e25f6c4b1719e5",
+      "bytes": 79703,
+      "path": "source/docs/ROADMAP.md"
+    },
+    {
+      "sha256": "ea631c2c42331c6a8d092c965f14ff1358b8af160411622b30300a192720a74d",
+      "bytes": 10495,
+      "path": "source/docs/STACK-ONLY-RESEARCH.md"
+    },
+    {
+      "sha256": "1a41bd5ae6735f751b06476351ab0e7f9a15aee10d808ce8a94379ddbae1b068",
+      "bytes": 590,
+      "path": "source/experiments/AgentLang.NativeValueStack/AgentLang.NativeValueStack.fsproj"
+    },
+    {
+      "sha256": "49b38e1bc901277228b37f81f57d226ad0a40473e2e4b6cd11d08f2b636d61cd",
+      "bytes": 599032,
+      "path": "source/experiments/AgentLang.NativeValueStack/Program.fs"
+    },
+    {
+      "sha256": "62eac4e0aa5b9cb5caba5f350788fd5b554715c6b9021e287ef2081951f09c35",
+      "bytes": 4192,
+      "path": "source/experiments/AgentLang.NativeValueStack/value-stack.flow"
+    },
+    {
+      "sha256": "59454537cad3222424fde04e538daf061c117391d888cdca8cf0b8fe7e647a58",
+      "bytes": 5910,
+      "path": "source/scripts/Verify-CampfireNativeSqlite.ps1"
+    },
+    {
+      "sha256": "5ac5cf570b3a7047912dec0b79227b57a85b9e80016a058f95869eba1cccae03",
+      "bytes": 76214,
+      "path": "source/scripts/Verify-NativeValueStack.ps1"
+    },
+    {
+      "sha256": "4b633117ac5462fa540b0b17dfea2951068de1d847946ecd00e3e1f25de415de",
+      "bytes": 42496,
+      "path": "source/src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll"
+    },
+    {
+      "sha256": "84fbfd8bfdf406de6de6a1b8bce3c919187fffddf3708ceeb34d6ada258940e5",
+      "bytes": 2885632,
+      "path": "source/src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Core.dll"
+    },
+    {
+      "sha256": "28c58faeed2e6cde4540c8e5ab7b12e5c87e49a4b68cfe36738aaedf248c5424",
+      "bytes": 1189,
+      "path": "source/src/AgentLang.Core/AgentLang.Core.fsproj"
+    },
+    {
+      "sha256": "653413476d1008e34035f50dda446480786a7ab27e947db4488df062bac50faf",
+      "bytes": 51816,
+      "path": "source/src/AgentLang.Core/AuthoringHelp.fs"
+    },
+    {
+      "sha256": "8470cee074cece34bd11f1cff7ccc0139da1b0bbce50320e02f02f8f078c5311",
+      "bytes": 122811,
+      "path": "source/src/AgentLang.Core/Compiler.fs"
+    },
+    {
+      "sha256": "a0a79a645531fb90faf3ab1f600829c29fcd657766530ae24db28e5fc1e52a09",
+      "bytes": 10062,
+      "path": "source/src/AgentLang.Core/Core.fs"
+    },
+    {
+      "sha256": "38187554839b9812458646ae200b3714e5981cd60803344ce4bd647d94fa03cf",
+      "bytes": 31815,
+      "path": "source/src/AgentLang.Core/Discovery.fs"
+    },
+    {
+      "sha256": "4068dd856384978a1a7894b9560eebd7fa632662efb9861d959f8d03479018d7",
+      "bytes": 10745,
+      "path": "source/src/AgentLang.Core/FileSystem.fs"
+    },
+    {
+      "sha256": "cb3f072280035d004bcd573648e6da5b1b396c8ab6d0c2760cbf243793695e3c",
+      "bytes": 24435,
+      "path": "source/src/AgentLang.Core/FiniteCoverage.fs"
+    },
+    {
+      "sha256": "7793b40f8c85671f6807d91e79d5a4adce7f2564c09e47cef30e79155214e160",
+      "bytes": 5663,
+      "path": "source/src/AgentLang.Core/FloatText.fs"
+    },
+    {
+      "sha256": "5ba6a10171f4d67cff6f43d32ddce8b9e7aa33eb3f97d407aee3bcd76bfb5ccf",
+      "bytes": 14022,
+      "path": "source/src/AgentLang.Core/FlowLint.fs"
+    },
+    {
+      "sha256": "9707798cc4bbfb65374fa15d072c1901a451a7168d237039f40513441445d820",
+      "bytes": 237816,
+      "path": "source/src/AgentLang.Core/FlowLowering.fs"
+    },
+    {
+      "sha256": "74654097d0dbe358a5c11c7da85cf5b1f4c6c2b3229c3a6cb383deecb8905feb",
+      "bytes": 95046,
+      "path": "source/src/AgentLang.Core/FlowParser.fs"
+    },
+    {
+      "sha256": "eb255f43ee7ee60303f4e85416bb0e27b92227ccbf63c812e48301767e7668a2",
+      "bytes": 4865,
+      "path": "source/src/AgentLang.Core/FlowPersistence.fs"
+    },
+    {
+      "sha256": "9445ddb9ca47aac590e3852cdbc3c9a67f6288d4d5aaff1ee2c13f4121d20e01",
+      "bytes": 57359,
+      "path": "source/src/AgentLang.Core/FlowRewrite.fs"
+    },
+    {
+      "sha256": "aae3ae56d0d7dc576956dffdd180741bae25b413d22bd24470b45fabdbf45078",
+      "bytes": 62014,
+      "path": "source/src/AgentLang.Core/FlowSyntax.fs"
+    },
+    {
+      "sha256": "5cab8d45a16cd7039c03b4e72aebc48b4868849521cb1358d2e371a350bc3241",
+      "bytes": 54958,
+      "path": "source/src/AgentLang.Core/IrFormatting.fs"
+    },
+    {
+      "sha256": "acd0ee1a54cf8605e5932bc8d1731e626dc8a05357ec10c5be6809d52a3171de",
+      "bytes": 108541,
+      "path": "source/src/AgentLang.Core/IrInterpreter.fs"
+    },
+    {
+      "sha256": "996140b145d04314da8ae9755e926323ff71852d36a49383f75b0941aa304521",
+      "bytes": 44492,
+      "path": "source/src/AgentLang.Core/Parser.fs"
+    },
+    {
+      "sha256": "d1dfb67c82760aa5b6663162c31f1dfce70441275c073fd344a13a00e34f27e5",
+      "bytes": 3314,
+      "path": "source/src/AgentLang.Core/Protocol.fs"
+    },
+    {
+      "sha256": "55b762ac8d4181a55829971917e1484ad18f80bf45f94bc4d236e369b835634c",
+      "bytes": 586852,
+      "path": "source/src/AgentLang.Core/Runtime.fs"
+    },
+    {
+      "sha256": "e49f8e969fdb0a88385c463d66f1fbc439ea477d03147b82b01851798731f7bb",
+      "bytes": 11073,
+      "path": "source/src/AgentLang.Core/Source.fs"
+    },
+    {
+      "sha256": "3f954b69e13287ec56e96e544f276cfcf289c8dc893769e8ef086565c8eb5bb9",
+      "bytes": 107363,
+      "path": "source/src/AgentLang.Core/Storage.fs"
+    },
+    {
+      "sha256": "c26edc9681c879c5f0a410274901d6e1cfc3c515f7628f139235747daad57659",
+      "bytes": 8978,
+      "path": "source/src/AgentLang.Core/TrustedValues.fs"
+    },
+    {
+      "sha256": "3d1e1afeb8a2f62cad0075007fc52b9823876262bf151bcad429916c1dd40566",
+      "bytes": 88674,
+      "path": "source/src/AgentLang.Core/TypedIR.fs"
+    },
+    {
+      "sha256": "fcbb073611e2bcb9cc6a1b2032783824be097b7dc55e07a7bac587ced28c474c",
+      "bytes": 29502,
+      "path": "source/src/AgentLang.Core/ValueInspection.fs"
+    },
+    {
+      "sha256": "ad516494327d537c8a2dadc6f9381083e2320937bf1457dea96c444d8e8bdf6b",
+      "bytes": 26296,
+      "path": "source/src/AgentLang.Core/VocabularyAnalysis.fs"
+    },
+    {
+      "sha256": "a42c2b7c7d50870fea9b15fed595ecf6f41d5200b603093dc400448590e79b60",
+      "bytes": 1715,
+      "path": "source/src/AgentLang.Llvm/AgentLang.Llvm.fsproj"
+    },
+    {
+      "sha256": "05eabe2a0e90f5aed418a5f8869075ab234cff1fd212d208f32672c8a63ec385",
+      "bytes": 20186,
+      "path": "source/src/AgentLang.Llvm/ArenaLifetime.fs"
+    },
+    {
+      "sha256": "b568060da4f75d25ae04ad05fef1252e58d7eb3e00b81f2bfa75844cc0ac9a66",
+      "bytes": 132851,
+      "path": "source/src/AgentLang.Llvm/LlvmAot.fs"
+    },
+    {
+      "sha256": "0ddb347004433f47a84c89cbf08aa6f77560f1d31aa99f4f96282921f561bbae",
+      "bytes": 20733,
+      "path": "source/src/AgentLang.Llvm/LlvmToolchain.fs"
+    },
+    {
+      "sha256": "efc5ce054250223c1701e818dd6294925ef7a3f7e873bc4d03bc855d422ace35",
+      "bytes": 1079,
+      "path": "source/src/AgentLang.Llvm/native/campfire_room_host_abi.h"
+    },
+    {
+      "sha256": "bd424792f314bb4266024dcc0a4720828afeb1bd7ebf0d4165bfb03e6b2049bd",
+      "bytes": 15142,
+      "path": "source/src/AgentLang.Llvm/native/float_format.h"
+    },
+    {
+      "sha256": "b1e34ea7532e0414e92d8f6517ddc6f0e422934ccaacb0c825c242836fdd4b88",
+      "bytes": 167257,
+      "path": "source/src/AgentLang.Llvm/native/owning_stack_runtime_test.c"
+    },
+    {
+      "sha256": "a6f223c3163a51a2902e6552208bc01af87b832134462406680b66241da24d84",
+      "bytes": 109359,
+      "path": "source/src/AgentLang.Llvm/native/owning_stack_runtime.c"
+    },
+    {
+      "sha256": "a958238d68d880e905478137a0eff29aeec05388e903235f980589dff5280164",
+      "bytes": 13421,
+      "path": "source/src/AgentLang.Llvm/native/owning_stack_runtime.h"
+    },
+    {
+      "sha256": "4c2504edcff2bf4d52ccfb0ec920c92ff9298f347278e996a2de46828199791a",
+      "bytes": 5317,
+      "path": "source/src/AgentLang.Llvm/NativeAbi.fs"
+    },
+    {
+      "sha256": "d576e8c82f3055c1bd6278715e7935203961c8fb49fc241f8c36a3a85a626e05",
+      "bytes": 5433,
+      "path": "source/src/AgentLang.Llvm/NativeStackUsage.fs"
+    },
+    {
+      "sha256": "e0e4f8d764a3bcc2abeb29a7ddfb4c7500b8c3bd01fc89104840b1a9eb593b25",
+      "bytes": 12945,
+      "path": "source/src/AgentLang.Llvm/NativeValueMetrics.fs"
+    },
+    {
+      "sha256": "a5a2898a23d98c6f52b48cc471f111f757d4560dc9e30aed8fe40bb54dd93957",
+      "bytes": 16129,
+      "path": "source/src/AgentLang.Llvm/NativeValues.fs"
+    },
+    {
+      "sha256": "81b084412ed3feb25a83b1f78a098565d842a7cf0647f546d681b4d990008992",
+      "bytes": 473564,
+      "path": "source/src/AgentLang.Llvm/OwningStackAot.fs"
+    },
+    {
+      "sha256": "b1301af49f9497422aa8a7aa934289214a33705cf765698c08fc8103af52122b",
+      "bytes": 529,
+      "path": "source/tests/AgentLang.Aot.EntryExport.Tests/AgentLang.Aot.EntryExport.Tests.fsproj"
+    },
+    {
+      "sha256": "a7a094844f29422b0e7984712d712ef5daeb1d25ff9bf6831c3312e8ed094a21",
+      "bytes": 6277,
+      "path": "source/tests/AgentLang.Aot.EntryExport.Tests/native/room_find_fixture.c"
+    },
+    {
+      "sha256": "47fed064e419fad1f1aaae9dee334dbcbf30880da9ef66892be91c1c0bea3883",
+      "bytes": 19784,
+      "path": "source/tests/AgentLang.Aot.EntryExport.Tests/native/room_sqlite_smoke.c"
+    },
+    {
+      "sha256": "9e9947546e7ab3875ec8839935cb5e0356a576b27fd3cc6831a9c31886b74bfb",
+      "bytes": 17370,
+      "path": "source/tests/AgentLang.Aot.EntryExport.Tests/NativeHostTests.fs"
+    },
+    {
+      "sha256": "faafa46bcdf971021edf959effd6c790c89b15411a19e6791218e437b5c1062c",
+      "bytes": 27153,
+      "path": "source/tests/AgentLang.Aot.EntryExport.Tests/NativeSqliteTests.fs"
+    },
+    {
+      "sha256": "22fafc659e6e8c94ff07d49f01011217e0d5bd4ac441286448272a24796c92a0",
+      "bytes": 22140,
+      "path": "source/tests/AgentLang.Aot.EntryExport.Tests/Program.fs"
+    },
+    {
+      "sha256": "73768caafac8e15b2032827c4ff0f11c5df89c57507e24fe64bc09af49e8be3b",
+      "bytes": 46942,
+      "path": "source/tests/AgentLang.Campfire.Authentication.Integration.Tests/Program.fs"
+    },
+    {
+      "sha256": "306adb74896c6fdaaab97fd309a1fc1e7ce7a026cad9ca2485f978faeeeb990f",
+      "bytes": 5520,
+      "path": "source/tests/AgentLang.Campfire.Authentication.Integration.Tests/real-authentication-tests.flow"
+    },
+    {
+      "sha256": "ec1a08f8d09db50318f6e0495c5ab0132532daf8b4ed7ad96a6713e1f6c9e8ae",
+      "bytes": 747,
+      "path": "source/tests/AgentLang.Campfire.Authentication.Persistence.Tests/AgentLang.Campfire.Authentication.Persistence.Tests.fsproj"
+    },
+    {
+      "sha256": "b19b51ab56159786df1980fc7f1a84f67f9b9264609e58620d62afba61ea6ca4",
+      "bytes": 994,
+      "path": "source/tests/AgentLang.Campfire.Authentication.Persistence.Tests/Fixtures/rails-password-vectors.json"
+    },
+    {
+      "sha256": "fdfe06c8eb391ce4122c2664a97eb636c99aa6e530be0a949ded399597e0b712",
+      "bytes": 59316,
+      "path": "source/tests/AgentLang.Campfire.Authentication.Persistence.Tests/Program.fs"
+    },
+    {
+      "sha256": "2eea58cd75ef6112d1d468d1904787e04411317dc20a90ece54b58486c314522",
+      "bytes": 301897,
+      "path": "source/tests/AgentLang.Campfire.Browser.Tests/Fixtures/campfire_user_agents.json"
+    },
+    {
+      "sha256": "616a7e1db23553889a0d91aacdedb5d06fc05a44d3b19cc7617e66a398226f3c",
+      "bytes": 14100,
+      "path": "source/tests/AgentLang.Campfire.Browser.Tests/Program.fs"
+    },
+    {
+      "sha256": "f3436ac395ed67aa8c1cfd7cf932d2033034869ce8df974502eef568efe6c858",
+      "bytes": 1159,
+      "path": "source/tests/AgentLang.Campfire.Browser.Tests/real-browser-tests.flow"
+    },
+    {
+      "sha256": "eb1c6afd57d445dcb327821e2134d8366383c5565ba1c1f2b1b2dfd5f822fae4",
+      "bytes": 13536,
+      "path": "source/tests/AgentLang.Campfire.Cookies.Tests/Fixtures/rails-cookie-vectors.json"
+    },
+    {
+      "sha256": "747e30859dc25411d4937a8dbf9a5c70c14a71ccb362f42ab8b0e500280b6b0a",
+      "bytes": 12548,
+      "path": "source/tests/AgentLang.Campfire.Cookies.Tests/Program.fs"
+    },
+    {
+      "sha256": "acb0cbb572de78fb788fddcb8f9f7f90f1c17d6fb9815350706a564601f7749c",
+      "bytes": 105692,
+      "path": "source/tests/AgentLang.Campfire.Http.Tests/Program.fs"
+    },
+    {
+      "sha256": "fd51f95671155bedac7a0b348d6ef805d002e0170acb7a7af68156ffcf6abf96",
+      "bytes": 40707,
+      "path": "source/tests/AgentLang.Campfire.Integration.Tests/Program.fs"
+    },
+    {
+      "sha256": "5d5ee20be0602924d61354c8c8507d805fce8a8ec675a103fc8af9bc4e2d91c6",
+      "bytes": 5652,
+      "path": "source/tests/AgentLang.Campfire.Integration.Tests/real-provider-tests.flow"
+    },
+    {
+      "sha256": "7b4bc8deef9806b6737758bdfbfc0ea6080d0877a6a75821307c66c19a375929",
+      "bytes": 382,
+      "path": "source/tests/AgentLang.Campfire.LoginRate.Tests/AgentLang.Campfire.LoginRate.Tests.fsproj"
+    },
+    {
+      "sha256": "4fda03b66de137d8784629775a62024ad221e359fba5c3de69571fb28fdb3a3f",
+      "bytes": 3270,
+      "path": "source/tests/AgentLang.Campfire.LoginRate.Tests/Program.fs"
+    },
+    {
+      "sha256": "1fb8573a354bacc8e287713bb8eb285cee13e89a9073eee133e870b077832137",
+      "bytes": 494,
+      "path": "source/tests/AgentLang.Campfire.SignIn.Tests/AgentLang.Campfire.SignIn.Tests.fsproj"
+    },
+    {
+      "sha256": "df1c82ecf0f571765cc96ef313fb43d26e200ba161d2d143e48cab797ba6d46a",
+      "bytes": 13292,
+      "path": "source/tests/AgentLang.Campfire.SignIn.Tests/Program.fs"
+    },
+    {
+      "sha256": "471d3cb56b40cb9d1f0c5f62ed94ee7baaa0260022c0b9872c484a678d41193a",
+      "bytes": 644981,
+      "path": "source/tests/AgentLang.Flow.Runtime.Tests/Program.fs"
+    },
+    {
+      "sha256": "8b98394da31b4b404f2d065ac4b459373dc026fb7ae8ad831e8dce27d5185866",
+      "bytes": 1371,
+      "path": "source/tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj"
+    },
+    {
+      "sha256": "9b2a47b0c51ae3c978c036c3e6e8a21208aa29af28a2f631c3a3c7372599e57b",
+      "bytes": 29330,
+      "path": "source/tests/AgentLang.Llvm.Tests/ArenaLifetimeTests.fs"
+    },
+    {
+      "sha256": "86f8336343d5ee879604f806b83d7f0bda6e6bde5b8507736c633abb844a0d49",
+      "bytes": 7832,
+      "path": "source/tests/AgentLang.Llvm.Tests/native_float_mailbox_test.c"
+    },
+    {
+      "sha256": "0dbc601a4cbc0ce72cf505257d1198f84ce5bf489934797dc27a1dc10c2e2ad7",
+      "bytes": 424041,
+      "path": "source/tests/AgentLang.Llvm.Tests/Program.fs"
+    },
+    {
+      "sha256": "e63f153915e3ee94fc9cf22e0c35b187bc0155207157da701ee483c01e1021c5",
+      "bytes": 75781,
+      "path": "source/tests/fixtures/native-conformance/native-value-stack.json"
+    },
+    {
+      "sha256": "01ef35d21475704237d2862c5fff4aada0ca8cafe2d2b2660dc20fda9207bf51",
+      "bytes": 274,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/build-01.log"
+    },
+    {
+      "sha256": "f1b02791a6c81f337b32d42713452844ca587d6827215a0929fa4112137843cc",
+      "bytes": 11851,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/build-02.log"
+    },
+    {
+      "sha256": "92a37248e8221a26a82b4e46b70e107319203b6bbe3c2e0b5c4ecbab05a861b4",
+      "bytes": 1568,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/build-03.log"
+    },
+    {
+      "sha256": "0e244f5740bfd72c5c36d9ee26334ac30c4301b80008ce788c18c26534b88ef3",
+      "bytes": 1568,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/build-04.log"
+    },
+    {
+      "sha256": "81b93fb5ca1bae33967a241ca9d107247d3386392991f52785caf744f04447e4",
+      "bytes": 11227,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final.log"
+    },
+    {
+      "sha256": "cca0bde3ce2dcb116118bc29a668914ecce50c79bdf00f206858eb63cd55a2f5",
+      "bytes": 1004,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/build-authentication-integration.log"
+    },
+    {
+      "sha256": "984b7a36a03494962a6f386cb2d986ebca50110d88c90ac5df2ffb522b1c969f",
+      "bytes": 613,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/build-authentication-storage.log"
+    },
+    {
+      "sha256": "1b923ee3c7e4f2b65851e8986f3e3905e3cea26a1fc225a2746e224ae78b7b53",
+      "bytes": 592,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/build-browser.log"
+    },
+    {
+      "sha256": "e9a41f1b32e32d7422de763103f778d2c99deeac2fbc86d4be128c1ab5f94776",
+      "bytes": 263,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/build-cli.log"
+    },
+    {
+      "sha256": "2189aeb565ef1ce63a976a7d484a7fd52e06b8d5a72fb8bea45fae3fd7e2c359",
+      "bytes": 357,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/build-cookies.log"
+    },
+    {
+      "sha256": "49b6cd5696b28008ae101e6e59389e50bd21789e51df621886b5c6f746eb9c39",
+      "bytes": 1450,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/build-http.log"
+    },
+    {
+      "sha256": "22c156c9ab092784a06e4b911aaaf88ff95d75f94d53dd25e0176d6f3ee07d52",
+      "bytes": 597,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/build-integration.log"
+    },
+    {
+      "sha256": "22b42f7385c54a0755ce7504b8fe0aa3cd9666c8fa4d33f1365e570bdc99d4be",
+      "bytes": 1465,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/build-login-rate.log"
+    },
+    {
+      "sha256": "7819ddb4bb85e25ae812bcc5e72a63b4af7316eb1d480d1f8b95ce725070e149",
+      "bytes": 381,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/build-persistence.log"
+    },
+    {
+      "sha256": "546b3e79b229a805fb76280825a6df9d4bc96527e2e2eb2fbf3c3579d0476595",
+      "bytes": 814,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/build-sign-in.log"
+    },
+    {
+      "sha256": "dfdaffe911a2dcb756316789a528d4f051731a00ddeadc6fca7de8726bfc4c23",
+      "bytes": 22449,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/receipt.json"
+    },
+    {
+      "sha256": "2c3990fbb53a0e639731d1a0f4417b09ad06da7b45b5341ec9b063c8865d06ad",
+      "bytes": 1037,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/temp/Microsoft.NET.Workload_10672_20261012_123521_049.log"
+    },
+    {
+      "sha256": "568af636a73390c345d61e50e716fb0f3160dd58e894932b60c2f83c94a4d7b7",
+      "bytes": 1023,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/temp/Microsoft.NET.Workload_14952_20261012_123536_234.log"
+    },
+    {
+      "sha256": "0f2c0d81d6e668ab27b8586f3ac037cf0a40b4dafe6a0979cc1cb01922f148d0",
+      "bytes": 1037,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/temp/Microsoft.NET.Workload_23712_20261012_123523_138.log"
+    },
+    {
+      "sha256": "f6800b23055489ba5c82506ee3b88f1f30314a7bdbccb83177662fd682613b30",
+      "bytes": 1027,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/temp/Microsoft.NET.Workload_26116_20261012_123542_871.log"
+    },
+    {
+      "sha256": "4bd6310ba0d19d7b0d63028c3cf2b0c955d79284ab7b48309d17f9c65a9e70ec",
+      "bytes": 1029,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/temp/Microsoft.NET.Workload_39560_20261012_123525_628.log"
+    },
+    {
+      "sha256": "e0134fa95c0031629cb93c49973b0941cb7843f557c8e37ad9e274150ec159d9",
+      "bytes": 1029,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/temp/Microsoft.NET.Workload_40972_20261012_123532_975.log"
+    },
+    {
+      "sha256": "13d26a8b8cf06ef310d671af80bcef219d74b5a11efcabe7a134c958b7be32fe",
+      "bytes": 1067,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/temp/Microsoft.NET.Workload_49016_20261012_123527_651.log"
+    },
+    {
+      "sha256": "33f537aa5adaf824168a602d3b30468252cc4480039754a9b5770b94d5f04066",
+      "bytes": 989,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/temp/Microsoft.NET.Workload_49080_20261012_123517_425.log"
+    },
+    {
+      "sha256": "506bae94b961d34738631ccc2f277f7e518792b9884260585b1de16b9797e8fd",
+      "bytes": 1033,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/temp/Microsoft.NET.Workload_53932_20261012_123545_818.log"
+    },
+    {
+      "sha256": "9811b4c337be82310a5ef9c533c6c52ffbb8c4e1d57e70e84a013fa88816e7c3",
+      "bytes": 1066,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/temp/Microsoft.NET.Workload_8608_20261012_123529_977.log"
+    },
+    {
+      "sha256": "439eccfe07a0b6c28b53311fdedd59e0df9481295ff6e18260e7968ae770f239",
+      "bytes": 187,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/test-authentication-integration.log"
+    },
+    {
+      "sha256": "71895c3573840354834cf7173234f106d956b16ff2246a4a167be629004b4dcb",
+      "bytes": 775,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/test-authentication-storage.log"
+    },
+    {
+      "sha256": "71d69568542697a361b341873293f699299fa2799a08f673ff1e3e97e7758d10",
+      "bytes": 202,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/test-browser.log"
+    },
+    {
+      "sha256": "6af2eceb62180e523a25302837deef87ff42ab10f6ad29dacca5b76ebc3bee2f",
+      "bytes": 38,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/test-cookies.log"
+    },
+    {
+      "sha256": "0772809d7beac0bf66f7053fc21a86abb858f0a396143db09797c0aeb7d9fceb",
+      "bytes": 195,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/test-http.log"
+    },
+    {
+      "sha256": "486d289a4d3f26c316b6615f0447ee25b0153ef7787b4dc9fee053cc2d1e6dd1",
+      "bytes": 47,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/test-integration.log"
+    },
+    {
+      "sha256": "2e5208d4cf10a22a14b50204429688acc3d878de65373230735053b2d7171b1c",
+      "bytes": 53,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/test-login-rate.log"
+    },
+    {
+      "sha256": "dae109da3c9feabe3a1b75fcf5d818b8959514c2cd3bf2a7bfbc15e626c5949a",
+      "bytes": 201,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/test-persistence.log"
+    },
+    {
+      "sha256": "f59c757ffaacf046984c426081da1e6454231e29c32509b9121e4a48de769e73",
+      "bytes": 189,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/test-sign-in.log"
+    },
+    {
+      "sha256": "c60cac34654b88975bc4c4fc48b4560464861df5414ad5f6507b4f9184b612e9",
+      "bytes": 511,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/Verify-CampfirePolicy.log"
+    },
+    {
+      "sha256": "cb1d29d2652ed58d80a6887be839a3e9c1cbc4fdb7c16d71cd57964ab3ee0407",
+      "bytes": 197,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/Verify-CampfireRequestPolicy.log"
+    },
+    {
+      "sha256": "7cd85ae27e7978b8136be20ed262014f47666825a63f82ba4b6fc47e37a2000a",
+      "bytes": 221,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/campfire-final/Verify-CampfireSessionPolicy.log"
+    },
+    {
+      "sha256": "edad01a1b225d52b5ff378c3f254c6ee7c49de82e831951a1524255a1164eefa",
+      "bytes": 159,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-native-blocker.json"
+    },
+    {
+      "sha256": "150fb3470c398be46d8513a55e9223adc09035649ea67062c3c77cf9e4edfa79",
+      "bytes": 46025,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/150fb3470c398be46d8513a55e9223adc09035649ea67062c3c77cf9e4edfa79.json"
+    },
+    {
+      "sha256": "21d4c4594de697e3b1c7a78c459359b3b0122679241eab4ed534615b1f8304c1",
+      "bytes": 2169950,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/21d4c4594de697e3b1c7a78c459359b3b0122679241eab4ed534615b1f8304c1.json"
+    },
+    {
+      "sha256": "2d29094db32f2329d63c13d951581421a7a5804bc5d2fe13d91d2b447666c060",
+      "bytes": 1204563,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/2d29094db32f2329d63c13d951581421a7a5804bc5d2fe13d91d2b447666c060.json"
+    },
+    {
+      "sha256": "362ebc344dafc321bf55fada71d3cfec9679abb2405bb61a66a9db139279009c",
+      "bytes": 13748,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/362ebc344dafc321bf55fada71d3cfec9679abb2405bb61a66a9db139279009c.json"
+    },
+    {
+      "sha256": "3cc112b9181c45e5827948a21173083dbb274489fcf5e7cedaea3671574225cd",
+      "bytes": 155521,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/3cc112b9181c45e5827948a21173083dbb274489fcf5e7cedaea3671574225cd.json"
+    },
+    {
+      "sha256": "41f217993406f785b77ddccf5b8b03fcfc86a174720b75546ca7293a687d9a64",
+      "bytes": 2172697,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/41f217993406f785b77ddccf5b8b03fcfc86a174720b75546ca7293a687d9a64.json"
+    },
+    {
+      "sha256": "4bab19e48687a750de005325fa106c0741ac2d05f3f4c9c7259c46a02f60478a",
+      "bytes": 39196,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/4bab19e48687a750de005325fa106c0741ac2d05f3f4c9c7259c46a02f60478a.json"
+    },
+    {
+      "sha256": "4d0b539f6638a8a4b5c2e6b8b5a40f43ca9d1a013d3a1b29c21ca6f741bc86fc",
+      "bytes": 1251811,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/4d0b539f6638a8a4b5c2e6b8b5a40f43ca9d1a013d3a1b29c21ca6f741bc86fc.json"
+    },
+    {
+      "sha256": "54e2f658436ead8e292cd8eb6e0a6eb45f637dbc792b4ef06b6fbae7b835e0c0",
+      "bytes": 1288160,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/54e2f658436ead8e292cd8eb6e0a6eb45f637dbc792b4ef06b6fbae7b835e0c0.json"
+    },
+    {
+      "sha256": "562f53038a67eb8db7b54f4f81e975b9ea8880f84aa23dd3b6143c02bd599d52",
+      "bytes": 2175435,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/562f53038a67eb8db7b54f4f81e975b9ea8880f84aa23dd3b6143c02bd599d52.json"
+    },
+    {
+      "sha256": "904d59ed1e7b5d227dede37097816bd2259535dd9b6e7f6dac5c100996a70091",
+      "bytes": 86461,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/904d59ed1e7b5d227dede37097816bd2259535dd9b6e7f6dac5c100996a70091.json"
+    },
+    {
+      "sha256": "93b1e8c4c383facc0f26a8db7b1f920e6393ad28bdebfe82b26efc6ea06d75bb",
+      "bytes": 3492,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/93b1e8c4c383facc0f26a8db7b1f920e6393ad28bdebfe82b26efc6ea06d75bb.json"
+    },
+    {
+      "sha256": "9bf98d914399c3b45b07f748687d3b171b295895fc5a12891950ffb529ce9065",
+      "bytes": 3763,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/9bf98d914399c3b45b07f748687d3b171b295895fc5a12891950ffb529ce9065.json"
+    },
+    {
+      "sha256": "b42c05e00eff6ef41fc9ed02e2ffd6ba033221ef9adb04ae40651605972ecbd4",
+      "bytes": 103824,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/b42c05e00eff6ef41fc9ed02e2ffd6ba033221ef9adb04ae40651605972ecbd4.json"
+    },
+    {
+      "sha256": "b6f5550d399a29c8e08bb3c39916823ccf29bfe82637da303ea0d3f16a03613a",
+      "bytes": 206402,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/b6f5550d399a29c8e08bb3c39916823ccf29bfe82637da303ea0d3f16a03613a.json"
+    },
+    {
+      "sha256": "c67b124c2407838943aca1ffafc0477a165f76f0e74aae20271c84aa5d184de0",
+      "bytes": 25989,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/c67b124c2407838943aca1ffafc0477a165f76f0e74aae20271c84aa5d184de0.json"
+    },
+    {
+      "sha256": "e03d1944b2d1db4aff5c77534cb73a35c073bac6b0eb93ced07e9ff10962938d",
+      "bytes": 1010301,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/e03d1944b2d1db4aff5c77534cb73a35c073bac6b0eb93ced07e9ff10962938d.json"
+    },
+    {
+      "sha256": "e162950140f118ff383a2a8b149eb08e9fd4188a69f9310cd016516c90ef1c6e",
+      "bytes": 273465,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/e162950140f118ff383a2a8b149eb08e9fd4188a69f9310cd016516c90ef1c6e.json"
+    },
+    {
+      "sha256": "f125296b6ee95125e813012ddc4ac3b0a55c0f299582ab43e5ac344ae419f445",
+      "bytes": 19191,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/campfire-project/.agentlang/store/manifests/f125296b6ee95125e813012ddc4ac3b0a55c0f299582ab43e5ac344ae419f445.json"
+    },
+    {
+      "sha256": "7ab49236067792877966c25a5676b77028e10fffc86f43f34b778f7afc38b6b0",
+      "bytes": 6687,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/changed-enum/.agentlang/store/manifests/7ab49236067792877966c25a5676b77028e10fffc86f43f34b778f7afc38b6b0.json"
+    },
+    {
+      "sha256": "9c188dc3e7f437755af11c2a70f25faeddb990763af6e601b553717f36cb0f59",
+      "bytes": 3949,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/changed-enum/.agentlang/store/manifests/9c188dc3e7f437755af11c2a70f25faeddb990763af6e601b553717f36cb0f59.json"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/dependency-build/import-library-build.log"
+    },
+    {
+      "sha256": "967b8e574390babc672d60a5033cd35107d2f62a1b52865ebea898fd87d1e99f",
+      "bytes": 6687,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/extra-declared-effect/.agentlang/store/manifests/967b8e574390babc672d60a5033cd35107d2f62a1b52865ebea898fd87d1e99f.json"
+    },
+    {
+      "sha256": "9bc3bb07c06d92127234ffd2511dda1896e5bb629da5c16c708eb6849afdb5e2",
+      "bytes": 3949,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/extra-declared-effect/.agentlang/store/manifests/9bc3bb07c06d92127234ffd2511dda1896e5bb629da5c16c708eb6849afdb5e2.json"
+    },
+    {
+      "sha256": "16bf88bac537468914215c5ae018c8c2e7601badf12c150abf18d2ef4ee8fdd9",
+      "bytes": 87,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/missing-room-adapter.c"
+    },
+    {
+      "sha256": "9e3f8e77aa53499b613cb8d92144142d8c1da6ffcba0bf19584dff39d8ce6db8",
+      "bytes": 4446,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/missing-room-adapter/agentlang-arena-runtime.su"
+    },
+    {
+      "sha256": "acd6d781f0f5ef13564651f291838fe7538157dc42556349b32bd41f6728c527",
+      "bytes": 80,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/missing-room-adapter/agentlang-native-host-adapter.su"
+    },
+    {
+      "sha256": "57f86832216c17ff1a21ff8933f6799a39bebef90fc40f51396b8ef7795b1be8",
+      "bytes": 849,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/missing-room-adapter/agentlang-native.su"
+    },
+    {
+      "sha256": "efc5ce054250223c1701e818dd6294925ef7a3f7e873bc4d03bc855d422ace35",
+      "bytes": 1079,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/missing-room-adapter/native-runtime/campfire_room_host_abi.h"
+    },
+    {
+      "sha256": "16bf88bac537468914215c5ae018c8c2e7601badf12c150abf18d2ef4ee8fdd9",
+      "bytes": 87,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/missing-room-adapter/native-runtime/campfire_room_host_adapter.c"
+    },
+    {
+      "sha256": "bd424792f314bb4266024dcc0a4720828afeb1bd7ebf0d4165bfb03e6b2049bd",
+      "bytes": 15142,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/missing-room-adapter/native-runtime/float_format.h"
+    },
+    {
+      "sha256": "a6f223c3163a51a2902e6552208bc01af87b832134462406680b66241da24d84",
+      "bytes": 109359,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/missing-room-adapter/native-runtime/owning_stack_runtime.c"
+    },
+    {
+      "sha256": "a958238d68d880e905478137a0eff29aeec05388e903235f980589dff5280164",
+      "bytes": 13421,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/missing-room-adapter/native-runtime/owning_stack_runtime.h"
+    },
+    {
+      "sha256": "9d43a3996694f0c1d6e7d64a0e3e7e701afc5a92c092c241387f33ba08511ea6",
+      "bytes": 147177,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/missing-room-adapter/owning-stack-native-host.ll"
+    },
+    {
+      "sha256": "da349b9e183bdb0629ccb6b738eae9782283798f709d0bd25b74fa5eb18203df",
+      "bytes": 3979,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite-project/.agentlang/store/manifests/da349b9e183bdb0629ccb6b738eae9782283798f709d0bd25b74fa5eb18203df.json"
+    },
+    {
+      "sha256": "f1dd92869144822d597f645d45a627db34ec5e56622767dbadd1ed42826ab46e",
+      "bytes": 6749,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite-project/.agentlang/store/manifests/f1dd92869144822d597f645d45a627db34ec5e56622767dbadd1ed42826ab46e.json"
+    },
+    {
+      "sha256": "efc5ce054250223c1701e818dd6294925ef7a3f7e873bc4d03bc855d422ace35",
+      "bytes": 1079,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/managed-dependency-rejected/native-runtime/campfire_room_host_abi.h"
+    },
+    {
+      "sha256": "4530329b50aef3940e278e9f221fb7c758944f5f300dfddbaebadb14f13c6c60",
+      "bytes": 23675,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/managed-dependency-rejected/native-runtime/campfire_room_host_adapter.c"
+    },
+    {
+      "sha256": "bd424792f314bb4266024dcc0a4720828afeb1bd7ebf0d4165bfb03e6b2049bd",
+      "bytes": 15142,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/managed-dependency-rejected/native-runtime/float_format.h"
+    },
+    {
+      "sha256": "a6f223c3163a51a2902e6552208bc01af87b832134462406680b66241da24d84",
+      "bytes": 109359,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/managed-dependency-rejected/native-runtime/owning_stack_runtime.c"
+    },
+    {
+      "sha256": "a958238d68d880e905478137a0eff29aeec05388e903235f980589dff5280164",
+      "bytes": 13421,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/managed-dependency-rejected/native-runtime/owning_stack_runtime.h"
+    },
+    {
+      "sha256": "efc2fe6d291bf108b6518331025e91d6291a1105853cfd7a65374e170a7d7bb0",
+      "bytes": 2548,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/managed-dependency-rejected/native-runtime/room_sqlite_adapter.h"
+    },
+    {
+      "sha256": "2e27ee943b5a5f51c908bfb5bef38815a63b136ba819a7ab5983505873981754",
+      "bytes": 2772,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/managed-dependency-rejected/native-runtime/sqlite_subset.h"
+    },
+    {
+      "sha256": "de4d572913ab64623cd7c8073f7ab9e26862740f021291a3a178f44c19a0e297",
+      "bytes": 147176,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/managed-dependency-rejected/owning-stack-native-host.ll"
+    },
+    {
+      "sha256": "1f89018ad1d6e004529cb3901182e60fcc82a46bf555e58c470e30c1858595b3",
+      "bytes": 6217,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O0/agentlang-arena-runtime.su"
+    },
+    {
+      "sha256": "d2b6451d81c706f2a1746a296a2b8164f0a7fb8f7da5aa24d809013b753af44c",
+      "bytes": 1785,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O0/agentlang-native-host-adapter.su"
+    },
+    {
+      "sha256": "633cac845d75ad880475e6c530373f5f62fd9dc10592dad1908c3442d7a45d85",
+      "bytes": 833,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O0/agentlang-native.su"
+    },
+    {
+      "sha256": "efc5ce054250223c1701e818dd6294925ef7a3f7e873bc4d03bc855d422ace35",
+      "bytes": 1079,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O0/native-runtime/campfire_room_host_abi.h"
+    },
+    {
+      "sha256": "4530329b50aef3940e278e9f221fb7c758944f5f300dfddbaebadb14f13c6c60",
+      "bytes": 23675,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O0/native-runtime/campfire_room_host_adapter.c"
+    },
+    {
+      "sha256": "bd424792f314bb4266024dcc0a4720828afeb1bd7ebf0d4165bfb03e6b2049bd",
+      "bytes": 15142,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O0/native-runtime/float_format.h"
+    },
+    {
+      "sha256": "a6f223c3163a51a2902e6552208bc01af87b832134462406680b66241da24d84",
+      "bytes": 109359,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O0/native-runtime/owning_stack_runtime.c"
+    },
+    {
+      "sha256": "a958238d68d880e905478137a0eff29aeec05388e903235f980589dff5280164",
+      "bytes": 13421,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O0/native-runtime/owning_stack_runtime.h"
+    },
+    {
+      "sha256": "efc2fe6d291bf108b6518331025e91d6291a1105853cfd7a65374e170a7d7bb0",
+      "bytes": 2548,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O0/native-runtime/room_sqlite_adapter.h"
+    },
+    {
+      "sha256": "2e27ee943b5a5f51c908bfb5bef38815a63b136ba819a7ab5983505873981754",
+      "bytes": 2772,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O0/native-runtime/sqlite_subset.h"
+    },
+    {
+      "sha256": "d307414c86de813a5636799d0161fcda063f13168a33594d2ae957e000a6e879",
+      "bytes": 9306,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O0/owning-stack-native-host-manifest.json"
+    },
+    {
+      "sha256": "de4d572913ab64623cd7c8073f7ab9e26862740f021291a3a178f44c19a0e297",
+      "bytes": 147176,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O0/owning-stack-native-host.ll"
+    },
+    {
+      "sha256": "9e3f8e77aa53499b613cb8d92144142d8c1da6ffcba0bf19584dff39d8ce6db8",
+      "bytes": 4446,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O2/agentlang-arena-runtime.su"
+    },
+    {
+      "sha256": "7713c3291df4f0cbbaf5adf82fb118533b7379c1b59fb29e8df6942cb09da031",
+      "bytes": 819,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O2/agentlang-native-host-adapter.su"
+    },
+    {
+      "sha256": "e52fc43cc86344be60e68584f7b20a1f93224e5bfed988ae2cdf65868b4c2da4",
+      "bytes": 833,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O2/agentlang-native.su"
+    },
+    {
+      "sha256": "efc5ce054250223c1701e818dd6294925ef7a3f7e873bc4d03bc855d422ace35",
+      "bytes": 1079,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O2/native-runtime/campfire_room_host_abi.h"
+    },
+    {
+      "sha256": "4530329b50aef3940e278e9f221fb7c758944f5f300dfddbaebadb14f13c6c60",
+      "bytes": 23675,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O2/native-runtime/campfire_room_host_adapter.c"
+    },
+    {
+      "sha256": "bd424792f314bb4266024dcc0a4720828afeb1bd7ebf0d4165bfb03e6b2049bd",
+      "bytes": 15142,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O2/native-runtime/float_format.h"
+    },
+    {
+      "sha256": "a6f223c3163a51a2902e6552208bc01af87b832134462406680b66241da24d84",
+      "bytes": 109359,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O2/native-runtime/owning_stack_runtime.c"
+    },
+    {
+      "sha256": "a958238d68d880e905478137a0eff29aeec05388e903235f980589dff5280164",
+      "bytes": 13421,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O2/native-runtime/owning_stack_runtime.h"
+    },
+    {
+      "sha256": "efc2fe6d291bf108b6518331025e91d6291a1105853cfd7a65374e170a7d7bb0",
+      "bytes": 2548,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O2/native-runtime/room_sqlite_adapter.h"
+    },
+    {
+      "sha256": "2e27ee943b5a5f51c908bfb5bef38815a63b136ba819a7ab5983505873981754",
+      "bytes": 2772,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O2/native-runtime/sqlite_subset.h"
+    },
+    {
+      "sha256": "fa8913019bd5cb3f98d7883fdbcbd0e8a5bd30d32d392a7140d806243c29f6aa",
+      "bytes": 9306,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O2/owning-stack-native-host-manifest.json"
+    },
+    {
+      "sha256": "de4d572913ab64623cd7c8073f7ab9e26862740f021291a3a178f44c19a0e297",
+      "bytes": 147176,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/native-sqlite/O2/owning-stack-native-host.ll"
+    },
+    {
+      "sha256": "1f89018ad1d6e004529cb3901182e60fcc82a46bf555e58c470e30c1858595b3",
+      "bytes": 6217,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/pure-native/O0/agentlang-arena-runtime.su"
+    },
+    {
+      "sha256": "8e3ad45144b0388db84ab1e36f4caf2c5dab0721c6aa7d548bb5f7fd89f977a9",
+      "bytes": 592,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/pure-native/O0/agentlang-native.su"
+    },
+    {
+      "sha256": "bd424792f314bb4266024dcc0a4720828afeb1bd7ebf0d4165bfb03e6b2049bd",
+      "bytes": 15142,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/pure-native/O0/native-runtime/float_format.h"
+    },
+    {
+      "sha256": "a6f223c3163a51a2902e6552208bc01af87b832134462406680b66241da24d84",
+      "bytes": 109359,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/pure-native/O0/native-runtime/owning_stack_runtime.c"
+    },
+    {
+      "sha256": "a958238d68d880e905478137a0eff29aeec05388e903235f980589dff5280164",
+      "bytes": 13421,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/pure-native/O0/native-runtime/owning_stack_runtime.h"
+    },
+    {
+      "sha256": "23c76bd7eaa4004a95f454e6e84b77378bbbb909a59a0d277573cd5c565ca551",
+      "bytes": 157498,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/pure-native/O0/owning-stack-native.ll"
+    },
+    {
+      "sha256": "9e3f8e77aa53499b613cb8d92144142d8c1da6ffcba0bf19584dff39d8ce6db8",
+      "bytes": 4446,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/pure-native/O2/agentlang-arena-runtime.su"
+    },
+    {
+      "sha256": "cd6cd26498bd22bde5373a57e8d0a95992e81d0125560700b8336704a5e949a3",
+      "bytes": 592,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/pure-native/O2/agentlang-native.su"
+    },
+    {
+      "sha256": "bd424792f314bb4266024dcc0a4720828afeb1bd7ebf0d4165bfb03e6b2049bd",
+      "bytes": 15142,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/pure-native/O2/native-runtime/float_format.h"
+    },
+    {
+      "sha256": "a6f223c3163a51a2902e6552208bc01af87b832134462406680b66241da24d84",
+      "bytes": 109359,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/pure-native/O2/native-runtime/owning_stack_runtime.c"
+    },
+    {
+      "sha256": "a958238d68d880e905478137a0eff29aeec05388e903235f980589dff5280164",
+      "bytes": 13421,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/pure-native/O2/native-runtime/owning_stack_runtime.h"
+    },
+    {
+      "sha256": "23c76bd7eaa4004a95f454e6e84b77378bbbb909a59a0d277573cd5c565ca551",
+      "bytes": 157498,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/pure-native/O2/owning-stack-native.ll"
+    },
+    {
+      "sha256": "8094e4b30603321d8198e9d462ed510784c8838c7cd22635a4373133df5357d4",
+      "bytes": 6782,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/pure-project/.agentlang/store/manifests/8094e4b30603321d8198e9d462ed510784c8838c7cd22635a4373133df5357d4.json"
+    },
+    {
+      "sha256": "cb0ee029fadc781e0aeb6b4a0011227d58ee888f6e4351edb55cbae0c02502de",
+      "bytes": 2205,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/receipt.json"
+    },
+    {
+      "sha256": "1f89018ad1d6e004529cb3901182e60fcc82a46bf555e58c470e30c1858595b3",
+      "bytes": 6217,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O0/agentlang-arena-runtime.su"
+    },
+    {
+      "sha256": "3606531a6591ff389f5a740a879054d99749781390f2f8f03795193ee0ada57c",
+      "bytes": 399,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O0/agentlang-native-host-adapter.su"
+    },
+    {
+      "sha256": "cf0b32f70d6ee4283cbd7f330c9e6246bf0cd53e4bf4c86387a92a517bfffb0a",
+      "bytes": 817,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O0/agentlang-native.su"
+    },
+    {
+      "sha256": "efc5ce054250223c1701e818dd6294925ef7a3f7e873bc4d03bc855d422ace35",
+      "bytes": 1079,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O0/native-runtime/campfire_room_host_abi.h"
+    },
+    {
+      "sha256": "a7a094844f29422b0e7984712d712ef5daeb1d25ff9bf6831c3312e8ed094a21",
+      "bytes": 6277,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O0/native-runtime/campfire_room_host_adapter.c"
+    },
+    {
+      "sha256": "bd424792f314bb4266024dcc0a4720828afeb1bd7ebf0d4165bfb03e6b2049bd",
+      "bytes": 15142,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O0/native-runtime/float_format.h"
+    },
+    {
+      "sha256": "a6f223c3163a51a2902e6552208bc01af87b832134462406680b66241da24d84",
+      "bytes": 109359,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O0/native-runtime/owning_stack_runtime.c"
+    },
+    {
+      "sha256": "a958238d68d880e905478137a0eff29aeec05388e903235f980589dff5280164",
+      "bytes": 13421,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O0/native-runtime/owning_stack_runtime.h"
+    },
+    {
+      "sha256": "f96302edfdd3e112ba77ff37043060caa07654a246cc25d080a748b3d8045135",
+      "bytes": 8301,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O0/owning-stack-native-host-manifest.json"
+    },
+    {
+      "sha256": "9d43a3996694f0c1d6e7d64a0e3e7e701afc5a92c092c241387f33ba08511ea6",
+      "bytes": 147177,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O0/owning-stack-native-host.ll"
+    },
+    {
+      "sha256": "9e3f8e77aa53499b613cb8d92144142d8c1da6ffcba0bf19584dff39d8ce6db8",
+      "bytes": 4446,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O2/agentlang-arena-runtime.su"
+    },
+    {
+      "sha256": "db64f28a2f1a094336b3ea4f81d27117922d83f576488a45e88563cded654886",
+      "bytes": 257,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O2/agentlang-native-host-adapter.su"
+    },
+    {
+      "sha256": "f5c435411ebaad2da982c9a124dfd2f0e90a68f97eabcb61f2aaffc69f39bb91",
+      "bytes": 817,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O2/agentlang-native.su"
+    },
+    {
+      "sha256": "efc5ce054250223c1701e818dd6294925ef7a3f7e873bc4d03bc855d422ace35",
+      "bytes": 1079,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O2/native-runtime/campfire_room_host_abi.h"
+    },
+    {
+      "sha256": "a7a094844f29422b0e7984712d712ef5daeb1d25ff9bf6831c3312e8ed094a21",
+      "bytes": 6277,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O2/native-runtime/campfire_room_host_adapter.c"
+    },
+    {
+      "sha256": "bd424792f314bb4266024dcc0a4720828afeb1bd7ebf0d4165bfb03e6b2049bd",
+      "bytes": 15142,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O2/native-runtime/float_format.h"
+    },
+    {
+      "sha256": "a6f223c3163a51a2902e6552208bc01af87b832134462406680b66241da24d84",
+      "bytes": 109359,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O2/native-runtime/owning_stack_runtime.c"
+    },
+    {
+      "sha256": "a958238d68d880e905478137a0eff29aeec05388e903235f980589dff5280164",
+      "bytes": 13421,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O2/native-runtime/owning_stack_runtime.h"
+    },
+    {
+      "sha256": "3639569e471a95015e679b76d9f356daa09a77f2a05a3b948e5c8818c146785f",
+      "bytes": 8301,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O2/owning-stack-native-host-manifest.json"
+    },
+    {
+      "sha256": "9d43a3996694f0c1d6e7d64a0e3e7e701afc5a92c092c241387f33ba08511ea6",
+      "bytes": 147177,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/room-host/O2/owning-stack-native-host.ll"
+    },
+    {
+      "sha256": "3aab852c506ea7b1bfcdcdf5ed90dd54cc20c1f2a982f8348198661ff92a61da",
+      "bytes": 3917,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/unapproved-operation/.agentlang/store/manifests/3aab852c506ea7b1bfcdcdf5ed90dd54cc20c1f2a982f8348198661ff92a61da.json"
+    },
+    {
+      "sha256": "792c8cc83d3f87f045542f48c330be76e9f4677c59f382f5b940ea5adc9f3f5a",
+      "bytes": 6639,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/unapproved-operation/.agentlang/store/manifests/792c8cc83d3f87f045542f48c330be76e9f4677c59f382f5b940ea5adc9f3f5a.json"
+    },
+    {
+      "sha256": "acf9d08e2fc06ed82c770fa7cedd8c54949f844702f4a8aec75034204b3fb87c",
+      "bytes": 125,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/wrong-room-prototype.c"
+    },
+    {
+      "sha256": "9e3f8e77aa53499b613cb8d92144142d8c1da6ffcba0bf19584dff39d8ce6db8",
+      "bytes": 4446,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/wrong-room-prototype/agentlang-arena-runtime.su"
+    },
+    {
+      "sha256": "ae22a0089a657c6c0e7f19c602866e6fd8fb92e928c6e90194eebf69472568a5",
+      "bytes": 849,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/wrong-room-prototype/agentlang-native.su"
+    },
+    {
+      "sha256": "efc5ce054250223c1701e818dd6294925ef7a3f7e873bc4d03bc855d422ace35",
+      "bytes": 1079,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/wrong-room-prototype/native-runtime/campfire_room_host_abi.h"
+    },
+    {
+      "sha256": "acf9d08e2fc06ed82c770fa7cedd8c54949f844702f4a8aec75034204b3fb87c",
+      "bytes": 125,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/wrong-room-prototype/native-runtime/campfire_room_host_adapter.c"
+    },
+    {
+      "sha256": "bd424792f314bb4266024dcc0a4720828afeb1bd7ebf0d4165bfb03e6b2049bd",
+      "bytes": 15142,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/wrong-room-prototype/native-runtime/float_format.h"
+    },
+    {
+      "sha256": "a6f223c3163a51a2902e6552208bc01af87b832134462406680b66241da24d84",
+      "bytes": 109359,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/wrong-room-prototype/native-runtime/owning_stack_runtime.c"
+    },
+    {
+      "sha256": "a958238d68d880e905478137a0eff29aeec05388e903235f980589dff5280164",
+      "bytes": 13421,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/wrong-room-prototype/native-runtime/owning_stack_runtime.h"
+    },
+    {
+      "sha256": "9d43a3996694f0c1d6e7d64a0e3e7e701afc5a92c092c241387f33ba08511ea6",
+      "bytes": 147177,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165100351Z-37160cb56d104bbb8aeafa39ada1972a/wrong-room-prototype/owning-stack-native-host.ll"
+    },
+    {
+      "sha256": "1f89018ad1d6e004529cb3901182e60fcc82a46bf555e58c470e30c1858595b3",
+      "bytes": 6217,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165322895Z-d55fad4c3c664aa6b43f4db1cf87aefd/fresh-loader/O0/agentlang-arena-runtime.su"
+    },
+    {
+      "sha256": "d2b6451d81c706f2a1746a296a2b8164f0a7fb8f7da5aa24d809013b753af44c",
+      "bytes": 1785,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165322895Z-d55fad4c3c664aa6b43f4db1cf87aefd/fresh-loader/O0/agentlang-native-host-adapter.su"
+    },
+    {
+      "sha256": "5a1b528c055dd4ea6ee29c4a996725062ded6f2c408fff0f9be5503a84ded474",
+      "bytes": 628,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165322895Z-d55fad4c3c664aa6b43f4db1cf87aefd/fresh-loader/O0/agentlang-native.su"
+    },
+    {
+      "sha256": "efc5ce054250223c1701e818dd6294925ef7a3f7e873bc4d03bc855d422ace35",
+      "bytes": 1079,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165322895Z-d55fad4c3c664aa6b43f4db1cf87aefd/fresh-loader/O0/native-runtime/campfire_room_host_abi.h"
+    },
+    {
+      "sha256": "4530329b50aef3940e278e9f221fb7c758944f5f300dfddbaebadb14f13c6c60",
+      "bytes": 23675,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165322895Z-d55fad4c3c664aa6b43f4db1cf87aefd/fresh-loader/O0/native-runtime/campfire_room_host_adapter.c"
+    },
+    {
+      "sha256": "bd424792f314bb4266024dcc0a4720828afeb1bd7ebf0d4165bfb03e6b2049bd",
+      "bytes": 15142,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165322895Z-d55fad4c3c664aa6b43f4db1cf87aefd/fresh-loader/O0/native-runtime/float_format.h"
+    },
+    {
+      "sha256": "a6f223c3163a51a2902e6552208bc01af87b832134462406680b66241da24d84",
+      "bytes": 109359,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165322895Z-d55fad4c3c664aa6b43f4db1cf87aefd/fresh-loader/O0/native-runtime/owning_stack_runtime.c"
+    },
+    {
+      "sha256": "a958238d68d880e905478137a0eff29aeec05388e903235f980589dff5280164",
+      "bytes": 13421,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165322895Z-d55fad4c3c664aa6b43f4db1cf87aefd/fresh-loader/O0/native-runtime/owning_stack_runtime.h"
+    },
+    {
+      "sha256": "efc2fe6d291bf108b6518331025e91d6291a1105853cfd7a65374e170a7d7bb0",
+      "bytes": 2548,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165322895Z-d55fad4c3c664aa6b43f4db1cf87aefd/fresh-loader/O0/native-runtime/room_sqlite_adapter.h"
+    },
+    {
+      "sha256": "2e27ee943b5a5f51c908bfb5bef38815a63b136ba819a7ab5983505873981754",
+      "bytes": 2772,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165322895Z-d55fad4c3c664aa6b43f4db1cf87aefd/fresh-loader/O0/native-runtime/sqlite_subset.h"
+    },
+    {
+      "sha256": "9de2c568cad0b909dbd16bf09ea6890e4e9528b19f4de217036af60fa19c73d7",
+      "bytes": 9306,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165322895Z-d55fad4c3c664aa6b43f4db1cf87aefd/fresh-loader/O0/owning-stack-native-host-manifest.json"
+    },
+    {
+      "sha256": "835b43252af3fd00bed91c132e019c072d07081ebd5a2a3982ab5fe547d7eb5e",
+      "bytes": 92563,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165322895Z-d55fad4c3c664aa6b43f4db1cf87aefd/fresh-loader/O0/owning-stack-native-host.ll"
+    },
+    {
+      "sha256": "1a7da02f06deed3fb857f9c048c0bdbad32152adca4eadb2d4a70e6c113deea0",
+      "bytes": 3979,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165322895Z-d55fad4c3c664aa6b43f4db1cf87aefd/native-loader-probe-project/.agentlang/store/manifests/1a7da02f06deed3fb857f9c048c0bdbad32152adca4eadb2d4a70e6c113deea0.json"
+    },
+    {
+      "sha256": "9e3f8e77aa53499b613cb8d92144142d8c1da6ffcba0bf19584dff39d8ce6db8",
+      "bytes": 4446,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165324555Z-a26281a4b4f04146956c346f751b6eb4/fresh-loader/O2/agentlang-arena-runtime.su"
+    },
+    {
+      "sha256": "7713c3291df4f0cbbaf5adf82fb118533b7379c1b59fb29e8df6942cb09da031",
+      "bytes": 819,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165324555Z-a26281a4b4f04146956c346f751b6eb4/fresh-loader/O2/agentlang-native-host-adapter.su"
+    },
+    {
+      "sha256": "7099e70144816392d7d7e66a2eca004f9bd785d7b10fe6f1f60cd77da05285f3",
+      "bytes": 628,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165324555Z-a26281a4b4f04146956c346f751b6eb4/fresh-loader/O2/agentlang-native.su"
+    },
+    {
+      "sha256": "efc5ce054250223c1701e818dd6294925ef7a3f7e873bc4d03bc855d422ace35",
+      "bytes": 1079,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165324555Z-a26281a4b4f04146956c346f751b6eb4/fresh-loader/O2/native-runtime/campfire_room_host_abi.h"
+    },
+    {
+      "sha256": "4530329b50aef3940e278e9f221fb7c758944f5f300dfddbaebadb14f13c6c60",
+      "bytes": 23675,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165324555Z-a26281a4b4f04146956c346f751b6eb4/fresh-loader/O2/native-runtime/campfire_room_host_adapter.c"
+    },
+    {
+      "sha256": "bd424792f314bb4266024dcc0a4720828afeb1bd7ebf0d4165bfb03e6b2049bd",
+      "bytes": 15142,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165324555Z-a26281a4b4f04146956c346f751b6eb4/fresh-loader/O2/native-runtime/float_format.h"
+    },
+    {
+      "sha256": "a6f223c3163a51a2902e6552208bc01af87b832134462406680b66241da24d84",
+      "bytes": 109359,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165324555Z-a26281a4b4f04146956c346f751b6eb4/fresh-loader/O2/native-runtime/owning_stack_runtime.c"
+    },
+    {
+      "sha256": "a958238d68d880e905478137a0eff29aeec05388e903235f980589dff5280164",
+      "bytes": 13421,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165324555Z-a26281a4b4f04146956c346f751b6eb4/fresh-loader/O2/native-runtime/owning_stack_runtime.h"
+    },
+    {
+      "sha256": "efc2fe6d291bf108b6518331025e91d6291a1105853cfd7a65374e170a7d7bb0",
+      "bytes": 2548,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165324555Z-a26281a4b4f04146956c346f751b6eb4/fresh-loader/O2/native-runtime/room_sqlite_adapter.h"
+    },
+    {
+      "sha256": "2e27ee943b5a5f51c908bfb5bef38815a63b136ba819a7ab5983505873981754",
+      "bytes": 2772,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165324555Z-a26281a4b4f04146956c346f751b6eb4/fresh-loader/O2/native-runtime/sqlite_subset.h"
+    },
+    {
+      "sha256": "350bceb935bb0dd7c0f69bb1fd2936d07fc5774eda1e892a590b586e167bc3c6",
+      "bytes": 9306,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165324555Z-a26281a4b4f04146956c346f751b6eb4/fresh-loader/O2/owning-stack-native-host-manifest.json"
+    },
+    {
+      "sha256": "835b43252af3fd00bed91c132e019c072d07081ebd5a2a3982ab5fe547d7eb5e",
+      "bytes": 92563,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165324555Z-a26281a4b4f04146956c346f751b6eb4/fresh-loader/O2/owning-stack-native-host.ll"
+    },
+    {
+      "sha256": "2eeab92183eb84bb039fe853c1dfd92d21ad9218c2fa63d133531a4f975f362a",
+      "bytes": 3979,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/entry-tests/runs/20261012T165324555Z-a26281a4b4f04146956c346f751b6eb4/native-loader-probe-project/.agentlang/store/manifests/2eeab92183eb84bb039fe853c1dfd92d21ad9218c2fa63d133531a4f975f362a.json"
+    },
+    {
+      "sha256": "2f628e5bb19ebe1a1af22e120d1164f595b0181f993c6ff936ee5b5fe55f6d1d",
+      "bytes": 390,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/llvm-build-final.log"
+    },
+    {
+      "sha256": "7dbf5cf1c36d9ebd9810af521dfda5e8085076c5538a80aa52c3b992f9550b17",
+      "bytes": 390,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/llvm-build-loader-final-02.log"
+    },
+    {
+      "sha256": "6f2f6d793c959c564e06668f5530b46500de91f78d0cb15e6138b16e83631b9d",
+      "bytes": 657,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/llvm-build-loader-final.log"
+    },
+    {
+      "sha256": "809afa2191042e4423309c808cf9c2edc8f8247dbbe4b9a3a2c43c52c83a564e",
+      "bytes": 2785,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/llvm-tests-final.log"
+    },
+    {
+      "sha256": "bbaaf7496f628203fa868980f90177f580a7dea55c6992544e67927620c15b9f",
+      "bytes": 2785,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/llvm-tests-loader-final-02.log"
+    },
+    {
+      "sha256": "c7d2a4318e276556bc502020e4e4e6aebdd31ff94416d7d61fd66da856ff3692",
+      "bytes": 586,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/native-exe-dependents.log"
+    },
+    {
+      "sha256": "4752ed1731237f155c48811bfd2548dedf4de0a2a911d1d8dfe33d79cee15ee0",
+      "bytes": 604,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/native-exe-final-dependents.log"
+    },
+    {
+      "sha256": "b17d06d28a8a2991be4fb11cd915a3038b49b776ea7e044c57cc5b235a957f35",
+      "bytes": 520,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/native-module-final-dependents.log"
+    },
+    {
+      "sha256": "7f70dd4c4e08e5762f4567464b8bbc4233f6433929a2b6ac7ad3295b83dd7b4b",
+      "bytes": 177,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/native-stack-final.log"
+    },
+    {
+      "sha256": "1d3aeaf1a87fbcca36cb1cf58f63a0adc62922f7e3b51b8047d7c4352ab078b2",
+      "bytes": 177,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/native-stack-loader-final-02.log"
+    },
+    {
+      "sha256": "2fa55b47403c8031bc72361b39be2c77813eb3fa8018a3a7dc6743bc0e451cbe",
+      "bytes": 1833,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/native-stack-loader-final.log"
+    },
+    {
+      "sha256": "0af20c264e8633dcf8c9ecb2c2852144af9096f4a5d0961120378c7e7f456420",
+      "bytes": 1074,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/run-01.log"
+    },
+    {
+      "sha256": "bbabb50f7e6a1e06e30d018c6ad034624304b156631944353c5141cda19f34a0",
+      "bytes": 195,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/run-02.log"
+    },
+    {
+      "sha256": "93d5658fb183fe3764c4dd81aa6fc6b13d7173f40fd010f7c48a79c4d8e19666",
+      "bytes": 344,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/smoke-build-O0-01.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/smoke-build-O0-02.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/smoke-build-O0-03.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/smoke-build-O2-03.log"
+    },
+    {
+      "sha256": "ecaa381ab935d0d3496c48920e66307fc4c7b4e764a74ab72aae6e1284d2d198",
+      "bytes": 38,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/smoke-run-O0-02.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/smoke-run-O0-03.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/smoke-run-O2-03.log"
+    },
+    {
+      "sha256": "2d886f010b1fa83ff1bd72e676de41997e5049a6731c91678c35ec447936b36f",
+      "bytes": 1313,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/sqlite-dependency-audit.json"
+    },
+    {
+      "sha256": "e3e5097be7f5db89a0a197415d47b9b221683da3d4c61ea2559ef751cd9eebd7",
+      "bytes": 529,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/sqlite-final-dependents.log"
+    },
+    {
+      "sha256": "64c90c1319e36bb7ed5a3006a6b7f87d5da9ff55f8bfcd19cd72b14af0e0720a",
+      "bytes": 139,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/verification-01.log"
+    },
+    {
+      "sha256": "600b0d0d537bb7251e648943be5fdc0ad34418091bca334af89224f3490df095",
+      "bytes": 1568,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/verification-11feafa151d3464eb86f28ad0e1fdb63/build.log"
+    },
+    {
+      "sha256": "ce3eb4fcc810b903e3de738275131d58a4f6daccada08bf99d3d127e30a4f58f",
+      "bytes": 195,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/verification-11feafa151d3464eb86f28ad0e1fdb63/entry-tests.log"
+    },
+    {
+      "sha256": "8ed2cd06f7566720429dbc2abf0e620bdc1ead2777f677d5e44e30ea2d821579",
+      "bytes": 299,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/verification-11feafa151d3464eb86f28ad0e1fdb63/fresh-loader-probe-O0.log"
+    },
+    {
+      "sha256": "623588c5cf720d5a84b16fd40d8b7221e08022fe52f3e335a4cb9e2eedef23e3",
+      "bytes": 299,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/verification-11feafa151d3464eb86f28ad0e1fdb63/fresh-loader-probe-O2.log"
+    },
+    {
+      "sha256": "84d978a178ded4636d41781cce1ce835483e1c597dbaf21d3a8be57d84b39ec6",
+      "bytes": 5144,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/verification-11feafa151d3464eb86f28ad0e1fdb63/receipt.json"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/verification-11feafa151d3464eb86f28ad0e1fdb63/smoke-build-O0.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/verification-11feafa151d3464eb86f28ad0e1fdb63/smoke-build-O2.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/verification-11feafa151d3464eb86f28ad0e1fdb63/smoke-run-O0.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/verification-11feafa151d3464eb86f28ad0e1fdb63/smoke-run-O2.log"
+    },
+    {
+      "sha256": "8fefb9abb080f51b9551eba6914b642df931eb5a9b0e92467a28dae82b99df17",
+      "bytes": 139,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/verification-loader-final-02.log"
+    },
+    {
+      "sha256": "2ecad559c72dfab031afb81b97a2f32d65d9195ef3edad5077e06684d5536d56",
+      "bytes": 22315,
+      "path": "validation/.agentlang/campfire-native-sqlite-249/verification-loader-final.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/compiler-proved-arena-lifetime-tests.stderr.txt"
+    },
+    {
+      "sha256": "49035ce9453fbb350eec72438b192830829d5f3891e3d1eb17ee66a76d69f6b1",
+      "bytes": 59,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/compiler-proved-arena-lifetime-tests.stdout.txt"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/fresh-arena-lifetime-tests-build.stderr.txt"
+    },
+    {
+      "sha256": "6acdcc03f26f5fdde4a41e155b3a99ac60a25a615dea3b2f758040298e4d0a09",
+      "bytes": 811,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/fresh-arena-lifetime-tests-build.stdout.txt"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/fresh-dotnet-build.stderr.txt"
+    },
+    {
+      "sha256": "1eb4cbd2f304b7c3a9599de645e28adacd5552994f70cef7eec5eb38f66275f5",
+      "bytes": 968,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/fresh-dotnet-build.stdout.txt"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/fresh-owning-stack-c-build-O0.stderr.txt"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/fresh-owning-stack-c-build-O0.stdout.txt"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/fresh-owning-stack-c-build-O2.stderr.txt"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/fresh-owning-stack-c-build-O2.stdout.txt"
+    },
+    {
+      "sha256": "bb3e43163d75b8a32eed5c7f0525847c630b65c255bb51d7cfb68ea221f23a6c",
+      "bytes": 3397030,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/native-value-stack-evidence.json"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/owning-stack-native-storage-tests-O0.stderr.txt"
+    },
+    {
+      "sha256": "1ce9243b6af26bf49df905eddee5f64fc2ac931113a91c5b414490018e007796",
+      "bytes": 1395,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/owning-stack-native-storage-tests-O0.stdout.txt"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/owning-stack-native-storage-tests-O2.stderr.txt"
+    },
+    {
+      "sha256": "1ce9243b6af26bf49df905eddee5f64fc2ac931113a91c5b414490018e007796",
+      "bytes": 1395,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/owning-stack-native-storage-tests-O2.stdout.txt"
+    },
+    {
+      "sha256": "e959aee710329d206dad24fa22cb2f6ebcedade15a679c593f68e5e96af822e7",
+      "bytes": 84,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/owning-stack-ubsan-normal-build.stderr.txt"
+    },
+    {
+      "sha256": "c036daa213c8be7dc2ea8d4ddab3944f69e8885cace4300973a0d85af84c47fb",
+      "bytes": 7454,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/owning-stack-ubsan-normal-build.stdout.txt"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/owning-stack-ubsan-trap-build.stderr.txt"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/owning-stack-ubsan-trap-build.stdout.txt"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/owning-stack-ubsan-trap-run.stderr.txt"
+    },
+    {
+      "sha256": "1ce9243b6af26bf49df905eddee5f64fc2ac931113a91c5b414490018e007796",
+      "bytes": 1395,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/owning-stack-ubsan-trap-run.stdout.txt"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/same-ir-cross-backend-experiment.stderr.txt"
+    },
+    {
+      "sha256": "a43757429f7b5ef4f841499809673f1faff2f1aa7198fa484dbea1c044be68a6",
+      "bytes": 181,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/same-ir-cross-backend-experiment.stdout.txt"
+    },
+    {
+      "sha256": "9b6d723caefe805ef9425b8a21d8d2dcc8cb997a2e8d1fa8fd3bf3a96ea34be4",
+      "bytes": 1776451,
+      "path": "validation/.agentlang/owning-stack-003/verification-0ee0f3a32b2f483dad3763eefa4decc0/verification-evidence.json"
+    }
+  ],
+  "memberCount": 360,
+  "verifiedReadback": true,
+  "archive": "evidence.zip",
+  "baselineRevision": "ce74f8db96b5b6f750dd7d50d91ea9bb607c209d",
+  "archiveSha256": "d9890fcce4abea31af21d3cf30632b796e8de130a8778c45c3906f9435bf00f4",
+  "formatVersion": 1,
+  "scope": "Native SQLite room adapter through typed AOT entry and native/Campfire regression",
+  "sourceCount": 124
+}

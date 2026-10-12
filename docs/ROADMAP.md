@@ -16,7 +16,8 @@ The interpreter is a reference, not the performance target. Follow
 [the native delivery plan](CAMPFIRE-AOT-PLAN.md). The
 [verified entry export](../reports/246-verified-entry-ir-export.md) and
 [typed native room-host profile](../reports/248-typed-native-room-host.md) are
-compiler steps. Real SQLite adapters, the remaining room-path contracts, lists
+compiler steps. The [native SQLite room adapter](../reports/249-native-sqlite-room-adapter.md)
+executes the room lookup without .NET. The remaining SQL/room-path contracts, lists
 and full native room HTTP remain required. Earlier sequencing below is
 historical where it conflicts with this priority; the full migration scope remains.
 

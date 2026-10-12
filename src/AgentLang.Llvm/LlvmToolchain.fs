@@ -258,12 +258,13 @@ module LlvmToolchain =
     /// Compile a trusted, build-time native adapter beside the owning runtime
     /// and generated LLVM object. The adapter is statically linked into this
     /// artifact; language IR cannot select imports or symbols.
-    let compileLibraryWithRuntimeAndNativeHostAdapterAndNativeStackScreen
+    let compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreen
         (toolchain: LlvmToolchain)
         optimization
         (llvmIrPath: string)
         (runtimeSourcePath: string)
         (adapterSourcePath: string)
+        (linkLibraryPaths: string list)
         (runtimeIncludeDirectory: string)
         (outputDllPath: string) =
         let irPath = Path.GetFullPath llvmIrPath
@@ -287,7 +288,13 @@ module LlvmToolchain =
         // it itself. COFF symbol names alone cannot detect incompatible C types.
         let hostHeader = Path.Combine(includeDirectory, "campfire_room_host_abi.h")
         compileCObjectCore (Some hostHeader) toolchain optimization OwningRuntimeProfile.Diagnostic true adapterPath includeDirectory adapterObjectPath workingDirectory
-        linkObjects toolchain dllPath [ llvmObjectPath; runtimeObjectPath; adapterObjectPath ]
+        for path in linkLibraryPaths do
+            if not (File.Exists path) then invalidArg (nameof linkLibraryPaths) "Native host link dependency does not exist."
+        linkObjects toolchain dllPath ([ llvmObjectPath; runtimeObjectPath; adapterObjectPath ] @ linkLibraryPaths)
+
+    let compileLibraryWithRuntimeAndNativeHostAdapterAndNativeStackScreen toolchain optimization llvmIrPath runtimeSourcePath adapterSourcePath runtimeIncludeDirectory outputDllPath =
+        compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreen
+            toolchain optimization llvmIrPath runtimeSourcePath adapterSourcePath [] runtimeIncludeDirectory outputDllPath
 
     /// Compile a deterministic set of per-entry LLVM objects, one immutable
     /// module-metadata C object, and one arena runtime object into a DLL.

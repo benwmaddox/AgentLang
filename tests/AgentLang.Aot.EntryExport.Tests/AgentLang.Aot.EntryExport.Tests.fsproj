@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="NativeHostTests.fs" />
+    <Compile Include="NativeSqliteTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
