@@ -14,6 +14,22 @@ Report 140's native mailbox load fixture is not a Campfire benchmark; approximat
 500 completed requests/sec was an offered-load point with simulated I/O, not
 maximum application throughput.
 
+User clarification, 2026-10-12: optimize inbound request to a single worker
+mailbox, direct SQL/cache interaction, and returning the response. Ordinary
+function calls stay within that turn; do not introduce per-function or SQL/cache
+mailbox hops. Start with real SQL and caching disabled. Reuse a connection and
+prepared statements owned by the worker's thread where correctness permits.
+Retain response storage until the socket finishes consuming it, then reset or
+pool the arena. Async suspension must preserve only explicit required state or
+deliberately retain the arena; compare the two policies rather than assuming a win.
+
+The first request benchmark records dispatch/queue wait, SQL time, rendering,
+response-write completion and arena reuse, plus sustained whole-request throughput,
+tail latency and memory. Compare direct execution with one worker dispatch using
+the same native handler. Cache evaluation follows the SQL baseline, with bounded
+storage and explicit invalidation/authentication checks. Multiple stage transfers
+are optional diagnostic comparisons, not the intended application architecture.
+
 Use `OwningStackAot.fs` and the owning arena runtime as the native base. They
 already lower strings, nominal strings, records, enums, Option/Result and matches.
 The older scalar backend cannot represent the application's request/response
@@ -25,7 +41,9 @@ application host interface. These are verified blockers, not performance estimat
 
 1. Export a compiler-minted verified entry body from a committed Flow dictionary.
    Reuse the existing binding's exact identity, revision, source and signature
-   checks. Export is build-time only. Keep semantic IR authoritative.
+   checks. [Verified entry export](../reports/246-verified-entry-ir-export.md) now
+   passes focused native/runtime conformance. Export is build-time only; typed
+   host-call admission remains the next blocker. Keep semantic IR authoritative.
 2. Add typed native host calls with a fixed build-time contract and effect allowlist.
    Start with the existing `campfire.rooms.find-for-user` nominal/record/Option/Result
    signature. Pin required operation identities, signatures, effects, type layout

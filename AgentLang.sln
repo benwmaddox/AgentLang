@@ -97,6 +97,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AgentLang.Campfire.SignIn.T
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AgentLang.Campfire.LoginRate.Tests", "tests\AgentLang.Campfire.LoginRate.Tests\AgentLang.Campfire.LoginRate.Tests.fsproj", "{F289B876-691B-42FD-8B02-11558F2F6174}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AgentLang.Aot.EntryExport.Tests", "tests\AgentLang.Aot.EntryExport.Tests\AgentLang.Aot.EntryExport.Tests.fsproj", "{1E27CFD8-B5A1-4C85-B62E-8CD432AEA7A9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -599,6 +601,18 @@ Global
 		{F289B876-691B-42FD-8B02-11558F2F6174}.Release|x64.Build.0 = Release|Any CPU
 		{F289B876-691B-42FD-8B02-11558F2F6174}.Release|x86.ActiveCfg = Release|Any CPU
 		{F289B876-691B-42FD-8B02-11558F2F6174}.Release|x86.Build.0 = Release|Any CPU
+		{1E27CFD8-B5A1-4C85-B62E-8CD432AEA7A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E27CFD8-B5A1-4C85-B62E-8CD432AEA7A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E27CFD8-B5A1-4C85-B62E-8CD432AEA7A9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1E27CFD8-B5A1-4C85-B62E-8CD432AEA7A9}.Debug|x64.Build.0 = Debug|Any CPU
+		{1E27CFD8-B5A1-4C85-B62E-8CD432AEA7A9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1E27CFD8-B5A1-4C85-B62E-8CD432AEA7A9}.Debug|x86.Build.0 = Debug|Any CPU
+		{1E27CFD8-B5A1-4C85-B62E-8CD432AEA7A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E27CFD8-B5A1-4C85-B62E-8CD432AEA7A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E27CFD8-B5A1-4C85-B62E-8CD432AEA7A9}.Release|x64.ActiveCfg = Release|Any CPU
+		{1E27CFD8-B5A1-4C85-B62E-8CD432AEA7A9}.Release|x64.Build.0 = Release|Any CPU
+		{1E27CFD8-B5A1-4C85-B62E-8CD432AEA7A9}.Release|x86.ActiveCfg = Release|Any CPU
+		{1E27CFD8-B5A1-4C85-B62E-8CD432AEA7A9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -647,5 +661,6 @@ Global
 		{04B57F75-F596-4FA7-BF05-E400A8D4051A} = {1D3572CD-6591-7540-E30D-135F4F613FFF}
 		{00D340D6-1FF6-4CFA-872C-ADD97E16DDFF} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{F289B876-691B-42FD-8B02-11558F2F6174} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{1E27CFD8-B5A1-4C85-B62E-8CD432AEA7A9} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

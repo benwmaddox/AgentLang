@@ -6316,15 +6316,7 @@ module Runtime =
             match target with Some word when snapshot.Words.ContainsKey word -> dataNode["coverage"] <- coverageJson snapshot word results | _ -> ()
             success kind text (Some dataNode)
 
-        member _.ProjectDirectory = projectRoot
-        member _.Capabilities = capabilities
-        member _.TestCapabilities = engineTestCapabilities
-        member _.FileSystemMode = engineFileSystemMode
-
-        /// Bind one exact committed Flow definition for typed, value-only host
-        /// invocation. Binding compiles the named call against this snapshot;
-        /// replacing the word later does not mutate an already returned handle.
-        member _.BindFlowEntryPoint(wordName: string, expectedInputs: LangType list, expectedOutputs: LangType list) =
+        let prepareFlowEntryPoint (wordName: string) (expectedInputs: LangType list) (expectedOutputs: LangType list) : RuntimeSnapshot * VerifiedIrBody * string =
             if String.IsNullOrWhiteSpace wordName then
                 error "FLOW_ENTRYPOINT_NAME_INVALID" "A Flow entrypoint requires a nonempty committed word name." None None [ "committed Flow word name" ] [ "empty" ]
             if isNull (box expectedInputs) || isNull (box expectedOutputs) then
@@ -6340,7 +6332,7 @@ module Runtime =
                     | TInt | TFloat | TBool | TString | TUnit | TNamed _ -> true
             if (expectedInputs @ expectedOutputs) |> List.exists (isClosedType >> not) then
                 error "FLOW_ENTRYPOINT_SIGNATURE_INVALID" "Flow entrypoint signatures must contain closed, non-null language types." (Some wordName) None
-                    [ "closed input and output types" ] ((expectedInputs @ expectedOutputs) |> List.map Types.format)
+                    [ "closed input and output types" ] ((expectedInputs @ expectedOutputs) |> List.map (fun typ -> if isNull (box typ) then "<null>" else Types.format typ))
 
             let snapshot = currentSnapshot ()
             let entry =
@@ -6400,7 +6392,7 @@ module Runtime =
                     snapshot.Program
                     executionName
                     expectedInputs
-                    [ Call(wordName, authored.Definition.Span) ]
+                    [ Call(wordName, entry.Definition.Span) ]
                     flowContext.SourceOrigins
             let checkedBody = VerifiedIrBody.inspect body
             if checkedBody.BodyInputTypes <> functionValue.InputTypes
@@ -6429,6 +6421,24 @@ module Runtime =
                     [ "one checked call" ]
                     [ string instructions.Length ]
 
+            snapshot, body, executionName
+
+        member _.ProjectDirectory = projectRoot
+        member _.Capabilities = capabilities
+        member _.TestCapabilities = engineTestCapabilities
+        member _.FileSystemMode = engineFileSystemMode
+
+        /// Export one compiler-verified call body for the exact committed Flow definition.
+        /// Exporting captures the active snapshot but does not execute the body.
+        member _.ExportVerifiedFlowEntryPoint(wordName: string, expectedInputs: LangType list, expectedOutputs: LangType list) : VerifiedIrBody =
+            let _, body, _ = prepareFlowEntryPoint wordName expectedInputs expectedOutputs
+            body
+
+        /// Bind one exact committed Flow definition for typed, value-only host
+        /// invocation. Binding compiles the named call against this snapshot;
+        /// replacing the word later does not mutate an already returned handle.
+        member _.BindFlowEntryPoint(wordName: string, expectedInputs: LangType list, expectedOutputs: LangType list) =
+            let snapshot, body, executionName = prepareFlowEntryPoint wordName expectedInputs expectedOutputs
             FlowEntryPoint(fun arguments ->
                 try
                     let trace = createTrace None engineFileSystemMode false false virtualFiles

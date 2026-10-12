@@ -1,0 +1,702 @@
+{
+  "members": [
+    {
+      "path": "source/.gitattributes",
+      "sha256": "18e2f2414ce29443ff58863eca7e702f05cc3d94532b3908f4ccfc5e49900ab0",
+      "bytes": 12236
+    },
+    {
+      "path": "source/AgentLang.sln",
+      "sha256": "ea99dd4f1a8b851d3f67c425ab770299394526e993112fdcae1a1e5f13329249",
+      "bytes": 53591
+    },
+    {
+      "path": "source/applications/campfire/authentication-tests.flow",
+      "sha256": "be4b9fd0022d3d5031596949a97334db1258f388550c6e40dd812ace0624693d",
+      "bytes": 52314
+    },
+    {
+      "path": "source/applications/campfire/authentication-types.flow",
+      "sha256": "3677ee62fc7bfe2436ec9bedd36642d0c1b222be3409b89f3fc5572b590c87c9",
+      "bytes": 1055
+    },
+    {
+      "path": "source/applications/campfire/authentication.flow",
+      "sha256": "be2ba959673ac5878b1a4755a44b1e35d70eddd49db02c7724f26b4c36d85ccc",
+      "bytes": 2777
+    },
+    {
+      "path": "source/applications/campfire/Authentication.Host/AgentLang.Campfire.Authentication.Host.fsproj",
+      "sha256": "e195306c967f3a7b1d0570d39475b9e7b91aa32b53fda50655371c6c39acb2dc",
+      "bytes": 589
+    },
+    {
+      "path": "source/applications/campfire/Authentication.Host/CampfireAuthenticationHost.fs",
+      "sha256": "c0b4e878c76bc94b9bf83f0213b03a9d9022511bca45a5cba25ba20c294712b4",
+      "bytes": 16972
+    },
+    {
+      "path": "source/applications/campfire/Authentication.Persistence/AgentLang.Campfire.Authentication.Persistence.fsproj",
+      "sha256": "e7cbb54acafa9424a6c6c1af20b092b0d6b2b6929e6f3251dca8aa9178da1228",
+      "bytes": 566
+    },
+    {
+      "path": "source/applications/campfire/Authentication.Persistence/PasswordVerification.fs",
+      "sha256": "39101ba5db2a12008e36db6c60e7e23a07ab6a5f7f38d929cfa7e72442fdeb0c",
+      "bytes": 747
+    },
+    {
+      "path": "source/applications/campfire/Authentication.Persistence/SqliteProvider.fs",
+      "sha256": "bb1911239ec518f00cb18e44362c4bd9300f079bd809e94e62a43d3e898f8e3a",
+      "bytes": 23746
+    },
+    {
+      "path": "source/applications/campfire/browser-policy.flow",
+      "sha256": "30dcc27bd1ecc1a66648b257854c1f19cce2885b58cac01af0b66450e53c363e",
+      "bytes": 1397
+    },
+    {
+      "path": "source/applications/campfire/browser-tests.flow",
+      "sha256": "2b297c65063a4bce4e9e4657df565de87fb9a2d9557ae8bdb2a8ceb8baa7c3ab",
+      "bytes": 6017
+    },
+    {
+      "path": "source/applications/campfire/browser-types.flow",
+      "sha256": "ffb064531d02d8e14f455e005e127596f3157404c46784e1f21151409023dc3f",
+      "bytes": 242
+    },
+    {
+      "path": "source/applications/campfire/Browser/AgentLang.Campfire.Browser.fsproj",
+      "sha256": "eac201c58881149b4631c578bb40b64b89bcb6dac555da49717a750062adeda1",
+      "bytes": 303
+    },
+    {
+      "path": "source/applications/campfire/Browser/AgentLang.Campfire.Browser.Host.fsproj",
+      "sha256": "560834151378892b6f4ce08c6052264a6d0fab721bed8508cf6c563650c7543f",
+      "bytes": 437
+    },
+    {
+      "path": "source/applications/campfire/Browser/BrowserHost.fs",
+      "sha256": "38188a1c651bb01e24e35321b8f183013eb39b88e8663332fb65751a3c08b8d3",
+      "bytes": 2749
+    },
+    {
+      "path": "source/applications/campfire/Browser/RubyVersion.fs",
+      "sha256": "207a699a83cb29e6aa3af35dda0cc2c95d7e401e9a7355c2c881a64b67eca11b",
+      "bytes": 4797
+    },
+    {
+      "path": "source/applications/campfire/Browser/UserAgentNormalizer.fs",
+      "sha256": "ed5d29721e7dfb7e7a2423f4c76ffa57a109d8a943b91efae719ad1b1fc0cbc5",
+      "bytes": 24211
+    },
+    {
+      "path": "source/applications/campfire/campfire-types.flow",
+      "sha256": "48f478456df344a37ab32381c8b9886b182296357d552e85a36be40b9c8485e8",
+      "bytes": 1249
+    },
+    {
+      "path": "source/applications/campfire/Cookies/AgentLang.Campfire.Cookies.fsproj",
+      "sha256": "933b2906219d10042bdfc0eef83139aec8b43f61ac11923739e39ae5384320fc",
+      "bytes": 355
+    },
+    {
+      "path": "source/applications/campfire/Cookies/CookieService.fs",
+      "sha256": "84b7e5d871acc294e846fb339fb9b120ec917092faaff27d6f95977994c56d0e",
+      "bytes": 27367
+    },
+    {
+      "path": "source/applications/campfire/Host/AgentLang.Campfire.Host.fsproj",
+      "sha256": "be2a96c2d1cdf0164ed9d3230b4a1b6af96fb4a8655b73e92c54dece1e5db0bd",
+      "bytes": 457
+    },
+    {
+      "path": "source/applications/campfire/Host/CampfireHost.fs",
+      "sha256": "2f0e5549a1a23ab09b5a901c39103848b14d299564815f8e2d8fd2fbf9e0e471",
+      "bytes": 8614
+    },
+    {
+      "path": "source/applications/campfire/http-login-tests.flow",
+      "sha256": "fee88271cb6fbbc903615de068abfb9e21f7846a74910b7131a2efceec6b4596",
+      "bytes": 40580
+    },
+    {
+      "path": "source/applications/campfire/http-login.flow",
+      "sha256": "bf7751bd8a6c7c812ce2297d0ab40aeb5b964b302ca96cf75c7b706aa401e30a",
+      "bytes": 10807
+    },
+    {
+      "path": "source/applications/campfire/http-logout-tests.flow",
+      "sha256": "c65d08e98f457e0c07ec08ac9aa4f723bf3aaf3adda4c541c4dcbc651ded8a68",
+      "bytes": 29653
+    },
+    {
+      "path": "source/applications/campfire/http-tests.flow",
+      "sha256": "9e0bf6be1bcc1b26716891f50715257995cda11c1656473694da6489da7dd3dc",
+      "bytes": 74921
+    },
+    {
+      "path": "source/applications/campfire/http-types.flow",
+      "sha256": "9d39e50b6092a5e2c061fd16fca6f56e5c2396ad7ceb58206491c153ae4dd159",
+      "bytes": 1941
+    },
+    {
+      "path": "source/applications/campfire/http.flow",
+      "sha256": "53799b068ff329a1e5c4f2c8e907818408504876a77c3c1a2aad1def71a3a7dd",
+      "bytes": 11493
+    },
+    {
+      "path": "source/applications/campfire/Http/AgentLang.Campfire.Http.fsproj",
+      "sha256": "1beb314c607fccfc631c5f4ec985ad87d87c76a828fc5639989bb49195679edc",
+      "bytes": 916
+    },
+    {
+      "path": "source/applications/campfire/Http/Application.fs",
+      "sha256": "5df1d986a18871f653af6fd9119c67b6b792189c6bbfd29a4302a2212ef16ec6",
+      "bytes": 5395
+    },
+    {
+      "path": "source/applications/campfire/Http/CookieHost.fs",
+      "sha256": "f4931df5397a8b971f4caca1a3c63c6ee90336c29200287cae8f84fd86ab4b94",
+      "bytes": 3117
+    },
+    {
+      "path": "source/applications/campfire/Http/LoginHost.fs",
+      "sha256": "a14fc2cee4a81d1196f8b309f0bb7bbfa034a2ca93ad767c8c8cd4bf69aa883f",
+      "bytes": 2947
+    },
+    {
+      "path": "source/applications/campfire/Http/ResponseRenderer.fs",
+      "sha256": "4e87448c9ec7cc0f35bd94c2e3e2174b7e1f40f75acbc825d28d058387c63193",
+      "bytes": 7921
+    },
+    {
+      "path": "source/applications/campfire/Http/Transport.fs",
+      "sha256": "db91ec723d615320016018e4abba3415088e2389887ec462243d3f830d222b31",
+      "bytes": 27506
+    },
+    {
+      "path": "source/applications/campfire/message-policy.flow",
+      "sha256": "f9e48ef343d1d4d7965873f1a740083ec18ad8da8ef4565edac48edda2c19726",
+      "bytes": 5288
+    },
+    {
+      "path": "source/applications/campfire/Persistence/AgentLang.Campfire.Persistence.fsproj",
+      "sha256": "64b05c56f5c3f5eca0926a1101ea9425b2d5f3bdef8ecbd3608166eb0cf8b9fd",
+      "bytes": 361
+    },
+    {
+      "path": "source/applications/campfire/Persistence/SqliteProvider.fs",
+      "sha256": "ec86d1b93ef46a9d75c76950ef231c2626eec4c3d83f19c302a857123fe78446",
+      "bytes": 12117
+    },
+    {
+      "path": "source/applications/campfire/request-policy.flow",
+      "sha256": "2183bf86e8fe510f6433612941dcef1f65cdde9652a5ecd7bf4ced925ed7f357",
+      "bytes": 9551
+    },
+    {
+      "path": "source/applications/campfire/room-message-tests.flow",
+      "sha256": "7dad65057ea0cf3d0f836aa4c389208b6896ca8ad707ff3dd057b152c25c7997",
+      "bytes": 23001
+    },
+    {
+      "path": "source/applications/campfire/room-message.flow",
+      "sha256": "29dbce11f8572b0329adeec82627d1f4fce02869dfdca43591323739245c20b5",
+      "bytes": 4512
+    },
+    {
+      "path": "source/applications/campfire/session-policy.flow",
+      "sha256": "b14b14519af4ac0c2beeffcc2686fc18d22c95175a1c70b52518938a1a8f62ee",
+      "bytes": 2143
+    },
+    {
+      "path": "source/applications/campfire/sign-in-tests.flow",
+      "sha256": "7561d7a4861a8fe9b4addca2de92c7d9773d0bfa35723f7564776bc38d48dfa2",
+      "bytes": 21948
+    },
+    {
+      "path": "source/applications/campfire/sign-in.flow",
+      "sha256": "e2b8881a1ee32884a5033e3225845dfbb32424547928245fab1bc41eb8a89e0c",
+      "bytes": 1342
+    },
+    {
+      "path": "source/applications/campfire/sign-out-tests.flow",
+      "sha256": "ddf3e159d893bde438c05fe294611548d4eded00e2a086ffb831196fc8377534",
+      "bytes": 6831
+    },
+    {
+      "path": "source/applications/campfire/sign-out.flow",
+      "sha256": "248c2c6fa154418c67ed6b771ed8fbfd8ce171e41d575339efdfb087d49d266f",
+      "bytes": 706
+    },
+    {
+      "path": "source/docs/CAMPFIRE-AOT-PLAN.md",
+      "sha256": "c81fcfdbddd165833de74f79edaef9202974408ce002ede81c6184dd5652fc44",
+      "bytes": 7726
+    },
+    {
+      "path": "source/docs/ROADMAP.md",
+      "sha256": "ef4b2b4ab806df0068ff79f57e3f82473d0e5bdfd4e7139e3a0505156c7d2359",
+      "bytes": 78999
+    },
+    {
+      "path": "source/src/AgentLang.Core/AuthoringHelp.fs",
+      "sha256": "653413476d1008e34035f50dda446480786a7ab27e947db4488df062bac50faf",
+      "bytes": 51816
+    },
+    {
+      "path": "source/src/AgentLang.Core/Core.fs",
+      "sha256": "a0a79a645531fb90faf3ab1f600829c29fcd657766530ae24db28e5fc1e52a09",
+      "bytes": 10062
+    },
+    {
+      "path": "source/src/AgentLang.Core/FlowParser.fs",
+      "sha256": "74654097d0dbe358a5c11c7da85cf5b1f4c6c2b3229c3a6cb383deecb8905feb",
+      "bytes": 95046
+    },
+    {
+      "path": "source/src/AgentLang.Core/IrInterpreter.fs",
+      "sha256": "acd0ee1a54cf8605e5932bc8d1731e626dc8a05357ec10c5be6809d52a3171de",
+      "bytes": 108541
+    },
+    {
+      "path": "source/src/AgentLang.Core/Runtime.fs",
+      "sha256": "55b762ac8d4181a55829971917e1484ad18f80bf45f94bc4d236e369b835634c",
+      "bytes": 586852
+    },
+    {
+      "path": "source/src/AgentLang.Core/TypedIR.fs",
+      "sha256": "3d1e1afeb8a2f62cad0075007fc52b9823876262bf151bcad429916c1dd40566",
+      "bytes": 88674
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/LlvmToolchain.fs",
+      "sha256": "c5e0ef9cd0452647d45189eade31ffea652a43583c5941a1009831d4f8b023e3",
+      "bytes": 17067
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "sha256": "cb8a0fa5bfe907993ff5a593c3ba05d661a2f47e2a5f6f7e55efb8c631dc49e3",
+      "bytes": 106900
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "sha256": "4cd1ab15ac34c997085fd8fa5e6f411d4e765d15717d6e90e5dcd8209f31df19",
+      "bytes": 12763
+    },
+    {
+      "path": "source/src/AgentLang.Llvm/OwningStackAot.fs",
+      "sha256": "78f14ee790ce745fedebcc33febb11cf4e75bc8153159c45d7e443ba60fcec5e",
+      "bytes": 441537
+    },
+    {
+      "path": "source/tests/AgentLang.Aot.EntryExport.Tests/AgentLang.Aot.EntryExport.Tests.fsproj",
+      "sha256": "2074790e324a887bba8ea3df00cd88b62a9a7f5733c874697d612708ba9d8028",
+      "bytes": 437
+    },
+    {
+      "path": "source/tests/AgentLang.Aot.EntryExport.Tests/Program.fs",
+      "sha256": "33e6da14dcdf349ddee99835f733cb7dafdfdb1a46dc0d125e70c96b5a71268f",
+      "bytes": 8220
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.Authentication.Integration.Tests/Program.fs",
+      "sha256": "73768caafac8e15b2032827c4ff0f11c5df89c57507e24fe64bc09af49e8be3b",
+      "bytes": 46942
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.Authentication.Integration.Tests/real-authentication-tests.flow",
+      "sha256": "306adb74896c6fdaaab97fd309a1fc1e7ce7a026cad9ca2485f978faeeeb990f",
+      "bytes": 5520
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.Authentication.Persistence.Tests/AgentLang.Campfire.Authentication.Persistence.Tests.fsproj",
+      "sha256": "ec1a08f8d09db50318f6e0495c5ab0132532daf8b4ed7ad96a6713e1f6c9e8ae",
+      "bytes": 747
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.Authentication.Persistence.Tests/Fixtures/rails-password-vectors.json",
+      "sha256": "b19b51ab56159786df1980fc7f1a84f67f9b9264609e58620d62afba61ea6ca4",
+      "bytes": 994
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.Authentication.Persistence.Tests/Program.fs",
+      "sha256": "fdfe06c8eb391ce4122c2664a97eb636c99aa6e530be0a949ded399597e0b712",
+      "bytes": 59316
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.Browser.Tests/Fixtures/campfire_user_agents.json",
+      "sha256": "2eea58cd75ef6112d1d468d1904787e04411317dc20a90ece54b58486c314522",
+      "bytes": 301897
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.Browser.Tests/Program.fs",
+      "sha256": "616a7e1db23553889a0d91aacdedb5d06fc05a44d3b19cc7617e66a398226f3c",
+      "bytes": 14100
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.Browser.Tests/real-browser-tests.flow",
+      "sha256": "f3436ac395ed67aa8c1cfd7cf932d2033034869ce8df974502eef568efe6c858",
+      "bytes": 1159
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.Cookies.Tests/Fixtures/rails-cookie-vectors.json",
+      "sha256": "eb1c6afd57d445dcb327821e2134d8366383c5565ba1c1f2b1b2dfd5f822fae4",
+      "bytes": 13536
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.Cookies.Tests/Program.fs",
+      "sha256": "747e30859dc25411d4937a8dbf9a5c70c14a71ccb362f42ab8b0e500280b6b0a",
+      "bytes": 12548
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.Http.Tests/AgentLang.Campfire.Http.Tests.fsproj",
+      "sha256": "e603eff0ba5a835723c9023b6f5d8c25876f3966b486e15d12a58b6b63050279",
+      "bytes": 804
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.Http.Tests/Program.fs",
+      "sha256": "acb0cbb572de78fb788fddcb8f9f7f90f1c17d6fb9815350706a564601f7749c",
+      "bytes": 105692
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.Integration.Tests/Program.fs",
+      "sha256": "fd51f95671155bedac7a0b348d6ef805d002e0170acb7a7af68156ffcf6abf96",
+      "bytes": 40707
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.Integration.Tests/real-provider-tests.flow",
+      "sha256": "5d5ee20be0602924d61354c8c8507d805fce8a8ec675a103fc8af9bc4e2d91c6",
+      "bytes": 5652
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.LoginRate.Tests/AgentLang.Campfire.LoginRate.Tests.fsproj",
+      "sha256": "7b4bc8deef9806b6737758bdfbfc0ea6080d0877a6a75821307c66c19a375929",
+      "bytes": 382
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.LoginRate.Tests/Program.fs",
+      "sha256": "4fda03b66de137d8784629775a62024ad221e359fba5c3de69571fb28fdb3a3f",
+      "bytes": 3270
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.SignIn.Tests/AgentLang.Campfire.SignIn.Tests.fsproj",
+      "sha256": "1fb8573a354bacc8e287713bb8eb285cee13e89a9073eee133e870b077832137",
+      "bytes": 494
+    },
+    {
+      "path": "source/tests/AgentLang.Campfire.SignIn.Tests/Program.fs",
+      "sha256": "df1c82ecf0f571765cc96ef313fb43d26e200ba161d2d143e48cab797ba6d46a",
+      "bytes": 13292
+    },
+    {
+      "path": "source/tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "sha256": "471d3cb56b40cb9d1f0c5f62ed94ee7baaa0260022c0b9872c484a678d41193a",
+      "bytes": 644981
+    },
+    {
+      "path": "validation/combined-01/build-authentication-integration.log",
+      "sha256": "bfecdff6aa2defa4de63a8da6cb8e3ec021b65ab09f420c82ea081350c2947b6",
+      "bytes": 1004
+    },
+    {
+      "path": "validation/combined-01/build-authentication-storage.log",
+      "sha256": "984b7a36a03494962a6f386cb2d986ebca50110d88c90ac5df2ffb522b1c969f",
+      "bytes": 613
+    },
+    {
+      "path": "validation/combined-01/build-browser.log",
+      "sha256": "17bee489c6803803fcc737c0898cebccf9818b47a1d72222d09ec2a6984b5b69",
+      "bytes": 592
+    },
+    {
+      "path": "validation/combined-01/build-cli.log",
+      "sha256": "bb1a0a959513b099a5e129e20f87bc3740817657aee0a80bfd49422b572c82a1",
+      "bytes": 263
+    },
+    {
+      "path": "validation/combined-01/build-cookies.log",
+      "sha256": "19a8b8d05377947aefa5dfea1ffe8542d1ea06ccdc00e6249d84b869f6c45dad",
+      "bytes": 357
+    },
+    {
+      "path": "validation/combined-01/build-http.log",
+      "sha256": "e0bbd3ecb43f4e65be2996b1813ebd67c7fca533d11b25776f8b17aab501747f",
+      "bytes": 1450
+    },
+    {
+      "path": "validation/combined-01/build-integration.log",
+      "sha256": "5c64a27afc39c20c5d4971e4f1c9fd80883c6669870f14a48f34c1cd77c38edb",
+      "bytes": 597
+    },
+    {
+      "path": "validation/combined-01/build-login-rate.log",
+      "sha256": "5ed6f81640203c71b2f56e82979529a4d8ca3eba402be2c13b0f4cb6b59bc5ae",
+      "bytes": 1465
+    },
+    {
+      "path": "validation/combined-01/build-persistence.log",
+      "sha256": "11154f26d8a5979c77ac49841b50f8289ac21f2bba9b04864793241be7f5e92b",
+      "bytes": 381
+    },
+    {
+      "path": "validation/combined-01/build-sign-in.log",
+      "sha256": "e5f782c7a1f427eb58932f9915bb007969101da0dde234d18f5b46446363b0b9",
+      "bytes": 814
+    },
+    {
+      "path": "validation/combined-01/receipt.json",
+      "sha256": "9c88c3f0240dc24d6844d9b8668ab316d5b8029df9b39fe3b4cd2d2e2df793dd",
+      "bytes": 22448
+    },
+    {
+      "path": "validation/combined-01/test-authentication-integration.log",
+      "sha256": "01f45ef0f60490b67fdb319d982af912304dc0e5281db6bb28d9c9e1b309c4f0",
+      "bytes": 187
+    },
+    {
+      "path": "validation/combined-01/test-authentication-storage.log",
+      "sha256": "71895c3573840354834cf7173234f106d956b16ff2246a4a167be629004b4dcb",
+      "bytes": 775
+    },
+    {
+      "path": "validation/combined-01/test-browser.log",
+      "sha256": "71d69568542697a361b341873293f699299fa2799a08f673ff1e3e97e7758d10",
+      "bytes": 202
+    },
+    {
+      "path": "validation/combined-01/test-cookies.log",
+      "sha256": "6af2eceb62180e523a25302837deef87ff42ab10f6ad29dacca5b76ebc3bee2f",
+      "bytes": 38
+    },
+    {
+      "path": "validation/combined-01/test-http.log",
+      "sha256": "b8ea68f8dc575aabdd7b8f4798e3fa26db2fe402a690f9c1204849a9a887c2b3",
+      "bytes": 195
+    },
+    {
+      "path": "validation/combined-01/test-integration.log",
+      "sha256": "486d289a4d3f26c316b6615f0447ee25b0153ef7787b4dc9fee053cc2d1e6dd1",
+      "bytes": 47
+    },
+    {
+      "path": "validation/combined-01/test-login-rate.log",
+      "sha256": "2e5208d4cf10a22a14b50204429688acc3d878de65373230735053b2d7171b1c",
+      "bytes": 53
+    },
+    {
+      "path": "validation/combined-01/test-persistence.log",
+      "sha256": "dae109da3c9feabe3a1b75fcf5d818b8959514c2cd3bf2a7bfbc15e626c5949a",
+      "bytes": 201
+    },
+    {
+      "path": "validation/combined-01/test-sign-in.log",
+      "sha256": "6d6d5d2fc0313975f3a23e4ddd5e7f26a62e5f7d5926f0bb52a2f4e2c3936561",
+      "bytes": 189
+    },
+    {
+      "path": "validation/combined-01/Verify-CampfirePolicy.log",
+      "sha256": "61ced385ff26920a3675eab09d696c72022498a363bb553ff3e6eb0536cbfd29",
+      "bytes": 511
+    },
+    {
+      "path": "validation/combined-01/Verify-CampfireRequestPolicy.log",
+      "sha256": "f3c199e4533cd0ca73f52d9944ecf2e38deee3a047fe6c80880a8543802e1931",
+      "bytes": 197
+    },
+    {
+      "path": "validation/combined-01/Verify-CampfireSessionPolicy.log",
+      "sha256": "80d4258e35e19be9e63bd4c231389250f1ced4855029835476da72f0ae39fa2a",
+      "bytes": 221
+    },
+    {
+      "path": "validation/combined-host-run.log",
+      "sha256": "bd488f0b81516d7e23438a1a91e10882043881030124a085ef88e75ecf2e5c21",
+      "bytes": 11221
+    },
+    {
+      "path": "validation/focused-01/export-build-02.log",
+      "sha256": "d6fc9524fbad7252e50491fc6de5f0e05eddfc3a832f6cc2c65c7ea2bcbbc0fd",
+      "bytes": 1568
+    },
+    {
+      "path": "validation/focused-01/export-build-03.log",
+      "sha256": "bed5e271322d8d2547a85fa6f6782bcd71c7d33cdf5df51dd675a2c7a32066aa",
+      "bytes": 1568
+    },
+    {
+      "path": "validation/focused-01/export-build-04.log",
+      "sha256": "1add1094bb8856501901212f2937b605fa57a87038a1ef91a195fbe91794dbe3",
+      "bytes": 1568
+    },
+    {
+      "path": "validation/focused-01/export-build.log",
+      "sha256": "fbdedb42396851c523558a9249f1574fe6f5f4c0e7139a49db9d7bd6aa15d8cd",
+      "bytes": 1568
+    },
+    {
+      "path": "validation/focused-01/export-run-02.log",
+      "sha256": "4a7416ec20ce2ebac0be01567905043d118da5f0db0e195cee61dae1f739bc66",
+      "bytes": 1184
+    },
+    {
+      "path": "validation/focused-01/export-run-03.log",
+      "sha256": "b972814bc4a5ac812cc99b0c390e333e57358b4dcd3eda9e377c441c23d3ec79",
+      "bytes": 167
+    },
+    {
+      "path": "validation/focused-01/export-run-04.log",
+      "sha256": "12da3c7e38de9f96c4ded62750eef447b5408fb8d4cb375d8e8e27e0d5928c82",
+      "bytes": 167
+    },
+    {
+      "path": "validation/focused-01/export-run.log",
+      "sha256": "7b5b77b50dcba60c7e409b6be62260bbcf5bf5e320e860299aa22e5559a18aba",
+      "bytes": 1146
+    },
+    {
+      "path": "validation/focused-01/flow-build-02.log",
+      "sha256": "3221d9839cc6f259f47edc06eb56d2b9d43ece2b79c8f86474f9f43171f16436",
+      "bytes": 411
+    },
+    {
+      "path": "validation/focused-01/flow-build-03.log",
+      "sha256": "eaaf27aa94858cf0eb2f29bd0562b7198c488afe29f8fe926cbb17712ae561ef",
+      "bytes": 411
+    },
+    {
+      "path": "validation/focused-01/flow-build-04.log",
+      "sha256": "6ab67dbd8b404ddfda30352d5abd188090d8ea89d9d6d8ad01351eec6d05d30c",
+      "bytes": 411
+    },
+    {
+      "path": "validation/focused-01/flow-build-05.log",
+      "sha256": "6c3cc1e7542eea82ee3647b577f75c0421871e5519de6f1007888e0d343c0901",
+      "bytes": 411
+    },
+    {
+      "path": "validation/focused-01/flow-build.log",
+      "sha256": "04760760a58cd3ba73778e77b24e82ef6304bdbedd9adcb34e43b7bf4609b4f6",
+      "bytes": 1384
+    },
+    {
+      "path": "validation/focused-01/flow-run-02.log",
+      "sha256": "60dc6ab908a869da7864f47fa1cf5d9563f69c56c242266ce0288931178a3eca",
+      "bytes": 1322
+    },
+    {
+      "path": "validation/focused-01/flow-run-03.log",
+      "sha256": "f22721063416f69525041e0a5d796695c298f014b93ac6f0d87ecc2e72e198b9",
+      "bytes": 1253
+    },
+    {
+      "path": "validation/focused-01/flow-run-04.log",
+      "sha256": "28f04d0c00ca7eea6fa048205849b8b058a318b1a3137de2ef07fb51b7018102",
+      "bytes": 56
+    },
+    {
+      "path": "validation/focused-01/flow-run.log",
+      "sha256": "e27cff78a4d9e6d33d4728b9cf2986bff4f927cfde87dbe572102a334ca6d801",
+      "bytes": 1315
+    },
+    {
+      "path": "validation/impl-notes.md",
+      "sha256": "34563d086036a57c259f4667cf7713e9e65b3d4e4c54e9821a36ca55456f3712",
+      "bytes": 1291
+    },
+    {
+      "path": "validation/restore-host.log",
+      "sha256": "82ed001d68ca166d22ed1b32ce42303448b5e5edd34c196fc93706d0f49e61d2",
+      "bytes": 206
+    },
+    {
+      "path": "validation/review-notes.md",
+      "sha256": "0ba6be7d0b66cb7cc52665b63baafe105118fda5d9a19e2c300f2ba07ee472cd",
+      "bytes": 1746
+    },
+    {
+      "path": "validation/runs/20261012T142031671Z-64a73922c3f7488ab664b6a670c83e8e/receipt.json",
+      "sha256": "1bba815123191af1220de653d8558b627d913bd15d93d5b4a4fec6780d3e2bc9",
+      "bytes": 1694
+    },
+    {
+      "path": "validation/runs/20261012T142400065Z-f40de972e3fb4883bed328087bb37762/receipt.json",
+      "sha256": "b40c8f8c32ce26d6317d4fb323d2629713f56b566c80d45c6972ae861acbda55",
+      "bytes": 1728
+    },
+    {
+      "path": "validation/runs/20261012T142456763Z-c8efdf85af0e4aaf9e7d5f8f43301a0c/campfire-native-blocker.json",
+      "sha256": "edad01a1b225d52b5ff378c3f254c6ee7c49de82e831951a1524255a1164eefa",
+      "bytes": 159
+    },
+    {
+      "path": "validation/runs/20261012T142456763Z-c8efdf85af0e4aaf9e7d5f8f43301a0c/pure-native/O0/owning-stack-native.ll",
+      "sha256": "23c76bd7eaa4004a95f454e6e84b77378bbbb909a59a0d277573cd5c565ca551",
+      "bytes": 157498
+    },
+    {
+      "path": "validation/runs/20261012T142456763Z-c8efdf85af0e4aaf9e7d5f8f43301a0c/pure-native/O2/owning-stack-native.ll",
+      "sha256": "23c76bd7eaa4004a95f454e6e84b77378bbbb909a59a0d277573cd5c565ca551",
+      "bytes": 157498
+    },
+    {
+      "path": "validation/runs/20261012T142456763Z-c8efdf85af0e4aaf9e7d5f8f43301a0c/receipt.json",
+      "sha256": "b14ca9b61b7f39ea42e6b9f3e45645be9d83e341f7b9d078968aa7c38a597cac",
+      "bytes": 499
+    },
+    {
+      "path": "validation/runs/20261012T144751391Z-0ddec5f81c214c569138d43f9d173442/campfire-native-blocker.json",
+      "sha256": "edad01a1b225d52b5ff378c3f254c6ee7c49de82e831951a1524255a1164eefa",
+      "bytes": 159
+    },
+    {
+      "path": "validation/runs/20261012T144751391Z-0ddec5f81c214c569138d43f9d173442/pure-native/O0/owning-stack-native.ll",
+      "sha256": "23c76bd7eaa4004a95f454e6e84b77378bbbb909a59a0d277573cd5c565ca551",
+      "bytes": 157498
+    },
+    {
+      "path": "validation/runs/20261012T144751391Z-0ddec5f81c214c569138d43f9d173442/pure-native/O2/owning-stack-native.ll",
+      "sha256": "23c76bd7eaa4004a95f454e6e84b77378bbbb909a59a0d277573cd5c565ca551",
+      "bytes": 157498
+    },
+    {
+      "path": "validation/runs/20261012T144751391Z-0ddec5f81c214c569138d43f9d173442/receipt.json",
+      "sha256": "9366c3fb66388bf2321a9d69f27ed9656584df8b523bd56690ef2f0cdf37bed6",
+      "bytes": 499
+    },
+    {
+      "path": "validation/shared/.agentlang/campfire-http-242/auth-order/runs/20261012T144817956Z-70f9ba33c70748ccaaef3aca70abdf87/run-receipt.json",
+      "sha256": "a3c687e939f54ea760aca609749614e40b726c1a9ff84da85863c0ba42c60552",
+      "bytes": 404
+    },
+    {
+      "path": "validation/shared/.agentlang/campfire-http-242/auth-order/runs/20261012T144817956Z-70f9ba33c70748ccaaef3aca70abdf87/source-hashes.json",
+      "sha256": "514f95edb3a58e14ead0d7717afaff8b0c928301fc3a16da54b2a3e24eb87f4c",
+      "bytes": 785
+    },
+    {
+      "path": "validation/shared/.agentlang/campfire-logout-245/http-tests/runs/20261012T144829354Z-12fa0a484f4947baa5cb52d325544f34/http-transcript.jsonl",
+      "sha256": "4c737238eebde21edd52937f770ca376d7174933bf70aad23a1c3b9f68a4e90a",
+      "bytes": 188710
+    },
+    {
+      "path": "validation/shared/.agentlang/campfire-logout-245/http-tests/runs/20261012T144829354Z-12fa0a484f4947baa5cb52d325544f34/provider-traces.jsonl",
+      "sha256": "ee4a99252188761ed787f15f5e70f6b0abc7103ddf25898785fd364befeb7bdd",
+      "bytes": 25052
+    },
+    {
+      "path": "validation/shared/.agentlang/campfire-logout-245/http-tests/runs/20261012T144829354Z-12fa0a484f4947baa5cb52d325544f34/receipt.json",
+      "sha256": "db84b91228f349a982ea28fbb7c56ab98c14e10c8d45c853f2481bc6e64b8a47",
+      "bytes": 6391
+    }
+  ],
+  "memberCount": 138,
+  "archive": "evidence.zip",
+  "baselineRevision": "7f659f35f0fd04e6309add3d54d30f5ce415d5e5",
+  "archiveSha256": "b593279874a6080fe01b74755494977a94f2784f7bc5d0bc56ba38b4bf8d92f4",
+  "sourceCount": 79,
+  "scope": "Campfire interpreter storage/authentication, browser compatibility, public-login/authenticated loopback HTTP and pure application policies",
+  "formatVersion": 1,
+  "verifiedReadback": true
+}

@@ -6,7 +6,9 @@ User steering, 2026-10-12: prioritize **AOT Campfire and real endpoint performan
 Finish the bounded logout work already underway, then unblock the owning native
 backend and deliver real GET/HEAD room HTTP without F#/.NET in the release process.
 The interpreter is a reference, not the performance target. Follow
-[the native delivery plan](CAMPFIRE-AOT-PLAN.md). Earlier sequencing below is
+[the native delivery plan](CAMPFIRE-AOT-PLAN.md). The
+[verified entry export](../reports/246-verified-entry-ir-export.md) is the first
+compiler step; native host calls and full room HTTP remain required. Earlier sequencing below is
 historical where it conflicts with this priority; the full migration scope remains.
 
 As of 2026-10-11, the primary deliverable is a complete Campfire migration in

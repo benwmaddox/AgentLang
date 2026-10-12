@@ -7693,16 +7693,107 @@ test-file self {
         let outputs = [ TNamed "Reply" ]
         let bind name inputTypes outputTypes =
             engine.BindFlowEntryPoint(name, inputTypes, outputTypes)
+        let export name inputTypes outputTypes =
+            engine.ExportVerifiedFlowEntryPoint(name, inputTypes, outputTypes)
         let expectBindError expectedCode action =
             try
                 action () |> ignore
                 failwith $"expected bind diagnostic {expectedCode}"
             with
             | LanguageException diagnostic -> equal expectedCode diagnostic.Code "Flow entrypoint bind diagnostic"
+        let expectExportError expectedCode action =
+            try
+                action () |> ignore
+                failwith $"expected export diagnostic {expectedCode}"
+            with
+            | LanguageException diagnostic -> equal expectedCode diagnostic.Code "Flow entrypoint export diagnostic"
+        let sourceSpan revision =
+            let source =
+                dispatch engine "source" [ "word", jstr "app.lookup" ]
+                |> expectOk "inspect exact committed source for export metadata"
+                |> fun response -> response["data"].GetValue<string>()
+            let description =
+                dispatch engine "describe" [ "word", jstr "app.lookup" ]
+                |> expectOk "inspect committed source location for export metadata"
+                |> fun response -> response["data"]
+            equal revision (description["revision"].GetValue<int>()) "export source metadata revision"
+            let file = description["source"].GetValue<string>()
+            FlowParser.parseWordWithVersion 2 file source
+            |> Result.defaultWith (fun diagnostic -> failwith $"parse committed source for export metadata: {diagnostic.Code}: {diagnostic.Message}")
+            |> fun word -> word.Span
+        let assertExportSnapshot label expectedRevision expectedSpan (verifiedBody: VerifiedIrBody) =
+            let body = VerifiedIrBody.inspect verifiedBody
+            let programHandle = VerifiedIrBody.program verifiedBody
+            let program = VerifiedIrProgram.inspect programHandle
+            equal "<flow-entrypoint:app.lookup>" body.BodyName $"{label} execution name"
+            check (VerifiedIrProgram.isBackendExecutable programHandle) $"{label} carries compiler/backend authority"
+            let call, site =
+                match body.BodyBlock.Code with
+                | [ instruction ] ->
+                    match instruction.Operation with
+                    | IrOperation.Call resolved -> resolved, instruction.Site
+                    | operation -> failwith $"{label} should contain one direct call, got {operation}"
+                | instructions -> failwith $"{label} should contain one direct call, got {instructions.Length} instructions"
+            equal "app.lookup" call.ResolvedName $"{label} resolved target name"
+            let ownerId =
+                match call.ResolvedTarget with
+                | UserWordTarget(identity, revision) ->
+                    equal expectedRevision revision $"{label} exact target revision"
+                    identity
+                | target -> failwith $"{label} should retain a committed user-word target, got {target}"
+            let target =
+                program.FunctionsById.TryFind ownerId
+                |> Option.defaultWith (fun () -> failwith $"{label} target identity is absent from the retained program")
+            equal "app.lookup" target.FunctionName $"{label} target identity name"
+            equal expectedRevision target.FunctionRevision $"{label} retained function revision"
+            equal target.InputTypes body.BodyInputTypes $"{label} exact compiled input signature"
+            equal target.OutputTypes body.BodyOutputTypes $"{label} exact compiled output signature"
+            let source =
+                body.BodySourceMap.TryFind site
+                |> Option.defaultWith (fun () -> failwith $"{label} direct call has no source metadata")
+            equal None source.SiteOwner $"{label} detached call source owner"
+            equal "call" source.SourceKind $"{label} authored source kind"
+            equal expectedSpan source.SiteSpan $"{label} exact Flow source span"
+            programHandle
         expectBindError "FLOW_ENTRYPOINT_SIGNATURE_MISMATCH" (fun () -> bind "app.lookup" [ TString; TOption(TNamed "Email") ] outputs)
         expectBindError "FLOW_ENTRYPOINT_SIGNATURE_MISMATCH" (fun () -> bind "app.lookup" inputs [ TString ])
         expectBindError "FLOW_ENTRYPOINT_NOT_COMMITTED" (fun () -> bind "app.candidate" [ TInt ] [ TInt ])
         expectBindError "FLOW_ENTRYPOINT_NOT_FLOW_AUTHORED" (fun () -> bind "host.email.lookup" definition.Inputs definition.Outputs)
+        expectExportError "FLOW_ENTRYPOINT_NAME_INVALID" (fun () -> export "" inputs outputs)
+        expectExportError "FLOW_ENTRYPOINT_SIGNATURE_INVALID" (fun () -> export "app.lookup" Unchecked.defaultof<LangType list> outputs)
+        expectExportError "FLOW_ENTRYPOINT_SIGNATURE_INVALID" (fun () -> export "app.lookup" inputs Unchecked.defaultof<LangType list>)
+        expectExportError "FLOW_ENTRYPOINT_SIGNATURE_INVALID" (fun () -> export "app.lookup" [ Unchecked.defaultof<LangType> ] outputs)
+        expectExportError "FLOW_ENTRYPOINT_SIGNATURE_INVALID" (fun () -> export "app.lookup" [ TVar "entry" ] outputs)
+        expectExportError "FLOW_ENTRYPOINT_WORD_UNKNOWN" (fun () -> export "missing.entry" [] [])
+        expectExportError "FLOW_ENTRYPOINT_SIGNATURE_MISMATCH" (fun () -> export "app.lookup" [ TString; TOption(TNamed "Email") ] outputs)
+        expectExportError "FLOW_ENTRYPOINT_SIGNATURE_MISMATCH" (fun () -> export "app.lookup" inputs [ TString ])
+        expectExportError "FLOW_ENTRYPOINT_NOT_COMMITTED" (fun () -> export "app.candidate" [ TInt ] [ TInt ])
+        expectExportError "FLOW_ENTRYPOINT_NOT_FLOW_AUTHORED" (fun () -> export "host.email.lookup" definition.Inputs definition.Outputs)
+        let callsBeforeExport = providerCalls, testFactoryCalls, testProviderCalls
+        let descriptionBeforeExport =
+            dispatch engine "describe" [ "word", jstr "app.lookup" ]
+            |> expectOk "capture committed entrypoint metadata before export"
+            |> fun response -> response["data"].ToJsonString()
+        let initialSpan = sourceSpan 1
+        let exportedBody = export "app.lookup" inputs outputs
+        let exportedProgram = exportedBody |> assertExportSnapshot "exported v1" 1 initialSpan
+        equal callsBeforeExport (providerCalls, testFactoryCalls, testProviderCalls) "export does not invoke production or attached-test providers"
+        let descriptionAfterExport =
+            dispatch engine "describe" [ "word", jstr "app.lookup" ]
+            |> expectOk "inspect committed entrypoint metadata after export"
+            |> fun response -> response["data"].ToJsonString()
+        equal descriptionBeforeExport descriptionAfterExport "export does not mutate committed dictionary metadata"
+        let exportedCatalog = VerifiedIrProgram.hostOperationContracts exportedProgram
+        equal 1 exportedCatalog.Count "export retains the exact effectful host-operation catalog"
+        let exportedHost = exportedCatalog[operationId]
+        equal definition.WordName exportedHost.OperationName "export retains the host-operation name"
+        equal (Set.singleton IrEffect.DatabaseRead) exportedHost.OperationEffects "export retains the host-operation effect contract"
+        try
+            VerifiedIrProgram.requireNoHostOperations exportedProgram
+            failwith "native backend preflight unexpectedly accepted an exported host operation"
+        with
+        | LanguageException diagnostic -> equal "IR_NATIVE_HOST_OPERATION_UNSUPPORTED" diagnostic.Code "exported host operation remains unsupported by native backends"
+        equal callsBeforeExport (providerCalls, testFactoryCalls, testProviderCalls) "backend preflight over exported IR does not invoke providers"
         let entryPoint = bind "app.lookup" inputs outputs
         dispatch engine "task.begin" [ "goal", jstr "exercise typed Flow entrypoint input and task logging boundaries" ]
         |> expectOk "begin task before direct entrypoint invocation"
@@ -7777,6 +7868,9 @@ test-file self {
         dispatch engine "replace-word" [ "word", jstr "app.lookup" ]
         |> expectOk "commit the replacement while retaining the original opaque handle"
         |> ignore
+        assertExportSnapshot "pinned exported v1 after replacement" 1 initialSpan exportedBody |> ignore
+        let replacementSpan = sourceSpan 2
+        export "app.lookup" inputs outputs |> assertExportSnapshot "new exported v2" 2 replacementSpan |> ignore
         invokeAndCheck "frozen old snapshot after replacement" (Some validEmail) "v1"
         let rebound = bind "app.lookup" inputs outputs
         match rebound.Invoke(validInput (Some validEmail)) with
