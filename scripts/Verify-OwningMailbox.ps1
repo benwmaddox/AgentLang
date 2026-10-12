@@ -623,10 +623,11 @@ function Test-RefinementOracle($Bootstrap, $Fixture, [string]$Label) {
     $initialHash = [string](Get-Field $provenance 'initialFrozenSnapshotSha256')
     $firstRunId = [string](Get-Field $firstEvidence 'runId')
     $firstEvidencePath = [string](Get-Field $firstEvidence 'relativePath')
-    # Milestone 206 changes only module/layout ABI expectations and labels.
+    # The native-list milestone changes the layout ABI expectation and labels.
     # Historical post-execution oracle corrections above remain unchanged.
     $historicalFixtureHash = 'A22BB448EE864713903D5EE7946C785CD7C8978CF54DA02E0F2E0B86911CBBB1'
-    $expectedFinalFixtureHash = '6965D1F3684BB2B94C4E40B390CA1B0ECDC9C50EFB1E01AF30874126AE4D92E9'
+    $expectedAbi4FixtureHash = '6965D1F3684BB2B94C4E40B390CA1B0ECDC9C50EFB1E01AF30874126AE4D92E9'
+    $expectedFinalFixtureHash = 'DD6D91207390763BD2886917B16F9E3315E0CF6DE3F6A3DEC7005B28C52AA47B'
     $actualFixtureHash = (Get-FileHash -LiteralPath $script:refinementsFixturePath -Algorithm SHA256).Hash.ToUpperInvariant()
     $expectedPriorHash = $initialHash
     $correctionKinds = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
@@ -664,12 +665,17 @@ function Test-RefinementOracle($Bootstrap, $Fixture, [string]$Label) {
         if ($hasFollowingCorrection) { $expectedPriorHash = $afterHash }
     }
     $lastCorrectionAfterHash = if ($corrections.Count -gt 0) { [string](Get-Field $corrections[$corrections.Count - 1] 'afterFixtureSha256') } else { '' }
+    $layoutTransition = Get-Field $provenance 'layoutAbiTransition'
     $provenanceOkay = $provenanceOkay -and
         $correctionKinds.Contains('diagnostic-code-classification') -and
         $correctionKinds.Contains('copy-accounting') -and
         [string]::IsNullOrWhiteSpace($lastCorrectionAfterHash) -and
+        [string](Get-Field $layoutTransition 'fromLayoutAbiVersion') -ceq '4' -and
+        [string](Get-Field $layoutTransition 'toLayoutAbiVersion') -ceq '5' -and
+        [string](Get-Field $layoutTransition 'priorFixtureSha256') -ceq $expectedAbi4FixtureHash -and
+        [string](Get-Field $layoutTransition 'historicalCorrectionChainFinalSha256Preserved') -ceq $expectedAbi4FixtureHash -and
         $actualFixtureHash -ceq $expectedFinalFixtureHash
-    Add-Check "$Label fixture provenance links the initial freeze and corrections to the pinned current fixture bytes" $provenanceOkay ([ordered]@{ frozenBeforeNativeExecution = Get-Field $Fixture 'frozenBeforeNativeExecution'; initialFrozenSnapshotSha256 = $initialHash; terminalCorrectionPriorSha256 = $expectedPriorHash; historicalFixtureSha256 = $historicalFixtureHash; abiTransition = '206 module ABI 2 / layout ABI 4; value, step and copy oracles unchanged'; actualFixtureSha256 = $actualFixtureHash; expectedFixtureSha256 = $expectedFinalFixtureHash; provenance = $provenance })
+    Add-Check "$Label fixture provenance preserves the ABI4 correction-chain baseline and pins the ABI5 transition bytes" $provenanceOkay ([ordered]@{ frozenBeforeNativeExecution = Get-Field $Fixture 'frozenBeforeNativeExecution'; initialFrozenSnapshotSha256 = $initialHash; terminalCorrectionPriorSha256 = $expectedPriorHash; historicalFixtureSha256 = $historicalFixtureHash; abi4FixtureSha256 = $expectedAbi4FixtureHash; abiTransition = 'module ABI 2, stack ABI 2, and descriptor sizes unchanged; layout ABI 4 to 5'; actualFixtureSha256 = $actualFixtureHash; expectedFixtureSha256 = $expectedFinalFixtureHash; provenance = $provenance })
 
     $oracle = Get-Field $Bootstrap 'sourceDerivedRefinementOracle'
     $expected = Get-Field $Fixture 'sourceDerivedStepOracle'
@@ -1272,6 +1278,62 @@ try {
     $fixture = Read-JsonFile $fixturePath
     $sumsFixture = Read-JsonFile $sumsFixturePath
     $refinementsFixture = Read-JsonFile $refinementsFixturePath
+    $baseTransition = Get-Field (Get-Field $fixture 'oracleProvenance') 'layoutAbiTransition'
+    $sumTransition = Get-Field (Get-Field $sumsFixture 'oracleProvenance') 'layoutAbiTransition'
+    $refinementTransition = Get-Field (Get-Field $refinementsFixture 'oracleProvenance') 'layoutAbiTransition'
+    $layoutTransitionsPassed =
+        [int](Get-Field $fixture 'layoutAbiVersion') -eq 5 -and
+        [int](Get-Field (Get-Field $sumsFixture 'abi') 'layoutAbiVersion') -eq 5 -and
+        [int](Get-Field $refinementsFixture 'layoutAbiVersion') -eq 5 -and
+        [int](Get-Field $fixture 'moduleAbiVersion') -eq 2 -and
+        [int](Get-Field $sumsFixture.abi 'moduleAbiVersion') -eq 2 -and
+        [int](Get-Field $refinementsFixture 'moduleAbiVersion') -eq 2 -and
+        [int](Get-Field $baseTransition 'moduleAbiVersionUnchanged') -eq 2 -and
+        [int](Get-Field $sumTransition 'moduleAbiVersionUnchanged') -eq 2 -and
+        [int](Get-Field $fixture 'moduleStructSizeBytes') -eq 144 -and
+        [int](Get-Field $sumsFixture.abi 'moduleStructSizeBytes') -eq 144 -and
+        [int](Get-Field $baseTransition 'contextAbiVersionUnchanged') -eq 2 -and
+        [int](Get-Field $sumTransition 'contextAbiVersionUnchanged') -eq 2 -and
+        [int](Get-Field $refinementTransition 'contextAbiVersionUnchanged') -eq 2 -and
+        [int](Get-Field $baseTransition 'stackAbiVersionUnchanged') -eq 2 -and
+        [int](Get-Field $sumTransition 'stackAbiVersionUnchanged') -eq 2 -and
+        [int](Get-Field $refinementsFixture 'stackAbiVersion') -eq 2 -and
+        [int](Get-Field $sumsFixture.abi 'stackAbiVersion') -eq 2 -and
+        [int](Get-Field $baseTransition 'fromLayoutAbiVersion') -eq 4 -and [int](Get-Field $baseTransition 'toLayoutAbiVersion') -eq 5 -and
+        [int](Get-Field $sumTransition 'fromLayoutAbiVersion') -eq 4 -and [int](Get-Field $sumTransition 'toLayoutAbiVersion') -eq 5 -and
+        [int](Get-Field $refinementTransition 'fromLayoutAbiVersion') -eq 4 -and [int](Get-Field $refinementTransition 'toLayoutAbiVersion') -eq 5 -and
+        [string](Get-Field $baseTransition 'priorFixtureSha256') -ceq '7349F579B00F524AE614E6688B14CEBC659962B3317B1961E9E76B50B5BE874A' -and
+        [string](Get-Field $sumTransition 'priorFixtureSha256') -ceq 'ED035CF89B0BE6D7B4E530E652D81BE39E107B96810ECFD504E04FA147FA75FD' -and
+        [string](Get-Field $refinementTransition 'priorFixtureSha256') -ceq '6965D1F3684BB2B94C4E40B390CA1B0ECDC9C50EFB1E01AF30874126AE4D92E9' -and
+        [int](Get-Field $baseTransition 'moduleStructSizeBytesUnchanged') -eq 144 -and
+        [int](Get-Field $baseTransition 'typeDescriptorSizeBytesUnchanged') -eq 36 -and
+        [int](Get-Field $baseTransition 'fieldDescriptorSizeBytesUnchanged') -eq 16 -and
+        [int](Get-Field $baseTransition 'layoutDescriptorSizeBytesUnchanged') -eq 40 -and
+        [int](Get-Field $sumTransition 'moduleStructSizeBytesUnchanged') -eq 144 -and
+        [int](Get-Field $sumTransition 'typeDescriptorSizeBytesUnchanged') -eq 36 -and
+        [int](Get-Field $sumTransition 'fieldDescriptorSizeBytesUnchanged') -eq 16 -and
+        [int](Get-Field $sumTransition 'layoutDescriptorSizeBytesUnchanged') -eq 40 -and
+        [int](Get-Field $refinementTransition 'moduleStructSizeBytesUnchanged') -eq 144 -and
+        [int](Get-Field $refinementTransition 'typeDescriptorSizeBytesUnchanged') -eq 36 -and
+        [int](Get-Field $refinementTransition 'fieldDescriptorSizeBytesUnchanged') -eq 16 -and
+        [int](Get-Field $refinementTransition 'layoutDescriptorSizeBytesUnchanged') -eq 40 -and
+        [int](Get-Field $refinementTransition 'moduleAbiVersionUnchanged') -eq 2 -and
+        [int](Get-Field $refinementTransition 'stackAbiVersionUnchanged') -eq 2 -and
+        (Get-Field $baseTransition 'valueStepAndCopyOraclesChanged') -eq $false -and
+        (Get-Field $sumTransition 'serializedValueStepAndCopyOraclesChanged') -eq $false -and
+        (Get-Field $refinementTransition 'valueStepAndCopyOraclesChanged') -eq $false
+    Add-Check 'all owning-mailbox fixtures pin layout ABI 5 and preserve module, stack and descriptor ABI sizes' $layoutTransitionsPassed ([ordered]@{ layoutAbiVersions = @((Get-Field $fixture 'layoutAbiVersion'), (Get-Field (Get-Field $sumsFixture 'abi') 'layoutAbiVersion'), (Get-Field $refinementsFixture 'layoutAbiVersion')); transitions = @($baseTransition, $sumTransition, $refinementTransition) })
+    $currentFixtureHashes = @(
+        (Get-Hash $fixturePath),
+        (Get-Hash $sumsFixturePath),
+        (Get-Hash $refinementsFixturePath)
+    )
+    $expectedCurrentFixtureHashes = @(
+        '35d424914ea2c43198f6a004e46d2053c9acbb48f9abe5b191d400412c9121ef',
+        'ddd86cbd139cb678a25960ac74b09f154ccf0ab170ddafcc31c8b362f20c8859',
+        'dd6d91207390763bd2886917b16f9e3315e0cf6de3f6a3dec7005b28c52aa47b'
+    )
+    Add-Check 'base, sums, and refinements fixtures match the explicitly transitioned ABI5 byte pins' (($currentFixtureHashes -join ',') -ceq ($expectedCurrentFixtureHashes -join ',')) ([ordered]@{ expected = $expectedCurrentFixtureHashes; actual = $currentFixtureHashes })
     $report.sumsFixture = $sumsFixturePath
     foreach ($inputPath in $sourceInputPaths) {
         if (-not (Test-Path -LiteralPath $inputPath -PathType Leaf)) { throw "Required acceptance input is missing: $inputPath" }

@@ -22,13 +22,26 @@
         "case": "large request returned output descriptors",
         "correction": "Count callback-returned descriptors before publication: initialize 1 + begin 2 + bank-commit-failed resume 1 + retry resume 1 = 5, including the successful callback output whose bank commit fails."
       }
-    ]
+    ],
+    "layoutAbiTransition": {
+      "fromLayoutAbiVersion": 4,
+      "toLayoutAbiVersion": 5,
+      "priorFixtureSha256": "7349F579B00F524AE614E6688B14CEBC659962B3317B1961E9E76B50B5BE874A",
+      "moduleAbiVersionUnchanged": 2,
+      "contextAbiVersionUnchanged": 2,
+      "stackAbiVersionUnchanged": 2,
+      "moduleStructSizeBytesUnchanged": 144,
+      "typeDescriptorSizeBytesUnchanged": 36,
+      "fieldDescriptorSizeBytesUnchanged": 16,
+      "layoutDescriptorSizeBytesUnchanged": 40,
+      "valueStepAndCopyOraclesChanged": false
+    }
   },
   "sourceFixture": "experiments/AgentLang.OwningMailbox/owning-mailbox.flow",
   "abiHeader": "src/AgentLang.Llvm/native/owning_mailbox_abi.h",
   "moduleAbiVersion": 2,
   "manifestFormatVersion": 1,
-  "layoutAbiVersion": 4,
+  "layoutAbiVersion": 5,
   "typeDescriptorSizeBytes": 36,
   "moduleStructSizeBytes": 144,
   "associatedResumePointerOffsetBytes": 136,

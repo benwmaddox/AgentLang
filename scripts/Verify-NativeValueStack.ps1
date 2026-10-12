@@ -15,6 +15,7 @@ $repoTempDirectory = Join-Path $runDirectory 'compiler-temp'
 $evidencePath = Join-Path $runDirectory 'verification-evidence.json'
 $runnerProject = Join-Path $repo 'experiments/AgentLang.NativeValueStack/AgentLang.NativeValueStack.fsproj'
 $arenaLifetimeTestProject = Join-Path $repo 'tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj'
+$owningListsTestProject = Join-Path $repo 'tests/AgentLang.OwningLists.Tests/AgentLang.OwningLists.Tests.fsproj'
 $fixturePath = Join-Path $repo 'tests/fixtures/native-conformance/native-value-stack.json'
 $nativeSourceDirectory = Join-Path $repo 'src/AgentLang.Llvm/native'
 $nativeTestSource = Join-Path $nativeSourceDirectory 'owning_stack_runtime_test.c'
@@ -29,6 +30,9 @@ $nativeUnitRuns = [Collections.Generic.List[object]]::new()
 $sourceInputPaths = @(
     $runnerProject,
     $arenaLifetimeTestProject,
+    $owningListsTestProject,
+    (Join-Path $repo 'tests/AgentLang.OwningLists.Tests/Program.fs'),
+    (Join-Path $repo 'tests/AgentLang.OwningLists.Tests/owning-lists.flow'),
     (Join-Path $repo 'tests/AgentLang.Llvm.Tests/native_float_mailbox_test.c'),
     (Join-Path $repo 'experiments/AgentLang.NativeValueStack/Program.fs'),
     (Join-Path $repo 'experiments/AgentLang.NativeValueStack/value-stack.flow'),
@@ -248,7 +252,71 @@ try {
     $report.arenaLifetimeAssertions = [int]$arenaLifetimeAssertionMatch.Groups['count'].Value
     Add-Check 'arena-lifetime test suite exercised its static cases' ($report.arenaLifetimeAssertions -gt 0) ([ordered]@{ assertions = $report.arenaLifetimeAssertions })
 
-    $storageOracle = (Read-JsonFile $fixturePath).storageRuntimeTestOracle
+    $owningListsBuild = Invoke-CapturedProcess 'fresh-owning-lists-tests-build' $dotnet @(
+        'build', $owningListsTestProject, '--artifacts-path', $buildDirectory, '--configuration', 'Release', '--verbosity', 'minimal', '-p:NuGetAudit=true', '-m:1'
+    ) $repo
+    $report.owningListsTestBuild = $owningListsBuild
+    Require-ProcessSuccess $owningListsBuild 'fresh Release build of owning-list and integer-format parity tests'
+    $owningListsAssemblies = @(Get-ChildItem -LiteralPath (Join-Path $buildDirectory 'bin') -Recurse -File -Filter 'AgentLang.OwningLists.Tests.dll')
+    Add-Check 'fresh build emitted exactly one owning-lists test executable' ($owningListsAssemblies.Count -eq 1) ([ordered]@{ count = $owningListsAssemblies.Count })
+    $owningListsAssembly = [IO.Path]::GetFullPath($owningListsAssemblies[0].FullName)
+    Add-Check 'owning-lists test assembly is inside the fresh artifact root' $owningListsAssembly.StartsWith([IO.Path]::GetFullPath($buildDirectory), [StringComparison]::OrdinalIgnoreCase) $owningListsAssembly
+    $owningListsArtifactsPath = Join-Path $runDirectory 'owning-lists-artifacts'
+    $owningListsRun = Invoke-CapturedProcess 'owning-lists-o0-o2-parity-tests' $dotnet @($owningListsAssembly, '--artifacts-path', $owningListsArtifactsPath) $repo
+    $report.owningListsTestRun = $owningListsRun
+    Require-ProcessSuccess $owningListsRun 'typed owning-list and Int64 formatter O0/O2 conformance tests passed'
+    $owningListsSummaryMatch = [regex]::Match($owningListsRun.stdout, 'owning lists: (?<assertions>[0-9]+) assertions passed; (?<listCases>[0-9]+) list cases; (?<intValues>[0-9]+) int-format values; artifacts (?<artifacts>.+)')
+    Add-Check 'owning-lists CLI reports its assertions, case count, and integer-format corpus' $owningListsSummaryMatch.Success ([ordered]@{ stdout = $owningListsRun.stdout })
+    if ($owningListsSummaryMatch.Success) {
+        $owningListsReceiptPath = Join-Path $owningListsArtifactsPath 'receipt.json'
+        Add-Check 'owning-lists CLI wrote its source-pinned receipt' (Test-Path -LiteralPath $owningListsReceiptPath -PathType Leaf) $owningListsReceiptPath
+        if (Test-Path -LiteralPath $owningListsReceiptPath -PathType Leaf) {
+            $owningListsReceipt = Read-JsonFile $owningListsReceiptPath
+            $owningListsReceiptPassed = $owningListsReceipt.status -ceq 'pass' -and
+                $owningListsReceipt.owningLayoutAbiVersion -eq 5 -and
+                $owningListsReceipt.moduleAbiVersion -eq 2 -and
+                $owningListsReceipt.owningStackAbiVersion -eq 2 -and
+                $owningListsReceipt.listDescriptorKind -eq 10 -and
+                $owningListsReceipt.assertionCount -eq [int]$owningListsSummaryMatch.Groups['assertions'].Value -and
+                $owningListsReceipt.intFormattingValueCount -eq [int]$owningListsSummaryMatch.Groups['intValues'].Value -and
+                @($owningListsReceipt.sourcePins).Count -ge 8
+            Add-Check 'owning-lists receipt pins ABI versions, descriptor kind, source hashes and passing counts' $owningListsReceiptPassed $owningListsReceipt
+            $report.owningListsReceiptPath = $owningListsReceiptPath
+            $report.owningListsReceiptSha256 = Get-Hash $owningListsReceiptPath
+            $report.owningListsAssertions = [int]$owningListsReceipt.assertionCount
+        }
+    }
+
+    $nativeValueFixture = Read-JsonFile $fixturePath
+    $storageOracle = $nativeValueFixture.storageRuntimeTestOracle
+    $listOracle = $nativeValueFixture.listConformance
+    $layoutAbiFivePassed =
+        $nativeValueFixture.sumConformance.layoutAbiVersion -eq 5 -and
+        $nativeValueFixture.sumConformance.layoutSchemaVersion -eq 5 -and
+        $listOracle.layoutAbiVersion -eq 5 -and
+        $listOracle.layoutSchemaVersion -eq 5 -and
+        $listOracle.descriptorKind -eq 10 -and
+        $listOracle.abiCompatibility.abi4LayoutRejected -eq $true -and
+        $listOracle.abiCompatibility.contextAbiVersionUnchanged -eq 2 -and
+        $listOracle.abiCompatibility.moduleAbiVersionUnchanged -eq 2 -and
+        $listOracle.abiCompatibility.descriptorStructSizesUnchanged.typeDescriptorBytes -eq 36 -and
+        $listOracle.abiCompatibility.descriptorStructSizesUnchanged.fieldDescriptorBytes -eq 16 -and
+        $listOracle.abiCompatibility.descriptorStructSizesUnchanged.layoutDescriptorBytes -eq 40 -and
+        $storageOracle.abi.layoutAbiVersion -eq 5 -and
+        $storageOracle.abi.layoutSizeBytes -eq 40 -and
+        $storageOracle.abi.typeDescriptorSizeBytes -eq 36 -and
+        $storageOracle.abi.fieldDescriptorSizeBytes -eq 16 -and
+        $storageOracle.abi.contextSizeBytes -eq 176 -and
+        $listOracle.moduleAbiVersion -eq 2 -and
+        $listOracle.stackAbiVersion -eq 2 -and
+        (Get-Content -LiteralPath (Join-Path $nativeSourceDirectory 'owning_stack_runtime.h') -Raw) -match '(?m)^#define AL_OWNING_LAYOUT_ABI_VERSION 5u$' -and
+        (Get-Content -LiteralPath (Join-Path $nativeSourceDirectory 'owning_stack_runtime.h') -Raw) -match '(?m)^\s*AL_OWNING_TYPE_LIST = 10u$'
+    Add-Check 'fixture, emitted list descriptor and live native header pin owning layout ABI 5 while module, stack and descriptor shapes stay fixed' $layoutAbiFivePassed ([ordered]@{
+        sumConformance = [ordered]@{ layoutAbiVersion = $nativeValueFixture.sumConformance.layoutAbiVersion; layoutSchemaVersion = $nativeValueFixture.sumConformance.layoutSchemaVersion }
+        listConformance = $listOracle
+        storageAbi = $storageOracle.abi
+        nativeHeaderLayoutAbiFive = ((Get-Content -LiteralPath (Join-Path $nativeSourceDirectory 'owning_stack_runtime.h') -Raw) -match '(?m)^#define AL_OWNING_LAYOUT_ABI_VERSION 5u$')
+    })
     foreach ($optimizationName in @('O0', 'O2')) {
         $nativeUnitPath = Join-Path $nativeDirectory "owning_stack_runtime_test_$optimizationName.exe"
         $nativeBuild = Invoke-CapturedProcess "fresh-owning-stack-c-build-$optimizationName" $clang @(
@@ -1054,7 +1122,7 @@ try {
     Add-Check 'fixed three-way controls share one compiler-authorized program instance' ([bool]$experimentEvidence.fixedControlVerifiedProgramInstance) $experimentEvidence.backendScope
     Add-Check 'String interpreter and owning O0/O2 share one compiler-authorized program instance' ([bool]$experimentEvidence.stringVerifiedProgramInstance -and $experimentEvidence.stringBackendScope -match 'ABI3 String parity is unavailable') $experimentEvidence.stringBackendScope
     Add-Check 'String comparison records nested runtime Value input and no ABI3 String claim' ($experimentEvidence.stringBackendScope -match 'runtime Value input' -and $experimentEvidence.stringBackendScope -match 'ABI3 String parity is unavailable') $experimentEvidence.stringBackendScope
-    Add-Check 'Option/Result parity is scoped to owning layout ABI4 and excludes older sharedgraph ABI3' ([bool]$experimentEvidence.sumVerifiedProgramInstance -and $experimentEvidence.sumBackendScope -match 'owning-stack physical layout contract' -and $experimentEvidence.sumBackendScope -match 'older LlvmAot sharedgraph ABI3' -and $experimentEvidence.sumBackendScope -match 'does not claim Option/Result support') $experimentEvidence.sumBackendScope
+    Add-Check 'Option/Result parity is scoped to owning layout ABI5 and excludes older sharedgraph ABI3' ([bool]$experimentEvidence.sumVerifiedProgramInstance -and $experimentEvidence.sumBackendScope -match 'Layout ABI5' -and $experimentEvidence.sumBackendScope -match 'owning-stack physical layout contract' -and $experimentEvidence.sumBackendScope -match 'older LlvmAot sharedgraph ABI3' -and $experimentEvidence.sumBackendScope -match 'does not claim Option/Result support') $experimentEvidence.sumBackendScope
     Add-Check 'two-turn retained publication boundary is accurately scoped' ($experimentEvidence.turnBoundaryScope -match 'not a persistent native controller') $experimentEvidence.turnBoundaryScope
     Add-Check 'fixture declares no final memory-policy or throughput conclusion' (@($experimentEvidence.limitations | Where-Object { $_ -match 'No final memory-policy|throughput' }).Count -ge 1) $experimentEvidence.limitations
 

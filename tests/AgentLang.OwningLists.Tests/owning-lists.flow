@@ -1,0 +1,88 @@
+type MessageId : Int { }
+type RoomId : Int { }
+type UserId : Int { }
+
+record MessageRow {
+    field id: MessageId
+    field roomId: RoomId
+    field authorId: UserId
+    field body: Option<String>
+    field clientMessageId: Option<String>
+    field tags: List<String>
+}
+
+record MessagePage {
+    field rows: List<MessageRow>
+    field cursor: Option<List<String>>
+    field queryResult: Result<List<MessageRow>, String>
+}
+
+fn native.lists.echo-rows(rows: List<MessageRow>) -> List<MessageRow> {
+    effects none
+    rows
+}
+
+fn native.lists.empty-rows() -> List<MessageRow> {
+    effects none
+    list.empty<MessageRow>()
+}
+
+fn native.lists.echo-nested-strings(values: List<List<String>>) -> List<List<String>> {
+    effects none
+    values
+}
+
+fn native.lists.echo-pages(pages: List<MessagePage>) -> List<MessagePage> {
+    effects none
+    pages
+}
+
+fn native.lists.echo-units(values: List<Unit>) -> List<Unit> {
+    effects none
+    values
+}
+
+fn native.lists.int-format(value: Int) -> String {
+    effects none
+    int.to-string(value)
+}
+
+test native.lists.echo-rows/empty-list {
+    native.lists.echo-rows(list.empty<MessageRow>())
+    => value list.empty<MessageRow>()
+}
+
+test native.lists.empty-rows/empty-list {
+    native.lists.empty-rows()
+    => value list.empty<MessageRow>()
+}
+
+test native.lists.echo-nested-strings/empty-list {
+    native.lists.echo-nested-strings(list.empty<List<String>>())
+    => value list.empty<List<String>>()
+}
+
+test native.lists.echo-pages/empty-list {
+    native.lists.echo-pages(list.empty<MessagePage>())
+    => value list.empty<MessagePage>()
+}
+
+test native.lists.echo-units/empty-list {
+    native.lists.echo-units(list.empty<Unit>())
+    => value list.empty<Unit>()
+}
+
+test native.lists.int-format/zero {
+    native.lists.int-format(0)
+    => value "0"
+}
+
+test native.lists.int-format/negative-boundary {
+    native.lists.int-format(-9223372036854775808)
+    => value "-9223372036854775808"
+}
+
+test native.lists.int-format/positive-boundary {
+    native.lists.int-format(9223372036854775807)
+    => value "9223372036854775807"
+}

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AgentLang.Llvm\AgentLang.Llvm.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="owning-lists.flow" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\fixtures\native-conformance\native-value-stack.json" Link="native-value-stack.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

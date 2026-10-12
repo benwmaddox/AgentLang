@@ -136,7 +136,7 @@ static const char *const required_check_names[] = {
     "malformed active tag and payload through mailbox APIs preserve pending roots and token in every profile",
     "an invalid inactive Result alternative is rejected with scanner and controller output sentinels unchanged",
     "ordinary calls and matches report zero payload moves",
-    "Layout ABI is 4 and stack ABI is 2"};
+    "Layout ABI is 5 and stack ABI is 2"};
 
 static const char *const hex_unicode_initialize =
     "0000000000000000030000000000000041003dd842de0000";

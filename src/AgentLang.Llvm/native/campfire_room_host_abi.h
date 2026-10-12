@@ -10,7 +10,7 @@
  * UserId RoomId -> Result<Option<RoomRow>, DbError>, effect db.read.
  * provider_context is execution-scoped worker state, never a language value.
  * output is a borrowed writable arena suffix. Its representation uses owning
- * layout ABI4; the caller validates it before making it language-visible.
+ * layout ABI5; the caller validates it before making it language-visible.
  * Neither output nor provider_context may be retained beyond the call.
  * Return zero with an exact serialized extent, or nonzero for a boundary
  * failure. Database errors are serialized Result.Error values, not nonzero

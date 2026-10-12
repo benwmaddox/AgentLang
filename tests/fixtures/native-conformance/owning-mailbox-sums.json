@@ -7,12 +7,25 @@
     "derivation": "A String is an 8-byte header (UTF-16 unit count plus four reserved zero bytes), UTF-16LE content, and zero padding to an 8-byte extent. Chunk is a one-field record containing that standalone String encoding. Option and Result are an 8-byte little-endian tag followed by the active child's standalone encoding. State and Continuation are one-field records containing the complete inline sum encoding.",
     "independentPreExecutionReview": "Before any native execution, root review corrected the Z lifecycle State payload from 22 to 18 bytes and added the None-match empty-string literal (8 copied bytes) to the ERR resume formula. A second accounting review traced the final sequence: thirteen handler-dispatched lifecycle API calls, including the expected FAIL and retained-capacity failures, stage 168 bytes total; two malformed active-root attempts reject before handler dispatch, adding 0 staging bytes under RETURN and 16 under KEEP_ASSOCIATED because that policy stages the empty completion String before attached-root validation. A further required Error-arm round trip adds the second empty begin and resume call, yielding deep-copy total 872 bytes per policy. No native output was used.",
     "nativeOutputWasUsedToDeriveOrCorrectOracles": false,
-    "layoutIndexes": "The C runner receives layout indexes from the emitted bootstrap metadata, keyed by typeName and layoutIndex; the fixture contains no hardcoded descriptor index convention."
+    "layoutIndexes": "The C runner receives layout indexes from the emitted bootstrap metadata, keyed by typeName and layoutIndex; the fixture contains no hardcoded descriptor index convention.",
+    "layoutAbiTransition": {
+      "fromLayoutAbiVersion": 4,
+      "toLayoutAbiVersion": 5,
+      "priorFixtureSha256": "ED035CF89B0BE6D7B4E530E652D81BE39E107B96810ECFD504E04FA147FA75FD",
+      "moduleAbiVersionUnchanged": 2,
+      "contextAbiVersionUnchanged": 2,
+      "stackAbiVersionUnchanged": 2,
+      "moduleStructSizeBytesUnchanged": 144,
+      "typeDescriptorSizeBytesUnchanged": 36,
+      "fieldDescriptorSizeBytesUnchanged": 16,
+      "layoutDescriptorSizeBytesUnchanged": 40,
+      "serializedValueStepAndCopyOraclesChanged": false
+    }
   },
   "abi": {
     "moduleAbiVersion": 2,
     "moduleStructSizeBytes": 144,
-    "layoutAbiVersion": 4,
+    "layoutAbiVersion": 5,
     "stackAbiVersion": 2,
     "typeDescriptorSizeBytes": 36,
     "fieldDescriptorSizeBytes": 16,
@@ -254,7 +267,7 @@
     "malformed active tag and payload through mailbox APIs preserve pending roots and token in every profile",
     "an invalid inactive Result alternative is rejected with scanner and controller output sentinels unchanged",
     "ordinary calls and matches report zero payload moves",
-    "Layout ABI is 4 and stack ABI is 2"
+    "Layout ABI is 5 and stack ABI is 2"
   ],
   "limitations": [
     "This is a bounded mailbox integration fixture for one nominal record payload closure, not new language or runtime architecture.",

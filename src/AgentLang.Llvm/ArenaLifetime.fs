@@ -47,6 +47,7 @@ module internal ArenaLifetime =
 
     let private owningPrimitiveSet =
         set [ "add"; "subtract"; "multiply"; "divide"
+              "int.to-string"
               "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
               "equals"; "bool.and"; "bool.or"; "bool.not"
               "dup"; "drop"; "swap"; "string.concat"; "string.length" ]
@@ -194,9 +195,10 @@ module internal ArenaLifetime =
                 else
                     let prefix, inputs = pop 1 state.Stack
                     { state with Stack = prefix @ [ inputs.Head ] }
+            | IrOperation.ListEmpty _
             | IrOperation.OptionNone _ ->
-                // A sum is stored inline in the current arena region, even
-                // when its active case has no payload.
+                // Empty Lists and None sums allocate their inline root in the
+                // current arena region, even when they have no child payload.
                 { state with Stack = state.Stack @ [ Set.singleton currentRegion ] }
             | IrOperation.OptionSome _
             | IrOperation.ResultOk _
@@ -246,7 +248,6 @@ module internal ArenaLifetime =
             | IrOperation.WrapScalar _
             | IrOperation.UnwrapScalar _
             | IrOperation.MakeEnumCase _ -> unmodeled ()
-            | IrOperation.ListEmpty _
             | IrOperation.ListSingleton _
             | IrOperation.ListMap _
             | IrOperation.ListFilter _
@@ -261,7 +262,9 @@ module internal ArenaLifetime =
                 let taint = Set.union unknownOutputOrigins (unionOrigins inputs)
                 makeOutputs outputCount taint prefix retainedState
             match instruction.Operation with
-            | IrOperation.ListEmpty _ | IrOperation.OptionNone _ ->
+            | IrOperation.ListEmpty _ ->
+                invalidOp "Arena lifetime analysis routed a modeled ListEmpty through the unmodeled fallback."
+            | IrOperation.OptionNone _ ->
                 finishUnknown state.Stack [] 1
             | IrOperation.ListSingleton _ | IrOperation.OptionSome _
             | IrOperation.ResultOk _ | IrOperation.ResultError _ ->

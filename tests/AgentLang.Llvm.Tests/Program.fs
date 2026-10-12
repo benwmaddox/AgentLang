@@ -1600,7 +1600,7 @@ let private testOwningNominalIntSlice () =
                     16)
             check ($"{optimization} {label} exact nominal host roundtrip") (
                 result.Values = [ NamedValue("Meters", IntValue number); NamedValue("OrderId", IntValue number) ]
-                && result.LayoutSchemaVersion = 4
+                && result.LayoutSchemaVersion = 5
                 && result.RetainedBytesWritten = 16
                 && Convert.ToHexString(result.RetainedOutputBytes).ToLowerInvariant() = rawBytes + rawBytes)
 
@@ -1758,7 +1758,7 @@ let private testOwningNominalBoolSlice () =
             let values = [ NamedValue("BoolTag", BoolValue flag); NamedValue("PeerBoolTag", BoolValue flag) ]
             let actual = identity.Execute(values, 4096, 16)
             check ($"{optimization} {flag} exact-name nominal Bool host roundtrip") (
-                actual.Values = values && actual.LayoutSchemaVersion = 4
+                actual.Values = values && actual.LayoutSchemaVersion = 5
                 && actual.RetainedBytesWritten = 16
                 && Convert.ToHexString(actual.RetainedOutputBytes).ToLowerInvariant() = raw flag + raw flag)
 
@@ -1855,7 +1855,7 @@ let private testOwningCanonicalUnitSlice () =
             invokeRawOwningEntryForMetrics native Array.empty<byte> Array.empty<int>
         check ($"{optimization} canonical Unit and Option<Unit> values match the interpreter") (
             actual.Values = interpreted && actual.Values = expected
-            && actual.LayoutSchemaVersion = 4
+            && actual.LayoutSchemaVersion = 5
             && actual.RetainedBytesWritten = 32
             && Convert.ToHexString(actual.RetainedOutputBytes).ToLowerInvariant() = expectedBytes)
         check ($"{optimization} canonical Unit and Option<Unit> preserve instruction fuel") (
@@ -3593,7 +3593,7 @@ let private testOwningFloatSlice () =
             exactFloatBits directResult.Values interpretedDirect
             && directResult.RetainedBytesWritten = finiteValues.Length * 8
             && hex directResult.RetainedOutputBytes = finiteRawHex
-            && directResult.LayoutSchemaVersion = 4)
+            && directResult.LayoutSchemaVersion = 5)
         checkRawExecution
             (string optimization + " raw direct Float inputs preserve output bytes and fuel")
             direct

@@ -13,12 +13,13 @@
 
 #define AL_OWNING_STACK_ABI_VERSION 2u
 
-#define AL_OWNING_LAYOUT_ABI_VERSION 4u
+#define AL_OWNING_LAYOUT_ABI_VERSION 5u
 #define AL_OWNING_LAYOUT_DYNAMIC_U32 UINT32_MAX
 #define AL_OWNING_LAYOUT_MAX_DEPTH 64u
 #define AL_OWNING_LAYOUT_MAX_TYPES 4096u
 #define AL_OWNING_LAYOUT_MAX_FIELDS 65536u
-#define AL_OWNING_FLOAT_ASCII_CAPACITY 32u
+#define AL_OWNING_ASCII_CAPACITY 32u
+#define AL_OWNING_FLOAT_ASCII_CAPACITY AL_OWNING_ASCII_CAPACITY
 
 enum {
   AL_OWNING_TYPE_I64 = 1u,
@@ -29,7 +30,8 @@ enum {
   AL_OWNING_TYPE_ENUM = 6u,
   AL_OWNING_TYPE_OPTION = 7u,
   AL_OWNING_TYPE_RESULT = 8u,
-  AL_OWNING_TYPE_F64 = 9u
+  AL_OWNING_TYPE_F64 = 9u,
+  AL_OWNING_TYPE_LIST = 10u
 };
 
 enum { AL_OWNING_FIELD_ZERO_WIDTH = 1u };
@@ -232,7 +234,10 @@ int32_t al_owning_string_concat_write(
 int32_t al_owning_float_format(al_owning_stack_context *ctx, uint64_t bits,
                                uint8_t *ascii32, uint32_t *out_length,
                                uint32_t error_id);
-int32_t al_owning_float_string_write(
+int32_t al_owning_int_format(al_owning_stack_context *ctx, int64_t value,
+                             uint8_t *ascii32, uint32_t *out_length,
+                             uint32_t error_id);
+int32_t al_owning_ascii_string_write(
     al_owning_stack_context *ctx, uint32_t destination_offset,
     uint32_t destination_extent_bytes, const uint8_t *ascii,
     uint32_t ascii_length, uint32_t type_id, uint32_t error_id);

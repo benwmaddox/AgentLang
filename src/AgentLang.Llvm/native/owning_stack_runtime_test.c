@@ -33,14 +33,16 @@ _Static_assert(sizeof(al_owning_stack_event) == 40u,
                "ABI 1 event size changed");
 _Static_assert(offsetof(al_owning_stack_event, checksum) == 32u,
                "ABI 1 event checksum offset changed");
+_Static_assert(AL_OWNING_LAYOUT_ABI_VERSION == 5u,
+               "Layout ABI version changed");
 _Static_assert(sizeof(al_owning_type_descriptor) == 36u,
-               "Layout ABI 3 type descriptor size changed");
+               "Layout ABI 5 type descriptor size changed");
 _Static_assert(sizeof(al_owning_field_descriptor) == 16u,
-               "Layout ABI 3 field descriptor size changed");
+               "Layout ABI 5 field descriptor size changed");
 _Static_assert(sizeof(al_owning_value_size) == 8u,
-               "Layout ABI 3 value size result changed");
+               "Layout ABI 5 value size result changed");
 _Static_assert(sizeof(al_owning_field_location) == 12u,
-               "Layout ABI 3 field location result changed");
+               "Layout ABI 5 field location result changed");
 _Static_assert(
     offsetof(al_owning_type_descriptor, kind) == 0u &&
         offsetof(al_owning_type_descriptor, type_id) == 4u &&
@@ -51,20 +53,20 @@ _Static_assert(
         offsetof(al_owning_type_descriptor, minimum_payload_bytes) == 24u &&
         offsetof(al_owning_type_descriptor, minimum_extent_bytes) == 28u &&
         offsetof(al_owning_type_descriptor, case_count) == 32u,
-    "Layout ABI 3 type descriptor offsets changed");
+    "Layout ABI 5 type descriptor offsets changed");
 _Static_assert(offsetof(al_owning_field_descriptor, child_type_index) == 0u &&
                    offsetof(al_owning_field_descriptor, fixed_offset_bytes) ==
                        4u &&
                    offsetof(al_owning_field_descriptor, flags) == 8u &&
                    offsetof(al_owning_field_descriptor, reserved) == 12u,
-               "Layout ABI 3 field descriptor offsets changed");
+               "Layout ABI 5 field descriptor offsets changed");
 _Static_assert(offsetof(al_owning_value_size, payload_bytes) == 0u &&
                    offsetof(al_owning_value_size, extent_bytes) == 4u,
-               "Layout ABI 3 value size offsets changed");
+               "Layout ABI 5 value size offsets changed");
 _Static_assert(offsetof(al_owning_field_location, offset_bytes) == 0u &&
                    offsetof(al_owning_field_location, payload_bytes) == 4u &&
                    offsetof(al_owning_field_location, extent_bytes) == 8u,
-               "Layout ABI 3 field location offsets changed");
+               "Layout ABI 5 field location offsets changed");
 _Static_assert(AL_OWNING_LAYOUT_MAX_TYPES == 4096u,
                "Layout ABI type descriptor ceiling changed");
 _Static_assert(AL_OWNING_LAYOUT_MAX_FIELDS == 65536u,
@@ -73,17 +75,17 @@ _Static_assert(AL_OWNING_LAYOUT_MAX_FIELDS == 65536u,
 _Static_assert(sizeof(al_owning_stack_context) == 176u,
                "ABI 2 64-bit context size changed");
 _Static_assert(sizeof(al_owning_layout) == 40u,
-               "Layout ABI 3 layout descriptor size changed");
+               "Layout ABI 5 layout descriptor size changed");
 _Static_assert(offsetof(al_owning_layout, abi_version) == 0u,
-               "Layout ABI 3 version offset changed");
+               "Layout ABI 5 version offset changed");
 _Static_assert(offsetof(al_owning_layout, types) == 8u,
-               "Layout ABI 3 type pointer offset changed");
+               "Layout ABI 5 type pointer offset changed");
 _Static_assert(offsetof(al_owning_layout, type_count) == 16u,
-               "Layout ABI 3 type count offset changed");
+               "Layout ABI 5 type count offset changed");
 _Static_assert(offsetof(al_owning_layout, fields) == 24u,
-               "Layout ABI 3 field pointer offset changed");
+               "Layout ABI 5 field pointer offset changed");
 _Static_assert(offsetof(al_owning_layout, field_count) == 32u,
-               "Layout ABI 3 field count offset changed");
+               "Layout ABI 5 field count offset changed");
 _Static_assert(offsetof(al_owning_stack_context, stack_data) == 104u,
                "ABI 2 stack pointer offset changed");
 _Static_assert(offsetof(al_owning_stack_context, init_bitmap) == 112u,
@@ -390,6 +392,71 @@ static const al_owning_layout al_test_float_layout = {
     AL_TEST_FLOAT_LAYOUT_TYPE_COUNT, al_test_float_fields,
     (uint32_t)(sizeof(al_test_float_fields) /
                sizeof(al_test_float_fields[0]))};
+
+enum {
+  AL_TEST_LIST_INT = 0u,
+  AL_TEST_LIST_UNIT = 1u,
+  AL_TEST_LIST_STRING = 2u,
+  AL_TEST_LIST_EMPTY = 3u,
+  AL_TEST_LIST_OPTION_STRING = 4u,
+  AL_TEST_LIST_ROW = 5u,
+  AL_TEST_LIST_OF_INT = 6u,
+  AL_TEST_LIST_OF_STRING = 7u,
+  AL_TEST_LIST_OF_OPTION = 8u,
+  AL_TEST_LIST_OF_ROW = 9u,
+  AL_TEST_LIST_OF_UNIT = 10u,
+  AL_TEST_LIST_OF_EMPTY = 11u,
+  AL_TEST_LIST_OF_LIST_INT = 12u,
+  AL_TEST_LIST_TYPE_COUNT = 13u,
+  AL_TEST_LIST_ERROR_ID = 222u
+};
+
+static const al_owning_type_descriptor al_test_list_types[] = {
+    {AL_OWNING_TYPE_I64, 901u, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_UNIT, 902u, 0u, 0u, 8u, 8u, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_STRING, 903u, 0u, 0u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_RECORD, 904u, 0u, 0u, 0u, 8u, 0u, 8u, 0u},
+    {AL_OWNING_TYPE_OPTION, 905u, 0u, 2u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 2u},
+    {AL_OWNING_TYPE_RECORD, 906u, 2u, 3u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 16u, 16u,
+     0u},
+    {AL_OWNING_TYPE_LIST, 907u, 5u, 1u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_LIST, 908u, 6u, 1u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_LIST, 909u, 7u, 1u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_LIST, 910u, 8u, 1u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_LIST, 911u, 9u, 1u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_LIST, 912u, 10u, 1u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u},
+    {AL_OWNING_TYPE_LIST, 913u, 11u, 1u,
+     AL_OWNING_LAYOUT_DYNAMIC_U32, AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 8u, 0u}};
+
+static const al_owning_field_descriptor al_test_list_fields[] = {
+    {AL_TEST_LIST_STRING, 8u, 0u, 0u},
+    {AL_OWNING_LAYOUT_DYNAMIC_U32, 8u, 0u, 0u},
+    {AL_TEST_LIST_INT, 0u, 0u, 0u},
+    {AL_TEST_LIST_OPTION_STRING, 8u, 0u, 0u},
+    {AL_TEST_LIST_EMPTY, AL_OWNING_LAYOUT_DYNAMIC_U32,
+     AL_OWNING_FIELD_ZERO_WIDTH, 0u},
+    {AL_TEST_LIST_INT, 8u, 0u, 0u},
+    {AL_TEST_LIST_STRING, 8u, 0u, 0u},
+    {AL_TEST_LIST_OPTION_STRING, 8u, 0u, 0u},
+    {AL_TEST_LIST_ROW, 8u, 0u, 0u},
+    {AL_TEST_LIST_UNIT, 8u, 0u, 0u},
+    {AL_TEST_LIST_EMPTY, 8u, 0u, 0u},
+    {AL_TEST_LIST_OF_INT, 8u, 0u, 0u}};
+
+static const al_owning_layout al_test_list_layout = {
+    AL_OWNING_LAYOUT_ABI_VERSION, al_test_list_types,
+    AL_TEST_LIST_TYPE_COUNT, al_test_list_fields,
+    (uint32_t)(sizeof(al_test_list_fields) /
+               sizeof(al_test_list_fields[0]))};
 
 typedef struct al_test_fixture {
   uint8_t raw[AL_TEST_DYNAMIC_STACK_CAPACITY + 2u * AL_TEST_GUARD_BYTES];
@@ -2220,15 +2287,15 @@ failed:
   return 0;
 }
 
-static int al_test_closed_enum_abi2_rejected(void) {
+static int al_test_closed_enum_abi4_rejected(void) {
   al_test_fixture fixture;
   al_owning_layout stale_layout = al_test_enum_layout;
   uint8_t enum_bytes[8] = {0u};
   uint32_t payload;
   uint32_t extent;
   al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
-  AL_CHECK(al_test_case_begin("closed_enum_abi2_rejected", &fixture));
-  stale_layout.abi_version = 2u;
+  AL_CHECK(al_test_case_begin("closed_enum_abi4_rejected", &fixture));
+  stale_layout.abi_version = 4u;
   AL_CHECK(al_owning_measure_external_value(
                &fixture.ctx, &stale_layout, AL_TEST_ENUM_LAYOUT_TAG,
                enum_bytes, sizeof(enum_bytes), 0u, AL_TEST_DYNAMIC_ERROR_ID,
@@ -3319,6 +3386,216 @@ failed:
   return 0;
 }
 
+static int al_test_list_external_measure(
+    const al_owning_layout *layout, uint32_t type_index, const uint8_t *bytes,
+    uint32_t byte_count, uint32_t source_offset, uint32_t expected_payload,
+    uint32_t expected_extent) {
+  al_test_fixture fixture;
+  uint32_t payload = UINT32_C(0xAABBCCDD);
+  uint32_t extent = UINT32_C(0x11223344);
+  int32_t result;
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  result = al_owning_measure_external_value(
+      &fixture.ctx, layout, type_index, bytes, byte_count, source_offset,
+      AL_TEST_LIST_ERROR_ID, &payload, &extent);
+  return result == 0 && fixture.ctx.status == AL_OWNING_STATUS_OK &&
+         payload == expected_payload && extent == expected_extent;
+}
+
+static int al_test_list_external_rejected(
+    const al_owning_layout *layout, uint32_t type_index, const uint8_t *bytes,
+    uint32_t byte_count, uint32_t source_offset) {
+  al_test_fixture fixture;
+  uint32_t payload = UINT32_C(0xAABBCCDD);
+  uint32_t extent = UINT32_C(0x11223344);
+  int32_t result;
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  result = al_owning_measure_external_value(
+      &fixture.ctx, layout, type_index, bytes, byte_count, source_offset,
+      AL_TEST_LIST_ERROR_ID, &payload, &extent);
+  return result != 0 && fixture.ctx.status != AL_OWNING_STATUS_OK &&
+         fixture.ctx.error_id == AL_TEST_LIST_ERROR_ID &&
+         payload == UINT32_C(0xAABBCCDD) && extent == UINT32_C(0x11223344);
+}
+
+static int al_test_list_layout_and_scanner(void) {
+  uint8_t empty_list[8] = {0u};
+  uint8_t integer_list[24] = {0u};
+  uint8_t unit_list[24] = {0u};
+  uint8_t empty_record_list[24] = {0u};
+  uint8_t option_list[40] = {0u};
+  uint8_t row_list[56] = {0u};
+  uint8_t nested_list[32] = {0u};
+  uint8_t truncated_list[12] = {0u};
+  uint8_t bad_header[8] = {0u};
+  uint8_t bad_count[8] = {0u};
+  uint8_t source_with_prefix[16] = {0u};
+  al_owning_type_descriptor bad_types[AL_TEST_LIST_TYPE_COUNT];
+  al_owning_field_descriptor bad_fields[
+      sizeof(al_test_list_fields) / sizeof(al_test_list_fields[0])];
+  al_owning_layout bad_layout = al_test_list_layout;
+  al_test_fixture fixture;
+  al_owning_stack_context *ctx;
+  uint8_t preserved_prefix[8] = {1u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
+  uint32_t output_payload;
+  uint32_t index;
+
+  al_test_write_u32_le(integer_list, 0u, 2u);
+  al_test_write_u64_le(integer_list, 8u, UINT64_C(41));
+  al_test_write_u64_le(integer_list, 16u, UINT64_C(42));
+  al_test_write_u32_le(unit_list, 0u, 2u);
+  al_test_write_u32_le(empty_record_list, 0u, 2u);
+  al_test_write_u32_le(option_list, 0u, 2u);
+  al_test_write_u64_le(option_list, 8u, UINT64_C(0));
+  al_test_write_u32_le(option_list, 16u, 1u);
+  option_list[24u] = (uint8_t)'x';
+  al_test_write_u64_le(option_list, 32u, UINT64_C(1));
+
+  al_test_write_u32_le(row_list, 0u, 2u);
+  al_test_write_u64_le(row_list, 8u, UINT64_C(17));
+  al_test_write_u64_le(row_list, 16u, UINT64_C(0));
+  al_test_write_u32_le(row_list, 24u, 1u);
+  row_list[32u] = (uint8_t)'x';
+  al_test_write_u64_le(row_list, 40u, UINT64_C(22));
+  al_test_write_u64_le(row_list, 48u, UINT64_C(1));
+
+  al_test_write_u32_le(nested_list, 0u, 1u);
+  al_test_write_u32_le(nested_list, 8u, 2u);
+  al_test_write_u64_le(nested_list, 16u, UINT64_C(51));
+  al_test_write_u64_le(nested_list, 24u, UINT64_C(52));
+  al_test_write_u32_le(truncated_list, 0u, 1u);
+  al_test_write_u32_le(bad_header, 4u, 1u);
+  al_test_write_u32_le(bad_count, 0u, UINT32_MAX);
+  al_test_write_u32_le(source_with_prefix, 8u, 0u);
+
+  AL_CHECK(al_test_list_external_measure(
+      &al_test_list_layout, AL_TEST_LIST_OF_INT, empty_list,
+      (uint32_t)sizeof(empty_list), 0u, 8u, 8u));
+  AL_CHECK(al_test_list_external_measure(
+      &al_test_list_layout, AL_TEST_LIST_OF_INT, integer_list,
+      (uint32_t)sizeof(integer_list), 0u, 24u, 24u));
+  AL_CHECK(al_test_list_external_measure(
+      &al_test_list_layout, AL_TEST_LIST_OF_UNIT, unit_list,
+      (uint32_t)sizeof(unit_list), 0u, 24u, 24u));
+  AL_CHECK(al_test_list_external_measure(
+      &al_test_list_layout, AL_TEST_LIST_OF_EMPTY, empty_record_list,
+      (uint32_t)sizeof(empty_record_list), 0u, 8u, 24u));
+  AL_CHECK(al_test_list_external_measure(
+      &al_test_list_layout, AL_TEST_LIST_OF_OPTION, option_list,
+      (uint32_t)sizeof(option_list), 0u, 34u, 40u));
+  AL_CHECK(al_test_list_external_measure(
+      &al_test_list_layout, AL_TEST_LIST_OF_ROW, row_list,
+      (uint32_t)sizeof(row_list), 0u, 50u, 56u));
+  AL_CHECK(al_test_list_external_measure(
+      &al_test_list_layout, AL_TEST_LIST_OF_LIST_INT, nested_list,
+      (uint32_t)sizeof(nested_list), 0u, 32u, 32u));
+  AL_CHECK(al_test_list_external_measure(
+      &al_test_list_layout, AL_TEST_LIST_OF_INT, source_with_prefix,
+      (uint32_t)sizeof(source_with_prefix), 8u, 8u, 8u));
+
+  AL_CHECK(al_test_list_external_rejected(
+      &al_test_list_layout, AL_TEST_LIST_OF_INT, source_with_prefix,
+      (uint32_t)sizeof(source_with_prefix), 1u));
+  AL_CHECK(al_test_list_external_rejected(
+      &al_test_list_layout, AL_TEST_LIST_OF_INT, bad_header,
+      (uint32_t)sizeof(bad_header), 0u));
+  AL_CHECK(al_test_list_external_rejected(
+      &al_test_list_layout, AL_TEST_LIST_OF_INT, bad_count,
+      (uint32_t)sizeof(bad_count), 0u));
+  AL_CHECK(al_test_list_external_rejected(
+      &al_test_list_layout, AL_TEST_LIST_OF_INT, truncated_list,
+      (uint32_t)sizeof(truncated_list), 0u));
+  AL_CHECK(al_test_list_external_rejected(
+      &al_test_list_layout, AL_TEST_LIST_OF_INT, empty_list,
+      (uint32_t)sizeof(empty_list), 8u));
+
+  (void)memcpy(bad_types, al_test_list_types, sizeof(bad_types));
+  bad_layout.types = bad_types;
+  bad_types[AL_TEST_LIST_OF_INT].field_count = 0u;
+  AL_CHECK(al_test_list_external_rejected(
+      &bad_layout, AL_TEST_LIST_OF_INT, empty_list,
+      (uint32_t)sizeof(empty_list), 0u));
+  (void)memcpy(bad_types, al_test_list_types, sizeof(bad_types));
+  bad_types[AL_TEST_LIST_OF_INT].minimum_extent_bytes = 16u;
+  AL_CHECK(al_test_list_external_rejected(
+      &bad_layout, AL_TEST_LIST_OF_INT, empty_list,
+      (uint32_t)sizeof(empty_list), 0u));
+  (void)memcpy(bad_types, al_test_list_types, sizeof(bad_types));
+  (void)memcpy(bad_fields, al_test_list_fields, sizeof(bad_fields));
+  bad_layout.fields = bad_fields;
+  bad_fields[5u].fixed_offset_bytes = 7u;
+  AL_CHECK(al_test_list_external_rejected(
+      &bad_layout, AL_TEST_LIST_OF_INT, empty_list,
+      (uint32_t)sizeof(empty_list), 0u));
+  (void)memcpy(bad_fields, al_test_list_fields, sizeof(bad_fields));
+  bad_fields[5u].flags = AL_OWNING_FIELD_ZERO_WIDTH;
+  AL_CHECK(al_test_list_external_rejected(
+      &bad_layout, AL_TEST_LIST_OF_INT, empty_list,
+      (uint32_t)sizeof(empty_list), 0u));
+  (void)memcpy(bad_fields, al_test_list_fields, sizeof(bad_fields));
+  bad_fields[5u].child_type_index = UINT32_MAX;
+  AL_CHECK(al_test_list_external_rejected(
+      &bad_layout, AL_TEST_LIST_OF_INT, empty_list,
+      (uint32_t)sizeof(empty_list), 0u));
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  AL_CHECK(al_owning_reserve_to(ctx, 72u, AL_TEST_LIST_ERROR_ID) == 0);
+  al_owning_store_i64(ctx, 0u, INT64_C(1), 901u);
+  al_test_write_u32_le(ctx->stack_data, 8u, 1u);
+  al_test_write_u32_le(ctx->stack_data, 12u, 0u);
+  al_test_write_u64_le(ctx->stack_data, 16u, UINT64_C(77));
+  output_payload = UINT32_C(0xAABBCCDD);
+  AL_CHECK(al_owning_commit_host_output(
+               ctx, &al_test_list_layout, AL_TEST_LIST_OF_INT, 8u, 72u, 16u,
+               0, AL_TEST_LIST_ERROR_ID, &output_payload) == 0 &&
+           ctx->status == AL_OWNING_STATUS_OK && ctx->cursor_bytes == 24u &&
+           output_payload == 16u &&
+           memcmp(ctx->stack_data, preserved_prefix,
+                  sizeof(preserved_prefix)) == 0);
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  AL_CHECK(al_owning_reserve_to(ctx, 72u, AL_TEST_LIST_ERROR_ID) == 0);
+  al_owning_store_i64(ctx, 0u, INT64_C(1), 901u);
+  al_test_write_u32_le(ctx->stack_data, 8u, 1u);
+  al_test_write_u32_le(ctx->stack_data, 12u, 0u);
+  al_test_write_u64_le(ctx->stack_data, 16u, UINT64_C(77));
+  output_payload = UINT32_C(0xAABBCCDD);
+  AL_CHECK(al_owning_commit_host_output(
+               ctx, &al_test_list_layout, AL_TEST_LIST_OF_INT, 8u, 72u, 24u,
+               0, AL_TEST_LIST_ERROR_ID, &output_payload) != 0 &&
+           ctx->status == AL_OWNING_STATUS_DIAGNOSTIC &&
+           ctx->cursor_bytes == 8u && output_payload == UINT32_C(0xAABBCCDD) &&
+           memcmp(ctx->stack_data, preserved_prefix,
+                  sizeof(preserved_prefix)) == 0);
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  AL_CHECK(al_owning_reserve_to(ctx, 72u, AL_TEST_LIST_ERROR_ID) == 0);
+  al_owning_store_i64(ctx, 0u, INT64_C(1), 901u);
+  al_test_write_u32_le(ctx->stack_data, 8u, 1u);
+  al_test_write_u32_le(ctx->stack_data, 12u, 0u);
+  al_test_write_u64_le(ctx->stack_data, 16u, UINT64_C(77));
+  output_payload = UINT32_C(0xAABBCCDD);
+  AL_CHECK(al_owning_commit_host_output(
+               ctx, &al_test_list_layout, AL_TEST_LIST_OF_INT, 8u, 72u, 16u,
+               1, AL_TEST_LIST_ERROR_ID, &output_payload) != 0 &&
+           ctx->status == AL_OWNING_STATUS_DIAGNOSTIC &&
+           ctx->cursor_bytes == 8u && output_payload == UINT32_C(0xAABBCCDD) &&
+           memcmp(ctx->stack_data, preserved_prefix,
+                  sizeof(preserved_prefix)) == 0);
+
+  for (index = 0u; index < (uint32_t)sizeof(empty_list); ++index)
+    AL_CHECK(empty_list[index] == 0u);
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  AL_CHECK(al_test_fixture_guards_ok(&fixture));
+  AL_CHECK(al_test_case_begin("list_layout_scanner_and_host_output", &fixture));
+  return 1;
+failed:
+  return 0;
+}
+
 static int al_test_float_format_values(void) {
   static const struct {
     uint64_t bits;
@@ -3400,9 +3677,68 @@ failed:
   return 0;
 }
 
-static int al_test_float_string_writer(void) {
+static int al_test_int_format_values(void) {
+  static const struct {
+    int64_t value;
+    const char *expected;
+  } values[] = {
+      {INT64_C(0), "0"},
+      {INT64_C(1), "1"},
+      {-INT64_C(1), "-1"},
+      {INT64_C(123456789), "123456789"},
+      {-INT64_C(123456789), "-123456789"},
+      {INT64_MAX, "9223372036854775807"},
+      {INT64_MIN, "-9223372036854775808"}};
+  al_test_fixture fixture;
+  al_owning_stack_context *ctx;
+  uint8_t output[AL_OWNING_ASCII_CAPACITY];
+  uint8_t before[AL_OWNING_ASCII_CAPACITY];
+  uint32_t output_length;
+  uint32_t index;
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  for (index = 0u; index < (uint32_t)(sizeof(values) / sizeof(values[0]));
+       ++index) {
+    uint32_t expected_length = (uint32_t)strlen(values[index].expected);
+    (void)memset(output, AL_TEST_CANARY, sizeof(output));
+    output_length = UINT32_C(0xDEADBEEF);
+    AL_CHECK(al_owning_int_format(ctx, values[index].value, output,
+                                  &output_length,
+                                  AL_TEST_FLOAT_ERROR_ID) == 0 &&
+             ctx->status == AL_OWNING_STATUS_OK &&
+             output_length == expected_length && expected_length <= 20u &&
+             memcmp(output, values[index].expected, expected_length) == 0 &&
+             output[expected_length] == AL_TEST_CANARY &&
+             output[AL_OWNING_ASCII_CAPACITY - 1u] == AL_TEST_CANARY);
+  }
+
+  (void)memset(output, AL_TEST_CANARY, sizeof(output));
+  (void)memcpy(before, output, sizeof(output));
+  output_length = UINT32_C(0xDEADBEEF);
+  AL_CHECK(al_owning_int_format(ctx, INT64_MIN, 0, &output_length,
+                                AL_TEST_FLOAT_ERROR_ID) != 0 &&
+           ctx->status == AL_OWNING_STATUS_INTERNAL &&
+           ctx->error_id == AL_TEST_FLOAT_ERROR_ID &&
+           output_length == UINT32_C(0xDEADBEEF) &&
+           memcmp(output, before, sizeof(output)) == 0);
+  ctx->status = AL_OWNING_STATUS_OK;
+  AL_CHECK(al_owning_int_format(ctx, INT64_MIN, output, 0,
+                                AL_TEST_FLOAT_ERROR_ID) != 0 &&
+           ctx->status == AL_OWNING_STATUS_INTERNAL &&
+           memcmp(output, before, sizeof(output)) == 0);
+  ctx->status = AL_OWNING_STATUS_OK;
+  AL_CHECK(al_test_case_begin("int_format_values", &fixture));
+  return 1;
+failed:
+  return 0;
+}
+
+static int al_test_ascii_string_writer(void) {
   static const uint8_t text[] = {'1', 'E', '+', '2', '0'};
   static const uint8_t non_ascii[] = {'1', 0x80u};
+  uint8_t too_long[AL_OWNING_ASCII_CAPACITY + 1u] = {0u};
+  uint8_t max_ascii[AL_OWNING_ASCII_CAPACITY];
   al_test_fixture fixture;
   al_owning_stack_context *ctx;
   uint8_t before[AL_TEST_DYNAMIC_STACK_CAPACITY];
@@ -3414,7 +3750,7 @@ static int al_test_float_string_writer(void) {
   ctx = &fixture.ctx;
   if (al_owning_reserve_to(ctx, 64u, AL_TEST_FLOAT_ERROR_ID) != 0)
     goto failed;
-  AL_CHECK(al_owning_float_string_write(
+  AL_CHECK(al_owning_ascii_string_write(
                ctx, 0u, 24u, text, (uint32_t)sizeof(text),
                AL_TEST_TYPE_STRING, AL_TEST_FLOAT_ERROR_ID) == 0 &&
            ctx->status == AL_OWNING_STATUS_OK);
@@ -3439,7 +3775,7 @@ static int al_test_float_string_writer(void) {
   (void)memcpy(before, ctx->stack_data, sizeof(before));
   (void)memcpy(init_before, fixture.init_bitmap, sizeof(init_before));
   (void)memcpy(poison_before, fixture.poison_bitmap, sizeof(poison_before));
-  AL_CHECK(al_owning_float_string_write(
+  AL_CHECK(al_owning_ascii_string_write(
                ctx, 0u, 16u, text, (uint32_t)sizeof(text),
                AL_TEST_TYPE_STRING, AL_TEST_FLOAT_ERROR_ID) != 0 &&
            ctx->status == AL_OWNING_STATUS_INTERNAL &&
@@ -3448,7 +3784,7 @@ static int al_test_float_string_writer(void) {
            memcmp(poison_before, fixture.poison_bitmap,
                   sizeof(poison_before)) == 0);
   ctx->status = AL_OWNING_STATUS_OK;
-  AL_CHECK(al_owning_float_string_write(
+  AL_CHECK(al_owning_ascii_string_write(
                ctx, 56u, 24u, text, (uint32_t)sizeof(text),
                AL_TEST_TYPE_STRING, AL_TEST_FLOAT_ERROR_ID) != 0 &&
            ctx->status == AL_OWNING_STATUS_INTERNAL &&
@@ -3457,7 +3793,7 @@ static int al_test_float_string_writer(void) {
            memcmp(poison_before, fixture.poison_bitmap,
                   sizeof(poison_before)) == 0);
   ctx->status = AL_OWNING_STATUS_OK;
-  AL_CHECK(al_owning_float_string_write(
+  AL_CHECK(al_owning_ascii_string_write(
                ctx, 32u, 16u, non_ascii, (uint32_t)sizeof(non_ascii),
                AL_TEST_TYPE_STRING, AL_TEST_FLOAT_ERROR_ID) != 0 &&
            ctx->status == AL_OWNING_STATUS_INTERNAL &&
@@ -3466,8 +3802,37 @@ static int al_test_float_string_writer(void) {
            memcmp(poison_before, fixture.poison_bitmap,
                   sizeof(poison_before)) == 0);
   ctx->status = AL_OWNING_STATUS_OK;
+  AL_CHECK(al_owning_ascii_string_write(
+               ctx, 32u, 80u, too_long, (uint32_t)sizeof(too_long),
+               AL_TEST_TYPE_STRING, AL_TEST_FLOAT_ERROR_ID) != 0 &&
+           ctx->status == AL_OWNING_STATUS_INTERNAL &&
+           memcmp(before, ctx->stack_data, sizeof(before)) == 0 &&
+           memcmp(init_before, fixture.init_bitmap, sizeof(init_before)) == 0 &&
+           memcmp(poison_before, fixture.poison_bitmap,
+                  sizeof(poison_before)) == 0);
+  ctx->status = AL_OWNING_STATUS_OK;
   AL_CHECK(al_test_fixture_guards_ok(&fixture));
-  AL_CHECK(al_test_case_begin("float_string_writer", &fixture));
+
+  al_test_fixture_init(&fixture, AL_TEST_DYNAMIC_STACK_CAPACITY);
+  ctx = &fixture.ctx;
+  if (al_owning_reserve_to(ctx, AL_TEST_DYNAMIC_STACK_CAPACITY,
+                           AL_TEST_FLOAT_ERROR_ID) != 0)
+    goto failed;
+  for (index = 0u; index < (uint32_t)sizeof(max_ascii); ++index)
+    max_ascii[index] = (uint8_t)('a' + (index % 26u));
+  AL_CHECK(al_owning_ascii_string_write(
+               ctx, 0u, 72u, max_ascii, AL_OWNING_ASCII_CAPACITY,
+               AL_TEST_TYPE_STRING, AL_TEST_FLOAT_ERROR_ID) == 0 &&
+           ctx->status == AL_OWNING_STATUS_OK &&
+           al_owning_check_initialized(ctx, 0u, 72u) == 0);
+  AL_CHECK(ctx->stack_data[0u] == AL_OWNING_ASCII_CAPACITY &&
+           ctx->stack_data[4u] == 0u && ctx->stack_data[5u] == 0u &&
+           ctx->stack_data[6u] == 0u && ctx->stack_data[7u] == 0u);
+  for (index = 0u; index < AL_OWNING_ASCII_CAPACITY; ++index)
+    AL_CHECK(ctx->stack_data[8u + index * 2u] == max_ascii[index] &&
+             ctx->stack_data[9u + index * 2u] == 0u);
+  AL_CHECK(al_test_fixture_guards_ok(&fixture));
+  AL_CHECK(al_test_case_begin("ascii_string_writer", &fixture));
   return 1;
 failed:
   return 0;
@@ -3517,12 +3882,13 @@ int main(int argc, char **argv) {
       !al_test_closed_enum_invalid_nested_tags() ||
       !al_test_closed_enum_short_extents() ||
       !al_test_closed_enum_descriptor_validation() ||
-      !al_test_closed_enum_abi2_rejected() ||
+      !al_test_closed_enum_abi4_rejected() ||
       !al_test_option_result_layout_and_scanner() ||
+      !al_test_list_layout_and_scanner() ||
       !al_test_record_copy_preserves_source() ||
       !al_test_float_finite_scanner() ||
       !al_test_float_typed_equality() || !al_test_float_format_values() ||
-      !al_test_float_string_writer()) {
+      !al_test_int_format_values() || !al_test_ascii_string_writer()) {
     return 1;
   }
   {

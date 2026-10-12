@@ -164,7 +164,7 @@ static const char *const check_names[] = {
     "retry completes with no pending mailbox or retained scratch lease",
     "native lifecycle emitted independent step and raw statistics for both policies",
     "all controller raw-byte, copy, publication, import, and descriptor metrics are present",
-    "stack ABI is 2 and the owning layout ABI is 4"};
+    "stack ABI is 2 and the owning layout ABI is 5"};
 
 static void record_check(size_t index, int passed) {
   if (index >= sizeof(check_names) / sizeof(check_names[0])) {

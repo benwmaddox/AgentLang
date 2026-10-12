@@ -662,7 +662,7 @@ type OwningStackCompiledProgram internal
             if writtenBytes > 0 then Array.Copy(resultBytes, 0, retainedOutput, 0, writtenBytes)
             let committedMetrics = { metrics with HostRetainedCommitBytes = writtenBytes }
             { Values = values
-              LayoutSchemaVersion = 4
+              LayoutSchemaVersion = 5
               Metrics = committedMetrics
               RetainedBytesWritten = writtenBytes
               RetainedOutputBytes = resultBytes
@@ -712,7 +712,7 @@ type OwningStackCompiledProgram internal
 [<RequireQualifiedAccess>]
 module OwningStackAot =
     let private unsupported code message owner actual =
-        Diagnostics.raiseError code message (Some owner) None [ "Int | Bool | Float | Unit | String | payload-free enum | acyclic inline record | Option<T> | Result<T, E>" ] [ actual ]
+        Diagnostics.raiseError code message (Some owner) None [ "Int | Bool | Float | Unit | String | payload-free enum | acyclic inline record | List<T> | Option<T> | Result<T, E>" ] [ actual ]
 
     let private rejectHostOperation owner span (operationId: HostOperationId) =
         Diagnostics.raiseError "IR_NATIVE_HOST_OPERATION_UNSUPPORTED"
@@ -753,6 +753,7 @@ module OwningStackAot =
         | IrUnit -> "Unit"
         | IrFloat -> "Float"
         | IrString -> "String"
+        | IrList item -> $"List<{typeName program item}>"
         | IrOption item -> $"Option<{typeName program item}>"
         | IrResult(okType, errorType) -> $"Result<{typeName program okType}, {typeName program errorType}>"
         | IrNominal key ->
@@ -761,7 +762,6 @@ module OwningStackAot =
             | Some(IrScalarDefinition scalar) -> scalar.TypeName
             | Some(IrEnumDefinition enumDefinition) -> enumDefinition.TypeName
             | None -> sprintf "%A" key
-        | other -> IrTypes.format other
 
     let private failNativeHostProfile expected actual =
         Diagnostics.raiseError "IR_NATIVE_HOST_PROFILE_MISMATCH"
@@ -854,10 +854,10 @@ module OwningStackAot =
         | IrUnit -> TUnit
         | IrFloat -> TFloat
         | IrString -> TString
+        | IrList item -> TList(langTypeFor program item)
         | IrOption item -> TOption(langTypeFor program item)
         | IrResult(okType, errorType) -> TResult(langTypeFor program okType, langTypeFor program errorType)
         | IrNominal key -> TNamed(typeName program (IrNominal key))
-        | other -> invalidOp $"Unsupported host value type reached owning-stack conversion: {IrTypes.format other}."
 
     let private extent payload = max 8 payload
 
@@ -1048,6 +1048,23 @@ module OwningStackAot =
                           Cases = [] }
                     typeInfos <- Map.add ty value typeInfos
                     value
+                | IrList itemType ->
+                    ensureCompoundTypeId ty |> ignore
+                    let itemInfo = buildType owner (depth + 1) itemType
+                    let value =
+                        { Type = ty
+                          TypeId = typeIdFor typeIds ty
+                          Name = typeName program ty
+                          PayloadBytes = -1
+                          ExtentBytes = -1
+                          IsDynamic = true
+                          MinimumPayloadBytes = 8
+                          MinimumExtentBytes = 8
+                          LayoutDepth = itemInfo.LayoutDepth + 1
+                          Fields = [ "element", itemType, 8 ]
+                          Cases = [] }
+                    typeInfos <- Map.add ty value typeInfos
+                    value
                 | IrOption itemType ->
                     buildSum owner depth ty [ "Some", Some itemType; "None", None ]
                 | IrResult(okType, errorType) ->
@@ -1166,7 +1183,6 @@ module OwningStackAot =
                         | None -> unsupported "IR_OWNING_STACK_TYPE_UNKNOWN" "Owning-stack type is absent from the verified nominal table." owner (IrTypes.format ty)
                     finally
                         active.Remove ty |> ignore
-                | other -> unsupported "IR_OWNING_STACK_TYPE_UNSUPPORTED" "Owning-stack backend does not support this verified value type." owner (IrTypes.format other)
 
         and buildSum owner depth ty caseDefinitions =
             if depth >= 64 then
@@ -1234,7 +1250,7 @@ module OwningStackAot =
                   "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
                   "float.add"; "float.subtract"; "float.multiply"; "float.divide"
                   "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
-                  "int.to-float"; "float.to-int"; "float.round"; "float.to-string"
+                  "int.to-float"; "int.to-string"; "float.to-int"; "float.round"; "float.to-string"
                   "equals"; "bool.and"; "bool.or"; "bool.not"; "dup"; "drop"; "swap"
                   "string.concat"; "string.length" ]
 
@@ -1253,6 +1269,7 @@ module OwningStackAot =
                 | ("float.add" | "float.subtract" | "float.multiply" | "float.divide"), [ IrFloat; IrFloat ], [ IrFloat ] -> true
                 | ("float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal"), [ IrFloat; IrFloat ], [ IrBool ] -> true
                 | "int.to-float", [ IrInt ], [ IrFloat ] -> true
+                | "int.to-string", [ IrInt ], [ IrString ] -> true
                 | ("float.to-int" | "float.round"), [ IrFloat ], [ IrInt ] -> true
                 | "float.to-string", [ IrFloat ], [ IrString ] -> true
                 | "equals", [ left; right ], [ IrBool ] -> left = right
@@ -1330,6 +1347,7 @@ module OwningStackAot =
                     validateEnumCall owner span call key caseIndex
                 | IrOperation.OptionNone itemType
                 | IrOperation.OptionSome itemType -> checkType owner (IrOption itemType)
+                | IrOperation.ListEmpty itemType -> checkType owner (IrList itemType)
                 | IrOperation.ResultOk(okType, errorType)
                 | IrOperation.ResultError(okType, errorType) -> checkType owner (IrResult(okType, errorType))
                 | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
@@ -1366,8 +1384,8 @@ module OwningStackAot =
                 | IrOperation.If(thenBlock, elseBlock) -> validateBlock owner thenBlock; validateBlock owner elseBlock
                 | operation ->
                     Diagnostics.raiseError "IR_OWNING_STACK_OPERATION_UNSUPPORTED"
-                        "Owning-stack backend supports constants, calls, records, nominal Int, Bool, Float, and String scalars with optional pure frozen predicates, payload-free enums, Option/Result values, locals, Scope, If, and exhaustive matches."
-                        (Some owner) span [ "Constant"; "Call"; "MakeRecord"; "GetRecordField"; "WrapScalar"; "UnwrapScalar"; "MakeEnumCase"; "OptionNone"; "OptionSome"; "ResultOk"; "ResultError"; "MatchOption"; "MatchResult"; "MatchEnum"; "StoreLocal"; "LoadLocal"; "Scope"; "If" ]
+                        "Owning-stack backend supports constants, calls, records, nominal Int, Bool, Float, and String scalars with optional pure frozen predicates, payload-free enums, ListEmpty, Option/Result values, locals, Scope, If, and exhaustive matches."
+                        (Some owner) span [ "Constant"; "Call"; "MakeRecord"; "GetRecordField"; "WrapScalar"; "UnwrapScalar"; "MakeEnumCase"; "ListEmpty"; "OptionNone"; "OptionSome"; "ResultOk"; "ResultError"; "MatchOption"; "MatchResult"; "MatchEnum"; "StoreLocal"; "LoadLocal"; "Scope"; "If" ]
                         [ sprintf "%A" operation ]
 
         and validateScalarCall owner span (call: IrResolvedCall) key expectedOperation inputTypes outputTypes =
@@ -1502,8 +1520,8 @@ module OwningStackAot =
         let layoutFieldCount = typeInfos |> Map.toSeq |> Seq.sumBy (fun (_, typeInfo) -> typeInfo.Fields.Length + typeInfo.Cases.Length)
         if layoutFieldCount > 65536 then
             Diagnostics.raiseError "IR_OWNING_STACK_LAYOUT_FIELD_COUNT"
-                "Owning-stack layout descriptors are limited to 65536 reachable record fields and sum-case rows."
-                (Some body.BodyName) None [ "at most 65536 reachable record fields and sum-case rows" ] [ string layoutFieldCount ]
+                "Owning-stack layout descriptors are limited to 65536 reachable child edges and sum-case rows."
+                (Some body.BodyName) None [ "at most 65536 reachable child edges and sum-case rows" ] [ string layoutFieldCount ]
         let typeLayouts =
             typeInfos
             |> Map.toList
@@ -1519,7 +1537,8 @@ module OwningStackAot =
                     info.Fields
                     |> List.map (fun (fieldName, fieldType, offset) ->
                         let field = typeInfos[fieldType]
-                        let inlineZeroWidth = not field.IsDynamic && field.PayloadBytes = 0
+                        let listElementRoot = match info.Type with IrList _ -> true | _ -> false
+                        let inlineZeroWidth = not listElementRoot && not field.IsDynamic && field.PayloadBytes = 0
                         { FieldName = fieldName
                           FieldType = fieldType
                           OffsetBytes = offset
@@ -1631,6 +1650,15 @@ module OwningStackAot =
                     invalidArg (nameof values) "Owning-stack String payload exceeds the bounded 32-bit runtime range."
                 let payload = int payload64
                 payload, alignedExtent payload
+            | IrList itemType, ListValue(declaredType, items) when declaredType = langTypeFor info.Program itemType ->
+                if isNull (box items) then invalidArg (nameof values) "Owning-stack List inputs cannot contain a null item sequence."
+                let mutable payload = 8
+                let mutable extentBytes = 8
+                for item in items do
+                    let childPayload, childExtent = measure false itemType item
+                    payload <- checkedHostAdd (nameof values) payload childPayload
+                    extentBytes <- checkedHostAdd (nameof values) extentBytes childExtent
+                payload, extentBytes
             | IrOption itemType, OptionValue(declaredType, option) when declaredType = langTypeFor info.Program itemType ->
                 match option with
                 | None -> 8, 8
@@ -1761,6 +1789,15 @@ module OwningStackAot =
                     bytes[offset + 8 + index * 2] <- byte codeUnit
                     bytes[offset + 9 + index * 2] <- byte (codeUnit >>> 8)
                 alignedExtent (8 + text.Length * 2)
+            | IrList itemType, ListValue(declaredType, items) when declaredType = langTypeFor info.Program itemType ->
+                if isNull (box items) then invalidArg (nameof values) "Owning-stack List inputs cannot contain a null item sequence."
+                writeUInt32 offset (uint32 items.Length)
+                writeUInt32 (offset + 4) 0u
+                let mutable childOffset = offset + 8
+                for item in items do
+                    let childExtent = encode false childOffset itemType item
+                    childOffset <- checkedHostAdd (nameof values) childOffset childExtent
+                childOffset - offset
             | IrOption itemType, OptionValue(declaredType, option) when declaredType = langTypeFor info.Program itemType ->
                 match option with
                 | None ->
@@ -1891,6 +1928,29 @@ module OwningStackAot =
                 for pad in payload .. extentBytes - 1 do
                     if bytes[offset + pad] <> 0uy then raise (InvalidDataException("Owning-stack String padding is nonzero."))
                 StringValue(String(chars)), extentBytes, payload
+            | IrList itemType ->
+                ensureRange offset 8 "List header"
+                let count = readUInt32 offset
+                if readUInt32 (offset + 4) <> 0u then raise (InvalidDataException("Owning-stack List reserved header is nonzero."))
+                let childMinimumExtent = (infoFor info itemType).MinimumExtentBytes
+                if childMinimumExtent < 8 then
+                    raise (InvalidDataException("Owning-stack List element layout has a minimum extent below one root header."))
+                let available = bytes.Length - offset - 8
+                if uint64 count > uint64 (available / childMinimumExtent) then
+                    raise (InvalidDataException("Owning-stack List count exceeds the available encoded elements."))
+                let items = ResizeArray<Value>()
+                let mutable childOffset = offset + 8
+                let mutable payload = 8
+                let mutable remaining = int count
+                while remaining > 0 do
+                    let item, childExtent, childPayload = decode false childOffset itemType
+                    if childOffset > bytes.Length - childExtent then
+                        raise (InvalidDataException("Owning-stack List element extent is truncated."))
+                    items.Add item
+                    childOffset <- checkedDecodedAdd childOffset childExtent "List extent"
+                    payload <- checkedDecodedAdd payload childPayload "List payload"
+                    remaining <- remaining - 1
+                ListValue(langTypeFor info.Program itemType, List.ofSeq items), childOffset - offset, payload
             | IrOption itemType ->
                 if offset < 0 || offset > bytes.Length - 8 then raise (InvalidDataException("Owning-stack Option tag is truncated."))
                 match readInt64 bytes offset with
@@ -1958,7 +2018,6 @@ module OwningStackAot =
                         raise (InvalidDataException("Owning-stack empty-record token was truncated or nonzero."))
                 let extentBytes = if payload = 0 && not nested then 8 else childOffset - offset
                 RecordValue(layout.Name, fields), extentBytes, payload
-            | unsupported -> invalidOp $"Unsupported output type reached owning-stack decode: {IrTypes.format unsupported}."
         let mutable offset = 0
         let values =
             types
@@ -2088,6 +2147,7 @@ module OwningStackAot =
                     let _, prefix = pop call.InputTypes.Length
                     stack <- prefix @ call.OutputTypes
                 | IrOperation.OptionNone itemType -> stack <- stack @ [ IrOption itemType ]
+                | IrOperation.ListEmpty itemType -> stack <- stack @ [ IrList itemType ]
                 | IrOperation.OptionSome itemType ->
                     let _, prefix = pop 1
                     stack <- prefix @ [ IrOption itemType ]
@@ -2360,6 +2420,7 @@ module OwningStackAot =
             | IrUnit -> 3u
             | IrFloat -> 9u
             | IrString -> 5u
+            | IrList _ -> 10u
             | IrOption _ -> 7u
             | IrResult _ -> 8u
             | IrNominal _ as ty ->
@@ -2373,7 +2434,6 @@ module OwningStackAot =
                     match enumDefinition program ty with
                     | Some _ -> 6u
                     | None -> 4u
-            | ty -> invalidOp $"Unsupported fixed descriptor type {IrTypes.format ty}."
         let typeCaseCount ty =
             match ty with
             | IrOption _ | IrResult _ -> uint32 (infoFor info ty).Cases.Length
@@ -2390,7 +2450,8 @@ module OwningStackAot =
             else
                 for _, childType, fixedOffset in item.Fields do
                     let child = infoFor info childType
-                    let isZeroWidth = not child.IsDynamic && child.PayloadBytes = 0
+                    let isListEdge = match item.Type with IrList _ -> true | _ -> false
+                    let isZeroWidth = not isListEdge && not child.IsDynamic && child.PayloadBytes = 0
                     descriptorFields.Add(typeIndex childType, (if fixedOffset < 0 then UInt32.MaxValue else uint32 fixedOffset), (if isZeroWidth then 1u else 0u), 0u)
         let rec makeBindings (env: OwningLocalEnvPlan) (outer: Map<LocalSlot, OwningLocalBinding>) =
             env.Slots
@@ -3178,7 +3239,7 @@ module OwningStackAot =
                 |> String.concat ", "
         writer.Line($"@al_owning_types = private constant [{typeInfos.Length} x %%AlOwningTypeDescriptor] [{fixedTypeDescriptors}], align 4")
         writer.Line($"@al_owning_fields = private constant [{fixedFieldArraySize} x %%AlOwningFieldDescriptor] [{fixedRenderedFields}], align 4")
-        writer.Line($"@al_owning_layout = private constant %%AlOwningLayout {{ i32 4, ptr @al_owning_types, i32 {typeInfos.Length}, ptr @al_owning_fields, i32 {descriptorFields.Count} }}, align 8")
+        writer.Line($"@al_owning_layout = private constant %%AlOwningLayout {{ i32 5, ptr @al_owning_types, i32 {typeInfos.Length}, ptr @al_owning_fields, i32 {descriptorFields.Count} }}, align 8")
         writer.Line("%AlOwningContext = type { i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, ptr, ptr, ptr, ptr, i64, i64, i64, i64, i64 }")
         writer.Line("declare void @al_owning_begin(ptr)")
         writer.Line("declare i32 @al_owning_enter_frame(ptr, i32)")
@@ -3373,6 +3434,7 @@ module OwningStackAot =
             | IrUnit -> 3u
             | IrFloat -> 9u
             | IrString -> 5u
+            | IrList _ -> 10u
             | IrOption _ -> 7u
             | IrResult _ -> 8u
             | IrNominal _ as ty ->
@@ -3386,7 +3448,6 @@ module OwningStackAot =
                     match enumDefinition info.Program ty with
                     | Some _ -> 6u
                     | None -> 4u
-            | ty -> invalidOp $"Unsupported dynamic descriptor type {IrTypes.format ty}."
         let typeCaseCount ty =
             match ty with
             | IrOption _ | IrResult _ -> uint32 (typeInfo ty).Cases.Length
@@ -3442,7 +3503,8 @@ module OwningStackAot =
             else
                 for _, childType, fixedOffset in item.Fields do
                     let child = typeInfo childType
-                    let isZeroWidth = not child.IsDynamic && child.PayloadBytes = 0
+                    let isListEdge = match item.Type with IrList _ -> true | _ -> false
+                    let isZeroWidth = not isListEdge && not child.IsDynamic && child.PayloadBytes = 0
                     descriptorFields.Add(
                         typeIndex childType,
                         (if fixedOffset < 0 then UInt32.MaxValue else uint32 fixedOffset),
@@ -3479,7 +3541,7 @@ module OwningStackAot =
         writer.Line($"@al_owning_types = private constant [{typeInfos.Length} x %%AlOwningTypeDescriptor] [{renderedTypeDescriptors}], align 4")
         writer.Line($"@al_owning_fields = private constant [{fieldArraySize} x %%AlOwningFieldDescriptor] [{renderedFields}], align 4")
         let layoutLinkage = if mailboxMode then "" else "private "
-        writer.Line($"{layoutSymbol} = {layoutLinkage}constant %%AlOwningLayout {{ i32 4, ptr @al_owning_types, i32 {typeInfos.Length}, ptr @al_owning_fields, i32 {descriptorFields.Count} }}, align 8")
+        writer.Line($"{layoutSymbol} = {layoutLinkage}constant %%AlOwningLayout {{ i32 5, ptr @al_owning_types, i32 {typeInfos.Length}, ptr @al_owning_fields, i32 {descriptorFields.Count} }}, align 8")
         for value in stringValues do
             let bytes, _, _ = encodeLiteral value
             writer.Line($"{stringGlobal value} = private unnamed_addr constant [{bytes.Length} x i8] c\"{llvmByteString bytes}\", align 8")
@@ -3508,7 +3570,8 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_string_concat_plan(ptr, i32, i32, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_float_format(ptr, i64, ptr, ptr, i32)")
-        writer.Line("declare i32 @al_owning_float_string_write(ptr, i32, i32, ptr, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_ascii_string_write(ptr, i32, i32, ptr, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_int_format(ptr, i64, ptr, ptr, i32)")
         writer.Line("declare void @al_owning_move_range(ptr, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_copy_range(ptr, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_duplicate(ptr, i32, i32, i32, i32, i32)")
@@ -4156,6 +4219,19 @@ module OwningStackAot =
                         emitRuntimeStatus w "%ctx" failBody
                         emitUpdateLive w "8" "0" failBody
                         stack <- push stack ty cursor "8" "8" next
+                    | IrOperation.ListEmpty itemType ->
+                        let listType = IrList itemType
+                        let cursor = emitContextLoad w "%ctx" 2
+                        let next = emitOffset w cursor "8"
+                        let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve an empty List value." currentOwner instructionSpan [] []
+                        emitReserve w next reserveError failBody
+                        // The first eight bytes are count=0 and reserved=0.
+                        w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 0, i32 {typeId listType})")
+                        emitRuntimeStatus w "%ctx" failBody
+                        emitUpdateLive w "8" "0" failBody
+                        w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {cursor}, i32 8, i32 8, i32 0, i32 0)")
+                        emitRuntimeStatus w "%ctx" failBody
+                        stack <- push stack listType cursor "8" "8" next
                     | IrOperation.OptionNone itemType ->
                         let sumType = IrOption itemType
                         let cursor = emitContextLoad w "%ctx" 2
@@ -4804,6 +4880,59 @@ module OwningStackAot =
                                 let result = w.Fresh "float.round.result"
                                 w.Inst($"{result} = fptosi double {rounded} to i64")
                                 emitScalarResult IrInt result
+                            | "int.to-string", [ value ] ->
+                                let raw = w.Fresh "int.to.string.input"
+                                w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {value.Offset})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let asciiBuffer = w.Fresh "int.to.string.ascii.buffer"
+                                let ascii = w.Fresh "int.to.string.ascii"
+                                let lengthPointer = w.Fresh "int.to.string.length.pointer"
+                                w.Inst($"{asciiBuffer} = alloca [32 x i8], align 1")
+                                w.Inst($"{ascii} = getelementptr inbounds [32 x i8], ptr {asciiBuffer}, i64 0, i64 0")
+                                w.Inst($"{lengthPointer} = alloca i32, align 4")
+                                let formatError =
+                                    addDiagnostic
+                                        "OWNING_STACK_INTERNAL"
+                                        "The native Int formatter rejected an Int64 value."
+                                        currentOwner instructionSpan [] []
+                                let formatStatus = w.Fresh "int.to.string.format.status"
+                                w.Inst($"{formatStatus} = call i32 @al_owning_int_format(ptr %%ctx, i64 {raw}, ptr {ascii}, ptr {lengthPointer}, i32 {formatError})")
+                                emitStatusResult w formatStatus failBody
+                                let length = w.Fresh "int.to.string.length"
+                                w.Inst($"{length} = load i32, ptr {lengthPointer}, align 4")
+                                let lengthNonempty = w.Fresh "int.to.string.length.nonempty"
+                                w.Inst($"{lengthNonempty} = icmp uge i32 {length}, 1")
+                                let lengthWithinBound = w.Fresh "int.to.string.length.within.bound"
+                                w.Inst($"{lengthWithinBound} = icmp ule i32 {length}, 20")
+                                let lengthValid = w.Fresh "int.to.string.length.valid"
+                                w.Inst($"{lengthValid} = and i1 {lengthNonempty}, {lengthWithinBound}")
+                                let lengthFailure = w.Label "int.to.string.length.failure"
+                                let lengthReady = w.Label "int.to.string.length.ready"
+                                let lengthError = addDiagnostic "OWNING_STACK_INTERNAL" "The native Int formatter exceeded its 20-byte ASCII bound." currentOwner instructionSpan [] []
+                                w.Inst($"br i1 {lengthValid}, label %%{lengthReady}, label %%{lengthFailure}")
+                                w.Line($"{lengthFailure}:")
+                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {lengthError}, i32 {length}, i32 20)")
+                                w.Inst($"br label %%{failBody}")
+                                w.Line($"{lengthReady}:")
+                                dropInputs ()
+                                let doubledLength = w.Fresh "int.to.string.utf16.length"
+                                let payload = w.Fresh "int.to.string.payload"
+                                let payloadWithPadding = w.Fresh "int.to.string.payload.with.padding"
+                                let extent = w.Fresh "int.to.string.extent"
+                                w.Inst($"{doubledLength} = mul i32 {length}, 2")
+                                w.Inst($"{payload} = add i32 {doubledLength}, 8")
+                                w.Inst($"{payloadWithPadding} = add i32 {payload}, 7")
+                                w.Inst($"{extent} = and i32 {payloadWithPadding}, -8")
+                                let destination = emitContextLoad w "%ctx" 2
+                                let resultEnd = emitOffset w destination extent
+                                let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve exact Int String output." currentOwner instructionSpan [] []
+                                emitReserve w resultEnd reserveError failBody
+                                let writeError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to write the formatted Int String." currentOwner instructionSpan [] []
+                                let writeStatus = w.Fresh "int.to.string.write.status"
+                                w.Inst($"{writeStatus} = call i32 @al_owning_ascii_string_write(ptr %%ctx, i32 {destination}, i32 {extent}, ptr {ascii}, i32 {length}, i32 {typeId IrString}, i32 {writeError})")
+                                emitStatusResult w writeStatus failBody
+                                emitUpdateLive w payload "0" failBody
+                                stack <- push prefix IrString destination extent payload resultEnd
                             | "float.to-string", [ value ] ->
                                 // Preserve the Float bits until the native formatter has
                                 // copied them into its bounded stack-local conversion state.
@@ -4868,7 +4997,7 @@ module OwningStackAot =
                                 emitReserve w resultEnd reserveError failBody
                                 let writeError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to write the formatted Float String." currentOwner instructionSpan [] []
                                 let writeStatus = w.Fresh "float.to.string.write.status"
-                                w.Inst($"{writeStatus} = call i32 @al_owning_float_string_write(ptr %%ctx, i32 {destination}, i32 {extent}, ptr {ascii}, i32 {length}, i32 {typeId IrString}, i32 {writeError})")
+                                w.Inst($"{writeStatus} = call i32 @al_owning_ascii_string_write(ptr %%ctx, i32 {destination}, i32 {extent}, ptr {ascii}, i32 {length}, i32 {typeId IrString}, i32 {writeError})")
                                 emitStatusResult w writeStatus failBody
                                 emitUpdateLive w payload "0" failBody
                                 stack <- push prefix IrString destination extent payload resultEnd
@@ -6426,8 +6555,8 @@ module OwningStackAot =
                adapterSourceSha256 = hashFile adapterCopyPath
                hostAbiVersion = 1
                owningRuntimeAbiVersion = 2
-               layoutSchemaVersion = 4
-               layoutAbiVersion = 4
+               layoutSchemaVersion = 5
+               layoutAbiVersion = 5
                exportName = "agentlang_owning_execute_with_host_context"
                inputTypes = [ "UserId"; "RoomId" ]
                outputTypes = [ "Result<Option<RoomRow>, DbError>" ]
@@ -6584,14 +6713,14 @@ module OwningStackAot =
                      | IrUnit -> "Unit"
                      | IrFloat -> "Float"
                      | IrString -> "String"
+                     | IrList _ -> "List"
                      | IrOption _ -> "Option"
                      | IrResult _ -> "Result"
                      | IrNominal _ as ty when Option.isSome (enumDefinition programInfo.Program ty) -> "Enum"
                      | IrNominal _ as ty when (scalarDefinition programInfo.Program ty |> Option.exists (fun scalar -> scalar.BaseType = IrInt)) -> "Int"
                      | IrNominal _ as ty when (scalarDefinition programInfo.Program ty |> Option.exists (fun scalar -> scalar.BaseType = IrFloat)) -> "Float"
                      | IrNominal _ as ty when (scalarDefinition programInfo.Program ty |> Option.exists (fun scalar -> scalar.BaseType = IrString)) -> "String"
-                     | IrNominal _ -> "Record"
-                     | other -> IrTypes.format other)
+                     | IrNominal _ -> "Record")
                    name = item.TypeName
                    caseCount =
                     if not item.Cases.IsEmpty then item.Cases.Length
@@ -6684,7 +6813,7 @@ module OwningStackAot =
         let manifestCore =
             {| formatVersion = 1
                abiVersion = 2
-               layoutAbiVersion = 4
+               layoutAbiVersion = 5
                typeDescriptorSizeBytes = 36
                optimization = optimizationName
                runtimeProfile = runtimeProfileName

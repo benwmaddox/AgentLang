@@ -33,7 +33,7 @@ release dependencies still need their package notices included in release packag
 audits. The build creates an import library from that file, copies explicit trusted
 headers/import libraries/runtime DLLs, and hashes them in host manifest format 2.
 No SDK import library or package DLL is committed to the repository. Owning ABI 2,
-value layout 4, host callback ABI 1 and SQLite context ABI 1 remain distinct contracts.
+value layout 5, host callback ABI 1 and SQLite context ABI 1 remain distinct contracts.
 
 Run locally:
 

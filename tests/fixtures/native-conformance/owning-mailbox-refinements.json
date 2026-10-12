@@ -132,12 +132,26 @@
         "src/AgentLang.Llvm/native/owning_stack_runtime.c:1128-1134",
         "src/AgentLang.Llvm/native/owning_mailbox_abi.h:47-52"
       ]
+    },
+    "layoutAbiTransition": {
+      "fromLayoutAbiVersion": 4,
+      "toLayoutAbiVersion": 5,
+      "priorFixtureSha256": "6965D1F3684BB2B94C4E40B390CA1B0ECDC9C50EFB1E01AF30874126AE4D92E9",
+      "historicalCorrectionChainFinalSha256Preserved": "6965D1F3684BB2B94C4E40B390CA1B0ECDC9C50EFB1E01AF30874126AE4D92E9",
+      "moduleAbiVersionUnchanged": 2,
+      "contextAbiVersionUnchanged": 2,
+      "stackAbiVersionUnchanged": 2,
+      "moduleStructSizeBytesUnchanged": 144,
+      "typeDescriptorSizeBytesUnchanged": 36,
+      "fieldDescriptorSizeBytesUnchanged": 16,
+      "layoutDescriptorSizeBytesUnchanged": 40,
+      "valueStepAndCopyOraclesChanged": false
     }
   },
   "sourceFixture": "experiments/AgentLang.OwningMailbox/owning-mailbox-refinements.flow",
   "moduleAbiVersion": 2,
   "stackAbiVersion": 2,
-  "layoutAbiVersion": 4,
+  "layoutAbiVersion": 5,
   "entryOrder": ["initialize", "begin", "resume"],
   "roles": {
     "initialize": { "inputs": ["String"], "outputs": ["State"] },
@@ -423,7 +437,7 @@
     "frozen validator target identity and revision match source-derived fixture",
     "source-derived copy and step counts match runtime evidence without predicate counter instrumentation",
     "O0 and O2 diagnostic, fast-reset, and trusted-generated profiles agree",
-    "Layout ABI is 4 and stack ABI is 2"
+    "Layout ABI is 5 and stack ABI is 2"
   ],
   "limitations": [
     "Controller lifecycle guarantees and direct raw-callback admission controls are separate evidence paths.",

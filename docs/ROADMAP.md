@@ -17,15 +17,20 @@ The interpreter is a reference, not the performance target. Follow
 [verified entry export](../reports/246-verified-entry-ir-export.md) and
 [typed native room-host profile](../reports/248-typed-native-room-host.md) are
 compiler steps. The [native SQLite room adapter](../reports/249-native-sqlite-room-adapter.md)
-executes the room lookup without .NET. The remaining SQL/room-path contracts, lists
-and full native room HTTP remain required. Earlier sequencing below is
+executes the room lookup without .NET. [Report 251](../reports/251-native-owning-lists.md)
+adds typed owning list layout ABI5, `ListEmpty`, and native Int64 formatting.
+The remaining room-path host contracts, the Campfire message-list adapter, and
+full native room HTTP remain required. Earlier sequencing below is
 historical where it conflicts with this priority; the full migration scope remains.
 
 The [shared GET/HEAD room entry](../reports/250-shared-room-read-entry.md) now
 has independent parity against the previous dispatcher and an exact nine-operation
-IR closure. Implement bounded native message lists and Int64 formatting next, then
-the remaining closed host contracts and native HTTP transport/rendering. This is
-application preparation for AOT, not a native endpoint performance result.
+IR closure. Report 251 validates the generic typed-list layout and Int64 formatter
+at O0/O2; native list construction is currently limited to `ListEmpty`, and the
+fixture does not build Campfire messages or test list payloads through mailbox
+begin/resume. Implement the nine closed host operations and a native message-list
+adapter next, then connect native HTTP transport/rendering and prove parity. This
+is application preparation for AOT, not a native endpoint performance result.
 
 As of 2026-10-11, the primary deliverable is a complete Campfire migration in
 this language. Add language and runtime features when the next application step

@@ -532,7 +532,7 @@ static al_mailbox_result al_validate_owning_module(
     const al_owning_type_descriptor *type = &layout->types[index];
     uint32_t prior;
     if (type->kind < AL_OWNING_TYPE_I64 ||
-        type->kind > AL_OWNING_TYPE_F64 ||
+        type->kind > AL_OWNING_TYPE_LIST ||
         (type->kind == AL_OWNING_TYPE_ENUM &&
          (type->case_count == 0u || type->field_count != 0u)) ||
         ((type->kind == AL_OWNING_TYPE_OPTION ||
@@ -546,6 +546,20 @@ static al_mailbox_result al_validate_owning_module(
       return AL_MAILBOX_INVALID_MODULE;
     for (prior = 0u; prior < index; ++prior) {
       if (layout->types[prior].type_id == type->type_id)
+        return AL_MAILBOX_INVALID_MODULE;
+    }
+    if (type->kind == AL_OWNING_TYPE_LIST) {
+      const al_owning_field_descriptor *element;
+      if (type->fixed_payload_bytes != AL_OWNING_LAYOUT_DYNAMIC_U32 ||
+          type->fixed_extent_bytes != AL_OWNING_LAYOUT_DYNAMIC_U32 ||
+          type->minimum_payload_bytes != 8u ||
+          type->minimum_extent_bytes != 8u || type->case_count != 0u ||
+          type->field_count != 1u)
+        return AL_MAILBOX_INVALID_MODULE;
+      element = &layout->fields[type->first_field];
+      if (element->child_type_index >= layout->type_count ||
+          element->fixed_offset_bytes != 8u || element->flags != 0u ||
+          element->reserved != 0u)
         return AL_MAILBOX_INVALID_MODULE;
     }
     if (type->kind == AL_OWNING_TYPE_OPTION ||

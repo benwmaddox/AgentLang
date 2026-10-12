@@ -185,7 +185,7 @@ let run (toolchain: LlvmToolchain) (runRoot: string) (engine: Runtime.Engine) (s
             let manifestPath = native.NativeHostManifestPath |> Option.defaultWith (fun () -> failwith "Missing native host manifest")
             let manifest = JsonNode.Parse(File.ReadAllText(manifestPath))
             let info = manifest["moduleInfo"]
-            check "manifest pins host, owning and layout versions" (info["hostAbiVersion"].GetValue<int>() = 1 && info["owningRuntimeAbiVersion"].GetValue<int>() = 2 && info["layoutAbiVersion"].GetValue<int>() = 4)
+            check "manifest pins host, owning and layout versions" (info["hostAbiVersion"].GetValue<int>() = 1 && info["owningRuntimeAbiVersion"].GetValue<int>() = 2 && info["layoutAbiVersion"].GetValue<int>() = 5)
             check "manifest pins diagnostic runtime profile" (info["runtimeProfile"].GetValue<string>() = "diagnostic")
             check "manifest pins exact operation and bounded output" (info["operationId"].GetValue<string>() = "campfire.rooms.find-for-user" && info["outputLimitBytes"].GetValue<int>() = 65536)
             check "manifest pins adapter source bytes" (info["adapterSourceSha256"].GetValue<string>() = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(fixture))).ToLowerInvariant())

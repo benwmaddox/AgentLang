@@ -4597,7 +4597,7 @@ let private runStringWorkload
             "metrics", jsonNode options (metricSummary metrics)
             "layoutEvents", jsonNode options (layoutEventDetails events) ]))
 
-    recordCheck checks failures $"owning-stack/{optimizationName}/String/layout-schema-v4" (layoutSchemaVersion = 4L) (jsonObject [ "expected", box 4; "actual", box layoutSchemaVersion ])
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/layout-schema-v5" (layoutSchemaVersion = 5L) (jsonObject [ "expected", box 5; "actual", box layoutSchemaVersion ])
     let dynamicLayoutChecks, dynamicLayoutFailures, dynamicLayoutSummary =
         validateDynamicTypeLayouts [ "String"; "TextLeaf"; "TextEnvelope"; "TextState" ] fixture dynamicLayouts
     for details in dynamicLayoutChecks do checks.Add details
@@ -6013,8 +6013,8 @@ let private runSumConformance
         && (result.LayoutEvents |> List.forall (fun event -> event.Kind <> "local-compact" && event.Kind <> "call-input-move" && event.Kind <> "call-return-move"))
     let expectedLayoutAbi = oracle.GetProperty("layoutAbiVersion").GetInt32()
     let nativeLayoutAbi = contextAbiOracle.GetProperty("layoutAbiVersion").GetInt32()
-    recordCheck checks failures $"sum/{optimizationName}/owning-layout-abi-v4"
-        (expectedLayoutAbi = 4 && nativeLayoutAbi = expectedLayoutAbi)
+    recordCheck checks failures $"sum/{optimizationName}/owning-layout-abi-v5"
+        (expectedLayoutAbi = 5 && nativeLayoutAbi = expectedLayoutAbi)
         (jsonObject [ "fixtureLayoutAbiVersion", box expectedLayoutAbi; "nativeLayoutAbiVersion", box nativeLayoutAbi ])
     let mutable schemaChecked = false
     for caseName in caseNames do
@@ -6073,8 +6073,8 @@ let private runSumConformance
         if not schemaChecked then
             let actualSchema = constructorResult.LayoutSchemaVersion
             let expectedSchema = oracle.GetProperty("layoutSchemaVersion").GetInt32()
-            recordCheck checks failures $"sum/{optimizationName}/independent-layout-oracle-and-schema-v4"
-                (expectedSchema = 4 && actualSchema = expectedSchema)
+            recordCheck checks failures $"sum/{optimizationName}/independent-layout-oracle-and-schema-v5"
+                (expectedSchema = 5 && actualSchema = expectedSchema)
                 (jsonObject [
                     "expectedSchemaVersion", box expectedSchema
                     "actualSchemaVersion", box actualSchema ])
@@ -8436,7 +8436,7 @@ let private runRefinedStringConformance
         && mailboxManifestIdsPassed
         && mailboxManifestFormatVersion = 1
         && mailboxAbiVersion = 2
-        && mailboxLayoutAbiVersion = 4
+        && mailboxLayoutAbiVersion = 5
     record "refined-string-mailbox-compiled-admission-is-explicit" mailboxAdmissionPassed (jsonObject [
         "compiledModule", box true
         "backendExecutableProgram", box (VerifiedIrProgram.isBackendExecutable mailboxProgram)
@@ -8461,7 +8461,7 @@ let private runRefinedStringConformance
         "moduleAbiVersion", box mailboxAbiVersion
         "expectedModuleAbiVersion", box 2
         "layoutAbiVersion", box mailboxLayoutAbiVersion
-        "expectedLayoutAbiVersion", box 4
+        "expectedLayoutAbiVersion", box 5
         "associatedResumeSymbol", box mailboxModule.AssociatedResumeSymbol ])
 
     jsonObject [
@@ -8599,7 +8599,7 @@ let main argv =
         report["enumRuns"] <- enumRuns.ToArray()
         let sumEntries = compileSumEntries fixture
         report["sumVerifiedProgramInstance"] <- box true
-        report["sumBackendScope"] <- box "The same compiler-authorized VerifiedIrProgram and exact VerifiedIrBody instances run through the interpreter and owning-stack LLVM at O0/O2, including runtime Value input encoding and output decoding. Layout ABI4 here is the owning-stack physical layout contract. The older LlvmAot sharedgraph ABI3 path remains a separate fixed-only control and does not claim Option/Result support."
+        report["sumBackendScope"] <- box "The same compiler-authorized VerifiedIrProgram and exact VerifiedIrBody instances run through the interpreter and owning-stack LLVM at O0/O2, including runtime Value input encoding and output decoding. Layout ABI5 here is the owning-stack physical layout contract. The older LlvmAot sharedgraph ABI3 path remains a separate fixed-only control and does not claim Option/Result support."
         let sumRuns = ResizeArray<obj>()
         for optimization, optimizationName in optimizationPairs do
             sumRuns.Add(box (runSumConformance checks failures fixture artifactsRoot optimization optimizationName sumEntries))

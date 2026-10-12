@@ -300,6 +300,33 @@ let run () =
         ]
     check "an escaping None sum retains its inline owner" (not (scopeDecision escapingNoneSum (ArenaLifetime.analyzeBody escapingNoneSum) "sum-none-escape.scope.agent").AllowRewind)
 
+    let deadListEmpty =
+        compileBody emptyContext "arena-dead-list-empty" [] [
+            Scope(
+                [ ConstructContainer(ListEmpty, [ TString ], span "list-empty.dead.make.agent" 1)
+                  Call("drop", span "list-empty.dead.drop.agent" 1) ],
+                span "list-empty.dead.scope.agent" 1)
+        ]
+    check "a consumed empty List permits rewind" (scopeDecision deadListEmpty (ArenaLifetime.analyzeBody deadListEmpty) "list-empty.dead.scope.agent").AllowRewind
+
+    let escapingListEmpty =
+        compileBody emptyContext "arena-escaping-list-empty" [] [
+            Scope(
+                [ ConstructContainer(ListEmpty, [ TInt ], span "list-empty.escape.make.agent" 1) ],
+                span "list-empty.escape.scope.agent" 1)
+        ]
+    check "an escaping empty List retains its inline owner" (not (scopeDecision escapingListEmpty (ArenaLifetime.analyzeBody escapingListEmpty) "list-empty.escape.scope.agent").AllowRewind)
+
+    let droppedIntToString =
+        compileBody emptyContext "arena-dropped-int-to-string" [] [
+            Scope(
+                [ Push(LInt 42L, span "int-string.value.agent" 1)
+                  Call("int.to-string", span "int-string.call.agent" 1)
+                  Call("drop", span "int-string.drop.agent" 1) ],
+                span "int-string.scope.agent" 1)
+        ]
+    check "a dropped int.to-string result permits scope rewind" (scopeDecision droppedIntToString (ArenaLifetime.analyzeBody droppedIntToString) "int-string.scope.agent").AllowRewind
+
     let escapingOptionPayload =
         compileBody emptyContext "arena-escaping-option-payload" [] [
             Scope(
@@ -430,7 +457,8 @@ let run () =
     let unsupported =
         compileBody emptyContext "arena-unmodeled-list" [] [
             Scope(
-                [ ConstructContainer(ListEmpty, [ TString ], span "unmodeled.empty.agent" 1)
+                [ Push(LString "item", span "unmodeled.item.agent" 1)
+                  ConstructContainer(ListSingleton, [ TString ], span "unmodeled.singleton.agent" 1)
                   Call("drop", span "unmodeled.drop.agent" 1) ],
                 span "unmodeled.scope.agent" 1)
         ]

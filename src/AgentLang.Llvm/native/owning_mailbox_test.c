@@ -591,6 +591,95 @@ static const al_owning_mailbox_module test_sum_mailbox_module = {
      {3u, 1u, {3u, 4u, 0u}, {3u, 0u}, test_sum_mailbox_resume}},
     test_sum_mailbox_associated_resume};
 
+static void test_generic_mailbox_list_descriptor_validation(void) {
+  static _Alignas(8) uint8_t list_storage[8192];
+  al_mailbox_owning_config config = {AL_MAILBOX_CONTROL_ABI_VERSION,
+                                     sizeof(al_mailbox_owning_config),
+                                     1u,
+                                     128u,
+                                     128u,
+                                     64u,
+                                     1u,
+                                     AL_MAILBOX_OWNING_POLICY_RETURN};
+  al_owning_type_descriptor list_types[6];
+  al_owning_field_descriptor list_fields[7];
+  al_owning_layout list_layout = test_sum_mailbox_layout;
+  al_owning_mailbox_module list_module = test_sum_mailbox_module;
+  al_mailbox_runtime *runtime = NULL;
+
+  (void)memcpy(list_types, test_sum_mailbox_types,
+               sizeof(test_sum_mailbox_types));
+  (void)memcpy(list_fields, test_sum_mailbox_fields,
+               sizeof(test_sum_mailbox_fields));
+  list_types[5u] = (al_owning_type_descriptor){
+      AL_OWNING_TYPE_LIST,          315u, 6u, 1u, AL_OWNING_LAYOUT_DYNAMIC_U32,
+      AL_OWNING_LAYOUT_DYNAMIC_U32, 8u,   8u, 0u};
+  list_fields[6u] = (al_owning_field_descriptor){1u, 8u, 0u, 0u};
+  list_layout.types = list_types;
+  list_layout.type_count = 6u;
+  list_layout.fields = list_fields;
+  list_layout.field_count = 7u;
+  list_module.layout = &list_layout;
+
+  assert(al_mailbox_runtime_init_owning(&list_module, &config, list_storage,
+                                        sizeof(list_storage),
+                                        &runtime) == AL_MAILBOX_OK);
+  assert(runtime != NULL);
+  assert(al_mailbox_dispose(runtime) == AL_MAILBOX_OK);
+
+  {
+    al_owning_type_descriptor bad_types[6];
+    al_owning_field_descriptor bad_fields[7];
+    al_owning_layout bad_layout = list_layout;
+    al_owning_mailbox_module bad_module = list_module;
+
+    (void)memcpy(bad_types, list_types, sizeof(bad_types));
+    (void)memcpy(bad_fields, list_fields, sizeof(bad_fields));
+    bad_fields[6u].fixed_offset_bytes = 16u;
+    bad_layout.types = bad_types;
+    bad_layout.fields = bad_fields;
+    bad_module.layout = &bad_layout;
+    runtime = NULL;
+    assert(al_mailbox_runtime_init_owning(&bad_module, &config, list_storage,
+                                          sizeof(list_storage), &runtime) ==
+           AL_MAILBOX_INVALID_MODULE);
+    assert(runtime == NULL);
+
+    (void)memcpy(bad_types, list_types, sizeof(bad_types));
+    (void)memcpy(bad_fields, list_fields, sizeof(bad_fields));
+    bad_types[5u].field_count = 0u;
+    bad_layout.types = bad_types;
+    bad_layout.fields = bad_fields;
+    bad_module.layout = &bad_layout;
+    runtime = NULL;
+    assert(al_mailbox_runtime_init_owning(&bad_module, &config, list_storage,
+                                          sizeof(list_storage), &runtime) ==
+           AL_MAILBOX_INVALID_MODULE);
+    assert(runtime == NULL);
+
+    (void)memcpy(bad_types, list_types, sizeof(bad_types));
+    (void)memcpy(bad_fields, list_fields, sizeof(bad_fields));
+    bad_fields[6u].child_type_index = 6u;
+    bad_layout.types = bad_types;
+    bad_layout.fields = bad_fields;
+    bad_module.layout = &bad_layout;
+    runtime = NULL;
+    assert(al_mailbox_runtime_init_owning(&bad_module, &config, list_storage,
+                                          sizeof(list_storage), &runtime) ==
+           AL_MAILBOX_INVALID_MODULE);
+    assert(runtime == NULL);
+
+    bad_layout = list_layout;
+    bad_layout.abi_version = 4u;
+    bad_module.layout = &bad_layout;
+    runtime = NULL;
+    assert(al_mailbox_runtime_init_owning(&bad_module, &config, list_storage,
+                                          sizeof(list_storage), &runtime) ==
+           AL_MAILBOX_INVALID_MODULE);
+    assert(runtime == NULL);
+  }
+}
+
 static void test_generic_mailbox_nested_sum_roots(void) {
   static _Alignas(8) uint8_t sum_storage[8192];
   al_mailbox_owning_config config = {
@@ -1548,6 +1637,7 @@ int main(void) {
   assert(stats.initialized_mailboxes == 0u && stats.live_retained_bytes == 0u &&
          stats.live_retained_roots == 0u && stats.pending_mailboxes == 0u);
   assert(al_mailbox_dispose(runtime) == AL_MAILBOX_OK);
+  test_generic_mailbox_list_descriptor_validation();
   test_generic_mailbox_enum_preflight();
   test_generic_mailbox_nested_sum_roots();
   test_keep_associated_policy();

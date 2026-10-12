@@ -134,8 +134,8 @@
     }
   },
   "sumConformance": {
-    "layoutAbiVersion": 4,
-    "layoutSchemaVersion": 4,
+    "layoutAbiVersion": 5,
+    "layoutSchemaVersion": 5,
     "cases": [
       {
         "name": "option-none-int",
@@ -491,9 +491,73 @@
     },
     "graphAbi3Scope": {
       "backend": "LlvmAot shared graph ABI 3",
-      "optionResultParity": "unsupported and kept outside this owning-layout ABI 4 conformance suite",
+      "optionResultParity": "unsupported and kept outside this owning-layout ABI 5 conformance suite",
       "fixedOnlyControlRemainsSeparate": true
     }
+  },
+  "listConformance": {
+    "layoutAbiVersion": 5,
+    "layoutSchemaVersion": 5,
+    "moduleAbiVersion": 2,
+    "stackAbiVersion": 2,
+    "descriptorKind": 10,
+    "layoutDescriptorSizeBytes": 40,
+    "abiCompatibility": {
+      "abi4LayoutRejected": true,
+      "contextAbiVersionUnchanged": 2,
+      "moduleAbiVersionUnchanged": 2,
+      "descriptorStructSizesUnchanged": { "typeDescriptorBytes": 36, "fieldDescriptorBytes": 16, "layoutDescriptorBytes": 40 }
+    },
+    "rootHeaderBytes": 8,
+    "header": {
+      "countOffsetBytes": 0,
+      "countEncoding": "unsigned 32-bit little-endian",
+      "reservedOffsetBytes": 4,
+      "reservedBytesMustBeZero": true,
+      "elementEncoding": "packed, individually aligned element root encodings in order"
+    },
+    "emptyList": {
+      "extentBytes": 8,
+      "retainedBytesHex": "0000000000000000"
+    },
+    "zeroWidthUnitList": {
+      "count": 3,
+      "extentBytes": 32,
+      "retainedBytesHex": "0300000000000000000000000000000000000000000000000000000000000000"
+    },
+    "emptyStringList": {
+      "count": 1,
+      "extentBytes": 16,
+      "retainedBytesHex": "01000000000000000000000000000000"
+    },
+    "coverage": {
+      "entry": "typed Flow host ListValue input through verified native owning-stack execution and return decoding",
+      "recordFields": ["nominal Int", "Option<String>", "List<String>"],
+      "nestedList": "List<List<String>> with empty and Unicode elements",
+      "recordContainers": "List<Record> with List, Option<List>, Result<List, String> fields",
+      "unitRoots": "List<Unit>",
+      "listOperations": ["identity", "ListEmpty"],
+      "optimizationLevels": ["O0", "O2"],
+      "fixtureCaseCount": 6
+    },
+    "capacityOracle": {
+      "exactRetainedExtentSucceeds": true,
+      "oneByteShortRetainedExtentRejected": true,
+      "malformedCountReservedBitsTruncationAndExtentCases": "covered by the native runtime scanner suite"
+    },
+    "intToString": {
+      "word": "int.to-string",
+      "oracle": "Invariant signed Int64 decimal text",
+      "boundaryValues": ["-9223372036854775808", "-1000000000000000000", "-10", "-1", "0", "1", "10", "999999999999999999", "9223372036854775807"],
+      "randomSeed": 251,
+      "randomValueCount": 256,
+      "optimizationLevels": ["O0", "O2"]
+    },
+    "limitations": [
+      "No general list map, fold, filter or edit operations are claimed.",
+      "No heap payload or automatic arena compaction is claimed.",
+      "The Flow frontend currently excludes zero-field record declarations; native runtime zero-width record-child scanning is covered separately."
+    ]
   },
   "programScopes": {
     "fixedControl": "The original Leaf/Envelope/State program runs through interpreter, ABI3 O0/O2, and owning O0/O2.",
@@ -1107,8 +1171,8 @@
   },
   "storageRuntimeTestOracle": {
     "suite": "owning_stack_runtime_storage_v2",
-    "cases": 56,
-    "checks": 792,
+    "cases": 58,
+    "checks": 872,
     "rawFrameBoundary": {
       "successfulHelperEnters": 66,
       "nextEnterDiagnosticDepth": 66,
@@ -1125,7 +1189,7 @@
       "peakCursorBytes": 56,
       "maxStackCapacityBytes": 64
     },
-    "dynamicCases": { "cases": 40, "checks": 603 },
+    "dynamicCases": { "cases": 42, "checks": 683 },
     "abi": {
       "eventSizeBytes": 40,
       "eventChecksumOffsetBytes": 32,
@@ -1141,7 +1205,7 @@
         "retained_copy_bytes": 160,
         "diagnostic_float_bits": 168
       },
-      "layoutAbiVersion": 4,
+      "layoutAbiVersion": 5,
       "layoutSizeBytes": 40,
       "layoutOffsetsBytes": { "types": 8, "type_count": 16, "fields": 24, "field_count": 32 },
       "typeDescriptorSizeBytes": 36,

@@ -61,7 +61,12 @@ statically linked adapter, carrying worker-owned provider state per execution.
 The synthetic boundary fixture remains a test. A native SQLite adapter now executes
 the room lookup through the same typed AOT entry, with a worker-owned connection
 and reusable prepared statement. This is not yet an HTTP endpoint.
-Broader host contracts and list support remain required. The fixed
+Typed owning lists and native `int.to-string` now pass focused O0/O2 conformance
+in [report 251](../reports/251-native-owning-lists.md). This adds layout ABI5
+(context/module ABI2 remain unchanged), but the compiler instruction surface is
+limited to `ListEmpty`; the generic fixture does not build the Campfire message
+list or measure list payloads through mailbox begin/resume. The nine operations
+in the room-read closure and native HTTP integration remain required. The fixed
 initialize/begin/resume mailbox exports are not a general application host interface.
 
 ## Delivery order
@@ -85,9 +90,13 @@ initialize/begin/resume mailbox exports are not a general application host inter
    application endpoint. Expand native contracts to the shared room-path closure,
    including conditional session-refresh writes, before measuring that endpoint.
 3. Add the list layout/instructions and `int.to-string` required by room display.
-   Emit a general owning module descriptor and entry ABI. Audit every affected
-   version, offset, capacity, layout fixture and deterministic oracle. Preserve
-   conservative compiler-proven rewinds; do not add automatic compaction.
+   **Complete for this bounded slice:** [report 251](../reports/251-native-owning-lists.md)
+   validates typed list layout ABI5, `ListEmpty`, identity/pass-through of typed
+   host values, and signed Int64 formatting at O0/O2. ABI4 layout modules are
+   rejected; context ABI2, module ABI2 and owning-stack ABI2 are unchanged.
+   General list construction/traversal and the Campfire message-list adapter are
+   not included. Preserve conservative compiler-proven rewinds; do not add
+   automatic compaction.
 4. Compile a complete GET/HEAD room path. A separately bound Flow entry may share
    existing authentication and room-policy helpers while excluding unrelated
    write/login routes from its static closure. Prove parity with the generic
@@ -95,8 +104,9 @@ initialize/begin/resume mailbox exports are not a general application host inter
    [The shared room-read entry](../reports/250-shared-room-read-entry.md) now
    matches the prechange generic dispatcher in 24 injected-provider cases. Its
    compiler-minted closure contains exactly nine host operations and db.read/write
-   effects. This verifies the application boundary; list layout, integer formatting
-   and admission/implementation of those native contracts still block native HTTP.
+   effects. Implement those nine operations, connect a native message-list adapter,
+   and then prove the complete endpoint through native HTTP; report 251 is compiler
+   and generic runtime evidence, not room-page evidence.
 5. Supply narrow native SQLite, cookie/crypto, browser, rendering and HTTP adapters.
    Use established native libraries/OS facilities, parameterized SQL and bounded
    input/output. Preserve existing SQLite data and Rails-compatible cookies.

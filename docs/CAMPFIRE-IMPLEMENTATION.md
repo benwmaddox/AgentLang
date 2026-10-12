@@ -20,7 +20,13 @@ The [shared room-read entry](../reports/250-shared-room-read-entry.md) provides 
 fixed GET/HEAD application boundary with independently checked behavior and a
 narrow host closure. It reuses session/browser/user policy in the language and
 keeps unrelated mutation routes out of that closure. Its whole-page native lowering
-still needs bounded lists, Int64 formatting and the remaining native adapters.
+now has typed owning list layout ABI5 and native Int64 formatting, as checked by
+[report 251](../reports/251-native-owning-lists.md). The compiler currently emits
+`ListEmpty` for language-created lists; the generic fixture round-trips supplied
+typed lists but does not build the Campfire message list or exercise mailbox
+begin/resume with lists. Implement the exact nine host operations in the room-read
+closure, connect the message-list adapter, and then verify the path through native
+HTTP. The SQLite room lookup is still the only native Campfire operation executed.
 
 The HTTP slice (room listing, message creation, login page/submission and logout)
 is a delivery milestone, not the final
