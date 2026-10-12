@@ -14,6 +14,7 @@
   <ItemGroup>
     <Compile Include="CookieHost.fs" />
     <Compile Include="ResponseRenderer.fs" />
+    <Compile Include="LoginHost.fs" />
     <Compile Include="Application.fs" />
     <Compile Include="Transport.fs" />
   </ItemGroup>

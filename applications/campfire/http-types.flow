@@ -1,6 +1,8 @@
 enum HttpRoute {
     case room-show
     case message-create
+    case session-new
+    case session-create
 }
 
 enum HttpFormError {
@@ -13,6 +15,11 @@ enum HttpFormError {
 record HttpMessageInput {
     field client-message-id: Option<String>
     field body: Option<String>
+}
+
+record HttpLoginInput {
+    field email-address: Option<String>
+    field password: Option<String>
 }
 
 record CampfireHttpRequest {
@@ -30,7 +37,9 @@ record CampfireHttpRequest {
     field session-token: Option<String>
     field bot-key: Option<BotKey>
     field message-form: Result<Option<HttpMessageInput>, HttpFormError>
+    field login-form: Result<Option<HttpLoginInput>, HttpFormError>
     field accepts-turbo: Bool
+    field accepts-html: Bool
     field last-room: Option<String>
     field browser: BrowserInfo
 }
@@ -43,6 +52,9 @@ enum HttpView {
     case redirect-session
     case incompatible-browser
     case room-not-found
+    case login-page
+    case redirect-authenticated
+    case redirect-first-run
 }
 
 record CampfireHttpResponse {

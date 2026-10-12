@@ -29,7 +29,12 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 
 [<Sealed>]
-type private FixedClock(instant: DateTimeOffset) =
+type private FixedClock(initialInstant: DateTimeOffset) =
+    let mutable instant = initialInstant
+
+    member _.CurrentInstant = instant
+    member _.Advance(duration: TimeSpan) = instant <- instant.Add duration
+
     interface IClock with
         member _.UtcNow() = instant
 
@@ -37,6 +42,15 @@ type private FixedClock(instant: DateTimeOffset) =
 type private ProviderProbe(provider: HostOperationProvider) =
     let calls = ResizeArray<string * Value list>()
     let mutable disposeCalls = 0
+
+    let rec redactValue = function
+        | StringValue _ -> StringValue "<redacted:string>"
+        | ListValue (itemType, values) -> ListValue(itemType, List.map redactValue values)
+        | OptionValue (itemType, value) -> OptionValue(itemType, Option.map redactValue value)
+        | ResultValue (okType, errorType, result) -> ResultValue(okType, errorType, Result.map redactValue result |> Result.mapError redactValue)
+        | RecordValue (name, fields) -> RecordValue(name, Map.map (fun _ value -> redactValue value) fields)
+        | NamedValue (name, value) -> NamedValue(name, redactValue value)
+        | value -> value
 
     member _.Calls = calls |> Seq.toList
     member _.Names = calls |> Seq.map fst |> Seq.toList
@@ -47,7 +61,7 @@ type private ProviderProbe(provider: HostOperationProvider) =
         { OperationIds = provider.OperationIds
           Invoke = fun operation values ->
               let (HostOperationId name) = operation
-              calls.Add((name, values))
+              calls.Add((name, List.map redactValue values))
               provider.Invoke operation values
           Dispose = fun () ->
               disposeCalls <- disposeCalls + 1
@@ -156,13 +170,19 @@ module Program =
         requestNode["accept"] <- optionalStringNode request.Accept
         requestNode["origin"] <- optionalStringNode request.Origin
         requestNode["fetchSite"] <- optionalStringNode request.FetchSite
-        requestNode["body"] <- optionalStringNode request.Body
+        requestNode["body"] <-
+            if request.Path.StartsWith("/session", StringComparison.Ordinal) && request.Body.IsSome then
+                jsonStringNode "<redacted-login-form>"
+            else optionalStringNode request.Body
 
         let responseNode = JsonObject()
         responseNode["status"] <- JsonValue.Create response.Status
         responseNode["location"] <- optionalStringNode response.Location
         responseNode["contentType"] <- optionalStringNode response.ContentType
-        responseNode["body"] <- JsonValue.Create response.Body
+        responseNode["body"] <-
+            JsonValue.Create(
+                if request.Path.StartsWith("/session", StringComparison.Ordinal) then "<redacted-login-response>"
+                else response.Body)
         let cookies = JsonArray()
         for header in response.SetCookies do
             cookies.Add(JsonValue.Create(header.Split('=', 2)[0]))
@@ -200,7 +220,7 @@ module Program =
         use connection = openConnection path SqliteOpenMode.ReadWriteCreate
         use command = connection.CreateCommand()
         command.CommandText <-
-            "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, role INTEGER NOT NULL, status INTEGER NOT NULL, bot_token TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
+            "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, role INTEGER NOT NULL, status INTEGER NOT NULL, bot_token TEXT, email_address TEXT, password_digest TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE UNIQUE INDEX users_bot_token_unique ON users(bot_token); " +
             "CREATE TABLE sessions (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), token TEXT NOT NULL UNIQUE, ip_address TEXT, user_agent TEXT, last_active_at TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE TABLE bans (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), ip_address TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
@@ -216,14 +236,16 @@ module Program =
             "CREATE TRIGGER reject_test_body BEFORE INSERT ON action_text_rich_texts WHEN NEW.body = 'abort-after-insert' BEGIN SELECT RAISE(ABORT, 'test-only message write failure'); END"
         command.ExecuteNonQuery() |> ignore
 
-        for id, name, role, status, botToken in
-            [ 1, "member", 0, 0, None
-              2, "other-member", 0, 0, None
-              3, "administrator", 1, 0, None
-              4, "bot", 2, 0, Some "4-bot-secret" ] do
+        for id, name, role, status, botToken, email, passwordDigest in
+            [ 1, "member", 0, 0, None, Some "member@example.test", Some "$2a$12$I/2qP3ixlNN..JU2dXSN0umG7/Folk3aUaqgSHn/Rl0G82O9WYk66"
+              2, "other-member", 0, 0, None, Some "other-member@example.test", None
+              3, "administrator", 1, 0, None, Some "administrator@example.test", None
+              4, "bot", 2, 0, Some "4-bot-secret", None, None
+              5, "inactive-member", 0, 1, None, Some "inactive@example.test", Some "$2a$12$I/2qP3ixlNN..JU2dXSN0umG7/Folk3aUaqgSHn/Rl0G82O9WYk66" ] do
             execute connection
-                "INSERT INTO users(id, name, role, status, bot_token, created_at, updated_at) VALUES ($id, $name, $role, $status, $bot, '2025-01-01 00:00:00', '2025-01-01 00:00:00')"
-                [ "$id", box id; "$name", box name; "$role", box role; "$status", box status; "$bot", nullable botToken ]
+                "INSERT INTO users(id, name, role, status, bot_token, email_address, password_digest, created_at, updated_at) VALUES ($id, $name, $role, $status, $bot, $email, $digest, '2025-01-01 00:00:00', '2025-01-01 00:00:00')"
+                [ "$id", box id; "$name", box name; "$role", box role; "$status", box status; "$bot", nullable botToken
+                  "$email", nullable email; "$digest", nullable passwordDigest ]
             |> ignore
 
         let insertSession id userId token ip agent lastActive =
@@ -342,9 +364,12 @@ module Program =
             |> expectOk "open existing authentication SQLite provider"
         let cookieProvider = CookieHost.createProvider cookies
         let browser = BrowserHost.createProvider()
-        let combined = HostComposition.provider [ campfire; authentication; cookieProvider; browser ]
+        let login = LoginHost.createProvider()
+        let combined = HostComposition.provider [ campfire; authentication; cookieProvider; browser; login ]
         let probe = ProviderProbe(combined)
-        let manifest = HostComposition.manifest [ CookieHost.manifest; CampfireHost.manifest; CampfireAuthenticationHost.manifest; BrowserHost.manifest ]
+        let manifest =
+            HostComposition.manifest
+                [ CookieHost.manifest; CampfireHost.manifest; CampfireAuthenticationHost.manifest; BrowserHost.manifest; LoginHost.manifest ]
         let mutable testFactoryCalls = 0
         let environment =
             { Manifest = manifest
@@ -445,11 +470,14 @@ module Program =
               "applications/campfire/http-types.flow"
               "applications/campfire/http.flow"
               "applications/campfire/http-tests.flow"
+              "applications/campfire/http-login.flow"
+              "applications/campfire/http-login-tests.flow"
               "applications/campfire/browser-types.flow"
               "applications/campfire/Http/Application.fs"
               "applications/campfire/Http/CookieHost.fs"
               "applications/campfire/Http/ResponseRenderer.fs"
               "applications/campfire/Http/Transport.fs"
+              "applications/campfire/Http/LoginHost.fs"
               "applications/campfire/Http/AgentLang.Campfire.Http.fsproj"
               "applications/campfire/campfire-types.flow"
               "applications/campfire/session-policy.flow"
@@ -486,7 +514,7 @@ module Program =
             use stream = File.OpenRead(path)
             relative, SHA256.HashData(stream) |> Convert.ToHexString |> fun value -> value.ToLowerInvariant())
 
-    let private checkHttpBehavior (client: HttpClient) (cookies: CookieService) (probe: ProviderProbe) =
+    let private checkHttpBehavior (client: HttpClient) (cookies: CookieService) (probe: ProviderProbe) (clock: FixedClock) =
         let token name = createSignedCookie cookies name
 
         currentCheck <- "member GET renders bounded newest page and escapes markup"
@@ -513,7 +541,7 @@ module Program =
         currentCheck <- "unauthenticated room redirect preserves encrypted existing state and return URL"
         let initialState = JsonObject()
         initialState["retained-marker"] <- JsonValue.Create("kept-across-login-redirect")
-        let encryptedState = cookies.EncryptRailsSession(initialState, now) |> expectOk "encrypt synthetic starting Rails session"
+        let encryptedState = cookies.EncryptRailsSession(initialState, clock.CurrentInstant) |> expectOk "encrypt synthetic starting Rails session"
         probe.Clear()
         let login =
             send client
@@ -525,7 +553,7 @@ module Program =
         equal (Some "/session/new") login.Location "unauthenticated route redirects to fixed login path"
         let returnedState =
             getCookie login "_campfire_session"
-            |> Option.bind (fun value -> cookies.DecryptRailsSession(value, now))
+            |> Option.bind (fun value -> cookies.DecryptRailsSession(value, clock.CurrentInstant))
             |> Option.defaultWith (fun () -> failwith "redirect response did not produce a decryptable Rails session cookie")
         equal "kept-across-login-redirect" (returnedState["retained-marker"].GetValue<string>()) "existing encrypted session state survives redirect mutation"
         equal "http://campfire.test/rooms/1?view=compact&x=1" (returnedState["return_to_after_authenticating"].GetValue<string>()) "encrypted return URL preserves route and query while using configured authority"
@@ -637,7 +665,7 @@ module Program =
                     ExtraHeaders = [ "X-Forwarded-For", "203.0.113.99" ] }
         expectStatus 422 csrf
         equal (beforeCsrf) (scalarLong databasePath "SELECT COUNT(*) FROM messages" []) "CSRF failure inserts no message"
-        equal "2026-01-01 12:00:00" (scalarString databasePath "SELECT last_active_at FROM sessions WHERE id = 11" []) "due session refresh commits before CSRF rejection"
+        equal (clock.CurrentInstant.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)) (scalarString databasePath "SELECT last_active_at FROM sessions WHERE id = 11" []) "due session refresh commits before CSRF rejection"
         equal "127.0.0.1" (scalarString databasePath "SELECT ip_address FROM sessions WHERE id = 11" []) "due refresh uses the transport remote address and ignores forwarded headers"
         equal (Some(token "due-token")) (getCookie csrf "session_token") "CSRF response refreshes the exact persisted session token"
         check (csrf.SetCookies |> List.exists (fun value -> value.StartsWith("session_token=", StringComparison.Ordinal))) "CSRF response returns refreshed session token cookie"
@@ -794,7 +822,7 @@ module Program =
                     Cookies = [ "session_token", token "orphan-token" ]
                     FetchSite = Some "same-origin" }
         expectStatus 500 orphan
-        equal "2026-01-01 12:00:00" (scalarString databasePath "SELECT last_active_at FROM sessions WHERE id = 14" []) "orphan session refresh is durable before the missing user result"
+        equal (clock.CurrentInstant.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)) (scalarString databasePath "SELECT last_active_at FROM sessions WHERE id = 14" []) "orphan session refresh is durable before the missing user result"
         check (orphan.SetCookies |> List.exists (fun value -> value.StartsWith("session_token=", StringComparison.Ordinal))) "orphan error retains the due refresh cookie"
         expectTrace probe
             [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.sessions.refresh-before"
@@ -841,6 +869,356 @@ module Program =
         expectStatus 431 cookieLimit
         expectTrace probe []
 
+    let private formPair (name: string) (value: string) = Uri.EscapeDataString(name) + "=" + Uri.EscapeDataString(value)
+
+    let private loginBody email password =
+        [ email |> Option.map (formPair "email_address")
+          password |> Option.map (formPair "password") ]
+        |> List.choose id
+        |> String.concat "&"
+
+    let private loginPost path email password accept =
+        { (baseSpec "POST" path) with
+            ContentType = Some "application/x-www-form-urlencoded"
+            Body = Some(loginBody email password)
+            Accept = accept
+            Origin = Some(publicUri.GetLeftPart(UriPartial.Authority))
+            FetchSite = Some "same-origin" }
+
+    let private checkLoginHttpBehavior (client: HttpClient) (cookies: CookieService) (probe: ProviderProbe) (clock: FixedClock) =
+        let secretPassword = "secret123456"
+        let passwordDigest = "$2a$12$I/2qP3ixlNN..JU2dXSN0umG7/Folk3aUaqgSHn/Rl0G82O9WYk66"
+        let memberEmail = "member@example.test"
+        let goodToken = createSignedCookie cookies "fresh-token"
+        let browserAndUsers = [ "campfire.browser.version-at-least?"; "campfire.users.any?" ]
+        let loginAttempt =
+            [ "campfire.bans.ip-banned?"
+              "campfire.browser.version-at-least?"
+              "campfire.sessions.login-attempt-count" ]
+        let loginCredentialCheck = loginAttempt @ [ "campfire.users.authenticate-password" ]
+        let loginSuccessTrace = loginCredentialCheck @ [ "campfire.sessions.start" ]
+        let emailInQuery = "<member&x@example.test>"
+        let encryptedExistingState =
+            let state = JsonObject()
+            state["retained-marker"] <- JsonValue.Create("keep-on-login-page")
+            cookies.EncryptRailsSession(state, clock.CurrentInstant)
+            |> expectOk "encrypt existing session state for public login GET"
+
+        currentCheck <- "GET and HEAD login page encode query email and ignore signed session and bot cookies"
+        probe.Clear()
+        let page =
+            send client
+                { (baseSpec "GET" ("/session/new?email_address=" + Uri.EscapeDataString emailInQuery + "&bot_key=4-bot-secret")) with
+                    Cookies = [ "session_token", goodToken; "_campfire_session", encryptedExistingState ]
+                    Accept = Some "text/html" }
+        expectStatus 200 page
+        check (page.ContentType |> Option.exists (fun value -> value.StartsWith("text/html", StringComparison.OrdinalIgnoreCase))) "login GET renders HTML"
+        check (page.Body.Contains("value=\"&lt;member&amp;x@example.test&gt;\"", StringComparison.Ordinal)) "login page HTML-encodes the email query value"
+        check (not (page.Body.Contains("<member&x@example.test>", StringComparison.Ordinal))) "raw email markup is not reflected"
+        check (not (page.Body.Contains(secretPassword, StringComparison.Ordinal))) "login page never includes a password value"
+        check (not (page.Body.Contains(passwordDigest, StringComparison.Ordinal))) "login page never includes a password digest"
+        expectTrace probe browserAndUsers
+
+        probe.Clear()
+        let head =
+            send client
+                { (baseSpec "HEAD" "/session/new") with
+                    Cookies = [ "session_token", goodToken ]
+                    Accept = Some "text/html" }
+        expectStatus 200 head
+        check (head.Body = "") "HEAD login response has no body"
+        expectTrace probe browserAndUsers
+
+        currentCheck <- "public login ignores stale duplicate authentication cookies but not ambiguous encrypted state"
+        probe.Clear()
+        let ignoredAuthCookies = send client { (baseSpec "GET" "/session/new") with CookieHeaderOverride = Some "session_token=%invalid; session_token=stale; last_room=%invalid; last_room=stale" }
+        expectStatus 200 ignoredAuthCookies
+        expectTrace probe browserAndUsers
+        probe.Clear()
+        let duplicateState = send client { (baseSpec "GET" "/session/new") with CookieHeaderOverride = Some "_campfire_session=first; _campfire_session=second" }
+        expectStatus 400 duplicateState
+        expectTrace probe []
+
+        currentCheck <- "login HTML negotiation happens after the browser and users checks"
+        probe.Clear()
+        let jsonPage = send client { (baseSpec "GET" "/session/new") with Accept = Some "application/json" }
+        expectStatus 406 jsonPage
+        expectTrace probe browserAndUsers
+
+        probe.Clear()
+        let zeroQualityHtml =
+            send client { (baseSpec "GET" "/session/new") with Accept = Some "text/html;q=0" }
+        expectStatus 200 zeroQualityHtml
+        check (zeroQualityHtml.ContentType |> Option.exists (fun value -> value.StartsWith("text/html", StringComparison.OrdinalIgnoreCase))) "q=0 HTML remains a recognized login representation"
+        expectTrace probe browserAndUsers
+
+        currentCheck <- "old browser blocks login before users or attempt counter"
+        let oldBrowser = Some "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)"
+        probe.Clear()
+        let oldPage =
+            send client
+                { (baseSpec "GET" "/session/new") with
+                    UserAgent = oldBrowser
+                    Accept = Some "text/html" }
+        expectStatus 200 oldPage
+        check (oldPage.Body.Contains("Please upgrade your browser.", StringComparison.Ordinal)) "old browser receives the fixed compatibility page"
+        expectTrace probe []
+
+        probe.Clear()
+        let oldPost =
+            send client
+                { (loginPost "/session" (Some memberEmail) (Some secretPassword) None) with
+                    UserAgent = oldBrowser }
+        expectStatus 200 oldPost
+        check (oldPost.Body.Contains("Please upgrade your browser.", StringComparison.Ordinal)) "old browser POST is gated before credentials"
+        expectTrace probe [ "campfire.bans.ip-banned?" ]
+
+        currentCheck <- "login CSRF failure stops before browser checks and attempt or password operations"
+        probe.Clear()
+        let csrf =
+            send client
+                { (loginPost "/session" (Some memberEmail) (Some secretPassword) None) with
+                    Origin = Some "https://attacker.invalid"
+                    FetchSite = Some "cross-site" }
+        expectStatus 422 csrf
+        expectTrace probe [ "campfire.bans.ip-banned?" ]
+
+        currentCheck <- "ambiguous encrypted session cookies are rejected before login dispatch"
+        probe.Clear()
+        let duplicateSignedCookie = cookiePair "_campfire_session" goodToken + "; " + cookiePair "_campfire_session" goodToken
+        let malformedCookie =
+            send client
+                { (baseSpec "POST" "/session") with
+                    CookieHeaderOverride = Some duplicateSignedCookie
+                    ContentType = Some "application/x-www-form-urlencoded"
+                    Body = Some(loginBody (Some memberEmail) (Some secretPassword)) }
+        expectStatus 400 malformedCookie
+        expectTrace probe []
+
+        currentCheck <- "malformed and unsupported login forms stay bounded and ordered"
+        probe.Clear()
+        let duplicateField =
+            send client
+                { (loginPost "/session" None None None) with
+                    Body = Some(formPair "email_address" memberEmail + "&" + formPair "email_address" "other@example.test" + "&" + formPair "password" secretPassword) }
+        expectStatus 400 duplicateField
+        expectTrace probe loginAttempt
+
+        probe.Clear()
+        let unsupportedMedia =
+            send client
+                { (loginPost "/session" (Some memberEmail) (Some secretPassword) None) with
+                    ContentType = Some "text/plain" }
+        expectStatus 415 unsupportedMedia
+        expectTrace probe loginAttempt
+
+        probe.Clear()
+        let unsupportedJsonMedia =
+            send client
+                { (loginPost "/session" (Some memberEmail) (Some secretPassword) None) with
+                    ContentType = Some "application/json" }
+        expectStatus 415 unsupportedJsonMedia
+        expectTrace probe loginAttempt
+
+        let tooLarge = String('x', int Transport.MaximumBodyBytes + 1)
+        probe.Clear()
+        let oversizedChunked =
+            send client
+                { (loginPost "/session" None None None) with
+                    Body = Some tooLarge
+                    Chunked = true }
+        expectStatus 413 oversizedChunked
+        expectTrace probe []
+
+        probe.Clear()
+        let oversizedHeaders =
+            send client
+                { (baseSpec "POST" "/session") with
+                    ExtraHeaders = [ "X-Test-Large", String('h', 33000) ] }
+        expectStatus 431 oversizedHeaders
+        expectTrace probe []
+
+        currentCheck <- "login requests with missing, wrong, or inactive credentials do not start sessions"
+        let missingCredentials =
+            [ None, None
+              Some memberEmail, None
+              None, Some secretPassword ]
+        for email, password in missingCredentials do
+            probe.Clear()
+            let missing = send client (loginPost "/session" email password None)
+            expectStatus 401 missing
+            check (not (missing.Body.Contains(secretPassword, StringComparison.Ordinal))) "missing-credential response never reflects the password"
+            expectTrace probe loginAttempt
+
+        probe.Clear()
+        let wrongPassword = "wrong-password-should-not-leak"
+        let sessionsBeforeInvalidCredentials = scalarLong databasePath "SELECT COUNT(*) FROM sessions" []
+        let wrong = send client (loginPost "/session" (Some memberEmail) (Some wrongPassword) None)
+        expectStatus 401 wrong
+        check (not (wrong.Body.Contains(wrongPassword, StringComparison.Ordinal))) "wrong password is not reflected in the response"
+        check (not (wrong.Body.Contains(passwordDigest, StringComparison.Ordinal))) "password digest is not reflected in the response"
+        equal
+            [ StringValue "<redacted:string>"; StringValue "<redacted:string>" ]
+            (probe.Calls |> List.find (fun (name, _) -> name = "campfire.users.authenticate-password") |> snd)
+            "provider probe records only the credential value types"
+        expectTrace probe loginCredentialCheck
+
+        probe.Clear()
+        let inactive = send client (loginPost "/session" (Some "inactive@example.test") (Some secretPassword) None)
+        expectStatus 401 inactive
+        check (not (inactive.Body.Contains(secretPassword, StringComparison.Ordinal))) "inactive-account response never reflects the password"
+        expectTrace probe loginCredentialCheck
+
+        probe.Clear()
+        let jsonFailure =
+            send client (loginPost "/session" (Some memberEmail) (Some wrongPassword) (Some "application/json"))
+        expectStatus 406 jsonFailure
+        check (jsonFailure.Body = "") "credential failure negotiated away from HTML has an empty body"
+        equal sessionsBeforeInvalidCredentials (scalarLong databasePath "SELECT COUNT(*) FROM sessions" []) "missing, wrong, inactive, and non-HTML failures create no session"
+        expectTrace probe loginCredentialCheck
+
+        currentCheck <- "successful login redirects despite JSON Accept and signs a permanent HttpOnly Lax cookie"
+        clock.Advance(TimeSpan.FromSeconds 180.0)
+        let sessionsBefore = scalarLong databasePath "SELECT COUNT(*) FROM sessions" []
+        probe.Clear()
+        let success =
+            send client
+                { (loginPost "/session?bot_key=4-bot-secret" (Some memberEmail) (Some secretPassword) (Some "application/json")) with
+                    Cookies = [ "session_token", goodToken ] }
+        expectStatus 302 success
+        equal (Some "/") success.Location "login without a return target falls back to the configured root"
+        equal (sessionsBefore + 1L) (scalarLong databasePath "SELECT COUNT(*) FROM sessions" []) "successful login creates exactly one session"
+        let issuedCookie =
+            getCookie success "session_token"
+            |> Option.defaultWith (fun () -> failwith "successful login did not issue a signed session cookie")
+        let issuedToken =
+            cookies.VerifySessionToken(issuedCookie, clock.CurrentInstant)
+            |> Option.defaultWith (fun () -> failwith "successful login session cookie failed signature verification")
+        equal issuedToken (scalarString databasePath "SELECT token FROM sessions ORDER BY id DESC LIMIT 1" []) "issued token matches the persisted session"
+        assertCookieHasFlag success "session_token" "HttpOnly"
+        assertCookieHasFlag success "session_token" "SameSite=Lax"
+        assertCookieHasFlag success "session_token" "Path=/"
+        let sessionHeader = success.SetCookies |> List.find (fun value -> value.StartsWith("session_token=", StringComparison.Ordinal))
+        check (sessionHeader.Contains("Expires=", StringComparison.OrdinalIgnoreCase)) "session token cookie is permanent"
+        check (not (success.Body.Contains(secretPassword, StringComparison.Ordinal))) "successful login response never includes the password"
+        check (not (success.Body.Contains(passwordDigest, StringComparison.Ordinal))) "successful login response never includes the password digest"
+        expectTrace probe loginSuccessTrace
+
+        currentCheck <- "login failure preserves encrypted return target for a later successful attempt"
+        let returnTarget = "http://campfire.test/rooms/1?view=compact&source=login"
+        let returnState = JsonObject()
+        returnState["return_to_after_authenticating"] <- JsonValue.Create returnTarget
+        returnState["retained-marker"] <- JsonValue.Create "preserved-through-login"
+        let returnCookie = cookies.EncryptRailsSession(returnState, clock.CurrentInstant) |> expectOk "encrypt login return target"
+        probe.Clear()
+        let failedReturn =
+            send client
+                { (loginPost "/session" (Some memberEmail) (Some wrongPassword) None) with
+                    Cookies = [ "_campfire_session", returnCookie ] }
+        expectStatus 401 failedReturn
+        check (not (failedReturn.SetCookies |> List.exists (fun value -> value.StartsWith("_campfire_session=", StringComparison.Ordinal)))) "failed login does not replace the encrypted return target"
+        check (not (failedReturn.Body.Contains(wrongPassword, StringComparison.Ordinal))) "failed login response does not echo its password"
+        expectTrace probe loginCredentialCheck
+
+        probe.Clear()
+        let returned =
+            send client
+                { (loginPost "/session" (Some memberEmail) (Some secretPassword) None) with
+                    Cookies = [ "_campfire_session", returnCookie ] }
+        expectStatus 302 returned
+        equal (Some "/rooms/1?view=compact&source=login") returned.Location "same-authority return target is used after success"
+        let consumedState =
+            getCookie returned "_campfire_session"
+            |> Option.bind (fun value -> cookies.DecryptRailsSession(value, clock.CurrentInstant))
+            |> Option.defaultWith (fun () -> failwith "successful return-target login did not produce decryptable state")
+        check (isNull consumedState["return_to_after_authenticating"]) "successful login consumes the return target"
+        equal "preserved-through-login" (consumedState["retained-marker"].GetValue<string>()) "successful login preserves unrelated encrypted state"
+        expectTrace probe loginSuccessTrace
+
+        currentCheck <- "hostile encrypted return targets always fall back to the configured root"
+        let hostileTargets =
+            [ "https://attacker.invalid/steal"
+              "//attacker.invalid/steal"
+              "\\\\attacker.invalid\\share"
+              "http://campfire.test/rooms/1\r\nLocation: https://attacker.invalid/steal" ]
+        for target in hostileTargets do
+            let state = JsonObject()
+            state["return_to_after_authenticating"] <- JsonValue.Create target
+            state["retained-marker"] <- JsonValue.Create "kept"
+            let encrypted = cookies.EncryptRailsSession(state, clock.CurrentInstant) |> expectOk "encrypt hostile test return target"
+            probe.Clear()
+            let response =
+                send client
+                    { (loginPost "/session" (Some memberEmail) (Some secretPassword) None) with
+                        Cookies = [ "_campfire_session", encrypted ] }
+            expectStatus 302 response
+            equal (Some "/") response.Location $"hostile return target {target} is rejected"
+            let savedState =
+                getCookie response "_campfire_session"
+                |> Option.bind (fun value -> cookies.DecryptRailsSession(value, clock.CurrentInstant))
+                |> Option.defaultWith (fun () -> failwith "hostile return-target login did not preserve encrypted state")
+            check (isNull savedState["return_to_after_authenticating"]) "hostile return target is consumed"
+            equal "kept" (savedState["retained-marker"].GetValue<string>()) "hostile target handling preserves unrelated state"
+            expectTrace probe loginSuccessTrace
+
+        currentCheck <- "non-string encrypted return target falls back to root and is consumed"
+        let nonStringState = JsonObject()
+        nonStringState["return_to_after_authenticating"] <- JsonValue.Create(42)
+        nonStringState["retained-marker"] <- JsonValue.Create "kept-after-invalid-return"
+        let nonStringCookie =
+            cookies.EncryptRailsSession(nonStringState, clock.CurrentInstant)
+            |> expectOk "encrypt non-string login return target"
+        probe.Clear()
+        let nonStringReturn =
+            send client
+                { (loginPost "/session" (Some memberEmail) (Some secretPassword) None) with
+                    Cookies = [ "_campfire_session", nonStringCookie ] }
+        expectStatus 302 nonStringReturn
+        equal (Some "/") nonStringReturn.Location "non-string return target falls back to root"
+        let nonStringSavedState =
+            getCookie nonStringReturn "_campfire_session"
+            |> Option.bind (fun value -> cookies.DecryptRailsSession(value, clock.CurrentInstant))
+            |> Option.defaultWith (fun () -> failwith "non-string return-target login did not preserve encrypted state")
+        check (isNull nonStringSavedState["return_to_after_authenticating"]) "non-string return target is consumed"
+        equal "kept-after-invalid-return" (nonStringSavedState["retained-marker"].GetValue<string>()) "non-string target handling preserves unrelated state"
+        expectTrace probe loginSuccessTrace
+
+        let persistedTrace = File.ReadAllText operationTracePath
+        let persistedTranscript = File.ReadAllText transcriptPath
+        for sensitive in [ secretPassword; passwordDigest; wrongPassword ] do
+            check (not (persistedTrace.Contains(sensitive, StringComparison.Ordinal))) "provider trace never stores password material"
+            check (not (persistedTranscript.Contains(sensitive, StringComparison.Ordinal))) "HTTP transcript never stores password material"
+        issuedCookie
+
+    let private checkLoginRateBoundary (client: HttpClient) (probe: ProviderProbe) (clock: FixedClock) =
+        currentCheck <- "login attempt budget allows ten posts and rejects the eleventh"
+        let loginAttempt =
+            [ "campfire.bans.ip-banned?"
+              "campfire.browser.version-at-least?"
+              "campfire.sessions.login-attempt-count" ]
+        clock.Advance(TimeSpan.FromSeconds 180.0)
+        for _ in 1 .. 10 do
+            probe.Clear()
+            let allowed = send client (loginPost "/session" None None None)
+            expectStatus 401 allowed
+            expectTrace probe loginAttempt
+        let sessionsBeforeLimit = scalarLong databasePath "SELECT COUNT(*) FROM sessions" []
+        probe.Clear()
+        let limited = send client (loginPost "/session" (Some "member@example.test") (Some "wrong-after-limit") None)
+        expectStatus 429 limited
+        check (not (limited.Body.Contains("wrong-after-limit", StringComparison.Ordinal))) "rate-limited response does not echo credentials"
+        equal sessionsBeforeLimit (scalarLong databasePath "SELECT COUNT(*) FROM sessions" []) "eleventh login attempt creates no session"
+        expectTrace probe loginAttempt
+
+        currentCheck <- "login attempt budget expires exactly at 180 seconds"
+        clock.Advance(TimeSpan.FromSeconds 180.0)
+        probe.Clear()
+        let expired = send client (loginPost "/session" None None None)
+        expectStatus 401 expired
+        expectTrace probe loginAttempt
+
+    let private checkBannedHttpBehavior (client: HttpClient) (cookies: CookieService) (probe: ProviderProbe) =
+        let token name = createSignedCookie cookies name
         currentCheck <- "unsafe-IP ban precedes cookie verification while GET omits ban lookup"
         executeAtPath
             databasePath
@@ -859,6 +1237,14 @@ module Program =
                     ExtraHeaders = [ "X-Forwarded-For", "203.0.113.99" ] }
         expectStatus 429 bannedPost
         expectTrace probe [ "campfire.bans.ip-banned?" ]
+
+        probe.Clear()
+        let bannedLogin =
+            send client (loginPost "/session" (Some "member@example.test") (Some "password-should-not-be-checked") None)
+        expectStatus 429 bannedLogin
+        check (not (bannedLogin.Body.Contains("password-should-not-be-checked", StringComparison.Ordinal))) "banned login response does not echo credentials"
+        expectTrace probe [ "campfire.bans.ip-banned?" ]
+
         let getWhileBanned =
             send client
                 { (baseSpec "GET" "/rooms/1") with
@@ -869,6 +1255,48 @@ module Program =
         expectTrace probe
             [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
               "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page" ]
+
+    let private checkEmptyUsersHttpBehavior (sourceDirectory: string) (clock: FixedClock) (cookies: CookieService) =
+        currentCheck <- "empty users login redirects to first run"
+        let emptyDatabase = Path.Combine(runDirectory, "empty-users.sqlite3")
+        let emptyProject = Path.Combine(runDirectory, "empty-users-project")
+        seedFixture emptyDatabase
+        executeAtPath
+            emptyDatabase
+            "DELETE FROM messages; DELETE FROM action_text_rich_texts; DELETE FROM memberships; DELETE FROM rooms; DELETE FROM sessions; DELETE FROM bans; DELETE FROM users;"
+            []
+        |> ignore
+        let environment, probe, _ = createEnvironment emptyDatabase (clock :> IClock) cookies
+        let application = Application.create emptyProject sourceDirectory environment
+        let options =
+            { PublicBaseUri = publicUri
+              ForceSsl = false
+              Cookies = cookies
+              Clock = fun () -> clock.CurrentInstant
+              NormalizeBrowser = Application.normalizeBrowser
+              Invoke = application.Invoke }
+        let builder = WebApplication.CreateBuilder([||])
+        builder.WebHost.UseUrls("http://127.0.0.1:0") |> ignore
+        builder.Logging.ClearProviders() |> ignore
+        use web = builder.Build()
+        Transport.mapRoutes web options
+        web.StartAsync().GetAwaiter().GetResult()
+        try
+            let server = web.Services.GetRequiredService<IServer>()
+            let feature = server.Features.Get<IServerAddressesFeature>()
+            if isNull feature || feature.Addresses.Count = 0 then failwith "empty-users Kestrel did not expose its loopback address"
+            use handler = new HttpClientHandler(AllowAutoRedirect = false, UseCookies = false, UseProxy = false)
+            use client = new HttpClient(handler)
+            client.Timeout <- TimeSpan.FromSeconds(10.0)
+            client.BaseAddress <- Uri(feature.Addresses |> Seq.head)
+            probe.Clear()
+            let firstRun = send client (baseSpec "GET" "/session/new")
+            expectStatus 302 firstRun
+            equal (Some "/first_run") firstRun.Location "empty users redirect to first run"
+            expectTrace probe [ "campfire.browser.version-at-least?"; "campfire.users.any?" ]
+        finally
+            web.StopAsync().GetAwaiter().GetResult()
+            probe.AsProvider.Dispose()
 
     let private runHttpApplication () =
         Directory.CreateDirectory(runDirectory) |> ignore
@@ -891,7 +1319,7 @@ module Program =
             { PublicBaseUri = publicUri
               ForceSsl = false
               Cookies = cookies
-              Clock = fun () -> now
+              Clock = fun () -> clock.CurrentInstant
               NormalizeBrowser = Application.normalizeBrowser
               Invoke = application.Invoke }
 
@@ -914,7 +1342,11 @@ module Program =
             check (client.BaseAddress.Port > 0) "Kestrel selected a nonzero ephemeral port"
             check (address.StartsWith("http://127.0.0.1:", StringComparison.OrdinalIgnoreCase)) "Kestrel uses the IPv4 loopback address expected by the ban fixture"
 
-            checkHttpBehavior client cookies providerProbe
+            checkHttpBehavior client cookies providerProbe clock
+            let issuedLoginCookie = checkLoginHttpBehavior client cookies providerProbe clock
+            checkLoginRateBoundary client providerProbe clock
+            checkBannedHttpBehavior client cookies providerProbe
+            checkEmptyUsersHttpBehavior sourceDirectory clock cookies
 
             currentCheck <- "same dictionary can be reopened without database mutation"
             let before = snapshot databasePath
@@ -922,12 +1354,12 @@ module Program =
             let currentStore = Path.Combine(projectDirectory, ".agentlang", "store", "CURRENT")
             let dictionaryPointerBefore = File.ReadAllBytes currentStore
             let providerCallsBeforeRestart = providerProbe.Calls.Length
-            let restarted = Application.create projectDirectory sourceDirectory environment
+            let reopened = Application.create projectDirectory sourceDirectory environment
             equal before (snapshot databasePath) "restarting the application preserves the asserted domain summary"
             equal databaseDigestBefore (databaseDigest databasePath) "restarting the application leaves every fixture table row unchanged"
             equal providerCallsBeforeRestart providerProbe.Calls.Length "startup/reload does not execute database operations"
             check (dictionaryPointerBefore.AsSpan().SequenceEqual(File.ReadAllBytes currentStore)) "second startup reuses the same persisted dictionary generation"
-            let words = restarted.Engine.Dispatch("words", JsonObject())
+            let words = reopened.Engine.Dispatch("words", JsonObject())
             check (words["ok"].GetValue<bool>()) "fresh engine can read the existing published language dictionary"
             let dataNode = words["data"]
             let wordEntriesNode = dataNode["words"]
@@ -938,6 +1370,47 @@ module Program =
                     nameNode.GetValue<string>() = "campfire.http.dispatch"))
                 "reloaded dictionary retains the fixed HTTP entrypoint"
             equal 0 (testFactoryCalls()) "repeat startup still does not construct a test provider"
+
+            currentCheck <- "login session restores from SQLite after application restart"
+            let restartedEnvironment, restartedProbe, restartedTestFactoryCalls =
+                createEnvironment databasePath (clock :> IClock) cookies
+            try
+                let restarted = Application.create projectDirectory sourceDirectory restartedEnvironment
+                equal before (snapshot databasePath) "fresh providers reopen the durable database without changing its domain summary"
+                equal databaseDigestBefore (databaseDigest databasePath) "fresh providers preserve every database row on startup"
+                equal 0 (restartedTestFactoryCalls()) "fresh production provider startup does not construct a test provider"
+                equal 0 restartedProbe.Calls.Length "fresh provider startup performs no database operation"
+                let restartOptions = { options with Invoke = restarted.Invoke }
+                let restartBuilder = WebApplication.CreateBuilder([||])
+                restartBuilder.WebHost.UseUrls("http://127.0.0.1:0") |> ignore
+                restartBuilder.Logging.ClearProviders() |> ignore
+                use restartWeb = restartBuilder.Build()
+                Transport.mapRoutes restartWeb restartOptions
+                restartWeb.StartAsync().GetAwaiter().GetResult()
+                try
+                    let restartServer = restartWeb.Services.GetRequiredService<IServer>()
+                    let restartFeature = restartServer.Features.Get<IServerAddressesFeature>()
+                    if isNull restartFeature || restartFeature.Addresses.Count = 0 then
+                        failwith "restarted Kestrel did not expose its loopback address"
+                    use restartHandler = new HttpClientHandler(AllowAutoRedirect = false, UseCookies = false, UseProxy = false)
+                    use restartClient = new HttpClient(restartHandler)
+                    restartClient.Timeout <- TimeSpan.FromSeconds(10.0)
+                    restartClient.BaseAddress <- Uri(restartFeature.Addresses |> Seq.head)
+                    restartedProbe.Clear()
+                    let restoredRoom =
+                        send restartClient
+                            { (baseSpec "GET" "/rooms/1") with
+                                Cookies = [ "session_token", issuedLoginCookie ] }
+                    expectStatus 200 restoredRoom
+                    check (restoredRoom.Body.Contains("<h1>Main room</h1>", StringComparison.Ordinal)) "restarted application restores the persisted login session"
+                    expectTrace restartedProbe
+                        [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
+                          "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"
+                          "campfire.messages.last-page" ]
+                finally
+                    restartWeb.StopAsync().GetAwaiter().GetResult()
+            finally
+                restartedProbe.AsProvider.Dispose()
         finally
             web.StopAsync().GetAwaiter().GetResult()
             providerProbe.AsProvider.Dispose()

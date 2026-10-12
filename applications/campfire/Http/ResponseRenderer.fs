@@ -12,7 +12,8 @@ type RenderedResponse =
       RefreshToken: string option
       RememberReturnTo: bool
       LastRoom: int64 option
-      Alert: string option }
+      Alert: string option
+      CompleteLogin: bool }
 
 /// Only fixed templates are executable HTML. Every application string is
 /// encoded, including existing rich-text rows; Action Text parity is later work.
@@ -58,10 +59,22 @@ module ResponseRenderer =
                     "text/plain; charset=utf-8", "", None, None
                 | "room-not-found" when status = 200 && noRouteData && not remember && lastRoom.IsNone ->
                     "text/html; charset=utf-8", $"<!doctype html><html><body><p>{encode text}</p></body></html>", None, None
+                | "login-page" when (status = 200 || status = 401 || status = 429) && noRouteData && not remember && token.IsNone && lastRoom.IsNone ->
+                    let alertHtml =
+                        if status = 401 || status = 429 then
+                            "<p role=\"alert\">Too many requests or unauthorized.</p>"
+                        else ""
+                    let email = encode text
+                    "text/html; charset=utf-8",
+                    $"<!doctype html><html><body>{alertHtml}<form method=\"post\" action=\"/session\"><label for=\"email_address\">Email address</label><input id=\"email_address\" name=\"email_address\" type=\"email\" autocomplete=\"username\" value=\"{email}\"><label for=\"password\">Password</label><input id=\"password\" name=\"password\" type=\"password\" autocomplete=\"current-password\" maxlength=\"72\"><button type=\"submit\">Sign in</button></form></body></html>", None, None
                 | "redirect-root" when status = 302 && noRouteData && not remember && lastRoom.IsNone ->
                     "text/html; charset=utf-8", "", Some "/", Some text
                 | "redirect-session" when status = 302 && noRouteData && text = "" && remember && token.IsNone && lastRoom.IsNone ->
                     "text/html; charset=utf-8", "", Some "/session/new", None
+                | "redirect-authenticated" when status = 302 && noRouteData && text = "" && not remember && token.IsSome && lastRoom.IsNone ->
+                    "text/html; charset=utf-8", "", None, None
+                | "redirect-first-run" when status = 302 && noRouteData && text = "" && not remember && token.IsNone && lastRoom.IsNone ->
+                    "text/html; charset=utf-8", "", Some "/first_run", None
                 | "incompatible-browser" when status = 200 && noRouteData && not remember && lastRoom.IsNone && text = "" ->
                     "text/html; charset=utf-8", "<!doctype html><html><body><p>Please upgrade your browser.</p></body></html>", None, None
                 | "room" when status = 200 && room.IsSome && message.IsNone && not remember && text = "" ->
@@ -84,5 +97,6 @@ module ResponseRenderer =
                     $"<turbo-stream action=\"append\" target=\"messages\"><template>{messageHtml row}</template></turbo-stream>", None, None
                 | _ -> fail ()
             Ok { Status = status; ContentType = contentType; Body = body; Location = location
-                 RefreshToken = token; RememberReturnTo = remember; LastRoom = lastRoom; Alert = alert }
+                 RefreshToken = token; RememberReturnTo = remember; LastRoom = lastRoom; Alert = alert
+                 CompleteLogin = view = "redirect-authenticated" }
         with _ -> Error "HTTP_RESPONSE_CONTRACT_MISMATCH"

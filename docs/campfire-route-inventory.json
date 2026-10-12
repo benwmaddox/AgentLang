@@ -97,8 +97,10 @@
       "path": "/session/new(.:format)",
       "endpoint": "sessions#new",
       "defaults": {},
-      "status": "not-validated",
-      "evidence": []
+      "status": "implementation-in-progress",
+      "evidence": [
+        "reports/244-campfire-public-login-http.md"
+      ]
     },
     {
       "verb": "GET",
@@ -145,8 +147,10 @@
       "path": "/session(.:format)",
       "endpoint": "sessions#create",
       "defaults": {},
-      "status": "not-validated",
-      "evidence": []
+      "status": "implementation-in-progress",
+      "evidence": [
+        "reports/244-campfire-public-login-http.md"
+      ]
     },
     {
       "verb": "GET",

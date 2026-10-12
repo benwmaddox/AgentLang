@@ -1,0 +1,166 @@
+fn campfire.http.login-page(request: CampfireHttpRequest, status: Int) -> CampfireHttpResponse {
+    doc "Builds a login page response whose text contains only the submitted email address, when present."
+
+    let email = match request.login-form {
+        error failure => ""
+        ok maybe-input => {
+            match maybe-input {
+                none => ""
+                some input => {
+                    match input.email-address {
+                        none => ""
+                        some value => value
+                    }
+                }
+            }
+        }
+    }
+    campfire.http.response(status, HttpView.login-page(), email, option.none<SessionToken>())
+}
+
+fn campfire.http.render-login-page(request: CampfireHttpRequest, status: Int) -> CampfireHttpResponse {
+    doc "Renders login-page statuses only when the caller accepts HTML."
+
+    if request.accepts-html {
+        campfire.http.login-page(request, status)
+    } else {
+        campfire.http.response(406, HttpView.empty(), "", option.none<SessionToken>())
+    }
+}
+
+fn campfire.http.login-form-error(request: CampfireHttpRequest) -> CampfireHttpResponse {
+    doc "Maps only the known form parser failures to their transport status."
+
+    match request.login-form {
+        error failure => {
+            match failure {
+                invalid-form => campfire.http.response(400, HttpView.empty(), "", option.none<SessionToken>())
+                unsupported-media => campfire.http.response(415, HttpView.empty(), "", option.none<SessionToken>())
+                unsupported-attachment => campfire.http.response(422, HttpView.empty(), "", option.none<SessionToken>())
+                body-too-large => campfire.http.response(413, HttpView.empty(), "", option.none<SessionToken>())
+            }
+        }
+        ok maybe-input => campfire.http.response(400, HttpView.empty(), "", option.none<SessionToken>())
+    }
+}
+
+fn campfire.http.login-submit(request: CampfireHttpRequest) -> CampfireHttpResponse {
+    effects db.read, db.write, random.read
+    doc "Consumes the per-IP login-attempt budget before inspecting parsed credentials, then delegates sign-in to the authentication policy."
+
+    match campfire.sessions.login-attempt-count(request.remote-ip, request.now) {
+        error failure => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+        ok attempts => {
+            if int.greater-than(attempts, 10) {
+                campfire.http.render-login-page(request, 429)
+            } else {
+                match request.login-form {
+                    error failure => campfire.http.login-form-error(request)
+                    ok maybe-input => {
+                        match maybe-input {
+                            none => campfire.http.render-login-page(request, 401)
+                            some input => {
+                                match input.email-address {
+                                    none => campfire.http.render-login-page(request, 401)
+                                    some email => {
+                                        match input.password {
+                                            none => campfire.http.render-login-page(request, 401)
+                                            some password => {
+                                                match campfire.authentication.sign-in(
+                                                    email,
+                                                    password,
+                                                    request.now,
+                                                    option.some<RemoteIp>(request.remote-ip),
+                                                    request.user-agent
+                                                ) {
+                                                    error failure => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+                                                    ok maybe-session => {
+                                                        match maybe-session {
+                                                            none => campfire.http.render-login-page(request, 401)
+                                                            some session => campfire.http.response(
+                                                                302,
+                                                                HttpView.redirect-authenticated(),
+                                                                "",
+                                                                option.some<SessionToken>(session.token)
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.http.session-login-route(request: CampfireHttpRequest) -> CampfireHttpResponse {
+    effects db.read, db.write, random.read
+    doc "Applies the same forgery and browser gates as authenticated routes before public GET or POST login behavior."
+
+    if campfire.request.forgery-check-passed?(request.method, request.origin, request.fetch-site, request.base-url, true, request.request-is-ssl, request.force-ssl) {
+        if campfire.browser.supported?(request.browser) {
+            match request.route {
+                session-new => {
+                    match request.method {
+                        get => {
+                            match campfire.users.any?() {
+                                error failure => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+                                ok any-users => {
+                                    if any-users {
+                                        campfire.http.render-login-page(request, 200)
+                                    } else {
+                                        campfire.http.response(302, HttpView.redirect-first-run(), "", option.none<SessionToken>())
+                                    }
+                                }
+                            }
+                        }
+                        head => {
+                            match campfire.users.any?() {
+                                error failure => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+                                ok any-users => {
+                                    if any-users {
+                                        campfire.http.render-login-page(request, 200)
+                                    } else {
+                                        campfire.http.response(302, HttpView.redirect-first-run(), "", option.none<SessionToken>())
+                                    }
+                                }
+                            }
+                        }
+                        unsafe => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+                    }
+                }
+                session-create => {
+                    match request.method {
+                        unsafe => campfire.http.login-submit(request)
+                        get => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+                        head => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+                    }
+                }
+                room-show => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+                message-create => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
+            }
+        } else {
+            campfire.http.response(200, HttpView.incompatible-browser(), "", option.none<SessionToken>())
+        }
+    } else {
+        campfire.http.response(422, HttpView.empty(), "", option.none<SessionToken>())
+    }
+}
+
+fn campfire.http.dispatch-after-ban(request: CampfireHttpRequest) -> CampfireHttpResponse {
+    effects db.read, db.write, clock.read, random.read
+    doc "Sends only public session routes to the login policy; protected room routes preserve their existing authentication flow."
+
+    match request.route {
+        room-show => campfire.http.authenticate(request)
+        message-create => campfire.http.authenticate(request)
+        session-new => campfire.http.session-login-route(request)
+        session-create => campfire.http.session-login-route(request)
+    }
+}

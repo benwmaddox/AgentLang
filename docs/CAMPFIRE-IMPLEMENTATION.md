@@ -6,7 +6,8 @@ This supersedes the earlier scheduling of Campfire as a final research exercise.
 It does not establish application readiness or change the intended native release
 runtime, arena allocation or mailbox execution model.
 
-The authenticated two-route HTTP slice is a delivery milestone, not the final
+The four-handler HTTP slice (room listing, message creation, login page and
+login submission) is a delivery milestone, not the final
 scope. Completion still requires the full application's observable behavior,
 existing-data migration, compatible cookies/assets/live protocols, deployment
 and native runtime work described below. Where a requirement appears infeasible,
@@ -18,7 +19,9 @@ the pinned Rails route vectors, including aliases and possibly absent reference
 actions. It is a compatibility checklist, not 177 implemented features or a
 percentage-complete measure. Rows require executable evidence before being
 marked validated; live protocols, assets, jobs, stored files and deployment also
-need separate acceptance evidence. The current two route rows are in progress.
+need separate acceptance evidence. The current four base route rows are in progress
+pending broader compatibility; GET/HEAD login and POST login now pass a focused
+302-assertion local HTTP suite. See [report 244](../reports/244-campfire-public-login-http.md).
 
 ## Reference and compatibility
 

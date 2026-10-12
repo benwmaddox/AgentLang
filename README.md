@@ -441,4 +441,4 @@ throughput or improved agent edit reliability.
 
 The [Campfire sign-in foundation](reports/243-campfire-sign-in-foundation.md)
 adds a tested, discoverable language library over fixed bcrypt and transactional
-session adapters. Public HTTP sign-in routing remains the next migration slice.
+session adapters. [Public HTTP login](reports/244-campfire-public-login-http.md) now passes 302 focused integration assertions. Logout, first-run setup and complete rendering/live delivery remain migration work.

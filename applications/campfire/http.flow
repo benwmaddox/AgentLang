@@ -117,12 +117,16 @@ fn campfire.http.route(request: CampfireHttpRequest, user: AuthUser, refresh: Op
                     match request.route {
                         room-show => campfire.http.response(302, HttpView.redirect-root(), "Room not found or inaccessible", refresh)
                         message-create => campfire.http.response(200, HttpView.room-not-found(), "This room was deleted.", refresh)
+                        session-new => campfire.http.response(500, HttpView.empty(), "", refresh)
+                        session-create => campfire.http.response(500, HttpView.empty(), "", refresh)
                     }
                 }
                 some room => {
                     match request.route {
                         room-show => campfire.http.show-room(request, user, room, refresh)
                         message-create => campfire.http.create-message(request, user, room, refresh)
+                        session-new => campfire.http.response(500, HttpView.empty(), "", refresh)
+                        session-create => campfire.http.response(500, HttpView.empty(), "", refresh)
                     }
                 }
             }
@@ -199,11 +203,11 @@ fn campfire.http.authenticate(request: CampfireHttpRequest) -> CampfireHttpRespo
 
 fn campfire.http.dispatch(request: CampfireHttpRequest) -> CampfireHttpResponse {
     effects db.read, db.write, clock.read, random.read
-    doc "Fixed HTTP entrypoint. Unsafe-IP rejection precedes cookie verification, authentication, CSRF, browser compatibility and route actions. Only the trusted host may bind this entrypoint; request data never selects code."
+    doc "Fixed HTTP entrypoint. Unsafe-IP rejection runs first for unsafe methods. Protected room routes keep cookie authentication; public session routes bypass session and bot lookup, then apply forgery and browser gates before login actions. Only the trusted host may bind this entrypoint; request data never selects code."
 
     match request.method {
-        get => campfire.http.authenticate(request)
-        head => campfire.http.authenticate(request)
+        get => campfire.http.dispatch-after-ban(request)
+        head => campfire.http.dispatch-after-ban(request)
         unsafe => {
             match campfire.bans.ip-banned?(request.remote-ip) {
                 error failure => campfire.http.response(500, HttpView.empty(), "", option.none<SessionToken>())
@@ -211,7 +215,7 @@ fn campfire.http.dispatch(request: CampfireHttpRequest) -> CampfireHttpResponse 
                     if banned {
                         campfire.http.response(429, HttpView.empty(), "", option.none<SessionToken>())
                     } else {
-                        campfire.http.authenticate(request)
+                        campfire.http.dispatch-after-ban(request)
                     }
                 }
             }

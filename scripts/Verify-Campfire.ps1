@@ -13,7 +13,7 @@ $repo = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $startedAt = [DateTimeOffset]::UtcNow
 if ([string]::IsNullOrWhiteSpace($EvidencePath)) {
     $runName = $startedAt.ToString('yyyyMMddTHHmmssZ') + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 8)
-    $EvidencePath = Join-Path $repo ".agentlang/campfire-login-243/verification/$runName/receipt.json"
+    $EvidencePath = Join-Path $repo ".agentlang/campfire-login-http-244/verification/$runName/receipt.json"
 } elseif (-not [IO.Path]::IsPathRooted($EvidencePath)) {
     $EvidencePath = Join-Path $repo $EvidencePath
 }
@@ -75,13 +75,14 @@ try {
         'browser' = 'tests/AgentLang.Campfire.Browser.Tests/AgentLang.Campfire.Browser.Tests.fsproj'
         'http' = 'tests/AgentLang.Campfire.Http.Tests/AgentLang.Campfire.Http.Tests.fsproj'
         'sign-in' = 'tests/AgentLang.Campfire.SignIn.Tests/AgentLang.Campfire.SignIn.Tests.fsproj'
+        'login-rate' = 'tests/AgentLang.Campfire.LoginRate.Tests/AgentLang.Campfire.LoginRate.Tests.fsproj'
     }
     foreach ($name in $projects.Keys) {
         $arguments = @('build', $projects[$name], '--configuration', $Configuration, '-m:1', '-nr:false')
         if ($NoRestore) { $arguments += '--no-restore' }
         Invoke-Check "build-$name" 'dotnet' $arguments
     }
-    foreach ($name in @('persistence', 'integration', 'cookies', 'authentication-storage', 'authentication-integration', 'browser', 'http', 'sign-in')) {
+    foreach ($name in @('persistence', 'integration', 'cookies', 'authentication-storage', 'authentication-integration', 'browser', 'http', 'sign-in', 'login-rate')) {
         Invoke-Check "test-$name" 'dotnet' @('run', '--project', $projects[$name], '--configuration', $Configuration, '--no-build', '--no-restore')
     }
     $cliPath = Join-Path $repo "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
@@ -104,6 +105,11 @@ try {
         'applications/campfire/room-message-tests.flow',
         'applications/campfire/http-types.flow',
         'applications/campfire/http.flow',
+        'applications/campfire/http-login.flow',
+        'applications/campfire/http-login-tests.flow',
+        'applications/campfire/Http/LoginHost.fs',
+        'tests/AgentLang.Campfire.LoginRate.Tests/Program.fs',
+        'tests/AgentLang.Campfire.LoginRate.Tests/AgentLang.Campfire.LoginRate.Tests.fsproj',
         'applications/campfire/http-tests.flow',
         'applications/campfire/browser-types.flow',
         'applications/campfire/browser-policy.flow',
@@ -154,7 +160,7 @@ try {
 } finally {
     $receipt = [ordered]@{
         formatVersion = 1
-        scope = 'Campfire interpreter storage/authentication, browser compatibility, authenticated loopback HTTP and pure application policies'
+        scope = 'Campfire interpreter storage/authentication, browser compatibility, public-login/authenticated loopback HTTP and pure application policies'
         passed = -not $failed
         revision = $revision
         configuration = $Configuration

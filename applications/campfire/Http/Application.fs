@@ -74,7 +74,8 @@ module Application =
                 [ "message-policy.flow"; "room-message.flow"; "room-message-tests.flow"
                   "authentication.flow"; "authentication-tests.flow"
                   "sign-in.flow"; "sign-in-tests.flow"
-                  "browser-policy.flow"; "browser-tests.flow"; "http.flow"; "http-tests.flow" ])
+                  "browser-policy.flow"; "browser-tests.flow"
+                  "http-login.flow"; "http.flow"; "http-login-tests.flow"; "http-tests.flow" ])
             for name in
                 [ "user.can-administer?"; "message.can-administer?"
                   "campfire.rooms.list-for-user"; "campfire.messages.list-for-member"

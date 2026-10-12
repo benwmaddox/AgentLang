@@ -17,7 +17,8 @@ contains 177 reference rows, and these two handlers remain in progress pending
 broader compatibility evidence. Do not read the two tested routes as a migration
 percentage.
 
-Next, complete compatible rendering and login/session issuance, then implement
+Next, implement logout and first-run account setup, complete compatible
+rendering, then implement
 live delivery over the Campfire protocol. Continue through the remaining route,
 asset, data-migration, background-job and deployment requirements. Preserve the
 reference's data, cookie and protocol contracts; record deliberate differences
@@ -32,16 +33,19 @@ remains the objective after the first slice passes.
 
 The [sign-in foundation](../reports/243-campfire-sign-in-foundation.md) now passes
 strict library qualification and real SQLite/bcrypt checks. New Campfire
-dictionaries expose it as a discoverable library. Public sign-in routes, rate
-limiting, rendering and cookie finalization are the next application slice.
+dictionaries expose it as a discoverable library. [Public login HTTP](../reports/244-campfire-public-login-http.md)
+now passes 302 focused assertions, including bounded forms, fixed-window rate
+limiting, cookie issuance and return-to handling. Full login layout/asset parity
+remains outstanding.
 
 The inherited-test edit guard is integrated. Room/message and session-restoration
 functions now exercise real SQLite through typed host adapters. Cookie compatibility,
 authentication storage, library reload and the resolved regression gates pass local
-component tests. Authenticated HTTP room listing/message creation is next, followed
-by rendering and live delivery. Avoid unrelated language research during migration.
+component tests. Authenticated HTTP room listing/message creation and public login
+have component validation. Continue session/setup, rendering and live delivery.
+Avoid unrelated language research during migration.
 
-Updated 2026-10-11. This is a delivery order and status map, not a replacement
+Updated 2026-10-12. This is a delivery order and status map, not a replacement
 for the [PRD](PRD.md). Reliable agent edits, discovery and reuse of accumulated
 typed vocabulary remain the primary research question. Runtime performance and
 development cost are separate measurements.

@@ -63,6 +63,8 @@ test-file campfire-http-authenticate {
             session-token = option.some<String>("invalid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -93,6 +95,8 @@ test-file campfire-http-authenticate {
             session-token = option.some<String>("missing-session"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -123,6 +127,8 @@ test-file campfire-http-authenticate {
             session-token = option.some<String>("failure"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -203,6 +209,8 @@ test-file campfire-http-authenticated {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.internet-explorer(), version = option.some<String>("1"), is-bot = false)
@@ -233,6 +241,8 @@ test-file campfire-http-authenticated {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.internet-explorer(), version = option.some<String>("1"), is-bot = false)
@@ -263,6 +273,8 @@ test-file campfire-http-authenticated {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -343,6 +355,8 @@ test-file campfire-http-bot-or-redirect {
             session-token = option.some<String>("valid"),
             bot-key = option.some<BotKey>(BotKey.new("active")),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -373,6 +387,8 @@ test-file campfire-http-bot-or-redirect {
             session-token = option.some<String>("valid"),
             bot-key = option.some<BotKey>(BotKey.new("inactive")),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -453,6 +469,8 @@ test-file campfire-http-create-message {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -483,6 +501,8 @@ test-file campfire-http-create-message {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = false,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -513,6 +533,8 @@ test-file campfire-http-create-message {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -543,6 +565,8 @@ test-file campfire-http-create-message {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.error<Option<HttpMessageInput>, HttpFormError>(HttpFormError.invalid-form()),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -573,6 +597,8 @@ test-file campfire-http-create-message {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.error<Option<HttpMessageInput>, HttpFormError>(HttpFormError.unsupported-media()),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -603,6 +629,8 @@ test-file campfire-http-create-message {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.error<Option<HttpMessageInput>, HttpFormError>(HttpFormError.unsupported-attachment()),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -633,6 +661,8 @@ test-file campfire-http-create-message {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.error<Option<HttpMessageInput>, HttpFormError>(HttpFormError.body-too-large()),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -713,6 +743,8 @@ test-file campfire-http-dispatch {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -743,6 +775,8 @@ test-file campfire-http-dispatch {
             session-token = option.some<String>("failure"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -773,6 +807,8 @@ test-file campfire-http-dispatch {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -803,6 +839,8 @@ test-file campfire-http-dispatch {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -833,6 +871,8 @@ test-file campfire-http-dispatch {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -975,6 +1015,8 @@ test-file campfire-http-route {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -1005,12 +1047,78 @@ test-file campfire-http-route {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
         ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), option.none<SessionToken>())
         response.status
         => 200
+        effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.http.route/session-new-rejected {
+        let response = campfire.http.route(campfireHttpRequest.new(
+            route = HttpRoute.session-new(),
+            method = RequestMethod.get(),
+            room-id = RoomId.new(1),
+            now = UtcInstant.new(3600000001),
+            remote-ip = RemoteIp.new("allowed"),
+            user-agent = option.none<String>(),
+            base-url = "https://chat.test",
+            request-is-ssl = true,
+            force-ssl = false,
+            origin = option.none<String>(),
+            fetch-site = option.some<String>("same-origin"),
+            session-token = option.none<String>(),
+            bot-key = option.none<BotKey>(),
+            message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
+            accepts-turbo = false,
+            last-room = option.none<String>(),
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+        ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), option.none<SessionToken>())
+        response.status
+        => 500
+        effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.http.route/session-create-rejected {
+        let response = campfire.http.route(campfireHttpRequest.new(
+            route = HttpRoute.session-create(),
+            method = RequestMethod.unsafe(),
+            room-id = RoomId.new(1),
+            now = UtcInstant.new(3600000001),
+            remote-ip = RemoteIp.new("allowed"),
+            user-agent = option.none<String>(),
+            base-url = "https://chat.test",
+            request-is-ssl = true,
+            force-ssl = false,
+            origin = option.none<String>(),
+            fetch-site = option.some<String>("same-origin"),
+            session-token = option.none<String>(),
+            bot-key = option.none<BotKey>(),
+            message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
+            accepts-turbo = false,
+            last-room = option.none<String>(),
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+        ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), option.none<SessionToken>())
+        response.status
+        => 500
         effects {
             db.read: 0
             db.write: 0
@@ -1085,6 +1193,8 @@ test-file campfire-http-show-room {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.none<String>(),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
@@ -1115,6 +1225,8 @@ test-file campfire-http-show-room {
             session-token = option.some<String>("valid"),
             bot-key = option.none<BotKey>(),
             message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.some<HttpMessageInput>(httpMessageInput.new(client-message-id = option.none<String>(), body = option.some<String>("Hello")))),
+            login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+            accepts-html = true,
             accepts-turbo = true,
             last-room = option.some<String>("1"),
             browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)

@@ -160,3 +160,6 @@ reports/evidence/242-campfire-authenticated-http/** -text -whitespace
 
 # Preserve Campfire sign-in foundation validation/source byte hashes.
 reports/evidence/243-campfire-sign-in-foundation/** -text -whitespace
+
+# Preserve Campfire public login validation/source byte hashes.
+reports/evidence/244-campfire-public-login-http/** -text -whitespace
