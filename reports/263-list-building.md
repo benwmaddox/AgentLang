@@ -125,10 +125,14 @@ comparisons use the minimum of 30 interleaved samples.
 
 Remaining copies of the dynamic content:
 
-1. the name is copied into the row call;
-2. the escape;
-3. the row join;
-4. the page join.
+1. the escape;
+2. the row join;
+3. the join of all rows;
+4. the outer `<ul>` join.
+
+Correction (after commit 421bbee): an earlier version of this list said the name
+is copied into the row call. It is not. Calls, `map` callbacks and local loads
+pass descriptors and copy nothing.
 
 String constants are also copied into the arena on every use. In the fused
 join test, 64 of 120 copied bytes are the two literals. Shared static literals

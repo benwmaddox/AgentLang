@@ -128,11 +128,23 @@ same placement.
    - **Free nominal list retag.** Unwrapping `List<Html>` to `List<String>`
      (`parts.map(html.text)`) copies today. A map whose callback is only a
      nominal unwrap or wrap should retag the list descriptor, with no copy.
-   - **No unneeded argument copies.** Audit call-argument passing so values
-     already on the stack are passed by descriptor, not copied into the callee.
-   - **In-place `list.append` / `list.concat`.** When the list is the newest
-     value on the arena and nothing else refers to it, extend it in place and
-     copy only the new element.
+   - **No unneeded argument copies (audited 2026-10-13).** Calls, `map`
+     callbacks and local loads already pass descriptors (descriptor transfer)
+     and copy nothing. Remaining copies come from operations that build a new
+     value (escape, join, list building). Keep it that way: any new operation
+     must justify each copy.
+   - **In-place `list.append` / `list.concat`.**
+     - Compile-time condition: the list operand is unaliased, meaning it was
+       created by a list-building operation in this block and has not been
+       stored to a local or loaded from one. Local loads share bytes, so in place
+       is also allowed for a local's last use once last-use analysis exists.
+     - Runtime fast paths:
+       - if the appended value's bytes start at the list's end and finish at the
+         arena cursor, only the header count changes (zero copy);
+       - if the list ends at the cursor, only the new element is copied;
+       - otherwise the current one-copy path runs.
+     - `concat` with an adjacent right list moves only the right elements down
+       over its 8-byte header.
 3. **Proven structural access** for statically validated layouts, re-measured
    with the report-256 ABBA method. Runtime checks stay for unproven paths.
 4. **Message partial** in the language. New host operations supply the creator
