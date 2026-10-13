@@ -148,15 +148,15 @@ initialize/begin/resume mailbox exports are not a general application host inter
    memory growth remains unattributed, so fixed-memory/GC evidence is required
    before a memory-efficiency claim. Full native application migration remains
    required beyond this room endpoint.
-   After the checked-runtime measurements, exercise the existing
-   `TrustedGenerated` runtime through the native host compile path. Pin the
-   runtime profile in the manifest and executable build; match its context
-   shape, and run both profiles through the same valid and malformed boundary
-   corpus before timing. Remove diagnostic poisoning/bitmaps/traces only in that
-   compiler-generated release profile; retain type/refinement, extent/capacity,
-   effect and host-output validation. Include cross-profile context rejection.
-   This tests the intended lean release runtime instead of treating diagnostic
-   bookkeeping throughput as the final architecture's performance.
+   [Report 254](../reports/254-native-campfire-release-profile.md) connects
+   `TrustedGenerated` through the native host compile path. Both runtime
+   profiles are pinned in manifests/executables and pass the O0/O2 valid and
+   malformed boundary corpus, including cross-profile context rejection.
+   The release profile omits diagnostic poisoning/bitmaps/traces while retaining
+   type/refinement, extent/capacity, effect and host-output validation. Compare
+   one/four/eight-worker throughput on the same authenticated read workload;
+   then prioritize native transaction/write routes, with strict SQLite isolation,
+   durability, cleanup and bounded contention behavior.
    Response finalization must include Rails encrypted-session mutations:
    missing/invalid authentication redirects to `/session/new` and remembers the
    requested return URL; a `redirect-root` response with an alert replaces flash.

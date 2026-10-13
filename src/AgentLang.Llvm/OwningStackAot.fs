@@ -505,6 +505,7 @@ type private OwningLlvmWriter() =
 type OwningStackCompiledProgram internal
     (libraryPath: string,
      nativeHostManifestPath: string option,
+     runtimeProfile: OwningRuntimeProfile,
      programInfo: OwningProgramInfo,
      diagnostics: OwningDiagnosticInfo array,
      llvmIr: string,
@@ -546,6 +547,7 @@ type OwningStackCompiledProgram internal
 
     member _.LibraryPath = libraryPath
     member _.NativeHostManifestPath = nativeHostManifestPath
+    member _.RuntimeProfile = runtimeProfile
     member _.LlvmIr = llvmIr
     member _.InputTypes = programInfo.Body.BodyInputTypes
     member _.OutputTypes = programInfo.Body.BodyOutputTypes
@@ -569,9 +571,16 @@ type OwningStackCompiledProgram internal
         let inputExtentTableBytes = inputExtents.Length * sizeof<uint32>
         let inputExtentAllocationBytes = max 1 inputExtentTableBytes
         let stackBitBytes = stackByteCapacity / 8 + (if stackByteCapacity % 8 = 0 then 0 else 1)
+        let bitmapBytes =
+            match runtimeProfile with
+            | OwningRuntimeProfile.Diagnostic -> stackBitBytes
+            | OwningRuntimeProfile.TrustedGenerated -> 0
         let traceCapacity = 8192
         let stackAllocationBytes = max 1 stackByteCapacity
-        let bitmapAllocationBytes = max 1 stackBitBytes
+        let bitmapAllocationBytes =
+            match runtimeProfile with
+            | OwningRuntimeProfile.Diagnostic -> max 1 stackBitBytes
+            | OwningRuntimeProfile.TrustedGenerated -> 0
         let eventAllocationBytes = traceCapacity * Marshal.SizeOf<NativeOwningEvent>()
         let inputAllocationBytes = max 1 inputLength
         let contextBytes = Marshal.SizeOf<NativeOwningContext>()
@@ -591,8 +600,9 @@ type OwningStackCompiledProgram internal
         try
             contextPointer <- allocate contextBytes
             stackPointer <- allocate stackAllocationBytes
-            initBitmapPointer <- allocate bitmapAllocationBytes
-            poisonBitmapPointer <- allocate bitmapAllocationBytes
+            if bitmapAllocationBytes > 0 then
+                initBitmapPointer <- allocate bitmapAllocationBytes
+                poisonBitmapPointer <- allocate bitmapAllocationBytes
             tracePointer <- allocate eventAllocationBytes
             inputPointer <- allocate inputAllocationBytes
             inputExtentPointer <- allocate inputExtentAllocationBytes
@@ -606,7 +616,7 @@ type OwningStackCompiledProgram internal
             context.AbiVersion <- 2u
             context.StackCapacityBytes <- uint32 stackByteCapacity
             context.TraceEventCapacity <- uint32 traceCapacity
-            context.InitBitmapBytes <- uint32 stackBitBytes
+            context.InitBitmapBytes <- uint32 bitmapBytes
             context.StackData <- stackPointer
             context.InitBitmap <- initBitmapPointer
             context.PoisonBitmap <- poisonBitmapPointer
@@ -627,7 +637,7 @@ type OwningStackCompiledProgram internal
                         | None -> raise (ObjectDisposedException(nameof OwningStackCompiledProgram)))
             context <- Marshal.PtrToStructure<NativeOwningContext>(contextPointer)
             let metrics =
-                readMetrics stackByteCapacity retainedCapacityBytes inputLength traceCapacity eventAllocationBytes stackBitBytes retainedStagingBytes 0 inputExtentAllocationBytes
+                readMetrics stackByteCapacity retainedCapacityBytes inputLength traceCapacity eventAllocationBytes bitmapBytes retainedStagingBytes 0 inputExtentAllocationBytes
                     backendMetadataPerFrameBytes backendMetadataPeakBoundBytes runtimeLayoutScannerScratchBytes context
             let events = readEvents tracePointer context.TraceEventCount
             let metrics =
@@ -6892,15 +6902,16 @@ module OwningStackAot =
             LlvmToolchain.compileLibraryWithRuntimeAndNativeStackScreen
                 toolchain optimization llvmIrPath runtimeSourcePath runtimeDirectory libraryPath
         new OwningStackCompiledProgram(
-            compiledPath, None, programInfo, diagnostics, llvmIr, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
+            compiledPath, None, OwningRuntimeProfile.Diagnostic, programInfo, diagnostics, llvmIr, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
             encodeValues, decodeValues, readEvents, readMetrics, diagnosticForError)
 
     /// Compile a verified entry with the closed Campfire room-lookup adapter
     /// statically linked into a separate host-context export. The adapter C
     /// source is copied into the artifact directory before hashing and build.
-    let compileWithNativeHostDependencies
+    let compileWithNativeHostDependenciesWithRuntimeProfile
         (toolchain: LlvmToolchain)
         optimization
+        (runtimeProfile: OwningRuntimeProfile)
         (profile: OwningNativeHostProfile)
         (adapterSourcePath: string)
         (dependencies: OwningNativeHostDependencies)
@@ -6975,8 +6986,8 @@ module OwningStackAot =
         let runtimeCopies = copyInputs ".dll" fullDirectory dependencies.RuntimeLibraryPaths
 
         let compiledPath =
-            LlvmToolchain.compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreen
-                toolchain optimization llvmIrPath runtimeSourcePath adapterCopyPath hostAbiHeaderPath linkCopies runtimeDirectory libraryPath
+            LlvmToolchain.compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreenWithRuntimeProfile
+                toolchain optimization runtimeProfile llvmIrPath runtimeSourcePath adapterCopyPath hostAbiHeaderPath linkCopies runtimeDirectory libraryPath
         let hashBytes (bytes: byte array) =
             SHA256.HashData bytes
             |> Convert.ToHexString
@@ -6986,6 +6997,10 @@ module OwningStackAot =
             match optimization with
             | LlvmOptimization.O0 -> "O0"
             | LlvmOptimization.O2 -> "O2"
+        let runtimeProfileName =
+            match runtimeProfile with
+            | OwningRuntimeProfile.Diagnostic -> "diagnostic"
+            | OwningRuntimeProfile.TrustedGenerated -> "trusted-generated"
         let typeInfos =
             programInfo.TypeInfos
             |> Map.toList
@@ -7049,7 +7064,7 @@ module OwningStackAot =
                 let manifestCore =
                     {| formatVersion = 2
                        profileId = "campfire-room-find-for-user-v1"
-                       runtimeProfile = "diagnostic"
+                       runtimeProfile = runtimeProfileName
                        operationId = "campfire.rooms.find-for-user"
                        operationName = "campfire.rooms.find-for-user"
                        adapterSymbol = nativeHostAdapterSymbol
@@ -7094,7 +7109,7 @@ module OwningStackAot =
                 let manifestCore =
                     {| formatVersion = 2
                        profileId = "campfire-room-read-v1"
-                       runtimeProfile = "diagnostic"
+                       runtimeProfile = runtimeProfileName
                        operationId = "campfire.http.room-read"
                        operationName = "campfire.http.room-read"
                        adapterSymbol = nativeRoomReadAdapterSymbol
@@ -7126,8 +7141,21 @@ module OwningStackAot =
                 jsonOptions)
         File.WriteAllText(manifestPath, serializedManifest, UTF8Encoding(false))
         new OwningStackCompiledProgram(
-            compiledPath, Some manifestPath, programInfo, diagnostics, llvmIr, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
+            compiledPath, Some manifestPath, runtimeProfile, programInfo, diagnostics, llvmIr, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
             encodeValues, decodeValues, readEvents, readMetrics, diagnosticForError)
+
+    /// Preserve the historical diagnostic runtime for existing native-host callers.
+    let compileWithNativeHostDependencies
+        (toolchain: LlvmToolchain)
+        optimization
+        (profile: OwningNativeHostProfile)
+        (adapterSourcePath: string)
+        (dependencies: OwningNativeHostDependencies)
+        outputDirectory
+        (verifiedBody: VerifiedIrBody) =
+        compileWithNativeHostDependenciesWithRuntimeProfile
+            toolchain optimization OwningRuntimeProfile.Diagnostic profile adapterSourcePath dependencies
+            outputDirectory verifiedBody
 
     /// Existing dependency-free host profile entry remains explicitly opt-in.
     let compileWithNativeHostProfile toolchain optimization profile adapterSourcePath outputDirectory verifiedBody =

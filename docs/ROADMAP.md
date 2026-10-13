@@ -2,6 +2,15 @@
 
 ## Active delivery priority: Campfire implementation
 
+Latest checkpoint: [report 254](../reports/254-native-campfire-release-profile.md)
+connects the compiler-generated release arena profile to the native room HTTP
+host. Both runtime profiles pass fresh O0/O2 boundary and application parity
+checks; the host's profile is pinned to its validated module. Compare one, four
+and eight workers on authenticated room reads before proceeding to native
+transaction/write routes. Keep the same worker for direct SQL and response
+handling. The full 177-route/protocol/storage/deployment migration remains the
+deliverable; a room-read benchmark is not a completion percentage.
+
 The first AOT performance checkpoint uses one worker mailbox with direct SQL and
 response handling. The second dispatches each request to one of X worker mailboxes
 and verifies pool scaling, bounded queues, dispatch contention, tail latency and

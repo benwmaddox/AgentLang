@@ -190,3 +190,4 @@ applications/campfire/Native/http/cookie_unescape.[ch] -text whitespace=blank-at
 # These pinned prototypes retain their tested terminal blank line.
 applications/campfire/Native/http/native_http_host.c whitespace=blank-at-eol,space-before-tab,-blank-at-eof
 reports/evidence/253-native-campfire-http/** -text -whitespace
+reports/evidence/254-native-campfire-release/** -text -whitespace

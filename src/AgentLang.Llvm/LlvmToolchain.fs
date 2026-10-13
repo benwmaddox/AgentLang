@@ -258,9 +258,10 @@ module LlvmToolchain =
     /// Compile a trusted, build-time native adapter beside the owning runtime
     /// and generated LLVM object. The adapter is statically linked into this
     /// artifact; language IR cannot select imports or symbols.
-    let compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreen
+    let compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreenWithRuntimeProfile
         (toolchain: LlvmToolchain)
         optimization
+        (runtimeProfile: OwningRuntimeProfile)
         (llvmIrPath: string)
         (runtimeSourcePath: string)
         (adapterSourcePath: string)
@@ -286,13 +287,28 @@ module LlvmToolchain =
         let runtimeObjectPath = Path.Combine(workingDirectory, "agentlang-arena-runtime.obj")
         let adapterObjectPath = Path.Combine(workingDirectory, "agentlang-native-host-adapter.obj")
         compileLlvmObject toolchain optimization true irPath llvmObjectPath workingDirectory |> ignore
-        compileCObject toolchain optimization OwningRuntimeProfile.Diagnostic true runtimePath includeDirectory runtimeObjectPath workingDirectory
+        compileCObject toolchain optimization runtimeProfile true runtimePath includeDirectory runtimeObjectPath workingDirectory
         // Force the contract declaration even when an adapter forgets to include
         // it itself. COFF symbol names alone cannot detect incompatible C types.
-        compileCObjectCore (Some hostHeader) toolchain optimization OwningRuntimeProfile.Diagnostic true adapterPath includeDirectory adapterObjectPath workingDirectory
+        compileCObjectCore (Some hostHeader) toolchain optimization runtimeProfile true adapterPath includeDirectory adapterObjectPath workingDirectory
         for path in linkLibraryPaths do
             if not (File.Exists path) then invalidArg (nameof linkLibraryPaths) "Native host link dependency does not exist."
         linkObjects toolchain dllPath ([ llvmObjectPath; runtimeObjectPath; adapterObjectPath ] @ linkLibraryPaths)
+
+    /// Preserve the historical diagnostic runtime for existing native-host callers.
+    let compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreen
+        (toolchain: LlvmToolchain)
+        optimization
+        (llvmIrPath: string)
+        (runtimeSourcePath: string)
+        (adapterSourcePath: string)
+        (hostAbiHeaderPath: string)
+        (linkLibraryPaths: string list)
+        (runtimeIncludeDirectory: string)
+        (outputDllPath: string) =
+        compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreenWithRuntimeProfile
+            toolchain optimization OwningRuntimeProfile.Diagnostic llvmIrPath runtimeSourcePath adapterSourcePath
+            hostAbiHeaderPath linkLibraryPaths runtimeIncludeDirectory outputDllPath
 
     let compileLibraryWithRuntimeAndNativeHostAdapterAndNativeStackScreen toolchain optimization llvmIrPath runtimeSourcePath adapterSourcePath runtimeIncludeDirectory outputDllPath =
         compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreen

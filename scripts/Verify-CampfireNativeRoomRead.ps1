@@ -1,7 +1,9 @@
 [CmdletBinding()]
 #requires -Version 7.0
 param(
-    [string] $RunRoot
+    [string] $RunRoot,
+    [ValidateSet('Diagnostic', 'TrustedGenerated')]
+    [string] $RuntimeProfile = 'Diagnostic'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -94,7 +96,7 @@ if ($null -eq $testDll) { throw 'The standalone native room-read test assembly w
 $runErrorActionPreference = $ErrorActionPreference
 try {
     $ErrorActionPreference = 'Continue'
-    & dotnet $testDll.FullName --run-root $RunRoot 2>&1 |
+    & dotnet $testDll.FullName --run-root $RunRoot --runtime-profile $RuntimeProfile 2>&1 |
         Tee-Object -FilePath $runLog
     $runExitCode = $LASTEXITCODE
 }
@@ -120,3 +122,8 @@ $sourceFreeze = [ordered]@{
 $sourceFreeze | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $sourceFreezePath -Encoding utf8NoBOM
 if ($changedSourceFiles.Count -ne 0) { throw "Pinned room-read source changed during validation: $($changedSourceFiles -join ', ')" }
 if ($runExitCode -ne 0) { throw "native room-read verification failed with exit code $runExitCode" }
+$receipt = Get-Content -LiteralPath (Join-Path $RunRoot 'test-receipt.json') -Raw -Encoding UTF8 | ConvertFrom-Json -AsHashtable
+$expectedRuntimeProfile = if ($RuntimeProfile -eq 'Diagnostic') { 'diagnostic' } else { 'trusted-generated' }
+if (-not [bool]$receipt['passed'] -or [string]$receipt['runtimeProfile'] -cne $expectedRuntimeProfile) {
+    throw "Room-read receipt does not confirm the selected runtime profile '$expectedRuntimeProfile'."
+}

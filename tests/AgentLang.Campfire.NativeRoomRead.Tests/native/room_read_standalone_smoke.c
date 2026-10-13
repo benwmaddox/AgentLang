@@ -27,7 +27,16 @@ enum {
   SMOKE_ENTRY_STATUS_INVALID = 11,
   SMOKE_OUTPUT_EXTENT_INVALID = 12,
   SMOKE_OUTPUT_MISMATCH = 13,
-  SMOKE_PROVIDER_CONTEXT_DESTROY_FAILED = 14
+  SMOKE_PROVIDER_CONTEXT_DESTROY_FAILED = 14,
+  SMOKE_PROFILE_PAIRING_ACCEPTED = 15,
+  SMOKE_INPUT_COUNT_ACCEPTED = 16,
+  SMOKE_NULL_INPUT_ACCEPTED = 17,
+  SMOKE_NULL_EXTENTS_ACCEPTED = 18,
+  SMOKE_BAD_EXTENT_ACCEPTED = 19,
+  SMOKE_NULL_PROVIDER_ACCEPTED = 20,
+  SMOKE_INVALID_REFINEMENT_ACCEPTED = 21,
+  SMOKE_RETAINED_CAPACITY_NOT_REJECTED = 22,
+  SMOKE_RETAINED_CAPACITY_PARTIAL_WRITE = 23
 };
 
 typedef uint32_t(__cdecl *pure_size_fn)(void);
@@ -88,6 +97,60 @@ static int bytes_equal(const uint8_t *left, const uint8_t *right,
   return 1;
 }
 
+static void reset_runtime_context(int32_t runtime_profile,
+                                  int invert_bitmap_shape) {
+  volatile uint8_t *bytes = (volatile uint8_t *)&runtime_context;
+  size_t index;
+  int use_bitmaps = runtime_profile == 0;
+  if (invert_bitmap_shape)
+    use_bitmaps = !use_bitmaps;
+  for (index = 0u; index < sizeof(runtime_context); ++index)
+    bytes[index] = 0u;
+  runtime_context.abi_version = AL_OWNING_STACK_ABI_VERSION;
+  runtime_context.stack_capacity_bytes = SMOKE_STACK_BYTES;
+  runtime_context.stack_data = stack_storage;
+  if (use_bitmaps) {
+    runtime_context.init_bitmap_bytes = SMOKE_STACK_BYTES / 8u;
+    runtime_context.init_bitmap = init_bitmap;
+    runtime_context.poison_bitmap = poison_bitmap;
+  }
+}
+
+static int entry_rejected(execute_fn execute, int32_t runtime_profile,
+                          int invert_bitmap_shape, void *host_context,
+                          const uint8_t *input_bytes, uint32_t input_length,
+                          const uint32_t *input_extents, uint32_t input_count,
+                          uint8_t *retained, uint32_t retained_capacity) {
+  int32_t result;
+  reset_runtime_context(runtime_profile, invert_bitmap_shape);
+  result = execute(&runtime_context, host_context, input_bytes, input_length,
+                   input_extents, input_count, retained, retained_capacity);
+  return result != 0 || runtime_context.status != AL_OWNING_STATUS_OK;
+}
+
+static void fill_bytes(uint8_t *destination, uint32_t length,
+                       uint8_t value) {
+  uint32_t index;
+  for (index = 0u; index < length; ++index)
+    destination[index] = value;
+}
+
+static int bytes_are(const uint8_t *bytes, uint32_t length, uint8_t value) {
+  uint32_t index;
+  for (index = 0u; index < length; ++index) {
+    if (bytes[index] != value)
+      return 0;
+  }
+  return 1;
+}
+
+static void write_i64_le(uint8_t *destination, int64_t value) {
+  uint64_t bits = (uint64_t)value;
+  uint32_t index;
+  for (index = 0u; index < 8u; ++index)
+    destination[index] = (uint8_t)(bits >> (index * 8u));
+}
+
 void room_read_smoke_start(void) {
   HMODULE module = NULL;
   LPWSTR *arguments = NULL;
@@ -106,13 +169,24 @@ void room_read_smoke_start(void) {
   uint32_t storage_bytes;
   uint32_t alignment;
   uint32_t written_bytes;
+  int32_t runtime_profile = -1;
+  int32_t call_status;
+  uint8_t invalid_refinement_input[ROOM_READ_INPUT_BYTES];
   int converted_path_bytes;
   int pure_initialized = 0;
   int provider_initialized = 0;
   int result = SMOKE_MODULE_LOAD_FAILED;
 
   arguments = CommandLineToArgvW(GetCommandLineW(), &argument_count);
-  if (arguments == NULL || argument_count != 3) {
+  if (arguments == NULL || argument_count != 4) {
+    result = SMOKE_BAD_ARGUMENTS;
+    goto cleanup;
+  }
+  if (arguments[3][0] == L'0' && arguments[3][1] == L'\0')
+    runtime_profile = 0;
+  else if (arguments[3][0] == L'1' && arguments[3][1] == L'\0')
+    runtime_profile = 1;
+  else {
     result = SMOKE_BAD_ARGUMENTS;
     goto cleanup;
   }
@@ -178,15 +252,11 @@ void room_read_smoke_start(void) {
   }
   provider_initialized = 1;
 
-  runtime_context.abi_version = AL_OWNING_STACK_ABI_VERSION;
-  runtime_context.stack_capacity_bytes = SMOKE_STACK_BYTES;
-  runtime_context.init_bitmap_bytes = SMOKE_STACK_BYTES / 8u;
-  runtime_context.stack_data = stack_storage;
-  runtime_context.init_bitmap = init_bitmap;
-  runtime_context.poison_bitmap = poison_bitmap;
-  if (execute(&runtime_context, &provider_context, room_read_input,
-              ROOM_READ_INPUT_BYTES, &input_extent, 1u, retained_storage,
-              SMOKE_RETAINED_BYTES) != 0) {
+  reset_runtime_context(runtime_profile, 0);
+  call_status = execute(&runtime_context, &provider_context, room_read_input,
+                        ROOM_READ_INPUT_BYTES, &input_extent, 1u,
+                        retained_storage, SMOKE_RETAINED_BYTES);
+  if (call_status != 0) {
     result = SMOKE_ENTRY_CALL_FAILED;
     goto cleanup;
   }
@@ -201,6 +271,82 @@ void room_read_smoke_start(void) {
   }
   if (!bytes_equal(retained_storage, room_read_expected, written_bytes)) {
     result = SMOKE_OUTPUT_MISMATCH;
+    goto cleanup;
+  }
+
+  /* A runtime module must reject the context layout for the other profile.
+   * Diagnostic requires both bitmaps; TrustedGenerated requires neither. */
+  if (!entry_rejected(execute, runtime_profile, 1, &provider_context,
+                      room_read_input, ROOM_READ_INPUT_BYTES, &input_extent,
+                      1u, retained_storage, SMOKE_RETAINED_BYTES)) {
+    result = SMOKE_PROFILE_PAIRING_ACCEPTED;
+    goto cleanup;
+  }
+  if (!entry_rejected(execute, runtime_profile, 0, &provider_context,
+                      room_read_input, ROOM_READ_INPUT_BYTES, &input_extent,
+                      0u, retained_storage, SMOKE_RETAINED_BYTES)) {
+    result = SMOKE_INPUT_COUNT_ACCEPTED;
+    goto cleanup;
+  }
+  if (!entry_rejected(execute, runtime_profile, 0, &provider_context, NULL,
+                      ROOM_READ_INPUT_BYTES, &input_extent, 1u,
+                      retained_storage, SMOKE_RETAINED_BYTES)) {
+    result = SMOKE_NULL_INPUT_ACCEPTED;
+    goto cleanup;
+  }
+  if (!entry_rejected(execute, runtime_profile, 0, &provider_context,
+                      room_read_input, ROOM_READ_INPUT_BYTES, NULL, 1u,
+                      retained_storage, SMOKE_RETAINED_BYTES)) {
+    result = SMOKE_NULL_EXTENTS_ACCEPTED;
+    goto cleanup;
+  }
+  input_extent = ROOM_READ_INPUT_BYTES - 1u;
+  if (!entry_rejected(execute, runtime_profile, 0, &provider_context,
+                      room_read_input, ROOM_READ_INPUT_BYTES, &input_extent,
+                      1u, retained_storage, SMOKE_RETAINED_BYTES)) {
+    result = SMOKE_BAD_EXTENT_ACCEPTED;
+    goto cleanup;
+  }
+  input_extent = ROOM_READ_INPUT_BYTES;
+  if (!entry_rejected(execute, runtime_profile, 0, NULL, room_read_input,
+                      ROOM_READ_INPUT_BYTES, &input_extent, 1u,
+                      retained_storage, SMOKE_RETAINED_BYTES)) {
+    result = SMOKE_NULL_PROVIDER_ACCEPTED;
+    goto cleanup;
+  }
+
+  {
+    uint32_t index;
+    for (index = 0u; index < ROOM_READ_INPUT_BYTES; ++index)
+      invalid_refinement_input[index] = room_read_input[index];
+  }
+  write_i64_le(invalid_refinement_input + ROOM_READ_NOW_OFFSET_BYTES,
+               INT64_MAX);
+  reset_runtime_context(runtime_profile, 0);
+  call_status = execute(&runtime_context, &provider_context,
+                        invalid_refinement_input, ROOM_READ_INPUT_BYTES,
+                        &input_extent, 1u, retained_storage,
+                        SMOKE_RETAINED_BYTES);
+  if ((call_status == 0 &&
+       runtime_context.status == AL_OWNING_STATUS_OK) ||
+      runtime_context.status != AL_OWNING_STATUS_DIAGNOSTIC) {
+    result = SMOKE_INVALID_REFINEMENT_ACCEPTED;
+    goto cleanup;
+  }
+
+  fill_bytes(retained_storage, ROOM_READ_EXPECTED_BYTES, 0xa5u);
+  reset_runtime_context(runtime_profile, 0);
+  call_status = execute(&runtime_context, &provider_context, room_read_input,
+                        ROOM_READ_INPUT_BYTES, &input_extent, 1u,
+                        retained_storage, ROOM_READ_EXPECTED_BYTES - 1u);
+  if ((call_status == 0 &&
+       runtime_context.status == AL_OWNING_STATUS_OK) ||
+      runtime_context.status != AL_OWNING_STATUS_RETAINED_CAPACITY) {
+    result = SMOKE_RETAINED_CAPACITY_NOT_REJECTED;
+    goto cleanup;
+  }
+  if (!bytes_are(retained_storage, ROOM_READ_EXPECTED_BYTES, 0xa5u)) {
+    result = SMOKE_RETAINED_CAPACITY_PARTIAL_WRITE;
     goto cleanup;
   }
   result = SMOKE_SUCCESS;

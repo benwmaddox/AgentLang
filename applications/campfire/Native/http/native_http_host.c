@@ -24,6 +24,14 @@
 #include "cookie_unescape.h"
 #include "cookie_expiry.h"
 
+#if !defined(CAMPFIRE_HTTP_OWNING_RUNTIME_PROFILE_ID) || \
+    !defined(CAMPFIRE_HTTP_OWNING_RUNTIME_PROFILE_NAME)
+#error "The generated HTTP host pins must declare the owning runtime profile."
+#endif
+#if CAMPFIRE_HTTP_OWNING_RUNTIME_PROFILE_ID != AL_OWNING_TRUSTED_GENERATED
+#error "The host and owning runtime profile pins must match."
+#endif
+
 #define HOST_WORKER_MAX 8u
 #define HOST_DEFAULT_WORKERS 4u
 #define HOST_QUEUE_LENGTH 64u
@@ -133,6 +141,7 @@ typedef struct host_config {
   HMODULE sqlite_module;
   host_api api;
   uint32_t worker_count;
+  uint32_t owning_runtime_profile;
   uint32_t port;
   uint32_t ready_workers;
   uint32_t cleaned_workers;
@@ -488,6 +497,7 @@ static uint32_t load_entry_module(host_config *config,
   if (!hash_file_sha256(config->manifest_path, digest) || !hash_equal(digest, g_expected_manifest_sha256)) return 0u;
   *failure_stage = 2u;
   if (!hash_file_sha256(config->module_path, digest) || !hash_equal(digest, g_expected_module_sha256)) return 0u;
+  config->owning_runtime_profile = CAMPFIRE_HTTP_OWNING_RUNTIME_PROFILE_ID;
   *failure_stage = 3u;
   slash = config->sqlite_path;
   bytes_copy(slash, config->module_path, (wlen(config->module_path) + 1u) * sizeof(WCHAR));
@@ -594,6 +604,7 @@ static void worker_release(worker_state *worker) {
 static uint32_t worker_allocate(worker_state *worker) {
   uint32_t error_tag = UINT32_MAX;
   host_config *config = worker->config;
+  if (config->owning_runtime_profile > 1u) return 0u;
   worker->pure_bytes = config->api.pure_size();
   worker->pure_alignment = config->api.pure_alignment();
   worker->response_bytes = al_campfire_cookie_response_context_size_v1();
@@ -602,9 +613,13 @@ static uint32_t worker_allocate(worker_state *worker) {
       worker->response_bytes == 0u || worker->response_bytes > 1048576u || worker->response_alignment > 4096u) return 0u;
   if (!align_pointer(&worker->pure_raw, worker->pure_bytes, worker->pure_alignment, &worker->pure_context) ||
       !align_pointer(&worker->response_raw, worker->response_bytes, worker->response_alignment, &worker->response_context)) return 0u;
+  worker->init_bitmap = NULL;
+  worker->poison_bitmap = NULL;
   worker->stack = (uint8_t *)VirtualAlloc(NULL, HOST_STACK_BYTES, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-  worker->init_bitmap = (uint8_t *)VirtualAlloc(NULL, HOST_STACK_BYTES / 8u, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-  worker->poison_bitmap = (uint8_t *)VirtualAlloc(NULL, HOST_STACK_BYTES / 8u, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+  if (config->owning_runtime_profile == 0u) {
+    worker->init_bitmap = (uint8_t *)VirtualAlloc(NULL, HOST_STACK_BYTES / 8u, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    worker->poison_bitmap = (uint8_t *)VirtualAlloc(NULL, HOST_STACK_BYTES / 8u, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+  }
   worker->request_buffer = (uint8_t *)VirtualAlloc(NULL, HOST_REQUEST_BUFFER_BYTES, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
   worker->input = (uint8_t *)VirtualAlloc(NULL, HOST_INPUT_BYTES, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
   worker->retained = (uint8_t *)VirtualAlloc(NULL, HOST_RETAINED_BYTES, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
@@ -625,7 +640,9 @@ static uint32_t worker_allocate(worker_state *worker) {
   if (!align_pointer(&worker->browser_scratch_raw, (uint32_t)worker->browser_scratch_bytes,
                      (uint32_t)al_campfire_browser_scratch_alignment_v1(), &worker->browser_scratch)) return 0u;
   { uint32_t i; for (i = 0u; i < 3u; ++i) { worker->cookie_wire[i] = (uint8_t *)VirtualAlloc(NULL, HOST_COOKIE_WIRE_BYTES, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE); worker->cookie_raw[i] = (uint8_t *)VirtualAlloc(NULL, HOST_COOKIE_RAW_BYTES, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE); } }
-  if (worker->stack == NULL || worker->init_bitmap == NULL || worker->poison_bitmap == NULL || worker->request_buffer == NULL ||
+  if (worker->stack == NULL ||
+      (config->owning_runtime_profile == 0u && (worker->init_bitmap == NULL || worker->poison_bitmap == NULL)) ||
+      worker->request_buffer == NULL ||
       worker->input == NULL || worker->retained == NULL || worker->body == NULL || worker->text_arena == NULL || worker->cookie_input == NULL ||
       worker->unescape_scratch == NULL || worker->cookie_json == NULL || worker->cookie_json_input == NULL || worker->return_url == NULL || worker->browser_scratch == NULL) return 0u;
   for (uint32_t i = 0u; i < 3u; ++i) if (worker->cookie_wire[i] == NULL || worker->cookie_raw[i] == NULL) return 0u;
@@ -644,10 +661,16 @@ static uint32_t worker_allocate(worker_state *worker) {
   bytes_zero(&worker->runtime, sizeof(worker->runtime));
   worker->runtime.abi_version = AL_OWNING_STACK_ABI_VERSION;
   worker->runtime.stack_capacity_bytes = HOST_STACK_BYTES;
-  worker->runtime.init_bitmap_bytes = HOST_STACK_BYTES / 8u;
   worker->runtime.stack_data = worker->stack;
-  worker->runtime.init_bitmap = worker->init_bitmap;
-  worker->runtime.poison_bitmap = worker->poison_bitmap;
+  if (config->owning_runtime_profile == 0u) {
+    worker->runtime.init_bitmap_bytes = HOST_STACK_BYTES / 8u;
+    worker->runtime.init_bitmap = worker->init_bitmap;
+    worker->runtime.poison_bitmap = worker->poison_bitmap;
+  } else {
+    worker->runtime.init_bitmap_bytes = 0u;
+    worker->runtime.init_bitmap = NULL;
+    worker->runtime.poison_bitmap = NULL;
+  }
   worker->initialized = 1u;
   return 1u;
 }
@@ -1752,6 +1775,7 @@ static int http_start(host_config *config) {
   prefix_added = 1;
   write_ascii("READY prefix=");
   { char text[HOST_AUTHORITY_UNITS + 2u]; int bytes = WideCharToMultiByte(CP_UTF8, 0, config->prefix, -1, text, sizeof(text), NULL, NULL); if (bytes > 1) write_ascii(text); }
+  write_ascii(" runtime_profile="); write_ascii(CAMPFIRE_HTTP_OWNING_RUNTIME_PROFILE_NAME);
   write_ascii(" workers="); write_u32(config->worker_count);
   write_ascii(" queue="); write_u32(HOST_QUEUE_LENGTH);
   write_ascii(" retained_cap="); write_u32(HOST_RETAINED_BYTES);

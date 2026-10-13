@@ -3,18 +3,24 @@
 param(
     [Parameter(Mandatory = $true)]
     [string] $ValidationRunRoot,
+    [ValidateSet('diagnostic', 'trusted-generated')]
+    [string] $RuntimeProfile = 'diagnostic',
     [ValidateSet('O0', 'O2', 'Both')]
     [string] $Optimization = 'Both'
 )
 
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
+if (-not [StringComparer]::Ordinal.Equals($RuntimeProfile, 'diagnostic') -and
+    -not [StringComparer]::Ordinal.Equals($RuntimeProfile, 'trusted-generated')) {
+    throw 'RuntimeProfile must be exactly diagnostic or trusted-generated.'
+}
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$outputRootParent = [System.IO.Path]::GetFullPath((Join-Path $repositoryRoot '.agentlang\campfire-native-http-253\http-host'))
+$outputRootParent = [System.IO.Path]::GetFullPath((Join-Path $repositoryRoot '.agentlang\campfire-native-release-254\http-host'))
 $testRunsRoot = [System.IO.Path]::GetFullPath((Join-Path $repositoryRoot '.agentlang\campfire-native-room-read-252\test-runs'))
 $HostSourcePath = Join-Path $repositoryRoot 'applications\campfire\Native\http\native_http_host.c'
 $HelperSourceRoot = Join-Path $repositoryRoot 'applications\campfire\Native\http'
-$OutputRoot = Join-Path $outputRootParent ('build-tracked-' + [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ') + '-' + [Guid]::NewGuid().ToString('N'))
+$OutputRoot = Join-Path $outputRootParent ('build-' + $RuntimeProfile + '-' + [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ') + '-' + [Guid]::NewGuid().ToString('N'))
 if (-not (Test-Path -LiteralPath $HostSourcePath -PathType Leaf)) { throw "HTTP host source is missing: $HostSourcePath" }
 if (-not (Test-Path -LiteralPath $HelperSourceRoot -PathType Container)) { throw "HTTP helper source root is missing: $HelperSourceRoot" }
 if (-not (Test-Path -LiteralPath $outputRootParent -PathType Container)) {
@@ -121,7 +127,7 @@ function Assert-HashMap([object] $Map, [string[]] $ExpectedPaths, [string] $Labe
         $null = Assert-Hash $value "$Label[$relativePath]"
     }
 }
-function Assert-FreshValidationRun([string] $RequestedRunRoot) {
+function Assert-FreshValidationRun([string] $RequestedRunRoot, [string] $ExpectedRuntimeProfile) {
     $resolvedRunRoot = [System.IO.Path]::GetFullPath($RequestedRunRoot)
     if (-not (Test-Path -LiteralPath $resolvedRunRoot -PathType Container)) { throw "Validation run directory is missing: $resolvedRunRoot" }
     $runDirectory = Get-Item -LiteralPath $resolvedRunRoot
@@ -139,6 +145,10 @@ function Assert-FreshValidationRun([string] $RequestedRunRoot) {
     $receipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json -AsHashtable
     $freeze = Get-Content -LiteralPath $freezePath -Raw | ConvertFrom-Json -AsHashtable
     if ($receipt.passed -isnot [bool] -or -not $receipt.passed) { throw 'Validation receipt is not a passing run.' }
+    if ($receipt.runtimeProfile -isnot [string] -or
+        -not [StringComparer]::Ordinal.Equals($receipt.runtimeProfile, $ExpectedRuntimeProfile)) {
+        throw 'Validation receipt runtimeProfile does not exactly match the selected host profile.'
+    }
     if ($freeze.stable -isnot [bool] -or -not $freeze.stable) { throw 'Validation source freeze is not stable.' }
     if (@($freeze.changedFiles).Count -ne 0) { throw 'Validation source freeze records changed files.' }
 
@@ -197,13 +207,15 @@ function Assert-FreshValidationRun([string] $RequestedRunRoot) {
         ModuleSha256 = $expectedModule
         ManifestSha256 = $expectedManifest
         SqliteSha256 = $expectedSqlite
+        RuntimeProfile = $receipt.runtimeProfile
     }
 }
-function Assert-ClosedRoomReadManifest([string] $ManifestPath) {
+function Assert-ClosedRoomReadManifest([string] $ManifestPath, [string] $ExpectedRuntimeProfile) {
     $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
     $info = $manifest.moduleInfo
     if ($info.profileId -ne 'campfire-room-read-v1' -or
-        $info.runtimeProfile -ne 'diagnostic' -or
+        $info.runtimeProfile -isnot [string] -or
+        -not [StringComparer]::Ordinal.Equals($info.runtimeProfile, $ExpectedRuntimeProfile) -or
         $info.operationName -ne 'campfire.http.room-read' -or
         $info.exportName -ne 'agentlang_owning_execute_with_host_context' -or
         $info.inputTypes.Count -ne 1 -or $info.inputTypes[0] -ne 'CampfireHttpRequest' -or
@@ -211,7 +223,7 @@ function Assert-ClosedRoomReadManifest([string] $ManifestPath) {
         $info.outputLimitBytes -ne 16777216 -or
         $info.formatVersion -ne 2 -or $info.layoutSchemaVersion -ne 5 -or
         $info.layoutAbiVersion -ne 5 -or $info.hostAbiVersion -ne 1) {
-        throw 'Manifest does not match the exact diagnostic campfire-room-read-v1 contract.'
+        throw 'Manifest does not match the exact selected-profile campfire-room-read-v1 contract.'
     }
     $expectedEffects = @('db.read', 'db.write')
     $actualEffects = @($info.effects | ForEach-Object { [string]$_ })
@@ -229,6 +241,7 @@ function Assert-ClosedRoomReadManifest([string] $ManifestPath) {
     )
     $actualOperations = @($info.operations | ForEach-Object { [string]$_.operationName })
     Assert-ExactStringSet $actualOperations $expectedOperations 'Manifest operations'
+    return [string]$info.runtimeProfile
 }
 function Find-UniqueHelper([string] $Name) {
     $matches = @(Get-ChildItem -LiteralPath $HelperSourceRoot -Filter $Name -File -Recurse)
@@ -261,7 +274,7 @@ foreach ($helperName in $helperPins.Keys) {
     $helperPaths[$helperName] = $helperPath
 }
 
-$validation = Assert-FreshValidationRun $ValidationRunRoot
+$validation = Assert-FreshValidationRun $ValidationRunRoot $RuntimeProfile
 $modulePath = $validation.ModulePath
 $manifestPath = $validation.ManifestPath
 $sqlitePath = $validation.SqlitePath
@@ -272,7 +285,8 @@ $provenanceMode = 'fresh-validation-receipt'
 if ((Get-Hash $modulePath) -ne $expectedModule) { throw 'Native module hash does not match the selected artifact source.' }
 if ((Get-Hash $manifestPath) -ne $expectedManifest) { throw 'Manifest hash does not match the selected artifact source.' }
 if ((Get-Hash $sqlitePath) -ne $expectedSqlite) { throw 'SQLite DLL hash does not match the selected artifact source.' }
-Assert-ClosedRoomReadManifest $manifestPath
+$manifestRuntimeProfile = Assert-ClosedRoomReadManifest $manifestPath $validation.RuntimeProfile
+$runtimeProfileMacro = if ([StringComparer]::Ordinal.Equals($manifestRuntimeProfile, 'trusted-generated')) { 1 } else { 0 }
 
 $toolRoot = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\Llvm\x64\bin'
 $clang = Join-Path $toolRoot 'clang.exe'
@@ -310,6 +324,9 @@ $pinsHeader = Join-Path $OutputRoot 'http_host_pins.h'
 $headerText = @(
     '#ifndef CAMPFIRE_HTTP_HOST_PINS_H',
     '#define CAMPFIRE_HTTP_HOST_PINS_H',
+    ('#define AL_OWNING_TRUSTED_GENERATED ' + $runtimeProfileMacro),
+    ('#define CAMPFIRE_HTTP_OWNING_RUNTIME_PROFILE_ID ' + $runtimeProfileMacro),
+    ('#define CAMPFIRE_HTTP_OWNING_RUNTIME_PROFILE_NAME "' + $manifestRuntimeProfile + '"'),
     'static const uint8_t g_expected_module_sha256[32] = {' + (Convert-HashToCBytes $expectedModule) + '};',
     'static const uint8_t g_expected_manifest_sha256[32] = {' + (Convert-HashToCBytes $expectedManifest) + '};',
     'static const uint8_t g_expected_sqlite_sha256[32] = {' + (Convert-HashToCBytes $expectedSqlite) + '};',
@@ -326,7 +343,8 @@ foreach ($helperName in $helperPaths.Keys) {
     $sourcePins[$relativePath] = Get-Hash $helperPath
 }
 $hostHash = Get-Hash $HostSourcePath
-if ($hostHash -ne 'BE32FA33CC42243EA6181FC56CC3A9E6D056614E1B065B6076297789CCC134C6') {
+$expectedHostHash = '928054AFA0789172BFED6CED9A0055D0712C14E9D328550C69AACE8E07C0B706'
+if ($hostHash -ne $expectedHostHash) {
     throw 'HTTP host source differs from the reviewed native host revision.'
 }
 $hostPinPath = [System.IO.Path]::GetRelativePath($repositoryRoot, $HostSourcePath).Replace('\', '/')
@@ -375,6 +393,9 @@ foreach ($opt in $builds) {
         $object = Join-Path $outDir ($baseName + '.obj')
         $compileArgs = @('--target=x86_64-pc-windows-msvc', '-std=c11', '-Wall', '-Wextra', '-Werror', '-Wno-gnu-folding-constant', '-ffreestanding', '-fno-builtin', '-fstack-usage', '-include', 'stddef.h')
         $compileArgs += if ($opt -eq 'O0') { '-O0' } else { '-O2' }
+        if ([StringComparer]::OrdinalIgnoreCase.Equals([System.IO.Path]::GetFullPath($source), [System.IO.Path]::GetFullPath($runtimeSource))) {
+            $compileArgs += '-DAL_OWNING_TRUSTED_GENERATED=' + $runtimeProfileMacro
+        }
         foreach ($include in $includeDirs) { $compileArgs += @('-I', $include) }
         $compileArgs += @('-c', $source, '-o', $object)
         $compileOutput = & $clang @compileArgs 2>&1
@@ -411,6 +432,8 @@ foreach ($opt in $builds) {
     }
     $build = [ordered]@{
         Optimization = $opt
+        RuntimeProfile = $manifestRuntimeProfile
+        OwningRuntimeCompileDefine = '-DAL_OWNING_TRUSTED_GENERATED=' + $runtimeProfileMacro
         ProvenanceMode = $provenanceMode
         ValidationRunRoot = $validation.RunRoot
         ValidationReceiptSha256 = $validation.ReceiptSha256
@@ -422,6 +445,8 @@ foreach ($opt in $builds) {
         ModuleSha256 = Get-Hash (Join-Path $outDir 'owning-stack-native-host.dll')
         ManifestSha256 = Get-Hash (Join-Path $outDir 'owning-stack-native-host-manifest.json')
         SqliteSha256 = Get-Hash (Join-Path $outDir 'e_sqlite3.dll')
+        ModuleOutputLimitBytes = 16777216
+        HostRetainedCapacityBytes = 4194304
         Compiler = $clang
         Linker = $lldLink
         SdkVersion = $sdk.Name

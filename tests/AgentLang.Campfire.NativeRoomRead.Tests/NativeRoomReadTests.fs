@@ -118,6 +118,9 @@ module NativeRoomReadTests =
     let private fixedNow = DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero)
     let private sessionToken = "native-room-read-session-token"
     let private botToken = "nativeRoomReadBotKey"
+    let private runtimeProfileName = function
+        | OwningRuntimeProfile.Diagnostic -> "diagnostic"
+        | OwningRuntimeProfile.TrustedGenerated -> "trusted-generated"
     let private sourceFiles repo =
         let staticFiles =
             [ "applications/campfire/Native/room_read_adapter.c"
@@ -482,7 +485,7 @@ module NativeRoomReadTests =
             + cArray "room_read_input" requestBytes
             + cArray "room_read_expected" expectedBytes
             + cArray "room_read_secret" secretBytes
-            + $"#define ROOM_READ_INPUT_BYTES {requestBytes.Length}u\n#define ROOM_READ_EXPECTED_BYTES {expectedBytes.Length}u\n#define ROOM_READ_SECRET_BYTES {secretBytes.Length}u\n#endif\n"
+            + $"#define ROOM_READ_INPUT_BYTES {requestBytes.Length}u\n#define ROOM_READ_NOW_OFFSET_BYTES 24u\n#define ROOM_READ_EXPECTED_BYTES {expectedBytes.Length}u\n#define ROOM_READ_SECRET_BYTES {secretBytes.Length}u\n#endif\n"
         File.WriteAllText(path, contents, UTF8Encoding(false))
 
     let private runChild (executable: string) (arguments: string list) (workingDirectory: string) =
@@ -939,7 +942,7 @@ module NativeRoomReadTests =
 
     let private sha256 (path: string) = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes path)).ToLowerInvariant()
 
-    let private writeReceipt (repo: string) (runRoot: string) (passed: bool) (assertionCount: int) (resultHashes: Map<string, string>) =
+    let private writeReceipt (repo: string) (runRoot: string) (runtimeProfile: string) (passed: bool) (assertionCount: int) (resultHashes: Map<string, string>) =
         let hashes = JsonObject()
         for relative in sourceFiles repo do
             let path = Path.Combine(repo, relative.Replace('/', Path.DirectorySeparatorChar))
@@ -948,24 +951,26 @@ module NativeRoomReadTests =
         for KeyValue(name, hash) in resultHashes do results[name] <- JsonValue.Create(hash)
         let receipt = JsonObject()
         receipt["passed"] <- JsonValue.Create passed
+        receipt["runtimeProfile"] <- JsonValue.Create runtimeProfile
         receipt["assertions"] <- JsonValue.Create assertionCount
         receipt["sourceSha256"] <- hashes
         receipt["artifactsSha256"] <- results
         File.WriteAllText(Path.Combine(runRoot, "test-receipt.json"), receipt.ToJsonString(), UTF8Encoding(false))
 
-    let writeFailureReceipt (repo: string) (runRoot: string) (safeMessage: string) (diagnostic: string) =
+    let writeFailureReceipt (repo: string) (runRoot: string) (runtimeProfile: string) (safeMessage: string) (diagnostic: string) =
         let hashes = JsonObject()
         for relative in sourceFiles repo do
             let path = Path.Combine(repo, relative.Replace('/', Path.DirectorySeparatorChar))
             if File.Exists path then hashes[relative] <- JsonValue.Create(sha256 path)
         let receipt = JsonObject()
         receipt["passed"] <- JsonValue.Create false
+        receipt["runtimeProfile"] <- JsonValue.Create runtimeProfile
         receipt["failure"] <- JsonValue.Create safeMessage
         receipt["privateDiagnostic"] <- JsonValue.Create diagnostic
         receipt["sourceSha256"] <- hashes
         File.WriteAllText(Path.Combine(runRoot, "test-receipt.json"), receipt.ToJsonString(), UTF8Encoding(false))
 
-    let run toolchain repo runRoot =
+    let run toolchain repo runRoot runtimeProfile =
         if not (OperatingSystem.IsWindows()) then failwith "the real native SQLite verifier is Windows-only"
         let assertions = ref 0
         let contextBytes = Marshal.SizeOf<RoomReadContextAbi>()
@@ -1001,13 +1006,15 @@ module NativeRoomReadTests =
                 let optimizationName = match optimization with LlvmOptimization.O0 -> "O0" | LlvmOptimization.O2 -> "O2"
                 let artifactDirectory = Path.Combine(runRoot, "test-artifacts", optimizationName)
                 progress $"{optimizationName}: compiling native profile artifact"
-                use native = OwningStackAot.compileWithNativeHostDependencies toolchain optimization OwningNativeHostProfile.CampfireRoomReadV1 aggregator dependencies artifactDirectory body
+                use native = OwningStackAot.compileWithNativeHostDependenciesWithRuntimeProfile toolchain optimization runtimeProfile OwningNativeHostProfile.CampfireRoomReadV1 aggregator dependencies artifactDirectory body
                 progress $"{optimizationName}: native profile artifact compiled"
                 check assertions $"{optimizationName}: native manifest is emitted" native.NativeHostManifestPath.IsSome
+                check assertions $"{optimizationName}: compiled program retains the selected runtime profile" (native.RuntimeProfile = runtimeProfile)
                 let manifestPath = native.NativeHostManifestPath.Value
                 let manifest = JsonNode.Parse(File.ReadAllText manifestPath).AsObject()
                 check assertions $"{optimizationName}: native profile publishes the 16 MiB output limit" (manifest.ToJsonString().Contains("16777216", StringComparison.Ordinal))
                 let moduleInfo = manifest["moduleInfo"].AsObject()
+                check assertions $"{optimizationName}: manifest pins runtime profile {runtimeProfileName runtimeProfile}" (moduleInfo["runtimeProfile"].GetValue<string>() = runtimeProfileName runtimeProfile)
                 let requestSchema =
                     moduleInfo["boundarySchemas"].AsArray()
                     |> Seq.choose Option.ofObj
@@ -1157,6 +1164,7 @@ module NativeRoomReadTests =
                     runSmoke.UseShellExecute <- false
                     runSmoke.ArgumentList.Add native.LibraryPath
                     runSmoke.ArgumentList.Add nativeDatabase
+                    runSmoke.ArgumentList.Add(match runtimeProfile with OwningRuntimeProfile.Diagnostic -> "0" | OwningRuntimeProfile.TrustedGenerated -> "1")
                     use smokeProcess = Process.Start(runSmoke)
                     smokeProcess.WaitForExit()
                     check assertions $"{optimizationName}: standalone C smoke invokes the generated export without CLR" (smokeProcess.ExitCode = 0)
@@ -1173,7 +1181,7 @@ module NativeRoomReadTests =
                 | LanguageException diagnostic -> diagnostic.Code
             check assertions $"room-read body is rejected by the unrelated room-find profile with its existing diagnostic (actual {oldProfileDiagnostic})" (oldProfileDiagnostic = "IR_OWNING_STACK_EFFECT_UNSUPPORTED")
             check assertions "profile rejection occurs before native artifacts are emitted" (not (Directory.Exists mismatchDirectory))
-            writeReceipt repo runRoot true assertions.Value (Map.ofSeq artifactHashes)
+            writeReceipt repo runRoot (runtimeProfileName runtimeProfile) true assertions.Value (Map.ofSeq artifactHashes)
             progress "native room-read verifier passed"
             assertions.Value
         finally
