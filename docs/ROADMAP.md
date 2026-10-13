@@ -32,8 +32,8 @@ room benchmark of AgentLang AOT, Rails and Rust with caching disabled everywhere
 AgentLang serves 4,764 req/s, but its page is ~10 KB against Rails/Rust's
 ~420–460 KB full page, so the result is not yet behaviourally comparable. Next:
 render the full Rails room page in the language, following the
-[views plan](CAMPFIRE-VIEWS-PLAN.md) (AOT list operations, growable strings with
-`Text`/`Html`, proven structural access, then the message partial, layout and
+[views plan](CAMPFIRE-VIEWS-PLAN.md) (AOT list operations, immutable strings joined
+once via `string.join` with `Text`/`Html`, proven structural access, then the message partial, layout and
 rich text), then rerun the same comparison.
 Then: compiler-proven structural access
 measured with the same method, then native message writes. Keep locks and

@@ -11,10 +11,14 @@ same placement.
 - **Views live in the language.** Flow computes view data and decisions, and the
   HTML templates are language code. The compiler and stdlib gain what that needs.
   The F#/C renderer twins are retired for each part the language takes over.
-- **Strings can grow.** A growable string lives on the request's data stack and
-  is reclaimed when the request ends. Appending to the top-of-stack string
-  extends it in place. Building a page is appends, not quadratic re-concatenation
-  and not nested fragment copies.
+- **Strings are immutable.** Strings are bump-allocated on the request's data
+  stack and reclaimed when the request ends. Allocating several is cheap, so a
+  page is built from separately allocated pieces combined by a stdlib
+  `string.join`: it sizes its result once and copies each piece once, so a few
+  levels (fragments, then messages, then page) copy a linear multiple of the
+  page size. Repeated `concat` of a growing page (quadratic) is avoided. The
+  compiler may later prove last-use appends and extend in place as an
+  optimization; that does not change semantics.
 - **Stdlib improvements are in scope** wherever the views need them.
 - **Benchmarks** compare AgentLang AOT with Rails and Rust. The interpreter is a
   parity control only. Cache-enabled comparisons come later.
@@ -22,7 +26,8 @@ same placement.
 ## Constraints
 
 - The entry is never replayed to size output, because it may refresh a session.
-  Growable output removes the measure-then-render pass for language views.
+  Language views produce the body string inside the single entry execution, so
+  there is no measure-then-render replay.
 - **Safety is a type rule.** Distinct `Text` and `Html` values. Raw markup comes
   only from compile-time literal template strings; runtime strings enter only
   through one escaping function, checked byte-for-byte against Rails ERB
@@ -48,9 +53,9 @@ same placement.
 1. **AOT list operations.** `ListSingleton`, `ListMap`, `ListFold` and `ListEach`
    in the owning backend, with interpreter parity at O0/O2. Templates need them
    to iterate messages and boosts.
-2. **Growable strings and the `Text`/`Html` surface.** In-place top-of-stack
-   append, escaping and literal-only raw markup. Prototype a synthetic
-   40 × 9.6 KB page at O2 and record µs per GET and copied bytes.
+2. **`string.join` and the `Text`/`Html` surface.** Sized single-copy join of a
+   string list, escaping, and literal-only raw markup. Prototype a synthetic
+   40 × 9.6 KB page at O2 and record µs per GET, copied bytes and arena peak.
 3. **Proven structural access** for statically validated layouts, re-measured
    with the report-256 ABBA method. Runtime checks stay for unproven paths.
 4. **Message partial** in the language. New host operations supply the creator
