@@ -487,12 +487,17 @@ static int al_http_format_i64(int64_t value, uint8_t output[20],
 
 static int al_http_emit_message(al_http_body_sink *sink,
                                 const al_http_message_row *message) {
-  static const uint8_t prefix[] =
-      "<article id=\"message_";
+  /* Rails-shaped identity: messages_helper#message_tag and the
+   * dom_id(message, :presentation) div. Keep in step with ResponseRenderer.fs. */
+  static const uint8_t prefix[] = "<div id=\"message_";
+  static const uint8_t data_id_prefix[] =
+      "\" class=\"message\" data-message-id=\"";
   static const uint8_t client_prefix[] =
       "\" data-client-message-id=\"";
-  static const uint8_t paragraph_prefix[] = "\"><p>";
-  static const uint8_t paragraph_suffix[] = "</p></article>";
+  static const uint8_t presentation_prefix[] =
+      "\"><div id=\"presentation_message_";
+  static const uint8_t presentation_suffix[] = "\" dir=\"auto\">";
+  static const uint8_t paragraph_suffix[] = "</div></div>";
   uint8_t decimal[20];
   uint32_t decimal_length;
   al_http_text body;
@@ -500,11 +505,17 @@ static int al_http_emit_message(al_http_body_sink *sink,
   al_http_format_i64(message->id, decimal, &decimal_length);
   if (!al_http_sink_append(sink, prefix, (uint32_t)(sizeof(prefix) - 1u)) ||
       !al_http_sink_append(sink, decimal, decimal_length) ||
+      !al_http_sink_append(sink, data_id_prefix,
+                           (uint32_t)(sizeof(data_id_prefix) - 1u)) ||
+      !al_http_sink_append(sink, decimal, decimal_length) ||
       !al_http_sink_append(sink, client_prefix,
                            (uint32_t)(sizeof(client_prefix) - 1u)) ||
       !al_http_sink_html(sink, message->client_message_id) ||
-      !al_http_sink_append(sink, paragraph_prefix,
-                           (uint32_t)(sizeof(paragraph_prefix) - 1u)))
+      !al_http_sink_append(sink, presentation_prefix,
+                           (uint32_t)(sizeof(presentation_prefix) - 1u)) ||
+      !al_http_sink_append(sink, decimal, decimal_length) ||
+      !al_http_sink_append(sink, presentation_suffix,
+                           (uint32_t)(sizeof(presentation_suffix) - 1u)))
     return 0;
   if (message->body.present != 0u) {
     body = message->body.value;

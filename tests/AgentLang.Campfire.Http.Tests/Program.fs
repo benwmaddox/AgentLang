@@ -570,7 +570,8 @@ module Program =
                     FetchSite = Some "same-origin" }
         expectStatus 200 room
         check (room.Body.Contains("<h1>Main room</h1>", StringComparison.Ordinal)) "GET contains the authorized room title"
-        equal 40 (room.Body.Split("<article id=\"message_", StringSplitOptions.None).Length - 1) "GET renders exactly forty messages"
+        equal 40 (room.Body.Split(" data-message-id=\"", StringSplitOptions.None).Length - 1) "GET renders exactly forty messages"
+        equal 40 (room.Body.Split("<div id=\"presentation_message_", StringSplitOptions.None).Length - 1) "GET renders forty message presentations"
         check (room.Body.Contains("message_6", StringComparison.Ordinal)) "GET contains the oldest row in the newest forty"
         check (room.Body.Contains("message_45", StringComparison.Ordinal)) "GET contains the newest row"
         check (not (room.Body.Contains("message_5", StringComparison.Ordinal))) "GET excludes rows older than the newest forty"

@@ -18,6 +18,10 @@ take about 49% of the ~518 µs `api_execute` per GET, and the message page takes
 about 210 µs of that. SQL calls total about 104 µs. The largest attributable
 runtime cost is per-access re-validation of statically known layouts: 44 locates
 (~171 µs), 51 type-graph validations (~105 µs) and 3,779 initialization checks.
+[Report257](../reports/257-native-campfire-message-markup.md) gives room-page
+messages Rails' `data-message-id`/presentation identity in both renderers, with
+byte-identical native/interpreted bodies. The shared harness seed now builds
+locally (WSL Docker, pinned Rails `90b3300`).
 Next: the matched room-page comparison, then compiler-proven structural access
 measured with the same method, then native message writes. Keep locks and
 cross-worker dependencies rare, and discuss any new one before adopting it.

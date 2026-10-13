@@ -1,0 +1,392 @@
+{
+  "archiveFile": "257-native-campfire-message-markup-evidence.zip",
+  "archiveSha256": "cdf7bc22db2bc0c7f8c85cad6624c6f0e7e870598efc3d96e389b7a4671f42b6",
+  "archiveSizeBytes": 100573,
+  "entryCount": 65,
+  "entries": [
+    {
+      "archivePath": "validation/markup257-off-o0/driver.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o0/driver.log",
+      "sha256": "f197e4289854639e761cfb927455c1dbd6ed9af21ea250f8c615e23166e49103",
+      "sizeBytes": 189
+    },
+    {
+      "archivePath": "validation/markup257-off-o0/run-host.err.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o0/run-host.err.log",
+      "sha256": "e56da025ba7e34c65749d7be3cf9ddae8384241a222d4d315b83654e67b2c0bb",
+      "sizeBytes": 361
+    },
+    {
+      "archivePath": "validation/markup257-off-o0/run-host.out.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o0/run-host.out.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "validation/markup257-off-o0-b/driver.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o0-b/driver.log",
+      "sha256": "089b6eed324437b447ed6895444d800c73771682c34dbad2041110c628c3beed",
+      "sizeBytes": 508
+    },
+    {
+      "archivePath": "validation/markup257-off-o0-b/reference.err.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o0-b/reference.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "validation/markup257-off-o0-b/reference.out.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o0-b/reference.out.log",
+      "sha256": "f112dece4e6c5f96d4dc318a5140d7058af62258d4a38245409c425296ee33c3",
+      "sizeBytes": 192
+    },
+    {
+      "archivePath": "validation/markup257-off-o0-b/room-body-parity.json",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o0-b/room-body-parity.json",
+      "sha256": "013a74e3610932f069acad05da0db2649127e85648f029c0c679f314bb4f56ca",
+      "sizeBytes": 422
+    },
+    {
+      "archivePath": "validation/markup257-off-o0-b/run-host.err.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o0-b/run-host.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "validation/markup257-off-o0-b/run-host.out.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o0-b/run-host.out.log",
+      "sha256": "51a55bbb59a4c2474a4c4004990d7513eefbf3d7d86d29dfc8c506f1f5322fb8",
+      "sizeBytes": 669
+    },
+    {
+      "archivePath": "validation/markup257-off-o2/driver.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o2/driver.log",
+      "sha256": "819e8b86c2ef99bd8458d47e36f91d483c596d7bab33f17fddd78f544f913a3c",
+      "sizeBytes": 189
+    },
+    {
+      "archivePath": "validation/markup257-off-o2/run-host.err.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o2/run-host.err.log",
+      "sha256": "89ec39fa525dfb2f0fc92945c01f7a5700d918e36b1cba42b3db494890762ce5",
+      "sizeBytes": 361
+    },
+    {
+      "archivePath": "validation/markup257-off-o2/run-host.out.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o2/run-host.out.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "validation/markup257-off-o2-b/driver.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o2-b/driver.log",
+      "sha256": "b7c6a897552cbda91e32d6cc757e60294801a76c63e2c630f835bf0a42043362",
+      "sizeBytes": 508
+    },
+    {
+      "archivePath": "validation/markup257-off-o2-b/reference.err.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o2-b/reference.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "validation/markup257-off-o2-b/reference.out.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o2-b/reference.out.log",
+      "sha256": "2a9d9dd82ca7206dafcec30e6e4afb7b2d6c3c3cca73febbbd13e7e5aa47392f",
+      "sizeBytes": 192
+    },
+    {
+      "archivePath": "validation/markup257-off-o2-b/room-body-parity.json",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o2-b/room-body-parity.json",
+      "sha256": "013a74e3610932f069acad05da0db2649127e85648f029c0c679f314bb4f56ca",
+      "sizeBytes": 422
+    },
+    {
+      "archivePath": "validation/markup257-off-o2-b/run-host.err.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o2-b/run-host.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "validation/markup257-off-o2-b/run-host.out.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/validation/markup257-off-o2-b/run-host.out.log",
+      "sha256": "c46572cf78e91e4c867099b745bd608770502f54686db76782a1a7f021483160",
+      "sizeBytes": 669
+    },
+    {
+      "archivePath": "runs/markup257-off-o0-b/build-receipt.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o0-b/build-receipt.json",
+      "sha256": "f4d92950988418af6409d669e262a1598c113ad14a4d76861138ce61a6eb51df",
+      "sizeBytes": 2648
+    },
+    {
+      "archivePath": "runs/markup257-off-o0-b/fixture-postrun.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o0-b/fixture-postrun.json",
+      "sha256": "6951fcee68591208b84f0070f790605e8c33f44cf8ea344f9010f24774066d11",
+      "sizeBytes": 596
+    },
+    {
+      "archivePath": "runs/markup257-off-o0-b/fixture-refresh.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o0-b/fixture-refresh.json",
+      "sha256": "e726cea787095288d6014caabedcd3aa707f6c435068159828166da7f478fff3",
+      "sizeBytes": 464
+    },
+    {
+      "archivePath": "runs/markup257-off-o0-b/host-process.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o0-b/host-process.json",
+      "sha256": "dd03b48b646c8bfb5fe05db590bd24d1f501b18fd983d937ddabb382c773eebd",
+      "sizeBytes": 436
+    },
+    {
+      "archivePath": "runs/markup257-off-o0-b/native-host.log",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o0-b/native-host.log",
+      "sha256": "e839372489db4afd93c00cd3dda597ec64a6f4d38422cb84020148869155cb00",
+      "sizeBytes": 2850
+    },
+    {
+      "archivePath": "runs/markup257-off-o0-b/native-host.stderr.log",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o0-b/native-host.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/markup257-off-o0-b/run-receipt.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o0-b/run-receipt.json",
+      "sha256": "37a5ade958f585eb8d9c9125f8e91aaf8c268c06f9045696f4478851fb579d45",
+      "sizeBytes": 1143
+    },
+    {
+      "archivePath": "runs/markup257-off-o0-b/run-start.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o0-b/run-start.json",
+      "sha256": "abc03297416c30ba0a460ecb64e409246590b375d95596f0a32b768075989b8b",
+      "sizeBytes": 1697
+    },
+    {
+      "archivePath": "runs/markup257-off-o2-b/build-receipt.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o2-b/build-receipt.json",
+      "sha256": "0bfccad359bd8b1580e397da315eed7c917895b02618b840c30e16984a7180c1",
+      "sizeBytes": 2648
+    },
+    {
+      "archivePath": "runs/markup257-off-o2-b/fixture-postrun.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o2-b/fixture-postrun.json",
+      "sha256": "8b6200a50fce71a09dafdaeee0f26a4627718857e5927ce94ceff56d75b3db61",
+      "sizeBytes": 596
+    },
+    {
+      "archivePath": "runs/markup257-off-o2-b/fixture-refresh.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o2-b/fixture-refresh.json",
+      "sha256": "29fc1e0393f30cf39b751ca2cf37e8e644f1b6e173492118a37dd36106a92d82",
+      "sizeBytes": 465
+    },
+    {
+      "archivePath": "runs/markup257-off-o2-b/host-process.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o2-b/host-process.json",
+      "sha256": "3e9837d252930422f56f194551b2dd1ecc5edaf8ef9058801348ddacb27613b7",
+      "sizeBytes": 436
+    },
+    {
+      "archivePath": "runs/markup257-off-o2-b/native-host.log",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o2-b/native-host.log",
+      "sha256": "c2e0aeabcd1e5403a8700ba9778ead88cfd1bc6faca2a91899448c81b369b7ff",
+      "sizeBytes": 2837
+    },
+    {
+      "archivePath": "runs/markup257-off-o2-b/native-host.stderr.log",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o2-b/native-host.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/markup257-off-o2-b/run-receipt.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o2-b/run-receipt.json",
+      "sha256": "710f7efba1c3ed1cebde23905e94317e37469ce6a48149e92366032e8b853383",
+      "sizeBytes": 1143
+    },
+    {
+      "archivePath": "runs/markup257-off-o2-b/run-start.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/runs/markup257-off-o2-b/run-start.json",
+      "sha256": "36383c5bed2886261e1201d75ab779f71fbfcbb524b441a8608fc0f7c3414e2e",
+      "sizeBytes": 1697
+    },
+    {
+      "archivePath": "http-validation/markup257-off-o0-b-off-o0/cookie-header-redacted-receipt.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-validation/markup257-off-o0-b-off-o0/cookie-header-redacted-receipt.json",
+      "sha256": "8ecfa97f29229c690b6765b58bc0c87716f5412995b6cdf09d7167dfb4f635d5",
+      "sizeBytes": 11551
+    },
+    {
+      "archivePath": "http-validation/markup257-off-o0-b-off-o0/http-corpus.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-validation/markup257-off-o0-b-off-o0/http-corpus.json",
+      "sha256": "8fff232d5e5756ddeb980dbaabb3833e206862bdba24e1655c3d8b533a2a742f",
+      "sizeBytes": 6638
+    },
+    {
+      "archivePath": "http-validation/markup257-off-o0-b-off-o0/validation-receipt.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-validation/markup257-off-o0-b-off-o0/validation-receipt.json",
+      "sha256": "291b95b5b502ba2704094a727a5057cc0ab5e24eec83a0d73b047b44def0f726",
+      "sizeBytes": 502
+    },
+    {
+      "archivePath": "http-validation/markup257-off-o2-b-off-o2/cookie-header-redacted-receipt.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-validation/markup257-off-o2-b-off-o2/cookie-header-redacted-receipt.json",
+      "sha256": "d375d72c06025674a9443924660739da31934f3453bebcc24a19fb21b433269b",
+      "sizeBytes": 11551
+    },
+    {
+      "archivePath": "http-validation/markup257-off-o2-b-off-o2/http-corpus.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-validation/markup257-off-o2-b-off-o2/http-corpus.json",
+      "sha256": "8fff232d5e5756ddeb980dbaabb3833e206862bdba24e1655c3d8b533a2a742f",
+      "sizeBytes": 6638
+    },
+    {
+      "archivePath": "http-validation/markup257-off-o2-b-off-o2/transport-limits.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-validation/markup257-off-o2-b-off-o2/transport-limits.json",
+      "sha256": "90303f38d135c8869db93130c2b42843bd8164c108eeca56e5eeeb00cffd830f",
+      "sizeBytes": 882
+    },
+    {
+      "archivePath": "http-validation/markup257-off-o2-b-off-o2/validation-receipt.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-validation/markup257-off-o2-b-off-o2/validation-receipt.json",
+      "sha256": "7e98c8f4331cff4a953096c5553b205e9b57a3903db715693ca9fc03eb5758fd",
+      "sizeBytes": 564
+    },
+    {
+      "archivePath": "builds/build-trusted-generated-20261013T104437427Z-e7617fb18f1f4da88b1891babfd76d20/http_host_pins.h",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-host/build-trusted-generated-20261013T104437427Z-e7617fb18f1f4da88b1891babfd76d20/http_host_pins.h",
+      "sha256": "12892419048b8bde60dfc05ab87edef99291759fcbd23ea98d0daa76b7efa29b",
+      "sizeBytes": 983
+    },
+    {
+      "archivePath": "builds/build-trusted-generated-20261013T104437427Z-e7617fb18f1f4da88b1891babfd76d20/source-pins.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-host/build-trusted-generated-20261013T104437427Z-e7617fb18f1f4da88b1891babfd76d20/source-pins.json",
+      "sha256": "dafd050117e6e37a0f5b33bc8a062799574fa9c76064077c807562b02c357bdb",
+      "sizeBytes": 10359
+    },
+    {
+      "archivePath": "builds/build-trusted-generated-20261013T104437427Z-e7617fb18f1f4da88b1891babfd76d20/O0/build-receipt.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-host/build-trusted-generated-20261013T104437427Z-e7617fb18f1f4da88b1891babfd76d20/O0/build-receipt.json",
+      "sha256": "f4d92950988418af6409d669e262a1598c113ad14a4d76861138ce61a6eb51df",
+      "sizeBytes": 2648
+    },
+    {
+      "archivePath": "builds/build-trusted-generated-20261013T104437427Z-e7617fb18f1f4da88b1891babfd76d20/O2/build-receipt.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-host/build-trusted-generated-20261013T104437427Z-e7617fb18f1f4da88b1891babfd76d20/O2/build-receipt.json",
+      "sha256": "0bfccad359bd8b1580e397da315eed7c917895b02618b840c30e16984a7180c1",
+      "sizeBytes": 2648
+    },
+    {
+      "archivePath": "builds/build-trusted-generated-20261013T104437427Z-e7617fb18f1f4da88b1891babfd76d20/O0/native-imports.txt",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-host/build-trusted-generated-20261013T104437427Z-e7617fb18f1f4da88b1891babfd76d20/O0/native-imports.txt",
+      "sha256": "1d44c8de1c7154d72092b831124477ec739dc2d5d230728236205dac4d621193",
+      "sizeBytes": 3009
+    },
+    {
+      "archivePath": "builds/build-trusted-generated-20261013T104437427Z-e7617fb18f1f4da88b1891babfd76d20/O2/native-imports.txt",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-host/build-trusted-generated-20261013T104437427Z-e7617fb18f1f4da88b1891babfd76d20/O2/native-imports.txt",
+      "sha256": "7618d6973d07b20a2dc13cd3974992d06f2c327a5cad3b989441687f735d6b7b",
+      "sizeBytes": 3009
+    },
+    {
+      "archivePath": "builds/build-trusted-generated-20261013T104256913Z-e51cccb9aae24ee09cec770bea70942a/http_host_pins.h",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-host/build-trusted-generated-20261013T104256913Z-e51cccb9aae24ee09cec770bea70942a/http_host_pins.h",
+      "sha256": "61351a8053416f6135512494d234d9e715ba0c912c8dd8567ba5a4f6a225afff",
+      "sizeBytes": 983
+    },
+    {
+      "archivePath": "builds/build-trusted-generated-20261013T104256913Z-e51cccb9aae24ee09cec770bea70942a/source-pins.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-host/build-trusted-generated-20261013T104256913Z-e51cccb9aae24ee09cec770bea70942a/source-pins.json",
+      "sha256": "e67c1c17b0c70a10d011e28e936716c90a1ed9a3cca0af934f47274323d7be23",
+      "sizeBytes": 10359
+    },
+    {
+      "archivePath": "builds/build-trusted-generated-20261013T104256913Z-e51cccb9aae24ee09cec770bea70942a/O0/build-receipt.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-host/build-trusted-generated-20261013T104256913Z-e51cccb9aae24ee09cec770bea70942a/O0/build-receipt.json",
+      "sha256": "dd3a54ca79b3b9463ba3a95e6a91444881d0c709ea791fa130d0c98d5fe363ae",
+      "sizeBytes": 2649
+    },
+    {
+      "archivePath": "builds/build-trusted-generated-20261013T104256913Z-e51cccb9aae24ee09cec770bea70942a/O2/build-receipt.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-host/build-trusted-generated-20261013T104256913Z-e51cccb9aae24ee09cec770bea70942a/O2/build-receipt.json",
+      "sha256": "aca9eb8f7e0326aecb51df84e84878fff55583d0f4eb4052c522e6f8108abd24",
+      "sizeBytes": 2649
+    },
+    {
+      "archivePath": "builds/build-trusted-generated-20261013T104256913Z-e51cccb9aae24ee09cec770bea70942a/O0/native-imports.txt",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-host/build-trusted-generated-20261013T104256913Z-e51cccb9aae24ee09cec770bea70942a/O0/native-imports.txt",
+      "sha256": "703f83034321d56f9cacee2480541cc537b730e5c87fd7ca0418d7b2e84af81b",
+      "sizeBytes": 2857
+    },
+    {
+      "archivePath": "builds/build-trusted-generated-20261013T104256913Z-e51cccb9aae24ee09cec770bea70942a/O2/native-imports.txt",
+      "sourcePath": ".agentlang/campfire-native-profile-256/http-host/build-trusted-generated-20261013T104256913Z-e51cccb9aae24ee09cec770bea70942a/O2/native-imports.txt",
+      "sha256": "6769872961e0fdaed336aa29cda95e09935189b5dfc633925ca63c69414dfde5",
+      "sizeBytes": 2857
+    },
+    {
+      "archivePath": "room-read-gate/test-receipt.json",
+      "sourcePath": ".agentlang/campfire-native-room-read-252/test-runs/20261013T104002202Z-3c2a57d523dc461a9a93d6cd09d842da/test-receipt.json",
+      "sha256": "5bcf39a04380de06794a1cc71ac4a6db09f588e1376946db2dcda4c064afee72",
+      "sizeBytes": 8414
+    },
+    {
+      "archivePath": "room-read-gate/test-source-freeze.json",
+      "sourcePath": ".agentlang/campfire-native-room-read-252/test-runs/20261013T104002202Z-3c2a57d523dc461a9a93d6cd09d842da/test-source-freeze.json",
+      "sha256": "057a48c83c4bee2c26cb770fc4f314a3cbf1cdd4ef22a9a966ea724dd7429ee3",
+      "sizeBytes": 23882
+    },
+    {
+      "archivePath": "room-read-gate/test-run.log",
+      "sourcePath": ".agentlang/campfire-native-room-read-252/test-runs/20261013T104002202Z-3c2a57d523dc461a9a93d6cd09d842da/test-run.log",
+      "sha256": "9290d812a41a6a56342e65af1f8edd2ddd46a837ee5040fe2e15bf689058deaa",
+      "sizeBytes": 8683
+    },
+    {
+      "archivePath": "http-tests/receipt.json",
+      "sourcePath": ".agentlang/campfire-logout-245/http-tests/runs/20261013T103451550Z-dc74c0f0e3b24de0b0c655c0cc484c5e/receipt.json",
+      "sha256": "db20da659f21f50e8718156b41a07a8a7011243cae67efe5f0f4431ecf989660",
+      "sizeBytes": 6515
+    },
+    {
+      "archivePath": "reference/reference-build.log",
+      "sourcePath": ".agentlang/campfire-native-markup-257/reference-build.log",
+      "sha256": "b90e7eda2a4553aa87fba70fd4ffd333a8d2d99420f28b049798bbe7f6843b23",
+      "sizeBytes": 3049
+    },
+    {
+      "archivePath": "tools/Validate-Markup.ps1",
+      "sourcePath": ".agentlang/campfire-native-markup-257/Validate-Markup.ps1",
+      "sha256": "5a59a0a97d22ba49738b64a625d9b650158fb1923d1e766825afcee95ba939e3",
+      "sizeBytes": 6077
+    },
+    {
+      "archivePath": "tools/seal_257.py",
+      "sourcePath": ".agentlang/campfire-native-markup-257/seal_257.py",
+      "sha256": "2a69fe7365d3a511ec351b5dca117c39089e3d6814d80d1ae579add014abfd28",
+      "sizeBytes": 4917
+    },
+    {
+      "archivePath": "sources/applications/campfire/Http/ResponseRenderer.fs",
+      "sourcePath": "applications/campfire/Http/ResponseRenderer.fs",
+      "sha256": "82c2370c0c5d115c708b71c2dc74d4f2704f763dd24364c369882caa8697984e",
+      "sizeBytes": 8156
+    },
+    {
+      "archivePath": "sources/applications/campfire/Native/http/campfire_http_renderer.c",
+      "sourcePath": "applications/campfire/Native/http/campfire_http_renderer.c",
+      "sha256": "94d3df2e54524572ba7ea086bce219e9c31c2d883eeb890fb7c2ca1206b97f9f",
+      "sizeBytes": 26575
+    },
+    {
+      "archivePath": "sources/tests/AgentLang.Campfire.Http.Tests/Program.fs",
+      "sourcePath": "tests/AgentLang.Campfire.Http.Tests/Program.fs",
+      "sha256": "de2785aaf06397fe248f19bf680230ed94ff9c7cb663f2653066c25f421dfaae",
+      "sizeBytes": 105901
+    },
+    {
+      "archivePath": "sources/scripts/Build-CampfireNativeHttp.ps1",
+      "sourcePath": "scripts/Build-CampfireNativeHttp.ps1",
+      "sha256": "a72f2723b59efc32525d53f424c0534bcd0464e1bf292290566fedfa756d2c98",
+      "sizeBytes": 30439
+    }
+  ]
+}
