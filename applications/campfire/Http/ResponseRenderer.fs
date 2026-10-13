@@ -38,9 +38,11 @@ module ResponseRenderer =
             let id = get "id" fields |> namedInt "MessageId"
             let body = get "body" fields |> optional TString stringValue |> Option.defaultValue ""
             let clientId = get "client-message-id" fields |> stringValue
-            // Rails-shaped identity: messages_helper#message_tag and the dom_id(message, :presentation) div.
+            // Rails-shaped identity: messages_helper#message_tag and dom_id(message, :presentation).
+            // Message#to_key is [client_message_id], so DOM ids use it; data-message-id is the row id.
             let idText = id.ToString(CultureInfo.InvariantCulture)
-            $"<div id=\"message_{idText}\" class=\"message\" data-message-id=\"{idText}\" data-client-message-id=\"{encode clientId}\"><div id=\"presentation_message_{idText}\" dir=\"auto\">{encode body}</div></div>"
+            let domKey = encode clientId
+            $"<div id=\"message_{domKey}\" class=\"message\" data-message-id=\"{idText}\"><div id=\"presentation_message_{domKey}\" dir=\"auto\">{encode body}</div></div>"
         try
             let fields = record "CampfireHttpResponse" value
             if fields.Count <> 9 then fail ()

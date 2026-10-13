@@ -22,6 +22,11 @@ runtime cost is per-access re-validation of statically known layouts: 44 locates
 messages Rails' `data-message-id`/presentation identity in both renderers, with
 byte-identical native/interpreted bodies. The shared harness seed now builds
 locally (WSL Docker, pinned Rails `90b3300`).
+[Report258](../reports/258-native-campfire-shared-contract.md): the AOT native
+host serves the harness's Rails-built seed, accepts a Rails-issued session, and
+passes the harness `room_show` contract on 800/800 responses. Benchmarks compare
+the AOT native host with Rails/Rust references; the interpreter is a parity
+control only (user direction, 2026-10-13).
 Next: the matched room-page comparison, then compiler-proven structural access
 measured with the same method, then native message writes. Keep locks and
 cross-worker dependencies rare, and discuss any new one before adopting it.

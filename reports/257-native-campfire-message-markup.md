@@ -1,5 +1,10 @@
 # 257 — Rails-shaped message markup for the room page
 
+> **Correction ([report 258](258-native-campfire-shared-contract.md)):** Rails
+> `Message#to_key` is the client message ID, so `id="message_…"` and
+> `presentation_message_…` use the client ID, not the database ID shown below.
+> Report 258 fixes both renderers and revalidates parity.
+
 Status: interpreted/native parity passed; full Rails page and migration incomplete.
 
 The room page now gives each message the identity that the shared
