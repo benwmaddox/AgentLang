@@ -1,0 +1,2774 @@
+{
+  "archiveFile": "259-campfire-room-benchmark-evidence.zip",
+  "archiveSha256": "a02e4b60e081159534c5d7aa8ee4ee9b25f52bb311a0890fc4992a7348eca550",
+  "archiveSizeBytes": 297631,
+  "entryCount": 462,
+  "entries": [
+    {
+      "archivePath": "runs/explore-rust-nocache-1/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/client-cpu-fetch1.txt",
+      "sha256": "ee030a657e2b92f14db6438f6e013f53fa4c1fab039fc500b8786ba4d7e59fa2",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-1/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/client-cpu-fetch2.txt",
+      "sha256": "8fba2b9541f12e8a69419f0eedec260c70326f1d697add81f967cb874aeb2fc2",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-1/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/client-cpu-login.txt",
+      "sha256": "d1d43a782db0ac328af2be68abc8d25cb1e865db5a8817664ed433a2b72816e3",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-1/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/client-cpu-scrape.txt",
+      "sha256": "6fc725a56d241f3cc7e6647b56f7880f0ffec0ba964693ddcc3e9cf3af1dfa53",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-1/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/client-cpu-timed0.txt",
+      "sha256": "32858492039bd2e65f5bac4e7c08ed3043b313ce87b0087c35cb29d4dc91086f",
+      "sizeBytes": 130
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-1/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/client-cpu-timed1.txt",
+      "sha256": "5add4c97ae792c23c93042060142f4cc0b4e91b3d6e1cc556fc8e463338f5aba",
+      "sizeBytes": 128
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-1/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/client-cpu-warm0.txt",
+      "sha256": "bf6bb4b77ce364f9b2fc33773422b91327e2f305c2d5872c2b7e01d02c692408",
+      "sizeBytes": 127
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-1/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/container-log-summary.json",
+      "sha256": "4c059e141e70f058c07fdfdc62b7e52ccfb4857dea3f91c10dc7a9039c0e6c5c",
+      "sizeBytes": 19043
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-1/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-1/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/driver.log",
+      "sha256": "28269348a71d8b4e8dfd0cd9464f3e7607ef8ab18826d5901d0980cfc0ae3ffa",
+      "sizeBytes": 1034
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-1/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/server-cpu-gzip0.txt",
+      "sha256": "7393fd956d2f343c93b92bac6ac9e203a1c5acb689daee1785b712380c9b18bb",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-1/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/server-cpu-gzip1.txt",
+      "sha256": "9b607424101e88812f6cde4eca0fbbea0a6cb9d6aafbb7a7ad99fc755be687cc",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-1/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/timed-gzip0.json",
+      "sha256": "7ce0aa2cca3a67ce5841f98f8b8f6d77a19a43ba4c1a68b3838e3336dd550ee7",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-1/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/timed-gzip1.json",
+      "sha256": "192ce70e5240339227560008330e534b196df101a1a4ad8479002d391ffc86f9",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-1/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-1/warmup-gzip0.json",
+      "sha256": "bfa046d04d9ecb86dc977d908a215ccd50894d577bf8bd7d69357df38543cf54",
+      "sizeBytes": 313
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/client-cpu-fetch1.txt",
+      "sha256": "6fc14610abb1bb58e18e64602d7abf37bfe5585e2a6cea0dc52e0e5f8cdecac2",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/client-cpu-fetch2.txt",
+      "sha256": "ad778af57fc30b0e2f2e1e7a031b391dcf227ac63168ecf90844409c20c877d3",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/client-cpu-login.txt",
+      "sha256": "72ab69068e97caa04a9f2c8922184d1ea3bd671e22aa15e78fb2a502621556fd",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/client-cpu-scrape.txt",
+      "sha256": "83d52a9c753438729383ed54f7a4c94912b9bfe1c79ba1aa347200938d9255d9",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/client-cpu-timed0.txt",
+      "sha256": "2d02298722c2f2d6ab5080085a5c8cbd5fe67a1d1831756d8ba943c6785c49d0",
+      "sizeBytes": 130
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/client-cpu-timed1.txt",
+      "sha256": "fb2ac40730a64a217ad520c7aa6150102b3d12876a12acffc0eb5a6c9de082f2",
+      "sizeBytes": 128
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/client-cpu-warm0.txt",
+      "sha256": "380ef66f956961b03b0f4c3895c6bb362ae6dc82f520dd631e3eca0c03b5452e",
+      "sizeBytes": 127
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/container-log-summary.json",
+      "sha256": "58b040565f1949545c16222be98b1383a217cc7ae8519da4ec3fe666debf1545",
+      "sizeBytes": 19043
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/driver.log",
+      "sha256": "dda0cbb5345d57dfa2a11f15a1d292929a4f2192a3f1129309ccf6a97892d976",
+      "sizeBytes": 1033
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/server-cpu-gzip0.txt",
+      "sha256": "2e73efd3b5abb5577ebc6d24fe0face093228f9e30ccee422e6f827df7821662",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/server-cpu-gzip1.txt",
+      "sha256": "43c69f03b96e293a43fc4ca21119aa5986012408ac5c296804d4848c872e02ae",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/timed-gzip0.json",
+      "sha256": "46e121a5d300c8b1af5241e8f7279f7013c646743e02d8310aec54e824ec1553",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/timed-gzip1.json",
+      "sha256": "894f52c77b4d03e96b2066c323c3b9f067e07885a66d85c09d7de7f8599ee987",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/explore-rust-nocache-2/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/explore-rust-nocache-2/warmup-gzip0.json",
+      "sha256": "0921866b15071161863714d34c4124f5a90ee50fd4d4d0fe30062a9c3d3c4bb7",
+      "sizeBytes": 313
+    },
+    {
+      "archivePath": "runs/nc-set1-1-native/cpu-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-1-native/cpu-gzip0.json",
+      "sha256": "9d9a123139b3f389a8b928bf642fda3b670ce42bcc6a12718841bdd9017c444a",
+      "sizeBytes": 152
+    },
+    {
+      "archivePath": "runs/nc-set1-1-native/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-1-native/driver.log",
+      "sha256": "459854b40602fc2b5b06cf2d1c92d6d976a5014205366c41890a09fcaa347618",
+      "sizeBytes": 639
+    },
+    {
+      "archivePath": "runs/nc-set1-1-native/loadgen-fetch1.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-1-native/loadgen-fetch1.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set1-1-native/loadgen-fetch2.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-1-native/loadgen-fetch2.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set1-1-native/loadgen-timed0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-1-native/loadgen-timed0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set1-1-native/loadgen-warm0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-1-native/loadgen-warm0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set1-1-native/native-host.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-1-native/native-host.log",
+      "sha256": "9f995f28ca6a9955228a12f42f461ceba82330d94a1a9ab54bd8af199ea28f7a",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/nc-set1-1-native/native-host.stderr.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-1-native/native-host.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/nc-set1-1-native/processes-after.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-1-native/processes-after.json",
+      "sha256": "5881ef6b28bf504aa49091959306355fe24962e1145dbfc4a7e449571b83defd",
+      "sizeBytes": 31976
+    },
+    {
+      "archivePath": "runs/nc-set1-1-native/processes-before.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-1-native/processes-before.json",
+      "sha256": "6918c7dc5664ce2200c49554505dee0bf18dcd79149a135474b781862b19f522",
+      "sizeBytes": 32203
+    },
+    {
+      "archivePath": "runs/nc-set1-1-native/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-1-native/timed-gzip0.json",
+      "sha256": "700dbf97ca3ffb2b644053cc0f89ea9b69d523ec9a7ad36e04d97d52f62cdb19",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/nc-set1-1-native/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-1-native/warmup-gzip0.json",
+      "sha256": "5267d58e4305a0fbc35642f43417942e352f856a1d1467cc68dd3d7d15461dae",
+      "sizeBytes": 312
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/client-cpu-fetch1.txt",
+      "sha256": "a4c3705d4875f12d9db8b849ce68dac6d150830bce5eaeebba4b9d7651c402b4",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/client-cpu-fetch2.txt",
+      "sha256": "2c5f419917fccd30182ddcc88bde192961b1c9442f03c2251d7297ab4949d9c0",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/client-cpu-login.txt",
+      "sha256": "5cb509b5414bcb71ac2d24b7285630e688a61142393f0257b5c33f7d76ad9d18",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/client-cpu-scrape.txt",
+      "sha256": "4425d71bb81d0b3a6dbee5e0389fb4da386686fbf26e6e077d2d9eeb6636460b",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/client-cpu-timed0.txt",
+      "sha256": "40f2ab8edd980c84848156da92c760fb0067093f231f45bdaa143e4e837d0876",
+      "sizeBytes": 124
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/client-cpu-timed1.txt",
+      "sha256": "2426a9f33564cc190ac65cbedcc750928e94ae7ee2052e10a0c4455b099357dd",
+      "sizeBytes": 123
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/client-cpu-warm0.txt",
+      "sha256": "c2ef6e1fe5bbc63b60abfe3da711538fc6b262f627f8fd652f7e4022ee83055f",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/container-log-summary.json",
+      "sha256": "00ffca417e85acb04c52def757cd13aead1a3674e300824f8ef39bb7296ca960",
+      "sizeBytes": 5958
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/driver.log",
+      "sha256": "c15da808ba3e26c2e0b3034da59b506fe6322a39bff6c457d2f113245c6dc292",
+      "sizeBytes": 1143
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/server-cpu-gzip0.txt",
+      "sha256": "91747212e0eb28692c3ab4523ade874785f6fc611d3751f517acf928e7dbf0bf",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/server-cpu-gzip1.txt",
+      "sha256": "d1805ba43c796a59d14b26c22cedea0a4ec8084f7b6189b64044d5cde3e57a7c",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/timed-gzip0.json",
+      "sha256": "fb7684a2e30b4c66cfb0cb2af987e009997049e47dc57b1bfc475ad4d2a5d67e",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/timed-gzip1.json",
+      "sha256": "1cacff398dc611e9aa3b2d19d190e140bfc3bd27b35f87688d9ad02e10f7bba6",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/nc-set1-2-rails/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-2-rails/warmup-gzip0.json",
+      "sha256": "e74d2bf776b843feba5b308a3cfacb74e2df0cab8087de00a377ea53cb7275d5",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/client-cpu-fetch1.txt",
+      "sha256": "fdb6ce0c26bd11bc320bb106b51ccc23cba22d56739dc3ecab6bc6552e60224e",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/client-cpu-fetch2.txt",
+      "sha256": "a925c3d7a94bed130ee8d6f05602d1cb3ae60ab7bf950071fa05982bb863cbde",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/client-cpu-login.txt",
+      "sha256": "c3ec35f6d041675d886db2115f9c5347c6a6590e566d3476a001e859bec0098e",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/client-cpu-scrape.txt",
+      "sha256": "670ee68086f53b5a99e819d67e6af860caea32f614d73bccc633e173da711a4f",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/client-cpu-timed0.txt",
+      "sha256": "2227194deb69b85ffd57052b5e058496659fd98b3cfc5172b0bcdb33d6afeb25",
+      "sizeBytes": 127
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/client-cpu-timed1.txt",
+      "sha256": "5102c1c8dd8f2d6f7a33c5529021b2dce8dd3763cc252921da0ed7504f35c37e",
+      "sizeBytes": 125
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/client-cpu-warm0.txt",
+      "sha256": "7f210044a7e6ca28669ac16db6fe57507952c8b35e02a8cfcc3e470fc7a2a30c",
+      "sizeBytes": 124
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/container-log-summary.json",
+      "sha256": "b50a9c0e1ca4e1dacb1e457e820ef693892580f0bdbc7ff09cf17d3eb734bcdd",
+      "sizeBytes": 19041
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/driver.log",
+      "sha256": "743a6ae18bd4acf0f7bf2e83df87a9c57772c3206ba4b73d8f6e15a47f31cf13",
+      "sizeBytes": 1045
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/server-cpu-gzip0.txt",
+      "sha256": "a7c1d2ad5c152b8e2cc0c668f2f83f81f2cd808a1827f6c9ce434a5010f05eca",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/server-cpu-gzip1.txt",
+      "sha256": "935b798de8c8a6ce49ffb7f5c2cfeebf73ea769ba1058b8dfe0778ef3329bd90",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/timed-gzip0.json",
+      "sha256": "2bbda61a88f67d30f0d37550b1fc4f3ec130b97854f9c27caa90ee85e24f8139",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/timed-gzip1.json",
+      "sha256": "c31a6f2d2677e47280bfffa2a07e572547b6b6e54a26ce49edd6cb8bfad28d88",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/nc-set1-3-rust/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-3-rust/warmup-gzip0.json",
+      "sha256": "4f968690e963649fe29dee97e93541f0e23762c37a3c797ce31b44664234109e",
+      "sizeBytes": 312
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/client-cpu-fetch1.txt",
+      "sha256": "d0ddb14b9808e2b3f17a74b71f5bd705b8f9606a7e3a9d897eb7a811767385eb",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/client-cpu-fetch2.txt",
+      "sha256": "ad7140f8c7500f86945790770921a10c9f3037228f3e90d3a217ed0c2077c5b8",
+      "sizeBytes": 117
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/client-cpu-login.txt",
+      "sha256": "593a0f6df428a581810934bde87c4adf6af5e0fb2d5f12e2c09c9b2b8798eb70",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/client-cpu-scrape.txt",
+      "sha256": "55c89ed109a6d5b13aeccbd880c085782f6a37fa6f50b2f5b5e8d93d77576e73",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/client-cpu-timed0.txt",
+      "sha256": "9c69bdef2882c6a3d3af2ebc3e193cd6492112f409cf9d5a365ca96a33916f91",
+      "sizeBytes": 127
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/client-cpu-timed1.txt",
+      "sha256": "cd2db471f2e03558ca88c4eb40b5344dd10eb7db5cc9b273d2bd91c1e6a3836d",
+      "sizeBytes": 125
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/client-cpu-warm0.txt",
+      "sha256": "959e83eb2183df98c7278abdf4b882893b2a032dd5ba18bb4675ba5c2813b6de",
+      "sizeBytes": 124
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/container-log-summary.json",
+      "sha256": "d69928eb7aa729631da9507d3480304a6d00eb272d3e3b600a01409c9a093bbf",
+      "sizeBytes": 19041
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/driver.log",
+      "sha256": "f3dac11437de95c659e15c34825df6d1c0f7de83b1a1fc7ea4abaf96f0bf999c",
+      "sizeBytes": 1044
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/server-cpu-gzip0.txt",
+      "sha256": "b2452ce47c6f0f5991a47493121551354bb160ffa46a73fc5134cb60654944d5",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/server-cpu-gzip1.txt",
+      "sha256": "cd0eb9d2f5860af5d292f3edd8445ef2eb2c7183cc5f61ac5ab59df452b88e62",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/timed-gzip0.json",
+      "sha256": "974855d3cf63e4bb02b9779e13a9b52e1d682de114346256ae67aa9efc5fbc28",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/timed-gzip1.json",
+      "sha256": "b4433a2514797ecdb8dabb21f79139c1d28ddb7c2f350ac3a2f9c6e2e38d0027",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/nc-set1-4-rust/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-4-rust/warmup-gzip0.json",
+      "sha256": "4744debdb7fb242778cf148f715fabf3529ca481ca16dcca4f5542b6482379df",
+      "sizeBytes": 310
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/client-cpu-fetch1.txt",
+      "sha256": "deaa5c8f9d2eb39e55dfa3122d522c4be4d6be853d96a3e6ed6a85919105b357",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/client-cpu-fetch2.txt",
+      "sha256": "6058a69f1f96ed96f144d2b819f432be665d6031cb6269a827fb65ae6fe85e10",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/client-cpu-login.txt",
+      "sha256": "f2dd16867efadd6a4c2f3008a79bcb94843b001a548ff7891946fbd4f2f56f7e",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/client-cpu-scrape.txt",
+      "sha256": "2565381fa8dcca452f745003dc5e391e527ed38fb6222d153e5fa8c8e6b61d59",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/client-cpu-timed0.txt",
+      "sha256": "7f24796fdf2985980fe304e1f7afe7456b3e7d70c20a00f3c171545acc11c653",
+      "sizeBytes": 124
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/client-cpu-timed1.txt",
+      "sha256": "99f2c2c5da64ccda5a85443243d5a5967559bbcdd910ac5a23378304de604c23",
+      "sizeBytes": 123
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/client-cpu-warm0.txt",
+      "sha256": "1bb2cfcb334624741fb062ed822c3027a9c1ca0100c0fbb6deb7af02ffd8a40e",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/container-log-summary.json",
+      "sha256": "b9180877d8270d4bf6142b6e898650bf81dd5834af3600ef192f51c4735d554a",
+      "sizeBytes": 5958
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/driver.log",
+      "sha256": "b416241d40ccc35001e05e7b8073cb686257f15f37fdd805ef42c6ad89be5b72",
+      "sizeBytes": 1143
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/server-cpu-gzip0.txt",
+      "sha256": "17c9b7b988058d068179e5cd6fc3d690b2b2db08485f64ced58e923b1beaca7f",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/server-cpu-gzip1.txt",
+      "sha256": "c77869ea107410d2ad18d474b22bf90660be8d7178cc65fcd2b3571b64777b69",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/timed-gzip0.json",
+      "sha256": "b880ef8e868c16e034479f3062890949b91b2074f89c4f78b8c727a982edd08f",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/timed-gzip1.json",
+      "sha256": "9b0f798aa40bec98efb85a8903bfe252d508087720fb3a126272c183a5d29ace",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/nc-set1-5-rails/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-5-rails/warmup-gzip0.json",
+      "sha256": "1da0928389fd8138fb3c27e8cbca270ed14f5440bcd150d698faec94c2ca333a",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/nc-set1-6-native/cpu-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-6-native/cpu-gzip0.json",
+      "sha256": "5886d5529bdd99415b92f67985b5f30c6072dc5cfb1f8e3b744207e9656e3c25",
+      "sizeBytes": 153
+    },
+    {
+      "archivePath": "runs/nc-set1-6-native/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-6-native/driver.log",
+      "sha256": "fc872865102e70416b6c4a5c33e26050855d347fada06ffcd93fca959d07b3d7",
+      "sizeBytes": 639
+    },
+    {
+      "archivePath": "runs/nc-set1-6-native/loadgen-fetch1.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-6-native/loadgen-fetch1.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set1-6-native/loadgen-fetch2.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-6-native/loadgen-fetch2.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set1-6-native/loadgen-timed0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-6-native/loadgen-timed0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set1-6-native/loadgen-warm0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-6-native/loadgen-warm0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set1-6-native/native-host.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-6-native/native-host.log",
+      "sha256": "9f995f28ca6a9955228a12f42f461ceba82330d94a1a9ab54bd8af199ea28f7a",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/nc-set1-6-native/native-host.stderr.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-6-native/native-host.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/nc-set1-6-native/processes-after.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-6-native/processes-after.json",
+      "sha256": "db24a0225ca0b495fbccdfee914ef56c97f4d052dd89b41dfdb9d346b69b03ce",
+      "sizeBytes": 31497
+    },
+    {
+      "archivePath": "runs/nc-set1-6-native/processes-before.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-6-native/processes-before.json",
+      "sha256": "db24a0225ca0b495fbccdfee914ef56c97f4d052dd89b41dfdb9d346b69b03ce",
+      "sizeBytes": 31497
+    },
+    {
+      "archivePath": "runs/nc-set1-6-native/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-6-native/timed-gzip0.json",
+      "sha256": "c6e509ae8d61816b991bdc549ebcf700c0576dd8ab97d441cc2d0329321c8412",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/nc-set1-6-native/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set1-6-native/warmup-gzip0.json",
+      "sha256": "9ba768276aac980bbf923969df225997401a1d03947d1d03614d7af8d10697e5",
+      "sizeBytes": 311
+    },
+    {
+      "archivePath": "runs/nc-set2-1-native/cpu-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-1-native/cpu-gzip0.json",
+      "sha256": "d75a74c9c3e2a081aa0569fc9b7ec6dc30425f523c0135aaffa3ec7060655c66",
+      "sizeBytes": 150
+    },
+    {
+      "archivePath": "runs/nc-set2-1-native/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-1-native/driver.log",
+      "sha256": "d774205efa3c265849854531c2a2e924a47699cfba00a803492f029359b13dbb",
+      "sizeBytes": 639
+    },
+    {
+      "archivePath": "runs/nc-set2-1-native/loadgen-fetch1.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-1-native/loadgen-fetch1.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set2-1-native/loadgen-fetch2.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-1-native/loadgen-fetch2.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set2-1-native/loadgen-timed0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-1-native/loadgen-timed0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set2-1-native/loadgen-warm0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-1-native/loadgen-warm0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set2-1-native/native-host.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-1-native/native-host.log",
+      "sha256": "9f995f28ca6a9955228a12f42f461ceba82330d94a1a9ab54bd8af199ea28f7a",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/nc-set2-1-native/native-host.stderr.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-1-native/native-host.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/nc-set2-1-native/processes-after.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-1-native/processes-after.json",
+      "sha256": "5d05fd5db1c7baa830721c0b6832e5d0be8b03d9642b292b8cf099dd7b84165c",
+      "sizeBytes": 31428
+    },
+    {
+      "archivePath": "runs/nc-set2-1-native/processes-before.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-1-native/processes-before.json",
+      "sha256": "3203dccf840dca76111aea7e112a4d7edcf2bdea932a32f8191c819b97bfe7d4",
+      "sizeBytes": 31498
+    },
+    {
+      "archivePath": "runs/nc-set2-1-native/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-1-native/timed-gzip0.json",
+      "sha256": "fa384583129888e5de87a66263fa619958370057a3c4113fe86078571ee65236",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/nc-set2-1-native/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-1-native/warmup-gzip0.json",
+      "sha256": "2e7009f245ecfd81998aa0cb37d6647e603ba2fb5a10afa549f1a5a6af29ee79",
+      "sizeBytes": 311
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/client-cpu-fetch1.txt",
+      "sha256": "6efa07f260b2631fc35ee7515ddfa36f4405d8e908fbd56fdf101d4fb6083ad4",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/client-cpu-fetch2.txt",
+      "sha256": "3f5fbdffd13cd2354fb678388b289da64903104ae06dc8233fb82305ec02657a",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/client-cpu-login.txt",
+      "sha256": "71248c5511be408d013ae64c55d49ff13830e01e1f38ab7b3b539e6feeda3206",
+      "sizeBytes": 117
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/client-cpu-scrape.txt",
+      "sha256": "32d49a7612dd25782440e7907c9209e1a15252168ae8d76bc28a63310b63bcff",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/client-cpu-timed0.txt",
+      "sha256": "0c80a02803b2c7fffe5866532d23330c4e9981db1ca0c2a4c9dedcb3e8182a3f",
+      "sizeBytes": 124
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/client-cpu-timed1.txt",
+      "sha256": "b4685cce04fd8c991b5b6f95d5f114b0108405ca991526db9e1b304ed82a65b0",
+      "sizeBytes": 123
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/client-cpu-warm0.txt",
+      "sha256": "6a4fb630bd13ee83733eda5e8a59c8e3e05f5147ff75f5370397965917ccaa90",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/container-log-summary.json",
+      "sha256": "e3bc92a10bc2fb2da6c78a97c4ef202c664aace14ed2793b11f4eb9ed4968e15",
+      "sizeBytes": 5711
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/driver.log",
+      "sha256": "f5d75997b3a2f09dacd3f5963d3dfa4cd26104135370b2b22c7d143e6a88fdce",
+      "sizeBytes": 1143
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/server-cpu-gzip0.txt",
+      "sha256": "a18c8a59b030a40a3bfecd8057afa97e8ec49889c1d5861b55f5d36523ecc856",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/server-cpu-gzip1.txt",
+      "sha256": "ebb2e5fd197a2bcce84351dc3fa95c0040d82c9d339f4cb0fc2275a858658665",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/timed-gzip0.json",
+      "sha256": "9b33bba1af3de9d75c2c77421082c038ddebf721e2f81fcabe8aef346c9c2c50",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/timed-gzip1.json",
+      "sha256": "2e1ca24d07229358e99ea73dfeefa63a250795875f7e04c1d45ec3d895c8fede",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/nc-set2-2-rails/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-2-rails/warmup-gzip0.json",
+      "sha256": "7436caac743d2991e65b7c1128b9a077b2723992498406501ed544cdc5af23a3",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/client-cpu-fetch1.txt",
+      "sha256": "13166065548514eccb14ed48ac816a016d646c8631ffc876873cc10d9989d380",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/client-cpu-fetch2.txt",
+      "sha256": "ac78ad2ef6fcd110d364fe0a36446547386c304b8f830700a1a53cd739966e88",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/client-cpu-login.txt",
+      "sha256": "57d1df5e2ecae365985d445741e3a4f7cd6630cb67f31768beb60ee09dce6e52",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/client-cpu-scrape.txt",
+      "sha256": "d7e82162a106dbd67416fa43f0972ba20ee66f4f9548328316d9d8202343aa86",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/client-cpu-timed0.txt",
+      "sha256": "9b9c8dab422ca477eca5119fbde7ee8134b206b7c4c73f29acbcd4fcb17c6670",
+      "sizeBytes": 127
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/client-cpu-timed1.txt",
+      "sha256": "0a295cf99c9e25256b63854da8e0ddf57498bf30bcdbfe3a7b408c1b8755a9c5",
+      "sizeBytes": 125
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/client-cpu-warm0.txt",
+      "sha256": "99e8678e3d0dc6fff3d2e52f1481fa8e48e96dcda87e68f0c72579b5d184c214",
+      "sizeBytes": 124
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/container-log-summary.json",
+      "sha256": "14fc7de5c926e951ddebfe1dc3d0717edc3093ba57a47a7499a285a3f6b51f5f",
+      "sizeBytes": 19041
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/driver.log",
+      "sha256": "22dbff89f67fb0a7d731baeefc3809b09e143eefda49e807cc256c9490a6e07a",
+      "sizeBytes": 1041
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/server-cpu-gzip0.txt",
+      "sha256": "9f1b9397a044e2616bb73940d6b548c25e9029fa25dc4e78782df255328f9f6b",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/server-cpu-gzip1.txt",
+      "sha256": "190e3384a40ec39f31d07ff60f17b580708ab2e7e72e7bd345be91567bd380fb",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/timed-gzip0.json",
+      "sha256": "cf63ba80b607ca9242650220bf5f78422e7b59604d2090c96c3a8e207a76b214",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/timed-gzip1.json",
+      "sha256": "58580268fcb24483af92fc7235221dd3419cd050aa49555ea6d150202639d864",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/nc-set2-3-rust/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-3-rust/warmup-gzip0.json",
+      "sha256": "5b0689cb4979897018675e330986dbbbd74e26ae74a3d2d04ee3d6d5fc9ff91f",
+      "sizeBytes": 310
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/client-cpu-fetch1.txt",
+      "sha256": "ed246b9d13588127fe98d20d156582e0ae0c6a7c3aba507e17be4247c34d41e7",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/client-cpu-fetch2.txt",
+      "sha256": "46dc325ddee2efef4a8d3f6a0c3b8d7c49011d0d72c0e298bdb0229a1364ff0e",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/client-cpu-login.txt",
+      "sha256": "4647f5bb57a4e1825049e46dede0f0a2843d693cc4cea6f0b6b6a606a8cc4f2b",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/client-cpu-scrape.txt",
+      "sha256": "217166f9705a230956850df776daa134d52e72d6e40f98c23586263859ff0864",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/client-cpu-timed0.txt",
+      "sha256": "ff0da94adcd50a53c80747004d981842b6a649fe273388fa5b9faaf6ff2e4708",
+      "sizeBytes": 127
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/client-cpu-timed1.txt",
+      "sha256": "637bfffaeb24ac4b0cc6870fa6fa6b2b273419c5ee33647fba93d07a42bff4f0",
+      "sizeBytes": 125
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/client-cpu-warm0.txt",
+      "sha256": "807bed494fa91961a63fb0303792ea0f2da632bf43acfc5783a0b4b2e1f7664e",
+      "sizeBytes": 124
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/container-log-summary.json",
+      "sha256": "c538507ee65fc3c4fee0c6fbb51a5429edd401c3bae17fe224cb3239682faba8",
+      "sizeBytes": 19041
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/driver.log",
+      "sha256": "556ea90108d67791d699857631f581b773421e1a5c78c773f5e0b1c1ebe49316",
+      "sizeBytes": 1041
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/server-cpu-gzip0.txt",
+      "sha256": "e16ddf3b7b451881b962a6a963483f846fec322c08bb4d889ed342268772ced6",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/server-cpu-gzip1.txt",
+      "sha256": "8573813e3e162140ef9e7b8381d2d202ac4d9670fb2f16ee0fc315f30cab2b8a",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/timed-gzip0.json",
+      "sha256": "e0fd9ece86c1867cb627144315c7fa8656294405ed6e97c96e3010cbf33cc869",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/timed-gzip1.json",
+      "sha256": "46c708d43faf7ada2456f2d3062a463e5ce2c8e5c85e4835ace47d5966a6a245",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/nc-set2-4-rust/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-4-rust/warmup-gzip0.json",
+      "sha256": "748117f1ebe1f908e79b621437391ac66a4b4286450a86b0a648f3f46d22c747",
+      "sizeBytes": 310
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/client-cpu-fetch1.txt",
+      "sha256": "ca0909dcd0cd5acab76828c6d97208ee85ddce95b9d5017304b9d6997fa9a470",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/client-cpu-fetch2.txt",
+      "sha256": "2cab8d17018519a509750ef950d51d8e538d033e134a54bb8c7abdb770f6107f",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/client-cpu-login.txt",
+      "sha256": "fbdfc2628d2ebc1166a53817902f4668b7cf3bd891c9b5cdf1459e07ed928ba7",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/client-cpu-scrape.txt",
+      "sha256": "896b7616a873a3336cc90068b2bd39ef9a5ca68a5e50f2e4ffd49c9d8ca6dcfd",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/client-cpu-timed0.txt",
+      "sha256": "a65b949c0b536f25effedd2923f42c0dd41a7d8bd9f3189500ac86bfad53affb",
+      "sizeBytes": 123
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/client-cpu-timed1.txt",
+      "sha256": "50c4b16083829bcbe086a811824b7a7911e8adbb70ad5824457cd251d275fd06",
+      "sizeBytes": 123
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/client-cpu-warm0.txt",
+      "sha256": "9f5833f5eb4980925f95d1c22c5f70af6079dd91ebad02f8c0eae2cad98fdef1",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/container-log-summary.json",
+      "sha256": "4bb8839d98c8af05fcfc4158fe1c9dc419bc90cd4ee0e2ece9ed510ddf0f6b3b",
+      "sizeBytes": 6126
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/driver.log",
+      "sha256": "fb9c39b7b7032b9782b6c4d306931d7a67ad449c20b704fd6eb079df9a616530",
+      "sizeBytes": 1144
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/server-cpu-gzip0.txt",
+      "sha256": "c9d298f55b4b97c487c4207fe9d87e3f8652e148dac451090948080dca1594e3",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/server-cpu-gzip1.txt",
+      "sha256": "c070748a201c853d9b15394ac5e7904e65066ebbc5d2a02cd19dac2b5f4d2c14",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/timed-gzip0.json",
+      "sha256": "8bb58f31d150df1433acc7f7df9a1cf25612da9f1b9ab901b2b0dfcf0196fc7d",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/timed-gzip1.json",
+      "sha256": "cee007e55e9f5c41c33edf6435d5cba0f1cb57ae60ebc6d94d5a738ee9c584e0",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/nc-set2-5-rails/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-5-rails/warmup-gzip0.json",
+      "sha256": "c8546e26a94c4c5578884ae56b95751e9b0403f1d8714dcb2f2374958a01cb35",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/nc-set2-6-native/cpu-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-6-native/cpu-gzip0.json",
+      "sha256": "f0d2c39fb34f9f41f4f24b1bfe6598675ac028abc7833bb37db6a8ec221990bb",
+      "sizeBytes": 154
+    },
+    {
+      "archivePath": "runs/nc-set2-6-native/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-6-native/driver.log",
+      "sha256": "f9b0bcdbc18fbb95d99f203cfc3ea5c71d271a817bf78e28ed46e893b29c5230",
+      "sizeBytes": 640
+    },
+    {
+      "archivePath": "runs/nc-set2-6-native/loadgen-fetch1.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-6-native/loadgen-fetch1.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set2-6-native/loadgen-fetch2.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-6-native/loadgen-fetch2.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set2-6-native/loadgen-timed0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-6-native/loadgen-timed0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set2-6-native/loadgen-warm0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-6-native/loadgen-warm0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/nc-set2-6-native/native-host.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-6-native/native-host.log",
+      "sha256": "9f995f28ca6a9955228a12f42f461ceba82330d94a1a9ab54bd8af199ea28f7a",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/nc-set2-6-native/native-host.stderr.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-6-native/native-host.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/nc-set2-6-native/processes-after.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-6-native/processes-after.json",
+      "sha256": "fea88606882a7feb010e142032761679a47f02b44143942cf6465a026cbf7e31",
+      "sizeBytes": 31895
+    },
+    {
+      "archivePath": "runs/nc-set2-6-native/processes-before.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-6-native/processes-before.json",
+      "sha256": "0672cff40c6886bc6b4a4679dfedf84d67c31e08231c1e2cdb3262f31a76e3cc",
+      "sizeBytes": 32023
+    },
+    {
+      "archivePath": "runs/nc-set2-6-native/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-6-native/timed-gzip0.json",
+      "sha256": "f3a00f21a7eeef172449997080dd992e5bc55f4b976f78030119459270392c0a",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/nc-set2-6-native/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/nc-set2-6-native/warmup-gzip0.json",
+      "sha256": "9ebd0a90c98396b5365bf443a1f0eb470b14bebb752170dca1f7de8c89d6e182",
+      "sizeBytes": 310
+    },
+    {
+      "archivePath": "runs/set1-1-native/cpu-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-1-native/cpu-gzip0.json",
+      "sha256": "4a7908811428c30770e5635e0649cd0b81c3b2afe674a84131b80761a5759a4e",
+      "sizeBytes": 152
+    },
+    {
+      "archivePath": "runs/set1-1-native/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-1-native/driver.log",
+      "sha256": "db4e1d89d418d5ad6466f538e90e4ea987fc2be54146f297641d72f5d7e36ece",
+      "sizeBytes": 638
+    },
+    {
+      "archivePath": "runs/set1-1-native/loadgen-fetch1.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-1-native/loadgen-fetch1.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set1-1-native/loadgen-fetch2.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-1-native/loadgen-fetch2.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set1-1-native/loadgen-timed0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-1-native/loadgen-timed0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set1-1-native/loadgen-warm0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-1-native/loadgen-warm0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set1-1-native/native-host.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-1-native/native-host.log",
+      "sha256": "9f995f28ca6a9955228a12f42f461ceba82330d94a1a9ab54bd8af199ea28f7a",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/set1-1-native/native-host.stderr.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-1-native/native-host.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/set1-1-native/processes-after.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-1-native/processes-after.json",
+      "sha256": "e9425089e2955e6857962f0684905719168cb2db6b66d2d9c6f5eab982e9ff27",
+      "sizeBytes": 31165
+    },
+    {
+      "archivePath": "runs/set1-1-native/processes-before.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-1-native/processes-before.json",
+      "sha256": "e9425089e2955e6857962f0684905719168cb2db6b66d2d9c6f5eab982e9ff27",
+      "sizeBytes": 31165
+    },
+    {
+      "archivePath": "runs/set1-1-native/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-1-native/timed-gzip0.json",
+      "sha256": "8139daea2769bfa63b7c38b73a8a2eb9069a51b4722468174be1ea41dbc7a09e",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/set1-1-native/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-1-native/warmup-gzip0.json",
+      "sha256": "b5a65e97ac0071da9086c0d79da27cffccd1263101f0d869abb0eb4cac66789d",
+      "sizeBytes": 311
+    },
+    {
+      "archivePath": "runs/set1-2-rails/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/client-cpu-fetch1.txt",
+      "sha256": "e132378d8342adafab12a5b441eb4b81040a8562e8562640cfc37c5120dcccd3",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set1-2-rails/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/client-cpu-fetch2.txt",
+      "sha256": "f1344ec7c041f064b15513620eee42c6e42db49dafd97ced4088f02ef0fb9644",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set1-2-rails/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/client-cpu-login.txt",
+      "sha256": "e2c18b0403fec5d20c8d5d8f063732836953e85998a7bcbb6d1b7de953fb4b2f",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/set1-2-rails/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/client-cpu-scrape.txt",
+      "sha256": "c705a7e0938758e41f4280538792d27ddace44bd55d053c4ea0671cc8b0c01b9",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/set1-2-rails/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/client-cpu-timed0.txt",
+      "sha256": "df3b87f8332bed76db4fadaef94370a698125ad63a5f4755ca4f37be60ede8af",
+      "sizeBytes": 126
+    },
+    {
+      "archivePath": "runs/set1-2-rails/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/client-cpu-timed1.txt",
+      "sha256": "0b4b4dfdf2682a4effcac1740e437ccfac88c3c2fe5c07fc41cb91592e470e25",
+      "sizeBytes": 126
+    },
+    {
+      "archivePath": "runs/set1-2-rails/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/client-cpu-warm0.txt",
+      "sha256": "903fad3b6ad723fa3062fe76755cb36531f57271a5e7daaf802f76635a05e80b",
+      "sizeBytes": 123
+    },
+    {
+      "archivePath": "runs/set1-2-rails/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/container-log-summary.json",
+      "sha256": "2e9d3034b75f81d7999894ce5d14d968e46245efe8045ffe95c8ea02721ed706",
+      "sizeBytes": 5711
+    },
+    {
+      "archivePath": "runs/set1-2-rails/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/set1-2-rails/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/driver.log",
+      "sha256": "a17fc70c581747110953cf25eb6f9354ae89ee28667425945219b374379da234",
+      "sizeBytes": 1037
+    },
+    {
+      "archivePath": "runs/set1-2-rails/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/server-cpu-gzip0.txt",
+      "sha256": "0171233220c5f1421cacc40e8ce141ae787581126bd067e4b88776bbb3fce262",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set1-2-rails/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/server-cpu-gzip1.txt",
+      "sha256": "26bd4130bc81f2d7a673ea60071d151c7e0f436c77aec84eef78311638c5559b",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set1-2-rails/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/timed-gzip0.json",
+      "sha256": "474c47c3e6143cd59a304086d48d8e84cd8ef96e3db0aae13b390c4796b6e1ff",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/set1-2-rails/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/timed-gzip1.json",
+      "sha256": "5d28146536827e83218a464676d59466650be2f03adacca61c3074452d0a0c0e",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/set1-2-rails/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-2-rails/warmup-gzip0.json",
+      "sha256": "6c8c3859f61a791bf4d3002476d3598eaf26a54ffea867130965f13eb0608543",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/set1-3-rust/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/client-cpu-fetch1.txt",
+      "sha256": "f225dc5779483b0104fe5932e1f482194b18cde90cb58290478c17b8ad8ad244",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/set1-3-rust/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/client-cpu-fetch2.txt",
+      "sha256": "c15a446ae8302887e54ab3d8bfba351760993daa31082196a74f419a43d2351f",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set1-3-rust/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/client-cpu-login.txt",
+      "sha256": "14a7152bf3f9dee52fdb03785b37132a803bf9c132bb3c90a3b6f7c0c768f6cb",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set1-3-rust/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/client-cpu-scrape.txt",
+      "sha256": "61ab4103b7ec42d3b4d9593d48442d93480e1438c497ab58cbe8d349083816b1",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set1-3-rust/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/client-cpu-timed0.txt",
+      "sha256": "13fdf14d27046a08d64db1132be41de04e4f59471f10d3bf3378e4d90efe68f2",
+      "sizeBytes": 130
+    },
+    {
+      "archivePath": "runs/set1-3-rust/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/client-cpu-timed1.txt",
+      "sha256": "54c5e64094ecf79df7f7e941116344a40a8e9ca84b0a9d85af09c4e8480ad315",
+      "sizeBytes": 128
+    },
+    {
+      "archivePath": "runs/set1-3-rust/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/client-cpu-warm0.txt",
+      "sha256": "6d6583fec244d369766408dd8271ff92b7b9e64067fb7ade53111f5f07bfa129",
+      "sizeBytes": 127
+    },
+    {
+      "archivePath": "runs/set1-3-rust/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/container-log-summary.json",
+      "sha256": "64d2ea8bd84b5055e205e7dc42b262fe34be0dd190a7087369149b0918a23db9",
+      "sizeBytes": 19043
+    },
+    {
+      "archivePath": "runs/set1-3-rust/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/set1-3-rust/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/driver.log",
+      "sha256": "deadb10492a238e4097a554b2f0f8c670e07634815d04b95db56bd97123dc122",
+      "sizeBytes": 1032
+    },
+    {
+      "archivePath": "runs/set1-3-rust/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/server-cpu-gzip0.txt",
+      "sha256": "b0662ce6d13458ef9a7fde28a2923672506a8293180aac1555628b85bb589bba",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set1-3-rust/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/server-cpu-gzip1.txt",
+      "sha256": "db444a675f993fd0a27be6bf1627005a461e811b2711a9c9e3eafb53e16c7973",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set1-3-rust/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/timed-gzip0.json",
+      "sha256": "4c49cbe05d15576a53bda008042b696cad5ecf6e3d893b9e8a9597d4093117df",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/set1-3-rust/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/timed-gzip1.json",
+      "sha256": "eb8faa848d699866fd8bf1f9588eae719ebbc4962aca4ee58574b30afad4f308",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/set1-3-rust/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-3-rust/warmup-gzip0.json",
+      "sha256": "4a7d0f84eeaa2fa8dd75ad2852e88b91226a11d4deccb096b6c3e8ba4523cbf9",
+      "sizeBytes": 313
+    },
+    {
+      "archivePath": "runs/set1-4-rust/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/client-cpu-fetch1.txt",
+      "sha256": "99ecc87f36da292707f27ad29a0848afbe40f4a87ccafab9b0bb665e3bafbae9",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/set1-4-rust/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/client-cpu-fetch2.txt",
+      "sha256": "1f9e93f5fe3ceb52d063c5c3278f152311bfa1d661e30a09ee405b0e1bf7ef78",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set1-4-rust/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/client-cpu-login.txt",
+      "sha256": "3bcba04053a5e75b794f3b92bfeeca333e73ae13c44dca988b1e168eeaab0020",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/set1-4-rust/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/client-cpu-scrape.txt",
+      "sha256": "3fcabdf8f7430ca39cbaba69322f1d2f4c2115767fb551fadbeb78c1047e6725",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set1-4-rust/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/client-cpu-timed0.txt",
+      "sha256": "c526fd726dbca1b5a6576462c3a4169945f17bba6c1309ca2319057c4401591c",
+      "sizeBytes": 130
+    },
+    {
+      "archivePath": "runs/set1-4-rust/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/client-cpu-timed1.txt",
+      "sha256": "3b98a7817852548f7e26eb61d08ddc9929a8c38cf9e73548f7b27828da9b0c0b",
+      "sizeBytes": 128
+    },
+    {
+      "archivePath": "runs/set1-4-rust/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/client-cpu-warm0.txt",
+      "sha256": "82aeec31083bda7aa5bff4a63836b2a5fa71ff472a1525bbb0745660bbc8521a",
+      "sizeBytes": 127
+    },
+    {
+      "archivePath": "runs/set1-4-rust/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/container-log-summary.json",
+      "sha256": "837323c91213637a2dabf43aadadfb44b491e53923a3b0550235436b71279703",
+      "sizeBytes": 19043
+    },
+    {
+      "archivePath": "runs/set1-4-rust/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/set1-4-rust/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/driver.log",
+      "sha256": "95f227a09fd8bb4ca6b5d1d27948e0b7d83e36b4328006a241c085fb449e4645",
+      "sizeBytes": 1033
+    },
+    {
+      "archivePath": "runs/set1-4-rust/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/server-cpu-gzip0.txt",
+      "sha256": "a2a011e75a6c05551b0b14b7a268c520e6a722fb8a94f8e9e2b15c85f340f9e7",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set1-4-rust/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/server-cpu-gzip1.txt",
+      "sha256": "fddbf4ed8624c2e9aaf612896b831d32065df2f261327a84221b9a3a74ebbac9",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set1-4-rust/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/timed-gzip0.json",
+      "sha256": "b623c6f8b5027e5d326cbb5611e0c5724466ad4bb13face7d7c2d9180330dc9a",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/set1-4-rust/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/timed-gzip1.json",
+      "sha256": "a77d012aaeda75c64e76af99870ce8a442cd743b1766993f75499e66aae894f7",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/set1-4-rust/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-4-rust/warmup-gzip0.json",
+      "sha256": "c8fe5121ff7347a17eb74603e115e5f34696f328aa62df155bb382235197283e",
+      "sizeBytes": 313
+    },
+    {
+      "archivePath": "runs/set1-5-rails/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/client-cpu-fetch1.txt",
+      "sha256": "e443b1a30803e42a7710dc855d1fdd1b1a1ce4819c41dca796ff5b91c3bdf735",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set1-5-rails/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/client-cpu-fetch2.txt",
+      "sha256": "5cef2c2ab8f06637ce6ae3f5c9d991920bd240319be0ae58235981d57f9c92d5",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/set1-5-rails/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/client-cpu-login.txt",
+      "sha256": "2cbd041ed74a2f0ca389f919ea363da0ce58ec0811a230279eddd277e03b2219",
+      "sizeBytes": 117
+    },
+    {
+      "archivePath": "runs/set1-5-rails/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/client-cpu-scrape.txt",
+      "sha256": "bb475aa207e697e8bf47e36fe59309530a142e6c2d83f9a73d3684ae36387366",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set1-5-rails/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/client-cpu-timed0.txt",
+      "sha256": "102e8020d497543bf950038f6bf6bd84c3fe09922589ecded6d3e342000efdbc",
+      "sizeBytes": 126
+    },
+    {
+      "archivePath": "runs/set1-5-rails/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/client-cpu-timed1.txt",
+      "sha256": "c86e361f83281ea986cfae07a04aefb996db7f587ae2aa36fd6fe26b303b16b6",
+      "sizeBytes": 126
+    },
+    {
+      "archivePath": "runs/set1-5-rails/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/client-cpu-warm0.txt",
+      "sha256": "59985b83c0436db22b0ed8277f4989e12bb5ee5d80b17d6e609b7557e4ba4589",
+      "sizeBytes": 123
+    },
+    {
+      "archivePath": "runs/set1-5-rails/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/container-log-summary.json",
+      "sha256": "6f5711534a82a3cb272502f6a50e891b73768600c3cb29e487a73efd2a970e46",
+      "sizeBytes": 5715
+    },
+    {
+      "archivePath": "runs/set1-5-rails/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/set1-5-rails/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/driver.log",
+      "sha256": "45e73ea53eb23683d1588b66cedbcbb9958794baaa10b78783139f103b2a4aa3",
+      "sizeBytes": 1037
+    },
+    {
+      "archivePath": "runs/set1-5-rails/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/server-cpu-gzip0.txt",
+      "sha256": "9b0ab5fc6fbdc53e6fab07e3c5a27c00feffcc3d251d257324d20f0300214458",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set1-5-rails/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/server-cpu-gzip1.txt",
+      "sha256": "7e9eb1fb713e1664519e9df54405254ea430139a17771c3cc62d8394531e62aa",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set1-5-rails/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/timed-gzip0.json",
+      "sha256": "6728593aaecde9d923e43660275040b2f6a9bf467210e4e54781d47ef436a155",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/set1-5-rails/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/timed-gzip1.json",
+      "sha256": "cee207d552c3f4d10d0ec99cc212d110b2afeb517346481514069ed14c752ed7",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/set1-5-rails/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-5-rails/warmup-gzip0.json",
+      "sha256": "dda3abc6e282d32896da467eb3a3c2ef307cd59fcaef076ac7784cc82d12f637",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/set1-6-native/cpu-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-6-native/cpu-gzip0.json",
+      "sha256": "e199324685b83210cf5f05882adf8509e295a984e04027f7a1ceeabf2a2fcf73",
+      "sizeBytes": 154
+    },
+    {
+      "archivePath": "runs/set1-6-native/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-6-native/driver.log",
+      "sha256": "622a2d6e538154f911ccacfaede71df27d57ff674a604e64982c5a89ac6eb543",
+      "sizeBytes": 638
+    },
+    {
+      "archivePath": "runs/set1-6-native/loadgen-fetch1.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-6-native/loadgen-fetch1.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set1-6-native/loadgen-fetch2.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-6-native/loadgen-fetch2.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set1-6-native/loadgen-timed0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-6-native/loadgen-timed0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set1-6-native/loadgen-warm0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-6-native/loadgen-warm0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set1-6-native/native-host.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-6-native/native-host.log",
+      "sha256": "9f995f28ca6a9955228a12f42f461ceba82330d94a1a9ab54bd8af199ea28f7a",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/set1-6-native/native-host.stderr.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-6-native/native-host.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/set1-6-native/processes-after.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-6-native/processes-after.json",
+      "sha256": "566f3589efaafd79df5405d4cf9690036d6c930824e23fd45545f2f870da6767",
+      "sizeBytes": 30960
+    },
+    {
+      "archivePath": "runs/set1-6-native/processes-before.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-6-native/processes-before.json",
+      "sha256": "59a367859dfd7200667e48953c0784ed8741ce72991feaf11fed1a3513e3c364",
+      "sizeBytes": 31019
+    },
+    {
+      "archivePath": "runs/set1-6-native/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-6-native/timed-gzip0.json",
+      "sha256": "3b7af1d33eb4ebf518218639f6b547c6cbe69b12a0bd95b42fa65cd68bbdda7d",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/set1-6-native/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set1-6-native/warmup-gzip0.json",
+      "sha256": "e571e25d709c58f175e2dcdd8076999d9e1a01e11144d70163219948c5df413f",
+      "sizeBytes": 311
+    },
+    {
+      "archivePath": "runs/set2-1-native/cpu-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-1-native/cpu-gzip0.json",
+      "sha256": "41c7ec364f994c454a4e01515dab02ffec638ed2db9baa4800e16a013c8c07d1",
+      "sizeBytes": 154
+    },
+    {
+      "archivePath": "runs/set2-1-native/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-1-native/driver.log",
+      "sha256": "99a618794013a30d65182591ffa4d9a8028b22ae622f4815d7a4a0bc19d3d8c0",
+      "sizeBytes": 639
+    },
+    {
+      "archivePath": "runs/set2-1-native/loadgen-fetch1.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-1-native/loadgen-fetch1.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set2-1-native/loadgen-fetch2.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-1-native/loadgen-fetch2.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set2-1-native/loadgen-timed0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-1-native/loadgen-timed0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set2-1-native/loadgen-warm0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-1-native/loadgen-warm0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set2-1-native/native-host.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-1-native/native-host.log",
+      "sha256": "9f995f28ca6a9955228a12f42f461ceba82330d94a1a9ab54bd8af199ea28f7a",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/set2-1-native/native-host.stderr.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-1-native/native-host.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/set2-1-native/processes-after.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-1-native/processes-after.json",
+      "sha256": "5bfc84b448cf7810abb5ed6378488a46ed94cb4f09a80257a809e6af2b572aeb",
+      "sizeBytes": 30901
+    },
+    {
+      "archivePath": "runs/set2-1-native/processes-before.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-1-native/processes-before.json",
+      "sha256": "39a80bdb0c1781c164614680827a0a85280d8493fb83c7c3c05029df704db34a",
+      "sizeBytes": 30960
+    },
+    {
+      "archivePath": "runs/set2-1-native/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-1-native/timed-gzip0.json",
+      "sha256": "9aaca876dd6c7e7a6be8be430e9204104f4e59cae268d69f215423290ed14014",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/set2-1-native/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-1-native/warmup-gzip0.json",
+      "sha256": "510a4df2c2dded8d756c3bbc86eec131e8b73a9605ea6a09d1b4e7d993e47f8f",
+      "sizeBytes": 311
+    },
+    {
+      "archivePath": "runs/set2-2-rails/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/client-cpu-fetch1.txt",
+      "sha256": "391412296866e79c7547f20b881de8231813062b2c745e3d38c242f7467cf672",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/set2-2-rails/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/client-cpu-fetch2.txt",
+      "sha256": "4a74d27b45afa670140ed0a06641c545d0429ddb2cbe60d457b8068614df5977",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set2-2-rails/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/client-cpu-login.txt",
+      "sha256": "37be27aa3ad147fcf7c9c4f6174a8113ce605b0341e1bc7bb89aa36488053b41",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/set2-2-rails/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/client-cpu-scrape.txt",
+      "sha256": "e73d228dfbe41981f1cb08b6925fbf2f4883a5db3ed0836e06cd3c81517b565c",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/set2-2-rails/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/client-cpu-timed0.txt",
+      "sha256": "6d48197450b06cff49000ace90b4e047bf380973f91442118f9876c8c3317cd6",
+      "sizeBytes": 126
+    },
+    {
+      "archivePath": "runs/set2-2-rails/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/client-cpu-timed1.txt",
+      "sha256": "909400d55517d683d869ff7927c597a11d67f56f8f2a99f92030271b8ee6265f",
+      "sizeBytes": 126
+    },
+    {
+      "archivePath": "runs/set2-2-rails/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/client-cpu-warm0.txt",
+      "sha256": "4129867f66ee20596b1c4aa5c3277b0fd3ca1fa3ccb9e4edd50d02cd3239b065",
+      "sizeBytes": 123
+    },
+    {
+      "archivePath": "runs/set2-2-rails/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/container-log-summary.json",
+      "sha256": "1e45b054d60dfa2ce0145abb9a0bbbb76822fa631b1ab63fa0132d46e0f606ab",
+      "sizeBytes": 5710
+    },
+    {
+      "archivePath": "runs/set2-2-rails/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/set2-2-rails/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/driver.log",
+      "sha256": "a215047c9ff036f8ae4bc532055fc86fab659bcfad64915b0e047df9ce96c05d",
+      "sizeBytes": 1036
+    },
+    {
+      "archivePath": "runs/set2-2-rails/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/server-cpu-gzip0.txt",
+      "sha256": "29f995ad979e8299185c6ee45abe6a71bbbb933e09bf862d4603d6ad4eca0ab1",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set2-2-rails/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/server-cpu-gzip1.txt",
+      "sha256": "b2a2dadef174c193d30ba51823bc8d9efaa0ca75e6b13dde8f23a8e59af9d9e3",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set2-2-rails/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/timed-gzip0.json",
+      "sha256": "53f4258492a07c9b4cfbff6ab1d279ca2bb78a8fd6e32062ff114f6a4282e678",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/set2-2-rails/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/timed-gzip1.json",
+      "sha256": "5d3a08a72b604111dfb18c1767c28da250d96371408f46d55fa3d214b3fb4c2a",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/set2-2-rails/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-2-rails/warmup-gzip0.json",
+      "sha256": "2068e374f2842f570b0ea2c8549ff4565be425c4bfb93756be605468ef3e1c53",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/set2-3-rust/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/client-cpu-fetch1.txt",
+      "sha256": "61413e5d45c387a1d7d403769f793b53929d6c37ecdd2786858ca72b090a10ed",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set2-3-rust/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/client-cpu-fetch2.txt",
+      "sha256": "8dc12a82ff1877652af0238ed388a6643ea79d418f12002c2d4297f3282ccb7d",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set2-3-rust/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/client-cpu-login.txt",
+      "sha256": "496218686e1b0af0d51a57f5da2f9972ffa38c5cddff533423c70d07899d359f",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set2-3-rust/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/client-cpu-scrape.txt",
+      "sha256": "06682c02b9ae5f160cd41768b1a6edad803afcf5051faec88c6cb3f31f819f5b",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/set2-3-rust/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/client-cpu-timed0.txt",
+      "sha256": "bc5bcd529ef49a42231dedfdd488f1f9bfc8b6afd99a46201caca99b176dcf85",
+      "sizeBytes": 130
+    },
+    {
+      "archivePath": "runs/set2-3-rust/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/client-cpu-timed1.txt",
+      "sha256": "f172ce889661e8f2d0b782b7ba85d3c249e0f9d3c6d4ce65bca8d10be616fef9",
+      "sizeBytes": 128
+    },
+    {
+      "archivePath": "runs/set2-3-rust/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/client-cpu-warm0.txt",
+      "sha256": "a3860f752aa0e6f71374a9cd8797854e4460e0020327983fffdadc906c7f9c66",
+      "sizeBytes": 127
+    },
+    {
+      "archivePath": "runs/set2-3-rust/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/container-log-summary.json",
+      "sha256": "64262f9c75990d99d64e9ba50ea82569c0767dc103ea7f2e3059057c8a193892",
+      "sizeBytes": 19043
+    },
+    {
+      "archivePath": "runs/set2-3-rust/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/set2-3-rust/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/driver.log",
+      "sha256": "7663b5792a07598524c204ba2d50a1ac3dd983418ff715ef7c6d51335eab8c4d",
+      "sizeBytes": 1034
+    },
+    {
+      "archivePath": "runs/set2-3-rust/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/server-cpu-gzip0.txt",
+      "sha256": "74f814ea94027f8050053704c53fd6e989fcdccd7f5159ead7093588384c15a9",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set2-3-rust/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/server-cpu-gzip1.txt",
+      "sha256": "f3159131e59ce42200155da651e43a1540560a0dd46a4c3b5231d13757da5843",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set2-3-rust/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/timed-gzip0.json",
+      "sha256": "81092a378697f3fb0656619028c67c383c0e540bf0a7828c50608b205dfa74e2",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/set2-3-rust/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/timed-gzip1.json",
+      "sha256": "f5bdd90c967ae4d291bc947576953a3c3aa1b3afc033af82e56f241de389683a",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/set2-3-rust/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-3-rust/warmup-gzip0.json",
+      "sha256": "a183dbb5332c2c12a3a9959bbf0776d0250d55da9354e9eef12621ba93520d4b",
+      "sizeBytes": 313
+    },
+    {
+      "archivePath": "runs/set2-4-rust/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/client-cpu-fetch1.txt",
+      "sha256": "255bae3a78c54c04b1756db5bf1015d9c3019de42944a61533541f952044288b",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/set2-4-rust/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/client-cpu-fetch2.txt",
+      "sha256": "0b33c78b3d74793ca5f5920cc47a1934ea0f2a72c80374b4970d83da5c148516",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set2-4-rust/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/client-cpu-login.txt",
+      "sha256": "abc5a6ff5f0151c4888685ba1e47b235de6f6afe0e1ce30e00a1545c11af5860",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set2-4-rust/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/client-cpu-scrape.txt",
+      "sha256": "3611d7439dbfdbc1254f50a6a16aaafefe8f557350ee87f43138e8f2865119e7",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set2-4-rust/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/client-cpu-timed0.txt",
+      "sha256": "60ab97fd940720ae604043d5ba1b5e4a7835d8fc4aa2acbdf3adece39d286282",
+      "sizeBytes": 130
+    },
+    {
+      "archivePath": "runs/set2-4-rust/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/client-cpu-timed1.txt",
+      "sha256": "ec892e3462ad164260a1c9b107ecefef021472ad80f7227653fdd92885c302c9",
+      "sizeBytes": 128
+    },
+    {
+      "archivePath": "runs/set2-4-rust/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/client-cpu-warm0.txt",
+      "sha256": "2c8fa3d5906693f1549a618a8d6a0f8175d296382d0cc3d64f19c9ddc274aad3",
+      "sizeBytes": 127
+    },
+    {
+      "archivePath": "runs/set2-4-rust/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/container-log-summary.json",
+      "sha256": "1e17d58a4c5d147e14f67f76451e98da4e8e9f5066e39cea69c36a3204deecec",
+      "sizeBytes": 19043
+    },
+    {
+      "archivePath": "runs/set2-4-rust/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/set2-4-rust/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/driver.log",
+      "sha256": "2c7505499735f8df8e7dd05d76a5ce3c308512a4d53030d6f1c6f9fc18f0620c",
+      "sizeBytes": 1032
+    },
+    {
+      "archivePath": "runs/set2-4-rust/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/server-cpu-gzip0.txt",
+      "sha256": "57ea37ff3f0a801ec586f59a69cabcd106c7df148012874e77a70aa5db9705ab",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set2-4-rust/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/server-cpu-gzip1.txt",
+      "sha256": "0c6d4f45adf752c21a9605838517ba66aae0301a0d1abc7a25e3ada2b448f84d",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set2-4-rust/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/timed-gzip0.json",
+      "sha256": "c6e425c2cbc0a00bce6b4613a02f9d043a8d33be11dec86cc0aab1cb6fe23b7e",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/set2-4-rust/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/timed-gzip1.json",
+      "sha256": "2420291d4c2c0c789fac8331196bc8cd9f73cc435873eadae17bef77457efe01",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/set2-4-rust/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-4-rust/warmup-gzip0.json",
+      "sha256": "f213dbaa5ebf4b92e2bc9969e6bdef3522dc59a6de018ec8b16902765d03f655",
+      "sizeBytes": 312
+    },
+    {
+      "archivePath": "runs/set2-5-rails/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/client-cpu-fetch1.txt",
+      "sha256": "492a790a9b243e68dfa42e014f2468c234ec294bb4f4009348ae09196d6b21e7",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/set2-5-rails/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/client-cpu-fetch2.txt",
+      "sha256": "78edbd617beb67487025ec6ecd117f8e352517611e6868631dc3ea172b3e3622",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set2-5-rails/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/client-cpu-login.txt",
+      "sha256": "1cdd68213534d1dcfc51b9bf271a914365afa19ef9deaca5da2c795f225699f0",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/set2-5-rails/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/client-cpu-scrape.txt",
+      "sha256": "047c176b874af3bb638b860a61ba8c7449c56ad8ca71a5468250d08a5777009d",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/set2-5-rails/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/client-cpu-timed0.txt",
+      "sha256": "22b0542d12a379c6ac7f9671138352e6346e7e62427aeab6c13414622eaaeb5e",
+      "sizeBytes": 126
+    },
+    {
+      "archivePath": "runs/set2-5-rails/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/client-cpu-timed1.txt",
+      "sha256": "547f8ef1ace3c1aa293098da2d3352a8387f3a129a98f98bb8be63d4f861cbbb",
+      "sizeBytes": 126
+    },
+    {
+      "archivePath": "runs/set2-5-rails/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/client-cpu-warm0.txt",
+      "sha256": "23ea11c3cee1d7540553c8a35d9ab68e1bf214f0b8e3b2dcba5c753aad8567e2",
+      "sizeBytes": 124
+    },
+    {
+      "archivePath": "runs/set2-5-rails/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/container-log-summary.json",
+      "sha256": "b09965b354aca1c6c9a4f4444c9664216db7f554ee9b4f88f792c94509e43fe6",
+      "sizeBytes": 5832
+    },
+    {
+      "archivePath": "runs/set2-5-rails/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/set2-5-rails/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/driver.log",
+      "sha256": "fab27512f4bccb4e3bdd9e959d94523151179584787564d8088dbaba26d6e611",
+      "sizeBytes": 1038
+    },
+    {
+      "archivePath": "runs/set2-5-rails/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/server-cpu-gzip0.txt",
+      "sha256": "2cd01a7f68667ec5c6019e7c93e6fe78c8f1ddcd1c42921c948e9ac49c7d185e",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set2-5-rails/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/server-cpu-gzip1.txt",
+      "sha256": "9a006cab3c3a95fa47d9fb0d08458e720e292d17db6990684a1e522d51375076",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/set2-5-rails/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/timed-gzip0.json",
+      "sha256": "15599688231359e47870026cd34782b84b99efc469c62c60b390dc8fb9f0d8ef",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/set2-5-rails/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/timed-gzip1.json",
+      "sha256": "a607e63b01b31b2eb2398a10712d6d2d48fd4e5068fc2e237c02bed7e32a3390",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/set2-5-rails/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-5-rails/warmup-gzip0.json",
+      "sha256": "0e6c860a359510e9ea727e2c2a19ae0ece33a20a9be8b1fe0d23d5709fc00f5d",
+      "sizeBytes": 313
+    },
+    {
+      "archivePath": "runs/set2-6-native/cpu-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-6-native/cpu-gzip0.json",
+      "sha256": "9d6995c7d78eb876dc4fffa1a1d30f9b333b9a37a16a7d4abedcfbd5d55aed76",
+      "sizeBytes": 154
+    },
+    {
+      "archivePath": "runs/set2-6-native/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-6-native/driver.log",
+      "sha256": "987b6a7f3442c1a506eac7dc2ffcfc9ddc817f9a51b73d8b4eb8d54fd15ab52f",
+      "sizeBytes": 639
+    },
+    {
+      "archivePath": "runs/set2-6-native/loadgen-fetch1.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-6-native/loadgen-fetch1.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set2-6-native/loadgen-fetch2.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-6-native/loadgen-fetch2.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set2-6-native/loadgen-timed0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-6-native/loadgen-timed0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set2-6-native/loadgen-warm0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-6-native/loadgen-warm0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/set2-6-native/native-host.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-6-native/native-host.log",
+      "sha256": "9f995f28ca6a9955228a12f42f461ceba82330d94a1a9ab54bd8af199ea28f7a",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/set2-6-native/native-host.stderr.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-6-native/native-host.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/set2-6-native/processes-after.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-6-native/processes-after.json",
+      "sha256": "2813ca8cbaeec22c0150f681b80829c9974cfffe83a6690fd066d6ba76a1b484",
+      "sizeBytes": 31449
+    },
+    {
+      "archivePath": "runs/set2-6-native/processes-before.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-6-native/processes-before.json",
+      "sha256": "2813ca8cbaeec22c0150f681b80829c9974cfffe83a6690fd066d6ba76a1b484",
+      "sizeBytes": 31449
+    },
+    {
+      "archivePath": "runs/set2-6-native/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-6-native/timed-gzip0.json",
+      "sha256": "db42899df7e7b7158dcc647ba97a44c31aed408da9eb4d051dc4ab79f152ff80",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/set2-6-native/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/set2-6-native/warmup-gzip0.json",
+      "sha256": "cde81386a07e97eb94c86e2d1f0adf9c8eafb9543482aabef46a3613be7886bc",
+      "sizeBytes": 311
+    },
+    {
+      "archivePath": "runs/shake-native/cpu-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-native/cpu-gzip0.json",
+      "sha256": "ae736c721887b60431ec2e641f920cde3b173107acdc2360f3389ae4572a1715",
+      "sizeBytes": 151
+    },
+    {
+      "archivePath": "runs/shake-native/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-native/driver.log",
+      "sha256": "9f1cef5c9ee4b504a115704784ba68e4b132de9253adf1b49c941f4b0ac93dad",
+      "sizeBytes": 638
+    },
+    {
+      "archivePath": "runs/shake-native/loadgen-fetch1.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-native/loadgen-fetch1.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/shake-native/loadgen-fetch2.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-native/loadgen-fetch2.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/shake-native/loadgen-timed0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-native/loadgen-timed0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/shake-native/loadgen-warm0.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-native/loadgen-warm0.err.log",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/shake-native/native-host.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-native/native-host.log",
+      "sha256": "9f995f28ca6a9955228a12f42f461ceba82330d94a1a9ab54bd8af199ea28f7a",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/shake-native/native-host.stderr.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-native/native-host.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/shake-native/processes-after.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-native/processes-after.json",
+      "sha256": "083d58b93f304227133ee7296471d69ffedc6df26ef2fbf55bfd368c171378ff",
+      "sizeBytes": 30847
+    },
+    {
+      "archivePath": "runs/shake-native/processes-before.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-native/processes-before.json",
+      "sha256": "083d58b93f304227133ee7296471d69ffedc6df26ef2fbf55bfd368c171378ff",
+      "sizeBytes": 30847
+    },
+    {
+      "archivePath": "runs/shake-native/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-native/timed-gzip0.json",
+      "sha256": "4e1e6701cd26cb10dbbae65f3384f92cb639f9dd8c3692120950a3ffc0a784f9",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/shake-native/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-native/warmup-gzip0.json",
+      "sha256": "395d4361639b479ce2f82f2c6ab3ecdbcda6171f2ffa950e1299eb721f23909a",
+      "sizeBytes": 311
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/client-cpu-fetch1.txt",
+      "sha256": "8db38b515218939ef9bec7f4fc6222c156d21428c432e6f34279da59118ee211",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/client-cpu-fetch2.txt",
+      "sha256": "0ce6045d9662bcec8e022773a07c58c95416c51624d53ea448509a695cc847f0",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/client-cpu-login.txt",
+      "sha256": "a5f604a2105179f31cb7083b5156209f9b863d80e5a232a8bfe51559d6df1253",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/client-cpu-scrape.txt",
+      "sha256": "83710143f141e558558465f8dda84fb796860a253de13cb05dba7bce62aba570",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/client-cpu-timed0.txt",
+      "sha256": "4c80e0497d4281f463db229ad54047035b8d4d3f0308ba2bb92ffe861818d471",
+      "sizeBytes": 124
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/client-cpu-timed1.txt",
+      "sha256": "63643d452fc5e7ef729a732415e7418918b6b464097820ff6c531db3c22e0827",
+      "sizeBytes": 123
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/client-cpu-warm0.txt",
+      "sha256": "e2350954a44ca0958b1e1a79829204e295b165a66538cbfae3bcda8199bc52d5",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/container-log-summary.json",
+      "sha256": "a3f5ab95d7faed74265dddadf3a89b39873fe869fac7d65bc78cfc9e1b459e10",
+      "sizeBytes": 5712
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/driver.log",
+      "sha256": "1e5502261d3384070a8f109c6d960210e27af0c7490acca494bf7199fc0fff51",
+      "sizeBytes": 1144
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/server-cpu-gzip0.txt",
+      "sha256": "3f07c69393e3b325c06a76fdb88ef9e213ebcdb06887a6d98e40dc84a4a8bef5",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/server-cpu-gzip1.txt",
+      "sha256": "23fb21f28c7f78f01b9ae48c9f19d70d3d369f5101278067f976f96ca09f5800",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/timed-gzip0.json",
+      "sha256": "7e8e619b5f94e29e43b7b8a1ca99315933d592ec31b287ff4a1839d3b041eb4a",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/timed-gzip1.json",
+      "sha256": "4d2f4b801bf3cf4be71f327a64905b20f9cf504a232ac0109cfa2352f585d2e6",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/shake-nc-rails/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rails/warmup-gzip0.json",
+      "sha256": "0979ccf06d6573cc706e9f1f252844609ad7b95e49a284a90b6a861d36b5834b",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/client-cpu-fetch1.txt",
+      "sha256": "0e8dfc1ad744e293df646201e76ca6ef59383c2a140e1e92ace5abd819bd58b2",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/client-cpu-fetch2.txt",
+      "sha256": "73c70440cea7184a8f5ef34dee94496349b0e9bb8a237aa195de30b44389ac80",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/client-cpu-login.txt",
+      "sha256": "519e13d8c38cdb522d635b20c3a7380a9dde8f458fdb49b886efcf691b35db16",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/client-cpu-scrape.txt",
+      "sha256": "a946c980754d1ce15543db3648723e83c56fe7aa1314966fcb9926d598503287",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/client-cpu-timed0.txt",
+      "sha256": "1cedd36c78c613f1a6b2b38436a50be32a286ebdee6ba3c7cfd550e8e4da7819",
+      "sizeBytes": 127
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/client-cpu-timed1.txt",
+      "sha256": "a7401468af33a30954830f8fefacc7fb56c5b0ceea0a863833f1b13fbce0cb61",
+      "sizeBytes": 125
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/client-cpu-warm0.txt",
+      "sha256": "29f3508d2b22a2a24ee085e2985616e336c15d90ed5b92f2dfd3af320f2bb76e",
+      "sizeBytes": 124
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/container-log-summary.json",
+      "sha256": "fba81994df8f06e43208342e610615ec921a70ce54f3a796249634ff8d308a6e",
+      "sizeBytes": 19041
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/driver.log",
+      "sha256": "15b169c074e1f220312c4b601f08e7bcbf0627e219b9a3e2f79e019845239bb5",
+      "sizeBytes": 1400
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/server-cpu-gzip0.txt",
+      "sha256": "38845d942117dca4d8c20dddd362fee6dcae2328cab22705bb68c61a6d69defc",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/server-cpu-gzip1.txt",
+      "sha256": "42c8c65d341c28d9a24a46ffc7386f9a71dd503cc529ac9626503419ef336374",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/timed-gzip0.json",
+      "sha256": "ecb84c0e31610c84833fe298ff39a9b03c7c550e69141192e6b37834435a2130",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/timed-gzip1.json",
+      "sha256": "38ee956a07072acbdd1ddb2dead89ec292e9aca4b8d5130bb0b322e3f887e6ae",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/shake-nc-rust/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-nc-rust/warmup-gzip0.json",
+      "sha256": "3113e278d671aae653b460020a5572ce7b61d52450f11a52a52cb3a3e0b0791c",
+      "sizeBytes": 310
+    },
+    {
+      "archivePath": "runs/shake-rails/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/client-cpu-fetch1.txt",
+      "sha256": "4434830026ac7467ead34e81d8288a709eaaf47b265ceccd080b2274c8bd75f3",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/shake-rails/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/client-cpu-fetch2.txt",
+      "sha256": "83a5a67ef02059a3b836d866cddb4b8a819bfcadda5f5fe47f83690af26029f0",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/shake-rails/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/client-cpu-login.txt",
+      "sha256": "9f3f2e00565044917860d36ed88a368015c0c5e52e880e5f5ac602ea129b5851",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/shake-rails/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/client-cpu-scrape.txt",
+      "sha256": "cfd17e714062e60fe3d7ffc1955f18edeb6a5ab20caadd0aebaa721c235f3319",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/shake-rails/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/client-cpu-timed0.txt",
+      "sha256": "b3eb86c8f489d0d457595a88987f3ed9aad743a3ae96e0d033662a0e3f894e7f",
+      "sizeBytes": 126
+    },
+    {
+      "archivePath": "runs/shake-rails/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/client-cpu-timed1.txt",
+      "sha256": "9afdc265beae25290bb56bfcbc2db9266fbbe9758e8f786f913e4029a8da9012",
+      "sizeBytes": 126
+    },
+    {
+      "archivePath": "runs/shake-rails/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/client-cpu-warm0.txt",
+      "sha256": "e3a4d7a75f60bd85172fef4ac7c40ba64070adbd7f28507304aacc55d6b18952",
+      "sizeBytes": 123
+    },
+    {
+      "archivePath": "runs/shake-rails/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/container-log-summary.json",
+      "sha256": "5c98aa17fb91d4a1ee229b64fede8983df29e4ed1232e62d01c5b2475ab173b2",
+      "sizeBytes": 5711
+    },
+    {
+      "archivePath": "runs/shake-rails/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/shake-rails/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/driver.log",
+      "sha256": "12e1838375c0b44dd164828d3ee83a6c3bd0677a2f47bcace06124b11aee89cf",
+      "sizeBytes": 1039
+    },
+    {
+      "archivePath": "runs/shake-rails/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/server-cpu-gzip0.txt",
+      "sha256": "d6c254773c155039c04f986f9e5722a20e2932808b9586d5af07e838d5dc773d",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/shake-rails/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/server-cpu-gzip1.txt",
+      "sha256": "fe488c2f8749ac70a5f66926befaf2842d8c04a4db20b34982ef99019a044ace",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/shake-rails/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/timed-gzip0.json",
+      "sha256": "6793d5e8848c2c8bd35fa40f505348609c0ce32694242434c9aed17e9df3a36e",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/shake-rails/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/timed-gzip1.json",
+      "sha256": "f262a42b39fa421855a0f0eb7a264bbfbf8ed251c4db0cbd9db6aca4239b7232",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/shake-rails/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rails/warmup-gzip0.json",
+      "sha256": "3514f0e813ec24c5198afe5a4869d2611b89dc4d17dad0ec782f8f4f749f2b42",
+      "sizeBytes": 313
+    },
+    {
+      "archivePath": "runs/shake-rust/client-cpu-fetch1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/client-cpu-fetch1.txt",
+      "sha256": "12ca6b21a276228437c6b243c413baaf51c3db8396b75abbb2262a8ab0d598d9",
+      "sizeBytes": 120
+    },
+    {
+      "archivePath": "runs/shake-rust/client-cpu-fetch2.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/client-cpu-fetch2.txt",
+      "sha256": "3e9a98c0544d34d84f5611e4981c323c4c83667b186c68a2bc2711baa266a234",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/shake-rust/client-cpu-login.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/client-cpu-login.txt",
+      "sha256": "b2f8961ef409ea2af41a891dfb4ca38ffadc6f5721c6dfdae179957458439f6b",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/shake-rust/client-cpu-scrape.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/client-cpu-scrape.txt",
+      "sha256": "de19239cba31bbacd3d34e6130e0bfad5491b9cc9043811d797131b51d414443",
+      "sizeBytes": 121
+    },
+    {
+      "archivePath": "runs/shake-rust/client-cpu-timed0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/client-cpu-timed0.txt",
+      "sha256": "9015e1df0b9508de63ad231675d379155e685e3d8af726f33391c753a8f18f3f",
+      "sizeBytes": 130
+    },
+    {
+      "archivePath": "runs/shake-rust/client-cpu-timed1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/client-cpu-timed1.txt",
+      "sha256": "a2d47fd248e4f8e21826a17ead4af14048c80c544df69d38c77a87d224fecd79",
+      "sizeBytes": 128
+    },
+    {
+      "archivePath": "runs/shake-rust/client-cpu-warm0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/client-cpu-warm0.txt",
+      "sha256": "32ef6955cc0b29dba639b83407f2839fe40fca6b436b83819682a3880bed4c56",
+      "sizeBytes": 127
+    },
+    {
+      "archivePath": "runs/shake-rust/container-log-summary.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/container-log-summary.json",
+      "sha256": "ac8edd4a94c77543905693310202a5bbf34ba3d8a7283dca1074c6d3858dd4ff",
+      "sizeBytes": 19043
+    },
+    {
+      "archivePath": "runs/shake-rust/contracts.err.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/shake-rust/driver.log",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/driver.log",
+      "sha256": "916decc123ab223a6c12f89187b5444b555d2b931a11cf586d8b6f259130a4dc",
+      "sizeBytes": 1034
+    },
+    {
+      "archivePath": "runs/shake-rust/server-cpu-gzip0.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/server-cpu-gzip0.txt",
+      "sha256": "d1726b9b67a53540e7c70ec8ce1b3d00d470111aa5620cd757813695ef9c86ad",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/shake-rust/server-cpu-gzip1.txt",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/server-cpu-gzip1.txt",
+      "sha256": "4d50b794027840451162507703e465bbafa0baa2933fb9d18a49620e4c017eb8",
+      "sizeBytes": 33
+    },
+    {
+      "archivePath": "runs/shake-rust/timed-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/timed-gzip0.json",
+      "sha256": "4496ac067667ab53b28b81477893fa9118b4bfca38f8255649c1f559977320cf",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/shake-rust/timed-gzip1.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/timed-gzip1.json",
+      "sha256": "0efa3e474ff8ba12076e549da22240e7843c55e50c7efc22b7b63347d4d9cbe2",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/shake-rust/warmup-gzip0.json",
+      "sourcePath": ".agentlang/campfire-matched-258/bench-259/shake-rust/warmup-gzip0.json",
+      "sha256": "d91101e9c976905f96826f800a482846deb5af5093996d8a05f37766f2d276f9",
+      "sizeBytes": 312
+    },
+    {
+      "archivePath": "protocol-and-tools/benchmark-protocol-259.md",
+      "sourcePath": ".agentlang/campfire-matched-258/benchmark-protocol-259.md",
+      "sha256": "7f918087b8c9b0f949c8a5388a9c94f2245a3cf8b5d64c99644af22cec67ec56",
+      "sizeBytes": 7342
+    },
+    {
+      "archivePath": "protocol-and-tools/analysis-259-cached.json",
+      "sourcePath": ".agentlang/campfire-matched-258/analysis-259-cached.json",
+      "sha256": "ba93473b3761b20593e6f1a052b6be0584a6da6375be962df5991f87430d380c",
+      "sizeBytes": 9758
+    },
+    {
+      "archivePath": "protocol-and-tools/analysis-259-nocache.json",
+      "sourcePath": ".agentlang/campfire-matched-258/analysis-259-nocache.json",
+      "sha256": "1e5b18d3680cfcd9d0eeb46b2c4d2e67ce0eac0636a09ef34c0daf0a0108b8b9",
+      "sizeBytes": 9655
+    },
+    {
+      "archivePath": "protocol-and-tools/aggregate_259.py",
+      "sourcePath": ".agentlang/campfire-matched-258/aggregate_259.py",
+      "sha256": "66a6b53d75d7ed774be33914ab02d3455be8798e66c80498c2a0cf17a5437e95",
+      "sizeBytes": 3349
+    },
+    {
+      "archivePath": "protocol-and-tools/ref-lifetime.sh",
+      "sourcePath": ".agentlang/campfire-matched-258/ref-lifetime.sh",
+      "sha256": "558e48f3c89efa08dc1a483f857e28c9ee153dc271b62fd3a4cff2a37168ba76",
+      "sizeBytes": 5368
+    },
+    {
+      "archivePath": "protocol-and-tools/Native-Lifetime.ps1",
+      "sourcePath": ".agentlang/campfire-matched-258/Native-Lifetime.ps1",
+      "sha256": "55ed0267b1bd97ee3199baf8f89156861601821c0b960538cc23e720f8014d36",
+      "sizeBytes": 6072
+    },
+    {
+      "archivePath": "protocol-and-tools/Run-Sets.ps1",
+      "sourcePath": ".agentlang/campfire-matched-258/Run-Sets.ps1",
+      "sha256": "91bae105fbbc7e88cec7fb213f2f93a9fa7e8571c7d6d1a3990e67e6b33d4acc",
+      "sizeBytes": 988
+    },
+    {
+      "archivePath": "protocol-and-tools/Make-Snapshot.ps1",
+      "sourcePath": ".agentlang/campfire-matched-258/Make-Snapshot.ps1",
+      "sha256": "76c91efbc05c6b38cdd41f6811fc83df6cef3e21eadfd9b2ad2f9b0c49417cf5",
+      "sizeBytes": 1128
+    },
+    {
+      "archivePath": "protocol-and-tools/stop-rails.sh",
+      "sourcePath": ".agentlang/campfire-matched-258/stop-rails.sh",
+      "sha256": "3d19e9ad82fbbab53b0b0ee26bb4fdeac8edbf0d7f2bbfb69291bce9260347c3",
+      "sizeBytes": 151
+    },
+    {
+      "archivePath": "protocol-and-tools/start-rails.sh",
+      "sourcePath": ".agentlang/campfire-matched-258/start-rails.sh",
+      "sha256": "2692be75a675fe8ea1d38f81862e6b70f8f4b0f9b65c8e2c06cae2acf077e1b6",
+      "sizeBytes": 1411
+    },
+    {
+      "archivePath": "protocol-and-tools/copy-db.sh",
+      "sourcePath": ".agentlang/campfire-matched-258/copy-db.sh",
+      "sha256": "2c0503262cc34f5354f7d86e92cbf84c5a6a0813ac07f2d87a4fc8f6b7185e50",
+      "sizeBytes": 477
+    },
+    {
+      "archivePath": "protocol-and-tools/no-cache-initializer.rb",
+      "sourcePath": ".agentlang/campfire-matched-258/no-cache-initializer.rb",
+      "sha256": "9b88a59eba06e1fe961130d49e79cbcf3fcd55f71e19f2c8cc8baf99c01059ab",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "protocol-and-tools/build-rust.sh",
+      "sourcePath": ".agentlang/campfire-matched-258/build-rust.sh",
+      "sha256": "86d4da5dceec5b817f172287201e69ba45fce951c5c1bb040df9593f746d6a4e",
+      "sizeBytes": 640
+    },
+    {
+      "archivePath": "protocol-and-tools/build-loadgen-linux.sh",
+      "sourcePath": ".agentlang/campfire-matched-258/build-loadgen-linux.sh",
+      "sha256": "57c273859d203dae319508e7736c5756b73410001afcd29530bf5bdbeba84ab3",
+      "sizeBytes": 581
+    },
+    {
+      "archivePath": "protocol-and-tools/init-sub.sh",
+      "sourcePath": ".agentlang/campfire-matched-258/init-sub.sh",
+      "sha256": "f798a6aab55737f59707d55fc4002fbd52c61c54c16638d46510e251f14ebba5",
+      "sizeBytes": 409
+    },
+    {
+      "archivePath": "protocol-and-tools/page_anatomy.py",
+      "sourcePath": ".agentlang/campfire-matched-258/page_anatomy.py",
+      "sha256": "3d7ef161c4669597b630576625bc34a84505bd49a2e205896ab3edf57adf5b39",
+      "sizeBytes": 1298
+    },
+    {
+      "archivePath": "protocol-and-tools/message_skeleton.py",
+      "sourcePath": ".agentlang/campfire-matched-258/message_skeleton.py",
+      "sha256": "5f94c3809f3d099c3fdc9f8924da9922edce96601ba5c56d3d350c569af27452",
+      "sizeBytes": 952
+    },
+    {
+      "archivePath": "protocol-and-tools/rust-image-build.log",
+      "sourcePath": ".agentlang/campfire-matched-258/rust-image-build.log",
+      "sha256": "fdc6a4c3baea142391ad910512bdd95394fa7fff84a4ec4287dd1309e4db318e",
+      "sizeBytes": 266612
+    },
+    {
+      "archivePath": "protocol-and-tools/loadgen-linux-build.log",
+      "sourcePath": ".agentlang/campfire-matched-258/loadgen-linux-build.log",
+      "sha256": "b01dbe57545ef2c79afadfd899b35fb0d824c316fecb924790f11e2bf14daed1",
+      "sizeBytes": 5046
+    },
+    {
+      "archivePath": "protocol-and-tools/contract-hashes.json",
+      "sourcePath": ".agentlang/campfire-matched-258/contract-hashes.json",
+      "sha256": "7d218671ed9aabe41c11e9d3363494d6ba7dcf1deb7f35bdbb4da58c00893b64",
+      "sizeBytes": 532
+    },
+    {
+      "archivePath": "protocol-and-tools/seal_259.py",
+      "sourcePath": ".agentlang/campfire-matched-258/seal_259.py",
+      "sha256": "c7de459f66991614441ec707d2eb856fd271a9b0019c950e4b241cf4ab07548b",
+      "sizeBytes": 4785
+    },
+    {
+      "archivePath": "loadgen/windows-build.log",
+      "sourcePath": ".agentlang/campfire-matched-258-loadgen-build.log",
+      "sha256": "21df168e076ff1c464e1130112e4e5bf938b27e4580df1a38ed4121e1593d528",
+      "sizeBytes": 2908
+    },
+    {
+      "archivePath": "seed/source.json",
+      "sourcePath": ".agentlang/once-campfire-verification/fixtures/default/source.json",
+      "sha256": "2b219c9001593d0317f9f8bb3f564d0d6776751ee3e7840d975a35e5850a0d6d",
+      "sizeBytes": 293
+    }
+  ]
+}

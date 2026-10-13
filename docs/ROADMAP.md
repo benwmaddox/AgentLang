@@ -27,7 +27,13 @@ host serves the harness's Rails-built seed, accepts a Rails-issued session, and
 passes the harness `room_show` contract on 800/800 responses. Benchmarks compare
 the AOT native host with Rails/Rust references; the interpreter is a parity
 control only (user direction, 2026-10-13).
-Next: the matched room-page comparison, then compiler-proven structural access
+[Report259](../reports/259-campfire-room-benchmark.md) runs the first contract-valid
+room benchmark of AgentLang AOT, Rails and Rust with caching disabled everywhere.
+AgentLang serves 4,764 req/s, but its page is ~10 KB against Rails/Rust's
+~420–460 KB full page, so the result is not yet behaviourally comparable. Next:
+render the full Rails room page (messages with avatars, authors, actions, boosts
+and rich text, plus layout and sidebar), then rerun the same comparison.
+Then: compiler-proven structural access
 measured with the same method, then native message writes. Keep locks and
 cross-worker dependencies rare, and discuss any new one before adopting it.
 
