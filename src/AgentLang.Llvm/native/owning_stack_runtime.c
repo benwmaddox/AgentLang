@@ -17,6 +17,19 @@ static int32_t al_owning_range_valid(const al_owning_stack_context *ctx,
          byte_count <= ctx->stack_capacity_bytes - offset;
 }
 
+static int32_t al_owning_address_ranges_overlap(uintptr_t left_address,
+                                                uintptr_t left_bytes,
+                                                uintptr_t right_address,
+                                                uintptr_t right_bytes) {
+  const uintptr_t maximum_address = ~(uintptr_t)0;
+  if (left_bytes == 0u || right_bytes == 0u) return 0;
+  if (left_address > maximum_address - left_bytes ||
+      right_address > maximum_address - right_bytes)
+    return 1;
+  return left_address < right_address + right_bytes &&
+         right_address < left_address + left_bytes;
+}
+
 #if !AL_OWNING_TRUSTED_GENERATED
 static int32_t al_owning_bit_get(const uint8_t *bits, uint32_t index) {
   return (bits[index >> 3] & (uint8_t)(1u << (index & 7u))) != 0u;
@@ -30,6 +43,55 @@ static void al_owning_bit_set(uint8_t *bits, uint32_t index, int32_t value) {
     bits[index >> 3] = (uint8_t)(bits[index >> 3] & (uint8_t)~mask);
   }
 }
+
+static void al_owning_mark_bits(uint8_t *bitmap, uint32_t offset,
+                                uint32_t byte_count, int32_t value) {
+  while (byte_count != 0u) {
+    const uint32_t bit_offset = offset & 7u;
+    uint32_t chunk = 8u - bit_offset;
+    uint8_t mask;
+    uint32_t bits;
+    if (chunk > byte_count) chunk = byte_count;
+    bits = chunk == 8u ? 0xffu : ((1u << chunk) - 1u);
+    mask = (uint8_t)(bits << bit_offset);
+    if (value)
+      bitmap[offset >> 3u] = (uint8_t)(bitmap[offset >> 3u] | mask);
+    else
+      bitmap[offset >> 3u] = (uint8_t)(bitmap[offset >> 3u] & (uint8_t)~mask);
+    byte_count -= chunk;
+    if (byte_count == 0u) return;
+    offset += chunk;
+  }
+}
+
+static int32_t al_owning_mark_can_batch(const al_owning_stack_context *ctx,
+                                        uint32_t offset,
+                                        uint32_t byte_count) {
+  const uintptr_t maximum_address = ~(uintptr_t)0;
+  const uint64_t last_bit = (uint64_t)offset + (uint64_t)byte_count - 1u;
+  const uint32_t first_bitmap_byte = offset >> 3u;
+  uint32_t last_bitmap_byte;
+  uintptr_t bitmap_bytes;
+  uintptr_t init_base, poison_base, init_range, poison_range;
+  if (byte_count == 0u || last_bit > UINT32_MAX) return 0;
+  last_bitmap_byte = (uint32_t)(last_bit >> 3u);
+  bitmap_bytes = (uintptr_t)(last_bitmap_byte - first_bitmap_byte) + 1u;
+  init_base = (uintptr_t)ctx->init_bitmap;
+  poison_base = (uintptr_t)ctx->poison_bitmap;
+  if (init_base > maximum_address - first_bitmap_byte ||
+      poison_base > maximum_address - first_bitmap_byte)
+    return 0;
+  init_range = init_base + first_bitmap_byte;
+  poison_range = poison_base + first_bitmap_byte;
+  return !al_owning_address_ranges_overlap(
+             init_range, bitmap_bytes, (uintptr_t)ctx,
+             (uintptr_t)sizeof(*ctx)) &&
+         !al_owning_address_ranges_overlap(
+             poison_range, bitmap_bytes, (uintptr_t)ctx,
+             (uintptr_t)sizeof(*ctx)) &&
+         !al_owning_address_ranges_overlap(init_range, bitmap_bytes,
+                                           poison_range, bitmap_bytes);
+}
 #endif
 
 static void al_owning_mark(al_owning_stack_context *ctx, uint32_t offset,
@@ -42,15 +104,37 @@ static void al_owning_mark(al_owning_stack_context *ctx, uint32_t offset,
   (void)initialized;
   (void)poisoned;
 #else
-  uint32_t index;
-  for (index = 0u; index < byte_count; ++index) {
-    al_owning_bit_set(ctx->init_bitmap, offset + index, initialized);
+  if (byte_count != 0u &&
+      al_owning_mark_can_batch(ctx, offset, byte_count)) {
+    al_owning_mark_bits(ctx->init_bitmap, offset, byte_count, initialized);
     if (poisoned)
-      al_owning_bit_set(ctx->poison_bitmap, offset + index, 1);
+      al_owning_mark_bits(ctx->poison_bitmap, offset, byte_count, 1);
     else if (!initialized)
-      al_owning_bit_set(ctx->poison_bitmap, offset + index, 0);
+      al_owning_mark_bits(ctx->poison_bitmap, offset, byte_count, 0);
+  } else {
+    uint32_t index;
+    for (index = 0u; index < byte_count; ++index) {
+      al_owning_bit_set(ctx->init_bitmap, offset + index, initialized);
+      if (poisoned)
+        al_owning_bit_set(ctx->poison_bitmap, offset + index, 1);
+      else if (!initialized)
+        al_owning_bit_set(ctx->poison_bitmap, offset + index, 0);
+    }
   }
 #endif
+}
+
+static int32_t al_owning_fill_cache_allowed(const al_owning_stack_context *ctx,
+                                            uint32_t offset,
+                                            uint32_t byte_count) {
+  const uintptr_t maximum_address = ~(uintptr_t)0;
+  const uintptr_t stack_base = (uintptr_t)ctx->stack_data;
+  uintptr_t destination_address;
+  if (byte_count == 0u || stack_base > maximum_address - offset) return 0;
+  destination_address = stack_base + offset;
+  return !al_owning_address_ranges_overlap(
+      destination_address, (uintptr_t)byte_count, (uintptr_t)ctx,
+      (uintptr_t)sizeof(*ctx));
 }
 
 static void al_owning_fill(al_owning_stack_context *ctx, uint32_t offset,
@@ -61,8 +145,16 @@ static void al_owning_fill(al_owning_stack_context *ctx, uint32_t offset,
                           offset + byte_count, ctx->stack_capacity_bytes);
     return;
   }
-  for (index = 0u; index < byte_count; ++index) {
-    ctx->stack_data[offset + index] = value;
+  if (byte_count == 0u) return;
+  if (al_owning_fill_cache_allowed(ctx, offset, byte_count)) {
+    uint8_t *stack_data = ctx->stack_data + offset;
+    for (index = 0u; index < byte_count; ++index) {
+      stack_data[index] = value;
+    }
+  } else {
+    for (index = 0u; index < byte_count; ++index) {
+      ctx->stack_data[offset + index] = value;
+    }
   }
 }
 

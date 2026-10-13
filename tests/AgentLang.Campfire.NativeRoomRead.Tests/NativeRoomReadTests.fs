@@ -1037,6 +1037,7 @@ module NativeRoomReadTests =
                 check assertions $"{optimizationName}: validated entry request uses a typed UtcInstant value" requestValueUsesNominalNow
                 artifactHashes.Add($"{optimizationName}/dll", sha256 native.LibraryPath)
                 artifactHashes.Add($"{optimizationName}/manifest", sha256 manifestPath)
+                artifactHashes.Add($"{optimizationName}/sqlite", sha256 (Path.Combine(artifactDirectory, "e_sqlite3.dll")))
 
                 let handle = NativeLibrary.Load native.LibraryPath
                 let context, releaseContext = createNativeContext handle nativeDatabase

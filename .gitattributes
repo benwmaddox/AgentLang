@@ -184,3 +184,9 @@ reports/evidence/251-native-owning-lists/** -text -whitespace
 
 # Preserve native room-read validation/source byte hashes.
 reports/evidence/252-native-room-read-host/** -text -whitespace
+
+# Preserve pinned native cookie-decoder bytes and sealed HTTP evidence hashes.
+applications/campfire/Native/http/cookie_unescape.[ch] -text whitespace=blank-at-eol,space-before-tab,cr-at-eol,-blank-at-eof
+# These pinned prototypes retain their tested terminal blank line.
+applications/campfire/Native/http/native_http_host.c whitespace=blank-at-eol,space-before-tab,-blank-at-eof
+reports/evidence/253-native-campfire-http/** -text -whitespace

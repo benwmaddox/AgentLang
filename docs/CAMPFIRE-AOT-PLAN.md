@@ -124,14 +124,39 @@ initialize/begin/resume mailbox exports are not a general application host inter
    transactions, and verify cleanup before connection reuse. Include actual
    reader/writer contention tests in native validation and report the settings
    with performance measurements.
+   Accommodate request-deadline-bounded lock waits and explicit atomic scopes
+   for dependent authorization/mutations before expanding to write routes.
+   Record checkpoint pressure and SQLite failure stages. Keep optional bounded
+   writer admission on the selected worker; do not add a SQL mailbox hop merely
+   to serialize SQLite's one writer. The current fixed five-second wait and
+   independent callbacks do not yet provide those broader guarantees.
    Produce an executable/native dependency manifest and verify the release loads
    without .NET. Windows clang/lld and CNG import libraries are available; the
    room adapter uses the pinned SQLitePCLRaw.lib.e_sqlite3 2.1.12 native library
    (SQLite 3.53.3), with version/options and package-byte verification. Standalone
    C smoke tests execute the compiled room entry without .NET at O0/O2. See
    [the native SQLite milestone](../reports/249-native-sqlite-room-adapter.md).
-   The complete room-read provider contracts now pass report 252. HTTP transport,
-   browser normalization, rendering and response-cookie finalization remain required.
+   The complete room-read provider contracts pass report 252; report 253 adds
+   native HTTP transport, browser normalization, rendering and response-cookie
+   conformance for the room endpoint.
+   [Report 253](../reports/253-native-campfire-http.md) now records a working
+   populated native room GET/HEAD and twenty HTTP cases matching the local
+   interpreted control. Guarded diagnostic bitmap/fill updates preserve the
+   owning runtime's checks; corrected expiry headers pass a full calendar-cycle
+   oracle and actual cookie tests. Repeated checked-runtime reads reach about
+   48 requests/sec with one worker and 177–178 with four. The control's managed
+   memory growth remains unattributed, so fixed-memory/GC evidence is required
+   before a memory-efficiency claim. Full native application migration remains
+   required beyond this room endpoint.
+   After the checked-runtime measurements, exercise the existing
+   `TrustedGenerated` runtime through the native host compile path. Pin the
+   runtime profile in the manifest and executable build; match its context
+   shape, and run both profiles through the same valid and malformed boundary
+   corpus before timing. Remove diagnostic poisoning/bitmaps/traces only in that
+   compiler-generated release profile; retain type/refinement, extent/capacity,
+   effect and host-output validation. Include cross-profile context rejection.
+   This tests the intended lean release runtime instead of treating diagnostic
+   bookkeeping throughput as the final architecture's performance.
    Response finalization must include Rails encrypted-session mutations:
    missing/invalid authentication redirects to `/session/new` and remembers the
    requested return URL; a `redirect-root` response with an alert replaces flash.

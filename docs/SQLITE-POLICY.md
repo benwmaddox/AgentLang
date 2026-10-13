@@ -1,8 +1,11 @@
 # SQLite transaction and concurrency policy
 
 Updated 2026-10-12. Strict correctness and durability are the initial baseline.
-This policy applies to the native Campfire host; implementation and concurrency
-tests are in progress in milestone 252. It does not claim native HTTP completion.
+This policy applies to the native Campfire host. Milestone 252 validates the
+room-read adapter's settings, snapshots, contention and cleanup. Milestone 253
+adds native room HTTP and one/four-worker read measurements. Broader concurrent
+write, deadline and checkpoint-pressure tests remain required; the complete
+native application migration is unfinished.
 
 ## Connections and isolation
 
@@ -11,6 +14,12 @@ on that worker's initializing thread. Private caches and `read_uncommitted=0`
 prevent dirty reads; no connection or active statement is shared between workers.
 NOMUTEX is permitted only while that ownership rule is enforced. Connection reuse
 is not permission to interleave independent requests inside a transaction.
+The SQLite build and startup configuration must support multi-thread use;
+NOMUTEX does not make a single-thread SQLite build safe across workers. A worker
+must finish/reset its active SELECT before mutating the same connection's queried
+data: SQLite does not define reliable cursor visibility for that interleaving.
+Copy required result values into the request's owned arena before resetting a
+statement; SQLite column pointers must never escape into retained mailbox state.
 [SQLite isolation](https://www.sqlite.org/isolation.html),
 [threading modes](https://www.sqlite.org/threadsafe.html), and
 [shared-cache guidance](https://www.sqlite.org/sharedcache.html).
@@ -108,3 +117,38 @@ Native request performance must report transaction mode, durability, worker coun
 contention failures, checkpoint behavior and tail latency. A later bounded writer
 admission mechanism may serialize write attempts while execution stays in the
 selected worker; a separate SQL mailbox is not required by this policy.
+
+## Strict multi-worker integration requirements
+
+The implementation must accommodate these rules before expanding the native
+profile to application writes. This is a host/provider contract, not new language
+syntax or a requirement to implement a general database framework first.
+
+| Concern | Required accommodation |
+| --- | --- |
+| Atomic decisions | Authorization, invariant checks and dependent writes belong in one explicit transaction where correctness depends on observing the same state. Separate callbacks are not implicitly atomic. |
+| Transaction lifetime | No network wait, response streaming or unrelated effect inside an open transaction. Complete statements and commit/rollback before returning database-owned storage or releasing a worker. |
+| Writer contention | Acquire IMMEDIATE before dependent reads. Initially let SQLite serialize writers with a bounded wait; keep room for a bounded writer-admission permit on the same worker if measured contention warrants it. |
+| Deadlines and cancellation | Host-controlled remaining time must bound lock waits. The current fixed 5,000 ms adapter timeout is not request cancellation. A future custom busy handler must be non-reentrant; setting busy_timeout would replace it. Cancellation must complete cleanup before reuse. |
+| Failure diagnostics | Preserve the primary and extended SQLite error codes in host diagnostics, together with operation/transaction stage and cleanup outcome. Distinguish ordinary contention, stale-snapshot failure, constraints, cancellation, disk-full and I/O failures even if the current public Result maps several to Unavailable. |
+| Checkpoint pressure | Record WAL bytes, log/checkpointed frames, incomplete/busy checkpoints and latency. Retain the initial 1,000-page automatic threshold until evidence justifies changing it. Maintenance must use its own owned connection if moved off request workers. |
+| Resource bounds | Bound worker count, waiting write attempts and per-connection cache budgets. More connections increase memory and possible contention; they do not increase simultaneous writer capacity. |
+
+`synchronous=FULL` durability and `SQLITE_CHECKPOINT_FULL` are different controls.
+Do not force a blocking FULL/RESTART/TRUNCATE checkpoint on every request. SQLite's
+PASSIVE checkpoint does not wait for readers/writers and may finish incompletely;
+even a successful return is not proof that the WAL is drained. If we introduce
+explicit maintenance, prefer nonblocking progress during traffic and reserve
+blocking reset/truncation for a bounded maintenance window. Never delete live
+WAL/SHM files to control their size.
+[Checkpoint API](https://www.sqlite.org/c3ref/wal_checkpoint_v2.html) and
+[WAL lifecycle](https://www.sqlite.org/wal.html).
+
+Extend the integration corpus as each capability lands: overlapping readers with
+a committing writer; competing writers with exact final-state checks; stale read
+snapshot upgrade rejection; deadline expiration followed by clean reuse; long
+readers delaying checkpoints and progress after they finish; and failed
+commit/rollback handling. Before claiming production durability, add separate
+process-kill/reopen integrity and atomicity tests. Process termination tests do not
+establish power-loss durability. Do not infer these results from the existing
+single-endpoint throughput test or from FULL alone.
