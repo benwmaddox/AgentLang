@@ -128,6 +128,17 @@ same day (`build-trusted-generated-20261013T110751812Z`, before reports 262–26
   per-request UTF-16 transcoding in and out is gone. ASCII-heavy pages also
   halve their String bytes.
 
+### Named gap: the page HTML is rendered in C
+
+Added after sealing. The Flow app chooses a view (`HttpView`) and supplies its
+data. The HTML itself is written by hand-written C in
+`applications/campfire/Native/http/campfire_http_renderer.c`. So these
+throughput numbers, and every native Campfire number before them, measure an
+AgentLang request path with a C renderer. They do not measure markup produced
+by the language. Moving rendering into Flow templates is report 266 (templates
+plus a byte-identical Flow port of this renderer) and report 267 (the host
+sends the Flow-built body, and the C renderer is deleted).
+
 ### Against Rails and Rust (history)
 
 These are the report-259 no-cache runs. **The pages are not yet equivalent**,
