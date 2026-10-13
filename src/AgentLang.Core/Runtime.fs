@@ -864,7 +864,6 @@ module Runtime =
 
         let countInstruction (trace: Trace) (currentWord: string) (site: SourceSiteId) (span: SourceSpan) (isAuthoredSite: bool) =
             trace.Steps <- trace.Steps + 1
-            if trace.Steps > 10000 then error "RUNTIME_STEP_LIMIT" "Execution exceeded the 10,000 instruction limit." (Some currentWord) (Some span) [] []
             if trace.CoverageTarget = Some currentWord && isAuthoredSite then
                 trace.CoverageInstructions <- Set.add site trace.CoverageInstructions
 

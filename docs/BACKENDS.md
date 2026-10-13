@@ -114,8 +114,11 @@ Native nominal scalars retain their type key in verified/emitted values and
 use the same i64 payload encoding as their base type. Frozen type metadata
 reconstructs named outputs; decoding and equality do not rerun validators.
 Constructors invoke the validator from the bound immutable program, including
-its reachable dependencies, with interpreter-equivalent depth, fuel and failure
-semantics. Unsupported validator code is rejected even in an untaken branch.
+its reachable dependencies, with interpreter-equivalent depth and failure
+semantics. There is no instruction limit in any backend (report 260): verified
+programs have acyclic call graphs and traverse only finite lists, so they
+terminate. Instructions are still counted (saturating) for parity checks.
+Unsupported validator code is rejected even in an untaken branch.
 See [report 105](../reports/105-native-refined-scalars.md) for validation status.
 ABI v2 adds generation/index record handles, typed graph validation and atomic
 promotion of successful roots from scratch to a separate retained native owner.

@@ -89,11 +89,5 @@
     "word": "is-positive?",
     "actual": [],
     "span": { "file": "is-positive?.agent", "line": 1, "column": 1, "length": 1 }
-  },
-  "validator-fuel-limit": {
-    "code": "RUNTIME_STEP_LIMIT",
-    "word": "valid-after-many-drops?",
-    "actual": [],
-    "span": { "file": "fuel-validator.agent", "line": 1, "column": 3, "length": 1 }
   }
 }

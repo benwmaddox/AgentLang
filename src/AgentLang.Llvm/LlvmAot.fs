@@ -1094,20 +1094,14 @@ module LlvmAot =
             emitFailure builder diagnostic wordSource
             builder.Switch continueLabel
 
-        let emitCharge (builder: CodeBuilder) (owner: string) wordSource site =
-            let currentSpan = sourceSpan sourceMap site
-            let diagnostic =
-                operationDiagnostic "RUNTIME_STEP_LIMIT" "Execution exceeded the 10,000 instruction limit."
-                    owner currentSpan [] []
+        // Counts instructions for interpreter parity; there is no instruction limit.
+        let emitCharge (builder: CodeBuilder) (_owner: string) _wordSource _site =
             let field = emitFieldPointer builder 1
             let current = builder.Fresh "steps.current"
             let next = builder.Fresh "steps.next"
-            let over = builder.Fresh "steps.over"
             builder.Emit($"{current} = load i32, ptr {field}, align 4")
             builder.Emit($"{next} = add i32 {current}, 1")
             builder.Emit($"store i32 {next}, ptr {field}, align 4")
-            builder.Emit($"{over} = icmp ugt i32 {next}, 10000")
-            emitErrorWhen builder over diagnostic wordSource
 
         let emitDepthGuardAt (builder: CodeBuilder) (depthValue: string) (call: IrResolvedCall) =
             let tooDeep = builder.Fresh "depth.exceeded"

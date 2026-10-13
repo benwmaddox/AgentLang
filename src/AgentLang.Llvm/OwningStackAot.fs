@@ -1730,7 +1730,26 @@ module OwningStackAot =
                     validateEnumCall owner span call key caseIndex
                 | IrOperation.OptionNone itemType
                 | IrOperation.OptionSome itemType -> checkType owner (IrOption itemType)
-                | IrOperation.ListEmpty itemType -> checkType owner (IrList itemType)
+                | IrOperation.ListEmpty itemType
+                | IrOperation.ListSingleton itemType -> checkType owner (IrList itemType)
+                | IrOperation.ListMap(call, _, _)
+                | IrOperation.ListFilter(call, _)
+                | IrOperation.ListEach(call, _)
+                | IrOperation.ListFold(call, _, _) ->
+                    match call.ResolvedTarget with
+                    | UserWordTarget _ ->
+                        requireProgramEffects owner call.ResolvedDeclaredEffects
+                        requireProgramEffects owner call.ResolvedEffects
+                        call.InputTypes @ call.OutputTypes |> List.iter (checkType owner)
+                        match instruction.Operation with
+                        | IrOperation.ListMap(_, itemType, resultType) -> checkType owner (IrList itemType); checkType owner (IrList resultType)
+                        | IrOperation.ListFilter(_, itemType) | IrOperation.ListEach(_, itemType) -> checkType owner (IrList itemType)
+                        | IrOperation.ListFold(_, itemType, accumulatorType) -> checkType owner (IrList itemType); checkType owner accumulatorType
+                        | _ -> ()
+                    | _ ->
+                        Diagnostics.raiseError "IR_OWNING_STACK_LIST_CALLBACK_UNSUPPORTED"
+                            "Owning-stack list callbacks must be user words; wrap a primitive or generated word in a function."
+                            (Some owner) span [ "user word" ] [ call.ResolvedName ]
                 | IrOperation.ResultOk(okType, errorType)
                 | IrOperation.ResultError(okType, errorType) -> checkType owner (IrResult(okType, errorType))
                 | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
@@ -1765,11 +1784,6 @@ module OwningStackAot =
                 | IrOperation.StoreLocal _ | IrOperation.LoadLocal _ -> ()
                 | IrOperation.Scope inner -> validateBlock owner inner
                 | IrOperation.If(thenBlock, elseBlock) -> validateBlock owner thenBlock; validateBlock owner elseBlock
-                | operation ->
-                    Diagnostics.raiseError "IR_OWNING_STACK_OPERATION_UNSUPPORTED"
-                        "Owning-stack backend supports constants, calls, records, nominal Int, Bool, Float, and String scalars with optional pure frozen predicates, payload-free enums, ListEmpty, Option/Result values, locals, Scope, If, and exhaustive matches."
-                        (Some owner) span [ "Constant"; "Call"; "MakeRecord"; "GetRecordField"; "WrapScalar"; "UnwrapScalar"; "MakeEnumCase"; "ListEmpty"; "OptionNone"; "OptionSome"; "ResultOk"; "ResultError"; "MatchOption"; "MatchResult"; "MatchEnum"; "StoreLocal"; "LoadLocal"; "Scope"; "If" ]
-                        [ sprintf "%A" operation ]
 
         and validateScalarCall owner span (call: IrResolvedCall) key expectedOperation inputTypes outputTypes =
             match program.NominalTypesByKey.TryFind key with
@@ -1872,6 +1886,13 @@ module OwningStackAot =
                     match call.ResolvedTarget with
                     | UserWordTarget(id, revision) ->
                         enqueueUserFunction owner id revision
+                    | _ -> ()
+                | IrOperation.ListMap(call, _, _)
+                | IrOperation.ListFilter(call, _)
+                | IrOperation.ListEach(call, _)
+                | IrOperation.ListFold(call, _, _) ->
+                    match call.ResolvedTarget with
+                    | UserWordTarget(id, revision) -> enqueueUserFunction owner id revision
                     | _ -> ()
                 | IrOperation.WrapScalar _ -> enqueueKnownTypeValidators owner
                 | IrOperation.Scope inner -> inspectCalls owner inner
@@ -2541,6 +2562,21 @@ module OwningStackAot =
                     stack <- prefix @ call.OutputTypes
                 | IrOperation.OptionNone itemType -> stack <- stack @ [ IrOption itemType ]
                 | IrOperation.ListEmpty itemType -> stack <- stack @ [ IrList itemType ]
+                | IrOperation.ListSingleton itemType ->
+                    let _, prefix = pop 1
+                    stack <- prefix @ [ IrList itemType ]
+                | IrOperation.ListMap(_, _, resultType) ->
+                    let _, prefix = pop 1
+                    stack <- prefix @ [ IrList resultType ]
+                | IrOperation.ListFilter(_, itemType) ->
+                    let _, prefix = pop 1
+                    stack <- prefix @ [ IrList itemType ]
+                | IrOperation.ListEach _ ->
+                    let _, prefix = pop 1
+                    stack <- prefix @ [ IrUnit ]
+                | IrOperation.ListFold(_, _, accumulatorType) ->
+                    let _, prefix = pop 2
+                    stack <- prefix @ [ accumulatorType ]
                 | IrOperation.OptionSome itemType ->
                     let _, prefix = pop 1
                     stack <- prefix @ [ IrOption itemType ]
@@ -2609,7 +2645,6 @@ module OwningStackAot =
                     let errorLocals = Map.remove errorLocal errorBlock.ExitShape.LocalTypes
                     if stack <> errorBlock.ExitShape.StackTypes || locals <> errorLocals then
                         invalidOp "Verified Result-match branches diverged while planning local storage."
-                | _ -> invalidOp "Unsupported operation reached owning local-storage planning after validation."
         visit block
         values
         |> Seq.map (fun pair -> pair.Key, List.ofSeq pair.Value)
@@ -4641,6 +4676,319 @@ module OwningStackAot =
                         w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {cursor}, i32 8, i32 8, i32 0, i32 0)")
                         emitRuntimeStatus w "%ctx" failBody
                         stack <- push stack listType cursor "8" "8" next
+                    | IrOperation.ListSingleton itemType ->
+                        let listType = IrList itemType
+                        let values, prefix = pop 1
+                        let item = List.head values
+                        let cursor = emitContextLoad w "%ctx" 2
+                        let listExtent = emitOffset w "8" item.Extent
+                        let listPayload = emitOffset w "8" item.Payload
+                        let next = emitOffset w cursor listExtent
+                        let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a singleton List value." currentOwner instructionSpan [] []
+                        emitReserve w next reserveError failBody
+                        w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 1, i32 {typeId listType})")
+                        emitRuntimeStatus w "%ctx" failBody
+                        emitCopyRange w (emitOffset w cursor "8") item.Offset item.Extent item.Payload (typeId itemType) failBody
+                        emitUpdateLive w "8" "0" failBody
+                        emitDropEntry stack (stack.Length - 1)
+                        w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {cursor}, i32 {listExtent}, i32 {listPayload}, i32 0, i32 0)")
+                        emitRuntimeStatus w "%ctx" failBody
+                        stack <- push prefix listType cursor listExtent listPayload next
+                    | IrOperation.ListMap(callback, _, _)
+                    | IrOperation.ListFilter(callback, _)
+                    | IrOperation.ListEach(callback, _)
+                    | IrOperation.ListFold(callback, _, _) ->
+                        // List traversal never relocates earlier arena data. Callback
+                        // temporaries stay until an enclosing compact { } or request end.
+                        let calleeId =
+                            match callback.ResolvedTarget with
+                            | UserWordTarget(id, _) -> id
+                            | _ -> invalidOp "Owning validation admitted a non-user list callback."
+                        let hiddenHostContext = if nativeHostProfile.IsSome then "ptr %provider.context, " else ""
+                        let loadI64 offset =
+                            let value = w.Fresh "list.load"
+                            w.Inst($"{value} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {offset})")
+                            value
+                        let truncI32 value =
+                            let narrow = w.Fresh "list.narrow"
+                            w.Inst($"{narrow} = trunc i64 {value} to i32")
+                            narrow
+                        let newI32 name initial =
+                            let slot = w.Fresh name
+                            w.Inst($"{slot} = alloca i32, align 4")
+                            w.Inst($"store i32 {initial}, ptr {slot}, align 4")
+                            slot
+                        let loadI32 slot =
+                            let value = w.Fresh "list.var"
+                            w.Inst($"{value} = load i32, ptr {slot}, align 4")
+                            value
+                        let storeI32 slot value = w.Inst($"store i32 {value}, ptr {slot}, align 4")
+                        // Counted loop over [0, count); body receives the index value.
+                        let emitLoop name count (body: string -> unit) =
+                            let index = newI32 $"{name}.index" "0"
+                            let condition = w.Label $"{name}.condition"
+                            let bodyLabel = w.Label $"{name}.body"
+                            let exitLabel = w.Label $"{name}.exit"
+                            w.Inst($"br label %%{condition}")
+                            w.Line($"{condition}:")
+                            let current = loadI32 index
+                            let more = w.Fresh $"{name}.more"
+                            w.Inst($"{more} = icmp ult i32 {current}, {count}")
+                            w.Inst($"br i1 {more}, label %%{bodyLabel}, label %%{exitLabel}")
+                            w.Line($"{bodyLabel}:")
+                            body current
+                            let advanced = w.Fresh $"{name}.next"
+                            w.Inst($"{advanced} = add i32 {current}, 1")
+                            storeI32 index advanced
+                            w.Inst($"br label %%{condition}")
+                            w.Line($"{exitLabel}:")
+                        let itemType, listEntry, accumulatorEntry, prefix =
+                            match instruction.Operation with
+                            | IrOperation.ListFold(_, itemType, _) ->
+                                let values, prefix = pop 2
+                                itemType, values[0], Some values[1], prefix
+                            | IrOperation.ListMap(_, itemType, _)
+                            | IrOperation.ListFilter(_, itemType)
+                            | IrOperation.ListEach(_, itemType) ->
+                                let values, prefix = pop 1
+                                itemType, values[0], None, prefix
+                            | _ -> invalidOp "Unreachable list traversal case."
+                        let count = truncI32 (loadI64 listEntry.Offset)
+                        let listEnd = emitOffset w listEntry.Offset listEntry.Extent
+                        let elementCursor = newI32 "list.element" (emitOffset w listEntry.Offset "8")
+                        let elementSize = w.Fresh "list.element.size"
+                        w.Inst($"{elementSize} = alloca %%AlOwningValueSize, align 4")
+                        let measureError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to measure a verified List element." currentOwner instructionSpan [] []
+                        // Measure the current element and return its descriptor; advances the cursor.
+                        let nextElement () =
+                            let offset = loadI32 elementCursor
+                            let status = w.Fresh "list.measure.status"
+                            w.Inst($"{status} = call i32 @al_owning_measure_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex itemType}, i32 {offset}, i32 {listEnd}, i32 {measureError}, ptr {elementSize})")
+                            emitStatusResult w status failBody
+                            let payloadPointer = w.Fresh "list.element.payload.pointer"
+                            let extentPointer = w.Fresh "list.element.extent.pointer"
+                            w.Inst($"{payloadPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 0")
+                            w.Inst($"{extentPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 1")
+                            let payload = w.Fresh "list.element.payload"
+                            let extent = w.Fresh "list.element.extent"
+                            w.Inst($"{payload} = load i32, ptr {payloadPointer}, align 4")
+                            w.Inst($"{extent} = load i32, ptr {extentPointer}, align 4")
+                            storeI32 elementCursor (emitOffset w offset extent)
+                            { Type = itemType; Offset = offset; Extent = extent; Payload = payload; OwnerEnd = listEntry.OwnerEnd }
+                        let callbackError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." callback.ResolvedName instructionSpan [] []
+                        // Call the callback with the given argument descriptors and return its result descriptor.
+                        let callCallback (arguments: OwningDynamicStackEntry list) =
+                            let argumentArray = w.Fresh "list.call.arguments"
+                            w.Inst($"{argumentArray} = alloca [{arguments.Length} x %%AlOwningDescriptor], align 4")
+                            for index, value in arguments |> List.indexed do
+                                emitStoreDescriptor w (emitDescriptorElementPointer w argumentArray index) value
+                                emitDescriptorTransfer w value failBody
+                            let resultArray = w.Fresh "list.call.results"
+                            w.Inst($"{resultArray} = alloca [1 x %%AlOwningDescriptor], align 4")
+                            let status = w.Fresh "list.callee.status"
+                            w.Inst($"{status} = call i32 {symbolFor calleeId}(ptr %%ctx, {hiddenHostContext}ptr {argumentArray}, ptr {resultArray}, i32 {callbackError})")
+                            emitStatusResult w status failBody
+                            let outputType = List.exactlyOne callback.OutputTypes
+                            let result, actualType = emitLoadDescriptor w (emitDescriptorElementPointer w resultArray 0) outputType
+                            let typeValid = w.Fresh "list.result.type.valid"
+                            let typeOkay = w.Label "list.result.type.ok"
+                            w.Inst($"{typeValid} = icmp eq i32 {actualType}, {typeId outputType}")
+                            w.Inst($"br i1 {typeValid}, label %%{typeOkay}, label %%{failBody}")
+                            w.Line($"{typeOkay}:")
+                            emitDescriptorBounds w result (Some(string (typeId outputType))) failBody
+                            emitDescriptorTransfer w result failBody
+                            result
+                        let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve List traversal storage." currentOwner instructionSpan [] []
+                        // Reserve 'bytes' (i64) at the cursor; returns the reserved start.
+                        let reserveBytes (bytes: string) =
+                            let start = emitContextLoad w "%ctx" 2
+                            let wideStart = w.Fresh "list.reserve.start.wide"
+                            w.Inst($"{wideStart} = zext i32 {start} to i64")
+                            let wideEnd = w.Fresh "list.reserve.end.wide"
+                            w.Inst($"{wideEnd} = add i64 {wideStart}, {bytes}")
+                            let fits = w.Fresh "list.reserve.fits"
+                            let fitsLabel = w.Label "list.reserve.fits"
+                            let overflowLabel = w.Label "list.reserve.overflow"
+                            w.Inst($"{fits} = icmp ule i64 {wideEnd}, 4294967295")
+                            w.Inst($"br i1 {fits}, label %%{fitsLabel}, label %%{overflowLabel}")
+                            w.Line($"{overflowLabel}:")
+                            let capacityError = addDiagnostic "OWNING_STACK_CAPACITY" "List traversal storage exceeds the owning-stack range." currentOwner instructionSpan [] []
+                            w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 2, i32 {capacityError}, i32 0, i32 0)")
+                            w.Inst($"br label %%{failBody}")
+                            w.Line($"{fitsLabel}:")
+                            emitReserve w (truncI32 wideEnd) reserveError failBody
+                            start
+                        let wideMul (value: string) (factor: int) =
+                            let wide = w.Fresh "list.wide"
+                            w.Inst($"{wide} = zext i32 {value} to i64")
+                            let product = w.Fresh "list.wide.product"
+                            w.Inst($"{product} = mul i64 {wide}, {factor}")
+                            product
+                        let tableEntryAt (table: string) (index: string) slotIndex =
+                            let scaled = w.Fresh "list.table.scaled"
+                            w.Inst($"{scaled} = mul i32 {index}, 16")
+                            emitOffset w table (emitOffset w scaled (string (slotIndex * 8)))
+                        let packPair (low: string) (high: string) =
+                            let lowWide = w.Fresh "list.pack.low"
+                            let highWide = w.Fresh "list.pack.high"
+                            let shifted = w.Fresh "list.pack.shifted"
+                            let packed = w.Fresh "list.pack"
+                            w.Inst($"{lowWide} = zext i32 {low} to i64")
+                            w.Inst($"{highWide} = zext i32 {high} to i64")
+                            w.Inst($"{shifted} = shl i64 {highWide}, 32")
+                            w.Inst($"{packed} = or i64 {lowWide}, {shifted}")
+                            packed
+                        let packLow (low: string) = packPair low "0"
+                        let unpackHigh (packed: string) =
+                            let shifted = w.Fresh "list.unpack.high"
+                            w.Inst($"{shifted} = lshr i64 {packed}, 32")
+                            truncI32 shifted
+                        let finishList listType (start: string) (extent: string) (payload: string) =
+                            let next = emitOffset w start extent
+                            w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {start}, i32 {extent}, i32 {payload}, i32 0, i32 0)")
+                            emitRuntimeStatus w "%ctx" failBody
+                            push prefix listType start extent payload next
+                        match instruction.Operation with
+                        | IrOperation.ListMap(_, _, resultType) ->
+                            let listType = IrList resultType
+                            // [descriptor table: 16 bytes per element][header][results...]
+                            let table = reserveBytes (wideMul count 16)
+                            let header = reserveBytes "8"
+                            let expected = newI32 "list.map.expected" (emitOffset w header "8")
+                            let contiguous = newI32 "list.map.contiguous" "1"
+                            let totalExtent = newI32 "list.map.extent" "8"
+                            let totalPayload = newI32 "list.map.payload" "8"
+                            emitLoop "list.map" count (fun index ->
+                                let element = nextElement ()
+                                let result = callCallback [ element ]
+                                w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {tableEntryAt table index 0}, i64 {packPair result.Offset result.Extent}, i32 {typeId IrInt})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {tableEntryAt table index 1}, i64 {packLow result.Payload}, i32 {typeId IrInt})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let wanted = loadI32 expected
+                                let adjacent = w.Fresh "list.map.adjacent"
+                                w.Inst($"{adjacent} = icmp eq i32 {result.Offset}, {wanted}")
+                                let adjacentBit = w.Fresh "list.map.adjacent.bit"
+                                w.Inst($"{adjacentBit} = zext i1 {adjacent} to i32")
+                                let prior = loadI32 contiguous
+                                let still = w.Fresh "list.map.still.contiguous"
+                                w.Inst($"{still} = and i32 {prior}, {adjacentBit}")
+                                storeI32 contiguous still
+                                storeI32 expected (emitOffset w result.Offset result.Extent)
+                                storeI32 totalExtent (emitOffset w (loadI32 totalExtent) result.Extent)
+                                storeI32 totalPayload (emitOffset w (loadI32 totalPayload) result.Payload))
+                            let isContiguous = w.Fresh "list.map.is.contiguous"
+                            w.Inst($"{isContiguous} = icmp ne i32 {loadI32 contiguous}, 0")
+                            let inPlaceLabel = w.Label "list.map.in.place"
+                            let copyLabel = w.Label "list.map.copy"
+                            let joinLabel = w.Label "list.map.join"
+                            let startSlot = newI32 "list.map.start" header
+                            w.Inst($"br i1 {isContiguous}, label %%{inPlaceLabel}, label %%{copyLabel}")
+                            // Results already follow the header: write the header only.
+                            w.Line($"{inPlaceLabel}:")
+                            w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {header}, i64 {packLow count}, i32 {typeId listType})")
+                            emitRuntimeStatus w "%ctx" failBody
+                            w.Inst($"br label %%{joinLabel}")
+                            // Otherwise copy each result once into a fresh contiguous list.
+                            w.Line($"{copyLabel}:")
+                            let freshBytes = w.Fresh "list.map.total.wide"
+                            w.Inst($"{freshBytes} = zext i32 {loadI32 totalExtent} to i64")
+                            let fresh = reserveBytes freshBytes
+                            w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {fresh}, i64 {packLow count}, i32 {typeId listType})")
+                            emitRuntimeStatus w "%ctx" failBody
+                            let destination = newI32 "list.map.destination" (emitOffset w fresh "8")
+                            emitLoop "list.map.copy" count (fun index ->
+                                let first = loadI64 (tableEntryAt table index 0)
+                                let second = loadI64 (tableEntryAt table index 1)
+                                let offset = truncI32 first
+                                let extent = unpackHigh first
+                                let payload = truncI32 second
+                                let target = loadI32 destination
+                                emitCopyRange w target offset extent payload (typeId resultType) failBody
+                                storeI32 destination (emitOffset w target extent))
+                            storeI32 startSlot fresh
+                            w.Inst($"br label %%{joinLabel}")
+                            w.Line($"{joinLabel}:")
+                            emitUpdateLive w "8" "0" failBody
+                            emitDropEntry (prefix @ [ listEntry ]) prefix.Length
+                            stack <- finishList listType (loadI32 startSlot) (loadI32 totalExtent) (loadI32 totalPayload)
+                        | IrOperation.ListFilter(_, filteredType) ->
+                            let listType = IrList filteredType
+                            // Phase 1: evaluate the predicate per element into an 8-byte flag table.
+                            let flags = reserveBytes (wideMul count 8)
+                            let keptCount = newI32 "list.filter.count" "0"
+                            let keptExtent = newI32 "list.filter.extent" "8"
+                            let keptPayload = newI32 "list.filter.payload" "8"
+                            emitLoop "list.filter" count (fun index ->
+                                let element = nextElement ()
+                                let result = callCallback [ element ]
+                                let keep = truncI32 (loadI64 result.Offset)
+                                let scaled = w.Fresh "list.filter.flag.offset"
+                                w.Inst($"{scaled} = mul i32 {index}, 8")
+                                w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {emitOffset w flags scaled}, i64 {packLow keep}, i32 {typeId IrInt})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let kept = w.Fresh "list.filter.kept"
+                                w.Inst($"{kept} = icmp ne i32 {keep}, 0")
+                                let keptBit = w.Fresh "list.filter.kept.bit"
+                                w.Inst($"{keptBit} = zext i1 {kept} to i32")
+                                storeI32 keptCount (emitOffset w (loadI32 keptCount) keptBit)
+                                let addExtent = w.Fresh "list.filter.add.extent"
+                                w.Inst($"{addExtent} = select i1 {kept}, i32 {element.Extent}, i32 0")
+                                let addPayload = w.Fresh "list.filter.add.payload"
+                                w.Inst($"{addPayload} = select i1 {kept}, i32 {element.Payload}, i32 0")
+                                storeI32 keptExtent (emitOffset w (loadI32 keptExtent) addExtent)
+                                storeI32 keptPayload (emitOffset w (loadI32 keptPayload) addPayload))
+                            // Phase 2: copy each kept element once into a fresh list.
+                            let freshBytes = w.Fresh "list.filter.total.wide"
+                            w.Inst($"{freshBytes} = zext i32 {loadI32 keptExtent} to i64")
+                            let fresh = reserveBytes freshBytes
+                            w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {fresh}, i64 {packLow (loadI32 keptCount)}, i32 {typeId listType})")
+                            emitRuntimeStatus w "%ctx" failBody
+                            storeI32 elementCursor (emitOffset w listEntry.Offset "8")
+                            let destination = newI32 "list.filter.destination" (emitOffset w fresh "8")
+                            emitLoop "list.filter.copy" count (fun index ->
+                                let element = nextElement ()
+                                let scaled = w.Fresh "list.filter.flag.offset"
+                                w.Inst($"{scaled} = mul i32 {index}, 8")
+                                let keep = truncI32 (loadI64 (emitOffset w flags scaled))
+                                let kept = w.Fresh "list.filter.copy.kept"
+                                w.Inst($"{kept} = icmp ne i32 {keep}, 0")
+                                let copyLabel = w.Label "list.filter.copy.keep"
+                                let skipLabel = w.Label "list.filter.copy.skip"
+                                w.Inst($"br i1 {kept}, label %%{copyLabel}, label %%{skipLabel}")
+                                w.Line($"{copyLabel}:")
+                                let target = loadI32 destination
+                                emitCopyRange w target element.Offset element.Extent element.Payload (typeId filteredType) failBody
+                                storeI32 destination (emitOffset w target element.Extent)
+                                w.Inst($"br label %%{skipLabel}")
+                                w.Line($"{skipLabel}:"))
+                            emitUpdateLive w "8" "0" failBody
+                            emitDropEntry (prefix @ [ listEntry ]) prefix.Length
+                            stack <- finishList listType fresh (loadI32 keptExtent) (loadI32 keptPayload)
+                        | IrOperation.ListEach _ ->
+                            emitLoop "list.each" count (fun _ ->
+                                let element = nextElement ()
+                                callCallback [ element ] |> ignore)
+                            emitDropEntry (prefix @ [ listEntry ]) prefix.Length
+                            let unitAt = reserveBytes "8"
+                            w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {unitAt}, i64 0, i32 {typeId IrUnit})")
+                            emitRuntimeStatus w "%ctx" failBody
+                            emitUpdateLive w "8" "0" failBody
+                            stack <- push prefix IrUnit unitAt "8" "8" (emitOffset w unitAt "8")
+                        | IrOperation.ListFold(_, _, accumulatorType) ->
+                            let initial = accumulatorEntry |> Option.defaultWith (fun () -> invalidOp "List fold lost its seed.")
+                            let accumulator = w.Fresh "list.fold.accumulator"
+                            w.Inst($"{accumulator} = alloca %%AlOwningDescriptor, align 4")
+                            emitStoreDescriptor w accumulator initial
+                            emitLoop "list.fold" count (fun _ ->
+                                let element = nextElement ()
+                                let current, _ = emitLoadDescriptor w accumulator accumulatorType
+                                let next = callCallback [ current; element ]
+                                emitStoreDescriptor w accumulator next)
+                            emitDropEntry (prefix @ [ listEntry; initial ]) prefix.Length
+                            let final, _ = emitLoadDescriptor w accumulator accumulatorType
+                            stack <- prefix @ [ final ]
+                        | _ -> invalidOp "Unreachable list traversal case."
                     | IrOperation.OptionNone itemType ->
                         let sumType = IrOption itemType
                         let cursor = emitContextLoad w "%ctx" 2
@@ -5660,7 +6008,6 @@ module OwningStackAot =
                             stack <- push prefix outputType cursor outputExtent outputPayload outputOwnerEnd
                         | HostOperationTarget operationId -> rejectHostOperation currentOwner instructionSpan operationId
                         | _ -> invalidOp "Verified dynamic call target is neither a primitive nor a user function."
-                    | _ -> invalidOp "Owning validation missed an unsupported dynamic operation."
                     emitCursorCheck stack failBody
                 stack
 

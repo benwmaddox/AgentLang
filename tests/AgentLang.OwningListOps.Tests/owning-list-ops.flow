@@ -1,0 +1,214 @@
+record Pair {
+    field name: String
+    field count: Int
+}
+
+fn native.listops.double(value: Int) -> Int {
+    effects none
+    multiply(value, 2)
+}
+
+fn native.listops.map-double(values: List<Int>) -> List<Int> {
+    effects none
+    values.map(native.listops.double)
+}
+
+fn native.listops.format(value: Int) -> String {
+    effects none
+    int.to-string(value)
+}
+
+fn native.listops.map-format(values: List<Int>) -> List<String> {
+    effects none
+    values.map(native.listops.format)
+}
+
+fn native.listops.same(value: String) -> String {
+    effects none
+    value
+}
+
+fn native.listops.map-same(values: List<String>) -> List<String> {
+    effects none
+    values.map(native.listops.same)
+}
+
+fn native.listops.pair(value: Int) -> Pair {
+    effects none
+    pair.new(int.to-string(value), value)
+}
+
+fn native.listops.map-pairs(values: List<Int>) -> List<Pair> {
+    effects none
+    values.map(native.listops.pair)
+}
+
+fn native.listops.positive(value: Int) -> Bool {
+    effects none
+    int.greater-than(value, 0)
+}
+
+fn native.listops.filter-positive(values: List<Int>) -> List<Int> {
+    effects none
+    values.filter(native.listops.positive)
+}
+
+fn native.listops.plus(total: Int, value: Int) -> Int {
+    effects none
+    add(total, value)
+}
+
+fn native.listops.sum(values: List<Int>) -> Int {
+    effects none
+    values.fold(0, native.listops.plus)
+}
+
+fn native.listops.join(text: String, value: String) -> String {
+    effects none
+    string.concat(text, value)
+}
+
+fn native.listops.join-all(values: List<String>) -> String {
+    effects none
+    values.fold("", native.listops.join)
+}
+
+fn native.listops.map-join(values: List<List<String>>) -> List<String> {
+    effects none
+    values.map(native.listops.join-all)
+}
+
+fn native.listops.ignore(value: Int) -> Unit {
+    effects none
+    unit
+}
+
+fn native.listops.each-ignore(values: List<Int>) -> Unit {
+    effects none
+    values.each(native.listops.ignore)
+}
+
+fn native.listops.singleton(value: String) -> List<String> {
+    effects none
+    list.singleton<String>(value)
+}
+
+test native.listops.double/two {
+    native.listops.double(2)
+    => value 4
+}
+
+test native.listops.map-double/empty {
+    native.listops.map-double(list.empty<Int>())
+    => value list.empty<Int>()
+}
+
+test native.listops.map-double/one {
+    native.listops.map-double(list.singleton<Int>(3))
+    => value list.singleton<Int>(6)
+}
+
+test native.listops.format/negative {
+    native.listops.format(-7)
+    => value "-7"
+}
+
+test native.listops.map-format/one {
+    native.listops.map-format(list.singleton<Int>(42))
+    => value list.singleton<String>("42")
+}
+
+test native.listops.same/text {
+    native.listops.same("x")
+    => value "x"
+}
+
+test native.listops.map-same/one {
+    native.listops.map-same(list.singleton<String>("λ"))
+    => value list.singleton<String>("λ")
+}
+
+test native.listops.pair/one {
+    native.listops.pair(1)
+    => value pair.new("1", 1)
+}
+
+test native.listops.map-pairs/one {
+    native.listops.map-pairs(list.singleton<Int>(5))
+    => value list.singleton<Pair>(pair.new("5", 5))
+}
+
+test native.listops.positive/zero {
+    native.listops.positive(0)
+    => value false
+}
+
+test native.listops.positive/one {
+    native.listops.positive(1)
+    => value true
+}
+
+test native.listops.filter-positive/drop {
+    native.listops.filter-positive(list.singleton<Int>(-1))
+    => value list.empty<Int>()
+}
+
+test native.listops.filter-positive/keep {
+    native.listops.filter-positive(list.singleton<Int>(9))
+    => value list.singleton<Int>(9)
+}
+
+test native.listops.plus/two {
+    native.listops.plus(2, 3)
+    => value 5
+}
+
+test native.listops.sum/empty {
+    native.listops.sum(list.empty<Int>())
+    => value 0
+}
+
+test native.listops.sum/one {
+    native.listops.sum(list.singleton<Int>(8))
+    => value 8
+}
+
+test native.listops.join/two {
+    native.listops.join("a", "b")
+    => value "ab"
+}
+
+test native.listops.join-all/empty {
+    native.listops.join-all(list.empty<String>())
+    => value ""
+}
+
+test native.listops.join-all/one {
+    native.listops.join-all(list.singleton<String>("q"))
+    => value "q"
+}
+
+test native.listops.map-join/one {
+    native.listops.map-join(list.singleton<List<String>>(list.singleton<String>("z")))
+    => value list.singleton<String>("z")
+}
+
+test native.listops.ignore/one {
+    native.listops.ignore(1)
+    => value unit
+}
+
+test native.listops.each-ignore/empty {
+    native.listops.each-ignore(list.empty<Int>())
+    => value unit
+}
+
+test native.listops.each-ignore/one {
+    native.listops.each-ignore(list.singleton<Int>(1))
+    => value unit
+}
+
+test native.listops.singleton/one {
+    native.listops.singleton("s")
+    => value list.singleton<String>("s")
+}

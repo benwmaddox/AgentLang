@@ -436,11 +436,13 @@ let private testVerifiedUserFunctionHooks () =
     let fuelContext = contextWith Map.empty [ fuelTarget ]
     let _, fuelBody = compileBody fuelContext "function-hook-fuel-fault" [] [ Call("hook.fuel-fault", source) ]
     let fuelEvents = ResizeArray<UserFunctionHookEvent>()
-    expectDiagnostic "interpreter fuel exhaustion propagates from the user function" "RUNTIME_STEP_LIMIT" (fun () ->
-        IrInterpreter.executeBody (recordingHost fuelEvents) "function-hook-fuel-fault" fuelBody |> ignore)
-    check "fuel exhaustion exits the user scope without reporting a normal return"
+    // No instruction limit (report 260): 10,000+ instructions complete normally.
+    check "a user function past 10,000 instructions completes"
+        (IrInterpreter.executeBody (recordingHost fuelEvents) "function-hook-fuel-fault" fuelBody = [])
+    check "a long-running user function reports a normal return"
         (List.ofSeq fuelEvents =
             [ hookEvent "enter" (WordId "user-hook.fuel-fault") 1 (Some [])
+              hookEvent "return" (WordId "user-hook.fuel-fault") 1 (Some [])
               hookEvent "exit" (WordId "user-hook.fuel-fault") 1 None ])
 
     let deniedTarget =
@@ -956,8 +958,8 @@ let private testInterpreterOwnsFuel () =
         flatExpressions.Add(Push(LInt 1L, expressionSpan))
         flatExpressions.Add(Call("drop", expressionSpan))
     let _, flatBody = compileBody context "flat-fuel" [] (List.ofSeq flatExpressions)
-    expectDiagnostic "10,002 flat instructions hit interpreter-local fuel with a no-op host" "RUNTIME_STEP_LIMIT" (fun () ->
-        IrInterpreter.executeBody (noOpHost ()) "flat-fuel" flatBody |> ignore)
+    check "10,002 flat instructions complete without an instruction limit"
+        (IrInterpreter.executeBody (noOpHost ()) "flat-fuel" flatBody = [])
 
     let buildList count =
         let expressions = ResizeArray<Expr>()
@@ -977,9 +979,9 @@ let private testInterpreterOwnsFuel () =
     let _, body = compileBody callbackContext "fuel" [] expressions
     let mutable hostCharges = 0
     let host = host (fun _ _ _ -> ()) (fun _ _ -> hostCharges <- hostCharges + 1) (fun _ -> EffectUnit) ignore
-    expectDiagnostic "local interpreter fuel includes nested callback iterations" "RUNTIME_STEP_LIMIT" (fun () ->
-        IrInterpreter.executeBody host "fuel" body |> ignore)
-    check "host tracing observes the over-limit instruction before the structured limit diagnostic" (hostCharges = 10001)
+    check "nested callback iterations complete without an instruction limit"
+        (IrInterpreter.executeBody host "fuel" body = [ UnitValue ])
+    check "host tracing still observes every instruction, including nested callbacks" (hostCharges > 10001)
 
     let chainWords =
         [ 0 .. 65 ]
@@ -1100,8 +1102,8 @@ let private testListFoldFuelLimit () =
     expressions.Add(Push(LInt 0L, source))
     expressions.Add(FoldList("fold.fuel-step", source))
     let _, body = compileBody context "fold-fuel" [] (List.ofSeq expressions)
-    expectDiagnostic "fold callback iterations and list construction share the interpreter instruction budget" "RUNTIME_STEP_LIMIT" (fun () ->
-        IrInterpreter.executeBody (noOpHost ()) "fold-fuel" body |> ignore)
+    check "a 2,501-element fold completes without an instruction limit"
+        (IrInterpreter.executeBody (noOpHost ()) "fold-fuel" body = [ IntValue(List.sum [ 0L .. 2_500L ]) ])
 
 let private testListTailExecution () =
     let source = span "list-tail.agent"

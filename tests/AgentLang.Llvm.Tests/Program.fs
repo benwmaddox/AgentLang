@@ -1173,19 +1173,18 @@ let private testFuelAndSourceMetadata () =
         [ 1 .. 5001 ]
         |> List.collect (fun _ -> [ Push(LInt 1L, callSpan); Call("drop", callSpan) ])
     let body = compileBody (contextWith []) "fuel-body" expressions
+    // No instruction limit (report 260): 10,002 instructions complete in the
+    // interpreter and the scalar backend, which still count them identically.
     let mutable charged = 0
     let host =
         { noOpHost () with ChargeInstruction = fun _ _ -> charged <- charged + 1 }
-    let interpreted = errorOf (fun () -> IrInterpreter.executeBody host "fuel-execution" body |> ignore)
-    check "interpreter charges the first over-limit instruction" (charged = 10001)
-    check "fuel diagnostic retains entry execution name and source span" (
-        interpreted.Code = "RUNTIME_STEP_LIMIT"
-        && interpreted.Word = Some "fuel-execution"
-        && interpreted.Span = Some callSpan)
+    let interpreted = IrInterpreter.executeBody host "fuel-execution" body
+    check "interpreter completes 10,002 instructions and counts each" (interpreted = [] && charged = 10002)
     for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
         use native = compileNative "fuel-source" optimization body
-        let actual = errorOf (fun () -> native.Execute "fuel-execution" |> ignore)
-        check ($"{optimization} native fuel/source diagnostic matches interpreter") (actual = interpreted)
+        let actual = native.Execute "fuel-execution"
+        check ($"{optimization} native completes with the interpreter's instruction count") (
+            actual.Values = interpreted && actual.StepsConsumed = charged)
 
 let private testCallDepth () =
     let callSpan index = span ($"deep-{index}.agent") 5
@@ -2576,24 +2575,23 @@ let private testOwningRefinedIntSlice () =
     ]
     let mutable overrunFuelSteps = 0
     let interpretedOverrun =
-        errorOf (fun () ->
-            use result =
-                IrInterpreter.executeBodyWithInputs
-                    { noOpHost () with ChargeInstruction = fun _ _ -> overrunFuelSteps <- overrunFuelSteps + 1 }
-                    "owning-overrun-fuel-constructor"
-                    overrunFuelBody
-                    None
-                    [ IrEntryArgument.IntArgument 1L ]
-            result.Decode() |> ignore)
-    check "interpreter reports the first instruction beyond constructor-validator fuel" (
-        overrunFuelSteps = 10001 && interpretedOverrun.Code = "RUNTIME_STEP_LIMIT")
+        use result =
+            IrInterpreter.executeBodyWithInputs
+                { noOpHost () with ChargeInstruction = fun _ _ -> overrunFuelSteps <- overrunFuelSteps + 1 }
+                "owning-overrun-fuel-constructor"
+                overrunFuelBody
+                None
+                [ IrEntryArgument.IntArgument 1L ]
+        result.Decode()
+    check "interpreter completes a constructor validator past 10,000 instructions" (
+        overrunFuelSteps = 10001 && interpretedOverrun = [])
     for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        // The owning AOT runtime has no instruction limit (report 260): the same
+        // body that exceeds the interpreter's 10,000-step bound completes natively.
         use overrunFuel = compileOwningNative toolchain "owning-overrun-fuel-constructor" optimization overrunFuelBody
-        let failure = owningException (fun () -> overrunFuel.Execute([ IntValue 1L ], 131072, 8) |> ignore)
-        check ($"{optimization} constructor validator charges the Wrap at the 10,001-step rejection boundary") (
-            failure.Diagnostic = interpretedOverrun
-            && failure.Metrics.FinalCursorBytes = 0
-            && failure.Metrics.HostRetainedCommitBytes = 0)
+        let completed = overrunFuel.Execute([ IntValue 1L ], 131072, 8)
+        check ($"{optimization} owning AOT completes a constructor validator past 10,000 instructions") (
+            completed.Values = interpretedOverrun && completed.Metrics.HostRetainedCommitBytes = 0)
 
     let overflowValidator =
         wordEntry "checked-positive?" [ TInt ] [ TBool ] Set.empty [
@@ -4435,23 +4433,19 @@ let private testOwningFloatSlice () =
             @ [ Call("float.to-string", span "owning-float-to-string-fuel.agent" 10001) ]
         let fuelBody = compileBodyWithInputs (contextWith []) "owning-float-to-string-fuel" [ TFloat ] fuelOperations
         use fuelNative = compileOwningNative toolchain "owning-float-to-string-fuel" optimization fuelBody
-        let fuelSentinel = Array.create 64 0xA5uy
-        let fuelFailure = captureExecutionFailure (fun () ->
-            fuelNative.ExecuteInto([ FloatValue 1.25 ], 131072, fuelSentinel) |> ignore)
-        let fuelStatus, fuelContext, fuelRetained =
+        // No instruction limit in the owning AOT runtime (report 260): the
+        // 10,001st instruction formats normally; Diagnostic builds still count it.
+        let fuelResult = fuelNative.Execute([ FloatValue 1.25 ], 131072, 64)
+        let fuelStatus, fuelContext, _ =
             invokeRawOwningEntryForMetricsWithStackCapacity
                 fuelNative
                 (BitConverter.GetBytes(BitConverter.DoubleToInt64Bits 1.25))
                 [| 8 |]
                 131072
-        check ($"{optimization} float.to-string charges fuel before formatting and does not publish a failed result (diagnostic={fuelFailure |> Option.map (fun failure -> failure.Diagnostic.Code, failure.Metrics.FinalCursorBytes)}; rawStatus={fuelStatus}; rawSteps={fuelContext.StepsConsumed}; rawRetainedSentinel={fuelRetained = Array.create fuelRetained.Length 0xA5uy}; hostSentinel={fuelSentinel = Array.create fuelSentinel.Length 0xA5uy})") (
-            fuelFailure |> Option.exists (fun failure ->
-                failure.Diagnostic.Code = "RUNTIME_STEP_LIMIT"
-                && failure.Metrics.FinalCursorBytes = 0)
-            && fuelStatus <> 0
-            && fuelContext.StepsConsumed = 10001u
-            && fuelRetained = Array.create fuelRetained.Length 0xA5uy
-            && fuelSentinel = Array.create fuelSentinel.Length 0xA5uy)
+        check ($"{optimization} float.to-string completes as the 10,001st instruction (rawStatus={fuelStatus}; rawSteps={fuelContext.StepsConsumed})") (
+            fuelResult.Values = [ StringValue "1.25" ]
+            && fuelStatus = 0
+            && fuelContext.StepsConsumed = 10001u)
 
     let corpusBatchSize = 32
     let corpusInputs = List.replicate corpusBatchSize TFloat
@@ -5787,23 +5781,18 @@ let private testNominalValidatorFuelLimit () =
             ChargeInstruction = fun _ _ -> interpretedSteps <- interpretedSteps + 1
             WordDefinitionSpan = fun word -> sources.WordDefinitionSpans.TryFind word
             PrimitiveDefinitionSpan = fun word -> sources.PrimitiveDefinitionSpans.TryFind word }
-    let interpretedError = errorOf (fun () -> IrInterpreter.executeBody host "validator-fuel-limit" body |> ignore)
-    let expectedFixture = fixtureError "validator-fuel-limit"
-    let expectedSpan = span "fuel-validator.agent" 3
-    let expectedActual = expectedFixture.GetProperty("actual").EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
-    check "validator fuel fixture independently specifies the first over-limit instruction" (
-        interpretedError.Code = expectedFixture.GetProperty("code").GetString()
-        && interpretedError.Word = Some(expectedFixture.GetProperty("word").GetString())
-        && interpretedError.Actual = expectedActual
-        && interpretedError.Span = Some expectedSpan
-        && interpretedSteps = 10001)
+    // No instruction limit (report 260): a validator past 10,000 instructions
+    // completes; native and interpreter still count the same instructions.
+    let interpreted = IrInterpreter.executeBody host "validator-fuel-limit" body
+    check "a validator past 10,000 instructions completes in the interpreter" (
+        interpreted = [ NamedValue("FuelTag", IntValue 1L) ] && interpretedSteps > 10000)
     for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
         use native = compileNativeWithSources "validator-fuel-limit" optimization sources body
-        let actualError = errorOf (fun () -> native.Execute "validator-fuel-limit" |> ignore)
-        check ($"{optimization} validator fuel diagnostic matches interpreter") (actualError = interpretedError)
+        let actual = native.Execute "validator-fuel-limit"
+        check ($"{optimization} long validator completes and matches the interpreter") (actual.Values = interpreted)
         let nativeStatus, nativeSteps = rawExecutionStatusAndSteps native
-        check ($"{optimization} validator fuel guard reports a language diagnostic") (nativeStatus = NativeAbi.StatusDiagnostic)
-        check ($"{optimization} validator fuel guard includes one Wrap and no generated-call charge") (nativeSteps = interpretedSteps)
+        check ($"{optimization} long validator reports success") (nativeStatus = NativeAbi.StatusSuccess)
+        check ($"{optimization} long validator includes one Wrap and no generated-call charge") (nativeSteps = interpretedSteps)
 
 let private testRejectsEffectsAndUnsupportedUntakenBranches () =
     let effectful =
@@ -6033,7 +6022,9 @@ let private testNativeModuleCompilation () =
     let toolchain = LlvmToolchain.discover()
     let build name optimization =
         let directory = Path.Combine(artifactRoot, "module", name, string optimization)
-        LlvmAot.compileModule toolchain optimization directory NativeDiagnosticSources.empty entries
+        // A non-ASCII primitive definition span exercises UTF-8 source text in C diagnostic metadata.
+        let sources = { NativeDiagnosticSources.empty with PrimitiveDefinitionSpans = Map.ofList [ "add", span "failure-λ.agent" 3 ] }
+        LlvmAot.compileModule toolchain optimization directory sources entries
     let optimization0 = build "fresh-a" LlvmOptimization.O0
     let optimization2 = build "fresh-b" LlvmOptimization.O2
     check "native module fingerprint is deterministic across output paths and optimization" (
@@ -6144,12 +6135,21 @@ let private testNativeModuleCompilation () =
             resumeStatus = NativeAbi.StatusSuccess && resumeValues = [ 103L ])
 
         let failureEntry = rawEntries[2]
-        let failureDiagnostic = Marshal.PtrToStructure<RawModuleDiagnostic>(failureEntry.Diagnostics)
-        check "immutable entry diagnostics preserve source text through UTF-8 C metadata" (
-            failureEntry.DiagnosticCount > 0u
-            && not (String.IsNullOrEmpty(Marshal.PtrToStringUTF8 failureDiagnostic.Code))
-            && Marshal.PtrToStringUTF8(failureDiagnostic.Word) = "C.failure"
-            && Marshal.PtrToStringUTF8(failureDiagnostic.File) = "failure-λ.agent")
+        let failureDiagnostics =
+            [ for index in 0 .. int failureEntry.DiagnosticCount - 1 ->
+                  Marshal.PtrToStructure<RawModuleDiagnostic>(
+                      IntPtr.Add(failureEntry.Diagnostics, index * Marshal.SizeOf<RawModuleDiagnostic>())) ]
+        let describedDiagnostics =
+            failureDiagnostics
+            |> List.map (fun diagnostic ->
+                $"{Marshal.PtrToStringUTF8 diagnostic.Code}|{Marshal.PtrToStringUTF8 diagnostic.Word}|{Marshal.PtrToStringUTF8 diagnostic.File}")
+            |> String.concat "; "
+        check $"immutable entry diagnostics preserve source text through UTF-8 C metadata ({describedDiagnostics})" (
+            failureDiagnostics
+            |> List.exists (fun diagnostic ->
+                Marshal.PtrToStringUTF8 diagnostic.Code = "RUNTIME_OVERFLOW"
+                && Marshal.PtrToStringUTF8(diagnostic.Word) = "add"
+                && Marshal.PtrToStringUTF8(diagnostic.File) = "failure-λ.agent"))
     finally
         NativeLibrary.Free library
 

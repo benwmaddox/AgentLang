@@ -113,7 +113,6 @@ module IrInterpreter =
           Depth: int
           EstimatedOutputBytes: int64 }
 
-    let private maxSteps = 10000
     let private maxCallDepth = 64
     let private maxCollectionLength = 10000
     let private maxRuntimeValueDepth = 256
@@ -733,12 +732,11 @@ module IrInterpreter =
                     addBytes (int64 (typeName.Length + caseName.Length) * 6L)
                 | IntValue _ | BoolValue _ | UnitValue -> ()
 
-        let mutable chargedSteps = 0
+        // No instruction limit: verified programs have acyclic call graphs and
+        // traverse only finite lists, so execution terminates. Hosts may still
+        // count instructions through ChargeInstruction.
         let chargeInstruction currentWord site =
-            chargedSteps <- chargedSteps + 1
             host.ChargeInstruction currentWord site
-            if chargedSteps > maxSteps then
-                fail "RUNTIME_STEP_LIMIT" "Execution exceeded the 10,000 instruction limit." (Some currentWord) (sourceSpan site) [] []
 
         let decodeValue = decodeRuntimeValue program
 

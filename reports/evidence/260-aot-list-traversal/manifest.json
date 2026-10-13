@@ -1,0 +1,194 @@
+{
+  "archiveFile": "260-aot-list-traversal-evidence.zip",
+  "archiveSha256": "46b33fe40570b6ecf271c78fb0400a5d5199d41ceadd7e3437c28ad8de438166",
+  "archiveSizeBytes": 392637,
+  "entryCount": 32,
+  "entries": [
+    {
+      "archivePath": "gates/campfire.log",
+      "sourcePath": ".agentlang/owning-list-ops-260/gates-20261013T130758Z/campfire.log",
+      "sha256": "76b875af4cdb7c00b3600d4b57e6ec1bd090ea193289f2fbba792ff9bd714fdb",
+      "sizeBytes": 11244
+    },
+    {
+      "archivePath": "gates/ir-interpreter.log",
+      "sourcePath": ".agentlang/owning-list-ops-260/gates-20261013T130758Z/ir-interpreter.log",
+      "sha256": "7e39bf8a8dfd4c33c0fa8ccbe70827ea3dc7a60c6d1edf0517993734d3f2b36e",
+      "sizeBytes": 47
+    },
+    {
+      "archivePath": "gates/ir-parity.log",
+      "sourcePath": ".agentlang/owning-list-ops-260/gates-20261013T130758Z/ir-parity.log",
+      "sha256": "49a25d33d011f831c784cd3e964e4dd9f89fbc7ee81eb9bc2448a868b9a21247",
+      "sizeBytes": 103
+    },
+    {
+      "archivePath": "gates/llvm-full-suite.log",
+      "sourcePath": ".agentlang/owning-list-ops-260/gates-20261013T130758Z/llvm-full-suite.log",
+      "sha256": "2ff0925dad02a6b7d230d905f2d00226d1d5f74d41c06db732a1d011b8790000",
+      "sizeBytes": 3664
+    },
+    {
+      "archivePath": "gates/native-conformance.log",
+      "sourcePath": ".agentlang/owning-list-ops-260/gates-20261013T130758Z/native-conformance.log",
+      "sha256": "be00430ee6650c4607a132c574d184780f140e004cbcbd0b2fa8da361f57fa79",
+      "sizeBytes": 3636
+    },
+    {
+      "archivePath": "gates/native-value-stack.log",
+      "sourcePath": ".agentlang/owning-list-ops-260/gates-20261013T130758Z/native-value-stack.log",
+      "sha256": "2c33d351b83e9331047812ca3022dea8ed8501ef841813e4ccfde3f3e64fcf90",
+      "sizeBytes": 177
+    },
+    {
+      "archivePath": "gates/owning-list-ops.log",
+      "sourcePath": ".agentlang/owning-list-ops-260/gates-20261013T130758Z/owning-list-ops.log",
+      "sha256": "0a345a5b554491d2262fad85f771dbabeb94dc254b2b0d79e4a60635ea185730",
+      "sizeBytes": 158
+    },
+    {
+      "archivePath": "gates/owning-lists.log",
+      "sourcePath": ".agentlang/owning-list-ops-260/gates-20261013T130758Z/owning-lists.log",
+      "sha256": "6c6ebdf40dd733db2bd3fb1d731d76b36c5aa3ff7ab8c184fa3a0ddab87888ba",
+      "sizeBytes": 199
+    },
+    {
+      "archivePath": "gates/owning-mailbox.log",
+      "sourcePath": ".agentlang/owning-list-ops-260/gates-20261013T130758Z/owning-mailbox.log",
+      "sha256": "d506154f8511a890108ad7cf191561a9095f45156684ed64bc3d0e5576d64c28",
+      "sizeBytes": 1134
+    },
+    {
+      "archivePath": "gates/room-read-diagnostic-off.log",
+      "sourcePath": ".agentlang/owning-list-ops-260/gates-20261013T130758Z/room-read-diagnostic-off.log",
+      "sha256": "9c9ea77846e5c3d257f43b975f5aed06d9a3d9f04062e39b54f51762b0295543",
+      "sizeBytes": 12806
+    },
+    {
+      "archivePath": "gates/room-read-trusted-off.log",
+      "sourcePath": ".agentlang/owning-list-ops-260/gates-20261013T130758Z/room-read-trusted-off.log",
+      "sha256": "8f3fb7d4268b7aa5f950403857487252ce0f7a3be5d362e22dbe4af372a82a4b",
+      "sizeBytes": 12812
+    },
+    {
+      "archivePath": "gates/summary.json",
+      "sourcePath": ".agentlang/owning-list-ops-260/gates-20261013T130758Z/summary.json",
+      "sha256": "1d68961061200169033b1e8fd631af896b5c541bff07c94a001f77ea0fd3c845",
+      "sizeBytes": 3828
+    },
+    {
+      "archivePath": "list-ops-receipts/20261013T120031117Z-2c4e0a61dfd745f183bb51c8b8445fd1.json",
+      "sourcePath": ".agentlang/owning-list-ops-260/runs/20261013T120031117Z-2c4e0a61dfd745f183bb51c8b8445fd1/receipt.json",
+      "sha256": "f4f4644a8405f7820576635541cb73658093ddb49d7e3e80c01670d7bcb7e704",
+      "sizeBytes": 5427
+    },
+    {
+      "archivePath": "list-ops-receipts/20261013T130217191Z-51d07062cf0d44518dd11c0ab8a18564.json",
+      "sourcePath": ".agentlang/owning-list-ops-260/runs/20261013T130217191Z-51d07062cf0d44518dd11c0ab8a18564/receipt.json",
+      "sha256": "f24c6da80c865634a3a1102859630f03c07e32e58773b5cbb426d7dbc89ca209",
+      "sizeBytes": 5427
+    },
+    {
+      "archivePath": "list-ops-receipts/20261013T132757629Z-83692fa862ec41939722f774fa8d6f42.json",
+      "sourcePath": ".agentlang/owning-list-ops-260/runs/20261013T132757629Z-83692fa862ec41939722f774fa8d6f42/receipt.json",
+      "sha256": "f24c6da80c865634a3a1102859630f03c07e32e58773b5cbb426d7dbc89ca209",
+      "sizeBytes": 5427
+    },
+    {
+      "archivePath": "tools/Run-Gates.ps1",
+      "sourcePath": ".agentlang/owning-list-ops-260/Run-Gates.ps1",
+      "sha256": "894c69d1d5faf4a9f04043aa8d41fef4642f21a6ba2697d414499c7dde332562",
+      "sizeBytes": 2627
+    },
+    {
+      "archivePath": "tools/seal_260.py",
+      "sourcePath": ".agentlang/owning-list-ops-260/seal_260.py",
+      "sha256": "7d6e90442e71505164ce583a8435aa1369ca34aaca257464a2c77cf90fda3809",
+      "sizeBytes": 3635
+    },
+    {
+      "archivePath": "sources/docs/BACKENDS.md",
+      "sourcePath": "docs/BACKENDS.md",
+      "sha256": "e2758016509654bf3f1301cab839e80c8d3239a27a5a76e3fc5d3657ebfc96d9",
+      "sizeBytes": 15724
+    },
+    {
+      "archivePath": "sources/docs/CAMPFIRE-VIEWS-PLAN.md",
+      "sourcePath": "docs/CAMPFIRE-VIEWS-PLAN.md",
+      "sha256": "f727d92596d831556f8b83b87ac93145098e939f73772fcf6cd1c10d057d945f",
+      "sizeBytes": 5412
+    },
+    {
+      "archivePath": "sources/docs/ROADMAP.md",
+      "sourcePath": "docs/ROADMAP.md",
+      "sha256": "a334a290f62d0bc2e31995e9f1a7d27d94ba90f599120f1c36febbddcef2b994",
+      "sizeBytes": 84743
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Core/IrInterpreter.fs",
+      "sourcePath": "src/AgentLang.Core/IrInterpreter.fs",
+      "sha256": "29c8b61ea5af74f9de78aab504641f90af19c850bac4115ddb64fbc49759e40b",
+      "sizeBytes": 108463
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Core/Runtime.fs",
+      "sourcePath": "src/AgentLang.Core/Runtime.fs",
+      "sha256": "854bfd8719d434a7d7d9e5ddc46e2dfbaf4db2b3bf7b2576c96681a36af0ef75",
+      "sizeBytes": 586697
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Llvm/LlvmAot.fs",
+      "sourcePath": "src/AgentLang.Llvm/LlvmAot.fs",
+      "sha256": "4e56dd914c7ea47f23926c9bc17c7f398331daf039bb874eb09dff4f89ae5a5a",
+      "sizeBytes": 132527
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Llvm/OwningStackAot.fs",
+      "sourcePath": "src/AgentLang.Llvm/OwningStackAot.fs",
+      "sha256": "7441459912532d7cf7aa12b251b4117d29a0827cfe38cd69e7953c4b9116a62e",
+      "sizeBytes": 553357
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "sourcePath": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "sha256": "23334a6e10c34acf6fc7089a094fdb3229be94bfee757bdcb424e66cece65d22",
+      "sizeBytes": 139273
+    },
+    {
+      "archivePath": "sources/tests/AgentLang.IR.Interpreter.Tests/Program.fs",
+      "sourcePath": "tests/AgentLang.IR.Interpreter.Tests/Program.fs",
+      "sha256": "421ac27dd891b845ecf5e4940b104e55eb7f551d2e1ae2b875f89cc62a307b45",
+      "sizeBytes": 82429
+    },
+    {
+      "archivePath": "sources/tests/AgentLang.Llvm.Tests/Program.fs",
+      "sourcePath": "tests/AgentLang.Llvm.Tests/Program.fs",
+      "sha256": "e916dfd6474a6d240f0146806385db6bff6c562b25a8b4d000cd65f4a6565bb2",
+      "sizeBytes": 423722
+    },
+    {
+      "archivePath": "sources/tests/AgentLang.OwningListOps.Tests/AgentLang.OwningListOps.Tests.fsproj",
+      "sourcePath": "tests/AgentLang.OwningListOps.Tests/AgentLang.OwningListOps.Tests.fsproj",
+      "sha256": "ff7b9cf9625b2028dc48c015693675df0e3b49fdda12da52c8957b5c045eb2ab",
+      "sizeBytes": 456
+    },
+    {
+      "archivePath": "sources/tests/AgentLang.OwningListOps.Tests/Program.fs",
+      "sourcePath": "tests/AgentLang.OwningListOps.Tests/Program.fs",
+      "sha256": "e06639f3da1e3309eb0df64c8b3cd1ea2161a65e50085efc3a77167f5957fab5",
+      "sizeBytes": 12228
+    },
+    {
+      "archivePath": "sources/tests/AgentLang.OwningListOps.Tests/owning-list-ops.flow",
+      "sourcePath": "tests/AgentLang.OwningListOps.Tests/owning-list-ops.flow",
+      "sha256": "e0881a23a41e08fcb3df2577a7bd4e73694a41d62da5cc8d81fa2bbce7060a48",
+      "sizeBytes": 4659
+    },
+    {
+      "archivePath": "sources/tests/fixtures/native-conformance/scalar-cases.json",
+      "sourcePath": "tests/fixtures/native-conformance/scalar-cases.json",
+      "sha256": "52a1f79f5af161f4544f724dd1602104a051441a84a4a874a0eb61fa0261941f",
+      "sizeBytes": 3500
+    }
+  ]
+}

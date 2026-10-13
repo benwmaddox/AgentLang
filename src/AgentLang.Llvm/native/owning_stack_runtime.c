@@ -3316,14 +3316,16 @@ int32_t al_owning_check_cursor(al_owning_stack_context *ctx,
   return 0;
 }
 
+/* There is no instruction limit: verified programs have acyclic call graphs
+ * and traverse only finite lists, so every execution terminates. Instructions
+ * are still counted (saturating) for interpreter parity and lifecycle
+ * statistics. */
 int32_t al_owning_charge_step(al_owning_stack_context *ctx, uint32_t error_id) {
+  (void)error_id;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
-  ++ctx->steps_consumed;
-  if (ctx->steps_consumed > 10000u) {
-    al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id, 0u, 0u);
-    return 1;
-  }
+  if (ctx->steps_consumed != UINT32_MAX)
+    ++ctx->steps_consumed;
   return 0;
 }
 

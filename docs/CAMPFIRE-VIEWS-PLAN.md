@@ -20,6 +20,22 @@ same placement.
   compiler may later prove last-use appends and extend in place as an
   optimization; that does not change semantics.
 - **Stdlib improvements are in scope** wherever the views need them.
+- **`compact { }` is the only relocation mechanism.** The planned
+  `let result = compact { ... }` (PRD; `STABLE-ARENA-LOWERING.md`) is
+  implemented as the explicit, compiler-proven way to move a block's surviving
+  results to its region mark and rewind its temporaries. List operations never
+  compact implicitly:
+  - `map` builds a contiguous list. When each callback result directly follows
+    the previous one, which a `compact { }` callback body produces, it copies
+    nothing; otherwise each result is copied once.
+  - `fold` returns the last accumulator without copying.
+  - `filter` copies each kept element once.
+
+  Temporaries otherwise remain until an enclosing `compact { }` or request end.
+- **No instruction limit in the AOT runtime.** Verified programs have acyclic
+  call graphs and only finite list traversal, so they terminate. The
+  interpreter's bound becomes an execution option, with unbounded execution for
+  AOT parity runs.
 - **Benchmarks** compare AgentLang AOT with Rails and Rust. The interpreter is a
   parity control only. Cache-enabled comparisons come later.
 
@@ -50,9 +66,12 @@ same placement.
 
 ## Order
 
-1. **AOT list operations.** `ListSingleton`, `ListMap`, `ListFold` and `ListEach`
-   in the owning backend, with interpreter parity at O0/O2. Templates need them
-   to iterate messages and boosts.
+1. **AOT list operations.** `ListSingleton`, `ListMap`, `ListFilter`, `ListFold`
+   and `ListEach` in the owning backend, without implicit relocation, with
+   interpreter parity at O0/O2. Remove the AOT instruction limit. Templates need
+   these to iterate messages and boosts.
+1b. **`compact { }`** end to end: parser, IR, interpreter (identity semantics),
+   arena-lifetime proof and AOT lowering. Measure bytes recovered and bytes moved.
 2. **`string.join` and the `Text`/`Html` surface.** Sized single-copy join of a
    string list, escaping, and literal-only raw markup. Prototype a synthetic
    40 × 9.6 KB page at O2 and record µs per GET, copied bytes and arena peak.
