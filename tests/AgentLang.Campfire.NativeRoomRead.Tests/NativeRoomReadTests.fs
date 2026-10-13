@@ -596,9 +596,9 @@ module NativeRoomReadTests =
                 bytes
             | _ -> failwith $"unsupported input encoding for {itemType}"
         and encodeString text =
-            let data = Encoding.Unicode.GetBytes text
+            let data = Encoding.UTF8.GetBytes text
             let bytes = Array.zeroCreate(align8 (8 + data.Length))
-            writeU32 bytes 0 text.Length
+            writeU32 bytes 0 data.Length
             Array.Copy(data, 0, bytes, 8, data.Length)
             bytes
         encode ty value
@@ -768,8 +768,8 @@ module NativeRoomReadTests =
         let dispatch = Marshal.GetDelegateForFunctionPointer<RoomReadDispatch>(NativeLibrary.GetExport(nativeHandle, "al_host_campfire_room_read_v1"))
         let descriptorSize = 36
         let descriptors = Marshal.AllocHGlobal(descriptorSize * 2)
-        let leftBytes: byte array = Encoding.Unicode.GetBytes("120.0.0")
-        let rightBytes: byte array = Encoding.Unicode.GetBytes("120.0.0")
+        let leftBytes: byte array = Encoding.UTF8.GetBytes("120.0.0")
+        let rightBytes: byte array = Encoding.UTF8.GetBytes("120.0.0")
         let encodeString (data: byte array) (codeUnits: int) =
             let extent = (8 + data.Length + 7) &&& ~~~7
             let bytes = Array.zeroCreate<byte> extent

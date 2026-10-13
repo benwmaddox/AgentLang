@@ -59,7 +59,7 @@ let private prepare (engine: Runtime.Engine) =
 
 let private strings values = ListValue(TString, values |> List.map StringValue)
 let private hash (path: string) = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant()
-let private stringExtent (text: string) = (8 + text.Length * 2 + 7) &&& ~~~7
+let private stringExtent (text: string) = (8 + Text.Encoding.UTF8.GetByteCount text + 7) &&& ~~~7
 
 let private run () =
     let args = Environment.GetCommandLineArgs()

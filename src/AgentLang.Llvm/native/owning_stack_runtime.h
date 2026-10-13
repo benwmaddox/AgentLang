@@ -221,11 +221,16 @@ int32_t al_owning_locate_sum_case(
     al_owning_field_location *out_case_location);
 int32_t al_owning_string_length(al_owning_stack_context *ctx, uint32_t offset,
                                 uint32_t extent_bytes, uint32_t error_id,
-                                uint32_t *out_code_units);
+                                uint32_t *out_string_bytes);
+/* Number of Unicode scalar values (non-continuation UTF-8 bytes). */
+int32_t al_owning_string_char_length(al_owning_stack_context *ctx,
+                                     uint32_t offset, uint32_t extent_bytes,
+                                     uint32_t error_id,
+                                     uint32_t *out_characters);
 int32_t al_owning_string_concat_plan(
     al_owning_stack_context *ctx, uint32_t left_offset,
     uint32_t left_extent_bytes, uint32_t right_offset,
-    uint32_t right_extent_bytes, uint32_t error_id, uint32_t *out_code_units,
+    uint32_t right_extent_bytes, uint32_t error_id, uint32_t *out_string_bytes,
     uint32_t *out_payload_bytes, uint32_t *out_extent_bytes);
 int32_t al_owning_string_concat_write(
     al_owning_stack_context *ctx, uint32_t destination_offset,
@@ -235,7 +240,7 @@ int32_t al_owning_string_concat_write(
 int32_t al_owning_string_join_plan(al_owning_stack_context *ctx,
                                    uint32_t list_offset,
                                    uint32_t list_extent_bytes,
-                                   uint32_t error_id, uint32_t *out_code_units,
+                                   uint32_t error_id, uint32_t *out_string_bytes,
                                    uint32_t *out_payload_bytes,
                                    uint32_t *out_extent_bytes);
 int32_t al_owning_string_join_write(al_owning_stack_context *ctx,
@@ -246,7 +251,7 @@ int32_t al_owning_string_join_write(al_owning_stack_context *ctx,
                                     uint32_t type_id, uint32_t error_id);
 int32_t al_owning_string_html_escape_plan(
     al_owning_stack_context *ctx, uint32_t offset, uint32_t extent_bytes,
-    uint32_t error_id, uint32_t *out_code_units, uint32_t *out_payload_bytes,
+    uint32_t error_id, uint32_t *out_string_bytes, uint32_t *out_payload_bytes,
     uint32_t *out_extent_bytes);
 int32_t al_owning_string_html_escape_write(
     al_owning_stack_context *ctx, uint32_t destination_offset,
@@ -266,7 +271,7 @@ int32_t al_owning_list_combine_header(al_owning_stack_context *ctx,
 int32_t al_owning_string_join_parts_plan(al_owning_stack_context *ctx,
                                          const uint32_t *parts,
                                          uint32_t count, uint32_t error_id,
-                                         uint32_t *out_code_units,
+                                         uint32_t *out_string_bytes,
                                          uint32_t *out_payload_bytes,
                                          uint32_t *out_extent_bytes);
 int32_t al_owning_string_join_parts_write(al_owning_stack_context *ctx,

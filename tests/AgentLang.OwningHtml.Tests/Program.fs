@@ -72,7 +72,7 @@ let private prepare (engine: Runtime.Engine) =
 
 let private strings values = ListValue(TString, values |> List.map StringValue)
 let private hash (path: string) = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant()
-let private stringExtent (text: string) = (8 + text.Length * 2 + 7) &&& ~~~7
+let private stringExtent (text: string) = (8 + Text.Encoding.UTF8.GetByteCount text + 7) &&& ~~~7
 
 let private run () =
     let args = Environment.GetCommandLineArgs()
@@ -198,7 +198,7 @@ fn tag.ok?(value: String) -> Bool {
         check $"TrustedValues.htmlEscape matches Rails for {JsonSerializer.Serialize input}" (TrustedValues.htmlEscape input = expected)
     // Unpaired surrogates and NUL cannot round-trip through the Ruby JSON file;
     // the rule copies every code unit other than the five unchanged.
-    let extraInputs = [ "\uD800 lone high"; "lone low \uDC00"; "nul\u0000<"; String('<', 300) ]
+    let extraInputs = [ "café λ 🚀 𐐷 <b>"; "nul\u0000<"; String('<', 300) ]
     for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
         for index, (input, expected) in List.indexed vectors do
             let values, result = execute optimization "native.html.escape-text" [ TString ] [ TString ] [ StringValue input ]
@@ -213,7 +213,7 @@ fn tag.ok?(value: String) -> Bool {
             [ "empty", []
               "one-empty", [ "" ]
               "two", [ "a"; "b" ]
-              "unicode", [ "café "; "λ"; "🚀"; "\uD800"; "\uDC00"; "" ]
+              "unicode", [ "café "; "λ"; "🚀"; "𐐷"; "" ]
               "many", [ for index in 1 .. 400 -> $"<li>{index}</li>" ] ]
         for label, parts in joinCases do
             let expected = String.Concat(parts)
@@ -225,7 +225,7 @@ fn tag.ok?(value: String) -> Bool {
 
         let searchCases =
             [ "hello world", "world"; "hello world", "hello"; "hello", ""; "", ""; "", "a"; "ab", "abc"
-              "a🚀b", "🚀"; "a🚀b", "\uDE80b"; "<script>", "<script"; "aaab", "aab"; "abc", "abd" ]
+              "a🚀b", "🚀"; "a🚀b", "🚀b"; "é", "e"; "<script>", "<script"; "aaab", "aab"; "abc", "abd" ]
         for haystack, needle in searchCases do
             let expectations =
                 [ "native.html.contains", haystack.Contains(needle, StringComparison.Ordinal)

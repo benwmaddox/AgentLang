@@ -134,8 +134,8 @@ let rec private encodeWire ty value =
     | TInt, IntValue number -> i64 number
     | TUnit, UnitValue -> zeroHeader
     | TString, StringValue text ->
-        let content = Encoding.Unicode.GetBytes(text)
-        align8 (join [ u32 (uint32 text.Length); Array.zeroCreate<byte> 4; content ])
+        let content = Encoding.UTF8.GetBytes(text)
+        align8 (join [ u32 (uint32 content.Length); Array.zeroCreate<byte> 4; content ])
     | TNamed name, NamedValue(actualName, inner) when actualName = name && (name = "MessageId" || name = "RoomId" || name = "UserId") ->
         encodeWire TInt inner
     | TNamed name, RecordValue(actualName, fields) when actualName = name && recordFields.ContainsKey(name) ->
@@ -263,7 +263,7 @@ let private executeIntFormatting (engine: Runtime.Engine) toolchain runRoot opti
         check $"int-format/{optimization}/{index}: interpreter oracle" (interpreted = [ expected ])
         let result = native.Execute([ IntValue value ], 4096, 128)
         check $"int-format/{optimization}/{index}: native matches interpreter and invariant signed-decimal oracle" (result.Values = interpreted && result.Values = [ expected ])
-        check $"int-format/{optimization}/{index}: exact retained output bytes for UTF-16 String" (result.RetainedOutputBytes = (u32 (uint32 expectedText.Length) |> fun header -> Array.concat [ header; Array.zeroCreate<byte> 4; Encoding.Unicode.GetBytes(expectedText); Array.zeroCreate<byte> ((8 - ((8 + Encoding.Unicode.GetByteCount(expectedText)) % 8)) % 8) ]))
+        check $"int-format/{optimization}/{index}: exact retained output bytes for UTF-8 String" (result.RetainedOutputBytes = (u32 (uint32 (Encoding.UTF8.GetByteCount expectedText)) |> fun header -> Array.concat [ header; Array.zeroCreate<byte> 4; Encoding.UTF8.GetBytes(expectedText); Array.zeroCreate<byte> ((8 - ((8 + Encoding.UTF8.GetByteCount(expectedText)) % 8)) % 8) ]))
     values.Length
 
 let private run () =

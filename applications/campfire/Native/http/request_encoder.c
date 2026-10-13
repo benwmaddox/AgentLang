@@ -2,14 +2,30 @@
 #include <stddef.h>
 #define CF_INPUT_MAX_BYTES (1024u * 1024u)
 typedef struct writer { uint8_t *out; uint32_t cursor; } writer;
+/* Host text is UTF-16; the owning String is UTF-8. Returns UINT32_MAX for an
+ * unpaired surrogate, which has no UTF-8 form. */
+static uint32_t utf8_length(cf_text t) {
+ uint32_t i, bytes=0u;
+ for (i=0u; i<t.length; ++i) {
+  uint32_t u=t.data[i];
+  if (u < 0x80u) bytes += 1u;
+  else if (u < 0x800u) bytes += 2u;
+  else if (u >= 0xd800u && u <= 0xdbffu && i+1u < t.length &&
+           t.data[i+1u] >= 0xdc00u && t.data[i+1u] <= 0xdfffu) { bytes += 4u; ++i; }
+  else if (u >= 0xd800u && u <= 0xdfffu) return UINT32_MAX;
+  else bytes += 3u;
+ }
+ return bytes;
+}
 static int valid_text(cf_text t) {
- return t.length <= 16384u && (t.length == 0u || t.data != NULL);
+ return t.length <= 16384u && (t.length == 0u || t.data != NULL) &&
+        (t.length == 0u || utf8_length(t) != UINT32_MAX);
 }
 static int valid_optional(cf_optional_text t) {
  return t.present <= 1u && (t.present ? valid_text(t.value) :
                             (t.value.length == 0u && t.value.data == NULL));
 }
-static uint32_t text_size(cf_text t) { return (8u + t.length * 2u + 7u) & ~7u; }
+static uint32_t text_size(cf_text t) { return (8u + utf8_length(t) + 7u) & ~7u; }
 static uint32_t optional_size(cf_optional_text t) {
  return 8u + (t.present ? text_size(t.value) : 0u);
 }
@@ -19,10 +35,14 @@ static void scalar(writer *w, uint64_t v) {
 }
 static void text(writer *w, cf_text t) {
  uint32_t i, start=w->cursor, extent=text_size(t);
- scalar(w, t.length);
+ scalar(w, utf8_length(t));
  for (i=0u; i<t.length; ++i) {
-  w->out[w->cursor++] = (uint8_t)t.data[i];
-  w->out[w->cursor++] = (uint8_t)(t.data[i] >> 8u);
+  uint32_t s=t.data[i];
+  if (s >= 0xd800u && s <= 0xdbffu) { s = 0x10000u + ((s - 0xd800u) << 10) + ((uint32_t)t.data[i+1u] - 0xdc00u); ++i; }
+  if (s < 0x80u) w->out[w->cursor++] = (uint8_t)s;
+  else if (s < 0x800u) { w->out[w->cursor++] = (uint8_t)(0xc0u | (s >> 6)); w->out[w->cursor++] = (uint8_t)(0x80u | (s & 0x3fu)); }
+  else if (s < 0x10000u) { w->out[w->cursor++] = (uint8_t)(0xe0u | (s >> 12)); w->out[w->cursor++] = (uint8_t)(0x80u | ((s >> 6) & 0x3fu)); w->out[w->cursor++] = (uint8_t)(0x80u | (s & 0x3fu)); }
+  else { w->out[w->cursor++] = (uint8_t)(0xf0u | (s >> 18)); w->out[w->cursor++] = (uint8_t)(0x80u | ((s >> 12) & 0x3fu)); w->out[w->cursor++] = (uint8_t)(0x80u | ((s >> 6) & 0x3fu)); w->out[w->cursor++] = (uint8_t)(0x80u | (s & 0x3fu)); }
  }
  while (w->cursor < start+extent) w->out[w->cursor++] = 0u;
 }

@@ -141,332 +141,990 @@
         "name": "option-none-int",
         "type": "Option<Int>",
         "identityBody": "sums.option-int-identity",
-        "expected": { "type": "Option<Int>", "case": "none" },
+        "expected": {
+          "type": "Option<Int>",
+          "case": "none"
+        },
         "retainedBytesHex": "0100000000000000"
       },
       {
         "name": "option-some-int",
         "type": "Option<Int>",
         "identityBody": "sums.option-int-identity",
-        "expected": { "type": "Option<Int>", "case": "some", "payload": { "type": "Int", "value": 42 } },
+        "expected": {
+          "type": "Option<Int>",
+          "case": "some",
+          "payload": {
+            "type": "Int",
+            "value": 42
+          }
+        },
         "retainedBytesHex": "00000000000000002a00000000000000"
       },
       {
         "name": "option-some-int-other",
         "type": "Option<Int>",
         "identityBody": "sums.option-int-identity",
-        "expected": { "type": "Option<Int>", "case": "some", "payload": { "type": "Int", "value": 43 } },
+        "expected": {
+          "type": "Option<Int>",
+          "case": "some",
+          "payload": {
+            "type": "Int",
+            "value": 43
+          }
+        },
         "retainedBytesHex": "00000000000000002b00000000000000"
       },
       {
         "name": "option-some-bool",
         "type": "Option<Bool>",
         "identityBody": "sums.option-bool-identity",
-        "expected": { "type": "Option<Bool>", "case": "some", "payload": { "type": "Bool", "value": true } },
+        "expected": {
+          "type": "Option<Bool>",
+          "case": "some",
+          "payload": {
+            "type": "Bool",
+            "value": true
+          }
+        },
         "retainedBytesHex": "00000000000000000100000000000000"
       },
       {
         "name": "option-none-bool",
         "type": "Option<Bool>",
         "identityBody": "sums.option-bool-identity",
-        "expected": { "type": "Option<Bool>", "case": "none" },
+        "expected": {
+          "type": "Option<Bool>",
+          "case": "none"
+        },
         "retainedBytesHex": "0100000000000000"
       },
       {
         "name": "option-some-enum",
         "type": "Option<SumSignal>",
         "identityBody": "sums.option-signal-identity",
-        "expected": { "type": "Option<SumSignal>", "case": "some", "payload": { "type": "SumSignal", "case": "ready" } },
+        "expected": {
+          "type": "Option<SumSignal>",
+          "case": "some",
+          "payload": {
+            "type": "SumSignal",
+            "case": "ready"
+          }
+        },
         "retainedBytesHex": "00000000000000000000000000000000"
       },
       {
         "name": "option-none-enum",
         "type": "Option<SumSignal>",
         "identityBody": "sums.option-signal-identity",
-        "expected": { "type": "Option<SumSignal>", "case": "none" },
+        "expected": {
+          "type": "Option<SumSignal>",
+          "case": "none"
+        },
         "retainedBytesHex": "0100000000000000"
       },
       {
         "name": "result-ok-int",
         "type": "Result<Int,String>",
         "identityBody": "sums.result-int-string-identity",
-        "expected": { "type": "Result<Int,String>", "case": "ok", "payload": { "type": "Int", "value": 7 } },
+        "expected": {
+          "type": "Result<Int,String>",
+          "case": "ok",
+          "payload": {
+            "type": "Int",
+            "value": 7
+          }
+        },
         "retainedBytesHex": "00000000000000000700000000000000"
       },
       {
         "name": "result-ok-int-other",
         "type": "Result<Int,String>",
         "identityBody": "sums.result-int-string-identity",
-        "expected": { "type": "Result<Int,String>", "case": "ok", "payload": { "type": "Int", "value": 8 } },
+        "expected": {
+          "type": "Result<Int,String>",
+          "case": "ok",
+          "payload": {
+            "type": "Int",
+            "value": 8
+          }
+        },
         "retainedBytesHex": "00000000000000000800000000000000"
       },
       {
         "name": "result-error-string",
         "type": "Result<Int,String>",
         "identityBody": "sums.result-int-string-identity",
-        "expected": { "type": "Result<Int,String>", "case": "error", "payload": { "type": "String", "codeUnitsHex": "6e006f00" } },
-        "retainedBytesHex": "010000000000000002000000000000006e006f0000000000"
+        "expected": {
+          "type": "Result<Int,String>",
+          "case": "error",
+          "payload": {
+            "type": "String",
+            "codeUnitsHex": "6e006f00"
+          }
+        },
+        "retainedBytesHex": "010000000000000002000000000000006e6f000000000000"
       },
       {
         "name": "result-error-string-other",
         "type": "Result<Int,String>",
         "identityBody": "sums.result-int-string-identity",
-        "expected": { "type": "Result<Int,String>", "case": "error", "payload": { "type": "String", "codeUnitsHex": "6e006f0070006500" } },
-        "retainedBytesHex": "010000000000000004000000000000006e006f0070006500"
+        "expected": {
+          "type": "Result<Int,String>",
+          "case": "error",
+          "payload": {
+            "type": "String",
+            "codeUnitsHex": "6e006f0070006500"
+          }
+        },
+        "retainedBytesHex": "010000000000000004000000000000006e6f706500000000"
       },
       {
         "name": "result-error-int",
         "type": "Result<String,Int>",
         "identityBody": "sums.result-string-int-identity",
-        "expected": { "type": "Result<String,Int>", "case": "error", "payload": { "type": "Int", "value": 11 } },
+        "expected": {
+          "type": "Result<String,Int>",
+          "case": "error",
+          "payload": {
+            "type": "Int",
+            "value": 11
+          }
+        },
         "retainedBytesHex": "01000000000000000b00000000000000"
       },
       {
         "name": "result-ok-unit",
         "type": "Result<Unit,Bool>",
         "identityBody": "sums.result-unit-bool-identity",
-        "expected": { "type": "Result<Unit,Bool>", "case": "ok", "payload": { "type": "Unit" } },
+        "expected": {
+          "type": "Result<Unit,Bool>",
+          "case": "ok",
+          "payload": {
+            "type": "Unit"
+          }
+        },
         "retainedBytesHex": "00000000000000000000000000000000"
       },
       {
         "name": "result-error-bool",
         "type": "Result<Unit,Bool>",
         "identityBody": "sums.result-unit-bool-identity",
-        "expected": { "type": "Result<Unit,Bool>", "case": "error", "payload": { "type": "Bool", "value": true } },
+        "expected": {
+          "type": "Result<Unit,Bool>",
+          "case": "error",
+          "payload": {
+            "type": "Bool",
+            "value": true
+          }
+        },
         "retainedBytesHex": "01000000000000000100000000000000"
       },
       {
         "name": "result-ok-string",
         "type": "Result<String,Int>",
         "identityBody": "sums.result-string-int-identity",
-        "expected": { "type": "Result<String,Int>", "case": "ok", "payload": { "type": "String", "codeUnitsHex": "6f006b00" } },
-        "retainedBytesHex": "000000000000000002000000000000006f006b0000000000"
+        "expected": {
+          "type": "Result<String,Int>",
+          "case": "ok",
+          "payload": {
+            "type": "String",
+            "codeUnitsHex": "6f006b00"
+          }
+        },
+        "retainedBytesHex": "000000000000000002000000000000006f6b000000000000"
       },
       {
         "name": "result-error-empty",
         "type": "Result<Empty,Empty>",
         "identityBody": "sums.result-empty-identity",
-        "expected": { "type": "Result<Empty,Empty>", "case": "error", "payload": { "type": "Empty", "fields": {} } },
+        "expected": {
+          "type": "Result<Empty,Empty>",
+          "case": "error",
+          "payload": {
+            "type": "Empty",
+            "fields": {}
+          }
+        },
         "retainedBytesHex": "01000000000000000000000000000000"
       },
       {
         "name": "result-ok-empty",
         "type": "Result<Empty,Empty>",
         "identityBody": "sums.result-empty-identity",
-        "expected": { "type": "Result<Empty,Empty>", "case": "ok", "payload": { "type": "Empty", "fields": {} } },
+        "expected": {
+          "type": "Result<Empty,Empty>",
+          "case": "ok",
+          "payload": {
+            "type": "Empty",
+            "fields": {}
+          }
+        },
         "retainedBytesHex": "00000000000000000000000000000000"
       },
       {
         "name": "option-some-empty-record",
         "type": "Option<Empty>",
         "identityBody": "sums.option-empty-identity",
-        "expected": { "type": "Option<Empty>", "case": "some", "payload": { "type": "Empty", "fields": {} } },
+        "expected": {
+          "type": "Option<Empty>",
+          "case": "some",
+          "payload": {
+            "type": "Empty",
+            "fields": {}
+          }
+        },
         "retainedBytesHex": "00000000000000000000000000000000"
       },
       {
         "name": "nested-option-result-error-int",
         "type": "Option<Result<String,Int>>",
         "identityBody": "sums.nested-option-result-identity",
-        "expected": { "type": "Option<Result<String,Int>>", "case": "some", "payload": { "type": "Result<String,Int>", "case": "error", "payload": { "type": "Int", "value": 9 } } },
+        "expected": {
+          "type": "Option<Result<String,Int>>",
+          "case": "some",
+          "payload": {
+            "type": "Result<String,Int>",
+            "case": "error",
+            "payload": {
+              "type": "Int",
+              "value": 9
+            }
+          }
+        },
         "retainedBytesHex": "000000000000000001000000000000000900000000000000"
       },
       {
         "name": "nested-option-result-ok-string",
         "type": "Option<Result<String,Int>>",
         "identityBody": "sums.nested-option-result-identity",
-        "expected": { "type": "Option<Result<String,Int>>", "case": "some", "payload": { "type": "Result<String,Int>", "case": "ok", "payload": { "type": "String", "codeUnitsHex": "6f006b00" } } },
-        "retainedBytesHex": "0000000000000000000000000000000002000000000000006f006b0000000000"
+        "expected": {
+          "type": "Option<Result<String,Int>>",
+          "case": "some",
+          "payload": {
+            "type": "Result<String,Int>",
+            "case": "ok",
+            "payload": {
+              "type": "String",
+              "codeUnitsHex": "6f006b00"
+            }
+          }
+        },
+        "retainedBytesHex": "0000000000000000000000000000000002000000000000006f6b000000000000"
       },
       {
         "name": "nested-option-none",
         "type": "Option<Result<String,Int>>",
         "identityBody": "sums.nested-option-result-identity",
-        "expected": { "type": "Option<Result<String,Int>>", "case": "none" },
+        "expected": {
+          "type": "Option<Result<String,Int>>",
+          "case": "none"
+        },
         "retainedBytesHex": "0100000000000000"
       },
       {
         "name": "option-some-embedded-nul",
         "type": "Option<String>",
         "identityBody": "sums.option-string-identity",
-        "expected": { "type": "Option<String>", "case": "some", "payload": { "type": "String", "codeUnitsHex": "410000004200" } },
-        "retainedBytesHex": "000000000000000003000000000000004100000042000000"
+        "expected": {
+          "type": "Option<String>",
+          "case": "some",
+          "payload": {
+            "type": "String",
+            "codeUnitsHex": "410000004200"
+          }
+        },
+        "retainedBytesHex": "000000000000000003000000000000004100420000000000"
       },
       {
         "name": "option-some-embedded-nul-other",
         "type": "Option<String>",
         "identityBody": "sums.option-string-identity",
-        "expected": { "type": "Option<String>", "case": "some", "payload": { "type": "String", "codeUnitsHex": "410000004300" } },
-        "retainedBytesHex": "000000000000000003000000000000004100000043000000"
-      },
-      {
-        "name": "option-some-isolated-high-surrogate",
-        "type": "Option<String>",
-        "identityBody": "sums.option-string-identity",
-        "expected": { "type": "Option<String>", "case": "some", "payload": { "type": "String", "codeUnitsHex": "3ed8" } },
-        "retainedBytesHex": "000000000000000001000000000000003ed8000000000000"
+        "expected": {
+          "type": "Option<String>",
+          "case": "some",
+          "payload": {
+            "type": "String",
+            "codeUnitsHex": "410000004300"
+          }
+        },
+        "retainedBytesHex": "000000000000000003000000000000004100430000000000"
       },
       {
         "name": "option-none-string",
         "type": "Option<String>",
         "identityBody": "sums.option-string-identity",
-        "expected": { "type": "Option<String>", "case": "none" },
+        "expected": {
+          "type": "Option<String>",
+          "case": "none"
+        },
         "retainedBytesHex": "0100000000000000"
       },
       {
         "name": "sum-text-tail",
         "type": "SumTextTail",
         "identityBody": "sums.text-tail-identity",
-        "expected": { "type": "SumTextTail", "fields": { "choice": { "type": "Option<String>", "case": "some", "payload": { "type": "String", "codeUnitsHex": "410000004200" } }, "tail": { "type": "Int", "value": 99 } } },
-        "retainedBytesHex": "0000000000000000030000000000000041000000420000006300000000000000",
-        "fieldOffsetsBytes": { "choice": 0, "tail": 24 },
-        "choiceRetainedBytesHex": "000000000000000003000000000000004100000042000000",
+        "expected": {
+          "type": "SumTextTail",
+          "fields": {
+            "choice": {
+              "type": "Option<String>",
+              "case": "some",
+              "payload": {
+                "type": "String",
+                "codeUnitsHex": "410000004200"
+              }
+            },
+            "tail": {
+              "type": "Int",
+              "value": 99
+            }
+          }
+        },
+        "retainedBytesHex": "0000000000000000030000000000000041004200000000006300000000000000",
+        "fieldOffsetsBytes": {
+          "choice": 0,
+          "tail": 24
+        },
+        "choiceRetainedBytesHex": "000000000000000003000000000000004100420000000000",
         "tailRetainedBytesHex": "6300000000000000"
       }
     ],
     "equalityCases": [
-      { "left": "option-none-int", "right": "option-none-int", "expected": true, "retainedBytesHex": "0100000000000000" },
-      { "left": "option-some-int", "right": "option-some-int", "expected": true, "retainedBytesHex": "0100000000000000" },
-      { "left": "option-some-int", "right": "option-some-int-other", "expected": false, "retainedBytesHex": "0000000000000000" },
-      { "left": "option-none-int", "right": "option-some-int", "expected": false, "retainedBytesHex": "0000000000000000" },
-      { "left": "result-ok-int", "right": "result-ok-int", "expected": true, "retainedBytesHex": "0100000000000000" },
-      { "left": "result-ok-int", "right": "result-ok-int-other", "expected": false, "retainedBytesHex": "0000000000000000" },
-      { "left": "result-error-string", "right": "result-error-string", "expected": true, "retainedBytesHex": "0100000000000000" },
-      { "left": "result-error-string", "right": "result-error-string-other", "expected": false, "retainedBytesHex": "0000000000000000" },
-      { "left": "result-ok-int", "right": "result-error-string", "expected": false, "retainedBytesHex": "0000000000000000" },
-      { "left": "option-some-embedded-nul", "right": "option-some-embedded-nul", "expected": true, "retainedBytesHex": "0100000000000000" },
-      { "left": "option-some-embedded-nul", "right": "option-some-embedded-nul-other", "expected": false, "retainedBytesHex": "0000000000000000" },
-      { "left": "result-ok-string", "right": "result-ok-string", "expected": true, "retainedBytesHex": "0100000000000000" }
+      {
+        "left": "option-none-int",
+        "right": "option-none-int",
+        "expected": true,
+        "retainedBytesHex": "0100000000000000"
+      },
+      {
+        "left": "option-some-int",
+        "right": "option-some-int",
+        "expected": true,
+        "retainedBytesHex": "0100000000000000"
+      },
+      {
+        "left": "option-some-int",
+        "right": "option-some-int-other",
+        "expected": false,
+        "retainedBytesHex": "0000000000000000"
+      },
+      {
+        "left": "option-none-int",
+        "right": "option-some-int",
+        "expected": false,
+        "retainedBytesHex": "0000000000000000"
+      },
+      {
+        "left": "result-ok-int",
+        "right": "result-ok-int",
+        "expected": true,
+        "retainedBytesHex": "0100000000000000"
+      },
+      {
+        "left": "result-ok-int",
+        "right": "result-ok-int-other",
+        "expected": false,
+        "retainedBytesHex": "0000000000000000"
+      },
+      {
+        "left": "result-error-string",
+        "right": "result-error-string",
+        "expected": true,
+        "retainedBytesHex": "0100000000000000"
+      },
+      {
+        "left": "result-error-string",
+        "right": "result-error-string-other",
+        "expected": false,
+        "retainedBytesHex": "0000000000000000"
+      },
+      {
+        "left": "result-ok-int",
+        "right": "result-error-string",
+        "expected": false,
+        "retainedBytesHex": "0000000000000000"
+      },
+      {
+        "left": "option-some-embedded-nul",
+        "right": "option-some-embedded-nul",
+        "expected": true,
+        "retainedBytesHex": "0100000000000000"
+      },
+      {
+        "left": "option-some-embedded-nul",
+        "right": "option-some-embedded-nul-other",
+        "expected": false,
+        "retainedBytesHex": "0000000000000000"
+      },
+      {
+        "left": "result-ok-string",
+        "right": "result-ok-string",
+        "expected": true,
+        "retainedBytesHex": "0100000000000000"
+      }
     ],
     "layouts": {
       "Option<Int>": {
-        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
-        "minimumPayloadBytes": 8, "minimumExtentBytes": 8,
+        "payloadBytes": -1,
+        "extentBytes": -1,
+        "isDynamic": true,
+        "minimumPayloadBytes": 8,
+        "minimumExtentBytes": 8,
         "cases": [
-          { "name": "Some", "tag": 0, "typeName": "Int", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
-          { "name": "None", "tag": 1, "typeName": null, "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 0, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 0 }
+          {
+            "name": "Some",
+            "tag": 0,
+            "typeName": "Int",
+            "offsetBytes": 8,
+            "payloadBytes": 8,
+            "extentBytes": 8,
+            "isDynamic": false,
+            "minimumPayloadBytes": 8,
+            "minimumExtentBytes": 8
+          },
+          {
+            "name": "None",
+            "tag": 1,
+            "typeName": null,
+            "offsetBytes": 8,
+            "payloadBytes": 0,
+            "extentBytes": 0,
+            "isDynamic": false,
+            "minimumPayloadBytes": 0,
+            "minimumExtentBytes": 0
+          }
         ]
       },
       "Option<Bool>": {
-        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
-        "minimumPayloadBytes": 8, "minimumExtentBytes": 8,
+        "payloadBytes": -1,
+        "extentBytes": -1,
+        "isDynamic": true,
+        "minimumPayloadBytes": 8,
+        "minimumExtentBytes": 8,
         "cases": [
-          { "name": "Some", "tag": 0, "typeName": "Bool", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
-          { "name": "None", "tag": 1, "typeName": null, "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 0, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 0 }
+          {
+            "name": "Some",
+            "tag": 0,
+            "typeName": "Bool",
+            "offsetBytes": 8,
+            "payloadBytes": 8,
+            "extentBytes": 8,
+            "isDynamic": false,
+            "minimumPayloadBytes": 8,
+            "minimumExtentBytes": 8
+          },
+          {
+            "name": "None",
+            "tag": 1,
+            "typeName": null,
+            "offsetBytes": 8,
+            "payloadBytes": 0,
+            "extentBytes": 0,
+            "isDynamic": false,
+            "minimumPayloadBytes": 0,
+            "minimumExtentBytes": 0
+          }
         ]
       },
       "Option<SumSignal>": {
-        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
-        "minimumPayloadBytes": 8, "minimumExtentBytes": 8,
+        "payloadBytes": -1,
+        "extentBytes": -1,
+        "isDynamic": true,
+        "minimumPayloadBytes": 8,
+        "minimumExtentBytes": 8,
         "cases": [
-          { "name": "Some", "tag": 0, "typeName": "SumSignal", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
-          { "name": "None", "tag": 1, "typeName": null, "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 0, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 0 }
+          {
+            "name": "Some",
+            "tag": 0,
+            "typeName": "SumSignal",
+            "offsetBytes": 8,
+            "payloadBytes": 8,
+            "extentBytes": 8,
+            "isDynamic": false,
+            "minimumPayloadBytes": 8,
+            "minimumExtentBytes": 8
+          },
+          {
+            "name": "None",
+            "tag": 1,
+            "typeName": null,
+            "offsetBytes": 8,
+            "payloadBytes": 0,
+            "extentBytes": 0,
+            "isDynamic": false,
+            "minimumPayloadBytes": 0,
+            "minimumExtentBytes": 0
+          }
         ]
       },
       "Option<String>": {
-        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
-        "minimumPayloadBytes": 8, "minimumExtentBytes": 8,
+        "payloadBytes": -1,
+        "extentBytes": -1,
+        "isDynamic": true,
+        "minimumPayloadBytes": 8,
+        "minimumExtentBytes": 8,
         "cases": [
-          { "name": "Some", "tag": 0, "typeName": "String", "offsetBytes": 8, "payloadBytes": -1, "extentBytes": -1, "isDynamic": true, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
-          { "name": "None", "tag": 1, "typeName": null, "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 0, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 0 }
+          {
+            "name": "Some",
+            "tag": 0,
+            "typeName": "String",
+            "offsetBytes": 8,
+            "payloadBytes": -1,
+            "extentBytes": -1,
+            "isDynamic": true,
+            "minimumPayloadBytes": 8,
+            "minimumExtentBytes": 8
+          },
+          {
+            "name": "None",
+            "tag": 1,
+            "typeName": null,
+            "offsetBytes": 8,
+            "payloadBytes": 0,
+            "extentBytes": 0,
+            "isDynamic": false,
+            "minimumPayloadBytes": 0,
+            "minimumExtentBytes": 0
+          }
         ]
       },
       "Result<Int, String>": {
-        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
-        "minimumPayloadBytes": 16, "minimumExtentBytes": 16,
+        "payloadBytes": -1,
+        "extentBytes": -1,
+        "isDynamic": true,
+        "minimumPayloadBytes": 16,
+        "minimumExtentBytes": 16,
         "cases": [
-          { "name": "Ok", "tag": 0, "typeName": "Int", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
-          { "name": "Error", "tag": 1, "typeName": "String", "offsetBytes": 8, "payloadBytes": -1, "extentBytes": -1, "isDynamic": true, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 }
+          {
+            "name": "Ok",
+            "tag": 0,
+            "typeName": "Int",
+            "offsetBytes": 8,
+            "payloadBytes": 8,
+            "extentBytes": 8,
+            "isDynamic": false,
+            "minimumPayloadBytes": 8,
+            "minimumExtentBytes": 8
+          },
+          {
+            "name": "Error",
+            "tag": 1,
+            "typeName": "String",
+            "offsetBytes": 8,
+            "payloadBytes": -1,
+            "extentBytes": -1,
+            "isDynamic": true,
+            "minimumPayloadBytes": 8,
+            "minimumExtentBytes": 8
+          }
         ]
       },
       "Result<String, Int>": {
-        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
-        "minimumPayloadBytes": 16, "minimumExtentBytes": 16,
+        "payloadBytes": -1,
+        "extentBytes": -1,
+        "isDynamic": true,
+        "minimumPayloadBytes": 16,
+        "minimumExtentBytes": 16,
         "cases": [
-          { "name": "Ok", "tag": 0, "typeName": "String", "offsetBytes": 8, "payloadBytes": -1, "extentBytes": -1, "isDynamic": true, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
-          { "name": "Error", "tag": 1, "typeName": "Int", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 }
+          {
+            "name": "Ok",
+            "tag": 0,
+            "typeName": "String",
+            "offsetBytes": 8,
+            "payloadBytes": -1,
+            "extentBytes": -1,
+            "isDynamic": true,
+            "minimumPayloadBytes": 8,
+            "minimumExtentBytes": 8
+          },
+          {
+            "name": "Error",
+            "tag": 1,
+            "typeName": "Int",
+            "offsetBytes": 8,
+            "payloadBytes": 8,
+            "extentBytes": 8,
+            "isDynamic": false,
+            "minimumPayloadBytes": 8,
+            "minimumExtentBytes": 8
+          }
         ]
       },
       "Result<Unit, Bool>": {
-        "payloadBytes": 16, "extentBytes": 16, "isDynamic": false,
-        "minimumPayloadBytes": 16, "minimumExtentBytes": 16,
+        "payloadBytes": 16,
+        "extentBytes": 16,
+        "isDynamic": false,
+        "minimumPayloadBytes": 16,
+        "minimumExtentBytes": 16,
         "cases": [
-          { "name": "Ok", "tag": 0, "typeName": "Unit", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
-          { "name": "Error", "tag": 1, "typeName": "Bool", "offsetBytes": 8, "payloadBytes": 8, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 }
+          {
+            "name": "Ok",
+            "tag": 0,
+            "typeName": "Unit",
+            "offsetBytes": 8,
+            "payloadBytes": 8,
+            "extentBytes": 8,
+            "isDynamic": false,
+            "minimumPayloadBytes": 8,
+            "minimumExtentBytes": 8
+          },
+          {
+            "name": "Error",
+            "tag": 1,
+            "typeName": "Bool",
+            "offsetBytes": 8,
+            "payloadBytes": 8,
+            "extentBytes": 8,
+            "isDynamic": false,
+            "minimumPayloadBytes": 8,
+            "minimumExtentBytes": 8
+          }
         ]
       },
       "Option<Result<String, Int>>": {
-        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
-        "minimumPayloadBytes": 8, "minimumExtentBytes": 8,
+        "payloadBytes": -1,
+        "extentBytes": -1,
+        "isDynamic": true,
+        "minimumPayloadBytes": 8,
+        "minimumExtentBytes": 8,
         "cases": [
-          { "name": "Some", "tag": 0, "typeName": "Result<String, Int>", "offsetBytes": 8, "payloadBytes": -1, "extentBytes": -1, "isDynamic": true, "minimumPayloadBytes": 16, "minimumExtentBytes": 16 },
-          { "name": "None", "tag": 1, "typeName": null, "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 0, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 0 }
+          {
+            "name": "Some",
+            "tag": 0,
+            "typeName": "Result<String, Int>",
+            "offsetBytes": 8,
+            "payloadBytes": -1,
+            "extentBytes": -1,
+            "isDynamic": true,
+            "minimumPayloadBytes": 16,
+            "minimumExtentBytes": 16
+          },
+          {
+            "name": "None",
+            "tag": 1,
+            "typeName": null,
+            "offsetBytes": 8,
+            "payloadBytes": 0,
+            "extentBytes": 0,
+            "isDynamic": false,
+            "minimumPayloadBytes": 0,
+            "minimumExtentBytes": 0
+          }
         ]
       },
       "Option<Empty>": {
-        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
-        "minimumPayloadBytes": 8, "minimumExtentBytes": 8,
+        "payloadBytes": -1,
+        "extentBytes": -1,
+        "isDynamic": true,
+        "minimumPayloadBytes": 8,
+        "minimumExtentBytes": 8,
         "cases": [
-          { "name": "Some", "tag": 0, "typeName": "Empty", "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 8 },
-          { "name": "None", "tag": 1, "typeName": null, "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 0, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 0 }
+          {
+            "name": "Some",
+            "tag": 0,
+            "typeName": "Empty",
+            "offsetBytes": 8,
+            "payloadBytes": 0,
+            "extentBytes": 8,
+            "isDynamic": false,
+            "minimumPayloadBytes": 0,
+            "minimumExtentBytes": 8
+          },
+          {
+            "name": "None",
+            "tag": 1,
+            "typeName": null,
+            "offsetBytes": 8,
+            "payloadBytes": 0,
+            "extentBytes": 0,
+            "isDynamic": false,
+            "minimumPayloadBytes": 0,
+            "minimumExtentBytes": 0
+          }
         ]
       },
       "Result<Empty, Empty>": {
-        "payloadBytes": 8, "extentBytes": 16, "isDynamic": false,
-        "minimumPayloadBytes": 8, "minimumExtentBytes": 16,
+        "payloadBytes": 8,
+        "extentBytes": 16,
+        "isDynamic": false,
+        "minimumPayloadBytes": 8,
+        "minimumExtentBytes": 16,
         "cases": [
-          { "name": "Ok", "tag": 0, "typeName": "Empty", "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 8 },
-          { "name": "Error", "tag": 1, "typeName": "Empty", "offsetBytes": 8, "payloadBytes": 0, "extentBytes": 8, "isDynamic": false, "minimumPayloadBytes": 0, "minimumExtentBytes": 8 }
+          {
+            "name": "Ok",
+            "tag": 0,
+            "typeName": "Empty",
+            "offsetBytes": 8,
+            "payloadBytes": 0,
+            "extentBytes": 8,
+            "isDynamic": false,
+            "minimumPayloadBytes": 0,
+            "minimumExtentBytes": 8
+          },
+          {
+            "name": "Error",
+            "tag": 1,
+            "typeName": "Empty",
+            "offsetBytes": 8,
+            "payloadBytes": 0,
+            "extentBytes": 8,
+            "isDynamic": false,
+            "minimumPayloadBytes": 0,
+            "minimumExtentBytes": 8
+          }
         ]
       },
       "SumTextTail": {
-        "payloadBytes": -1, "extentBytes": -1, "isDynamic": true,
-        "minimumPayloadBytes": 16, "minimumExtentBytes": 16,
+        "payloadBytes": -1,
+        "extentBytes": -1,
+        "isDynamic": true,
+        "minimumPayloadBytes": 16,
+        "minimumExtentBytes": 16,
         "fields": [
-          { "name": "choice", "offsetBytes": 0, "payloadBytes": -1, "extentBytes": -1, "isOffsetDynamic": false, "isDynamic": true, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 },
-          { "name": "tail", "offsetBytes": -1, "payloadBytes": 8, "extentBytes": 8, "isOffsetDynamic": true, "isDynamic": false, "minimumPayloadBytes": 8, "minimumExtentBytes": 8 }
+          {
+            "name": "choice",
+            "offsetBytes": 0,
+            "payloadBytes": -1,
+            "extentBytes": -1,
+            "isOffsetDynamic": false,
+            "isDynamic": true,
+            "minimumPayloadBytes": 8,
+            "minimumExtentBytes": 8
+          },
+          {
+            "name": "tail",
+            "offsetBytes": -1,
+            "payloadBytes": 8,
+            "extentBytes": 8,
+            "isOffsetDynamic": true,
+            "isDynamic": false,
+            "minimumPayloadBytes": 8,
+            "minimumExtentBytes": 8
+          }
         ],
         "cases": []
       }
     },
     "matches": {
-      "optionIntSome": { "inputCase": "option-some-int", "expected": { "type": "Int", "value": 42 }, "retainedBytesHex": "2a00000000000000", "expectedDeepCopyBytes": 0 },
-      "optionIntNone": { "inputCase": "option-none-int", "expected": { "type": "Int", "value": -1 }, "retainedBytesHex": "ffffffffffffffff", "expectedDeepCopyBytes": 0 },
-      "resultOk": { "inputCase": "result-ok-int", "expected": { "type": "String", "codeUnitsHex": "6f006b00" }, "retainedBytesHex": "02000000000000006f006b0000000000", "expectedDeepCopyBytes": 16, "expectedLiteralCodeUnitsHex": "6f006b00" },
-      "resultError": { "inputCase": "result-error-string", "expected": { "type": "String", "codeUnitsHex": "6e006f00" }, "retainedBytesHex": "02000000000000006e006f0000000000", "expectedDeepCopyBytes": 0 },
-      "nestedError": { "inputCase": "nested-option-result-error-int", "expected": { "type": "String", "codeUnitsHex": "6500720072006f007200" }, "retainedBytesHex": "05000000000000006500720072006f007200000000000000", "expectedDeepCopyBytes": 24, "expectedLiteralCodeUnitsHex": "6500720072006f007200" },
-      "nestedOk": { "inputCase": "nested-option-result-ok-string", "expected": { "type": "String", "codeUnitsHex": "6f006b00" }, "retainedBytesHex": "02000000000000006f006b0000000000", "expectedDeepCopyBytes": 0 },
-      "nestedNone": { "inputCase": "nested-option-none", "expected": { "type": "String", "codeUnitsHex": "6e006f006e006500" }, "retainedBytesHex": "04000000000000006e006f006e006500", "expectedDeepCopyBytes": 16, "expectedLiteralCodeUnitsHex": "6e006f006e006500" },
-      "resultStringError": { "inputCase": "result-error-int", "expected": { "type": "String", "codeUnitsHex": "6500720072006f007200" }, "retainedBytesHex": "05000000000000006500720072006f007200000000000000", "expectedDeepCopyBytes": 24, "expectedLiteralCodeUnitsHex": "6500720072006f007200" },
-      "resultErrorInt": { "inputCase": "result-error-int", "expected": { "type": "Int", "value": 11 }, "retainedBytesHex": "0b00000000000000", "expectedDeepCopyBytes": 0 },
-      "optionStringNone": { "inputCase": "option-none-string", "expected": { "type": "String", "codeUnitsHex": "" }, "retainedBytesHex": "0000000000000000", "expectedDeepCopyBytes": 8, "expectedLiteralCodeUnitsHex": "" },
-      "nestedErrorInt": { "inputCase": "nested-option-result-error-int", "expected": { "type": "Int", "value": 9 }, "retainedBytesHex": "0900000000000000", "expectedDeepCopyBytes": 0 },
-      "optionStringEmbeddedNul": { "inputCase": "option-some-embedded-nul", "expected": { "type": "String", "codeUnitsHex": "410000004200" }, "retainedBytesHex": "03000000000000004100000042000000", "expectedDeepCopyBytes": 0 }
+      "optionIntSome": {
+        "inputCase": "option-some-int",
+        "expected": {
+          "type": "Int",
+          "value": 42
+        },
+        "retainedBytesHex": "2a00000000000000",
+        "expectedDeepCopyBytes": 0
+      },
+      "optionIntNone": {
+        "inputCase": "option-none-int",
+        "expected": {
+          "type": "Int",
+          "value": -1
+        },
+        "retainedBytesHex": "ffffffffffffffff",
+        "expectedDeepCopyBytes": 0
+      },
+      "resultOk": {
+        "inputCase": "result-ok-int",
+        "expected": {
+          "type": "String",
+          "codeUnitsHex": "6f006b00"
+        },
+        "retainedBytesHex": "02000000000000006f6b000000000000",
+        "expectedDeepCopyBytes": 16,
+        "expectedLiteralCodeUnitsHex": "6f006b00"
+      },
+      "resultError": {
+        "inputCase": "result-error-string",
+        "expected": {
+          "type": "String",
+          "codeUnitsHex": "6e006f00"
+        },
+        "retainedBytesHex": "02000000000000006e6f000000000000",
+        "expectedDeepCopyBytes": 0
+      },
+      "nestedError": {
+        "inputCase": "nested-option-result-error-int",
+        "expected": {
+          "type": "String",
+          "codeUnitsHex": "6500720072006f007200"
+        },
+        "retainedBytesHex": "05000000000000006572726f72000000",
+        "expectedDeepCopyBytes": 16,
+        "expectedLiteralCodeUnitsHex": "6500720072006f007200"
+      },
+      "nestedOk": {
+        "inputCase": "nested-option-result-ok-string",
+        "expected": {
+          "type": "String",
+          "codeUnitsHex": "6f006b00"
+        },
+        "retainedBytesHex": "02000000000000006f6b000000000000",
+        "expectedDeepCopyBytes": 0
+      },
+      "nestedNone": {
+        "inputCase": "nested-option-none",
+        "expected": {
+          "type": "String",
+          "codeUnitsHex": "6e006f006e006500"
+        },
+        "retainedBytesHex": "04000000000000006e6f6e6500000000",
+        "expectedDeepCopyBytes": 16,
+        "expectedLiteralCodeUnitsHex": "6e006f006e006500"
+      },
+      "resultStringError": {
+        "inputCase": "result-error-int",
+        "expected": {
+          "type": "String",
+          "codeUnitsHex": "6500720072006f007200"
+        },
+        "retainedBytesHex": "05000000000000006572726f72000000",
+        "expectedDeepCopyBytes": 16,
+        "expectedLiteralCodeUnitsHex": "6500720072006f007200"
+      },
+      "resultErrorInt": {
+        "inputCase": "result-error-int",
+        "expected": {
+          "type": "Int",
+          "value": 11
+        },
+        "retainedBytesHex": "0b00000000000000",
+        "expectedDeepCopyBytes": 0
+      },
+      "optionStringNone": {
+        "inputCase": "option-none-string",
+        "expected": {
+          "type": "String",
+          "codeUnitsHex": ""
+        },
+        "retainedBytesHex": "0000000000000000",
+        "expectedDeepCopyBytes": 8,
+        "expectedLiteralCodeUnitsHex": ""
+      },
+      "nestedErrorInt": {
+        "inputCase": "nested-option-result-error-int",
+        "expected": {
+          "type": "Int",
+          "value": 9
+        },
+        "retainedBytesHex": "0900000000000000",
+        "expectedDeepCopyBytes": 0
+      },
+      "optionStringEmbeddedNul": {
+        "inputCase": "option-some-embedded-nul",
+        "expected": {
+          "type": "String",
+          "codeUnitsHex": "410000004200"
+        },
+        "retainedBytesHex": "03000000000000004100420000000000",
+        "expectedDeepCopyBytes": 0
+      }
     },
     "branchJoinCases": [
-      { "name": "some-arm", "chooseSome": true, "expected": { "type": "Option<Int>", "case": "some", "payload": { "type": "Int", "value": 42 } }, "retainedBytesHex": "00000000000000002a00000000000000" },
-      { "name": "none-arm", "chooseSome": false, "expected": { "type": "Option<Int>", "case": "none" }, "retainedBytesHex": "0100000000000000" }
+      {
+        "name": "some-arm",
+        "chooseSome": true,
+        "expected": {
+          "type": "Option<Int>",
+          "case": "some",
+          "payload": {
+            "type": "Int",
+            "value": 42
+          }
+        },
+        "retainedBytesHex": "00000000000000002a00000000000000"
+      },
+      {
+        "name": "none-arm",
+        "chooseSome": false,
+        "expected": {
+          "type": "Option<Int>",
+          "case": "none"
+        },
+        "retainedBytesHex": "0100000000000000"
+      }
     ],
     "dupDrop": {
       "inputCase": "option-some-embedded-nul",
-      "retainedBytesHex": "000000000000000003000000000000004100000042000000",
+      "retainedBytesHex": "000000000000000003000000000000004100420000000000",
       "duplicateExtentBytes": 24
     },
     "hostValueRejections": {
-      "mismatchedOptionType": { "expectedRejected": true, "expectedRetainedBytesUnchanged": true }
+      "mismatchedOptionType": {
+        "expectedRejected": true,
+        "expectedRetainedBytesUnchanged": true
+      }
     },
     "rawNativeEntry": {
       "sentinelBytesHex": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5",
       "expectedInvalidRequestStatus": 4,
       "invalidTags": [
-        { "name": "option-tag-two", "body": "optionInt", "inputCount": 1, "inputExtentsBytes": [8], "inputBytesHex": "0200000000000000" },
-        { "name": "result-tag-two", "body": "resultIntString", "inputCount": 1, "inputExtentsBytes": [8], "inputBytesHex": "0200000000000000" }
+        {
+          "name": "option-tag-two",
+          "body": "optionInt",
+          "inputCount": 1,
+          "inputExtentsBytes": [
+            8
+          ],
+          "inputBytesHex": "0200000000000000"
+        },
+        {
+          "name": "result-tag-two",
+          "body": "resultIntString",
+          "inputCount": 1,
+          "inputExtentsBytes": [
+            8
+          ],
+          "inputBytesHex": "0200000000000000"
+        }
       ],
       "malformedInputs": [
-        { "name": "truncated-option-tag", "body": "optionInt", "inputCount": 1, "inputExtentsBytes": [7], "inputBytesHex": "00000000000000" },
-        { "name": "truncated-option-active-int", "body": "optionInt", "inputCount": 1, "inputExtentsBytes": [8], "inputBytesHex": "0000000000000000" },
-        { "name": "truncated-result-active-string", "body": "resultIntString", "inputCount": 1, "inputExtentsBytes": [16], "inputBytesHex": "01000000000000000100000000000000" },
-        { "name": "nonzero-result-string-padding", "body": "resultIntString", "inputCount": 1, "inputExtentsBytes": [24], "inputBytesHex": "010000000000000001000000000000007800000000000001" },
-        { "name": "nested-invalid-result-tag", "body": "nestedOptionResult", "inputCount": 1, "inputExtentsBytes": [16], "inputBytesHex": "00000000000000000200000000000000" }
+        {
+          "name": "truncated-option-tag",
+          "body": "optionInt",
+          "inputCount": 1,
+          "inputExtentsBytes": [
+            7
+          ],
+          "inputBytesHex": "00000000000000"
+        },
+        {
+          "name": "truncated-option-active-int",
+          "body": "optionInt",
+          "inputCount": 1,
+          "inputExtentsBytes": [
+            8
+          ],
+          "inputBytesHex": "0000000000000000"
+        },
+        {
+          "name": "truncated-result-active-string",
+          "body": "resultIntString",
+          "inputCount": 1,
+          "inputExtentsBytes": [
+            16
+          ],
+          "inputBytesHex": "01000000000000000100000000000000"
+        },
+        {
+          "name": "nonzero-result-string-padding",
+          "body": "resultIntString",
+          "inputCount": 1,
+          "inputExtentsBytes": [
+            24
+          ],
+          "inputBytesHex": "010000000000000001000000000000007800000000000001"
+        },
+        {
+          "name": "nested-invalid-result-tag",
+          "body": "nestedOptionResult",
+          "inputCount": 1,
+          "inputExtentsBytes": [
+            16
+          ],
+          "inputBytesHex": "00000000000000000200000000000000"
+        }
       ]
     },
     "descriptorGraphRejections": [
@@ -493,7 +1151,15 @@
       "backend": "LlvmAot shared graph ABI 3",
       "optionResultParity": "unsupported and kept outside this owning-layout ABI 5 conformance suite",
       "fixedOnlyControlRemainsSeparate": true
-    }
+    },
+    "rejectedUnpairedSurrogateCases": [
+      {
+        "name": "option-some-isolated-high-surrogate",
+        "type": "Option<String>",
+        "codeUnitsHex": "3ed8",
+        "reason": "report 265: no UTF-8 form; refused at the boundary (see stringWorkload.rejectedUnpairedSurrogateInputs)"
+      }
+    ]
   },
   "listConformance": {
     "layoutAbiVersion": 5,
@@ -506,7 +1172,11 @@
       "abi4LayoutRejected": true,
       "contextAbiVersionUnchanged": 2,
       "moduleAbiVersionUnchanged": 2,
-      "descriptorStructSizesUnchanged": { "typeDescriptorBytes": 36, "fieldDescriptorBytes": 16, "layoutDescriptorBytes": 40 }
+      "descriptorStructSizesUnchanged": {
+        "typeDescriptorBytes": 36,
+        "fieldDescriptorBytes": 16,
+        "layoutDescriptorBytes": 40
+      }
     },
     "rootHeaderBytes": 8,
     "header": {
@@ -532,12 +1202,22 @@
     },
     "coverage": {
       "entry": "typed Flow host ListValue input through verified native owning-stack execution and return decoding",
-      "recordFields": ["nominal Int", "Option<String>", "List<String>"],
+      "recordFields": [
+        "nominal Int",
+        "Option<String>",
+        "List<String>"
+      ],
       "nestedList": "List<List<String>> with empty and Unicode elements",
       "recordContainers": "List<Record> with List, Option<List>, Result<List, String> fields",
       "unitRoots": "List<Unit>",
-      "listOperations": ["identity", "ListEmpty"],
-      "optimizationLevels": ["O0", "O2"],
+      "listOperations": [
+        "identity",
+        "ListEmpty"
+      ],
+      "optimizationLevels": [
+        "O0",
+        "O2"
+      ],
       "fixtureCaseCount": 6
     },
     "capacityOracle": {
@@ -548,10 +1228,23 @@
     "intToString": {
       "word": "int.to-string",
       "oracle": "Invariant signed Int64 decimal text",
-      "boundaryValues": ["-9223372036854775808", "-1000000000000000000", "-10", "-1", "0", "1", "10", "999999999999999999", "9223372036854775807"],
+      "boundaryValues": [
+        "-9223372036854775808",
+        "-1000000000000000000",
+        "-10",
+        "-1",
+        "0",
+        "1",
+        "10",
+        "999999999999999999",
+        "9223372036854775807"
+      ],
       "randomSeed": 251,
       "randomValueCount": 256,
-      "optimizationLevels": ["O0", "O2"]
+      "optimizationLevels": [
+        "O0",
+        "O2"
+      ]
     },
     "limitations": [
       "No general list map, fold, filter or edit operations are claimed.",
@@ -603,39 +1296,137 @@
   ],
   "stringWorkload": {
     "encoding": {
-      "codeUnit": "UTF-16 code unit serialized little-endian",
+      "unit": "UTF-8 byte",
       "headerBytes": 8,
-      "codeUnitCount": "u32 little-endian",
+      "byteCount": "u32 little-endian",
       "reserved": "u32 little-endian zero",
-      "payloadBytesFormula": "8 + 2*n",
-      "extentBytesFormula": "align8(8 + 2*n)",
+      "payloadBytesFormula": "8 + n",
+      "extentBytesFormula": "align8(8 + n)",
       "padding": "zero through the 8-byte aligned extent",
-      "acceptsAllNonNullCodeUnitSequences": true,
-      "normalizesOrTranscodes": false
+      "rejectsUnpairedSurrogates": true,
+      "normalizesOrTranscodes": false,
+      "fixtureTextNotation": "texts are written as UTF-16 code-unit hex (the .NET view); n is their strict UTF-8 byte count"
     },
     "records": {
-      "TextLeaf": ["text", "codeUnits"],
-      "TextEnvelope": ["leaf", "tag"],
-      "TextState": ["count", "last"],
-      "TextMixed": ["marker", "text", "sentinel"]
+      "TextLeaf": [
+        "text",
+        "codeUnits"
+      ],
+      "TextEnvelope": [
+        "leaf",
+        "tag"
+      ],
+      "TextState": [
+        "count",
+        "last"
+      ],
+      "TextMixed": [
+        "marker",
+        "text",
+        "sentinel"
+      ]
     },
     "dynamicLayoutOracle": {
       "alignmentBytes": 8,
-      "minimumPayloadBytes": {"String": 8, "TextLeaf": 16, "TextEnvelope": 24, "TextState": 32, "TextMixed": 16},
-      "minimumExtentBytes": {"String": 8, "TextLeaf": 16, "TextEnvelope": 24, "TextState": 32, "TextMixed": 16},
-      "payloadFormula": {"String": "8 + 2*n", "TextLeaf": "16 + 2*n", "TextEnvelope": "24 + 2*n", "TextState": "32 + 2*n", "TextMixed": "16 + 2*n"},
-      "extentFormula": {"String": "align8(8 + 2*n)", "TextLeaf": "align8(16 + 2*n)", "TextEnvelope": "align8(24 + 2*n)", "TextState": "align8(32 + 2*n)", "TextMixed": "align8(8 + 2*n) + 8"},
-      "eventTypeIds": {"Int": 1, "Empty": 4, "TextEnvelope": 8, "TextMixed": 10, "String": 12},
+      "minimumPayloadBytes": {
+        "String": 8,
+        "TextLeaf": 16,
+        "TextEnvelope": 24,
+        "TextState": 32,
+        "TextMixed": 16
+      },
+      "minimumExtentBytes": {
+        "String": 8,
+        "TextLeaf": 16,
+        "TextEnvelope": 24,
+        "TextState": 32,
+        "TextMixed": 16
+      },
+      "payloadFormula": {
+        "String": "8 + n",
+        "TextLeaf": "16 + n",
+        "TextEnvelope": "24 + n",
+        "TextState": "32 + n",
+        "TextMixed": "16 + n"
+      },
+      "extentFormula": {
+        "String": "align8(8 + n)",
+        "TextLeaf": "align8(16 + n)",
+        "TextEnvelope": "align8(24 + n)",
+        "TextState": "align8(32 + n)",
+        "TextMixed": "align8(8 + n) + 8"
+      },
+      "eventTypeIds": {
+        "Int": 1,
+        "Empty": 4,
+        "TextEnvelope": 8,
+        "TextMixed": 10,
+        "String": 12
+      },
       "fields": {
-        "TextLeaf.text": {"isDynamic": true, "isOffsetDynamic": false, "minimumOffsetBytes": 0, "minimumPayloadBytes": 8, "minimumExtentBytes": 8},
-        "TextLeaf.codeUnits": {"isDynamic": false, "isOffsetDynamic": true, "minimumOffsetBytes": 8, "payloadBytes": 8, "extentBytes": 8},
-        "TextEnvelope.leaf": {"isDynamic": true, "isOffsetDynamic": false, "minimumOffsetBytes": 0, "minimumPayloadBytes": 16, "minimumExtentBytes": 16},
-        "TextEnvelope.tag": {"isDynamic": false, "isOffsetDynamic": true, "minimumOffsetBytes": 16, "payloadBytes": 8, "extentBytes": 8},
-        "TextState.count": {"isDynamic": false, "isOffsetDynamic": false, "offsetBytes": 0, "payloadBytes": 8, "extentBytes": 8},
-        "TextState.last": {"isDynamic": true, "isOffsetDynamic": false, "offsetBytes": 8, "minimumPayloadBytes": 24, "minimumExtentBytes": 24},
-        "TextMixed.marker": {"isDynamic": false, "isOffsetDynamic": false, "offsetBytes": 0, "payloadBytes": 0, "extentBytes": 0},
-        "TextMixed.text": {"isDynamic": true, "isOffsetDynamic": false, "minimumOffsetBytes": 0, "minimumPayloadBytes": 8, "minimumExtentBytes": 8},
-        "TextMixed.sentinel": {"isDynamic": false, "isOffsetDynamic": true, "minimumOffsetBytes": 8, "payloadBytes": 8, "extentBytes": 8}
+        "TextLeaf.text": {
+          "isDynamic": true,
+          "isOffsetDynamic": false,
+          "minimumOffsetBytes": 0,
+          "minimumPayloadBytes": 8,
+          "minimumExtentBytes": 8
+        },
+        "TextLeaf.codeUnits": {
+          "isDynamic": false,
+          "isOffsetDynamic": true,
+          "minimumOffsetBytes": 8,
+          "payloadBytes": 8,
+          "extentBytes": 8
+        },
+        "TextEnvelope.leaf": {
+          "isDynamic": true,
+          "isOffsetDynamic": false,
+          "minimumOffsetBytes": 0,
+          "minimumPayloadBytes": 16,
+          "minimumExtentBytes": 16
+        },
+        "TextEnvelope.tag": {
+          "isDynamic": false,
+          "isOffsetDynamic": true,
+          "minimumOffsetBytes": 16,
+          "payloadBytes": 8,
+          "extentBytes": 8
+        },
+        "TextState.count": {
+          "isDynamic": false,
+          "isOffsetDynamic": false,
+          "offsetBytes": 0,
+          "payloadBytes": 8,
+          "extentBytes": 8
+        },
+        "TextState.last": {
+          "isDynamic": true,
+          "isOffsetDynamic": false,
+          "offsetBytes": 8,
+          "minimumPayloadBytes": 24,
+          "minimumExtentBytes": 24
+        },
+        "TextMixed.marker": {
+          "isDynamic": false,
+          "isOffsetDynamic": false,
+          "offsetBytes": 0,
+          "payloadBytes": 0,
+          "extentBytes": 0
+        },
+        "TextMixed.text": {
+          "isDynamic": true,
+          "isOffsetDynamic": false,
+          "minimumOffsetBytes": 0,
+          "minimumPayloadBytes": 8,
+          "minimumExtentBytes": 8
+        },
+        "TextMixed.sentinel": {
+          "isDynamic": false,
+          "isOffsetDynamic": true,
+          "minimumOffsetBytes": 8,
+          "payloadBytes": 8,
+          "extentBytes": 8
+        }
       },
       "dynamicRuntimeOffsets": {
         "TextLeaf.codeUnits": "S(n)",
@@ -647,24 +1438,32 @@
     },
     "mixedDynamicRecord": {
       "record": "TextMixed",
-      "fields": ["marker:Empty", "text:String", "sentinel:Int"],
+      "fields": [
+        "marker:Empty",
+        "text:String",
+        "sentinel:Int"
+      ],
       "inputCodeUnitsHex": "410000004200",
       "inputString": "A\u0000B",
       "inputCodeUnitCount": 3,
       "inputStringExtentBytes": 16,
-      "inputStringBytesHex": "03000000000000004100000042000000",
+      "inputStringBytesHex": "03000000000000004100420000000000",
       "sentinel": 1234605616436508552,
       "nestedEmptyPayloadBytes": 0,
       "nestedEmptyExtentBytes": 0,
       "textOffsetBytes": 0,
       "sentinelOffsetBytes": 16,
-      "recordPayloadBytes": 22,
+      "recordPayloadBytes": 19,
       "recordExtentBytes": 24,
-      "recordBytesHex": "030000000000000041000000420000008877665544332211",
-      "projectedTextAndSentinelBytesHex": "030000000000000041000000420000008877665544332211",
+      "recordBytesHex": "030000000000000041004200000000008877665544332211",
+      "projectedTextAndSentinelBytesHex": "030000000000000041004200000000008877665544332211",
       "projectedEmptyTokenBytesHex": "0000000000000000",
-      "projectionOrder": ["String", "Int"],
-      "acceptance": "Construct from runtime Value inputs; project the dynamic String and following Int sentinel; separately project the nested Empty as its standalone eight-byte token."
+      "projectionOrder": [
+        "String",
+        "Int"
+      ],
+      "acceptance": "Construct from runtime Value inputs; project the dynamic String and following Int sentinel; separately project the nested Empty as its standalone eight-byte token.",
+      "inputUtf8ByteCount": 3
     },
     "dynamicBranchCases": [
       {
@@ -681,15 +1480,21 @@
         "chooseLeft": false,
         "selectedMainCase": "long-bmp-astral",
         "expectedSelectedEnvelopeExtentBytes": 40,
-        "expectedLengthOutput": 8,
+        "expectedLengthOutput": 16,
         "expectedRetainedBytes": 48,
-        "expectedRetainedBytesHex": "08000000000000007167ac4e68303ed8eadd610062006300080000000000000046000000000000000800000000000000"
+        "expectedRetainedBytesHex": "1000000000000000e69db1e4baace381a8f09fa7aa616263080000000000000046000000000000001000000000000000"
       }
     ],
     "mainCases": [
       {
         "name": "short-ascii",
-        "input": {"type": "TextState", "count": 10, "text": "A", "codeUnits": 1, "tag": 70},
+        "input": {
+          "type": "TextState",
+          "count": 10,
+          "text": "A",
+          "codeUnits": 1,
+          "tag": 70
+        },
         "inputCodeUnitCount": 1,
         "inputCodeUnitsHex": "4100",
         "inputStringExtentBytes": 16,
@@ -697,35 +1502,63 @@
         "inputStateBytes": 40,
         "inputStateBytesHex": "0a000000000000000100000000000000410000000000000001000000000000004600000000000000",
         "expectedOutputs": [
-          {"type": "TextState", "count": 11, "text": "A!A?", "codeUnits": 1, "tag": 71},
-          {"type": "Int", "value": 4}
+          {
+            "type": "TextState",
+            "count": 11,
+            "text": "A!A?",
+            "codeUnits": 1,
+            "tag": 71
+          },
+          {
+            "type": "Int",
+            "value": 4
+          }
         ],
         "outputCodeUnitCount": 4,
         "outputCodeUnitsHex": "4100210041003f00",
         "outputStringExtentBytes": 16,
         "outputStateBytes": 40,
         "retainedBytes": 48,
-        "retainedBytesHex": "0b0000000000000004000000000000004100210041003f00010000000000000047000000000000000400000000000000"
+        "retainedBytesHex": "0b0000000000000004000000000000004121413f00000000010000000000000047000000000000000400000000000000",
+        "inputUtf8ByteCount": 1,
+        "outputUtf8ByteCount": 4
       },
       {
         "name": "long-bmp-astral",
-        "input": {"type": "TextState", "count": 10, "text": "東京と🧪abc", "codeUnits": 8, "tag": 70},
+        "input": {
+          "type": "TextState",
+          "count": 10,
+          "text": "東京と🧪abc",
+          "codeUnits": 8,
+          "tag": 70
+        },
         "inputCodeUnitCount": 8,
         "inputCodeUnitsHex": "7167ac4e68303ed8eadd610062006300",
         "inputStringExtentBytes": 24,
         "inputTagOffsetWithinEnvelopeBytes": 32,
         "inputStateBytes": 48,
-        "inputStateBytesHex": "0a0000000000000008000000000000007167ac4e68303ed8eadd61006200630008000000000000004600000000000000",
+        "inputStateBytesHex": "0a000000000000001000000000000000e69db1e4baace381a8f09fa7aa61626308000000000000004600000000000000",
         "expectedOutputs": [
-          {"type": "TextState", "count": 11, "text": "東京と🧪abc!東京と🧪abc?", "codeUnits": 8, "tag": 71},
-          {"type": "Int", "value": 18}
+          {
+            "type": "TextState",
+            "count": 11,
+            "text": "東京と🧪abc!東京と🧪abc?",
+            "codeUnits": 16,
+            "tag": 71
+          },
+          {
+            "type": "Int",
+            "value": 34
+          }
         ],
         "outputCodeUnitCount": 18,
         "outputCodeUnitsHex": "7167ac4e68303ed8eadd61006200630021007167ac4e68303ed8eadd6100620063003f00",
         "outputStringExtentBytes": 48,
         "outputStateBytes": 72,
         "retainedBytes": 80,
-        "retainedBytesHex": "0b0000000000000012000000000000007167ac4e68303ed8eadd61006200630021007167ac4e68303ed8eadd6100620063003f0000000000080000000000000047000000000000001200000000000000"
+        "retainedBytesHex": "0b000000000000002200000000000000e69db1e4baace381a8f09fa7aa61626321e69db1e4baace381a8f09fa7aa6162633f000000000000100000000000000047000000000000002200000000000000",
+        "inputUtf8ByteCount": 16,
+        "outputUtf8ByteCount": 34
       }
     ],
     "nestedEdgeCases": [
@@ -742,11 +1575,22 @@
         "outputCodeUnitsHex": "21003f00",
         "outputStringExtentBytes": 16,
         "expectedOutputs": [
-          {"type": "TextState", "count": 11, "text": "!?", "codeUnits": 0, "tag": 71},
-          {"type": "Int", "value": 2}
+          {
+            "type": "TextState",
+            "count": 11,
+            "text": "!?",
+            "codeUnits": 0,
+            "tag": 71
+          },
+          {
+            "type": "Int",
+            "value": 2
+          }
         ],
         "retainedBytes": 48,
-        "retainedBytesHex": "0b00000000000000020000000000000021003f0000000000000000000000000047000000000000000200000000000000"
+        "retainedBytesHex": "0b000000000000000200000000000000213f000000000000000000000000000047000000000000000200000000000000",
+        "inputUtf8ByteCount": 0,
+        "outputUtf8ByteCount": 2
       },
       {
         "name": "embedded-nul",
@@ -754,18 +1598,29 @@
         "inputStringExtentBytes": 16,
         "inputTagOffsetWithinEnvelopeBytes": 24,
         "inputCodeUnitsHex": "410000004200",
-        "inputStringBytesHex": "03000000000000004100000042000000",
+        "inputStringBytesHex": "03000000000000004100420000000000",
         "inputStateBytes": 40,
-        "inputStateBytesHex": "0a000000000000000300000000000000410000004200000003000000000000004600000000000000",
+        "inputStateBytesHex": "0a000000000000000300000000000000410042000000000003000000000000004600000000000000",
         "outputCodeUnitCount": 8,
         "outputCodeUnitsHex": "41000000420021004100000042003f00",
-        "outputStringExtentBytes": 24,
+        "outputStringExtentBytes": 16,
         "expectedOutputs": [
-          {"type": "TextState", "count": 11, "text": "A\u0000B!A\u0000B?", "codeUnits": 3, "tag": 71},
-          {"type": "Int", "value": 8}
+          {
+            "type": "TextState",
+            "count": 11,
+            "text": "A\u0000B!A\u0000B?",
+            "codeUnits": 3,
+            "tag": 71
+          },
+          {
+            "type": "Int",
+            "value": 8
+          }
         ],
-        "retainedBytes": 56,
-        "retainedBytesHex": "0b00000000000000080000000000000041000000420021004100000042003f00030000000000000047000000000000000800000000000000"
+        "retainedBytes": 48,
+        "retainedBytesHex": "0b000000000000000800000000000000410042214100423f030000000000000047000000000000000800000000000000",
+        "inputUtf8ByteCount": 3,
+        "outputUtf8ByteCount": 8
       },
       {
         "name": "astral-scalar",
@@ -773,82 +1628,75 @@
         "inputStringExtentBytes": 16,
         "inputTagOffsetWithinEnvelopeBytes": 24,
         "inputCodeUnitsHex": "3ed8eadd",
-        "inputStringBytesHex": "02000000000000003ed8eadd00000000",
+        "inputStringBytesHex": "0400000000000000f09fa7aa00000000",
         "inputStateBytes": 40,
-        "inputStateBytesHex": "0a0000000000000002000000000000003ed8eadd0000000002000000000000004600000000000000",
+        "inputStateBytesHex": "0a000000000000000400000000000000f09fa7aa0000000002000000000000004600000000000000",
         "outputCodeUnitCount": 6,
         "outputCodeUnitsHex": "3ed8eadd21003ed8eadd3f00",
         "outputStringExtentBytes": 24,
         "expectedOutputs": [
-          {"type": "TextState", "count": 11, "text": "🧪!🧪?", "codeUnits": 2, "tag": 71},
-          {"type": "Int", "value": 6}
+          {
+            "type": "TextState",
+            "count": 11,
+            "text": "🧪!🧪?",
+            "codeUnits": 4,
+            "tag": 71
+          },
+          {
+            "type": "Int",
+            "value": 10
+          }
         ],
         "retainedBytes": 56,
-        "retainedBytesHex": "0b0000000000000006000000000000003ed8eadd21003ed8eadd3f0000000000020000000000000047000000000000000600000000000000"
-      },
-      {
-        "name": "isolated-high-surrogate",
-        "inputCodeUnitCount": 1,
-        "inputStringExtentBytes": 16,
-        "inputTagOffsetWithinEnvelopeBytes": 24,
-        "inputCodeUnitsHex": "3ed8",
-        "inputStringBytesHex": "01000000000000003ed8000000000000",
-        "inputStateBytes": 40,
-        "inputStateBytesHex": "0a0000000000000001000000000000003ed800000000000001000000000000004600000000000000",
-        "outputCodeUnitCount": 4,
-        "outputCodeUnitsHex": "3ed821003ed83f00",
-        "outputStringExtentBytes": 16,
-        "expectedOutputCodeUnitsHex": "3ed821003ed83f00",
-        "expectedOutputs": [
-          {"type": "TextState", "count": 11, "codeUnits": 1, "tag": 71},
-          {"type": "Int", "value": 4}
-        ],
-        "retainedBytes": 48,
-        "retainedBytesHex": "0b0000000000000004000000000000003ed821003ed83f00010000000000000047000000000000000400000000000000"
-      },
-      {
-        "name": "isolated-low-surrogate",
-        "inputCodeUnitCount": 1,
-        "inputStringExtentBytes": 16,
-        "inputTagOffsetWithinEnvelopeBytes": 24,
-        "inputCodeUnitsHex": "eadd",
-        "inputStringBytesHex": "0100000000000000eadd000000000000",
-        "inputStateBytes": 40,
-        "inputStateBytesHex": "0a000000000000000100000000000000eadd00000000000001000000000000004600000000000000",
-        "outputCodeUnitCount": 4,
-        "outputCodeUnitsHex": "eadd2100eadd3f00",
-        "outputStringExtentBytes": 16,
-        "expectedOutputCodeUnitsHex": "eadd2100eadd3f00",
-        "expectedOutputs": [
-          {"type": "TextState", "count": 11, "codeUnits": 1, "tag": 71},
-          {"type": "Int", "value": 4}
-        ],
-        "retainedBytes": 48,
-        "retainedBytesHex": "0b000000000000000400000000000000eadd2100eadd3f00010000000000000047000000000000000400000000000000"
+        "retainedBytesHex": "0b000000000000000a00000000000000f09fa7aa21f09fa7aa3f000000000000040000000000000047000000000000000a00000000000000",
+        "inputUtf8ByteCount": 4,
+        "outputUtf8ByteCount": 10
       }
     ],
     "joinedSurrogatePair": {
-      "body": "mailbox.join-strings(String, String) -> String; both inputs use Value.StringValue, not source literals",
-      "leftCodeUnitHex": "3ed8",
-      "rightCodeUnitHex": "eadd",
+      "body": "mailbox.join-strings(String, String) -> String; both inputs use Value.StringValue, not source literals Report 265: the inputs were the lone halves 3ed8/eadd (now rejected, see rejectedUnpairedSurrogateInputs); they are two 2-byte UTF-8 scalars so every extent and concat span is unchanged.",
+      "leftCodeUnitHex": "e900",
+      "rightCodeUnitHex": "fc00",
       "expectedCodeUnitCount": 2,
-      "expectedCodeUnitsHex": "3ed8eadd",
-      "expectedStringBytesHex": "02000000000000003ed8eadd00000000",
+      "expectedCodeUnitsHex": "e900fc00",
+      "expectedStringBytesHex": "0400000000000000c3a9c3bc00000000",
       "expectedExtentBytes": 16
     },
     "directValueStringRoundTrips": [
-      {"name": "empty", "inputCodeUnitCount": 0, "inputCodeUnitsHex": "", "stringBytesHex": "0000000000000000", "extentBytes": 8},
-      {"name": "embedded-nul", "inputCodeUnitCount": 3, "inputCodeUnitsHex": "410000004200", "stringBytesHex": "03000000000000004100000042000000", "extentBytes": 16},
-      {"name": "astral", "inputCodeUnitCount": 2, "inputCodeUnitsHex": "3ed8eadd", "stringBytesHex": "02000000000000003ed8eadd00000000", "extentBytes": 16},
-      {"name": "isolated-high-surrogate", "inputCodeUnitCount": 1, "inputCodeUnitsHex": "3ed8", "stringBytesHex": "01000000000000003ed8000000000000", "extentBytes": 16},
-      {"name": "isolated-low-surrogate", "inputCodeUnitCount": 1, "inputCodeUnitsHex": "eadd", "stringBytesHex": "0100000000000000eadd000000000000", "extentBytes": 16}
+      {
+        "name": "empty",
+        "inputCodeUnitCount": 0,
+        "inputCodeUnitsHex": "",
+        "stringBytesHex": "0000000000000000",
+        "extentBytes": 8,
+        "inputUtf8ByteCount": 0
+      },
+      {
+        "name": "embedded-nul",
+        "inputCodeUnitCount": 3,
+        "inputCodeUnitsHex": "410000004200",
+        "stringBytesHex": "03000000000000004100420000000000",
+        "extentBytes": 16,
+        "inputUtf8ByteCount": 3
+      },
+      {
+        "name": "astral",
+        "inputCodeUnitCount": 2,
+        "inputCodeUnitsHex": "3ed8eadd",
+        "stringBytesHex": "0400000000000000f09fa7aa00000000",
+        "extentBytes": 16,
+        "inputUtf8ByteCount": 4
+      }
     ],
     "dynamicCopyAndFrameCases": {
       "directDupDropBody": "TextEnvelope input; dup; drop; retain survivor",
       "scopeSameLocalSlotBody": "two TextEnvelope inputs; store one in local shadow; enter Scope, replace same logical LocalSlot with the other; leave Scope and return outer value",
-      "runWidths": ["short outer / long inner", "long outer / short inner"],
+      "runWidths": [
+        "short outer / long inner",
+        "long outer / short inner"
+      ],
       "zeroOutputBody": "TextEnvelope input; user helper drops it and returns zero values",
-      "multiOutputBody": "TextState -> (TextState, Int); the long nested record output grows from 48 input bytes to 72 bytes while the second Int remains 18",
+      "multiOutputBody": "TextState -> (TextState, Int); the long nested record output grows from 48 input bytes to 72 bytes while the second Int remains 34",
       "failureAfterAllocation": "mailbox.fail-after-text-allocation; expected RUNTIME_DIVIDE_BY_ZERO after concat allocation",
       "copyRangesMustBeDisjoint": true,
       "dropMustPreserveSurvivor": true,
@@ -870,16 +1718,32 @@
     },
     "capacityCases": {
       "retainedOutput": [
-        {"case": "short-ascii", "requiredBytes": 48, "availableBytes": 47, "oldCallerBufferUnchanged": true},
-        {"case": "long-bmp-astral", "requiredBytes": 80, "availableBytes": 79, "oldCallerBufferUnchanged": true}
+        {
+          "case": "short-ascii",
+          "requiredBytes": 48,
+          "availableBytes": 47,
+          "oldCallerBufferUnchanged": true
+        },
+        {
+          "case": "long-bmp-astral",
+          "requiredBytes": 80,
+          "availableBytes": 79,
+          "oldCallerBufferUnchanged": true
+        }
       ],
       "programStack": {
         "independentDynamicConcat": {
           "body": "Compiler-minted direct string.concat(String, String) -> String VerifiedIrBody, exercised by the interpreter and owning backend with two runtime Value inputs",
-          "inputCodeUnitsHex": ["3ed8", "eadd"],
-          "inputStringExtentsBytes": [16, 16],
+          "inputCodeUnitsHex": [
+            "e900",
+            "fc00"
+          ],
+          "inputStringExtentsBytes": [
+            16,
+            16
+          ],
           "inputStackBytes": 32,
-          "concatOutputCodeUnitsHex": "3ed8eadd",
+          "concatOutputCodeUnitsHex": "e900fc00",
           "concatOutputExtentBytes": 16,
           "deepCopyBytes": 16,
           "requiredStackCapacityBytes": 48,
@@ -895,10 +1759,21 @@
     },
     "backendScope": "interpreter and owning O0/O2 use the same String VerifiedIrProgram/body; ABI3 runs the separate fixed-only program",
     "limits": [
-      "UTF-16 code-unit preservation is required; no UTF-8 validity constraint.",
+      "UTF-8 byte preservation is required (report 265); unpaired surrogates are rejected at the boundary because they have no UTF-8 form.",
       "String conformance does not claim ABI3 String parity, memory reduction, cache locality, or throughput improvement.",
       "List, async, and effectful String operations remain outside this slice."
-    ]
+    ],
+    "rejectedUnpairedSurrogateInputs": [
+      {
+        "name": "isolated-high-surrogate",
+        "inputCodeUnitsHex": "3ed8"
+      },
+      {
+        "name": "isolated-low-surrogate",
+        "inputCodeUnitsHex": "eadd"
+      }
+    ],
+    "report265Utf8Transition": "Owning Strings are UTF-8 since report 265. Every String oracle in this workload was re-derived by an independent script from the unchanged logical texts (byte counts, extents, offsets, serialized bytes, and the string.length Int outputs, which are now UTF-8 byte counts). The isolated-surrogate edge cases and round trips became boundary-rejection inputs; the joined pair and the dynamic-concat capacity probe use two 2-byte scalars, keeping every extent."
   },
   "branches": [
     {
@@ -1055,28 +1930,44 @@
   },
   "stableArenaCases": {
     "fixedSixLocalNestedDeadOnly": {
-      "input": [11, 22, 33, 44, 55, 66],
+      "input": [
+        11,
+        22,
+        33,
+        44,
+        55,
+        66
+      ],
       "localCount": 6,
       "nestedScopeCount": 2,
       "functionExitRewindCount": 1,
       "rewindEventCount": 3,
-    "inputCopyBytes": 48,
-    "innerRewindExtentBytes": 16,
-    "outerRewindExtentBytes": 16,
-    "functionExitRewindExtentBytes": 0,
-    "postRewindAllocationOffsetBytes": 48,
-    "postRewindAllocationExtentBytes": 8,
-    "postRewindConstructionOffsetBytes": 56,
-    "postRewindConstructionExtentBytes": 8,
-    "expectedPeakCursorBytes": 64,
-    "deepCopyBytes": 16,
+      "inputCopyBytes": 48,
+      "innerRewindExtentBytes": 16,
+      "outerRewindExtentBytes": 16,
+      "functionExitRewindExtentBytes": 0,
+      "postRewindAllocationOffsetBytes": 48,
+      "postRewindAllocationExtentBytes": 8,
+      "postRewindConstructionOffsetBytes": 56,
+      "postRewindConstructionExtentBytes": 8,
+      "expectedPeakCursorBytes": 64,
+      "deepCopyBytes": 16,
       "moveBytes": 0,
       "outputCount": 0
     },
     "fixedEscapingScopeResult": {
-      "input": {"value": 17, "tag": 1017},
+      "input": {
+        "value": 17,
+        "tag": 1017
+      },
       "temporaryLeafValue": 99,
-      "expected": {"type": "Envelope", "leaf": {"value": 17}, "tag": 1017},
+      "expected": {
+        "type": "Envelope",
+        "leaf": {
+          "value": 17
+        },
+        "tag": 1017
+      },
       "retainedBytesHex": "1100000000000000f903000000000000",
       "inputCopyBytes": 16,
       "deepCopyBytes": 32,
@@ -1094,30 +1985,44 @@
       "moveBytes": 0
     },
     "stringSixLocalNestedDeadOnly": {
-      "inputs": ["a", "b", "c", "d", "e", "f"],
+      "inputs": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ],
       "localCount": 6,
       "nestedScopeCount": 2,
       "functionExitRewindCount": 1,
       "rewindEventCount": 3,
-    "inputCopyBytes": 96,
-    "concatResultExtentBytes": 16,
-    "innerRewindExtentBytes": 16,
-    "outerRewindExtentBytes": 16,
-    "functionExitRewindExtentBytes": 0,
-    "postRewindAllocationOffsetBytes": 96,
-    "postRewindAllocationExtentBytes": 16,
-    "postRewindAllocationPayloadBytes": 10,
-    "expectedPeakCursorBytes": 112,
-    "deepCopyBytes": 32,
+      "inputCopyBytes": 96,
+      "concatResultExtentBytes": 16,
+      "innerRewindExtentBytes": 16,
+      "outerRewindExtentBytes": 16,
+      "functionExitRewindExtentBytes": 0,
+      "postRewindAllocationOffsetBytes": 96,
+      "postRewindAllocationExtentBytes": 16,
+      "postRewindAllocationPayloadBytes": 9,
+      "expectedPeakCursorBytes": 112,
+      "deepCopyBytes": 32,
       "moveBytes": 0,
       "outputCount": 0
     },
     "stringEscapingScopeResult": {
       "temporaryLiteral": "dead",
-      "concatLiterals": ["a", "b"],
+      "concatLiterals": [
+        "a",
+        "b"
+      ],
       "expected": "ab",
-      "retainedBytesHex": "02000000000000006100620000000000",
-      "literalExtentsBytes": [16, 16, 16],
+      "retainedBytesHex": "02000000000000006162000000000000",
+      "literalExtentsBytes": [
+        16,
+        16,
+        16
+      ],
       "resultExtentBytes": 16,
       "minimumPeakCursorBytes": 64,
       "deepCopyBytes": 64,
@@ -1126,13 +2031,13 @@
     },
     "stringBindingRoundTrip": {
       "value": "stable",
-      "retainedBytesHex": "060000000000000073007400610062006c00650000000000",
-      "literalExtentBytes": 24,
-      "literalPayloadBytes": 20,
+      "retainedBytesHex": "0600000000000000737461626c650000",
+      "literalExtentBytes": 16,
+      "literalPayloadBytes": 14,
       "descriptorTransferCount": 3,
       "descriptorTransferBytes": 60,
       "moveBytes": 0,
-      "deepCopyBytes": 24,
+      "deepCopyBytes": 16,
       "scopeRewinds": 0
     },
     "stringUncertainCallScope": {
@@ -1215,7 +2120,8 @@
     },
     "payload": {
       "allCasesPeakOperandBytes": 128,
-      "allCasesPeakLocalBytes": 42,
+      "allCasesPeakLocalBytes": 41,
+      "report265Utf8Transition": "Post-execution correction (report 265): owning_stack_runtime_test.c reported 41 after its String builders moved to UTF-8; it was 42 under UTF-16. The value was taken from the native run, not derived independently; the reserved (8-byte aligned) peaks are unchanged.",
       "fixedPeakOperandBytes": 48,
       "fixedPeakLocalBytes": 16
     },
@@ -1352,12 +2258,12 @@
     "ownerEnvelope": {
       "ownerValue": -42,
       "tail": "tail",
-      "retainedBytesHex": "d6ffffffffffffff04000000000000007400610069006c00",
+      "retainedBytesHex": "d6ffffffffffffff04000000000000007461696c00000000",
       "projectedOwnerBytesHex": "d6ffffffffffffff",
       "constructionDeepCopyBytes": 40
     },
     "ownerRangeTrace": {
-      "literalDeepCopyBytes": 80,
+      "literalDeepCopyBytes": 56,
       "expectedDescriptorTransfer": {
         "typeId": 1,
         "offsetBytes": 0,
@@ -1405,8 +2311,12 @@
             "code": "REFINEMENT_FAILED",
             "message": "Value does not satisfy PositiveId's refinement validator.",
             "word": "PositiveId.construct",
-            "expected": ["validator returns true"],
-            "actual": ["false"],
+            "expected": [
+              "validator returns true"
+            ],
+            "actual": [
+              "false"
+            ],
             "span": {
               "file": "<native-value-stack-scalar-PositiveId>",
               "line": 1,
@@ -1422,8 +2332,12 @@
             "code": "REFINEMENT_FAILED",
             "message": "Value does not satisfy PositiveId's refinement validator.",
             "word": "PositiveId.construct",
-            "expected": ["validator returns true"],
-            "actual": ["false"],
+            "expected": [
+              "validator returns true"
+            ],
+            "actual": [
+              "false"
+            ],
             "span": {
               "file": "<native-value-stack-scalar-PositiveId>",
               "line": 1,
@@ -1441,12 +2355,21 @@
       "exceptionType": "System.ArgumentException",
       "parameterName": "values",
       "cases": [
-        { "name": "bare-int", "kind": "int", "value": 1 },
-        { "name": "wrong-nominal", "kind": "named-int", "typeName": "OrderId", "value": 1 }
+        {
+          "name": "bare-int",
+          "kind": "int",
+          "value": 1
+        },
+        {
+          "name": "wrong-nominal",
+          "kind": "named-int",
+          "typeName": "OrderId",
+          "value": 1
+        }
       ]
     },
     "nestedHostInputs": {
-      "envelopeBytesHex": "010000000000000002000000000000006f006b0000000000",
+      "envelopeBytesHex": "010000000000000002000000000000006f6b000000000000",
       "optionSomeBytesHex": "00000000000000000100000000000000",
       "optionNoneBytesHex": "0100000000000000",
       "resultOkBytesHex": "00000000000000000100000000000000",
@@ -1457,8 +2380,12 @@
       "code": "REFINEMENT_FAILED",
       "message": "Value does not satisfy PositiveId's refinement validator.",
       "word": "PositiveId.construct",
-      "expected": ["validator returns true"],
-      "actual": ["false"],
+      "expected": [
+        "validator returns true"
+      ],
+      "actual": [
+        "false"
+      ],
       "span": {
         "file": "<native-value-stack-scalar-PositiveId>",
         "line": 1,
@@ -1494,9 +2421,12 @@
     "sentinelByteHex": "a5"
   },
   "nonEmptyStringConformance": {
-    "encoding": "String payload is an eight-byte UTF-16 code-unit count and zero reserved word, followed by UTF-16LE data and zero padding to an eight-byte extent.",
+    "encoding": "String payload is an eight-byte UTF-8 byte count and zero reserved word, followed by UTF-8 data and zero padding to an eight-byte extent (UTF-16 before report 265).",
     "identityProgram": {
-      "typeIds": { "NonEmptyString": 4, "String": 5 },
+      "typeIds": {
+        "NonEmptyString": 4,
+        "String": 5
+      },
       "stringKind": 5,
       "minimumPayloadBytes": 8,
       "minimumExtentBytes": 8
@@ -1504,8 +2434,8 @@
     "constructor": {
       "success": {
         "value": "ok",
-        "stringBytesHex": "02000000000000006f006b0000000000",
-        "payloadBytes": 12,
+        "stringBytesHex": "02000000000000006f6b000000000000",
+        "payloadBytes": 10,
         "extentBytes": 16
       },
       "empty": {
@@ -1515,8 +2445,12 @@
           "code": "REFINEMENT_FAILED",
           "message": "Value does not satisfy NonEmptyString's refinement validator.",
           "word": "NonEmptyString.construct",
-          "expected": ["validator returns true"],
-          "actual": ["false"],
+          "expected": [
+            "validator returns true"
+          ],
+          "actual": [
+            "false"
+          ],
           "span": {
             "file": "<native-value-stack-scalar-NonEmptyString>",
             "line": 1,
@@ -1530,8 +2464,12 @@
       "code": "REFINEMENT_FAILED",
       "message": "Value does not satisfy NonEmptyString's refinement validator.",
       "word": "NonEmptyString.construct",
-      "expected": ["validator returns true"],
-      "actual": ["false"],
+      "expected": [
+        "validator returns true"
+      ],
+      "actual": [
+        "false"
+      ],
       "span": {
         "file": "<native-value-stack-scalar-NonEmptyString>",
         "line": 1,
@@ -1541,18 +2479,18 @@
     },
     "hostInputs": {
       "validValue": "ok",
-      "validStringBytesHex": "02000000000000006f006b0000000000",
+      "validStringBytesHex": "02000000000000006f6b000000000000",
       "wrongNominalTypeName": "OtherString",
       "utf16Cases": {
         "supplementary": {
-          "value": "A\ud83d\ude00",
+          "value": "A😀",
           "codeUnitCount": 3,
-          "stringBytesHex": "030000000000000041003dd800de0000"
+          "stringBytesHex": "050000000000000041f09f9880000000"
         },
         "embeddedNul": {
           "value": "A\u0000B",
           "codeUnitCount": 3,
-          "stringBytesHex": "03000000000000004100000042000000"
+          "stringBytesHex": "03000000000000004100420000000000"
         }
       }
     },
@@ -1564,18 +2502,22 @@
       "inputCount": 1,
       "invalidEmptyBytesHex": "0000000000000000",
       "invalidEmptyExtentBytes": 8,
-      "validBytesHex": "02000000000000006f006b0000000000",
+      "validBytesHex": "02000000000000006f6b000000000000",
       "validExtentBytes": 16,
       "expectedDiagnosticStatus": 1,
       "sentinelBytesHex": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
     },
     "nestedProgram": {
-      "typeIds": { "NonEmptyString": 4, "RefinedEnvelope": 5, "String": 6 },
+      "typeIds": {
+        "NonEmptyString": 4,
+        "RefinedEnvelope": 5,
+        "String": 6
+      },
       "record": {
         "ownerValue": "ok",
         "tailValue": "z",
-        "bytesHex": "02000000000000006f006b000000000001000000000000007a00000000000000",
-        "payloadBytes": 22,
+        "bytesHex": "02000000000000006f6b00000000000001000000000000007a00000000000000",
+        "payloadBytes": 19,
         "extentBytes": 32
       },
       "envelopeLayout": {
@@ -1583,12 +2525,12 @@
         "minimumExtentBytes": 16
       },
       "option": {
-        "someBytesHex": "000000000000000002000000000000006f006b0000000000",
+        "someBytesHex": "000000000000000002000000000000006f6b000000000000",
         "noneBytesHex": "0100000000000000"
       },
       "result": {
-        "okBytesHex": "000000000000000002000000000000006f006b0000000000",
-        "errorBytesHex": "010000000000000002000000000000006f006b0000000000",
+        "okBytesHex": "000000000000000002000000000000006f6b000000000000",
+        "errorBytesHex": "010000000000000002000000000000006f6b000000000000",
         "inactiveOkInt": {
           "value": 7,
           "bytesHex": "00000000000000000700000000000000"
@@ -1613,8 +2555,8 @@
       }
     },
     "ownerRangeTrace": {
-      "literalDeepCopyBytes": 80,
-      "projectedOutputBytesHex": "02000000000000006f006b0000000000",
+      "literalDeepCopyBytes": 56,
+      "projectedOutputBytesHex": "02000000000000006f6b000000000000",
       "expectedDescriptorTransfer": {
         "typeId": 6,
         "offsetBytes": 0,
@@ -1626,9 +2568,13 @@
   },
 
   "nominalStringConformance": {
-    "encoding": "String payload is an eight-byte UTF-16 code-unit count and zero reserved word, followed by UTF-16LE data and zero padding to an eight-byte extent.",
+    "encoding": "String payload is an eight-byte UTF-8 byte count and zero reserved word, followed by UTF-8 data and zero padding to an eight-byte extent (UTF-16 before report 265).",
     "identityProgram": {
-      "typeIds": { "TextTag": 5, "OtherTextTag": 4, "String": 6 },
+      "typeIds": {
+        "TextTag": 5,
+        "OtherTextTag": 4,
+        "String": 6
+      },
       "stringKind": 5,
       "minimumPayloadBytes": 8,
       "minimumExtentBytes": 8
@@ -1643,40 +2589,44 @@
       },
       {
         "name": "ordinary",
-        "codeUnits": [111, 107],
+        "codeUnits": [
+          111,
+          107
+        ],
         "codeUnitsHex": "6f006b00",
         "codeUnitCount": 2,
-        "stringBytesHex": "02000000000000006f006b0000000000"
+        "stringBytesHex": "02000000000000006f6b000000000000"
       },
       {
         "name": "embedded-nul",
-        "codeUnits": [65, 0, 66],
+        "codeUnits": [
+          65,
+          0,
+          66
+        ],
         "codeUnitsHex": "410000004200",
         "codeUnitCount": 3,
-        "stringBytesHex": "03000000000000004100000042000000"
-      },
-      {
-        "name": "isolated-surrogate",
-        "codeUnits": [65, 55296, 66],
-        "codeUnitsHex": "410000d84200",
-        "codeUnitCount": 3,
-        "stringBytesHex": "0300000000000000410000d842000000"
+        "stringBytesHex": "03000000000000004100420000000000"
       },
       {
         "name": "supplementary",
-        "codeUnits": [65, 55357, 56832],
+        "codeUnits": [
+          65,
+          55357,
+          56832
+        ],
         "codeUnitsHex": "41003dd800de",
         "codeUnitCount": 3,
-        "stringBytesHex": "030000000000000041003dd800de0000"
+        "stringBytesHex": "050000000000000041f09f9880000000"
       }
     ],
     "identityPair": {
       "codeUnitsHex": "6f006b00",
-      "stringBytesHex": "02000000000000006f006b0000000000"
+      "stringBytesHex": "02000000000000006f6b000000000000"
     },
     "wrapUnwrap": {
       "codeUnitsHex": "6f006b00",
-      "stringBytesHex": "02000000000000006f006b0000000000",
+      "stringBytesHex": "02000000000000006f6b000000000000",
       "expectedDescriptorTransfer": {
         "typeId": 6,
         "offsetBytes": 0,
@@ -1689,31 +2639,42 @@
       "parameterName": "values"
     },
     "nestedProgram": {
-      "typeIds": { "TextTag": 5, "NominalEnvelope": 4, "String": 6 },
+      "typeIds": {
+        "TextTag": 5,
+        "NominalEnvelope": 4,
+        "String": 6
+      },
       "record": {
         "ownerCodeUnitsHex": "6f006b00",
         "tailCodeUnitsHex": "7a00",
-        "bytesHex": "02000000000000006f006b000000000001000000000000007a00000000000000"
+        "bytesHex": "02000000000000006f6b00000000000001000000000000007a00000000000000"
       },
       "option": {
         "codeUnitsHex": "6f006b00",
-        "someBytesHex": "000000000000000002000000000000006f006b0000000000",
+        "someBytesHex": "000000000000000002000000000000006f6b000000000000",
         "noneBytesHex": "0100000000000000"
       },
       "result": {
         "okCodeUnitsHex": "6f006b00",
         "errorCodeUnitsHex": "6500720072006f007200",
-        "okBytesHex": "000000000000000002000000000000006f006b0000000000",
-        "errorBytesHex": "010000000000000005000000000000006500720072006f007200000000000000"
+        "okBytesHex": "000000000000000002000000000000006f6b000000000000",
+        "errorBytesHex": "010000000000000005000000000000006572726f72000000"
       },
       "inactiveResult": {
         "value": 7,
         "bytesHex": "00000000000000000700000000000000"
       }
     },
-    "sentinelByteHex": "a5"
+    "sentinelByteHex": "a5",
+    "rejectedUnpairedSurrogateCases": [
+      {
+        "codeUnitsHex": "410000d84200",
+        "reason": "report 265: no UTF-8 form"
+      }
+    ]
   },
 
+  "report265Utf8SectionsTransition": "Owning Strings are UTF-8 since report 265. sumConformance, listConformance, stableArenaCases, nonEmptyStringConformance and nominalStringConformance String images were re-derived by replacing each fixture text's UTF-16 serialization with its UTF-8 serialization (single ASCII characters are byte-identical in both). Re-derived numbers: NonEmptyString constructor payload 12->10, nested record payload 22->19, resultStringError and nestedError deep copy 24->16, owner-range literal deep copy 80->56 (temporary-in-scope 32 + after-scope 24), stable binding literal 20/24->14/16 with deep copy 16, dead-only post-rewind allocation payload 10->9; nominalIntConformance and positiveIdConformance images included. Lone-surrogate cases (sum option-some-isolated-high-surrogate, nominal 410000d84200) moved to rejectedUnpairedSurrogateCases.",
   "limits": [
     "Synchronous execution only; no async provider buffers or cancellation claims.",
     "Fixture coverage is bounded to fixed Int/Bool/Unit workloads, selected enums and UTF-16 String cases, nominal/refined scalar cases, and selected acyclic nested record/Option/Result shapes; it does not establish general type or layout coverage.",

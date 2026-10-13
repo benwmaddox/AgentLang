@@ -450,12 +450,13 @@ let private describeRawMailboxInvocation (invocation: RawMailboxInvocation) =
 let private mailboxIntBytes (value: int64) = BitConverter.GetBytes value
 
 let private mailboxStringBytes (value: string) =
-    let utf16 = Encoding.Unicode.GetBytes value
-    let payloadBytes = 8 + utf16.Length
+    // Native Strings are UTF-8: u32 byte count, 4 zero bytes, UTF-8, zero padding.
+    let utf8 = Encoding.UTF8.GetBytes value
+    let payloadBytes = 8 + utf8.Length
     let extentBytes = (payloadBytes + 7) &&& ~~~7
     let bytes = Array.zeroCreate<byte> extentBytes
-    Buffer.BlockCopy(BitConverter.GetBytes(value.Length), 0, bytes, 0, sizeof<int32>)
-    Buffer.BlockCopy(utf16, 0, bytes, 8, utf16.Length)
+    Buffer.BlockCopy(BitConverter.GetBytes(utf8.Length), 0, bytes, 0, sizeof<int32>)
+    Buffer.BlockCopy(utf8, 0, bytes, 8, utf8.Length)
     bytes
 
 let private invokeRawMailboxEntry (native: OwningMailboxCompiledModule) entryIndex (inputs: byte array list) =
@@ -2893,8 +2894,8 @@ let private testOwningRefinedStringSlice () =
         Call("NonEmptyString.construct", span "owning-refined-string-constructor.agent" 1)
     ]
     let emptyRawBytes = Array.zeroCreate<byte> 8
-    let expectedStringBytes = "02000000000000006f006b0000000000"
-    let expectedOtherStringBytes = "020000000000000079006f0000000000"
+    let expectedStringBytes = "02000000000000006f6b000000000000"
+    let expectedOtherStringBytes = "0200000000000000796f000000000000"
     let validString = NamedValue("NonEmptyString", StringValue "ok")
     for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
         use constructor = compileOwningNative toolchain "owning-refined-string-constructor" optimization constructorBody
@@ -2918,7 +2919,7 @@ let private testOwningRefinedStringSlice () =
             constructor.LlvmIr.Contains("i32 5, i32 4, i32 0, i32 0, i32 4294967295, i32 4294967295, i32 8, i32 8, i32 0", StringComparison.Ordinal)
             && constructor.LlvmIr.Contains("i32 5, i32 5, i32 0, i32 0, i32 4294967295, i32 4294967295, i32 8, i32 8, i32 0", StringComparison.Ordinal))
         let constructed = constructor.Execute([ StringValue "ok" ], 4096, 16)
-        check ($"{optimization} NonEmptyString constructor preserves UTF-16 String bytes and nominal identity") (
+        check ($"{optimization} NonEmptyString constructor preserves UTF-8 String bytes and nominal identity") (
             constructed.Values = [ validString ]
             && constructed.RetainedBytesWritten = 16
             && Convert.ToHexString(constructed.RetainedOutputBytes).ToLowerInvariant() = expectedStringBytes
@@ -3190,11 +3191,14 @@ let private testOwningNominalStringSlice () =
             | _ -> true)
     let bytes (hex: string) = Convert.FromHexString hex
     let nulText = String([| 'a'; char 0; 'b' |])
+    // A supplementary character (4 UTF-8 bytes); an unpaired surrogate has no
+    // UTF-8 form and is rejected at the boundary (checked below).
+    let supplementary = "\U00010437"
     let isolatedSurrogate = String([| char 0xD800 |])
-    let nulBytes = bytes "03000000000000006100000062000000"
-    let surrogateBytes = bytes "010000000000000000d8000000000000"
-    let sameBytes = bytes "0400000000000000730061006d006500"
-    let tailBytes = bytes "04000000000000007400610069006c00"
+    let nulBytes = bytes "03000000000000006100620000000000"
+    let supplementaryBytes = bytes "0400000000000000f09090b700000000"
+    let sameBytes = bytes "040000000000000073616d6500000000"
+    let tailBytes = bytes "04000000000000007461696c00000000"
     let textTagString = NamedValue("TextTag", StringValue "same")
     let otherTagString = NamedValue("OtherTag", StringValue "same")
     let identityBody = compileBodyWithInputs context "owning-nominal-string-identity" [ TNamed "TextTag"; TNamed "OtherTag" ] []
@@ -3253,15 +3257,21 @@ let private testOwningNominalStringSlice () =
             && not (wrapUnwrap.LlvmIr.Contains("REFINEMENT_FAILED", StringComparison.Ordinal)))
         for label, value, expectedBytes in [
             "embedded NUL", nulText, nulBytes
-            "isolated high surrogate", isolatedSurrogate, surrogateBytes
+            "supplementary character", supplementary, supplementaryBytes
         ] do
             let result = wrapUnwrap.Execute([ StringValue value ], 4096, expectedBytes.Length)
-            check ($"{optimization} wrap/unwrap preserves {label} UTF-16 bytes without copying or moving") (
+            check ($"{optimization} wrap/unwrap preserves {label} UTF-8 bytes without copying or moving") (
                 result.Values = [ StringValue value ]
                 && result.RetainedBytesWritten = expectedBytes.Length
                 && result.RetainedOutputBytes = expectedBytes
                 && result.Metrics.DeepCopyBytes = 0UL
                 && result.Metrics.MoveBytes = 0UL)
+        let surrogateRejected =
+            try
+                wrapUnwrap.Execute([ StringValue isolatedSurrogate ], 4096, 16) |> ignore
+                false
+            with :? ArgumentException as error -> error.Message.Contains("STRING_INVALID_UTF16", StringComparison.Ordinal)
+        check ($"{optimization} an unpaired surrogate is rejected at the native boundary (no UTF-8 form)") surrogateRejected
 
     let envelope = recordDefinition "StringOwnerEnvelope" [
         recordField "owner" (TNamed "TextTag")
@@ -3280,7 +3290,7 @@ let private testOwningNominalStringSlice () =
     let nominalText text = NamedValue("TextTag", StringValue text)
     let nestedValues = [
         RecordValue("StringOwnerEnvelope", Map.ofList [ "owner", nominalText nulText; "tail", StringValue "tail" ])
-        OptionValue(TNamed "TextTag", Some(nominalText isolatedSurrogate))
+        OptionValue(TNamed "TextTag", Some(nominalText supplementary))
         OptionValue(TNamed "TextTag", None)
         ResultValue(TNamed "TextTag", TInt, Ok(nominalText "same"))
         ResultValue(TNamed "TextTag", TInt, Error(IntValue 42L))
@@ -3291,7 +3301,7 @@ let private testOwningNominalStringSlice () =
     let int42 = bytes "2a00000000000000"
     let expectedNestedBytes =
         [ nulBytes; tailBytes
-          zeroTag; surrogateBytes
+          zeroTag; supplementaryBytes
           oneTag
           zeroTag; sameBytes
           oneTag; int42
@@ -3327,7 +3337,7 @@ let private testOwningNominalStringSlice () =
                 && event.SourceExtentBytes = Some 16)
         check ($"{optimization} unwrapped String result escapes without losing its multi-field owner range") (
             ownerEndResult.Values = [ StringValue "ok" ]
-            && Convert.ToHexString(ownerEndResult.RetainedOutputBytes).ToLowerInvariant() = "02000000000000006f006b0000000000"
+            && Convert.ToHexString(ownerEndResult.RetainedOutputBytes).ToLowerInvariant() = "02000000000000006f6b000000000000"
             && ownerEndResult.Metrics.InputBytes = 32
             && ownerEndResult.Metrics.HostEncodedInputBytes = 32
             && ownerEndResult.Metrics.DeepCopyBytes = 0UL

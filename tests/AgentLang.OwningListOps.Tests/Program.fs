@@ -79,7 +79,7 @@ let private i64 (value: int64) =
     bytes
 
 /// Independent wire oracle for the owning layout (ABI5): Int 8 bytes; String
-/// u32 code units + 4 zero bytes + UTF-16 padded to 8; List u32 count + 4 zero
+/// u32 UTF-8 bytes + 4 zero bytes + UTF-8 padded to 8; List u32 count + 4 zero
 /// bytes + packed elements; records concatenate fields; Unit/Bool 8 bytes.
 let rec private wire ty value =
     let align8 (bytes: byte array) =
@@ -90,7 +90,7 @@ let rec private wire ty value =
     | TBool, BoolValue flag -> i64 (if flag then 1L else 0L)
     | TUnit, UnitValue -> Array.zeroCreate<byte> 8
     | TString, StringValue text ->
-        align8 (Array.concat [ u32 (uint32 text.Length); Array.zeroCreate<byte> 4; Encoding.Unicode.GetBytes(text) ])
+        align8 (Array.concat [ u32 (uint32 (Encoding.UTF8.GetByteCount text)); Array.zeroCreate<byte> 4; Encoding.UTF8.GetBytes(text) ])
     | TNamed "Pair", RecordValue("Pair", fields) -> Array.append (wire TString fields["name"]) (wire TInt fields["count"])
     | TList itemType, ListValue(storedType, items) when storedType = itemType ->
         Array.concat ([ u32 (uint32 items.Length); Array.zeroCreate<byte> 4 ] @ (items |> List.map (wire itemType)))

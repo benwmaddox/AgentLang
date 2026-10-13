@@ -71,7 +71,8 @@ typedef struct al_mailbox_config {
 
 /* Fixed-role owning module configuration. Retained byte capacity is per bank;
  * the ABI bounds each bank to two typed roots. UTF-8 inputs are converted into
- * one shared canonical UTF-16 staging region. */
+ * one shared canonical String staging region (UTF-8 since report 265;
+ * the utf16_staging_bytes statistic keeps its name for ABI stability). */
 typedef struct al_mailbox_owning_config {
   uint32_t control_abi_version;
   uint32_t struct_size;

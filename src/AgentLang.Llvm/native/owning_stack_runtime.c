@@ -1431,12 +1431,57 @@ static int32_t al_owning_validate_type_graph(al_owning_scan_view *view,
 }
 #endif
 
+/* Strict UTF-8 (RFC 3629): no overlongs, no surrogates, nothing above U+10FFFF.
+ * Returns 1 when bytes[0, length) is well formed. */
+static int32_t al_owning_utf8_valid(const uint8_t *bytes, uint32_t length) {
+  uint32_t index = 0u;
+  while (index < length) {
+    const uint32_t lead = bytes[index];
+    uint32_t need;
+    uint32_t minimum;
+    uint32_t value;
+    uint32_t k;
+    if (lead < 0x80u) {
+      ++index;
+      continue;
+    }
+    if (lead >= 0xC2u && lead <= 0xDFu) {
+      need = 1u;
+      minimum = 0x80u;
+      value = lead & 0x1Fu;
+    } else if (lead >= 0xE0u && lead <= 0xEFu) {
+      need = 2u;
+      minimum = 0x800u;
+      value = lead & 0x0Fu;
+    } else if (lead >= 0xF0u && lead <= 0xF4u) {
+      need = 3u;
+      minimum = 0x10000u;
+      value = lead & 0x07u;
+    } else {
+      return 0;
+    }
+    if (length - index <= need)
+      return 0;
+    for (k = 1u; k <= need; ++k) {
+      const uint32_t next = bytes[index + k];
+      if ((next & 0xC0u) != 0x80u)
+        return 0;
+      value = (value << 6) | (next & 0x3Fu);
+    }
+    if (value < minimum || value > 0x10FFFFu ||
+        (value >= 0xD800u && value <= 0xDFFFu))
+      return 0;
+    index += need + 1u;
+  }
+  return 1;
+}
+
 static int32_t al_owning_scan_string(al_owning_scan_view *view, uint32_t offset,
                                      uint32_t containing_owner_end,
-                                     uint32_t *out_code_units,
+                                     uint32_t *out_string_bytes,
                                      uint32_t *out_payload_bytes,
                                      uint32_t *out_extent_bytes) {
-  uint32_t code_units;
+  uint32_t string_bytes;
   uint32_t payload;
   uint32_t extent;
   uint32_t index;
@@ -1454,7 +1499,7 @@ static int32_t al_owning_scan_string(al_owning_scan_view *view, uint32_t offset,
     }
     return 0;
   }
-  code_units = al_owning_read_u32_le(view->bytes, offset);
+  string_bytes = al_owning_read_u32_le(view->bytes, offset);
   if (view->bytes[offset + 4u] != 0u || view->bytes[offset + 5u] != 0u ||
       view->bytes[offset + 6u] != 0u || view->bytes[offset + 7u] != 0u) {
     al_owning_scan_failure(
@@ -1462,7 +1507,7 @@ static int32_t al_owning_scan_string(al_owning_scan_view *view, uint32_t offset,
         containing_owner_end > offset ? containing_owner_end - offset : 0u);
     return 0;
   }
-  payload_wide = 8ull + (uint64_t)code_units * 2ull;
+  payload_wide = 8ull + (uint64_t)string_bytes;
   extent_wide = (payload_wide + 7ull) & ~7ull;
   available = containing_owner_end - offset;
   if (payload_wide > UINT32_MAX || extent_wide > UINT32_MAX ||
@@ -1482,7 +1527,14 @@ static int32_t al_owning_scan_string(al_owning_scan_view *view, uint32_t offset,
       return 0;
     }
   }
-  *out_code_units = code_units;
+  /* Strings created by native code are well formed by construction; bytes
+   * admitted from a host or caller are checked here. */
+  if (view->external &&
+      !al_owning_utf8_valid(view->bytes + offset + 8u, string_bytes)) {
+    al_owning_scan_failure(view, extent, available);
+    return 0;
+  }
+  *out_string_bytes = string_bytes;
   *out_payload_bytes = payload;
   *out_extent_bytes = extent;
   return 1;
@@ -1649,11 +1701,11 @@ static int32_t al_owning_scan_value(al_owning_scan_view *view,
     payload = (uint32_t)payload_wide;
     extent = (uint32_t)extent_wide;
   } else if (type->kind == AL_OWNING_TYPE_STRING) {
-    uint32_t code_units;
-    if (!al_owning_scan_string(view, offset, containing_owner_end, &code_units,
+    uint32_t string_bytes;
+    if (!al_owning_scan_string(view, offset, containing_owner_end, &string_bytes,
                                &payload, &extent))
       return 0;
-    (void)code_units;
+    (void)string_bytes;
   } else if (type->kind == AL_OWNING_TYPE_ENUM) {
     uint64_t ordinal;
     uint32_t required;
@@ -2521,15 +2573,15 @@ int32_t al_owning_locate_sum_case(
 
 int32_t al_owning_string_length(al_owning_stack_context *ctx, uint32_t offset,
                                 uint32_t extent_bytes, uint32_t error_id,
-                                uint32_t *out_code_units) {
+                                uint32_t *out_string_bytes) {
   al_owning_scan_view view;
-  uint32_t code_units;
+  uint32_t string_bytes;
   uint32_t payload;
   uint32_t extent;
   uint32_t owner_end;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
-  if (out_code_units == 0 || offset > ctx->cursor_bytes ||
+  if (out_string_bytes == 0 || offset > ctx->cursor_bytes ||
       extent_bytes > ctx->cursor_bytes - offset ||
       extent_bytes > UINT32_MAX - offset) {
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
@@ -2542,7 +2594,7 @@ int32_t al_owning_string_length(al_owning_stack_context *ctx, uint32_t offset,
   view.length = owner_end;
   view.error_id = error_id;
   view.external = 0;
-  if (!al_owning_scan_string(&view, offset, owner_end, &code_units, &payload,
+  if (!al_owning_scan_string(&view, offset, owner_end, &string_bytes, &payload,
                              &extent))
     return 1;
   if (extent != extent_bytes) {
@@ -2550,14 +2602,35 @@ int32_t al_owning_string_length(al_owning_stack_context *ctx, uint32_t offset,
                           extent_bytes);
     return 1;
   }
-  *out_code_units = code_units;
+  *out_string_bytes = string_bytes;
   (void)payload;
+  return 0;
+}
+
+int32_t al_owning_string_char_length(al_owning_stack_context *ctx,
+                                     uint32_t offset, uint32_t extent_bytes,
+                                     uint32_t error_id,
+                                     uint32_t *out_characters) {
+  uint32_t byte_length;
+  uint32_t index;
+  uint32_t characters = 0u;
+  if (al_owning_string_length(ctx, offset, extent_bytes, error_id,
+                              &byte_length) != 0)
+    return 1;
+  if (out_characters == 0) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
+    return 1;
+  }
+  for (index = 0u; index < byte_length; ++index)
+    if ((ctx->stack_data[offset + 8u + index] & 0xC0u) != 0x80u)
+      ++characters;
+  *out_characters = characters;
   return 0;
 }
 
 static int32_t al_owning_string_scan_stack_exact(
     al_owning_stack_context *ctx, uint32_t offset, uint32_t extent_bytes,
-    uint32_t error_id, uint32_t *out_code_units, uint32_t *out_payload_bytes) {
+    uint32_t error_id, uint32_t *out_string_bytes, uint32_t *out_payload_bytes) {
   al_owning_scan_view view;
   uint32_t owner_end;
   uint32_t measured_extent;
@@ -2573,7 +2646,7 @@ static int32_t al_owning_string_scan_stack_exact(
   view.length = owner_end;
   view.error_id = error_id;
   view.external = 0;
-  if (!al_owning_scan_string(&view, offset, owner_end, out_code_units,
+  if (!al_owning_scan_string(&view, offset, owner_end, out_string_bytes,
                              out_payload_bytes, &measured_extent))
     return 0;
   if (measured_extent != extent_bytes) {
@@ -2587,7 +2660,7 @@ static int32_t al_owning_string_scan_stack_exact(
 int32_t al_owning_string_concat_plan(
     al_owning_stack_context *ctx, uint32_t left_offset,
     uint32_t left_extent_bytes, uint32_t right_offset,
-    uint32_t right_extent_bytes, uint32_t error_id, uint32_t *out_code_units,
+    uint32_t right_extent_bytes, uint32_t error_id, uint32_t *out_string_bytes,
     uint32_t *out_payload_bytes, uint32_t *out_extent_bytes) {
   uint32_t left_units;
   uint32_t right_units;
@@ -2598,7 +2671,7 @@ int32_t al_owning_string_concat_plan(
   uint64_t extent_wide;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
-  if (out_code_units == 0 || out_payload_bytes == 0 || out_extent_bytes == 0) {
+  if (out_string_bytes == 0 || out_payload_bytes == 0 || out_extent_bytes == 0) {
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
     return 1;
   }
@@ -2610,7 +2683,7 @@ int32_t al_owning_string_concat_plan(
                                          &right_payload))
     return 1;
   units_wide = (uint64_t)left_units + (uint64_t)right_units;
-  payload_wide = 8ull + units_wide * 2ull;
+  payload_wide = 8ull + units_wide;
   extent_wide = (payload_wide + 7ull) & ~7ull;
   if (units_wide > INT32_MAX || payload_wide > UINT32_MAX ||
       extent_wide > UINT32_MAX) {
@@ -2618,7 +2691,7 @@ int32_t al_owning_string_concat_plan(
                           UINT32_MAX, ctx->stack_capacity_bytes);
     return 1;
   }
-  *out_code_units = (uint32_t)units_wide;
+  *out_string_bytes = (uint32_t)units_wide;
   *out_payload_bytes = (uint32_t)payload_wide;
   *out_extent_bytes = (uint32_t)extent_wide;
   (void)left_payload;
@@ -2631,7 +2704,7 @@ int32_t al_owning_string_concat_write(
     uint32_t destination_extent_bytes, uint32_t left_offset,
     uint32_t left_extent_bytes, uint32_t right_offset,
     uint32_t right_extent_bytes, uint32_t type_id, uint32_t error_id) {
-  uint32_t code_units;
+  uint32_t string_bytes;
   uint32_t payload;
   uint32_t extent;
   uint32_t left_units;
@@ -2644,7 +2717,7 @@ int32_t al_owning_string_concat_write(
     return 1;
   if (al_owning_string_concat_plan(ctx, left_offset, left_extent_bytes,
                                    right_offset, right_extent_bytes, error_id,
-                                   &code_units, &payload, &extent) != 0)
+                                   &string_bytes, &payload, &extent) != 0)
     return 1;
   if (extent != destination_extent_bytes || (destination_offset & 7u) != 0u ||
       destination_offset > ctx->cursor_bytes ||
@@ -2669,9 +2742,9 @@ int32_t al_owning_string_concat_write(
                           destination_extent_bytes, destination_offset);
     return 1;
   }
-  left_data_bytes = left_units * 2u;
-  right_data_bytes = right_units * 2u;
-  al_owning_write_u32_le(ctx->stack_data + destination_offset, 0u, code_units);
+  left_data_bytes = left_units;
+  right_data_bytes = right_units;
+  al_owning_write_u32_le(ctx->stack_data + destination_offset, 0u, string_bytes);
   ctx->stack_data[destination_offset + 4u] = 0u;
   ctx->stack_data[destination_offset + 5u] = 0u;
   ctx->stack_data[destination_offset + 6u] = 0u;
@@ -2696,9 +2769,6 @@ int32_t al_owning_string_concat_write(
   return 0;
 }
 
-static uint32_t al_owning_read_u16_le(const uint8_t *bytes, uint32_t offset) {
-  return (uint32_t)bytes[offset] | ((uint32_t)bytes[offset + 1u] << 8);
-}
 /* A packed List(String) on the owning stack: u32 count, four zero bytes, then
  * each String element back to back. The walk is exact: the last element must
  * end at the list owner end. */
@@ -2758,10 +2828,10 @@ static int32_t al_owning_string_list_walk(
 static int32_t al_owning_string_result_plan(al_owning_stack_context *ctx,
                                             uint64_t units_wide,
                                             uint32_t error_id,
-                                            uint32_t *out_code_units,
+                                            uint32_t *out_string_bytes,
                                             uint32_t *out_payload_bytes,
                                             uint32_t *out_extent_bytes) {
-  uint64_t payload_wide = 8ull + units_wide * 2ull;
+  uint64_t payload_wide = 8ull + units_wide;
   uint64_t extent_wide = (payload_wide + 7ull) & ~7ull;
   if (units_wide > INT32_MAX || payload_wide > UINT32_MAX ||
       extent_wide > UINT32_MAX) {
@@ -2769,7 +2839,7 @@ static int32_t al_owning_string_result_plan(al_owning_stack_context *ctx,
                           UINT32_MAX, ctx->stack_capacity_bytes);
     return 0;
   }
-  *out_code_units = (uint32_t)units_wide;
+  *out_string_bytes = (uint32_t)units_wide;
   *out_payload_bytes = (uint32_t)payload_wide;
   *out_extent_bytes = (uint32_t)extent_wide;
   return 1;
@@ -2780,7 +2850,7 @@ static int32_t al_owning_string_result_plan(al_owning_stack_context *ctx,
 static int32_t al_owning_string_result_begin(
     al_owning_stack_context *ctx, uint32_t destination_offset,
     uint32_t destination_extent_bytes, uint32_t planned_extent,
-    uint32_t code_units, uint32_t source_offset, uint32_t source_extent_bytes,
+    uint32_t string_bytes, uint32_t source_offset, uint32_t source_extent_bytes,
     uint32_t error_id) {
   if (planned_extent != destination_extent_bytes ||
       (destination_offset & 7u) != 0u ||
@@ -2792,7 +2862,7 @@ static int32_t al_owning_string_result_begin(
                           planned_extent, destination_extent_bytes);
     return 0;
   }
-  al_owning_write_u32_le(ctx->stack_data + destination_offset, 0u, code_units);
+  al_owning_write_u32_le(ctx->stack_data + destination_offset, 0u, string_bytes);
   ctx->stack_data[destination_offset + 4u] = 0u;
   ctx->stack_data[destination_offset + 5u] = 0u;
   ctx->stack_data[destination_offset + 6u] = 0u;
@@ -2815,26 +2885,26 @@ static void al_owning_string_result_finish(al_owning_stack_context *ctx,
 int32_t al_owning_string_join_plan(al_owning_stack_context *ctx,
                                    uint32_t list_offset,
                                    uint32_t list_extent_bytes,
-                                   uint32_t error_id, uint32_t *out_code_units,
+                                   uint32_t error_id, uint32_t *out_string_bytes,
                                    uint32_t *out_payload_bytes,
                                    uint32_t *out_extent_bytes) {
   uint32_t count;
   uint64_t units_wide;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
-  if (out_code_units == 0 || out_payload_bytes == 0 || out_extent_bytes == 0) {
+  if (out_string_bytes == 0 || out_payload_bytes == 0 || out_extent_bytes == 0) {
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
     return 1;
   }
   if (!al_owning_string_list_walk(ctx, list_offset, list_extent_bytes,
                                   error_id, &count, &units_wide) ||
-      !al_owning_string_result_plan(ctx, units_wide, error_id, out_code_units,
+      !al_owning_string_result_plan(ctx, units_wide, error_id, out_string_bytes,
                                     out_payload_bytes, out_extent_bytes))
     return 1;
   return 0;
 }
 
-/* One copy per part: every String element's UTF-16 data is copied once into
+/* One copy per part: every String element's UTF-8 data is copied once into
  * the exact result reserved by the plan. */
 int32_t al_owning_string_join_write(al_owning_stack_context *ctx,
                                     uint32_t destination_offset,
@@ -2842,7 +2912,7 @@ int32_t al_owning_string_join_write(al_owning_stack_context *ctx,
                                     uint32_t list_offset,
                                     uint32_t list_extent_bytes,
                                     uint32_t type_id, uint32_t error_id) {
-  uint32_t code_units;
+  uint32_t string_bytes;
   uint32_t payload;
   uint32_t extent;
   uint32_t count;
@@ -2852,19 +2922,18 @@ int32_t al_owning_string_join_write(al_owning_stack_context *ctx,
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
   if (al_owning_string_join_plan(ctx, list_offset, list_extent_bytes, error_id,
-                                 &code_units, &payload, &extent) != 0)
+                                 &string_bytes, &payload, &extent) != 0)
     return 1;
   count = al_owning_read_u32_le(ctx->stack_data, list_offset);
   if (!al_owning_string_result_begin(ctx, destination_offset,
                                      destination_extent_bytes, extent,
-                                     code_units, list_offset,
+                                     string_bytes, list_offset,
                                      list_extent_bytes, error_id))
     return 1;
   cursor = destination_offset + 8u;
   source = list_offset + 8u;
   for (index = 0u; index < count; ++index) {
-    const uint32_t units = al_owning_read_u32_le(ctx->stack_data, source);
-    const uint32_t data_bytes = units * 2u;
+    const uint32_t data_bytes = al_owning_read_u32_le(ctx->stack_data, source);
     al_owning_bytes_copy(ctx->stack_data + cursor,
                          ctx->stack_data + source + 8u, data_bytes);
     cursor += data_bytes;
@@ -2881,14 +2950,14 @@ int32_t al_owning_string_join_write(al_owning_stack_context *ctx,
 int32_t al_owning_string_join_parts_plan(al_owning_stack_context *ctx,
                                          const uint32_t *parts,
                                          uint32_t count, uint32_t error_id,
-                                         uint32_t *out_code_units,
+                                         uint32_t *out_string_bytes,
                                          uint32_t *out_payload_bytes,
                                          uint32_t *out_extent_bytes) {
   uint64_t units_wide = 0ull;
   uint32_t index;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
-  if (parts == 0 || out_code_units == 0 || out_payload_bytes == 0 ||
+  if (parts == 0 || out_string_bytes == 0 || out_payload_bytes == 0 ||
       out_extent_bytes == 0) {
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
     return 1;
@@ -2902,7 +2971,7 @@ int32_t al_owning_string_join_parts_plan(al_owning_stack_context *ctx,
       return 1;
     units_wide += units;
   }
-  if (!al_owning_string_result_plan(ctx, units_wide, error_id, out_code_units,
+  if (!al_owning_string_result_plan(ctx, units_wide, error_id, out_string_bytes,
                                     out_payload_bytes, out_extent_bytes))
     return 1;
   return 0;
@@ -2914,7 +2983,7 @@ int32_t al_owning_string_join_parts_write(al_owning_stack_context *ctx,
                                           const uint32_t *parts,
                                           uint32_t count, uint32_t type_id,
                                           uint32_t error_id) {
-  uint32_t code_units;
+  uint32_t string_bytes;
   uint32_t payload;
   uint32_t extent;
   uint32_t cursor;
@@ -2922,7 +2991,7 @@ int32_t al_owning_string_join_parts_write(al_owning_stack_context *ctx,
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
   if (al_owning_string_join_parts_plan(ctx, parts, count, error_id,
-                                       &code_units, &payload, &extent) != 0)
+                                       &string_bytes, &payload, &extent) != 0)
     return 1;
   /* The destination is the fresh cursor: every part lies below it. */
   for (index = 0u; index < count; ++index) {
@@ -2934,14 +3003,13 @@ int32_t al_owning_string_join_parts_write(al_owning_stack_context *ctx,
   }
   if (!al_owning_string_result_begin(ctx, destination_offset,
                                      destination_extent_bytes, extent,
-                                     code_units, destination_offset, 0u,
+                                     string_bytes, destination_offset, 0u,
                                      error_id))
     return 1;
   cursor = destination_offset + 8u;
   for (index = 0u; index < count; ++index) {
     const uint32_t source = parts[index * 2u];
-    const uint32_t data_bytes =
-        al_owning_read_u32_le(ctx->stack_data, source) * 2u;
+    const uint32_t data_bytes = al_owning_read_u32_le(ctx->stack_data, source);
     al_owning_bytes_copy(ctx->stack_data + cursor,
                          ctx->stack_data + source + 8u, data_bytes);
     cursor += data_bytes;
@@ -2952,8 +3020,9 @@ int32_t al_owning_string_join_parts_write(al_owning_stack_context *ctx,
 }
 
 /* Rails ERB::Util.html_escape: exactly & < > " ' are replaced; every other
- * UTF-16 code unit, including unpaired surrogates, is copied unchanged. All
- * five specials are below 64, so one mask test classifies a code unit. */
+ * UTF-8 byte is copied unchanged (specials are ASCII, so multi-byte sequences
+ * never match). All
+ * five specials are below 64, so one mask test classifies a byte. */
 #define AL_OWNING_HTML_SPECIAL_MASK                                            \
   ((1ull << 0x22u) | (1ull << 0x26u) | (1ull << 0x27u) | (1ull << 0x3Cu) |   \
    (1ull << 0x3Eu))
@@ -2962,7 +3031,7 @@ static int al_owning_html_is_special(uint32_t unit) {
   return unit < 64u && ((AL_OWNING_HTML_SPECIAL_MASK >> unit) & 1ull) != 0ull;
 }
 
-/* Extra code units an escaped special adds beyond its own one. */
+/* Extra bytes an escaped special adds beyond its own one. */
 static uint32_t al_owning_html_escape_extra(uint32_t unit) {
   switch (unit) {
   case 0x26u: /* &amp; */
@@ -2997,7 +3066,7 @@ static const char *al_owning_html_escape_entity(uint32_t unit) {
 
 int32_t al_owning_string_html_escape_plan(
     al_owning_stack_context *ctx, uint32_t offset, uint32_t extent_bytes,
-    uint32_t error_id, uint32_t *out_code_units, uint32_t *out_payload_bytes,
+    uint32_t error_id, uint32_t *out_string_bytes, uint32_t *out_payload_bytes,
     uint32_t *out_extent_bytes) {
   uint32_t units;
   uint32_t ignored_payload;
@@ -3005,7 +3074,7 @@ int32_t al_owning_string_html_escape_plan(
   uint64_t escaped_units = 0ull;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
-  if (out_code_units == 0 || out_payload_bytes == 0 || out_extent_bytes == 0) {
+  if (out_string_bytes == 0 || out_payload_bytes == 0 || out_extent_bytes == 0) {
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
     return 1;
   }
@@ -3014,13 +3083,12 @@ int32_t al_owning_string_html_escape_plan(
     return 1;
   escaped_units = units;
   for (index = 0u; index < units; ++index) {
-    const uint32_t unit =
-        al_owning_read_u16_le(ctx->stack_data, offset + 8u + index * 2u);
+    const uint32_t unit = ctx->stack_data[offset + 8u + index];
     if (al_owning_html_is_special(unit))
       escaped_units += al_owning_html_escape_extra(unit);
   }
   if (!al_owning_string_result_plan(ctx, escaped_units, error_id,
-                                    out_code_units, out_payload_bytes,
+                                    out_string_bytes, out_payload_bytes,
                                     out_extent_bytes))
     return 1;
   return 0;
@@ -3030,7 +3098,7 @@ int32_t al_owning_string_html_escape_write(
     al_owning_stack_context *ctx, uint32_t destination_offset,
     uint32_t destination_extent_bytes, uint32_t offset, uint32_t extent_bytes,
     uint32_t type_id, uint32_t error_id) {
-  uint32_t code_units;
+  uint32_t string_bytes;
   uint32_t payload;
   uint32_t extent;
   uint32_t units;
@@ -3040,45 +3108,42 @@ int32_t al_owning_string_html_escape_write(
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
   if (al_owning_string_html_escape_plan(ctx, offset, extent_bytes, error_id,
-                                        &code_units, &payload, &extent) != 0)
+                                        &string_bytes, &payload, &extent) != 0)
     return 1;
   units = al_owning_read_u32_le(ctx->stack_data, offset);
   if (!al_owning_string_result_begin(ctx, destination_offset,
                                      destination_extent_bytes, extent,
-                                     code_units, offset, extent_bytes,
+                                     string_bytes, offset, extent_bytes,
                                      error_id))
     return 1;
   cursor = destination_offset + 8u;
   run_start = 0u;
   for (index = 0u; index < units; ++index) {
-    const uint32_t unit =
-        al_owning_read_u16_le(ctx->stack_data, offset + 8u + index * 2u);
+    const uint32_t unit = ctx->stack_data[offset + 8u + index];
     if (al_owning_html_is_special(unit)) {
       const char *entity = al_owning_html_escape_entity(unit);
-      const uint32_t run_bytes = (index - run_start) * 2u;
+      const uint32_t run_bytes = index - run_start;
       al_owning_bytes_copy(ctx->stack_data + cursor,
-                           ctx->stack_data + offset + 8u + run_start * 2u,
+                           ctx->stack_data + offset + 8u + run_start,
                            run_bytes);
       cursor += run_bytes;
-      while (*entity != '\0') {
-        ctx->stack_data[cursor] = (uint8_t)*entity++;
-        ctx->stack_data[cursor + 1u] = 0u;
-        cursor += 2u;
-      }
+      while (*entity != '\0')
+        ctx->stack_data[cursor++] = (uint8_t)*entity++;
       run_start = index + 1u;
     }
   }
   al_owning_bytes_copy(ctx->stack_data + cursor,
-                       ctx->stack_data + offset + 8u + run_start * 2u,
-                       (units - run_start) * 2u);
-  cursor += (units - run_start) * 2u;
+                       ctx->stack_data + offset + 8u + run_start,
+                       units - run_start);
+  cursor += units - run_start;
   al_owning_string_result_finish(ctx, destination_offset, cursor, payload,
                                  extent, type_id);
   return 0;
 }
 
-/* Ordinal UTF-16 code-unit search: mode 0 = contains, 1 = starts-with,
- * 2 = ends-with. An empty needle always matches, as in .NET Ordinal. */
+/* Ordinal search over UTF-8 bytes: mode 0 = contains, 1 = starts-with,
+ * 2 = ends-with. UTF-8 is self-synchronizing, so on well-formed strings a byte
+ * match is a whole-character match. An empty needle always matches. */
 int32_t al_owning_string_find(al_owning_stack_context *ctx,
                               uint32_t haystack_offset,
                               uint32_t haystack_extent_bytes,
@@ -3112,13 +3177,12 @@ int32_t al_owning_string_find(al_owning_stack_context *ctx,
   if (mode == 1u)
     last = 0u;
   for (start = first; start <= last; ++start) {
-    const uint8_t *candidate =
-        ctx->stack_data + haystack_offset + 8u + start * 2u;
+    const uint8_t *candidate = ctx->stack_data + haystack_offset + 8u + start;
     const uint8_t *needle = ctx->stack_data + needle_offset + 8u;
     uint32_t index = 0u;
-    while (index < needle_units * 2u && candidate[index] == needle[index])
+    while (index < needle_units && candidate[index] == needle[index])
       ++index;
-    if (index == needle_units * 2u) {
+    if (index == needle_units) {
       *out_found = 1u;
       return 0;
     }
@@ -3251,7 +3315,7 @@ int32_t al_owning_ascii_string_write(
     return 1;
   }
 
-  payload_bytes = 8u + ascii_length * 2u;
+  payload_bytes = 8u + ascii_length;
   measured_extent = (payload_bytes + 7u) & ~7u;
   if (destination_extent_bytes != measured_extent ||
       (destination_offset & 7u) != 0u ||
@@ -3283,11 +3347,9 @@ int32_t al_owning_ascii_string_write(
   for (index = 0u; index < 4u; ++index)
     ctx->stack_data[destination_offset + 4u + index] = 0u;
   cursor = destination_offset + 8u;
-  for (index = 0u; index < ascii_length; ++index) {
-    ctx->stack_data[cursor + index * 2u] = local_ascii[index];
-    ctx->stack_data[cursor + index * 2u + 1u] = 0u;
-  }
-  cursor += ascii_length * 2u;
+  for (index = 0u; index < ascii_length; ++index)
+    ctx->stack_data[cursor + index] = local_ascii[index];
+  cursor += ascii_length;
   while (cursor < destination_offset + destination_extent_bytes)
     ctx->stack_data[cursor++] = 0u;
   al_owning_mark(ctx, destination_offset, destination_extent_bytes, 1, 0);

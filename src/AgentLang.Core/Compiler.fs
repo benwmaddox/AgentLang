@@ -84,6 +84,8 @@ module Compiler =
         | "string.html-escape" -> [ TString ], [ TString ]
         | "string.contains" | "string.starts-with" | "string.ends-with" -> [ TString; TString ], [ TBool ]
         | "string.length" -> [ TString ], [ TInt ]
+        | "string.byte-length" -> [ TString ], [ TInt ]
+        | "string.char-length" -> [ TString ], [ TInt ]
         | "string.trim" | "string.to-lower" | "string.to-upper" -> [ TString ], [ TString ]
         | "int.abs" -> [ TInt ], [ TInt ]
         | "int.to-float" -> [ TInt ], [ TFloat ]
@@ -125,7 +127,7 @@ module Compiler =
               "int.add-checked"; "int.multiply-checked"; "int.scale-ratio-toward-zero"
               "instant.parse-utc"; "instant.is-canonical-utc?"; "instant.before?"; "instant.add-days"
               "string.concat"; "string.join"; "string.html-escape"; "string.contains"; "string.starts-with"; "string.ends-with"
-              "string.length"; "string.trim"; "string.to-lower"; "string.to-upper"; "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"
+              "string.length"; "string.byte-length"; "string.char-length"; "string.trim"; "string.to-lower"; "string.to-upper"; "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"
               "float.round"; "int.to-string"; "float.to-string"; "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
               "dup"; "drop"; "swap"; "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write" ]
         names
@@ -140,6 +142,9 @@ module Compiler =
                   Revision = 1
                   Documentation =
                     match name with
+                    | "string.byte-length" -> "Returns the String's length in UTF-8 bytes (constant time)."
+                    | "string.char-length" -> "Returns the number of Unicode characters (scalar values) in the String."
+                    | "string.length" -> "Deprecated alias of string.byte-length; use string.byte-length or string.char-length. Removed by 2026-11-01."
                     | "string.join" -> "Concatenates every String in List<String> in order with one copy of each part; an empty list returns the empty String."
                     | "string.html-escape" -> "Replaces exactly & < > \" ' with &amp; &lt; &gt; &quot; &#39; (Rails ERB::Util.html_escape); every other UTF-16 code unit is unchanged."
                     | "string.guid-canonical?" -> "Returns true only for lower-case canonical D-format GUID text."

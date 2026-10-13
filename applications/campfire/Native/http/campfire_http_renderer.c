@@ -180,11 +180,10 @@ static int al_http_read_text(al_http_cursor *cursor, al_http_text *out_text) {
              ((uint32_t)cursor->bytes[start + 5u] << 8u) |
              ((uint32_t)cursor->bytes[start + 6u] << 16u) |
              ((uint32_t)cursor->bytes[start + 7u] << 24u);
-  if (reserved != 0u ||
-      (((uintptr_t)(cursor->bytes + start + 8u)) & (uintptr_t)1u) != 0u)
+  if (reserved != 0u)
     return 0;
 
-  payload_bytes = 8u + (uint64_t)count * 2u;
+  payload_bytes = 8u + (uint64_t)count;
   padded_bytes = (payload_bytes + 7u) & ~UINT64_C(7);
   if (padded_bytes > UINT32_MAX ||
       !al_http_range_valid(cursor, (uint32_t)padded_bytes))
@@ -416,7 +415,7 @@ static int al_http_contract_valid(const uint8_t *bytes, uint32_t extent,
 static int al_http_html_measure(al_http_text text, uint32_t *out_bytes) {
   uint32_t required = 0u;
   const int32_t status = al_campfire_html_encode_utf8_v1(
-      (const uint16_t *)(const void *)text.utf16le, text.code_units, NULL, 0u,
+      text.utf16le, text.code_units, NULL, 0u,
       &required);
   if ((required == 0u && status != AL_CAMPFIRE_HTML_ENCODE_OK) ||
       (required != 0u &&
@@ -452,7 +451,7 @@ static int al_http_sink_html(al_http_body_sink *sink, al_http_text text) {
   {
     uint32_t written = 0u;
     const int32_t status = al_campfire_html_encode_utf8_v1(
-        (const uint16_t *)(const void *)text.utf16le, text.code_units,
+        text.utf16le, text.code_units,
         sink->bytes + sink->used, sink->capacity - sink->used, &written);
     if (status != AL_CAMPFIRE_HTML_ENCODE_OK || written != required)
       return 0;

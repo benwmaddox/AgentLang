@@ -2,27 +2,54 @@
 
 #include <stdint.h>
 
-static uint32_t al_html_next_scalar(const uint16_t *input,
-                                    uint32_t input_code_units,
+/* Decode one scalar from UTF-8. Malformed input (not produced by the native
+ * runtime, which only holds well-formed UTF-8) maps to U+FFFD per byte. */
+static uint32_t al_html_next_scalar(const uint8_t *input, uint32_t input_bytes,
                                     uint32_t *index) {
-  const uint32_t first = input[*index];
-  ++*index;
-
-  if (first >= UINT32_C(0xd800) && first <= UINT32_C(0xdbff)) {
-    if (*index < input_code_units) {
-      const uint32_t second = input[*index];
-      if (second >= UINT32_C(0xdc00) && second <= UINT32_C(0xdfff)) {
-        ++*index;
-        return UINT32_C(0x10000) + ((first - UINT32_C(0xd800)) << 10u) +
-               (second - UINT32_C(0xdc00));
-      }
-    }
+  const uint32_t lead = input[*index];
+  uint32_t need;
+  uint32_t value;
+  uint32_t minimum;
+  uint32_t k;
+  if (lead < 0x80u) {
+    ++*index;
+    return lead;
+  }
+  if (lead >= 0xc2u && lead <= 0xdfu) {
+    need = 1u;
+    value = lead & 0x1fu;
+    minimum = 0x80u;
+  } else if (lead >= 0xe0u && lead <= 0xefu) {
+    need = 2u;
+    value = lead & 0x0fu;
+    minimum = 0x800u;
+  } else if (lead >= 0xf0u && lead <= 0xf4u) {
+    need = 3u;
+    value = lead & 0x07u;
+    minimum = 0x10000u;
+  } else {
+    ++*index;
     return UINT32_C(0xfffd);
   }
-
-  if (first >= UINT32_C(0xdc00) && first <= UINT32_C(0xdfff))
+  if (input_bytes - *index <= need) {
+    ++*index;
     return UINT32_C(0xfffd);
-  return first;
+  }
+  for (k = 1u; k <= need; ++k) {
+    const uint32_t next = input[*index + k];
+    if ((next & 0xc0u) != 0x80u) {
+      ++*index;
+      return UINT32_C(0xfffd);
+    }
+    value = (value << 6) | (next & 0x3fu);
+  }
+  if (value < minimum || value > 0x10ffffu ||
+      (value >= 0xd800u && value <= 0xdfffu)) {
+    ++*index;
+    return UINT32_C(0xfffd);
+  }
+  *index += need + 1u;
+  return value;
 }
 
 static uint32_t al_html_numeric_entity_size(uint32_t scalar) {
@@ -53,7 +80,7 @@ static uint32_t al_html_scalar_output_size(uint32_t scalar) {
   return al_html_numeric_entity_size(scalar);
 }
 
-static int al_html_measure(const uint16_t *input, uint32_t input_code_units,
+static int al_html_measure(const uint8_t *input, uint32_t input_code_units,
                            uint32_t *out_required_bytes) {
   uint64_t total = 0u;
   uint32_t index = 0u;
@@ -128,7 +155,7 @@ static void al_html_write_scalar(uint32_t scalar, uint8_t *output,
   al_html_write_numeric_entity(scalar, output, offset);
 }
 
-static void al_html_write(const uint16_t *input, uint32_t input_code_units,
+static void al_html_write(const uint8_t *input, uint32_t input_code_units,
                           uint8_t *output) {
   uint32_t index = 0u;
   uint32_t offset = 0u;
@@ -139,7 +166,7 @@ static void al_html_write(const uint16_t *input, uint32_t input_code_units,
   }
 }
 
-int32_t al_campfire_html_encode_utf8_v1(const uint16_t *input_utf16,
+int32_t al_campfire_html_encode_utf8_v1(const uint8_t *input_utf16,
                                         uint32_t input_code_units,
                                         uint8_t *output_utf8,
                                         uint32_t output_capacity_bytes,

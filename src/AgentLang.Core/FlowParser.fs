@@ -742,6 +742,10 @@ module FlowParser =
                 | StringLiteral, _ ->
                     consume state |> ignore
                     let value = JsonSerializer.Deserialize<string>(first.Text)
+                    // The lexer already rejects lone surrogate escapes (FLOW_INVALID_STRING);
+                    // this catches raw unpaired surrogates in source text supplied as .NET strings.
+                    if not (TrustedValues.isWellFormedUtf16 value) then
+                        fail state.File first.Line first.Column first.Text.Length "FLOW_STRING_INVALID_UTF16" "String literals must be well-formed Unicode; an unpaired surrogate has no UTF-8 form."
                     FlowExpression.Literal(LString value, sourceSpan state.File first (Some first))
                 | Identifier, "true" -> consume state |> ignore; FlowExpression.Literal(LBool true, sourceSpan state.File first (Some first))
                 | Identifier, "false" -> consume state |> ignore; FlowExpression.Literal(LBool false, sourceSpan state.File first (Some first))

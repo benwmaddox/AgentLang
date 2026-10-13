@@ -67,12 +67,12 @@
     "typeIndexes": { "Continuation": 2, "State": 3, "String": 4 }
   },
   "serializedString": {
-    "encoding": "UTF-16LE",
+    "encoding": "UTF-8",
     "headerBytes": 8,
     "codeUnitCountOffset": 0,
     "reservedHeaderBytes": 4,
     "extentAlignmentBytes": 8,
-    "payloadBytesFormula": "8 + 2*UTF16CodeUnits",
+    "payloadBytesFormula": "8 + UTF8Bytes",
     "extentBytesFormula": "align_up(payloadBytes, 8)",
     "paddingBytesAreZero": true
   },
@@ -83,19 +83,19 @@
       "initializeUtf8Hex": "41f09f9982",
       "initializeValue": "A🙂",
       "initializeCodeUnitsHex": "0041d83dde42",
-      "initializeRoot": { "type": "State", "extentBytes": 16, "serializedHex": "030000000000000041003dd842de0000" },
+      "initializeRoot": { "type": "State", "extentBytes": 16, "serializedHex": "050000000000000041f09f9982000000" },
       "beginUtf8Hex": "ceb4",
       "beginValue": "δ",
       "beginCodeUnitsHex": "03b4",
       "beginRoots": [
-        { "type": "State", "extentBytes": 16, "serializedHex": "030000000000000041003dd842de0000" },
-        { "type": "Continuation", "extentBytes": 16, "serializedHex": "0100000000000000b403000000000000" }
+        { "type": "State", "extentBytes": 16, "serializedHex": "050000000000000041f09f9982000000" },
+        { "type": "Continuation", "extentBytes": 16, "serializedHex": "0200000000000000ceb4000000000000" }
       ],
       "resumeUtf8Hex": "00f09f9a80",
       "resumeValue": "\u0000🚀",
       "resumeExpectedValue": "A🙂δ\u0000🚀",
       "resumeExpectedCodeUnitsHex": "0041d83dde4203b40000d83dde80",
-      "resumeRoot": { "type": "State", "extentBytes": 24, "serializedHex": "070000000000000041003dd842deb40300003dd880de0000" }
+      "resumeRoot": { "type": "State", "extentBytes": 24, "serializedHex": "0c0000000000000041f09f9982ceb400f09f9a8000000000" }
     },
     "empty": {
       "mailbox": 1,
@@ -114,13 +114,14 @@
     "largeRequest": {
       "mailbox": 0,
       "utf8PatternByte": "41",
-      "utf8ByteCount": 4096,
-      "utf16CodeUnits": 4096,
+      "utf8ByteCount": 8192,
+      "utf16CodeUnits": 8192,
       "canonicalRootExtentBytes": 8200,
+      "report265Utf8Transition": "Owning Strings are UTF-8 since report 265 (prior fixture sha256 35d424914ea2c43198f6a004e46d2053c9acbb48f9abe5b191d400412c9121ef). The request doubled from 4096 to 8192 ASCII bytes so the canonical String stays 8200 bytes and the retained-capacity failure is unchanged; only utf8InputBytes changes (8193 to 16385). The Unicode lifecycle serializedHex oracles and the String encoding block are re-derived from the unchanged UTF-8 inputs; their extents are unchanged. The utf16StagingBytes name is kept for ABI stability and now counts UTF-8 String staging.",
       "minimumStackInputBytes": 8200,
       "minimumBankOutputBytesForInitialize": 8200,
       "sourceDerivedStats": {
-        "utf8InputBytes": 8193,
+        "utf8InputBytes": 16385,
         "utf16StagingBytes": 16424,
         "inputImportBytes": 41056,
         "publicationCopyBytes": 24624,

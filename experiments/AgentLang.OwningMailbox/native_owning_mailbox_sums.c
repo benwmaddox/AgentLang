@@ -139,18 +139,18 @@ static const char *const required_check_names[] = {
     "Layout ABI is 5 and stack ABI is 2"};
 
 static const char *const hex_unicode_initialize =
-    "0000000000000000030000000000000041003dd842de0000";
+    "0000000000000000050000000000000041f09f9982000000";
 static const char *const hex_continuation_some_delta =
-    "00000000000000000100000000000000b403000000000000";
+    "00000000000000000200000000000000ceb4000000000000";
 static const char *const hex_unicode_final =
-    "0000000000000000070000000000000041003dd842deb40300003dd880de0000";
+    "00000000000000000c0000000000000041f09f9982ceb400f09f9a8000000000";
 static const char *const hex_z_initialize =
     "000000000000000001000000000000005a00000000000000";
 static const char *const hex_continuation_none = "0100000000000000";
 static const char *const hex_error_err =
-    "010000000000000003000000000000004500520052000000";
+    "010000000000000003000000000000004552520000000000";
 static const char *const hex_ok_err =
-    "000000000000000003000000000000004500520052000000";
+    "000000000000000003000000000000004552520000000000";
 static const char *const hex_capacity_empty =
     "00000000000000000000000000000000";
 
@@ -628,8 +628,8 @@ static int external_failure_preserves_sentinels(
 static int direct_malformed_checks(const al_owning_mailbox_module *module) {
   static const uint8_t valid_state[24] = {
       0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u,
-      3u, 0u, 0u, 0u, 0u, 0u, 0u, 0u,
-      0x41u, 0u, 0x3du, 0xd8u, 0x42u, 0xdeu, 0u, 0u};
+      5u, 0u, 0u, 0u, 0u, 0u, 0u, 0u,
+      0x41u, 0xf0u, 0x9fu, 0x99u, 0x82u, 0u, 0u, 0u};
   uint8_t malformed[24];
   al_owning_type_descriptor *types = NULL;
   al_owning_field_descriptor *fields = NULL;
@@ -648,7 +648,7 @@ static int direct_malformed_checks(const al_owning_mailbox_module *module) {
   scan_result = al_owning_measure_external_value(
       &fixture.context, module->layout, state_index, valid_state,
       (uint32_t)sizeof(valid_state), 0u, 0u, &payload, &extent);
-  okay = scan_result == 0 && payload == 22u && extent == 24u;
+  okay = scan_result == 0 && payload == 21u && extent == 24u;
   memcpy(malformed, valid_state, sizeof(malformed));
   write_u64_le(malformed, UINT64_C(2));
   okay = okay && external_failure_preserves_sentinels(
@@ -808,13 +808,15 @@ static int run_error_round_trip(al_mailbox_runtime *runtime, uint32_t policy,
       evidence->empty_error_to_ok_final.root_count == 1u &&
       snapshot_matches_root(&evidence->empty_error_to_ok_final, 0u,
                             loaded_module->layout->types[state_index].type_id,
-                            0u, 22u, 24u, hex_ok_err);
+                            0u, 19u, 24u, hex_ok_err);
   return evidence->error_round_trip_ok != 0u;
 }
 
 static int run_capacity(al_mailbox_runtime *runtime, uint32_t policy,
                         policy_evidence *evidence) {
-  static const uint8_t long_text[] = {'1', '2', '3', '4', '5', '6', '7'};
+  /* 14 UTF-8 bytes: the State extent is 32, one byte over the 31-byte bank. */
+  static const uint8_t long_text[] = {'1', '2', '3', '4', '5', '6', '7',
+                                      '8', '9', '0', '1', '2', '3', '4'};
   static const uint8_t empty[1] = {0u};
   al_mailbox_call_info info;
   al_mailbox_token token;
@@ -911,11 +913,11 @@ static int validate_policy_evidence(const policy_evidence *evidence,
            : &evidence->capacity_begin_bank;
   int okay =
       snapshot_matches_root(&evidence->unicode_initialize, 0u, state_type_id,
-                            0u, 22u, 24u, hex_unicode_initialize) &&
+                            0u, 21u, 24u, hex_unicode_initialize) &&
       evidence->unicode_suspended_bank.pending == 1u &&
       evidence->unicode_suspended_bank.root_count == (keep ? 1u : 2u) &&
       snapshot_matches_root(&evidence->unicode_suspended_bank, 0u,
-                            state_type_id, 0u, 22u, 24u,
+                            state_type_id, 0u, 21u, 24u,
                             hex_unicode_initialize) &&
       (keep ? snapshot_matches_root(&evidence->unicode_suspended_associated,
                                    1u, continuation_type_id, 24u, 18u, 24u,
@@ -923,14 +925,14 @@ static int validate_policy_evidence(const policy_evidence *evidence,
             : evidence->unicode_suspended_associated.root_count == 0u) &&
       evidence->unicode_suspended_associated.pending == 1u &&
       evidence->unicode_suspended_associated.root_count == (keep ? 2u : 0u) &&
-      snapshot_matches_root(unicode_pair, 0u, state_type_id, 0u, 22u, 24u,
+      snapshot_matches_root(unicode_pair, 0u, state_type_id, 0u, 21u, 24u,
                             hex_unicode_initialize) &&
       snapshot_matches_root(unicode_pair, 1u, continuation_type_id, 24u,
                             18u, 24u, hex_continuation_some_delta) &&
       evidence->unicode_before_failure.pending == 1u &&
       evidence->unicode_before_failure.root_count == 2u &&
       snapshot_matches_root(&evidence->unicode_before_failure, 0u,
-                            state_type_id, 0u, 22u, 24u,
+                            state_type_id, 0u, 21u, 24u,
                             hex_unicode_initialize) &&
       snapshot_matches_root(&evidence->unicode_before_failure, 1u,
                             continuation_type_id, 24u, 18u, 24u,
@@ -938,7 +940,7 @@ static int validate_policy_evidence(const policy_evidence *evidence,
       evidence->unicode_after_failure.pending == 1u &&
       evidence->unicode_after_failure.root_count == 2u &&
       snapshot_matches_root(&evidence->unicode_after_failure, 0u,
-                            state_type_id, 0u, 22u, 24u,
+                            state_type_id, 0u, 21u, 24u,
                             hex_unicode_initialize) &&
       snapshot_matches_root(&evidence->unicode_after_failure, 1u,
                             continuation_type_id, 24u, 18u, 24u,
@@ -948,31 +950,31 @@ static int validate_policy_evidence(const policy_evidence *evidence,
       evidence->unicode_malformed_tag_rejected != 0u &&
       evidence->unicode_malformed_payload_rejected != 0u &&
       snapshot_matches_root(&evidence->unicode_final, 0u, state_type_id, 0u,
-                            30u, 32u, hex_unicode_final) &&
+                            28u, 32u, hex_unicode_final) &&
       evidence->unicode_final.pending == 0u &&
       snapshot_matches_root(&evidence->empty_initialize, 0u, state_type_id,
-                            0u, 18u, 24u, hex_z_initialize) &&
+                            0u, 17u, 24u, hex_z_initialize) &&
       evidence->empty_begin_bank.pending == 1u &&
       evidence->empty_begin_bank.root_count == (keep ? 1u : 2u) &&
       evidence->empty_begin_associated.pending == 1u &&
       evidence->empty_begin_associated.root_count == (keep ? 2u : 0u) &&
-      snapshot_matches_root(empty_pair, 0u, state_type_id, 0u, 18u, 24u,
+      snapshot_matches_root(empty_pair, 0u, state_type_id, 0u, 17u, 24u,
                             hex_z_initialize) &&
       snapshot_matches_root(empty_pair, 1u, continuation_type_id, 24u,
                             8u, 8u,
                             hex_continuation_none) &&
       snapshot_matches_root(&evidence->empty_error_final, 0u, state_type_id,
-                            0u, 22u, 24u, hex_error_err) &&
+                            0u, 19u, 24u, hex_error_err) &&
       evidence->empty_error_to_ok_begin_bank.root_count == (keep ? 1u : 2u) &&
       evidence->empty_error_to_ok_begin_bank.pending == 1u &&
       evidence->empty_error_to_ok_begin_associated.pending == 1u &&
       evidence->empty_error_to_ok_begin_associated.root_count == (keep ? 2u : 0u) &&
-      snapshot_matches_root(error_followup_pair, 0u, state_type_id, 0u, 22u,
+      snapshot_matches_root(error_followup_pair, 0u, state_type_id, 0u, 19u,
                             24u, hex_error_err) &&
       snapshot_matches_root(error_followup_pair, 1u, continuation_type_id,
                             24u, 8u, 8u, hex_continuation_none) &&
       snapshot_matches_root(&evidence->empty_error_to_ok_final, 0u,
-                            state_type_id, 0u, 22u, 24u, hex_ok_err) &&
+                            state_type_id, 0u, 19u, 24u, hex_ok_err) &&
       evidence->empty_error_to_ok_final.pending == 0u &&
       evidence->error_round_trip_ok != 0u &&
       snapshot_matches_root(&evidence->capacity_initialize, 0u, state_type_id,

@@ -170,6 +170,25 @@ the authoring syntax and library qualification rules are unchanged. See the
 [native typing scope](NATIVE-NOMINALS-IMPLEMENTATION.md) and
 [report 174](../reports/174-native-refined-string.md) for the original refinement slice.
 
+## Strings are UTF-8
+
+Strings hold Unicode text and are stored as UTF-8 in native builds.
+
+| Primitive | Returns |
+| --- | --- |
+| `string.byte-length(s)` | the length in UTF-8 bytes (constant time) |
+| `string.char-length(s)` | the number of Unicode characters (scalar values) |
+| `string.length(s)` | deprecated alias of `string.byte-length`, removed by 2026-11-01 |
+
+Text with an unpaired UTF-16 surrogate has no UTF-8 form and is rejected
+wherever it enters:
+
+- **source literals:** `FLOW_INVALID_STRING`;
+- **interpreter inputs and host values:** `STRING_INVALID_UTF16`;
+- **native inputs:** `STRING_INVALID_UTF16`.
+
+Search and escaping work on whole characters.
+
 ## List literals
 
 `[a, b, c]` builds a `List<T>` from one or more elements in order. Every element

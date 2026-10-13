@@ -539,16 +539,18 @@ static void al_test_write_u64_le(uint8_t *bytes, uint32_t offset,
     bytes[offset + index] = (uint8_t)(value >> (index * 8u));
 }
 
+/* Test texts are written as ASCII UTF-16LE arrays; native Strings are UTF-8,
+ * so each unit's low byte is the character (the high byte must be zero). */
 static void al_test_build_string(uint8_t *bytes, uint32_t code_units,
                                  const uint8_t *data) {
-  uint32_t data_bytes = code_units * 2u;
-  uint32_t payload = 8u + data_bytes;
+  uint32_t payload = 8u + code_units;
   uint32_t extent = (payload + 7u) & ~7u;
   uint32_t index;
   (void)memset(bytes, 0, extent);
   al_test_write_u32_le(bytes, 0u, code_units);
-  for (index = 0u; index < data_bytes; ++index)
-    bytes[8u + index] = data[index];
+  for (index = 0u; index < code_units; ++index) {
+    bytes[8u + index] = data[index * 2u];
+  }
 }
 
 static void al_test_build_text_state(uint8_t *bytes, uint32_t count,
@@ -556,19 +558,21 @@ static void al_test_build_text_state(uint8_t *bytes, uint32_t count,
                                      uint32_t code_units, uint64_t state_count,
                                      uint64_t tag, uint32_t *out_payload,
                                      uint32_t *out_extent) {
-  uint32_t string_payload = 8u + code_units * 2u;
+  uint32_t string_payload = 8u + code_units;
   uint32_t string_extent = (string_payload + 7u) & ~7u;
   uint32_t code_units_offset = 8u + string_extent;
   uint32_t tag_offset = 16u + string_extent;
   uint32_t extent = string_extent + 24u;
+  uint32_t index;
   (void)memset(bytes, 0, extent);
   al_test_write_u64_le(bytes, 0u, state_count);
   al_test_write_u32_le(bytes, 8u, count);
-  if (code_units * 2u > 0u)
-    (void)memcpy(bytes + 16u, string_data, code_units * 2u);
+  for (index = 0u; index < code_units; ++index) {
+    bytes[16u + index] = string_data[index * 2u];
+  }
   al_test_write_u64_le(bytes, code_units_offset, code_units);
   al_test_write_u64_le(bytes, tag_offset, tag);
-  *out_payload = 32u + code_units * 2u;
+  *out_payload = 32u + code_units;
   *out_extent = extent;
 }
 
@@ -1139,7 +1143,7 @@ static int al_test_dynamic_external_copy_and_fields(void) {
   ctx = &fixture.ctx;
   al_test_build_text_state(external, 1u, text, 1u, UINT64_C(0x1122334455667788),
                            UINT64_C(0x8877665544332211), &payload, &extent);
-  AL_CHECK(payload == 34u && extent == 40u);
+  AL_CHECK(payload == 33u && extent == 40u);
   /* Independent byte oracle for State{Int64, Envelope{String,Int64},Int64}.
    * In particular, nonzero trailing fields after the dynamic String prove
    * that the bounded external copy includes nested padding and later fields. */
@@ -1190,7 +1194,7 @@ static int al_test_dynamic_owner_end_boundary(void) {
   al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
   ctx = &fixture.ctx;
   AL_CHECK(al_owning_reserve_to(ctx, 32u, AL_TEST_DYNAMIC_ERROR_ID) == 0);
-  al_owning_store_i64(ctx, 0u, 5, AL_TEST_TYPE_STRING);
+  al_owning_store_i64(ctx, 0u, 9, AL_TEST_TYPE_STRING); /* 8 + 9 UTF-8 bytes needs 24 > 16 */
   al_owning_store_i64(ctx, 8u, INT64_C(0x1111222233334444), AL_TEST_TYPE_INT);
   al_owning_store_i64(ctx, 16u, INT64_C(0x5555666677778888), AL_TEST_TYPE_INT);
   al_owning_store_i64(ctx, 24u, INT64_C(0x0123456789ABCDEF), AL_TEST_TYPE_INT);
@@ -1235,16 +1239,16 @@ static int al_test_dynamic_concat_provenance_and_atomicity(void) {
   al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
   ctx = &fixture.ctx;
   AL_CHECK(al_owning_reserve_to(ctx, 48u, AL_TEST_DYNAMIC_ERROR_ID) == 0);
-  AL_CHECK(al_owning_copy_external_bounded(ctx, 0u, left, sizeof(left), 0u, 10u,
+  AL_CHECK(al_owning_copy_external_bounded(ctx, 0u, left, sizeof(left), 0u, 9u,
                                            sizeof(left), AL_TEST_TYPE_STRING,
                                            AL_TEST_DYNAMIC_ERROR_ID) == 0);
   AL_CHECK(al_owning_copy_external_bounded(
-               ctx, 16u, right, sizeof(right), 0u, 12u, sizeof(right),
+               ctx, 16u, right, sizeof(right), 0u, 10u, sizeof(right),
                AL_TEST_TYPE_STRING, AL_TEST_DYNAMIC_ERROR_ID) == 0);
   AL_CHECK(al_owning_string_concat_plan(ctx, 0u, 16u, 16u, 16u,
                                         AL_TEST_DYNAMIC_ERROR_ID, &units,
                                         &payload, &extent) == 0);
-  AL_CHECK(units == 3u && payload == 14u && extent == 16u);
+  AL_CHECK(units == 3u && payload == 11u && extent == 16u);
   AL_CHECK(al_owning_string_concat_write(ctx, 32u, extent, 0u, 16u, 16u, 16u,
                                          AL_TEST_TYPE_STRING,
                                          AL_TEST_DYNAMIC_ERROR_ID) == 0);
@@ -1252,34 +1256,36 @@ static int al_test_dynamic_concat_provenance_and_atomicity(void) {
            ctx->trace_events[2].kind == AL_OWNING_EVENT_STRING_CONCAT_LEFT &&
            ctx->trace_events[3].kind == AL_OWNING_EVENT_STRING_CONCAT_RIGHT);
   AL_CHECK(ctx->trace_events[2].offset == 40u &&
-           ctx->trace_events[2].extent_bytes == 2u &&
-           ctx->trace_events[2].payload_bytes == 2u &&
+           ctx->trace_events[2].extent_bytes == 1u &&
+           ctx->trace_events[2].payload_bytes == 1u &&
            ctx->trace_events[2].source_offset == 8u &&
-           ctx->trace_events[2].source_extent_bytes == 2u);
-  AL_CHECK(ctx->trace_events[3].offset == 42u &&
-           ctx->trace_events[3].extent_bytes == 4u &&
-           ctx->trace_events[3].payload_bytes == 4u &&
+           ctx->trace_events[2].source_extent_bytes == 1u);
+  AL_CHECK(ctx->trace_events[3].offset == 41u &&
+           ctx->trace_events[3].extent_bytes == 2u &&
+           ctx->trace_events[3].payload_bytes == 2u &&
            ctx->trace_events[3].source_offset == 24u &&
-           ctx->trace_events[3].source_extent_bytes == 4u);
+           ctx->trace_events[3].source_extent_bytes == 2u);
   AL_CHECK(ctx->trace_events[2].offset + ctx->trace_events[2].extent_bytes ==
            ctx->trace_events[3].offset);
   AL_CHECK(ctx->deep_copy_bytes == 16u && ctx->input_copy_bytes == 32u);
   AL_CHECK(ctx->stack_data[32u] == 3u && ctx->stack_data[36u] == 0u &&
            ctx->stack_data[37u] == 0u && ctx->stack_data[38u] == 0u &&
            ctx->stack_data[39u] == 0u);
-  AL_CHECK(memcmp(ctx->stack_data + 40u, "A\0B\0C\0", 6u) == 0);
-  AL_CHECK(ctx->stack_data[46u] == 0u && ctx->stack_data[47u] == 0u);
-  AL_CHECK(ctx->live_payload_bytes == 22u);
+  AL_CHECK(memcmp(ctx->stack_data + 40u, "ABC", 3u) == 0);
+  AL_CHECK(ctx->stack_data[43u] == 0u && ctx->stack_data[44u] == 0u &&
+           ctx->stack_data[45u] == 0u && ctx->stack_data[46u] == 0u &&
+           ctx->stack_data[47u] == 0u);
+  AL_CHECK(ctx->live_payload_bytes == 19u);
   AL_CHECK(al_test_case_begin("dynamic_concat_provenance", &fixture));
 
   al_test_fixture_init(&short_fixture, 47u);
   ctx = &short_fixture.ctx;
   AL_CHECK(al_owning_reserve_to(ctx, 32u, AL_TEST_DYNAMIC_ERROR_ID) == 0);
-  AL_CHECK(al_owning_copy_external_bounded(ctx, 0u, left, sizeof(left), 0u, 10u,
+  AL_CHECK(al_owning_copy_external_bounded(ctx, 0u, left, sizeof(left), 0u, 9u,
                                            sizeof(left), AL_TEST_TYPE_STRING,
                                            AL_TEST_DYNAMIC_ERROR_ID) == 0);
   AL_CHECK(al_owning_copy_external_bounded(
-               ctx, 16u, right, sizeof(right), 0u, 12u, sizeof(right),
+               ctx, 16u, right, sizeof(right), 0u, 10u, sizeof(right),
                AL_TEST_TYPE_STRING, AL_TEST_DYNAMIC_ERROR_ID) == 0);
   (void)memcpy(short_before, ctx->stack_data, sizeof(short_before));
   AL_CHECK(al_owning_reserve_to(ctx, 48u, AL_TEST_DYNAMIC_ERROR_ID) != 0);
@@ -1294,11 +1300,11 @@ static int al_test_dynamic_concat_provenance_and_atomicity(void) {
   al_test_fixture_init(&overlap_fixture, AL_TEST_STACK_CAPACITY);
   ctx = &overlap_fixture.ctx;
   AL_CHECK(al_owning_reserve_to(ctx, 48u, AL_TEST_DYNAMIC_ERROR_ID) == 0);
-  AL_CHECK(al_owning_copy_external_bounded(ctx, 0u, left, sizeof(left), 0u, 10u,
+  AL_CHECK(al_owning_copy_external_bounded(ctx, 0u, left, sizeof(left), 0u, 9u,
                                            sizeof(left), AL_TEST_TYPE_STRING,
                                            AL_TEST_DYNAMIC_ERROR_ID) == 0);
   AL_CHECK(al_owning_copy_external_bounded(
-               ctx, 16u, right, sizeof(right), 0u, 12u, sizeof(right),
+               ctx, 16u, right, sizeof(right), 0u, 10u, sizeof(right),
                AL_TEST_TYPE_STRING, AL_TEST_DYNAMIC_ERROR_ID) == 0);
   AL_CHECK(al_owning_string_concat_plan(ctx, 0u, 16u, 16u, 16u,
                                         AL_TEST_DYNAMIC_ERROR_ID, &units,
@@ -1554,7 +1560,7 @@ static int al_test_dynamic_local_suffix_compaction(void) {
   al_test_build_text_state(short_state, 0u, 0, 0u, UINT64_C(81), UINT64_C(82),
                            &short_payload, &short_extent);
   al_test_build_string(empty_string, 0u, 0);
-  AL_CHECK(long_payload == 34u && long_extent == 40u && short_payload == 32u &&
+  AL_CHECK(long_payload == 33u && long_extent == 40u && short_payload == 32u &&
            short_extent == 32u);
 
   /* Reserve packed locals A/B, store each from a distinct operand copy, and
@@ -1590,14 +1596,14 @@ static int al_test_dynamic_local_suffix_compaction(void) {
                ctx->cursor_bytes);
   al_owning_drop(ctx, 48u, 8u, 8u, AL_TEST_TYPE_INT);
   AL_CHECK(ctx->cursor_bytes == 48u && ctx->live_payload_bytes == 0u &&
-           ctx->live_local_payload_bytes == 42u &&
+           ctx->live_local_payload_bytes == long_payload + 8u &&
            ctx->active_local_reserved_bytes == 48u);
   AL_CHECK(al_owning_reserve_to(ctx, 56u, AL_TEST_DYNAMIC_ERROR_ID) == 0);
   AL_CHECK(al_owning_copy_external_bounded(
                ctx, 48u, empty_string, sizeof(empty_string), 0u, 8u, 8u,
                AL_TEST_TYPE_STRING, AL_TEST_DYNAMIC_ERROR_ID) == 0);
   AL_CHECK(ctx->live_payload_bytes == 8u &&
-           ctx->live_local_payload_bytes == 42u &&
+           ctx->live_local_payload_bytes == long_payload + 8u &&
            ctx->active_local_reserved_bytes == 48u &&
            ctx->live_payload_bytes + ctx->live_local_payload_bytes <=
                ctx->cursor_bytes);
@@ -1664,7 +1670,7 @@ static int al_test_dynamic_local_suffix_compaction(void) {
   AL_CHECK(al_owning_copy_external_bounded(
                ctx, 48u, long_state, long_extent, 0u, long_payload, long_extent,
                AL_TEST_TYPE_TEXT_STATE, AL_TEST_DYNAMIC_ERROR_ID) == 0);
-  AL_CHECK(ctx->live_payload_bytes == 42u &&
+  AL_CHECK(ctx->live_payload_bytes == long_payload + 8u &&
            ctx->live_local_payload_bytes == 40u &&
            ctx->live_payload_bytes + ctx->live_local_payload_bytes <=
                ctx->cursor_bytes);
@@ -1680,14 +1686,14 @@ static int al_test_dynamic_local_suffix_compaction(void) {
            (fixture.poison_bitmap[4u] & 0xFFu) == 0xFFu);
   al_owning_store_local(ctx, 0u, 56u, long_extent, long_extent, long_payload,
                         short_payload, AL_TEST_TYPE_TEXT_STATE);
-  AL_CHECK(ctx->live_payload_bytes == 42u &&
-           ctx->live_local_payload_bytes == 42u &&
+  AL_CHECK(ctx->live_payload_bytes == long_payload + 8u &&
+           ctx->live_local_payload_bytes == long_payload + 8u &&
            ctx->active_local_reserved_bytes == 48u &&
            ctx->live_payload_bytes + ctx->live_local_payload_bytes <=
                ctx->cursor_bytes);
   al_owning_drop(ctx, 56u, long_extent, long_payload, AL_TEST_TYPE_TEXT_STATE);
   AL_CHECK(ctx->cursor_bytes == 56u && ctx->live_payload_bytes == 8u &&
-           ctx->live_local_payload_bytes == 42u &&
+           ctx->live_local_payload_bytes == long_payload + 8u &&
            ctx->active_local_reserved_bytes == 48u &&
            ctx->live_payload_bytes + ctx->live_local_payload_bytes <=
                ctx->cursor_bytes);
@@ -2052,12 +2058,12 @@ static int al_test_closed_enum_valid_values(void) {
                ctx, &al_test_enum_layout, AL_TEST_ENUM_LAYOUT_TEXT_RECORD,
                dynamic_record, sizeof(dynamic_record), 0u,
                AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) == 0);
-  AL_CHECK(payload == 18u && extent == 24u);
+  AL_CHECK(payload == 17u && extent == 24u);
   AL_CHECK(al_owning_measure_external_value(
                ctx, &al_test_enum_layout, AL_TEST_ENUM_LAYOUT_NESTED_TEXT,
                dynamic_record, sizeof(dynamic_record), 0u,
                AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) == 0);
-  AL_CHECK(payload == 18u && extent == 24u);
+  AL_CHECK(payload == 17u && extent == 24u);
   return 1;
 failed:
   return 0;
@@ -2500,13 +2506,13 @@ static int al_test_bool_canonical_scanner(void) {
   al_test_write_u64_le(bytes, 0u, 1u);
   al_test_write_u32_le(bytes, 8u, 2u);
   bytes[16u] = 0x6fu;
-  bytes[18u] = 0x6bu;
+  bytes[17u] = 0x6bu;
   (void)memcpy(malformed_source, bytes, sizeof(bytes));
   AL_CHECK(al_test_bool_external_valid(
-      AL_TEST_BOOL_LAYOUT_RESULT_BOOL_STRING, bytes, 24u, 20u, 24u));
+      AL_TEST_BOOL_LAYOUT_RESULT_BOOL_STRING, bytes, 24u, 18u, 24u));
   al_test_write_u64_le(bytes, 0u, 0u);
   AL_CHECK(al_test_bool_external_valid(
-      AL_TEST_BOOL_LAYOUT_RESULT_STRING_BOOL, bytes, 24u, 20u, 24u));
+      AL_TEST_BOOL_LAYOUT_RESULT_STRING_BOOL, bytes, 24u, 18u, 24u));
   AL_CHECK(memcmp(bytes + 8u, malformed_source + 8u, 16u) == 0);
 
   for (index = 0u; index < 2u; ++index) {
@@ -2790,7 +2796,7 @@ static int al_test_option_result_layout_and_scanner(void) {
                ctx, &al_test_sum_layout, AL_TEST_SUM_RESULT_INT_STRING,
                error_string, sizeof(error_string), 0u,
                AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) == 0 &&
-           payload == 18u && extent == 24u);
+           payload == 17u && extent == 24u);
   AL_CHECK(al_owning_measure_external_value(
                ctx, &al_test_sum_layout, AL_TEST_SUM_RESULT_INT_STRING,
                error_empty_string, sizeof(error_empty_string), 0u,
@@ -2810,23 +2816,23 @@ static int al_test_option_result_layout_and_scanner(void) {
                ctx, &al_test_sum_layout, AL_TEST_SUM_OPTION_NESTED_RESULT,
                nested_string, sizeof(nested_string), 0u,
                AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) == 0 &&
-           payload == 26u && extent == 32u);
+           payload == 25u && extent == 32u);
   AL_CHECK(al_owning_measure_external_value(
                ctx, &al_test_sum_layout, AL_TEST_SUM_OPTION_STRING_RECORD,
                option_string_record, sizeof(option_string_record), 0u,
                AL_TEST_DYNAMIC_ERROR_ID, &payload, &extent) == 0 &&
-           payload == 26u && extent == 32u);
+           payload == 25u && extent == 32u);
 
   AL_CHECK(al_owning_reserve_to(ctx, sizeof(error_string),
                                 AL_TEST_DYNAMIC_ERROR_ID) == 0);
-  al_owning_copy_external(ctx, 0u, error_string, 18u, sizeof(error_string),
+  al_owning_copy_external(ctx, 0u, error_string, 17u, sizeof(error_string),
                           406u);
   AL_CHECK(ctx->status == AL_OWNING_STATUS_OK &&
            al_owning_measure_value(ctx, &al_test_sum_layout,
                                    AL_TEST_SUM_RESULT_INT_STRING, 0u,
                                    sizeof(error_string),
                                    AL_TEST_DYNAMIC_ERROR_ID, &measured) == 0 &&
-           measured.payload_bytes == 18u && measured.extent_bytes == 24u);
+           measured.payload_bytes == 17u && measured.extent_bytes == 24u);
   (void)memcpy(original_stack, ctx->stack_data, sizeof(error_string));
   copy_bytes_before = ctx->deep_copy_bytes;
   AL_CHECK(al_owning_locate_sum_case(
@@ -2834,7 +2840,7 @@ static int al_test_option_result_layout_and_scanner(void) {
                sizeof(error_string), AL_TEST_DYNAMIC_ERROR_ID, &case_index,
                &location) == 0 &&
            case_index == 1u && location.offset_bytes == 8u &&
-           location.payload_bytes == 10u && location.extent_bytes == 16u);
+           location.payload_bytes == 9u && location.extent_bytes == 16u);
   AL_CHECK(ctx->deep_copy_bytes == copy_bytes_before &&
            memcmp(original_stack, ctx->stack_data, sizeof(error_string)) ==
                0);
@@ -2866,7 +2872,7 @@ static int al_test_option_result_layout_and_scanner(void) {
                ctx, &al_test_sum_layout, AL_TEST_SUM_OPTION_STRING_RECORD,
                0u, sizeof(option_string_record), 0u,
                AL_TEST_DYNAMIC_ERROR_ID, &location) == 0 &&
-           location.offset_bytes == 0u && location.payload_bytes == 18u &&
+           location.offset_bytes == 0u && location.payload_bytes == 17u &&
            location.extent_bytes == 24u);
   al_test_fixture_init(&fixture, AL_TEST_STACK_CAPACITY);
   ctx = &fixture.ctx;
@@ -3482,10 +3488,10 @@ static int al_test_list_layout_and_scanner(void) {
       (uint32_t)sizeof(empty_record_list), 0u, 8u, 24u));
   AL_CHECK(al_test_list_external_measure(
       &al_test_list_layout, AL_TEST_LIST_OF_OPTION, option_list,
-      (uint32_t)sizeof(option_list), 0u, 34u, 40u));
+      (uint32_t)sizeof(option_list), 0u, 33u, 40u));
   AL_CHECK(al_test_list_external_measure(
       &al_test_list_layout, AL_TEST_LIST_OF_ROW, row_list,
-      (uint32_t)sizeof(row_list), 0u, 50u, 56u));
+      (uint32_t)sizeof(row_list), 0u, 49u, 56u));
   AL_CHECK(al_test_list_external_measure(
       &al_test_list_layout, AL_TEST_LIST_OF_LIST_INT, nested_list,
       (uint32_t)sizeof(nested_list), 0u, 32u, 32u));
@@ -3751,32 +3757,30 @@ static int al_test_ascii_string_writer(void) {
   if (al_owning_reserve_to(ctx, 64u, AL_TEST_FLOAT_ERROR_ID) != 0)
     goto failed;
   AL_CHECK(al_owning_ascii_string_write(
-               ctx, 0u, 24u, text, (uint32_t)sizeof(text),
+               ctx, 0u, 16u, text, (uint32_t)sizeof(text),
                AL_TEST_TYPE_STRING, AL_TEST_FLOAT_ERROR_ID) == 0 &&
            ctx->status == AL_OWNING_STATUS_OK);
   AL_CHECK(ctx->stack_data[0u] == sizeof(text) &&
            ctx->stack_data[1u] == 0u && ctx->stack_data[2u] == 0u &&
            ctx->stack_data[3u] == 0u);
   for (index = 0u; index < (uint32_t)sizeof(text); ++index) {
-    AL_CHECK(ctx->stack_data[8u + index * 2u] == text[index] &&
-             ctx->stack_data[9u + index * 2u] == 0u);
+    AL_CHECK(ctx->stack_data[8u + index] == text[index]);
   }
-  AL_CHECK(ctx->stack_data[18u] == 0u && ctx->stack_data[19u] == 0u &&
-           ctx->stack_data[20u] == 0u && ctx->stack_data[21u] == 0u &&
-           ctx->stack_data[22u] == 0u && ctx->stack_data[23u] == 0u &&
-           al_owning_check_initialized(ctx, 0u, 24u) == 0);
+  AL_CHECK(ctx->stack_data[13u] == 0u && ctx->stack_data[14u] == 0u &&
+           ctx->stack_data[15u] == 0u &&
+           al_owning_check_initialized(ctx, 0u, 16u) == 0);
   AL_CHECK(ctx->trace_event_count == 1u &&
            fixture.events[0].kind == AL_OWNING_EVENT_ALLOCATE &&
            fixture.events[0].type_id == AL_TEST_TYPE_STRING &&
            fixture.events[0].offset == 0u &&
-           fixture.events[0].extent_bytes == 24u &&
-           fixture.events[0].payload_bytes == 18u);
+           fixture.events[0].extent_bytes == 16u &&
+           fixture.events[0].payload_bytes == 13u);
 
   (void)memcpy(before, ctx->stack_data, sizeof(before));
   (void)memcpy(init_before, fixture.init_bitmap, sizeof(init_before));
   (void)memcpy(poison_before, fixture.poison_bitmap, sizeof(poison_before));
   AL_CHECK(al_owning_ascii_string_write(
-               ctx, 0u, 16u, text, (uint32_t)sizeof(text),
+               ctx, 0u, 24u, text, (uint32_t)sizeof(text),
                AL_TEST_TYPE_STRING, AL_TEST_FLOAT_ERROR_ID) != 0 &&
            ctx->status == AL_OWNING_STATUS_INTERNAL &&
            memcmp(before, ctx->stack_data, sizeof(before)) == 0 &&
@@ -3785,7 +3789,7 @@ static int al_test_ascii_string_writer(void) {
                   sizeof(poison_before)) == 0);
   ctx->status = AL_OWNING_STATUS_OK;
   AL_CHECK(al_owning_ascii_string_write(
-               ctx, 56u, 24u, text, (uint32_t)sizeof(text),
+               ctx, 56u, 16u, text, (uint32_t)sizeof(text),
                AL_TEST_TYPE_STRING, AL_TEST_FLOAT_ERROR_ID) != 0 &&
            ctx->status == AL_OWNING_STATUS_INTERNAL &&
            memcmp(before, ctx->stack_data, sizeof(before)) == 0 &&
@@ -3821,16 +3825,15 @@ static int al_test_ascii_string_writer(void) {
   for (index = 0u; index < (uint32_t)sizeof(max_ascii); ++index)
     max_ascii[index] = (uint8_t)('a' + (index % 26u));
   AL_CHECK(al_owning_ascii_string_write(
-               ctx, 0u, 72u, max_ascii, AL_OWNING_ASCII_CAPACITY,
+               ctx, 0u, 40u, max_ascii, AL_OWNING_ASCII_CAPACITY,
                AL_TEST_TYPE_STRING, AL_TEST_FLOAT_ERROR_ID) == 0 &&
            ctx->status == AL_OWNING_STATUS_OK &&
-           al_owning_check_initialized(ctx, 0u, 72u) == 0);
+           al_owning_check_initialized(ctx, 0u, 40u) == 0);
   AL_CHECK(ctx->stack_data[0u] == AL_OWNING_ASCII_CAPACITY &&
            ctx->stack_data[4u] == 0u && ctx->stack_data[5u] == 0u &&
            ctx->stack_data[6u] == 0u && ctx->stack_data[7u] == 0u);
   for (index = 0u; index < AL_OWNING_ASCII_CAPACITY; ++index)
-    AL_CHECK(ctx->stack_data[8u + index * 2u] == max_ascii[index] &&
-             ctx->stack_data[9u + index * 2u] == 0u);
+    AL_CHECK(ctx->stack_data[8u + index] == max_ascii[index]);
   AL_CHECK(al_test_fixture_guards_ok(&fixture));
   AL_CHECK(al_test_case_begin("ascii_string_writer", &fixture));
   return 1;

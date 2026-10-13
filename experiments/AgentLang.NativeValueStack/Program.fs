@@ -2342,10 +2342,16 @@ let private codeUnitsFromHex (hex: string) =
 let private stringFromCodeUnitsHex (hex: string) =
     String(codeUnitsFromHex hex)
 
+/// Owning Strings are UTF-8 since report 265. Fixture texts stay written as
+/// UTF-16 code-unit hex (the .NET view of the logical string); this strict
+/// encoder throws on unpaired surrogates instead of substituting U+FFFD.
+let private strictUtf8 = UTF8Encoding(false, true)
+
+let private utf8ByteCount (text: string) = strictUtf8.GetByteCount text
+
 let private stringBytesFromCodeUnitsHex (hex: string) =
-    let data = bytesFromHex hex
-    if data.Length % 2 <> 0 then invalidArg (nameof hex) "UTF-16 code-unit hex must contain complete little-endian code units."
-    let count = uint32 (data.Length / 2)
+    let data = strictUtf8.GetBytes(stringFromCodeUnitsHex hex)
+    let count = uint32 data.Length
     let payloadBytes = 8 + data.Length
     let extentBytes = (payloadBytes + 7) / 8 * 8
     let result = Array.zeroCreate<byte> extentBytes
@@ -4450,14 +4456,14 @@ let private runStringWorkload
             "inputBytes", box inputBytes
             "inputCopyBytes", box inputCopyBytes
             "hostEncodedInputBytes", box hostEncodedInputBytes ])
-        let inputCount = caseElement.GetProperty("inputCodeUnitCount").GetInt32()
-        let outputCount = caseElement.GetProperty("outputCodeUnitCount").GetInt32()
+        let inputCount = caseElement.GetProperty("inputUtf8ByteCount").GetInt32()
+        let outputCount = caseElement.GetProperty("outputUtf8ByteCount").GetInt32()
         let inputStringExtent = caseElement.GetProperty("inputStringExtentBytes").GetInt32()
         let outputStringExtent = caseElement.GetProperty("outputStringExtentBytes").GetInt32()
         let fieldExtractEvents = events |> List.filter (fun event -> event.Kind = "field-extract")
         let stringFieldExtractEvents = fieldExtractEvents |> List.filter (fun event -> event.TypeId = stringTypeId)
-        let inputStringPayload = 8 + 2 * inputCount
-        let outputStringPayload = 8 + 2 * outputCount
+        let inputStringPayload = 8 + inputCount
+        let outputStringPayload = 8 + outputCount
         let align8 bytes = ((bytes + 7) / 8) * 8
         let inputStringExtentFromOracle = align8 inputStringPayload
         let outputStringExtentFromOracle = align8 outputStringPayload
@@ -4491,7 +4497,7 @@ let private runStringWorkload
                           && left.TypeId = stringTypeId
                           && right.TypeId = stringTypeId then
                            yield left, right |]
-        let outputStringDataBytes = 2 * outputCount
+        let outputStringDataBytes = outputCount
         let outputConcatSpansMatch =
             concatEventPairs
             |> Array.exists (fun (left, right) ->
@@ -4629,7 +4635,7 @@ let private runStringWorkload
         let encodedBytes = int64Property metrics "HostEncodedInputBytes"
         let indexedEvents = result.LayoutEvents |> List.indexed |> List.toArray
         let retainedEvent = indexedEvents |> Array.tryFind (fun (_, event) -> event.Kind = "retained-copy")
-        let inputStringPayloadBytes = 8 + 2 * (stringFromCodeUnitsHex codeUnitsHex).Length
+        let inputStringPayloadBytes = 8 + utf8ByteCount (stringFromCodeUnitsHex codeUnitsHex)
         let inputAllocation =
             indexedEvents
             |> Array.tryFind (fun (_, event) ->
@@ -4690,12 +4696,12 @@ let private runStringWorkload
         "marker", mixedEmpty
         "text", StringValue mixedText
         "sentinel", IntValue mixedSentinel ])
-    let mixedCodeUnitCount = mixedOracle.GetProperty("inputCodeUnitCount").GetInt32()
+    let mixedCodeUnitCount = mixedOracle.GetProperty("inputUtf8ByteCount").GetInt32()
     let mixedStringBytes = stringBytesFromCodeUnitsHex mixedCodeUnitsHex
-    let mixedStringPayloadBytes = 8 + 2 * mixedCodeUnitCount
+    let mixedStringPayloadBytes = 8 + mixedCodeUnitCount
     let mixedStringExtentBytes = ((mixedStringPayloadBytes + 7) / 8) * 8
     let mixedRecordPayloadBytes = mixedStringPayloadBytes + 8
-    let mixedExpectedRecordPayloadBytes = 16 + 2 * mixedCodeUnitCount
+    let mixedExpectedRecordPayloadBytes = 16 + mixedCodeUnitCount
     let mixedExpectedRecordExtentBytes = mixedStringExtentBytes + 8
     let mixedRecordBytes = Array.concat [ mixedStringBytes; bytesFromInt64s [ mixedSentinel ] ]
     let mixedFixtureStringBytes = bytesFromHex (mixedOracle.GetProperty("inputStringBytesHex").GetString())
@@ -4927,7 +4933,7 @@ let private runStringWorkload
             expectedEnvelopeBytes.Length = expectedEnvelopeExtent
             && expectedBranchBytes = fixtureBranchBytes
             && fixtureBranchBytes.Length = branchCase.GetProperty("expectedRetainedBytes").GetInt32()
-            && expectedLength = int64 selectedCodeUnitCount
+            && expectedLength = int64 (utf8ByteCount (stringFromCodeUnitsHex selectedCodeUnitsHex))
         recordCheck checks failures $"oracle/String/{branchName}/dynamic-branch-retained-bytes" fixtureOraclePassed (jsonObject [
             "selectedEnvelopeBytes", box (bytesHex expectedEnvelopeBytes)
             "selectedEnvelopeExtentBytes", box expectedEnvelopeBytes.Length
@@ -4975,6 +4981,21 @@ let private runStringWorkload
             "actualBytes", box (bytesHex branchOutput)
             "metrics", box (jsonNode options (metricSummary branchMetrics))
             "events", box (layoutEventDetails branchResult.LayoutEvents) ]))
+
+    // Report 265: an unpaired surrogate has no UTF-8 form, so these former
+    // edge-case inputs must be refused at the native boundary.
+    for rejected in workload.GetProperty("rejectedUnpairedSurrogateInputs").EnumerateArray() do
+        let name = rejected.GetProperty("name").GetString()
+        let rejectedHex = rejected.GetProperty("inputCodeUnitsHex").GetString()
+        let text = stringFromCodeUnitsHex rejectedHex
+        let rejectedByAot =
+            try
+                identityProgram.ExecuteInto([ StringValue text ], stateCapacity, Array.zeroCreate<byte> 64) |> ignore
+                false
+            with :? ArgumentException as error -> error.Message.Contains("STRING_INVALID_UTF16", StringComparison.Ordinal)
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/{name}/unpaired-surrogate-rejected-at-boundary" (not (TrustedValues.isWellFormedUtf16 text) && rejectedByAot) (jsonObject [
+            "codeUnitsHex", box rejectedHex
+            "rejectedByOwningBoundary", box rejectedByAot ])
 
     let joined = workload.GetProperty("joinedSurrogatePair")
     let leftHex = joined.GetProperty("leftCodeUnitHex").GetString()
@@ -5189,7 +5210,7 @@ let private runStringWorkload
                    && index < outerRewindIndex
                    && event.Kind = "descriptor-transfer"
                    && event.TypeId = stringTypeId
-                   && event.PayloadBytes = 10
+                   && event.PayloadBytes = 8 + utf8ByteCount ((stableDead.GetProperty("inputs")[0]).GetString())
                    && event.SourceExtentBytes = Some 16
                    && event.SourceOffsetBytes = Some(event.OffsetBytes + 16) then
                     Some event.OffsetBytes
@@ -5276,7 +5297,7 @@ let private runStringWorkload
     let stableBindingTransfers = stableBindingIndexedEvents |> Array.choose (fun (index, event) -> if event.Kind = "descriptor-transfer" then Some(index, event) else None)
     let stableBindingRewinds = stableBindingResult.LayoutEvents |> List.filter (fun event -> event.Kind = "arena-rewind")
     let stableBindingExpectedLiteralBytes = stableBinding.GetProperty("literalExtentBytes").GetInt32()
-    let stableBindingExpectedLiteralPayloadBytes = 8 + 2 * stableBinding.GetProperty("value").GetString().Length
+    let stableBindingExpectedLiteralPayloadBytes = 8 + utf8ByteCount (stableBinding.GetProperty("value").GetString())
     let stableBindingLiteral =
         stableBindingIndexedEvents
         |> Array.tryFind (fun (_, event) ->
@@ -6222,7 +6243,7 @@ let private runSumConformance
                 let literalCodeUnitsHex = literalCodeUnitsElement.GetString()
                 let literalCodeUnitBytes = bytesFromHex literalCodeUnitsHex
                 let literalBytes = stringBytesFromCodeUnitsHex literalCodeUnitsHex
-                expectedLiteralPayloadBytes <- 8 + literalCodeUnitBytes.Length
+                expectedLiteralPayloadBytes <- 8 + utf8ByteCount (stringFromCodeUnitsHex literalCodeUnitsHex)
                 expectedLiteralExtentBytes <- literalBytes.Length
                 let llvmLines = matchProgram.LlvmIr.Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
                 let encodedLiteralBytes =

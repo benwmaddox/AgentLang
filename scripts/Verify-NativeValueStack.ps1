@@ -533,11 +533,11 @@ try {
         $nominalOwnerBytes = [string]$nominalOwner['retainedBytesHex']
         $nominalOwnerPassed = [string]$nominalOwner['ownerValue'] -ceq '-42' -and
             [string]$nominalOwner['tail'] -ceq 'tail' -and
-            $nominalOwnerBytes -ceq 'd6ffffffffffffff04000000000000007400610069006c00' -and
+            $nominalOwnerBytes -ceq 'd6ffffffffffffff04000000000000007461696c00000000' -and
             [string]$nominalOwner['projectedOwnerBytesHex'] -ceq 'd6ffffffffffffff'
         $nominalOwnerRange = $nominalOracle['ownerRangeTrace']['expectedDescriptorTransfer']
         $nominalOwnerRangePassed = [int]$nominalOwnerRange['typeId'] -eq 1 -and
-            [int]$nominalOracle['ownerRangeTrace']['literalDeepCopyBytes'] -eq 80 -and
+            [int]$nominalOracle['ownerRangeTrace']['literalDeepCopyBytes'] -eq 56 -and
             [int]$nominalOwnerRange['offsetBytes'] -eq 0 -and
             [int]$nominalOwnerRange['sourceOffsetBytesOwnerEnd'] -eq 24 -and
             [int]$nominalOwnerRange['sourceExtentBytesPayloadExtent'] -eq 8
@@ -564,7 +564,7 @@ try {
         expectedTypeIds = [ordered]@{ Meters = 4; OrderId = 5 }
         expectedSignedFixtures = $nominalSignedExpected
         actualSignedFixtureNames = $nominalFixtureSignedNames
-        expectedOwnerBytesHex = 'd6ffffffffffffff04000000000000007400610069006c00'
+        expectedOwnerBytesHex = 'd6ffffffffffffff04000000000000007461696c00000000'
         actualOwnerBytesHex = $nominalOwnerBytes
         expectedOwnerDescriptorTransfer = [ordered]@{ typeId = 1; offsetBytes = 0; sourceOffsetBytesOwnerEnd = 24; sourceExtentBytesPayloadExtent = 8 }
         actualOwnerDescriptorTransfer = $nominalOwnerRange
@@ -713,7 +713,7 @@ try {
             ($positiveFixtureFalseNames -join ',') -ceq 'zero,negative-one' -and $positiveFalseDiagnosticsPassed -and
             [string]$positiveOracle['hostInputs']['positiveIdBytesHex'] -ceq '0100000000000000' -and
             $hostShapeFixturePassed -and
-            [string]$nested['envelopeBytesHex'] -ceq '010000000000000002000000000000006f006b0000000000' -and
+            [string]$nested['envelopeBytesHex'] -ceq '010000000000000002000000000000006f6b000000000000' -and
             [string]$nested['optionSomeBytesHex'] -ceq '00000000000000000100000000000000' -and
             [string]$nested['optionNoneBytesHex'] -ceq '0100000000000000' -and
             [string]$nested['resultOkBytesHex'] -ceq '00000000000000000100000000000000' -and
@@ -744,7 +744,7 @@ try {
         expectedHostShapeCases = @('bare-int', 'wrong-nominal OrderId')
         actualHostShapeCases = $hostShapeCaseNames
         expectedPositiveIdBytesHex = '0100000000000000'
-        expectedEnvelopeBytesHex = '010000000000000002000000000000006f006b0000000000'
+        expectedEnvelopeBytesHex = '010000000000000002000000000000006f6b000000000000'
         expectedHostFailure = 'REFINEMENT_FAILED / PositiveId.construct / scalar declaration span'
         expectedOverflow = 'RUNTIME_OVERFLOW / divide / <native-value-stack-positive-id-overflow-validator-divide>:1:4:1'
         expectedBodyFailure = 'RUNTIME_DIVIDE_BY_ZERO / divide / <native-value-stack-positive-id-body-failure-divide>:1:3:1'
@@ -849,13 +849,13 @@ try {
     $refinedUtf16 = $refinedHost['utf16Cases']
     $refinedFixturePassed =
         $null -ne $refinedOracle -and
-        [string]$refinedOracle['encoding'] -ceq 'String payload is an eight-byte UTF-16 code-unit count and zero reserved word, followed by UTF-16LE data and zero padding to an eight-byte extent.' -and
+        [string]$refinedOracle['encoding'] -ceq 'String payload is an eight-byte UTF-8 byte count and zero reserved word, followed by UTF-8 data and zero padding to an eight-byte extent (UTF-16 before report 265).' -and
         [int]$refinedIdentityIds['NonEmptyString'] -eq 4 -and [int]$refinedIdentityIds['String'] -eq 5 -and
         [int]$refinedIdentity['stringKind'] -eq 5 -and
         [int]$refinedIdentity['minimumPayloadBytes'] -eq 8 -and [int]$refinedIdentity['minimumExtentBytes'] -eq 8 -and
         [string]$refinedSuccess['value'] -ceq 'ok' -and
-        [string]$refinedSuccess['stringBytesHex'] -ceq '02000000000000006f006b0000000000' -and
-        [int]$refinedSuccess['payloadBytes'] -eq 12 -and [int]$refinedSuccess['extentBytes'] -eq 16 -and
+        [string]$refinedSuccess['stringBytesHex'] -ceq '02000000000000006f6b000000000000' -and
+        [int]$refinedSuccess['payloadBytes'] -eq 10 -and [int]$refinedSuccess['extentBytes'] -eq 16 -and
         [string]$refinedEmpty['bytesHex'] -ceq '0000000000000000' -and
         [string]$refinedFalse['code'] -ceq 'REFINEMENT_FAILED' -and
         [string]$refinedFalse['message'] -ceq "Value does not satisfy NonEmptyString's refinement validator." -and
@@ -864,25 +864,25 @@ try {
         ([string[]]$refinedFalse['actual'] -join ',') -ceq 'false' -and
         [string]$refinedFalseSpan['file'] -ceq '<native-value-stack-scalar-NonEmptyString>' -and
         [int]$refinedFalseSpan['line'] -eq 1 -and [int]$refinedFalseSpan['column'] -eq 1 -and [int]$refinedFalseSpan['length'] -eq 1 -and
-        [string]$refinedHost['validStringBytesHex'] -ceq '02000000000000006f006b0000000000' -and
+        [string]$refinedHost['validStringBytesHex'] -ceq '02000000000000006f6b000000000000' -and
         [string]$refinedHost['wrongNominalTypeName'] -ceq 'OtherString' -and
         [string]$refinedOracle['hostShapeRejections']['exceptionType'] -ceq 'System.ArgumentException' -and
         [string]$refinedOracle['hostShapeRejections']['parameterName'] -ceq 'values' -and
         [int]$refinedRaw['inputCount'] -eq 1 -and
         [string]$refinedRaw['invalidEmptyBytesHex'] -ceq '0000000000000000' -and [int]$refinedRaw['invalidEmptyExtentBytes'] -eq 8 -and
-        [string]$refinedRaw['validBytesHex'] -ceq '02000000000000006f006b0000000000' -and [int]$refinedRaw['validExtentBytes'] -eq 16 -and
+        [string]$refinedRaw['validBytesHex'] -ceq '02000000000000006f6b000000000000' -and [int]$refinedRaw['validExtentBytes'] -eq 16 -and
         [int]$refinedRaw['expectedDiagnosticStatus'] -eq 1 -and
         [string]$refinedRaw['sentinelBytesHex'] -ceq (('a5' * 32) -join '') -and
         [int]$refinedNestedIds['NonEmptyString'] -eq 4 -and [int]$refinedNestedIds['RefinedEnvelope'] -eq 5 -and [int]$refinedNestedIds['String'] -eq 6 -and
-        [string]$refinedRecord['bytesHex'] -ceq '02000000000000006f006b000000000001000000000000007a00000000000000' -and
+        [string]$refinedRecord['bytesHex'] -ceq '02000000000000006f6b00000000000001000000000000007a00000000000000' -and
         [string]$refinedRecord['ownerValue'] -ceq 'ok' -and [string]$refinedRecord['tailValue'] -ceq 'z' -and
-        [int]$refinedRecord['payloadBytes'] -eq 22 -and [int]$refinedRecord['extentBytes'] -eq 32 -and
+        [int]$refinedRecord['payloadBytes'] -eq 19 -and [int]$refinedRecord['extentBytes'] -eq 32 -and
         [int]$refinedNested['envelopeLayout']['minimumPayloadBytes'] -eq 16 -and
         [int]$refinedNested['envelopeLayout']['minimumExtentBytes'] -eq 16 -and
-        [string]$refinedOption['someBytesHex'] -ceq '000000000000000002000000000000006f006b0000000000' -and
+        [string]$refinedOption['someBytesHex'] -ceq '000000000000000002000000000000006f6b000000000000' -and
         [string]$refinedOption['noneBytesHex'] -ceq '0100000000000000' -and
-        [string]$refinedResult['okBytesHex'] -ceq '000000000000000002000000000000006f006b0000000000' -and
-        [string]$refinedResult['errorBytesHex'] -ceq '010000000000000002000000000000006f006b0000000000' -and
+        [string]$refinedResult['okBytesHex'] -ceq '000000000000000002000000000000006f6b000000000000' -and
+        [string]$refinedResult['errorBytesHex'] -ceq '010000000000000002000000000000006f6b000000000000' -and
         [int]$refinedInactive['value'] -eq 7 -and
         [string]$refinedInactive['bytesHex'] -ceq '00000000000000000700000000000000' -and
         [int]$refinedOracle['validatorReplacement']['originalRevision'] -eq 1 -and
@@ -891,23 +891,23 @@ try {
         [string]$refinedRuntime['message'] -ceq 'Integer division by zero.' -and [string]$refinedRuntime['word'] -ceq 'divide' -and
         [string]$refinedRuntimeSpan['file'] -ceq '<native-value-stack-refined-string-runtime-validator-divide>' -and
         [int]$refinedRuntimeSpan['line'] -eq 1 -and [int]$refinedRuntimeSpan['column'] -eq 4 -and [int]$refinedRuntimeSpan['length'] -eq 1 -and
-        [int]$refinedOwner['literalDeepCopyBytes'] -eq 80 -and
-        [string]$refinedOwner['projectedOutputBytesHex'] -ceq '02000000000000006f006b0000000000' -and
+        [int]$refinedOwner['literalDeepCopyBytes'] -eq 56 -and
+        [string]$refinedOwner['projectedOutputBytesHex'] -ceq '02000000000000006f6b000000000000' -and
         [int]$refinedTransfer['typeId'] -eq 6 -and [int]$refinedTransfer['offsetBytes'] -eq 0 -and
         [int]$refinedTransfer['sourceOffsetBytesOwnerEnd'] -eq 32 -and
         [int]$refinedTransfer['sourceExtentBytesPayloadExtent'] -eq 16 -and
         [string]$refinedUtf16['supplementary']['value'] -ceq ("A" + [char]0xD83D + [char]0xDE00) -and
         [int]$refinedUtf16['supplementary']['codeUnitCount'] -eq 3 -and
-        [string]$refinedUtf16['supplementary']['stringBytesHex'] -ceq '030000000000000041003dd800de0000' -and
+        [string]$refinedUtf16['supplementary']['stringBytesHex'] -ceq '050000000000000041f09f9880000000' -and
         [string]$refinedUtf16['embeddedNul']['value'] -ceq ("A" + [char]0 + "B") -and
         [int]$refinedUtf16['embeddedNul']['codeUnitCount'] -eq 3 -and
-        [string]$refinedUtf16['embeddedNul']['stringBytesHex'] -ceq '03000000000000004100000042000000'
-    Add-Check 'NonEmptyString fixture pins UTF-16 bytes, IDs, dynamic layout, raw atomicity, validator diagnostics, and OwnerEnd provenance' $refinedFixturePassed ([ordered]@{
+        [string]$refinedUtf16['embeddedNul']['stringBytesHex'] -ceq '03000000000000004100420000000000'
+    Add-Check 'NonEmptyString fixture pins UTF-8 bytes, IDs, dynamic layout, raw atomicity, validator diagnostics, and OwnerEnd provenance' $refinedFixturePassed ([ordered]@{
         expectedIdentityTypeIds = [ordered]@{ NonEmptyString = 4; String = 5 }
         expectedNestedTypeIds = [ordered]@{ NonEmptyString = 4; RefinedEnvelope = 5; String = 6 }
         expectedStringKind = 5
-        expectedOkBytesHex = '02000000000000006f006b0000000000'
-        expectedRecordBytesHex = '02000000000000006f006b000000000001000000000000007a00000000000000'
+        expectedOkBytesHex = '02000000000000006f6b000000000000'
+        expectedRecordBytesHex = '02000000000000006f6b00000000000001000000000000007a00000000000000'
         expectedOwnerEndBytes = 32
         actualFixtureIdentityTypeIds = $refinedIdentityIds
         actualFixtureNestedTypeIds = $refinedNestedIds
@@ -918,23 +918,22 @@ try {
     $nominalStringNestedIds = $nominalStringOracle['nestedProgram']['typeIds']
     $nominalStringUtf16Cases = @($nominalStringOracle['utf16Cases'])
     $nominalStringUtf16Names = @($nominalStringUtf16Cases | ForEach-Object { [string]$_['name'] })
-    $nominalStringIsolatedSurrogate = $nominalStringUtf16Cases | Where-Object { [string]$_['name'] -ceq 'isolated-surrogate' } | Select-Object -First 1
+    $nominalStringIsolatedSurrogate = @($nominalStringOracle['rejectedUnpairedSurrogateCases']) | Select-Object -First 1
     $nominalStringFixturePassed =
-        [string]$nominalStringOracle['encoding'] -ceq 'String payload is an eight-byte UTF-16 code-unit count and zero reserved word, followed by UTF-16LE data and zero padding to an eight-byte extent.' -and
+        [string]$nominalStringOracle['encoding'] -ceq 'String payload is an eight-byte UTF-8 byte count and zero reserved word, followed by UTF-8 data and zero padding to an eight-byte extent (UTF-16 before report 265).' -and
         [int]$nominalStringIdentityIds['TextTag'] -eq 5 -and
         [int]$nominalStringIdentityIds['OtherTextTag'] -eq 4 -and
         [int]$nominalStringIdentityIds['String'] -eq 6 -and
         [int]$nominalStringOracle['identityProgram']['stringKind'] -eq 5 -and
         [int]$nominalStringOracle['identityProgram']['minimumPayloadBytes'] -eq 8 -and
         [int]$nominalStringOracle['identityProgram']['minimumExtentBytes'] -eq 8 -and
-        ($nominalStringUtf16Names -join ',') -ceq 'empty,ordinary,embedded-nul,isolated-surrogate,supplementary' -and
-        ([int[]]$nominalStringIsolatedSurrogate['codeUnits'] -join ',') -ceq '65,55296,66' -and
+        ($nominalStringUtf16Names -join ',') -ceq 'empty,ordinary,embedded-nul,supplementary' -and
+        @($nominalStringOracle['rejectedUnpairedSurrogateCases']).Count -eq 1 -and
         [string]$nominalStringIsolatedSurrogate['codeUnitsHex'] -ceq '410000d84200' -and
-        [string]$nominalStringIsolatedSurrogate['stringBytesHex'] -ceq '0300000000000000410000d842000000' -and
-        [string]$nominalStringUtf16Cases[2]['stringBytesHex'] -ceq '03000000000000004100000042000000' -and
-        [string]$nominalStringUtf16Cases[4]['stringBytesHex'] -ceq '030000000000000041003dd800de0000' -and
-        [string]$nominalStringOracle['identityPair']['stringBytesHex'] -ceq '02000000000000006f006b0000000000' -and
-        [string]$nominalStringOracle['wrapUnwrap']['stringBytesHex'] -ceq '02000000000000006f006b0000000000' -and
+        [string]$nominalStringUtf16Cases[2]['stringBytesHex'] -ceq '03000000000000004100420000000000' -and
+        [string]$nominalStringUtf16Cases[3]['stringBytesHex'] -ceq '050000000000000041f09f9880000000' -and
+        [string]$nominalStringOracle['identityPair']['stringBytesHex'] -ceq '02000000000000006f6b000000000000' -and
+        [string]$nominalStringOracle['wrapUnwrap']['stringBytesHex'] -ceq '02000000000000006f6b000000000000' -and
         [int]$nominalStringOracle['wrapUnwrap']['expectedDescriptorTransfer']['typeId'] -eq 6 -and
         [int]$nominalStringOracle['wrapUnwrap']['expectedDescriptorTransfer']['sourceOffsetBytesOwnerEnd'] -eq 16 -and
         [int]$nominalStringOracle['wrapUnwrap']['expectedDescriptorTransfer']['sourceExtentBytesPayloadExtent'] -eq 16 -and
@@ -943,18 +942,17 @@ try {
         [int]$nominalStringNestedIds['TextTag'] -eq 5 -and
         [int]$nominalStringNestedIds['NominalEnvelope'] -eq 4 -and
         [int]$nominalStringNestedIds['String'] -eq 6 -and
-        [string]$nominalStringOracle['nestedProgram']['record']['bytesHex'] -ceq '02000000000000006f006b000000000001000000000000007a00000000000000' -and
-        [string]$nominalStringOracle['nestedProgram']['option']['someBytesHex'] -ceq '000000000000000002000000000000006f006b0000000000' -and
+        [string]$nominalStringOracle['nestedProgram']['record']['bytesHex'] -ceq '02000000000000006f6b00000000000001000000000000007a00000000000000' -and
+        [string]$nominalStringOracle['nestedProgram']['option']['someBytesHex'] -ceq '000000000000000002000000000000006f6b000000000000' -and
         [string]$nominalStringOracle['nestedProgram']['option']['noneBytesHex'] -ceq '0100000000000000' -and
-        [string]$nominalStringOracle['nestedProgram']['result']['okBytesHex'] -ceq '000000000000000002000000000000006f006b0000000000' -and
-        [string]$nominalStringOracle['nestedProgram']['result']['errorBytesHex'] -ceq '010000000000000005000000000000006500720072006f007200000000000000' -and
+        [string]$nominalStringOracle['nestedProgram']['result']['okBytesHex'] -ceq '000000000000000002000000000000006f6b000000000000' -and
+        [string]$nominalStringOracle['nestedProgram']['result']['errorBytesHex'] -ceq '010000000000000005000000000000006572726f72000000' -and
         [string]$nominalStringOracle['nestedProgram']['inactiveResult']['bytesHex'] -ceq '00000000000000000700000000000000'
-    Add-Check 'unvalidated nominal String fixture pins UTF-16LE code units, distinct TypeIds, exact host shapes, owner transfer, and nested bytes' $nominalStringFixturePassed ([ordered]@{
+    Add-Check 'unvalidated nominal String fixture pins UTF-8 bytes, distinct TypeIds, exact host shapes, owner transfer, and nested bytes' $nominalStringFixturePassed ([ordered]@{
         expectedIdentityTypeIds = [ordered]@{ TextTag = 5; OtherTextTag = 4; String = 6 }
         expectedNestedTypeIds = [ordered]@{ TextTag = 5; NominalEnvelope = 4; String = 6 }
         expectedStringKind = 5
-        expectedIsolatedSurrogateCodeUnits = @(65, 55296, 66)
-        expectedIsolatedSurrogateBytesHex = '0300000000000000410000d842000000'
+        expectedRejectedIsolatedSurrogateCodeUnitsHex = '410000d84200'
         expectedOwnerEndBytes = 16
         actualUtf16CaseNames = $nominalStringUtf16Names
         actualFixtureIdentityTypeIds = $nominalStringIdentityIds
@@ -1053,7 +1051,6 @@ try {
         'host-identity-utf16-empty',
         'host-identity-utf16-ordinary',
         'host-identity-utf16-embedded-nul',
-        'host-identity-utf16-isolated-surrogate',
         'host-identity-utf16-supplementary',
         'host-pair-distinct-identities',
         'wrap-unwrap-preserves-bytes-and-owner',
@@ -1071,7 +1068,7 @@ try {
     $nominalStringRunOptimizationNames = @($nominalStringRuns | ForEach-Object { [string]$_['optimization'] } | Sort-Object) -join ','
     $nominalStringRunsMissingCoverage = @($nominalStringRuns | Where-Object {
         $_['caseCount'] -ne $nominalStringCaseSuffixes.Count -or
-        $_['utf16CaseCount'] -ne 5 -or
+        $_['utf16CaseCount'] -ne 4 -or
         $_['textTagTypeId'] -ne 5 -or $_['otherTextTagTypeId'] -ne 4 -or $_['stringTypeId'] -ne 6 -or
         $_['nestedTextTagTypeId'] -ne 5 -or $_['nestedEnvelopeTypeId'] -ne 4 -or $_['nestedStringTypeId'] -ne 6 -or
         $_['stringKind'] -ne 5 -or $_['predicateCount'] -ne 0 -or
@@ -1106,8 +1103,9 @@ try {
         if ($matchingChecks.Count -ne 1) { $nominalStringMissingChecks.Add("$expectedName (count=$($matchingChecks.Count))") }
         elseif (-not [bool]$matchingChecks[0]['passed']) { $nominalStringFailingChecks.Add($expectedName) }
     }
-    $nominalStringCheckCoveragePassed = $nominalStringCaseSuffixes.Count -eq 17 -and
-        $nominalStringExpectedCheckNames.Count -eq 34 -and
+    # Report 265 removed the isolated-surrogate host case (no UTF-8 form): 17 -> 16 cases.
+    $nominalStringCheckCoveragePassed = $nominalStringCaseSuffixes.Count -eq 16 -and
+        $nominalStringExpectedCheckNames.Count -eq 32 -and
         $nominalStringEvidenceChecks.Count -eq $nominalStringExpectedCheckNames.Count -and
         $nominalStringMissingChecks.Count -eq 0 -and $nominalStringFailingChecks.Count -eq 0
     Add-Check 'unvalidated nominal String matrix has one passing check per pinned O0/O2 case with no missing, duplicate, or unexpected cases' $nominalStringCheckCoveragePassed ([ordered]@{

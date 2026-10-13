@@ -24,8 +24,8 @@ extern "C" {
 
 /* Encode the exact default HtmlEncoder mapping to UTF-8 bytes.
  *
- * `input_utf16` is borrowed for this call and may be NULL only when its length
- * is zero. Isolated surrogates map to U+FFFD, like HtmlEncoder.Default.
+ * `input_utf16` (now UTF-8 bytes, length in bytes) is borrowed for this call
+ * and may be NULL only when its length is zero. Malformed UTF-8 maps to U+FFFD.
  * `output_utf8` is caller-owned, receives no NUL terminator, and may be NULL
  * only when capacity is zero. Input and output ranges must not overlap.
  * `out_required_bytes` must be a valid non-overlapping pointer.
@@ -35,7 +35,7 @@ extern "C" {
  * other failures report zero required bytes and leave the output untouched.
  */
 AL_CAMPFIRE_HTML_EXPORT int32_t al_campfire_html_encode_utf8_v1(
-    const uint16_t *input_utf16, uint32_t input_code_units,
+    const uint8_t *input_utf16, uint32_t input_code_units,
     uint8_t *output_utf8, uint32_t output_capacity_bytes,
     uint32_t *out_required_bytes);
 

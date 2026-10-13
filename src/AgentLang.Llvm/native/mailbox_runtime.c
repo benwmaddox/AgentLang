@@ -1716,23 +1716,19 @@ static al_mailbox_result al_owning_text_measure(
     } else {
       return AL_MAILBOX_INVALID_TEXT_ENCODING;
     }
-    units += scalar > 0xffffu ? 2u : 1u;
-    if (units > ((uint64_t)INT32_MAX - 8u) / 2u)
+    (void)scalar;
+    units += width;
+    if (units > (uint64_t)INT32_MAX - 8u)
       return AL_MAILBOX_TEXT_CAPACITY;
     index += width;
   }
-  payload = 8u + units * 2u;
+  payload = 8u + units;
   extent = (payload + 7u) & ~UINT64_C(7);
   if (extent > staging_capacity || extent > UINT32_MAX)
     return AL_MAILBOX_TEXT_CAPACITY;
   *out_payload_bytes = (uint32_t)payload;
   *out_extent_bytes = (uint32_t)extent;
   return AL_MAILBOX_OK;
-}
-
-static void al_owning_write_u16(uint8_t *destination, uint16_t value) {
-  destination[0] = (uint8_t)value;
-  destination[1] = (uint8_t)(value >> 8u);
 }
 
 static void al_owning_write_u32(uint8_t *destination, uint32_t value) {
@@ -1747,11 +1743,10 @@ static al_mailbox_result al_owning_text_write(
     uint32_t extent_bytes, uint8_t *destination) {
   uint32_t source_index = 0u;
   uint32_t output_index = 8u;
-  if (destination == NULL || payload_bytes < 8u || extent_bytes < payload_bytes ||
-      ((payload_bytes - 8u) & 1u) != 0u)
+  if (destination == NULL || payload_bytes < 8u || extent_bytes < payload_bytes)
     return AL_MAILBOX_INVALID_ARGUMENT;
   memset(destination, 0, extent_bytes);
-  al_owning_write_u32(destination, (payload_bytes - 8u) / 2u);
+  al_owning_write_u32(destination, payload_bytes - 8u);
   while (source_index < byte_count) {
     uint32_t scalar;
     uint32_t width;
@@ -1800,21 +1795,14 @@ static al_mailbox_result al_owning_text_write(
     } else {
       return AL_MAILBOX_INVALID_TEXT_ENCODING;
     }
-    output_width = scalar > 0xffffu ? 4u : 2u;
+    /* Validated above; the owning String holds the same UTF-8 bytes. */
+    (void)scalar;
+    output_width = width;
     if (output_index > payload_bytes ||
         output_width > payload_bytes - output_index)
       return AL_MAILBOX_INVALID_TEXT_ENCODING;
-    if (scalar <= 0xffffu) {
-      al_owning_write_u16(destination + output_index, (uint16_t)scalar);
-      output_index += 2u;
-    } else {
-      uint32_t adjusted = scalar - 0x10000u;
-      al_owning_write_u16(destination + output_index,
-                          (uint16_t)(0xd800u + (adjusted >> 10u)));
-      al_owning_write_u16(destination + output_index + 2u,
-                          (uint16_t)(0xdc00u + (adjusted & 0x3ffu)));
-      output_index += 4u;
-    }
+    memcpy(destination + output_index, utf8 + source_index, width);
+    output_index += width;
     source_index += width;
   }
   return output_index == payload_bytes ? AL_MAILBOX_OK

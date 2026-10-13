@@ -4,7 +4,7 @@
   "frozenBeforeNativeExecution": true,
   "oracleProvenance": {
     "basis": "Published layout ABI 3 and the source behavior in experiments/AgentLang.OwningMailbox/owning-mailbox-sums.flow.",
-    "derivation": "A String is an 8-byte header (UTF-16 unit count plus four reserved zero bytes), UTF-16LE content, and zero padding to an 8-byte extent. Chunk is a one-field record containing that standalone String encoding. Option and Result are an 8-byte little-endian tag followed by the active child's standalone encoding. State and Continuation are one-field records containing the complete inline sum encoding.",
+    "derivation": "A String is an 8-byte header (UTF-8 byte count plus four reserved zero bytes; UTF-16 before report 265), UTF-8 content, and zero padding to an 8-byte extent. Chunk is a one-field record containing that standalone String encoding. Option and Result are an 8-byte little-endian tag followed by the active child's standalone encoding. State and Continuation are one-field records containing the complete inline sum encoding.",
     "independentPreExecutionReview": "Before any native execution, root review corrected the Z lifecycle State payload from 22 to 18 bytes and added the None-match empty-string literal (8 copied bytes) to the ERR resume formula. A second accounting review traced the final sequence: thirteen handler-dispatched lifecycle API calls, including the expected FAIL and retained-capacity failures, stage 168 bytes total; two malformed active-root attempts reject before handler dispatch, adding 0 staging bytes under RETURN and 16 under KEEP_ASSOCIATED because that policy stages the empty completion String before attached-root validation. A further required Error-arm round trip adds the second empty begin and resume call, yielding deep-copy total 872 bytes per policy. No native output was used.",
     "nativeOutputWasUsedToDeriveOrCorrectOracles": false,
     "layoutIndexes": "The C runner receives layout indexes from the emitted bootstrap metadata, keyed by typeName and layoutIndex; the fixture contains no hardcoded descriptor index convention.",
@@ -20,7 +20,8 @@
       "fieldDescriptorSizeBytesUnchanged": 16,
       "layoutDescriptorSizeBytesUnchanged": 40,
       "serializedValueStepAndCopyOraclesChanged": false
-    }
+    },
+    "report265Utf8Transition": "Owning Strings are UTF-8 since report 265 (prior fixture sha256 ddd86cbd139cb678a25960ac74b09f154ccf0ab170ddafcc31c8b362f20c8859). Serialized String bytes and payload sizes are re-derived from the unchanged UTF-8 inputs; every String extent, and therefore every staging, import, publication and deep-copy total, is unchanged. The capacity resume text doubled from 7 to 14 ASCII bytes so the State extent stays 32 against the 31-byte bank; utf8InputBytes rises from 27 to 34. The utf16StagingBytes name is kept for ABI stability."
   },
   "abi": {
     "moduleAbiVersion": 2,
@@ -55,16 +56,16 @@
       "root": "Continuation",
       "offsetBytes": 8,
       "mutatedValueHex": "ffffffff",
-      "reason": "The Some payload begins with its nested String header at byte 8; UINT32_MAX UTF-16 units exceeds its bounded root extent."
+      "reason": "The Some payload begins with its nested String header at byte 8; UINT32_MAX UTF-8 bytes exceeds its bounded root extent."
     }
   },
   "serializedValue": {
     "string": {
-      "encoding": "UTF-16LE",
+      "encoding": "UTF-8",
       "headerBytes": 8,
       "unitCountOffsetBytes": 0,
       "reservedHeaderBytes": 4,
-      "payloadBytesFormula": "8 + 2*UTF16CodeUnits",
+      "payloadBytesFormula": "8 + UTF8Bytes",
       "extentBytesFormula": "align_up(payloadBytes, 8)",
       "paddingBytesAreZero": true
     },
@@ -93,29 +94,29 @@
       "completionCodeUnitsHex": "0041d83dde4203b40000d83dde80",
       "initializeRoot": {
         "type": "State",
-        "payloadBytes": 22,
+        "payloadBytes": 21,
         "extentBytes": 24,
-        "serializedHex": "0000000000000000030000000000000041003dd842de0000"
+        "serializedHex": "0000000000000000050000000000000041f09f9982000000"
       },
       "beginRoots": [
         {
           "type": "State",
-          "payloadBytes": 22,
+          "payloadBytes": 21,
           "extentBytes": 24,
-          "serializedHex": "0000000000000000030000000000000041003dd842de0000"
+          "serializedHex": "0000000000000000050000000000000041f09f9982000000"
         },
         {
           "type": "Continuation",
           "payloadBytes": 18,
           "extentBytes": 24,
-          "serializedHex": "00000000000000000100000000000000b403000000000000"
+          "serializedHex": "00000000000000000200000000000000ceb4000000000000"
         }
       ],
       "resumeRoot": {
         "type": "State",
-        "payloadBytes": 30,
+        "payloadBytes": 28,
         "extentBytes": 32,
-        "serializedHex": "0000000000000000070000000000000041003dd842deb40300003dd880de0000"
+        "serializedHex": "00000000000000000c0000000000000041f09f9982ceb400f09f9a8000000000"
       }
     },
     "emptyNoneError": {
@@ -126,14 +127,14 @@
       "resumeValue": "ERR",
       "initializeRoot": {
         "type": "State",
-        "payloadBytes": 18,
+        "payloadBytes": 17,
         "extentBytes": 24,
         "serializedHex": "000000000000000001000000000000005a00000000000000"
       },
       "beginRoots": [
         {
           "type": "State",
-          "payloadBytes": 18,
+          "payloadBytes": 17,
           "extentBytes": 24,
           "serializedHex": "000000000000000001000000000000005a00000000000000"
         },
@@ -146,9 +147,9 @@
       ],
       "resumeRoot": {
         "type": "State",
-        "payloadBytes": 22,
+        "payloadBytes": 19,
         "extentBytes": 24,
-        "serializedHex": "010000000000000003000000000000004500520052000000"
+        "serializedHex": "010000000000000003000000000000004552520000000000"
       }
     },
     "errorToOkAfterError": {
@@ -158,9 +159,9 @@
       "beginRoots": [
         {
           "type": "State",
-          "payloadBytes": 22,
+          "payloadBytes": 19,
           "extentBytes": 24,
-          "serializedHex": "010000000000000003000000000000004500520052000000"
+          "serializedHex": "010000000000000003000000000000004552520000000000"
         },
         {
           "type": "Continuation",
@@ -171,22 +172,22 @@
       ],
       "resumeRoot": {
         "type": "State",
-        "payloadBytes": 22,
+        "payloadBytes": 19,
         "extentBytes": 24,
-        "serializedHex": "000000000000000003000000000000004500520052000000"
+        "serializedHex": "000000000000000003000000000000004552520000000000"
       }
     },
     "oneByteShortCapacity": {
       "retainedBankCapacityBytes": 31,
       "initializeUtf8Hex": "",
       "beginUtf8Hex": "",
-      "oversizedResumeUtf8Hex": "31323334353637",
-      "oversizedResumeCodeUnitsHex": "0031003200330034003500360037",
+      "oversizedResumeUtf8Hex": "3132333435363738393031323334",
+      "oversizedResumeCodeUnitsHex": "00310032003300340035003600370038003900300031003200330034",
       "oversizedExpectedRoot": {
         "type": "State",
         "payloadBytes": 30,
         "extentBytes": 32,
-        "serializedHex": "0000000000000000070000000000000031003200330034003500360037000000"
+        "serializedHex": "00000000000000000e0000000000000031323334353637383930313233340000"
       },
       "publishedRootsBeforeFailure": [
         {
@@ -212,9 +213,9 @@
     }
   },
   "copyAccounting": {
-    "scope": "Exact API sequence per policy: Unicode init(A🙂), begin(δ), malformed active Result tag with empty completion, malformed active Option payload with empty completion, resume(FAIL), retry resume(NUL+🚀); Z init, begin(empty), resume(ERR), begin(empty) from Error(ERR), resume(empty) to exercise the Result.Error extraction arm; capacity init(empty), begin(empty), resume(1234567) rejected one byte short, retry resume(empty). The thirteen handler-dispatched lifecycle API calls, including expected FAIL and retained-capacity failures, stage 168 bytes. The two malformed-root attempts reject before handler dispatch: RETURN validates published bank roots before text staging, so totals 168; KEEP_ASSOCIATED stages the 8-byte empty completion before validating attached roots, totaling 184. Extraction, ordinary calls, descriptor transfer, and match views add no payload movement. Literal creation, explicit record/sum construction, and concatenation each contribute their full copied extent to deepCopyBytes.",
+    "scope": "Exact API sequence per policy: Unicode init(A🙂), begin(δ), malformed active Result tag with empty completion, malformed active Option payload with empty completion, resume(FAIL), retry resume(NUL+🚀); Z init, begin(empty), resume(ERR), begin(empty) from Error(ERR), resume(empty) to exercise the Result.Error extraction arm; capacity init(empty), begin(empty), resume(12345678901234) rejected one byte short, retry resume(empty). The thirteen handler-dispatched lifecycle API calls, including expected FAIL and retained-capacity failures, stage 168 bytes. The two malformed-root attempts reject before handler dispatch: RETURN validates published bank roots before text staging, so totals 168; KEEP_ASSOCIATED stages the 8-byte empty completion before validating attached roots, totaling 184. Extraction, ordinary calls, descriptor transfer, and match views add no payload movement. Literal creation, explicit record/sum construction, and concatenation each contribute their full copied extent to deepCopyBytes.",
     "formulaTerms": {
-      "stringExtent": "align_up(8 + 2*UTF16CodeUnits, 8)",
+      "stringExtent": "align_up(8 + UTF8Bytes, 8)",
       "initializeWithStringExtentT": "Chunk.new copies T + Result.Ok copies T + State.new copies (8 + T) = 3*T + 8",
       "beginSomeWithStringExtentT": "empty-string condition literal 8 + Chunk.new T + Option.Some child copy T + Continuation.new copies (8 + T) = 3*T + 16",
       "beginNone": "empty-string condition literal 8 + Option.None tag store 0 + Continuation.new copies 8 = 16",
@@ -223,12 +224,12 @@
       "resumeHandlerFailureSomeUnicode": "After Some extraction: FAIL comparison literal 16; execution stops before the ERR comparison or any output construction",
       "beginNoneAfterError": "empty-string condition literal 8 + Option.None tag store 0 + Continuation.new copies 8 = 16",
       "resumeOkFromErrorAndNone": "None match empty-string literal 8 + FAIL and ERR literals 32 + concat(ERR,empty) extent 16 + concat(ERR,empty) extent 16 + Chunk.new 16 + Result.Ok child copy 16 + State.new copies 24 = 128",
-      "capacityResumeSevenUnits": "None payload literal 8 + FAIL and ERR literals 32 + empty concat extent 8 + seven-unit concat extent 24 + Chunk.new 24 + Result.Ok child copy 24 + State.new copies 32 = 152",
+      "capacityResumeSevenUnits": "None payload literal 8 + FAIL and ERR literals 32 + empty concat extent 8 + fourteen-byte concat extent 24 + Chunk.new 24 + Result.Ok child copy 24 + State.new copies 32 = 152",
       "capacityRetryEmpty": "None payload literal 8 + FAIL and ERR literals 32 + two empty concat extents 16 + Chunk.new 8 + Result.Ok child copy 8 + State.new copies 16 = 88"
     },
     "expectedStatsBySuspensionPolicy": {
       "RETURN": {
-        "utf8InputBytes": 27,
+        "utf8InputBytes": 34,
         "utf16StagingBytes": 168,
         "inputImportBytes": 464,
         "publicationCopyBytes": 296,
@@ -241,7 +242,7 @@
         "handlerFailures": 2
       },
       "KEEP_ASSOCIATED": {
-        "utf8InputBytes": 27,
+        "utf8InputBytes": 34,
         "utf16StagingBytes": 184,
         "inputImportBytes": 256,
         "publicationCopyBytes": 160,

@@ -164,6 +164,18 @@
           { "path": "directAdmissionControls.validState.fullBeginStepsIncludingHandler", "previous": 77, "corrected": 65 }
         ],
         "unchanged": "Values, serialized bytes, layouts, diagnostics, predicate-invocation counts for runtime admission, copy accounting and the RETURN-vs-KEEP resume delta (51)."
+      },
+      {
+        "kind": "utf8-string-encoding",
+        "report": "265",
+        "priorFixtureSha256": "78FCCB8710050253E61563F8829934D8E10CEEEBB2C72CA8F7B1EC3E0E814F9D",
+        "rule": "Owning Strings are UTF-8: the header count is bytes and the content is UTF-8. Every String in this fixture is ASCII, so serialized bytes, extents, staging, import, publication and copy totals are unchanged; historical UTF-16 wording in the correction notes is kept as recorded (FAIL is still a 16-byte extent).",
+        "changes": [
+          { "path": "stringEncoding", "previous": "UTF-16LE", "corrected": "UTF-8" },
+          { "path": "stringExtentFormula", "previous": "align_up(8 + 2*UTF16CodeUnits, 8)", "corrected": "align_up(8 + UTF8Bytes, 8)" },
+          { "path": "State payloadBytes (one one-character String)", "previous": 42, "corrected": 41 },
+          { "path": "Continuation payloadBytes (two one-character Strings)", "previous": 44, "corrected": 42 }
+        ]
       }
     ]
   },
@@ -220,8 +232,8 @@
     "stringCountOffsetBytes": 0,
     "stringCountWidthBytes": 4,
     "stringReservedHeaderBytes": 4,
-    "stringEncoding": "UTF-16LE",
-    "stringExtentFormula": "align_up(8 + 2*UTF16CodeUnits, 8)",
+    "stringEncoding": "UTF-8",
+    "stringExtentFormula": "align_up(8 + UTF8Bytes, 8)",
     "sumTagEncoding": "8-byte little-endian tag; Option.None=1, Some=0, Result.Ok=0, Result.Error=1",
     "onlyActiveSumPayloadIsSerialized": true,
     "paddingBytesAreZero": true
@@ -261,27 +273,27 @@
       "initializedState": {
         "type": "State",
         "typeId": 7,
-        "payloadBytes": 42,
+        "payloadBytes": 41,
         "extentBytes": 48,
         "serializedHex": "010000000000000001000000000000004100000000000000010000000000000000000000000000000100000000000000"
       },
       "suspendedContinuation": {
         "type": "Continuation",
         "typeId": 4,
-        "payloadBytes": 44,
+        "payloadBytes": 42,
         "extentBytes": 56,
         "serializedHex": "0200000000000000010000000000000042000000000000000100000000000000010000000000000001000000000000004200000000000000"
       },
       "completedState": {
         "type": "State",
         "typeId": 7,
-        "payloadBytes": 42,
+        "payloadBytes": 41,
         "extentBytes": 48,
         "serializedHex": "020000000000000001000000000000004300000000000000010000000000000000000000000000000200000000000000"
       },
       "beforeAndAfterFailedResume": [
-        { "type": "State", "typeId": 7, "payloadBytes": 42, "extentBytes": 48, "serializedHex": "010000000000000001000000000000004100000000000000010000000000000000000000000000000100000000000000" },
-        { "type": "Continuation", "typeId": 4, "payloadBytes": 44, "extentBytes": 56, "serializedHex": "0200000000000000010000000000000042000000000000000100000000000000010000000000000001000000000000004200000000000000" }
+        { "type": "State", "typeId": 7, "payloadBytes": 41, "extentBytes": 48, "serializedHex": "010000000000000001000000000000004100000000000000010000000000000000000000000000000100000000000000" },
+        { "type": "Continuation", "typeId": 4, "payloadBytes": 42, "extentBytes": 56, "serializedHex": "0200000000000000010000000000000042000000000000000100000000000000010000000000000001000000000000004200000000000000" }
       ]
     }
   },

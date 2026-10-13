@@ -51,11 +51,11 @@ static int room_profiled_sqlite_bind_int64(sqlite3_stmt *statement, int index,
   return rc;
 }
 
-static int room_profiled_sqlite_bind_text16(
+static int room_profiled_sqlite_bind_text(
     sqlite3_stmt *statement, int index, const void *value, int byte_count,
     sqlite3_destructor_type destructor) {
   uint64_t start_ticks = al_owning_profile_begin_v1();
-  int rc = sqlite3_bind_text16(statement, index, value, byte_count, destructor);
+  int rc = sqlite3_bind_text(statement, index, value, byte_count, destructor);
   (void)al_owning_profile_end_v1(AL_OWNING_PROFILE_SQL_BIND, start_ticks,
                                  rc != SQLITE_OK);
   return rc;
@@ -105,13 +105,13 @@ static uint32_t room_profile_category_for_operation(uint32_t operation) {
 
 #define room_read_sqlite_prepare_v2 room_profiled_sqlite_prepare_v2
 #define room_read_sqlite_bind_int64 room_profiled_sqlite_bind_int64
-#define room_read_sqlite_bind_text16 room_profiled_sqlite_bind_text16
+#define room_read_sqlite_bind_text room_profiled_sqlite_bind_text
 #define room_read_sqlite_bind_null room_profiled_sqlite_bind_null
 #define room_read_sqlite_step room_profiled_sqlite_step
 #else
 #define room_read_sqlite_prepare_v2 sqlite3_prepare_v2
 #define room_read_sqlite_bind_int64 sqlite3_bind_int64
-#define room_read_sqlite_bind_text16 sqlite3_bind_text16
+#define room_read_sqlite_bind_text sqlite3_bind_text
 #define room_read_sqlite_bind_null sqlite3_bind_null
 #define room_read_sqlite_step sqlite3_step
 #endif
@@ -150,7 +150,7 @@ static const char *const room_read_queries[AL_CAMPFIRE_ROOM_READ_SQLITE_STATEMEN
 
 typedef struct al_room_read_text {
   const uint8_t *bytes;
-  uint32_t code_units;
+  uint32_t byte_count_utf8;
 } al_room_read_text;
 
 typedef struct al_room_read_session_row {
@@ -167,7 +167,7 @@ typedef struct al_room_read_session_row {
   int64_t last_active_at_micros;
   int64_t created_at_micros;
   int64_t updated_at_micros;
-  const uint16_t *observed_last_active_at;
+  const uint8_t *observed_last_active_at;
   int observed_last_active_bytes;
 } al_room_read_session_row;
 
@@ -230,9 +230,6 @@ static uint64_t load_u64_le(const uint8_t *bytes) {
   return value;
 }
 
-static uint16_t load_u16_le(const uint8_t *bytes) {
-  return (uint16_t)((uint16_t)bytes[0] | ((uint16_t)bytes[1] << 8u));
-}
 
 static void store_u64_le(uint8_t *output, uint32_t offset, uint64_t value) {
   uint32_t index;
@@ -240,8 +237,8 @@ static void store_u64_le(uint8_t *output, uint32_t offset, uint64_t value) {
     output[offset + index] = (uint8_t)(value >> (index * 8u));
 }
 
-static uint32_t padded_string_extent(uint32_t code_units) {
-  uint64_t raw = UINT64_C(8) + (uint64_t)code_units * UINT64_C(2);
+static uint32_t padded_string_extent(uint32_t byte_count_utf8) {
+  uint64_t raw = UINT64_C(8) + (uint64_t)byte_count_utf8;
   uint64_t padded = (raw + UINT64_C(7)) & ~UINT64_C(7);
   if (padded > UINT32_MAX)
     return 0u;
@@ -310,16 +307,16 @@ static int measure_value(const al_owning_layout *layout, uint32_t type_index,
     extent = 8u;
     break;
   case AL_OWNING_TYPE_STRING: {
-    uint64_t code_units;
+    uint64_t byte_count_utf8;
     uint64_t raw;
     uint64_t padded;
     uint32_t pad_index;
     if (available < 8u)
       return 0;
-    code_units = load_u64_le(data);
-    if (code_units > (UINT32_MAX - 16u) / 2u)
+    byte_count_utf8 = load_u64_le(data);
+    if (byte_count_utf8 > UINT32_MAX - 16u)
       return 0;
-    raw = UINT64_C(8) + code_units * UINT64_C(2);
+    raw = UINT64_C(8) + byte_count_utf8;
     padded = (raw + UINT64_C(7)) & ~UINT64_C(7);
     if (padded > available || padded > UINT32_MAX)
       return 0;
@@ -752,7 +749,7 @@ static uint32_t sqlite_error_tag(sqlite3 *database) {
   return AL_CAMPFIRE_DB_ERROR_UNAVAILABLE;
 }
 
-static int read_column_text16(sqlite3 *database, sqlite3_stmt *statement,
+static int read_column_text(sqlite3 *database, sqlite3_stmt *statement,
                               int column, int allow_null,
                               al_room_read_text *out_text) {
   const void *value;
@@ -760,13 +757,13 @@ static int read_column_text16(sqlite3 *database, sqlite3_stmt *statement,
   int type = sqlite3_column_type(statement, column);
   if (type == SQLITE_NULL)
     return allow_null ? 0 : -1;
-  value = sqlite3_column_text16(statement, column);
-  byte_count = sqlite3_column_bytes16(statement, column);
-  if (value == NULL || byte_count < 0 || (byte_count & 1) != 0 ||
+  value = sqlite3_column_text(statement, column);
+  byte_count = sqlite3_column_bytes(statement, column);
+  if (value == NULL || byte_count < 0 ||
       sqlite3_errcode(database) == SQLITE_NOMEM)
     return -1;
   out_text->bytes = (const uint8_t *)value;
-  out_text->code_units = (uint32_t)byte_count / 2u;
+  out_text->byte_count_utf8 = (uint32_t)byte_count;
   return 1;
 }
 
@@ -781,10 +778,10 @@ static int read_column_int64(sqlite3_stmt *statement, int column,
 static int text_equal_ascii(const al_room_read_text *text,
                             const char *ascii, uint32_t length) {
   uint32_t index;
-  if (text->code_units != length)
+  if (text->byte_count_utf8 != length)
     return 0;
   for (index = 0u; index < length; ++index) {
-    if (load_u16_le(text->bytes + index * 2u) != (uint16_t)ascii[index])
+    if (text->bytes[index] != (uint16_t)ascii[index])
       return 0;
   }
   return 1;
@@ -799,7 +796,7 @@ static int read_digits(const al_room_read_text *text, uint32_t start,
   uint32_t index;
   uint32_t result = 0u;
   for (index = 0u; index < count; ++index) {
-    uint16_t character = load_u16_le(text->bytes + (start + index) * 2u);
+    uint16_t character = text->bytes[start + index];
     if (!is_ascii_digit(character))
       return 0;
     result = result * 10u + (uint32_t)(character - (uint16_t)'0');
@@ -828,7 +825,7 @@ static int try_parse_timestamp(const al_room_read_text *text,
   static const uint32_t month_days[] = {31u, 28u, 31u, 30u, 31u, 30u,
                                         31u, 31u, 30u, 31u, 30u, 31u};
   uint32_t start = 0u;
-  uint32_t end = text->code_units;
+  uint32_t end = text->byte_count_utf8;
   uint32_t year, month, day, hour, minute, second;
   uint32_t fraction_microseconds = 0u;
   uint32_t offset_hours = 0u;
@@ -844,19 +841,19 @@ static int try_parse_timestamp(const al_room_read_text *text,
   if (text->bytes == NULL)
     return 0;
   while (start < end && is_unicode_whitespace(
-                             load_u16_le(text->bytes + start * 2u)))
+                             text->bytes[start]))
     ++start;
   while (end > start && is_unicode_whitespace(
-                             load_u16_le(text->bytes + (end - 1u) * 2u)))
+                             text->bytes[end - 1u]))
     --end;
   if (end - start < 19u)
     return 0;
-  if (load_u16_le(text->bytes + (start + 4u) * 2u) != (uint16_t)'-' ||
-      load_u16_le(text->bytes + (start + 7u) * 2u) != (uint16_t)'-' ||
-      (load_u16_le(text->bytes + (start + 10u) * 2u) != (uint16_t)' ' &&
-       load_u16_le(text->bytes + (start + 10u) * 2u) != (uint16_t)'T') ||
-      load_u16_le(text->bytes + (start + 13u) * 2u) != (uint16_t)':' ||
-      load_u16_le(text->bytes + (start + 16u) * 2u) != (uint16_t)':')
+  if (text->bytes[start + 4u] != (uint16_t)'-' ||
+      text->bytes[start + 7u] != (uint16_t)'-' ||
+      (text->bytes[start + 10u] != (uint16_t)' ' &&
+       text->bytes[start + 10u] != (uint16_t)'T') ||
+      text->bytes[start + 13u] != (uint16_t)':' ||
+      text->bytes[start + 16u] != (uint16_t)':')
     return 0;
   if (!read_digits(text, start, 4u, &year) ||
       !read_digits(text, start + 5u, 2u, &month) ||
@@ -876,20 +873,20 @@ static int try_parse_timestamp(const al_room_read_text *text,
 
   suffix = start + 19u;
   if (suffix < end &&
-      load_u16_le(text->bytes + suffix * 2u) == (uint16_t)'.') {
+      text->bytes[suffix] == (uint16_t)'.') {
     uint32_t first_digit;
     uint32_t digit_count;
     ++suffix;
     first_digit = suffix;
     while (suffix < end && is_ascii_digit(
-                               load_u16_le(text->bytes + suffix * 2u)))
+                               text->bytes[suffix]))
       ++suffix;
     digit_count = suffix - first_digit;
     if (digit_count == 0u)
       return 0;
     for (index = 0u; index < digit_count && index < 6u; ++index) {
       fraction_microseconds = fraction_microseconds * 10u +
-          (uint32_t)(load_u16_le(text->bytes + (first_digit + index) * 2u) -
+          (uint32_t)(text->bytes[first_digit + index] -
                      (uint16_t)'0');
     }
     for (; index < 6u; ++index)
@@ -899,20 +896,20 @@ static int try_parse_timestamp(const al_room_read_text *text,
   if (suffix == end) {
     offset_sign = 1;
   } else if (end - suffix == 1u &&
-             load_u16_le(text->bytes + suffix * 2u) == (uint16_t)'Z') {
+             text->bytes[suffix] == (uint16_t)'Z') {
     offset_sign = 1;
   } else if (end - suffix == 4u &&
-             load_u16_le(text->bytes + suffix * 2u) == (uint16_t)' ' &&
-             load_u16_le(text->bytes + (suffix + 1u) * 2u) == (uint16_t)'U' &&
-             load_u16_le(text->bytes + (suffix + 2u) * 2u) == (uint16_t)'T' &&
-             load_u16_le(text->bytes + (suffix + 3u) * 2u) == (uint16_t)'C') {
+             text->bytes[suffix] == (uint16_t)' ' &&
+             text->bytes[suffix + 1u] == (uint16_t)'U' &&
+             text->bytes[suffix + 2u] == (uint16_t)'T' &&
+             text->bytes[suffix + 3u] == (uint16_t)'C') {
     offset_sign = 1;
   } else if (end - suffix == 6u &&
-             (load_u16_le(text->bytes + suffix * 2u) == (uint16_t)'+' ||
-              load_u16_le(text->bytes + suffix * 2u) == (uint16_t)'-') &&
-             load_u16_le(text->bytes + (suffix + 3u) * 2u) == (uint16_t)':') {
+             (text->bytes[suffix] == (uint16_t)'+' ||
+              text->bytes[suffix] == (uint16_t)'-') &&
+             text->bytes[suffix + 3u] == (uint16_t)':') {
     offset_sign =
-        load_u16_le(text->bytes + suffix * 2u) == (uint16_t)'-' ? -1 : 1;
+        text->bytes[suffix] == (uint16_t)'-' ? -1 : 1;
     if (!read_digits(text, suffix + 1u, 2u, &offset_hours) ||
         !read_digits(text, suffix + 4u, 2u, &offset_minutes) ||
         offset_hours > 14u || offset_minutes > 59u ||
@@ -947,14 +944,12 @@ static int try_parse_timestamp(const al_room_read_text *text,
 
 static void write_string(uint8_t *output, uint32_t offset,
                          const al_room_read_text *text) {
-  uint32_t extent = padded_string_extent(text->code_units);
-  uint32_t raw_extent = 8u + text->code_units * 2u;
+  uint32_t extent = padded_string_extent(text->byte_count_utf8);
+  uint32_t raw_extent = 8u + text->byte_count_utf8;
   uint32_t index;
-  store_u64_le(output, offset, text->code_units);
-  for (index = 0u; index < text->code_units; ++index) {
-    uint16_t unit = load_u16_le(text->bytes + index * 2u);
-    output[offset + 8u + index * 2u] = (uint8_t)(unit & 0xffu);
-    output[offset + 9u + index * 2u] = (uint8_t)(unit >> 8u);
+  store_u64_le(output, offset, text->byte_count_utf8);
+  for (index = 0u; index < text->byte_count_utf8; ++index) {
+    output[offset + 8u + index] = text->bytes[index];
   }
   for (index = raw_extent; index < extent; ++index)
     output[offset + index] = 0u;
@@ -993,7 +988,7 @@ static int write_result_bool(uint8_t *output, uint32_t capacity, int value,
 
 static int text_output_extent(const al_room_read_text *text,
                               uint32_t *out_extent) {
-  uint32_t extent = padded_string_extent(text->code_units);
+  uint32_t extent = padded_string_extent(text->byte_count_utf8);
   if (extent == 0u)
     return 0;
   *out_extent = extent;
@@ -1022,16 +1017,16 @@ static int load_session_row(sqlite3 *database, sqlite3_stmt *statement,
   if (!read_column_int64(statement, 0, &row->id) ||
       !read_column_int64(statement, 1, &row->user_id))
     return 0;
-  token_state = read_column_text16(database, statement, 2, 0, &row->token);
-  ip_state = read_column_text16(database, statement, 3, 1, &row->ip_address);
+  token_state = read_column_text(database, statement, 2, 0, &row->token);
+  ip_state = read_column_text(database, statement, 3, 1, &row->ip_address);
   agent_state =
-      read_column_text16(database, statement, 4, 1, &row->user_agent);
-  active_state = read_column_text16(database, statement, 5, 0,
+      read_column_text(database, statement, 4, 1, &row->user_agent);
+  active_state = read_column_text(database, statement, 5, 0,
                                     &row->last_active_at_text);
   created_state =
-      read_column_text16(database, statement, 6, 0, &row->created_at_text);
+      read_column_text(database, statement, 6, 0, &row->created_at_text);
   updated_state =
-      read_column_text16(database, statement, 7, 0, &row->updated_at_text);
+      read_column_text(database, statement, 7, 0, &row->updated_at_text);
   if (token_state != 1 || ip_state < 0 || agent_state < 0 ||
       active_state != 1 || created_state != 1 || updated_state != 1 ||
       !try_parse_timestamp(&row->last_active_at_text,
@@ -1039,10 +1034,9 @@ static int load_session_row(sqlite3 *database, sqlite3_stmt *statement,
       !try_parse_timestamp(&row->created_at_text, &row->created_at_micros) ||
       !try_parse_timestamp(&row->updated_at_text, &row->updated_at_micros))
     return 0;
-  row->observed_last_active_at =
-      (const uint16_t *)row->last_active_at_text.bytes;
+  row->observed_last_active_at = row->last_active_at_text.bytes;
   row->observed_last_active_bytes =
-      (int)(row->last_active_at_text.code_units * 2u);
+      (int)row->last_active_at_text.byte_count_utf8;
   row->ip_state = ip_state;
   row->agent_state = agent_state;
   return 1;
@@ -1070,7 +1064,7 @@ static int session_output_extent(const al_room_read_session_row *row,
 
 static void write_session_row(uint8_t *output, uint32_t offset,
                               const al_room_read_session_row *row) {
-  uint32_t token_extent = padded_string_extent(row->token.code_units);
+  uint32_t token_extent = padded_string_extent(row->token.byte_count_utf8);
   uint32_t option_extent;
   store_u64_le(output, offset, (uint64_t)row->id);
   offset += 8u;
@@ -1081,14 +1075,14 @@ static void write_session_row(uint8_t *output, uint32_t offset,
   store_u64_le(output, offset, row->ip_state == 1 ? 0u : 1u);
   offset += 8u;
   if (row->ip_state == 1) {
-    option_extent = padded_string_extent(row->ip_address.code_units);
+    option_extent = padded_string_extent(row->ip_address.byte_count_utf8);
     write_string(output, offset, &row->ip_address);
     offset += option_extent;
   }
   store_u64_le(output, offset, row->agent_state == 1 ? 0u : 1u);
   offset += 8u;
   if (row->agent_state == 1) {
-    option_extent = padded_string_extent(row->user_agent.code_units);
+    option_extent = padded_string_extent(row->user_agent.byte_count_utf8);
     write_string(output, offset, &row->user_agent);
     offset += option_extent;
   }
@@ -1148,11 +1142,11 @@ static int bind_int64(sqlite3_stmt *statement, int index, int64_t value) {
 }
 
 static int bind_text(sqlite3_stmt *statement, int index,
-                     const uint8_t *bytes, uint32_t code_units) {
-  uint64_t byte_count = (uint64_t)code_units * 2u;
+                     const uint8_t *bytes, uint32_t byte_count_utf8) {
+  uint64_t byte_count = (uint64_t)byte_count_utf8;
   if (byte_count > INT_MAX)
     return SQLITE_ERROR;
-  return room_read_sqlite_bind_text16(statement, index, bytes,
+  return room_read_sqlite_bind_text(statement, index, bytes,
                                       (int)byte_count, SQLITE_TRANSIENT);
 }
 
@@ -1160,7 +1154,7 @@ static int bind_option_text(sqlite3_stmt *statement, int index,
                             const uint8_t *option, uint32_t option_extent) {
   uint64_t tag;
   uint32_t string_extent;
-  uint64_t code_units;
+  uint64_t byte_count_utf8;
   if (option == NULL || option_extent < 8u)
     return SQLITE_ERROR;
   tag = load_u64_le(option);
@@ -1168,12 +1162,12 @@ static int bind_option_text(sqlite3_stmt *statement, int index,
     return room_read_sqlite_bind_null(statement, index);
   if (tag != 0u || option_extent < 16u)
     return SQLITE_ERROR;
-  code_units = load_u64_le(option + 8u);
-  if (code_units > UINT32_MAX ||
-      (string_extent = padded_string_extent((uint32_t)code_units)) == 0u ||
+  byte_count_utf8 = load_u64_le(option + 8u);
+  if (byte_count_utf8 > UINT32_MAX ||
+      (string_extent = padded_string_extent((uint32_t)byte_count_utf8)) == 0u ||
       string_extent + 8u != option_extent)
     return SQLITE_ERROR;
-  return bind_text(statement, index, option + 16u, (uint32_t)code_units);
+  return bind_text(statement, index, option + 16u, (uint32_t)byte_count_utf8);
 }
 
 static void write_text_option(uint8_t *output, uint32_t offset, int state,
@@ -1190,7 +1184,7 @@ static int load_user_row(sqlite3 *database, sqlite3_stmt *statement,
   int64_t raw_status;
   if (!read_column_int64(statement, 0, &row->id))
     return 0;
-  name_state = read_column_text16(database, statement, 1, 0, &row->name);
+  name_state = read_column_text(database, statement, 1, 0, &row->name);
   if (name_state != 1 || !read_column_int64(statement, 2, &raw_role) ||
       !read_column_int64(statement, 3, &raw_status) || raw_role < 0 ||
       raw_role > 2 || raw_status < 0 || raw_status > 2)
@@ -1213,10 +1207,10 @@ static void write_user_row(uint8_t *output, uint32_t offset,
                            const al_room_read_user_row *row) {
   store_u64_le(output, offset, (uint64_t)row->id);
   write_string(output, offset + 8u, &row->name);
-  store_u64_le(output, offset + 8u + padded_string_extent(row->name.code_units),
+  store_u64_le(output, offset + 8u + padded_string_extent(row->name.byte_count_utf8),
                row->role);
   store_u64_le(output,
-               offset + 16u + padded_string_extent(row->name.code_units),
+               offset + 16u + padded_string_extent(row->name.byte_count_utf8),
                row->status);
 }
 
@@ -1246,15 +1240,15 @@ static int load_room_row(sqlite3 *database, sqlite3_stmt *statement,
   if (!read_column_int64(statement, 0, &row->id))
     return 0;
   row->name_state =
-      read_column_text16(database, statement, 1, 1, &row->name);
-  kind_state = read_column_text16(database, statement, 2, 0, &kind_text);
+      read_column_text(database, statement, 1, 1, &row->name);
+  kind_state = read_column_text(database, statement, 2, 0, &kind_text);
   if (kind_state != 1 ||
       !room_kind_tag(&kind_text, &row->kind) ||
       !read_column_int64(statement, 3, &row->creator_id))
     return 0;
-  created_state = read_column_text16(database, statement, 4, 0,
+  created_state = read_column_text(database, statement, 4, 0,
                                      &row->created_at);
-  updated_state = read_column_text16(database, statement, 5, 0,
+  updated_state = read_column_text(database, statement, 5, 0,
                                      &row->updated_at);
   return row->name_state >= 0 && created_state == 1 && updated_state == 1 &&
          try_parse_timestamp(&row->created_at, &parsed_ticks) &&
@@ -1285,7 +1279,7 @@ static void write_room_row(uint8_t *output, uint32_t offset,
   store_u64_le(output, offset, (uint64_t)row->id);
   offset += 8u;
   name_extent = row->name_state == 1
-                    ? padded_string_extent(row->name.code_units)
+                    ? padded_string_extent(row->name.byte_count_utf8)
                     : 0u;
   write_text_option(output, offset, row->name_state, &row->name);
   offset += 8u + name_extent;
@@ -1294,7 +1288,7 @@ static void write_room_row(uint8_t *output, uint32_t offset,
   store_u64_le(output, offset, (uint64_t)row->creator_id);
   offset += 8u;
   write_string(output, offset, &row->created_at);
-  offset += padded_string_extent(row->created_at.code_units);
+  offset += padded_string_extent(row->created_at.byte_count_utf8);
   write_string(output, offset, &row->updated_at);
 }
 
@@ -1309,12 +1303,12 @@ static int load_message_row(sqlite3 *database, sqlite3_stmt *statement,
       !read_column_int64(statement, 2, &row->creator_id))
     return 0;
   client_state =
-      read_column_text16(database, statement, 3, 0, &row->client_message_id);
-  body_state = read_column_text16(database, statement, 4, 1, &row->body);
+      read_column_text(database, statement, 3, 0, &row->client_message_id);
+  body_state = read_column_text(database, statement, 4, 1, &row->body);
   created_state =
-      read_column_text16(database, statement, 5, 0, &row->created_at);
+      read_column_text(database, statement, 5, 0, &row->created_at);
   updated_state =
-      read_column_text16(database, statement, 6, 0, &row->updated_at);
+      read_column_text(database, statement, 6, 0, &row->updated_at);
   if (client_state != 1 || body_state < 0 || created_state != 1 ||
       updated_state != 1)
     return 0;
@@ -1345,9 +1339,9 @@ static int message_output_extent(const al_room_read_message_row *row,
 static void write_message_row(uint8_t *output, uint32_t offset,
                               const al_room_read_message_row *row) {
   uint32_t client_extent =
-      padded_string_extent(row->client_message_id.code_units);
+      padded_string_extent(row->client_message_id.byte_count_utf8);
   uint32_t body_extent = row->body_state == 1
-                             ? padded_string_extent(row->body.code_units)
+                             ? padded_string_extent(row->body.byte_count_utf8)
                              : 0u;
   store_u64_le(output, offset, (uint64_t)row->id);
   offset += 8u;
@@ -1360,12 +1354,12 @@ static void write_message_row(uint8_t *output, uint32_t offset,
   write_text_option(output, offset, row->body_state, &row->body);
   offset += 8u + body_extent;
   write_string(output, offset, &row->created_at);
-  offset += padded_string_extent(row->created_at.code_units);
+  offset += padded_string_extent(row->created_at.byte_count_utf8);
   write_string(output, offset, &row->updated_at);
 }
 
-static void format_timestamp(int64_t unix_micros, uint16_t output[26],
-                             uint32_t *out_code_units) {
+static void format_timestamp(int64_t unix_micros, uint8_t output[26],
+                             uint32_t *out_byte_count_utf8) {
   int64_t days = unix_micros / UNIX_MICROS_PER_DAY;
   int64_t day_micros = unix_micros % UNIX_MICROS_PER_DAY;
   int64_t z;
@@ -1408,28 +1402,28 @@ static void format_timestamp(int64_t unix_micros, uint16_t output[26],
   for (index = 0u; index < 26u; ++index)
     output[index] = 0u;
 #define PUT_DIGIT(position, digit) \
-  output[(position)] = (uint16_t)('0' + (digit))
+  output[(position)] = (uint8_t)('0' + (digit))
   PUT_DIGIT(0u, (year / 1000) % 10);
   PUT_DIGIT(1u, (year / 100) % 10);
   PUT_DIGIT(2u, (year / 10) % 10);
   PUT_DIGIT(3u, year % 10);
-  output[4] = (uint16_t)'-';
+  output[4] = (uint8_t)'-';
   PUT_DIGIT(5u, month / 10);
   PUT_DIGIT(6u, month % 10);
-  output[7] = (uint16_t)'-';
+  output[7] = (uint8_t)'-';
   PUT_DIGIT(8u, day / 10);
   PUT_DIGIT(9u, day % 10);
-  output[10] = (uint16_t)' ';
+  output[10] = (uint8_t)' ';
   PUT_DIGIT(11u, hour / 10);
   PUT_DIGIT(12u, hour % 10);
-  output[13] = (uint16_t)':';
+  output[13] = (uint8_t)':';
   PUT_DIGIT(14u, minute / 10);
   PUT_DIGIT(15u, minute % 10);
-  output[16] = (uint16_t)':';
+  output[16] = (uint8_t)':';
   PUT_DIGIT(17u, second / 10);
   PUT_DIGIT(18u, second % 10);
   if (micros != 0) {
-    output[19] = (uint16_t)'.';
+    output[19] = (uint8_t)'.';
     PUT_DIGIT(20u, micros / 100000);
     PUT_DIGIT(21u, (micros / 10000) % 10);
     PUT_DIGIT(22u, (micros / 1000) % 10);
@@ -1439,7 +1433,7 @@ static void format_timestamp(int64_t unix_micros, uint16_t output[26],
     length = 26u;
   }
 #undef PUT_DIGIT
-  *out_code_units = length;
+  *out_byte_count_utf8 = length;
 }
 
 static int begin_transaction(al_campfire_room_read_context_v1 *ctx,
@@ -1515,9 +1509,9 @@ static int session_find_by_token(al_campfire_room_read_context_v1 *ctx,
   al_room_read_session_row row;
   uint32_t row_extent;
   int rc;
-  uint64_t code_units = load_u64_le(inputs[0].data);
-  if (code_units > UINT32_MAX ||
-      bind_text(statement, 1, inputs[0].data + 8u, (uint32_t)code_units) !=
+  uint64_t byte_count_utf8 = load_u64_le(inputs[0].data);
+  if (byte_count_utf8 > UINT32_MAX ||
+      bind_text(statement, 1, inputs[0].data + 8u, (uint32_t)byte_count_utf8) !=
           SQLITE_OK)
     return write_result_error(output, capacity,
                               sqlite_error_tag(database), out_extent);
@@ -1620,8 +1614,8 @@ static int session_refresh_before(al_campfire_room_read_context_v1 *ctx,
   sqlite3_stmt *update_statement = (sqlite3_stmt *)ctx->opaque_statements[
       AL_CAMPFIRE_READ_STMT_SESSION_REFRESH_UPDATE];
   al_room_read_refresh_input refresh;
-  uint16_t now_utf16[26];
-  uint32_t now_code_units;
+  uint8_t now_utf8[26];
+  uint32_t now_byte_count_utf8;
   uint32_t error_tag = AL_CAMPFIRE_DB_ERROR_UNAVAILABLE;
   uint32_t attempts;
   int transaction_open = 0;
@@ -1635,7 +1629,7 @@ static int session_refresh_before(al_campfire_room_read_context_v1 *ctx,
       refresh.now > UtcInstant_MAX_MICROS || refresh.cutoff > refresh.now)
     return write_result_error(output, capacity,
                               AL_CAMPFIRE_DB_ERROR_INVALID_INPUT, out_extent);
-  format_timestamp(refresh.now, now_utf16, &now_code_units);
+  format_timestamp(refresh.now, now_utf8, &now_byte_count_utf8);
   if (!begin_transaction(ctx, AL_CAMPFIRE_READ_STMT_BEGIN_IMMEDIATE,
                          &error_tag))
     return write_result_error(output, capacity, error_tag, out_extent);
@@ -1659,12 +1653,12 @@ static int session_refresh_before(al_campfire_room_read_context_v1 *ctx,
                            refresh.ip_option_extent) != SQLITE_OK ||
           bind_option_text(update_statement, 2, refresh.agent_option,
                            refresh.agent_option_extent) != SQLITE_OK ||
-          bind_text(update_statement, 3, (const uint8_t *)now_utf16,
-                    now_code_units) != SQLITE_OK ||
+          bind_text(update_statement, 3, now_utf8,
+                    now_byte_count_utf8) != SQLITE_OK ||
           bind_int64(update_statement, 4, refresh.session_id) != SQLITE_OK ||
           current.observed_last_active_at == NULL ||
           current.observed_last_active_bytes < 0 ||
-          room_read_sqlite_bind_text16(update_statement, 5,
+          room_read_sqlite_bind_text(update_statement, 5,
                               current.observed_last_active_at,
                               current.observed_last_active_bytes,
                               SQLITE_TRANSIENT) != SQLITE_OK) {
@@ -1769,8 +1763,8 @@ static int split_bot_key(const al_room_read_text *key,
   uint32_t index;
   uint32_t dash = UINT32_MAX;
   uint32_t second_dash = UINT32_MAX;
-  for (index = 0u; index < key->code_units; ++index) {
-    if (load_u16_le(key->bytes + index * 2u) == (uint16_t)'-') {
+  for (index = 0u; index < key->byte_count_utf8; ++index) {
+    if (key->bytes[index] == (uint16_t)'-') {
       if (dash == UINT32_MAX)
         dash = index;
       else {
@@ -1782,9 +1776,9 @@ static int split_bot_key(const al_room_read_text *key,
   if (dash == UINT32_MAX)
     return 0;
   id->bytes = key->bytes;
-  id->code_units = dash;
-  token->bytes = key->bytes + (dash + 1u) * 2u;
-  token->code_units = (second_dash == UINT32_MAX ? key->code_units
+  id->byte_count_utf8 = dash;
+  token->bytes = key->bytes + (dash + 1u);
+  token->byte_count_utf8 = (second_dash == UINT32_MAX ? key->byte_count_utf8
                                                  : second_dash) - dash - 1u;
   return 1;
 }
@@ -1804,11 +1798,11 @@ static int user_authenticate_bot_key(al_campfire_room_read_context_v1 *ctx,
   uint64_t key_units = load_u64_le(input->data);
   int rc;
   key.bytes = input->data + 8u;
-  key.code_units = (uint32_t)key_units;
+  key.byte_count_utf8 = (uint32_t)key_units;
   if (!split_bot_key(&key, &id, &token))
     return write_result_option_none(output, capacity, out_extent);
-  if (bind_text(statement, 1, id.bytes, id.code_units) != SQLITE_OK ||
-      bind_text(statement, 2, token.bytes, token.code_units) != SQLITE_OK)
+  if (bind_text(statement, 1, id.bytes, id.byte_count_utf8) != SQLITE_OK ||
+      bind_text(statement, 2, token.bytes, token.byte_count_utf8) != SQLITE_OK)
     return write_result_error(output, capacity, sqlite_error_tag(database),
                               out_extent);
   rc = room_read_sqlite_step(statement);
@@ -2098,10 +2092,10 @@ static int execute_fixed_pragma(sqlite3 *database, const char *sql,
 
 static int pragma_text_equals(sqlite3 *database, const char *sql,
                               const char *expected,
-                              uint32_t expected_code_units,
+                              uint32_t expected_byte_count_utf8,
                               uint32_t *out_error_tag) {
   sqlite3_stmt *statement = NULL;
-  const uint16_t *value;
+  const uint8_t *value;
   int byte_count;
   uint32_t index;
   int rc;
@@ -2114,16 +2108,16 @@ static int pragma_text_equals(sqlite3 *database, const char *sql,
     (void)sqlite3_finalize(statement);
     return 0;
   }
-  value = (const uint16_t *)sqlite3_column_text16(statement, 0);
-  byte_count = sqlite3_column_bytes16(statement, 0);
-  if (value == NULL || byte_count < 0 || (byte_count & 1) != 0 ||
-      (uint32_t)byte_count / 2u != expected_code_units) {
+  value = sqlite3_column_text(statement, 0);
+  byte_count = sqlite3_column_bytes(statement, 0);
+  if (value == NULL || byte_count < 0 ||
+      (uint32_t)byte_count != expected_byte_count_utf8) {
     *out_error_tag = AL_CAMPFIRE_DB_ERROR_UNAVAILABLE;
     (void)sqlite3_finalize(statement);
     return 0;
   }
-  for (index = 0u; index < expected_code_units; ++index) {
-    uint16_t actual = load_u16_le((const uint8_t *)value + index * 2u);
+  for (index = 0u; index < expected_byte_count_utf8; ++index) {
+    uint16_t actual = value[index];
     uint16_t wanted = (uint16_t)expected[index];
     if (actual >= (uint16_t)'A' && actual <= (uint16_t)'Z')
       actual = (uint16_t)(actual + ((uint16_t)'a' - (uint16_t)'A'));

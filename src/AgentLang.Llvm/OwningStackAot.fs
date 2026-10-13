@@ -1646,7 +1646,7 @@ module OwningStackAot =
                   "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
                   "int.to-float"; "int.to-string"; "float.to-int"; "float.round"; "float.to-string"
                   "equals"; "bool.and"; "bool.or"; "bool.not"; "dup"; "drop"; "swap"
-                  "string.concat"; "string.length"; "string.join"; "string.html-escape"
+                  "string.concat"; "string.length"; "string.byte-length"; "string.char-length"; "string.join"; "string.html-escape"
                   "string.contains"; "string.starts-with"; "string.ends-with"
                   "list.append"; "list.concat" ]
 
@@ -1676,7 +1676,7 @@ module OwningStackAot =
                 | "drop", [ _ ], [] -> true
                 | "swap", [ first; second ], [ secondResult; firstResult ] -> second = secondResult && first = firstResult
                 | "string.concat", [ IrString; IrString ], [ IrString ] -> true
-                | "string.length", [ IrString ], [ IrInt ] -> true
+                | ("string.length" | "string.byte-length" | "string.char-length"), [ IrString ], [ IrInt ] -> true
                 | "string.join", [ IrList IrString ], [ IrString ] -> true
                 | "string.html-escape", [ IrString ], [ IrString ] -> true
                 | ("string.contains" | "string.starts-with" | "string.ends-with"), [ IrString; IrString ], [ IrBool ] -> true
@@ -2085,6 +2085,15 @@ module OwningStackAot =
             invalidArg name "Owning-stack host value exceeds the bounded 32-bit runtime range."
         int total
 
+    /// Native Strings are UTF-8. Encoding is strict: a .NET string with an
+    /// unpaired surrogate cannot be represented and is rejected, never replaced.
+    let private strictUtf8 = UTF8Encoding(false, true)
+
+    let internal utf8Bytes (text: string) =
+        try strictUtf8.GetBytes text
+        with :? EncoderFallbackException ->
+            invalidArg "values" "STRING_INVALID_UTF16: a String contains an unpaired surrogate and cannot be encoded as UTF-8."
+
     let private alignedExtent payload =
         let padded = Checked.(+) (int64 payload) 7L
         if padded > int64 Int32.MaxValue then
@@ -2102,7 +2111,7 @@ module OwningStackAot =
             | IrFloat, FloatValue number when Double.IsFinite number -> 8, 8
             | IrFloat, FloatValue _ -> invalidArg (nameof values) "Owning-stack Float inputs must be finite."
             | IrString, StringValue text when not (isNull text) ->
-                let payload64 = 8L + 2L * int64 text.Length
+                let payload64 = 8L + int64 (utf8Bytes text).Length
                 if payload64 > int64 Int32.MaxValue then
                     invalidArg (nameof values) "Owning-stack String payload exceeds the bounded 32-bit runtime range."
                 let payload = int payload64
@@ -2161,7 +2170,7 @@ module OwningStackAot =
                 not (isNull text)
                 && (scalarDefinition info.Program ty
                     |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrString)) ->
-                let payload64 = 8L + 2L * int64 text.Length
+                let payload64 = 8L + int64 (utf8Bytes text).Length
                 if payload64 > int64 Int32.MaxValue then
                     invalidArg (nameof values) "Owning-stack String payload exceeds the bounded 32-bit runtime range."
                 let payload = int payload64
@@ -2239,13 +2248,11 @@ module OwningStackAot =
                 8
             | IrString, StringValue text ->
                 if isNull text then invalidArg (nameof values) "Owning-stack String inputs cannot be null."
-                writeUInt32 offset (uint32 text.Length)
+                let encoded = utf8Bytes text
+                writeUInt32 offset (uint32 encoded.Length)
                 writeUInt32 (offset + 4) 0u
-                for index in 0 .. text.Length - 1 do
-                    let codeUnit = uint16 text[index]
-                    bytes[offset + 8 + index * 2] <- byte codeUnit
-                    bytes[offset + 9 + index * 2] <- byte (codeUnit >>> 8)
-                alignedExtent (8 + text.Length * 2)
+                Array.blit encoded 0 bytes (offset + 8) encoded.Length
+                alignedExtent (8 + encoded.Length)
             | IrList itemType, ListValue(declaredType, items) when declaredType = langTypeFor info.Program itemType ->
                 if isNull (box items) then invalidArg (nameof values) "Owning-stack List inputs cannot contain a null item sequence."
                 writeUInt32 offset (uint32 items.Length)
@@ -2305,13 +2312,11 @@ module OwningStackAot =
                 not (isNull text)
                 && (scalarDefinition info.Program ty
                     |> Option.exists (fun scalar -> scalar.TypeName = actualName && scalar.BaseType = IrString)) ->
-                writeUInt32 offset (uint32 text.Length)
+                let encoded = utf8Bytes text
+                writeUInt32 offset (uint32 encoded.Length)
                 writeUInt32 (offset + 4) 0u
-                for index in 0 .. text.Length - 1 do
-                    let codeUnit = uint16 text[index]
-                    bytes[offset + 8 + index * 2] <- byte codeUnit
-                    bytes[offset + 9 + index * 2] <- byte (codeUnit >>> 8)
-                alignedExtent (8 + text.Length * 2)
+                Array.blit encoded 0 bytes (offset + 8) encoded.Length
+                alignedExtent (8 + encoded.Length)
             | IrNominal _, RecordValue(name, fields) when name = layout.Name && Option.isSome (recordDefinition info.Program ty) ->
                 let mutable childOffset = offset
                 let mutable payload = 0
@@ -2372,19 +2377,17 @@ module OwningStackAot =
                 if offset < 0 || offset > bytes.Length - 8 then raise (InvalidDataException("Owning-stack String header is truncated."))
                 let count = readUInt32 offset
                 if readUInt32 (offset + 4) <> 0u then raise (InvalidDataException("Owning-stack String reserved header is nonzero."))
-                let payload64 = 8L + int64 count * 2L
+                let payload64 = 8L + int64 count
                 if payload64 > int64 Int32.MaxValue then raise (InvalidDataException("Owning-stack String payload exceeds the bounded range."))
                 let payload = int payload64
                 let extentBytes = alignedDecodedExtent payload "String extent"
                 if offset > bytes.Length - extentBytes then raise (InvalidDataException("Owning-stack String extent is truncated."))
-                let chars = Array.zeroCreate<char> (int count)
-                for index in 0 .. chars.Length - 1 do
-                    let lo = uint16 bytes[offset + 8 + index * 2]
-                    let hi = uint16 bytes[offset + 9 + index * 2]
-                    chars[index] <- char (lo ||| (hi <<< 8))
                 for pad in payload .. extentBytes - 1 do
                     if bytes[offset + pad] <> 0uy then raise (InvalidDataException("Owning-stack String padding is nonzero."))
-                StringValue(String(chars)), extentBytes, payload
+                let text =
+                    try strictUtf8.GetString(bytes, offset + 8, int count)
+                    with :? DecoderFallbackException -> raise (InvalidDataException("Owning-stack String is not well-formed UTF-8."))
+                StringValue text, extentBytes, payload
             | IrList itemType ->
                 ensureRange offset 8 "List header"
                 let count = readUInt32 offset
@@ -3947,14 +3950,12 @@ module OwningStackAot =
         let stringIndexes = stringValues |> Seq.mapi (fun index value -> value, index) |> Map.ofSeq
         let stringGlobal value = $"@al_owning_string_literal_{stringIndexes[value]}"
         let encodeLiteral (value: string) =
-            let payload = 8 + value.Length * 2
+            let encoded = utf8Bytes value
+            let payload = 8 + encoded.Length
             let extent = (payload + 7) &&& ~~~7
             let bytes = Array.zeroCreate<byte> extent
-            for index in 0 .. 3 do bytes[index] <- byte (uint32 value.Length >>> (index * 8))
-            for index in 0 .. value.Length - 1 do
-                let unit = uint16 value[index]
-                bytes[8 + index * 2] <- byte unit
-                bytes[9 + index * 2] <- byte (unit >>> 8)
+            for index in 0 .. 3 do bytes[index] <- byte (uint32 encoded.Length >>> (index * 8))
+            Array.blit encoded 0 bytes 8 encoded.Length
             bytes, payload, extent
         let llvmByteString (bytes: byte array) = bytes |> Array.map (fun value -> $"\\{value:X2}") |> String.concat ""
 
@@ -4041,6 +4042,7 @@ module OwningStackAot =
                 writer.Line($"declare i32 @{nativeRoomReadAdapterSymbol}(ptr, i32, ptr, ptr, i32, i32, ptr, i32, ptr)")
             | None -> invalidOp "Native host profile presence changed during declaration emission."
         writer.Line("declare i32 @al_owning_string_length(ptr, i32, i32, i32, ptr)")
+        writer.Line("declare i32 @al_owning_string_char_length(ptr, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_plan(ptr, i32, i32, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_join_plan(ptr, i32, i32, i32, ptr, ptr, ptr)")
@@ -5612,13 +5614,15 @@ module OwningStackAot =
                                 stack <- prefix @ [ value; duplicate ]
                             | "swap", [ left; right ] ->
                                 stack <- prefix @ [ right; left ]
-                            | "string.length", [ value ] ->
+                            | ("string.length" | "string.byte-length" | "string.char-length") as operation, [ value ] ->
+                                // Byte length is the header; character length counts lead bytes.
                                 let source = value.Offset
                                 let units = w.Fresh "string.length.units"
                                 w.Inst($"{units} = alloca i32, align 4")
                                 let errorId = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to read a verified String length." currentOwner instructionSpan [] []
                                 let status = w.Fresh "string.length.status"
-                                w.Inst($"{status} = call i32 @al_owning_string_length(ptr %%ctx, i32 {source}, i32 {value.Extent}, i32 {errorId}, ptr {units})")
+                                let runtimeFunction = if operation = "string.char-length" then "al_owning_string_char_length" else "al_owning_string_length"
+                                w.Inst($"{status} = call i32 @{runtimeFunction}(ptr %%ctx, i32 {source}, i32 {value.Extent}, i32 {errorId}, ptr {units})")
                                 emitStatusResult w status failBody
                                 let loaded = w.Fresh "string.length.value"
                                 w.Inst($"{loaded} = load i32, ptr {units}, align 4")
@@ -5998,11 +6002,11 @@ module OwningStackAot =
                                 w.Inst($"br label %%{failBody}")
                                 w.Line($"{lengthReady}:")
                                 dropInputs ()
-                                let doubledLength = w.Fresh "int.to.string.utf16.length"
+                                let doubledLength = w.Fresh "int.to.string.utf8.length"
                                 let payload = w.Fresh "int.to.string.payload"
                                 let payloadWithPadding = w.Fresh "int.to.string.payload.with.padding"
                                 let extent = w.Fresh "int.to.string.extent"
-                                w.Inst($"{doubledLength} = mul i32 {length}, 2")
+                                w.Inst($"{doubledLength} = add i32 {length}, 0")
                                 w.Inst($"{payload} = add i32 {doubledLength}, 8")
                                 w.Inst($"{payloadWithPadding} = add i32 {payload}, 7")
                                 w.Inst($"{extent} = and i32 {payloadWithPadding}, -8")
@@ -6070,7 +6074,7 @@ module OwningStackAot =
                                 let payload = w.Fresh "float.to.string.payload"
                                 let payloadWithPadding = w.Fresh "float.to.string.payload.with.padding"
                                 let extent = w.Fresh "float.to.string.extent"
-                                w.Inst($"{doubledLength} = mul i32 {length}, 2")
+                                w.Inst($"{doubledLength} = add i32 {length}, 0")
                                 w.Inst($"{payload} = add i32 {doubledLength}, 8")
                                 w.Inst($"{payloadWithPadding} = add i32 {payload}, 7")
                                 w.Inst($"{extent} = and i32 {payloadWithPadding}, -8")

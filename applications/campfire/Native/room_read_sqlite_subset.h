@@ -48,9 +48,9 @@ SQLITE_API int sqlite3_prepare_v2(sqlite3 *database, const char *sql,
                                   const char **tail);
 SQLITE_API int sqlite3_bind_int64(sqlite3_stmt *statement, int index,
                                   sqlite3_int64 value);
-SQLITE_API int sqlite3_bind_text16(sqlite3_stmt *statement, int index,
-                                   const void *value, int byte_count,
-                                   sqlite3_destructor_type destructor);
+SQLITE_API int sqlite3_bind_text(sqlite3_stmt *statement, int index,
+                                 const void *value, int byte_count,
+                                 sqlite3_destructor_type destructor);
 SQLITE_API int sqlite3_bind_null(sqlite3_stmt *statement, int index);
 SQLITE_API int sqlite3_step(sqlite3_stmt *statement);
 SQLITE_API int sqlite3_reset(sqlite3_stmt *statement);
@@ -60,9 +60,9 @@ SQLITE_API int sqlite3_changes(sqlite3 *database);
 SQLITE_API int sqlite3_column_type(sqlite3_stmt *statement, int column);
 SQLITE_API sqlite3_int64 sqlite3_column_int64(sqlite3_stmt *statement,
                                                int column);
-SQLITE_API const void *sqlite3_column_text16(sqlite3_stmt *statement,
-                                              int column);
-SQLITE_API int sqlite3_column_bytes16(sqlite3_stmt *statement, int column);
+SQLITE_API const unsigned char *sqlite3_column_text(sqlite3_stmt *statement,
+                                                     int column);
+SQLITE_API int sqlite3_column_bytes(sqlite3_stmt *statement, int column);
 SQLITE_API int sqlite3_errcode(sqlite3 *database);
 SQLITE_API int sqlite3_extended_errcode(sqlite3 *database);
 SQLITE_API int sqlite3_extended_result_codes(sqlite3 *database, int enabled);

@@ -17,6 +17,34 @@ module TrustedValues =
         || (value >= 'a' && value <= 'z')
         || (value >= '0' && value <= '9')
 
+    /// Strings are UTF-8 sequences of Unicode scalar values: a .NET string with an
+    /// unpaired surrogate has no UTF-8 form and is rejected at every boundary.
+    let isWellFormedUtf16 (value: string) =
+        if isNull value then false
+        else
+            let mutable valid = true
+            let mutable index = 0
+            while valid && index < value.Length do
+                let unit = value[index]
+                if Char.IsHighSurrogate unit then
+                    if index + 1 < value.Length && Char.IsLowSurrogate value[index + 1] then index <- index + 2
+                    else valid <- false
+                elif Char.IsLowSurrogate unit then valid <- false
+                else index <- index + 1
+            valid
+
+    /// UTF-8 byte count of a well-formed string.
+    let utf8ByteLength (value: string) = int64 (Text.Encoding.UTF8.GetByteCount value)
+
+    /// Number of Unicode scalar values (characters) of a well-formed string.
+    let characterLength (value: string) =
+        let mutable count = 0L
+        let mutable index = 0
+        while index < value.Length do
+            index <- index + (if Char.IsHighSurrogate value[index] then 2 else 1)
+            count <- count + 1L
+        count
+
     /// Rails ERB::Util.html_escape: replaces exactly & < > " ' and leaves every
     /// other UTF-16 code unit (including surrogates) unchanged.
     let htmlEscape (value: string) =

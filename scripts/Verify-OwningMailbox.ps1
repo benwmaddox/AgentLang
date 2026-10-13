@@ -277,7 +277,8 @@ function Get-ExpectedPayloadBytes([string]$Hex) {
         $byte = [Convert]::ToUInt32($Hex.Substring($index * 2, 2), 16)
         $count = ($count -shl 8) -bor $byte
     }
-    return [uint32](8 + 2 * $count)
+    # Owning Strings are UTF-8 since report 265: the header count is bytes.
+    return [uint32](8 + $count)
 }
 
 function Compare-Bank($Actual, [bool]$Pending, $ExpectedRoots, [string]$Label, $Fixture) {
@@ -452,7 +453,7 @@ function Check-NativeEvidence($Native, $Fixture, [string]$Label, [string]$Runtim
     }
     Compare-StatsToFixture (Get-Field $Native 'boundaryStats') $boundaryExpected "$Label UTF-8 width boundaries"
     $largeExpected = Get-Field (Get-Field $life 'largeRequest') 'sourceDerivedStats'
-    Compare-StatsToFixture (Get-Field $Native 'largeRequestStats') $largeExpected "$Label 4096-byte request and retained-capacity retry"
+    Compare-StatsToFixture (Get-Field $Native 'largeRequestStats') $largeExpected "$Label 8192-byte request and retained-capacity retry"
 
     $scratchStats = Get-Field $Native 'scratchFailureRetryStats'
     Add-Check "$Label scratch failure retry completes with no outstanding scratch lease" (
@@ -632,7 +633,9 @@ function Test-RefinementOracle($Bootstrap, $Fixture, [string]$Label) {
     # Report 263: proven refined literals are retagged without a validator call,
     # recorded as a semantic transition chained from the ABI5 fixture hash.
     $expectedAbi5FixtureHash = 'DD6D91207390763BD2886917B16F9E3315E0CF6DE3F6A3DEC7005B28C52AA47B'
-    $expectedFinalFixtureHash = '78FCCB8710050253E61563F8829934D8E10CEEEBB2C72CA8F7B1EC3E0E814F9D'
+    # Report 265: UTF-8 Strings, chained from the report 263 fixture hash.
+    $expectedReport263FixtureHash = '78FCCB8710050253E61563F8829934D8E10CEEEBB2C72CA8F7B1EC3E0E814F9D'
+    $expectedFinalFixtureHash = '433E59CE124785C834C4A12E67ABCB9739F64C35281E97180348CF9FC31A0177'
     $semanticTransitions = @(Get-Field $provenance 'semanticTransitions')
     $actualFixtureHash = (Get-FileHash -LiteralPath $script:refinementsFixturePath -Algorithm SHA256).Hash.ToUpperInvariant()
     $expectedPriorHash = $initialHash
@@ -681,9 +684,11 @@ function Test-RefinementOracle($Bootstrap, $Fixture, [string]$Label) {
         [string](Get-Field $layoutTransition 'priorFixtureSha256') -ceq $expectedAbi4FixtureHash -and
         [string](Get-Field $layoutTransition 'historicalCorrectionChainFinalSha256Preserved') -ceq $expectedAbi4FixtureHash -and
         $actualFixtureHash -ceq $expectedFinalFixtureHash -and
-        $semanticTransitions.Count -eq 1 -and
+        $semanticTransitions.Count -eq 2 -and
         [string](Get-Field $semanticTransitions[0] 'kind') -ceq 'proven-refined-literal-admission' -and
-        [string](Get-Field $semanticTransitions[0] 'priorFixtureSha256') -ceq $expectedAbi5FixtureHash
+        [string](Get-Field $semanticTransitions[0] 'priorFixtureSha256') -ceq $expectedAbi5FixtureHash -and
+        [string](Get-Field $semanticTransitions[1] 'kind') -ceq 'utf8-string-encoding' -and
+        [string](Get-Field $semanticTransitions[1] 'priorFixtureSha256') -ceq $expectedReport263FixtureHash
     Add-Check "$Label fixture provenance preserves the ABI4 correction-chain baseline and pins the ABI5 transition bytes" $provenanceOkay ([ordered]@{ frozenBeforeNativeExecution = Get-Field $Fixture 'frozenBeforeNativeExecution'; initialFrozenSnapshotSha256 = $initialHash; terminalCorrectionPriorSha256 = $expectedPriorHash; historicalFixtureSha256 = $historicalFixtureHash; abi4FixtureSha256 = $expectedAbi4FixtureHash; abiTransition = 'module ABI 2, stack ABI 2, and descriptor sizes unchanged; layout ABI 4 to 5'; actualFixtureSha256 = $actualFixtureHash; expectedFixtureSha256 = $expectedFinalFixtureHash; provenance = $provenance })
 
     $oracle = Get-Field $Bootstrap 'sourceDerivedRefinementOracle'
@@ -1338,10 +1343,12 @@ try {
         (Get-Hash $refinementsFixturePath)
     )
     $expectedCurrentFixtureHashes = @(
-        '35d424914ea2c43198f6a004e46d2053c9acbb48f9abe5b191d400412c9121ef',
-        'ddd86cbd139cb678a25960ac74b09f154ccf0ab170ddafcc31c8b362f20c8859',
-        # Report 263 proven-literal semantic transition (chained from dd6d9120...aa47b).
-        '78fccb8710050253e61563f8829934d8e10ceeebb2c72ca8f7b1ec3e0e814f9d'
+        # Report 265 UTF-8 String transition (chained from 35d42491...121ef).
+        '1c7e4abbc5a732f53b835541a4fa51cbf4c7f42cb62957687fe6382710396124',
+        # Report 265 UTF-8 String transition (chained from ddd86cbd...c8859).
+        '2322f915eef3875a7604bf5ce2ce5ea8118b3c93837680def268881126aa9552',
+        # Report 263 proven-literal (from dd6d9120...aa47b), then report 265 UTF-8 String transition (chained from 78fccb87...14f9d).
+        '433e59ce124785c834c4a12e67abcb9739f64c35281e97180348cf9fc31a0177'
     )
     Add-Check 'base, sums, and refinements fixtures match the explicitly transitioned ABI5 byte pins' (($currentFixtureHashes -join ',') -ceq ($expectedCurrentFixtureHashes -join ',')) ([ordered]@{ expected = $expectedCurrentFixtureHashes; actual = $currentFixtureHashes })
     $report.sumsFixture = $sumsFixturePath

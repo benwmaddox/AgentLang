@@ -2159,12 +2159,12 @@ static uint32_t finalize_response_cookies(worker_state *worker,
       return_bytes = worker->return_url_bytes;
     }
     if (metadata->alert.present != 0u) {
+      /* Owning Strings are UTF-8: the span is copied, not transcoded. */
       if (metadata->alert.data_utf16le == NULL ||
-          metadata->alert.code_units > HOST_COOKIE_RAW_BYTES / 4u) return 0u;
+          metadata->alert.code_units > HOST_COOKIE_RAW_BYTES) return 0u;
       worker->cookie_raw_bytes[0] = HOST_COOKIE_RAW_BYTES;
-      alert_bytes = u16_to_utf8((const uint16_t *)metadata->alert.data_utf16le,
-          metadata->alert.code_units, worker->cookie_raw[0], HOST_COOKIE_RAW_BYTES);
-      if (alert_bytes == UINT32_MAX) return 0u;
+      bytes_copy(worker->cookie_raw[0], metadata->alert.data_utf16le, metadata->alert.code_units);
+      alert_bytes = metadata->alert.code_units;
       worker->cookie_raw_bytes[0] = alert_bytes;
       alert = worker->cookie_raw[0];
     }
@@ -2188,12 +2188,11 @@ static uint32_t finalize_response_cookies(worker_state *worker,
   if (metadata->refresh_session_token.present != 0u) {
     uint32_t token_bytes;
     if (metadata->refresh_session_token.data_utf16le == NULL ||
-        metadata->refresh_session_token.code_units > HOST_COOKIE_RAW_BYTES / 4u) return 0u;
+        metadata->refresh_session_token.code_units > HOST_COOKIE_RAW_BYTES) return 0u;
     worker->cookie_raw_bytes[1] = HOST_COOKIE_RAW_BYTES;
-    token_bytes = u16_to_utf8((const uint16_t *)metadata->refresh_session_token.data_utf16le,
-        metadata->refresh_session_token.code_units, worker->cookie_raw[1],
-        HOST_COOKIE_RAW_BYTES);
-    if (token_bytes == UINT32_MAX) return 0u;
+    bytes_copy(worker->cookie_raw[1], metadata->refresh_session_token.data_utf16le,
+        metadata->refresh_session_token.code_units);
+    token_bytes = metadata->refresh_session_token.code_units;
     worker->cookie_raw_bytes[1] = token_bytes;
     worker->cookie_json_bytes = HOST_COOKIE_JSON_BYTES;
     cookie_status = al_campfire_cookie_response_sign_session_token_v1(

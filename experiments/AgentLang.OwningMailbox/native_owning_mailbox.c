@@ -149,20 +149,58 @@ static void write_u32_le(uint8_t *destination, uint32_t value) {
   destination[3] = (uint8_t)(value >> 24u);
 }
 
+/* Expected texts are written as UTF-16 units; owning Strings are UTF-8. */
+static uint32_t utf8_from_units(const uint16_t *units, uint32_t unit_count,
+                                uint8_t *output) {
+  uint32_t index;
+  uint32_t length = 0u;
+  for (index = 0u; index < unit_count; ++index) {
+    uint32_t scalar = units[index];
+    if (scalar >= 0xd800u && scalar <= 0xdbffu && index + 1u < unit_count) {
+      scalar = 0x10000u + ((scalar - 0xd800u) << 10u) +
+               ((uint32_t)units[index + 1u] - 0xdc00u);
+      ++index;
+    }
+    if (scalar < 0x80u) {
+      if (output != NULL) output[length] = (uint8_t)scalar;
+      length += 1u;
+    } else if (scalar < 0x800u) {
+      if (output != NULL) {
+        output[length] = (uint8_t)(0xc0u | (scalar >> 6u));
+        output[length + 1u] = (uint8_t)(0x80u | (scalar & 0x3fu));
+      }
+      length += 2u;
+    } else if (scalar < 0x10000u) {
+      if (output != NULL) {
+        output[length] = (uint8_t)(0xe0u | (scalar >> 12u));
+        output[length + 1u] = (uint8_t)(0x80u | ((scalar >> 6u) & 0x3fu));
+        output[length + 2u] = (uint8_t)(0x80u | (scalar & 0x3fu));
+      }
+      length += 3u;
+    } else {
+      if (output != NULL) {
+        output[length] = (uint8_t)(0xf0u | (scalar >> 18u));
+        output[length + 1u] = (uint8_t)(0x80u | ((scalar >> 12u) & 0x3fu));
+        output[length + 2u] = (uint8_t)(0x80u | ((scalar >> 6u) & 0x3fu));
+        output[length + 3u] = (uint8_t)(0x80u | (scalar & 0x3fu));
+      }
+      length += 4u;
+    }
+  }
+  return length;
+}
+
 static uint32_t encode_expected_string(const uint16_t *units,
                                        uint32_t unit_count, uint8_t *output,
                                        uint32_t output_capacity) {
-  uint32_t payload_bytes = 8u + unit_count * 2u;
+  uint32_t byte_count = utf8_from_units(units, unit_count, NULL);
+  uint32_t payload_bytes = 8u + byte_count;
   uint32_t extent_bytes = align8(payload_bytes);
-  uint32_t index;
   if (output == NULL || extent_bytes > output_capacity)
     return 0u;
   memset(output, 0, extent_bytes);
-  write_u32_le(output, unit_count);
-  for (index = 0u; index < unit_count; ++index) {
-    output[8u + index * 2u] = (uint8_t)units[index];
-    output[9u + index * 2u] = (uint8_t)(units[index] >> 8u);
-  }
+  write_u32_le(output, byte_count);
+  (void)utf8_from_units(units, unit_count, output + 8u);
   return extent_bytes;
 }
 
@@ -530,7 +568,8 @@ static int check_string_root(const al_owning_byte_bank *bank,
     return 0;
   root = &bank->roots[root_index];
   return root->type_id == expected_type_id && root->offset_bytes <= bank->used_bytes &&
-         root->extent_bytes == extent && root->payload_bytes == 8u + unit_count * 2u &&
+         root->extent_bytes == extent &&
+         root->payload_bytes == 8u + utf8_from_units(units, unit_count, NULL) &&
          root->owner_end_bytes == root->offset_bytes + extent &&
          root->owner_end_bytes <= bank->used_bytes &&
          memcmp(bank->bytes + root->offset_bytes, expected, extent) == 0;
@@ -549,14 +588,14 @@ static int check_main_bank(al_mailbox_runtime *runtime, uint32_t mailbox_id,
       view.pending != pending || view.bank->root_count != root_count)
     return 0;
   if (root_count > 0u) {
-    uint32_t extent = align8(8u + first_count * 2u);
+    uint32_t extent = align8(8u + utf8_from_units(first, first_count, NULL));
     if (!check_string_root(view.bank, 0u, EXPECTED_STATE_TYPE_ID, first,
                            first_count))
       return 0;
     expected_used += extent;
   }
   if (root_count > 1u) {
-    uint32_t extent = align8(8u + second_count * 2u);
+    uint32_t extent = align8(8u + utf8_from_units(second, second_count, NULL));
     if (!check_string_root(view.bank, 1u, EXPECTED_CONTINUATION_TYPE_ID,
                            second, second_count))
       return 0;
@@ -1816,7 +1855,8 @@ static void run_scratch_capacity_failure(
 
 static void run_retained_capacity_failure(
     const al_owning_mailbox_module *module) {
-  static uint8_t large_text[4096];
+  /* 8192 ASCII bytes keep the 8200-byte UTF-8 String of the UTF-16 era. */
+  static uint8_t large_text[8192];
   static const uint8_t chunk[] = {0x58u};
   static const uint16_t chunk_units[] = {0x0058u};
   runtime_fixture fixture;
@@ -1835,7 +1875,7 @@ static void run_retained_capacity_failure(
     return;
   }
   initialize_call_info(&info);
-  CHECK("native text request of exactly 4096 bytes initializes",
+  CHECK("native text request of exactly 8192 bytes initializes",
         al_mailbox_init_text(fixture.runtime, 0u, large_text,
                              sizeof(large_text), &info) == AL_MAILBOX_OK);
   CHECK("large initialization publishes the exact 8200-byte serialized String",
@@ -1844,14 +1884,13 @@ static void run_retained_capacity_failure(
             view.bank->roots[0].type_id == EXPECTED_STATE_TYPE_ID &&
             view.bank->roots[0].extent_bytes == 8200u &&
             view.bank->roots[0].payload_bytes == 8200u &&
-            view.bank->bytes[0] == 0x00u && view.bank->bytes[1] == 0x10u &&
+            view.bank->bytes[0] == 0x00u && view.bank->bytes[1] == 0x20u &&
             view.bank->bytes[2] == 0x00u && view.bank->bytes[3] == 0x00u);
   for (index = 8u; index < 8200u; ++index) {
-    uint8_t expected = (index & 1u) == 0u ? 0x41u : 0u;
-    if (view.bank->bytes[index] != expected)
+    if (view.bank->bytes[index] != 0x41u)
       break;
   }
-  CHECK("large root retains all 4096 ASCII code units",
+  CHECK("large root retains all 8192 ASCII bytes",
         index == 8200u);
   initialize_call_info(&info);
   CHECK("large mailbox enters pending state with a small continuation",
@@ -1870,7 +1909,7 @@ static void run_retained_capacity_failure(
   CHECK("large mailbox snapshots counters before retained-capacity failure",
         get_owning_stats(fixture.runtime, &stats_before));
   initialize_call_info(&info);
-  CHECK("4096-byte completion exceeds bank capacity after handler success",
+  CHECK("8192-byte completion exceeds bank capacity after handler success",
         al_mailbox_resume_text(fixture.runtime, 0u, &token, large_text,
                                sizeof(large_text), &info) ==
             AL_MAILBOX_RETAINED_CAPACITY);
@@ -1896,18 +1935,18 @@ static void run_retained_capacity_failure(
         get_view(fixture.runtime, 0u, &view) && view.pending == 0u &&
             view.bank->root_count == 1u && view.bank->used_bytes == 8208u &&
             view.bank->roots[0].extent_bytes == 8208u &&
-            view.bank->roots[0].payload_bytes == 8202u);
+            view.bank->roots[0].payload_bytes == 8201u);
   for (index = 8u; index < 8200u; ++index) {
-    uint8_t expected = (index & 1u) == 0u ? 0x41u : 0u;
-    if (view.bank->bytes[index] != expected)
+    if (view.bank->bytes[index] != 0x41u)
       break;
   }
   CHECK("retried large result preserves request and appends the continuation",
         index == 8200u && view.bank->bytes[8200u] == 0x58u &&
-            view.bank->bytes[8201u] == 0x00u);
+            view.bank->bytes[8201u] == 0x00u &&
+            view.bank->bytes[8207u] == 0x00u);
   CHECK("large request stats report staging, imports, construction and publication separately",
         get_owning_stats(fixture.runtime, &stats_after) &&
-            stats_after.utf8_input_bytes == 8193u &&
+            stats_after.utf8_input_bytes == 16385u &&
              stats_after.utf16_staging_bytes == 16424u &&
              stats_after.input_import_bytes == 41056u &&
              stats_after.publication_copy_bytes == 24624u &&

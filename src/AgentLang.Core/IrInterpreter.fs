@@ -162,7 +162,7 @@ module IrInterpreter =
             "int.add-checked"; "int.multiply-checked"; "int.scale-ratio-toward-zero"
             "instant.parse-utc"; "instant.is-canonical-utc?"; "instant.before?"; "instant.add-days"
             "string.concat"; "string.join"; "string.html-escape"; "string.contains"; "string.starts-with"; "string.ends-with"
-            "string.length"; "string.trim"; "string.to-lower"; "string.to-upper"
+            "string.length"; "string.byte-length"; "string.char-length"; "string.trim"; "string.to-lower"; "string.to-upper"
             "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"; "float.round"
             "int.to-string"; "float.to-string"
             "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
@@ -721,6 +721,8 @@ module IrInterpreter =
                 match value with
                 | StringValue text ->
                     if isNull text then invalid "null string"
+                    if not (TrustedValues.isWellFormedUtf16 text) then
+                        fail "STRING_INVALID_UTF16" "A String contains an unpaired surrogate and has no UTF-8 form." (Some currentWord) (site |> Option.bind sourceSpan) [ "well-formed Unicode text" ] [ "unpaired surrogate" ]
                     addBytes (int64 text.Length * 6L)
                 | FloatValue number when not (Double.IsFinite number) -> invalid "non-finite float"
                 | FloatValue _ -> ()
@@ -895,7 +897,7 @@ module IrInterpreter =
             | IrInt, IntValue number -> RuntimeInt number
             | IrFloat, FloatValue number when Double.IsFinite number -> RuntimeFloat number
             | IrBool, BoolValue flag -> RuntimeBool flag
-            | IrString, StringValue text when not (isNull text) -> RuntimeString text
+            | IrString, StringValue text when not (isNull text) && TrustedValues.isWellFormedUtf16 text -> RuntimeString text
             | IrUnit, UnitValue -> RuntimeUnit
             | IrList itemType, ListValue(actualType, values) ->
                 requireContainerType (TList actualType)
@@ -1107,7 +1109,8 @@ module IrInterpreter =
             | "string.contains", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.Contains(sub, StringComparison.Ordinal)) ]
             | "string.starts-with", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.StartsWith(sub, StringComparison.Ordinal)) ]
             | "string.ends-with", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.EndsWith(sub, StringComparison.Ordinal)) ]
-            | "string.length", [ RuntimeString value ] -> [ RuntimeInt(int64 value.Length) ]
+            | ("string.length" | "string.byte-length"), [ RuntimeString value ] -> [ RuntimeInt(TrustedValues.utf8ByteLength value) ]
+            | "string.char-length", [ RuntimeString value ] -> [ RuntimeInt(TrustedValues.characterLength value) ]
             | "string.trim", [ RuntimeString value ] -> [ RuntimeString(value.Trim()) ]
             | "string.to-lower", [ RuntimeString value ] -> [ RuntimeString(value.ToLowerInvariant()) ]
             | "string.to-upper", [ RuntimeString value ] -> [ RuntimeString(value.ToUpperInvariant()) ]

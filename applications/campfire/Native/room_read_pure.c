@@ -96,15 +96,6 @@ static void al_campfire_write_u64_le(uint8_t *bytes, uint64_t value) {
     bytes[index] = (uint8_t)(value >> (index * 8u));
 }
 
-static uint16_t al_campfire_read_u16_le(const uint8_t *bytes) {
-  return (uint16_t)((uint16_t)bytes[0] | ((uint16_t)bytes[1] << 8u));
-}
-
-static void al_campfire_write_u16_le(uint8_t *bytes, uint16_t value) {
-  bytes[0] = (uint8_t)value;
-  bytes[1] = (uint8_t)(value >> 8u);
-}
-
 static int32_t al_campfire_layout_valid(const al_owning_layout *layout) {
   return layout != NULL &&
          layout->abi_version == AL_OWNING_LAYOUT_ABI_VERSION &&
@@ -133,7 +124,7 @@ static int32_t al_campfire_read_input_string(
   if (input->data[4] != 0u || input->data[5] != 0u ||
       input->data[6] != 0u || input->data[7] != 0u)
     return 0;
-  payload = 8u + (uint64_t)code_units * 2u;
+  payload = 8u + (uint64_t)code_units;
   extent = (payload + 7u) & ~UINT64_C(7);
   if (extent > UINT32_MAX || extent != input->extent_bytes)
     return 0;
@@ -159,9 +150,10 @@ static int32_t al_campfire_read_input_i64(
   return 1;
 }
 
+/* One UTF-8 byte; callers compare ASCII values only. */
 static uint16_t al_campfire_string_unit(const al_campfire_string_view *view,
                                        uint32_t index) {
-  return al_campfire_read_u16_le(view->data + ((size_t)index * 2u));
+  return view->data[index];
 }
 
 static int32_t al_campfire_string_is_ascii(
@@ -186,38 +178,9 @@ static void al_campfire_clear_scratch(al_campfire_pure_context *context) {
 static int32_t al_campfire_utf8_byte_count(
     const al_campfire_string_view *view, uint32_t maximum,
     uint32_t *out_bytes) {
-  uint64_t total = 0u;
-  uint32_t index = 0u;
-  if (view == NULL || out_bytes == NULL)
+  if (view == NULL || out_bytes == NULL || view->code_units > maximum)
     return 0;
-  while (index < view->code_units) {
-    const uint16_t first = al_campfire_string_unit(view, index);
-    if (first <= 0x7fu) {
-      total += 1u;
-      ++index;
-    } else if (first <= 0x7ffu) {
-      total += 2u;
-      ++index;
-    } else if (first >= 0xd800u && first <= 0xdbffu &&
-               index + 1u < view->code_units) {
-      const uint16_t second = al_campfire_string_unit(view, index + 1u);
-      if (second >= 0xdc00u && second <= 0xdfffu) {
-        total += 4u;
-        index += 2u;
-      } else {
-        /* Encoding.UTF8's default replacement for an unpaired surrogate. */
-        total += 3u;
-        ++index;
-      }
-    } else {
-      /* Includes isolated low surrogates, which also become U+FFFD. */
-      total += 3u;
-      ++index;
-    }
-    if (total > maximum)
-      return 0;
-  }
-  *out_bytes = (uint32_t)total;
+  *out_bytes = view->code_units;
   return 1;
 }
 
@@ -1294,19 +1257,63 @@ static int32_t al_campfire_write_cookie_some(
     const al_owning_layout *layout, uint32_t output_type_index,
     const uint16_t *token, uint32_t token_units, uint8_t *output,
     uint32_t output_capacity_bytes, uint32_t *output_extent_bytes) {
-  const uint64_t string_payload = 8u + (uint64_t)token_units * 2u;
-  const uint64_t string_extent = (string_payload + 7u) & ~UINT64_C(7);
-  const uint64_t total_extent = 8u + string_extent;
+  uint64_t utf8_bytes = 0u;
+  uint64_t string_payload;
+  uint64_t string_extent;
+  uint64_t total_extent;
   uint32_t index;
+  uint32_t cursor;
   if (output == NULL || token == NULL || output_extent_bytes == NULL ||
-      !al_campfire_cookie_output_valid(layout, output_type_index) ||
-      total_extent > UINT32_MAX || total_extent > output_capacity_bytes)
+      !al_campfire_cookie_output_valid(layout, output_type_index))
+    return 1;
+  /* Measure the UTF-8 form; unpaired surrogates have none and are rejected. */
+  for (index = 0u; index < token_units; ++index) {
+    const uint32_t unit = token[index];
+    if (unit < 0x80u)
+      utf8_bytes += 1u;
+    else if (unit < 0x800u)
+      utf8_bytes += 2u;
+    else if (unit >= 0xd800u && unit <= 0xdbffu && index + 1u < token_units &&
+             token[index + 1u] >= 0xdc00u && token[index + 1u] <= 0xdfffu) {
+      utf8_bytes += 4u;
+      ++index;
+    } else if (unit >= 0xd800u && unit <= 0xdfffu)
+      return 1;
+    else
+      utf8_bytes += 3u;
+  }
+  string_payload = 8u + utf8_bytes;
+  string_extent = (string_payload + 7u) & ~UINT64_C(7);
+  total_extent = 8u + string_extent;
+  if (total_extent > UINT32_MAX || total_extent > output_capacity_bytes)
     return 1;
   SecureZeroMemory(output, (size_t)total_extent);
   al_campfire_write_u64_le(output, 0u);
-  al_campfire_write_u32_le(output + 8u, token_units);
-  for (index = 0u; index < token_units; ++index)
-    al_campfire_write_u16_le(output + 16u + index * 2u, token[index]);
+  al_campfire_write_u32_le(output + 8u, (uint32_t)utf8_bytes);
+  cursor = 16u;
+  for (index = 0u; index < token_units; ++index) {
+    uint32_t scalar = token[index];
+    if (scalar >= 0xd800u && scalar <= 0xdbffu) {
+      scalar = 0x10000u + ((scalar - 0xd800u) << 10) +
+               ((uint32_t)token[index + 1u] - 0xdc00u);
+      ++index;
+    }
+    if (scalar < 0x80u) {
+      output[cursor++] = (uint8_t)scalar;
+    } else if (scalar < 0x800u) {
+      output[cursor++] = (uint8_t)(0xc0u | (scalar >> 6));
+      output[cursor++] = (uint8_t)(0x80u | (scalar & 0x3fu));
+    } else if (scalar < 0x10000u) {
+      output[cursor++] = (uint8_t)(0xe0u | (scalar >> 12));
+      output[cursor++] = (uint8_t)(0x80u | ((scalar >> 6) & 0x3fu));
+      output[cursor++] = (uint8_t)(0x80u | (scalar & 0x3fu));
+    } else {
+      output[cursor++] = (uint8_t)(0xf0u | (scalar >> 18));
+      output[cursor++] = (uint8_t)(0x80u | ((scalar >> 12) & 0x3fu));
+      output[cursor++] = (uint8_t)(0x80u | ((scalar >> 6) & 0x3fu));
+      output[cursor++] = (uint8_t)(0x80u | (scalar & 0x3fu));
+    }
+  }
   *output_extent_bytes = (uint32_t)total_extent;
   return 0;
 }

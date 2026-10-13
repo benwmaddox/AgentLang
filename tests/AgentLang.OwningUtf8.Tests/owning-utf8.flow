@@ -1,0 +1,44 @@
+fn native.utf8.byte-length(text: String) -> Int {
+    string.byte-length(text)
+}
+
+fn native.utf8.char-length(text: String) -> Int {
+    string.char-length(text)
+}
+
+fn native.utf8.legacy-length(text: String) -> Int {
+    string.length(text)
+}
+
+fn native.utf8.decorate(text: String) -> String {
+    string.join(["«", string.html-escape(text), "» ", int.to-string(string.char-length(text))])
+}
+
+fn native.utf8.has-rocket(text: String) -> Bool {
+    string.contains(text, "🚀")
+}
+
+test native.utf8.byte-length/mixed {
+    native.utf8.byte-length("aé🚀")
+    => value 7
+}
+
+test native.utf8.char-length/mixed {
+    native.utf8.char-length("aé🚀")
+    => value 3
+}
+
+test native.utf8.legacy-length/mixed {
+    native.utf8.legacy-length("aé🚀")
+    => value 7
+}
+
+test native.utf8.decorate/escape {
+    native.utf8.decorate("<é>")
+    => value "«&lt;é&gt;» 3"
+}
+
+test native.utf8.has-rocket/yes {
+    native.utf8.has-rocket("go 🚀 now")
+    => value true
+}
