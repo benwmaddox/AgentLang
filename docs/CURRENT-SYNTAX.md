@@ -169,3 +169,24 @@ a predicate and their remaining validation status are tracked in
 the authoring syntax and library qualification rules are unchanged. See the
 [native typing scope](NATIVE-NOMINALS-IMPLEMENTATION.md) and
 [report 174](../reports/174-native-refined-string.md) for the original refinement slice.
+
+## compact { }
+
+`compact { ... }` is an expression block that must produce exactly one value
+(use a record to carry several). The interpreter simply evaluates the block. A
+native owning-AOT build moves the result to the block's arena mark and reclaims
+the block's temporaries. The compiler must prove that nothing else (outer
+values, surviving locals, effectful operations) can still refer to them;
+otherwise it rejects the block with `IR_OWNING_COMPACT_UNPROVEN`. Ordinary
+scopes, returns and list operations never relocate. See
+[report 261](../reports/261-compact-blocks.md).
+
+```flow
+fn label(value: Int) -> String {
+    effects none
+    compact {
+        let text = int.to-string(value)
+        string.concat(string.concat("#", text), "!")
+    }
+}
+```

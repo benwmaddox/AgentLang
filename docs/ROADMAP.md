@@ -37,9 +37,12 @@ once via `string.join` with `Text`/`Html`, proven structural access, then the me
 rich text), then rerun the same comparison.
 [Report260](../reports/260-aot-list-traversal-no-instruction-limit.md) compiles
 list map/filter/fold/each/singleton in the owning AOT backend without implicit
-relocation, and removes the instruction limit from every backend. Next:
-`compact { }`, starting with precise arena-lifetime modeling of scalars, enums
-and list operations.
+relocation, and removes the instruction limit from every backend.
+[Report261](../reports/261-compact-blocks.md) adds `compact { }`: one result per
+block, compiler-proven relocation in the owning AOT backend, and precise
+arena-lifetime modeling. A compact map callback cut peak arena use by 65% and
+let the map build its list in place. Next: `string.join` with `Text`/`Html`,
+then proven structural access and the message partial.
 Then: compiler-proven structural access
 measured with the same method, then native message writes. Keep locks and
 cross-worker dependencies rare, and discuss any new one before adopting it.

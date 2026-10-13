@@ -229,7 +229,7 @@ module Runtime =
                     |> List.map namedTypeReferences
                     |> Set.unionMany
                     |> Set.union found
-                | Scope(body, _) -> Set.union found (collect body)
+                | Scope(body, _) | Compact(body, _) -> Set.union found (collect body)
                 | If(thenBranch, elseBranch, _)
                 | MatchOption(_, thenBranch, elseBranch, _) ->
                     Set.union found (Set.union (collect thenBranch) (collect elseBranch))
@@ -259,7 +259,7 @@ module Runtime =
                 | If(thenBranch, elseBranch, _)
                 | MatchOption(_, thenBranch, elseBranch, _) -> containsEnumMatch thenBranch || containsEnumMatch elseBranch
                 | MatchResult(_, _, okBranch, errorBranch, _) -> containsEnumMatch okBranch || containsEnumMatch errorBranch
-                | Scope(innerBody, _) -> containsEnumMatch innerBody
+                | Scope(innerBody, _) | Compact(innerBody, _) -> containsEnumMatch innerBody
                 | _ -> false)
 
         let rec visit (pending: string list) (seenWords: Set<string>) (foundEnums: Set<string>) =

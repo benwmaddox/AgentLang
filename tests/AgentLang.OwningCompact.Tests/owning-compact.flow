@@ -1,0 +1,118 @@
+record Pair {
+    field name: String
+    field count: Int
+}
+
+record CheckedName {
+    field name: String
+    validate native.compact.has-name
+}
+
+fn native.compact.has-name(item: CheckedName) -> Bool {
+    effects none
+    int.greater-than(string.length(item.name), 0)
+}
+
+fn native.compact.label(value: Int) -> String {
+    effects none
+    compact {
+        let text = int.to-string(value)
+        let tagged = string.concat("#", text)
+        string.concat(tagged, "!")
+    }
+}
+
+fn native.compact.plain-label(value: Int) -> String {
+    effects none
+    let text = int.to-string(value)
+    let tagged = string.concat("#", text)
+    string.concat(tagged, "!")
+}
+
+fn native.compact.map-labels(values: List<Int>) -> List<String> {
+    effects none
+    values.map(native.compact.label)
+}
+
+fn native.compact.map-plain-labels(values: List<Int>) -> List<String> {
+    effects none
+    values.map(native.compact.plain-label)
+}
+
+fn native.compact.keep(value: String) -> String {
+    effects none
+    compact {
+        value
+    }
+}
+
+fn native.compact.first-name(value: Int) -> String {
+    effects none
+    compact {
+        let item = pair.new(int.to-string(value), value)
+        item.name
+    }
+}
+
+fn native.compact.nested(value: Int) -> String {
+    effects none
+    compact {
+        let inner = compact {
+            string.concat(int.to-string(value), "a")
+        }
+        string.concat(inner, "b")
+    }
+}
+
+fn native.compact.unproven(value: String) -> String {
+    effects none
+    compact {
+        let checked = checkedName.new(value)
+        checked.name
+    }
+}
+
+test native.compact.has-name/nonempty {
+    native.compact.has-name(checkedName.new("a"))
+    => value true
+}
+
+test native.compact.label/seven {
+    native.compact.label(7)
+    => value "#7!"
+}
+
+test native.compact.plain-label/seven {
+    native.compact.plain-label(7)
+    => value "#7!"
+}
+
+test native.compact.map-labels/one {
+    native.compact.map-labels(list.singleton<Int>(3))
+    => value list.singleton<String>("#3!")
+}
+
+test native.compact.map-plain-labels/one {
+    native.compact.map-plain-labels(list.singleton<Int>(3))
+    => value list.singleton<String>("#3!")
+}
+
+test native.compact.keep/text {
+    native.compact.keep("x")
+    => value "x"
+}
+
+test native.compact.first-name/five {
+    native.compact.first-name(5)
+    => value "5"
+}
+
+test native.compact.nested/two {
+    native.compact.nested(2)
+    => value "2ab"
+}
+
+test native.compact.unproven/text {
+    native.compact.unproven("ok")
+    => value "ok"
+}

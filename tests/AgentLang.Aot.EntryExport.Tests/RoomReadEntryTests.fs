@@ -296,7 +296,7 @@ module RoomReadEntryTests =
             | IrOperation.ListFilter(call, _)
             | IrOperation.ListEach(call, _)
             | IrOperation.ListFold(call, _, _) -> [ call ]
-            | IrOperation.Scope block -> callsInBlock block
+            | IrOperation.Scope block | IrOperation.Compact block -> callsInBlock block
             | IrOperation.If(thenBlock, elseBlock) -> callsInBlock thenBlock @ callsInBlock elseBlock
             | IrOperation.MatchOption(_, someBlock, noneBlock) -> callsInBlock someBlock @ callsInBlock noneBlock
             | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> callsInBlock okBlock @ callsInBlock errorBlock

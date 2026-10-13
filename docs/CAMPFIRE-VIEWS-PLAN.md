@@ -66,12 +66,13 @@ same placement.
 
 ## Order
 
-1. **AOT list operations.** `ListSingleton`, `ListMap`, `ListFilter`, `ListFold`
+1. **AOT list operations** (done, [report 260](../reports/260-aot-list-traversal-no-instruction-limit.md)). `ListSingleton`, `ListMap`, `ListFilter`, `ListFold`
    and `ListEach` in the owning backend, without implicit relocation, with
    interpreter parity at O0/O2. Remove the AOT instruction limit. Templates need
    these to iterate messages and boosts.
-1b. **`compact { }`** end to end: parser, IR, interpreter (identity semantics),
-   arena-lifetime proof and AOT lowering. Measure bytes recovered and bytes moved.
+1b. **`compact { }`** end to end: done in [report 261](../reports/261-compact-blocks.md).
+   A compact map callback cut peak arena use by 65% and let the map build its
+   list in place.
 2. **`string.join` and the `Text`/`Html` surface.** Sized single-copy join of a
    string list, escaping, and literal-only raw markup. Prototype a synthetic
    40 × 9.6 KB page at O2 and record µs per GET, copied bytes and arena peak.

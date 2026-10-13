@@ -155,6 +155,23 @@ module internal ArenaLifetime =
                     decision owner (Some instruction.Site) restoredState.Stack (restoredState.Locals |> Map.toList |> List.map snd) restoredState.Escaped
                 decisions.Add(instruction.Site, scopeDecision)
                 restoredState
+            | IrOperation.Compact innerBlock ->
+                // compact { }: the block's single result is relocated to the block's
+                // mark, so it is exempt from the outgoing-value check; everything
+                // else (prefix values, surviving locals, retained effects) must not
+                // refer to the block's region.
+                let innerPath = scopePath @ [ instruction.Site ]
+                let innerState = analyzeBlock innerPath innerBlock state
+                let restoredState = { innerState with Locals = state.Locals }
+                let prefix, results = pop 1 restoredState.Stack
+                let compactDecision =
+                    decision owner (Some instruction.Site) prefix (restoredState.Locals |> Map.toList |> List.map snd) restoredState.Escaped
+                decisions.Add(instruction.Site, compactDecision)
+                // After relocation the result lives in the enclosing region.
+                let insideBlock, outside =
+                    results.Head |> Set.partition (fun region -> region.Owner = owner && List.contains instruction.Site region.ScopePath)
+                let relocated = if Set.isEmpty insideBlock then outside else Set.add currentRegion outside
+                { restoredState with Stack = prefix @ [ relocated ] }
             | IrOperation.If(thenBlock, elseBlock) ->
                 let prefix, _ = pop 1 state.Stack
                 let branchEntry = { state with Stack = prefix }
@@ -245,15 +262,47 @@ module internal ArenaLifetime =
                     analyzeBlock scopePath errorBlock errorEntry
                     |> fun exit -> { exit with Locals = Map.remove errorLocal exit.Locals }
                 combineStates okExit errorExit
-            | IrOperation.WrapScalar _
-            | IrOperation.UnwrapScalar _
-            | IrOperation.MakeEnumCase _ -> unmodeled ()
-            | IrOperation.ListSingleton _
-            | IrOperation.ListMap _
-            | IrOperation.ListFilter _
-            | IrOperation.ListEach _
-            | IrOperation.ListFold _
-            | IrOperation.MatchEnum _ -> unmodeled ()
+            | IrOperation.WrapScalar(call, _, validator) ->
+                // Wrapping writes a new scalar in the current region; a pure
+                // validator allocates only in the active regions.
+                let validatorEffects = validator |> Option.exists callEffects
+                if callEffects call || validatorEffects then unmodeled ()
+                else
+                    let prefix, inputs = pop 1 state.Stack
+                    { state with Stack = prefix @ [ Set.union inputs.Head currentRegions ] }
+            | IrOperation.UnwrapScalar(call, _) ->
+                // Unwrapping projects the stored base value.
+                if callEffects call then unmodeled ()
+                else
+                    let prefix, inputs = pop 1 state.Stack
+                    { state with Stack = prefix @ [ inputs.Head ] }
+            | IrOperation.MakeEnumCase(call, _, _) ->
+                if callEffects call then unmodeled ()
+                else { state with Stack = state.Stack @ [ Set.singleton currentRegion ] }
+            | IrOperation.MatchEnum(_, caseBlocks) ->
+                let prefix, _ = pop 1 state.Stack
+                let entry = { state with Stack = prefix }
+                caseBlocks
+                |> List.map (snd >> fun block -> analyzeBlock scopePath block entry)
+                |> List.reduce combineStates
+            | IrOperation.ListSingleton _ ->
+                // A new list owner in the current region holding a copy of the item.
+                let prefix, items = pop 1 state.Stack
+                { state with Stack = prefix @ [ Set.add currentRegion items.Head ] }
+            | IrOperation.ListMap(call, _, _)
+            | IrOperation.ListFilter(call, _)
+            | IrOperation.ListEach(call, _)
+            | IrOperation.ListFold(call, _, _) ->
+                // Each element is a user-word call: model it like Call, joining the
+                // list (and fold seed) origins with the active regions.
+                let inputCount = match instruction.Operation with IrOperation.ListFold _ -> 2 | _ -> 1
+                let prefix, inputs = pop inputCount state.Stack
+                let inputOrigins = unionOrigins inputs
+                let outputOrigins = Set.union inputOrigins currentRegions
+                let retained =
+                    if callEffects call then Set.union state.Escaped currentRegions |> Set.union inputOrigins
+                    else state.Escaped
+                { state with Stack = prefix @ [ outputOrigins ]; Escaped = retained }
 
         and analyzeUnmodeled (scopePath: SourceSiteId list) (state: AbstractState) (instruction: IrInstruction) =
             let retainedState, possible = addRetainedUncertainty owner scopePath state
@@ -316,7 +365,7 @@ module internal ArenaLifetime =
             | IrOperation.MakeEnumCase(call, _, _) ->
                 finishUnknown state.Stack [] call.OutputTypes.Length
             | IrOperation.Constant _ | IrOperation.StoreLocal _ | IrOperation.LoadLocal _
-            | IrOperation.Scope _ | IrOperation.If _ ->
+            | IrOperation.Scope _ | IrOperation.Compact _ | IrOperation.If _ ->
                 // These operations are modeled above; retain all visible roots
                 // if a future verified shape reaches this fallback.
                 { retainedState with Stack = state.Stack |> List.map (Set.union unknownOutputOrigins) }

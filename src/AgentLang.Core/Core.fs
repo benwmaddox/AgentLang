@@ -65,6 +65,9 @@ type Expr =
     /// Internal lexical block used by explicit authoring frontends. It keeps
     /// the resulting stack while restoring the entry local environment.
     | Scope of Expr list * SourceSpan
+    /// compact { ... }: evaluates the block; the compiler may relocate its single
+    /// result to the block's arena mark and reclaim the block's temporaries.
+    | Compact of Expr list * SourceSpan
     | MatchOption of string * Expr list * Expr list * SourceSpan
     | MatchResult of string * string * Expr list * Expr list * SourceSpan
     | MatchEnum of (string * Expr list) list * SourceSpan

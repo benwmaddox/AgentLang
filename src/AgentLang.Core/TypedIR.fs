@@ -160,6 +160,9 @@ type IrOperation =
     | StoreLocal of LocalSlot
     | LoadLocal of LocalSlot
     | Scope of IrBlock
+    /// Like Scope, but the block must push exactly one value; the owning AOT
+    /// backend moves that value to the block's arena mark and rewinds past it.
+    | Compact of IrBlock
     | If of IrBlock * IrBlock
     | MatchOption of SomeLocal: LocalSlot * SomeBlock: IrBlock * NoneBlock: IrBlock
     | MatchResult of OkLocal: LocalSlot * ErrorLocal: LocalSlot * OkBlock: IrBlock * ErrorBlock: IrBlock
@@ -697,6 +700,16 @@ module IrVerifier =
                     | IrOperation.Scope innerBlock ->
                         let innerShape, innerEffects = verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site shape innerBlock
                         { StackTypes = innerShape.StackTypes; LocalTypes = shape.LocalTypes }, innerEffects
+                    | IrOperation.Compact innerBlock ->
+                        let innerShape, innerEffects = verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site shape innerBlock
+                        let unchangedPrefix =
+                            innerShape.StackTypes.Length = shape.StackTypes.Length + 1
+                            && List.take shape.StackTypes.Length innerShape.StackTypes = shape.StackTypes
+                        if not unchangedPrefix then
+                            operationError "IR_COMPACT_SHAPE" "A compact block must leave the outer stack unchanged and produce exactly one value."
+                                ((shape.StackTypes |> List.map IrTypes.format) @ [ "one value" ])
+                                (innerShape.StackTypes |> List.map IrTypes.format)
+                        { StackTypes = innerShape.StackTypes; LocalTypes = shape.LocalTypes }, innerEffects
                     | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
                         if not (owner.LocalNames.ContainsKey someLocal) then operationError "IR_UNKNOWN_LOCAL_SLOT" "Option case local is absent from the function layout." [] [ sprintf "%A" someLocal ]
                         let prefix, input = pop 1
@@ -843,7 +856,8 @@ module IrVerifier =
                     let branches = Map.add instruction.Site [ "true"; "false" ] branches
                     let leftSites, leftBranches = collectBlock thenBlock.Code sites branches
                     collectBlock elseBlock.Code leftSites leftBranches
-                | IrOperation.Scope innerBlock -> collectBlock innerBlock.Code sites branches
+                | IrOperation.Scope innerBlock
+                | IrOperation.Compact innerBlock -> collectBlock innerBlock.Code sites branches
                 | IrOperation.MatchOption(_, someBlock, noneBlock) ->
                     let branches = Map.add instruction.Site [ "some"; "none" ] branches
                     let leftSites, leftBranches = collectBlock someBlock.Code sites branches
@@ -872,7 +886,8 @@ module IrVerifier =
                 let nested =
                     match instruction.Operation with
                     | IrOperation.If(thenBlock, elseBlock) -> collect thenBlock.Code @ collect elseBlock.Code
-                    | IrOperation.Scope innerBlock -> collect innerBlock.Code
+                    | IrOperation.Scope innerBlock
+                    | IrOperation.Compact innerBlock -> collect innerBlock.Code
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock.Code @ collect noneBlock.Code
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock.Code @ collect errorBlock.Code
                     | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.collect (snd >> fun caseBlock -> collect caseBlock.Code)
@@ -896,7 +911,8 @@ module IrVerifier =
                 let nested =
                     match instruction.Operation with
                     | IrOperation.If(thenBlock, elseBlock) -> collect thenBlock.Code @ collect elseBlock.Code
-                    | IrOperation.Scope innerBlock -> collect innerBlock.Code
+                    | IrOperation.Scope innerBlock
+                    | IrOperation.Compact innerBlock -> collect innerBlock.Code
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock.Code @ collect noneBlock.Code
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock.Code @ collect errorBlock.Code
                     | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.collect (snd >> fun caseBlock -> collect caseBlock.Code)

@@ -37,6 +37,7 @@ module FlowParser =
         | FlowExpression.Property(_, _, span)
         | FlowExpression.Equality(_, _, span)
         | FlowExpression.If(_, _, _, span)
+        | FlowExpression.Compact(_, span)
         | FlowExpression.Container(_, _, _, span)
         | FlowExpression.MatchOption(_, _, _, span)
         | FlowExpression.MatchResult(_, _, _, span)
@@ -153,6 +154,10 @@ module FlowParser =
         if state.Index < state.Tokens.Length then Some state.Tokens[state.Index] else None
 
     let private peek (state: State) = current state |> Option.map (fun token -> token.Text)
+
+    let private peekAt (state: State) offset =
+        let index = state.Index + offset
+        if index < state.Tokens.Length then Some state.Tokens[index].Text else None
 
     let private atEnd state = state.Index >= state.Tokens.Length
 
@@ -743,6 +748,12 @@ module FlowParser =
                 | Identifier, "match" -> consume state |> ignore; parseMatch state first
                 | Identifier, "word" when explicitShortReferenceAhead state ->
                     fail state.File first.Line first.Column first.Text.Length "FLOW_CALLBACK_REFERENCE_CONTEXT" "Short word references are allowed only as static list callback arguments; use `word name` inside `.map`, `.filter`, `.each`, or `.fold`."
+                | Identifier, "compact" when peekAt state 1 = Some "{" ->
+                    if state.SyntaxVersion <> 2 then
+                        fail state.File first.Line first.Column first.Text.Length "FLOW_SYNTAX_VERSION" "compact { } requires Flow/2 syntax."
+                    consume state |> ignore
+                    let body = parseBlock state
+                    FlowExpression.Compact(body, sourceSpan state.File first (previous state))
                 | Identifier, "if" ->
                     consume state |> ignore
                     let condition = parseExpressionState state
@@ -1218,7 +1229,7 @@ module FlowParser =
 
     let private validFieldName (name: string) =
         let reservedWordNames =
-            set [ "if"; "else"; "end"; "let"; "true"; "false"; "unit"
+            set [ "if"; "else"; "end"; "let"; "true"; "false"; "unit"; "compact"
                   "match-option"; "match-result"; "some"; "none"; "ok"; "error"
                   "list.empty"; "list.singleton"; "option.none"; "option.some"; "result.ok"; "result.error"
                   "list.map"; "list.filter"; "list.each"; "list.fold" ]

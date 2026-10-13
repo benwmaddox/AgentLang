@@ -152,6 +152,12 @@ module FlowLint =
                         | FlowExpression.Equality(left, right, _) ->
                             analyzeExpression outerFrames localBindings statementIndex left
                             analyzeExpression outerFrames localBindings statementIndex right
+                        | FlowExpression.Compact(body, _) ->
+                            let parentFrame =
+                                { Bindings = localBindings
+                                  ParameterNames = Set.empty
+                                  UseStatement = Some statementIndex }
+                            analyzeBlock (parentFrame :: outerFrames) [] body
                         | FlowExpression.If(condition, thenBranch, elseBranch, _) ->
                             analyzeExpression outerFrames localBindings statementIndex condition
                             let parentFrame =

@@ -75,14 +75,14 @@ let private allScopeSitesInBlock (root: IrBlock) =
         |> List.collect (fun instruction ->
             let children =
                 match instruction.Operation with
-                | IrOperation.Scope inner -> collect inner
+                | IrOperation.Scope inner | IrOperation.Compact inner -> collect inner
                 | IrOperation.If(thenBlock, elseBlock) -> collect thenBlock @ collect elseBlock
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock @ collect noneBlock
                 | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock @ collect errorBlock
                 | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (snd >> collect)
                 | _ -> []
             match instruction.Operation with
-            | IrOperation.Scope _ -> instruction.Site :: children
+            | IrOperation.Scope _ | IrOperation.Compact _ -> instruction.Site :: children
             | _ -> children)
     collect root
 
@@ -94,7 +94,7 @@ let private allStoreSlots (root: IrBlock) =
         |> List.collect (fun instruction ->
             let nested =
                 match instruction.Operation with
-                | IrOperation.Scope inner -> collect inner
+                | IrOperation.Scope inner | IrOperation.Compact inner -> collect inner
                 | IrOperation.If(thenBlock, elseBlock) -> collect thenBlock @ collect elseBlock
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock @ collect noneBlock
                 | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock @ collect errorBlock
@@ -464,8 +464,40 @@ let run () =
         ]
     let unsupportedAnalysis = ArenaLifetime.analyzeBody unsupported
     let unsupportedDecision = scopeDecision unsupported unsupportedAnalysis "unmodeled.scope.agent"
-    check "unmodeled verified operation stays conservative after drop" (not unsupportedDecision.AllowRewind)
-    check "unmodeled decision explains retained uncertainty" (unsupportedDecision.Reason.Contains("unmodeled", StringComparison.Ordinal))
+    // Report 261 models ListSingleton precisely: a dropped singleton is dead.
+    check "a dropped list singleton permits rewind" unsupportedDecision.AllowRewind
+    let escapingSingleton =
+        compileBody emptyContext "arena-escaping-singleton" [] [
+            Scope(
+                [ Push(LString "item", span "singleton-escape.item.agent" 1)
+                  ConstructContainer(ListSingleton, [ TString ], span "singleton-escape.singleton.agent" 1) ],
+                span "singleton-escape.scope.agent" 1)
+        ]
+    check "an escaping list singleton retains its owner" (not (scopeDecision escapingSingleton (ArenaLifetime.analyzeBody escapingSingleton) "singleton-escape.scope.agent").AllowRewind)
+
+    let pureCallback = wordEntry "arena.same" [ TString ] [ TString ] Set.empty []
+    let effectCallback = wordEntry "arena.write" [ TString ] [ TUnit ] (Set.singleton "fs.write") [ Push(LString "content", span "arena.write.agent" 1); Call("file.write", span "arena.write.agent" 2) ]
+    let listContext = contextWith [ pureCallback; effectCallback ] []
+    let listOf file =
+        [ Push(LString "item", span file 1)
+          ConstructContainer(ListSingleton, [ TString ], span file 2) ]
+    let droppedMap =
+        compileBody listContext "arena-dropped-map" [] [
+            Scope(listOf "map-dead.list.agent" @ [ MapList("arena.same", span "map-dead.map.agent" 1); Call("drop", span "map-dead.drop.agent" 1) ], span "map-dead.scope.agent" 1)
+        ]
+    check "a dropped pure map result permits rewind" (scopeDecision droppedMap (ArenaLifetime.analyzeBody droppedMap) "map-dead.scope.agent").AllowRewind
+    let escapingMap =
+        compileBody listContext "arena-escaping-map" [] [
+            Scope(listOf "map-escape.list.agent" @ [ MapList("arena.same", span "map-escape.map.agent" 1) ], span "map-escape.scope.agent" 1)
+        ]
+    check "an escaping map result retains the boundary" (not (scopeDecision escapingMap (ArenaLifetime.analyzeBody escapingMap) "map-escape.scope.agent").AllowRewind)
+    let effectEach =
+        compileBody listContext "arena-effect-each" [] [
+            Scope(listOf "each-effect.list.agent" @ [ EachList("arena.write", span "each-effect.each.agent" 1); Call("drop", span "each-effect.drop.agent" 1) ], span "each-effect.scope.agent" 1)
+        ]
+    let effectEachDecision = scopeDecision effectEach (ArenaLifetime.analyzeBody effectEach) "each-effect.scope.agent"
+    check "an effectful list callback retains the boundary after its result is dropped" (not effectEachDecision.AllowRewind)
+    check "effectful callback decision explains retained effects" (effectEachDecision.Reason.Contains("effectful", StringComparison.Ordinal))
 
     let effectful =
         compileBody emptyContext "arena-effectful-call" [] [
@@ -552,6 +584,42 @@ let run () =
             check "verified duplicate scope sites are rejected" true
             true
     check "duplicate scope-site safety regression executed" duplicateBodyRejectedOrRetained
+
+    // compact { } (report 261): the single result is exempt because it is relocated.
+    let pureCompact =
+        compileBody listContext "arena-pure-compact" [] [
+            Compact(
+                [ Push(LString "a", span "compact-pure.a.agent" 1)
+                  Push(LString "b", span "compact-pure.b.agent" 1)
+                  Call("string.concat", span "compact-pure.concat.agent" 1) ],
+                span "compact-pure.compact.agent" 1)
+        ]
+    check "a pure compact block whose only survivor is its result is proven" (scopeDecision pureCompact (ArenaLifetime.analyzeBody pureCompact) "compact-pure.compact.agent").AllowRewind
+    let effectfulCompact =
+        compileBody listContext "arena-effectful-compact" [] [
+            Compact(
+                listOf "compact-effect.list.agent"
+                @ [ EachList("arena.write", span "compact-effect.each.agent" 1)
+                    Call("drop", span "compact-effect.drop.agent" 1)
+                    Push(LString "result", span "compact-effect.result.agent" 1) ],
+                span "compact-effect.compact.agent" 1)
+        ]
+    check "a compact block containing an effectful call is not proven" (not (scopeDecision effectfulCompact (ArenaLifetime.analyzeBody effectfulCompact) "compact-effect.compact.agent").AllowRewind)
+    let relocatedThenDropped =
+        compileBody listContext "arena-compact-in-scope" [] [
+            Scope(
+                [ Compact([ Push(LString "x", span "compact-scope.x.agent" 1) ], span "compact-scope.compact.agent" 1)
+                  Call("drop", span "compact-scope.drop.agent" 1) ],
+                span "compact-scope.scope.agent" 1)
+        ]
+    check "an enclosing scope rewinds after a relocated compact result is dropped" (scopeDecision relocatedThenDropped (ArenaLifetime.analyzeBody relocatedThenDropped) "compact-scope.scope.agent").AllowRewind
+    let relocatedEscapes =
+        compileBody listContext "arena-compact-escapes-scope" [] [
+            Scope(
+                [ Compact([ Push(LString "x", span "compact-escape.x.agent" 1) ], span "compact-escape.compact.agent" 1) ],
+                span "compact-escape.scope.agent" 1)
+        ]
+    check "a relocated compact result that escapes still retains its enclosing scope" (not (scopeDecision relocatedEscapes (ArenaLifetime.analyzeBody relocatedEscapes) "compact-escape.scope.agent").AllowRewind)
 
     let result = ArenaLifetime.analyzeBody deadOnly
     let repeat = ArenaLifetime.analyzeBody deadOnly

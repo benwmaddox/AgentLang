@@ -48,6 +48,7 @@ type FlowAstPathSegment =
     | IfCondition
     | IfThenStatement of int
     | IfElseStatement of int
+    | CompactStatement of int
     | ContainerPayload
     | OptionScrutinee
     | OptionSomeStatement of int
@@ -77,6 +78,8 @@ type FlowExpression =
     | Property of FlowExpression * string * SourceSpan
     | Equality of FlowExpression * FlowExpression * SourceSpan
     | If of FlowExpression * FlowStatement list * FlowStatement list * SourceSpan
+    /// compact { ... }: a block whose single result may be relocated to its arena mark.
+    | Compact of FlowStatement list * SourceSpan
     | Container of FlowContainerConstructor * FlowTypeArgument list * FlowExpression option * SourceSpan
     | MatchOption of FlowExpression * FlowPayloadCase * FlowCaseBlock * SourceSpan
     | MatchResult of FlowExpression * FlowPayloadCase * FlowPayloadCase * SourceSpan
@@ -242,6 +245,7 @@ module FlowStructure =
         | FlowExpression.Property(_, _, span)
         | FlowExpression.Equality(_, _, span)
         | FlowExpression.If(_, _, _, span)
+        | FlowExpression.Compact(_, span)
         | FlowExpression.Container(_, _, _, span)
         | FlowExpression.MatchOption(_, _, _, span)
         | FlowExpression.MatchResult(_, _, _, span)
@@ -391,6 +395,8 @@ module FlowStructure =
                     schedule (ExpressionNode(condition, depth + 1)) (expressionSpan condition)
                     scheduleStatements (depth + 1) thenBody
                     scheduleStatements (depth + 1) elseBody
+                | FlowExpression.Compact(body, _) ->
+                    scheduleStatements (depth + 1) body
                 | FlowExpression.Container(_, typeArguments, payload, _) ->
                     for argument in typeArguments do scheduleType 1 argument.Type argument.Span
                     match payload with
@@ -535,6 +541,13 @@ module FlowSource =
             prefix + indentContinuationLines depth (renderEqualityOperand syntaxVersion locals left) + " == " + indentContinuationLines depth (renderEqualityOperand syntaxVersion locals right)
         | FlowExpression.Container(kind, typeArguments, payload, _) ->
             prefix + indentContinuationLines depth (renderContainer syntaxVersion locals kind typeArguments payload)
+        | FlowExpression.Compact(body, span) ->
+            requireFlow2 syntaxVersion None (Some span) "compact { }"
+            let lines = ResizeArray<string>()
+            lines.Add(prefix + "compact {")
+            renderStatements syntaxVersion locals (depth + 1) body |> fst |> List.iter lines.Add
+            lines.Add(prefix + "}")
+            String.concat "\n" lines
         | FlowExpression.If(condition, thenBranch, elseBranch, _) ->
             let lines = ResizeArray<string>()
             lines.Add(prefix + "if " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals condition) + " {")
@@ -574,7 +587,7 @@ module FlowSource =
         | FlowExpression.Equality(left, right, span) ->
             requireFlow2 syntaxVersion None (Some span) "Equality operator"
             renderEqualityOperand syntaxVersion locals left + " == " + renderEqualityOperand syntaxVersion locals right
-        | FlowExpression.If _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ | FlowExpression.MatchEnum _ -> renderExpressionAt syntaxVersion locals 0 expression
+        | FlowExpression.If _ | FlowExpression.Compact _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ | FlowExpression.MatchEnum _ -> renderExpressionAt syntaxVersion locals 0 expression
     and private renderEqualityOperand syntaxVersion locals expression =
         match expression with
         | FlowExpression.Equality _ -> "(" + renderInlineExpression syntaxVersion locals expression + ")"
@@ -584,6 +597,7 @@ module FlowSource =
             match expression with
             | FlowExpression.Equality _
             | FlowExpression.If _
+            | FlowExpression.Compact _
             | FlowExpression.MatchOption _
             | FlowExpression.MatchResult _
             | FlowExpression.MatchEnum _ -> "(" + renderInlineExpression syntaxVersion locals expression + ")"
@@ -655,7 +669,7 @@ module FlowSource =
         | FlowExpression.Property(receiver, _, _) -> safeBareArmExpression receiver
         | FlowExpression.Equality(left, right, _) -> safeBareArmExpression left && safeBareArmExpression right
         | FlowExpression.Container(_, _, payload, _) -> payload |> Option.forall safeBareArmExpression
-        | FlowExpression.If _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ | FlowExpression.MatchEnum _ -> false
+        | FlowExpression.If _ | FlowExpression.Compact _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ | FlowExpression.MatchEnum _ -> false
 
     and private renderMatchCase syntaxVersion depth header caseLocals statements =
         match statements with

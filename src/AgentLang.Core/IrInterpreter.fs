@@ -1291,7 +1291,8 @@ module IrInterpreter =
                             stack <- branchStack
                             locals <- branchLocals
                         | actual -> fail "RUNTIME_IF_REQUIRES_BOOL" "'if' requires a Bool at the top of the stack." (Some currentWord) instructionSpan [ "Bool" ] [ formatType program (runtimeValueType actual) ]
-                | IrOperation.Scope innerBlock ->
+                | IrOperation.Scope innerBlock
+                | IrOperation.Compact innerBlock ->
                     let scopedStack, _ = executeBlock depth currentWord localNames innerBlock stack locals
                     stack <- scopedStack
                 | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->

@@ -51,6 +51,12 @@ module Source =
                 renderBodyAt (depth + 1) elseBranch |> List.iter lines.Add
             lines.Add(prefix + "end")
             String.concat "\n" lines
+        | Compact(body, _) ->
+            let lines = ResizeArray<string>()
+            lines.Add(prefix + "compact")
+            renderBodyAt (depth + 1) body |> List.iter lines.Add
+            lines.Add(prefix + "end")
+            String.concat "\n" lines
         | Scope(body, _) ->
             let lines = ResizeArray<string>()
             lines.Add(prefix + "scope")
@@ -152,6 +158,7 @@ module Source =
             | FoldList(name, span) when name = oldName -> FoldList(newName, span)
             | If(thenBranch, elseBranch, span) -> If(rewrite thenBranch, rewrite elseBranch, span)
             | Scope(body, span) -> Scope(rewrite body, span)
+            | Compact(body, span) -> Compact(rewrite body, span)
             | MatchOption(name, someBranch, noneBranch, span) -> MatchOption(name, rewrite someBranch, rewrite noneBranch, span)
             | MatchResult(okName, errorName, okBranch, errorBranch, span) -> MatchResult(okName, errorName, rewrite okBranch, rewrite errorBranch, span)
             | MatchEnum(cases, span) -> MatchEnum(cases |> List.map (fun (caseName, body) -> caseName, rewrite body), span)

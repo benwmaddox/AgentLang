@@ -377,6 +377,14 @@ module Compiler =
                         let scopedBody = visit stack locals innerBody
                         childBodies <- [ scopedBody ]
                         scopedBody.ExitStack, locals
+                    | Compact(innerBody, expressionSpan) ->
+                        let compactBody = visit stack locals innerBody
+                        let exit = compactBody.ExitStack
+                        if exit.Length <> stack.Length + 1 || List.take stack.Length exit <> stack then
+                            Diagnostics.raiseError "TYPE_COMPACT_RESULT" "A compact block must leave the outer stack unchanged and produce exactly one value." (Some wordName) (Some expressionSpan)
+                                ((stack |> List.map Types.format) @ [ "one value" ]) (exit |> List.map Types.format)
+                        childBodies <- [ compactBody ]
+                        exit, locals
                     | MatchOption(someName, someBranch, noneBranch, expressionSpan) ->
                         if List.isEmpty stack then
                             Diagnostics.raiseError "TYPE_MATCH_REQUIRES_OPTION" "match-option consumes an Option<T> from the top of the stack." (Some wordName) (Some expressionSpan) [ "Option<T>" ] []
@@ -553,7 +561,7 @@ module Compiler =
                 | MapList(name, _) | FilterList(name, _) | EachList(name, _) | FoldList(name, _) -> Set.add name found
                 | If(thenBranch, elseBranch, _) | MatchOption(_, thenBranch, elseBranch, _) ->
                     Set.union found (Set.union (collect thenBranch) (collect elseBranch))
-                | Scope(innerBody, _) -> Set.union found (collect innerBody)
+                | Scope(innerBody, _) | Compact(innerBody, _) -> Set.union found (collect innerBody)
                     | MatchResult(_, _, thenBranch, elseBranch, _) -> Set.union found (Set.union (collect thenBranch) (collect elseBranch))
                     | MatchEnum(cases, _) -> cases |> List.fold (fun found (_, branch) -> Set.union found (collect branch)) found
                 | _ -> found) Set.empty
@@ -625,6 +633,7 @@ module Compiler =
                     let elseText = sourceExpressions elseBranch
                     if List.isEmpty elseBranch then "if\n" + thenText + "\nend" else "if\n" + thenText + "\nelse\n" + elseText + "\nend"
                 | Scope(innerBody, _) -> "scope\n" + sourceExpressions innerBody + "\nend"
+                | Compact(innerBody, _) -> "compact\n" + sourceExpressions innerBody + "\nend"
                 | MatchOption(name, someBranch, noneBranch, _) ->
                     "match-option\nsome " + name + "\n" + sourceExpressions someBranch + "\nnone\n" + sourceExpressions noneBranch + "\nend"
                 | MatchResult(okName, errorName, okBranch, errorBranch, _) ->
@@ -916,6 +925,7 @@ module Compiler =
                 | Load(name, span) -> appendText "load"; appendText name; appendSpan span
                 | If(thenBranch, elseBranch, span) -> appendText "if"; appendExpressions thenBranch; appendExpressions elseBranch; appendSpan span
                 | Scope(innerBody, span) -> appendText "scope"; appendExpressions innerBody; appendSpan span
+                | Compact(innerBody, span) -> appendText "compact"; appendExpressions innerBody; appendSpan span
                 | MatchOption(name, someBranch, noneBranch, span) -> appendText "match-option"; appendText name; appendExpressions someBranch; appendExpressions noneBranch; appendSpan span
                 | MatchResult(okName, errorName, okBranch, errorBranch, span) ->
                     appendText "match-result"
@@ -1177,7 +1187,7 @@ module Compiler =
     let private expressionSpan = function
         | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
         | MapList(_, span) | FilterList(_, span) | EachList(_, span) | FoldList(_, span)
-        | Let(_, span) | Load(_, span) | If(_, _, span) | Scope(_, span)
+        | Let(_, span) | Load(_, span) | If(_, _, span) | Scope(_, span) | Compact(_, span)
         | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) | MatchEnum(_, span) -> span
 
     let private expressionKind = function
@@ -1197,6 +1207,7 @@ module Compiler =
         | Load _ -> "load-local"
         | If _ -> "if"
         | Scope _ -> "scope"
+        | Compact _ -> "compact"
         | MatchOption _ -> "match-option"
         | MatchResult _ -> "match-result"
         | MatchEnum _ -> "match-enum"
@@ -1209,7 +1220,7 @@ module Compiler =
                 let found = if span.Length = 0 then Set.add span found else found
                 match expression with
                 | If(thenBranch, elseBranch, _) -> Set.union found (Set.union (collect thenBranch) (collect elseBranch))
-                | Scope(innerBody, _) -> Set.union found (collect innerBody)
+                | Scope(innerBody, _) | Compact(innerBody, _) -> Set.union found (collect innerBody)
                 | MatchOption(_, someBranch, noneBranch, _) -> Set.union found (Set.union (collect someBranch) (collect noneBranch))
                 | MatchResult(_, _, okBranch, errorBranch, _) -> Set.union found (Set.union (collect okBranch) (collect errorBranch))
                 | MatchEnum(cases, _) -> cases |> List.fold (fun found (_, branch) -> Set.union found (collect branch)) found
@@ -1407,6 +1418,10 @@ module Compiler =
                             match node.ChildBodies with
                             | [ scopedBody ] -> IrOperation.Scope(lowerBlock env scopedBody)
                             | _ -> irFailure "IR_SCOPE_ANNOTATION_INVALID" "Scope lowering requires exactly one checked child block." (Some ownerName) (Some span) [ "1 child block" ] [ string node.ChildBodies.Length ]
+                        | Compact(_, _) ->
+                            match node.ChildBodies with
+                            | [ compactBody ] -> IrOperation.Compact(lowerBlock env compactBody)
+                            | _ -> irFailure "IR_SCOPE_ANNOTATION_INVALID" "Compact lowering requires exactly one checked child block." (Some ownerName) (Some span) [ "1 child block" ] [ string node.ChildBodies.Length ]
                         | MatchOption(someName, _, _, _) ->
                             match node.ChildBodies, List.last node.InputStack with
                             | [ someBody; noneBody ], TOption itemType ->

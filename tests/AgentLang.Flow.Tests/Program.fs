@@ -1562,6 +1562,7 @@ let private testSparseFlowSourceMarkerAllocation () =
         | Load(name, source) -> Load(name, shiftMarker source)
         | If(thenBody, elseBody, source) -> If(List.map shiftExpression thenBody, List.map shiftExpression elseBody, shiftMarker source)
         | Scope(body, source) -> Scope(List.map shiftExpression body, shiftMarker source)
+        | Compact(body, source) -> Compact(List.map shiftExpression body, shiftMarker source)
         | MatchOption(name, someBody, noneBody, source) -> MatchOption(name, List.map shiftExpression someBody, List.map shiftExpression noneBody, shiftMarker source)
         | MatchResult(okName, errorName, okBody, errorBody, source) -> MatchResult(okName, errorName, List.map shiftExpression okBody, List.map shiftExpression errorBody, shiftMarker source)
         | MatchEnum(cases, source) -> MatchEnum(cases |> List.map (fun (name, body) -> name, List.map shiftExpression body), shiftMarker source)
@@ -2451,7 +2452,7 @@ let private testFlowOutputVectors () =
                     | FlowExpression.Literal(_, source) | FlowExpression.Local(_, source) -> source
                     | FlowExpression.Call(_, _, source) | FlowExpression.RootCall(_, _, source) | FlowExpression.DotCall(_, _, _, source)
                     | FlowExpression.Property(_, _, source) | FlowExpression.Equality(_, _, source)
-                    | FlowExpression.If(_, _, _, source) | FlowExpression.Container(_, _, _, source)
+                    | FlowExpression.If(_, _, _, source) | FlowExpression.Compact(_, source) | FlowExpression.Container(_, _, _, source)
                     | FlowExpression.MatchOption(_, _, _, source) | FlowExpression.MatchResult(_, _, _, source)
                     | FlowExpression.MatchEnum(_, _, source) -> source)
                 |> Some
@@ -2995,6 +2996,7 @@ let private testFlowAuthoredCases () =
         | Load(name, source) -> Load(name, shiftMarker source)
         | If(thenBody, elseBody, source) -> If(List.map shiftExpression thenBody, List.map shiftExpression elseBody, shiftMarker source)
         | Scope(body, source) -> Scope(List.map shiftExpression body, shiftMarker source)
+        | Compact(body, source) -> Compact(List.map shiftExpression body, shiftMarker source)
         | MatchOption(name, someBody, noneBody, source) -> MatchOption(name, List.map shiftExpression someBody, List.map shiftExpression noneBody, shiftMarker source)
         | MatchResult(okName, errorName, okBody, errorBody, source) -> MatchResult(okName, errorName, List.map shiftExpression okBody, List.map shiftExpression errorBody, shiftMarker source)
         | MatchEnum(cases, source) -> MatchEnum(cases |> List.map (fun (name, body) -> name, List.map shiftExpression body), shiftMarker source)
@@ -4642,6 +4644,7 @@ let private testFlowAttachmentCallBindings () =
         | If(thenBranch, elseBranch, sourceSpan) ->
             If(normalizeExpressions origins thenBranch, normalizeExpressions origins elseBranch, resolveOrigin origins sourceSpan)
         | Scope(body, sourceSpan) -> Scope(normalizeExpressions origins body, resolveOrigin origins sourceSpan)
+        | Compact(body, sourceSpan) -> Compact(normalizeExpressions origins body, resolveOrigin origins sourceSpan)
         | MatchOption(name, someBranch, noneBranch, sourceSpan) ->
             MatchOption(name, normalizeExpressions origins someBranch, normalizeExpressions origins noneBranch, resolveOrigin origins sourceSpan)
         | MatchResult(okName, errorName, okBranch, errorBranch, sourceSpan) ->

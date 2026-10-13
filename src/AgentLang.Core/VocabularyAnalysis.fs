@@ -199,6 +199,9 @@ module VocabularyAnalysis =
             | Scope(innerBody, _) ->
                 writer.Write 12uy
                 writeList innerBody
+            | Compact(innerBody, _) ->
+                writer.Write 15uy
+                writeList innerBody
             | MatchOption(name, someBranch, noneBranch, _) ->
                 writer.Write 10uy
                 writeString writer name
@@ -438,7 +441,7 @@ module VocabularyAnalysis =
                                 addCallbackTarget target targetExpansion
                             | If(thenBranch, elseBranch, _) ->
                                 addExpansion (expandExpressions thenBranch) (expandExpressions elseBranch)
-                            | Scope(innerBody, _) -> expandExpressions innerBody
+                            | Scope(innerBody, _) | Compact(innerBody, _) -> expandExpressions innerBody
                             | MatchOption(_, someBranch, noneBranch, _) ->
                                 addExpansion (expandExpressions someBranch) (expandExpressions noneBranch)
                             | MatchResult(_, _, okBranch, errorBranch, _) ->

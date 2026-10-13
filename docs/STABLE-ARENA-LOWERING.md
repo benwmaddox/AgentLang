@@ -77,7 +77,7 @@ let summary = compact {
 }
 ```
 
-This is planned syntax, not an available language feature. A record or tuple
+Implemented in [report 261](../reports/261-compact-blocks.md) with one result per block. A record or tuple
 could carry multiple surviving results. Being at the logical stack top
 alone is insufficient: the compiler must prove that the reclaimed region has no
 other live dependents, including projected fields and pending I/O. Relocation

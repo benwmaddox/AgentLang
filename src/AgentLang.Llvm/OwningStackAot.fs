@@ -1035,7 +1035,7 @@ module OwningStackAot =
                 block.Code
                 |> List.collect (fun instruction ->
                     match instruction.Operation with
-                    | IrOperation.Scope inner -> normalizeBlock parameterSlot inner
+                    | IrOperation.Scope inner | IrOperation.Compact inner -> normalizeBlock parameterSlot inner
                     | IrOperation.If(thenBlock, elseBlock) -> [ UtcValidatorIf(normalizeBlock parameterSlot thenBlock, normalizeBlock parameterSlot elseBlock) ]
                     | IrOperation.StoreLocal slot when slot = parameterSlot -> [ UtcValidatorParameterStore ]
                     | IrOperation.LoadLocal slot when slot = parameterSlot -> [ UtcValidatorParameter ]
@@ -1782,7 +1782,7 @@ module OwningStackAot =
                             (Some owner) span (expectedCases |> List.map string) (actualCases |> List.map string)
                     caseBlocks |> List.iter (snd >> validateBlock owner)
                 | IrOperation.StoreLocal _ | IrOperation.LoadLocal _ -> ()
-                | IrOperation.Scope inner -> validateBlock owner inner
+                | IrOperation.Scope inner | IrOperation.Compact inner -> validateBlock owner inner
                 | IrOperation.If(thenBlock, elseBlock) -> validateBlock owner thenBlock; validateBlock owner elseBlock
 
         and validateScalarCall owner span (call: IrResolvedCall) key expectedOperation inputTypes outputTypes =
@@ -1895,7 +1895,7 @@ module OwningStackAot =
                     | UserWordTarget(id, revision) -> enqueueUserFunction owner id revision
                     | _ -> ()
                 | IrOperation.WrapScalar _ -> enqueueKnownTypeValidators owner
-                | IrOperation.Scope inner -> inspectCalls owner inner
+                | IrOperation.Scope inner | IrOperation.Compact inner -> inspectCalls owner inner
                 | IrOperation.If(left, right) -> inspectCalls owner left; inspectCalls owner right
                 | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> inspectCalls owner)
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> inspectCalls owner someBlock; inspectCalls owner noneBlock
@@ -2594,7 +2594,7 @@ module OwningStackAot =
                 | IrOperation.LoadLocal slot ->
                     let ty = locals.TryFind slot |> Option.defaultWith (fun () -> invalidOp "Verified LoadLocal lacks its local type during local planning.")
                     stack <- stack @ [ ty ]
-                | IrOperation.Scope inner ->
+                | IrOperation.Scope inner | IrOperation.Compact inner ->
                     let localsBeforeScope = locals
                     stack <- inner.ExitShape.StackTypes
                     locals <- localsBeforeScope
@@ -2655,7 +2655,7 @@ module OwningStackAot =
         let rec visit (current: IrBlock) =
             for instruction in current.Code do
                 match instruction.Operation with
-                | IrOperation.Scope inner -> found.Add(instruction.Site, inner)
+                | IrOperation.Scope inner | IrOperation.Compact inner -> found.Add(instruction.Site, inner)
                 | IrOperation.If(left, right) -> visit left; visit right
                 | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> visit)
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> visit someBlock; visit noneBlock
@@ -3096,7 +3096,9 @@ module OwningStackAot =
                         let text = $"call void @al_owning_load_local(ptr %%ctx, i32 {destination}, i32 {sourceOffset}, i32 {extentOf ty}, i32 {payload ty}, i32 {typeId ty})"
                         emitCallAndCheck w "%ctx" text failBody
                         stack <- pushTypes stack [ ty ]
-                    | IrOperation.Scope inner ->
+                    // Fixed-layout emission never rewinds, so compact { } is a plain scope here.
+                    | IrOperation.Scope inner
+                    | IrOperation.Compact inner ->
                         let childEnv = env.Scopes.TryFind instruction.Site |> Option.defaultWith (fun () -> invalidOp "Verified Scope lacks a planned bounded local region.")
                         for _, slotPlan in childEnv.Slots |> Map.toList do
                             let flagId = slotPlan.FlagId.Value
@@ -3898,7 +3900,7 @@ module OwningStackAot =
             for instruction in block.Code do
                 match instruction.Operation with
                 | IrOperation.Constant(LString value, IrString) when seenStrings.Add value -> stringValues.Add value
-                | IrOperation.Scope inner -> collectStrings inner
+                | IrOperation.Scope inner | IrOperation.Compact inner -> collectStrings inner
                 | IrOperation.If(thenBlock, elseBlock) -> collectStrings thenBlock; collectStrings elseBlock
                 | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> collectStrings)
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> collectStrings someBlock; collectStrings noneBlock
@@ -5048,6 +5050,57 @@ module OwningStackAot =
                         | Some decision when decision.AllowRewind -> emitArenaRewind w scopeMark failBody
                         | _ -> ()
                         stack <- innerStack
+                        locals <- localsBeforeScope
+                        localTypes <- localTypesBeforeScope
+                    | IrOperation.Compact inner ->
+                        let childEnv = env.Scopes.TryFind instruction.Site |> Option.defaultWith (fun () -> invalidOp "Verified compact block has no local plan.")
+                        let localsBeforeScope = locals
+                        let localTypesBeforeScope = localTypes
+                        let mark = emitContextLoad w "%ctx" 2
+                        for _, slotPlan in childEnv.Slots |> Map.toList do
+                            removeLocal slotPlan.FlagId
+                        let childLocals = makeBindings childEnv locals
+                        let innerStack = emitBlock currentOwner childEnv stack childLocals inner
+                        emitClearEnvironment childEnv
+                        if (innerStack |> List.map (fun item -> item.Type)) <> inner.ExitShape.StackTypes then
+                            invalidOp "Dynamic compact output differs from its verified shape."
+                        // Relocation must be proved: nothing but the single result may
+                        // refer to the block's region. Otherwise compilation fails.
+                        match analysis.ScopeExits.TryFind instruction.Site with
+                        | Some decision when decision.AllowRewind -> ()
+                        | found ->
+                            let reason = found |> Option.map (fun decision -> decision.Reason) |> Option.defaultValue "no lifetime proof"
+                            Diagnostics.raiseError "IR_OWNING_COMPACT_UNPROVEN"
+                                "The compiler cannot prove that only the compact block's result refers to its arena region."
+                                (Some currentOwner) instructionSpan [ "only the result survives the block" ] [ reason ]
+                        let result = List.last innerStack
+                        let prefix = List.take (innerStack.Length - 1) innerStack
+                        // A result allocated inside the block (offset >= mark) moves down to
+                        // the mark; an older value is left in place. Either way the block's
+                        // temporaries above are released.
+                        let isFresh = w.Fresh "compact.fresh"
+                        w.Inst($"{isFresh} = icmp uge i32 {result.Offset}, {mark}")
+                        let moveLabel = w.Label "compact.move"
+                        let keepLabel = w.Label "compact.keep"
+                        let joinLabel = w.Label "compact.join"
+                        w.Inst($"br i1 {isFresh}, label %%{moveLabel}, label %%{keepLabel}")
+                        w.Line($"{moveLabel}:")
+                        w.Inst($"call void @al_owning_move_range(ptr %%ctx, i32 {mark}, i32 {result.Offset}, i32 {result.Extent}, i32 {result.Payload}, i32 {typeId result.Type}, i32 9)")
+                        emitRuntimeStatus w "%ctx" failBody
+                        let movedEnd = emitOffset w mark result.Extent
+                        w.Inst($"call void @al_owning_release_to(ptr %%ctx, i32 {movedEnd}, i32 0, i32 0, i32 0)")
+                        emitRuntimeStatus w "%ctx" failBody
+                        w.Inst($"br label %%{joinLabel}")
+                        w.Line($"{keepLabel}:")
+                        w.Inst($"call void @al_owning_release_to(ptr %%ctx, i32 {mark}, i32 0, i32 0, i32 0)")
+                        emitRuntimeStatus w "%ctx" failBody
+                        w.Inst($"br label %%{joinLabel}")
+                        w.Line($"{joinLabel}:")
+                        let offset = w.Fresh "compact.offset"
+                        w.Inst($"{offset} = select i1 {isFresh}, i32 {mark}, i32 {result.Offset}")
+                        let ownerEnd = w.Fresh "compact.owner.end"
+                        w.Inst($"{ownerEnd} = select i1 {isFresh}, i32 {movedEnd}, i32 {result.OwnerEnd}")
+                        stack <- prefix @ [ { result with Offset = offset; OwnerEnd = ownerEnd } ]
                         locals <- localsBeforeScope
                         localTypes <- localTypesBeforeScope
                     | IrOperation.If(thenBlock, elseBlock) ->

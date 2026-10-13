@@ -721,13 +721,13 @@ Do not decide rewind safety through runtime liveness checks or root scans.
 Runtime-sized offsets and normal bounds/capacity checks remain permitted; they
 do not decide whether a value is still needed.
 
-Future opt-in candidate: `let result = compact { ... }`. A structured block
-identifies surviving results that may be moved to its saved region mark before
-rewinding past them. Require compiler proof over every affected location and
-dependency; stack-top placement alone is insufficient. Ordinary returns and
-scope exits never compact automatically. This syntax is not implemented; measure
-retained dead space and relocation cost before adopting it. See the
-[candidate design](STABLE-ARENA-LOWERING.md#allocation-and-lifetime).
+Opt-in compaction: `let result = compact { ... }` (implemented in report 261,
+one result per block). A structured block identifies surviving results that may
+be moved to its saved region mark before rewinding past them. Require compiler
+proof over every affected location and dependency; stack-top placement alone is
+insufficient. Ordinary returns, scope exits and list operations never compact
+automatically. Keep measuring retained dead space and relocation cost. See the
+[design](STABLE-ARENA-LOWERING.md#allocation-and-lifetime).
 
 Ordinary binding, read-only local access, same-arena calls and returns should
 transfer compiler-managed locations or ownership without copying full payloads.

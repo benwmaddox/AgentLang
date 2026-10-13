@@ -89,6 +89,8 @@ module FlowRewrite =
                 add role path StoredCallForm.Direct "equals" span
                 visitExpression role (pathChild path FlowAstPathSegment.EqualityLeft) left
                 visitExpression role (pathChild path FlowAstPathSegment.EqualityRight) right
+            | FlowExpression.Compact(body, _) ->
+                visitStatements role (pathChild path (FlowAstPathSegment.CompactStatement 0)) body
             | FlowExpression.If(condition, thenStatements, elseStatements, _) ->
                 visitExpression role (pathChild path FlowAstPathSegment.IfCondition) condition
                 visitStatements role (pathChild path (FlowAstPathSegment.IfThenStatement 0)) thenStatements
@@ -441,6 +443,12 @@ module FlowRewrite =
                             (pathChild newPath FlowAstPathSegment.EqualityRight) right
                     recordSite role oldPath newPath StoredCallForm.Direct "equals" StoredCallForm.Direct "equals" span |> ignore
                     FlowExpression.Equality(newLeft, newRight, span)
+                | FlowExpression.Compact(body, span) ->
+                    FlowExpression.Compact(
+                        rewriteStatements role
+                            (pathChild oldPath (FlowAstPathSegment.CompactStatement 0))
+                            (pathChild newPath (FlowAstPathSegment.CompactStatement 0)) body,
+                        span)
                 | FlowExpression.If(condition, thenStatements, elseStatements, span) ->
                     FlowExpression.If(
                         rewriteExpression role

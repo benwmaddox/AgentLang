@@ -266,6 +266,7 @@ module FlowLowering =
         | SemanticLoad of string
         | SemanticIf of SemanticExpr list * SemanticExpr list
         | SemanticScope of SemanticExpr list
+        | SemanticCompact of SemanticExpr list
         | SemanticMatchOption of string * SemanticExpr list * SemanticExpr list
         | SemanticMatchResult of string * string * SemanticExpr list * SemanticExpr list
         | SemanticMatchEnum of (string * SemanticExpr list) list
@@ -343,6 +344,7 @@ module FlowLowering =
         | FlowExpression.Property(_, _, span)
         | FlowExpression.Equality(_, _, span)
         | FlowExpression.If(_, _, _, span)
+        | FlowExpression.Compact(_, span)
         | FlowExpression.Container(_, _, _, span)
         | FlowExpression.MatchOption(_, _, _, span)
         | FlowExpression.MatchResult(_, _, _, span)
@@ -863,6 +865,13 @@ module FlowLowering =
             | _ -> fail "FLOW_MATCH_BRANCH_VALUE" "Both Result match cases must produce a nonempty output vector." None (Some matchSpan) [ "one or more outputs from Ok and Error" ] []
         | FlowExpression.MatchEnum(scrutinee, cases, matchSpan) ->
             inferEnumMatchOutput context state environment scrutinee cases matchSpan
+        | FlowExpression.Compact(body, compactSpan) ->
+            match inferStatements context state environment body with
+            | Some [ single ] -> [ single ]
+            | Some outputs ->
+                fail "FLOW_COMPACT_RESULT" "A compact block must produce exactly one value." None (Some compactSpan) [ "one value" ] (outputs |> List.map Types.format)
+            | None ->
+                fail "FLOW_COMPACT_RESULT" "A compact block must produce exactly one value." None (Some compactSpan) [ "one value" ] []
         | FlowExpression.If(condition, thenBody, elseBody, _) ->
             let conditionType = inferExpression context state environment condition
             if conditionType <> TBool then fail "FLOW_IF_CONDITION_TYPE" "Flow if condition must have type Bool." None (Some(spanOfExpression condition)) [ "Bool" ] [ Types.format conditionType ]
@@ -1126,6 +1135,11 @@ module FlowLowering =
             let armEvents = caseFragments |> List.collect (fun (_, _, caseFragment) -> caseFragment.CallEvents)
             { Expressions = scrutineeFragment.Expressions @ [ MatchEnum(loweredCases, matchSpan) ]
               CallEvents = scrutineeFragment.CallEvents @ armEvents }
+        | FlowExpression.Compact(body, compactSpan) ->
+            inferOutputs context state environment expression |> ignore
+            let bodyFragment, _ = lowerStatements context state environment (extendPath path (FlowAstPathSegment.CompactStatement 0)) body
+            { Expressions = [ Compact(bodyFragment.Expressions, compactSpan) ]
+              CallEvents = bodyFragment.CallEvents }
         | FlowExpression.If(condition, thenStatements, elseStatements, ifSpan) ->
             inferOutputs context state environment expression |> ignore
             let conditionType = inferExpression context state environment condition
@@ -1310,7 +1324,7 @@ module FlowLowering =
                     | _ -> []
                 let nested =
                     match instruction.Operation with
-                    | IrOperation.Scope inner -> walk inner
+                    | IrOperation.Scope inner | IrOperation.Compact inner -> walk inner
                     | IrOperation.If(thenBlock, elseBlock) -> walk thenBlock @ walk elseBlock
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> walk someBlock @ walk noneBlock
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> walk okBlock @ walk errorBlock
@@ -1500,6 +1514,7 @@ module FlowLowering =
             | Load(name, _) -> SemanticLoad name
             | If(thenBranch, elseBranch, _) -> SemanticIf(semanticExpressions thenBranch, semanticExpressions elseBranch)
             | Scope(body, _) -> SemanticScope(semanticExpressions body)
+            | Compact(body, _) -> SemanticCompact(semanticExpressions body)
             | MatchOption(name, someBranch, noneBranch, _) -> SemanticMatchOption(name, semanticExpressions someBranch, semanticExpressions noneBranch)
             | MatchResult(okName, errorName, okBranch, errorBranch, _) ->
                 SemanticMatchResult(okName, errorName, semanticExpressions okBranch, semanticExpressions errorBranch)
@@ -1559,6 +1574,8 @@ module FlowLowering =
             | FlowExpression.Equality(left, right, _) ->
                 walkExpression (extendPath path FlowAstPathSegment.EqualityLeft) left
                 walkExpression (extendPath path FlowAstPathSegment.EqualityRight) right
+            | FlowExpression.Compact(body, _) ->
+                walkStatements (extendPath path (FlowAstPathSegment.CompactStatement 0)) body
             | FlowExpression.If(condition, thenStatements, elseStatements, _) ->
                 walkExpression (extendPath path FlowAstPathSegment.IfCondition) condition
                 walkStatements (extendPath path (FlowAstPathSegment.IfThenStatement 0)) thenStatements
@@ -1632,6 +1649,8 @@ module FlowLowering =
                 add role path span
                 walkExpression role (extendPath path FlowAstPathSegment.EqualityLeft) left
                 walkExpression role (extendPath path FlowAstPathSegment.EqualityRight) right
+            | FlowExpression.Compact(body, _) ->
+                walkStatements role (extendPath path (FlowAstPathSegment.CompactStatement 0)) body
             | FlowExpression.If(condition, thenStatements, elseStatements, _) ->
                 walkExpression role (extendPath path FlowAstPathSegment.IfCondition) condition
                 walkStatements role (extendPath path (FlowAstPathSegment.IfThenStatement 0)) thenStatements
@@ -2042,12 +2061,12 @@ module FlowLowering =
                     match expression with
                     | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
                     | MapList(_, span) | FilterList(_, span) | EachList(_, span) | FoldList(_, span)
-                    | Let(_, span) | Load(_, span) | If(_, _, span) | Scope(_, span)
+                    | Let(_, span) | Load(_, span) | If(_, _, span) | Scope(_, span) | Compact(_, span)
                     | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) | MatchEnum(_, span) -> span
                 let found = if span.Length = 0 then Set.add span found else found
                 match expression with
                 | If(thenBranch, elseBranch, _) -> Set.union found (Set.union (collect thenBranch) (collect elseBranch))
-                | Scope(innerBody, _) -> Set.union found (collect innerBody)
+                | Scope(innerBody, _) | Compact(innerBody, _) -> Set.union found (collect innerBody)
                 | MatchOption(_, someBranch, noneBranch, _) -> Set.union found (Set.union (collect someBranch) (collect noneBranch))
                 | MatchResult(_, _, okBranch, errorBranch, _) -> Set.union found (Set.union (collect okBranch) (collect errorBranch))
                 | MatchEnum(cases, _) -> cases |> List.fold (fun accumulated (_, caseBody) -> Set.union accumulated (collect caseBody)) found

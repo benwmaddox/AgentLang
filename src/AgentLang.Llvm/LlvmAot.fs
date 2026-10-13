@@ -595,7 +595,7 @@ module LlvmAot =
                 | IrOperation.WrapScalar(call, key, _) ->
                     add call
                     addConstructorValidator (WrapScalarOperation key)
-                | IrOperation.Scope inner -> visitBlock inner
+                | IrOperation.Scope inner | IrOperation.Compact inner -> visitBlock inner
                 | IrOperation.If(thenBlock, elseBlock) ->
                     visitBlock thenBlock
                     visitBlock elseBlock
@@ -900,7 +900,7 @@ module LlvmAot =
             | IrOperation.MakeEnumCase(_, key, _) -> rejectEnum program owner span key
             | IrOperation.StoreLocal _
             | IrOperation.LoadLocal _ -> ()
-            | IrOperation.Scope inner -> validateBlock program owner sourceMap inner
+            | IrOperation.Scope inner | IrOperation.Compact inner -> validateBlock program owner sourceMap inner
             | IrOperation.If(thenBlock, elseBlock) ->
                 validateBlock program owner sourceMap thenBlock
                 validateBlock program owner sourceMap elseBlock
@@ -1449,7 +1449,9 @@ module LlvmAot =
                             builder.Switch failureLabel
                             emitFailure builder diagnostic wordSource
                             builder.Switch okLabel
-                    | IrOperation.Scope innerBlock ->
+                    // The scalar backend has no arena, so compact { } is a plain scope.
+                    | IrOperation.Scope innerBlock
+                    | IrOperation.Compact innerBlock ->
                         let resultStack, _ = emitBlock currentWord wordSource innerBlock stack localValues
                         stack <- resultStack
                     | IrOperation.If(thenBlock, elseBlock) ->
