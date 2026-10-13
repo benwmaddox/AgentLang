@@ -72,7 +72,8 @@ same placement.
 - **Shared immutable literals:** each String or proven `Html` literal is emitted
   once into the binary's read-only data and referenced by every worker, with no
   per-request copy and no locks. Native descriptors need to address this static
-  region alongside the request arena.
+  region alongside the request arena. **Deferred (user, 2026-10-13):** this
+  comes later, and only after further testing.
 
 ## Constraints
 
@@ -120,8 +121,18 @@ same placement.
    µs per GET was **not** measured: the trusted profile needs a host adapter.
    The checked harness spends about 65 ms per page above its floor. Next is a trusted
    measurement to choose between list building and faster copies.
-2b. **Native list building** (`list.append`, `list.concat`) so templates build
-   part lists and join once per level.
+2b. **Native list building** (done, [report 263](../reports/263-list-building.md)):
+   `[a, b, c]` literals, native `list.append` and `list.concat`, and fused
+   literal joins.
+2c. **Near-term copy removals** (user, 2026-10-13):
+   - **Free nominal list retag.** Unwrapping `List<Html>` to `List<String>`
+     (`parts.map(html.text)`) copies today. A map whose callback is only a
+     nominal unwrap or wrap should retag the list descriptor, with no copy.
+   - **No unneeded argument copies.** Audit call-argument passing so values
+     already on the stack are passed by descriptor, not copied into the callee.
+   - **In-place `list.append` / `list.concat`.** When the list is the newest
+     value on the arena and nothing else refers to it, extend it in place and
+     copy only the new element.
 3. **Proven structural access** for statically validated layouts, re-measured
    with the report-256 ABBA method. Runtime checks stay for unproven paths.
 4. **Message partial** in the language. New host operations supply the creator
