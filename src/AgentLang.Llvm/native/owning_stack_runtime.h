@@ -97,6 +97,7 @@ typedef struct al_owning_stack_context {
   uint32_t peak_local_reserved_bytes;
   uint32_t live_local_payload_bytes;
   uint32_t peak_live_local_payload_bytes;
+  /* Reserved; always 0. Native code no longer counts IR steps (2026-10-13). */
   uint32_t steps_consumed;
   uint32_t trace_event_count;
   uint32_t trace_event_capacity;
@@ -338,7 +339,6 @@ void al_owning_publish(al_owning_stack_context *ctx, uint8_t *retained,
                        uint32_t byte_count, uint32_t type_id);
 int32_t al_owning_check_cursor(al_owning_stack_context *ctx,
                                uint32_t expected_cursor);
-int32_t al_owning_charge_step(al_owning_stack_context *ctx, uint32_t error_id);
 void al_owning_set_failure(al_owning_stack_context *ctx, uint32_t status,
                            uint32_t error_id, uint32_t required_bytes,
                            uint32_t available_bytes);

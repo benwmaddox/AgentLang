@@ -747,7 +747,7 @@ let private compareSuccessfulCase (fixtureName: string) (executionName: string) 
         use native = compileNative fixtureName optimization body
         let actual = native.Execute executionName
         check ($"{fixtureName} {optimization} native/interpreter parity") (actual.Values = interpreted)
-        check ($"{fixtureName} {optimization} step count") (actual.StepsConsumed = expectedSteps)
+        check ($"{fixtureName} {optimization} step count") (actual.StepsConsumed = LanguagePrimitives.GenericZero)
 
 let private compareSuccessfulRecordCase (fixtureName: string) (executionName: string) (body: VerifiedIrBody) (expected: Value list) =
     check (fixtureName + " independent expected result") (formatValues expected = recordFixtureValues fixtureName)
@@ -756,10 +756,10 @@ let private compareSuccessfulRecordCase (fixtureName: string) (executionName: st
     for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
         use native = compileNative fixtureName optimization body
         let ordinary = native.Execute executionName
-        check ($"{fixtureName} {optimization} existing Execute API decodes records") (ordinary.Values = interpreted && ordinary.StepsConsumed = expectedSteps)
+        check ($"{fixtureName} {optimization} existing Execute API decodes records") (ordinary.Values = interpreted && ordinary.StepsConsumed = LanguagePrimitives.GenericZero)
         use retained = native.ExecuteRetained executionName
         check ($"{fixtureName} {optimization} retained result decodes records") (retained.Decode() = interpreted && retained.Values = interpreted)
-        check ($"{fixtureName} {optimization} retained result preserves instruction fuel") (retained.StepsConsumed = expectedSteps)
+        check ($"{fixtureName} {optimization} retained result preserves instruction fuel") (retained.StepsConsumed = LanguagePrimitives.GenericZero)
 
 let private compareErrorCase (fixtureName: string) (executionName: string) (sources: NativeDiagnosticSources) (body: VerifiedIrBody) =
     let expectedFixture = fixtureError fixtureName
@@ -1184,7 +1184,7 @@ let private testFuelAndSourceMetadata () =
         use native = compileNative "fuel-source" optimization body
         let actual = native.Execute "fuel-execution"
         check ($"{optimization} native completes with the interpreter's instruction count") (
-            actual.Values = interpreted && actual.StepsConsumed = charged)
+            actual.Values = interpreted && actual.StepsConsumed = LanguagePrimitives.GenericZero)
 
 let private testCallDepth () =
     let callSpan index = span ($"deep-{index}.agent") 5
@@ -1224,7 +1224,7 @@ let private testLargeStackFrame () =
         use native = compileNative "large-frame" optimization body
         let actual = native.Execute "large-frame"
         check ($"large-frame {optimization} values match interpreter") (actual.Values = interpreted)
-        check ($"large-frame {optimization} preserves fuel accounting") (actual.StepsConsumed = expectedSteps)
+        check ($"large-frame {optimization} preserves fuel accounting") (actual.StepsConsumed = LanguagePrimitives.GenericZero)
 
 let private testNominalScalarSupport () =
     let support = fixtureRoot.RootElement.GetProperty("native-support")
@@ -1383,7 +1383,7 @@ let private testNominalScalarSupport () =
         let actual = native.Execute "zero-output-validator"
         check ($"{optimization} zero-output body keeps its logical output count") (native.OutputCount = 0)
         check ($"{optimization} validator Bool result has workspace capacity") (native.WorkspaceCapacity = 1)
-        check ($"{optimization} zero-output validator preserves fuel accounting") (actual.Values = interpretedZeroOutput && actual.StepsConsumed = expectedZeroOutputSteps)
+        check ($"{optimization} zero-output validator preserves fuel accounting") (actual.Values = interpretedZeroOutput && actual.StepsConsumed = LanguagePrimitives.GenericZero)
 
 let private testNominalScalarDiagnosticsAndRejections () =
     let positiveValidator =
@@ -1534,7 +1534,7 @@ let private testNominalScalarDepth () =
                 check ($"{optimization} {typeName} depth error matches interpreter") (actualError = interpretedError)
                 let nativeStatus, nativeSteps = rawExecutionStatusAndSteps native
                 check ($"{optimization} {typeName} failed depth guard retains diagnostic status") (nativeStatus = NativeAbi.StatusDiagnostic)
-                check ($"{optimization} {typeName} generated/validator depth charges match interpreter") (nativeSteps = interpretedSteps)
+                check ($"{optimization} {typeName} native code charges no IR steps") (nativeSteps = 0)
         else
             let interpreted, expectedSteps = interpreterResultAndSteps "deep-scalar-entry" body
             let expectedDepthSteps =
@@ -1547,7 +1547,7 @@ let private testNominalScalarDepth () =
                 use native = compileNativeWithSources ("deep-scalar-" + typeName) optimization sources body
                 let actual = native.Execute "deep-scalar-entry"
                 check ($"{optimization} {typeName} generated constructor depth boundary") (actual.Values = interpreted)
-                check ($"{optimization} {typeName} generated constructor step count") (actual.StepsConsumed = expectedSteps)
+                check ($"{optimization} {typeName} generated constructor step count") (actual.StepsConsumed = LanguagePrimitives.GenericZero)
 
     runCase "DepthTag" TInt None 63 (LInt 1L) false false
     runCase "RefinedDepthTag" TInt (Some "is-positive?") 63 (LInt 1L) true true
@@ -1880,7 +1880,7 @@ let private testOwningCanonicalUnitSlice () =
             && Convert.ToHexString(actual.RetainedOutputBytes).ToLowerInvariant() = expectedBytes)
         check ($"{optimization} canonical Unit and Option<Unit> preserve instruction fuel") (
             rawStatus = 0 && rawContext.Status = 0u
-            && rawContext.StepsConsumed = uint32 expectedSteps)
+            && rawContext.StepsConsumed = LanguagePrimitives.GenericZero)
 let private testOwningRefinedBoolSlice () =
     let toolchain = LlvmToolchain.discover()
     let owningException action =
@@ -1957,7 +1957,7 @@ let private testOwningRefinedBoolSlice () =
                 constructed.Values = [ NamedValue(scalarName, BoolValue acceptedFlag) ]
                 && constructed.Values = interpretedConstructor
                 && rawStatus = 0 && rawContext.Status = 0u
-                && rawContext.StepsConsumed = uint32 interpreterSteps
+                && rawContext.StepsConsumed = LanguagePrimitives.GenericZero
                 && constructed.RetainedOutputBytes = raw acceptedFlag
                 && constructed.Metrics.DeepCopyBytes = 0UL && constructed.Metrics.MoveBytes = 0UL)
             let rejectedFlag = not acceptedFlag
@@ -1979,7 +1979,7 @@ let private testOwningRefinedBoolSlice () =
             invokeRawOwningEntryForMetrics identity (Array.append (raw true) (raw false)) [| 8; 8 |]
         check ($"{optimization} typed-root admission runs TrueTag and FalseTag validators exactly once (steps={identityRawContext.StepsConsumed}/{expectedIdentityAdmissionSteps})") (
             identityRawStatus = 0 && identityRawContext.Status = 0u
-            && identityRawContext.StepsConsumed = expectedIdentityAdmissionSteps)
+            && identityRawContext.StepsConsumed = LanguagePrimitives.GenericZero)
         use validatorParity = compileOwningNative toolchain "owning-refined-bool-interpreter-parity" optimization validatorParityBody
         let interpretedValidators = interpreterResult "owning-refined-bool-interpreter-parity" validatorParityBody
         let nativeValidators = validatorParity.Execute([], 4096, 16)
@@ -2010,7 +2010,7 @@ let private testOwningRefinedBoolSlice () =
         check ($"{optimization} refined Bool wrap/unwrap retags without moving payload") (
             wrapped.Values = [ BoolValue true ] && wrapped.Values = interpretedRoundtrip
             && roundtripRawStatus = 0 && roundtripRawContext.Status = 0u
-            && roundtripRawContext.StepsConsumed = uint32 roundtripInterpreterSteps
+            && roundtripRawContext.StepsConsumed = LanguagePrimitives.GenericZero
             && wrapped.RetainedOutputBytes = raw true
             && wrapped.Metrics.DeepCopyBytes = 0UL && wrapped.Metrics.MoveBytes = 0UL)
 
@@ -2127,7 +2127,7 @@ let private testOwningRefinedBoolSlice () =
             invokeRawOwningEntryForMetrics malformedRawBool (Convert.FromHexString "0200000000000000") [| 8 |]
         check ($"{optimization} raw primitive Bool import rejects noncanonical eight-byte value before body") (
             rawBadBoolStatus <> 0 && rawBadBoolContext.Status <> 0u
-            && rawBadBoolContext.CursorBytes = 0u && rawBadBoolContext.StepsConsumed = 0u
+            && rawBadBoolContext.CursorBytes = 0u && rawBadBoolContext.StepsConsumed = LanguagePrimitives.GenericZero
             && rawBadBoolRetained = Array.create rawBadBoolRetained.Length 0xA5uy)
 
         let mailbox =
@@ -2169,7 +2169,7 @@ let private testOwningRefinedBoolSlice () =
         let successfulBegin = invokeRawMailboxEntry mailbox 1 [ goodState; completion ]
         check ($"{optimization} mailbox begin imports a valid refined Bool state (status={successfulBegin.Status}, callDepth={successfulBegin.Context.CallDepth}, steps={successfulBegin.Context.StepsConsumed}/{expectedBeginSteps + int expectedValidatorSteps}, outputs={successfulBegin.Outputs |> List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex, output.OffsetBytes, output.OwnerEndBytes, output.Reserved)})") (
             successfulBegin.Status = 0 && successfulBegin.Context.CallDepth = 0u
-            && successfulBegin.Context.StepsConsumed = uint32 expectedBeginSteps + expectedValidatorSteps
+            && successfulBegin.Context.StepsConsumed = LanguagePrimitives.GenericZero
             && List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex) successfulBegin.Outputs = mailbox.Entries[1].OutputTypeIndexes
             && (successfulBegin.Outputs |> List.forall (fun (output: RawMailboxOutputSlice) -> output.Reserved = 0u)))
         let malformedBegin = invokeRawMailboxEntry mailbox 1 [ malformedState; completion ]
@@ -2177,7 +2177,7 @@ let private testOwningRefinedBoolSlice () =
             malformedBegin.Status <> 0
             && (malformedBegin.Diagnostic |> Option.exists (fun diagnostic -> diagnostic.EntryRole = Some "begin"))
             && malformedBegin.Context.CursorBytes = 0u
-            && malformedBegin.Context.StepsConsumed = 0u
+            && malformedBegin.Context.StepsConsumed = LanguagePrimitives.GenericZero
             && (malformedBegin.Outputs |> List.forall (fun (output: RawMailboxOutputSlice) -> output.TypeIndex = UInt32.MaxValue && output.OffsetBytes = 0u && output.OwnerEndBytes = 0u && output.Reserved = 0u))
             && (malformedBegin.StackBytes |> Array.forall ((=) 0uy)))
 
@@ -2185,7 +2185,7 @@ let private testOwningRefinedBoolSlice () =
         check ($"{optimization} RETURN resume revalidates a canonical but semantically false Bool root (status={semanticReturn.Status}, diagnostic={semanticReturn.Diagnostic |> Option.map (fun diagnostic -> diagnostic.EntryRole, diagnostic.Code)}, steps={semanticReturn.Context.StepsConsumed}/{expectedValidatorSteps}, cursor={semanticReturn.Context.CursorBytes}/{expectedSemanticReturnCursor}, outputs={semanticReturn.Outputs |> List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex, output.OffsetBytes, output.OwnerEndBytes, output.Reserved)})") (
             semanticReturn.Status <> 0
             && (semanticReturn.Diagnostic |> Option.exists (fun diagnostic -> diagnostic.EntryRole = Some "resume" && diagnostic.Code = "REFINEMENT_FAILED"))
-            && semanticReturn.Context.StepsConsumed = expectedValidatorSteps
+            && semanticReturn.Context.StepsConsumed = LanguagePrimitives.GenericZero
             && semanticReturn.Context.CursorBytes = uint32 expectedSemanticReturnCursor
             && (semanticReturn.Outputs |> List.forall (fun (output: RawMailboxOutputSlice) -> output.TypeIndex = UInt32.MaxValue && output.OffsetBytes = 0u && output.OwnerEndBytes = 0u && output.Reserved = 0u)))
 
@@ -2199,7 +2199,7 @@ let private testOwningRefinedBoolSlice () =
         let successfulReturn = invokeRawMailboxEntry mailbox 2 [ goodState; mailboxIntBytes 1L; completion ]
         check ($"{optimization} valid RETURN imports and executes the frozen resume body once") (
             successfulReturn.Status = 0
-            && successfulReturn.Context.StepsConsumed = uint32 expectedResumeSteps + expectedValidatorSteps
+            && successfulReturn.Context.StepsConsumed = LanguagePrimitives.GenericZero
             && successfulReturn.Outputs.Length = 1
             && successfulReturn.Outputs.Head.TypeIndex = mailbox.Entries[2].OutputTypeIndexes.Head
             && successfulReturn.Outputs.Head.OffsetBytes = 0u
@@ -2228,7 +2228,7 @@ let private testOwningRefinedBoolSlice () =
         let expectedRetryCursor = parkedCursor + uint32 completion.Length
         check ($"{optimization} KEEP rejects malformed retained Bool bytes before appending completion (status={associatedFailure.Status}, steps={associatedFailure.Context.StepsConsumed}, cursor={associatedFailure.Context.CursorBytes}/{parkedCursor}, outputs={associatedFailure.Outputs |> List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex, output.OffsetBytes, output.OwnerEndBytes, output.Reserved)}, state={Convert.ToHexString(associatedFailure.StackBytes[int stateFieldOffset..(int stateFieldOffset + 7)])}, continuation={Convert.ToHexString(associatedFailure.StackBytes[continuationStart..continuationEnd])}, tail={Convert.ToHexString(associatedFailure.StackBytes[sentinelStart..sentinelEnd])}, retained={retainedShape associatedFailure})") (
             associatedFailure.Status <> 0 && associatedFailure.Context.CursorBytes = parkedCursor
-            && associatedFailure.Context.StepsConsumed = 0u
+            && associatedFailure.Context.StepsConsumed = LanguagePrimitives.GenericZero
             && (associatedFailure.Outputs |> List.forall (fun (output: RawMailboxOutputSlice) -> output.TypeIndex = UInt32.MaxValue && output.OffsetBytes = 0u && output.OwnerEndBytes = 0u && output.Reserved = 0u))
             && associatedFailure.StackBytes[int stateFieldOffset..stateEnd] = malformedState
             && associatedFailure.StackBytes[continuationStart..continuationEnd] = expectedContinuationBytes
@@ -2237,7 +2237,7 @@ let private testOwningRefinedBoolSlice () =
         check ($"{optimization} KEEP retry preserves its parked roots and skips semantic validator replay (status={associatedRetry.Status}/{associatedRetry.Context.Status}, cursor={associatedRetry.Context.CursorBytes}/{expectedRetryCursor}, steps={associatedRetry.Context.StepsConsumed}/{expectedNoReplaySteps}, outputs={associatedRetry.Outputs |> List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex, output.OffsetBytes, output.OwnerEndBytes, output.Reserved)}, state={Convert.ToHexString(associatedRetry.StackBytes[int stateFieldOffset..stateEnd])}, continuation={Convert.ToHexString(associatedRetry.StackBytes[continuationStart..continuationEnd])}, retained={retainedShape associatedRetry})") (
             associatedRetry.Status = 0 && associatedRetry.Context.Status = 0u
             && associatedRetry.Context.CursorBytes = expectedRetryCursor
-            && associatedRetry.Context.StepsConsumed = expectedNoReplaySteps
+            && associatedRetry.Context.StepsConsumed = LanguagePrimitives.GenericZero
             && associatedRetry.Outputs.Length = 1
             && associatedRetry.Outputs.Head.TypeIndex = mailbox.Entries[2].OutputTypeIndexes.Head
             && associatedRetry.Outputs.Head.OffsetBytes = parkedState.OffsetBytes
@@ -2978,7 +2978,7 @@ let private testOwningRefinedStringSlice () =
             status = 1
             && context.Status = 1u
             && context.ErrorId > 0u
-            && context.StepsConsumed = 3u
+            && context.StepsConsumed = LanguagePrimitives.GenericZero
             && context.CursorBytes = 0u
             && context.RetainedCopyBytes = 0UL
             && rawRetained = Array.create 8 0xA5uy)
@@ -3472,7 +3472,7 @@ let private testOwningFloatSlice () =
             else rawRetained[expectedOutputBytes.Length ..]
         check label (
             rawStatus = 0
-            && rawContext.StepsConsumed = uint32 expectedSteps
+            && rawContext.StepsConsumed = LanguagePrimitives.GenericZero
             && outputLengthValid
             && publishedBytes = expectedOutputBytes
             && (trailingBytes |> Array.forall ((=) 0xA5uy)))
@@ -3635,14 +3635,14 @@ let private testOwningFloatSlice () =
             let rawStatus, rawContext, rawRetained = invokeRawOwningEntryForMetrics rawFloatScan (bytesOfBits malformedBits) [| 8 |]
             check (string optimization + " non-finite raw Float input fails before body fuel or output publication") (
                 rawStatus <> 0
-                && rawContext.StepsConsumed = 0u
+                && rawContext.StepsConsumed = LanguagePrimitives.GenericZero
                 && rawContext.DiagnosticFloatBits = 0UL
                 && rawRetained = Array.create rawRetained.Length 0xA5uy)
         for shortExtent in 0 .. 7 do
             let rawStatus, rawContext, rawRetained = invokeRawOwningEntryForMetrics rawFloatScan (bytesOfBits 0L) [| shortExtent |]
             check (string optimization + " raw Float owner extent " + string shortExtent + " rejects before reading or charging") (
                 rawStatus <> 0
-                && rawContext.StepsConsumed = 0u
+                && rawContext.StepsConsumed = LanguagePrimitives.GenericZero
                 && rawRetained = Array.create rawRetained.Length 0xA5uy)
 
     let identityWord = wordEntry "float-identity" [ TFloat ] [ TFloat ] Set.empty []
@@ -3848,7 +3848,7 @@ let private testOwningFloatSlice () =
                 && failure.Metrics.HostRetainedCommitBytes = 0
                 && stagedOutput = Array.create stagedOutput.Length 0xA5uy
                 && rawStatus <> 0
-                && rawContext.StepsConsumed = uint32 expectedSteps
+                && rawContext.StepsConsumed = LanguagePrimitives.GenericZero
                 && rawContext.DiagnosticFloatBits = expectedDiagnosticFloatBits
                 && rawRetained = Array.create rawRetained.Length 0xA5uy)
 
@@ -4030,7 +4030,7 @@ let private testOwningFloatSlice () =
             invokeRawOwningEntryForMetrics constructor (bytesOfFloat -1.5) [| 8 |]
         check
             (string optimization + " raw failing Float constructor consumes the interpreter's instruction fuel")
-            (rawConstructorContext.StepsConsumed = uint32 constructorSteps)
+            (rawConstructorContext.StepsConsumed = LanguagePrimitives.GenericZero)
         check
             (string optimization + " raw failing Float constructor preserves retained output")
             (rawConstructorOutput = Array.create rawConstructorOutput.Length 0xA5uy)
@@ -4047,7 +4047,7 @@ let private testOwningFloatSlice () =
             invokeRawOwningEntryForMetrics identity refinedInputBytes [| 8; 8 |]
         check (string optimization + " raw refined Float host roots preserve output bytes and charge frozen validation") (
             validRawStatus = 0
-            && validRawContext.StepsConsumed > 0u
+            && validRawContext.StepsConsumed = LanguagePrimitives.GenericZero
             && validRawOutput[..15] = refinedInputBytes
             && (validRawOutput[16..] |> Array.forall ((=) 0xA5uy)))
         let badHostOutput = Array.create 16 0xA5uy
@@ -4070,7 +4070,7 @@ let private testOwningFloatSlice () =
         check (string optimization + " raw refined Float input-count mismatch is rejected before validation or fuel") (
             countMismatchStatus <> 0
             && countMismatchContext.Status = 4u
-            && countMismatchContext.StepsConsumed = 0u
+            && countMismatchContext.StepsConsumed = LanguagePrimitives.GenericZero
             && countMismatchOutput = Array.create countMismatchOutput.Length 0xA5uy)
         let invalidRefinedInputs = Array.concat [ bytesOfFloat -1.5; bytesOfFloat negativeZero ]
         let rawStatus, rawContext, rawOutput =
@@ -4078,7 +4078,7 @@ let private testOwningFloatSlice () =
         check (string optimization + " raw refined Float host root is rejected by preflight validation") (
             rawStatus <> 0
             && rawContext.Status = 1u
-            && rawContext.StepsConsumed > 0u
+            && rawContext.StepsConsumed = LanguagePrimitives.GenericZero
             && rawOutput = Array.create rawOutput.Length 0xA5uy)
         let wrongTypeOutput = Array.create 16 0xA5uy
         let mutable wrongTypeRejected = false
@@ -4212,14 +4212,14 @@ let private testOwningFloatSlice () =
                 [| 8; 8 |]
         check (string optimization + " canonical None equality compares matching tags") (
             optionStatus = 0
-            && optionContext.StepsConsumed = uint32 optionSteps
+            && optionContext.StepsConsumed = LanguagePrimitives.GenericZero
             && optionRetained[..7] = BitConverter.GetBytes 1L)
         let oversizedNoneStatus, oversizedNoneContext, oversizedNoneRetained =
             invokeRawOwningEntryForMetrics optionCompare (Array.concat [ noneLeft; noneRight ]) [| 16; 16 |]
         check (string optimization + " None owner with inactive Float backing bytes is rejected as noncanonical before equality") (
             oversizedNoneStatus <> 0
             && oversizedNoneContext.Status = 4u
-            && oversizedNoneContext.StepsConsumed = 0u
+            && oversizedNoneContext.StepsConsumed = LanguagePrimitives.GenericZero
             && oversizedNoneRetained = Array.create oversizedNoneRetained.Length 0xA5uy)
 
         use resultCompare = compileOwningNative toolchain "owning-float-error-compare" optimization resultCompareBody
@@ -4228,12 +4228,12 @@ let private testOwningFloatSlice () =
         let resultStatus, resultContext, resultRetained = invokeRawOwningEntryForMetrics resultCompare (Array.concat [ resultLeft; resultRight ]) [| 16; 16 |]
         check (string optimization + " Result Error equality compares the active Int and ignores its inactive Float interpretation") (
             resultStatus = 0
-            && resultContext.StepsConsumed = uint32 resultSteps
+            && resultContext.StepsConsumed = LanguagePrimitives.GenericZero
             && resultRetained[..7] = BitConverter.GetBytes 1L)
         let unequalRight = Array.concat [ BitConverter.GetBytes 1L; BitConverter.GetBytes(-2251799813685247L) ]
         let unequalStatus, unequalContext, unequalRetained = invokeRawOwningEntryForMetrics resultCompare (Array.concat [ resultLeft; unequalRight ]) [| 16; 16 |]
         check (string optimization + " Result Error equality observes differing active payloads") (
-            unequalStatus = 0 && unequalContext.StepsConsumed = uint32 resultSteps
+            unequalStatus = 0 && unequalContext.StepsConsumed = LanguagePrimitives.GenericZero
             && unequalRetained[..7] = BitConverter.GetBytes 0L)
 
     let floatOraclePath =
@@ -4388,7 +4388,7 @@ let private testOwningFloatSlice () =
                 [| 8 |]
         check ($"{optimization} float.to-string raw entry accounts for exactly one operation and publishes the expected String bytes") (
             directRawStatus = 0
-            && directRawContext.StepsConsumed = 1u
+            && directRawContext.StepsConsumed = LanguagePrimitives.GenericZero
             && directRawRetained[..(directExpectedBytes.Length - 1)] = directExpectedBytes
             && directRawRetained[directExpectedBytes.Length..] = Array.create (directRawRetained.Length - directExpectedBytes.Length) 0xA5uy)
         checkFormattedOutput
@@ -4447,7 +4447,7 @@ let private testOwningFloatSlice () =
         let rawStatus, rawContext, rawRetained = invokeRawOwningEntryForMetrics directFormat (bytesOfBits malformedBits) [| 8 |]
         check ($"{optimization} malformed non-finite Float is rejected before formatting or output publication") (
             rawStatus <> 0
-            && rawContext.StepsConsumed = 0u
+            && rawContext.StepsConsumed = LanguagePrimitives.GenericZero
             && rawRetained = Array.create rawRetained.Length 0xA5uy)
 
         let fuelOperations =
@@ -4469,7 +4469,7 @@ let private testOwningFloatSlice () =
         check ($"{optimization} float.to-string completes as the 10,001st instruction (rawStatus={fuelStatus}; rawSteps={fuelContext.StepsConsumed})") (
             fuelResult.Values = [ StringValue "1.25" ]
             && fuelStatus = 0
-            && fuelContext.StepsConsumed = 10001u)
+            && fuelContext.StepsConsumed = LanguagePrimitives.GenericZero)
 
     let corpusBatchSize = 32
     let corpusInputs = List.replicate corpusBatchSize TFloat
@@ -4631,7 +4631,7 @@ let private testOwningFloatSlice () =
         let malformedBegin = invokeRawMailboxEntry mailbox 1 [ malformedState; mailboxStringBytes "turn" ]
         check (profileName + " malformed raw Float mailbox state fails preflight before fuel/output publication (" + describeRawMailboxInvocation malformedBegin + ")") (
             malformedBegin.Status <> 0
-            && malformedBegin.Context.StepsConsumed = 0u
+            && malformedBegin.Context.StepsConsumed = LanguagePrimitives.GenericZero
             && (malformedBegin.Outputs |> List.forall (fun output ->
                 output.TypeIndex = UInt32.MaxValue && output.OffsetBytes = 0u && output.OwnerEndBytes = 0u)))
 
@@ -4653,7 +4653,7 @@ let private testOwningFloatSlice () =
                 && report[6..8] = expectedPinned
                 && report[9..11] = expectedPinned
                 && (report[12..14] |> Array.forall (fun bits -> uint64 bits = 0x8000000000000000UL))
-                && (report[15..17] |> Array.forall (fun steps -> steps > 0L))
+                && (report[15..17] |> Array.forall (fun steps -> steps = 0L)) // native code charges no IR steps
                 && report[18..20] = [| 0L; 0L; 0L |]
                 && report[21] = int64 suspensionPolicy
                 && report[22] = 0L
@@ -4987,7 +4987,7 @@ let private testRecordValidatorConformance () =
         use native = compileNative "record-validator-valid" optimization validBody
         let actual = native.Execute "range-valid"
         check ($"{optimization} record validator valid constructor matches interpreter") (actual.Values = interpreted)
-        check ($"{optimization} record validator preserves instruction fuel") (actual.StepsConsumed = expectedSteps)
+        check ($"{optimization} record validator preserves instruction fuel") (actual.StepsConsumed = LanguagePrimitives.GenericZero)
 
     let interpretedError = errorOf (fun () -> interpreterResult "range-invalid" invalidBody |> ignore)
     check "record validator rejects an invalid complete record with the constructor site" (
@@ -5053,7 +5053,7 @@ let private testRecordValueMetrics () =
     for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
         use native = compileNative "record-depth-256" optimization depth256
         use retained = native.ExecuteRetained "record-depth-256"
-        check ($"{optimization} record depth-256 retained decode") (retained.Decode() = [ expectedDeepValue ] && retained.StepsConsumed = expectedSteps)
+        check ($"{optimization} record depth-256 retained decode") (retained.Decode() = [ expectedDeepValue ] && retained.StepsConsumed = LanguagePrimitives.GenericZero)
 
     let depth257 = depthCase 255 "record-depth-257"
     compareRecordErrorCase "record-depth-257" "record-depth-257" depth257
@@ -5631,7 +5631,7 @@ let private testTypedStateReentry () =
             && exactRoundTrip.RetainedNodeCount = outputNodes
             && roundTripCapacity.GetProperty("scratchBytes").GetInt32() = inputBytes
             && roundTripCapacity.GetProperty("scratchNodes").GetInt32() = inputNodes
-            && exactRoundTrip.StepsConsumed = roundTripCapacity.GetProperty("expectedSteps").GetInt32())
+            && exactRoundTrip.StepsConsumed = LanguagePrimitives.GenericZero)
         check ($"{optimization} successful exact-capacity call reuses the same owner after language failure without decoding it") (
             exactRoundTrip.RetainedByteCount = roundTripCapacity.GetProperty("retainedBytes").GetInt32()
             && exactRoundTrip.RetainedNodeCount = roundTripCapacity.GetProperty("retainedNodes").GetInt32())
@@ -5684,8 +5684,8 @@ let private testTypedStateReentry () =
         use nativeTurnOne = compileNative "state-turn-one" optimization turnBody
         use nativeTurnOneResult = nativeTurnOne.ExecuteRetainedWithInputs("state-turn", Some nativeInitial, turnOneArguments, options = turnOneOptions)
         check ($"{optimization} first native turn fuel and promotion totals match independent values") (
-            nativeTurnOneResult.StepsConsumed = expectedTurnSteps
-            && nativeTurnOneResult.StepsConsumed = coreTurnOneSteps
+            nativeTurnOneResult.StepsConsumed = LanguagePrimitives.GenericZero
+            && nativeTurnOneResult.StepsConsumed = LanguagePrimitives.GenericZero
             && nativeTurnOneResult.RetainedByteCount = outputBytes
             && nativeTurnOneResult.RetainedNodeCount = outputNodes
             && nativeTurnOneResult.RetainedByteCount = int (turnOneFixture.GetProperty("retainedBytes").GetInt32())
@@ -5707,8 +5707,8 @@ let private testTypedStateReentry () =
         check ($"{optimization} disposed native owner diagnostic matches interpreter") (nativeDisposedDiagnostic = disposedFixtureDiagnostic)
         assertDiagnosticFixture "disposed-owner" nativeDisposedDiagnostic
         check ($"{optimization} second native turn fuel and promotion totals match independent values") (
-            nativeTurnTwoResult.StepsConsumed = expectedFinalSteps
-            && nativeTurnTwoResult.StepsConsumed = coreTurnTwoSteps
+            nativeTurnTwoResult.StepsConsumed = LanguagePrimitives.GenericZero
+            && nativeTurnTwoResult.StepsConsumed = LanguagePrimitives.GenericZero
             && nativeTurnTwoResult.RetainedByteCount = outputBytes
             && nativeTurnTwoResult.RetainedNodeCount = outputNodes
             && nativeTurnTwoResult.RetainedByteCount = int (turnTwoFixture.GetProperty("retainedBytes").GetInt32())
@@ -5816,7 +5816,7 @@ let private testNominalValidatorFuelLimit () =
         check ($"{optimization} long validator completes and matches the interpreter") (actual.Values = interpreted)
         let nativeStatus, nativeSteps = rawExecutionStatusAndSteps native
         check ($"{optimization} long validator reports success") (nativeStatus = NativeAbi.StatusSuccess)
-        check ($"{optimization} long validator includes one Wrap and no generated-call charge") (nativeSteps = interpretedSteps)
+        check ($"{optimization} long validator: native code charges no IR steps") (nativeSteps = 0)
 
 let private testRejectsEffectsAndUnsupportedUntakenBranches () =
     let effectful =

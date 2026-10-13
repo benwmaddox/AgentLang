@@ -36,7 +36,8 @@ let private flowArgs (source: string) =
 let private words =
     [ "tag.ok?"; "native.lists.ints"; "native.lists.strings"; "native.lists.records"; "native.lists.nested"; "native.lists.joined"
       "native.lists.compact-joined"; "native.lists.append"; "native.lists.concat"; "native.lists.append-records"
-      "native.lists.literal-tag"; "native.lists.runtime-tag" ]
+      "native.lists.literal-tag"; "native.lists.runtime-tag"; "native.lists.append-top"; "native.lists.append-adjacent"
+      "native.lists.concat-adjacent"; "native.lists.append-aliased"; "tag.text"; "native.lists.retag" ]
 
 let private wordArgs (name: string) =
     let args = JsonObject()
@@ -161,6 +162,31 @@ let private run () =
         check $"concat/{optimization}: two empty lists" (emptyConcat = [ strings [] ])
         let recordAppend, _ = execute optimization "native.lists.append-records" [ TList(TNamed "Pair"); TString ] [ TList(TNamed "Pair") ] [ ListValue(TNamed "Pair", []); StringValue "r" ]
         check $"append-records/{optimization}: record element" (match recordAppend with [ ListValue(_, [ _ ]) ] -> true | _ -> false)
+
+        // In-place list growth: unaliased lists are extended without recopying.
+        let topValues, top = execute optimization "native.lists.append-top" [ TString; TString; TString ] [ TList TString ] [ StringValue "aa"; StringValue "bbb"; StringValue "c" ]
+        check $"append-top/{optimization}: values" (topValues = [ strings [ "aa"; "bbb"; "c" ] ])
+        check $"append-top/{optimization}: each element copied once, no list recopy (deep={top.Metrics.DeepCopyBytes})" (
+            top.Metrics.DeepCopyBytes = uint64 (stringExtent "aa" + stringExtent "bbb" + stringExtent "c"))
+        let adjacentValues, adjacent = execute optimization "native.lists.append-adjacent" [ TString; TString ] [ TList TString ] [ StringValue "aa"; StringValue "<b>" ]
+        check $"append-adjacent/{optimization}: values" (adjacentValues = [ strings [ "aa"; "&lt;b&gt;" ] ])
+        // [a] copies a; the escape writes its result directly after the list; the append copies nothing.
+        check $"append-adjacent/{optimization}: the adjacent element is not copied (deep={adjacent.Metrics.DeepCopyBytes})" (
+            adjacent.Metrics.DeepCopyBytes = uint64 (stringExtent "aa" + stringExtent "&lt;b&gt;"))
+        let concatValues, concatAdjacent = execute optimization "native.lists.concat-adjacent" [ TString; TString; TString ] [ TList TString ] [ StringValue "a"; StringValue "b"; StringValue "c" ]
+        check $"concat-adjacent/{optimization}: values" (concatValues = [ strings [ "a"; "b"; "c" ] ])
+        check $"concat-adjacent/{optimization}: right elements slide over the right header instead of being copied (deep={concatAdjacent.Metrics.DeepCopyBytes}, move={concatAdjacent.Metrics.MoveBytes})" (
+            concatAdjacent.Metrics.DeepCopyBytes = uint64 (stringExtent "a" + stringExtent "b" + stringExtent "c")
+            && concatAdjacent.Metrics.MoveBytes = uint64 (stringExtent "b" + stringExtent "c"))
+        let aliasedValues, _ = execute optimization "native.lists.append-aliased" [ TString; TString ] [ TList(TList TString) ] [ StringValue "a"; StringValue "b" ]
+        check $"append-aliased/{optimization}: a list bound to a local is never mutated" (
+            aliasedValues = [ ListValue(TList TString, [ strings [ "a" ]; strings [ "a"; "b" ] ]) ])
+        let tags = ListValue(TNamed "Tag", [ NamedValue("Tag", StringValue "x"); NamedValue("Tag", StringValue "yy") ])
+        let retagValues, retag = execute optimization "native.lists.retag" [ TList(TNamed "Tag") ] [ TList TString ] [ tags ]
+        check $"retag/{optimization}: values" (retagValues = [ strings [ "x"; "yy" ] ])
+        check $"retag/{optimization}: map of a nominal unwrap is a retag: no copy, no callback frame (deep={retag.Metrics.DeepCopyBytes}, frames={retag.Metrics.FrameReturnCount})" (
+            // Frames: the entry and the word itself; the two elements add no callback frames.
+            retag.Metrics.DeepCopyBytes = 0UL && retag.Metrics.FrameReturnCount = 2)
 
         // A literal proven at compile time skips the runtime validator frame.
         let literalValues, literal = execute optimization "native.lists.literal-tag" [] [ TString ] []

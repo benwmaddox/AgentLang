@@ -80,6 +80,29 @@ same placement.
     3. templates;
     4. `out.write` streaming;
     5. apples-to-apples.
+- **Sequencing and templates (user, 2026-10-13, later):**
+  - UTF-8 internal strings come right after report 264. Streaming output is
+    deferred until it is needed.
+  - Every coded batch ends with a performance check (trusted-profile page
+    measurement) recorded in its report.
+  - Templates: an `html"…"` template's markup is syntax-checked as a whole at
+    compile time.
+  - Each interpolated `Html` value must be a well-formed snippet: balanced tags,
+    including its closing tags, but not a whole document. Literal parts are
+    checked at compile time, and run-time `Html` (from `html.raw`) is checked
+    when it is constructed.
+  - Apples-to-apples path after UTF-8:
+    1. reference capture and structural parity oracle;
+    2. templates;
+    3. **general app-declared host capabilities** (user, 2026-10-13): remove the
+       hard-coded Campfire host profiles (`CampfireRoomFindForUserV1`,
+       `CampfireRoomReadV1` and their operation tables and ABI headers) from the
+       compiler. Apps declare typed host operations and effects in Flow; the
+       compiler generates the native ABI, and the app's adapter implements it;
+    3b. host data for the full page, built on that mechanism;
+    4. message partial with seed-subset rich text checked against Rails vectors;
+    5. layout, head, nav and composer;
+    6. rerun the report-259 protocol.
 - **No list length limit:** the 10,000-element cap is dropped; memory bounds
   lists.
 - **Shared immutable literals:** each String or proven `Html` literal is emitted
@@ -137,7 +160,7 @@ same placement.
 2b. **Native list building** (done, [report 263](../reports/263-list-building.md)):
    `[a, b, c]` literals, native `list.append` and `list.concat`, and fused
    literal joins.
-2c. **Near-term copy removals** (user, 2026-10-13):
+2c. **Near-term copy removals** (done, [report 264](../reports/264-inplace-lists-no-steps.md); user, 2026-10-13). The native step counter was also removed:
    - **Free nominal list retag.** Unwrapping `List<Html>` to `List<String>`
      (`parts.map(html.text)`) copies today. A map whose callback is only a
      nominal unwrap or wrap should retag the list descriptor, with no copy.

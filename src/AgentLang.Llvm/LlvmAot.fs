@@ -1096,13 +1096,6 @@ module LlvmAot =
             builder.Switch continueLabel
 
         // Counts instructions for interpreter parity; there is no instruction limit.
-        let emitCharge (builder: CodeBuilder) (_owner: string) _wordSource _site =
-            let field = emitFieldPointer builder 1
-            let current = builder.Fresh "steps.current"
-            let next = builder.Fresh "steps.next"
-            builder.Emit($"{current} = load i32, ptr {field}, align 4")
-            builder.Emit($"{next} = add i32 {current}, 1")
-            builder.Emit($"store i32 {next}, ptr {field}, align 4")
 
         let emitDepthGuardAt (builder: CodeBuilder) (depthValue: string) (call: IrResolvedCall) =
             let tooDeep = builder.Fresh "depth.exceeded"
@@ -1424,7 +1417,6 @@ module LlvmAot =
                     | _ -> invalidOp "Validated generated target is not a supported scalar constructor or accessor."
                 let mutable previousOperation: IrOperation option = None
                 for instruction in block.Code do
-                    emitCharge builder currentWord wordSource instruction.Site
                     let span = sourceSpan sourceMap instruction.Site
                     let provenLiteralWrap =
                         match previousOperation, instruction.Operation with

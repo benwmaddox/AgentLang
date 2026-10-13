@@ -162,7 +162,7 @@ static const char *const check_names[] = {
     "empty refinement failure preserves logical roots, raw roots, and the token under both policies",
     "runtime divide failure preserves logical roots, raw roots, and the same token under both policies",
     "retry completes with no pending mailbox or retained scratch lease",
-    "native lifecycle emitted independent step and raw statistics for both policies",
+    "native lifecycle charges no IR steps and emits raw statistics for both policies",
     "all controller raw-byte, copy, publication, import, and descriptor metrics are present",
     "stack ABI is 2 and the owning layout ABI is 5"};
 
@@ -1109,16 +1109,17 @@ int main(int argc, char **argv) {
                        associated_evidence.stats.pinned_scratch_slots == 0u &&
                        return_evidence.stats.pinned_scratch_bytes == 0u &&
                        associated_evidence.stats.pinned_scratch_bytes == 0u);
-  record_check(10u, return_evidence.initialize_call.steps_consumed != 0u &&
-                       return_evidence.begin_call.steps_consumed != 0u &&
-                       return_evidence.empty_resume_call.steps_consumed != 0u &&
-                       return_evidence.fail_resume_call.steps_consumed != 0u &&
-                       return_evidence.retry_resume_call.steps_consumed != 0u &&
-                       associated_evidence.initialize_call.steps_consumed != 0u &&
-                       associated_evidence.begin_call.steps_consumed != 0u &&
-                       associated_evidence.empty_resume_call.steps_consumed != 0u &&
-                       associated_evidence.fail_resume_call.steps_consumed != 0u &&
-                       associated_evidence.retry_resume_call.steps_consumed != 0u);
+  /* Native code no longer counts IR steps (2026-10-13): every call reports 0. */
+  record_check(10u, return_evidence.initialize_call.steps_consumed == 0u &&
+                       return_evidence.begin_call.steps_consumed == 0u &&
+                       return_evidence.empty_resume_call.steps_consumed == 0u &&
+                       return_evidence.fail_resume_call.steps_consumed == 0u &&
+                       return_evidence.retry_resume_call.steps_consumed == 0u &&
+                       associated_evidence.initialize_call.steps_consumed == 0u &&
+                       associated_evidence.begin_call.steps_consumed == 0u &&
+                       associated_evidence.empty_resume_call.steps_consumed == 0u &&
+                       associated_evidence.fail_resume_call.steps_consumed == 0u &&
+                       associated_evidence.retry_resume_call.steps_consumed == 0u);
   record_check(11u, return_evidence.stats.handler_invocations == 5u &&
                         associated_evidence.stats.handler_invocations == 5u &&
                         return_evidence.stats.returned_output_descriptors != 0u &&

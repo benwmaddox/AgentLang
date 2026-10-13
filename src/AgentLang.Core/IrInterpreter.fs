@@ -120,6 +120,26 @@ module IrInterpreter =
     /// pure validator. Such a construction is a retag in every backend.
     let mutable internal provenRefinedLiteral: VerifiedIrProgram -> SourceSiteId -> Literal -> IrType -> IrOperation -> bool =
         fun _ _ _ _ _ -> false
+
+    /// A map callback that only unwraps a nominal scalar (no effects) changes the
+    /// list's element type, not its bytes: nominal scalars share their base layout.
+    /// Every backend maps it as a retag without calling the callback.
+    let retagOnlyCallback (program: IrProgram) (callback: IrResolvedCall) =
+        Set.isEmpty callback.ResolvedEffects
+        && match callback.ResolvedTarget with
+           | UserWordTarget(id, _) ->
+               match program.FunctionsById.TryFind id with
+               | Some fn ->
+                   match fn.FunctionBody.Code |> List.map (fun instruction -> instruction.Operation) with
+                   | [ IrOperation.UnwrapScalar _ ] -> true
+                   | [ IrOperation.StoreLocal stored; IrOperation.LoadLocal loaded; IrOperation.UnwrapScalar _ ] -> stored = loaded
+                   | _ -> false
+               | None -> false
+           | GeneratedWordTarget(id, _) ->
+               match program.GeneratedTargetsById.TryFind id with
+               | Some { Operation = UnwrapScalarOperation _ } -> true
+               | _ -> false
+           | _ -> false
     // Host root-value and record-field count bound. Lists have no length limit;
     // memory (the native arena capacity, or the value-size budget here) bounds them.
     let private maxCollectionLength = 10000
@@ -1212,6 +1232,19 @@ module IrInterpreter =
                     | None ->
                         let name = localNames.TryFind slot |> Option.defaultValue (sprintf "%A" slot)
                         fail "RUNTIME_UNKNOWN_LOCAL" $"Local '${name}' has not been bound." (Some currentWord) instructionSpan [] [ name ]
+                | IrOperation.ListMap(callback, itemType, outputType) when retagOnlyCallback program callback ->
+                    // Retag: same elements under the base type; the callback is not called.
+                    let prefix, input = popOne "List higher-order operation requires a list." currentWord instruction.Site []
+                    match input with
+                    | RuntimeList(actualType, values) when actualType = itemType ->
+                        host.RecordUse "list.map"
+                        host.RecordBranchOutcome currentWord instruction.Site (if List.isEmpty values then "empty" else "nonempty")
+                        let unwrapped =
+                            values |> List.map (function
+                                | RuntimeScalar(_, value) -> value
+                                | actual -> fail "RUNTIME_INTERNAL_TYPE" "Retag map received a non-scalar element after type checking." (Some currentWord) instructionSpan [] [ formatType program (runtimeValueType actual) ])
+                        stack <- prefix @ [ RuntimeList(outputType, unwrapped) ]
+                    | actual -> fail "RUNTIME_INTERNAL_TYPE" "List operation received a non-list after type checking." (Some currentWord) instructionSpan [ formatType program (IrList itemType) ] [ formatType program (runtimeValueType actual) ]
                 | IrOperation.ListMap(callback, itemType, outputType) ->
                     let prefix, input = popOne "List higher-order operation requires a list." currentWord instruction.Site []
                     let values =

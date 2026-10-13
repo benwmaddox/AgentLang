@@ -128,3 +128,65 @@ test tag.ok?/empty {
     tag.ok?("")
     => value false
 }
+
+fn native.lists.append-top(a: String, b: String, c: String) -> List<String> {
+    effects none
+    list.append(list.append([a], b), c)
+}
+
+fn native.lists.append-adjacent(a: String, b: String) -> List<String> {
+    effects none
+    list.append([a], string.html-escape(b))
+}
+
+fn native.lists.concat-adjacent(a: String, b: String, c: String) -> List<String> {
+    effects none
+    list.concat([a], [b, c])
+}
+
+fn native.lists.append-aliased(a: String, b: String) -> List<List<String>> {
+    effects none
+    let first = [a]
+    let second = list.append(first, b)
+    [first, second]
+}
+
+fn native.lists.retag(values: List<Tag>) -> List<String> {
+    effects none
+    values.map(tag.text)
+}
+
+fn tag.text(value: Tag) -> String {
+    effects none
+    Tag.value(value)
+}
+
+test native.lists.append-top/three {
+    native.lists.append-top("a", "b", "c")
+    => value ["a", "b", "c"]
+}
+
+test native.lists.append-adjacent/two {
+    native.lists.append-adjacent("a", "<b>")
+    => value ["a", "&lt;b&gt;"]
+}
+
+test native.lists.concat-adjacent/three {
+    native.lists.concat-adjacent("a", "b", "c")
+    => value ["a", "b", "c"]
+}
+
+test native.lists.append-aliased/unchanged {
+    native.lists.append-aliased("a", "b")
+    => value [["a"], ["a", "b"]]
+}
+
+test tag.text/one {
+    tag.text(Tag.new("x"))
+    => value "x"
+}
+
+test native.lists.retag/two {
+    native.lists.retag([Tag.new("x"), Tag.new("y")])
+    => value ["x", "y"]
+}

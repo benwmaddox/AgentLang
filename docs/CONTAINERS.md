@@ -20,7 +20,7 @@ option::some<Email>(Email::new("dev@example.com"))
 result::ok<Int, String>(7)
 ```
 
-`list.count`, `list.tail`, `list.append`, `list.concat`, `list.get`, and `list.is-empty?` are trusted dictionary words. `list.tail` returns the same `List<T>` without its first element; an empty input remains empty. It preserves the element type, order, and duplicates, and does not change the input. `list.get` returns a typed `Option<T>`; an out-of-range index keeps the list element type. Concatenation requires both lists to have the same exact element type. Lists have no element-count limit (removed 2026-10-13, user decision); available memory bounds them: the native arena capacity (`OWNING_STACK_CAPACITY`) or the interpreter's value-size budget.
+`list.count`, `list.tail`, `list.append`, `list.concat`, `list.get`, and `list.is-empty?` are trusted dictionary words. `list.tail` returns the same `List<T>` without its first element; an empty input remains empty. It preserves the element type, order, and duplicates, and does not change the input. `list.get` returns a typed `Option<T>`; an out-of-range index keeps the list element type. Concatenation requires both lists to have the same exact element type. Native builds extend a list in place when it is unaliased (built in the same block and never stored to a local) and the runtime layout allows it; otherwise each element is copied once. A `map` that only unwraps a nominal scalar is a free retag. Lists have no element-count limit (removed 2026-10-13, user decision); available memory bounds them: the native arena capacity (`OWNING_STACK_CAPACITY`) or the interpreter's value-size budget.
 
 The higher-order forms take one statically named word. They do not evaluate arbitrary quotations or dynamically selected callbacks:
 

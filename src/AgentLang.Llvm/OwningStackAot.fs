@@ -3084,14 +3084,6 @@ module OwningStackAot =
                         emitRuntimeStatus w "%ctx" failBody
                 for instruction in current.Code do
                     let instructionSpan = spanFor instruction.Site
-                    let stepId = addDiagnostic "RUNTIME_STEP_LIMIT" "Execution exceeded the 10,000 instruction limit." currentOwner instructionSpan [] []
-                    let stepStatus = w.Fresh "step.status"
-                    w.Inst($"{stepStatus} = call i32 @al_owning_charge_step(ptr %%ctx, i32 {stepId})")
-                    let stepOk = w.Fresh "step.ok"
-                    let stepNext = w.Label "step.continue"
-                    w.Inst($"{stepOk} = icmp eq i32 {stepStatus}, 0")
-                    w.Inst($"br i1 {stepOk}, label %%{stepNext}, label %%{failBody}")
-                    w.Line($"{stepNext}:")
                     match instruction.Operation with
                     | IrOperation.Constant(literal, ty)
                         when ty = IrInt || ty = IrBool || ty = IrUnit || ty = IrFloat ->
@@ -3741,7 +3733,6 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_equal_typed(ptr, ptr, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_publish(ptr, ptr, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_check_cursor(ptr, i32)")
-        writer.Line("declare i32 @al_owning_charge_step(ptr, i32)")
         writer.Line("declare void @al_owning_set_failure(ptr, i32, i32, i32, i32)")
         writer.Line("declare { i64, i1 } @llvm.sadd.with.overflow.i64(i64, i64)")
         writer.Line("declare { i64, i1 } @llvm.ssub.with.overflow.i64(i64, i64)")
@@ -4068,7 +4059,6 @@ module OwningStackAot =
         writer.Line("declare void @al_owning_duplicate(ptr, i32, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_drop(ptr, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_check_cursor(ptr, i32)")
-        writer.Line("declare i32 @al_owning_charge_step(ptr, i32)")
         writer.Line("declare void @al_owning_update_live(ptr, i32, i32)")
         writer.Line("declare void @al_owning_local_reserve(ptr, i32)")
         writer.Line("declare void @al_owning_local_release(ptr, i32)")
@@ -4640,6 +4630,9 @@ module OwningStackAot =
                 let mutable stack = currentStack
                 let mutable locals = currentLocals
                 let mutable localTypes = current.EntryShape.LocalTypes
+                // Lists built in this block and never stored to a local: nothing else
+                // can refer to their bytes, so append/concat may extend them in place.
+                let mutable unaliasedLists: Set<string> = Set.empty
                 let pop count =
                     if count = 0 then [], stack
                     elif stack.Length < count then invalidOp "Verified dynamic owning block stack underflow."
@@ -4685,10 +4678,6 @@ module OwningStackAot =
                     |> Set.ofList
                 for instruction in current.Code do
                     let instructionSpan = frameSourceMap.TryFind instruction.Site |> Option.map (fun source -> source.SiteSpan)
-                    let stepId = addDiagnostic "RUNTIME_STEP_LIMIT" "Execution exceeded the 10,000 instruction limit." currentOwner instructionSpan [] []
-                    let stepStatus = w.Fresh "step.status"
-                    w.Inst($"{stepStatus} = call i32 @al_owning_charge_step(ptr %%ctx, i32 {stepId})")
-                    emitStatusResult w stepStatus failBody
                     match instruction.Operation with
                     | IrOperation.Constant(literal, ty) when ty = IrInt || ty = IrBool || ty = IrUnit || ty = IrFloat ->
                         let bits =
@@ -4745,6 +4734,7 @@ module OwningStackAot =
                         w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {cursor}, i32 8, i32 8, i32 0, i32 0)")
                         emitRuntimeStatus w "%ctx" failBody
                         stack <- push stack listType cursor "8" "8" next
+                        unaliasedLists <- Set.add cursor unaliasedLists
                     | IrOperation.ListSingleton itemType ->
                         let listType = IrList itemType
                         let values, prefix = pop 1
@@ -4763,6 +4753,7 @@ module OwningStackAot =
                         w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {cursor}, i32 {listExtent}, i32 {listPayload}, i32 0, i32 0)")
                         emitRuntimeStatus w "%ctx" failBody
                         stack <- push prefix listType cursor listExtent listPayload next
+                        unaliasedLists <- Set.add cursor unaliasedLists
                     | IrOperation.ListOf(IrString, count) when fusedJoinSites.Contains instruction.Site ->
                         let parts, prefix = pop count
                         let partsArray = w.Fresh "join.parts"
@@ -4822,6 +4813,12 @@ module OwningStackAot =
                         w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {cursor}, i32 {listExtent}, i32 {listPayload}, i32 0, i32 0)")
                         emitRuntimeStatus w "%ctx" failBody
                         stack <- push prefix listType cursor listExtent listPayload next
+                        unaliasedLists <- Set.add cursor unaliasedLists
+                    | IrOperation.ListMap(callback, _, resultType) when IrInterpreter.retagOnlyCallback info.Program callback ->
+                        // A nominal unwrap over every element: same bytes, new element type.
+                        let values, prefix = pop 1
+                        let input = List.head values
+                        stack <- push prefix (IrList resultType) input.Offset input.Extent input.Payload input.OwnerEnd
                     | IrOperation.ListMap(callback, _, _)
                     | IrOperation.ListFilter(callback, _)
                     | IrOperation.ListEach(callback, _)
@@ -5144,6 +5141,8 @@ module OwningStackAot =
                     | IrOperation.StoreLocal slot ->
                         let values, prefix = pop 1
                         let source = List.head values
+                        // A local shares the bytes with every later load: no longer unaliased.
+                        unaliasedLists <- Set.remove source.Offset unaliasedLists
                         let binding = localBinding slot locals
                         emitStoreLocal binding source
                         stack <- prefix
@@ -5653,32 +5652,104 @@ module OwningStackAot =
                                 emitUpdateLive w resultPayload "0" failBody
                                 stack <- push prefix IrString cursor resultExtent resultPayload resultEnd
                             | ("list.append" | "list.concat") as operation, [ left; right ] ->
-                                // One sized list: header, then the left elements and the
-                                // appended element (or right elements) as two range copies.
+                                // A sized result list. Unaliased lists are extended in place when
+                                // the runtime layout allows it; otherwise the left elements and the
+                                // appended element (or right elements) are range-copied once.
                                 let listType = left.Type
                                 let rightIsList = operation = "list.concat"
-                                let cursor = emitContextLoad w "%ctx" 2
                                 let rightBytes extentOrPayload = if rightIsList then emitOffset w extentOrPayload "-8" else extentOrPayload
-                                let listExtent = emitOffset w left.Extent (rightBytes right.Extent)
-                                let listPayload = emitOffset w left.Payload (rightBytes right.Payload)
-                                let next = emitOffset w cursor listExtent
-                                let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" $"Unable to reserve the {operation} result." currentOwner instructionSpan [] []
-                                emitReserve w next reserveError failBody
-                                let limitError = addDiagnostic "OWNING_STACK_INTERNAL" $"Unable to write the {operation} list header." currentOwner instructionSpan [] []
-                                let status = w.Fresh $"{operation}.header.status"
+                                let appendedExtent = rightBytes right.Extent
+                                let appendedPayload = rightBytes right.Payload
+                                let appendedSource = if rightIsList then emitOffset w right.Offset "8" else right.Offset
                                 let rightHeader = if rightIsList then right.Offset else "4294967295"
-                                w.Inst($"{status} = call i32 @al_owning_list_combine_header(ptr %%ctx, i32 {cursor}, i32 {left.Offset}, i32 {rightHeader}, i32 {typeId listType}, i32 {limitError})")
-                                emitStatusResult w status failBody
-                                let leftElements = emitOffset w left.Extent "-8"
-                                let leftPayload = emitOffset w left.Payload "-8"
-                                let afterLeft = emitOffset w cursor left.Extent
-                                emitCopyRange w (emitOffset w cursor "8") (emitOffset w left.Offset "8") leftElements leftPayload (typeId listType) failBody
-                                if rightIsList then
-                                    emitCopyRange w afterLeft (emitOffset w right.Offset "8") (emitOffset w right.Extent "-8") (emitOffset w right.Payload "-8") (typeId listType) failBody
+                                let headerError = addDiagnostic "OWNING_STACK_INTERNAL" $"Unable to write the {operation} list header." currentOwner instructionSpan [] []
+                                let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" $"Unable to reserve the {operation} result." currentOwner instructionSpan [] []
+                                let writeHeader destination =
+                                    let status = w.Fresh $"{operation}.header.status"
+                                    w.Inst($"{status} = call i32 @al_owning_list_combine_header(ptr %%ctx, i32 {destination}, i32 {left.Offset}, i32 {rightHeader}, i32 {typeId listType}, i32 {headerError})")
+                                    emitStatusResult w status failBody
+                                let resultSlots =
+                                    [ "offset"; "extent"; "payload"; "owner" ]
+                                    |> List.map (fun name ->
+                                        let slot = w.Fresh $"{operation}.result.{name}"
+                                        w.Inst($"{slot} = alloca i32, align 4")
+                                        slot)
+                                let storeResult values =
+                                    List.iter2 (fun slot value -> w.Inst($"store i32 {value}, ptr {slot}, align 4")) resultSlots values
+                                let combinedExtent = emitOffset w left.Extent appendedExtent
+                                let combinedPayload = emitOffset w left.Payload appendedPayload
+                                let emitCopyPath () =
+                                    let cursor = emitContextLoad w "%ctx" 2
+                                    let next = emitOffset w cursor combinedExtent
+                                    emitReserve w next reserveError failBody
+                                    writeHeader cursor
+                                    let afterLeft = emitOffset w cursor left.Extent
+                                    emitCopyRange w (emitOffset w cursor "8") (emitOffset w left.Offset "8") (emitOffset w left.Extent "-8") (emitOffset w left.Payload "-8") (typeId listType) failBody
+                                    emitCopyRange w afterLeft appendedSource appendedExtent appendedPayload (typeId (if rightIsList then listType else right.Type)) failBody
+                                    emitUpdateLive w "8" "0" failBody
+                                    storeResult [ cursor; combinedExtent; combinedPayload; next ]
+                                let doneLabel = w.Label $"{operation}.done"
+                                if unaliasedLists.Contains left.Offset then
+                                    let cursor = emitContextLoad w "%ctx" 2
+                                    let leftEnd = emitOffset w left.Offset left.Extent
+                                    let rightEnd = emitOffset w right.Offset right.Extent
+                                    let compare name a b =
+                                        let value = w.Fresh name
+                                        w.Inst($"{value} = icmp eq i32 {a}, {b}")
+                                        value
+                                    let both name a b =
+                                        let value = w.Fresh name
+                                        w.Inst($"{value} = and i1 {a}, {b}")
+                                        value
+                                    let leftExact = compare "list.left.exact" left.OwnerEnd leftEnd
+                                    let adjacent =
+                                        both "list.adjacent"
+                                            (both "list.adjacent.start" leftExact (compare "list.right.at.left.end" right.Offset leftEnd))
+                                            (both "list.adjacent.end" (compare "list.right.exact" right.OwnerEnd rightEnd) (compare "list.right.at.cursor" rightEnd cursor))
+                                    let adjacentLabel = w.Label $"{operation}.adjacent"
+                                    let checkTopLabel = w.Label $"{operation}.check.top"
+                                    let topLabel = w.Label $"{operation}.top"
+                                    let copyLabel = w.Label $"{operation}.copy"
+                                    w.Inst($"br i1 {adjacent}, label %%{adjacentLabel}, label %%{checkTopLabel}")
+                                    // The appended bytes already follow the list and end at the cursor:
+                                    // only the header changes (concat also slides the right elements
+                                    // down over the right header).
+                                    w.Line($"{adjacentLabel}:")
+                                    writeHeader left.Offset
+                                    if rightIsList then
+                                        w.Inst($"call void @al_owning_move_range(ptr %%ctx, i32 {right.Offset}, i32 {appendedSource}, i32 {appendedExtent}, i32 {appendedPayload}, i32 {typeId listType}, i32 6)")
+                                        emitRuntimeStatus w "%ctx" failBody
+                                    storeResult [ left.Offset; combinedExtent; combinedPayload; cursor ]
+                                    w.Inst($"br label %%{doneLabel}")
+                                    // The list ends at the cursor: copy only the appended bytes after it.
+                                    w.Line($"{checkTopLabel}:")
+                                    let atTop = both "list.left.top" leftExact (compare "list.left.at.cursor" leftEnd cursor)
+                                    w.Inst($"br i1 {atTop}, label %%{topLabel}, label %%{copyLabel}")
+                                    w.Line($"{topLabel}:")
+                                    let topNext = emitOffset w cursor appendedExtent
+                                    emitReserve w topNext reserveError failBody
+                                    emitCopyRange w cursor appendedSource appendedExtent appendedPayload (typeId (if rightIsList then listType else right.Type)) failBody
+                                    writeHeader left.Offset
+                                    storeResult [ left.Offset; combinedExtent; combinedPayload; topNext ]
+                                    w.Inst($"br label %%{doneLabel}")
+                                    w.Line($"{copyLabel}:")
+                                    emitCopyPath ()
+                                    w.Inst($"br label %%{doneLabel}")
                                 else
-                                    emitCopyRange w afterLeft right.Offset right.Extent right.Payload (typeId right.Type) failBody
-                                emitUpdateLive w "8" "0" failBody
-                                stack <- push prefix listType cursor listExtent listPayload next
+                                    emitCopyPath ()
+                                    w.Inst($"br label %%{doneLabel}")
+                                w.Line($"{doneLabel}:")
+                                let loaded =
+                                    resultSlots
+                                    |> List.map (fun slot ->
+                                        let value = w.Fresh $"{operation}.result"
+                                        w.Inst($"{value} = load i32, ptr {slot}, align 4")
+                                        value)
+                                match loaded with
+                                | [ offset; extent; payload; ownerEnd ] ->
+                                    stack <- push prefix listType offset extent payload ownerEnd
+                                    unaliasedLists <- Set.add offset unaliasedLists
+                                | _ -> invalidOp "List combine lost its result descriptor."
                             | ("string.contains" | "string.starts-with" | "string.ends-with") as operation, [ haystack; needle ] ->
                                 let mode = match operation with "string.contains" -> 0 | "string.starts-with" -> 1 | _ -> 2
                                 let found = w.Fresh $"{operation}.found"

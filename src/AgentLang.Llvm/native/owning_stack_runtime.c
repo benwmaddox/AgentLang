@@ -3807,15 +3807,6 @@ int32_t al_owning_check_cursor(al_owning_stack_context *ctx,
  * and traverse only finite lists, so every execution terminates. Instructions
  * are still counted (saturating) for interpreter parity and lifecycle
  * statistics. */
-int32_t al_owning_charge_step(al_owning_stack_context *ctx, uint32_t error_id) {
-  (void)error_id;
-  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
-    return 1;
-  if (ctx->steps_consumed != UINT32_MAX)
-    ++ctx->steps_consumed;
-  return 0;
-}
-
 uint8_t *al_owning_stack_base(al_owning_stack_context *ctx) {
   return ctx == 0 ? 0 : ctx->stack_data;
 }

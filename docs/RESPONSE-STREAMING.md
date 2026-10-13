@@ -55,6 +55,13 @@ fn room.page(room: Room, messages: List<Message>) -> Unit {
   built as a normal `Html` value, which costs one copy.
 - **Interpreter and tests.** `out.write` appends to a captured string, so parity
   compares the same bytes.
+- **Typed sink (direction, user musing 2026-10-13).** The buffer is bytes, but
+  the program sees a typed, append-only sink:
+  - an HTML response accepts only `Html`, so unescaped `String`s cannot reach
+    the page;
+  - a JSON endpoint gets a `Json` sink, and a download gets `Bytes`;
+  - the sink type could also determine `Content-Type`;
+  - it costs nothing at run time.
 
 ## Cached fragments
 

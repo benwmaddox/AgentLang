@@ -594,6 +594,8 @@ function Compare-RefinementSnapshot($Actual, [Parameter()][AllowEmptyCollection(
     return $okay
 }
 
+# Native code no longer counts IR steps (2026-10-13): native stepsConsumed must be 0.
+# The fixture's step oracle remains the verified-IR interpreter's instruction count.
 function Get-RefinementExpectedStepArray($Oracle, [string]$Policy) {
     $expected = Get-Field $Oracle 'expectedSteps'
     if ($Policy -ceq 'RETURN') {
@@ -868,7 +870,7 @@ function Check-RefinementNativeEvidence($Native, $Fixture, $Bootstrap, $LayoutIn
     $validDirectOkay = [uint32](Get-Field $validDirect 'callbackResult') -eq 0 -and
         [uint32](Get-Field $validDirect 'contextStatus') -eq 0 -and
         (Get-Field $validDirect 'outputContract') -eq $true -and
-        [uint32](Get-Field $validDirect 'stepsConsumed') -eq [uint32](Get-Field (Get-Field (Get-Field $Fixture 'directAdmissionControls') 'validState') 'fullBeginStepsIncludingHandler')
+        [uint32](Get-Field $validDirect 'stepsConsumed') -eq 0
     Add-Check "$Label direct valid raw State skips inactive alternatives and admits the full begin role" $validDirectOkay $validDirect
     Compare-RefinementSnapshot (Get-Field $validDirect 'outputs') @((Get-Field $roots 'initializedState'), (Get-Field $roots 'suspendedContinuation')) $false "$Label direct valid begin outputs"
 
@@ -888,7 +890,7 @@ function Check-RefinementNativeEvidence($Native, $Fixture, $Bootstrap, $LayoutIn
         $caseOkay = [uint32](Get-Field $actualCase 'callbackResult') -ne 0 -and
             [uint32](Get-Field $actualCase 'contextStatus') -ne 0 -and
             (Get-Field $actualCase 'outputContract') -eq $true -and
-            [uint32](Get-Field $actualCase 'stepsConsumed') -eq [uint32](Get-Field $expectedCase 'stepsConsumed') -and
+            [uint32](Get-Field $actualCase 'stepsConsumed') -eq 0 -and
             $actualError -ceq $expectedError -and
             [uint32](Get-Field (Get-Field $actualCase 'outputs') 'rootCount') -eq 0
         Add-Check "$Label direct $($case.fixtureName) fails at the frozen step prefix with invalid output descriptors" $caseOkay ([ordered]@{ expected = $expectedCase; actual = $actualCase; actualError = $actualError })
@@ -908,7 +910,7 @@ function Check-RefinementNativeEvidence($Native, $Fixture, $Bootstrap, $LayoutIn
         $malformedOkay = [uint32](Get-Field $malformed 'callbackResult') -ne 0 -and
             [uint32](Get-Field $malformed 'contextStatus') -eq [uint32](Get-Field $expectedContract 'expectedContextStatus') -and
             (Get-Field $malformed 'outputContract') -eq $true -and
-            [uint32](Get-Field $malformed 'stepsConsumed') -eq [uint32](Get-Field $expectedContract 'stepsConsumed') -and
+            [uint32](Get-Field $malformed 'stepsConsumed') -eq 0 -and
             $actualError -ceq [string](Get-Field $expectedContract 'expectedError') -and
             [string](Get-Field $expectedContract 'outputDescriptors') -ceq 'invalid' -and
             [uint32](Get-Field (Get-Field $malformed 'outputs') 'rootCount') -eq 0
@@ -920,7 +922,7 @@ function Check-RefinementNativeEvidence($Native, $Fixture, $Bootstrap, $LayoutIn
     $wrongIndexOkay = [uint32](Get-Field $wrongIndex 'callbackResult') -ne 0 -and
         [uint32](Get-Field $wrongIndex 'contextStatus') -eq [uint32](Get-Field $wrongIndexExpected 'expectedContextStatus') -and
         (Get-Field $wrongIndex 'outputContract') -eq $true -and
-        [uint32](Get-Field $wrongIndex 'stepsConsumed') -eq [uint32](Get-Field $wrongIndexExpected 'stepsConsumed') -and
+        [uint32](Get-Field $wrongIndex 'stepsConsumed') -eq 0 -and
         $wrongIndexError -ceq [string](Get-Field $wrongIndexExpected 'expectedError') -and
         [string](Get-Field $wrongIndexExpected 'outputDescriptors') -ceq 'unchanged' -and
         [uint32](Get-Field $wrongIndexExpected 'actualInputTypeIndex') -eq [uint32](Get-Field $LayoutIndexes 'Continuation') -and
@@ -976,7 +978,7 @@ function Check-RefinementNativeEvidence($Native, $Fixture, $Bootstrap, $LayoutIn
             $call = Get-Field $calls $callNames[$index]
             $errorCode = Get-RefinementErrorCode $Bootstrap (Get-Field $call 'errorId')
             $callOkay = [uint32](Get-Field $call 'result') -eq $expectedResults[$index] -and
-                [uint32](Get-Field $call 'stepsConsumed') -eq $expectedSteps[$index] -and
+                [uint32](Get-Field $call 'stepsConsumed') -eq 0 -and
                 $errorCode -ceq $expectedErrors[$index]
             $actualStepList.Add([uint32](Get-Field $call 'stepsConsumed'))
             Add-Check "$Label $policy $($callNames[$index]) status, diagnostic, and measured IR steps match the fixture" $callOkay ([ordered]@{ expectedResult = $expectedResults[$index]; expectedError = $expectedErrors[$index]; expectedSteps = $expectedSteps[$index]; actual = $call; actualError = $errorCode })

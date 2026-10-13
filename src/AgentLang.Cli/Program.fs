@@ -21,6 +21,7 @@ module Program =
         """AgentLang CLI
 
 Usage:
+  agentlang test|check|fmt FILE.flow...   (see agentlang test --help)
   agentlang [--project DIR] [--allow effect,...] [--clock ISO] [--frontend flow|stack] [--syntax-version 1|2]
   agentlang [--project DIR] [--allow effect,...] --jsonl
   agentlang [--project DIR] [--frontend flow|stack] [--syntax-version 1|2] --eval CODE
@@ -469,8 +470,170 @@ Human REPL commands:
                     with ex ->
                         Console.WriteLine($"error: {ex.Message}")
 
-    [<EntryPoint>]
-    let main argv =
+
+    // ---- File commands: agentlang test|check|fmt FILE.flow ... -----------------
+
+    let private fileUsage =
+        """Usage:
+  agentlang test  FILE.flow... [--project DIR] [--allow effect,...] [--json]
+  agentlang check FILE.flow... [--project DIR] [--json]
+  agentlang fmt   FILE.flow... [--write | --check]
+
+Files are Flow/2 source. Without --project, a fresh in-memory project is used and
+discarded, so nothing is committed. `test` defines every file and runs every
+attached test; the exit code is 0 only when all pass. `check` defines (parses and
+type-checks) only. `fmt` prints canonical source, rewrites files with --write, or
+exits 1 with --check when a file is not canonical."""
+
+    /// Maps a per-definition diagnostic span (`<flow:NAME/...>:line`) back to the
+    /// authored file by locating the definition's header line.
+    let private authoredLocation (fileName: string) (lines: string array) (span: JsonNode) =
+        if isNull span then fileName
+        else
+            let spanFile = try span["file"].GetValue<string>() with _ -> ""
+            let line = try span["line"].GetValue<int>() with _ -> 1
+            let column = try span["column"].GetValue<int>() with _ -> 1
+            let ownerName =
+                if spanFile.StartsWith("<flow:", StringComparison.Ordinal) then
+                    let body = spanFile.Substring(6)
+                    let stop = body.IndexOfAny([| '/'; '>' |])
+                    if stop > 0 then Some(body.Substring(0, stop)) else None
+                else None
+            let headerLine =
+                ownerName
+                |> Option.bind (fun name ->
+                    lines
+                    |> Array.tryFindIndex (fun text ->
+                        let trimmed = text.TrimStart()
+                        [ "fn "; "type "; "record "; "enum " ]
+                        |> List.exists (fun keyword ->
+                            trimmed.StartsWith(keyword + name + "(", StringComparison.Ordinal)
+                            || trimmed.StartsWith(keyword + name + " ", StringComparison.Ordinal)
+                            || trimmed.StartsWith(keyword + name + ":", StringComparison.Ordinal))))
+            match headerLine with
+            | Some index -> $"{fileName}:{index + line}:{column}"
+            | None -> $"{fileName} ({spanFile}:{line}:{column})"
+
+    let private printDiagnostic (fileName: string) (lines: string array) (response: JsonObject) =
+        let error = response["error"]
+        let code = try error["code"].GetValue<string>() with _ -> "error"
+        let message = try error["message"].GetValue<string>() with _ -> responseText response
+        let location = authoredLocation fileName lines (if isNull error then null else error["span"])
+        Console.Error.WriteLine($"{location}: error {code}: {message}")
+
+    let private runFileCommand (argv: string array) =
+        let command = argv[0]
+        let files = ResizeArray<string>()
+        let mutable projectDirectory: string option = None
+        let mutable capabilities = Set.empty<string>
+        let mutable json = false
+        let mutable write = false
+        let mutable checkOnly = false
+        let mutable problem: string option = None
+        let mutable index = 1
+        while index < argv.Length && problem.IsNone do
+            match argv[index] with
+            | "--project" when index + 1 < argv.Length ->
+                index <- index + 1
+                projectDirectory <- Some argv[index]
+            | "--allow" when index + 1 < argv.Length ->
+                index <- index + 1
+                capabilities <- Set.union capabilities (argv[index].Split([| ',' |], StringSplitOptions.RemoveEmptyEntries) |> Array.map (fun item -> item.Trim()) |> Set.ofArray)
+            | "--json" -> json <- true
+            | "--write" when command = "fmt" -> write <- true
+            | "--check" when command = "fmt" -> checkOnly <- true
+            | "--help" | "-h" -> problem <- Some ""
+            | flag when flag.StartsWith("-", StringComparison.Ordinal) -> problem <- Some($"Unknown option '{flag}' for '{command}'.")
+            | file -> files.Add file
+            index <- index + 1
+        if problem.IsNone && files.Count = 0 then problem <- Some($"'{command}' needs at least one .flow file.")
+        if problem.IsNone then
+            for file in files do
+                if problem.IsNone && not (File.Exists file) then problem <- Some($"File not found: {file}")
+        match problem with
+        | Some message ->
+            if message <> "" then Console.Error.WriteLine(message)
+            Console.Error.WriteLine(fileUsage)
+            if message = "" then 0 else 2
+        | None ->
+            let temporary = projectDirectory.IsNone
+            let directory = projectDirectory |> Option.defaultWith (fun () -> Path.Combine(Path.GetTempPath(), "agentlang-" + Guid.NewGuid().ToString("N")))
+            try
+                let engine = Runtime.Engine(directory, capabilities, fileSystemMode = FileSystemMode.Virtual)
+                let flowArgs (source: string) =
+                    let args = newArgs ()
+                    args["frontend"] <- jsonString "flow"
+                    args["syntaxVersion"] <- JsonValue.Create(2)
+                    args["source"] <- jsonString source
+                    args
+                if command = "fmt" then
+                    let mutable exitCode = 0
+                    for file in files do
+                        let source = File.ReadAllText file
+                        let response = engine.Dispatch("format", flowArgs source)
+                        if not (response["ok"].GetValue<bool>()) then
+                            printDiagnostic file (source.Split('\n')) response
+                            exitCode <- 1
+                        else
+                            // Files end with a newline; the engine's canonical text does not.
+                            let formatted = (response["data"]["source"]).GetValue<string>().TrimEnd('\n') + "\n"
+                            if checkOnly then
+                                if formatted <> source then
+                                    Console.Error.WriteLine($"{file}: not canonical (run agentlang fmt --write)")
+                                    exitCode <- 1
+                            elif write then
+                                if formatted <> source then
+                                    File.WriteAllText(file, formatted, UTF8Encoding(false))
+                                    Console.WriteLine($"formatted {file}")
+                            else Console.Write(formatted)
+                    exitCode
+                else
+                    let mutable defined = true
+                    for file in files do
+                        let source = File.ReadAllText file
+                        let response = engine.Dispatch("define", flowArgs source)
+                        if not (response["ok"].GetValue<bool>()) then
+                            printDiagnostic file (source.Split('\n')) response
+                            defined <- false
+                    if not defined then 1
+                    elif command = "check" then
+                        if not json then Console.WriteLine($"ok: {files.Count} file(s) checked")
+                        0
+                    else
+                        let response = engine.Dispatch("test-all", newArgs ())
+                        if json then Console.WriteLine(response.ToJsonString())
+                        if not (response["ok"].GetValue<bool>()) then
+                            printDiagnostic files[0] [||] response
+                            1
+                        else
+                            let data = response["data"]
+                            let results = data["results"].AsArray()
+                            if not json then
+                                for result in results do
+                                    let name = result["word"].GetValue<string>() + "/" + result["name"].GetValue<string>()
+                                    if result["passed"].GetValue<bool>() then Console.WriteLine($"PASS {name}")
+                                    else
+                                        let field (key: string) = if isNull result[key] then "" else result[key].ToJsonString()
+                                        let text (key: string) = if isNull result[key] then "" else result[key].GetValue<string>()
+                                        let errorCode = text "errorCode"
+                                        let code = if errorCode = "" then "" else " [" + errorCode + "]"
+                                        let expected = field "expected"
+                                        let actual = field "actual"
+                                        let message = text "message"
+                                        Console.WriteLine("FAIL " + name + code)
+                                        Console.WriteLine("     expected " + expected)
+                                        Console.WriteLine("     actual   " + actual)
+                                        if message <> "" then Console.WriteLine("     " + message)
+                            let summary = data["testSummary"]
+                            let passed = summary["passed"].GetValue<int>()
+                            let failed = summary["failed"].GetValue<int>()
+                            if not json then Console.WriteLine($"{passed} passed, {failed} failed")
+                            if failed = 0 && passed > 0 then 0 else 1
+            finally
+                if temporary && Directory.Exists directory then
+                    try Directory.Delete(directory, true) with _ -> ()
+
+    let private runClassic (argv: string array) =
         Console.InputEncoding <- UTF8Encoding(false)
         Console.OutputEncoding <- UTF8Encoding(false)
         let mutable projectDirectory = Environment.CurrentDirectory
@@ -605,3 +768,11 @@ Human REPL commands:
                 | None ->
                     runRepl engine frontend syntaxVersion
                     0
+
+    [<EntryPoint>]
+    let main argv =
+        Console.InputEncoding <- UTF8Encoding(false)
+        Console.OutputEncoding <- UTF8Encoding(false)
+        match argv |> Array.tryHead with
+        | Some("test" | "check" | "fmt") -> runFileCommand argv
+        | _ -> runClassic argv
