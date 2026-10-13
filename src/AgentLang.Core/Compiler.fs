@@ -80,6 +80,8 @@ module Compiler =
         | "instant.before?" -> [ TString; TString ], [ TBool ]
         | "instant.add-days" -> [ TString; TInt ], [ TResult(TString, TString) ]
         | "string.concat" -> [ TString; TString ], [ TString ]
+        | "string.join" -> [ TList TString ], [ TString ]
+        | "string.html-escape" -> [ TString ], [ TString ]
         | "string.contains" | "string.starts-with" | "string.ends-with" -> [ TString; TString ], [ TBool ]
         | "string.length" -> [ TString ], [ TInt ]
         | "string.trim" | "string.to-lower" | "string.to-upper" -> [ TString ], [ TString ]
@@ -122,7 +124,7 @@ module Compiler =
               "string.guid-canonical?"; "string.guid-normalize"; "string.email-address-valid?"
               "int.add-checked"; "int.multiply-checked"; "int.scale-ratio-toward-zero"
               "instant.parse-utc"; "instant.is-canonical-utc?"; "instant.before?"; "instant.add-days"
-              "string.concat"; "string.contains"; "string.starts-with"; "string.ends-with"
+              "string.concat"; "string.join"; "string.html-escape"; "string.contains"; "string.starts-with"; "string.ends-with"
               "string.length"; "string.trim"; "string.to-lower"; "string.to-upper"; "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"
               "float.round"; "int.to-string"; "float.to-string"; "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
               "dup"; "drop"; "swap"; "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write" ]
@@ -138,6 +140,8 @@ module Compiler =
                   Revision = 1
                   Documentation =
                     match name with
+                    | "string.join" -> "Concatenates every String in List<String> in order with one copy of each part; an empty list returns the empty String."
+                    | "string.html-escape" -> "Replaces exactly & < > \" ' with &amp; &lt; &gt; &quot; &#39; (Rails ERB::Util.html_escape); every other UTF-16 code unit is unchanged."
                     | "string.guid-canonical?" -> "Returns true only for lower-case canonical D-format GUID text."
                     | "string.guid-normalize" -> "Accepts Guid.TryParse D, N, B, P, and X forms with surrounding whitespace; returns lower-case D-format text, or INVALID_GUID."
                     | "string.email-address-valid?" -> "Checks an ASCII address policy: local segments use letters, digits, underscore, percent, plus, or hyphen and are separated by single dots with no empty segments; the domain has at least two labels with alphanumeric ends and internal hyphens. Rejects whitespace and values over 254 characters."

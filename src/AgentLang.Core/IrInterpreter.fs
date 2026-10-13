@@ -133,7 +133,7 @@ module IrInterpreter =
             "string.guid-canonical?"; "string.guid-normalize"; "string.email-address-valid?"
             "int.add-checked"; "int.multiply-checked"; "int.scale-ratio-toward-zero"
             "instant.parse-utc"; "instant.is-canonical-utc?"; "instant.before?"; "instant.add-days"
-            "string.concat"; "string.contains"; "string.starts-with"; "string.ends-with"
+            "string.concat"; "string.join"; "string.html-escape"; "string.contains"; "string.starts-with"; "string.ends-with"
             "string.length"; "string.trim"; "string.to-lower"; "string.to-upper"
             "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"; "float.round"
             "int.to-string"; "float.to-string"
@@ -1060,6 +1060,26 @@ module IrInterpreter =
                       Depth = max 1 typeDepth
                       EstimatedOutputBytes = estimatedBytes }
                 [ RuntimeString(left + right) ]
+            | "string.join", [ RuntimeList(IrString, parts) ] ->
+                let texts =
+                    parts |> List.map (function
+                        | RuntimeString text -> text
+                        | _ -> fail "RUNTIME_INTERNAL_TYPE" "string.join received a non-String part." (Some currentWord) (site |> Option.bind sourceSpan) [ "String" ] [])
+                let typeDepth, typeBytes = typeFootprint currentWord site IrString
+                let units = texts |> List.sumBy (fun text -> int64 text.Length)
+                checkValueMetrics currentWord site
+                    { ExpandedNodes = 1L
+                      Depth = max 1 typeDepth
+                      EstimatedOutputBytes = saturatingAdd maxRuntimeValueOutputBytes (64L + typeBytes) (units * 6L) }
+                [ RuntimeString(String.concat "" texts) ]
+            | "string.html-escape", [ RuntimeString value ] ->
+                let escaped = TrustedValues.htmlEscape value
+                let typeDepth, typeBytes = typeFootprint currentWord site IrString
+                checkValueMetrics currentWord site
+                    { ExpandedNodes = 1L
+                      Depth = max 1 typeDepth
+                      EstimatedOutputBytes = saturatingAdd maxRuntimeValueOutputBytes (64L + typeBytes) (int64 escaped.Length * 6L) }
+                [ RuntimeString escaped ]
             | "string.contains", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.Contains(sub, StringComparison.Ordinal)) ]
             | "string.starts-with", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.StartsWith(sub, StringComparison.Ordinal)) ]
             | "string.ends-with", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.EndsWith(sub, StringComparison.Ordinal)) ]

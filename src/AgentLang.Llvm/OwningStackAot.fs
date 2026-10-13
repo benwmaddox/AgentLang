@@ -1635,7 +1635,8 @@ module OwningStackAot =
                   "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
                   "int.to-float"; "int.to-string"; "float.to-int"; "float.round"; "float.to-string"
                   "equals"; "bool.and"; "bool.or"; "bool.not"; "dup"; "drop"; "swap"
-                  "string.concat"; "string.length" ]
+                  "string.concat"; "string.length"; "string.join"; "string.html-escape"
+                  "string.contains"; "string.starts-with"; "string.ends-with" ]
 
         let validatePrimitive owner span (call: IrResolvedCall) operation =
             requireEffectFree owner call.ResolvedDeclaredEffects
@@ -1664,6 +1665,9 @@ module OwningStackAot =
                 | "swap", [ first; second ], [ secondResult; firstResult ] -> second = secondResult && first = firstResult
                 | "string.concat", [ IrString; IrString ], [ IrString ] -> true
                 | "string.length", [ IrString ], [ IrInt ] -> true
+                | "string.join", [ IrList IrString ], [ IrString ] -> true
+                | "string.html-escape", [ IrString ], [ IrString ] -> true
+                | ("string.contains" | "string.starts-with" | "string.ends-with"), [ IrString; IrString ], [ IrBool ] -> true
                 | _ -> false
             if not valid then
                 Diagnostics.raiseError "IR_OWNING_STACK_PRIMITIVE_SIGNATURE"
@@ -4006,6 +4010,11 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_string_length(ptr, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_plan(ptr, i32, i32, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_string_join_plan(ptr, i32, i32, i32, ptr, ptr, ptr)")
+        writer.Line("declare i32 @al_owning_string_join_write(ptr, i32, i32, i32, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_string_html_escape_plan(ptr, i32, i32, i32, ptr, ptr, ptr)")
+        writer.Line("declare i32 @al_owning_string_html_escape_write(ptr, i32, i32, i32, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_string_find(ptr, i32, i32, i32, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_float_format(ptr, i64, ptr, ptr, i32)")
         writer.Line("declare i32 @al_owning_ascii_string_write(ptr, i32, i32, ptr, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_int_format(ptr, i64, ptr, ptr, i32)")
@@ -5520,6 +5529,46 @@ module OwningStackAot =
                                 emitReserve w resultEnd reserveError failBody
                                 let writeStatus = w.Fresh "string.concat.write.status"
                                 w.Inst($"{writeStatus} = call i32 @al_owning_string_concat_write(ptr %%ctx, i32 {cursor}, i32 {resultExtent}, i32 {leftOffset}, i32 {left.Extent}, i32 {rightOffset}, i32 {right.Extent}, i32 {typeId IrString}, i32 {concatError})")
+                                emitStatusResult w writeStatus failBody
+                                emitUpdateLive w resultPayload "0" failBody
+                                stack <- push prefix IrString cursor resultExtent resultPayload resultEnd
+                            | ("string.contains" | "string.starts-with" | "string.ends-with") as operation, [ haystack; needle ] ->
+                                let mode = match operation with "string.contains" -> 0 | "string.starts-with" -> 1 | _ -> 2
+                                let found = w.Fresh $"{operation}.found"
+                                w.Inst($"{found} = alloca i32, align 4")
+                                let errorId = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to search a verified String." currentOwner instructionSpan [] []
+                                let status = w.Fresh $"{operation}.status"
+                                w.Inst($"{status} = call i32 @al_owning_string_find(ptr %%ctx, i32 {haystack.Offset}, i32 {haystack.Extent}, i32 {needle.Offset}, i32 {needle.Extent}, i32 {mode}, i32 {errorId}, ptr {found})")
+                                emitStatusResult w status failBody
+                                let loaded = w.Fresh $"{operation}.value"
+                                w.Inst($"{loaded} = load i32, ptr {found}, align 4")
+                                let asInt = w.Fresh $"{operation}.int"
+                                w.Inst($"{asInt} = zext i32 {loaded} to i64")
+                                emitScalarResult IrBool asInt
+                            | ("string.join" | "string.html-escape") as operation, [ value ] ->
+                                // Both produce one exact String: plan the size, reserve, then copy
+                                // each source code unit once (escape entities expand in place).
+                                let symbol = if operation = "string.join" then "string_join" else "string_html_escape"
+                                let cursor = emitContextLoad w "%ctx" 2
+                                let units = w.Fresh $"{operation}.units"
+                                let resultPayloadPointer = w.Fresh $"{operation}.payload.pointer"
+                                let resultExtentPointer = w.Fresh $"{operation}.extent.pointer"
+                                w.Inst($"{units} = alloca i32, align 4")
+                                w.Inst($"{resultPayloadPointer} = alloca i32, align 4")
+                                w.Inst($"{resultExtentPointer} = alloca i32, align 4")
+                                let sizeError = addDiagnostic "RUNTIME_STRING_LENGTH_OVERFLOW" $"{operation} result exceeds the bounded UTF-16 code-unit range." currentOwner instructionSpan [] []
+                                let planStatus = w.Fresh $"{operation}.plan.status"
+                                w.Inst($"{planStatus} = call i32 @al_owning_{symbol}_plan(ptr %%ctx, i32 {value.Offset}, i32 {value.Extent}, i32 {sizeError}, ptr {units}, ptr {resultPayloadPointer}, ptr {resultExtentPointer})")
+                                emitStatusResult w planStatus failBody
+                                let resultPayload = w.Fresh $"{operation}.payload"
+                                let resultExtent = w.Fresh $"{operation}.extent"
+                                w.Inst($"{resultPayload} = load i32, ptr {resultPayloadPointer}, align 4")
+                                w.Inst($"{resultExtent} = load i32, ptr {resultExtentPointer}, align 4")
+                                let resultEnd = emitOffset w cursor resultExtent
+                                let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" $"Unable to reserve exact {operation} output." currentOwner instructionSpan [] []
+                                emitReserve w resultEnd reserveError failBody
+                                let writeStatus = w.Fresh $"{operation}.write.status"
+                                w.Inst($"{writeStatus} = call i32 @al_owning_{symbol}_write(ptr %%ctx, i32 {cursor}, i32 {resultExtent}, i32 {value.Offset}, i32 {value.Extent}, i32 {typeId IrString}, i32 {sizeError})")
                                 emitStatusResult w writeStatus failBody
                                 emitUpdateLive w resultPayload "0" failBody
                                 stack <- push prefix IrString cursor resultExtent resultPayload resultEnd

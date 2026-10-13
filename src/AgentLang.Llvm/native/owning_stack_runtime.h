@@ -231,6 +231,32 @@ int32_t al_owning_string_concat_write(
     uint32_t destination_extent_bytes, uint32_t left_offset,
     uint32_t left_extent_bytes, uint32_t right_offset,
     uint32_t right_extent_bytes, uint32_t type_id, uint32_t error_id);
+int32_t al_owning_string_join_plan(al_owning_stack_context *ctx,
+                                   uint32_t list_offset,
+                                   uint32_t list_extent_bytes,
+                                   uint32_t error_id, uint32_t *out_code_units,
+                                   uint32_t *out_payload_bytes,
+                                   uint32_t *out_extent_bytes);
+int32_t al_owning_string_join_write(al_owning_stack_context *ctx,
+                                    uint32_t destination_offset,
+                                    uint32_t destination_extent_bytes,
+                                    uint32_t list_offset,
+                                    uint32_t list_extent_bytes,
+                                    uint32_t type_id, uint32_t error_id);
+int32_t al_owning_string_html_escape_plan(
+    al_owning_stack_context *ctx, uint32_t offset, uint32_t extent_bytes,
+    uint32_t error_id, uint32_t *out_code_units, uint32_t *out_payload_bytes,
+    uint32_t *out_extent_bytes);
+int32_t al_owning_string_html_escape_write(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    uint32_t destination_extent_bytes, uint32_t offset, uint32_t extent_bytes,
+    uint32_t type_id, uint32_t error_id);
+int32_t al_owning_string_find(al_owning_stack_context *ctx,
+                              uint32_t haystack_offset,
+                              uint32_t haystack_extent_bytes,
+                              uint32_t needle_offset,
+                              uint32_t needle_extent_bytes, uint32_t mode,
+                              uint32_t error_id, uint32_t *out_found);
 int32_t al_owning_float_format(al_owning_stack_context *ctx, uint64_t bits,
                                uint8_t *ascii32, uint32_t *out_length,
                                uint32_t error_id);

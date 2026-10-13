@@ -170,6 +170,33 @@ the authoring syntax and library qualification rules are unchanged. See the
 [native typing scope](NATIVE-NOMINALS-IMPLEMENTATION.md) and
 [report 174](../reports/174-native-refined-string.md) for the original refinement slice.
 
+## Refined literals and Html
+
+A refined type is a library type, not a compiler feature. When a literal is
+passed straight to a refined constructor (`Html.new("<li>")`), the compiler runs
+the type's validator at compile time through the interpreter. An invalid literal
+fails the build with `REFINEMENT_LITERAL_INVALID`. Non-literal construction is
+still checked at run time (`REFINEMENT_FAILED`). Validators that would perform an
+effect are left to the run-time check.
+
+`string.html-escape` replaces exactly `& < > " '` with `&amp; &lt; &gt; &quot;
+&#39;`, matching Rails `ERB::Util.html_escape` byte for byte. `string.join`
+concatenates a `List<String>`, sizing the result once and copying each part
+once. An `Html` type is library code:
+
+```flow
+type Html : String {
+    validate html.safe?
+}
+
+fn html.escape(text: String) -> Html {
+    effects none
+    Html.new(string.html-escape(text))
+}
+```
+
+See [report 262](../reports/262-string-join-html-escape.md).
+
 ## compact { }
 
 `compact { ... }` is an expression block that must produce exactly one value

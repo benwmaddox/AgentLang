@@ -50,7 +50,9 @@ module internal ArenaLifetime =
               "int.to-string"
               "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
               "equals"; "bool.and"; "bool.or"; "bool.not"
-              "dup"; "drop"; "swap"; "string.concat"; "string.length" ]
+              "dup"; "drop"; "swap"; "string.concat"; "string.length"
+              "string.join"; "string.html-escape"
+              "string.contains"; "string.starts-with"; "string.ends-with" ]
 
     let private combineStates (left: AbstractState) (right: AbstractState) =
         let stack = List.map2 Set.union left.Stack right.Stack

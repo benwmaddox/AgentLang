@@ -41,8 +41,12 @@ relocation, and removes the instruction limit from every backend.
 [Report261](../reports/261-compact-blocks.md) adds `compact { }`: one result per
 block, compiler-proven relocation in the owning AOT backend, and precise
 arena-lifetime modeling. A compact map callback cut peak arena use by 65% and
-let the map build its list in place. Next: `string.join` with `Text`/`Html`,
-then proven structural access and the message partial.
+let the map build its list in place.
+[Report262](../reports/262-string-join-html-escape.md) adds single-copy
+`string.join`, Rails-exact `string.html-escape` and native string search, makes
+`Html` a library refined type, and validates refined literals at compile time.
+Next: native list building (`list.append`/`list.concat`) so each view level joins
+once, then proven structural access and the message partial.
 Then: compiler-proven structural access
 measured with the same method, then native message writes. Keep locks and
 cross-worker dependencies rare, and discuss any new one before adopting it.

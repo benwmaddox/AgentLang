@@ -17,6 +17,20 @@ module TrustedValues =
         || (value >= 'a' && value <= 'z')
         || (value >= '0' && value <= '9')
 
+    /// Rails ERB::Util.html_escape: replaces exactly & < > " ' and leaves every
+    /// other UTF-16 code unit (including surrogates) unchanged.
+    let htmlEscape (value: string) =
+        let builder = Text.StringBuilder(value.Length)
+        for character in value do
+            match character with
+            | '&' -> builder.Append("&amp;") |> ignore
+            | '<' -> builder.Append("&lt;") |> ignore
+            | '>' -> builder.Append("&gt;") |> ignore
+            | '"' -> builder.Append("&quot;") |> ignore
+            | '\'' -> builder.Append("&#39;") |> ignore
+            | other -> builder.Append(other) |> ignore
+        builder.ToString()
+
     let guidCanonical (value: string) =
         if isNull value then false
         else

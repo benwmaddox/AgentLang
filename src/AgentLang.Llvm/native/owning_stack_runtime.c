@@ -2682,6 +2682,338 @@ int32_t al_owning_string_concat_write(
   return 0;
 }
 
+static uint32_t al_owning_read_u16_le(const uint8_t *bytes, uint32_t offset) {
+  return (uint32_t)bytes[offset] | ((uint32_t)bytes[offset + 1u] << 8);
+}
+/* A packed List(String) on the owning stack: u32 count, four zero bytes, then
+ * each String element back to back. The walk is exact: the last element must
+ * end at the list owner end. */
+static int32_t al_owning_string_list_walk(
+    al_owning_stack_context *ctx, uint32_t list_offset,
+    uint32_t list_extent_bytes, uint32_t error_id, uint32_t *out_count,
+    uint64_t *out_total_units) {
+  al_owning_scan_view view;
+  uint32_t owner_end;
+  uint32_t count;
+  uint32_t cursor;
+  uint32_t index;
+  uint64_t total_units = 0ull;
+  if ((list_offset & 7u) != 0u || list_offset > ctx->cursor_bytes ||
+      list_extent_bytes > ctx->cursor_bytes - list_offset ||
+      list_extent_bytes < 8u) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          list_extent_bytes, ctx->cursor_bytes);
+    return 0;
+  }
+  owner_end = list_offset + list_extent_bytes;
+  count = al_owning_read_u32_le(ctx->stack_data, list_offset);
+  if (ctx->stack_data[list_offset + 4u] != 0u ||
+      ctx->stack_data[list_offset + 5u] != 0u ||
+      ctx->stack_data[list_offset + 6u] != 0u ||
+      ctx->stack_data[list_offset + 7u] != 0u) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 8u,
+                          list_extent_bytes);
+    return 0;
+  }
+  view.ctx = ctx;
+  view.bytes = ctx->stack_data;
+  view.length = owner_end;
+  view.error_id = error_id;
+  view.external = 0;
+  cursor = list_offset + 8u;
+  for (index = 0u; index < count; ++index) {
+    uint32_t units;
+    uint32_t payload;
+    uint32_t extent;
+    if (!al_owning_scan_string(&view, cursor, owner_end, &units, &payload,
+                               &extent))
+      return 0;
+    total_units += units;
+    cursor += extent;
+  }
+  if (cursor != owner_end) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, cursor,
+                          owner_end);
+    return 0;
+  }
+  *out_count = count;
+  *out_total_units = total_units;
+  return 1;
+}
+
+static int32_t al_owning_string_result_plan(al_owning_stack_context *ctx,
+                                            uint64_t units_wide,
+                                            uint32_t error_id,
+                                            uint32_t *out_code_units,
+                                            uint32_t *out_payload_bytes,
+                                            uint32_t *out_extent_bytes) {
+  uint64_t payload_wide = 8ull + units_wide * 2ull;
+  uint64_t extent_wide = (payload_wide + 7ull) & ~7ull;
+  if (units_wide > INT32_MAX || payload_wide > UINT32_MAX ||
+      extent_wide > UINT32_MAX) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id,
+                          UINT32_MAX, ctx->stack_capacity_bytes);
+    return 0;
+  }
+  *out_code_units = (uint32_t)units_wide;
+  *out_payload_bytes = (uint32_t)payload_wide;
+  *out_extent_bytes = (uint32_t)extent_wide;
+  return 1;
+}
+
+/* Checks an exact, aligned, reserved destination that does not overlap the
+ * source owner range, then writes the String header. */
+static int32_t al_owning_string_result_begin(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    uint32_t destination_extent_bytes, uint32_t planned_extent,
+    uint32_t code_units, uint32_t source_offset, uint32_t source_extent_bytes,
+    uint32_t error_id) {
+  if (planned_extent != destination_extent_bytes ||
+      (destination_offset & 7u) != 0u ||
+      destination_offset > ctx->cursor_bytes ||
+      destination_extent_bytes > ctx->cursor_bytes - destination_offset ||
+      (destination_offset < source_offset + source_extent_bytes &&
+       source_offset < destination_offset + destination_extent_bytes)) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          planned_extent, destination_extent_bytes);
+    return 0;
+  }
+  al_owning_write_u32_le(ctx->stack_data + destination_offset, 0u, code_units);
+  ctx->stack_data[destination_offset + 4u] = 0u;
+  ctx->stack_data[destination_offset + 5u] = 0u;
+  ctx->stack_data[destination_offset + 6u] = 0u;
+  ctx->stack_data[destination_offset + 7u] = 0u;
+  return 1;
+}
+
+static void al_owning_string_result_finish(al_owning_stack_context *ctx,
+                                           uint32_t destination_offset,
+                                           uint32_t cursor, uint32_t payload,
+                                           uint32_t extent, uint32_t type_id) {
+  while (cursor < destination_offset + extent)
+    ctx->stack_data[cursor++] = 0u;
+  al_owning_mark(ctx, destination_offset, extent, 1, 0);
+  ctx->deep_copy_bytes += extent;
+  al_owning_event(ctx, AL_OWNING_EVENT_ALLOCATE, type_id, destination_offset,
+                  extent, payload, 0u, 0u, 0u);
+}
+
+int32_t al_owning_string_join_plan(al_owning_stack_context *ctx,
+                                   uint32_t list_offset,
+                                   uint32_t list_extent_bytes,
+                                   uint32_t error_id, uint32_t *out_code_units,
+                                   uint32_t *out_payload_bytes,
+                                   uint32_t *out_extent_bytes) {
+  uint32_t count;
+  uint64_t units_wide;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (out_code_units == 0 || out_payload_bytes == 0 || out_extent_bytes == 0) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
+    return 1;
+  }
+  if (!al_owning_string_list_walk(ctx, list_offset, list_extent_bytes,
+                                  error_id, &count, &units_wide) ||
+      !al_owning_string_result_plan(ctx, units_wide, error_id, out_code_units,
+                                    out_payload_bytes, out_extent_bytes))
+    return 1;
+  return 0;
+}
+
+/* One copy per part: every String element's UTF-16 data is copied once into
+ * the exact result reserved by the plan. */
+int32_t al_owning_string_join_write(al_owning_stack_context *ctx,
+                                    uint32_t destination_offset,
+                                    uint32_t destination_extent_bytes,
+                                    uint32_t list_offset,
+                                    uint32_t list_extent_bytes,
+                                    uint32_t type_id, uint32_t error_id) {
+  uint32_t code_units;
+  uint32_t payload;
+  uint32_t extent;
+  uint32_t count;
+  uint32_t source;
+  uint32_t cursor;
+  uint32_t index;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (al_owning_string_join_plan(ctx, list_offset, list_extent_bytes, error_id,
+                                 &code_units, &payload, &extent) != 0)
+    return 1;
+  count = al_owning_read_u32_le(ctx->stack_data, list_offset);
+  if (!al_owning_string_result_begin(ctx, destination_offset,
+                                     destination_extent_bytes, extent,
+                                     code_units, list_offset,
+                                     list_extent_bytes, error_id))
+    return 1;
+  cursor = destination_offset + 8u;
+  source = list_offset + 8u;
+  for (index = 0u; index < count; ++index) {
+    const uint32_t units = al_owning_read_u32_le(ctx->stack_data, source);
+    const uint32_t data_bytes = units * 2u;
+    al_owning_bytes_copy(ctx->stack_data + cursor,
+                         ctx->stack_data + source + 8u, data_bytes);
+    cursor += data_bytes;
+    source += (8u + data_bytes + 7u) & ~7u;
+  }
+  al_owning_string_result_finish(ctx, destination_offset, cursor, payload,
+                                 extent, type_id);
+  return 0;
+}
+
+/* Rails ERB::Util.html_escape: exactly & < > " ' are replaced; every other
+ * UTF-16 code unit, including unpaired surrogates, is copied unchanged. */
+static uint32_t al_owning_html_escape_width(uint32_t unit) {
+  switch (unit) {
+  case 0x26u: /* &amp; */
+  case 0x27u: /* &#39; */
+    return 5u;
+  case 0x3Cu: /* &lt; */
+  case 0x3Eu: /* &gt; */
+    return 4u;
+  case 0x22u: /* &quot; */
+    return 6u;
+  default:
+    return 1u;
+  }
+}
+
+static const char *al_owning_html_escape_entity(uint32_t unit) {
+  switch (unit) {
+  case 0x26u:
+    return "&amp;";
+  case 0x27u:
+    return "&#39;";
+  case 0x3Cu:
+    return "&lt;";
+  case 0x3Eu:
+    return "&gt;";
+  case 0x22u:
+    return "&quot;";
+  default:
+    return 0;
+  }
+}
+
+int32_t al_owning_string_html_escape_plan(
+    al_owning_stack_context *ctx, uint32_t offset, uint32_t extent_bytes,
+    uint32_t error_id, uint32_t *out_code_units, uint32_t *out_payload_bytes,
+    uint32_t *out_extent_bytes) {
+  uint32_t units;
+  uint32_t ignored_payload;
+  uint32_t index;
+  uint64_t escaped_units = 0ull;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (out_code_units == 0 || out_payload_bytes == 0 || out_extent_bytes == 0) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
+    return 1;
+  }
+  if (!al_owning_string_scan_stack_exact(ctx, offset, extent_bytes, error_id,
+                                         &units, &ignored_payload))
+    return 1;
+  for (index = 0u; index < units; ++index)
+    escaped_units += al_owning_html_escape_width(al_owning_read_u16_le(
+        ctx->stack_data, offset + 8u + index * 2u));
+  if (!al_owning_string_result_plan(ctx, escaped_units, error_id,
+                                    out_code_units, out_payload_bytes,
+                                    out_extent_bytes))
+    return 1;
+  return 0;
+}
+
+int32_t al_owning_string_html_escape_write(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    uint32_t destination_extent_bytes, uint32_t offset, uint32_t extent_bytes,
+    uint32_t type_id, uint32_t error_id) {
+  uint32_t code_units;
+  uint32_t payload;
+  uint32_t extent;
+  uint32_t units;
+  uint32_t cursor;
+  uint32_t index;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (al_owning_string_html_escape_plan(ctx, offset, extent_bytes, error_id,
+                                        &code_units, &payload, &extent) != 0)
+    return 1;
+  units = al_owning_read_u32_le(ctx->stack_data, offset);
+  if (!al_owning_string_result_begin(ctx, destination_offset,
+                                     destination_extent_bytes, extent,
+                                     code_units, offset, extent_bytes,
+                                     error_id))
+    return 1;
+  cursor = destination_offset + 8u;
+  for (index = 0u; index < units; ++index) {
+    const uint32_t source = offset + 8u + index * 2u;
+    const char *entity = al_owning_html_escape_entity(
+        al_owning_read_u16_le(ctx->stack_data, source));
+    if (entity == 0) {
+      ctx->stack_data[cursor] = ctx->stack_data[source];
+      ctx->stack_data[cursor + 1u] = ctx->stack_data[source + 1u];
+      cursor += 2u;
+    } else {
+      while (*entity != '\0') {
+        ctx->stack_data[cursor] = (uint8_t)*entity++;
+        ctx->stack_data[cursor + 1u] = 0u;
+        cursor += 2u;
+      }
+    }
+  }
+  al_owning_string_result_finish(ctx, destination_offset, cursor, payload,
+                                 extent, type_id);
+  return 0;
+}
+
+/* Ordinal UTF-16 code-unit search: mode 0 = contains, 1 = starts-with,
+ * 2 = ends-with. An empty needle always matches, as in .NET Ordinal. */
+int32_t al_owning_string_find(al_owning_stack_context *ctx,
+                              uint32_t haystack_offset,
+                              uint32_t haystack_extent_bytes,
+                              uint32_t needle_offset,
+                              uint32_t needle_extent_bytes, uint32_t mode,
+                              uint32_t error_id, uint32_t *out_found) {
+  uint32_t haystack_units;
+  uint32_t needle_units;
+  uint32_t ignored_payload;
+  uint32_t first;
+  uint32_t last;
+  uint32_t start;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (out_found == 0 || mode > 2u) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, mode, 0u);
+    return 1;
+  }
+  if (!al_owning_string_scan_stack_exact(ctx, haystack_offset,
+                                         haystack_extent_bytes, error_id,
+                                         &haystack_units, &ignored_payload) ||
+      !al_owning_string_scan_stack_exact(ctx, needle_offset,
+                                         needle_extent_bytes, error_id,
+                                         &needle_units, &ignored_payload))
+    return 1;
+  *out_found = 0u;
+  if (needle_units > haystack_units)
+    return 0;
+  last = haystack_units - needle_units;
+  first = mode == 2u ? last : 0u;
+  if (mode == 1u)
+    last = 0u;
+  for (start = first; start <= last; ++start) {
+    const uint8_t *candidate =
+        ctx->stack_data + haystack_offset + 8u + start * 2u;
+    const uint8_t *needle = ctx->stack_data + needle_offset + 8u;
+    uint32_t index = 0u;
+    while (index < needle_units * 2u && candidate[index] == needle[index])
+      ++index;
+    if (index == needle_units * 2u) {
+      *out_found = 1u;
+      return 0;
+    }
+  }
+  return 0;
+}
+
 int32_t al_owning_float_format(al_owning_stack_context *ctx, uint64_t bits,
                                uint8_t *ascii32, uint32_t *out_length,
                                uint32_t error_id) {

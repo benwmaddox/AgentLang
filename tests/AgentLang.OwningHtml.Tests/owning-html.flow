@@ -1,0 +1,142 @@
+type Html : String {
+    validate html.safe?
+}
+
+fn html.safe?(value: String) -> Bool {
+    effects none
+    doc "Example markup policy: rejects script tags and javascript: URLs. A policy example, not a sanitizer."
+
+    bool.not(bool.or(string.contains(value, "<script"), string.contains(value, "javascript:")))
+}
+
+fn html.escape(text: String) -> Html {
+    effects none
+    doc "Escapes exactly & < > \" ' like Rails ERB::Util.html_escape."
+
+    Html.new(string.html-escape(text))
+}
+
+fn html.text(value: Html) -> String {
+    effects none
+    Html.value(value)
+}
+
+fn html.join(parts: List<Html>) -> Html {
+    effects none
+    Html.new(string.join(parts.map(html.text)))
+}
+
+fn native.html.escape-text(text: String) -> String {
+    effects none
+    string.html-escape(text)
+}
+
+fn native.html.join-text(parts: List<String>) -> String {
+    effects none
+    string.join(parts)
+}
+
+fn native.html.contains(value: String, part: String) -> Bool {
+    effects none
+    string.contains(value, part)
+}
+
+fn native.html.starts-with(value: String, part: String) -> Bool {
+    effects none
+    string.starts-with(value, part)
+}
+
+fn native.html.ends-with(value: String, part: String) -> Bool {
+    effects none
+    string.ends-with(value, part)
+}
+
+fn native.html.escape-all(texts: List<String>) -> String {
+    effects none
+    html.text(html.join(texts.map(html.escape)))
+}
+
+fn native.html.row(name: String) -> String {
+    effects none
+    compact {
+        let open = html.text(Html.new("<li class=\"row\">"))
+        let body = html.text(html.escape(name))
+        string.concat(string.concat(open, body), "</li>")
+    }
+}
+
+fn native.html.page(names: List<String>) -> String {
+    effects none
+    let rows = string.join(names.map(native.html.row))
+    string.concat(string.concat("<ul>", rows), "</ul>")
+}
+
+fn native.html.trusted(text: String) -> String {
+    effects none
+    html.text(Html.new(text))
+}
+
+test native.html.escape-text/less-than {
+    native.html.escape-text("a<b")
+    => value "a&lt;b"
+}
+
+test native.html.join-text/two {
+    native.html.join-text(list.singleton<String>("a"))
+    => value "a"
+}
+
+test native.html.row/name {
+    native.html.row("Tom & Jerry")
+    => value "<li class=\"row\">Tom &amp; Jerry</li>"
+}
+
+test native.html.trusted/plain {
+    native.html.trusted("<b>ok</b>")
+    => value "<b>ok</b>"
+}
+
+test native.html.escape-all/one {
+    native.html.escape-all(list.singleton<String>("<i>"))
+    => value "&lt;i&gt;"
+}
+
+test html.safe?/rejects-script {
+    html.safe?("<script>")
+    => value false
+}
+
+test html.escape/ampersand {
+    html.text(html.escape("a&b"))
+    => value "a&amp;b"
+}
+
+test html.text/plain {
+    html.text(Html.new("<p>"))
+    => value "<p>"
+}
+
+test html.join/one {
+    html.text(html.join(list.singleton<Html>(Html.new("<p>"))))
+    => value "<p>"
+}
+
+test native.html.contains/yes {
+    native.html.contains("abc", "b")
+    => value true
+}
+
+test native.html.starts-with/yes {
+    native.html.starts-with("abc", "a")
+    => value true
+}
+
+test native.html.ends-with/yes {
+    native.html.ends-with("abc", "c")
+    => value true
+}
+
+test native.html.page/one {
+    native.html.page(list.singleton<String>("<x>"))
+    => value "<ul><li class=\"row\">&lt;x&gt;</li></ul>"
+}

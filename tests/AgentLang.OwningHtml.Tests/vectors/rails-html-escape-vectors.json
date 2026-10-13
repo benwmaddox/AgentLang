@@ -1,0 +1,77 @@
+{
+  "source": "ActiveSupport 8.2.0.alpha ERB::Util.html_escape",
+  "vectors": [
+    {
+      "input": "",
+      "escaped": ""
+    },
+    {
+      "input": "plain text",
+      "escaped": "plain text"
+    },
+    {
+      "input": "&",
+      "escaped": "&amp;"
+    },
+    {
+      "input": "<",
+      "escaped": "&lt;"
+    },
+    {
+      "input": ">",
+      "escaped": "&gt;"
+    },
+    {
+      "input": "\"",
+      "escaped": "&quot;"
+    },
+    {
+      "input": "'",
+      "escaped": "&#39;"
+    },
+    {
+      "input": "<script>alert('x')</script>",
+      "escaped": "&lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt;"
+    },
+    {
+      "input": "a & b < c > d \" e ' f",
+      "escaped": "a &amp; b &lt; c &gt; d &quot; e &#39; f"
+    },
+    {
+      "input": "&amp; already escaped",
+      "escaped": "&amp;amp; already escaped"
+    },
+    {
+      "input": "&lt;&gt;&quot;&#39;",
+      "escaped": "&amp;lt;&amp;gt;&amp;quot;&amp;#39;"
+    },
+    {
+      "input": "café λ ü",
+      "escaped": "café λ ü"
+    },
+    {
+      "input": "🚀 rocket 𐐷",
+      "escaped": "🚀 rocket 𐐷"
+    },
+    {
+      "input": "tab\there\nnewline",
+      "escaped": "tab\there\nnewline"
+    },
+    {
+      "input": "`backtick` = and /slash",
+      "escaped": "`backtick` = and /slash"
+    },
+    {
+      "input": "&&&<<<>>>\"\"\"'''",
+      "escaped": "&amp;&amp;&amp;&lt;&lt;&lt;&gt;&gt;&gt;&quot;&quot;&quot;&#39;&#39;&#39;"
+    },
+    {
+      "input": "<div class=\"message\" data-id='7'>",
+      "escaped": "&lt;div class=&quot;message&quot; data-id=&#39;7&#39;&gt;"
+    },
+    {
+      "input": " nbsp   ls",
+      "escaped": " nbsp   ls"
+    }
+  ]
+}

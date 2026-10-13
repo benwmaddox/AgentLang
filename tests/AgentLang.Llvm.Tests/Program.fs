@@ -2684,8 +2684,7 @@ let private testOwningRefinedIntSlice () =
             If(
                 [ Call("drop", span "owning-unsupported-validator.agent" 2)
                   Push(LString "hello", span "owning-unsupported-validator.agent" 3)
-                  Push(LString "ell", span "owning-unsupported-validator.agent" 4)
-                  Call("string.contains", span "owning-unsupported-validator.agent" 4)
+                  Call("string.guid-canonical?", span "owning-unsupported-validator.agent" 4)
                   Call("drop", span "owning-unsupported-validator.agent" 5)
                   Push(LBool true, span "owning-unsupported-validator.agent" 6) ],
                 [ Call("drop", span "owning-unsupported-validator.agent" 6)

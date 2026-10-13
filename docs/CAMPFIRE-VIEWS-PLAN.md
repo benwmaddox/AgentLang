@@ -44,10 +44,13 @@ same placement.
 - The entry is never replayed to size output, because it may refresh a session.
   Language views produce the body string inside the single entry execution, so
   there is no measure-then-render replay.
-- **Safety is a type rule.** Distinct `Text` and `Html` values. Raw markup comes
-  only from compile-time literal template strings; runtime strings enter only
-  through one escaping function, checked byte-for-byte against Rails ERB
-  escaping for both text and attribute contexts.
+- **Safety is a type rule.** `Html` is a library refined type over `String`
+  (user decision 262), not a compiler built-in. Views take raw markup only from
+  literals, which are validated at compile time. Runtime strings enter through
+  `html.escape`, which matches Rails ERB escaping byte for byte (Rails uses the
+  same five-character rule for text and attributes). `Html.new` on a runtime
+  string is validated by the type's policy at run time. A lint restricting it in
+  view modules is open.
 - No new locks or cross-worker dependencies. The request stays on its worker.
 - Semantic IR stays authoritative. The interpreter implements the same semantics.
 - Each view milestone records structural locates per GET (Detailed profile).
@@ -73,9 +76,17 @@ same placement.
 1b. **`compact { }`** end to end: done in [report 261](../reports/261-compact-blocks.md).
    A compact map callback cut peak arena use by 65% and let the map build its
    list in place.
-2. **`string.join` and the `Text`/`Html` surface.** Sized single-copy join of a
-   string list, escaping, and literal-only raw markup. Prototype a synthetic
-   40 × 9.6 KB page at O2 and record µs per GET, copied bytes and arena peak.
+2. **`string.join` and the `Html` surface** (done, [report 262](../reports/262-string-join-html-escape.md)).
+   Single-copy `string.join`, Rails-exact `string.html-escape`, and native
+   `string.contains`/`starts-with`/`ends-with`. `Html` is a library refined type
+   (user decision); refined literals are validated at compile time. The 40 × 9.6 KB
+   prototype copies 6× the page because rows and the page use `concat` chains.
+   Native `list.append`/`list.concat` would let each level use one join (about 3×).
+   µs per GET was **not** measured: the trusted profile needs a host adapter.
+   The checked harness spends about 65 ms per page above its floor. Next is a trusted
+   measurement to choose between list building and faster copies.
+2b. **Native list building** (`list.append`, `list.concat`) so templates build
+   part lists and join once per level.
 3. **Proven structural access** for statically validated layouts, re-measured
    with the report-256 ABBA method. Runtime checks stay for unproven paths.
 4. **Message partial** in the language. New host operations supply the creator
