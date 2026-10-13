@@ -56,20 +56,15 @@ fn room.page(room: Room, messages: List<Message>) -> Unit {
 - **Interpreter and tests.** `out.write` appends to a captured string, so parity
   compares the same bytes.
 
-## Cached parts
+## Cached fragments
 
-The same mechanism serves cached and fresh results together. A cache entry is
-an immutable UTF-8 byte range. A part list can reference it like any other
-part, so one response can mix:
+A cached fragment is an immutable UTF-8 byte range. `out.write(cached)` copies
+it into the response buffer once. Later, a gather write could send buffer
+segments and cache entries side by side, without that copy, if measurements
+justify it.
 
-- a cached sidebar,
-- fresh message rows,
-- static layout literals.
-
-All of them go out in one gather write with no copying.
-
-The cost is that a cache shared across workers needs a safe way to keep an entry
-alive while a response is still writing it. The options are:
+A cache shared across workers needs a safe way to keep an entry alive while a
+response still uses it. The options are:
 
 1. **Per-worker caches.** No cross-thread dependency. Memory grows with the
    worker count, and the hit rate is lower.
@@ -85,24 +80,24 @@ later "with cache" comparison against Rails' and Rust's fragment caches.
 
 ## Costs and open questions
 
-- **Gather-write limits.** `IOV_MAX` is 1024 on Linux, and `WSASend` limits
-  apply too. Long part lists go out in batches. Adjacent tiny parts can be
-  coalesced into a small per-request buffer when that is cheaper than another
-  iovec entry.
-- **Compression.** gzip or brotli consume the parts as a stream, so there is no
-  zero-copy then. The benchmark serves uncompressed today.
-- **Partial writes and backpressure.** The worker keeps the part cursor and
-  arena until the send completes.
-- **Testing.** Parity tests materialize the part list and compare bytes with the
-  interpreter, which can either represent `Html` as parts or materialize
-  eagerly. The semantics are identical.
+- **Errors after a partial render.** With the default buffer, nothing has been
+  sent yet, so the handler's error response replaces the buffer. Chunked
+  flushing, when added, must define what happens after the first flush.
+- **Buffer capacity.** The output region has its own capacity. Overflowing it
+  is a diagnostic, like `OWNING_STACK_CAPACITY`.
+- **Compression.** gzip or brotli would read the buffer as a stream. The
+  benchmark serves uncompressed today.
+- **Testing.** The interpreter captures `out.write` into a string, so parity
+  compares bytes.
 
-## Proposed order
+## Order
 
-1. Native list building and templates that lower to a single sized join.
-   This needs no host change.
+1. Free list retag and in-place `list.append` / `list.concat`.
 2. UTF-8 internal strings.
-3. A part-list `Html` representation in the owning AOT backend with host
-   gather writes, plus a per-request coalescing buffer.
-4. Per-worker caches for the "with cache" comparison. Shared-cache options go to
-   discussion.
+3. Templates: the literal-only `Html` constructor, `html"…"` with multi-line
+   strings, and compile-time syntax validation.
+4. `out.write` into the response buffer, with join flattening and
+   destination-passing for templates.
+5. The apples-to-apples Campfire page.
+6. Later: per-worker caches for the "with cache" comparison. Shared-cache
+   options go to discussion.
