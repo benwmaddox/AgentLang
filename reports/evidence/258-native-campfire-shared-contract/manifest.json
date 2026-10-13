@@ -1,8 +1,8 @@
 {
   "archiveFile": "258-native-campfire-shared-contract-evidence.zip",
-  "archiveSha256": "a9d19acb7e27dc236e031683d95809824b666eaf1f4c11f221d629a6357b6434",
-  "archiveSizeBytes": 104431,
-  "entryCount": 72,
+  "archiveSha256": "824da46877a8d2b1ebfab3cd5a46b4210e30e49c60bc847c65b55bb74bc65f41",
+  "archiveSizeBytes": 101840,
+  "entryCount": 71,
   "entries": [
     {
       "archivePath": "parity/markup257-off-o0-d/driver.log",
@@ -329,16 +329,10 @@
       "sizeBytes": 0
     },
     {
-      "archivePath": "harness-contract/room_show.json",
-      "sourcePath": ".agentlang/campfire-matched-258/contracts-preflight-1/room_show.json",
-      "sha256": "e920149e2b171d55d62bd09b05439bd40a5b2e1a8de9f3c22e79e684e619a913",
-      "sizeBytes": 9339
-    },
-    {
-      "archivePath": "harness-contract/scrape-rails-preflight-1.json",
-      "sourcePath": ".agentlang/campfire-matched-258/scrape-rails-preflight-1.json",
-      "sha256": "3718690e71db63b444b4961a5c4329c1077c42e29c263b4ee1ae75741bca500a",
-      "sizeBytes": 678
+      "archivePath": "harness-contract/harness-generated-hashes.json",
+      "sourcePath": ".agentlang/campfire-matched-258/harness-generated-hashes-258.json",
+      "sha256": "b2a54afd50fc77f722c81ebf756d098cf4492e3ec0a1bfacadfdf7cc73e02d36",
+      "sizeBytes": 371
     },
     {
       "archivePath": "rails/preflight-1-container.log",
@@ -379,8 +373,8 @@
     {
       "archivePath": "tools/copy-db.sh",
       "sourcePath": ".agentlang/campfire-matched-258/copy-db.sh",
-      "sha256": "1eac16e2bc6a1538b8b37789c074247a61806222ecce28cf372c557eb573789d",
-      "sizeBytes": 471
+      "sha256": "2c0503262cc34f5354f7d86e92cbf84c5a6a0813ac07f2d87a4fc8f6b7185e50",
+      "sizeBytes": 477
     },
     {
       "archivePath": "tools/copy-logs.sh",
@@ -391,14 +385,14 @@
     {
       "archivePath": "tools/Native-Contract.ps1",
       "sourcePath": ".agentlang/campfire-matched-258/Native-Contract.ps1",
-      "sha256": "a2273aa75c1c4a8f3f587e7cd0d0c9a30d4f5f3b6037ca34191df532b3983a22",
-      "sizeBytes": 3103
+      "sha256": "8d2cfe68066eb94ef03f9e68d5b121c3fdcf19ed20111b0e5377aab7c4f8425b",
+      "sizeBytes": 3141
     },
     {
       "archivePath": "tools/seal_258.py",
       "sourcePath": ".agentlang/campfire-matched-258/seal_258.py",
-      "sha256": "989cb14d6badaa74706bca557c654d360aa215fc52e4bd0102cccbfeb63c43e6",
-      "sizeBytes": 5909
+      "sha256": "fa3dbc49711268e7b28b095e6de1d7cf156828fc725beae98fa325be00151867",
+      "sizeBytes": 5811
     },
     {
       "archivePath": "tools/Validate-Markup.ps1",

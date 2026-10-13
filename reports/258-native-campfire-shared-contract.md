@@ -91,16 +91,23 @@ These 400-request runs are correctness checks, not throughput measurements.
 ## Sealed evidence
 
 [Archive](evidence/258-native-campfire-shared-contract/258-native-campfire-shared-contract-evidence.zip)
-and [manifest](evidence/258-native-campfire-shared-contract/manifest.json): 72
-entries, 104,431 bytes, SHA256
-`a9d19acb7e27dc236e031683d95809824b666eaf1f4c11f221d629a6357b6434`. Contents:
+and [manifest](evidence/258-native-campfire-shared-contract/manifest.json): 71
+entries, 101,840 bytes, SHA256
+`824da46877a8d2b1ebfab3cd5a46b4210e30e49c60bc847c65b55bb74bc65f41`.
+
+This archive was resealed after report 259. The harness asks that its generated
+artifacts not be published, so the harness-generated `room_show.json` contract
+and the Rails scrape summary are now recorded only as SHA256 hashes
+(`e920149e…` and `3718690e…`). The tool scripts in the archive are their later
+versions; for example, `Native-Contract.ps1` gained a database-copy parameter.
+The archive contains:
 
 - parity, HTTP validation, run and build receipts, plus the gate and HTTP test
   receipts;
 - the native contract runs, including loadgen JSON and host logs;
-- the harness `room_show.json` contract;
 - Rails container logs (scanned clean) and the seed provenance;
 - the loadgen build log, the tools and the changed sources.
 
 Excluded: all databases, `secret_key_base` and the credentials env file,
-Rails-issued cookies, and seed `labels.json` (it holds fixture passwords).
+Rails-issued cookies, seed `labels.json` (it holds fixture passwords), and the
+harness-generated artifacts.
