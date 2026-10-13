@@ -6894,9 +6894,11 @@ module OwningStackAot =
         let assembly = typeof<OwningStackCompiledProgram>.Assembly
         let runtimeHeaderPath = Path.Combine(runtimeDirectory, "owning_stack_runtime.h")
         let runtimeSourcePath = Path.Combine(runtimeDirectory, "owning_stack_runtime.c")
+        let profileHeaderPath = Path.Combine(runtimeDirectory, "owning_stack_profile.h")
         let floatFormatHeaderPath = Path.Combine(runtimeDirectory, "float_format.h")
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.h" runtimeHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.c" runtimeSourcePath
+        writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_profile.h" profileHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.float_format.h" floatFormatHeaderPath
         let compiledPath =
             LlvmToolchain.compileLibraryWithRuntimeAndNativeStackScreen
@@ -6908,10 +6910,11 @@ module OwningStackAot =
     /// Compile a verified entry with the closed Campfire room-lookup adapter
     /// statically linked into a separate host-context export. The adapter C
     /// source is copied into the artifact directory before hashing and build.
-    let compileWithNativeHostDependenciesWithRuntimeProfile
+    let compileWithNativeHostDependenciesWithRuntimeProfileAndInstrumentation
         (toolchain: LlvmToolchain)
         optimization
         (runtimeProfile: OwningRuntimeProfile)
+        (instrumentation: OwningRuntimeInstrumentation)
         (profile: OwningNativeHostProfile)
         (adapterSourcePath: string)
         (dependencies: OwningNativeHostDependencies)
@@ -6942,6 +6945,7 @@ module OwningStackAot =
         let assembly = typeof<OwningStackCompiledProgram>.Assembly
         let runtimeHeaderPath = Path.Combine(runtimeDirectory, "owning_stack_runtime.h")
         let runtimeSourcePath = Path.Combine(runtimeDirectory, "owning_stack_runtime.c")
+        let profileHeaderPath = Path.Combine(runtimeDirectory, "owning_stack_profile.h")
         let floatFormatHeaderPath = Path.Combine(runtimeDirectory, "float_format.h")
         let hostAbiHeaderName = nativeHostHeaderNameFor profile
         let hostAbiHeaderPath = Path.Combine(runtimeDirectory, hostAbiHeaderName)
@@ -6949,13 +6953,14 @@ module OwningStackAot =
         let adapterCopyPath = Path.Combine(runtimeDirectory, adapterCopyName)
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.h" runtimeHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.c" runtimeSourcePath
+        writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_profile.h" profileHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.float_format.h" floatFormatHeaderPath
         writeEmbeddedResource assembly (nativeHostHeaderResourceFor profile) hostAbiHeaderPath
         File.WriteAllBytes(adapterCopyPath, File.ReadAllBytes fullAdapterSourcePath)
 
         let dependencyDirectory = Path.Combine(fullDirectory, "native-dependencies")
         let usedNames = HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        for name in [ "owning_stack_runtime.h"; "owning_stack_runtime.c"; "float_format.h"; hostAbiHeaderName; adapterCopyName; "owning-stack-native-host.dll" ] do
+        for name in [ "owning_stack_runtime.h"; "owning_stack_runtime.c"; "owning_stack_profile.h"; "float_format.h"; hostAbiHeaderName; adapterCopyName; "owning-stack-native-host.dll" ] do
             usedNames.Add name |> ignore
         let copyInputs extension targetDirectory paths =
             paths |> List.map (fun path ->
@@ -6972,7 +6977,15 @@ module OwningStackAot =
                 File.WriteAllBytes(destination, bytes)
                 destination)
         let headerCopies = copyInputs ".h" runtimeDirectory dependencies.HeaderPaths
-        let linkCopies = copyInputs ".lib" dependencyDirectory dependencies.LinkLibraryPaths
+        let linkLibraryInputs =
+            match instrumentation with
+            | OwningRuntimeInstrumentation.Off -> dependencies.LinkLibraryPaths
+            | OwningRuntimeInstrumentation.Detailed ->
+                if dependencies.LinkLibraryPaths |> List.exists (fun path -> String.Equals(Path.GetFileName(path), "kernel32.lib", StringComparison.OrdinalIgnoreCase)) then
+                    dependencies.LinkLibraryPaths
+                else
+                    dependencies.LinkLibraryPaths @ [ LlvmToolchain.findWindowsSdkKernel32Library () ]
+        let linkCopies = copyInputs ".lib" dependencyDirectory linkLibraryInputs
         for path in dependencies.RuntimeLibraryPaths do
             if String.IsNullOrWhiteSpace path || not (File.Exists path) then
                 invalidArg (nameof dependencies) "Native runtime dependency does not exist."
@@ -6986,8 +6999,8 @@ module OwningStackAot =
         let runtimeCopies = copyInputs ".dll" fullDirectory dependencies.RuntimeLibraryPaths
 
         let compiledPath =
-            LlvmToolchain.compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreenWithRuntimeProfile
-                toolchain optimization runtimeProfile llvmIrPath runtimeSourcePath adapterCopyPath hostAbiHeaderPath linkCopies runtimeDirectory libraryPath
+            LlvmToolchain.compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreenWithRuntimeProfileAndInstrumentation
+                toolchain optimization runtimeProfile instrumentation llvmIrPath runtimeSourcePath adapterCopyPath hostAbiHeaderPath linkCopies runtimeDirectory libraryPath
         let hashBytes (bytes: byte array) =
             SHA256.HashData bytes
             |> Convert.ToHexString
@@ -7001,6 +7014,10 @@ module OwningStackAot =
             match runtimeProfile with
             | OwningRuntimeProfile.Diagnostic -> "diagnostic"
             | OwningRuntimeProfile.TrustedGenerated -> "trusted-generated"
+        let executionProfileName =
+            match instrumentation with
+            | OwningRuntimeInstrumentation.Off -> "off"
+            | OwningRuntimeInstrumentation.Detailed -> "detailed"
         let typeInfos =
             programInfo.TypeInfos
             |> Map.toList
@@ -7045,6 +7062,7 @@ module OwningStackAot =
             [ "owning-stack-native-host.ll", hashFile llvmIrPath
               "native-runtime/owning_stack_runtime.c", hashFile runtimeSourcePath
               "native-runtime/owning_stack_runtime.h", hashFile runtimeHeaderPath
+              "native-runtime/owning_stack_profile.h", hashFile profileHeaderPath
               "native-runtime/float_format.h", hashFile floatFormatHeaderPath
               Path.Combine("native-runtime", hostAbiHeaderName).Replace('\\', '/'), hashFile hostAbiHeaderPath
               Path.Combine("native-runtime", adapterCopyName).Replace('\\', '/'), hashFile adapterCopyPath ]
@@ -7065,6 +7083,7 @@ module OwningStackAot =
                     {| formatVersion = 2
                        profileId = "campfire-room-find-for-user-v1"
                        runtimeProfile = runtimeProfileName
+                       executionProfile = executionProfileName
                        operationId = "campfire.rooms.find-for-user"
                        operationName = "campfire.rooms.find-for-user"
                        adapterSymbol = nativeHostAdapterSymbol
@@ -7110,6 +7129,7 @@ module OwningStackAot =
                     {| formatVersion = 2
                        profileId = "campfire-room-read-v1"
                        runtimeProfile = runtimeProfileName
+                       executionProfile = executionProfileName
                        operationId = "campfire.http.room-read"
                        operationName = "campfire.http.room-read"
                        adapterSymbol = nativeRoomReadAdapterSymbol
@@ -7143,6 +7163,20 @@ module OwningStackAot =
         new OwningStackCompiledProgram(
             compiledPath, Some manifestPath, runtimeProfile, programInfo, diagnostics, llvmIr, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
             encodeValues, decodeValues, readEvents, readMetrics, diagnosticForError)
+
+    /// Preserve existing native-host callers with detailed instrumentation off.
+    let compileWithNativeHostDependenciesWithRuntimeProfile
+        (toolchain: LlvmToolchain)
+        optimization
+        (runtimeProfile: OwningRuntimeProfile)
+        (profile: OwningNativeHostProfile)
+        (adapterSourcePath: string)
+        (dependencies: OwningNativeHostDependencies)
+        outputDirectory
+        (verifiedBody: VerifiedIrBody) =
+        compileWithNativeHostDependenciesWithRuntimeProfileAndInstrumentation
+            toolchain optimization runtimeProfile OwningRuntimeInstrumentation.Off profile
+            adapterSourcePath dependencies outputDirectory verifiedBody
 
     /// Preserve the historical diagnostic runtime for existing native-host callers.
     let compileWithNativeHostDependencies
@@ -7240,10 +7274,12 @@ module OwningStackAot =
         let assembly = typeof<OwningStackCompiledProgram>.Assembly
         let runtimeHeaderPath = Path.Combine(runtimeDirectory, "owning_stack_runtime.h")
         let runtimeSourcePath = Path.Combine(runtimeDirectory, "owning_stack_runtime.c")
+        let profileHeaderPath = Path.Combine(runtimeDirectory, "owning_stack_profile.h")
         let floatFormatHeaderPath = Path.Combine(runtimeDirectory, "float_format.h")
         let mailboxAbiHeaderPath = Path.Combine(runtimeDirectory, "owning_mailbox_abi.h")
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.h" runtimeHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.c" runtimeSourcePath
+        writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_profile.h" profileHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.float_format.h" floatFormatHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_mailbox_abi.h" mailboxAbiHeaderPath
         let compiledPath, objectPaths =
@@ -7263,6 +7299,7 @@ module OwningStackAot =
               "owning-mailbox-metadata.c", hashFile metadataSourcePath
               "native-runtime/owning_stack_runtime.c", hashFile runtimeSourcePath
               "native-runtime/owning_stack_runtime.h", hashFile runtimeHeaderPath
+              "native-runtime/owning_stack_profile.h", hashFile profileHeaderPath
               "native-runtime/float_format.h", hashFile floatFormatHeaderPath
               "native-runtime/owning_mailbox_abi.h", hashFile mailboxAbiHeaderPath ]
             @ (List.zip entryMetadata entryFrameIrPaths

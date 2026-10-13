@@ -93,6 +93,7 @@ internal static class Program
                 using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
                 await response.Content.LoadIntoBufferAsync(config.MaxBodyBytes);
                 byte[] body = await response.Content.ReadAsByteArrayAsync();
+                double responseMicroseconds = Stopwatch.GetElapsedTime(started).TotalMicroseconds;
                 if ((int)response.StatusCode != config.ExpectedStatus)
                 {
                     samples?.Error("status:" + (int)response.StatusCode);
@@ -106,7 +107,7 @@ internal static class Program
                 if (samples != null)
                 {
                     samples.Correct++; samples.Bytes += body.Length;
-                    samples.Buckets[Samples.Index(Stopwatch.GetElapsedTime(started).TotalMicroseconds)]++;
+                    samples.Buckets[Samples.Index(responseMicroseconds)]++;
                 }
                 return true;
             }
@@ -174,7 +175,7 @@ internal static class Program
             clientCpuEquivalentCores = clientCpuMilliseconds / timer.Elapsed.TotalMilliseconds,
             effectiveClientAffinityMask,
             config.ServerPid, config.WarmupRequests, config.ExpectedBodySha256,
-            methodology = "Closed-loop HTTP/1.1 keepalive; no redirects/decompression; complete body SHA256 on every request; in-flight drain included; correct-response latency only; 100ms process-memory sampling excludes kernel buffers. Process CPU deltas exclude warmup; equivalent cores divide CPU time by measured wall time and are not percentages of the machine. Client costs are included equally in both workloads."
+            methodology = "Closed-loop HTTP/1.1 keepalive; no redirects/decompression; complete body SHA256 on every request; in-flight drain included; correct-response latency ends after full body receipt, before status/SHA256 validation; throughput includes validation; 100ms process-memory sampling excludes kernel buffers. Process CPU deltas exclude warmup; equivalent cores divide CPU time by measured wall time and are not percentages of the machine. Client costs are included equally in both workloads."
         };
         await File.WriteAllTextAsync(args[1], JsonSerializer.Serialize(report, Json));
         Console.WriteLine(JsonSerializer.Serialize(report, Json));

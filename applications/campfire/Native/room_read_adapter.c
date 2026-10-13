@@ -1,6 +1,7 @@
 #include "room_read_adapter.h"
 #include "room_read_pure.h"
 #include "room_read_sqlite_subset.h"
+#include "owning_stack_profile.h"
 
 #include <limits.h>
 #include <stddef.h>
@@ -29,6 +30,91 @@
 #define UtcInstant_MAX_MICROS INT64_C(253402300799999999)
 #define ROOM_READ_CONTEXT_STATE_ACTIVE 1u
 #define ROOM_READ_CONTEXT_STATE_POISONED 2u
+
+#if AL_OWNING_DETAILED_PROFILE
+static int room_profiled_sqlite_prepare_v2(
+    sqlite3 *database, const char *sql, int byte_count,
+    sqlite3_stmt **statement, const char **tail) {
+  uint64_t start_ticks = al_owning_profile_begin_v1();
+  int rc = sqlite3_prepare_v2(database, sql, byte_count, statement, tail);
+  (void)al_owning_profile_end_v1(AL_OWNING_PROFILE_SQL_PREPARE, start_ticks,
+                                 rc != SQLITE_OK);
+  return rc;
+}
+
+static int room_profiled_sqlite_bind_int64(sqlite3_stmt *statement, int index,
+                                            sqlite3_int64 value) {
+  uint64_t start_ticks = al_owning_profile_begin_v1();
+  int rc = sqlite3_bind_int64(statement, index, value);
+  (void)al_owning_profile_end_v1(AL_OWNING_PROFILE_SQL_BIND, start_ticks,
+                                 rc != SQLITE_OK);
+  return rc;
+}
+
+static int room_profiled_sqlite_bind_text16(
+    sqlite3_stmt *statement, int index, const void *value, int byte_count,
+    sqlite3_destructor_type destructor) {
+  uint64_t start_ticks = al_owning_profile_begin_v1();
+  int rc = sqlite3_bind_text16(statement, index, value, byte_count, destructor);
+  (void)al_owning_profile_end_v1(AL_OWNING_PROFILE_SQL_BIND, start_ticks,
+                                 rc != SQLITE_OK);
+  return rc;
+}
+
+static int room_profiled_sqlite_bind_null(sqlite3_stmt *statement, int index) {
+  uint64_t start_ticks = al_owning_profile_begin_v1();
+  int rc = sqlite3_bind_null(statement, index);
+  (void)al_owning_profile_end_v1(AL_OWNING_PROFILE_SQL_BIND, start_ticks,
+                                 rc != SQLITE_OK);
+  return rc;
+}
+
+static int room_profiled_sqlite_step(sqlite3_stmt *statement) {
+  uint64_t start_ticks = al_owning_profile_begin_v1();
+  int rc = sqlite3_step(statement);
+  (void)al_owning_profile_end_v1(
+      AL_OWNING_PROFILE_SQL_STEP, start_ticks,
+      rc != SQLITE_ROW && rc != SQLITE_DONE);
+  return rc;
+}
+
+static uint32_t room_profile_category_for_operation(uint32_t operation) {
+  switch (operation) {
+  case AL_CAMPFIRE_COOKIE_VERIFY:
+    return AL_OWNING_PROFILE_COOKIE_VERIFY_SESSION_TOKEN;
+  case AL_CAMPFIRE_SESSION_FIND:
+    return AL_OWNING_PROFILE_SESSION_FIND_BY_TOKEN;
+  case AL_CAMPFIRE_SESSION_REFRESH:
+    return AL_OWNING_PROFILE_SESSION_REFRESH_BEFORE;
+  case AL_CAMPFIRE_USER_FIND:
+    return AL_OWNING_PROFILE_USER_FIND_BY_ID;
+  case AL_CAMPFIRE_USER_BOT_KEY:
+    return AL_OWNING_PROFILE_USER_AUTHENTICATE_BOT_KEY;
+  case AL_CAMPFIRE_BROWSER_VERSION:
+    return AL_OWNING_PROFILE_BROWSER_VERSION_AT_LEAST;
+  case AL_CAMPFIRE_ROOM_FIND:
+    return AL_OWNING_PROFILE_ROOM_FIND_FOR_USER;
+  case AL_CAMPFIRE_MEMBERSHIP_EXISTS:
+    return AL_OWNING_PROFILE_MEMBERSHIP_EXISTS;
+  case AL_CAMPFIRE_MESSAGES_LAST_PAGE:
+    return AL_OWNING_PROFILE_MESSAGE_LAST_PAGE;
+  default:
+    return UINT32_MAX;
+  }
+}
+
+#define room_read_sqlite_prepare_v2 room_profiled_sqlite_prepare_v2
+#define room_read_sqlite_bind_int64 room_profiled_sqlite_bind_int64
+#define room_read_sqlite_bind_text16 room_profiled_sqlite_bind_text16
+#define room_read_sqlite_bind_null room_profiled_sqlite_bind_null
+#define room_read_sqlite_step room_profiled_sqlite_step
+#else
+#define room_read_sqlite_prepare_v2 sqlite3_prepare_v2
+#define room_read_sqlite_bind_int64 sqlite3_bind_int64
+#define room_read_sqlite_bind_text16 sqlite3_bind_text16
+#define room_read_sqlite_bind_null sqlite3_bind_null
+#define room_read_sqlite_step sqlite3_step
+#endif
 
 extern __declspec(dllimport) unsigned long __stdcall GetCurrentThreadId(void);
 
@@ -1016,10 +1102,21 @@ static void write_session_row(uint8_t *output, uint32_t offset,
 static int reset_statement(sqlite3_stmt *statement) {
   int reset_status;
   int clear_status;
+#if AL_OWNING_DETAILED_PROFILE
+  uint64_t start_ticks;
+#endif
   if (statement == NULL)
     return SQLITE_OK;
+#if AL_OWNING_DETAILED_PROFILE
+  start_ticks = al_owning_profile_begin_v1();
+#endif
   reset_status = sqlite3_reset(statement);
   clear_status = sqlite3_clear_bindings(statement);
+#if AL_OWNING_DETAILED_PROFILE
+  (void)al_owning_profile_end_v1(
+      AL_OWNING_PROFILE_SQL_RESET, start_ticks,
+      reset_status != SQLITE_OK || clear_status != SQLITE_OK);
+#endif
   return clear_status != SQLITE_OK ? clear_status :
          (reset_status == SQLITE_OK ? SQLITE_OK : reset_status);
 }
@@ -1046,7 +1143,8 @@ static void release_context_call(al_campfire_room_read_context_v1 *ctx) {
 }
 
 static int bind_int64(sqlite3_stmt *statement, int index, int64_t value) {
-  return sqlite3_bind_int64(statement, index, (sqlite3_int64)value);
+  return room_read_sqlite_bind_int64(statement, index,
+                                     (sqlite3_int64)value);
 }
 
 static int bind_text(sqlite3_stmt *statement, int index,
@@ -1054,8 +1152,8 @@ static int bind_text(sqlite3_stmt *statement, int index,
   uint64_t byte_count = (uint64_t)code_units * 2u;
   if (byte_count > INT_MAX)
     return SQLITE_ERROR;
-  return sqlite3_bind_text16(statement, index, bytes, (int)byte_count,
-                             SQLITE_TRANSIENT);
+  return room_read_sqlite_bind_text16(statement, index, bytes,
+                                      (int)byte_count, SQLITE_TRANSIENT);
 }
 
 static int bind_option_text(sqlite3_stmt *statement, int index,
@@ -1067,7 +1165,7 @@ static int bind_option_text(sqlite3_stmt *statement, int index,
     return SQLITE_ERROR;
   tag = load_u64_le(option);
   if (tag == 1u)
-    return sqlite3_bind_null(statement, index);
+    return room_read_sqlite_bind_null(statement, index);
   if (tag != 0u || option_extent < 16u)
     return SQLITE_ERROR;
   code_units = load_u64_le(option + 8u);
@@ -1349,7 +1447,7 @@ static int begin_transaction(al_campfire_room_read_context_v1 *ctx,
                              uint32_t *out_error_tag) {
   sqlite3_stmt *statement = (sqlite3_stmt *)ctx->opaque_statements[
       statement_index];
-  int rc = sqlite3_step(statement);
+  int rc = room_read_sqlite_step(statement);
   if (rc != SQLITE_DONE) {
     *out_error_tag = sqlite_error_tag((sqlite3 *)ctx->opaque_db);
     return 0;
@@ -1362,7 +1460,7 @@ static int end_transaction(al_campfire_room_read_context_v1 *ctx,
                            uint32_t *out_error_tag) {
   sqlite3_stmt *statement =
       (sqlite3_stmt *)ctx->opaque_statements[statement_index];
-  int rc = sqlite3_step(statement);
+  int rc = room_read_sqlite_step(statement);
   if (rc != SQLITE_DONE) {
     *out_error_tag = sqlite_error_tag((sqlite3 *)ctx->opaque_db);
     return 0;
@@ -1389,7 +1487,7 @@ static int rollback_transaction(al_campfire_room_read_context_v1 *ctx) {
     poison_context(ctx);
     return 0;
   }
-  rc = sqlite3_step(statement);
+  rc = room_read_sqlite_step(statement);
   reset_rc = reset_statement(statement);
   if (rc != SQLITE_DONE || reset_rc != SQLITE_OK ||
       sqlite3_get_autocommit(database) == 0) {
@@ -1423,7 +1521,7 @@ static int session_find_by_token(al_campfire_room_read_context_v1 *ctx,
           SQLITE_OK)
     return write_result_error(output, capacity,
                               sqlite_error_tag(database), out_extent);
-  rc = sqlite3_step(statement);
+  rc = room_read_sqlite_step(statement);
   if (rc == SQLITE_DONE)
     return write_result_option_none(output, capacity, out_extent);
   if (rc != SQLITE_ROW)
@@ -1496,7 +1594,7 @@ static int refresh_read_row(al_campfire_room_read_context_v1 *ctx,
     *out_error_tag = sqlite_error_tag(database);
     return 0;
   }
-  rc = sqlite3_step(statement);
+  rc = room_read_sqlite_step(statement);
   if (rc == SQLITE_DONE) {
     *out_found = 0;
     return 1;
@@ -1566,7 +1664,7 @@ static int session_refresh_before(al_campfire_room_read_context_v1 *ctx,
           bind_int64(update_statement, 4, refresh.session_id) != SQLITE_OK ||
           current.observed_last_active_at == NULL ||
           current.observed_last_active_bytes < 0 ||
-          sqlite3_bind_text16(update_statement, 5,
+          room_read_sqlite_bind_text16(update_statement, 5,
                               current.observed_last_active_at,
                               current.observed_last_active_bytes,
                               SQLITE_TRANSIENT) != SQLITE_OK) {
@@ -1576,7 +1674,7 @@ static int session_refresh_before(al_campfire_room_read_context_v1 *ctx,
       /* SQLite owns a copy of the timestamp binding before the read is reset. */
       (void)reset_statement((sqlite3_stmt *)ctx->opaque_statements[
           AL_CAMPFIRE_READ_STMT_SESSION_FIND_ID]);
-      rc = sqlite3_step(update_statement);
+      rc = room_read_sqlite_step(update_statement);
       if (rc != SQLITE_DONE) {
         error_tag = sqlite_error_tag(database);
         goto refresh_error;
@@ -1608,7 +1706,7 @@ static int session_refresh_before(al_campfire_room_read_context_v1 *ctx,
     {
       sqlite3_stmt *read_statement = (sqlite3_stmt *)ctx->opaque_statements[
           AL_CAMPFIRE_READ_STMT_SESSION_FIND_ID];
-      int rc = sqlite3_step(read_statement);
+      int rc = room_read_sqlite_step(read_statement);
       if (rc != SQLITE_DONE) {
         error_tag = sqlite_error_tag(database);
         goto refresh_error;
@@ -1646,7 +1744,7 @@ static int user_find_by_id(al_campfire_room_read_context_v1 *ctx,
   if (bind_int64(statement, 1, user_id) != SQLITE_OK)
     return write_result_error(output, capacity, sqlite_error_tag(database),
                               out_extent);
-  rc = sqlite3_step(statement);
+  rc = room_read_sqlite_step(statement);
   if (rc == SQLITE_DONE)
     return write_result_option_none(output, capacity, out_extent);
   if (rc != SQLITE_ROW)
@@ -1713,7 +1811,7 @@ static int user_authenticate_bot_key(al_campfire_room_read_context_v1 *ctx,
       bind_text(statement, 2, token.bytes, token.code_units) != SQLITE_OK)
     return write_result_error(output, capacity, sqlite_error_tag(database),
                               out_extent);
-  rc = sqlite3_step(statement);
+  rc = room_read_sqlite_step(statement);
   if (rc == SQLITE_DONE)
     return write_result_option_none(output, capacity, out_extent);
   if (rc != SQLITE_ROW)
@@ -1746,7 +1844,7 @@ static int room_find_for_user(al_campfire_room_read_context_v1 *ctx,
       bind_int64(statement, 2, room_id) != SQLITE_OK)
     return write_result_error(output, capacity, sqlite_error_tag(database),
                               out_extent);
-  rc = sqlite3_step(statement);
+  rc = room_read_sqlite_step(statement);
   if (rc == SQLITE_DONE)
     return write_result_option_none(output, capacity, out_extent);
   if (rc != SQLITE_ROW)
@@ -1777,7 +1875,7 @@ static int membership_exists(al_campfire_room_read_context_v1 *ctx,
       bind_int64(statement, 2, room_id) != SQLITE_OK)
     return write_result_error(output, capacity, sqlite_error_tag(database),
                               out_extent);
-  rc = sqlite3_step(statement);
+  rc = room_read_sqlite_step(statement);
   if (rc != SQLITE_ROW)
     return write_result_error(output, capacity, sqlite_error_tag(database),
                               out_extent);
@@ -1796,7 +1894,7 @@ static int room_exists(al_campfire_room_read_context_v1 *ctx, int64_t room_id,
     *out_error_tag = sqlite_error_tag(database);
     return 0;
   }
-  rc = sqlite3_step(statement);
+  rc = room_read_sqlite_step(statement);
   if (rc != SQLITE_ROW) {
     *out_error_tag = sqlite_error_tag(database);
     return 0;
@@ -1864,7 +1962,7 @@ static int messages_last_page(al_campfire_room_read_context_v1 *ctx,
   for (;;) {
     al_room_read_message_row row;
     uint32_t row_extent;
-    rc = sqlite3_step(statement);
+    rc = room_read_sqlite_step(statement);
     if (rc == SQLITE_DONE)
       break;
     if (rc != SQLITE_ROW) {
@@ -1909,7 +2007,7 @@ static int messages_last_page(al_campfire_room_read_context_v1 *ctx,
   for (index = 0u; index < count; ++index) {
     al_room_read_message_row row;
     uint32_t row_extent;
-    rc = sqlite3_step(statement);
+    rc = room_read_sqlite_step(statement);
     if (rc != SQLITE_ROW) {
       error_tag = sqlite_error_tag(database);
       goto last_page_error;
@@ -1925,7 +2023,7 @@ static int messages_last_page(al_campfire_room_read_context_v1 *ctx,
     }
     write_message_row(output, rows[index].output_offset, &row);
   }
-  rc = sqlite3_step(statement);
+  rc = room_read_sqlite_step(statement);
   if (rc != SQLITE_DONE) {
     error_tag = sqlite_error_tag(database);
     goto last_page_error;
@@ -1951,7 +2049,7 @@ last_page_error:
 static int32_t prepare_query(sqlite3 *database, uint32_t index,
                              sqlite3_stmt **out_statement) {
   const char *tail = NULL;
-  int rc = sqlite3_prepare_v2(database, room_read_queries[index], -1,
+  int rc = room_read_sqlite_prepare_v2(database, room_read_queries[index], -1,
                               out_statement, &tail);
   if (rc != SQLITE_OK || *out_statement == NULL || tail == NULL ||
       *tail != '\0')
@@ -1963,7 +2061,7 @@ static int prepare_fixed_pragma(sqlite3 *database, const char *sql,
                                 sqlite3_stmt **out_statement,
                                 uint32_t *out_error_tag) {
   const char *tail = NULL;
-  int rc = sqlite3_prepare_v2(database, sql, -1, out_statement, &tail);
+  int rc = room_read_sqlite_prepare_v2(database, sql, -1, out_statement, &tail);
   if (rc != SQLITE_OK || *out_statement == NULL || tail == NULL ||
       *tail != '\0') {
     *out_error_tag = sqlite_error_tag(database);
@@ -1983,7 +2081,7 @@ static int execute_fixed_pragma(sqlite3 *database, const char *sql,
   if (!prepare_fixed_pragma(database, sql, &statement, out_error_tag))
     return 0;
   do {
-    rc = sqlite3_step(statement);
+    rc = room_read_sqlite_step(statement);
   } while (rc == SQLITE_ROW);
   if (rc != SQLITE_DONE) {
     *out_error_tag = sqlite_error_tag(database);
@@ -2009,7 +2107,7 @@ static int pragma_text_equals(sqlite3 *database, const char *sql,
   int rc;
   if (!prepare_fixed_pragma(database, sql, &statement, out_error_tag))
     return 0;
-  rc = sqlite3_step(statement);
+  rc = room_read_sqlite_step(statement);
   if (rc != SQLITE_ROW ||
       sqlite3_column_type(statement, 0) != SQLITE_TEXT) {
     *out_error_tag = sqlite_error_tag(database);
@@ -2037,7 +2135,7 @@ static int pragma_text_equals(sqlite3 *database, const char *sql,
       return 0;
     }
   }
-  rc = sqlite3_step(statement);
+  rc = room_read_sqlite_step(statement);
   if (rc != SQLITE_DONE) {
     *out_error_tag = sqlite_error_tag(database);
     (void)sqlite3_finalize(statement);
@@ -2059,7 +2157,7 @@ static int pragma_integer_equals(sqlite3 *database, const char *sql,
   int rc;
   if (!prepare_fixed_pragma(database, sql, &statement, out_error_tag))
     return 0;
-  rc = sqlite3_step(statement);
+  rc = room_read_sqlite_step(statement);
   if (rc != SQLITE_ROW ||
       sqlite3_column_type(statement, 0) != SQLITE_INTEGER) {
     *out_error_tag = sqlite_error_tag(database);
@@ -2072,7 +2170,7 @@ static int pragma_integer_equals(sqlite3 *database, const char *sql,
     (void)sqlite3_finalize(statement);
     return 0;
   }
-  rc = sqlite3_step(statement);
+  rc = room_read_sqlite_step(statement);
   if (rc != SQLITE_DONE) {
     *out_error_tag = sqlite_error_tag(database);
     (void)sqlite3_finalize(statement);
@@ -2300,7 +2398,11 @@ AL_CAMPFIRE_EXPORT int32_t al_campfire_room_read_context_destroy_v1(
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdll-attribute-on-redeclaration"
+#if AL_OWNING_DETAILED_PROFILE
+static int32_t room_read_callback_body(
+#else
 AL_CAMPFIRE_EXPORT int32_t al_host_campfire_room_read_v1(
+#endif
     void *provider_context, uint32_t operation,
     const al_owning_layout *layout,
     const al_campfire_room_read_input *inputs, uint32_t input_count,
@@ -2487,4 +2589,24 @@ callback_complete:
     *output_extent_bytes = 0u;
   return result;
 }
+#if AL_OWNING_DETAILED_PROFILE
+AL_CAMPFIRE_EXPORT int32_t al_host_campfire_room_read_v1(
+    void *provider_context, uint32_t operation,
+    const al_owning_layout *layout,
+    const al_campfire_room_read_input *inputs, uint32_t input_count,
+    uint32_t output_type_index, uint8_t *output,
+    uint32_t output_capacity_bytes, uint32_t *output_extent_bytes) {
+  uint32_t category = room_profile_category_for_operation(operation);
+  uint64_t start_ticks = 0u;
+  int32_t result;
+  if (category != UINT32_MAX)
+    start_ticks = al_owning_profile_begin_v1();
+  result = room_read_callback_body(
+      provider_context, operation, layout, inputs, input_count,
+      output_type_index, output, output_capacity_bytes, output_extent_bytes);
+  if (category != UINT32_MAX)
+    (void)al_owning_profile_end_v1(category, start_ticks, result != 0);
+  return result;
+}
+#endif
 #pragma clang diagnostic pop

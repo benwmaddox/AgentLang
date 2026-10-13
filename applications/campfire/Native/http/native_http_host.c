@@ -12,6 +12,7 @@
 #include <limits.h>
 
 #include "http_host_pins.h"
+#include "owning_stack_profile.h"
 #include "owning_stack_runtime.h"
 #include "campfire_room_read_host_abi.h"
 #include "room_read_adapter.h"
@@ -36,6 +37,10 @@
 #endif
 #if CAMPFIRE_HTTP_STAGE_PROFILE != 0 && CAMPFIRE_HTTP_STAGE_PROFILE != 1
 #error "The HTTP host stage profile setting must be zero or one."
+#endif
+#if !defined(CAMPFIRE_HTTP_EXECUTION_PROFILE) || \
+    (CAMPFIRE_HTTP_EXECUTION_PROFILE != 0 && CAMPFIRE_HTTP_EXECUTION_PROFILE != 1)
+#error "The generated pins must declare the execution profile setting."
 #endif
 
 #define HOST_WORKER_MAX 8u
@@ -65,6 +70,10 @@ typedef int32_t(__cdecl *context_init_fn)(al_campfire_room_read_context_v1 *, co
 typedef int32_t(__cdecl *provision_wal_fn)(const uint8_t *, uint32_t, uint32_t *);
 typedef int32_t(__cdecl *context_destroy_fn)(al_campfire_room_read_context_v1 *);
 typedef int32_t(__cdecl *execute_fn)(al_owning_stack_context *, void *, const uint8_t *, uint32_t, const uint32_t *, uint32_t, uint8_t *, uint32_t);
+#if CAMPFIRE_HTTP_EXECUTION_PROFILE
+typedef int32_t(__cdecl *profile_reset_fn)(uint32_t);
+typedef int32_t(__cdecl *profile_snapshot_fn)(uint32_t, void *, uint32_t);
+#endif
 
 typedef struct host_api {
   pure_size_fn pure_size;
@@ -75,6 +84,10 @@ typedef struct host_api {
   provision_wal_fn provision_wal;
   context_destroy_fn context_destroy;
   execute_fn execute;
+#if CAMPFIRE_HTTP_EXECUTION_PROFILE
+  profile_reset_fn profile_reset;
+  profile_snapshot_fn profile_snapshot;
+#endif
 } host_api;
 
 typedef struct text_span {
@@ -163,6 +176,9 @@ typedef struct worker_state {
   size_t browser_scratch_bytes;
 #if CAMPFIRE_HTTP_STAGE_PROFILE
   host_stage_profile stage_profile;
+#endif
+#if CAMPFIRE_HTTP_EXECUTION_PROFILE
+  al_owning_profile_snapshot execution_profile;
 #endif
 } worker_state;
 
@@ -682,6 +698,10 @@ static uint32_t load_entry_module(host_config *config,
   LOAD_FUNCTION(provision_wal, provision_wal_fn, "al_campfire_room_read_provision_wal_v1");
   LOAD_FUNCTION(context_destroy, context_destroy_fn, "al_campfire_room_read_context_destroy_v1");
   LOAD_FUNCTION(execute, execute_fn, "agentlang_owning_execute_with_host_context");
+#if CAMPFIRE_HTTP_EXECUTION_PROFILE
+  LOAD_FUNCTION(profile_reset, profile_reset_fn, "al_owning_profile_reset_v1");
+  LOAD_FUNCTION(profile_snapshot, profile_snapshot_fn, "al_owning_profile_snapshot_v1");
+#endif
   *failure_stage = 0u;
   return 1u;
 }
@@ -1688,6 +1708,15 @@ static DWORD WINAPI worker_entry(void *argument) {
 #if CAMPFIRE_HTTP_STAGE_PROFILE
   host_stage_capture_cpu_start(worker);
 #endif
+#if CAMPFIRE_HTTP_EXECUTION_PROFILE
+  if (config->api.profile_reset(1u) != 0) {
+    InterlockedExchange((volatile LONG *)&config->fatal_status, 62L);
+    InterlockedIncrement((volatile LONG *)&config->ready_workers);
+    SetEvent(config->workers_ready_event);
+    worker_release(worker);
+    return 1u;
+  }
+#endif
   if (InterlockedIncrement((volatile LONG *)&config->ready_workers) ==
       (LONG)config->worker_count) SetEvent(config->workers_ready_event);
   for (;;) {
@@ -1752,6 +1781,16 @@ static DWORD WINAPI worker_entry(void *argument) {
   }
 #if CAMPFIRE_HTTP_STAGE_PROFILE
   host_stage_capture_cpu_end(worker);
+#endif
+#if CAMPFIRE_HTTP_EXECUTION_PROFILE
+  if (config->api.profile_snapshot(1u, &worker->execution_profile,
+        (uint32_t)sizeof(worker->execution_profile)) != 0 ||
+      worker->execution_profile.abi_version != 1u ||
+      worker->execution_profile.size_bytes != sizeof(worker->execution_profile) ||
+      worker->execution_profile.category_count != 22u ||
+      worker->execution_profile.reserved != 0u ||
+      worker->execution_profile.qpc_frequency == 0u)
+    InterlockedExchange((volatile LONG *)&config->fatal_status, 63L);
 #endif
   worker_release(worker);
   return 0u;
@@ -1886,6 +1925,39 @@ static int configure_arguments(host_config *config, int count,
   return 1;
 }
 
+#if CAMPFIRE_HTTP_EXECUTION_PROFILE
+static void write_execution_profile(const host_config *config) {
+  write_ascii("execution_profile_semantics=inclusive_nested_non_additive reset_scope=post_worker_init_to_pre_worker_destroy\r\n");
+  static const char *names[22] = {
+    "reserve_release", "initialization_check", "arena_copy", "value_measure",
+    "external_measure", "structural_locate", "host_output_commit",
+    "frame_validation", "other_runtime_validation",
+    "cookie_verify_session_token", "session_find_by_token", "session_refresh_before",
+    "user_find_by_id", "user_authenticate_bot_key", "browser_version_at_least",
+    "room_find_for_user", "membership_exists", "message_last_page",
+    "sql_prepare", "sql_bind", "sql_step", "sql_reset"
+  };
+  for (uint32_t w = 0u; w < config->worker_count; ++w) {
+    const al_owning_profile_snapshot *snapshot = &config->workers[w].execution_profile;
+    write_ascii("execution_profile worker="); write_u32(w);
+    write_ascii(" version="); write_u32(snapshot->abi_version);
+    write_ascii(" size="); write_u32(snapshot->size_bytes);
+    write_ascii(" categories="); write_u32(snapshot->category_count);
+    write_ascii(" qpc_frequency="); write_u64(snapshot->qpc_frequency);
+    write_ascii("\r\n");
+    for (uint32_t i = 0u; i < 22u; ++i) {
+      write_ascii("execution_counter worker="); write_u32(w);
+      write_ascii(" id="); write_u32(i);
+      write_ascii(" name="); write_ascii(names[i]);
+      write_ascii(" calls="); write_u64(snapshot->counters[i].calls);
+      write_ascii(" ticks="); write_u64(snapshot->counters[i].ticks);
+      write_ascii(" failures="); write_u64(snapshot->counters[i].failures);
+      write_ascii("\r\n");
+    }
+  }
+}
+#endif
+
 static int http_start(host_config *config) {
   HTTPAPI_VERSION version = HTTPAPI_VERSION_2;
   ULONG status, queue_length = HOST_QUEUE_LENGTH, actual_queue_length = 0u;
@@ -1996,6 +2068,9 @@ cleanup_workers:
   if (config->fatal_status != 0u) result = 0u;
 #if CAMPFIRE_HTTP_STAGE_PROFILE
   if (result != 0u) write_stage_profile(config);
+#endif
+#if CAMPFIRE_HTTP_EXECUTION_PROFILE
+  if (result != 0u) write_execution_profile(config);
 #endif
   if (config->workers_ready_event != NULL) { CloseHandle(config->workers_ready_event); config->workers_ready_event = NULL; }
   if (config->stop_event != NULL) { CloseHandle(config->stop_event); config->stop_event = NULL; }

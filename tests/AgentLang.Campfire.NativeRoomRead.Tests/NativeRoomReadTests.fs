@@ -26,6 +26,9 @@ module private NativeModuleInterop =
     [<DllImport("kernel32.dll", EntryPoint = "GetModuleHandleExW", CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)>]
     extern bool getModuleHandleEx(uint32 flags, nativeint address, nativeint& moduleHandle)
 
+    [<DllImport("kernel32.dll", EntryPoint = "GetCurrentThreadId", ExactSpelling = true)>]
+    extern uint32 getCurrentThreadId()
+
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
 type private PureContextSize = delegate of unit -> uint32
 
@@ -107,6 +110,24 @@ type private SqliteColumnBytes16 = delegate of nativeint * int32 -> int32
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
 type private SqliteGetAutocommit = delegate of nativeint -> int32
 
+[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+type private OwningProfileBegin = delegate of unit -> uint64
+
+[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+type private OwningProfileEnd = delegate of uint32 * uint64 * int32 -> int32
+
+[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+type private OwningProfileReset = delegate of uint32 -> int32
+
+[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+type private OwningProfileSnapshot = delegate of uint32 * nativeint * uint32 -> int32
+
+type private OwningProfileApi =
+    { Begin: OwningProfileBegin
+      End: OwningProfileEnd
+      Reset: OwningProfileReset
+      Snapshot: OwningProfileSnapshot }
+
 [<Sealed>]
 type private FixedClock(instant: DateTimeOffset) =
     interface IClock with
@@ -121,6 +142,9 @@ module NativeRoomReadTests =
     let private runtimeProfileName = function
         | OwningRuntimeProfile.Diagnostic -> "diagnostic"
         | OwningRuntimeProfile.TrustedGenerated -> "trusted-generated"
+    let private executionProfileName = function
+        | OwningRuntimeInstrumentation.Off -> "off"
+        | OwningRuntimeInstrumentation.Detailed -> "detailed"
     let private sourceFiles repo =
         let staticFiles =
             [ "applications/campfire/Native/room_read_adapter.c"
@@ -132,6 +156,7 @@ module NativeRoomReadTests =
               "src/AgentLang.Llvm/native/campfire_room_read_host_abi.h"
               "src/AgentLang.Llvm/native/owning_stack_runtime.c"
               "src/AgentLang.Llvm/native/owning_stack_runtime.h"
+              "src/AgentLang.Llvm/native/owning_stack_profile.h"
               "src/AgentLang.Llvm/native/float_format.h"
               "src/AgentLang.Llvm/AgentLang.Llvm.fsproj"
               "src/AgentLang.Llvm/LlvmToolchain.fs"
@@ -175,6 +200,109 @@ module NativeRoomReadTests =
     let private check (counter: int ref) label condition =
         counter.Value <- counter.Value + 1
         if not condition then failwith label
+
+    let private profileApi (nativeHandle: nativeint) : OwningProfileApi =
+        { Begin = Marshal.GetDelegateForFunctionPointer<OwningProfileBegin>(NativeLibrary.GetExport(nativeHandle, "al_owning_profile_begin_v1"))
+          End = Marshal.GetDelegateForFunctionPointer<OwningProfileEnd>(NativeLibrary.GetExport(nativeHandle, "al_owning_profile_end_v1"))
+          Reset = Marshal.GetDelegateForFunctionPointer<OwningProfileReset>(NativeLibrary.GetExport(nativeHandle, "al_owning_profile_reset_v1"))
+          Snapshot = Marshal.GetDelegateForFunctionPointer<OwningProfileSnapshot>(NativeLibrary.GetExport(nativeHandle, "al_owning_profile_snapshot_v1")) }
+
+    let private readProfileU32 (bytes: byte array) offset =
+        BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(offset, 4))
+
+    let private readProfileU64 (bytes: byte array) offset =
+        BinaryPrimitives.ReadUInt64LittleEndian(bytes.AsSpan(offset, 8))
+
+    let private readProfileCounter (bytes: byte array) category =
+        let offset = 24 + category * 24
+        readProfileU64 bytes offset, readProfileU64 bytes (offset + 8), readProfileU64 bytes (offset + 16)
+
+    let private snapshotProfile (api: OwningProfileApi) =
+        let sizeBytes = 552
+        let buffer = Marshal.AllocHGlobal sizeBytes
+        try
+            let status = api.Snapshot.Invoke(1u, buffer, uint32 sizeBytes)
+            if status <> 0 then failwith $"Detailed native profile snapshot failed with status {status}."
+            let bytes = Array.zeroCreate<byte> sizeBytes
+            Marshal.Copy(buffer, bytes, 0, sizeBytes)
+            bytes
+        finally
+            Marshal.FreeHGlobal buffer
+
+    let private verifyDetailedProfileAbi (counter: int ref) (api: OwningProfileApi) =
+        check counter "detailed profile reset accepts ABI v1" (api.Reset.Invoke(1u) = 0)
+        let start = api.Begin.Invoke()
+        check counter "detailed profile timer begins successfully" (start <> 0UL && start <> UInt64.MaxValue)
+        check counter "detailed profile timer records a runtime category" (api.End.Invoke(0u, start, 0) = 0)
+        let initial = snapshotProfile api
+        check counter "detailed profile snapshot has the pinned v1 552-byte layout" (initial.Length = 552 && readProfileU32 initial 0 = 1u && readProfileU32 initial 4 = 552u && readProfileU32 initial 8 = 22u && readProfileU32 initial 12 = 0u && readProfileU64 initial 16 > 0UL)
+        check counter "detailed profile counter array starts at byte 24" (let calls, _, failures = readProfileCounter initial 0 in calls = 1UL && failures = 0UL)
+        let badResetStatus = api.Reset.Invoke(2u)
+        let preserved = snapshotProfile api
+        let preservedCalls, _, _ = readProfileCounter preserved 0
+        check counter "detailed profile reset rejects unsupported ABI without clearing counters" (badResetStatus = 2 && preservedCalls = 1UL)
+
+        let checkRejectedSnapshot label version capacity expectedStatus =
+            let sentinel = Array.create 552 0xa5uy
+            let buffer = Marshal.AllocHGlobal sentinel.Length
+            try
+                Marshal.Copy(sentinel, 0, buffer, sentinel.Length)
+                let status = api.Snapshot.Invoke(version, buffer, capacity)
+                let after = Array.zeroCreate<byte> sentinel.Length
+                Marshal.Copy(buffer, after, 0, after.Length)
+                check counter ($"{label}: returns the specified ABI status") (status = expectedStatus)
+                check counter ($"{label}: leaves caller memory unchanged") (after = sentinel)
+            finally
+                Marshal.FreeHGlobal buffer
+
+        check counter "detailed profile snapshot rejects a null output pointer" (api.Snapshot.Invoke(1u, 0n, 552u) = 1)
+        checkRejectedSnapshot "unsupported profile snapshot version" 2u 552u 2
+        checkRejectedSnapshot "truncated profile snapshot buffer" 1u 551u 3
+        check counter "detailed profile reset clears counters" (api.Reset.Invoke(1u) = 0)
+        let cleared = snapshotProfile api
+        check counter "detailed profile reset clears every category without changing snapshot metadata" (
+            readProfileU32 cleared 0 = 1u
+            && readProfileU32 cleared 4 = 552u
+            && readProfileU32 cleared 8 = 22u
+            && ([ 0 .. 21 ] |> List.forall (fun category -> let calls, ticks, failures = readProfileCounter cleared category in calls = 0UL && ticks = 0UL && failures = 0UL)))
+
+    let private verifyDetailedProfileThreadIsolation (counter: int ref) (api: OwningProfileApi) =
+        check counter "calling-thread profile reset succeeds before isolation check" (api.Reset.Invoke(1u) = 0)
+        let start = api.Begin.Invoke()
+        check counter "calling-thread profile timer starts before isolation check" (start <> 0UL && start <> UInt64.MaxValue)
+        check counter "calling-thread profile counter is seeded before isolation check" (api.End.Invoke(0u, start, 0) = 0)
+        let mainThreadId = NativeModuleInterop.getCurrentThreadId()
+        let mainBefore = snapshotProfile api
+        let worker =
+            System.Threading.Tasks.Task.Run(fun () ->
+                let workerThreadId = NativeModuleInterop.getCurrentThreadId()
+                let resetStatus = api.Reset.Invoke(1u)
+                let snapshot = if resetStatus = 0 then snapshotProfile api else Array.empty
+                workerThreadId, resetStatus, snapshot)
+        let workerThreadId, workerResetStatus, workerSnapshot = worker.GetAwaiter().GetResult()
+        check counter "profile isolation probe runs on a distinct native thread" (workerThreadId <> mainThreadId)
+        check counter "worker-thread profile reset succeeds" (workerResetStatus = 0)
+        check counter "worker-thread reset and snapshot contain only zero counters" (
+            workerSnapshot.Length = 552
+            && ([ 0 .. 21 ] |> List.forall (fun category -> let calls, ticks, failures = readProfileCounter workerSnapshot category in calls = 0UL && ticks = 0UL && failures = 0UL)))
+        let mainAfter = snapshotProfile api
+        let mainCalls, _, _ = readProfileCounter mainAfter 0
+        check counter "worker-thread reset leaves the calling thread counters intact" (mainCalls = 1UL && mainAfter = mainBefore)
+        check counter "calling-thread profile reset succeeds after isolation check" (api.Reset.Invoke(1u) = 0)
+
+    let private verifyDetailedRoomReadCounters (counter: int ref) (api: OwningProfileApi) =
+        let bytes = snapshotProfile api
+        check counter "room-read detailed profile snapshot retains ABI v1 metadata" (readProfileU32 bytes 0 = 1u && readProfileU32 bytes 4 = 552u && readProfileU32 bytes 8 = 22u && readProfileU64 bytes 16 > 0UL)
+        let providerCalls = [ 9 .. 17 ] |> List.map (fun category -> let calls, _, _ = readProfileCounter bytes category in calls)
+        check counter "room GET invokes the exact expected provider operations" (providerCalls = [ 1UL; 1UL; 0UL; 1UL; 0UL; 0UL; 1UL; 1UL; 1UL ])
+        check counter "room GET provider operations report no failures" ([ 9 .. 17 ] |> List.forall (fun category -> let _, _, failures = readProfileCounter bytes category in failures = 0UL))
+        check counter "room GET records runtime work including output commit" (
+            ([ 0 .. 8 ] |> List.sumBy (fun category -> let calls, _, _ = readProfileCounter bytes category in calls)) > 0UL
+            && (let calls, _, _ = readProfileCounter bytes 6 in calls > 0UL))
+        check counter "room GET runtime operations report no failures" ([ 0 .. 8 ] |> List.forall (fun category -> let _, _, failures = readProfileCounter bytes category in failures = 0UL))
+        check counter "context preparation is excluded after explicit profile reset" (let calls, _, failures = readProfileCounter bytes 18 in calls = 0UL && failures = 0UL)
+        check counter "room GET records SQL binding, stepping, and statement reset" (
+            ([ 19 .. 21 ] |> List.forall (fun category -> let calls, _, failures = readProfileCounter bytes category in calls > 0UL && failures = 0UL)))
 
     let private progress message =
         Console.WriteLine($"[native-room-read] {message}")
@@ -561,14 +689,19 @@ module NativeRoomReadTests =
             UTF8Encoding(false))
         aggregator
 
-    let private compileSmoke (toolchain: LlvmToolchain) (optimization: LlvmOptimization) (source: string) (headerDirectory: string) (kernelLibrary: string) (shellLibrary: string) (runtimeLibrary: string option) (outputDirectory: string) =
+    let private compileSmoke (toolchain: LlvmToolchain) (optimization: LlvmOptimization) (executionProfile: OwningRuntimeInstrumentation) (source: string) (headerDirectory: string) (kernelLibrary: string) (shellLibrary: string) (runtimeLibrary: string option) (outputDirectory: string) =
         Directory.CreateDirectory outputDirectory |> ignore
         let objectPath = Path.Combine(outputDirectory, "room_read_standalone_smoke.obj")
         let executable = Path.Combine(outputDirectory, "room_read_standalone_smoke.exe")
+        let profileDefine =
+            match executionProfile with
+            | OwningRuntimeInstrumentation.Off -> []
+            | OwningRuntimeInstrumentation.Detailed -> [ "-DAL_OWNING_DETAILED_PROFILE=1" ]
         runChild toolchain.ClangPath
-            [ "--target=x86_64-pc-windows-msvc"; "-std=c11"; "-Wall"; "-Wextra"; "-Werror"; "-ffreestanding"; "-fno-builtin"
-              (match optimization with LlvmOptimization.O0 -> "-O0" | LlvmOptimization.O2 -> "-O2")
-              "-c"; source; "-I"; headerDirectory; "-I"; outputDirectory; "-o"; objectPath ] outputDirectory
+            ([ "--target=x86_64-pc-windows-msvc"; "-std=c11"; "-Wall"; "-Wextra"; "-Werror"; "-ffreestanding"; "-fno-builtin"
+               (match optimization with LlvmOptimization.O0 -> "-O0" | LlvmOptimization.O2 -> "-O2") ]
+             @ profileDefine
+             @ [ "-c"; source; "-I"; headerDirectory; "-I"; outputDirectory; "-o"; objectPath ]) outputDirectory
         runChild toolchain.LldLinkPath
             ([ "/entry:room_read_smoke_start"; "/subsystem:console"; "/nodefaultlib"; "/machine:x64"; "/out:" + executable; objectPath; kernelLibrary; shellLibrary ]
              @ (runtimeLibrary |> Option.toList)) outputDirectory
@@ -942,7 +1075,7 @@ module NativeRoomReadTests =
 
     let private sha256 (path: string) = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes path)).ToLowerInvariant()
 
-    let private writeReceipt (repo: string) (runRoot: string) (runtimeProfile: string) (passed: bool) (assertionCount: int) (resultHashes: Map<string, string>) =
+    let private writeReceipt (repo: string) (runRoot: string) (runtimeProfile: string) (executionProfile: string) (passed: bool) (assertionCount: int) (resultHashes: Map<string, string>) =
         let hashes = JsonObject()
         for relative in sourceFiles repo do
             let path = Path.Combine(repo, relative.Replace('/', Path.DirectorySeparatorChar))
@@ -952,12 +1085,13 @@ module NativeRoomReadTests =
         let receipt = JsonObject()
         receipt["passed"] <- JsonValue.Create passed
         receipt["runtimeProfile"] <- JsonValue.Create runtimeProfile
+        receipt["executionProfile"] <- JsonValue.Create executionProfile
         receipt["assertions"] <- JsonValue.Create assertionCount
         receipt["sourceSha256"] <- hashes
         receipt["artifactsSha256"] <- results
         File.WriteAllText(Path.Combine(runRoot, "test-receipt.json"), receipt.ToJsonString(), UTF8Encoding(false))
 
-    let writeFailureReceipt (repo: string) (runRoot: string) (runtimeProfile: string) (safeMessage: string) (diagnostic: string) =
+    let writeFailureReceipt (repo: string) (runRoot: string) (runtimeProfile: string) (executionProfile: string) (safeMessage: string) (diagnostic: string) =
         let hashes = JsonObject()
         for relative in sourceFiles repo do
             let path = Path.Combine(repo, relative.Replace('/', Path.DirectorySeparatorChar))
@@ -965,12 +1099,13 @@ module NativeRoomReadTests =
         let receipt = JsonObject()
         receipt["passed"] <- JsonValue.Create false
         receipt["runtimeProfile"] <- JsonValue.Create runtimeProfile
+        receipt["executionProfile"] <- JsonValue.Create executionProfile
         receipt["failure"] <- JsonValue.Create safeMessage
         receipt["privateDiagnostic"] <- JsonValue.Create diagnostic
         receipt["sourceSha256"] <- hashes
         File.WriteAllText(Path.Combine(runRoot, "test-receipt.json"), receipt.ToJsonString(), UTF8Encoding(false))
 
-    let run toolchain repo runRoot runtimeProfile =
+    let run toolchain repo runRoot runtimeProfile executionProfile =
         if not (OperatingSystem.IsWindows()) then failwith "the real native SQLite verifier is Windows-only"
         let assertions = ref 0
         let contextBytes = Marshal.SizeOf<RoomReadContextAbi>()
@@ -1006,7 +1141,7 @@ module NativeRoomReadTests =
                 let optimizationName = match optimization with LlvmOptimization.O0 -> "O0" | LlvmOptimization.O2 -> "O2"
                 let artifactDirectory = Path.Combine(runRoot, "test-artifacts", optimizationName)
                 progress $"{optimizationName}: compiling native profile artifact"
-                use native = OwningStackAot.compileWithNativeHostDependenciesWithRuntimeProfile toolchain optimization runtimeProfile OwningNativeHostProfile.CampfireRoomReadV1 aggregator dependencies artifactDirectory body
+                use native = OwningStackAot.compileWithNativeHostDependenciesWithRuntimeProfileAndInstrumentation toolchain optimization runtimeProfile executionProfile OwningNativeHostProfile.CampfireRoomReadV1 aggregator dependencies artifactDirectory body
                 progress $"{optimizationName}: native profile artifact compiled"
                 check assertions $"{optimizationName}: native manifest is emitted" native.NativeHostManifestPath.IsSome
                 check assertions $"{optimizationName}: compiled program retains the selected runtime profile" (native.RuntimeProfile = runtimeProfile)
@@ -1014,7 +1149,17 @@ module NativeRoomReadTests =
                 let manifest = JsonNode.Parse(File.ReadAllText manifestPath).AsObject()
                 check assertions $"{optimizationName}: native profile publishes the 16 MiB output limit" (manifest.ToJsonString().Contains("16777216", StringComparison.Ordinal))
                 let moduleInfo = manifest["moduleInfo"].AsObject()
-                check assertions $"{optimizationName}: manifest pins runtime profile {runtimeProfileName runtimeProfile}" (moduleInfo["runtimeProfile"].GetValue<string>() = runtimeProfileName runtimeProfile)
+                let profileHeaderHash = sha256 (Path.Combine(repo, "src", "AgentLang.Llvm", "native", "owning_stack_profile.h"))
+                let profileHeaderIsPinned =
+                    moduleInfo["sourceHashes"].AsArray()
+                    |> Seq.choose Option.ofObj
+                    |> Seq.exists (fun source ->
+                        source["path"].GetValue<string>() = "native-runtime/owning_stack_profile.h"
+                        && source["sha256"].GetValue<string>() = profileHeaderHash)
+                check assertions $"{optimizationName}: manifest pins runtime and execution profiles" (
+                    moduleInfo["runtimeProfile"].GetValue<string>() = runtimeProfileName runtimeProfile
+                    && moduleInfo["executionProfile"].GetValue<string>() = executionProfileName executionProfile
+                    && profileHeaderIsPinned)
                 let requestSchema =
                     moduleInfo["boundarySchemas"].AsArray()
                     |> Seq.choose Option.ofObj
@@ -1050,6 +1195,14 @@ module NativeRoomReadTests =
                 let context, releaseContext = createNativeContext handle nativeDatabase
                 try
                     progress $"{optimizationName}: native SQLite context initialized"
+                    let detailedProfile =
+                        match executionProfile with
+                        | OwningRuntimeInstrumentation.Off -> None
+                        | OwningRuntimeInstrumentation.Detailed ->
+                            let api = profileApi handle
+                            verifyDetailedProfileAbi assertions api
+                            verifyDetailedProfileThreadIsolation assertions api
+                            Some api
                     progress $"{optimizationName}: checking direct 8-byte browser callback capacity"
                     verifyEightByteBrowserDispatch assertions handle context
                     progress $"{optimizationName}: direct 8-byte browser callback passed"
@@ -1057,6 +1210,10 @@ module NativeRoomReadTests =
                         progress $"{optimizationName}/{testCase.Name}: invoking reference and native entry"
                         configureSession referenceDatabase testCase
                         configureSession nativeDatabase testCase
+                        match detailedProfile, testCase.Name with
+                        | Some api, "legacy-cookie-purpose-metadata-fallback" ->
+                            check assertions $"{optimizationName}/{testCase.Name}: detailed profile reset succeeds" (api.Reset.Invoke(1u) = 0)
+                        | _ -> ()
                         let request = makeRequest testCase
                         let expected = invokeReference referenceEntry request
                         let actual =
@@ -1072,6 +1229,9 @@ module NativeRoomReadTests =
                                 raise (InvalidDataException($"{optimizationName}/{testCase.Name}: native execution or output decoding failed ({detail}).", error))
                             | error ->
                                 raise (InvalidDataException($"{optimizationName}/{testCase.Name}: native execution or output decoding failed.", error))
+                        match detailedProfile, testCase.Name with
+                        | Some api, "legacy-cookie-purpose-metadata-fallback" -> verifyDetailedRoomReadCounters assertions api
+                        | _ -> ()
                         check assertions $"{optimizationName}/{testCase.Name}: full typed interpreter/native values agree" (actual.Values = [ expected ])
                         let fields = outputFields expected
                         check assertions $"{optimizationName}/{testCase.Name}: expected status" (fields.TryFind "status" = Some(IntValue testCase.ExpectedStatus))
@@ -1155,7 +1315,7 @@ module NativeRoomReadTests =
                     let headerPath = Path.Combine(smokeDirectory, "room_read_test_fixture.h")
                     writeSmokeFixture headerPath requestBytes expectedBytes (Encoding.UTF8.GetBytes secret)
                     let smokeSource = Path.Combine(repo, "tests", "AgentLang.Campfire.NativeRoomRead.Tests", "native", "room_read_standalone_smoke.c")
-                    let smokeExe = compileSmoke toolchain optimization smokeSource (Path.GetDirectoryName(Path.Combine(artifactDirectory, "native-runtime", "room_read_adapter.h"))) (findSdkLibrary "kernel32.lib") (findSdkLibrary "shell32.lib") toolchain.CompilerRuntimeLibrary smokeDirectory
+                    let smokeExe = compileSmoke toolchain optimization executionProfile smokeSource (Path.GetDirectoryName(Path.Combine(artifactDirectory, "native-runtime", "room_read_adapter.h"))) (findSdkLibrary "kernel32.lib") (findSdkLibrary "shell32.lib") toolchain.CompilerRuntimeLibrary smokeDirectory
                     use executableStream = File.OpenRead smokeExe
                     use pe = new PEReader(executableStream)
                     check assertions $"{optimizationName}: standalone C smoke executable contains no CLR header" (isNull pe.PEHeaders.CorHeader)
@@ -1165,6 +1325,7 @@ module NativeRoomReadTests =
                     runSmoke.ArgumentList.Add native.LibraryPath
                     runSmoke.ArgumentList.Add nativeDatabase
                     runSmoke.ArgumentList.Add(match runtimeProfile with OwningRuntimeProfile.Diagnostic -> "0" | OwningRuntimeProfile.TrustedGenerated -> "1")
+                    if executionProfile = OwningRuntimeInstrumentation.Detailed then runSmoke.ArgumentList.Add "Detailed"
                     use smokeProcess = Process.Start(runSmoke)
                     smokeProcess.WaitForExit()
                     check assertions $"{optimizationName}: standalone C smoke invokes the generated export without CLR" (smokeProcess.ExitCode = 0)
@@ -1181,7 +1342,7 @@ module NativeRoomReadTests =
                 | LanguageException diagnostic -> diagnostic.Code
             check assertions $"room-read body is rejected by the unrelated room-find profile with its existing diagnostic (actual {oldProfileDiagnostic})" (oldProfileDiagnostic = "IR_OWNING_STACK_EFFECT_UNSUPPORTED")
             check assertions "profile rejection occurs before native artifacts are emitted" (not (Directory.Exists mismatchDirectory))
-            writeReceipt repo runRoot (runtimeProfileName runtimeProfile) true assertions.Value (Map.ofSeq artifactHashes)
+            writeReceipt repo runRoot (runtimeProfileName runtimeProfile) (executionProfileName executionProfile) true assertions.Value (Map.ofSeq artifactHashes)
             progress "native room-read verifier passed"
             assertions.Value
         finally

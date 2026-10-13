@@ -8,6 +8,14 @@ It follows the single-worker baseline and uses the same native handler, data,
 correctness checks, request mix and memory budget. One request remains within one
 worker. Ordinary function calls and SQL/cache access do not add mailbox transfers.
 
+User steering during finer profiling: keep locks and cross-thread dependencies
+rare. Prefer worker-owned arenas, provider contexts, SQL connections/statements
+and counters. Audit the successful request path for mutexes, atomic instructions
+and transfers; distinguish uncontended ownership/re-entry guards from shared
+contention. Discuss new synchronization or cross-worker dependencies before
+adopting them. Record HTTP admission/queue coordination and SQLite file/WAL
+coordination separately rather than claiming the whole service is lock-free.
+
 Sweep worker counts and record executor-thread counts/affinity separately. Measure
 sustained successful throughput, tail latency, dispatch wait, per-worker utilization,
 queue depth/bytes, failures/rejections, copied bytes and process memory. Test uneven

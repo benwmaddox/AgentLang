@@ -3,7 +3,9 @@
 param(
     [string] $RunRoot,
     [ValidateSet('Diagnostic', 'TrustedGenerated')]
-    [string] $RuntimeProfile = 'Diagnostic'
+    [string] $RuntimeProfile = 'Diagnostic',
+    [ValidateSet('Off', 'Detailed')]
+    [string] $ExecutionProfile = 'Off'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -43,6 +45,7 @@ $staticSourceFiles = @(
     'src/AgentLang.Llvm/native/campfire_room_read_host_abi.h',
     'src/AgentLang.Llvm/native/owning_stack_runtime.c',
     'src/AgentLang.Llvm/native/owning_stack_runtime.h',
+    'src/AgentLang.Llvm/native/owning_stack_profile.h',
     'src/AgentLang.Llvm/native/float_format.h',
     'src/AgentLang.Llvm/AgentLang.Llvm.fsproj',
     'src/AgentLang.Llvm/LlvmToolchain.fs',
@@ -96,7 +99,7 @@ if ($null -eq $testDll) { throw 'The standalone native room-read test assembly w
 $runErrorActionPreference = $ErrorActionPreference
 try {
     $ErrorActionPreference = 'Continue'
-    & dotnet $testDll.FullName --run-root $RunRoot --runtime-profile $RuntimeProfile 2>&1 |
+    & dotnet $testDll.FullName --run-root $RunRoot --runtime-profile $RuntimeProfile --execution-profile $ExecutionProfile 2>&1 |
         Tee-Object -FilePath $runLog
     $runExitCode = $LASTEXITCODE
 }
@@ -113,6 +116,8 @@ $changedSourceFiles = @($allPinnedFiles | Where-Object {
 })
 $sourceFreeze = [ordered]@{
     stable = ($changedSourceFiles.Count -eq 0)
+    runtimeProfile = $RuntimeProfile
+    executionProfile = $ExecutionProfile
     changedFiles = $changedSourceFiles
     filesBefore = $sourceFilesBefore
     filesAfter = $sourceFilesAfter
@@ -124,6 +129,9 @@ if ($changedSourceFiles.Count -ne 0) { throw "Pinned room-read source changed du
 if ($runExitCode -ne 0) { throw "native room-read verification failed with exit code $runExitCode" }
 $receipt = Get-Content -LiteralPath (Join-Path $RunRoot 'test-receipt.json') -Raw -Encoding UTF8 | ConvertFrom-Json -AsHashtable
 $expectedRuntimeProfile = if ($RuntimeProfile -eq 'Diagnostic') { 'diagnostic' } else { 'trusted-generated' }
-if (-not [bool]$receipt['passed'] -or [string]$receipt['runtimeProfile'] -cne $expectedRuntimeProfile) {
-    throw "Room-read receipt does not confirm the selected runtime profile '$expectedRuntimeProfile'."
+$expectedExecutionProfile = $ExecutionProfile.ToLowerInvariant()
+if (-not [bool]$receipt['passed'] -or
+    [string]$receipt['runtimeProfile'] -cne $expectedRuntimeProfile -or
+    [string]$receipt['executionProfile'] -cne $expectedExecutionProfile) {
+    throw "Room-read receipt does not confirm runtime '$expectedRuntimeProfile' and execution '$expectedExecutionProfile'."
 }

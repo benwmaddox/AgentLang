@@ -7,7 +7,13 @@
 #define AL_CAMPFIRE_EXPORT
 #include "room_read_adapter.h"
 #include "room_read_pure.h"
+#include "owning_stack_profile.h"
 #include "room_read_test_fixture.h"
+
+_Static_assert(sizeof(al_owning_profile_snapshot) == 552u,
+               "native profile snapshot ABI size changed");
+_Static_assert(offsetof(al_owning_profile_snapshot, counters) == 24u,
+               "native profile counter offset changed");
 
 #define SMOKE_STACK_BYTES (4u * 1024u * 1024u)
 #define SMOKE_RETAINED_BYTES (2u * 1024u * 1024u)
@@ -36,7 +42,9 @@ enum {
   SMOKE_NULL_PROVIDER_ACCEPTED = 20,
   SMOKE_INVALID_REFINEMENT_ACCEPTED = 21,
   SMOKE_RETAINED_CAPACITY_NOT_REJECTED = 22,
-  SMOKE_RETAINED_CAPACITY_PARTIAL_WRITE = 23
+  SMOKE_RETAINED_CAPACITY_PARTIAL_WRITE = 23,
+  SMOKE_PROFILE_API_FAILED = 24,
+  SMOKE_PROFILE_COUNTERS_INVALID = 25
 };
 
 typedef uint32_t(__cdecl *pure_size_fn)(void);
@@ -54,6 +62,10 @@ typedef int32_t(__cdecl *context_destroy_fn)(
 typedef int32_t(__cdecl *execute_fn)(
     al_owning_stack_context *, void *, const uint8_t *, uint32_t,
     const uint32_t *, uint32_t, uint8_t *, uint32_t);
+#if AL_OWNING_DETAILED_PROFILE
+typedef int32_t(__cdecl *profile_reset_fn)(uint32_t);
+typedef int32_t(__cdecl *profile_snapshot_fn)(uint32_t, void *, uint32_t);
+#endif
 
 #define LOAD_FUNCTION(destination, function_type, symbol_name)               \
   do {                                                                       \
@@ -163,6 +175,11 @@ void room_read_smoke_start(void) {
   context_init_fn context_init;
   context_destroy_fn context_destroy;
   execute_fn execute;
+#if AL_OWNING_DETAILED_PROFILE
+  profile_reset_fn profile_reset;
+  profile_snapshot_fn profile_snapshot;
+  al_owning_profile_snapshot profile_data;
+#endif
   uint32_t error_tag = UINT32_MAX;
   uint32_t input_extent = ROOM_READ_INPUT_BYTES;
   uint32_t path_bytes = 0u;
@@ -178,10 +195,24 @@ void room_read_smoke_start(void) {
   int result = SMOKE_MODULE_LOAD_FAILED;
 
   arguments = CommandLineToArgvW(GetCommandLineW(), &argument_count);
+#if AL_OWNING_DETAILED_PROFILE
+  if (arguments == NULL || argument_count != 5) {
+#else
   if (arguments == NULL || argument_count != 4) {
+#endif
     result = SMOKE_BAD_ARGUMENTS;
     goto cleanup;
   }
+#if AL_OWNING_DETAILED_PROFILE
+  if (arguments[4][0] != L'D' || arguments[4][1] != L'e' ||
+      arguments[4][2] != L't' || arguments[4][3] != L'a' ||
+      arguments[4][4] != L'i' || arguments[4][5] != L'l' ||
+      arguments[4][6] != L'e' || arguments[4][7] != L'd' ||
+      arguments[4][8] != L'\0') {
+    result = SMOKE_BAD_ARGUMENTS;
+    goto cleanup;
+  }
+#endif
   if (arguments[3][0] == L'0' && arguments[3][1] == L'\0')
     runtime_profile = 0;
   else if (arguments[3][0] == L'1' && arguments[3][1] == L'\0')
@@ -210,10 +241,22 @@ void room_read_smoke_start(void) {
                 "al_campfire_room_read_context_destroy_v1");
   LOAD_FUNCTION(execute, execute_fn,
                 "agentlang_owning_execute_with_host_context");
+#if AL_OWNING_DETAILED_PROFILE
+  LOAD_FUNCTION(profile_reset, profile_reset_fn,
+                "al_owning_profile_reset_v1");
+  LOAD_FUNCTION(profile_snapshot, profile_snapshot_fn,
+                "al_owning_profile_snapshot_v1");
+#endif
   if (pure_size == NULL || pure_alignment == NULL || pure_init == NULL ||
       pure_destroy == NULL || context_init == NULL || provision_wal == NULL ||
       context_destroy == NULL || execute == NULL)
     goto cleanup;
+#if AL_OWNING_DETAILED_PROFILE
+  if (profile_reset == NULL || profile_snapshot == NULL) {
+    result = SMOKE_PROFILE_API_FAILED;
+    goto cleanup;
+  }
+#endif
 
   storage_bytes = pure_size();
   alignment = pure_alignment();
@@ -252,6 +295,13 @@ void room_read_smoke_start(void) {
   }
   provider_initialized = 1;
 
+#if AL_OWNING_DETAILED_PROFILE
+  if (profile_reset(AL_OWNING_PROFILE_ABI_VERSION) !=
+      AL_OWNING_PROFILE_STATUS_OK) {
+    result = SMOKE_PROFILE_API_FAILED;
+    goto cleanup;
+  }
+#endif
   reset_runtime_context(runtime_profile, 0);
   call_status = execute(&runtime_context, &provider_context, room_read_input,
                         ROOM_READ_INPUT_BYTES, &input_extent, 1u,
@@ -273,6 +323,56 @@ void room_read_smoke_start(void) {
     result = SMOKE_OUTPUT_MISMATCH;
     goto cleanup;
   }
+#if AL_OWNING_DETAILED_PROFILE
+  if (profile_snapshot(AL_OWNING_PROFILE_ABI_VERSION, &profile_data,
+                       (uint32_t)sizeof(profile_data)) !=
+          AL_OWNING_PROFILE_STATUS_OK ||
+      profile_data.abi_version != AL_OWNING_PROFILE_ABI_VERSION ||
+      profile_data.size_bytes != (uint32_t)sizeof(profile_data) ||
+      profile_data.category_count != AL_OWNING_PROFILE_CATEGORY_COUNT ||
+      profile_data.reserved != 0u || profile_data.qpc_frequency == 0u) {
+    result = SMOKE_PROFILE_COUNTERS_INVALID;
+    goto cleanup;
+  }
+  if (profile_data.counters[AL_OWNING_PROFILE_COOKIE_VERIFY_SESSION_TOKEN]
+              .calls != 1u ||
+      profile_data.counters[AL_OWNING_PROFILE_SESSION_FIND_BY_TOKEN].calls !=
+          1u ||
+      profile_data.counters[AL_OWNING_PROFILE_SESSION_REFRESH_BEFORE].calls !=
+          0u ||
+      profile_data.counters[AL_OWNING_PROFILE_USER_FIND_BY_ID].calls != 1u ||
+      profile_data.counters[AL_OWNING_PROFILE_USER_AUTHENTICATE_BOT_KEY].calls !=
+          0u ||
+      profile_data.counters[AL_OWNING_PROFILE_BROWSER_VERSION_AT_LEAST].calls !=
+          0u ||
+      profile_data.counters[AL_OWNING_PROFILE_ROOM_FIND_FOR_USER].calls != 1u ||
+      profile_data.counters[AL_OWNING_PROFILE_MEMBERSHIP_EXISTS].calls != 1u ||
+      profile_data.counters[AL_OWNING_PROFILE_MESSAGE_LAST_PAGE].calls != 1u ||
+      profile_data.counters[AL_OWNING_PROFILE_SQL_PREPARE].calls != 0u ||
+      profile_data.counters[AL_OWNING_PROFILE_SQL_BIND].calls == 0u ||
+      profile_data.counters[AL_OWNING_PROFILE_SQL_STEP].calls == 0u ||
+      profile_data.counters[AL_OWNING_PROFILE_SQL_RESET].calls == 0u ||
+      profile_data.counters[AL_OWNING_PROFILE_HOST_OUTPUT_COMMIT].calls == 0u) {
+    result = SMOKE_PROFILE_COUNTERS_INVALID;
+    goto cleanup;
+  }
+  {
+    uint32_t index;
+    uint64_t runtime_calls = 0u;
+    for (index = 0u; index < AL_OWNING_PROFILE_CATEGORY_COUNT; ++index) {
+      if (profile_data.counters[index].failures != 0u) {
+        result = SMOKE_PROFILE_COUNTERS_INVALID;
+        goto cleanup;
+      }
+      if (index <= AL_OWNING_PROFILE_OTHER_RUNTIME_VALIDATION)
+        runtime_calls += profile_data.counters[index].calls;
+    }
+    if (runtime_calls == 0u) {
+      result = SMOKE_PROFILE_COUNTERS_INVALID;
+      goto cleanup;
+    }
+  }
+#endif
 
   /* A runtime module must reject the context layout for the other profile.
    * Diagnostic requires both bitmaps; TrustedGenerated requires neither. */

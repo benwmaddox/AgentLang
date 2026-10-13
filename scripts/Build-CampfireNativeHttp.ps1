@@ -20,7 +20,7 @@ if (-not [StringComparer]::Ordinal.Equals($RuntimeProfile, 'diagnostic') -and
 $stageProfileMacro = if ([StringComparer]::OrdinalIgnoreCase.Equals($StageProfile, 'On')) { 1 } else { 0 }
 $stageProfileName = if ($stageProfileMacro -eq 1) { 'On' } else { 'Off' }
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$outputRootParent = [System.IO.Path]::GetFullPath((Join-Path $repositoryRoot '.agentlang\campfire-native-profile-255\http-host'))
+$outputRootParent = [System.IO.Path]::GetFullPath((Join-Path $repositoryRoot '.agentlang\campfire-native-profile-256\http-host'))
 $testRunsRoot = [System.IO.Path]::GetFullPath((Join-Path $repositoryRoot '.agentlang\campfire-native-room-read-252\test-runs'))
 $HostSourcePath = Join-Path $repositoryRoot 'applications\campfire\Native\http\native_http_host.c'
 $HelperSourceRoot = Join-Path $repositoryRoot 'applications\campfire\Native\http'
@@ -77,6 +77,7 @@ function Get-ExpectedRoomReadSources {
         'src/AgentLang.Llvm/native/campfire_room_read_host_abi.h',
         'src/AgentLang.Llvm/native/owning_stack_runtime.c',
         'src/AgentLang.Llvm/native/owning_stack_runtime.h',
+        'src/AgentLang.Llvm/native/owning_stack_profile.h',
         'src/AgentLang.Llvm/native/float_format.h',
         'src/AgentLang.Llvm/AgentLang.Llvm.fsproj',
         'src/AgentLang.Llvm/LlvmToolchain.fs',
@@ -212,6 +213,7 @@ function Assert-FreshValidationRun([string] $RequestedRunRoot, [string] $Expecte
         ManifestSha256 = $expectedManifest
         SqliteSha256 = $expectedSqlite
         RuntimeProfile = $receipt.runtimeProfile
+        ExecutionProfile = $receipt.executionProfile
     }
 }
 function Assert-ClosedRoomReadManifest([string] $ManifestPath, [string] $ExpectedRuntimeProfile) {
@@ -290,6 +292,15 @@ if ((Get-Hash $modulePath) -ne $expectedModule) { throw 'Native module hash does
 if ((Get-Hash $manifestPath) -ne $expectedManifest) { throw 'Manifest hash does not match the selected artifact source.' }
 if ((Get-Hash $sqlitePath) -ne $expectedSqlite) { throw 'SQLite DLL hash does not match the selected artifact source.' }
 $manifestRuntimeProfile = Assert-ClosedRoomReadManifest $manifestPath $validation.RuntimeProfile
+$manifestInfo = (Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json).moduleInfo
+$executionProfileName = [string]$manifestInfo.executionProfile
+if ($executionProfileName -cnotin @('off', 'detailed') -or $executionProfileName -cne $validation.ExecutionProfile) {
+    throw 'Execution instrumentation must match the fresh passing gate receipt.'
+}
+$executionProfileMacro = if ($executionProfileName -ceq 'detailed') { 1 } else { 0 }
+if ($executionProfileMacro -eq 1 -and $stageProfileMacro -ne 1) {
+    throw 'Detailed execution instrumentation requires the enclosing stage profile.'
+}
 $runtimeProfileMacro = if ([StringComparer]::Ordinal.Equals($manifestRuntimeProfile, 'trusted-generated')) { 1 } else { 0 }
 
 $toolRoot = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\Llvm\x64\bin'
@@ -332,6 +343,7 @@ $headerText = @(
     ('#define CAMPFIRE_HTTP_OWNING_RUNTIME_PROFILE_ID ' + $runtimeProfileMacro),
     ('#define CAMPFIRE_HTTP_OWNING_RUNTIME_PROFILE_NAME "' + $manifestRuntimeProfile + '"'),
     ('#define CAMPFIRE_HTTP_STAGE_PROFILE ' + $stageProfileMacro),
+    ('#define CAMPFIRE_HTTP_EXECUTION_PROFILE ' + $executionProfileMacro),
     'static const uint8_t g_expected_module_sha256[32] = {' + (Convert-HashToCBytes $expectedModule) + '};',
     'static const uint8_t g_expected_manifest_sha256[32] = {' + (Convert-HashToCBytes $expectedManifest) + '};',
     'static const uint8_t g_expected_sqlite_sha256[32] = {' + (Convert-HashToCBytes $expectedSqlite) + '};',
@@ -348,7 +360,7 @@ foreach ($helperName in $helperPaths.Keys) {
     $sourcePins[$relativePath] = Get-Hash $helperPath
 }
 $hostHash = Get-Hash $HostSourcePath
-$expectedHostHash = 'BB1FBE71DC0912D6B96F1107A5143F4873A5346502D337A0F192C80D52085A49'
+$expectedHostHash = 'B700A759E5DB92F26D0040ED7FF77B8136C9270FC544CBF2BE425F02EC1DE895'
 if ($hostHash -ne $expectedHostHash) {
     throw 'HTTP host source differs from the reviewed native host revision.'
 }
@@ -449,6 +461,10 @@ foreach ($opt in $builds) {
         Optimization = $opt
         RuntimeProfile = $manifestRuntimeProfile
         StageProfile = $stageProfileName
+        ExecutionProfile = $executionProfileName
+        ExecutionProfileGeneratedPin = 'CAMPFIRE_HTTP_EXECUTION_PROFILE=' + $executionProfileMacro
+        ModuleInstrumentationCompileDefine = '-DAL_OWNING_DETAILED_PROFILE=' + $executionProfileMacro
+        HostLocalRuntimeInstrumentation = 'off'
         OwningRuntimeCompileDefine = '-DAL_OWNING_TRUSTED_GENERATED=' + $runtimeProfileMacro
         StageProfileGeneratedPin = 'CAMPFIRE_HTTP_STAGE_PROFILE=' + $stageProfileMacro
         ProvenanceMode = $provenanceMode

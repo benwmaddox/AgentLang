@@ -1,9 +1,122 @@
 #include "owning_stack_runtime.h"
+#include "owning_stack_profile.h"
 #include "float_format.h"
 
 #include <limits.h>
 
 #define AL_OWNING_POISON 0xA5u
+
+#if AL_OWNING_DETAILED_PROFILE
+/* Windows x64 uses the same 64-bit integer ABI for LARGE_INTEGER. Keep the
+ * freestanding runtime independent of the Windows SDK headers. */
+__declspec(dllimport) int32_t __stdcall QueryPerformanceCounter(int64_t *value);
+__declspec(dllimport) int32_t __stdcall QueryPerformanceFrequency(int64_t *value);
+
+static _Thread_local al_owning_profile_counter
+    al_owning_profile_counters[AL_OWNING_PROFILE_CATEGORY_COUNT];
+static _Thread_local uint32_t al_owning_profile_timer_failed;
+
+static uint64_t al_owning_profile_saturating_add(uint64_t left,
+                                                 uint64_t right) {
+  return right > UINT64_MAX - left ? UINT64_MAX : left + right;
+}
+
+uint64_t al_owning_profile_begin_v1(void) {
+  int64_t start_ticks = 0;
+  if (!QueryPerformanceCounter(&start_ticks) || start_ticks <= 0) {
+    al_owning_profile_timer_failed = 1u;
+    return UINT64_MAX;
+  }
+  return (uint64_t)start_ticks;
+}
+
+int32_t al_owning_profile_end_v1(uint32_t category_id, uint64_t start_ticks,
+                                 int32_t failed) {
+  int64_t stop_ticks = 0;
+  al_owning_profile_counter *counter;
+  uint64_t elapsed_ticks;
+  if (category_id >= AL_OWNING_PROFILE_CATEGORY_COUNT)
+    return AL_OWNING_PROFILE_STATUS_CATEGORY_UNSUPPORTED;
+  if (start_ticks == UINT64_MAX) {
+    al_owning_profile_timer_failed = 1u;
+    return AL_OWNING_PROFILE_STATUS_TIMER_FAILURE;
+  }
+  if (start_ticks == 0u || failed < 0 || failed > 1)
+    return AL_OWNING_PROFILE_STATUS_INVALID_ARGUMENT;
+  if (!QueryPerformanceCounter(&stop_ticks) || stop_ticks <= 0 ||
+      (uint64_t)stop_ticks < start_ticks) {
+    al_owning_profile_timer_failed = 1u;
+    return AL_OWNING_PROFILE_STATUS_TIMER_FAILURE;
+  }
+  elapsed_ticks = (uint64_t)stop_ticks - start_ticks;
+  counter = &al_owning_profile_counters[category_id];
+  counter->calls = al_owning_profile_saturating_add(counter->calls, 1u);
+  counter->ticks = al_owning_profile_saturating_add(counter->ticks,
+                                                    elapsed_ticks);
+  if (failed != 0)
+    counter->failures =
+        al_owning_profile_saturating_add(counter->failures, 1u);
+  return AL_OWNING_PROFILE_STATUS_OK;
+}
+
+int32_t al_owning_profile_reset_v1(uint32_t abi_version) {
+  uint32_t index;
+  if (abi_version != AL_OWNING_PROFILE_ABI_VERSION)
+    return AL_OWNING_PROFILE_STATUS_VERSION_UNSUPPORTED;
+  for (index = 0u; index < AL_OWNING_PROFILE_CATEGORY_COUNT; ++index) {
+    al_owning_profile_counters[index].calls = 0u;
+    al_owning_profile_counters[index].ticks = 0u;
+    al_owning_profile_counters[index].failures = 0u;
+  }
+  al_owning_profile_timer_failed = 0u;
+  return AL_OWNING_PROFILE_STATUS_OK;
+}
+
+int32_t al_owning_profile_snapshot_v1(uint32_t abi_version, void *out,
+                                      uint32_t capacity_bytes) {
+  al_owning_profile_snapshot snapshot;
+  uint32_t index;
+  int64_t frequency = 0;
+  uint8_t *destination;
+  const uint8_t *source;
+  uint32_t byte_index;
+  if (abi_version != AL_OWNING_PROFILE_ABI_VERSION)
+    return AL_OWNING_PROFILE_STATUS_VERSION_UNSUPPORTED;
+  if (out == 0)
+    return AL_OWNING_PROFILE_STATUS_INVALID_ARGUMENT;
+  if (capacity_bytes < (uint32_t)sizeof(snapshot))
+    return AL_OWNING_PROFILE_STATUS_BUFFER_TOO_SMALL;
+  if (al_owning_profile_timer_failed != 0u)
+    return AL_OWNING_PROFILE_STATUS_TIMER_FAILURE;
+  if (!QueryPerformanceFrequency(&frequency) || frequency <= 0)
+    return AL_OWNING_PROFILE_STATUS_TIMER_FAILURE;
+
+  snapshot.abi_version = AL_OWNING_PROFILE_ABI_VERSION;
+  snapshot.size_bytes = (uint32_t)sizeof(snapshot);
+  snapshot.category_count = AL_OWNING_PROFILE_CATEGORY_COUNT;
+  snapshot.reserved = 0u;
+  snapshot.qpc_frequency = (uint64_t)frequency;
+  for (index = 0u; index < AL_OWNING_PROFILE_CATEGORY_COUNT; ++index)
+    snapshot.counters[index] = al_owning_profile_counters[index];
+
+  /* Copy only after all validation and QPC calls have succeeded. Byte-wise
+   * copying accepts unaligned caller storage without changing the ABI. */
+  destination = (uint8_t *)out;
+  source = (const uint8_t *)&snapshot;
+  for (byte_index = 0u; byte_index < (uint32_t)sizeof(snapshot); ++byte_index)
+    destination[byte_index] = source[byte_index];
+  return AL_OWNING_PROFILE_STATUS_OK;
+}
+
+#define AL_OWNING_PROFILE_START() uint64_t al_profile_start = al_owning_profile_begin_v1()
+#define AL_OWNING_PROFILE_END(category, failed) \
+  ((void)al_owning_profile_end_v1((category), al_profile_start, (failed)))
+#define AL_OWNING_PROFILE_IMPL(name) name##_impl
+#else
+#define AL_OWNING_PROFILE_START() ((void)0)
+#define AL_OWNING_PROFILE_END(category, failed) ((void)0)
+#define AL_OWNING_PROFILE_IMPL(name) name
+#endif
 
 #if !AL_OWNING_TRUSTED_GENERATED
 static uint32_t al_owning_bit_bytes(uint32_t byte_count) {
@@ -258,7 +371,8 @@ void al_owning_set_failure(al_owning_stack_context *ctx, uint32_t status,
   ctx->diagnostic_float_bits = 0u;
 }
 
-int32_t al_owning_build_profile_valid(const al_owning_stack_context *ctx) {
+int32_t AL_OWNING_PROFILE_IMPL(al_owning_build_profile_valid)(
+    const al_owning_stack_context *ctx) {
   if (ctx == 0 || ctx->abi_version != AL_OWNING_STACK_ABI_VERSION ||
       ctx->stack_capacity_bytes > (uint32_t)INT32_MAX ||
       ctx->stack_data == 0)
@@ -272,6 +386,15 @@ int32_t al_owning_build_profile_valid(const al_owning_stack_context *ctx) {
          ctx->init_bitmap != 0 && ctx->poison_bitmap != 0;
 #endif
 }
+
+#if AL_OWNING_DETAILED_PROFILE
+int32_t al_owning_build_profile_valid(const al_owning_stack_context *ctx) {
+  AL_OWNING_PROFILE_START();
+  int32_t result = al_owning_build_profile_valid_impl(ctx);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_FRAME_VALIDATION, result == 0);
+  return result;
+}
+#endif
 
 void al_owning_begin(al_owning_stack_context *ctx) {
   if (ctx == 0)
@@ -324,7 +447,8 @@ void al_owning_begin(al_owning_stack_context *ctx) {
 #endif
 }
 
-int32_t al_owning_enter_frame(al_owning_stack_context *ctx, uint32_t error_id) {
+int32_t AL_OWNING_PROFILE_IMPL(al_owning_enter_frame)(
+    al_owning_stack_context *ctx, uint32_t error_id) {
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
   /* The compiled entry body contributes one native frame before user calls.
@@ -341,7 +465,18 @@ int32_t al_owning_enter_frame(al_owning_stack_context *ctx, uint32_t error_id) {
   return 0;
 }
 
-void al_owning_leave_frame(al_owning_stack_context *ctx) {
+#if AL_OWNING_DETAILED_PROFILE
+int32_t al_owning_enter_frame(al_owning_stack_context *ctx,
+                              uint32_t error_id) {
+  AL_OWNING_PROFILE_START();
+  int32_t result = al_owning_enter_frame_impl(ctx, error_id);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_FRAME_VALIDATION, result != 0);
+  return result;
+}
+#endif
+
+void AL_OWNING_PROFILE_IMPL(al_owning_leave_frame)(
+    al_owning_stack_context *ctx) {
   if (ctx == 0)
     return;
   if (ctx->call_depth > 0u)
@@ -351,8 +486,20 @@ void al_owning_leave_frame(al_owning_stack_context *ctx) {
                   ctx->cursor_bytes, 0u, 0u, 0u, 0u, 0u);
 }
 
-int32_t al_owning_reserve_to(al_owning_stack_context *ctx, uint32_t new_cursor,
-                             uint32_t error_id) {
+#if AL_OWNING_DETAILED_PROFILE
+void al_owning_leave_frame(al_owning_stack_context *ctx) {
+  AL_OWNING_PROFILE_START();
+  uint32_t prior_status = ctx == 0 ? AL_OWNING_STATUS_INTERNAL : ctx->status;
+  al_owning_leave_frame_impl(ctx);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_FRAME_VALIDATION,
+                        ctx == 0 ||
+                            (prior_status == AL_OWNING_STATUS_OK &&
+                             ctx->status != AL_OWNING_STATUS_OK));
+}
+#endif
+
+int32_t AL_OWNING_PROFILE_IMPL(al_owning_reserve_to)(
+    al_owning_stack_context *ctx, uint32_t new_cursor, uint32_t error_id) {
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
   if (new_cursor < ctx->cursor_bytes) {
@@ -372,9 +519,19 @@ int32_t al_owning_reserve_to(al_owning_stack_context *ctx, uint32_t new_cursor,
   return 0;
 }
 
-void al_owning_release_to(al_owning_stack_context *ctx, uint32_t new_cursor,
-                          uint32_t event_kind, uint32_t type_id,
-                          uint32_t payload_bytes) {
+#if AL_OWNING_DETAILED_PROFILE
+int32_t al_owning_reserve_to(al_owning_stack_context *ctx,
+                             uint32_t new_cursor, uint32_t error_id) {
+  AL_OWNING_PROFILE_START();
+  int32_t result = al_owning_reserve_to_impl(ctx, new_cursor, error_id);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_RESERVE_RELEASE, result != 0);
+  return result;
+}
+#endif
+
+void AL_OWNING_PROFILE_IMPL(al_owning_release_to)(
+    al_owning_stack_context *ctx, uint32_t new_cursor, uint32_t event_kind,
+    uint32_t type_id, uint32_t payload_bytes) {
   uint32_t old_cursor;
   if (ctx == 0)
     return;
@@ -391,8 +548,23 @@ void al_owning_release_to(al_owning_stack_context *ctx, uint32_t new_cursor,
   ctx->cursor_bytes = new_cursor;
 }
 
-int32_t al_owning_check_initialized(al_owning_stack_context *ctx,
-                                    uint32_t offset, uint32_t byte_count) {
+#if AL_OWNING_DETAILED_PROFILE
+void al_owning_release_to(al_owning_stack_context *ctx, uint32_t new_cursor,
+                          uint32_t event_kind, uint32_t type_id,
+                          uint32_t payload_bytes) {
+  AL_OWNING_PROFILE_START();
+  uint32_t prior_status = ctx == 0 ? AL_OWNING_STATUS_INTERNAL : ctx->status;
+  al_owning_release_to_impl(ctx, new_cursor, event_kind, type_id,
+                            payload_bytes);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_RESERVE_RELEASE,
+                        ctx == 0 ||
+                            (prior_status == AL_OWNING_STATUS_OK &&
+                             ctx->status != AL_OWNING_STATUS_OK));
+}
+#endif
+
+int32_t AL_OWNING_PROFILE_IMPL(al_owning_check_initialized)(
+    al_owning_stack_context *ctx, uint32_t offset, uint32_t byte_count) {
 #if !AL_OWNING_TRUSTED_GENERATED
   uint32_t index;
   int32_t saw_poison = 0;
@@ -425,6 +597,18 @@ int32_t al_owning_check_initialized(al_owning_stack_context *ctx,
   return 0;
 #endif
 }
+
+#if AL_OWNING_DETAILED_PROFILE
+int32_t al_owning_check_initialized(al_owning_stack_context *ctx,
+                                    uint32_t offset, uint32_t byte_count) {
+  AL_OWNING_PROFILE_START();
+  int32_t result =
+      al_owning_check_initialized_impl(ctx, offset, byte_count);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_INITIALIZATION_CHECK,
+                        result != 0);
+  return result;
+}
+#endif
 
 int64_t al_owning_load_i64(al_owning_stack_context *ctx, uint32_t offset) {
   uint64_t result = 0u;
@@ -472,10 +656,10 @@ void al_owning_store_token(al_owning_stack_context *ctx, uint32_t offset,
                   0u, 0u);
 }
 
-void al_owning_copy_external(al_owning_stack_context *ctx,
-                             uint32_t destination_offset, const uint8_t *source,
-                             uint32_t payload_bytes, uint32_t extent_bytes,
-                             uint32_t type_id) {
+void AL_OWNING_PROFILE_IMPL(al_owning_copy_external)(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    const uint8_t *source, uint32_t payload_bytes, uint32_t extent_bytes,
+    uint32_t type_id) {
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return;
   if (extent_bytes < payload_bytes ||
@@ -498,7 +682,23 @@ void al_owning_copy_external(al_owning_stack_context *ctx,
                   extent_bytes, payload_bytes, 0u, 0u, 0u);
 }
 
-int32_t al_owning_copy_external_bounded(
+#if AL_OWNING_DETAILED_PROFILE
+void al_owning_copy_external(al_owning_stack_context *ctx,
+                             uint32_t destination_offset, const uint8_t *source,
+                             uint32_t payload_bytes, uint32_t extent_bytes,
+                             uint32_t type_id) {
+  AL_OWNING_PROFILE_START();
+  uint32_t prior_status = ctx == 0 ? AL_OWNING_STATUS_INTERNAL : ctx->status;
+  al_owning_copy_external_impl(ctx, destination_offset, source, payload_bytes,
+                               extent_bytes, type_id);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_ARENA_COPY,
+                        ctx == 0 ||
+                            (prior_status == AL_OWNING_STATUS_OK &&
+                             ctx->status != AL_OWNING_STATUS_OK));
+}
+#endif
+
+int32_t AL_OWNING_PROFILE_IMPL(al_owning_copy_external_bounded)(
     al_owning_stack_context *ctx, uint32_t destination_offset,
     const uint8_t *source, uint32_t source_length, uint32_t source_offset,
     uint32_t payload_bytes, uint32_t extent_bytes, uint32_t type_id,
@@ -560,11 +760,25 @@ int32_t al_owning_copy_external_bounded(
   return ctx->status == AL_OWNING_STATUS_OK ? 0 : 1;
 }
 
-int32_t al_owning_copy_constant(al_owning_stack_context *ctx,
-                                uint32_t destination_offset,
-                                const uint8_t *source, uint32_t source_length,
-                                uint32_t payload_bytes, uint32_t extent_bytes,
-                                uint32_t type_id, uint32_t error_id) {
+#if AL_OWNING_DETAILED_PROFILE
+int32_t al_owning_copy_external_bounded(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    const uint8_t *source, uint32_t source_length, uint32_t source_offset,
+    uint32_t payload_bytes, uint32_t extent_bytes, uint32_t type_id,
+    uint32_t error_id) {
+  AL_OWNING_PROFILE_START();
+  int32_t result = al_owning_copy_external_bounded_impl(
+      ctx, destination_offset, source, source_length, source_offset,
+      payload_bytes, extent_bytes, type_id, error_id);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_ARENA_COPY, result != 0);
+  return result;
+}
+#endif
+
+int32_t AL_OWNING_PROFILE_IMPL(al_owning_copy_constant)(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    const uint8_t *source, uint32_t source_length, uint32_t payload_bytes,
+    uint32_t extent_bytes, uint32_t type_id, uint32_t error_id) {
   uintptr_t source_address;
   uintptr_t source_end;
   uintptr_t stack_address;
@@ -620,6 +834,21 @@ int32_t al_owning_copy_constant(al_owning_stack_context *ctx,
                   extent_bytes, payload_bytes, 0u, 0u, 0u);
   return ctx->status == AL_OWNING_STATUS_OK ? 0 : 1;
 }
+
+#if AL_OWNING_DETAILED_PROFILE
+int32_t al_owning_copy_constant(al_owning_stack_context *ctx,
+                                uint32_t destination_offset,
+                                const uint8_t *source, uint32_t source_length,
+                                uint32_t payload_bytes, uint32_t extent_bytes,
+                                uint32_t type_id, uint32_t error_id) {
+  AL_OWNING_PROFILE_START();
+  int32_t result = al_owning_copy_constant_impl(
+      ctx, destination_offset, source, source_length, payload_bytes,
+      extent_bytes, type_id, error_id);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_ARENA_COPY, result != 0);
+  return result;
+}
+#endif
 
 typedef struct al_owning_scan_view {
   al_owning_stack_context *ctx;
@@ -1162,9 +1391,9 @@ al_owning_initialize_graph_memo(uint8_t state[AL_OWNING_LAYOUT_MAX_TYPES],
   }
 }
 
-static int32_t al_owning_validate_type_graph(al_owning_scan_view *view,
-                                             const al_owning_layout *layout,
-                                             uint32_t type_index) {
+static int32_t AL_OWNING_PROFILE_IMPL(al_owning_validate_type_graph)(
+    al_owning_scan_view *view, const al_owning_layout *layout,
+    uint32_t type_index) {
   uint8_t state[AL_OWNING_LAYOUT_MAX_TYPES];
   uint8_t height[AL_OWNING_LAYOUT_MAX_TYPES];
   uint32_t visited_fields = 0u;
@@ -1172,6 +1401,19 @@ static int32_t al_owning_validate_type_graph(al_owning_scan_view *view,
   return al_owning_validate_type_graph_inner(view, layout, type_index, 0u,
                                              state, height, &visited_fields);
 }
+
+#if AL_OWNING_DETAILED_PROFILE
+static int32_t al_owning_validate_type_graph(al_owning_scan_view *view,
+                                             const al_owning_layout *layout,
+                                             uint32_t type_index) {
+  AL_OWNING_PROFILE_START();
+  int32_t result = al_owning_validate_type_graph_impl(view, layout,
+                                                      type_index);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_OTHER_RUNTIME_VALIDATION,
+                        result == 0);
+  return result;
+}
+#endif
 
 static int32_t al_owning_scan_string(al_owning_scan_view *view, uint32_t offset,
                                      uint32_t containing_owner_end,
@@ -1616,12 +1858,10 @@ static int32_t al_owning_scan_value(al_owning_scan_view *view,
   return 1;
 }
 
-int32_t al_owning_measure_value(al_owning_stack_context *ctx,
-                                const al_owning_layout *layout,
-                                uint32_t type_index, uint32_t offset,
-                                uint32_t containing_owner_end,
-                                uint32_t error_id,
-                                al_owning_value_size *out_value_size) {
+int32_t AL_OWNING_PROFILE_IMPL(al_owning_measure_value)(
+    al_owning_stack_context *ctx, const al_owning_layout *layout,
+    uint32_t type_index, uint32_t offset, uint32_t containing_owner_end,
+    uint32_t error_id, al_owning_value_size *out_value_size) {
   al_owning_scan_view view;
   uint32_t payload;
   uint32_t extent;
@@ -1654,7 +1894,23 @@ int32_t al_owning_measure_value(al_owning_stack_context *ctx,
   return 0;
 }
 
-int32_t al_owning_measure_external_value(
+#if AL_OWNING_DETAILED_PROFILE
+int32_t al_owning_measure_value(al_owning_stack_context *ctx,
+                                const al_owning_layout *layout,
+                                uint32_t type_index, uint32_t offset,
+                                uint32_t containing_owner_end,
+                                uint32_t error_id,
+                                al_owning_value_size *out_value_size) {
+  AL_OWNING_PROFILE_START();
+  int32_t result = al_owning_measure_value_impl(
+      ctx, layout, type_index, offset, containing_owner_end, error_id,
+      out_value_size);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_VALUE_MEASURE, result != 0);
+  return result;
+}
+#endif
+
+int32_t AL_OWNING_PROFILE_IMPL(al_owning_measure_external_value)(
     al_owning_stack_context *ctx, const al_owning_layout *layout,
     uint32_t type_index, const uint8_t *source, uint32_t source_length,
     uint32_t source_offset, uint32_t error_id, uint32_t *out_payload_bytes,
@@ -1690,7 +1946,22 @@ int32_t al_owning_measure_external_value(
   return 0;
 }
 
-int32_t al_owning_commit_host_output(
+#if AL_OWNING_DETAILED_PROFILE
+int32_t al_owning_measure_external_value(
+    al_owning_stack_context *ctx, const al_owning_layout *layout,
+    uint32_t type_index, const uint8_t *source, uint32_t source_length,
+    uint32_t source_offset, uint32_t error_id, uint32_t *out_payload_bytes,
+    uint32_t *out_extent_bytes) {
+  AL_OWNING_PROFILE_START();
+  int32_t result = al_owning_measure_external_value_impl(
+      ctx, layout, type_index, source, source_length, source_offset, error_id,
+      out_payload_bytes, out_extent_bytes);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_EXTERNAL_MEASURE, result != 0);
+  return result;
+}
+#endif
+
+int32_t AL_OWNING_PROFILE_IMPL(al_owning_commit_host_output)(
     al_owning_stack_context *ctx, const al_owning_layout *layout,
     uint32_t type_index, uint32_t start, uint32_t reserved_end,
     uint32_t output_extent, int32_t host_status, uint32_t error_id,
@@ -1744,6 +2015,21 @@ int32_t al_owning_commit_host_output(
   *out_payload = payload;
   return 0;
 }
+
+#if AL_OWNING_DETAILED_PROFILE
+int32_t al_owning_commit_host_output(
+    al_owning_stack_context *ctx, const al_owning_layout *layout,
+    uint32_t type_index, uint32_t start, uint32_t reserved_end,
+    uint32_t output_extent, int32_t host_status, uint32_t error_id,
+    uint32_t *out_payload) {
+  AL_OWNING_PROFILE_START();
+  int32_t result = al_owning_commit_host_output_impl(
+      ctx, layout, type_index, start, reserved_end, output_extent, host_status,
+      error_id, out_payload);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_HOST_OUTPUT_COMMIT, result != 0);
+  return result;
+}
+#endif
 
 static int32_t al_owning_equal_typed_scan(
     al_owning_scan_view *view, const al_owning_layout *layout,
@@ -2062,12 +2348,11 @@ int32_t al_owning_equal_typed(al_owning_stack_context *ctx,
       left_extent, right_offset, right_extent, 0u, error_id);
 }
 
-int32_t al_owning_locate_field(al_owning_stack_context *ctx,
-                               const al_owning_layout *layout,
-                               uint32_t parent_type_index,
-                               uint32_t parent_offset, uint32_t parent_extent,
-                               uint32_t field_index, uint32_t error_id,
-                               al_owning_field_location *out_field_location) {
+int32_t AL_OWNING_PROFILE_IMPL(al_owning_locate_field)(
+    al_owning_stack_context *ctx, const al_owning_layout *layout,
+    uint32_t parent_type_index, uint32_t parent_offset,
+    uint32_t parent_extent, uint32_t field_index, uint32_t error_id,
+    al_owning_field_location *out_field_location) {
   al_owning_scan_view view;
   al_owning_scan_target target;
   al_owning_field_location measured_location;
@@ -2121,7 +2406,23 @@ int32_t al_owning_locate_field(al_owning_stack_context *ctx,
   return 0;
 }
 
-int32_t al_owning_locate_sum_case(
+#if AL_OWNING_DETAILED_PROFILE
+int32_t al_owning_locate_field(al_owning_stack_context *ctx,
+                               const al_owning_layout *layout,
+                               uint32_t parent_type_index,
+                               uint32_t parent_offset, uint32_t parent_extent,
+                               uint32_t field_index, uint32_t error_id,
+                               al_owning_field_location *out_field_location) {
+  AL_OWNING_PROFILE_START();
+  int32_t result = al_owning_locate_field_impl(
+      ctx, layout, parent_type_index, parent_offset, parent_extent,
+      field_index, error_id, out_field_location);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_STRUCTURAL_LOCATE, result != 0);
+  return result;
+}
+#endif
+
+int32_t AL_OWNING_PROFILE_IMPL(al_owning_locate_sum_case)(
     al_owning_stack_context *ctx, const al_owning_layout *layout,
     uint32_t sum_type_index, uint32_t sum_offset, uint32_t sum_extent_bytes,
     uint32_t error_id, uint32_t *out_case_index,
@@ -2186,6 +2487,21 @@ int32_t al_owning_locate_sum_case(
   *out_case_location = measured_location;
   return 0;
 }
+
+#if AL_OWNING_DETAILED_PROFILE
+int32_t al_owning_locate_sum_case(
+    al_owning_stack_context *ctx, const al_owning_layout *layout,
+    uint32_t sum_type_index, uint32_t sum_offset, uint32_t sum_extent_bytes,
+    uint32_t error_id, uint32_t *out_case_index,
+    al_owning_field_location *out_case_location) {
+  AL_OWNING_PROFILE_START();
+  int32_t result = al_owning_locate_sum_case_impl(
+      ctx, layout, sum_type_index, sum_offset, sum_extent_bytes, error_id,
+      out_case_index, out_case_location);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_STRUCTURAL_LOCATE, result != 0);
+  return result;
+}
+#endif
 
 int32_t al_owning_string_length(al_owning_stack_context *ctx, uint32_t offset,
                                 uint32_t extent_bytes, uint32_t error_id,
@@ -2493,10 +2809,10 @@ int32_t al_owning_ascii_string_write(
   return 0;
 }
 
-void al_owning_move_range(al_owning_stack_context *ctx,
-                          uint32_t destination_offset, uint32_t source_offset,
-                          uint32_t byte_count, uint32_t payload_bytes,
-                          uint32_t type_id, uint32_t event_kind) {
+void AL_OWNING_PROFILE_IMPL(al_owning_move_range)(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    uint32_t source_offset, uint32_t byte_count, uint32_t payload_bytes,
+    uint32_t type_id, uint32_t event_kind) {
   uint32_t source_end;
   uint32_t destination_end;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK || byte_count == 0u)
@@ -2533,10 +2849,26 @@ void al_owning_move_range(al_owning_stack_context *ctx,
                   payload_bytes, source_offset, byte_count, 0u);
 }
 
-void al_owning_copy_range(al_owning_stack_context *ctx,
+#if AL_OWNING_DETAILED_PROFILE
+void al_owning_move_range(al_owning_stack_context *ctx,
                           uint32_t destination_offset, uint32_t source_offset,
-                          uint32_t extent_bytes, uint32_t payload_bytes,
+                          uint32_t byte_count, uint32_t payload_bytes,
                           uint32_t type_id, uint32_t event_kind) {
+  AL_OWNING_PROFILE_START();
+  uint32_t prior_status = ctx == 0 ? AL_OWNING_STATUS_INTERNAL : ctx->status;
+  al_owning_move_range_impl(ctx, destination_offset, source_offset,
+                            byte_count, payload_bytes, type_id, event_kind);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_ARENA_COPY,
+                        ctx == 0 ||
+                            (prior_status == AL_OWNING_STATUS_OK &&
+                             ctx->status != AL_OWNING_STATUS_OK));
+}
+#endif
+
+void AL_OWNING_PROFILE_IMPL(al_owning_copy_range)(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    uint32_t source_offset, uint32_t extent_bytes, uint32_t payload_bytes,
+    uint32_t type_id, uint32_t event_kind) {
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return;
   /* Check the complete request before writing or updating counters. */
@@ -2569,10 +2901,26 @@ void al_owning_copy_range(al_owning_stack_context *ctx,
                   payload_bytes, source_offset, extent_bytes, 0u);
 }
 
-void al_owning_duplicate(al_owning_stack_context *ctx,
-                         uint32_t destination_offset, uint32_t source_offset,
-                         uint32_t extent_bytes, uint32_t payload_bytes,
-                         uint32_t type_id) {
+#if AL_OWNING_DETAILED_PROFILE
+void al_owning_copy_range(al_owning_stack_context *ctx,
+                          uint32_t destination_offset, uint32_t source_offset,
+                          uint32_t extent_bytes, uint32_t payload_bytes,
+                          uint32_t type_id, uint32_t event_kind) {
+  AL_OWNING_PROFILE_START();
+  uint32_t prior_status = ctx == 0 ? AL_OWNING_STATUS_INTERNAL : ctx->status;
+  al_owning_copy_range_impl(ctx, destination_offset, source_offset,
+                            extent_bytes, payload_bytes, type_id, event_kind);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_ARENA_COPY,
+                        ctx == 0 ||
+                            (prior_status == AL_OWNING_STATUS_OK &&
+                             ctx->status != AL_OWNING_STATUS_OK));
+}
+#endif
+
+void AL_OWNING_PROFILE_IMPL(al_owning_duplicate)(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    uint32_t source_offset, uint32_t extent_bytes, uint32_t payload_bytes,
+    uint32_t type_id) {
 #if !AL_OWNING_TRUSTED_GENERATED
   uint64_t checksum;
 #endif
@@ -2612,9 +2960,25 @@ void al_owning_duplicate(al_owning_stack_context *ctx,
 #endif
 }
 
-void al_owning_drop(al_owning_stack_context *ctx, uint32_t start_offset,
-                    uint32_t extent_bytes, uint32_t payload_bytes,
-                    uint32_t type_id) {
+#if AL_OWNING_DETAILED_PROFILE
+void al_owning_duplicate(al_owning_stack_context *ctx,
+                         uint32_t destination_offset, uint32_t source_offset,
+                         uint32_t extent_bytes, uint32_t payload_bytes,
+                         uint32_t type_id) {
+  AL_OWNING_PROFILE_START();
+  uint32_t prior_status = ctx == 0 ? AL_OWNING_STATUS_INTERNAL : ctx->status;
+  al_owning_duplicate_impl(ctx, destination_offset, source_offset,
+                           extent_bytes, payload_bytes, type_id);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_ARENA_COPY,
+                        ctx == 0 ||
+                            (prior_status == AL_OWNING_STATUS_OK &&
+                             ctx->status != AL_OWNING_STATUS_OK));
+}
+#endif
+
+void AL_OWNING_PROFILE_IMPL(al_owning_drop)(
+    al_owning_stack_context *ctx, uint32_t start_offset,
+    uint32_t extent_bytes, uint32_t payload_bytes, uint32_t type_id) {
 #if !AL_OWNING_TRUSTED_GENERATED
   uint32_t index;
 #endif
@@ -2666,12 +3030,26 @@ void al_owning_drop(al_owning_stack_context *ctx, uint32_t start_offset,
   al_owning_update_live(ctx, -(int32_t)payload_bytes, 0);
 }
 
-void al_owning_store_local(al_owning_stack_context *ctx,
-                           uint32_t destination_offset, uint32_t source_offset,
-                           uint32_t reserved_bytes,
-                           uint32_t source_extent_bytes,
-                           uint32_t source_payload_bytes,
-                           uint32_t old_payload_bytes, uint32_t type_id) {
+#if AL_OWNING_DETAILED_PROFILE
+void al_owning_drop(al_owning_stack_context *ctx, uint32_t start_offset,
+                    uint32_t extent_bytes, uint32_t payload_bytes,
+                    uint32_t type_id) {
+  AL_OWNING_PROFILE_START();
+  uint32_t prior_status = ctx == 0 ? AL_OWNING_STATUS_INTERNAL : ctx->status;
+  al_owning_drop_impl(ctx, start_offset, extent_bytes, payload_bytes,
+                      type_id);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_ARENA_COPY,
+                        ctx == 0 ||
+                            (prior_status == AL_OWNING_STATUS_OK &&
+                             ctx->status != AL_OWNING_STATUS_OK));
+}
+#endif
+
+void AL_OWNING_PROFILE_IMPL(al_owning_store_local)(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    uint32_t source_offset, uint32_t reserved_bytes,
+    uint32_t source_extent_bytes, uint32_t source_payload_bytes,
+    uint32_t old_payload_bytes, uint32_t type_id) {
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return;
   if (reserved_bytes < source_extent_bytes ||
@@ -2702,10 +3080,29 @@ void al_owning_store_local(al_owning_stack_context *ctx,
                   source_extent_bytes, 0u);
 }
 
-void al_owning_load_local(al_owning_stack_context *ctx,
-                          uint32_t destination_offset, uint32_t source_offset,
-                          uint32_t extent_bytes, uint32_t payload_bytes,
-                          uint32_t type_id) {
+#if AL_OWNING_DETAILED_PROFILE
+void al_owning_store_local(al_owning_stack_context *ctx,
+                           uint32_t destination_offset, uint32_t source_offset,
+                           uint32_t reserved_bytes,
+                           uint32_t source_extent_bytes,
+                           uint32_t source_payload_bytes,
+                           uint32_t old_payload_bytes, uint32_t type_id) {
+  AL_OWNING_PROFILE_START();
+  uint32_t prior_status = ctx == 0 ? AL_OWNING_STATUS_INTERNAL : ctx->status;
+  al_owning_store_local_impl(ctx, destination_offset, source_offset,
+                             reserved_bytes, source_extent_bytes,
+                             source_payload_bytes, old_payload_bytes, type_id);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_ARENA_COPY,
+                        ctx == 0 ||
+                            (prior_status == AL_OWNING_STATUS_OK &&
+                             ctx->status != AL_OWNING_STATUS_OK));
+}
+#endif
+
+void AL_OWNING_PROFILE_IMPL(al_owning_load_local)(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    uint32_t source_offset, uint32_t extent_bytes, uint32_t payload_bytes,
+    uint32_t type_id) {
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return;
   if (!al_owning_range_valid(ctx, source_offset, extent_bytes) ||
@@ -2727,6 +3124,22 @@ void al_owning_load_local(al_owning_stack_context *ctx,
   al_owning_event(ctx, AL_OWNING_EVENT_LOCAL_LOAD, type_id, destination_offset,
                   extent_bytes, payload_bytes, source_offset, extent_bytes, 0u);
 }
+
+#if AL_OWNING_DETAILED_PROFILE
+void al_owning_load_local(al_owning_stack_context *ctx,
+                          uint32_t destination_offset, uint32_t source_offset,
+                          uint32_t extent_bytes, uint32_t payload_bytes,
+                          uint32_t type_id) {
+  AL_OWNING_PROFILE_START();
+  uint32_t prior_status = ctx == 0 ? AL_OWNING_STATUS_INTERNAL : ctx->status;
+  al_owning_load_local_impl(ctx, destination_offset, source_offset,
+                            extent_bytes, payload_bytes, type_id);
+  AL_OWNING_PROFILE_END(AL_OWNING_PROFILE_ARENA_COPY,
+                        ctx == 0 ||
+                            (prior_status == AL_OWNING_STATUS_OK &&
+                             ctx->status != AL_OWNING_STATUS_OK));
+}
+#endif
 
 void al_owning_clear_local(al_owning_stack_context *ctx, uint32_t offset,
                            uint32_t reserved_bytes, uint32_t payload_bytes,

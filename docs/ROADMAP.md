@@ -2,6 +2,26 @@
 
 ## Active delivery priority: Campfire implementation
 
+User steering after report255: first separate native execution into cookie/auth
+operations, individual SQL/provider operations, and runtime validation/copying.
+Measure detailed instrumentation against the stage-only baseline on the same
+four distinct cores and sixteen clients; do not add overlapping timer totals.
+Also close the room-page workload/platform gap using the pinned shared Campfire
+verification harness before claiming a speed ratio against published results.
+Native message-write planning is retained, with implementation following this
+profiling checkpoint.
+
+[Report256](../reports/256-native-campfire-execution-profile.md) completes that
+breakdown. In two ABBA sets on four distinct cores with 16 clients, detailed
+counters show no overhead above the 3–5% Off-versus-Off drift. Host operations
+take about 49% of the ~518 µs `api_execute` per GET, and the message page takes
+about 210 µs of that. SQL calls total about 104 µs. The largest attributable
+runtime cost is per-access re-validation of statically known layouts: 44 locates
+(~171 µs), 51 type-graph validations (~105 µs) and 3,779 initialization checks.
+Next: the matched room-page comparison, then compiler-proven structural access
+measured with the same method, then native message writes. Keep locks and
+cross-worker dependencies rare, and discuss any new one before adopting it.
+
 [Report255](../reports/255-native-campfire-profiling.md) narrows the worker
 regression to native language/runtime/provider execution and records a fixed
 four-physical-core comparison at sixteen clients. Four workers deliver about

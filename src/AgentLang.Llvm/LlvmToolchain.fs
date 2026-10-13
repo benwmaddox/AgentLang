@@ -14,6 +14,11 @@ type OwningRuntimeProfile =
     | Diagnostic
     | TrustedGenerated
 
+[<RequireQualifiedAccess>]
+type OwningRuntimeInstrumentation =
+    | Off
+    | Detailed
+
 [<Sealed>]
 type LlvmToolchain internal (clangPath: string, lldLinkPath: string, compilerRuntimeLibrary: string option) =
     member _.ClangPath = clangPath
@@ -27,6 +32,24 @@ module LlvmToolchain =
 
     let private defaultLld =
         @"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\Llvm\x64\bin\lld-link.exe"
+
+    let findWindowsSdkKernel32Library () =
+        let sdkRoot =
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                "Windows Kits", "10", "Lib")
+        if not (Directory.Exists sdkRoot) then
+            invalidOp "Windows SDK library directory is required for detailed owning-runtime profiling."
+        Directory.EnumerateDirectories(sdkRoot)
+        |> Seq.sortByDescending (fun path ->
+            match Version.TryParse(Path.GetFileName path) with
+            | true, version -> version
+            | false, _ -> Version(0, 0))
+        |> Seq.map (fun path -> Path.Combine(path, "um", "x64", "kernel32.lib"))
+        |> Seq.tryFind File.Exists
+        |> Option.map Path.GetFullPath
+        |> Option.defaultWith (fun () ->
+            invalidOp "Windows SDK x64 kernel32.lib is required for detailed owning-runtime profiling.")
 
     let private normalizedPath (path: string) =
         path |> Path.GetFullPath |> Path.TrimEndingDirectorySeparator
@@ -145,7 +168,7 @@ module LlvmToolchain =
         run toolchain.ClangPath arguments workingDirectory
         if screenNativeStackUsage then NativeStackUsage.verifyFreshFile stackUsagePath
 
-    let private compileCObjectCore forcedHeader (toolchain: LlvmToolchain) optimization (runtimeProfile: OwningRuntimeProfile) screenNativeStackUsage (sourcePath: string) (includeDirectory: string) (objectPath: string) workingDirectory =
+    let private compileCObjectCore forcedHeader (toolchain: LlvmToolchain) optimization (runtimeProfile: OwningRuntimeProfile) (instrumentation: OwningRuntimeInstrumentation) screenNativeStackUsage (sourcePath: string) (includeDirectory: string) (objectPath: string) workingDirectory =
         if File.Exists objectPath then File.Delete objectPath
         let stackUsagePath = stackUsageSidecarPath objectPath
         if screenNativeStackUsage && File.Exists stackUsagePath then File.Delete stackUsagePath
@@ -153,6 +176,10 @@ module LlvmToolchain =
             match runtimeProfile with
             | OwningRuntimeProfile.Diagnostic -> []
             | OwningRuntimeProfile.TrustedGenerated -> [ "-DAL_OWNING_TRUSTED_GENERATED=1" ]
+        let instrumentationArguments =
+            match instrumentation with
+            | OwningRuntimeInstrumentation.Off -> [ "-DAL_OWNING_DETAILED_PROFILE=0" ]
+            | OwningRuntimeInstrumentation.Detailed -> [ "-DAL_OWNING_DETAILED_PROFILE=1" ]
         let stackUsageArguments = if screenNativeStackUsage then [ "-fstack-usage" ] else []
         let headerArguments = forcedHeader |> Option.map (fun path -> [ "-include"; Path.GetFullPath path ]) |> Option.defaultValue []
         let arguments =
@@ -166,6 +193,7 @@ module LlvmToolchain =
               optimizationArgument optimization ]
             @ stackUsageArguments
             @ profileArguments
+            @ instrumentationArguments
             @ headerArguments
             @ [
               "-c"; Path.GetFullPath sourcePath
@@ -174,8 +202,8 @@ module LlvmToolchain =
         run toolchain.ClangPath arguments workingDirectory
         if screenNativeStackUsage then NativeStackUsage.verifyFreshFile stackUsagePath
 
-    let private compileCObject toolchain optimization runtimeProfile screenNativeStackUsage sourcePath includeDirectory objectPath workingDirectory =
-        compileCObjectCore None toolchain optimization runtimeProfile screenNativeStackUsage sourcePath includeDirectory objectPath workingDirectory
+    let private compileCObject toolchain optimization runtimeProfile instrumentation screenNativeStackUsage sourcePath includeDirectory objectPath workingDirectory =
+        compileCObjectCore None toolchain optimization runtimeProfile instrumentation screenNativeStackUsage sourcePath includeDirectory objectPath workingDirectory
 
     let private linkObjects (toolchain: LlvmToolchain) (outputDllPath: string) (objectPaths: string list) =
         if File.Exists outputDllPath then File.Delete outputDllPath
@@ -227,7 +255,7 @@ module LlvmToolchain =
         let runtimeObjectPath = Path.Combine(workingDirectory, "agentlang-arena-runtime.obj")
         compileLlvmObject toolchain optimization screenNativeStackUsage irPath llvmObjectPath workingDirectory |> ignore
         compileCObject
-            toolchain optimization OwningRuntimeProfile.Diagnostic screenNativeStackUsage
+            toolchain optimization OwningRuntimeProfile.Diagnostic OwningRuntimeInstrumentation.Off screenNativeStackUsage
             sourcePath includeDirectory runtimeObjectPath workingDirectory
         linkObjects toolchain dllPath [ llvmObjectPath; runtimeObjectPath ]
 
@@ -258,10 +286,11 @@ module LlvmToolchain =
     /// Compile a trusted, build-time native adapter beside the owning runtime
     /// and generated LLVM object. The adapter is statically linked into this
     /// artifact; language IR cannot select imports or symbols.
-    let compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreenWithRuntimeProfile
+    let compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreenWithRuntimeProfileAndInstrumentation
         (toolchain: LlvmToolchain)
         optimization
         (runtimeProfile: OwningRuntimeProfile)
+        (instrumentation: OwningRuntimeInstrumentation)
         (llvmIrPath: string)
         (runtimeSourcePath: string)
         (adapterSourcePath: string)
@@ -287,13 +316,39 @@ module LlvmToolchain =
         let runtimeObjectPath = Path.Combine(workingDirectory, "agentlang-arena-runtime.obj")
         let adapterObjectPath = Path.Combine(workingDirectory, "agentlang-native-host-adapter.obj")
         compileLlvmObject toolchain optimization true irPath llvmObjectPath workingDirectory |> ignore
-        compileCObject toolchain optimization runtimeProfile true runtimePath includeDirectory runtimeObjectPath workingDirectory
+        compileCObject toolchain optimization runtimeProfile instrumentation true runtimePath includeDirectory runtimeObjectPath workingDirectory
         // Force the contract declaration even when an adapter forgets to include
         // it itself. COFF symbol names alone cannot detect incompatible C types.
-        compileCObjectCore (Some hostHeader) toolchain optimization runtimeProfile true adapterPath includeDirectory adapterObjectPath workingDirectory
+        compileCObjectCore (Some hostHeader) toolchain optimization runtimeProfile instrumentation true adapterPath includeDirectory adapterObjectPath workingDirectory
         for path in linkLibraryPaths do
             if not (File.Exists path) then invalidArg (nameof linkLibraryPaths) "Native host link dependency does not exist."
-        linkObjects toolchain dllPath ([ llvmObjectPath; runtimeObjectPath; adapterObjectPath ] @ linkLibraryPaths)
+        let effectiveLinkLibraryPaths =
+            match instrumentation with
+            | OwningRuntimeInstrumentation.Off -> linkLibraryPaths
+            | OwningRuntimeInstrumentation.Detailed ->
+                if linkLibraryPaths |> List.exists (fun path -> String.Equals(Path.GetFileName(path), "kernel32.lib", StringComparison.OrdinalIgnoreCase)) then
+                    linkLibraryPaths
+                else
+                    linkLibraryPaths @ [ findWindowsSdkKernel32Library () ]
+        for path in effectiveLinkLibraryPaths do
+            if not (File.Exists path) then invalidArg (nameof linkLibraryPaths) "Native host link dependency does not exist."
+        linkObjects toolchain dllPath ([ llvmObjectPath; runtimeObjectPath; adapterObjectPath ] @ effectiveLinkLibraryPaths)
+
+    /// Preserve the diagnostic runtime with profiling disabled for existing callers.
+    let compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreenWithRuntimeProfile
+        (toolchain: LlvmToolchain)
+        optimization
+        (runtimeProfile: OwningRuntimeProfile)
+        (llvmIrPath: string)
+        (runtimeSourcePath: string)
+        (adapterSourcePath: string)
+        (hostAbiHeaderPath: string)
+        (linkLibraryPaths: string list)
+        (runtimeIncludeDirectory: string)
+        (outputDllPath: string) =
+        compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreenWithRuntimeProfileAndInstrumentation
+            toolchain optimization runtimeProfile OwningRuntimeInstrumentation.Off llvmIrPath runtimeSourcePath
+            adapterSourcePath hostAbiHeaderPath linkLibraryPaths runtimeIncludeDirectory outputDllPath
 
     /// Preserve the historical diagnostic runtime for existing native-host callers.
     let compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreen
@@ -350,9 +405,9 @@ module LlvmToolchain =
                 compileLlvmObject toolchain optimization screenNativeStackUsage irPath objectPath workingDirectory |> ignore
                 objectPath)
         let metadataObjectPath = Path.Combine(workingDirectory, "agentlang-module-metadata.obj")
-        compileCObject toolchain optimization runtimeProfile screenNativeStackUsage sourcePath includePath metadataObjectPath workingDirectory
+        compileCObject toolchain optimization runtimeProfile OwningRuntimeInstrumentation.Off screenNativeStackUsage sourcePath includePath metadataObjectPath workingDirectory
         let runtimeObjectPath = Path.Combine(workingDirectory, "agentlang-arena-runtime.obj")
-        compileCObject toolchain optimization runtimeProfile screenNativeStackUsage runtimePath includePath runtimeObjectPath workingDirectory
+        compileCObject toolchain optimization runtimeProfile OwningRuntimeInstrumentation.Off screenNativeStackUsage runtimePath includePath runtimeObjectPath workingDirectory
         let objectPaths = entryObjects @ [ metadataObjectPath; runtimeObjectPath ]
         linkObjects toolchain dllPath objectPaths, objectPaths
 
