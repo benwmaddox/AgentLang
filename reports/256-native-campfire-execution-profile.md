@@ -20,7 +20,8 @@ prepare/bind/step/reset calls without changing their results. The HTTP host
 resets counters after worker setup and snapshots on each worker before teardown.
 Manifests and build receipts pin the selected execution profile and header hash.
 
-Fresh gates passed before measurement:
+Fresh gates passed (all before measurement except the LLVM suite rerun, which ran
+afterwards on the unchanged sealed source):
 
 - Room-read provider gates, O0 and O2 including standalone no-CLR execution:
   Detailed 296 assertions and Off 238, both with stable source freezes.
@@ -76,27 +77,36 @@ cleaned workers.
 **No instrumentation overhead is detectable above the run-to-run drift.** Within
 each set, the two Off runs differ by 3.5% (set 1) and 4.5% (set 2) in throughput,
 and by 2.7% and 4.7% in `api_execute`. Set 2, the clean replication, shows Detailed
-at +1.3% throughput and −1.4% `api_execute` against Off on ABBA averages. In set 1
-the clean Detailed run B lies within the Off range for `api_execute`.
+at +1.3% throughput and −1.4% `api_execute` against Off on ABBA averages. In set 1 the
+clean Detailed run B is +1.8% `api_execute` and −1.2% throughput against the mean
+of its two Off runs, which is inside that set's 2.7%/3.5% drift.
 
 Set 1's raw ABBA comparison (−7.1% throughput) is driven by DetailedC. That run
 lost server saturation (3.47 cores), doubled its send time and varied 6% between
-repeats. Several system processes started during its window; that is observed
-context, not a proven cause. Report it as environment-contaminated rather than as
+repeats. A process listing taken afterwards showed several system processes starting
+during its window. Set 1 recorded no process snapshots, so this observation is
+not in the archive. It is context, not a proven cause. Report it as environment-contaminated rather than as
 counter cost.
 
 The null result is surprising. Detailed times about 4,170 intervals per GET
 (~8,300 QPC reads). A tight-loop microbenchmark on a pinned server core measures
-13.0–13.5 ns per QPC call, roughly 110 µs per GET if the costs simply added.
-Throughput, server CPU and `api_execute` do not show that cost. One hypothesis is
+12.9–13.8 ns per QPC call. The sealed output was captured during a concurrent
+LLVM build; an earlier idle run gave 13.05–13.49 ns. Simply added, that is
+roughly 110 µs per GET. Throughput, server CPU and `api_execute` do not show that cost. One hypothesis is
 that the non-serializing timestamp reads overlap with the memory-bound validation
 work around them, but this was not tested. Treat the bound as "below the 3–5%
 drift floor on this workload and machine", not as a general guarantee.
 
 ## Where `api_execute` goes (Detailed builds)
 
-The table gives per-GET means for the clean Detailed runs (set 2 F/G; set 1 B is
-within about 10%). They come from instrumented builds and include profiler cost.
+The table gives per-GET means for the clean set-2 Detailed runs F and G. They
+come from instrumented builds and include profiler cost.
+
+Set 1's clean Detailed run B matches set 2 almost exactly for the runtime
+categories (`structural_locate` 170.6 µs in both) and is within about 3 µs on SQL
+step. Its host operations are higher, though: 295 µs in total and 247 µs for the
+message page, about 17–18% above set 2. That difference between sessions is
+unexplained, so treat the provider rows below as carrying roughly ±18% variation.
 
 | View | Calls/GET | µs/GET | Note |
 | --- | ---: | ---: | --- |
