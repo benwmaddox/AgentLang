@@ -473,6 +473,7 @@ module Storage =
         | FlowAstPathSegment.IfThenStatement index -> setIndexed "ifThenStatement" index
         | FlowAstPathSegment.IfElseStatement index -> setIndexed "ifElseStatement" index
         | FlowAstPathSegment.CompactStatement index -> setIndexed "compactStatement" index
+        | FlowAstPathSegment.ListLiteralItem index -> setIndexed "listLiteralItem" index
         | FlowAstPathSegment.ContainerPayload -> setNamed "containerPayload"
         | FlowAstPathSegment.OptionScrutinee -> setNamed "optionScrutinee"
         | FlowAstPathSegment.OptionSomeStatement index -> setIndexed "optionSomeStatement" index
@@ -519,6 +520,7 @@ module Storage =
         | "ifThenStatement" -> indexed FlowAstPathSegment.IfThenStatement
         | "ifElseStatement" -> indexed FlowAstPathSegment.IfElseStatement
         | "compactStatement" -> indexed FlowAstPathSegment.CompactStatement
+        | "listLiteralItem" -> indexed FlowAstPathSegment.ListLiteralItem
         | "containerPayload" -> FlowAstPathSegment.ContainerPayload
         | "optionScrutinee" -> FlowAstPathSegment.OptionScrutinee
         | "optionSomeStatement" -> indexed FlowAstPathSegment.OptionSomeStatement
@@ -669,6 +671,7 @@ module Storage =
         | FlowAstPathSegment.IfThenStatement index
         | FlowAstPathSegment.IfElseStatement index
         | FlowAstPathSegment.CompactStatement index
+        | FlowAstPathSegment.ListLiteralItem index
         | FlowAstPathSegment.OptionSomeStatement index
         | FlowAstPathSegment.OptionNoneStatement index
         | FlowAstPathSegment.ResultOkStatement index

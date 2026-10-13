@@ -173,6 +173,9 @@ module VocabularyAnalysis =
                 | OptionSome -> writer.Write 4uy
                 | ResultOk -> writer.Write 5uy
                 | ResultError -> writer.Write 6uy
+                | ListOf count ->
+                    writer.Write 7uy
+                    writer.Write count
                 writeTypeList writer types
             | MapList(name, _) ->
                 writer.Write 4uy

@@ -283,30 +283,46 @@ static void al_owning_poison(al_owning_stack_context *ctx, uint32_t offset,
 #endif
 }
 
+/* The runtime is freestanding (no libc memcpy), so bulk copies move 16-byte
+ * unaligned chunks. Each chunk is loaded before it is stored, which keeps the
+ * forward copy correct when the destination is below the source and the
+ * backward copy correct when it is above. */
+typedef uint8_t al_owning_chunk16
+    __attribute__((vector_size(16), aligned(1), may_alias));
+
 static void al_owning_bytes_copy(uint8_t *destination, const uint8_t *source,
                                  uint32_t byte_count) {
-  uint32_t index;
-  for (index = 0u; index < byte_count; ++index) {
-    destination[index] = source[index];
+  uint32_t index = 0u;
+  for (; byte_count - index >= 16u; index += 16u) {
+    const al_owning_chunk16 chunk =
+        *(const al_owning_chunk16 *)(const void *)(source + index);
+    *(al_owning_chunk16 *)(void *)(destination + index) = chunk;
   }
+  for (; index < byte_count; ++index)
+    destination[index] = source[index];
 }
 
 static void al_owning_stack_bytes_move(al_owning_stack_context *ctx,
                                        uint32_t destination_offset,
                                        uint32_t source_offset,
                                        uint32_t byte_count) {
+  uint8_t *destination = ctx->stack_data + destination_offset;
+  const uint8_t *source = ctx->stack_data + source_offset;
   if (destination_offset < source_offset) {
-    uint32_t index;
-    for (index = 0u; index < byte_count; ++index) {
-      ctx->stack_data[destination_offset + index] =
-          ctx->stack_data[source_offset + index];
-    }
+    al_owning_bytes_copy(destination, source, byte_count);
   } else if (destination_offset > source_offset) {
-    uint32_t index = byte_count;
-    while (index > 0u) {
-      --index;
-      ctx->stack_data[destination_offset + index] =
-          ctx->stack_data[source_offset + index];
+    uint32_t remaining = byte_count;
+    while (remaining >= 16u) {
+      remaining -= 16u;
+      {
+        const al_owning_chunk16 chunk =
+            *(const al_owning_chunk16 *)(const void *)(source + remaining);
+        *(al_owning_chunk16 *)(void *)(destination + remaining) = chunk;
+      }
+    }
+    while (remaining > 0u) {
+      --remaining;
+      destination[remaining] = source[remaining];
     }
   }
 }
@@ -2624,7 +2640,6 @@ int32_t al_owning_string_concat_write(
   uint32_t left_data_bytes;
   uint32_t right_data_bytes;
   uint32_t cursor;
-  uint32_t index;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
   if (al_owning_string_concat_plan(ctx, left_offset, left_extent_bytes,
@@ -2662,12 +2677,11 @@ int32_t al_owning_string_concat_write(
   ctx->stack_data[destination_offset + 6u] = 0u;
   ctx->stack_data[destination_offset + 7u] = 0u;
   cursor = destination_offset + 8u;
-  for (index = 0u; index < left_data_bytes; ++index)
-    ctx->stack_data[cursor + index] = ctx->stack_data[left_offset + 8u + index];
+  al_owning_bytes_copy(ctx->stack_data + cursor,
+                       ctx->stack_data + left_offset + 8u, left_data_bytes);
   cursor += left_data_bytes;
-  for (index = 0u; index < right_data_bytes; ++index)
-    ctx->stack_data[cursor + index] =
-        ctx->stack_data[right_offset + 8u + index];
+  al_owning_bytes_copy(ctx->stack_data + cursor,
+                       ctx->stack_data + right_offset + 8u, right_data_bytes);
   cursor += right_data_bytes;
   while (cursor < destination_offset + extent)
     ctx->stack_data[cursor++] = 0u;
@@ -2861,20 +2875,106 @@ int32_t al_owning_string_join_write(al_owning_stack_context *ctx,
   return 0;
 }
 
+/* n-way String join over separate stack values: `parts` holds (offset, extent)
+ * pairs. The compiler fuses a `[a, b, c]` String literal followed by
+ * string.join into this call, so the parts are never copied into a list. */
+int32_t al_owning_string_join_parts_plan(al_owning_stack_context *ctx,
+                                         const uint32_t *parts,
+                                         uint32_t count, uint32_t error_id,
+                                         uint32_t *out_code_units,
+                                         uint32_t *out_payload_bytes,
+                                         uint32_t *out_extent_bytes) {
+  uint64_t units_wide = 0ull;
+  uint32_t index;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (parts == 0 || out_code_units == 0 || out_payload_bytes == 0 ||
+      out_extent_bytes == 0) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
+    return 1;
+  }
+  for (index = 0u; index < count; ++index) {
+    uint32_t units;
+    uint32_t ignored_payload;
+    if (!al_owning_string_scan_stack_exact(ctx, parts[index * 2u],
+                                           parts[index * 2u + 1u], error_id,
+                                           &units, &ignored_payload))
+      return 1;
+    units_wide += units;
+  }
+  if (!al_owning_string_result_plan(ctx, units_wide, error_id, out_code_units,
+                                    out_payload_bytes, out_extent_bytes))
+    return 1;
+  return 0;
+}
+
+int32_t al_owning_string_join_parts_write(al_owning_stack_context *ctx,
+                                          uint32_t destination_offset,
+                                          uint32_t destination_extent_bytes,
+                                          const uint32_t *parts,
+                                          uint32_t count, uint32_t type_id,
+                                          uint32_t error_id) {
+  uint32_t code_units;
+  uint32_t payload;
+  uint32_t extent;
+  uint32_t cursor;
+  uint32_t index;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (al_owning_string_join_parts_plan(ctx, parts, count, error_id,
+                                       &code_units, &payload, &extent) != 0)
+    return 1;
+  /* The destination is the fresh cursor: every part lies below it. */
+  for (index = 0u; index < count; ++index) {
+    if (parts[index * 2u] + parts[index * 2u + 1u] > destination_offset) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                            parts[index * 2u], destination_offset);
+      return 1;
+    }
+  }
+  if (!al_owning_string_result_begin(ctx, destination_offset,
+                                     destination_extent_bytes, extent,
+                                     code_units, destination_offset, 0u,
+                                     error_id))
+    return 1;
+  cursor = destination_offset + 8u;
+  for (index = 0u; index < count; ++index) {
+    const uint32_t source = parts[index * 2u];
+    const uint32_t data_bytes =
+        al_owning_read_u32_le(ctx->stack_data, source) * 2u;
+    al_owning_bytes_copy(ctx->stack_data + cursor,
+                         ctx->stack_data + source + 8u, data_bytes);
+    cursor += data_bytes;
+  }
+  al_owning_string_result_finish(ctx, destination_offset, cursor, payload,
+                                 extent, type_id);
+  return 0;
+}
+
 /* Rails ERB::Util.html_escape: exactly & < > " ' are replaced; every other
- * UTF-16 code unit, including unpaired surrogates, is copied unchanged. */
-static uint32_t al_owning_html_escape_width(uint32_t unit) {
+ * UTF-16 code unit, including unpaired surrogates, is copied unchanged. All
+ * five specials are below 64, so one mask test classifies a code unit. */
+#define AL_OWNING_HTML_SPECIAL_MASK                                            \
+  ((1ull << 0x22u) | (1ull << 0x26u) | (1ull << 0x27u) | (1ull << 0x3Cu) |   \
+   (1ull << 0x3Eu))
+
+static int al_owning_html_is_special(uint32_t unit) {
+  return unit < 64u && ((AL_OWNING_HTML_SPECIAL_MASK >> unit) & 1ull) != 0ull;
+}
+
+/* Extra code units an escaped special adds beyond its own one. */
+static uint32_t al_owning_html_escape_extra(uint32_t unit) {
   switch (unit) {
   case 0x26u: /* &amp; */
   case 0x27u: /* &#39; */
-    return 5u;
+    return 4u;
   case 0x3Cu: /* &lt; */
   case 0x3Eu: /* &gt; */
-    return 4u;
+    return 3u;
   case 0x22u: /* &quot; */
-    return 6u;
+    return 5u;
   default:
-    return 1u;
+    return 0u;
   }
 }
 
@@ -2912,9 +3012,13 @@ int32_t al_owning_string_html_escape_plan(
   if (!al_owning_string_scan_stack_exact(ctx, offset, extent_bytes, error_id,
                                          &units, &ignored_payload))
     return 1;
-  for (index = 0u; index < units; ++index)
-    escaped_units += al_owning_html_escape_width(al_owning_read_u16_le(
-        ctx->stack_data, offset + 8u + index * 2u));
+  escaped_units = units;
+  for (index = 0u; index < units; ++index) {
+    const uint32_t unit =
+        al_owning_read_u16_le(ctx->stack_data, offset + 8u + index * 2u);
+    if (al_owning_html_is_special(unit))
+      escaped_units += al_owning_html_escape_extra(unit);
+  }
   if (!al_owning_string_result_plan(ctx, escaped_units, error_id,
                                     out_code_units, out_payload_bytes,
                                     out_extent_bytes))
@@ -2932,6 +3036,7 @@ int32_t al_owning_string_html_escape_write(
   uint32_t units;
   uint32_t cursor;
   uint32_t index;
+  uint32_t run_start;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
   if (al_owning_string_html_escape_plan(ctx, offset, extent_bytes, error_id,
@@ -2944,22 +3049,29 @@ int32_t al_owning_string_html_escape_write(
                                      error_id))
     return 1;
   cursor = destination_offset + 8u;
+  run_start = 0u;
   for (index = 0u; index < units; ++index) {
-    const uint32_t source = offset + 8u + index * 2u;
-    const char *entity = al_owning_html_escape_entity(
-        al_owning_read_u16_le(ctx->stack_data, source));
-    if (entity == 0) {
-      ctx->stack_data[cursor] = ctx->stack_data[source];
-      ctx->stack_data[cursor + 1u] = ctx->stack_data[source + 1u];
-      cursor += 2u;
-    } else {
+    const uint32_t unit =
+        al_owning_read_u16_le(ctx->stack_data, offset + 8u + index * 2u);
+    if (al_owning_html_is_special(unit)) {
+      const char *entity = al_owning_html_escape_entity(unit);
+      const uint32_t run_bytes = (index - run_start) * 2u;
+      al_owning_bytes_copy(ctx->stack_data + cursor,
+                           ctx->stack_data + offset + 8u + run_start * 2u,
+                           run_bytes);
+      cursor += run_bytes;
       while (*entity != '\0') {
         ctx->stack_data[cursor] = (uint8_t)*entity++;
         ctx->stack_data[cursor + 1u] = 0u;
         cursor += 2u;
       }
+      run_start = index + 1u;
     }
   }
+  al_owning_bytes_copy(ctx->stack_data + cursor,
+                       ctx->stack_data + offset + 8u + run_start * 2u,
+                       (units - run_start) * 2u);
+  cursor += (units - run_start) * 2u;
   al_owning_string_result_finish(ctx, destination_offset, cursor, payload,
                                  extent, type_id);
   return 0;
@@ -3011,6 +3123,49 @@ int32_t al_owning_string_find(al_owning_stack_context *ctx,
       return 0;
     }
   }
+  return 0;
+}
+
+/* Writes the header of a list built from two packed lists (concat) or from a
+ * list and one element (append, right_offset == UINT32_MAX). The element bytes
+ * are then range-copied by the caller. Lists have no length limit; the arena
+ * capacity bounds them, and the u32 count cannot overflow within it. */
+int32_t al_owning_list_combine_header(al_owning_stack_context *ctx,
+                                      uint32_t destination_offset,
+                                      uint32_t left_offset,
+                                      uint32_t right_offset, uint32_t type_id,
+                                      uint32_t error_id) {
+  uint64_t total;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if ((destination_offset & 7u) != 0u ||
+      !al_owning_range_valid(ctx, destination_offset, 8u) ||
+      !al_owning_range_valid(ctx, left_offset, 8u) ||
+      (right_offset != UINT32_MAX &&
+       !al_owning_range_valid(ctx, right_offset, 8u))) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          destination_offset, ctx->cursor_bytes);
+    return 1;
+  }
+  total = (uint64_t)al_owning_read_u32_le(ctx->stack_data, left_offset) +
+          (right_offset == UINT32_MAX
+               ? 1ull
+               : (uint64_t)al_owning_read_u32_le(ctx->stack_data,
+                                                 right_offset));
+  if (total > UINT32_MAX) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          UINT32_MAX, ctx->cursor_bytes);
+    return 1;
+  }
+  al_owning_write_u32_le(ctx->stack_data + destination_offset, 0u,
+                         (uint32_t)total);
+  ctx->stack_data[destination_offset + 4u] = 0u;
+  ctx->stack_data[destination_offset + 5u] = 0u;
+  ctx->stack_data[destination_offset + 6u] = 0u;
+  ctx->stack_data[destination_offset + 7u] = 0u;
+  al_owning_mark(ctx, destination_offset, 8u, 1, 0);
+  al_owning_event(ctx, AL_OWNING_EVENT_ALLOCATE, type_id, destination_offset,
+                  8u, 8u, 0u, 0u, 0u);
   return 0;
 }
 

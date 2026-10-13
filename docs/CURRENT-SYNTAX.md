@@ -170,14 +170,34 @@ the authoring syntax and library qualification rules are unchanged. See the
 [native typing scope](NATIVE-NOMINALS-IMPLEMENTATION.md) and
 [report 174](../reports/174-native-refined-string.md) for the original refinement slice.
 
+## List literals
+
+`[a, b, c]` builds a `List<T>` from one or more elements in order. Every element
+must have the first element's exact type, and a trailing comma is allowed. An
+empty list is written `list.empty<T>()`:
+
+- `[]` is rejected with `FLOW_LIST_LITERAL_EMPTY`;
+- mixed element types are rejected with `FLOW_LIST_LITERAL_TYPE`.
+
+A native build sizes the list once and copies each element once. Lists have no
+element-count limit. `list.append` and `list.concat` copy each element once
+into a sized result.
+
+```flow
+fn row(name: String) -> String {
+    effects none
+    string.join(["<li>", string.html-escape(name), "</li>"])
+}
+```
+
 ## Refined literals and Html
 
 A refined type is a library type, not a compiler feature. When a literal is
 passed straight to a refined constructor (`Html.new("<li>")`), the compiler runs
 the type's validator at compile time through the interpreter. An invalid literal
 fails the build with `REFINEMENT_LITERAL_INVALID`. Non-literal construction is
-still checked at run time (`REFINEMENT_FAILED`). Validators that would perform an
-effect are left to the run-time check.
+still checked at run time (`REFINEMENT_FAILED`). Validators are pure, so a
+literal proven at compile time skips the run-time check in native builds.
 
 `string.html-escape` replaces exactly `& < > " '` with `&amp; &lt; &gt; &quot;
 &#39;`, matching Rails `ERB::Util.html_escape` byte for byte. `string.join`

@@ -46,6 +46,9 @@ type Literal =
 type ContainerConstructor =
     | ListEmpty
     | ListSingleton
+    /// [a, b, c]: consumes the top `count` values (all of the one type argument)
+    /// in order and builds one list, copying each element once.
+    | ListOf of count: int
     | OptionNone
     | OptionSome
     | ResultOk

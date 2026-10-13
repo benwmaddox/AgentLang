@@ -213,26 +213,25 @@ module Runtime =
                     try provider.Dispose() with _ -> ()
                 | _ -> outcome <- None
 
-    exception private CompileTimeValidatorEffect
-
     /// Refined-type literals are checked at compile time: a literal passed directly
     /// to a refined constructor runs the type's validator now, through the same
-    /// interpreter path as runtime construction. An invalid literal is a compile
-    /// error; non-literal construction is still validated at run time. Validators
-    /// are pure by language rule (TYPE_VALIDATOR_EFFECT); the effect guard below is
-    /// defensive and leaves any effect to the run-time check. Only verified word
-    /// bodies are scanned; test, example and eval bodies keep run-time semantics
-    /// so they can still assert REFINEMENT_FAILED.
-    let private checkRefinedLiterals (context: Compiler.IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) (program: VerifiedIrProgram) =
+    /// interpreter path as runtime construction (RefinedLiterals.evaluate). An
+    /// invalid literal is a compile error; non-literal construction is still
+    /// validated at run time, and backends may skip the runtime check only for
+    /// literals proven here. Validators are pure by language rule
+    /// (TYPE_VALIDATOR_EFFECT). Only verified word bodies are scanned; test,
+    /// example and eval bodies keep run-time semantics so they can still assert
+    /// REFINEMENT_FAILED.
+    let private checkRefinedLiterals (program: VerifiedIrProgram) =
         let inspected = VerifiedIrProgram.inspect program
-        let findings = ResizeArray<string * Literal * string * SourceSiteId>()
+        let findings = ResizeArray<string * Literal * IrType * IrOperation * SourceSiteId>()
         let rec visit owner (block: IrBlock) =
             block.Code
             |> List.pairwise
             |> List.iter (fun (previous, current) ->
                 match previous.Operation, current.Operation with
-                | IrOperation.Constant(literal, _), IrOperation.WrapScalar(call, _, Some _) ->
-                    findings.Add(owner, literal, call.ResolvedName, previous.Site)
+                | IrOperation.Constant(literal, literalType), (IrOperation.WrapScalar(_, _, Some _) as wrap) ->
+                    findings.Add(owner, literal, literalType, wrap, previous.Site)
                 | _ -> ())
             for instruction in block.Code do
                 match instruction.Operation with
@@ -244,30 +243,14 @@ module Runtime =
                 | _ -> ()
         for KeyValue(_, fn) in inspected.FunctionsById do
             visit fn.FunctionName fn.FunctionBody
-        let host: IrInterpreterHost =
-            { PreflightEffects = fun effects _ _ -> if not (Set.isEmpty effects) then raise CompileTimeValidatorEffect
-              ChargeInstruction = fun _ _ -> ()
-              RecordBranchOutcome = fun _ _ _ -> ()
-              RecordUse = ignore
-              InvokeEffect = fun _ -> raise CompileTimeValidatorEffect
-              InvokeHostOperation = fun _ _ -> raise CompileTimeValidatorEffect
-              EnterUserFunction = fun _ _ _ -> fun () -> ()
-              ReturnUserFunction = fun _ _ _ -> ()
-              WordDefinitionSpan = fun _ -> None
-              PrimitiveDefinitionSpan = fun _ -> None }
-        for owner, literal, constructor, site in findings |> Seq.distinctBy (fun (_, literal, constructor, _) -> literal, constructor) do
+        for owner, literal, literalType, wrap, site in findings |> Seq.distinctBy (fun (_, literal, _, wrap, _) -> literal, wrap) do
             let span = inspected.SourceMap.TryFind site |> Option.map (fun source -> source.SiteSpan)
-            let syntheticSpan = { File = "<refined-literal>"; Line = 1; Column = 1; Length = 1 }
-            let body =
-                Compiler.compileIrBodyAgainstProgramWithSourceOrigins context program "<refined-literal>" []
-                    [ Push(literal, syntheticSpan); Call(constructor, syntheticSpan) ] sourceOrigins
-            try
-                IrInterpreter.executeBody host "<refined-literal>" body |> ignore
-            with
-            | CompileTimeValidatorEffect -> ()
-            | LanguageException diagnostic when diagnostic.Code = "REFINEMENT_FAILED" ->
+            let constructor = match wrap with IrOperation.WrapScalar(call, _, _) -> call.ResolvedName | _ -> "<constructor>"
+            match RefinedLiterals.evaluate program literal literalType wrap with
+            | RefinedLiterals.Accepted | RefinedLiterals.Deferred -> ()
+            | RefinedLiterals.Rejected diagnostic when diagnostic.Code = "REFINEMENT_FAILED" ->
                 Diagnostics.raiseError "REFINEMENT_LITERAL_INVALID" $"Literal passed to {constructor} does not satisfy the refinement validator at compile time." (Some owner) span [ "literal satisfying the validator" ] [ Types.formatValue (Types.literalValue literal) ]
-            | LanguageException diagnostic ->
+            | RefinedLiterals.Rejected diagnostic ->
                 // The validator itself fails on this literal (for example INT_OVERFLOW);
                 // construction would fail the same way at run time.
                 Diagnostics.raiseError "REFINEMENT_LITERAL_INVALID" $"The refinement validator of {constructor} fails on this literal at compile time ({diagnostic.Code})." (Some owner) span [ "literal satisfying the validator" ] [ Types.formatValue (Types.literalValue literal); diagnostic.Code ]
@@ -2136,7 +2119,7 @@ module Runtime =
                     state, Some flowContext, None, words, context, Compiler.compileIrProgram context, Map.empty, Map.empty, Map.empty
             if not (Map.isEmpty finalState.FlowWords) then validateGraph finalState
             IrInterpreter.validateProgram program
-            checkRefinedLiterals context (flowContext |> Option.map (fun lowered -> lowered.SourceOrigins) |> Option.defaultValue Map.empty) program
+            checkRefinedLiterals program
             let flowTestBodies, flowExpectationBodies, flowExampleBodies =
                 match flowProject with
                 | None -> Map.empty, Map.empty, Map.empty

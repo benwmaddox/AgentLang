@@ -49,6 +49,7 @@ type FlowAstPathSegment =
     | IfThenStatement of int
     | IfElseStatement of int
     | CompactStatement of int
+    | ListLiteralItem of int
     | ContainerPayload
     | OptionScrutinee
     | OptionSomeStatement of int
@@ -80,6 +81,8 @@ type FlowExpression =
     | If of FlowExpression * FlowStatement list * FlowStatement list * SourceSpan
     /// compact { ... }: a block whose single result may be relocated to its arena mark.
     | Compact of FlowStatement list * SourceSpan
+    /// [a, b, c]: a nonempty list literal; every element has the first element's type.
+    | ListLiteral of FlowExpression list * SourceSpan
     | Container of FlowContainerConstructor * FlowTypeArgument list * FlowExpression option * SourceSpan
     | MatchOption of FlowExpression * FlowPayloadCase * FlowCaseBlock * SourceSpan
     | MatchResult of FlowExpression * FlowPayloadCase * FlowPayloadCase * SourceSpan
@@ -246,6 +249,7 @@ module FlowStructure =
         | FlowExpression.Equality(_, _, span)
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Compact(_, span)
+        | FlowExpression.ListLiteral(_, span)
         | FlowExpression.Container(_, _, _, span)
         | FlowExpression.MatchOption(_, _, _, span)
         | FlowExpression.MatchResult(_, _, _, span)
@@ -397,6 +401,10 @@ module FlowStructure =
                     scheduleStatements (depth + 1) elseBody
                 | FlowExpression.Compact(body, _) ->
                     scheduleStatements (depth + 1) body
+                | FlowExpression.ListLiteral(items, literalSpan) ->
+                    if syntaxVersion <> 2 then
+                        Diagnostics.raiseError "FLOW_SYNTAX_VERSION" "List literals require Flow/2 syntax." owner (Some literalSpan) [ "Flow/2" ] [ $"Flow/{syntaxVersion}" ]
+                    for item in items do schedule (ExpressionNode(item, depth + 1)) (expressionSpan item)
                 | FlowExpression.Container(_, typeArguments, payload, _) ->
                     for argument in typeArguments do scheduleType 1 argument.Type argument.Span
                     match payload with
@@ -488,11 +496,17 @@ module FlowStructure =
 module FlowSource =
     open System.Text.Json
 
+    // Markup stays readable in canonical source ("<li>" rather than "<li>").
+    // Quotes, backslashes and control characters are still escaped, and the
+    // output is valid JSON that the parser reads back unchanged.
+    let private literalJsonOptions =
+        JsonSerializerOptions(Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping)
+
     let private renderLiteral literal =
         match literal with
         | LFloat value -> FloatText.format value
         | LInt _ | LBool _ | LUnit -> Types.formatValue (Types.literalValue literal)
-        | LString value -> JsonSerializer.Serialize(value)
+        | LString value -> JsonSerializer.Serialize(value, literalJsonOptions)
 
     let private indent depth = String.replicate (depth * 4) " "
 
@@ -541,6 +555,9 @@ module FlowSource =
             prefix + indentContinuationLines depth (renderEqualityOperand syntaxVersion locals left) + " == " + indentContinuationLines depth (renderEqualityOperand syntaxVersion locals right)
         | FlowExpression.Container(kind, typeArguments, payload, _) ->
             prefix + indentContinuationLines depth (renderContainer syntaxVersion locals kind typeArguments payload)
+        | FlowExpression.ListLiteral(items, span) ->
+            requireFlow2 syntaxVersion None (Some span) "List literal"
+            prefix + indentContinuationLines depth (renderListLiteral syntaxVersion locals items)
         | FlowExpression.Compact(body, span) ->
             requireFlow2 syntaxVersion None (Some span) "compact { }"
             let lines = ResizeArray<string>()
@@ -573,6 +590,9 @@ module FlowSource =
         | FlowExpression.Literal(value, _) -> renderLiteral value
         | FlowExpression.Local(name, _) -> name
         | FlowExpression.Container(kind, typeArguments, payload, _) -> renderContainer syntaxVersion locals kind typeArguments payload
+        | FlowExpression.ListLiteral(items, span) ->
+            requireFlow2 syntaxVersion None (Some span) "List literal"
+            renderListLiteral syntaxVersion locals items
         | FlowExpression.Call(name, arguments, _) ->
             let shownName = renderQualifiedName syntaxVersion name
             let escape = if isShadowedQualifiedName syntaxVersion locals name then "." else ""
@@ -653,6 +673,9 @@ module FlowSource =
         let argument = payload |> Option.map (renderInlineExpression syntaxVersion locals) |> Option.defaultValue ""
         name + "<" + genericArguments + ">(" + argument + ")"
 
+    and private renderListLiteral syntaxVersion locals items =
+        "[" + (items |> List.map (renderInlineExpression syntaxVersion locals) |> String.concat ", ") + "]"
+
     and private renderMatchBlock syntaxVersion locals depth scrutinee lines =
         let prefix = indent depth
         prefix + "match " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals scrutinee) + " {\n" + String.concat "\n" lines + "\n" + prefix + "}"
@@ -669,6 +692,7 @@ module FlowSource =
         | FlowExpression.Property(receiver, _, _) -> safeBareArmExpression receiver
         | FlowExpression.Equality(left, right, _) -> safeBareArmExpression left && safeBareArmExpression right
         | FlowExpression.Container(_, _, payload, _) -> payload |> Option.forall safeBareArmExpression
+        | FlowExpression.ListLiteral(items, _) -> items |> List.forall safeBareArmExpression
         | FlowExpression.If _ | FlowExpression.Compact _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ | FlowExpression.MatchEnum _ -> false
 
     and private renderMatchCase syntaxVersion depth header caseLocals statements =

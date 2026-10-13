@@ -2100,10 +2100,12 @@ end
 """
         expectError "TYPE_UNKNOWN_NAMED_TYPE" (define badType unsupportedType) |> ignore
 
-        let oversized =
-            [ "1"; "list.singleton<Int>" ] @ (List.replicate 14 "dup list.concat")
+        // Lists have no element-count limit (user decision 2026-10-13): 2^14 values.
+        let large =
+            [ "1"; "list.singleton<Int>" ] @ (List.replicate 14 "dup list.concat") @ [ "list.count" ]
             |> String.concat " "
-        expectError "RUNTIME_VALUE_LIMIT" (evaluate runtime oversized) |> ignore
+        let largeCount = evaluate runtime large |> expectOk "build a 16,384-element list"
+        if stackValue largeCount 0 <> "16384" then failwith $"Expected a 16,384-element list, got {stackValue largeCount 0}."
 
         let preflightPath = makeProject root "container-effect-preflight"
         let preflight = engine preflightPath [ "fs.read"; "fs.write" ]

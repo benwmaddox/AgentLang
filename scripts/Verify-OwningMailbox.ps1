@@ -627,7 +627,11 @@ function Test-RefinementOracle($Bootstrap, $Fixture, [string]$Label) {
     # Historical post-execution oracle corrections above remain unchanged.
     $historicalFixtureHash = 'A22BB448EE864713903D5EE7946C785CD7C8978CF54DA02E0F2E0B86911CBBB1'
     $expectedAbi4FixtureHash = '6965D1F3684BB2B94C4E40B390CA1B0ECDC9C50EFB1E01AF30874126AE4D92E9'
-    $expectedFinalFixtureHash = 'DD6D91207390763BD2886917B16F9E3315E0CF6DE3F6A3DEC7005B28C52AA47B'
+    # Report 263: proven refined literals are retagged without a validator call,
+    # recorded as a semantic transition chained from the ABI5 fixture hash.
+    $expectedAbi5FixtureHash = 'DD6D91207390763BD2886917B16F9E3315E0CF6DE3F6A3DEC7005B28C52AA47B'
+    $expectedFinalFixtureHash = '78FCCB8710050253E61563F8829934D8E10CEEEBB2C72CA8F7B1EC3E0E814F9D'
+    $semanticTransitions = @(Get-Field $provenance 'semanticTransitions')
     $actualFixtureHash = (Get-FileHash -LiteralPath $script:refinementsFixturePath -Algorithm SHA256).Hash.ToUpperInvariant()
     $expectedPriorHash = $initialHash
     $correctionKinds = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
@@ -674,7 +678,10 @@ function Test-RefinementOracle($Bootstrap, $Fixture, [string]$Label) {
         [string](Get-Field $layoutTransition 'toLayoutAbiVersion') -ceq '5' -and
         [string](Get-Field $layoutTransition 'priorFixtureSha256') -ceq $expectedAbi4FixtureHash -and
         [string](Get-Field $layoutTransition 'historicalCorrectionChainFinalSha256Preserved') -ceq $expectedAbi4FixtureHash -and
-        $actualFixtureHash -ceq $expectedFinalFixtureHash
+        $actualFixtureHash -ceq $expectedFinalFixtureHash -and
+        $semanticTransitions.Count -eq 1 -and
+        [string](Get-Field $semanticTransitions[0] 'kind') -ceq 'proven-refined-literal-admission' -and
+        [string](Get-Field $semanticTransitions[0] 'priorFixtureSha256') -ceq $expectedAbi5FixtureHash
     Add-Check "$Label fixture provenance preserves the ABI4 correction-chain baseline and pins the ABI5 transition bytes" $provenanceOkay ([ordered]@{ frozenBeforeNativeExecution = Get-Field $Fixture 'frozenBeforeNativeExecution'; initialFrozenSnapshotSha256 = $initialHash; terminalCorrectionPriorSha256 = $expectedPriorHash; historicalFixtureSha256 = $historicalFixtureHash; abi4FixtureSha256 = $expectedAbi4FixtureHash; abiTransition = 'module ABI 2, stack ABI 2, and descriptor sizes unchanged; layout ABI 4 to 5'; actualFixtureSha256 = $actualFixtureHash; expectedFixtureSha256 = $expectedFinalFixtureHash; provenance = $provenance })
 
     $oracle = Get-Field $Bootstrap 'sourceDerivedRefinementOracle'
@@ -1331,7 +1338,8 @@ try {
     $expectedCurrentFixtureHashes = @(
         '35d424914ea2c43198f6a004e46d2053c9acbb48f9abe5b191d400412c9121ef',
         'ddd86cbd139cb678a25960ac74b09f154ccf0ab170ddafcc31c8b362f20c8859',
-        'dd6d91207390763bd2886917b16f9e3315e0cf6de3f6a3dec7005b28c52aa47b'
+        # Report 263 proven-literal semantic transition (chained from dd6d9120...aa47b).
+        '78fccb8710050253e61563f8829934d8e10ceeebb2c72ca8f7b1ec3e0e814f9d'
     )
     Add-Check 'base, sums, and refinements fixtures match the explicitly transitioned ABI5 byte pins' (($currentFixtureHashes -join ',') -ceq ($expectedCurrentFixtureHashes -join ',')) ([ordered]@{ expected = $expectedCurrentFixtureHashes; actual = $currentFixtureHashes })
     $report.sumsFixture = $sumsFixturePath

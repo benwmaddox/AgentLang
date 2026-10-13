@@ -1,0 +1,130 @@
+record Pair {
+    field name: String
+    field count: Int
+}
+
+type Tag : String {
+    validate tag.ok?
+}
+
+fn tag.ok?(value: String) -> Bool {
+    effects none
+    int.greater-than(string.length(value), 0)
+}
+
+fn native.lists.ints(a: Int, b: Int) -> List<Int> {
+    effects none
+    [a, b, add(a, b)]
+}
+
+fn native.lists.strings(name: String) -> List<String> {
+    effects none
+    ["<li>", name, "</li>",]
+}
+
+fn native.lists.records(name: String, count: Int) -> List<Pair> {
+    effects none
+    [pair.new(name, count), pair.new(string.concat(name, "!"), add(count, 1))]
+}
+
+fn native.lists.nested(name: String) -> List<List<String>> {
+    effects none
+    [[name], ["a", "b"]]
+}
+
+fn native.lists.joined(name: String) -> String {
+    effects none
+    string.join(["<li class=\"row\">", name, "</li>"])
+}
+
+fn native.lists.compact-joined(name: String) -> String {
+    effects none
+    compact {
+        string.join(["<li>", string.html-escape(name), "</li>"])
+    }
+}
+
+fn native.lists.append(values: List<String>, value: String) -> List<String> {
+    effects none
+    list.append(values, value)
+}
+
+fn native.lists.concat(left: List<String>, right: List<String>) -> List<String> {
+    effects none
+    list.concat(left, right)
+}
+
+fn native.lists.append-records(values: List<Pair>, name: String) -> List<Pair> {
+    effects none
+    list.append(values, pair.new(name, 7))
+}
+
+fn native.lists.literal-tag() -> String {
+    effects none
+    Tag.value(Tag.new("literal"))
+}
+
+fn native.lists.runtime-tag(value: String) -> String {
+    effects none
+    Tag.value(Tag.new(value))
+}
+
+test native.lists.ints/sum {
+    native.lists.ints(1, 2)
+    => value [1, 2, 3]
+}
+
+test native.lists.strings/name {
+    native.lists.strings("x")
+    => value ["<li>", "x", "</li>"]
+}
+
+test native.lists.records/two {
+    list.count(native.lists.records("a", 1))
+    => value 2
+}
+
+test native.lists.nested/two {
+    list.count(native.lists.nested("x"))
+    => value 2
+}
+
+test native.lists.joined/name {
+    native.lists.joined("x")
+    => value "<li class=\"row\">x</li>"
+}
+
+test native.lists.compact-joined/escape {
+    native.lists.compact-joined("<x>")
+    => value "<li>&lt;x&gt;</li>"
+}
+
+test native.lists.append/one {
+    native.lists.append(["a"], "b")
+    => value ["a", "b"]
+}
+
+test native.lists.concat/two {
+    native.lists.concat(["a"], ["b", "c"])
+    => value ["a", "b", "c"]
+}
+
+test native.lists.append-records/one {
+    list.count(native.lists.append-records(list.empty<Pair>(), "x"))
+    => value 1
+}
+
+test native.lists.literal-tag/value {
+    native.lists.literal-tag()
+    => value "literal"
+}
+
+test native.lists.runtime-tag/value {
+    native.lists.runtime-tag("x")
+    => value "x"
+}
+
+test tag.ok?/empty {
+    tag.ok?("")
+    => value false
+}

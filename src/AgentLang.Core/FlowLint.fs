@@ -152,6 +152,8 @@ module FlowLint =
                         | FlowExpression.Equality(left, right, _) ->
                             analyzeExpression outerFrames localBindings statementIndex left
                             analyzeExpression outerFrames localBindings statementIndex right
+                        | FlowExpression.ListLiteral(items, _) ->
+                            for item in items do analyzeExpression outerFrames localBindings statementIndex item
                         | FlowExpression.Compact(body, _) ->
                             let parentFrame =
                                 { Bindings = localBindings

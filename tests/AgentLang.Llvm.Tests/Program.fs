@@ -1476,7 +1476,10 @@ let private testNominalScalarDepth () =
             Call("int.greater-than", span "depth-validator.agent" 2)
         ]
 
-    let runCase typeName baseType validator finalIndex (literal: Literal) shouldFail =
+    // `computed` builds the constructor input from an operation (two extra
+    // instructions) so the validator runs; a bare literal is proven at compile
+    // time and retagged without a validator call.
+    let runCase typeName baseType validator finalIndex (literal: Literal) computed shouldFail =
         let scalar = scalarDefinition typeName baseType validator
         let deepWords =
             [ 0 .. finalIndex ]
@@ -1485,10 +1488,21 @@ let private testNominalScalarDepth () =
                 let body =
                     if index < finalIndex then [ Call($"deep.scalar.{index + 1}", span (name + ".agent") 2) ]
                     else
-                        [ Push(literal, span (name + ".agent") 2)
-                          Call(typeName + ".make", span (name + ".agent") 3)
-                          Call("drop", span (name + ".agent") 4) ]
+                        let input =
+                            match computed, literal with
+                            | false, _ -> [ Push(literal, span (name + ".agent") 2) ]
+                            | true, LBool _ ->
+                                [ Push(literal, span (name + ".agent") 2)
+                                  Push(LBool true, span (name + ".agent") 2)
+                                  Call("bool.and", span (name + ".agent") 2) ]
+                            | true, _ ->
+                                [ Push(literal, span (name + ".agent") 2)
+                                  Push(LInt 0L, span (name + ".agent") 2)
+                                  Call("add", span (name + ".agent") 2) ]
+                        input @ [ Call(typeName + ".make", span (name + ".agent") 3)
+                                  Call("drop", span (name + ".agent") 4) ]
                 wordEntry name [] [] Set.empty body)
+        let computedSteps = if computed then 2 else 0
         let context =
             let validatorWords = if validator = Some "is-positive?" then [ positiveValidator ] else []
             let extraWords = validatorWords @ deepWords
@@ -1513,7 +1527,7 @@ let private testNominalScalarDepth () =
                 && interpretedError.Word = Some expectedWord
                 && interpretedError.Span = expectedSpan
                 && interpretedError.Actual.IsEmpty)
-            check (typeName + " interpreter charges no extra generated/validator instruction") (interpretedSteps = 66)
+            check (typeName + " interpreter charges no extra generated/validator instruction") (interpretedSteps = 66 + computedSteps)
             for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
                 use native = compileNativeWithSources ("deep-scalar-" + typeName) optimization sources body
                 let actualError = errorOf (fun () -> native.Execute "deep-scalar-entry" |> ignore)
@@ -1523,7 +1537,11 @@ let private testNominalScalarDepth () =
                 check ($"{optimization} {typeName} generated/validator depth charges match interpreter") (nativeSteps = interpretedSteps)
         else
             let interpreted, expectedSteps = interpreterResultAndSteps "deep-scalar-entry" body
-            let expectedDepthSteps = if validator = Some "bool.not" then 66 else 67
+            let expectedDepthSteps =
+                match validator, computed with
+                | Some _, false -> expectedSteps // proven literal: retag only; native must match below
+                | Some "bool.not", true -> 66 + computedSteps
+                | _ -> 67 + computedSteps
             check (typeName + " interpreter permits the validator at depth 64") (interpreted = [] && expectedSteps = expectedDepthSteps)
             for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
                 use native = compileNativeWithSources ("deep-scalar-" + typeName) optimization sources body
@@ -1531,11 +1549,14 @@ let private testNominalScalarDepth () =
                 check ($"{optimization} {typeName} generated constructor depth boundary") (actual.Values = interpreted)
                 check ($"{optimization} {typeName} generated constructor step count") (actual.StepsConsumed = expectedSteps)
 
-    runCase "DepthTag" TInt None 63 (LInt 1L) false
-    runCase "RefinedDepthTag" TInt (Some "is-positive?") 63 (LInt 1L) true
-    runCase "BoundaryDepthTag" TInt (Some "is-positive?") 61 (LInt 1L) false
-    runCase "PrimitiveDepthFlag" TBool (Some "bool.not") 63 (LBool true) true
-    runCase "PrimitiveBoundaryFlag" TBool (Some "bool.not") 62 (LBool false) false
+    runCase "DepthTag" TInt None 63 (LInt 1L) false false
+    runCase "RefinedDepthTag" TInt (Some "is-positive?") 63 (LInt 1L) true true
+    runCase "BoundaryDepthTag" TInt (Some "is-positive?") 61 (LInt 1L) true false
+    runCase "PrimitiveDepthFlag" TBool (Some "bool.not") 63 (LBool true) true true
+    runCase "PrimitiveBoundaryFlag" TBool (Some "bool.not") 62 (LBool false) true false
+    // A proven literal at the depth that rejects a computed value runs no validator.
+    runCase "ProvenLiteralDepthTag" TInt (Some "is-positive?") 63 (LInt 1L) false false
+    runCase "ProvenLiteralDepthFlag" TBool (Some "bool.not") 63 (LBool false) false false
 
 let private recordField name fieldType =
     { Name = name
@@ -2369,7 +2390,11 @@ let private testOwningRefinedIntSlice () =
                 let body =
                     if index < finalIndex then [ Call($"owning.refined.depth.{label}.{index + 1}", span (name + ".agent") 2) ]
                     else
-                        [ Push(LInt 1L, span (name + ".agent") 2)
+                        // A computed (non-literal) value, so the validator runs at this
+                        // depth; proven literals are retagged without a validator call.
+                        [ Push(LInt 0L, span (name + ".agent") 2)
+                          Push(LInt 1L, span (name + ".agent") 2)
+                          Call("add", span (name + ".agent") 2)
                           Call("PositiveId.construct", span (name + ".agent") 3)
                           Call("drop", span (name + ".agent") 4) ]
                 wordEntry name [] [] Set.empty body)

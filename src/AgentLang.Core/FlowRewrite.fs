@@ -97,6 +97,8 @@ module FlowRewrite =
                 visitStatements role (pathChild path (FlowAstPathSegment.IfElseStatement 0)) elseStatements
             | FlowExpression.Container(_, _, payload, _) ->
                 payload |> Option.iter (visitExpression role (pathChild path FlowAstPathSegment.ContainerPayload))
+            | FlowExpression.ListLiteral(items, _) ->
+                items |> List.iteri (fun index item -> visitExpression role (pathChild path (FlowAstPathSegment.ListLiteralItem index)) item)
             | FlowExpression.MatchOption(scrutinee, someCase, noneCase, _) ->
                 visitExpression role (pathChild path FlowAstPathSegment.OptionScrutinee) scrutinee
                 visitStatements role (pathChild path (FlowAstPathSegment.OptionSomeStatement 0)) someCase.Statements
@@ -460,6 +462,14 @@ module FlowRewrite =
                         rewriteStatements role
                             (pathChild oldPath (FlowAstPathSegment.IfElseStatement 0))
                             (pathChild newPath (FlowAstPathSegment.IfElseStatement 0)) elseStatements,
+                        span)
+                | FlowExpression.ListLiteral(items, span) ->
+                    FlowExpression.ListLiteral(
+                        items
+                        |> List.mapi (fun index item ->
+                            rewriteExpression role
+                                (pathChild oldPath (FlowAstPathSegment.ListLiteralItem index))
+                                (pathChild newPath (FlowAstPathSegment.ListLiteralItem index)) item),
                         span)
                 | FlowExpression.Container(kind, typeArguments, payload, span) ->
                     FlowExpression.Container(kind, typeArguments,

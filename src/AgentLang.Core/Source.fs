@@ -31,6 +31,7 @@ module Source =
                 match kind with
                 | ListEmpty -> "list.empty"
                 | ListSingleton -> "list.singleton"
+                | ListOf count -> $"list.of{count}"
                 | OptionNone -> "option.none"
                 | OptionSome -> "option.some"
                 | ResultOk -> "result.ok"

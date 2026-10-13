@@ -146,7 +146,26 @@
       "fieldDescriptorSizeBytesUnchanged": 16,
       "layoutDescriptorSizeBytesUnchanged": 40,
       "valueStepAndCopyOraclesChanged": false
-    }
+    },
+    "semanticTransitions": [
+      {
+        "kind": "proven-refined-literal-admission",
+        "report": "263",
+        "priorFixtureSha256": "DD6D91207390763BD2886917B16F9E3315E0CF6DE3F6A3DEC7005B28C52AA47B",
+        "rule": "A refined constructor applied directly to a literal accepted by its pure validator at compile time is retagged without running the validator, in the interpreter, the owning AOT backend and the scalar backend alike (user decision 2026-10-13).",
+        "sourceSites": [
+          "experiments/AgentLang.OwningMailbox/owning-mailbox-refinements.flow: positiveId.new(1) in initialize; positiveId.new(2) in begin and in resume"
+        ],
+        "stepDelta": "-12 per literal PositiveId construction (the frozen is-positive? cost); each handler body that constructs one drops by 12, resumeFail (no literal) is unchanged",
+        "changes": [
+          { "path": "sourceDerivedStepOracle.handlerBodyStepsExcludingExternalAdmission", "previous": { "initialize": 44, "begin": 48, "resumeEmpty": 33, "resumeFail": 12, "resumeSuccess": 53 }, "corrected": { "initialize": 32, "begin": 36, "resumeEmpty": 21, "resumeFail": 12, "resumeSuccess": 41 } },
+          { "path": "sourceDerivedStepOracle.stepsConsumedByCall.RETURN", "previous": [44, 77, 84, 63, 104], "corrected": [32, 65, 72, 63, 92] },
+          { "path": "sourceDerivedStepOracle.stepsConsumedByCall.KEEP_ASSOCIATED", "previous": [44, 77, 33, 12, 53], "corrected": [32, 65, 21, 12, 41] },
+          { "path": "directAdmissionControls.validState.fullBeginStepsIncludingHandler", "previous": 77, "corrected": 65 }
+        ],
+        "unchanged": "Values, serialized bytes, layouts, diagnostics, predicate-invocation counts for runtime admission, copy accounting and the RETURN-vs-KEEP resume delta (51)."
+      }
+    ]
   },
   "sourceFixture": "experiments/AgentLang.OwningMailbox/owning-mailbox-refinements.flow",
   "moduleAbiVersion": 2,
@@ -267,13 +286,13 @@
     }
   },
   "sourceDerivedStepOracle": {
-    "method": "Verified-IR interpreter ChargeInstruction counts handler/body instructions; external refined-value admission adds the frozen validator function cost once per active refined scalar. Predicate-call counts are source-derived expectations, not a runtime predicate counter.",
+    "method": "Verified-IR interpreter ChargeInstruction counts handler/body instructions; external refined-value admission adds the frozen validator function cost once per active refined scalar. Predicate-call counts are source-derived expectations, not a runtime predicate counter. Since report 263 a refined constructor applied directly to a literal that its pure validator accepted at compile time is a retag in every backend: it charges no validator instructions.",
     "handlerBodyStepsExcludingExternalAdmission": {
-      "initialize": 44,
-      "begin": 48,
-      "resumeEmpty": 33,
+      "initialize": 32,
+      "begin": 36,
+      "resumeEmpty": 21,
       "resumeFail": 12,
-      "resumeSuccess": 53
+      "resumeSuccess": 41
     },
     "sourceDerivedPredicateInvocations": {
       "initialize": { "PositiveId": 1, "NonEmptyString": 1 },
@@ -288,8 +307,8 @@
       "controllerTotalKeep": { "PositiveId": 6, "NonEmptyString": 5 }
     },
     "stepsConsumedByCall": {
-      "RETURN": [44, 77, 84, 63, 104],
-      "KEEP_ASSOCIATED": [44, 77, 33, 12, 53]
+      "RETURN": [32, 65, 72, 63, 92],
+      "KEEP_ASSOCIATED": [32, 65, 21, 12, 41]
     },
     "callOrder": ["initialize", "begin", "resume-empty", "resume-fail", "retry-same-token"],
     "returnVsKeepResumeStepDelta": 51,
@@ -300,7 +319,7 @@
     "validState": {
       "predicateCalls": { "PositiveId": 2, "NonEmptyString": 1 },
       "admissionSteps": 29,
-      "fullBeginStepsIncludingHandler": 77,
+      "fullBeginStepsIncludingHandler": 65,
       "inactiveOptionAndResultAreSkipped": true
     },
     "invalidActiveValues": [

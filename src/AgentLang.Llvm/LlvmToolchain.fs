@@ -236,6 +236,7 @@ module LlvmToolchain =
     let private compileLibraryWithRuntimeCore
         (toolchain: LlvmToolchain)
         optimization
+        (runtimeProfile: OwningRuntimeProfile)
         screenNativeStackUsage
         (llvmIrPath: string)
         (runtimeSourcePath: string)
@@ -255,7 +256,7 @@ module LlvmToolchain =
         let runtimeObjectPath = Path.Combine(workingDirectory, "agentlang-arena-runtime.obj")
         compileLlvmObject toolchain optimization screenNativeStackUsage irPath llvmObjectPath workingDirectory |> ignore
         compileCObject
-            toolchain optimization OwningRuntimeProfile.Diagnostic OwningRuntimeInstrumentation.Off screenNativeStackUsage
+            toolchain optimization runtimeProfile OwningRuntimeInstrumentation.Off screenNativeStackUsage
             sourcePath includeDirectory runtimeObjectPath workingDirectory
         linkObjects toolchain dllPath [ llvmObjectPath; runtimeObjectPath ]
 
@@ -269,7 +270,7 @@ module LlvmToolchain =
         (runtimeIncludeDirectory: string)
         (outputDllPath: string) =
         compileLibraryWithRuntimeCore
-            toolchain optimization false llvmIrPath runtimeSourcePath runtimeIncludeDirectory outputDllPath
+            toolchain optimization OwningRuntimeProfile.Diagnostic false llvmIrPath runtimeSourcePath runtimeIncludeDirectory outputDllPath
 
     /// Compile an owning runtime and its LLVM IR with fresh static per-frame
     /// stack-usage receipts before linking. This is not a call-chain bound.
@@ -281,7 +282,20 @@ module LlvmToolchain =
         (runtimeIncludeDirectory: string)
         (outputDllPath: string) =
         compileLibraryWithRuntimeCore
-            toolchain optimization true llvmIrPath runtimeSourcePath runtimeIncludeDirectory outputDllPath
+            toolchain optimization OwningRuntimeProfile.Diagnostic true llvmIrPath runtimeSourcePath runtimeIncludeDirectory outputDllPath
+
+    /// The same screened pure-owning build with an explicit runtime profile, so a
+    /// host-free entry can run the trusted-generated runtime for measurement.
+    let compileLibraryWithRuntimeAndNativeStackScreenWithRuntimeProfile
+        (toolchain: LlvmToolchain)
+        optimization
+        (runtimeProfile: OwningRuntimeProfile)
+        (llvmIrPath: string)
+        (runtimeSourcePath: string)
+        (runtimeIncludeDirectory: string)
+        (outputDllPath: string) =
+        compileLibraryWithRuntimeCore
+            toolchain optimization runtimeProfile true llvmIrPath runtimeSourcePath runtimeIncludeDirectory outputDllPath
 
     /// Compile a trusted, build-time native adapter beside the owning runtime
     /// and generated LLVM object. The adapter is statically linked into this

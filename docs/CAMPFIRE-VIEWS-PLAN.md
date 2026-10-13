@@ -39,6 +39,41 @@ same placement.
 - **Benchmarks** compare AgentLang AOT with Rails and Rust. The interpreter is a
   parity control only. Cache-enabled comparisons come later.
 
+### Decisions (user, 2026-10-13, after report 262)
+
+- **Templates:** improve them dramatically, aiming for both readability and
+  efficiency. Both styles are wanted: an interpolated literal (`html"…{x}…"`) for
+  one-liners and a template block (`html { … }`) for partial and page bodies.
+  Each template lowers to one sized join. Interpolated `String`s are escaped and
+  `Html` is inserted as-is.
+- **Native list building** (`list.append`, `list.concat`).
+- **`Html.new` is always checked.** Literals are checked at compile time, and
+  every other construction is checked at run time.
+- **UTF-8 internal strings.**
+  - Length counts bytes and is renamed `string.byte-length`.
+  - A separate function gives the character (Unicode scalar) length.
+  - Invalid UTF-16 arriving from hosts (unpaired surrogates) is rejected at the
+    boundary.
+- **Bulk range copies and better structure checks** (proven structural access).
+- **Straight-to-socket responses:** explore a readable and efficient design for
+  fresh and cached results ([RESPONSE-STREAMING.md](RESPONSE-STREAMING.md)).
+- **Kept for later review** ([PENDING-REVIEW.md](PENDING-REVIEW.md)): immutable
+  strings and workflow ceremony.
+- **Raw vs escaped HTML: one type, explicit raw.**
+  - `Html` remains the only markup type.
+  - Run-time markup enters only through a distinctly named `html.raw(text)`, so
+    `Html.new` can't be called on run-time strings.
+  - Literals (including template parts) are validated at compile time, and their
+    run-time check is skipped.
+  - Enforcement will be a generic feature: a refined type's constructor can be
+    literal-only outside the type's own namespace.
+- **No list length limit:** the 10,000-element cap is dropped; memory bounds
+  lists.
+- **Shared immutable literals:** each String or proven `Html` literal is emitted
+  once into the binary's read-only data and referenced by every worker, with no
+  per-request copy and no locks. Native descriptors need to address this static
+  region alongside the request arena.
+
 ## Constraints
 
 - The entry is never replayed to size output, because it may refresh a session.

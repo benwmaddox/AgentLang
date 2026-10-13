@@ -309,6 +309,7 @@ module RoomReadEntryTests =
             | IrOperation.Constant _
             | IrOperation.ListEmpty _
             | IrOperation.ListSingleton _
+            | IrOperation.ListOf _
             | IrOperation.OptionNone _
             | IrOperation.OptionSome _
             | IrOperation.ResultOk _

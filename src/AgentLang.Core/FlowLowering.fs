@@ -345,6 +345,7 @@ module FlowLowering =
         | FlowExpression.Equality(_, _, span)
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Compact(_, span)
+        | FlowExpression.ListLiteral(_, span)
         | FlowExpression.Container(_, _, _, span)
         | FlowExpression.MatchOption(_, _, _, span)
         | FlowExpression.MatchResult(_, _, _, span)
@@ -812,6 +813,16 @@ module FlowLowering =
             let arguments = [ FlowArgument.Positional left; FlowArgument.Positional right ]
             let _, _, outputs = selectCallOutputs context state environment "equals" None arguments equalitySpan
             outputs
+        | FlowExpression.ListLiteral(items, literalSpan) ->
+            match items with
+            | [] -> fail "FLOW_LIST_LITERAL_EMPTY" "A list literal needs at least one element; use list.empty<T>() for an empty list." None (Some literalSpan) [ "one or more elements" ] []
+            | first :: rest ->
+                let itemType = inferExpression context state environment first
+                for item in rest do
+                    let actual = inferExpression context state environment item
+                    if actual <> itemType then
+                        fail "FLOW_LIST_LITERAL_TYPE" "Every list literal element must have the first element's exact type." None (Some(spanOfExpression item)) [ Types.format itemType ] [ Types.format actual ]
+                [ TList itemType ]
         | FlowExpression.Container(kind, typeArguments, payload, constructorSpan) ->
             let types = constructorTypeArguments context kind typeArguments constructorSpan
             let outputType, requiredPayloadType =
@@ -1091,6 +1102,14 @@ module FlowLowering =
                 | 1 -> FlowAstPathSegment.EqualityRight
                 | _ -> failwith "validated equality operand index is outside the binary operator"
             lowerResolvedCall context state environment path FlowCallForm.Direct "equals" candidate bound None arguments equalitySpan equalityOperandPath
+        | FlowExpression.ListLiteral(items, literalSpan) ->
+            let itemType =
+                match inferExpression context state environment expression with
+                | TList item -> item
+                | _ -> failwith "validated list literal changed type"
+            let fragments =
+                items |> List.mapi (fun index item -> lowerFlowExpression context state environment (extendPath path (FlowAstPathSegment.ListLiteralItem index)) item)
+            appendFragments fragments [ ConstructContainer(ListOf items.Length, [ itemType ], literalSpan) ]
         | FlowExpression.Container(kind, typeArguments, payload, constructorSpan) ->
             inferExpression context state environment expression |> ignore
             let payloadFragment = payload |> Option.map (lowerFlowExpression context state environment (extendPath path FlowAstPathSegment.ContainerPayload))
@@ -1582,6 +1601,8 @@ module FlowLowering =
                 walkStatements (extendPath path (FlowAstPathSegment.IfElseStatement 0)) elseStatements
             | FlowExpression.Container(_, _, payload, _) ->
                 payload |> Option.iter (walkExpression (extendPath path FlowAstPathSegment.ContainerPayload))
+            | FlowExpression.ListLiteral(items, _) ->
+                items |> List.iteri (fun index item -> walkExpression (extendPath path (FlowAstPathSegment.ListLiteralItem index)) item)
             | FlowExpression.MatchOption(scrutinee, someCase, noneCase, _) ->
                 walkExpression (extendPath path FlowAstPathSegment.OptionScrutinee) scrutinee
                 walkStatements (extendPath path (FlowAstPathSegment.OptionSomeStatement 0)) someCase.Statements
@@ -1657,6 +1678,8 @@ module FlowLowering =
                 walkStatements role (extendPath path (FlowAstPathSegment.IfElseStatement 0)) elseStatements
             | FlowExpression.Container(_, _, payload, _) ->
                 payload |> Option.iter (walkExpression role (extendPath path FlowAstPathSegment.ContainerPayload))
+            | FlowExpression.ListLiteral(items, _) ->
+                items |> List.iteri (fun index item -> walkExpression role (extendPath path (FlowAstPathSegment.ListLiteralItem index)) item)
             | FlowExpression.MatchOption(scrutinee, someCase, noneCase, _) ->
                 walkExpression role (extendPath path FlowAstPathSegment.OptionScrutinee) scrutinee
                 walkStatements role (extendPath path (FlowAstPathSegment.OptionSomeStatement 0)) someCase.Statements

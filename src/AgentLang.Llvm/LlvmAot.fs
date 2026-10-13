@@ -611,6 +611,7 @@ module LlvmAot =
                 | IrOperation.Constant _
                 | IrOperation.ListEmpty _
                 | IrOperation.ListSingleton _
+                | IrOperation.ListOf _
                 | IrOperation.OptionNone _
                 | IrOperation.OptionSome _
                 | IrOperation.ResultOk _
@@ -1421,9 +1422,16 @@ module LlvmAot =
                             [ { Type = field.FieldType; Operand = raw } ]
                         | _ -> invalidOp "Validated generated record accessor referred to an absent record field."
                     | _ -> invalidOp "Validated generated target is not a supported scalar constructor or accessor."
+                let mutable previousOperation: IrOperation option = None
                 for instruction in block.Code do
                     emitCharge builder currentWord wordSource instruction.Site
                     let span = sourceSpan sourceMap instruction.Site
+                    let provenLiteralWrap =
+                        match previousOperation, instruction.Operation with
+                        | Some(IrOperation.Constant(literal, literalType)), (IrOperation.WrapScalar(_, _, Some _) as wrap) ->
+                            RefinedLiterals.proven (VerifiedIrBody.program verifiedBody) instruction.Site literal literalType wrap
+                        | _ -> false
+                    previousOperation <- Some instruction.Operation
                     match instruction.Operation with
                     | IrOperation.Constant(LInt value, IrInt) ->
                         stack <- stack @ [ { Type = IrInt; Operand = value.ToString(CultureInfo.InvariantCulture) } ]
@@ -1493,6 +1501,10 @@ module LlvmAot =
                     | IrOperation.MakeRecord(call, _, validator) ->
                         let arguments = popArguments call.InputTypes.Length
                         stack <- stack @ emitResolvedCall call arguments "%depth" span validator
+                    | IrOperation.WrapScalar(call, key, _) when provenLiteralWrap ->
+                        // Proven at compile time by the same pure validator: retag only.
+                        let arguments = popArguments call.InputTypes.Length
+                        stack <- stack @ [ { Type = IrNominal key; Operand = (List.head arguments).Operand } ]
                     | IrOperation.Call call
                     | IrOperation.GetRecordField(call, _, _)
                     | IrOperation.WrapScalar(call, _, _)

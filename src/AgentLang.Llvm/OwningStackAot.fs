@@ -300,6 +300,9 @@ type internal OwningProgramInfo =
       TypeInfos: Map<IrType, OwningTypeInfo>
       ValidatedScalarValidators: Map<IrType, IrResolvedCall>
       ValidatedScalarConstructors: Map<IrType, IrGeneratedTarget>
+      /// WrapScalar sites whose input is a literal the type's pure validator
+      /// accepted at compile time; their runtime validator call is omitted.
+      ProvenRefinedLiteralSites: Set<SourceSiteId>
       Layouts: OwningStackTypeLayout list }
 
 type internal OwningDiagnosticInfo =
@@ -521,6 +524,7 @@ type OwningStackCompiledProgram internal
     let mutable executeDelegate: OwningExecuteDelegate option = None
     let mutable executeWithHostContextDelegate: OwningExecuteWithHostContextDelegate option = None
     let lifetimeGate = obj ()
+    let mutable lastNativeElapsedTicks = 0L
 
     do
         let handle =
@@ -548,6 +552,9 @@ type OwningStackCompiledProgram internal
     member _.LibraryPath = libraryPath
     member _.NativeHostManifestPath = nativeHostManifestPath
     member _.RuntimeProfile = runtimeProfile
+    /// Stopwatch ticks spent inside the most recent native entry call only
+    /// (excludes input encoding, allocation and output decoding).
+    member _.LastNativeElapsedTicks = lastNativeElapsedTicks
     member _.LlvmIr = llvmIr
     member _.InputTypes = programInfo.Body.BodyInputTypes
     member _.OutputTypes = programInfo.Body.BodyOutputTypes
@@ -626,15 +633,19 @@ type OwningStackCompiledProgram internal
             let status =
                 lock lifetimeGate (fun () ->
                     if libraryHandle = IntPtr.Zero then raise (ObjectDisposedException(nameof OwningStackCompiledProgram))
-                    match providerContext with
-                    | None ->
-                        match executeDelegate with
-                        | Some native -> native.Invoke(contextPointer, inputPointer, uint32 inputLength, inputExtentPointer, uint32 inputExtents.Length, retainedPointer, uint32 retainedCapacityBytes)
-                        | None -> raise (ObjectDisposedException(nameof OwningStackCompiledProgram))
-                    | Some hostContext ->
-                        match executeWithHostContextDelegate with
-                        | Some native -> native.Invoke(contextPointer, hostContext, inputPointer, uint32 inputLength, inputExtentPointer, uint32 inputExtents.Length, retainedPointer, uint32 retainedCapacityBytes)
-                        | None -> raise (ObjectDisposedException(nameof OwningStackCompiledProgram)))
+                    let started = Diagnostics.Stopwatch.GetTimestamp()
+                    let result =
+                        match providerContext with
+                        | None ->
+                            match executeDelegate with
+                            | Some native -> native.Invoke(contextPointer, inputPointer, uint32 inputLength, inputExtentPointer, uint32 inputExtents.Length, retainedPointer, uint32 retainedCapacityBytes)
+                            | None -> raise (ObjectDisposedException(nameof OwningStackCompiledProgram))
+                        | Some hostContext ->
+                            match executeWithHostContextDelegate with
+                            | Some native -> native.Invoke(contextPointer, hostContext, inputPointer, uint32 inputLength, inputExtentPointer, uint32 inputExtents.Length, retainedPointer, uint32 retainedCapacityBytes)
+                            | None -> raise (ObjectDisposedException(nameof OwningStackCompiledProgram))
+                    lastNativeElapsedTicks <- Diagnostics.Stopwatch.GetTimestamp() - started
+                    result)
             context <- Marshal.PtrToStructure<NativeOwningContext>(contextPointer)
             let metrics =
                 readMetrics stackByteCapacity retainedCapacityBytes inputLength traceCapacity eventAllocationBytes bitmapBytes retainedStagingBytes 0 inputExtentAllocationBytes
@@ -1636,7 +1647,8 @@ module OwningStackAot =
                   "int.to-float"; "int.to-string"; "float.to-int"; "float.round"; "float.to-string"
                   "equals"; "bool.and"; "bool.or"; "bool.not"; "dup"; "drop"; "swap"
                   "string.concat"; "string.length"; "string.join"; "string.html-escape"
-                  "string.contains"; "string.starts-with"; "string.ends-with" ]
+                  "string.contains"; "string.starts-with"; "string.ends-with"
+                  "list.append"; "list.concat" ]
 
         let validatePrimitive owner span (call: IrResolvedCall) operation =
             requireEffectFree owner call.ResolvedDeclaredEffects
@@ -1668,6 +1680,8 @@ module OwningStackAot =
                 | "string.join", [ IrList IrString ], [ IrString ] -> true
                 | "string.html-escape", [ IrString ], [ IrString ] -> true
                 | ("string.contains" | "string.starts-with" | "string.ends-with"), [ IrString; IrString ], [ IrBool ] -> true
+                | "list.append", [ IrList item; value ], [ IrList result ] -> item = value && item = result
+                | "list.concat", [ IrList left; IrList right ], [ IrList result ] -> left = right && left = result
                 | _ -> false
             if not valid then
                 Diagnostics.raiseError "IR_OWNING_STACK_PRIMITIVE_SIGNATURE"
@@ -1735,7 +1749,8 @@ module OwningStackAot =
                 | IrOperation.OptionNone itemType
                 | IrOperation.OptionSome itemType -> checkType owner (IrOption itemType)
                 | IrOperation.ListEmpty itemType
-                | IrOperation.ListSingleton itemType -> checkType owner (IrList itemType)
+                | IrOperation.ListSingleton itemType
+                | IrOperation.ListOf(itemType, _) -> checkType owner (IrList itemType)
                 | IrOperation.ListMap(call, _, _)
                 | IrOperation.ListFilter(call, _)
                 | IrOperation.ListEach(call, _)
@@ -1996,6 +2011,29 @@ module OwningStackAot =
             program.FunctionsById
             |> Map.toList
             |> List.choose (fun (id, fn) -> if reachable.Contains id then Some fn else None)
+        let provenRefinedLiteralSites =
+            let found = HashSet<SourceSiteId>()
+            let rec visit (block: IrBlock) =
+                block.Code
+                |> List.pairwise
+                |> List.iter (fun (previous, current) ->
+                    match previous.Operation, current.Operation with
+                    | IrOperation.Constant(literal, literalType), (IrOperation.WrapScalar(_, _, Some _) as wrap) ->
+                        if RefinedLiterals.proven sourceProgram current.Site literal literalType wrap then
+                            found.Add current.Site |> ignore
+                    | _ -> ())
+                for instruction in block.Code do
+                    match instruction.Operation with
+                    | IrOperation.Scope inner | IrOperation.Compact inner -> visit inner
+                    | IrOperation.If(left, right)
+                    | IrOperation.MatchOption(_, left, right)
+                    | IrOperation.MatchResult(_, _, left, right) -> visit left; visit right
+                    | IrOperation.MatchEnum(_, cases) -> cases |> List.iter (snd >> visit)
+                    | _ -> ()
+            // Only function bodies: their sites are owner-qualified and unique, while
+            // detached entry bodies number sites from zero and may share ids.
+            for fn in reachableFunctions do visit fn.FunctionBody
+            Set.ofSeq found
         { Program = program
           Body = body
           Bodies = bodies
@@ -2004,6 +2042,7 @@ module OwningStackAot =
           TypeInfos = typeInfos
           ValidatedScalarValidators = validatedScalarValidators
           ValidatedScalarConstructors = validatedScalarConstructors
+          ProvenRefinedLiteralSites = provenRefinedLiteralSites
           Layouts = typeLayouts }
 
     let private makeProgramInfo (verifiedBody: VerifiedIrBody) =
@@ -2568,6 +2607,9 @@ module OwningStackAot =
                 | IrOperation.ListEmpty itemType -> stack <- stack @ [ IrList itemType ]
                 | IrOperation.ListSingleton itemType ->
                     let _, prefix = pop 1
+                    stack <- prefix @ [ IrList itemType ]
+                | IrOperation.ListOf(itemType, count) ->
+                    let _, prefix = pop count
                     stack <- prefix @ [ IrList itemType ]
                 | IrOperation.ListMap(_, _, resultType) ->
                     let _, prefix = pop 1
@@ -4015,6 +4057,9 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_string_html_escape_plan(ptr, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_html_escape_write(ptr, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_find(ptr, i32, i32, i32, i32, i32, i32, ptr)")
+        writer.Line("declare i32 @al_owning_list_combine_header(ptr, i32, i32, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_string_join_parts_plan(ptr, ptr, i32, i32, ptr, ptr, ptr)")
+        writer.Line("declare i32 @al_owning_string_join_parts_write(ptr, i32, i32, ptr, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_float_format(ptr, i64, ptr, ptr, i32)")
         writer.Line("declare i32 @al_owning_ascii_string_write(ptr, i32, i32, ptr, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_int_format(ptr, i64, ptr, ptr, i32)")
@@ -4625,6 +4670,19 @@ module OwningStackAot =
                     emitRuntimeStatus w "%ctx" failBody
                     push prefix sumType cursor sumExtent sumPayload next
                 let entryAt entries index = entries[index]
+                // `[a, b, c]` of Strings immediately joined: the ListOf emits an n-way
+                // join of the parts and the following string.join becomes a no-op.
+                let fusedJoinSites =
+                    current.Code
+                    |> List.pairwise
+                    |> List.choose (fun (previous, next) ->
+                        match previous.Operation, next.Operation with
+                        | IrOperation.ListOf(IrString, _), IrOperation.Call call
+                            when call.ResolvedName = "string.join" && (match call.ResolvedTarget with PrimitiveTarget _ -> true | _ -> false) ->
+                            Some [ previous.Site; next.Site ]
+                        | _ -> None)
+                    |> List.concat
+                    |> Set.ofList
                 for instruction in current.Code do
                     let instructionSpan = frameSourceMap.TryFind instruction.Site |> Option.map (fun source -> source.SiteSpan)
                     let stepId = addDiagnostic "RUNTIME_STEP_LIMIT" "Execution exceeded the 10,000 instruction limit." currentOwner instructionSpan [] []
@@ -4702,6 +4760,65 @@ module OwningStackAot =
                         emitCopyRange w (emitOffset w cursor "8") item.Offset item.Extent item.Payload (typeId itemType) failBody
                         emitUpdateLive w "8" "0" failBody
                         emitDropEntry stack (stack.Length - 1)
+                        w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {cursor}, i32 {listExtent}, i32 {listPayload}, i32 0, i32 0)")
+                        emitRuntimeStatus w "%ctx" failBody
+                        stack <- push prefix listType cursor listExtent listPayload next
+                    | IrOperation.ListOf(IrString, count) when fusedJoinSites.Contains instruction.Site ->
+                        let parts, prefix = pop count
+                        let partsArray = w.Fresh "join.parts"
+                        w.Inst($"{partsArray} = alloca [{count * 2} x i32], align 4")
+                        parts
+                        |> List.iteri (fun index part ->
+                            for field, value in [ 0, part.Offset; 1, part.Extent ] do
+                                let slot = w.Fresh "join.part"
+                                w.Inst($"{slot} = getelementptr inbounds [{count * 2} x i32], ptr {partsArray}, i32 0, i32 {index * 2 + field}")
+                                w.Inst($"store i32 {value}, ptr {slot}, align 4"))
+                        let cursor = emitContextLoad w "%ctx" 2
+                        let units = w.Fresh "join.units"
+                        let payloadPointer = w.Fresh "join.payload.pointer"
+                        let extentPointer = w.Fresh "join.extent.pointer"
+                        w.Inst($"{units} = alloca i32, align 4")
+                        w.Inst($"{payloadPointer} = alloca i32, align 4")
+                        w.Inst($"{extentPointer} = alloca i32, align 4")
+                        let sizeError = addDiagnostic "RUNTIME_STRING_LENGTH_OVERFLOW" "string.join result exceeds the bounded UTF-16 code-unit range." currentOwner instructionSpan [] []
+                        let planStatus = w.Fresh "join.plan.status"
+                        w.Inst($"{planStatus} = call i32 @al_owning_string_join_parts_plan(ptr %%ctx, ptr {partsArray}, i32 {count}, i32 {sizeError}, ptr {units}, ptr {payloadPointer}, ptr {extentPointer})")
+                        emitStatusResult w planStatus failBody
+                        let resultPayload = w.Fresh "join.payload"
+                        let resultExtent = w.Fresh "join.extent"
+                        w.Inst($"{resultPayload} = load i32, ptr {payloadPointer}, align 4")
+                        w.Inst($"{resultExtent} = load i32, ptr {extentPointer}, align 4")
+                        let resultEnd = emitOffset w cursor resultExtent
+                        let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve exact string.join output." currentOwner instructionSpan [] []
+                        emitReserve w resultEnd reserveError failBody
+                        let writeStatus = w.Fresh "join.write.status"
+                        w.Inst($"{writeStatus} = call i32 @al_owning_string_join_parts_write(ptr %%ctx, i32 {cursor}, i32 {resultExtent}, ptr {partsArray}, i32 {count}, i32 {typeId IrString}, i32 {sizeError})")
+                        emitStatusResult w writeStatus failBody
+                        for index in stack.Length - 1 .. -1 .. stack.Length - count do
+                            emitDropEntry stack index
+                        emitUpdateLive w resultPayload "0" failBody
+                        stack <- push prefix IrString cursor resultExtent resultPayload resultEnd
+                    | IrOperation.ListOf(itemType, count) ->
+                        // [a, b, c]: one sized list; each element is range-copied once,
+                        // in order, behind the 8-byte header.
+                        let listType = IrList itemType
+                        let items, prefix = pop count
+                        let cursor = emitContextLoad w "%ctx" 2
+                        let listExtent = items |> List.fold (fun total item -> emitOffset w total item.Extent) "8"
+                        let listPayload = items |> List.fold (fun total item -> emitOffset w total item.Payload) "8"
+                        let next = emitOffset w cursor listExtent
+                        let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a List literal." currentOwner instructionSpan [] []
+                        emitReserve w next reserveError failBody
+                        w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 {count}, i32 {typeId listType})")
+                        emitRuntimeStatus w "%ctx" failBody
+                        items
+                        |> List.fold (fun destination item ->
+                            emitCopyRange w destination item.Offset item.Extent item.Payload (typeId itemType) failBody
+                            emitOffset w destination item.Extent) (emitOffset w cursor "8")
+                        |> ignore
+                        emitUpdateLive w "8" "0" failBody
+                        for index in stack.Length - 1 .. -1 .. stack.Length - count do
+                            emitDropEntry stack index
                         w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {cursor}, i32 {listExtent}, i32 {listPayload}, i32 0, i32 0)")
                         emitRuntimeStatus w "%ctx" failBody
                         stack <- push prefix listType cursor listExtent listPayload next
@@ -5414,7 +5531,10 @@ module OwningStackAot =
                         | Some frozenValidator ->
                             if validator <> Some frozenValidator then
                                 invalidOp "Validated scalar wrap diverged from its frozen type validator during emission."
-                            emitFrozenValidatorCall w scalarType frozenValidator input true instructionSpan failBody
+                            // A literal proven at compile time by the same pure validator
+                            // is retagged without re-running it.
+                            if not (info.ProvenRefinedLiteralSites.Contains instruction.Site) then
+                                emitFrozenValidatorCall w scalarType frozenValidator input true instructionSpan failBody
                         | None -> ()
                         stack <- push prefix (IrNominal key) input.Offset input.Extent input.Payload input.OwnerEnd
                     | IrOperation.UnwrapScalar(call, key) ->
@@ -5532,6 +5652,33 @@ module OwningStackAot =
                                 emitStatusResult w writeStatus failBody
                                 emitUpdateLive w resultPayload "0" failBody
                                 stack <- push prefix IrString cursor resultExtent resultPayload resultEnd
+                            | ("list.append" | "list.concat") as operation, [ left; right ] ->
+                                // One sized list: header, then the left elements and the
+                                // appended element (or right elements) as two range copies.
+                                let listType = left.Type
+                                let rightIsList = operation = "list.concat"
+                                let cursor = emitContextLoad w "%ctx" 2
+                                let rightBytes extentOrPayload = if rightIsList then emitOffset w extentOrPayload "-8" else extentOrPayload
+                                let listExtent = emitOffset w left.Extent (rightBytes right.Extent)
+                                let listPayload = emitOffset w left.Payload (rightBytes right.Payload)
+                                let next = emitOffset w cursor listExtent
+                                let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" $"Unable to reserve the {operation} result." currentOwner instructionSpan [] []
+                                emitReserve w next reserveError failBody
+                                let limitError = addDiagnostic "OWNING_STACK_INTERNAL" $"Unable to write the {operation} list header." currentOwner instructionSpan [] []
+                                let status = w.Fresh $"{operation}.header.status"
+                                let rightHeader = if rightIsList then right.Offset else "4294967295"
+                                w.Inst($"{status} = call i32 @al_owning_list_combine_header(ptr %%ctx, i32 {cursor}, i32 {left.Offset}, i32 {rightHeader}, i32 {typeId listType}, i32 {limitError})")
+                                emitStatusResult w status failBody
+                                let leftElements = emitOffset w left.Extent "-8"
+                                let leftPayload = emitOffset w left.Payload "-8"
+                                let afterLeft = emitOffset w cursor left.Extent
+                                emitCopyRange w (emitOffset w cursor "8") (emitOffset w left.Offset "8") leftElements leftPayload (typeId listType) failBody
+                                if rightIsList then
+                                    emitCopyRange w afterLeft (emitOffset w right.Offset "8") (emitOffset w right.Extent "-8") (emitOffset w right.Payload "-8") (typeId listType) failBody
+                                else
+                                    emitCopyRange w afterLeft right.Offset right.Extent right.Payload (typeId right.Type) failBody
+                                emitUpdateLive w "8" "0" failBody
+                                stack <- push prefix listType cursor listExtent listPayload next
                             | ("string.contains" | "string.starts-with" | "string.ends-with") as operation, [ haystack; needle ] ->
                                 let mode = match operation with "string.contains" -> 0 | "string.starts-with" -> 1 | _ -> 2
                                 let found = w.Fresh $"{operation}.found"
@@ -5545,6 +5692,9 @@ module OwningStackAot =
                                 let asInt = w.Fresh $"{operation}.int"
                                 w.Inst($"{asInt} = zext i32 {loaded} to i64")
                                 emitScalarResult IrBool asInt
+                            | "string.join", [ value ] when fusedJoinSites.Contains instruction.Site ->
+                                // The preceding String list literal already produced the joined String.
+                                stack <- prefix @ [ value ]
                             | ("string.join" | "string.html-escape") as operation, [ value ] ->
                                 // Both produce one exact String: plan the size, reserve, then copy
                                 // each source code unit once (escape entities expand in place).
@@ -7325,8 +7475,10 @@ module OwningStackAot =
             text.AppendLine($"{siteName}: {source.SourceKind} at {source.SiteSpan.File}:{source.SiteSpan.Line}:{source.SiteSpan.Column}+{source.SiteSpan.Length}") |> ignore
         text.ToString()
 
-    /// Compile verified fixed-layout owning IR as a fresh x64 LLVM library.
-    let compile (toolchain: LlvmToolchain) optimization outputDirectory (verifiedBody: VerifiedIrBody) =
+    /// Compile verified fixed-layout owning IR as a fresh x64 LLVM library with
+    /// the selected runtime profile. TrustedGenerated drops the diagnostic
+    /// bitmaps and traces; it is for measurement of host-free entries.
+    let compileWithRuntimeProfile (toolchain: LlvmToolchain) optimization (runtimeProfile: OwningRuntimeProfile) outputDirectory (verifiedBody: VerifiedIrBody) =
         if String.IsNullOrWhiteSpace outputDirectory then invalidArg (nameof outputDirectory) "Output directory must be nonempty."
         let programInfo = makeProgramInfo verifiedBody
         let checkedBody = IrVerifier.verifyBody (VerifiedIrBody.program verifiedBody) (VerifiedIrBody.inspect verifiedBody)
@@ -7350,11 +7502,15 @@ module OwningStackAot =
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_profile.h" profileHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.float_format.h" floatFormatHeaderPath
         let compiledPath =
-            LlvmToolchain.compileLibraryWithRuntimeAndNativeStackScreen
-                toolchain optimization llvmIrPath runtimeSourcePath runtimeDirectory libraryPath
+            LlvmToolchain.compileLibraryWithRuntimeAndNativeStackScreenWithRuntimeProfile
+                toolchain optimization runtimeProfile llvmIrPath runtimeSourcePath runtimeDirectory libraryPath
         new OwningStackCompiledProgram(
-            compiledPath, None, OwningRuntimeProfile.Diagnostic, programInfo, diagnostics, llvmIr, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
+            compiledPath, None, runtimeProfile, programInfo, diagnostics, llvmIr, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
             encodeValues, decodeValues, readEvents, readMetrics, diagnosticForError)
+
+    /// Compile verified fixed-layout owning IR as a fresh x64 LLVM library.
+    let compile (toolchain: LlvmToolchain) optimization outputDirectory (verifiedBody: VerifiedIrBody) =
+        compileWithRuntimeProfile toolchain optimization OwningRuntimeProfile.Diagnostic outputDirectory verifiedBody
 
     /// Compile a verified entry with the closed Campfire room-lookup adapter
     /// statically linked into a separate host-context export. The adapter C

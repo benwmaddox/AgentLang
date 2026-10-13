@@ -2452,7 +2452,7 @@ let private testFlowOutputVectors () =
                     | FlowExpression.Literal(_, source) | FlowExpression.Local(_, source) -> source
                     | FlowExpression.Call(_, _, source) | FlowExpression.RootCall(_, _, source) | FlowExpression.DotCall(_, _, _, source)
                     | FlowExpression.Property(_, _, source) | FlowExpression.Equality(_, _, source)
-                    | FlowExpression.If(_, _, _, source) | FlowExpression.Compact(_, source) | FlowExpression.Container(_, _, _, source)
+                    | FlowExpression.If(_, _, _, source) | FlowExpression.Compact(_, source) | FlowExpression.ListLiteral(_, source) | FlowExpression.Container(_, _, _, source)
                     | FlowExpression.MatchOption(_, _, _, source) | FlowExpression.MatchResult(_, _, _, source)
                     | FlowExpression.MatchEnum(_, _, source) -> source)
                 |> Some

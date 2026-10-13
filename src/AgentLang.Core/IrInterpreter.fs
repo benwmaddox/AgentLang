@@ -114,6 +114,14 @@ module IrInterpreter =
           EstimatedOutputBytes: int64 }
 
     let private maxCallDepth = 64
+
+    /// Installed by RefinedLiterals (end of this file): true when a function-body
+    /// literal passed directly to a refined constructor is accepted by the type's
+    /// pure validator. Such a construction is a retag in every backend.
+    let mutable internal provenRefinedLiteral: VerifiedIrProgram -> SourceSiteId -> Literal -> IrType -> IrOperation -> bool =
+        fun _ _ _ _ _ -> false
+    // Host root-value and record-field count bound. Lists have no length limit;
+    // memory (the native arena capacity, or the value-size budget here) bounds them.
     let private maxCollectionLength = 10000
     let private maxRuntimeValueDepth = 256
     let private maxRuntimeValueNodes = 100000L
@@ -699,9 +707,6 @@ module IrInterpreter =
                 | ListValue(itemType, values) ->
                     validateHostTypeMetadata currentWord site itemType
                     if isNull (box values) then invalid "null list payload"
-                    if values.Length > maxCollectionLength then
-                        fail "RUNTIME_VALUE_LIMIT" "Host list exceeds the bounded collection limit." (Some currentWord) (site |> Option.bind sourceSpan)
-                            [ $"list length <= {maxCollectionLength}" ] [ string values.Length ]
                     addBytes (int64 values.Length * 2L)
                     values |> List.iter push
                 | OptionValue(itemType, value) ->
@@ -874,7 +879,6 @@ module IrInterpreter =
             | IrUnit, UnitValue -> RuntimeUnit
             | IrList itemType, ListValue(actualType, values) ->
                 requireContainerType (TList actualType)
-                if values.Length > maxCollectionLength then invalid "list payload is outside the collection limit"
                 RuntimeList(itemType, values |> List.map (importHostValue depth currentWord site itemType))
             | IrOption itemType, OptionValue(actualType, value) ->
                 requireContainerType (TOption actualType)
@@ -1106,12 +1110,8 @@ module IrInterpreter =
             | "list.count", [ RuntimeList(_, values) ] -> [ RuntimeInt(int64 values.Length) ]
             | "list.tail", [ RuntimeList(itemType, []) ] -> [ RuntimeList(itemType, []) ]
             | "list.tail", [ RuntimeList(itemType, _ :: values) ] -> [ RuntimeList(itemType, values) ]
-            | "list.append", [ RuntimeList(_, values); _ ] when values.Length >= maxCollectionLength ->
-                fail "RUNTIME_VALUE_LIMIT" $"Lists cannot contain more than {maxCollectionLength} values." (Some operation) None [ string maxCollectionLength ] [ string values.Length ]
             | "list.append", [ RuntimeList(itemType, values); value ] when runtimeValueType value = itemType ->
                 [ RuntimeList(itemType, values @ [ value ]) ]
-            | "list.concat", [ RuntimeList(_, left); RuntimeList(_, right) ] when int64 left.Length + int64 right.Length > int64 maxCollectionLength ->
-                fail "RUNTIME_VALUE_LIMIT" $"Lists cannot contain more than {maxCollectionLength} values." (Some operation) None [ string maxCollectionLength ] [ string (left.Length + right.Length) ]
             | "list.concat", [ RuntimeList(itemType, left); RuntimeList(otherType, right) ] when itemType = otherType -> [ RuntimeList(itemType, left @ right) ]
             | "list.get", [ RuntimeList(itemType, values); RuntimeInt index ] when index >= 0L && index < int64 values.Length -> [ RuntimeOption(itemType, Some values[int index]) ]
             | "list.get", [ RuntimeList(itemType, _); RuntimeInt _ ] -> [ RuntimeOption(itemType, None) ]
@@ -1153,10 +1153,21 @@ module IrInterpreter =
                 match stack with
                 | [] -> fail "RUNTIME_STACK_UNDERFLOW" message (Some word) (sourceSpan site) expected []
                 | values -> values |> List.take (values.Length - 1), List.last values
+            let mutable previousOperation: IrOperation option = None
             for instruction in block.Code do
                 chargeInstruction currentWord instruction.Site
                 let instructionSpan = sourceSpan instruction.Site
+                let provenLiteralWrap =
+                    match previousOperation, instruction.Operation, instruction.Site with
+                    | Some(IrOperation.Constant(literal, literalType)), (IrOperation.WrapScalar(_, _, Some _) as wrap), SourceSiteId(Some _, _) ->
+                        provenRefinedLiteral verifiedProgram instruction.Site literal literalType wrap
+                    | _ -> false
+                previousOperation <- Some instruction.Operation
                 match instruction.Operation with
+                | IrOperation.WrapScalar(call, key, _) when provenLiteralWrap ->
+                    // Proven at compile time by the same pure validator: retag only.
+                    let prefix, arguments = popArguments call.ResolvedName call.InputTypes
+                    stack <- prefix @ [ RuntimeScalar(key, List.head arguments) ]
                 | IrOperation.Constant(literal, _) ->
                     let value =
                         match literal with
@@ -1174,6 +1185,11 @@ module IrInterpreter =
                 | IrOperation.ListSingleton itemType ->
                     let prefix, value = popOne "Typed container constructor requires one payload value." currentWord instruction.Site [ formatType program itemType ]
                     stack <- prefix @ [ RuntimeList(itemType, [ value ]) ]
+                | IrOperation.ListOf(itemType, count) ->
+                    if count < 1 || stack.Length < count then
+                        fail "RUNTIME_STACK_UNDERFLOW" "List literal requires one value per element." (Some currentWord) (sourceSpan instruction.Site) [ string count ] [ string stack.Length ]
+                    let prefix = stack |> List.take (stack.Length - count)
+                    stack <- prefix @ [ RuntimeList(itemType, stack |> List.skip (stack.Length - count)) ]
                 | IrOperation.OptionNone itemType -> stack <- stack @ [ RuntimeOption(itemType, None) ]
                 | IrOperation.OptionSome itemType ->
                     let prefix, value = popOne "Typed container constructor requires one payload value." currentWord instruction.Site [ formatType program itemType ]
@@ -1442,3 +1458,78 @@ module IrInterpreter =
             fail "IR_BACKEND_BODY_INPUT_UNSUPPORTED" "The interpreter entry point accepts only bodies with an empty initial stack." (Some executionName) None [] (body.BodyInputTypes |> List.map (formatType program))
         use result = executeBodyWithInputs host executionName verifiedBody None []
         result.Decode()
+
+/// Compile-time evaluation of refined-type literals. Scalar validators are pure
+/// (TYPE_VALIDATOR_EFFECT), so a literal that passes its validator once passes
+/// it on every run: backends may then retag it without a runtime check.
+module RefinedLiterals =
+    exception private ValidatorEffect
+
+    let private host: IrInterpreterHost =
+        { PreflightEffects = fun effects _ _ -> if not (Set.isEmpty effects) then raise ValidatorEffect
+          ChargeInstruction = fun _ _ -> ()
+          RecordBranchOutcome = fun _ _ _ -> ()
+          RecordUse = ignore
+          InvokeEffect = fun _ -> raise ValidatorEffect
+          InvokeHostOperation = fun _ _ -> raise ValidatorEffect
+          EnterUserFunction = fun _ _ _ -> fun () -> ()
+          ReturnUserFunction = fun _ _ _ -> ()
+          WordDefinitionSpan = fun _ -> None
+          PrimitiveDefinitionSpan = fun _ -> None }
+
+    /// Outcome of running a refined constructor on a literal at compile time.
+    type Outcome =
+        | Accepted
+        | Rejected of Diagnostic
+        | Deferred
+
+    /// Runs `literal` through the refined constructor `wrap` (an IrOperation.WrapScalar
+    /// with a validator) against the verified program. `Rejected` carries the
+    /// validator's diagnostic (REFINEMENT_FAILED or the validator's own failure).
+    let evaluate (verifiedProgram: VerifiedIrProgram) (literal: Literal) (literalType: IrType) (wrap: IrOperation) =
+        match wrap with
+        | IrOperation.WrapScalar(call, _, Some _) ->
+            let span = { File = "<refined-literal>"; Line = 1; Column = 1; Length = 1 }
+            let site index = SourceSiteId(None, index)
+            let source kind = { SiteOwner = None; SiteSpan = span; SourceKind = kind }
+            let block =
+                { EntryShape = { StackTypes = []; LocalTypes = Map.empty }
+                  ExitShape = { StackTypes = call.OutputTypes; LocalTypes = Map.empty }
+                  Code =
+                    [ { Site = site 0; Operation = IrOperation.Constant(literal, literalType) }
+                      { Site = site 1; Operation = wrap } ] }
+            let sourceMap = Map.ofList [ site 0, source "constant"; site 1, source "call" ]
+            let program = VerifiedIrProgram.inspect verifiedProgram
+            let body =
+                { BodyName = "<refined-literal>"
+                  BodyInputTypes = []
+                  BodyOutputTypes = call.OutputTypes
+                  BodyDeclaredEffects = Set.empty
+                  BodyInferredEffects = Set.empty
+                  BodyLocalNames = Map.empty
+                  BodyBlock = block
+                  BodySourceMap = sourceMap
+                  BodyCoverage = IrVerifier.coverageObligationsWithTypes program.NominalTypesByKey sourceMap block }
+            // A verification failure is a compiler bug, not a rejected literal: let it propagate.
+            let verified = IrVerifier.verifyBody verifiedProgram body
+            try
+                IrInterpreter.executeBody host "<refined-literal>" verified |> ignore
+                Accepted
+            with
+            | ValidatorEffect -> Deferred
+            | LanguageException diagnostic -> Rejected diagnostic
+        | _ -> Deferred
+
+    let private proofs = ConditionalWeakTable<VerifiedIrProgram, System.Collections.Concurrent.ConcurrentDictionary<SourceSiteId, bool>>()
+
+    /// Cached per program and WrapScalar site: whether this function-body literal
+    /// construction is proven. Shared by the interpreter and native backends so
+    /// they skip exactly the same runtime checks.
+    let proven (verifiedProgram: VerifiedIrProgram) (site: SourceSiteId) (literal: Literal) (literalType: IrType) (wrap: IrOperation) =
+        match site with
+        | SourceSiteId(Some _, _) ->
+            proofs.GetValue(verifiedProgram, fun _ -> System.Collections.Concurrent.ConcurrentDictionary())
+                .GetOrAdd(site, fun _ -> evaluate verifiedProgram literal literalType wrap = Accepted)
+        | SourceSiteId(None, _) -> false
+
+    do IrInterpreter.provenRefinedLiteral <- proven

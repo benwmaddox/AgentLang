@@ -52,7 +52,8 @@ module internal ArenaLifetime =
               "equals"; "bool.and"; "bool.or"; "bool.not"
               "dup"; "drop"; "swap"; "string.concat"; "string.length"
               "string.join"; "string.html-escape"
-              "string.contains"; "string.starts-with"; "string.ends-with" ]
+              "string.contains"; "string.starts-with"; "string.ends-with"
+              "list.append"; "list.concat" ]
 
     let private combineStates (left: AbstractState) (right: AbstractState) =
         let stack = List.map2 Set.union left.Stack right.Stack
@@ -291,6 +292,10 @@ module internal ArenaLifetime =
                 // A new list owner in the current region holding a copy of the item.
                 let prefix, items = pop 1 state.Stack
                 { state with Stack = prefix @ [ Set.add currentRegion items.Head ] }
+            | IrOperation.ListOf(_, count) ->
+                // A new list owner in the current region holding a copy of each item.
+                let prefix, items = pop count state.Stack
+                { state with Stack = prefix @ [ Set.add currentRegion (unionOrigins items) ] }
             | IrOperation.ListMap(call, _, _)
             | IrOperation.ListFilter(call, _)
             | IrOperation.ListEach(call, _)
@@ -320,6 +325,9 @@ module internal ArenaLifetime =
             | IrOperation.ListSingleton _ | IrOperation.OptionSome _
             | IrOperation.ResultOk _ | IrOperation.ResultError _ ->
                 let prefix, inputs = pop 1 state.Stack
+                finishUnknown prefix inputs 1
+            | IrOperation.ListOf(_, count) ->
+                let prefix, inputs = pop count state.Stack
                 finishUnknown prefix inputs 1
             | IrOperation.ListMap _ | IrOperation.ListFilter _ | IrOperation.ListEach _ ->
                 let prefix, inputs = pop 1 state.Stack

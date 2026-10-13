@@ -147,6 +147,7 @@ type IrOperation =
     | Call of IrResolvedCall
     | ListEmpty of IrType
     | ListSingleton of IrType
+    | ListOf of IrType * count: int
     | OptionNone of IrType
     | OptionSome of IrType
     | ResultOk of IrType * IrType
@@ -624,6 +625,11 @@ module IrVerifier =
                     | IrOperation.ListSingleton item ->
                         let prefix, actual = pop 1
                         if actual <> [ item ] then operationError "IR_CONTAINER_PAYLOAD" "List singleton payload type does not match its closed element type." [ IrTypes.format item ] (actual |> List.map IrTypes.format)
+                        { shape with StackTypes = prefix @ [ IrList item ] }, Set.empty
+                    | IrOperation.ListOf(item, count) ->
+                        if count < 1 then operationError "IR_CONTAINER_PAYLOAD" "List literal must have at least one element." [ "count >= 1" ] [ string count ]
+                        let prefix, actual = pop count
+                        if actual <> List.replicate count item then operationError "IR_CONTAINER_PAYLOAD" "List literal element types do not match its closed element type." [ IrTypes.format item ] (actual |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ [ IrList item ] }, Set.empty
                     | IrOperation.OptionNone item ->
                         verifyIrType program sourceOwner (Some instruction.Site) item

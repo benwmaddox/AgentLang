@@ -355,6 +355,10 @@ module IrFormatting =
         | IrOperation.ListSingleton item ->
             addString node "kind" "list-singleton"
             addType "elementType" item
+        | IrOperation.ListOf(item, count) ->
+            addString node "kind" "list-of"
+            addType "elementType" item
+            addInt node "count" count
         | IrOperation.OptionNone item ->
             addString node "kind" "option-none"
             addType "elementType" item
@@ -513,7 +517,7 @@ module IrFormatting =
 
     let private operationTypes = function
         | IrOperation.Constant(_, ty)
-        | IrOperation.ListEmpty ty | IrOperation.ListSingleton ty
+        | IrOperation.ListEmpty ty | IrOperation.ListSingleton ty | IrOperation.ListOf(ty, _)
         | IrOperation.OptionNone ty | IrOperation.OptionSome ty -> [ ty ]
         | IrOperation.ResultOk(ok, error) | IrOperation.ResultError(ok, error) -> [ ok; error ]
         | IrOperation.Call call -> call.InputTypes @ call.OutputTypes
@@ -594,7 +598,7 @@ module IrFormatting =
             let found =
                 match instruction.Operation with
                 | IrOperation.Constant(_, ty)
-                | IrOperation.ListEmpty ty | IrOperation.ListSingleton ty
+                | IrOperation.ListEmpty ty | IrOperation.ListSingleton ty | IrOperation.ListOf(ty, _)
                 | IrOperation.OptionNone ty | IrOperation.OptionSome ty -> collectTypeKeys found ty
                 | IrOperation.ResultOk(ok, error) | IrOperation.ResultError(ok, error) -> collectTypeKeys (collectTypeKeys found ok) error
                 | IrOperation.Call call -> collectCallTypeKeys found call

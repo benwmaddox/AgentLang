@@ -38,6 +38,7 @@ module FlowParser =
         | FlowExpression.Equality(_, _, span)
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Compact(_, span)
+        | FlowExpression.ListLiteral(_, span)
         | FlowExpression.Container(_, _, _, span)
         | FlowExpression.MatchOption(_, _, _, span)
         | FlowExpression.MatchResult(_, _, _, span)
@@ -761,6 +762,22 @@ module FlowParser =
                     expect state "else" |> ignore
                     let elseBranch = parseBlock state
                     FlowExpression.If(condition, thenBranch, elseBranch, sourceSpan state.File first (previous state))
+                | Symbol, "[" ->
+                    if state.SyntaxVersion <> 2 then
+                        fail state.File first.Line first.Column first.Text.Length "FLOW_SYNTAX_VERSION" "List literals require Flow/2 syntax."
+                    consume state |> ignore
+                    let items = ResizeArray<FlowExpression>()
+                    // A trailing comma is accepted so long literals can list one element per line.
+                    let mutable closed = accept state "]"
+                    while not closed do
+                        items.Add(parseExpressionState state)
+                        if accept state "," then closed <- accept state "]"
+                        else
+                            expect state "]" |> ignore
+                            closed <- true
+                    if items.Count = 0 then
+                        fail state.File first.Line first.Column first.Text.Length "FLOW_LIST_LITERAL_EMPTY" "A list literal needs at least one element; use list.empty<T>() for an empty list."
+                    FlowExpression.ListLiteral(List.ofSeq items, sourceSpan state.File first (previous state))
                 | Symbol, "(" when state.SyntaxVersion = 2 ->
                     consume state |> ignore
                     let grouped = parseExpressionState state

@@ -312,6 +312,16 @@ module Compiler =
                         | ListSingleton ->
                             requireArity 1
                             consume arguments.Head (TList arguments.Head)
+                        | ListOf count ->
+                            requireArity 1
+                            if count < 1 || stack.Length < count then
+                                Diagnostics.raiseError "TYPE_STACK_UNDERFLOW" "List literal requires one value per element." (Some wordName) (Some expressionSpan) [ string count ] [ string stack.Length ]
+                            let prefix = stack |> List.take (stack.Length - count)
+                            for actual in stack |> List.skip (stack.Length - count) do
+                                try unify Map.empty arguments.Head actual |> ignore
+                                with _ ->
+                                    Diagnostics.raiseError "TYPE_CONTAINER_PAYLOAD" "List literal element does not match the list element type." (Some wordName) (Some expressionSpan) [ Types.format arguments.Head ] [ Types.format actual ]
+                            prefix @ [ TList arguments.Head ], locals
                         | OptionNone ->
                             requireArity 1
                             stack @ [ TOption arguments.Head ], locals
@@ -621,6 +631,7 @@ module Compiler =
                         match kind with
                         | ListEmpty -> "list.empty"
                         | ListSingleton -> "list.singleton"
+                        | ListOf count -> $"list.of{count}"
                         | OptionNone -> "option.none"
                         | OptionSome -> "option.some"
                         | ResultOk -> "result.ok"
@@ -915,6 +926,7 @@ module Compiler =
                         (match kind with
                          | ListEmpty -> "list-empty"
                          | ListSingleton -> "list-singleton"
+                         | ListOf count -> $"list-of-{count}"
                          | OptionNone -> "option-none"
                          | OptionSome -> "option-some"
                          | ResultOk -> "result-ok"
@@ -1199,6 +1211,7 @@ module Compiler =
         | Call _ -> "call"
         | ConstructContainer(ListEmpty, _, _) -> "list-empty"
         | ConstructContainer(ListSingleton, _, _) -> "list-singleton"
+        | ConstructContainer(ListOf _, _, _) -> "list-of"
         | ConstructContainer(OptionNone, _, _) -> "option-none"
         | ConstructContainer(OptionSome, _, _) -> "option-some"
         | ConstructContainer(ResultOk, _, _) -> "result-ok"
@@ -1374,6 +1387,7 @@ module Compiler =
                             match kind, args with
                             | ListEmpty, [ item ] -> IrOperation.ListEmpty item
                             | ListSingleton, [ item ] -> IrOperation.ListSingleton item
+                            | ListOf count, [ item ] -> IrOperation.ListOf(item, count)
                             | OptionNone, [ item ] -> IrOperation.OptionNone item
                             | OptionSome, [ item ] -> IrOperation.OptionSome item
                             | ResultOk, [ ok; error ] -> IrOperation.ResultOk(ok, error)
