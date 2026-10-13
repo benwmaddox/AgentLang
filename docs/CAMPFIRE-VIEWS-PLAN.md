@@ -67,6 +67,19 @@ same placement.
     run-time check is skipped.
   - Enforcement will be a generic feature: a refined type's constructor can be
     literal-only outside the type's own namespace.
+- **Output (2026-10-13):**
+  - Responses stream through a typed `out.write` effect into a response buffer
+    that is flushed at the end (the default). Templates stay pure.
+  - A part-list `Body` type was rejected because it weakens bump freeing.
+  - Templates are only interpolated literals `html"…{x}…"`. They support
+    **multi-line strings** and validate the markup syntax at compile time where
+    possible. The `html { … }` block is dropped.
+  - Order:
+    1. free list retag and in-place append;
+    2. UTF-8 strings;
+    3. templates;
+    4. `out.write` streaming;
+    5. apples-to-apples.
 - **No list length limit:** the 10,000-element cap is dropped; memory bounds
   lists.
 - **Shared immutable literals:** each String or proven `Html` literal is emitted
