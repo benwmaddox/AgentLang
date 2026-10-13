@@ -5,6 +5,8 @@ param(
     [string] $ValidationRunRoot,
     [ValidateSet('diagnostic', 'trusted-generated')]
     [string] $RuntimeProfile = 'diagnostic',
+    [ValidateSet('Off', 'On')]
+    [string] $StageProfile = 'Off',
     [ValidateSet('O0', 'O2', 'Both')]
     [string] $Optimization = 'Both'
 )
@@ -15,8 +17,10 @@ if (-not [StringComparer]::Ordinal.Equals($RuntimeProfile, 'diagnostic') -and
     -not [StringComparer]::Ordinal.Equals($RuntimeProfile, 'trusted-generated')) {
     throw 'RuntimeProfile must be exactly diagnostic or trusted-generated.'
 }
+$stageProfileMacro = if ([StringComparer]::OrdinalIgnoreCase.Equals($StageProfile, 'On')) { 1 } else { 0 }
+$stageProfileName = if ($stageProfileMacro -eq 1) { 'On' } else { 'Off' }
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$outputRootParent = [System.IO.Path]::GetFullPath((Join-Path $repositoryRoot '.agentlang\campfire-native-release-254\http-host'))
+$outputRootParent = [System.IO.Path]::GetFullPath((Join-Path $repositoryRoot '.agentlang\campfire-native-profile-255\http-host'))
 $testRunsRoot = [System.IO.Path]::GetFullPath((Join-Path $repositoryRoot '.agentlang\campfire-native-room-read-252\test-runs'))
 $HostSourcePath = Join-Path $repositoryRoot 'applications\campfire\Native\http\native_http_host.c'
 $HelperSourceRoot = Join-Path $repositoryRoot 'applications\campfire\Native\http'
@@ -327,6 +331,7 @@ $headerText = @(
     ('#define AL_OWNING_TRUSTED_GENERATED ' + $runtimeProfileMacro),
     ('#define CAMPFIRE_HTTP_OWNING_RUNTIME_PROFILE_ID ' + $runtimeProfileMacro),
     ('#define CAMPFIRE_HTTP_OWNING_RUNTIME_PROFILE_NAME "' + $manifestRuntimeProfile + '"'),
+    ('#define CAMPFIRE_HTTP_STAGE_PROFILE ' + $stageProfileMacro),
     'static const uint8_t g_expected_module_sha256[32] = {' + (Convert-HashToCBytes $expectedModule) + '};',
     'static const uint8_t g_expected_manifest_sha256[32] = {' + (Convert-HashToCBytes $expectedManifest) + '};',
     'static const uint8_t g_expected_sqlite_sha256[32] = {' + (Convert-HashToCBytes $expectedSqlite) + '};',
@@ -343,7 +348,7 @@ foreach ($helperName in $helperPaths.Keys) {
     $sourcePins[$relativePath] = Get-Hash $helperPath
 }
 $hostHash = Get-Hash $HostSourcePath
-$expectedHostHash = '928054AFA0789172BFED6CED9A0055D0712C14E9D328550C69AACE8E07C0B706'
+$expectedHostHash = 'BB1FBE71DC0912D6B96F1107A5143F4873A5346502D337A0F192C80D52085A49'
 if ($hostHash -ne $expectedHostHash) {
     throw 'HTTP host source differs from the reviewed native host revision.'
 }
@@ -412,6 +417,16 @@ foreach ($opt in $builds) {
     $importOutput = & $llvmReadObj --coff-imports $executable 2>&1
     if ($LASTEXITCODE -ne 0) { throw "llvm-readobj $opt import audit failed: $($importOutput -join [Environment]::NewLine)" }
     $importText = $importOutput -join [Environment]::NewLine
+    $hasQpcCounter = $importText -match '(?im)^\s*Symbol:\s*QueryPerformanceCounter(?:\s|$)'
+    $hasQpcFrequency = $importText -match '(?im)^\s*Symbol:\s*QueryPerformanceFrequency(?:\s|$)'
+    $hasThreadTimes = $importText -match '(?im)^\s*Symbol:\s*GetThreadTimes(?:\s|$)'
+    if ($stageProfileMacro -eq 0 -and ($hasQpcCounter -or $hasQpcFrequency -or $hasThreadTimes)) {
+        throw "$opt off-profile executable imports stage profiling APIs."
+    }
+    if ($stageProfileMacro -eq 1 -and
+        (-not $hasQpcCounter -or -not $hasQpcFrequency -or -not $hasThreadTimes)) {
+        throw "$opt on-profile executable is missing a required stage profiling API."
+    }
     if ($importText -match '(?i)(mscoree|hostfxr|coreclr|e_sqlite3)\.dll') {
         throw "The $opt executable imports a forbidden CLR or static SQLite module."
     }
@@ -433,7 +448,9 @@ foreach ($opt in $builds) {
     $build = [ordered]@{
         Optimization = $opt
         RuntimeProfile = $manifestRuntimeProfile
+        StageProfile = $stageProfileName
         OwningRuntimeCompileDefine = '-DAL_OWNING_TRUSTED_GENERATED=' + $runtimeProfileMacro
+        StageProfileGeneratedPin = 'CAMPFIRE_HTTP_STAGE_PROFILE=' + $stageProfileMacro
         ProvenanceMode = $provenanceMode
         ValidationRunRoot = $validation.RunRoot
         ValidationReceiptSha256 = $validation.ReceiptSha256

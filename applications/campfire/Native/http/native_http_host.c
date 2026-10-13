@@ -31,6 +31,12 @@
 #if CAMPFIRE_HTTP_OWNING_RUNTIME_PROFILE_ID != AL_OWNING_TRUSTED_GENERATED
 #error "The host and owning runtime profile pins must match."
 #endif
+#if !defined(CAMPFIRE_HTTP_STAGE_PROFILE)
+#error "The generated HTTP host pins must declare the stage profile setting."
+#endif
+#if CAMPFIRE_HTTP_STAGE_PROFILE != 0 && CAMPFIRE_HTTP_STAGE_PROFILE != 1
+#error "The HTTP host stage profile setting must be zero or one."
+#endif
 
 #define HOST_WORKER_MAX 8u
 #define HOST_DEFAULT_WORKERS 4u
@@ -76,6 +82,30 @@ typedef struct text_span {
   uint32_t units;
   uint32_t present;
 } text_span;
+
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+typedef enum host_stage_id {
+  HOST_STAGE_RECEIVE_WAIT = 0,
+  HOST_STAGE_INPUT_PREPARE = 1,
+  HOST_STAGE_API_EXECUTE = 2,
+  HOST_STAGE_RENDERER = 3,
+  HOST_STAGE_COOKIE_FINALIZE = 4,
+  HOST_STAGE_SEND_API = 5,
+  HOST_STAGE_REQUEST_SCRUB = 6,
+  HOST_STAGE_COUNT = 7
+} host_stage_id;
+
+typedef struct host_stage_profile {
+  uint64_t calls[HOST_STAGE_COUNT];
+  uint64_t ticks[HOST_STAGE_COUNT];
+  uint64_t max_ticks[HOST_STAGE_COUNT];
+  uint64_t cpu_start_user_100ns;
+  uint64_t cpu_start_kernel_100ns;
+  uint64_t cpu_user_100ns;
+  uint64_t cpu_kernel_100ns;
+  uint32_t cpu_valid;
+} host_stage_profile;
+#endif
 
 typedef struct worker_state {
   HANDLE thread;
@@ -131,6 +161,9 @@ typedef struct worker_state {
   void *browser_scratch_raw;
   void *browser_scratch;
   size_t browser_scratch_bytes;
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  host_stage_profile stage_profile;
+#endif
 } worker_state;
 
 typedef struct host_config {
@@ -146,6 +179,9 @@ typedef struct host_config {
   uint32_t ready_workers;
   uint32_t cleaned_workers;
   uint32_t fatal_status;
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  uint64_t stage_qpc_frequency;
+#endif
   HANDLE workers_ready_event;
   uint8_t secret[HOST_SECRET_BYTES];
   uint32_t secret_bytes;
@@ -279,6 +315,116 @@ static void write_u32(uint32_t value) {
     WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), &ch, 1u, &written, NULL);
   }
 }
+
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+static void write_u64(uint64_t value) {
+  char digits[20];
+  uint32_t count = 0u, i;
+  do { digits[count++] = (char)('0' + (value % 10u)); value /= 10u; }
+  while (value != 0u && count < (uint32_t)sizeof(digits));
+  for (i = count; i > 0u; --i) {
+    char ch = digits[i - 1u];
+    DWORD written = 0u;
+    WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), &ch, 1u, &written, NULL);
+  }
+}
+
+static uint64_t host_stage_qpc_now(void) {
+  LARGE_INTEGER value;
+  if (!QueryPerformanceCounter(&value) || value.QuadPart <= 0) return 0u;
+  return (uint64_t)value.QuadPart;
+}
+
+static void host_stage_record(worker_state *worker, host_stage_id stage,
+                              uint64_t started) {
+  uint64_t ended = host_stage_qpc_now();
+  uint64_t elapsed;
+  if (stage >= HOST_STAGE_COUNT || started == 0u || ended < started) return;
+  elapsed = ended - started;
+  ++worker->stage_profile.calls[stage];
+  worker->stage_profile.ticks[stage] += elapsed;
+  if (elapsed > worker->stage_profile.max_ticks[stage])
+    worker->stage_profile.max_ticks[stage] = elapsed;
+}
+
+static uint64_t host_stage_filetime_value(FILETIME value) {
+  ULARGE_INTEGER combined;
+  combined.LowPart = value.dwLowDateTime;
+  combined.HighPart = value.dwHighDateTime;
+  return combined.QuadPart;
+}
+
+static void host_stage_capture_cpu_start(worker_state *worker) {
+  FILETIME created, exited, kernel, user;
+  if (GetThreadTimes(GetCurrentThread(), &created, &exited, &kernel, &user)) {
+    worker->stage_profile.cpu_start_user_100ns = host_stage_filetime_value(user);
+    worker->stage_profile.cpu_start_kernel_100ns = host_stage_filetime_value(kernel);
+    worker->stage_profile.cpu_valid = 1u;
+  }
+}
+
+static void host_stage_capture_cpu_end(worker_state *worker) {
+  FILETIME created, exited, kernel, user;
+  uint64_t user_end, kernel_end;
+  if (worker->stage_profile.cpu_valid == 0u ||
+      !GetThreadTimes(GetCurrentThread(), &created, &exited, &kernel, &user)) {
+    worker->stage_profile.cpu_valid = 0u;
+    return;
+  }
+  user_end = host_stage_filetime_value(user);
+  kernel_end = host_stage_filetime_value(kernel);
+  if (user_end < worker->stage_profile.cpu_start_user_100ns ||
+      kernel_end < worker->stage_profile.cpu_start_kernel_100ns) {
+    worker->stage_profile.cpu_valid = 0u;
+    return;
+  }
+  worker->stage_profile.cpu_user_100ns =
+      user_end - worker->stage_profile.cpu_start_user_100ns;
+  worker->stage_profile.cpu_kernel_100ns =
+      kernel_end - worker->stage_profile.cpu_start_kernel_100ns;
+}
+
+static void write_stage_profile(const host_config *config) {
+  static const char *const names[HOST_STAGE_COUNT] = {
+    "receive_wait", "input_prepare", "api_execute", "renderer",
+    "cookie_finalize", "send_api", "request_scrub"
+  };
+  write_ascii("stage_profile enabled=1 workers=");
+  write_u32(config->worker_count);
+  write_ascii(" qpc_frequency=");
+  write_u64(config->stage_qpc_frequency);
+  write_ascii(" units=ticks cpu_units=100ns\r\n");
+  for (uint32_t worker_index = 0u; worker_index < config->worker_count;
+       ++worker_index) {
+    const worker_state *worker = &config->workers[worker_index];
+    write_ascii("stage_worker index=");
+    write_u32(worker->index);
+    write_ascii(" received_requests=");
+    write_u32(worker->requests);
+    write_ascii(" cpu_valid=");
+    write_u32(worker->stage_profile.cpu_valid);
+    write_ascii(" worker_loop_user_100ns=");
+    write_u64(worker->stage_profile.cpu_user_100ns);
+    write_ascii(" worker_loop_kernel_100ns=");
+    write_u64(worker->stage_profile.cpu_kernel_100ns);
+    for (uint32_t stage = 0u; stage < HOST_STAGE_COUNT; ++stage) {
+      write_ascii(" ");
+      write_ascii(names[stage]);
+      write_ascii("_calls=");
+      write_u64(worker->stage_profile.calls[stage]);
+      write_ascii(" ");
+      write_ascii(names[stage]);
+      write_ascii("_ticks=");
+      write_u64(worker->stage_profile.ticks[stage]);
+      write_ascii(" ");
+      write_ascii(names[stage]);
+      write_ascii("_max_ticks=");
+      write_u64(worker->stage_profile.max_ticks[stage]);
+    }
+    write_ascii("\r\n");
+  }
+}
+#endif
 
 static int parse_u32(const WCHAR *s, uint32_t *out) {
   uint32_t value = 0u, i = 0u;
@@ -604,6 +750,9 @@ static void worker_release(worker_state *worker) {
 static uint32_t worker_allocate(worker_state *worker) {
   uint32_t error_tag = UINT32_MAX;
   host_config *config = worker->config;
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  bytes_zero(&worker->stage_profile, sizeof(worker->stage_profile));
+#endif
   if (config->owning_runtime_profile > 1u) return 0u;
   worker->pure_bytes = config->api.pure_size();
   worker->pure_alignment = config->api.pure_alignment();
@@ -1345,6 +1494,10 @@ static uint32_t send_response(worker_state *worker, HTTP_REQUEST_ID request_id,
   char content_length_text[11];
   uint32_t content_length_digits = 0u, unknown_count = 0u;
   ULONG bytes_sent = 0u;
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  ULONG api_status;
+  uint64_t stage_started;
+#endif
   const char *reason = reason_phrase(status);
   bytes_zero(&response, sizeof(response));
   bytes_zero(&chunk, sizeof(chunk));
@@ -1417,8 +1570,16 @@ static uint32_t send_response(worker_state *worker, HTTP_REQUEST_ID request_id,
   }
   cache_policy.Policy = HttpCachePolicyNocache;
   cache_policy.SecondsToLive = 0u;
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  stage_started = host_stage_qpc_now();
+  api_status = HttpSendHttpResponse(worker->config->request_queue, request_id, 0u,
+        &response, &cache_policy, &bytes_sent, NULL, 0u, NULL, NULL);
+  host_stage_record(worker, HOST_STAGE_SEND_API, stage_started);
+  if (api_status != NO_ERROR) return 0u;
+#else
   if (HttpSendHttpResponse(worker->config->request_queue, request_id, 0u,
         &response, &cache_policy, &bytes_sent, NULL, 0u, NULL, NULL) != NO_ERROR) return 0u;
+#endif
   return 1u;
 }
 
@@ -1514,6 +1675,9 @@ static uint32_t process_http_request(worker_state *worker,
 static DWORD WINAPI worker_entry(void *argument) {
   worker_state *worker = (worker_state *)argument;
   host_config *config = worker->config;
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  uint64_t stage_started;
+#endif
   if (!worker_allocate(worker)) {
     InterlockedExchange((volatile LONG *)&config->fatal_status, 60L);
     InterlockedIncrement((volatile LONG *)&config->ready_workers);
@@ -1521,6 +1685,9 @@ static DWORD WINAPI worker_entry(void *argument) {
     worker_release(worker);
     return 1u;
   }
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  host_stage_capture_cpu_start(worker);
+#endif
   if (InterlockedIncrement((volatile LONG *)&config->ready_workers) ==
       (LONG)config->worker_count) SetEvent(config->workers_ready_event);
   for (;;) {
@@ -1528,13 +1695,25 @@ static DWORD WINAPI worker_entry(void *argument) {
     ULONG bytes_received = 0u;
     ULONG status;
     request->RequestId = HTTP_NULL_ID;
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+    stage_started = host_stage_qpc_now();
+#endif
     status = HttpReceiveHttpRequest(config->request_queue, HTTP_NULL_ID, 0u,
         request, HOST_REQUEST_BUFFER_BYTES, &bytes_received, NULL);
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+    host_stage_record(worker, HOST_STAGE_RECEIVE_WAIT, stage_started);
+#endif
     if (status == NO_ERROR) {
       (void)process_http_request(worker, request);
       ++worker->requests;
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+      stage_started = host_stage_qpc_now();
+#endif
       clear_request_sensitive(worker);
       bytes_zero(worker->request_buffer, HOST_REQUEST_BUFFER_BYTES);
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+      host_stage_record(worker, HOST_STAGE_REQUEST_SCRUB, stage_started);
+#endif
       continue;
     }
     if (status == ERROR_CONNECTION_INVALID) {
@@ -1571,6 +1750,9 @@ static DWORD WINAPI worker_entry(void *argument) {
     SetEvent(config->stop_event);
     break;
   }
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  host_stage_capture_cpu_end(worker);
+#endif
   worker_release(worker);
   return 0u;
 }
@@ -1715,6 +1897,15 @@ static int http_start(host_config *config) {
   int http_initialized = 0, queue_created = 0, session_created = 0;
   int group_created = 0, prefix_added = 0;
   uint32_t created_threads = 0u, result = 0u;
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  LARGE_INTEGER stage_frequency;
+  if (!QueryPerformanceFrequency(&stage_frequency) ||
+      stage_frequency.QuadPart <= 0) {
+    write_ascii("startup.error=QueryPerformanceFrequency\r\n");
+    return 0;
+  }
+  config->stage_qpc_frequency = (uint64_t)stage_frequency.QuadPart;
+#endif
   status = HttpInitialize(version, HTTP_INITIALIZE_SERVER, NULL);
   if (status != NO_ERROR) { write_ascii("startup.api=HttpInitialize status="); write_u32(status); write_ascii("\r\n"); goto cleanup; }
   http_initialized = 1;
@@ -1803,6 +1994,9 @@ cleanup_workers:
     config->workers[i].thread = NULL;
   }
   if (config->fatal_status != 0u) result = 0u;
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  if (result != 0u) write_stage_profile(config);
+#endif
   if (config->workers_ready_event != NULL) { CloseHandle(config->workers_ready_event); config->workers_ready_event = NULL; }
   if (config->stop_event != NULL) { CloseHandle(config->stop_event); config->stop_event = NULL; }
 cleanup:
@@ -1962,8 +2156,17 @@ static uint32_t execute_and_send(worker_state *worker, const HTTP_REQUEST *reque
   al_campfire_http_render_metadata_v1 metadata;
   const uint8_t *content_type = NULL, *location = NULL;
   uint32_t content_type_bytes = 0u, location_bytes = 0u;
-  uint32_t preparation = make_entry_input(worker, request, method, room_id,
-                                          &input_bytes);
+  uint32_t preparation;
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  uint64_t stage_started;
+#endif
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  stage_started = host_stage_qpc_now();
+#endif
+  preparation = make_entry_input(worker, request, method, room_id, &input_bytes);
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  host_stage_record(worker, HOST_STAGE_INPUT_PREPARE, stage_started);
+#endif
   if (preparation != 1u) {
     uint32_t status = preparation == 2u ? 400u : preparation == 3u ? 431u : 500u;
     (void)send_response(worker, request->RequestId, status, NULL, 0u,
@@ -1971,9 +2174,15 @@ static uint32_t execute_and_send(worker_state *worker, const HTTP_REQUEST *reque
     return 0u;
   }
   input_extent = input_bytes;
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  stage_started = host_stage_qpc_now();
+#endif
   execute_status = worker->config->api.execute(&worker->runtime,
         &worker->database_context, worker->input, input_bytes,
         &input_extent, 1u, worker->retained, HOST_RETAINED_BYTES);
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  host_stage_record(worker, HOST_STAGE_API_EXECUTE, stage_started);
+#endif
   worker->active_retained_bytes = execute_status != 0 ||
       worker->runtime.status != AL_OWNING_STATUS_OK
       ? HOST_RETAINED_BYTES
@@ -1988,28 +2197,49 @@ static uint32_t execute_and_send(worker_state *worker, const HTTP_REQUEST *reque
   }
   rendered_extent = (uint32_t)worker->runtime.retained_copy_bytes;
   bytes_zero(&metadata, sizeof(metadata));
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  stage_started = host_stage_qpc_now();
+#endif
   render_status = al_campfire_http_render_v1(
       AL_CAMPFIRE_HTTP_RENDERER_MANIFEST_FORMAT_VERSION,
       AL_CAMPFIRE_HTTP_RENDERER_LAYOUT_SCHEMA_VERSION,
       AL_CAMPFIRE_HTTP_RENDERER_LAYOUT_ABI_VERSION,
       worker->retained, rendered_extent, NULL, 0u, &body_required, &metadata);
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  host_stage_record(worker, HOST_STAGE_RENDERER, stage_started);
+#endif
   if (render_status != AL_CAMPFIRE_HTTP_RENDER_OUTPUT_TOO_SMALL &&
       render_status != AL_CAMPFIRE_HTTP_RENDER_OK) goto internal_failure;
   if (body_required > HOST_BODY_BYTES || !ensure_body_committed(worker, body_required))
     goto internal_failure;
   worker->active_body_bytes = body_required;
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  stage_started = host_stage_qpc_now();
+#endif
   render_status = al_campfire_http_render_v1(
       AL_CAMPFIRE_HTTP_RENDERER_MANIFEST_FORMAT_VERSION,
       AL_CAMPFIRE_HTTP_RENDERER_LAYOUT_SCHEMA_VERSION,
       AL_CAMPFIRE_HTTP_RENDERER_LAYOUT_ABI_VERSION,
       worker->retained, rendered_extent, worker->body,
       worker->body_committed_bytes, &body_required, &metadata);
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  host_stage_record(worker, HOST_STAGE_RENDERER, stage_started);
+#endif
   if (render_status != AL_CAMPFIRE_HTTP_RENDER_OK) goto internal_failure;
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  stage_started = host_stage_qpc_now();
+#endif
   if (!finalize_response_cookies(worker, request, &metadata,
         worker->request_encrypted_cookie, &cookie_count)) {
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+    host_stage_record(worker, HOST_STAGE_COOKIE_FINALIZE, stage_started);
+#endif
     /* Cookie state is borrowed from the request and must be retained until finalization. */
     goto internal_failure;
   }
+#if CAMPFIRE_HTTP_STAGE_PROFILE
+  host_stage_record(worker, HOST_STAGE_COOKIE_FINALIZE, stage_started);
+#endif
   content_type = metadata.content_type_utf8;
   content_type_bytes = metadata.content_type_bytes;
   if (metadata.has_location != 0u) {

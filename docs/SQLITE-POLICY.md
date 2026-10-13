@@ -9,6 +9,25 @@ native application migration is unfinished.
 
 ## Connections and isolation
 
+Research candidate raised 2026-10-12: compare a bounded asynchronous database
+writer queue with direct worker-owned access once real native writes exist.
+Keep read connections separate initially; WAL permits simultaneous readers and
+one writer. A queued job should represent a typed logical transaction, including
+dependent authorization and mutations, and acknowledge success only after commit.
+Do not automatically batch unrelated requests into one atomic transaction:
+that couples failure and ordering and can increase tail latency. Cross-request
+batching requires an explicit policy, maximum batch size/delay, rollback/error
+semantics and cancellation behavior. Queue inputs/results need owned lifetime
+across suspension; no request scratch pointer may escape into pending work.
+
+Measure direct access, bounded read concurrency and a dedicated writer separately
+at the same durability, workload, memory bound and acceptable tail latency. A
+queue can improve admission and free request-worker capacity; it does not create
+parallel SQLite writers. The current read-only worker regression does not prove
+SQL is its cause. This is a comparison candidate, not a change to the current
+direct-SQL architecture. See [SQLite WAL concurrency](https://www.sqlite.org/wal.html#concurrency)
+and [transaction semantics](https://www.sqlite.org/lang_transaction.html).
+
 Each worker owns one connection and its prepared statements. Calls are serialized
 on that worker's initializing thread. Private caches and `read_uncommitted=0`
 prevent dirty reads; no connection or active statement is shared between workers.

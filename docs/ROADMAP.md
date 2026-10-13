@@ -2,6 +2,16 @@
 
 ## Active delivery priority: Campfire implementation
 
+[Report255](../reports/255-native-campfire-profiling.md) narrows the worker
+regression to native language/runtime/provider execution and records a fixed
+four-physical-core comparison at sixteen clients. Four workers deliver about
+6,536 reads/sec and better p99 than eight; keep that default for the four-core
+budget. Optional stage profiling is compiled out of the normal host. Continue
+with native membership-and-message creation in one strict transaction, preserving
+capacity preflight, rollback and request-security behavior. A queued singleton
+writer remains a measured research candidate once native writes exist; the
+profiling result does not require moving all reads through a database worker.
+
 Latest checkpoint: [report 254](../reports/254-native-campfire-release-profile.md)
 connects the compiler-generated release arena profile to the native room HTTP
 host. Both runtime profiles pass fresh O0/O2 boundary and application parity

@@ -6,7 +6,7 @@ using System.Text.Json;
 internal sealed record Config(string Uri, string Cookie, string UserAgent,
     int ExpectedStatus, string ExpectedBodySha256, int Concurrency = 1,
     int Seconds = 10, int WarmupRequests = 20, int ServerPid = 0,
-    string Method = "GET", int MaxBodyBytes = 1048576);
+    string Method = "GET", int MaxBodyBytes = 1048576, long? ClientAffinityMask = null);
 
 internal sealed class Samples
 {
@@ -63,6 +63,17 @@ internal static class Program
             throw new ArgumentException("Invalid bounded loopback configuration");
         byte[] expectedHash = Convert.FromHexString(config.ExpectedBodySha256);
         if (expectedHash.Length != 32) throw new ArgumentException("Expected SHA256 required");
+        using Process measurementClient = Process.GetCurrentProcess();
+        long? effectiveClientAffinityMask = null;
+        if (config.ClientAffinityMask.HasValue)
+        {
+            if (!OperatingSystem.IsWindows() || !Environment.Is64BitProcess || config.ClientAffinityMask.Value <= 0)
+                throw new ArgumentException("Client affinity requires a positive mask in a 64-bit Windows process");
+            measurementClient.ProcessorAffinity = (nint)config.ClientAffinityMask.Value;
+            effectiveClientAffinityMask = measurementClient.ProcessorAffinity.ToInt64();
+            if (effectiveClientAffinityMask != config.ClientAffinityMask.Value)
+                throw new InvalidOperationException("Client affinity mask did not match the requested mask");
+        }
         using var handler = new SocketsHttpHandler {
             AllowAutoRedirect = false, UseCookies = false, UseProxy = false,
             AutomaticDecompression = DecompressionMethods.None,
@@ -117,6 +128,9 @@ internal static class Program
             while (Stopwatch.GetTimestamp() < deadline) await Request(samples);
             return samples;
         }).ToArray();
+        server?.Refresh();
+        TimeSpan? serverCpuStart = server?.TotalProcessorTime;
+        TimeSpan clientCpuStart = measurementClient.TotalProcessorTime;
         var timer = Stopwatch.StartNew();
         deadline = Stopwatch.GetTimestamp() + (long)(config.Seconds * Stopwatch.Frequency);
         start.SetResult();
@@ -134,6 +148,11 @@ internal static class Program
         }
         Samples[] results = await completion;
         timer.Stop();
+        server?.Refresh();
+        measurementClient.Refresh();
+        double? serverCpuMilliseconds = serverCpuStart.HasValue
+            ? (server!.TotalProcessorTime - serverCpuStart.Value).TotalMilliseconds : null;
+        double clientCpuMilliseconds = (measurementClient.TotalProcessorTime - clientCpuStart).TotalMilliseconds;
         var merged = new Samples();
         foreach (Samples sample in results)
         {
@@ -150,8 +169,12 @@ internal static class Program
             p95MillisecondsUpperBound = merged.Quantile(.95), p99MillisecondsUpperBound = merged.Quantile(.99),
             latencyOverflowAt60Seconds = merged.Buckets[105991], errors = merged.Errors,
             sampledServerWorkingSetPeak = peakWorkingSet, sampledServerPrivateBytesPeak = peakPrivate,
+            serverCpuMilliseconds, clientCpuMilliseconds,
+            serverCpuEquivalentCores = serverCpuMilliseconds / timer.Elapsed.TotalMilliseconds,
+            clientCpuEquivalentCores = clientCpuMilliseconds / timer.Elapsed.TotalMilliseconds,
+            effectiveClientAffinityMask,
             config.ServerPid, config.WarmupRequests, config.ExpectedBodySha256,
-            methodology = "Closed-loop HTTP/1.1 keepalive; no redirects/decompression; complete body SHA256 on every request; in-flight drain included; correct-response latency only; 100ms process-memory sampling excludes kernel buffers. Client costs are included equally in both workloads."
+            methodology = "Closed-loop HTTP/1.1 keepalive; no redirects/decompression; complete body SHA256 on every request; in-flight drain included; correct-response latency only; 100ms process-memory sampling excludes kernel buffers. Process CPU deltas exclude warmup; equivalent cores divide CPU time by measured wall time and are not percentages of the machine. Client costs are included equally in both workloads."
         };
         await File.WriteAllTextAsync(args[1], JsonSerializer.Serialize(report, Json));
         Console.WriteLine(JsonSerializer.Serialize(report, Json));
