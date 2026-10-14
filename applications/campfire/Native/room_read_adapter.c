@@ -2463,26 +2463,6 @@ AL_CAMPFIRE_EXPORT int32_t al_host_campfire_room_read_v1(
     goto callback_complete;
   }
 
-  /* Rails CSRF tokens: crypto and randomness only, in the pure provider. */
-  if (operation == AL_CAMPFIRE_CSRF_SESSION_SECRET ||
-      operation == AL_CAMPFIRE_CSRF_FORM_TOKEN ||
-      operation == AL_CAMPFIRE_CSRF_BOOST_TOKENS) {
-    result = operation == AL_CAMPFIRE_CSRF_SESSION_SECRET
-                 ? al_campfire_csrf_session_secret_v1(
-                       ctx->pure_context, layout, inputs, input_count,
-                       output_type_index, output, effective_capacity,
-                       output_extent_bytes)
-             : operation == AL_CAMPFIRE_CSRF_FORM_TOKEN
-                 ? al_campfire_csrf_form_token_v1(
-                       ctx->pure_context, layout, inputs, input_count,
-                       output_type_index, output, effective_capacity,
-                       output_extent_bytes)
-                 : al_campfire_csrf_boost_tokens_v1(
-                       ctx->pure_context, layout, inputs, input_count,
-                       output_type_index, output, effective_capacity,
-                       output_extent_bytes);
-    goto callback_complete;
-  }
   if (operation == AL_CAMPFIRE_COOKIE_VERIFY) {
     result = al_campfire_verify_cookie_v1(
         ctx->pure_context, layout, inputs, input_count,

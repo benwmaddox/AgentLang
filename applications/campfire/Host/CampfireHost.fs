@@ -13,14 +13,10 @@ module CampfireHost =
     let private membershipExistsId = HostOperationId "campfire.membership.exists?"
     let private messagesLastPageId = HostOperationId "campfire.messages.last-page"
     let private messagesLastPageWithCreatorsId = HostOperationId "campfire.messages.last-page-with-creators"
-    let private csrfSessionSecretId = HostOperationId "campfire.csrf.session-secret"
-    let private csrfFormTokenId = HostOperationId "campfire.csrf.form-token"
-    let private csrfBoostTokensId = HostOperationId "campfire.csrf.boost-tokens"
     let private messagesCreateId = HostOperationId "campfire.messages.create"
 
     let operationIds =
-        Set.ofList [ roomsPageId; membershipExistsId; messagesLastPageId; messagesLastPageWithCreatorsId; messagesCreateId
-                     csrfSessionSecretId; csrfFormTokenId; csrfBoostTokensId ]
+        Set.ofList [ roomsPageId; membershipExistsId; messagesLastPageId; messagesLastPageWithCreatorsId; messagesCreateId ]
 
     let manifest =
         [ roomsPageId,
@@ -51,27 +47,6 @@ module CampfireHost =
             Outputs = [ TResult(TList(TNamed "MessageWithCreator"), TNamed "DbError") ]
             Effects = Set.singleton "db.read"
             Documentation = "Returns the room's last bounded message page, oldest first, with each creator's name, bio, update time and signed avatar token." }
-          csrfSessionSecretId,
-          { Id = csrfSessionSecretId
-            WordName = "campfire.csrf.session-secret"
-            Inputs = [ TOption TString ]
-            Outputs = [ TNamed "CsrfSecret" ]
-            Effects = Set.singleton "random.read"
-            Documentation = "The session's Rails _csrf_token when it decodes to 32 bytes; otherwise a new one (urlsafe Base64, 32 random bytes), marked fresh so the response stores it." }
-          csrfFormTokenId,
-          { Id = csrfFormTokenId
-            WordName = "campfire.csrf.form-token"
-            Inputs = [ TString; TString ]
-            Outputs = [ TString ]
-            Effects = Set.singleton "random.read"
-            Documentation = "Rails' masked authenticity token: HMAC-SHA256(secret, identifier), XOR a fresh 32-byte pad, pad first, urlsafe Base64 without padding. The identifier is '<path>#<method>', or '!real_csrf_token' for the page's global token." }
-          csrfBoostTokensId,
-          { Id = csrfBoostTokensId
-            WordName = "campfire.csrf.boost-tokens"
-            Inputs = [ TString; TNamed "MessageId" ]
-            Outputs = [ TNamed "BoostTokens" ]
-            Effects = Set.singleton "random.read"
-            Documentation = "Masked authenticity tokens for one message's eight quick-boost forms (/messages/:id/boosts#post): one HMAC, eight fresh pads." }
           messagesCreateId,
           { Id = messagesCreateId
             WordName = "campfire.messages.create"
@@ -194,29 +169,6 @@ module CampfireHost =
                   "creator-avatar-token", StringValue(avatarToken key creator)
                   "body", OptionValue(TString, Option.map StringValue row.Body) ])
 
-    let private decodeUrlSafe (text: string) =
-        let padded = text.Replace('-', '+').Replace('_', '/')
-        let padded = padded + String('=', (4 - padded.Length % 4) % 4)
-        try Some(Convert.FromBase64String padded) with _ -> None
-
-    let private encodeUrlSafe (bytes: byte array) =
-        Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
-
-    /// The session's raw CSRF secret: exactly 32 bytes, as Rails generates.
-    let private csrfSecretBytes (text: string) =
-        match decodeUrlSafe text with
-        | Some bytes when bytes.Length = 32 -> Some bytes
-        | _ -> None
-
-    let private maskToken (digest: byte array) =
-        let pad = RandomNumberGenerator.GetBytes 32
-        Array.append pad (Array.map2 (^^^) pad digest) |> encodeUrlSafe
-
-    let csrfFormToken (secret: string) (identifier: string) =
-        match csrfSecretBytes secret with
-        | Some raw -> maskToken (HMACSHA256.HashData(raw, Encoding.UTF8.GetBytes identifier))
-        | None -> mismatch ()
-
     let private resultValue okType (result: Result<'T, DbError>) mapOk =
         ResultValue(okType, TNamed "DbError", result |> Result.map mapOk |> Result.mapError dbErrorValue)
 
@@ -238,23 +190,6 @@ module CampfireHost =
             | id, [ roomIdValue ] when id = messagesLastPageWithCreatorsId ->
                 let result = store.LastPageWithCreators(asRoomId roomIdValue) |> Result.map (List.map (messageWithCreatorValue avatarKey))
                 Ok [ resultValue (TList(TNamed "MessageWithCreator")) result (fun rows -> ListValue(TNamed "MessageWithCreator", rows)) ]
-            | id, [ candidateValue ] when id = csrfSessionSecretId ->
-                let existing =
-                    match asOptionString candidateValue with
-                    | Some text when (csrfSecretBytes text).IsSome -> Some text
-                    | _ -> None
-                let value, fresh =
-                    match existing with
-                    | Some text -> text, false
-                    | None -> encodeUrlSafe (RandomNumberGenerator.GetBytes 32), true
-                Ok [ RecordValue("CsrfSecret", Map.ofList [ "value", StringValue value; "fresh", BoolValue fresh ]) ]
-            | id, [ StringValue secret; StringValue identifier ] when id = csrfFormTokenId ->
-                Ok [ StringValue(csrfFormToken secret identifier) ]
-            | id, [ StringValue secret; NamedValue("MessageId", IntValue messageId) ] when id = csrfBoostTokensId ->
-                let raw = csrfSecretBytes secret |> Option.defaultWith mismatch
-                let digest = HMACSHA256.HashData(raw, Encoding.UTF8.GetBytes($"/messages/{messageId}/boosts#post"))
-                let names = [ "thumbs-up"; "clapping"; "waving-hand"; "muscle"; "red-heart"; "tears-of-joy"; "party-popper"; "fire" ]
-                Ok [ RecordValue("BoostTokens", names |> List.map (fun name -> name, StringValue(maskToken digest)) |> Map.ofList) ]
             | id, [ messageValue ] when id = messagesCreateId ->
                 let result = store.CreateMessage(asNewMessage messageValue)
                 Ok [ resultValue (TNamed "MessageRow") result messageRowValue ]

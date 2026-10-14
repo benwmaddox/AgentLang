@@ -470,12 +470,6 @@ module Program =
     let private expectStatus expected exchange =
         equal expected exchange.Status "HTTP status"
 
-    /// Rails' CSRF work on a room GET: the session secret, the page's meta and
-    /// composer tokens, then one boost-token call per rendered message.
-    let private csrfTrace (body: string) =
-        [ "campfire.csrf.session-secret"; "campfire.csrf.form-token"; "campfire.csrf.form-token" ]
-        @ List.replicate (body.Split(" data-message-id=\"", StringSplitOptions.None).Length - 1) "campfire.csrf.boost-tokens"
-
     let private expectTrace (probe: ProviderProbe) (expected: string list) =
         let actual = probe.Names
         let trace = JsonObject()
@@ -533,6 +527,8 @@ module Program =
               "applications/campfire/authentication.flow"
               "applications/campfire/authentication-tests.flow"
               "applications/campfire/message-policy.flow"
+              "applications/campfire/csrf.flow"
+              "applications/campfire/csrf-tests.flow"
               "applications/campfire/room-message.flow"
               "applications/campfire/room-message-tests.flow"
               "applications/campfire/request-policy.flow"
@@ -583,7 +579,7 @@ module Program =
         check (not (room.Body.Contains("<script>", StringComparison.Ordinal))) "stored markup is not emitted as executable markup"
         expectTrace probe <|
             [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
-              "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ] @ csrfTrace room.Body
+              "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ]
         check (room.SetCookies |> List.exists (fun value -> value.StartsWith("last_room=", StringComparison.Ordinal))) "first successful room visit writes the last-room cookie"
 
         // Report 271: Rails' CSRF model. A session without _csrf_token gets one,
@@ -1536,7 +1532,7 @@ module Program =
         expectStatus 200 getWhileBanned
         expectTrace probe <|
             [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
-              "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ] @ csrfTrace getWhileBanned.Body
+              "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ]
 
     let private checkEmptyUsersHttpBehavior (sourceDirectory: string) (clock: FixedClock) (cookies: CookieService) =
         currentCheck <- "empty users login redirects to first run"
@@ -1687,7 +1683,7 @@ module Program =
                     expectTrace restartedProbe <|
                         [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
                           "campfire.rooms.find-for-user"; "campfire.membership.exists?"
-                          "campfire.messages.last-page-with-creators" ] @ csrfTrace restoredRoom.Body
+                          "campfire.messages.last-page-with-creators" ]
 
                     currentCheck <- "revoked signed logout token stays rejected after application restart"
                     restartedProbe.Clear()
