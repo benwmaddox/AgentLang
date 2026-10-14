@@ -1499,7 +1499,7 @@ module OwningStackAot =
                         call.InputTypes @ call.OutputTypes |> List.iter (checkType owner)
                         match instruction.Operation with
                         | IrOperation.ListMap(_, itemType, resultType) -> checkType owner (IrList itemType); checkType owner (IrList resultType)
-                        | IrOperation.ListMapWithContext(_, itemType, contextType, resultType) ->
+                        | IrOperation.ListMapWithContext(_, contextType, itemType, resultType) ->
                             checkType owner (IrList itemType)
                             checkType owner contextType
                             checkType owner (IrList resultType)
@@ -4759,7 +4759,7 @@ module OwningStackAot =
                             | IrOperation.ListFold(_, itemType, _) ->
                                 let values, prefix = pop 2
                                 itemType, values[0], Some values[1], prefix
-                            | IrOperation.ListMapWithContext(_, itemType, _, _) ->
+                            | IrOperation.ListMapWithContext(_, _, itemType, _) ->
                                 let values, prefix = pop 2
                                 itemType, values[0], Some values[1], prefix
                             | IrOperation.ListMap(_, itemType, _)

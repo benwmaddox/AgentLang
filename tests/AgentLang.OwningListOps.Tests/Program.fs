@@ -42,7 +42,8 @@ let private words =
       "native.listops.same"; "native.listops.map-same"; "native.listops.pair"; "native.listops.map-pairs"
       "native.listops.positive"; "native.listops.filter-positive"; "native.listops.plus"; "native.listops.sum"
       "native.listops.join"; "native.listops.join-all"; "native.listops.map-join"; "native.listops.ignore"
-      "native.listops.each-ignore"; "native.listops.singleton" ]
+      "native.listops.each-ignore"; "native.listops.singleton"; "native.listops.map-offset"; "native.listops.map-tags"
+      "native.listops.map-prefixed"; "native.listops.map-labeled"; "native.listops.map-nested"; "native.listops.map-list-context" ]
 
 let private prepare (engine: Runtime.Engine) =
     let args = JsonObject()
@@ -92,6 +93,7 @@ let rec private wire ty value =
     | TString, StringValue text ->
         align8 (Array.concat [ u32 (uint32 (Encoding.UTF8.GetByteCount text)); Array.zeroCreate<byte> 4; Encoding.UTF8.GetBytes(text) ])
     | TNamed "Pair", RecordValue("Pair", fields) -> Array.append (wire TString fields["name"]) (wire TInt fields["count"])
+    | TNamed "Tag", RecordValue("Tag", fields) -> Array.append (wire TString fields["label"]) (wire TInt fields["width"])
     | TList itemType, ListValue(storedType, items) when storedType = itemType ->
         Array.concat ([ u32 (uint32 items.Length); Array.zeroCreate<byte> 4 ] @ (items |> List.map (wire itemType)))
     | _ -> failwith $"No wire oracle for {ty} / {value}."
@@ -134,7 +136,46 @@ let private cases () =
       { Name = "map-nested-fold"; Word = "native.listops.map-join"; InputTypes = [ TList(TList TString) ]; OutputTypes = [ TList TString ]
         Inputs = [ ListValue(TList TString, nested |> List.map strings) ]; Expected = [ strings joined ]; MaxDeepCopyBytes = None }
       { Name = "each-unit"; Word = "native.listops.each-ignore"; InputTypes = [ TList TInt ]; OutputTypes = [ TUnit ]
-        Inputs = [ ints [ 1L; 2L; 3L ] ]; Expected = [ UnitValue ]; MaxDeepCopyBytes = Some 0 } ]
+        Inputs = [ ints [ 1L; 2L; 3L ] ]; Expected = [ UnitValue ]; MaxDeepCopyBytes = Some 0 }
+      // a) Int context with List<Int>
+      { Name = "map-context-int"; Word = "native.listops.map-offset"; InputTypes = [ TInt; TList TInt ]; OutputTypes = [ TList TInt ]
+        Inputs = [ IntValue 10L; ints [ 1L; -2L; 3L; 1_000_000L ] ]; Expected = [ ints [ 11L; 8L; 13L; 1_000_010L ] ]
+        MaxDeepCopyBytes = Some 0 }
+      // b) record context (String + Int) with List<String> producing Html joined to String
+      { Name = "map-context-record-html"; Word = "native.listops.map-tags"; InputTypes = [ TNamed "Tag"; TList TString ]; OutputTypes = [ TString ]
+        Inputs = [ RecordValue("Tag", Map.ofList [ "label", StringValue "λ-"; "width", IntValue 3L ]); strings unicode ]
+        Expected = [ StringValue(unicode |> List.map (fun name -> "<li>λ-3" + name + "</li>") |> String.concat "") ]
+        MaxDeepCopyBytes = None }
+      // b2) coordinator repro: record context with Html items across 40 BenchMessage-style names
+      { Name = "map-context-record-html-40"; Word = "native.listops.map-tags"; InputTypes = [ TNamed "Tag"; TList TString ]; OutputTypes = [ TString ]
+        Inputs = [ RecordValue("Tag", Map.ofList [ "label", StringValue "msg-"; "width", IntValue 2L ]); strings [ for i in 0 .. 39 -> $"bench-{i:D2}" ] ]
+        Expected = [ StringValue([ for i in 0 .. 39 -> $"<li>msg-2bench-{i:D2}</li>" ] |> String.concat "") ]
+        MaxDeepCopyBytes = None }
+      // c) more than 4 KB String context used by every item
+      { Name = "map-context-large-string"; Word = "native.listops.map-prefixed"; InputTypes = [ TString; TList TString ]; OutputTypes = [ TList TString ]
+        Inputs = [ StringValue(String.replicate 4200 "x"); strings [ "a"; "bb"; "ccc" ] ]
+        Expected = [ strings [ String.replicate 4200 "x" + "a"; String.replicate 4200 "x" + "bb"; String.replicate 4200 "x" + "ccc" ] ]
+        MaxDeepCopyBytes = None }
+      // d) empty list with a context produced by a word call
+      { Name = "map-context-from-call-empty"; Word = "native.listops.map-labeled"; InputTypes = [ TInt; TList TString ]; OutputTypes = [ TList TString ]
+        // The call-produced String context is materialized once (32 bytes measured) even with no items.
+        Inputs = [ IntValue 7L; strings [] ]; Expected = [ strings [] ]; MaxDeepCopyBytes = Some 32 }
+      { Name = "map-context-from-call-many"; Word = "native.listops.map-labeled"; InputTypes = [ TInt; TList TString ]; OutputTypes = [ TList TString ]
+        Inputs = [ IntValue 7L; strings [ "q"; "λ" ] ]; Expected = [ strings [ "#7q"; "#7λ" ] ]; MaxDeepCopyBytes = None }
+      // e) nested map-with-context over a list field inside the callback
+      { Name = "map-context-nested"; Word = "native.listops.map-nested"; InputTypes = [ TString; TList(TList TString) ]; OutputTypes = [ TList TString ]
+        Inputs = [ StringValue "-"; ListValue(TList TString, nested |> List.map strings) ]
+        Expected = [ strings (nested |> List.map (fun group -> group |> List.map (fun item -> "-" + item) |> String.concat "")) ]
+        MaxDeepCopyBytes = None }
+      // f) List<String> context
+      { Name = "map-context-list"; Word = "native.listops.map-list-context"; InputTypes = [ TList TString; TList TString ]; OutputTypes = [ TList TString ]
+        Inputs = [ strings [ "a"; "λ" ]; strings unicode ]
+        Expected = [ strings (unicode |> List.map (fun item -> "aλ" + item)) ]
+        MaxDeepCopyBytes = None }
+      // g) 200+ items
+      { Name = "map-context-many-items"; Word = "native.listops.map-offset"; InputTypes = [ TInt; TList TInt ]; OutputTypes = [ TList TInt ]
+        Inputs = [ IntValue 1L; ints [ for i in 0L .. 239L -> i ] ]; Expected = [ ints [ for i in 0L .. 239L -> i + 1L ] ]
+        MaxDeepCopyBytes = Some 0 } ]
 
 let private hash path = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant()
 

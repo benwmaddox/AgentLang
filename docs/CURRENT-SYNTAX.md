@@ -83,6 +83,26 @@ select it explicitly despite a shadowing local:
 `.customer.read-balance(customer)`. The same form selects an exact unqualified
 name, as in `.identity(value)`.
 
+`items.map(context, word)` passes a context value to every call of a static
+word reference. The context is evaluated once and borrowed: each call receives
+the same value unchanged, and the word's first parameter has the context type.
+The result is `List<U>`, where `U` is the word's output type. Only `map` takes a
+context; `filter` and `each` with a context raise `FLOW_CALLBACK_CONTEXT_MAP_ONLY`.
+For example:
+
+```
+record PageContext {
+    prefix: String
+}
+
+fn page.item(context: PageContext, name: String) -> Html {
+    effects none
+    html"<li>{context.prefix}{name}</li>"
+}
+
+names.map(context, page.item)
+```
+
 Discovery metadata may include `flowReference` and
 `flowReferenceSyntaxVersion`. Follow the reported version when copying a
 reference. When `flowReferenceSyntaxVersion` is 2, references use leading-dot

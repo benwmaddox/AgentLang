@@ -1469,6 +1469,7 @@ module FlowLowering =
                     match instruction.Operation with
                     | IrOperation.Call call
                     | IrOperation.ListMap(call, _, _)
+                    | IrOperation.ListMapWithContext(call, _, _, _)
                     | IrOperation.ListFilter(call, _)
                     | IrOperation.ListEach(call, _)
                     | IrOperation.ListFold(call, _, _)

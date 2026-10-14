@@ -3,6 +3,11 @@ record Pair {
     field count: Int
 }
 
+record Tag {
+    field label: String
+    field width: Int
+}
+
 fn native.listops.double(value: Int) -> Int {
     effects none
     multiply(value, 2)
@@ -91,6 +96,87 @@ fn native.listops.each-ignore(values: List<Int>) -> Unit {
 fn native.listops.singleton(value: String) -> List<String> {
     effects none
     list.singleton<String>(value)
+}
+
+fn native.listops.add-offset(offset: Int, value: Int) -> Int {
+    effects none
+    add(offset, value)
+}
+
+fn native.listops.map-offset(offset: Int, values: List<Int>) -> List<Int> {
+    effects none
+    values.map(offset, native.listops.add-offset)
+}
+
+fn native.listops.tag-html(label: String, name: String) -> Html {
+    effects none
+    html"<li>{label}{name}</li>"
+}
+
+fn native.listops.tag-item(context: Tag, name: String) -> Html {
+    effects none
+    native.listops.tag-html(string.concat(context.label, int.to-string(context.width)), name)
+}
+
+fn native.listops.html-text(value: Html) -> String {
+    effects none
+    Html.value(value)
+}
+
+fn native.listops.tag-fold(text: String, value: Html) -> String {
+    effects none
+    string.concat(text, native.listops.html-text(value))
+}
+
+fn native.listops.tag-all(items: List<Html>) -> String {
+    effects none
+    items.fold("", native.listops.tag-fold)
+}
+
+fn native.listops.map-tags(context: Tag, names: List<String>) -> String {
+    effects none
+    native.listops.tag-all(names.map(context, native.listops.tag-item))
+}
+
+fn native.listops.prefix-item(context: String, value: String) -> String {
+    effects none
+    string.concat(context, value)
+}
+
+fn native.listops.map-prefixed(prefix: String, values: List<String>) -> List<String> {
+    effects none
+    values.map(prefix, native.listops.prefix-item)
+}
+
+fn native.listops.label(number: Int) -> String {
+    effects none
+    string.concat("#", int.to-string(number))
+}
+
+fn native.listops.map-labeled(number: Int, values: List<String>) -> List<String> {
+    effects none
+    let label = native.listops.label(number)
+    values.map(label, native.listops.prefix-item)
+}
+
+fn native.listops.join-group(prefix: String, group: List<String>) -> String {
+    effects none
+    native.listops.join-all(group.map(prefix, native.listops.prefix-item))
+}
+
+fn native.listops.map-nested(prefix: String, groups: List<List<String>>) -> List<String> {
+    effects none
+    groups.map(prefix, native.listops.join-group)
+}
+
+fn native.listops.list-prefix(context: List<String>, value: String) -> String {
+    effects none
+    string.concat(native.listops.join-all(context), value)
+}
+
+fn native.listops.map-list-context(context: List<String>, values: List<String>) -> List<String> {
+    effects none
+    values.map(context, native.listops.list-prefix)
 }
 
 test native.listops.double/two {
@@ -211,4 +297,99 @@ test native.listops.each-ignore/one {
 test native.listops.singleton/one {
     native.listops.singleton("s")
     => value list.singleton<String>("s")
+}
+
+test native.listops.map-offset/two {
+    native.listops.map-offset(10, list.singleton<Int>(1))
+    => value list.singleton<Int>(11)
+}
+
+test native.listops.map-offset/empty {
+    native.listops.map-offset(10, list.empty<Int>())
+    => value list.empty<Int>()
+}
+
+test native.listops.map-tags/one {
+    native.listops.map-tags(tag.new("#", 3), list.singleton<String>("x"))
+    => value "<li>#3x</li>"
+}
+
+test native.listops.map-tags/empty {
+    native.listops.map-tags(tag.new("#", 3), list.empty<String>())
+    => value ""
+}
+
+test native.listops.map-prefixed/one {
+    native.listops.map-prefixed("ab", list.singleton<String>("c"))
+    => value list.singleton<String>("abc")
+}
+
+test native.listops.map-labeled/one {
+    native.listops.map-labeled(7, list.singleton<String>("q"))
+    => value list.singleton<String>("#7q")
+}
+
+test native.listops.map-labeled/empty {
+    native.listops.map-labeled(7, list.empty<String>())
+    => value list.empty<String>()
+}
+
+test native.listops.map-nested/one {
+    native.listops.map-nested("-", list.singleton<List<String>>(list.singleton<String>("z")))
+    => value list.singleton<String>("-z")
+}
+
+test native.listops.map-list-context/one {
+    native.listops.map-list-context(list.singleton<String>("a"), list.singleton<String>("b"))
+    => value list.singleton<String>("ab")
+}
+
+test native.listops.add-offset/two {
+    native.listops.add-offset(2, 3)
+    => value 5
+}
+
+test native.listops.tag-html/one {
+    native.listops.html-text(native.listops.tag-html("#", "x"))
+    => value "<li>#x</li>"
+}
+
+test native.listops.tag-item/one {
+    native.listops.html-text(native.listops.tag-item(tag.new("#", 3), "x"))
+    => value "<li>#3x</li>"
+}
+
+test native.listops.html-text/one {
+    native.listops.html-text(native.listops.tag-html("a", "b"))
+    => value "<li>ab</li>"
+}
+
+test native.listops.tag-fold/one {
+    native.listops.tag-fold("p", native.listops.tag-html("a", "b"))
+    => value "p<li>ab</li>"
+}
+
+test native.listops.tag-all/one {
+    native.listops.tag-all(list.singleton<Html>(native.listops.tag-html("a", "b")))
+    => value "<li>ab</li>"
+}
+
+test native.listops.prefix-item/one {
+    native.listops.prefix-item("a", "b")
+    => value "ab"
+}
+
+test native.listops.label/one {
+    native.listops.label(7)
+    => value "#7"
+}
+
+test native.listops.join-group/one {
+    native.listops.join-group("-", list.singleton<String>("z"))
+    => value "-z"
+}
+
+test native.listops.list-prefix/one {
+    native.listops.list-prefix(list.singleton<String>("a"), "b")
+    => value "ab"
 }
