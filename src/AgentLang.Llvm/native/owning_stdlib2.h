@@ -39,160 +39,36 @@ enum {
   AL_STDLIB_TIME_PARSE_ISO8601 = 45
 };
 
-/* ---------------------------------------------------------------- SHA-1 */
+/* ---------------------------------------------------------- OS crypto */
 
-typedef struct {
-  uint32_t h[5];
-  uint64_t length;
-  uint8_t block[64];
-  uint32_t used;
-} al_stdlib_sha1;
-
-static uint32_t al_stdlib_rotl(uint32_t value, uint32_t shift) {
-  return (value << shift) | (value >> (32u - shift));
-}
-
-static void al_stdlib_sha1_compress(uint32_t h[5], const uint8_t *block) {
-  uint32_t w[80];
-  uint32_t a = h[0], b = h[1], c = h[2], d = h[3], e = h[4];
-  uint32_t i;
-  for (i = 0u; i < 16u; ++i)
-    w[i] = ((uint32_t)block[i * 4u] << 24) |
-           ((uint32_t)block[i * 4u + 1u] << 16) |
-           ((uint32_t)block[i * 4u + 2u] << 8) | (uint32_t)block[i * 4u + 3u];
-  for (i = 16u; i < 80u; ++i)
-    w[i] = al_stdlib_rotl(w[i - 3u] ^ w[i - 8u] ^ w[i - 14u] ^ w[i - 16u], 1u);
-  for (i = 0u; i < 80u; ++i) {
-    uint32_t f;
-    uint32_t k;
-    uint32_t t;
-    if (i < 20u) {
-      f = (b & c) | (~b & d);
-      k = 0x5a827999u;
-    } else if (i < 40u) {
-      f = b ^ c ^ d;
-      k = 0x6ed9eba1u;
-    } else if (i < 60u) {
-      f = (b & c) | (b & d) | (c & d);
-      k = 0x8f1bbcdcu;
-    } else {
-      f = b ^ c ^ d;
-      k = 0xca62c1d6u;
-    }
-    t = al_stdlib_rotl(a, 5u) + f + e + k + w[i];
-    e = d;
-    d = c;
-    c = al_stdlib_rotl(b, 30u);
-    b = a;
-    a = t;
-  }
-  h[0] += a;
-  h[1] += b;
-  h[2] += c;
-  h[3] += d;
-  h[4] += e;
-}
-
-static void al_stdlib_sha1_init(al_stdlib_sha1 *s) {
-  s->h[0] = 0x67452301u;
-  s->h[1] = 0xefcdab89u;
-  s->h[2] = 0x98badcfeu;
-  s->h[3] = 0x10325476u;
-  s->h[4] = 0xc3d2e1f0u;
-  s->length = 0u;
-  s->used = 0u;
-}
-
-static void al_stdlib_sha1_update(al_stdlib_sha1 *s, const uint8_t *data,
-                                  uint32_t length) {
-  uint32_t i;
-  s->length += length;
-  for (i = 0u; i < length; ++i) {
-    s->block[s->used++] = data[i];
-    if (s->used == 64u) {
-      al_stdlib_sha1_compress(s->h, s->block);
-      s->used = 0u;
-    }
-  }
-}
-
-static void al_stdlib_sha1_final(al_stdlib_sha1 *s, uint8_t out[20]) {
-  const uint64_t bits = s->length * 8u;
-  uint32_t i;
-  s->block[s->used++] = 0x80u;
-  if (s->used > 56u) {
-    while (s->used < 64u)
-      s->block[s->used++] = 0u;
-    al_stdlib_sha1_compress(s->h, s->block);
-    s->used = 0u;
-  }
-  while (s->used < 56u)
-    s->block[s->used++] = 0u;
-  for (i = 0u; i < 8u; ++i)
-    s->block[56u + i] = (uint8_t)(bits >> (56u - i * 8u));
-  al_stdlib_sha1_compress(s->h, s->block);
-  for (i = 0u; i < 5u; ++i) {
-    out[i * 4u] = (uint8_t)(s->h[i] >> 24);
-    out[i * 4u + 1u] = (uint8_t)(s->h[i] >> 16);
-    out[i * 4u + 2u] = (uint8_t)(s->h[i] >> 8);
-    out[i * 4u + 3u] = (uint8_t)s->h[i];
-  }
-}
-
-static void al_stdlib_hmac_sha1(const uint8_t *key, uint32_t key_length,
-                                const uint8_t *message,
-                                uint32_t message_length, uint8_t out[20]) {
-  uint8_t block[64];
-  uint8_t pad[64];
-  uint8_t inner_digest[20];
-  al_stdlib_sha1 s;
-  uint32_t i;
-  for (i = 0u; i < 64u; ++i)
-    block[i] = 0u;
-  if (key_length > 64u) {
-    al_stdlib_sha1_init(&s);
-    al_stdlib_sha1_update(&s, key, key_length);
-    al_stdlib_sha1_final(&s, block);
-  } else {
-    for (i = 0u; i < key_length; ++i)
-      block[i] = key[i];
-  }
-  for (i = 0u; i < 64u; ++i)
-    pad[i] = (uint8_t)(block[i] ^ 0x36u);
-  al_stdlib_sha1_init(&s);
-  al_stdlib_sha1_update(&s, pad, 64u);
-  al_stdlib_sha1_update(&s, message, message_length);
-  al_stdlib_sha1_final(&s, inner_digest);
-  for (i = 0u; i < 64u; ++i)
-    pad[i] = (uint8_t)(block[i] ^ 0x5cu);
-  al_stdlib_sha1_init(&s);
-  al_stdlib_sha1_update(&s, pad, 64u);
-  al_stdlib_sha1_update(&s, inner_digest, 20u);
-  al_stdlib_sha1_final(&s, out);
-  for (i = 0u; i < 64u; ++i) {
-    block[i] = 0u;
-    pad[i] = 0u;
-  }
-}
-
-/* ------------------------------------------------------------ AES-GCM */
-
-/* The OS AES-256-GCM: encrypt (input -> output, tag written) or decrypt
- * (input -> output, tag checked). Returns 1 on success, 0 for a tag
- * mismatch, -1 when the OS library is unavailable or fails. Key 32, nonce 12
- * and tag 16 bytes. */
+/* Every cryptographic primitive runs on the OS library; the runtime has no
+ * hand-written cryptography. Each function returns 1 on success and -1 when
+ * the library is unavailable or fails (AES-GCM also returns 0 for a tag
+ * mismatch); callers turn -1 into RUNTIME_OS_CRYPTO_UNAVAILABLE.
+ *
+ * An empty HMAC key (or PBKDF2 password) is passed as one zero byte: HMAC
+ * zero-pads keys to the block size, so the two keys are the same key, and
+ * some library entry points reject a zero-length secret. */
 #if defined(_WIN32)
-/* Windows CNG. Modules that call crypto.aes-256-gcm-* define
- * al_owning_os_aes_table in their generated IR with the BCrypt entry points
- * (GenerateSymmetricKey, Encrypt, Decrypt, DestroyKey); every other module
- * resolves the reference to this failing stub and imports nothing. */
-int32_t al_owning_os_aes_table_unavailable(void **table, uint32_t count) {
+/* Windows CNG. Modules that call a crypto.* primitive define
+ * al_owning_os_crypto_table in their generated IR with the BCrypt entry
+ * points (GenerateSymmetricKey, Encrypt, Decrypt, DestroyKey, Hash,
+ * DeriveKeyPBKDF2); every other module resolves the reference to this
+ * failing stub and imports nothing from bcrypt.dll. The algorithms are CNG
+ * pseudo-handles (Windows 10+), so no provider is opened per call. */
+int32_t al_owning_os_crypto_table_unavailable(void **table, uint32_t count) {
   (void)table;
   (void)count;
   return -1;
 }
-int32_t al_owning_os_aes_table(void **table, uint32_t count);
-#pragma comment(linker, "/alternatename:al_owning_os_aes_table=al_owning_os_aes_table_unavailable")
+int32_t al_owning_os_crypto_table(void **table, uint32_t count);
+#pragma comment(linker, "/alternatename:al_owning_os_crypto_table=al_owning_os_crypto_table_unavailable")
+
+#define AL_BCRYPT_SHA256_ALG_HANDLE ((void *)(uintptr_t)0x41u)
+#define AL_BCRYPT_HMAC_SHA1_ALG_HANDLE ((void *)(uintptr_t)0xa1u)
+#define AL_BCRYPT_HMAC_SHA256_ALG_HANDLE ((void *)(uintptr_t)0xb1u)
+#define AL_BCRYPT_AES_GCM_ALG_HANDLE ((void *)(uintptr_t)0x1e1u)
+#define AL_OS_CRYPTO_ENTRIES 6u
 
 /* BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO, filled field by field. */
 typedef struct {
@@ -217,25 +93,108 @@ typedef int32_t (*al_bcrypt_crypt_fn)(void *, uint8_t *, uint32_t, void *,
                                        uint8_t *, uint32_t, uint8_t *,
                                        uint32_t, uint32_t *, uint32_t);
 typedef int32_t (*al_bcrypt_destroy_key_fn)(void *);
+typedef int32_t (*al_bcrypt_hash_fn)(void *, uint8_t *, uint32_t, uint8_t *,
+                                      uint32_t, uint8_t *, uint32_t);
+typedef int32_t (*al_bcrypt_pbkdf2_fn)(void *, uint8_t *, uint32_t, uint8_t *,
+                                        uint32_t, uint64_t, uint8_t *,
+                                        uint32_t, uint32_t);
+
+static int32_t al_os_crypto_entries(void **table) {
+  uint32_t k;
+  for (k = 0u; k < AL_OS_CRYPTO_ENTRIES; ++k)
+    table[k] = 0;
+  if (al_owning_os_crypto_table(table, AL_OS_CRYPTO_ENTRIES) != 0)
+    return 0;
+  for (k = 0u; k < AL_OS_CRYPTO_ENTRIES; ++k)
+    if (table[k] == 0)
+      return 0;
+  return 1;
+}
+
+/* One-shot BCryptHash: a digest (no secret) or an HMAC (secret). */
+static int32_t al_os_bcrypt_hash(void *algorithm, int32_t keyed,
+                                 const uint8_t *secret, uint32_t secret_length,
+                                 const uint8_t *data, uint32_t length,
+                                 uint8_t *out, uint32_t out_length) {
+  void *table[AL_OS_CRYPTO_ENTRIES];
+  uint8_t zero[1];
+  zero[0] = 0u;
+  if (!al_os_crypto_entries(table))
+    return -1;
+  if (keyed && secret_length == 0u) {
+    secret = zero;
+    secret_length = 1u;
+  }
+  return ((al_bcrypt_hash_fn)table[4])(
+             algorithm, keyed ? (uint8_t *)secret : 0, keyed ? secret_length : 0u,
+             length != 0u ? (uint8_t *)data : zero, length, out,
+             out_length) < 0
+             ? -1
+             : 1;
+}
+
+static int32_t al_os_sha256(const uint8_t *data, uint32_t length,
+                            uint8_t out[32]) {
+  return al_os_bcrypt_hash(AL_BCRYPT_SHA256_ALG_HANDLE, 0, 0, 0u, data, length,
+                           out, 32u);
+}
+
+/* HMAC-SHA1 (20-byte digest) or HMAC-SHA256 (32 bytes). */
+static int32_t al_os_hmac(int32_t sha1, const uint8_t *key,
+                          uint32_t key_length, const uint8_t *data,
+                          uint32_t length, uint8_t *out) {
+  return al_os_bcrypt_hash(sha1 ? AL_BCRYPT_HMAC_SHA1_ALG_HANDLE
+                                : AL_BCRYPT_HMAC_SHA256_ALG_HANDLE,
+                           1, key, key_length, data, length, out,
+                           sha1 ? 20u : 32u);
+}
+
+static int32_t al_os_pbkdf2_sha256(const uint8_t *password,
+                                   uint32_t password_length,
+                                   const uint8_t *salt, uint32_t salt_length,
+                                   uint64_t iterations, uint8_t *out,
+                                   uint32_t out_length) {
+  void *table[AL_OS_CRYPTO_ENTRIES];
+  uint8_t zero[1];
+  zero[0] = 0u;
+  if (!al_os_crypto_entries(table))
+    return -1;
+  if (password_length == 0u) {
+    password = zero;
+    password_length = 1u;
+  }
+  return ((al_bcrypt_pbkdf2_fn)table[5])(
+             AL_BCRYPT_HMAC_SHA256_ALG_HANDLE, (uint8_t *)password,
+             password_length, salt_length != 0u ? (uint8_t *)salt : zero,
+             salt_length, iterations, out, out_length, 0u) < 0
+             ? -1
+             : 1;
+}
+
+/* Windows has no constant-time compare in CNG, so the runtime keeps its
+ * XOR-accumulate loop (no early exit, time depends only on the lengths). */
+static int32_t al_os_equal_constant_time(const uint8_t *x, const uint8_t *y,
+                                         uint32_t length) {
+  uint32_t difference = 0u;
+  uint32_t i;
+  for (i = 0u; i < length; ++i)
+    difference |= (uint32_t)(x[i] ^ y[i]);
+  return difference == 0u;
+}
 
 static int32_t al_os_aes_gcm(int32_t encrypt, const uint8_t *key,
                              const uint8_t *nonce, const uint8_t *aad,
                              uint32_t aad_length, const uint8_t *input,
                              uint32_t length, uint8_t *output, uint8_t *tag) {
-  void *table[4];
+  void *table[AL_OS_CRYPTO_ENTRIES];
   void *handle = 0;
   al_bcrypt_auth_info info;
   uint8_t empty[1];
   uint32_t result = 0u;
   int32_t status;
-  table[0] = 0;
-  table[1] = 0;
-  table[2] = 0;
-  table[3] = 0;
-  if (al_owning_os_aes_table(table, 4u) != 0 || table[0] == 0)
+  if (!al_os_crypto_entries(table))
     return -1;
-  /* BCRYPT_AES_GCM_ALG_HANDLE is a pseudo-handle: no provider to open. */
-  if (((al_bcrypt_generate_key_fn)table[0])((void *)(uintptr_t)0x1e1u,
+  if (((al_bcrypt_generate_key_fn)table[0])(AL_BCRYPT_AES_GCM_ALG_HANDLE,
                                             &handle, 0, 0u, (uint8_t *)key,
                                             32u, 0u) < 0)
     return -1;
@@ -262,8 +221,22 @@ static int32_t al_os_aes_gcm(int32_t encrypt, const uint8_t *key,
   return status < 0 || result != length ? -1 : 1;
 }
 #else
-/* Linux: OpenSSL libcrypto (EVP), weakly referenced so a module that does not
- * link libcrypto still loads; the entry points are then null. */
+/* Linux: OpenSSL libcrypto, weakly referenced so a module that does not link
+ * libcrypto still loads; the entry points are then null and every crypto
+ * primitive reports the library unavailable. Link with
+ * -Wl,--no-as-needed -lcrypto. size_t is unsigned long on LP64 Linux. */
+extern const void *EVP_sha1(void) __attribute__((weak));
+extern const void *EVP_sha256(void) __attribute__((weak));
+extern int EVP_Digest(const void *, unsigned long, uint8_t *, unsigned int *,
+                      const void *, void *) __attribute__((weak));
+extern uint8_t *HMAC(const void *, const void *, int, const uint8_t *,
+                     unsigned long, uint8_t *, unsigned int *)
+    __attribute__((weak));
+extern int PKCS5_PBKDF2_HMAC(const char *, int, const uint8_t *, int, int,
+                             const void *, int, uint8_t *)
+    __attribute__((weak));
+extern int CRYPTO_memcmp(const void *, const void *, unsigned long)
+    __attribute__((weak));
 extern void *EVP_CIPHER_CTX_new(void) __attribute__((weak));
 extern void EVP_CIPHER_CTX_free(void *) __attribute__((weak));
 extern const void *EVP_aes_256_gcm(void) __attribute__((weak));
@@ -278,6 +251,75 @@ extern int EVP_DecryptUpdate(void *, uint8_t *, int *, const uint8_t *, int)
     __attribute__((weak));
 extern int EVP_DecryptFinal_ex(void *, uint8_t *, int *) __attribute__((weak));
 extern int EVP_CIPHER_CTX_ctrl(void *, int, int, void *) __attribute__((weak));
+
+static int32_t al_os_sha256(const uint8_t *data, uint32_t length,
+                            uint8_t out[32]) {
+  uint8_t zero[1];
+  unsigned int produced = 0u;
+  zero[0] = 0u;
+  if (EVP_Digest == 0 || EVP_sha256 == 0)
+    return -1;
+  return EVP_Digest(length != 0u ? data : zero, length, out, &produced,
+                    EVP_sha256(), 0) == 1 &&
+                 produced == 32u
+             ? 1
+             : -1;
+}
+
+static int32_t al_os_hmac(int32_t sha1, const uint8_t *key,
+                          uint32_t key_length, const uint8_t *data,
+                          uint32_t length, uint8_t *out) {
+  uint8_t zero[1];
+  unsigned int produced = 0u;
+  zero[0] = 0u;
+  if (HMAC == 0 || EVP_sha1 == 0 || EVP_sha256 == 0 || key_length > 0x7fffffffu)
+    return -1;
+  if (key_length == 0u) {
+    key = zero;
+    key_length = 1u;
+  }
+  return HMAC(sha1 ? EVP_sha1() : EVP_sha256(), key, (int)key_length,
+              length != 0u ? data : zero, length, out, &produced) != 0 &&
+                 produced == (sha1 ? 20u : 32u)
+             ? 1
+             : -1;
+}
+
+static int32_t al_os_pbkdf2_sha256(const uint8_t *password,
+                                   uint32_t password_length,
+                                   const uint8_t *salt, uint32_t salt_length,
+                                   uint64_t iterations, uint8_t *out,
+                                   uint32_t out_length) {
+  uint8_t zero[1];
+  zero[0] = 0u;
+  if (PKCS5_PBKDF2_HMAC == 0 || EVP_sha256 == 0 ||
+      password_length > 0x7fffffffu || salt_length > 0x7fffffffu ||
+      iterations > 0x7fffffffu || out_length > 0x7fffffffu)
+    return -1;
+  if (password_length == 0u) {
+    password = zero;
+    password_length = 1u;
+  }
+  return PKCS5_PBKDF2_HMAC((const char *)password, (int)password_length,
+                           salt_length != 0u ? salt : zero, (int)salt_length,
+                           (int)iterations, EVP_sha256(), (int)out_length,
+                           out) == 1
+             ? 1
+             : -1;
+}
+
+/* CRYPTO_memcmp when libcrypto is linked; otherwise the same
+ * XOR-accumulate loop (a compare, not a cipher). */
+static int32_t al_os_equal_constant_time(const uint8_t *x, const uint8_t *y,
+                                         uint32_t length) {
+  uint32_t difference = 0u;
+  uint32_t i;
+  if (CRYPTO_memcmp != 0)
+    return CRYPTO_memcmp(x, y, length) == 0;
+  for (i = 0u; i < length; ++i)
+    difference |= (uint32_t)(x[i] ^ y[i]);
+  return difference == 0u;
+}
 
 static int32_t al_os_aes_gcm(int32_t encrypt, const uint8_t *key,
                              const uint8_t *nonce, const uint8_t *aad,
@@ -1147,16 +1189,16 @@ static int32_t al_stdlib2_emit(al_owning_stack_context *ctx, int32_t op,
   const uint8_t *y = al_stdlib_data(ctx, a[1]);
   uint32_t ks, ke, vs, ve, cursor;
   switch (op) {
-  case AL_STDLIB_HMAC_SHA1: {
-    uint8_t digest[20];
-    uint32_t i;
-    for (i = 0u; i < 20u; ++i)
-      digest[i] = 0u;
-    if (w->base != 0)
-      al_stdlib_hmac_sha1(x, n[0], y, n[1], digest);
-    al_stdlib_text(w, digest, 20u);
+  case AL_STDLIB_HMAC_SHA1:
+    al_stdlib_begin_text(w, 20u);
+    if (w->base != 0 &&
+        al_os_hmac(1, x, n[0], y, n[1], w->base + w->extent) != 1) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id, 1u, 0u);
+      return 0;
+    }
+    w->extent += 20u;
+    al_stdlib_pad(w);
     return 1;
-  }
   case AL_STDLIB_AES_SEAL: {
     if (n[0] != 32u || n[1] != 12u) {
       al_stdlib_none(w);

@@ -3800,8 +3800,10 @@ module OwningStackAot =
         // define al_owning_os_random_fill and import BCryptGenRandom.
         let usesOsRandom = ref false
         // Set when crypto.aes-256-gcm-* is emitted: only then does the module
-        // define al_owning_os_aes_table and import the BCrypt AES entry points.
-        let usesOsAes = ref false
+        // define al_owning_os_crypto_table and import the BCrypt entry points.
+        // Every crypto.* primitive except random-bytes runs on the OS library.
+        let usesOsCrypto = ref false
+        let isOsCryptoPrimitive (operation: string) = operation.StartsWith "crypto." && operation <> "crypto.random-bytes"
         let mutable diagnosticRole: string option = None
         let addDiagnostic code message word span expected actual =
             diagnostics.Add
@@ -6169,7 +6171,7 @@ module OwningStackAot =
                                 // each result (String, Bytes, Option or List) at the cursor.
                                 let opId, _, outputs = OwningStdlib.operations[operation]
                                 if operation = "crypto.random-bytes" then usesOsRandom.Value <- true
-                                if operation.StartsWith "crypto.aes-256-gcm-" then usesOsAes.Value <- true
+                                if isOsCryptoPrimitive operation then usesOsCrypto.Value <- true
                                 let resultType = List.exactlyOne outputs
                                 let slots = arguments |> List.collect (fun value -> [ value.Offset; value.Extent ])
                                 let slots = slots @ List.replicate (16 - slots.Length) "0"
@@ -6177,8 +6179,8 @@ module OwningStackAot =
                                 let errorId =
                                     if operation = "crypto.random-bytes" then
                                         addDiagnostic "RUNTIME_RANDOM_BYTES_RANGE" "crypto.random-bytes takes a count from 0 to 65536." currentOwner instructionSpan [ "0..65536" ] []
-                                    elif operation.StartsWith "crypto.aes-256-gcm-" then
-                                        addDiagnostic "RUNTIME_OS_CRYPTO_UNAVAILABLE" $"{operation} needs the OS AES-GCM library (BCrypt on Windows, libcrypto on Linux) and stack space for the plaintext." currentOwner instructionSpan [] []
+                                    elif isOsCryptoPrimitive operation then
+                                        addDiagnostic "RUNTIME_OS_CRYPTO_UNAVAILABLE" $"{operation} needs the OS crypto library (BCrypt on Windows, libcrypto on Linux; AES-GCM open also needs stack space for the plaintext)." currentOwner instructionSpan [] []
                                     else
                                         addDiagnostic "RUNTIME_STDLIB_RESULT_RANGE" $"{operation} exceeds the bounded byte range." currentOwner instructionSpan [] []
                                 match resultType with
@@ -7702,14 +7704,17 @@ module OwningStackAot =
             writer.Line("  %status = call i32 @BCryptGenRandom(ptr null, ptr %buffer, i32 %length, i32 2)")
             writer.Line("  ret i32 %status")
             writer.Line("}")
-        if usesOsAes.Value then
-            // The runtime calls BCrypt AES-GCM through this table (generate
-            // key, encrypt, decrypt, destroy key); other modules get its stub.
+        if usesOsCrypto.Value then
+            // The runtime calls BCrypt through this table (generate key,
+            // encrypt, decrypt, destroy key, hash, PBKDF2); other modules get
+            // its failing stub and import nothing from bcrypt.dll.
             writer.Line("declare dllimport i32 @BCryptGenerateSymmetricKey(ptr, ptr, ptr, i32, ptr, i32, i32)")
             writer.Line("declare dllimport i32 @BCryptEncrypt(ptr, ptr, i32, ptr, ptr, i32, ptr, i32, ptr, i32)")
             writer.Line("declare dllimport i32 @BCryptDecrypt(ptr, ptr, i32, ptr, ptr, i32, ptr, i32, ptr, i32)")
             writer.Line("declare dllimport i32 @BCryptDestroyKey(ptr)")
-            writer.Line("define i32 @al_owning_os_aes_table(ptr %table, i32 %count) {")
+            writer.Line("declare dllimport i32 @BCryptHash(ptr, ptr, i32, ptr, i32, ptr, i32)")
+            writer.Line("declare dllimport i32 @BCryptDeriveKeyPBKDF2(ptr, ptr, i32, ptr, i32, i64, ptr, i32, i32)")
+            writer.Line("define i32 @al_owning_os_crypto_table(ptr %table, i32 %count) {")
             writer.Line("entry:")
             writer.Line("  store ptr @BCryptGenerateSymmetricKey, ptr %table, align 8")
             writer.Line("  %slot1 = getelementptr inbounds ptr, ptr %table, i64 1")
@@ -7718,6 +7723,10 @@ module OwningStackAot =
             writer.Line("  store ptr @BCryptDecrypt, ptr %slot2, align 8")
             writer.Line("  %slot3 = getelementptr inbounds ptr, ptr %table, i64 3")
             writer.Line("  store ptr @BCryptDestroyKey, ptr %slot3, align 8")
+            writer.Line("  %slot4 = getelementptr inbounds ptr, ptr %table, i64 4")
+            writer.Line("  store ptr @BCryptHash, ptr %slot4, align 8")
+            writer.Line("  %slot5 = getelementptr inbounds ptr, ptr %table, i64 5")
+            writer.Line("  store ptr @BCryptDeriveKeyPBKDF2, ptr %slot5, align 8")
             writer.Line("  ret i32 0")
             writer.Line("}")
         let metadataPerFrameBytes = frameTexts |> Seq.map explicitAllocaBoundBytes |> Seq.fold max 0
