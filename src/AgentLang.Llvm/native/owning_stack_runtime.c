@@ -3644,6 +3644,8 @@ int32_t al_owning_html_template_plan(al_owning_stack_context *ctx,
 int32_t al_owning_html_template_write(al_owning_stack_context *ctx,
                                       uint32_t destination_offset,
                                       uint32_t destination_extent_bytes,
+                                      uint32_t planned_string_bytes,
+                                      uint32_t planned_payload_bytes,
                                       const al_owning_template_part *parts,
                                       uint32_t count, uint32_t type_id,
                                       uint32_t error_id) {
@@ -3654,9 +3656,25 @@ int32_t al_owning_html_template_write(al_owning_stack_context *ctx,
   uint32_t index;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
+#if AL_OWNING_TRUSTED_GENERATED
+  /* The generated code just ran the plan over these same parts and reserved
+   * its extent; nothing ran in between, so writing does not plan twice
+   * (report 269). */
+  string_bytes = planned_string_bytes;
+  payload = planned_payload_bytes;
+  extent = destination_extent_bytes;
+#else
+  /* Diagnostic self-check: the plan must reproduce the caller's numbers. */
   if (al_owning_html_template_plan(ctx, parts, count, error_id, &string_bytes,
                                    &payload, &extent) != 0)
     return 1;
+  if (string_bytes != planned_string_bytes || payload != planned_payload_bytes ||
+      extent != destination_extent_bytes) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, extent,
+                          destination_extent_bytes);
+    return 1;
+  }
+#endif
   /* The destination is the fresh cursor: every stack hole lies below it. */
   for (index = 0u; index < count; ++index) {
     if (parts[index].bytes == 0 &&

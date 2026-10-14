@@ -1,0 +1,296 @@
+{
+  "archiveFile": "269-trusted-ir-cleanup-and-profile-evidence.zip",
+  "archiveSha256": "f055c5474edec6f2bd46ed019030a49f472292bfd4b51842531912132f7eca82",
+  "archiveSizeBytes": 169036,
+  "entryCount": 49,
+  "entries": [
+    {
+      "archivePath": "gates/acceptance.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/acceptance.log",
+      "sha256": "7a67b4949dc0263341916304b1dd6fd0d62dc561fe6b9b0bb53e667af24c4b8b",
+      "sizeBytes": 1398
+    },
+    {
+      "archivePath": "gates/arena-lifetime.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/arena-lifetime.log",
+      "sha256": "81081f1023fa5a5537e2801654f972f5123ad74dc148bbf6b82abe2a6833a93a",
+      "sizeBytes": 59
+    },
+    {
+      "archivePath": "gates/campfire-views.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/campfire-views.log",
+      "sha256": "f010825749af94f0b9ae76337d86bd2498553c4e377dd1122b0cfcb67e112044",
+      "sizeBytes": 271
+    },
+    {
+      "archivePath": "gates/campfire.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/campfire.log",
+      "sha256": "204abda53e0bdfb9d1c43bde2c947b1e6b87973b4bd77858b9d2cd03ac6da9cb",
+      "sizeBytes": 11244
+    },
+    {
+      "archivePath": "gates/flow-runtime-tests.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/flow-runtime-tests.log",
+      "sha256": "28f04d0c00ca7eea6fa048205849b8b058a318b1a3137de2ef07fb51b7018102",
+      "sizeBytes": 56
+    },
+    {
+      "archivePath": "gates/flow-tests.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/flow-tests.log",
+      "sha256": "60911b1a754d4b0b175a0bb5283ca8f56544301ec3b117c380621de3435bd5f7",
+      "sizeBytes": 36
+    },
+    {
+      "archivePath": "gates/ir-interpreter.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/ir-interpreter.log",
+      "sha256": "7e39bf8a8dfd4c33c0fa8ccbe70827ea3dc7a60c6d1edf0517993734d3f2b36e",
+      "sizeBytes": 47
+    },
+    {
+      "archivePath": "gates/ir-parity.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/ir-parity.log",
+      "sha256": "49a25d33d011f831c784cd3e964e4dd9f89fbc7ee81eb9bc2448a868b9a21247",
+      "sizeBytes": 103
+    },
+    {
+      "archivePath": "gates/llvm-full-suite.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/llvm-full-suite.log",
+      "sha256": "1a1cd31ad2a28dc31e310ed5f042f0de72942e81ddfab97b314dfc4a1582ebee",
+      "sizeBytes": 3612
+    },
+    {
+      "archivePath": "gates/native-conformance.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/native-conformance.log",
+      "sha256": "10f3532bb50739105ff295f17a0a31c4867539f868a17b1642c261034202c8fe",
+      "sizeBytes": 3636
+    },
+    {
+      "archivePath": "gates/native-value-stack.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/native-value-stack.log",
+      "sha256": "2788b60ec1d4cdb513cd3a0a4efebdfeef5843d6259c55e331a10222f11796d9",
+      "sizeBytes": 177
+    },
+    {
+      "archivePath": "gates/owning-compact.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/owning-compact.log",
+      "sha256": "d1ce668d3ae35f61a8f3c9170c8a41e5a2194f80039089b35157d9b986a7bc32",
+      "sizeBytes": 148
+    },
+    {
+      "archivePath": "gates/owning-html.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/owning-html.log",
+      "sha256": "e4b508bd4beffe73fd1f33dbf223fff9cfc619a5332d4a5574ce23f1c1375698",
+      "sizeBytes": 145
+    },
+    {
+      "archivePath": "gates/owning-list-ops.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/owning-list-ops.log",
+      "sha256": "6af46ecf1072b960bf9824116f4c4e84b9f70c776ce189705df0a81c89938f25",
+      "sizeBytes": 158
+    },
+    {
+      "archivePath": "gates/owning-listbuild.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/owning-listbuild.log",
+      "sha256": "80d078e53dd5227e12eba4276b7b901c33b8380e137d1c4432775c783c8f610c",
+      "sizeBytes": 154
+    },
+    {
+      "archivePath": "gates/owning-lists.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/owning-lists.log",
+      "sha256": "54ab863185be6d43397f1fe90fc68e79a06f155481b5710e46babd2b54af8d87",
+      "sizeBytes": 199
+    },
+    {
+      "archivePath": "gates/owning-mailbox.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/owning-mailbox.log",
+      "sha256": "d10c6adc427e410333476e3d670860a59032c553fb76f3f86667f1f257eda0e1",
+      "sizeBytes": 1134
+    },
+    {
+      "archivePath": "gates/owning-templates.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/owning-templates.log",
+      "sha256": "7b8a471768508fe985d0fc69dd833125b3751538af80ebe5454f37b2ea691728",
+      "sizeBytes": 154
+    },
+    {
+      "archivePath": "gates/owning-utf8.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/owning-utf8.log",
+      "sha256": "8575d3ee03f5b27502fa7eef1156542075f23e78ba43a844b40395beac1c8723",
+      "sizeBytes": 143
+    },
+    {
+      "archivePath": "gates/room-read-diagnostic-off.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/room-read-diagnostic-off.log",
+      "sha256": "ef1f4286a808ed73705659d6133d20b70d3a8870a81a462bc3d390dee8d2ea35",
+      "sizeBytes": 12823
+    },
+    {
+      "archivePath": "gates/room-read-trusted-off.log",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/room-read-trusted-off.log",
+      "sha256": "68e2debd28f48ab04f780e74906edee2301bee13e25ff83915de47000afb2ebe",
+      "sizeBytes": 12829
+    },
+    {
+      "archivePath": "gates/summary.json",
+      "sourcePath": ".agentlang/ir-269/gates-20261014T030637Z/summary.json",
+      "sha256": "587ceb8b0d15be5549f9b8e14c2793036ecd79bae50ac083d1cade9e6e4bffad",
+      "sizeBytes": 6105
+    },
+    {
+      "archivePath": "template-receipts/20261014T025654299Z-dca26795a1984cb1998bee105add8a1d.json",
+      "sourcePath": ".agentlang/templates-266/views-runs/20261014T025654299Z-dca26795a1984cb1998bee105add8a1d/receipt.json",
+      "sha256": "bacfb8d2fd34f684a0f506ed8c92c8b24089cc71c6f276ccf0d4ae62be69d15e",
+      "sizeBytes": 591
+    },
+    {
+      "archivePath": "template-receipts/20261014T025938282Z-4b6a5d054c624bc0acf7dcc52089d6db.json",
+      "sourcePath": ".agentlang/templates-266/views-runs/20261014T025938282Z-4b6a5d054c624bc0acf7dcc52089d6db/receipt.json",
+      "sha256": "3f03ac1748b53ab56c98fcba4e7235c20d7b94a85cb1bac8937a38466c74f0c7",
+      "sizeBytes": 591
+    },
+    {
+      "archivePath": "template-receipts/20261014T031321008Z-e52d8f9f9e3046b896deacd3bec3730d.json",
+      "sourcePath": ".agentlang/templates-266/views-runs/20261014T031321008Z-e52d8f9f9e3046b896deacd3bec3730d/receipt.json",
+      "sha256": "130f7b70db44e2b058c882435a9a283730e2529debc78caa1d8e59e166be0bfa",
+      "sizeBytes": 591
+    },
+    {
+      "archivePath": "room-read-receipts/profile-check.json",
+      "sourcePath": ".agentlang/campfire-native-room-read-252/test-runs/profile-check/test-receipt.json",
+      "sha256": "f6d2e633b8da3b1bcea19fec8411f57788b8534e8ec92b0804eee9f53d1b54cb",
+      "sizeBytes": 99
+    },
+    {
+      "archivePath": "room-read-receipts/profile-check-2.json",
+      "sourcePath": ".agentlang/campfire-native-room-read-252/test-runs/profile-check-2/test-receipt.json",
+      "sha256": "b9d887c14777ba82adadb193f436ff9a44c3479264dddde2c8213f7d94c051da",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "bench/quick-269-ir-cleanup-1/summary.json",
+      "sourcePath": ".agentlang/campfire-bench/runs/quick-269-ir-cleanup-1/summary.json",
+      "sha256": "688a26aeddf229dc7cde8e43561403aa1df98f8aa4bed3f3c8fb6ada59f79ecc",
+      "sizeBytes": 588
+    },
+    {
+      "archivePath": "bench/quick-269-ir-cleanup-1/timed.json",
+      "sourcePath": ".agentlang/campfire-bench/runs/quick-269-ir-cleanup-1/timed.json",
+      "sha256": "c2917260b118c22e09319b7b8bca61fb5900ae8cc86920e5e9ac02db5ab3543b",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "bench/quick-269-ir-cleanup-1/driver.log",
+      "sourcePath": ".agentlang/campfire-bench/runs/quick-269-ir-cleanup-1/driver.log",
+      "sha256": "2375627ed3bd4b70575af4ab7d827635bc38c3346facc15d6c1d438df5010c1c",
+      "sizeBytes": 530
+    },
+    {
+      "archivePath": "bench/quick-269-ir-cleanup-2/summary.json",
+      "sourcePath": ".agentlang/campfire-bench/runs/quick-269-ir-cleanup-2/summary.json",
+      "sha256": "c5835ad3e5cf9f8a68cddcd39a9c947d6a1c075dc2e2042c51a5351fa6e45c99",
+      "sizeBytes": 588
+    },
+    {
+      "archivePath": "bench/quick-269-ir-cleanup-2/timed.json",
+      "sourcePath": ".agentlang/campfire-bench/runs/quick-269-ir-cleanup-2/timed.json",
+      "sha256": "eca72b344939179fb4d46dc2abbd74dffb0f995bacc6f81b54f997a0eb3718ba",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "bench/quick-269-ir-cleanup-2/driver.log",
+      "sourcePath": ".agentlang/campfire-bench/runs/quick-269-ir-cleanup-2/driver.log",
+      "sha256": "25c4e8102d2bfa51ca7af2492b7031380a080b654afc8ac5afb380715e3e628f",
+      "sizeBytes": 530
+    },
+    {
+      "archivePath": "profile/profile-analysis-269.json",
+      "sourcePath": ".agentlang/campfire-native-profile-256/profile-analysis-269.json",
+      "sha256": "c9ad48bf3fa39d053c98cd68d2d7ff9f7d19dcf0078da89bfb05c39fb8de72f9",
+      "sizeBytes": 41940
+    },
+    {
+      "archivePath": "profile/profile-analysis-269.md",
+      "sourcePath": ".agentlang/campfire-native-profile-256/profile-analysis-269.md",
+      "sha256": "340cf65e04ddff3d1d83e78135beb1c7799160dac189492de232ebbbc7141601",
+      "sizeBytes": 4993
+    },
+    {
+      "archivePath": "profile/Run-Cycle-269.ps1",
+      "sourcePath": ".agentlang/campfire-native-profile-256/Run-Cycle-269.ps1",
+      "sha256": "5de01065d4810ecfd4b1b9e801e9ef2a4762bf3253b2c11b1e94883746e4937a",
+      "sizeBytes": 4854
+    },
+    {
+      "archivePath": "profile/Measure-269.ps1",
+      "sourcePath": ".agentlang/campfire-native-profile-256/Measure-269.ps1",
+      "sha256": "25e107c725cafced8b9fbe7abc9f29a043efe6b033cdd6b6602c7c403c010225",
+      "sizeBytes": 8232
+    },
+    {
+      "archivePath": "profile/Fetch-Hash-269.ps1",
+      "sourcePath": ".agentlang/campfire-native-profile-256/Fetch-Hash-269.ps1",
+      "sha256": "cd14eae72a0cb5a1323a4090e9d6ee5873971cb5d55222210d446b8f8ace422a",
+      "sizeBytes": 4868
+    },
+    {
+      "archivePath": "tools/Native-Bench.ps1",
+      "sourcePath": ".agentlang/campfire-bench/Native-Bench.ps1",
+      "sha256": "6cba65fba5a01ed372426279331bbd2968f32dd2e07651123a6be1df5658bbbf",
+      "sizeBytes": 5617
+    },
+    {
+      "archivePath": "tools/Quick-Bench.ps1",
+      "sourcePath": ".agentlang/campfire-bench/Quick-Bench.ps1",
+      "sha256": "1fa21efea579771e13fb5bc3c802a8d59e3ed478feb0016b0892ca5119e7181b",
+      "sizeBytes": 3576
+    },
+    {
+      "archivePath": "tools/reference-records.json",
+      "sourcePath": ".agentlang/campfire-bench/reference-records.json",
+      "sha256": "2d6dfec4beded8f89f669b4aad9c322c33a2b1753a22d82dce69ff6b653e019b",
+      "sizeBytes": 653
+    },
+    {
+      "archivePath": "tools/history.jsonl",
+      "sourcePath": ".agentlang/campfire-bench/history.jsonl",
+      "sha256": "e6345ef4f41ac61c487016dd1b6cee075f7992bb129e7808e6cb49a5142ab66f",
+      "sizeBytes": 3178
+    },
+    {
+      "archivePath": "tools/Run-Gates.ps1",
+      "sourcePath": ".agentlang/ir-269/Run-Gates.ps1",
+      "sha256": "8737452e9bea9f6b9453785e568da901f41658caf51ad153f3cfcbc23cddc40e",
+      "sizeBytes": 3905
+    },
+    {
+      "archivePath": "tools/seal_269.py",
+      "sourcePath": ".agentlang/ir-269/seal_269.py",
+      "sha256": "16890b0c0fdee4877e13d84121dd050659b35d9c7e9e59af34165f96576fbf60",
+      "sizeBytes": 4466
+    },
+    {
+      "archivePath": "sources/docs/PENDING-REVIEW.md",
+      "sourcePath": "docs/PENDING-REVIEW.md",
+      "sha256": "897ba3418f9cfbcca1c806d7462dae4c9f88be9164516a4c9005fb9f046db0d4",
+      "sizeBytes": 7643
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Llvm/OwningStackAot.fs",
+      "sourcePath": "src/AgentLang.Llvm/OwningStackAot.fs",
+      "sha256": "4878ae4376973b0dffeb3c38bc5b3a0d1510c1051b2d510b771ec02799e31fce",
+      "sizeBytes": 569914
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "sourcePath": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "sha256": "173e7a09ed7e2fb6ba0e49d40bf95ef4e7214fce4d5f85c8b475e2dde47a0f39",
+      "sizeBytes": 183802
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "sourcePath": "src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "sha256": "e075795252cce92d51aebb8a41db24d2626d113a503920b2a6347ab584feef7e",
+      "sizeBytes": 18566
+    }
+  ]
+}

@@ -282,6 +282,8 @@ int32_t al_owning_html_template_plan(al_owning_stack_context *ctx,
 int32_t al_owning_html_template_write(al_owning_stack_context *ctx,
                                       uint32_t destination_offset,
                                       uint32_t destination_extent_bytes,
+                                      uint32_t planned_string_bytes,
+                                      uint32_t planned_payload_bytes,
                                       const al_owning_template_part *parts,
                                       uint32_t count, uint32_t type_id,
                                       uint32_t error_id);

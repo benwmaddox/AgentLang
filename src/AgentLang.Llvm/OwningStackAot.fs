@@ -3790,7 +3790,7 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_string_html_escape_write(ptr, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_html_fragment(ptr, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_html_template_plan(ptr, ptr, i32, i32, ptr, ptr, ptr)")
-        writer.Line("declare i32 @al_owning_html_template_write(ptr, i32, i32, ptr, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_html_template_write(ptr, i32, i32, i32, i32, ptr, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_find(ptr, i32, i32, i32, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_list_combine_header(ptr, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_join_parts_plan(ptr, ptr, i32, i32, ptr, ptr, ptr)")
@@ -3871,6 +3871,14 @@ module OwningStackAot =
         let emitCopyRange (w: OwningLlvmWriter) destination source extent payload typeId failureLabel =
             w.Inst($"call void @al_owning_copy_range(ptr %%ctx, i32 {destination}, i32 {source}, i32 {extent}, i32 {payload}, i32 {typeId}, i32 6)")
             emitRuntimeStatus w "%ctx" failureLabel
+        // Layout trace events feed the diagnostic profile's trace; the trusted
+        // runtime's event is empty, so trusted IR does not call it (report 269).
+        let emitTraceEvent (w: OwningLlvmWriter) (callText: string) failureLabel =
+            match runtimeProfile with
+            | OwningRuntimeProfile.Diagnostic ->
+                w.Inst callText
+                emitRuntimeStatus w "%ctx" failureLabel
+            | OwningRuntimeProfile.TrustedGenerated -> ()
 
         let emitDescriptorElementPointer (w: OwningLlvmWriter) descriptorArray index =
             let pointer = w.Fresh "descriptor.element"
@@ -3909,14 +3917,12 @@ module OwningStackAot =
             // Trace fields describe the descriptor: Offset is its payload offset,
             // Extent is five i32 metadata fields, Payload is informational, and
             // SourceOffset/SourceExtent carry ownerEnd and the payload extent.
-            w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 17, i32 {typeId entry.Type}, i32 {entry.Offset}, i32 20, i32 {entry.Payload}, i32 {entry.OwnerEnd}, i32 {entry.Extent})")
-            emitRuntimeStatus w "%ctx" failureLabel
+            emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 17, i32 {typeId entry.Type}, i32 {entry.Offset}, i32 20, i32 {entry.Payload}, i32 {entry.OwnerEnd}, i32 {entry.Extent})" failureLabel
 
         let emitArenaRewind (w: OwningLlvmWriter) mark failureLabel =
             let cursor = emitContextLoad w "%ctx" 2
             let released = emitSub w cursor mark
-            w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 18, i32 0, i32 {mark}, i32 {released}, i32 0, i32 0, i32 0)")
-            emitRuntimeStatus w "%ctx" failureLabel
+            emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 18, i32 0, i32 {mark}, i32 {released}, i32 0, i32 0, i32 0)" failureLabel
             w.Inst($"call void @al_owning_release_to(ptr %%ctx, i32 {mark}, i32 0, i32 0, i32 0)")
             emitRuntimeStatus w "%ctx" failureLabel
 
@@ -4432,8 +4438,7 @@ module OwningStackAot =
                     // Dropping a descriptor only removes a logical operand. Its payload
                     // remains in the arena until a compiler-proved enclosing rewind.
                     let entry = entries[index]
-                    w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 3, i32 {typeId entry.Type}, i32 {entry.Offset}, i32 {entry.Extent}, i32 {entry.Payload}, i32 0, i32 0)")
-                    emitRuntimeStatus w "%ctx" failBody
+                    emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 3, i32 {typeId entry.Type}, i32 {entry.Offset}, i32 {entry.Extent}, i32 {entry.Payload}, i32 0, i32 0)" failBody
                 let emitSumPayloadConstruction sumType caseTag prefix (child: OwningDynamicStackEntry) instructionSpan =
                     let cursor = emitContextLoad w "%ctx" 2
                     let sumExtent = emitOffset w "8" child.Extent
@@ -4446,8 +4451,7 @@ module OwningStackAot =
                     let childDestination = emitOffset w cursor "8"
                     emitCopyRange w childDestination child.Offset child.Extent child.Payload (typeId child.Type) failBody
                     emitUpdateLive w "8" "0" failBody
-                    w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId sumType}, i32 {cursor}, i32 {sumExtent}, i32 {sumPayload}, i32 {child.Offset}, i32 {child.Extent})")
-                    emitRuntimeStatus w "%ctx" failBody
+                    emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId sumType}, i32 {cursor}, i32 {sumExtent}, i32 {sumPayload}, i32 {child.Offset}, i32 {child.Extent})" failBody
                     push prefix sumType cursor sumExtent sumPayload next
                 let entryAt entries index = entries[index]
                 // `[a, b, c]` of Strings immediately joined: the ListOf emits an n-way
@@ -4570,7 +4574,9 @@ module OwningStackAot =
                         emitReserve w resultEnd reserveError failBody
                         let writeStatus = w.Fresh "template.write.status"
                         let htmlType = IrNominal key
-                        w.Inst($"{writeStatus} = call i32 @al_owning_html_template_write(ptr %%ctx, i32 {cursor}, i32 {resultExtent}, ptr {partsArray}, i32 {entries.Length}, i32 {typeId htmlType}, i32 {sizeError})")
+                        let resultUnits = w.Fresh "template.units.value"
+                        w.Inst($"{resultUnits} = load i32, ptr {units}, align 4")
+                        w.Inst($"{writeStatus} = call i32 @al_owning_html_template_write(ptr %%ctx, i32 {cursor}, i32 {resultExtent}, i32 {resultUnits}, i32 {resultPayload}, ptr {partsArray}, i32 {entries.Length}, i32 {typeId htmlType}, i32 {sizeError})")
                         emitStatusResult w writeStatus failBody
                         for index in stack.Length - 1 .. -1 .. stack.Length - holeCount do
                             emitDropEntry stack index
@@ -4597,8 +4603,7 @@ module OwningStackAot =
                         w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 0, i32 {typeId listType})")
                         emitRuntimeStatus w "%ctx" failBody
                         emitUpdateLive w "8" "0" failBody
-                        w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {cursor}, i32 8, i32 8, i32 0, i32 0)")
-                        emitRuntimeStatus w "%ctx" failBody
+                        emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {cursor}, i32 8, i32 8, i32 0, i32 0)" failBody
                         stack <- push stack listType cursor "8" "8" next
                         unaliasedLists <- Set.add cursor unaliasedLists
                     | IrOperation.ListSingleton itemType ->
@@ -4616,8 +4621,7 @@ module OwningStackAot =
                         emitCopyRange w (emitOffset w cursor "8") item.Offset item.Extent item.Payload (typeId itemType) failBody
                         emitUpdateLive w "8" "0" failBody
                         emitDropEntry stack (stack.Length - 1)
-                        w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {cursor}, i32 {listExtent}, i32 {listPayload}, i32 0, i32 0)")
-                        emitRuntimeStatus w "%ctx" failBody
+                        emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {cursor}, i32 {listExtent}, i32 {listPayload}, i32 0, i32 0)" failBody
                         stack <- push prefix listType cursor listExtent listPayload next
                         unaliasedLists <- Set.add cursor unaliasedLists
                     | IrOperation.ListOf(IrString, count) when fusedJoinSites.Contains instruction.Site ->
@@ -4676,8 +4680,7 @@ module OwningStackAot =
                         emitUpdateLive w "8" "0" failBody
                         for index in stack.Length - 1 .. -1 .. stack.Length - count do
                             emitDropEntry stack index
-                        w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {cursor}, i32 {listExtent}, i32 {listPayload}, i32 0, i32 0)")
-                        emitRuntimeStatus w "%ctx" failBody
+                        emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {cursor}, i32 {listExtent}, i32 {listPayload}, i32 0, i32 0)" failBody
                         stack <- push prefix listType cursor listExtent listPayload next
                         unaliasedLists <- Set.add cursor unaliasedLists
                     | IrOperation.ListMap(callback, _, resultType) when IrInterpreter.retagOnlyCallback info.Program callback ->
@@ -4836,8 +4839,7 @@ module OwningStackAot =
                             truncI32 shifted
                         let finishList listType (start: string) (extent: string) (payload: string) =
                             let next = emitOffset w start extent
-                            w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {start}, i32 {extent}, i32 {payload}, i32 0, i32 0)")
-                            emitRuntimeStatus w "%ctx" failBody
+                            emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {start}, i32 {extent}, i32 {payload}, i32 0, i32 0)" failBody
                             push prefix listType start extent payload next
                         match instruction.Operation with
                         | IrOperation.ListMap(_, _, resultType) ->
@@ -4989,8 +4991,7 @@ module OwningStackAot =
                         w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 1, i32 {typeId sumType})")
                         emitRuntimeStatus w "%ctx" failBody
                         emitUpdateLive w "8" "0" failBody
-                        w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId sumType}, i32 {cursor}, i32 8, i32 8, i32 0, i32 0)")
-                        emitRuntimeStatus w "%ctx" failBody
+                        emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId sumType}, i32 {cursor}, i32 8, i32 8, i32 0, i32 0)" failBody
                         stack <- push stack sumType cursor "8" "8" next
                     | IrOperation.OptionSome itemType ->
                         let values, prefix = pop 1
@@ -5384,8 +5385,7 @@ module OwningStackAot =
                         if layout.MinimumPayloadBytes = 0 && not layout.IsDynamic then
                             w.Inst($"call void @al_owning_store_token(ptr %%ctx, i32 {recordStart}, i32 {typeId recordType})")
                             emitRuntimeStatus w "%ctx" failBody
-                        w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId recordType}, i32 {recordStart}, i32 {outputExtent}, i32 {recordPayload}, i32 0, i32 0)")
-                        emitRuntimeStatus w "%ctx" failBody
+                        emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId recordType}, i32 {recordStart}, i32 {outputExtent}, i32 {recordPayload}, i32 0, i32 0)" failBody
                         stack <- push prefix recordType recordStart outputExtent recordPayload recordEnd
                     | IrOperation.WrapScalar(call, key, validator) ->
                         emitInlineTargetDepthGuard w call.ResolvedName instructionSpan failBody
@@ -5413,25 +5413,81 @@ module OwningStackAot =
                         let values, prefix = pop 1
                         let parent = List.head values
                         let parentType = IrNominal key
-                        let fieldName, fieldType, _ = (typeInfo parentType).Fields |> List.item fieldIndex
+                        let parentFields = (typeInfo parentType).Fields
+                        let fieldName, fieldType, _ = parentFields |> List.item fieldIndex
                         let parentOffset = parent.Offset
-                        let location = w.Fresh "field.location"
-                        w.Inst($"{location} = alloca %%AlOwningFieldLocation, align 4")
                         let locationError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to locate a verified dynamic record field." currentOwner instructionSpan [] []
-                        let status = w.Fresh "field.location.status"
-                        w.Inst($"{status} = call i32 @al_owning_locate_field(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex parentType}, i32 {parentOffset}, i32 {parent.Extent}, i32 {fieldIndex}, i32 {locationError}, ptr {location})")
-                        emitStatusResult w status failBody
-                        let loadLocation index name =
-                            let pointer = w.Fresh $"{name}.pointer"
-                            let value = w.Fresh name
-                            w.Inst($"{pointer} = getelementptr inbounds %%AlOwningFieldLocation, ptr {location}, i32 0, i32 {index}")
-                            w.Inst($"{value} = load i32, ptr {pointer}, align 4")
-                            value
-                        let fieldOffset = loadLocation 0 "field.offset"
-                        let fieldPayload = loadLocation 1 "field.payload"
-                        let fieldExtent = loadLocation 2 "field.extent"
-                        w.Inst($"call void @al_owning_record_layout(ptr %%ctx, i32 7, i32 {typeId fieldType}, i32 {parent.Offset}, i32 {fieldExtent}, i32 {fieldPayload}, i32 {fieldOffset}, i32 {fieldExtent})")
-                        emitRuntimeStatus w "%ctx" failBody
+                        // Trusted builds locate the field from the static layout (report
+                        // 269): fixed-size fields add constants and String fields add
+                        // their padded length header, so most reads need no runtime
+                        // call. Other dynamic fields, and every diagnostic build, use
+                        // al_owning_locate_field.
+                        let fieldSize (ty: IrType) =
+                            let child = typeInfo ty
+                            if not child.IsDynamic && child.PayloadBytes = 0 then Some(Some(0, 0)) // zero-width
+                            elif not child.IsDynamic then Some(Some(child.PayloadBytes, child.ExtentBytes))
+                            elif ty = IrString then Some None
+                            else None
+                        let inlineSizes =
+                            match runtimeProfile with
+                            | OwningRuntimeProfile.TrustedGenerated ->
+                                let sizes = parentFields |> List.take (fieldIndex + 1) |> List.map (fun (_, ty, _) -> fieldSize ty)
+                                if sizes |> List.forall Option.isSome then Some(sizes |> List.map Option.get) else None
+                            | OwningRuntimeProfile.Diagnostic -> None
+                        let fieldOffset, fieldPayload, fieldExtent =
+                            match inlineSizes with
+                            | Some sizes ->
+                                let stackData = w.Fresh "field.stack.data"
+                                let stackDataField = w.Fresh "field.stack.data.field"
+                                w.Inst($"{stackDataField} = getelementptr inbounds %%AlOwningContext, ptr %%ctx, i32 0, i32 25")
+                                w.Inst($"{stackData} = load ptr, ptr {stackDataField}, align 8")
+                                let stringSize cursor =
+                                    let headerPointer = w.Fresh "field.string.header"
+                                    let units = w.Fresh "field.string.units"
+                                    w.Inst($"{headerPointer} = getelementptr inbounds i8, ptr {stackData}, i32 {cursor}")
+                                    w.Inst($"{units} = load i32, ptr {headerPointer}, align 8")
+                                    let payload = emitOffset w units "8"
+                                    let rounded = emitOffset w units "15"
+                                    let extent = w.Fresh "field.string.extent"
+                                    w.Inst($"{extent} = and i32 {rounded}, -8")
+                                    payload, extent
+                                let mutable cursor = parentOffset
+                                let mutable result = None
+                                sizes |> List.iteri (fun index size ->
+                                    let payload, extent =
+                                        match size with
+                                        | Some(payloadBytes, extentBytes) -> string payloadBytes, string extentBytes
+                                        | None -> stringSize cursor
+                                    if index = fieldIndex then result <- Some(cursor, payload, extent)
+                                    else cursor <- emitOffset w cursor extent)
+                                let offset, payload, extent = Option.get result
+                                // Bounds: the field must end inside its parent.
+                                let fieldEnd = emitOffset w offset extent
+                                let parentEnd = emitOffset w parentOffset parent.Extent
+                                let inside = w.Fresh "field.inside"
+                                let insideLabel = w.Label "field.inside.ok"
+                                let outsideLabel = w.Label "field.outside"
+                                w.Inst($"{inside} = icmp ule i32 {fieldEnd}, {parentEnd}")
+                                w.Inst($"br i1 {inside}, label %%{insideLabel}, label %%{outsideLabel}")
+                                w.Line($"{outsideLabel}:")
+                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 5, i32 {locationError}, i32 0, i32 0)")
+                                w.Inst($"br label %%{failBody}")
+                                w.Line($"{insideLabel}:")
+                                offset, payload, extent
+                            | None ->
+                                let location = w.Fresh "field.location"
+                                w.Inst($"{location} = alloca %%AlOwningFieldLocation, align 4")
+                                let status = w.Fresh "field.location.status"
+                                w.Inst($"{status} = call i32 @al_owning_locate_field(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex parentType}, i32 {parentOffset}, i32 {parent.Extent}, i32 {fieldIndex}, i32 {locationError}, ptr {location})")
+                                emitStatusResult w status failBody
+                                let loadLocation index name =
+                                    let pointer = w.Fresh $"{name}.pointer"
+                                    let value = w.Fresh name
+                                    w.Inst($"{pointer} = getelementptr inbounds %%AlOwningFieldLocation, ptr {location}, i32 0, i32 {index}")
+                                    w.Inst($"{value} = load i32, ptr {pointer}, align 4")
+                                    value
+                                loadLocation 0 "field.offset", loadLocation 1 "field.payload", loadLocation 2 "field.extent"
+                        emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 7, i32 {typeId fieldType}, i32 {parent.Offset}, i32 {fieldExtent}, i32 {fieldPayload}, i32 {fieldOffset}, i32 {fieldExtent})" failBody
                         ignore fieldName
                         stack <- push prefix fieldType fieldOffset fieldExtent fieldPayload parent.OwnerEnd
                     | IrOperation.Call call ->

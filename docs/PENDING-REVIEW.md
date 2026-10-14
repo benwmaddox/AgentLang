@@ -65,10 +65,17 @@ Noted for after the apples-to-apples Campfire comparison.
 - **Trusted `al_owning_locate_field`** walks only the fields before the target
   (bounds checked). It no longer re-validates the type graph or scans the whole
   parent on each read. The diagnostic profile keeps the full scan.
-- Still open: `al_owning_html_template_write` re-runs the plan, so each hole is
-  scanned twice. The no-op `al_owning_record_layout` event calls also remain in
-  trusted IR, and other trusted runtime self-checks could be removed the same
-  way.
+- **Report 269**, trusted builds only:
+  - **Trace events:** no layout trace-event calls are emitted.
+  - **Templates:** `al_owning_html_template_write` takes the plan's results
+    instead of re-planning; the diagnostic build re-plans and compares.
+  - **Field reads:** the location is computed inline from the static layout,
+    with constants for fixed-size fields and the padded length header for
+    String fields, plus one bounds check against the parent. Any other dynamic
+    field still calls `al_owning_locate_field`.
+- Still open: per-use descriptor `check_initialized` calls (about 4,400 per
+  room GET, roughly 3 ns each in trusted) and status checks after runtime calls
+  that cannot fail.
 
 ## Scheduled removals
 
