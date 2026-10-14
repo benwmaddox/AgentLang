@@ -61,7 +61,7 @@ fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
 }
 
 fn campfire.csrf.pad-at(pads: Bytes, index: Int) -> Bytes {
-    match bytes.slice(pads, multiply(index, 32), 32) {
+    match bytes.slice(pads, index * 32, 32) {
         none => pads
         some pad => pad
     }
