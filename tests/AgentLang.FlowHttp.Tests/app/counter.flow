@@ -49,20 +49,20 @@ fn counter.echo(request: HttpRequest) -> HttpResponse {
         some text => text
     }
     let lines = [
-        string.concat("method=", request.method),
-        string.concat("target=", request.target),
-        string.concat("path=", http.path(request.target)),
-        string.concat("query=", http.query(request.target)),
-        string.concat("probe=", probe),
-        string.concat("headers=", int.to-string(counter.count(request.headers))),
-        string.concat("body-bytes=", int.to-string(bytes.length(request.body))),
-        string.concat("body=", body),
-        string.concat("remote=", request.remote-ip)
+        string.concat("method=", string.concat(request.method, ";")),
+        string.concat("target=", string.concat(request.target, ";")),
+        string.concat("path=", string.concat(http.path(request.target), ";")),
+        string.concat("query=", string.concat(http.query(request.target), ";")),
+        string.concat("probe=", string.concat(probe, ";")),
+        string.concat("headers=", string.concat(int.to-string(counter.count(request.headers)), ";")),
+        string.concat("body-bytes=", string.concat(int.to-string(bytes.length(request.body)), ";")),
+        string.concat("body=", string.concat(body, ";")),
+        string.concat("remote=", string.concat(request.remote-ip, ";"))
     ]
     httpResponse.new(
         status = 200,
         headers = [httpHeader.new(name = "content-type", value = "text/plain"), httpHeader.new(name = "x-echo", value = probe)],
-        body = string.join(list.concat(lines, [""])))
+        body = string.replace(string.join(lines), ";", "\n"))
 }
 
 fn counter.line(row: DbRow) -> String {
