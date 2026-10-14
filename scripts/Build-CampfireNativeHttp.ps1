@@ -231,7 +231,7 @@ function Assert-ClosedRoomReadManifest([string] $ManifestPath, [string] $Expecte
         $info.layoutAbiVersion -ne 5 -or $info.hostAbiVersion -ne 1) {
         throw 'Manifest does not match the exact selected-profile campfire-room-read-v1 contract.'
     }
-    $expectedEffects = @('db.read', 'db.write')
+    $expectedEffects = @('db.read', 'db.write', 'random.read')
     $actualEffects = @($info.effects | ForEach-Object { [string]$_ })
     Assert-ExactStringSet $actualEffects $expectedEffects 'Manifest effects'
     $expectedOperations = @(
@@ -243,7 +243,10 @@ function Assert-ClosedRoomReadManifest([string] $ManifestPath, [string] $Expecte
         'campfire.browser.version-at-least?',
         'campfire.rooms.find-for-user',
         'campfire.membership.exists?',
-        'campfire.messages.last-page-with-creators'
+        'campfire.messages.last-page-with-creators',
+        'campfire.csrf.session-secret',
+        'campfire.csrf.form-token',
+        'campfire.csrf.boost-tokens'
     )
     $actualOperations = @($info.operations | ForEach-Object { [string]$_.operationName })
     Assert-ExactStringSet $actualOperations $expectedOperations 'Manifest operations'
@@ -256,14 +259,14 @@ function Find-UniqueHelper([string] $Name) {
 }
 
 $helperPins = [ordered]@{
-    'request_encoder.c' = '3276612D833B7393B5DC6602C9F1BDE20D3C5A85522D7356738362794223A2BA'
-    'request_encoder.h' = '53C6638A724BD493744CB9344F3BF3D389F8A16104675A93D9D7DFF205B83361'
+    'request_encoder.c' = 'C0DF185A11D2050FDFA8E233591F594E0647F239FD1CCE6C950813A92AAF4D50'
+    'request_encoder.h' = '6F3C1C980E48AE15DED4E4FFAE74E0F135BB13D2FD43F9F62E2E4A187D908876'
     'browser_normalizer.c' = '37CBCE440FFD22D5800570ED593426E48AACCF611319F7A9B8C3CFE8EE4040A2'
     'browser_normalizer.h' = 'B2D5289556A9A13F9C33C2E02ABBEFED4071DC2C1172B7B8B14B6520C082182E'
-    'campfire_http_renderer.c' = '04B1C976D0AF977524DDA87ED6781DCFF3EDF1B35A08BB9A66E093D58BB685AD'
-    'campfire_http_renderer.h' = 'B0D3175950002ECBBF215021CF31394DAFD948CF4F8CA3A31BD10677F531837A'
-    'cookie_response_codec.c' = 'E1E2FFBF5051751928C9823D918E2571D0D2A0D8EE03F53F625C20956A19AEE3'
-    'cookie_response_codec.h' = 'C146FDE950083F21DFCEEE1BFC1C87AE9789E256EE6DAD42C029857BB48B9EBB'
+    'campfire_http_renderer.c' = 'EE596DE77C16F09E6335B57E72CC6B02768CBF3F1B53C179C50E2256409EE6E8'
+    'campfire_http_renderer.h' = 'B90B258883BEABCC69F9FBF35ECE8572778741F9E47BF22F62127EE121FD5BF3'
+    'cookie_response_codec.c' = 'DF6F6AA20DB915DE028F76DB8D7EB51553FB4BB1C23D73EE24BEFF41296E6CBD'
+    'cookie_response_codec.h' = 'A59B947F18A76EC25850D7DE0D3B4FF912B05C5B5483B66BC4591EB7EA79E7BA'
     'cookie_wire.c' = '121E01E1D4CC6335CDB37AB996DA7078E3C0460A47AFD89556B34A92B5D4D410'
     'cookie_wire.h' = '14C011052333923391BE1FCF5BCEF311A7A46B5716DC729B04992FBD146FA5D3'
     'cookie_unescape.c' = '599FC1C0EEDF57B26AE0761B53E5606831D42A957BEAF12DEB6FDDEEFB72F74C'
@@ -358,7 +361,7 @@ foreach ($helperName in $helperPaths.Keys) {
     $sourcePins[$relativePath] = Get-Hash $helperPath
 }
 $hostHash = Get-Hash $HostSourcePath
-$expectedHostHash = 'D61E8E83F41F2A3B09F2AB05A1C2EEA21DB5954EEC5D659417B37588A686F1E0'  # report 267: the Flow application renders every body
+$expectedHostHash = '88A09A18731CFFEF80561DA40FAB9A39C24669104EC1B181D22A96C8B1BB9E1F'  # report 271: the session CSRF secret in, a fresh one out
 if ($hostHash -ne $expectedHostHash) {
     throw 'HTTP host source differs from the reviewed native host revision.'
 }

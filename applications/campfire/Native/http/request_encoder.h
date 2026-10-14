@@ -15,6 +15,7 @@ typedef struct cf_room_request {
  uint32_t browser_family; /* BrowserFamily declaration order, 0..5. */
  cf_optional_text browser_version;
  uint32_t browser_is_bot;
+ cf_optional_text csrf_token; /* the Rails session's _csrf_token (report 271) */
 } cf_room_request;
 /* Returns 0 on success, 1 invalid input, 2 insufficient output capacity.
  * Measurement (output=NULL, capacity=0) returns 2 and exact required bytes.

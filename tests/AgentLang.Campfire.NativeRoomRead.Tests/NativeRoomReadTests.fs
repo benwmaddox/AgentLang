@@ -8,6 +8,7 @@ open System.Reflection.PortableExecutable
 open System.Runtime.InteropServices
 open System.Security.Cryptography
 open System.Text
+open System.Text.RegularExpressions
 open System.Text.Json.Nodes
 open Microsoft.Data.Sqlite
 open AgentLang
@@ -412,6 +413,9 @@ module NativeRoomReadTests =
     let private optionString value = OptionValue(TString, Option.map StringValue value)
     let private optionNamed name value = OptionValue(TNamed name, value)
 
+    /// A fixed, valid session CSRF secret (32 bytes, urlsafe Base64) for these synthetic requests.
+    let private csrfSecret = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8"
+
     let private makeRequest testCase =
         RecordValue(
             "CampfireHttpRequest",
@@ -438,7 +442,43 @@ module NativeRoomReadTests =
                   "browser", RecordValue("BrowserInfo", Map.ofList
                       [ "family", EnumValue("BrowserFamily", testCase.BrowserFamily)
                         "version", optionString testCase.BrowserVersion
-                        "is-bot", BoolValue false ]) ])
+                        "is-bot", BoolValue false ])
+                  "csrf-token", optionString (Some csrfSecret) ])
+
+    /// Rails' CSRF tokens are randomly masked per form, so pages compare with
+    /// token values masked; csrfTokensValid checks each token separately.
+    let private maskCsrf (value: Value) =
+        match value with
+        | RecordValue("CampfireHttpResponse", fields) ->
+            match fields.TryFind "body" with
+            | Some(StringValue body) ->
+                let masked =
+                    Regex.Replace(Regex.Replace(body, "(name=\"authenticity_token\" value=\")[^\"]+", "$1•"),
+                                  "(<meta name=\"csrf-token\" content=\")[^\"]+", "$1•")
+                RecordValue("CampfireHttpResponse", fields.Add("body", StringValue masked))
+            | _ -> value
+        | other -> other
+
+    let private sameMasked (actual: Value list) (expected: Value) =
+        (actual |> List.map maskCsrf) = [ maskCsrf expected ]
+
+    /// Counts the body's boost-form and meta tokens that unmask to
+    /// HMAC-SHA256(secret, identifier), and all tokens found.
+    let private csrfTokensValid (body: string) =
+        let fromUrlSafe (text: string) =
+            let padded = text.Replace('-', '+').Replace('_', '/')
+            Convert.FromBase64String(padded + String('=', (4 - padded.Length % 4) % 4))
+        let raw = fromUrlSafe csrfSecret
+        let unmasks (token: string) (identifier: string) =
+            let masked = fromUrlSafe token
+            masked.Length = 64
+            && (Array.map2 (^^^) masked[0..31] masked[32..63]) = HMACSHA256.HashData(raw, Encoding.UTF8.GetBytes identifier)
+        let forms = Regex.Matches(body, "action=\"(/messages/\\d+/boosts)\"[^>]*method=\"post\"><input type=\"hidden\" name=\"authenticity_token\" value=\"([^\"]+)\"")
+        let meta = Regex.Match(body, "<meta name=\"csrf-token\" content=\"([^\"]+)\"")
+        let valid =
+            (forms |> Seq.filter (fun (m: Match) -> unmasks m.Groups[2].Value (m.Groups[1].Value + "#post")) |> Seq.length)
+            + (if meta.Success && unmasks meta.Groups[1].Value "!real_csrf_token" then 1 else 0)
+        valid, forms.Count + (if meta.Success then 1 else 0)
 
     let private withRequestMethod request methodName =
         match request with
@@ -1070,7 +1110,7 @@ module NativeRoomReadTests =
         check counter "failed refresh does not partially update the session" (unchanged = due.LastActiveAt)
         execute blocker "ROLLBACK" [] |> ignore
         let retried = native.ExecuteWithNativeHostContext([ request ], 4 * 1024 * 1024, 4 * 1024 * 1024, nativeContext)
-        check counter "same native context recovers and matches interpreter after releasing writer lock" (retried.Values = [ referenceExpected ])
+        check counter "same native context recovers and matches interpreter after releasing writer lock" (sameMasked retried.Values referenceExpected)
         let updated = Convert.ToString(scalar blocker "SELECT last_active_at FROM sessions WHERE id = 70", Globalization.CultureInfo.InvariantCulture)
         check counter "successful retry persists the refreshed session timestamp" (updated = "2026-01-01 12:00:00")
 
@@ -1236,7 +1276,7 @@ module NativeRoomReadTests =
                         match detailedProfile, testCase.Name with
                         | Some api, "legacy-cookie-purpose-metadata-fallback" -> verifyDetailedRoomReadCounters assertions api
                         | _ -> ()
-                        check assertions $"{optimizationName}/{testCase.Name}: full typed interpreter/native values agree" (actual.Values = [ expected ])
+                        check assertions $"{optimizationName}/{testCase.Name}: full typed interpreter/native values agree" (sameMasked actual.Values expected)
                         let fields = outputFields expected
                         check assertions $"{optimizationName}/{testCase.Name}: expected status" (fields.TryFind "status" = Some(IntValue testCase.ExpectedStatus))
                         check assertions $"{optimizationName}/{testCase.Name}: expected view" (fields.TryFind "view" = Some(EnumValue("HttpView", testCase.ExpectedView)))
@@ -1251,6 +1291,8 @@ module NativeRoomReadTests =
                         | Some expectedCount, Some(StringValue body) ->
                             let rendered = body.Split(" data-message-id=\"", StringSplitOptions.None).Length - 1
                             check assertions $"{optimizationName}/{testCase.Name}: message page size" (rendered = expectedCount)
+                            let valid, found = csrfTokensValid body
+                            check assertions $"{optimizationName}/{testCase.Name}: every CSRF token unmasks to its HMAC" (found = 8 * expectedCount + 1 && valid = found)
                             if testCase.Name = "unicode-forty-message-list-with-tied-latest-time" then
                                 check assertions "Unicode page retains body text and tied selected rows" (body.Contains("latest body — λ 東京 🚀", StringComparison.Ordinal))
                         | Some _, _ -> check assertions $"{optimizationName}/{testCase.Name}: rendered body exists" false
@@ -1276,12 +1318,12 @@ module NativeRoomReadTests =
                     let getRequest = makeRequest headCase
                     let expectedGet = invokeReference referenceEntry getRequest
                     let actualGet = native.ExecuteWithNativeHostContext([ getRequest ], 4 * 1024 * 1024, 4 * 1024 * 1024, context)
-                    check assertions $"{optimizationName}/method-get-baseline: full typed values agree" (actualGet.Values = [ expectedGet ])
+                    check assertions $"{optimizationName}/method-get-baseline: full typed values agree" (sameMasked actualGet.Values expectedGet)
                     let headRequest = withRequestMethod getRequest "head"
                     let expectedHead = invokeReference referenceEntry headRequest
                     let actualHead = native.ExecuteWithNativeHostContext([ headRequest ], 4 * 1024 * 1024, 4 * 1024 * 1024, context)
-                    check assertions $"{optimizationName}/method-head: interpreter matches the same GET response" (expectedHead = expectedGet)
-                    check assertions $"{optimizationName}/method-head: full typed native value matches GET" (actualHead.Values = [ expectedGet ])
+                    check assertions $"{optimizationName}/method-head: interpreter matches the same GET response" (maskCsrf expectedHead = maskCsrf expectedGet)
+                    check assertions $"{optimizationName}/method-head: full typed native value matches GET" (sameMasked actualHead.Values expectedGet)
 
                     let unsafeCase =
                         { headCase with
@@ -1299,7 +1341,7 @@ module NativeRoomReadTests =
                     let expectedUnsafe = invokeReference referenceEntry unsafeRequest
                     let actualUnsafe = native.ExecuteWithNativeHostContext([ unsafeRequest ], 4 * 1024 * 1024, 4 * 1024 * 1024, context)
                     let unsafeFields = outputFields expectedUnsafe
-                    check assertions $"{optimizationName}/method-unsafe: full typed interpreter/native values agree" (actualUnsafe.Values = [ expectedUnsafe ])
+                    check assertions $"{optimizationName}/method-unsafe: full typed interpreter/native values agree" (sameMasked actualUnsafe.Values expectedUnsafe)
                     check assertions $"{optimizationName}/method-unsafe: rejected before room read" (unsafeFields.TryFind "status" = Some(IntValue 500L) && unsafeFields.TryFind "view" = Some(EnumValue("HttpView", "empty")))
                     if optimization = LlvmOptimization.O0 then
                         progress "O0: checking native SQLite connection settings and WAL snapshot behavior"

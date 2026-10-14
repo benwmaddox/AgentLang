@@ -65,14 +65,14 @@ int cf_encode_room_request(const cf_room_request *r, uint8_t *out,
      !valid_optional(r->user_agent) || !valid_optional(r->origin) ||
      !valid_optional(r->fetch_site) || !valid_optional(r->session_token) ||
      !valid_optional(r->bot_key) || !valid_optional(r->last_room) ||
-     !valid_optional(r->browser_version)) return 1;
+     !valid_optional(r->browser_version) || !valid_optional(r->csrf_token)) return 1;
  /* Scalars: route/method/room/now, SSL flags, accepts flags, browser family/bot.
   * Three form fields each hold Result.Ok(Option.None), 16 bytes. */
  extent=10u*8u + 3u*16u + text_size(r->remote_ip) + text_size(r->base_url) +
   optional_size(r->user_agent) + optional_size(r->origin) +
   optional_size(r->fetch_site) + optional_size(r->session_token) +
   optional_size(r->bot_key) + optional_size(r->last_room) +
-  optional_size(r->browser_version);
+  optional_size(r->browser_version) + optional_size(r->csrf_token);
  if (extent > CF_INPUT_MAX_BYTES) return 1;
  *required=extent;
  if (out == NULL || capacity < extent) return 2;
@@ -90,5 +90,6 @@ int cf_encode_room_request(const cf_room_request *r, uint8_t *out,
  scalar(&w,r->accepts_turbo); scalar(&w,r->accepts_html);
  optional(&w,r->last_room); scalar(&w,r->browser_family);
  optional(&w,r->browser_version); scalar(&w,r->browser_is_bot);
+ optional(&w,r->csrf_token);
  return 0;
 }

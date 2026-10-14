@@ -1412,6 +1412,7 @@ static uint32_t make_entry_input(worker_state *worker, const HTTP_REQUEST *reque
   text_span encrypted = { NULL, 0u, 0u };
   text_span last_room = { NULL, 0u, 0u };
   text_span bot_key = { NULL, 0u, 0u };
+  text_span csrf_token = { NULL, 0u, 0u };
   uint32_t cookie_status, required = 0u;
   uint16_t *remote = NULL, *base = NULL;
   uint32_t remote_units = 0u, base_units = 0u;
@@ -1437,6 +1438,24 @@ static uint32_t make_entry_input(worker_state *worker, const HTTP_REQUEST *reque
   cookie_status = parse_cookies(worker, request, &token, &encrypted, &last_room);
   if (cookie_status != 0u) return cookie_status;
   worker->request_encrypted_cookie = encrypted;
+  worker->request_now_unix_microseconds = current_unix_microseconds_i64();
+  if (encrypted.present) {
+    /* Rails keeps the CSRF secret in the encrypted session (_csrf_token);
+     * a cookie without one leaves the field absent (report 271). */
+    uint8_t csrf_ascii[128];
+    uint32_t raw_bytes = 0u, csrf_bytes = 0u;
+    if (cookie_span_to_utf8(encrypted, worker->cookie_json_input,
+                            HOST_COOKIE_RAW_BYTES, &raw_bytes) &&
+        al_campfire_cookie_response_session_csrf_v1(
+            worker->response_context, worker->cookie_json_input, raw_bytes,
+            worker->request_now_unix_microseconds, csrf_ascii,
+            (uint32_t)sizeof(csrf_ascii), &csrf_bytes) == 0) {
+      csrf_token.data = arena_text(worker, csrf_ascii, csrf_bytes, &csrf_token.units);
+      if (csrf_token.data == NULL) return 0u;
+      csrf_token.present = 1u;
+    }
+    bytes_zero(csrf_ascii, sizeof(csrf_ascii));
+  }
   (void)parse_bot_key_query(worker, request, &bot_key);
   if (!remote_ip_text(worker, request, &remote, &remote_units)) return 0u;
   base_units = wlen(worker->config->authority);
@@ -1452,7 +1471,6 @@ static uint32_t make_entry_input(worker_state *worker, const HTTP_REQUEST *reque
   }
   request_value.method = method;
   request_value.room_id = room_id;
-  worker->request_now_unix_microseconds = current_unix_microseconds_i64();
   request_value.now_unix_microseconds = worker->request_now_unix_microseconds;
   request_value.remote_ip.data = remote; request_value.remote_ip.length = remote_units;
   request_value.base_url.data = base; request_value.base_url.length = base_units;
@@ -1469,6 +1487,7 @@ static uint32_t make_entry_input(worker_state *worker, const HTTP_REQUEST *reque
   request_value.browser_version.value.data = browser.has_version ? worker->browser_version : NULL;
   request_value.browser_version.value.length = browser.version_units;
   request_value.browser_is_bot = browser.is_bot;
+  request_value.csrf_token.present = csrf_token.present; request_value.csrf_token.value.data = csrf_token.data; request_value.csrf_token.value.length = csrf_token.units;
   status = cf_encode_room_request(&request_value, NULL, 0u, &required);
   if (status != 2u || required == 0u || required > HOST_INPUT_BYTES) return 0u;
   worker->active_input_bytes = required;
@@ -2142,7 +2161,7 @@ static uint32_t finalize_response_cookies(worker_state *worker,
   int32_t cookie_status;
   uint32_t has_session_mutation = metadata->remember_return_to != 0u ||
       metadata->alert.present != 0u || metadata->complete_login != 0u ||
-      metadata->complete_logout != 0u;
+      metadata->complete_logout != 0u || metadata->new_csrf_token.present != 0u;
   *cookie_count = 0u;
   worker->cookie_wire_bytes[0] = worker->cookie_wire_bytes[1] = worker->cookie_wire_bytes[2] = 0u;
   if (has_session_mutation) {
@@ -2168,12 +2187,19 @@ static uint32_t finalize_response_cookies(worker_state *worker,
       alert = worker->cookie_raw[0];
     }
     worker->cookie_json_bytes = HOST_COOKIE_JSON_BYTES;
-    cookie_status = al_campfire_cookie_response_finalize_session_v1(
+    if (metadata->new_csrf_token.present != 0u &&
+        (metadata->new_csrf_token.data_utf16le == NULL ||
+         metadata->new_csrf_token.code_units > 128u)) return 0u;
+    /* Owning Strings are UTF-8: the new secret's span is passed as-is. */
+    cookie_status = al_campfire_cookie_response_finalize_session_v2(
         worker->response_context,
         encrypted_session.present ? worker->cookie_json_input : NULL,
         encrypted_session.present ? raw_cookie_bytes : 0u,
         metadata->remember_return_to, return_url, return_bytes,
         metadata->alert.present, alert, alert_bytes,
+        metadata->new_csrf_token.present,
+        metadata->new_csrf_token.present ? metadata->new_csrf_token.data_utf16le : NULL,
+        metadata->new_csrf_token.present ? metadata->new_csrf_token.code_units : 0u,
         worker->request_now_unix_microseconds, worker->cookie_json,
         HOST_COOKIE_JSON_BYTES, &output_bytes);
     if (cookie_status == 0 && output_bytes <= HOST_COOKIE_JSON_BYTES)

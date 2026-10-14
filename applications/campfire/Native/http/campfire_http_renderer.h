@@ -40,6 +40,9 @@ typedef struct al_campfire_http_render_metadata_v1 {
   al_campfire_http_utf16_span_v1 alert;
   uint32_t complete_login;
   uint32_t complete_logout;
+  /* A CSRF secret Flow generated for a session without one (report 271);
+   * the host stores it as the session's _csrf_token. Room view only. */
+  al_campfire_http_utf16_span_v1 new_csrf_token;
 } al_campfire_http_render_metadata_v1;
 
 #if defined(_WIN32) || defined(__clang__)

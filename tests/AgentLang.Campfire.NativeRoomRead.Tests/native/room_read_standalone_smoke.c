@@ -99,12 +99,39 @@ static uint32_t utf8_path_length(const uint8_t *path) {
   return length;
 }
 
-static int bytes_equal(const uint8_t *left, const uint8_t *right,
-                       uint32_t length) {
-  uint32_t index;
-  for (index = 0u; index < length; ++index) {
+/* Rails' CSRF tokens are randomly masked per form (report 271): compare the
+ * page with each token's 86 characters skipped in both outputs. */
+static int marker_at(const uint8_t *bytes, uint32_t length, uint32_t index,
+                     const char *marker) {
+  uint32_t offset;
+  for (offset = 0u; marker[offset] != '\0'; ++offset) {
+    if (index + offset >= length || bytes[index + offset] != (uint8_t)marker[offset])
+      return 0;
+  }
+  return (int)offset;
+}
+
+static int bytes_equal_masking_csrf(const uint8_t *left, const uint8_t *right,
+                                    uint32_t length) {
+  static const char *const markers[] = {
+      "name=\"authenticity_token\" value=\"", "<meta name=\"csrf-token\" content=\""};
+  uint32_t index = 0u, which;
+  while (index < length) {
+    int skipped = 0;
+    for (which = 0u; which < 2u; ++which) {
+      const int marker = marker_at(left, length, index, markers[which]);
+      if (marker > 0 && marker_at(right, length, index, markers[which]) == marker &&
+          index + (uint32_t)marker + 86u <= length) {
+        index += (uint32_t)marker + 86u;
+        skipped = 1;
+        break;
+      }
+    }
+    if (skipped)
+      continue;
     if (left[index] != right[index])
       return 0;
+    ++index;
   }
   return 1;
 }
@@ -319,7 +346,7 @@ void room_read_smoke_start(void) {
     result = SMOKE_OUTPUT_EXTENT_INVALID;
     goto cleanup;
   }
-  if (!bytes_equal(retained_storage, room_read_expected, written_bytes)) {
+  if (!bytes_equal_masking_csrf(retained_storage, room_read_expected, written_bytes)) {
     result = SMOKE_OUTPUT_MISMATCH;
     goto cleanup;
   }

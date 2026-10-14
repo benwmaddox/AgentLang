@@ -11,7 +11,7 @@ _Static_assert(offsetof(al_campfire_http_utf16_span_v1, code_units) == 8u,
                "HTTP renderer UTF-16 span length offset changed");
 _Static_assert(offsetof(al_campfire_http_utf16_span_v1, present) == 12u,
                "HTTP renderer UTF-16 span presence offset changed");
-_Static_assert(sizeof(al_campfire_http_render_metadata_v1) == 96u,
+_Static_assert(sizeof(al_campfire_http_render_metadata_v1) == 112u,
                "HTTP renderer metadata ABI size changed");
 _Static_assert(_Alignof(al_campfire_http_render_metadata_v1) == 8u,
                "HTTP renderer metadata alignment changed");
@@ -27,6 +27,8 @@ _Static_assert(offsetof(al_campfire_http_render_metadata_v1, alert) == 72u,
                "HTTP renderer alert span offset changed");
 _Static_assert(offsetof(al_campfire_http_render_metadata_v1, complete_login) == 88u,
                "HTTP renderer completion flags offset changed");
+_Static_assert(offsetof(al_campfire_http_render_metadata_v1, new_csrf_token) == 96u,
+               "HTTP renderer new CSRF token span offset changed");
 
 enum al_http_view_ordinal {
   AL_HTTP_VIEW_EMPTY = 0u,
@@ -84,6 +86,7 @@ typedef struct al_http_parsed_response {
   uint32_t remember_return_to;
   uint32_t has_last_room;
   int64_t last_room;
+  al_http_optional_text new_csrf_token;
   al_http_text body;
 } al_http_parsed_response;
 
@@ -304,6 +307,7 @@ static int al_http_parse_response(const uint8_t *bytes, uint32_t extent,
       !al_http_read_bool(&cursor, &out_response->remember_return_to) ||
       !al_http_read_optional_i64(&cursor, &out_response->has_last_room,
                                  &out_response->last_room) ||
+      !al_http_read_optional_text(&cursor, &out_response->new_csrf_token) ||
       !al_http_read_text(&cursor, &out_response->body) ||
       cursor.offset != cursor.extent)
     return 0;
@@ -331,6 +335,9 @@ static int al_http_contract_valid(const al_http_parsed_response *response) {
   const int no_route_data = al_http_no_route_data(response);
   const int text_empty = al_http_text_is_empty(response->text);
 
+  if (response->new_csrf_token.present != 0u &&
+      response->view != AL_HTTP_VIEW_ROOM)
+    return 0;
   switch (response->view) {
   case AL_HTTP_VIEW_EMPTY:
     return no_route_data && text_empty &&
@@ -461,6 +468,15 @@ static void al_http_set_metadata(
   }
   metadata->complete_login = 0u;
   metadata->complete_logout = 0u;
+  metadata->new_csrf_token.data_utf16le =
+      response->new_csrf_token.present != 0u
+          ? response->new_csrf_token.value.utf16le
+          : NULL;
+  metadata->new_csrf_token.code_units =
+      response->new_csrf_token.present != 0u
+          ? response->new_csrf_token.value.code_units
+          : 0u;
+  metadata->new_csrf_token.present = response->new_csrf_token.present;
 }
 
 int32_t al_campfire_http_render_v1(

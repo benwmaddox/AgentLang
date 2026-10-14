@@ -2823,8 +2823,12 @@ static int32_t al_campfire_json_mutate_session(
     uint32_t has_return_url, const uint8_t *return_url_utf8,
     uint32_t return_url_bytes, uint32_t has_alert,
     const uint8_t *alert_utf8, uint32_t alert_bytes,
+    uint32_t has_csrf, const uint8_t *csrf_utf8, uint32_t csrf_bytes,
     uint8_t *output_json, uint32_t output_capacity,
     uint32_t *output_bytes) {
+  static const uint8_t csrf_key[] = "_csrf_token";
+  static const uint8_t csrf_property_name[] = "\"_csrf_token\"";
+  uint32_t saw_csrf = 0u;
   static const uint8_t empty_object[] = "{}";
   static const uint8_t root_open = '{';
   static const uint8_t root_close = '}';
@@ -2883,6 +2887,7 @@ static int32_t al_campfire_json_mutate_session(
     uint32_t ignored_ascii_length = 0u;
     int32_t is_return_key = 0;
     int32_t is_flash_key = 0;
+    int32_t is_csrf_key = 0;
     int32_t prior_match;
     uint32_t index;
     if (!al_campfire_json_parse_string(
@@ -2900,6 +2905,12 @@ static int32_t al_campfire_json_mutate_session(
               &key_match_parser, NULL, 0u, NULL, NULL, 0u, NULL, NULL,
               flash_key, (uint32_t)(sizeof(flash_key) - 1u),
               &is_flash_key))
+        goto malformed;
+      key_match_parser.index = key_start;
+      if (!al_campfire_json_parse_string(
+              &key_match_parser, NULL, 0u, NULL, NULL, 0u, NULL, NULL,
+              csrf_key, (uint32_t)(sizeof(csrf_key) - 1u),
+              &is_csrf_key))
         goto malformed;
     }
     prior_match = al_campfire_json_prior_key_matches(
@@ -2931,6 +2942,17 @@ static int32_t al_campfire_json_mutate_session(
         goto cleanup;
       used += index;
       saw_return = 1u;
+    } else if (is_csrf_key && has_csrf != 0u) {
+      if (!al_campfire_json_append_member_prefix(
+              output_json, output_capacity, &used, &property_count,
+              csrf_property_name,
+              (uint32_t)(sizeof(csrf_property_name) - 1u)) ||
+          !al_campfire_utf8_json_string(
+              csrf_utf8, csrf_bytes, output_json + used,
+              output_capacity - used, &index))
+        goto cleanup;
+      used += index;
+      saw_csrf = 1u;
     } else if (is_flash_key && has_alert != 0u) {
       if (!al_campfire_json_append_member_prefix(
               output_json, output_capacity, &used, &property_count,
@@ -2985,6 +3007,18 @@ static int32_t al_campfire_json_mutate_session(
       goto cleanup;
     used += encoded_bytes;
   }
+  if (has_csrf != 0u && saw_csrf == 0u) {
+    uint32_t encoded_bytes = 0u;
+    if (!al_campfire_json_append_member_prefix(
+            output_json, output_capacity, &used, &property_count,
+            csrf_property_name,
+            (uint32_t)(sizeof(csrf_property_name) - 1u)) ||
+        !al_campfire_utf8_json_string(
+            csrf_utf8, csrf_bytes, output_json + used,
+            output_capacity - used, &encoded_bytes))
+      goto cleanup;
+    used += encoded_bytes;
+  }
   if (has_alert != 0u && saw_flash == 0u) {
     if (!al_campfire_json_append_member_prefix(
             output_json, output_capacity, &used, &property_count,
@@ -3017,6 +3051,21 @@ int32_t al_campfire_cookie_response_finalize_session_v1(
     const uint8_t *alert_utf8, uint32_t alert_bytes,
     int64_t now_unix_microseconds, uint8_t *output,
     uint32_t output_capacity_bytes, uint32_t *output_bytes) {
+  return al_campfire_cookie_response_finalize_session_v2(
+      response_context, raw_cookie_utf8, cookie_bytes, has_return_url,
+      return_url_utf8, return_url_bytes, has_alert, alert_utf8, alert_bytes,
+      0u, NULL, 0u, now_unix_microseconds, output, output_capacity_bytes,
+      output_bytes);
+}
+
+int32_t al_campfire_cookie_response_finalize_session_v2(
+    void *response_context, const uint8_t *raw_cookie_utf8, uint32_t cookie_bytes,
+    uint32_t has_return_url, const uint8_t *return_url_utf8,
+    uint32_t return_url_bytes, uint32_t has_alert,
+    const uint8_t *alert_utf8, uint32_t alert_bytes,
+    uint32_t has_csrf, const uint8_t *csrf_utf8, uint32_t csrf_bytes,
+    int64_t now_unix_microseconds, uint8_t *output,
+    uint32_t output_capacity_bytes, uint32_t *output_bytes) {
   static const uint8_t empty_object[] = "{}";
   uint8_t session_json[AL_CAMPFIRE_MAX_JSON_BYTES];
   uint8_t mutated_json[AL_CAMPFIRE_MAX_JSON_BYTES];
@@ -3033,7 +3082,11 @@ int32_t al_campfire_cookie_response_finalize_session_v1(
   if (context == NULL ||
       context->magic != AL_CAMPFIRE_COOKIE_RESPONSE_CONTEXT_MAGIC ||
       output == NULL || output_bytes == NULL || has_return_url > 1u ||
-      has_alert > 1u || (raw_cookie_utf8 == NULL && cookie_bytes != 0u) ||
+      has_alert > 1u || has_csrf > 1u ||
+      (has_csrf == 0u && (csrf_utf8 != NULL || csrf_bytes != 0u)) ||
+      csrf_bytes > AL_CAMPFIRE_MAX_JSON_BYTES ||
+      !al_campfire_utf8_span_valid(csrf_utf8, has_csrf ? csrf_bytes : 0u) ||
+      (raw_cookie_utf8 == NULL && cookie_bytes != 0u) ||
       (has_return_url == 0u &&
        (return_url_utf8 != NULL || return_url_bytes != 0u)) ||
       (has_alert == 0u && (alert_utf8 != NULL || alert_bytes != 0u)) ||
@@ -3065,8 +3118,9 @@ int32_t al_campfire_cookie_response_finalize_session_v1(
   }
   mutation_result = al_campfire_json_mutate_session(
       session_json, session_json_bytes, has_return_url, return_url_utf8,
-      return_url_bytes, has_alert, alert_utf8, alert_bytes, mutated_json,
-      sizeof(mutated_json), &mutated_json_bytes);
+      return_url_bytes, has_alert, alert_utf8, alert_bytes, has_csrf,
+      csrf_utf8, csrf_bytes, mutated_json, sizeof(mutated_json),
+      &mutated_json_bytes);
   if (mutation_result != 1) {
     status = mutation_result == 4 ? 4 : mutation_result == 2 ? 2 : 3;
     goto cleanup;
@@ -3078,5 +3132,75 @@ int32_t al_campfire_cookie_response_finalize_session_v1(
 cleanup:
   SecureZeroMemory(session_json, sizeof(session_json));
   SecureZeroMemory(mutated_json, sizeof(mutated_json));
+  return status;
+}
+
+/* Reads the Rails session's top-level "_csrf_token" string (report 271).
+ * Returns 0 and the ASCII value when present; 1 when the cookie does not
+ * decrypt or has no ASCII string value under that key. */
+int32_t al_campfire_cookie_response_session_csrf_v1(
+    void *response_context, const uint8_t *raw_cookie_utf8, uint32_t cookie_bytes,
+    int64_t now_unix_microseconds, uint8_t *output,
+    uint32_t output_capacity_bytes, uint32_t *output_bytes) {
+  static const uint8_t csrf_key[] = "_csrf_token";
+  uint8_t session_json[AL_CAMPFIRE_MAX_JSON_BYTES];
+  uint32_t session_json_bytes = 0u;
+  al_campfire_json_parser parser;
+  int32_t status = 1;
+  if (output_bytes != NULL)
+    *output_bytes = 0u;
+  if (output == NULL || output_bytes == NULL || raw_cookie_utf8 == NULL ||
+      cookie_bytes == 0u)
+    return 1;
+  SecureZeroMemory(session_json, sizeof(session_json));
+  if (al_campfire_cookie_response_decrypt_session_json_v1(
+          response_context, raw_cookie_utf8, cookie_bytes,
+          now_unix_microseconds, session_json, sizeof(session_json),
+          &session_json_bytes) != 0 ||
+      !al_campfire_json_root_object_valid(session_json, session_json_bytes))
+    goto cleanup;
+  parser.bytes = session_json;
+  parser.length = session_json_bytes;
+  parser.index = 0u;
+  al_campfire_json_skip_whitespace(&parser);
+  if (parser.index >= parser.length || parser.bytes[parser.index] != (uint8_t)'{')
+    goto cleanup;
+  ++parser.index;
+  al_campfire_json_skip_whitespace(&parser);
+  while (parser.index < parser.length && parser.bytes[parser.index] != (uint8_t)'}') {
+    int32_t is_csrf = 0;
+    if (!al_campfire_json_parse_string(&parser, NULL, 0u, NULL, NULL, 0u, NULL,
+                                       NULL, csrf_key,
+                                       (uint32_t)(sizeof(csrf_key) - 1u), &is_csrf))
+      goto cleanup;
+    al_campfire_json_skip_whitespace(&parser);
+    if (parser.index >= parser.length || parser.bytes[parser.index] != (uint8_t)':')
+      goto cleanup;
+    ++parser.index;
+    al_campfire_json_skip_whitespace(&parser);
+    if (is_csrf && parser.index < parser.length &&
+        parser.bytes[parser.index] == (uint8_t)'"') {
+      uint32_t length = 0u;
+      int32_t all_ascii = 0;
+      if (al_campfire_json_parse_string(&parser, NULL, 0u, NULL, output,
+                                        output_capacity_bytes, &length,
+                                        &all_ascii, NULL, 0u, NULL) &&
+          all_ascii) {
+        *output_bytes = length;
+        status = 0;
+      }
+      goto cleanup;
+    }
+    if (!al_campfire_json_parse_value(&parser, 1u))
+      goto cleanup;
+    al_campfire_json_skip_whitespace(&parser);
+    if (parser.index < parser.length && parser.bytes[parser.index] == (uint8_t)',') {
+      ++parser.index;
+      al_campfire_json_skip_whitespace(&parser);
+    }
+  }
+
+cleanup:
+  SecureZeroMemory(session_json, sizeof(session_json));
   return status;
 }

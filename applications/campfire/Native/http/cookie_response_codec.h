@@ -90,6 +90,25 @@ al_campfire_cookie_response_finalize_session_v1(
     int64_t now_unix_microseconds, uint8_t *output,
     uint32_t output_capacity_bytes, uint32_t *output_bytes);
 
+/* As v1, and stores csrf_utf8 as the session's "_csrf_token" when has_csrf
+ * is set (a secret Flow generated for a session without one; report 271). */
+AL_CAMPFIRE_PURE_API int32_t
+al_campfire_cookie_response_finalize_session_v2(
+    void *response_context, const uint8_t *raw_cookie_utf8, uint32_t cookie_bytes,
+    uint32_t has_return_url, const uint8_t *return_url_utf8,
+    uint32_t return_url_bytes, uint32_t has_alert,
+    const uint8_t *alert_utf8, uint32_t alert_bytes,
+    uint32_t has_csrf, const uint8_t *csrf_utf8, uint32_t csrf_bytes,
+    int64_t now_unix_microseconds, uint8_t *output,
+    uint32_t output_capacity_bytes, uint32_t *output_bytes);
+
+/* The Rails session's "_csrf_token" ASCII value: 0 when present, else 1. */
+AL_CAMPFIRE_PURE_API int32_t
+al_campfire_cookie_response_session_csrf_v1(
+    void *response_context, const uint8_t *raw_cookie_utf8, uint32_t cookie_bytes,
+    int64_t now_unix_microseconds, uint8_t *output,
+    uint32_t output_capacity_bytes, uint32_t *output_bytes);
+
 #ifdef __cplusplus
 }
 #endif
