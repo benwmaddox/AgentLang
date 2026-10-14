@@ -1761,7 +1761,8 @@ module Compiler =
 
         remapSourceOriginDiagnostic sourceOrigins (fun () ->
             let knownTypes = contextTypes context
-            let checkedTest, typed, expected = checkTestDetailed knownTypes context.Enums context.Words test
+            let testScopeWords = Map.fold (fun words name entry -> Map.add name entry words) context.Words testIntrinsics
+            let checkedTest, typed, expected = checkTestDetailed knownTypes context.Enums testScopeWords test
             let actualBody = bodyFromInference context sourceOrigins verifiedProgram (test.Word + "/" + test.Name) [] checkedTest.Effects typed
             let expectedBody =
                 expected
