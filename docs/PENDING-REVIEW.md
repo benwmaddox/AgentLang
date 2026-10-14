@@ -164,3 +164,38 @@ than a diagnostic (item 5 above)?
   applications/campfire tests today; decide whether the scope that must use an
   override is the test, the block, or the file; and whether a failure or a
   warning suits agent-written tests better.
+
+## Native loop and call overhead (measured 2026-10-14; next backend work)
+
+Measured with the trusted O2 build, over a 111-byte string (min of 2000 runs):
+
+| Loop body | Per iteration |
+| --- | ---: |
+| empty Int `var` update | ~25 ns |
+| `string.byte-at` + `match` (Option) | ~80 ns (fixed by `string.byte-at-or`: inline load) |
+| call to a small Flow word | ~27 ns |
+
+Each iteration makes 8-10 out-of-line runtime calls (load/store i64, reserve,
+update live counters, release, relocate) because the runtime C is a separate
+object without LTO. Plan, in order:
+
+1. Measure the ceiling first: link runtime bitcode with the generated IR for
+   `bench.count` / `bench.word-call`. Low single-digit ns means call overhead
+   is the whole cost; otherwise the per-iteration work itself (reclaim,
+   reserving every scalar result in the arena) needs structural changes.
+2. Trusted profile only: emit the trivial helpers inline (load/store i64,
+   update_live, the reserve fast path, release cursor), keeping the C slow
+   paths. Diagnostic builds keep calling the checked C. Add a TrustedGenerated
+   O2 pass to the native parity harnesses so the inline code is tested, not
+   only benched.
+3. `inline` attribute on `fn` (user approved, 2026-10-14): a hint that the
+   backend emits a small word's body at the call site instead of a native call
+   (`campfire.ua.byte`, `digit?` and similar helpers).
+4. O0 frame bookkeeping: every IR temporary gets its own stack slot at O0, so
+   large words exceed the 64 KB per-frame screen (lean user-agent.flow had to
+   be split for this). Reuse slots or emit the bookkeeping as SSA values so
+   word size stops being limited by O0 frames. (Frames are native call-stack
+   bookkeeping, not the data stack.)
+
+Lean User-Agent cost today: typical Chrome UA 50 us, corpus median 31 us
+(trusted O2), versus a few us in the retired C normalizer.

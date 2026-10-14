@@ -5956,6 +5956,14 @@ module OwningStackAot =
                             | "string.byte-at-or", [ text; index; fallback ] ->
                                 // Inline: bounds check against the String header, then one byte
                                 // load from the data stack. Negative indexes fail the unsigned check.
+                                // Diagnostic builds first check the three operands are initialized.
+                                match runtimeProfile with
+                                | OwningRuntimeProfile.Diagnostic ->
+                                    for operand in [ text.Offset; index.Offset; fallback.Offset ] do
+                                        let status = w.Fresh "byte.check.status"
+                                        w.Inst($"{status} = call i32 @al_owning_check_initialized(ptr %%ctx, i32 {operand}, i32 8)")
+                                        emitStatusResult w status failBody
+                                | OwningRuntimeProfile.TrustedGenerated -> ()
                                 let dataPointer = w.Fresh "byte.data.pointer"
                                 w.Inst($"{dataPointer} = getelementptr inbounds %%AlOwningContext, ptr %%ctx, i32 0, i32 25")
                                 let data = w.Fresh "byte.data"

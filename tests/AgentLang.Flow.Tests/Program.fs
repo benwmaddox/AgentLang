@@ -5857,6 +5857,23 @@ let private testFlowRecordValidatorSyntax () =
     expectRecordError "Flow record allows at most one validator" "FLOW_RECORD_VALIDATOR_DUPLICATE"
         "record Customer { field id: Int; validate ::valid?; validate ::other?; }"
 
+let private testFlow2ElseIf () =
+    let parse source =
+        match FlowParser.parseExpressionWithVersion 2 "<flow2-else-if>" source with
+        | Ok expression -> expression
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let render = FlowSource.renderExpressionWithVersion 2
+    match parse "if a { 1 } else if b { 2 } else { 3 }" with
+    | FlowExpression.If(_, _, [ FlowStatement.Evaluate(FlowExpression.If(FlowExpression.Local("b", _), _, [ FlowStatement.Evaluate(FlowExpression.Literal(LInt 3L, _)) ], _)) ], _) ->
+        check "else if nests as the else block's only statement" true
+    | other -> failwithf "unexpected else-if AST: %A" other
+    let text = render (parse "if a { 1 } else if b { 2 } else if c { 3 } else { 4 }")
+    equal "formatter prints else if chains flat" "if a {\n    1\n} else if b {\n    2\n} else if c {\n    3\n} else {\n    4\n}" text
+    equal "else-if rendering is stable" text (text |> parse |> render)
+    equal "an explicit else block holding an if prints as else if" text (render (parse "if a { 1 } else { if b { 2 } else if c { 3 } else { 4 } }"))
+    expectError "Flow/1 has no else if" "FLOW_EXPECTED_TOKEN"
+        (FlowParser.parseExpressionWithVersion 1 "<flow1-else-if>" "if a { 1 } else if b { 2 } else { 3 }") |> ignore
+
 let private testFlow2InfixOperators () =
     let parse source =
         match FlowParser.parseExpressionWithVersion 2 "<flow2-operators>" source with
@@ -6208,6 +6225,7 @@ let private testFlow2Loops () =
 let main _ =
     testFlow2ExpectStatements ()
     testFlow2InfixOperators ()
+    testFlow2ElseIf ()
     testFlow2Loops ()
     testParserLocationsAndQualification ()
     testIterativeAstDepthLimit ()
