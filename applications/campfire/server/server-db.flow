@@ -1,0 +1,648 @@
+// Room-read database operations on the stdlib db API (db.query / db.execute).
+// Same SQL text, parameter order, transactions, row validation and error
+// mapping as applications/campfire/Native/room_read_adapter.c. Parameters bind
+// by first appearance ($now in the refresh UPDATE is one parameter).
+
+record LoadedSession {
+    row: SessionRow
+    last-active-text: String
+}
+
+record RefreshStep {
+    retry: Bool
+    outcome: Result<SessionRow, DbError>
+}
+
+fn campfire.server.cut(text: String, start: Int, count: Int) -> String {
+    match string.slice(text, start, count) {
+        none => ""
+        some part => part
+    }
+}
+
+fn campfire.server.digits(text: String, start: Int, count: Int) -> Int {
+    doc "The decimal value of count ASCII digits at start, or -1 when any byte is not a digit."
+
+    var value = 0
+    var valid = true
+    for index in start..start + count {
+        let byte = string.byte-at-or(text, index, -1)
+        if byte < 48 || byte > 57 {
+            valid = false
+        } else {
+            value = value * 10 + byte - 48
+        }
+    }
+    if valid { value } else { -1 }
+}
+
+test campfire.server.digits/values {
+    expect campfire.server.digits("x2026-", 1, 4) == 2026
+    expect campfire.server.digits("12a4", 0, 4) == -1
+    expect campfire.server.digits("12", 1, 2) == -1
+}
+
+fn campfire.server.db-error(failure: SqlError) -> DbError {
+    doc "SQLite extended result code to the Campfire error tag (room_read_adapter.c sqlite_error_tag)."
+
+    let code = failure.code
+    if code == 1811 {
+        DbError.unavailable()
+    } else if code == 1555 || code == 2067 {
+        DbError.constraint-conflict()
+    } else if code == 787 {
+        DbError.not-found()
+    } else if code % 256 == 19 {
+        DbError.invalid-input()
+    } else {
+        DbError.unavailable()
+    }
+}
+
+test campfire.server.db-error/codes {
+    expect campfire.server.db-error(sqlError.new(code = 2067, message = "")) == DbError.constraint-conflict()
+    expect campfire.server.db-error(sqlError.new(code = 787, message = "")) == DbError.not-found()
+    expect campfire.server.db-error(sqlError.new(code = 1299, message = "")) == DbError.invalid-input()
+    expect campfire.server.db-error(sqlError.new(code = 5, message = "")) == DbError.unavailable()
+}
+
+fn campfire.server.timestamp-space?(byte: Int) -> Bool {
+    doc "The adapter trims bytes that are Unicode whitespace code points below 256."
+
+    (byte >= 9 && byte <= 13) || byte == 32 || byte == 133 || byte == 160
+}
+
+fn campfire.server.month-days(year: Int, month: Int) -> Int {
+    if month == 2 {
+        if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 { 29 } else { 28 }
+    } else if month == 4 || month == 6 || month == 9 || month == 11 {
+        30
+    } else {
+        31
+    }
+}
+
+fn campfire.server.parse-timestamp(text: String) -> Option<Int> {
+    doc "Rails/ISO date-time text to Unix microseconds (room_read_adapter.c try_parse_timestamp): trims whitespace, keeps six fractional digits, accepts Z, ' UTC' or +hh:mm offsets."
+
+    let length = string.byte-length(text)
+    var start = 0
+    var end = length
+    for index in 0..length {
+        if bool.not(campfire.server.timestamp-space?(string.byte-at-or(text, index, -1))) {
+            break
+        }
+        start = index + 1
+    }
+    for step in 0..length {
+        if end <= start || bool.not(campfire.server.timestamp-space?(string.byte-at-or(text, end - 1, -1))) {
+            break
+        }
+        end = end - 1
+    }
+    let year = campfire.server.digits(text, start, 4)
+    let month = campfire.server.digits(text, start + 5, 2)
+    let day = campfire.server.digits(text, start + 8, 2)
+    let hour = campfire.server.digits(text, start + 11, 2)
+    let minute = campfire.server.digits(text, start + 14, 2)
+    let second = campfire.server.digits(text, start + 17, 2)
+    let separator = string.byte-at-or(text, start + 10, -1)
+    let shape-ok = end - start >= 19 && string.byte-at-or(text, start + 4, -1) == 45 && string.byte-at-or(text, start + 7, -1) == 45 && (separator == 32 || separator == 84) && string.byte-at-or(text, start + 13, -1) == 58 && string.byte-at-or(text, start + 16, -1) == 58
+    let fields-ok = year >= 1 && month >= 1 && month <= 12 && day >= 1 && hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59 && second >= 0 && second <= 59
+    if bool.not(shape-ok) || bool.not(fields-ok) {
+        option.none<Int>()
+    } else if day > campfire.server.month-days(year, month) {
+        option.none<Int>()
+    } else {
+        var suffix = start + 19
+        var fraction = 0
+        var fraction-ok = true
+        if suffix < end && string.byte-at-or(text, suffix, -1) == 46 {
+            suffix = suffix + 1
+            let first-digit = suffix
+            for index in first-digit..end {
+                let byte = string.byte-at-or(text, index, -1)
+                if byte < 48 || byte > 57 {
+                    break
+                }
+                if index - first-digit < 6 {
+                    fraction = fraction * 10 + byte - 48
+                }
+                suffix = index + 1
+            }
+            let count = suffix - first-digit
+            if count == 0 {
+                fraction-ok = false
+            }
+            for pad in count..6 {
+                fraction = fraction * 10
+            }
+        }
+        let rest = end - suffix
+        let first = string.byte-at-or(text, suffix, -1)
+        var offset-minutes = 0
+        var offset-ok = true
+        if rest == 0 {
+            offset-ok = true
+        } else if rest == 1 && first == 90 {
+            offset-ok = true
+        } else if rest == 4 && campfire.server.cut(text, suffix, 4) == " UTC" {
+            offset-ok = true
+        } else if rest == 6 && (first == 43 || first == 45) && string.byte-at-or(text, suffix + 3, -1) == 58 {
+            let offset-hours = campfire.server.digits(text, suffix + 1, 2)
+            let offset-mins = campfire.server.digits(text, suffix + 4, 2)
+            if offset-hours < 0 || offset-mins < 0 || offset-hours > 14 || offset-mins > 59 || (offset-hours == 14 && offset-mins != 0) {
+                offset-ok = false
+            } else if first == 45 {
+                offset-minutes = 0 - (offset-hours * 60 + offset-mins)
+            } else {
+                offset-minutes = offset-hours * 60 + offset-mins
+            }
+        } else {
+            offset-ok = false
+        }
+        if bool.not(fraction-ok) || bool.not(offset-ok) {
+            option.none<Int>()
+        } else {
+            let prior = year - 1
+            var days = prior * 365 + prior / 4 - prior / 100 + prior / 400
+            for earlier in 1..month {
+                days = days + campfire.server.month-days(year, earlier)
+            }
+            days = days + day - 1
+            let local = days * 86400000000 + hour * 3600000000 + minute * 60000000 + second * 1000000 + fraction
+            let utc = local - offset-minutes * 60000000
+            if utc < 0 || utc > 315537897599999999 {
+                option.none<Int>()
+            } else {
+                option.some<Int>(utc - 62135596800000000)
+            }
+        }
+    }
+}
+
+test campfire.server.parse-timestamp/forms {
+    expect campfire.server.parse-timestamp("1970-01-01 00:00:00") == option.some<Int>(0)
+    expect campfire.server.parse-timestamp("2026-10-14 12:30:05.123456") == option.some<Int>(1791981005123456)
+    expect campfire.server.parse-timestamp(" 2026-10-14T12:30:05.1234569Z ") == option.some<Int>(1791981005123456)
+    expect campfire.server.parse-timestamp("2026-10-14 12:30:05 UTC") == option.some<Int>(1791981005000000)
+    expect campfire.server.parse-timestamp("2026-10-14T14:30:05+02:00") == option.some<Int>(1791981005000000)
+    expect campfire.server.parse-timestamp("2024-02-29 00:00:00") == option.some<Int>(1709164800000000)
+    expect campfire.server.parse-timestamp("2023-02-29 00:00:00") == option.none<Int>()
+    expect campfire.server.parse-timestamp("2026-10-14 12:30:05.") == option.none<Int>()
+    expect campfire.server.parse-timestamp("2026-10-14 12:30") == option.none<Int>()
+    expect campfire.server.parse-timestamp("2026-10-14 12:30:05+15:00") == option.none<Int>()
+}
+
+fn campfire.server.two(value: Int) -> String {
+    if value < 10 { string.concat("0", int.to-string(value)) } else { int.to-string(value) }
+}
+
+fn campfire.server.format-timestamp(micros: Int) -> String {
+    doc "Unix microseconds as 'YYYY-MM-DD HH:MM:SS[.ffffff]' UTC (room_read_adapter.c format_timestamp)."
+
+    var days = micros / 86400000000
+    var day-micros = micros % 86400000000
+    if day-micros < 0 {
+        day-micros = day-micros + 86400000000
+        days = days - 1
+    }
+    let z = days + 719468
+    let era = z / 146097
+    let doe = z - era * 146097
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100)
+    let mp = (5 * doy + 2) / 153
+    let day = doy - (153 * mp + 2) / 5 + 1
+    let month = if mp < 10 { mp + 3 } else { mp - 9 }
+    let year = if month <= 2 { yoe + era * 400 + 1 } else { yoe + era * 400 }
+    let hour = day-micros / 3600000000
+    let minute = day-micros % 3600000000 / 60000000
+    let second = day-micros % 60000000 / 1000000
+    let fraction = day-micros % 1000000
+    let year-text = string.concat(int.to-string(year / 1000 % 10), string.concat(int.to-string(year / 100 % 10), campfire.server.two(year % 100)))
+    let base = string.join([year-text, "-", campfire.server.two(month), "-", campfire.server.two(day), " ", campfire.server.two(hour), ":", campfire.server.two(minute), ":", campfire.server.two(second)])
+    if fraction == 0 {
+        base
+    } else {
+        let padded = int.to-string(1000000 + fraction)
+        string.concat(string.concat(base, "."), campfire.server.cut(padded, 1, 6))
+    }
+}
+
+test campfire.server.format-timestamp/values {
+    expect campfire.server.format-timestamp(0) == "1970-01-01 00:00:00"
+    expect campfire.server.format-timestamp(1791981005123456) == "2026-10-14 12:30:05.123456"
+    expect campfire.server.format-timestamp(1709164800000001) == "2024-02-29 00:00:00.000001"
+    expect campfire.server.format-timestamp(-1) == "1969-12-31 23:59:59.999999"
+}
+
+fn campfire.server.optional-text-param(value: Option<String>) -> DbValue {
+    match value {
+        none => db.null-param()
+        some text => db.text-param(text)
+    }
+}
+
+fn campfire.server.session-row(row: DbRow) -> Option<LoadedSession> {
+    doc "Validates a sessions row: ids not null, token and the three timestamps present and parseable."
+
+    let id = db.optional-int(row, 0)
+    let user-id = db.optional-int(row, 1)
+    let token = db.optional-text(row, 2)
+    let active-text = db.optional-text(row, 5)
+    let active = match active-text { none => option.none<Int>(); some text => campfire.server.parse-timestamp(text) }
+    let created = match db.optional-text(row, 6) { none => option.none<Int>(); some text => campfire.server.parse-timestamp(text) }
+    let updated = match db.optional-text(row, 7) { none => option.none<Int>(); some text => campfire.server.parse-timestamp(text) }
+    match id {
+        none => option.none<LoadedSession>()
+        some session-id => match user-id {
+            none => option.none<LoadedSession>()
+            some owner => match token {
+                none => option.none<LoadedSession>()
+                some token-text => match active {
+                    none => option.none<LoadedSession>()
+                    some active-at => match created {
+                        none => option.none<LoadedSession>()
+                        some created-at => match updated {
+                            none => option.none<LoadedSession>()
+                            some updated-at => {
+                                let ip = match db.optional-text(row, 3) {
+                                    none => option.none<RemoteIp>()
+                                    some address => option.some<RemoteIp>(RemoteIp.new(address))
+                                }
+                                option.some<LoadedSession>(loadedSession.new(
+                                    row = sessionRow.new(
+                                        id = SessionId.new(session-id),
+                                        user-id = UserId.new(owner),
+                                        token = SessionToken.new(token-text),
+                                        ip-address = ip,
+                                        user-agent = db.optional-text(row, 4),
+                                        last-active-at = UtcInstant.new(active-at),
+                                        created-at = UtcInstant.new(created-at),
+                                        updated-at = UtcInstant.new(updated-at)),
+                                    last-active-text = db.text(row, 5)))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.sessions.find-by-token(token: SessionToken) -> Result<Option<SessionRow>, DbError> {
+    effects db.read
+
+    match db.query("SELECT id, user_id, token, ip_address, user_agent, last_active_at, created_at, updated_at FROM sessions WHERE token = $token LIMIT 1", [db.text-param(SessionToken.value(token))]) {
+        error failure => result.error<Option<SessionRow>, DbError>(campfire.server.db-error(failure))
+        ok rows => match db.first-row(rows) {
+            none => result.ok<Option<SessionRow>, DbError>(option.none<SessionRow>())
+            some row => match campfire.server.session-row(row) {
+                none => result.error<Option<SessionRow>, DbError>(DbError.unavailable())
+                some loaded => result.ok<Option<SessionRow>, DbError>(option.some<SessionRow>(loaded.row))
+            }
+        }
+    }
+}
+
+fn campfire.server.session-by-id(session-id: SessionId) -> Result<Option<LoadedSession>, DbError> {
+    effects db.read
+
+    match db.query("SELECT id, user_id, token, ip_address, user_agent, last_active_at, created_at, updated_at FROM sessions WHERE id = $sessionId LIMIT 1", [db.int-param(SessionId.value(session-id))]) {
+        error failure => result.error<Option<LoadedSession>, DbError>(campfire.server.db-error(failure))
+        ok rows => match db.first-row(rows) {
+            none => result.ok<Option<LoadedSession>, DbError>(option.none<LoadedSession>())
+            some row => match campfire.server.session-row(row) {
+                none => result.error<Option<LoadedSession>, DbError>(DbError.unavailable())
+                some loaded => result.ok<Option<LoadedSession>, DbError>(option.some<LoadedSession>(loaded))
+            }
+        }
+    }
+}
+
+fn campfire.server.refresh-step(refresh: SessionRefresh, now-text: String) -> RefreshStep {
+    effects db.read, db.write
+    doc "One attempt: read the session; when its activity is older than the cutoff, update it guarded by the observed last_active_at text and read it again. Zero changed rows asks for a retry."
+
+    match campfire.server.session-by-id(refresh.session-id) {
+        error failure => refreshStep.new(retry = false, outcome = result.error<SessionRow, DbError>(failure))
+        ok found => match found {
+            none => refreshStep.new(retry = false, outcome = result.error<SessionRow, DbError>(DbError.not-found()))
+            some current => {
+                if UtcInstant.value(current.row.last-active-at) < UtcInstant.value(refresh.cutoff) {
+                    let parameters = [
+                        campfire.server.optional-text-param(match refresh.ip-address { none => option.none<String>(); some address => option.some<String>(RemoteIp.value(address)) }),
+                        campfire.server.optional-text-param(refresh.user-agent),
+                        db.text-param(now-text),
+                        db.int-param(SessionId.value(refresh.session-id)),
+                        db.text-param(current.last-active-text)
+                    ]
+                    match db.execute("UPDATE sessions SET ip_address = $ipAddress, user_agent = $userAgent, last_active_at = $now, updated_at = $now WHERE id = $sessionId AND last_active_at = $observedLastActiveAt", parameters) {
+                        error failure => refreshStep.new(retry = false, outcome = result.error<SessionRow, DbError>(campfire.server.db-error(failure)))
+                        ok changes => {
+                            if changes == 0 {
+                                refreshStep.new(retry = true, outcome = result.error<SessionRow, DbError>(DbError.unavailable()))
+                            } else {
+                                match campfire.server.session-by-id(refresh.session-id) {
+                                    error failure => refreshStep.new(retry = false, outcome = result.error<SessionRow, DbError>(failure))
+                                    ok reread => match reread {
+                                        none => refreshStep.new(retry = false, outcome = result.error<SessionRow, DbError>(DbError.not-found()))
+                                        some updated => refreshStep.new(retry = false, outcome = result.ok<SessionRow, DbError>(updated.row))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    refreshStep.new(retry = false, outcome = result.ok<SessionRow, DbError>(current.row))
+                }
+            }
+        }
+    }
+}
+
+fn campfire.server.rollback() -> Bool {
+    effects db.write
+    match db.execute("ROLLBACK", list.empty<DbValue>()) {
+        error failure => false
+        ok changes => true
+    }
+}
+
+fn campfire.sessions.refresh-before(refresh: SessionRefresh) -> Result<SessionRow, DbError> {
+    effects db.read, db.write
+    doc "Refreshes a session whose activity is older than the cutoff inside BEGIN IMMEDIATE, with up to three guarded attempts."
+
+    if UtcInstant.value(refresh.cutoff) > UtcInstant.value(refresh.now) {
+        result.error<SessionRow, DbError>(DbError.invalid-input())
+    } else {
+        let now-text = campfire.server.format-timestamp(UtcInstant.value(refresh.now))
+        match db.execute("BEGIN IMMEDIATE", list.empty<DbValue>()) {
+            error failure => result.error<SessionRow, DbError>(campfire.server.db-error(failure))
+            ok begun => {
+                var outcome = result.error<SessionRow, DbError>(DbError.unavailable())
+                var finished = false
+                for attempt in 0..3 {
+                    if finished {
+                        break
+                    }
+                    let step = campfire.server.refresh-step(refresh, now-text)
+                    outcome = step.outcome
+                    finished = bool.not(step.retry)
+                }
+                match outcome {
+                    error failure => {
+                        campfire.server.rollback()
+                        result.error<SessionRow, DbError>(failure)
+                    }
+                    ok row => match db.execute("COMMIT", list.empty<DbValue>()) {
+                        error failure => {
+                            campfire.server.rollback()
+                            result.error<SessionRow, DbError>(campfire.server.db-error(failure))
+                        }
+                        ok committed => result.ok<SessionRow, DbError>(row)
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.server.user-row(row: DbRow) -> Option<AuthUser> {
+    doc "Validates a users row: id, non-null name, role and status in 0..2."
+
+    let role = match db.optional-int(row, 2) { none => -1; some value => value }
+    let status = match db.optional-int(row, 3) { none => -1; some value => value }
+    match db.optional-int(row, 0) {
+        none => option.none<AuthUser>()
+        some id => match db.optional-text(row, 1) {
+            none => option.none<AuthUser>()
+            some name => {
+                if role < 0 || role > 2 || status < 0 || status > 2 {
+                    option.none<AuthUser>()
+                } else {
+                    let user-role = if role == 0 { Role.member() } else if role == 1 { Role.administrator() } else { Role.bot() }
+                    let user-status = if status == 0 { AuthUserStatus.active() } else if status == 1 { AuthUserStatus.deactivated() } else { AuthUserStatus.banned() }
+                    option.some<AuthUser>(authUser.new(id = UserId.new(id), name = name, role = user-role, status = user-status))
+                }
+            }
+        }
+    }
+}
+
+fn campfire.server.user-result(outcome: Result<List<DbRow>, SqlError>) -> Result<Option<AuthUser>, DbError> {
+    match outcome {
+        error failure => result.error<Option<AuthUser>, DbError>(campfire.server.db-error(failure))
+        ok rows => match db.first-row(rows) {
+            none => result.ok<Option<AuthUser>, DbError>(option.none<AuthUser>())
+            some row => match campfire.server.user-row(row) {
+                none => result.error<Option<AuthUser>, DbError>(DbError.unavailable())
+                some user => result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(user))
+            }
+        }
+    }
+}
+
+fn campfire.users.find-by-id(user-id: UserId) -> Result<Option<AuthUser>, DbError> {
+    effects db.read
+
+    campfire.server.user-result(db.query("SELECT id, name, role, status FROM users WHERE id = $userId LIMIT 1", [db.int-param(UserId.value(user-id))]))
+}
+
+fn campfire.users.authenticate-bot-key(key: BotKey) -> Result<Option<AuthUser>, DbError> {
+    effects db.read
+    doc "Splits '<id>-<token>' at the first dash (the token ends at a second dash) and looks up an active bot with that token."
+
+    let text = BotKey.value(key)
+    match string.index-of(text, "-", 0) {
+        none => result.ok<Option<AuthUser>, DbError>(option.none<AuthUser>())
+        some dash => {
+            let after = dash + 1
+            let token-end = match string.index-of(text, "-", after) {
+                none => string.byte-length(text)
+                some second => second
+            }
+            let id = campfire.server.cut(text, 0, dash)
+            let token = campfire.server.cut(text, after, token-end - after)
+            campfire.server.user-result(db.query("SELECT id, name, role, status FROM users WHERE status = 0 AND role = 2 AND id = $id AND bot_token = $token LIMIT 1", [db.text-param(id), db.text-param(token)]))
+        }
+    }
+}
+
+fn campfire.server.room-kind(text: String) -> Option<RoomKind> {
+    if text == "Rooms::Open" {
+        option.some<RoomKind>(RoomKind.open())
+    } else if text == "Rooms::Closed" {
+        option.some<RoomKind>(RoomKind.closed())
+    } else if text == "Rooms::Direct" {
+        option.some<RoomKind>(RoomKind.direct())
+    } else {
+        option.none<RoomKind>()
+    }
+}
+
+fn campfire.server.room-row(row: DbRow) -> Option<RoomRow> {
+    let kind = match db.optional-text(row, 2) { none => option.none<RoomKind>(); some text => campfire.server.room-kind(text) }
+    let created = db.optional-text(row, 4)
+    let updated = db.optional-text(row, 5)
+    let created-ok = match created { none => false; some text => campfire.server.parse-timestamp(text) != option.none<Int>() }
+    let updated-ok = match updated { none => false; some text => campfire.server.parse-timestamp(text) != option.none<Int>() }
+    match db.optional-int(row, 0) {
+        none => option.none<RoomRow>()
+        some id => match kind {
+            none => option.none<RoomRow>()
+            some room-kind => match db.optional-int(row, 3) {
+                none => option.none<RoomRow>()
+                some creator => {
+                    if created-ok && updated-ok {
+                        option.some<RoomRow>(roomRow.new(
+                            id = RoomId.new(id),
+                            name = db.optional-text(row, 1),
+                            kind = room-kind,
+                            creator-id = UserId.new(creator),
+                            created-at = db.text(row, 4),
+                            updated-at = db.text(row, 5)))
+                    } else {
+                        option.none<RoomRow>()
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.rooms.find-for-user(user-id: UserId, room-id: RoomId) -> Result<Option<RoomRow>, DbError> {
+    effects db.read
+
+    match db.query("SELECT rooms.id, rooms.name, rooms.type, rooms.creator_id, rooms.created_at, rooms.updated_at FROM rooms INNER JOIN memberships ON rooms.id = memberships.room_id WHERE memberships.user_id = $userId AND rooms.id = $roomId LIMIT 1", [db.int-param(UserId.value(user-id)), db.int-param(RoomId.value(room-id))]) {
+        error failure => result.error<Option<RoomRow>, DbError>(campfire.server.db-error(failure))
+        ok rows => match db.first-row(rows) {
+            none => result.ok<Option<RoomRow>, DbError>(option.none<RoomRow>())
+            some row => match campfire.server.room-row(row) {
+                none => result.error<Option<RoomRow>, DbError>(DbError.unavailable())
+                some room => result.ok<Option<RoomRow>, DbError>(option.some<RoomRow>(room))
+            }
+        }
+    }
+}
+
+fn campfire.membership.exists?(key: MembershipKey) -> Result<Bool, DbError> {
+    effects db.read
+
+    match db.query("SELECT EXISTS (SELECT 1 FROM \"memberships\" WHERE \"user_id\" = $userId AND \"room_id\" = $roomId)", [db.int-param(UserId.value(key.user-id)), db.int-param(RoomId.value(key.room-id))]) {
+        error failure => result.error<Bool, DbError>(campfire.server.db-error(failure))
+        ok rows => match db.first-row(rows) {
+            none => result.error<Bool, DbError>(DbError.unavailable())
+            some row => result.ok<Bool, DbError>(db.int(row, 0) != 0)
+        }
+    }
+}
+
+fn campfire.server.avatar-token(avatar-key: Bytes, user-id: Int) -> String {
+    doc "Rails signed_id for user/avatar: unpadded URL-safe Base64 of the JSON envelope, '--', hex HMAC-SHA256 with the derived signed_id key."
+
+    let envelope = string.concat("{\"_rails\":{\"data\":", string.concat(int.to-string(user-id), ",\"pur\":\"user/avatar\"}}"))
+    let encoded = base64.url-encode(bytes.from-utf8(envelope))
+    string.concat(encoded, string.concat("--", hex.encode(crypto.hmac-sha256(avatar-key, bytes.from-utf8(encoded)))))
+}
+
+fn campfire.server.message-row(row: DbRow, avatar-token: String) -> Option<MessageWithCreator> {
+    let created-at = db.optional-text(row, 6)
+    let creator-updated-at = db.optional-text(row, 9)
+    let created-ok = match created-at { none => false; some text => campfire.server.parse-timestamp(text) != option.none<Int>() }
+    let creator-updated-ok = match creator-updated-at { none => false; some text => campfire.server.parse-timestamp(text) != option.none<Int>() }
+    let texts-ok = db.optional-text(row, 5) != option.none<String>() && db.optional-text(row, 7) != option.none<String>() && db.optional-text(row, 8) != option.none<String>()
+    let ints-ok = db.optional-int(row, 0) != option.none<Int>() && db.optional-int(row, 1) != option.none<Int>() && db.optional-int(row, 2) != option.none<Int>() && db.optional-int(row, 3) != option.none<Int>() && db.optional-int(row, 4) != option.none<Int>()
+    if created-ok && creator-updated-ok && texts-ok && ints-ok {
+        option.some<MessageWithCreator>(messageWithCreator.new(
+            id = MessageId.new(db.int(row, 0)),
+            room-id = RoomId.new(db.int(row, 1)),
+            creator-id = UserId.new(db.int(row, 2)),
+            created-at-ms = db.int(row, 3),
+            updated-at-ms = db.int(row, 4),
+            client-message-id = db.text(row, 5),
+            created-at = db.text(row, 6),
+            creator-name = db.text(row, 7),
+            creator-bio = db.text(row, 8),
+            creator-updated-at = db.text(row, 9),
+            creator-avatar-token = avatar-token,
+            body = db.optional-text(row, 10)))
+    } else {
+        option.none<MessageWithCreator>()
+    }
+}
+
+fn campfire.server.message-page(rows: List<DbRow>, avatar-key: Bytes) -> Option<List<MessageWithCreator>> {
+    doc "Maps the page rows in order; one avatar token per run of rows by the same creator. Any invalid row rejects the page."
+
+    var messages = list.empty<MessageWithCreator>()
+    var valid = true
+    var token-user = 0
+    var token = ""
+    for row in rows {
+        let creator = db.int(row, 2)
+        if token == "" || token-user != creator {
+            token = campfire.server.avatar-token(avatar-key, creator)
+            token-user = creator
+        }
+        let parsed = campfire.server.message-row(row, token)
+        valid = valid && match parsed {
+            none => false
+            some message => true
+        }
+        messages = match parsed {
+            none => messages
+            some message => list.append(messages, message)
+        }
+    }
+    if valid {
+        option.some<List<MessageWithCreator>>(messages)
+    } else {
+        option.none<List<MessageWithCreator>>()
+    }
+}
+
+fn campfire.server.page-query(room-id: RoomId, avatar-key: Bytes) -> Result<List<MessageWithCreator>, DbError> {
+    effects db.read
+
+    match db.query("SELECT EXISTS (SELECT 1 FROM \"rooms\" WHERE \"id\" = $roomId)", [db.int-param(RoomId.value(room-id))]) {
+        error failure => result.error<List<MessageWithCreator>, DbError>(campfire.server.db-error(failure))
+        ok exists-rows => {
+            let exists = match db.first-row(exists-rows) { none => false; some row => db.int(row, 0) != 0 }
+            if bool.not(exists) {
+                result.error<List<MessageWithCreator>, DbError>(DbError.not-found())
+            } else {
+                match db.query("WITH page AS (SELECT id, ROW_NUMBER() OVER (ORDER BY created_at DESC) AS position FROM messages WHERE room_id = $roomId ORDER BY created_at DESC LIMIT 40) SELECT messages.id, messages.room_id, messages.creator_id, CAST(strftime('%s', messages.created_at) AS INTEGER) * 1000 + CAST(substr(strftime('%f', messages.created_at), 4) AS INTEGER), CAST(strftime('%s', messages.updated_at) AS INTEGER) * 1000 + CAST(substr(strftime('%f', messages.updated_at), 4) AS INTEGER), messages.client_message_id, messages.created_at, users.name, COALESCE(users.bio, ''), users.updated_at, rich_text.body FROM page INNER JOIN messages ON messages.id = page.id INNER JOIN users ON users.id = messages.creator_id LEFT JOIN action_text_rich_texts AS rich_text ON rich_text.record_id = messages.id AND rich_text.record_type = 'Message' AND rich_text.name = 'body' ORDER BY page.position DESC", [db.int-param(RoomId.value(room-id))]) {
+                    error failure => result.error<List<MessageWithCreator>, DbError>(campfire.server.db-error(failure))
+                    ok rows => match campfire.server.message-page(rows, avatar-key) {
+                        none => result.error<List<MessageWithCreator>, DbError>(DbError.unavailable())
+                        some messages => result.ok<List<MessageWithCreator>, DbError>(messages)
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.server.last-page-with-creators(room-id: RoomId, avatar-key: Bytes) -> Result<List<MessageWithCreator>, DbError> {
+    effects db.read, db.write
+    doc "The room's newest forty messages, oldest first, with creators and avatar tokens, read in one deferred transaction (campfire.messages.last-page-with-creators)."
+
+    match db.execute("BEGIN DEFERRED", list.empty<DbValue>()) {
+        error failure => result.error<List<MessageWithCreator>, DbError>(campfire.server.db-error(failure))
+        ok begun => match campfire.server.page-query(room-id, avatar-key) {
+            error failure => {
+                campfire.server.rollback()
+                result.error<List<MessageWithCreator>, DbError>(failure)
+            }
+            ok messages => match db.execute("COMMIT", list.empty<DbValue>()) {
+                error failure => {
+                    campfire.server.rollback()
+                    result.error<List<MessageWithCreator>, DbError>(campfire.server.db-error(failure))
+                }
+                ok committed => result.ok<List<MessageWithCreator>, DbError>(messages)
+            }
+        }
+    }
+}

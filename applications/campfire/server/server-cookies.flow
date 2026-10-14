@@ -1,0 +1,484 @@
+// Rails 7 cookies in Flow: the signed session_token cookie (HMAC-SHA1, key
+// "signed cookie") and the encrypted _campfire_session cookie (AES-256-GCM, key
+// "authenticated encrypted cookie"), with the same acceptance rules as
+// room_read_pure.c (verify) and cookie_response_codec.c (decrypt, session
+// mutation, encrypt, sign). Keys come from the worker context; the crypto is
+// the stdlib's OS-library primitives.
+
+fn campfire.server.ascii?(text: String) -> Bool {
+    var ascii = true
+    for index in 0..string.byte-length(text) {
+        if string.byte-at-or(text, index, 0) > 127 {
+            ascii = false
+            break
+        }
+    }
+    ascii
+}
+
+test campfire.server.ascii?/values {
+    expect campfire.server.ascii?("abc-_=")
+    expect bool.not(campfire.server.ascii?("é"))
+}
+
+fn campfire.server.base64-decode(text: String) -> Option<Bytes> {
+    doc "Standard padded Base64, else URL-safe (the Rails decoders accept either alphabet)."
+
+    match base64.decode(text) {
+        some data => option.some<Bytes>(data)
+        none => base64.url-decode(text)
+    }
+}
+
+test campfire.server.base64-decode/alphabets {
+    expect campfire.server.base64-decode("Pz8-") == base64.url-decode("Pz8-")
+    expect campfire.server.base64-decode("Pz8+") == base64.decode("Pz8+")
+    expect campfire.server.base64-decode("%%") == option.none<Bytes>()
+}
+
+fn campfire.server.utf8(data: Bytes) -> Option<String> {
+    bytes.to-utf8(data)
+}
+
+test campfire.server.utf8/text {
+    expect campfire.server.utf8(bytes.from-utf8("x")) == option.some<String>("x")
+}
+
+fn campfire.server.json-object(text: String) -> Option<Json> {
+    doc "Parses text whose root value is a JSON object."
+
+    var first = -1
+    for index in 0..string.byte-length(text) {
+        let byte = string.byte-at-or(text, index, 0)
+        if byte != 32 && byte != 9 && byte != 10 && byte != 13 {
+            first = byte
+            break
+        }
+    }
+    if first != 123 {
+        option.none<Json>()
+    } else {
+        json.parse(text)
+    }
+}
+
+test campfire.server.json-object/root {
+    expect campfire.server.json-object(" {\"a\":1}") != option.none<Json>()
+    expect campfire.server.json-object("[1]") == option.none<Json>()
+    expect campfire.server.json-object("{") == option.none<Json>()
+}
+
+fn campfire.server.rails-purpose-ok?(rails: Json, purpose: String) -> Bool {
+    doc "An absent, null or empty purpose matches; otherwise it must equal the cookie's purpose."
+
+    match json.field(rails, "pur") {
+        none => true
+        some value => {
+            if json.null?(value) {
+                true
+            } else {
+                match json.text(value) {
+                    none => false
+                    some text => text == "" || text == purpose
+                }
+            }
+        }
+    }
+}
+
+test campfire.server.rails-purpose-ok?/forms {
+    let document = match json.parse("{\"pur\":\"cookie.x\"}") { none => json.parse("{}"); some value => option.some<Json>(value) }
+    expect match document { none => false; some value => campfire.server.rails-purpose-ok?(value, "cookie.x") }
+    expect match document { none => false; some value => bool.not(campfire.server.rails-purpose-ok?(value, "cookie.y")) }
+}
+
+fn campfire.server.rails-unexpired?(rails: Json, now: Int) -> Bool {
+    doc "An absent or null exp never expires; a text exp must parse and be later than now; any other exp is invalid."
+
+    match json.field(rails, "exp") {
+        none => true
+        some value => {
+            if json.null?(value) {
+                true
+            } else {
+                match json.text(value) {
+                    none => false
+                    some text => match time.parse-iso8601(text) {
+                        none => false
+                        some expiry => now < expiry
+                    }
+                }
+            }
+        }
+    }
+}
+
+test campfire.server.rails-unexpired?/forms {
+    let document = match json.parse("{\"exp\":\"2026-10-14T12:00:00.000Z\"}") { none => json.parse("{}"); some value => option.some<Json>(value) }
+    expect match document { none => false; some value => campfire.server.rails-unexpired?(value, 1791979199999999) }
+    expect match document { none => false; some value => bool.not(campfire.server.rails-unexpired?(value, 1791979200000000)) }
+}
+
+fn campfire.server.rails-message(payload: String, purpose: String, now: Int) -> Option<String> {
+    doc "Unwraps Rails' metadata envelope {\"_rails\":{\"message\":...,\"exp\":...,\"pur\":...}}; a payload without the envelope prefix is the message itself (legacy cookies)."
+
+    if bool.not(string.starts-with(payload, "{\"_rails\":{\"message\":\"")) {
+        option.some<String>(payload)
+    } else {
+        match campfire.server.json-object(payload) {
+            none => option.none<String>()
+            some root => match json.field(root, "_rails") {
+                none => option.none<String>()
+                some rails => match json.field(rails, "message") {
+                    none => option.none<String>()
+                    some message => match json.text(message) {
+                        none => option.none<String>()
+                        some encoded => {
+                            if campfire.server.ascii?(encoded) && campfire.server.rails-purpose-ok?(rails, purpose) && campfire.server.rails-unexpired?(rails, now) {
+                                match campfire.server.base64-decode(encoded) {
+                                    none => option.none<String>()
+                                    some data => campfire.server.utf8(data)
+                                }
+                            } else {
+                                option.none<String>()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+test campfire.server.rails-message/envelope {
+    expect campfire.server.rails-message("{\"_rails\":{\"message\":\"InRvayI=\",\"exp\":null,\"pur\":\"cookie.session_token\"}}", "cookie.session_token", 0) == option.some<String>("\"tok\"")
+    expect campfire.server.rails-message("{\"_rails\":{\"message\":\"InRvayI=\",\"exp\":null,\"pur\":\"cookie.other\"}}", "cookie.session_token", 0) == option.none<String>()
+    expect campfire.server.rails-message("\"legacy\"", "cookie.session_token", 0) == option.some<String>("\"legacy\"")
+}
+
+fn campfire.server.verify-session-token(signing-key: Bytes, raw: String, now: UtcInstant) -> Option<SessionToken> {
+    doc "Verifies the signed session_token cookie: base64(envelope)--hex(HMAC-SHA1) with a constant-time digest check, then the envelope and a JSON string token (campfire.cookies.verify-session-token)."
+
+    let length = string.byte-length(raw)
+    let encoded-length = length - 42
+    if length < 42 || encoded-length == 0 || bool.not(campfire.server.ascii?(raw)) || campfire.server.cut(raw, encoded-length, 2) != "--" {
+        option.none<SessionToken>()
+    } else {
+        let encoded = campfire.server.cut(raw, 0, encoded-length)
+        let digest = campfire.server.cut(raw, encoded-length + 2, 40)
+        let expected = hex.encode(crypto.hmac-sha1(signing-key, bytes.from-utf8(encoded)))
+        if bool.not(bytes.equal-constant-time?(bytes.from-utf8(expected), bytes.from-utf8(digest))) {
+            option.none<SessionToken>()
+        } else {
+            let payload = match campfire.server.base64-decode(encoded) {
+                none => option.none<String>()
+                some data => campfire.server.utf8(data)
+            }
+            let inner = match payload {
+                none => option.none<String>()
+                some text => campfire.server.rails-message(text, "cookie.session_token", UtcInstant.value(now))
+            }
+            match inner {
+                none => option.none<SessionToken>()
+                some token-json => match json.parse(token-json) {
+                    none => option.none<SessionToken>()
+                    some value => match json.text(value) {
+                        none => option.none<SessionToken>()
+                        some token => option.some<SessionToken>(SessionToken.new(token))
+                    }
+                }
+            }
+        }
+    }
+}
+
+test campfire.server.verify-session-token/round-trip {
+    let key = campfire.server.rails-key("synthetic-secret-key-base-for-agentlang-tests-0123456789abcdef", "signed cookie", 64)
+    let signed = campfire.server.sign-session-token(key, "token-value", 1791979200000000)
+    expect campfire.server.verify-session-token(key, signed, UtcInstant.new(1791979200000000)) == option.some<SessionToken>(SessionToken.new("token-value"))
+    expect campfire.server.verify-session-token(key, string.concat("x", signed), UtcInstant.new(1791979200000000)) == option.none<SessionToken>()
+    expect campfire.server.verify-session-token(key, "short", UtcInstant.new(0)) == option.none<SessionToken>()
+}
+
+test campfire.server.verify-session-token/node-token {
+    let key = campfire.server.rails-key("synthetic-secret-key-base-for-agentlang-tests-0123456789abcdef", "signed cookie", 64)
+    expect campfire.server.verify-session-token(key, "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluUnZhMlZ1TFhaaGJIVmxJZz09IiwiZXhwIjoiMjA0Ni0xMC0xNFQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--8704e18d5a8588cbd123ab767e534e69fa0dfac4", UtcInstant.new(1791979200000000)) == option.some<SessionToken>(SessionToken.new("token-value"))
+}
+
+fn campfire.server.rails-key(secret: String, salt: String, length: Int) -> Bytes {
+    doc "Rails 7 key derivation: PBKDF2-HMAC-SHA256 of secret_key_base, 1000 iterations."
+
+    match crypto.pbkdf2-sha256(bytes.from-utf8(secret), bytes.from-utf8(salt), 1000, length) {
+        none => bytes.from-utf8("")
+        some key => key
+    }
+}
+
+test campfire.server.rails-key/length {
+    expect bytes.length(campfire.server.rails-key("secret", "signed cookie", 64)) == 64
+}
+
+fn campfire.server.part(parts: List<String>, wanted: Int) -> String {
+    var found = ""
+    for part, index in parts {
+        if index == wanted {
+            found = part
+            break
+        }
+    }
+    found
+}
+
+test campfire.server.part/index {
+    expect campfire.server.part(["a", "b"], 1) == "b"
+    expect campfire.server.part(["a"], 3) == ""
+}
+
+fn campfire.server.count(parts: List<String>) -> Int {
+    var total = 0
+    for part in parts {
+        total = total + 1
+    }
+    total
+}
+
+test campfire.server.count/three {
+    expect campfire.server.count(string.split("a--b--c", "--")) == 3
+}
+
+fn campfire.server.decrypt-session(encryption-key: Bytes, raw: String, now: Int) -> Option<String> {
+    doc "Opens the _campfire_session value base64(ciphertext)--base64(iv)--base64(tag) and returns its session JSON object text."
+
+    let parts = string.split(raw, "--")
+    if raw == "" || bool.not(campfire.server.ascii?(raw)) || campfire.server.count(parts) != 3 {
+        option.none<String>()
+    } else {
+        let ciphertext = base64.decode(campfire.server.part(parts, 0))
+        let nonce = base64.decode(campfire.server.part(parts, 1))
+        let tag = base64.decode(campfire.server.part(parts, 2))
+        let opened = match ciphertext {
+            none => option.none<Bytes>()
+            some sealed => match nonce {
+                none => option.none<Bytes>()
+                some iv => match tag {
+                    none => option.none<Bytes>()
+                    some check => {
+                        if bytes.length(sealed) == 0 {
+                            option.none<Bytes>()
+                        } else {
+                            crypto.aes-256-gcm-open(encryption-key, iv, sealed, check, bytes.from-utf8(""))
+                        }
+                    }
+                }
+            }
+        }
+        let payload = match opened {
+            none => option.none<String>()
+            some plaintext => campfire.server.utf8(plaintext)
+        }
+        let session = match payload {
+            none => option.none<String>()
+            some text => campfire.server.rails-message(text, "cookie._campfire_session", now)
+        }
+        match session {
+            none => option.none<String>()
+            some text => match campfire.server.json-object(text) {
+                none => option.none<String>()
+                some document => option.some<String>(text)
+            }
+        }
+    }
+}
+
+test campfire.server.decrypt-session/node-cookie {
+    let key = campfire.server.rails-key("synthetic-secret-key-base-for-agentlang-tests-0123456789abcdef", "authenticated encrypted cookie", 32)
+    let raw = cookie.unescape("ran44C2kDDci5MMQUGOERkoDjUdzEzq0t4%2BoYsDjvko5jUw5BhN9DklqxELd2Qbf9dK86iZq3H0%2Barqms7lEeJddHix2umJ7XEzcZ2LIJCfRMH%2B61CmejqLrnxh8%2F%2BMPC4TyTYgncwuaKkTBgMETtB2%2FaRU3LqtAk3TlsP3n6Xd%2Bl6lsHV%2F3%2BmOFKWJJ2mVQ0%2FIbo8%2Fmorx%2B7cVBchjA--AAECAwQFBgcICQoL--Z%2ByE4Koevv3JHTK2xcGT3Q%3D%3D")
+    expect campfire.server.decrypt-session(key, raw, 1791979200000000) == option.some<String>("{\"session_id\":\"abc123\",\"_csrf_token\":\"tok\\u003cen\"}")
+    expect campfire.server.decrypt-session(key, raw, 2423131200000000) == option.none<String>()
+    expect campfire.server.decrypt-session(key, "a--b", 0) == option.none<String>()
+}
+
+fn campfire.server.session-csrf(session: String) -> Option<String> {
+    doc "The first top-level _csrf_token whose value is an ASCII string, as the native codec reads it."
+
+    match campfire.server.json-object(session) {
+        none => option.none<String>()
+        some root => {
+            let members = match json.count(root) { none => 0; some count => count }
+            var found = option.none<String>()
+            for index in 0..members {
+                let key = match json.key-at(root, index) { none => ""; some name => name }
+                let text = match json.index(root, index) {
+                    none => option.none<String>()
+                    some value => json.text(value)
+                }
+                if key == "_csrf_token" && text != option.none<String>() {
+                    found = match text {
+                        none => option.none<String>()
+                        some token => if campfire.server.ascii?(token) { option.some<String>(token) } else { option.none<String>() }
+                    }
+                    break
+                }
+            }
+            found
+        }
+    }
+}
+
+test campfire.server.session-csrf/first-string {
+    expect campfire.server.session-csrf("{\"_csrf_token\":1,\"_csrf_token\":\"a\",\"_csrf_token\":\"b\"}") == option.some<String>("a")
+    expect campfire.server.session-csrf("{\"session_id\":\"x\"}") == option.none<String>()
+    expect campfire.server.session-csrf("{\"_csrf_token\":\"é\",\"_csrf_token\":\"b\"}") == option.none<String>()
+}
+
+fn campfire.server.alert-value(alert: String) -> String {
+    string.concat("{\"discard\":[],\"flashes\":{\"alert\":", string.concat(json.quote(alert), "}}"))
+}
+
+test campfire.server.alert-value/shape {
+    expect campfire.server.alert-value("No") == "{\"discard\":[],\"flashes\":{\"alert\":\"No\"}}"
+}
+
+fn campfire.server.member(prior: String, key: String, value: String) -> String {
+    let separator = if prior == "" { "" } else { "," }
+    string.join([prior, separator, json.quote(key), ":", value])
+}
+
+test campfire.server.member/join {
+    expect campfire.server.member("", "a", "1") == "\"a\":1"
+    expect campfire.server.member("\"a\":1", "b", "2") == "\"a\":1,\"b\":2"
+}
+
+fn campfire.server.mutate-session(session: String, return-url: Option<String>, alert: Option<String>, csrf: Option<String>) -> Option<String> {
+    doc "Rewrites the session JSON as cookie_response_codec.c does: members keep their order, return_to_after_authenticating, _csrf_token and flash are replaced in place or appended in that order. Duplicate keys reject the session."
+
+    match campfire.server.json-object(session) {
+        none => option.none<String>()
+        some root => {
+            let members = match json.count(root) { none => 0; some count => count }
+            var body = ""
+            var duplicate = false
+            var saw-return = false
+            var saw-csrf = false
+            var saw-flash = false
+            for index in 0..members {
+                let key = match json.key-at(root, index) { none => ""; some name => name }
+                for earlier in 0..index {
+                    if json.key-at(root, earlier) == option.some<String>(key) {
+                        duplicate = true
+                    }
+                }
+                let raw = match json.index(root, index) { none => "null"; some value => json.encode(value) }
+                if key == "return_to_after_authenticating" && return-url != option.none<String>() {
+                    body = campfire.server.member(body, key, json.quote(match return-url { none => ""; some url => url }))
+                    saw-return = true
+                } else if key == "_csrf_token" && csrf != option.none<String>() {
+                    body = campfire.server.member(body, key, json.quote(match csrf { none => ""; some token => token }))
+                    saw-csrf = true
+                } else if key == "flash" && alert != option.none<String>() {
+                    body = campfire.server.member(body, key, campfire.server.alert-value(match alert { none => ""; some text => text }))
+                    saw-flash = true
+                } else {
+                    body = campfire.server.member(body, key, raw)
+                }
+            }
+            if bool.not(saw-return) && return-url != option.none<String>() {
+                body = campfire.server.member(body, "return_to_after_authenticating", json.quote(match return-url { none => ""; some url => url }))
+            }
+            if bool.not(saw-csrf) && csrf != option.none<String>() {
+                body = campfire.server.member(body, "_csrf_token", json.quote(match csrf { none => ""; some token => token }))
+            }
+            if bool.not(saw-flash) && alert != option.none<String>() {
+                body = campfire.server.member(body, "flash", campfire.server.alert-value(match alert { none => ""; some text => text }))
+            }
+            if duplicate {
+                option.none<String>()
+            } else {
+                option.some<String>(string.concat("{", string.concat(body, "}")))
+            }
+        }
+    }
+}
+
+test campfire.server.mutate-session/replace-and-append {
+    expect campfire.server.mutate-session("{\"session_id\":\"s\", \"_csrf_token\":\"old\",\"n\":[1, 2]}", option.none<String>(), option.none<String>(), option.some<String>("new")) == option.some<String>("{\"session_id\":\"s\",\"_csrf_token\":\"new\",\"n\":[1, 2]}")
+    expect campfire.server.mutate-session("{}", option.some<String>("http://h/rooms/1"), option.some<String>("Gone"), option.some<String>("t")) == option.some<String>("{\"return_to_after_authenticating\":\"http://h/rooms/1\",\"_csrf_token\":\"t\",\"flash\":{\"discard\":[],\"flashes\":{\"alert\":\"Gone\"}}}")
+    expect campfire.server.mutate-session("{\"a\":1,\"a\":2}", option.none<String>(), option.none<String>(), option.some<String>("t")) == option.none<String>()
+}
+
+fn campfire.server.slice-bytes(data: Bytes, start: Int, count: Int) -> Bytes {
+    match bytes.slice(data, start, count) {
+        none => bytes.from-utf8("")
+        some part => part
+    }
+}
+
+test campfire.server.slice-bytes/range {
+    expect hex.encode(campfire.server.slice-bytes(bytes.from-utf8("abc"), 1, 2)) == "6263"
+    expect hex.encode(campfire.server.slice-bytes(bytes.from-utf8("abc"), 2, 5)) == ""
+}
+
+fn campfire.server.rails-expiry(now: Int) -> String {
+    doc "The envelope expiry: 20 calendar years after now, ISO 8601 with milliseconds."
+
+    match time.add-years(now, 20) {
+        none => ""
+        some later => match time.iso8601-ms(later) {
+            none => ""
+            some text => text
+        }
+    }
+}
+
+test campfire.server.rails-expiry/twenty-years {
+    expect campfire.server.rails-expiry(1791979200000000) == "2046-10-14T12:00:00.000Z"
+}
+
+fn campfire.server.envelope(message: String, now: Int, purpose: String) -> String {
+    string.join(["{\"_rails\":{\"message\":\"", base64.encode(bytes.from-utf8(message)), "\",\"exp\":\"", campfire.server.rails-expiry(now), "\",\"pur\":\"", purpose, "\"}}"])
+}
+
+test campfire.server.envelope/shape {
+    expect campfire.server.envelope("{}", 1791979200000000, "cookie._campfire_session") == "{\"_rails\":{\"message\":\"e30=\",\"exp\":\"2046-10-14T12:00:00.000Z\",\"pur\":\"cookie._campfire_session\"}}"
+}
+
+fn campfire.server.seal-session(encryption-key: Bytes, nonce: Bytes, session: String, now: Int) -> String {
+    doc "The _campfire_session value (unescaped) for a session JSON object and a 12-byte nonce."
+
+    match crypto.aes-256-gcm-seal(encryption-key, nonce, bytes.from-utf8(campfire.server.envelope(session, now, "cookie._campfire_session")), bytes.from-utf8("")) {
+        none => ""
+        some sealed => {
+            let count = bytes.length(sealed) - 16
+            string.join([base64.encode(campfire.server.slice-bytes(sealed, 0, count)), "--", base64.encode(nonce), "--", base64.encode(campfire.server.slice-bytes(sealed, count, 16))])
+        }
+    }
+}
+
+test campfire.server.seal-session/matches-node {
+    let key = campfire.server.rails-key("synthetic-secret-key-base-for-agentlang-tests-0123456789abcdef", "authenticated encrypted cookie", 32)
+    let nonce = match base64.decode("AAECAwQFBgcICQoL") { none => bytes.from-utf8(""); some data => data }
+    expect cookie.escape(campfire.server.seal-session(key, nonce, "{\"session_id\":\"abc123\",\"_csrf_token\":\"tok\\u003cen\"}", 1791979200000000)) == "ran44C2kDDci5MMQUGOERkoDjUdzEzq0t4%2BoYsDjvko5jUw5BhN9DklqxELd2Qbf9dK86iZq3H0%2Barqms7lEeJddHix2umJ7XEzcZ2LIJCfRMH%2B61CmejqLrnxh8%2F%2BMPC4TyTYgncwuaKkTBgMETtB2%2FaRU3LqtAk3TlsP3n6Xd%2Bl6lsHV%2F3%2BmOFKWJJ2mVQ0%2FIbo8%2Fmorx%2B7cVBchjA--AAECAwQFBgcICQoL--Z%2ByE4Koevv3JHTK2xcGT3Q%3D%3D"
+}
+
+fn campfire.server.encrypt-session(encryption-key: Bytes, session: String, now: Int) -> String {
+    effects random.read
+
+    campfire.server.seal-session(encryption-key, crypto.random-bytes(12), session, now)
+}
+
+test campfire.server.encrypt-session/opens {
+    let key = campfire.server.rails-key("secret", "authenticated encrypted cookie", 32)
+    expect campfire.server.decrypt-session(key, campfire.server.encrypt-session(key, "{\"a\":1}", 0), 0) == option.some<String>("{\"a\":1}")
+}
+
+fn campfire.server.sign-session-token(signing-key: Bytes, token: String, now: Int) -> String {
+    doc "The signed session_token value: base64(envelope of the JSON token)--hex(HMAC-SHA1)."
+
+    let data = base64.encode(bytes.from-utf8(campfire.server.envelope(json.quote(token), now, "cookie.session_token")))
+    string.concat(data, string.concat("--", hex.encode(crypto.hmac-sha1(signing-key, bytes.from-utf8(data)))))
+}
+
+test campfire.server.sign-session-token/matches-node {
+    let key = campfire.server.rails-key("synthetic-secret-key-base-for-agentlang-tests-0123456789abcdef", "signed cookie", 64)
+    expect campfire.server.sign-session-token(key, "token-value", 1791979200000000) == "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluUnZhMlZ1TFhaaGJIVmxJZz09IiwiZXhwIjoiMjA0Ni0xMC0xNFQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--8704e18d5a8588cbd123ab767e534e69fa0dfac4"
+}

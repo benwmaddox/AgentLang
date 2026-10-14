@@ -7,7 +7,7 @@ module AgentLang.FlowHttp.Tests
 //    scripts/Build-FlowHttpServer.ps1, served on 127.0.0.1:13773, and the
 //    same sequence over one keep-alive connection must give the same status,
 //    app headers and body (interpreter-vs-native parity, including db rows,
-//    change counts and DbError codes);
+//    change counts and SqlError codes);
 // 3. protocol checks: pipelining, HEAD, 404, malformed requests, chunked
 //    bodies, Connection: close, oversized bodies, control shutdown.
 
@@ -52,7 +52,7 @@ let private cases =
       case "GET" "/items" [] ""
       case "POST" "/items" [ "X-Note", "n2" ] "second"
       case "POST" "/items" [] "third"
-      case "POST" "/items" [] "first"                     // UNIQUE violation: DbError 2067
+      case "POST" "/items" [] "first"                     // UNIQUE violation: SqlError 2067
       case "GET" "/items" [] ""
       case "GET" "/item?id=2" [] ""
       case "GET" "/item?id=3" [] ""
@@ -253,7 +253,7 @@ let private run () =
 
     let expected = interpreterResponses ()
     check "interpreter: hello" (expected.Head.Body = "hello world")
-    check "interpreter: unique violation maps to DbError 2067" (expected[5].Status = 409 && expected[5].Body = "db error 2067")
+    check "interpreter: unique violation maps to SqlError 2067" (expected[5].Status = 409 && expected[5].Body = "db error 2067")
     check "interpreter: listing after inserts" (expected[6].Body = "1:first\n2:second\n3:third\n")
     check "interpreter: optional-text null" (expected[8].Body = "third / (none)")
     printfn "interpreter: %d responses" expected.Length

@@ -92,7 +92,7 @@ Slice 1 (report 272) and slice 2 (report 274) are done (marked *).
    immutable context. This is configuration, not response caching: Rails and
    Rust also derive keys once and reuse prepared statements.
 6. Database: a statement prepared once per worker; `db.query<Row>(statement,
-   parameters) -> Result<List<Row>, DbError>`, one host call per query
+   parameters) -> Result<List<Row>, SqlError>`, one host call per query
    returning typed rows. Effects: `db.read` / `db.write`.
 7. JSON*, host-parsed, as the opaque type `Json` (the exact text of one
    validated value; Bytes layout natively): `json.parse(String) -> Option<Json>`

@@ -6,10 +6,10 @@ open AgentLang
 open SQLitePCL
 
 /// The portable database API (docs/LINUX-SERVER-PLAN.md piece C) as host
-/// operations: db.query and db.execute over the stdlib DbValue/DbRow/DbError
+/// operations: db.query and db.execute over the stdlib DbValue/DbRow/SqlError
 /// records (src/stdlib/db.flow). The interpreter provider below and the native
 /// adapter (native/http_host/flow_http_db.c) follow the same SQLite C API
-/// steps, so results and DbError codes agree.
+/// steps, so results and SqlError codes agree.
 module Db =
     let queryId = HostOperationId "db.query"
     let executeId = HostOperationId "db.execute"
@@ -21,21 +21,21 @@ module Db =
               { Id = queryId
                 WordName = "db.query"
                 Inputs = [ TString; TList(TNamed "DbValue") ]
-                Outputs = [ TResult(TList(TNamed "DbRow"), TNamed "DbError") ]
+                Outputs = [ TResult(TList(TNamed "DbRow"), TNamed "SqlError") ]
                 Effects = Set.singleton "db.read"
                 Documentation = "Runs one SQL literal (prepared once per worker) with ordered parameters and returns its rows." }
               executeId,
               { Id = executeId
                 WordName = "db.execute"
                 Inputs = [ TString; TList(TNamed "DbValue") ]
-                Outputs = [ TResult(TInt, TNamed "DbError") ]
+                Outputs = [ TResult(TInt, TNamed "SqlError") ]
                 Effects = Set.singleton "db.write"
                 Documentation = "Runs one SQL literal (prepared once per worker) with ordered parameters and returns the changed row count." } ]
 
     /// Native host manifest operations: tag, name, boundary type names, effects.
     let nativeOperations =
-        [ 1u, "db.query", [ "String"; "List<DbValue>" ], [ "Result<List<DbRow>, DbError>" ], [ "db.read" ]
-          2u, "db.execute", [ "String"; "List<DbValue>" ], [ "Result<Int, DbError>" ], [ "db.write" ] ]
+        [ 1u, "db.query", [ "String"; "List<DbValue>" ], [ "Result<List<DbRow>, SqlError>" ], [ "db.read" ]
+          2u, "db.execute", [ "String"; "List<DbValue>" ], [ "Result<Int, SqlError>" ], [ "db.write" ] ]
 
     let private sqliteOk = 0
     let private sqliteRow = 100
@@ -47,7 +47,7 @@ module Db =
     let private initialized = lazy (Batteries_V2.Init())
 
     let private dbError (code: int64) (message: string) =
-        RecordValue("DbError", Map.ofList [ "code", IntValue code; "message", StringValue message ])
+        RecordValue("SqlError", Map.ofList [ "code", IntValue code; "message", StringValue message ])
 
     let private dbValue kind (intValue: int64) (text: string) (blob: byte[]) =
         RecordValue(
@@ -178,8 +178,8 @@ module Db =
 
     let private resultValue okType (result: Result<Value, int64 * string>) =
         match result with
-        | Ok value -> ResultValue(okType, TNamed "DbError", Ok value)
-        | Error(code, message) -> ResultValue(okType, TNamed "DbError", Error(dbError code message))
+        | Ok value -> ResultValue(okType, TNamed "SqlError", Ok value)
+        | Error(code, message) -> ResultValue(okType, TNamed "SqlError", Error(dbError code message))
 
     /// Interpreter provider over one connection (one worker).
     let createProvider (path: string) : HostOperationProvider =

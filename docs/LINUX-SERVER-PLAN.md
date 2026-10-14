@@ -88,8 +88,8 @@ Unix-microseconds clock primitive.
 
 ### C. Stdlib: database (SQLite)
 
-- `db.query(sql: String, parameters: List<DbValue>) -> Result<List<DbRow>, DbError>`
-  and `db.execute(...) -> Result<Int, DbError>` (changes), with
+- `db.query(sql: String, parameters: List<DbValue>) -> Result<List<DbRow>, SqlError>`
+  and `db.execute(...) -> Result<Int, SqlError>` (changes), with
   `DbValue` (int | text | null | blob as an enum-plus-payload record) and row
   accessors `db.int(row, column)`, `db.text(row, column)`,
   `db.optional-text(row, column)`. `sql` must be a literal; each worker
@@ -103,14 +103,14 @@ Unix-microseconds clock primitive.
 
 - Stdlib Flow: `src/stdlib/http.flow` (HttpHeader/HttpRequest/HttpResponse,
   `http.header`, `http.path`, `http.query`, `http.config`, `http.response`)
-  and `src/stdlib/db.flow` (DbValueKind/DbValue/DbRow/DbError, `db.*-param`,
+  and `src/stdlib/db.flow` (DbValueKind/DbValue/DbRow/SqlError, `db.*-param`,
   `db.column`, `db.first-row`, `db.int`, `db.optional-int`, `db.text`,
   `db.optional-text`, `db.blob`). Columns are zero-based; REAL arrives as text.
 - `db.query` / `db.execute` are host operations (manifest in
   `src/AgentLang.FlowHttp/Db.fs`; effects db.read / db.write). The SQL
   argument must be a string literal (source check at load). Each worker
-  prepares a statement once per SQL text and reuses it. DbError.code is the
-  SQLite extended result code, DbError.message is `sqlite3_errmsg`.
+  prepares a statement once per SQL text and reuses it. SqlError.code is the
+  SQLite extended result code, SqlError.message is `sqlite3_errmsg`.
   Interpreter: SQLitePCL raw API (Microsoft.Data.Sqlite's e_sqlite3);
   native: `src/AgentLang.Llvm/native/http_host/flow_http_db.c`.
 - The owning backend has an explicit `OwningTarget` (Windows x64 default,

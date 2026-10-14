@@ -122,7 +122,7 @@ module FlowApp =
           HeaderPath = ""
           AdapterFileName = "flow_http_db.c"
           OutputLimitBytes = 16777216u
-          BoundarySchemaNames = [ "HttpHeader"; "HttpRequest"; "HttpResponse"; "DbValue"; "DbRow"; "DbError"; "DbValueKind"; app.ContextType ]
+          BoundarySchemaNames = [ "HttpHeader"; "HttpRequest"; "HttpResponse"; "DbValue"; "DbRow"; "SqlError"; "DbValueKind"; app.ContextType ]
           Operations =
             Db.nativeOperations
             |> List.map (fun (tag, name, inputs, outputs, effects) ->

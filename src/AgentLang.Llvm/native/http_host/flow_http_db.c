@@ -1,7 +1,7 @@
 /* db.query / db.execute for the portable Flow HTTP host, against the SQLite C
  * API. One connection and one prepared-statement cache per worker; nothing is
  * shared between workers. Mirrors AgentLang.FlowHttp/Db.fs step for step so
- * interpreter and native results (rows, change counts, DbError codes) agree. */
+ * interpreter and native results (rows, change counts, SqlError codes) agree. */
 #include "flow_http.h"
 #include "flow_http_sqlite.h"
 
@@ -129,7 +129,7 @@ static void fh_put_sqlite_error(fh_writer *w, fh_db *db) {
 }
 
 /* Binds List<DbValue> in order. Returns 1 when bound; otherwise writes the
- * DbError result and returns 0. Returns -1 for a malformed boundary value. */
+ * SqlError result and returns 0. Returns -1 for a malformed boundary value. */
 static int fh_bind(fh_db *db, sqlite3_stmt *statement, fh_reader *parameters, fh_writer *w) {
   uint32_t count = fh_get_count(parameters), i;
   if (parameters->failed) return -1;

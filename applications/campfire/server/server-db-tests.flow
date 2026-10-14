@@ -1,0 +1,160 @@
+// Attached tests for server-db.flow: validation units and the operations
+// against the synthetic in-memory fixture (campfire.server.test-fixture).
+
+test campfire.server.cut/range {
+    expect campfire.server.cut("abcdef", 1, 3) == "bcd"
+    expect campfire.server.cut("ab", 1, 5) == ""
+}
+
+test campfire.server.timestamp-space?/bytes {
+    expect campfire.server.timestamp-space?(32)
+    expect campfire.server.timestamp-space?(160)
+    expect bool.not(campfire.server.timestamp-space?(48))
+}
+
+test campfire.server.month-days/leap {
+    expect campfire.server.month-days(2024, 2) == 29
+    expect campfire.server.month-days(1900, 2) == 28
+    expect campfire.server.month-days(2026, 4) == 30
+}
+
+test campfire.server.two/pad {
+    expect campfire.server.two(7) == "07"
+    expect campfire.server.two(42) == "42"
+}
+
+test campfire.server.optional-text-param/kinds {
+    expect campfire.server.optional-text-param(option.none<String>()) == db.null-param()
+    expect campfire.server.optional-text-param(option.some<String>("x")) == db.text-param("x")
+}
+
+test campfire.server.session-row/validation {
+    let good = dbRow.new(values = [db.int-param(1), db.int-param(2), db.text-param("t"), db.null-param(), db.text-param("ua"), db.text-param("2026-10-14 11:30:00"), db.text-param("2026-10-01 00:00:00"), db.text-param("2026-10-14 11:30:00")])
+    let bad = dbRow.new(values = [db.int-param(1), db.int-param(2), db.text-param("t"), db.null-param(), db.text-param("ua"), db.text-param("yesterday"), db.text-param("2026-10-01 00:00:00"), db.text-param("2026-10-14 11:30:00")])
+    expect match campfire.server.session-row(good) { none => ""; some loaded => loaded.last-active-text } == "2026-10-14 11:30:00"
+    expect campfire.server.session-row(bad) == option.none<LoadedSession>()
+}
+
+test campfire.sessions.find-by-token/fixture {
+    expect campfire.sessions.find-by-token(SessionToken.new("session-token-1")) == result.error<Option<SessionRow>, DbError>(DbError.unavailable())
+    expect campfire.server.test-fixture() == 0
+    let found = campfire.sessions.find-by-token(SessionToken.new("session-token-1"))
+    expect match found { error failure => 0; ok maybe => match maybe { none => 0; some row => UserId.value(row.user-id) } } == 1
+    expect campfire.sessions.find-by-token(SessionToken.new("other")) == result.ok<Option<SessionRow>, DbError>(option.none<SessionRow>())
+}
+
+test campfire.server.session-by-id/fixture {
+    expect campfire.server.test-fixture() == 0
+    expect match campfire.server.session-by-id(SessionId.new(1)) { error failure => ""; ok maybe => match maybe { none => ""; some loaded => loaded.last-active-text } } == "2026-10-14 11:30:00"
+}
+
+test campfire.server.refresh-step/updates {
+    expect campfire.server.test-fixture() == 0
+    let refresh = sessionRefresh.new(session-id = SessionId.new(1), cutoff = UtcInstant.new(1792000000000000), now = UtcInstant.new(1792000000000001), ip-address = option.some<RemoteIp>(RemoteIp.new("10.0.0.2")), user-agent = option.none<String>())
+    let step = campfire.server.refresh-step(refresh, "2026-10-14 12:00:00")
+    expect bool.not(step.retry)
+    expect match step.outcome { error failure => ""; ok row => match row.ip-address { none => ""; some ip => RemoteIp.value(ip) } } == "10.0.0.2"
+}
+
+test campfire.server.rollback/no-transaction {
+    expect bool.not(campfire.server.rollback())
+}
+
+test campfire.sessions.refresh-before/due-and-fresh {
+    expect campfire.server.test-fixture() == 0
+    let due = sessionRefresh.new(session-id = SessionId.new(1), cutoff = UtcInstant.new(1791979200000000), now = UtcInstant.new(1791982800000000), ip-address = option.none<RemoteIp>(), user-agent = option.some<String>("agent"))
+    expect match campfire.sessions.refresh-before(due) { error failure => 0; ok row => UtcInstant.value(row.last-active-at) } == 1791982800000000
+    expect match campfire.sessions.refresh-before(due) { error failure => 0; ok row => UtcInstant.value(row.last-active-at) } == 1791982800000000
+    let missing = sessionRefresh.new(session-id = SessionId.new(9), cutoff = UtcInstant.new(0), now = UtcInstant.new(1), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>())
+    expect campfire.sessions.refresh-before(missing) == result.error<SessionRow, DbError>(DbError.not-found())
+    let backwards = sessionRefresh.new(session-id = SessionId.new(1), cutoff = UtcInstant.new(2), now = UtcInstant.new(1), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>())
+    expect campfire.sessions.refresh-before(backwards) == result.error<SessionRow, DbError>(DbError.invalid-input())
+}
+
+test campfire.server.user-row/validation {
+    expect campfire.server.user-row(dbRow.new(values = [db.int-param(5), db.text-param("Bot"), db.int-param(2), db.int-param(2)])) == option.some<AuthUser>(authUser.new(id = UserId.new(5), name = "Bot", role = Role.bot(), status = AuthUserStatus.banned()))
+    expect campfire.server.user-row(dbRow.new(values = [db.int-param(5), db.text-param("Bot"), db.int-param(3), db.int-param(0)])) == option.none<AuthUser>()
+}
+
+test campfire.server.user-result/error {
+    expect campfire.server.user-result(result.error<List<DbRow>, SqlError>(sqlError.new(code = 2067, message = ""))) == result.error<Option<AuthUser>, DbError>(DbError.constraint-conflict())
+}
+
+test campfire.users.find-by-id/fixture {
+    expect campfire.server.test-fixture() == 0
+    expect campfire.users.find-by-id(UserId.new(3)) == result.ok<Option<AuthUser>, DbError>(option.none<AuthUser>())
+}
+
+test campfire.users.authenticate-bot-key/split {
+    expect campfire.server.test-fixture() == 0
+    expect campfire.users.authenticate-bot-key(BotKey.new("nodash")) == result.ok<Option<AuthUser>, DbError>(option.none<AuthUser>())
+    expect campfire.users.authenticate-bot-key(BotKey.new("1-token-extra")) == result.ok<Option<AuthUser>, DbError>(option.none<AuthUser>())
+}
+
+test campfire.server.room-kind/names {
+    expect campfire.server.room-kind("Rooms::Direct") == option.some<RoomKind>(RoomKind.direct())
+    expect campfire.server.room-kind("Rooms::Other") == option.none<RoomKind>()
+}
+
+test campfire.server.room-row/validation {
+    expect campfire.server.room-row(dbRow.new(values = [db.int-param(1), db.null-param(), db.text-param("Rooms::Open"), db.int-param(2), db.text-param("2026-01-01 00:00:00"), db.text-param("2026-01-01 00:00:00")])) != option.none<RoomRow>()
+    expect campfire.server.room-row(dbRow.new(values = [db.int-param(1), db.null-param(), db.text-param("Rooms::Open"), db.int-param(2), db.text-param("2026-01-01"), db.text-param("2026-01-01 00:00:00")])) == option.none<RoomRow>()
+}
+
+test campfire.rooms.find-for-user/fixture {
+    expect campfire.server.test-fixture() == 0
+    expect match campfire.rooms.find-for-user(UserId.new(1), RoomId.new(1)) { error failure => ""; ok maybe => match maybe { none => ""; some room => room.created-at } } == "2026-01-01 00:00:00"
+    expect campfire.rooms.find-for-user(UserId.new(1), RoomId.new(2)) == result.ok<Option<RoomRow>, DbError>(option.none<RoomRow>())
+}
+
+test campfire.membership.exists?/fixture {
+    expect campfire.server.test-fixture() == 0
+    expect campfire.membership.exists?(membershipKey.new(user-id = UserId.new(2), room-id = RoomId.new(2))) == result.ok<Bool, DbError>(true)
+    expect campfire.membership.exists?(membershipKey.new(user-id = UserId.new(2), room-id = RoomId.new(1))) == result.ok<Bool, DbError>(false)
+}
+
+test campfire.server.avatar-token/shape {
+    let token = campfire.server.avatar-token(bytes.from-utf8("key"), 12)
+    expect string.starts-with(token, "eyJfcmFpbHMiOnsiZGF0YSI6MTIsInB1ciI6InVzZXIvYXZhdGFyIn19--")
+    expect string.byte-length(token) == 56 + 2 + 64
+}
+
+test campfire.server.message-row/validation {
+    let row = dbRow.new(values = [db.int-param(1), db.int-param(1), db.int-param(1), db.int-param(5), db.int-param(6), db.text-param("c"), db.text-param("2026-10-14 10:00:00"), db.text-param("Ann"), db.text-param(""), db.text-param("2026-01-01 00:00:00"), db.null-param()])
+    expect match campfire.server.message-row(row, "tok") { none => ""; some message => message.creator-avatar-token } == "tok"
+    let broken = dbRow.new(values = [db.int-param(1), db.int-param(1), db.int-param(1), db.null-param(), db.int-param(6), db.text-param("c"), db.text-param("2026-10-14 10:00:00"), db.text-param("Ann"), db.text-param(""), db.text-param("2026-01-01 00:00:00"), db.null-param()])
+    expect campfire.server.message-row(broken, "tok") == option.none<MessageWithCreator>()
+}
+
+test campfire.server.message-page/tokens-per-creator {
+    let row = dbRow.new(values = [db.int-param(1), db.int-param(1), db.int-param(7), db.int-param(5), db.int-param(6), db.text-param("c"), db.text-param("2026-10-14 10:00:00"), db.text-param("Ann"), db.text-param(""), db.text-param("2026-01-01 00:00:00"), db.null-param()])
+    let page = campfire.server.message-page([row, row], bytes.from-utf8("key"))
+    expect match page { none => 0; some messages => campfire.server.message-count(messages) } == 2
+}
+
+test campfire.server.page-query/fixture {
+    expect campfire.server.test-fixture() == 0
+    let page = campfire.server.page-query(RoomId.new(1), bytes.from-utf8("key"))
+    expect match page { error failure => ""; ok messages => campfire.server.first-body(messages) } == "first message"
+    expect campfire.server.page-query(RoomId.new(9), bytes.from-utf8("key")) == result.error<List<MessageWithCreator>, DbError>(DbError.not-found())
+}
+
+fn campfire.server.first-body(messages: List<MessageWithCreator>) -> String {
+    var body = ""
+    for message in messages {
+        body = match message.body { none => ""; some text => text }
+        break
+    }
+    body
+}
+
+test campfire.server.first-body/empty {
+    expect campfire.server.first-body(list.empty<MessageWithCreator>()) == ""
+}
+
+test campfire.server.last-page-with-creators/fixture {
+    expect campfire.server.test-fixture() == 0
+    let page = campfire.server.last-page-with-creators(RoomId.new(1), bytes.from-utf8("key"))
+    expect match page { error failure => -1; ok messages => campfire.server.message-count(messages) } == 2
+    expect match page { error failure => ""; ok messages => campfire.server.first-body(messages) } == "first message"
+}

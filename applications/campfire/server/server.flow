@@ -1,0 +1,571 @@
+// Campfire on the portable Flow HTTP host (docs/LINUX-SERVER-PLAN.md piece D).
+// Entry words for scripts/Build-FlowHttpServer.ps1 -App campfire.server:
+// worker-init derives the keys once per worker; handle serves GET/HEAD
+// /rooms/<id> exactly as the native host (native_http_host.c) does.
+//
+// The room-read chain below mirrors campfire.http.room-read (http.flow) word
+// for word, threading the worker context to the two steps that need a key:
+// signed session_token verification and the creators' avatar tokens. Every
+// policy, view, CSRF, user-agent and session-restore word is the shared one.
+
+record CampfireServerContext {
+    authority: String
+    base-url: String
+    encryption-key: Bytes
+    signing-key: Bytes
+    avatar-key: Bytes
+}
+
+fn campfire.server.worker-init(config: List<HttpHeader>) -> CampfireServerContext {
+    doc "Derives the Rails cookie keys (authenticated encrypted cookie, 32 bytes; signed cookie, 64 bytes) and the active_record/signed_id key (64 bytes) from secret_key_base once per worker. authority is the Host the server answers to (127.0.0.1:<port>)."
+
+    let secret = http.config(config, "secret_key_base")
+    let authority = http.config(config, "authority")
+    campfireServerContext.new(
+        authority = authority,
+        base-url = string.concat("http://", authority),
+        encryption-key = campfire.server.rails-key(secret, "authenticated encrypted cookie", 32),
+        signing-key = campfire.server.rails-key(secret, "signed cookie", 64),
+        avatar-key = campfire.server.rails-key(secret, "active_record/signed_id", 64))
+}
+
+test campfire.server.worker-init/keys {
+    let context = campfire.server.worker-init([httpHeader.new(name = "secret_key_base", value = "synthetic"), httpHeader.new(name = "authority", value = "127.0.0.1:1")])
+    expect context.base-url == "http://127.0.0.1:1"
+    expect bytes.length(context.encryption-key) == 32
+    expect bytes.length(context.avatar-key) == 64
+}
+
+fn campfire.server.test-context() -> CampfireServerContext {
+    doc "A worker context for attached tests: a synthetic secret_key_base and authority 127.0.0.1:13773."
+
+    campfire.server.worker-init([httpHeader.new(name = "secret_key_base", value = "synthetic-secret-key-base-for-agentlang-tests-0123456789abcdef"), httpHeader.new(name = "authority", value = "127.0.0.1:13773")])
+}
+
+test campfire.server.test-context/authority {
+    expect campfire.server.test-context().authority == "127.0.0.1:13773"
+}
+
+// ------------------------------------------------------------ route chain
+
+fn campfire.server.response(status: Int, view: HttpView, text: String, refresh: Option<SessionToken>) -> CampfireHttpResponse {
+    doc "campfire.http.response: no route data or cookie mutations other than a pending session refresh."
+
+    campfireHttpResponse.new(
+        status = status,
+        view = view,
+        text = text,
+        room = option.none<RoomRow>(),
+        message = option.none<MessageRow>(),
+        refresh-session-token = refresh,
+        remember-return-to = false,
+        last-room = option.none<RoomId>(),
+        new-csrf-token = option.none<String>(),
+        body = campfire.views.body(status, view, text))
+}
+
+test campfire.server.response/empty {
+    expect campfire.server.response(500, HttpView.empty(), "", option.none<SessionToken>()).body == ""
+}
+
+fn campfire.server.unauthenticated() -> CampfireHttpResponse {
+    doc "campfire.http.unauthenticated: the login redirect with a return-to session mutation."
+
+    campfireHttpResponse.new(
+        status = 302,
+        view = HttpView.redirect-session(),
+        text = "",
+        room = option.none<RoomRow>(),
+        message = option.none<MessageRow>(),
+        refresh-session-token = option.none<SessionToken>(),
+        remember-return-to = true,
+        last-room = option.none<RoomId>(),
+        new-csrf-token = option.none<String>(),
+        body = "")
+}
+
+test campfire.server.unauthenticated/redirect {
+    expect campfire.server.unauthenticated().remember-return-to
+}
+
+fn campfire.server.refresh-token(restored: RestoredSession) -> Option<SessionToken> {
+    if restored.refresh-cookie {
+        option.some<SessionToken>(restored.session.token)
+    } else {
+        option.none<SessionToken>()
+    }
+}
+
+test campfire.server.refresh-token/due {
+    let session = sessionRow.new(id = SessionId.new(1), user-id = UserId.new(2), token = SessionToken.new("t"), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>(), last-active-at = UtcInstant.new(0), created-at = UtcInstant.new(0), updated-at = UtcInstant.new(0))
+    expect campfire.server.refresh-token(restoredSession.new(user = option.none<AuthUser>(), session = session, refresh-cookie = true)) == option.some<SessionToken>(SessionToken.new("t"))
+    expect campfire.server.refresh-token(restoredSession.new(user = option.none<AuthUser>(), session = session, refresh-cookie = false)) == option.none<SessionToken>()
+}
+
+fn campfire.server.authenticated-user(request: CampfireHttpRequest, restored: RestoredSession, refresh: Option<SessionToken>) -> Result<AuthUser, CampfireHttpResponse> {
+    doc "campfire.http.authenticated-user: CSRF, browser and current-user gates in order, keeping a pending refresh."
+
+    if campfire.request.forgery-check-passed?(request.method, request.origin, request.fetch-site, request.base-url, true, request.request-is-ssl, request.force-ssl) {
+        if campfire.browser.supported?(campfire.browser.from-user-agent(request.user-agent)) {
+            match restored.user {
+                none => result.error<AuthUser, CampfireHttpResponse>(campfire.server.response(500, HttpView.empty(), "", refresh))
+                some user => result.ok<AuthUser, CampfireHttpResponse>(user)
+            }
+        } else {
+            result.error<AuthUser, CampfireHttpResponse>(campfire.server.response(200, HttpView.incompatible-browser(), "", refresh))
+        }
+    } else {
+        result.error<AuthUser, CampfireHttpResponse>(campfire.server.response(422, HttpView.empty(), "", refresh))
+    }
+}
+
+test campfire.server.authenticated-user/missing-user {
+    let request = campfire.server.test-request(option.none<String>())
+    let session = sessionRow.new(id = SessionId.new(1), user-id = UserId.new(2), token = SessionToken.new("t"), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>(), last-active-at = UtcInstant.new(0), created-at = UtcInstant.new(0), updated-at = UtcInstant.new(0))
+    let outcome = campfire.server.authenticated-user(request, restoredSession.new(user = option.none<AuthUser>(), session = session, refresh-cookie = false), option.none<SessionToken>())
+    expect match outcome { ok user => 0; error response => response.status } == 500
+}
+
+fn campfire.server.bot-or-redirect(request: CampfireHttpRequest) -> CampfireHttpResponse {
+    effects db.read
+    doc "campfire.http.bot-or-redirect: an active bot key is forbidden here; anything else redirects to sign-in."
+
+    match request.bot-key {
+        none => campfire.server.unauthenticated()
+        some key => match campfire.users.authenticate-bot-key(key) {
+            error failure => campfire.server.response(500, HttpView.empty(), "", option.none<SessionToken>())
+            ok maybe-bot => match maybe-bot {
+                none => campfire.server.unauthenticated()
+                some bot => campfire.server.response(403, HttpView.empty(), "", option.none<SessionToken>())
+            }
+        }
+    }
+}
+
+test campfire.server.bot-or-redirect/no-key {
+    expect campfire.server.bot-or-redirect(campfire.server.test-request(option.none<String>())).status == 302
+}
+
+fn campfire.server.restore-request-session(request: CampfireHttpRequest, context: CampfireServerContext) -> Result<Option<RestoredSession>, DbError> {
+    effects db.read, db.write
+    doc "campfire.http.restore-request-session with the worker's signing key."
+
+    let token = match request.session-token {
+        none => option.none<SessionToken>()
+        some signed => campfire.server.verify-session-token(context.signing-key, signed, request.now)
+    }
+    match token {
+        none => result.ok<Option<RestoredSession>, DbError>(option.none<RestoredSession>())
+        some verified => campfire.authentication.restore-session(verified, request.now, option.some<RemoteIp>(request.remote-ip), request.user-agent)
+    }
+}
+
+test campfire.server.restore-request-session/unsigned {
+    let request = campfire.server.test-request(option.some<String>("not-signed"))
+    expect campfire.server.restore-request-session(request, campfire.server.test-context()) == result.ok<Option<RestoredSession>, DbError>(option.none<RestoredSession>())
+}
+
+fn campfire.server.room-message-error(failure: DbError) -> RoomMessageError {
+    match failure {
+        unavailable => RoomMessageError.database-unavailable()
+        not-found => RoomMessageError.database-not-found()
+        constraint-conflict => RoomMessageError.database-constraint-conflict()
+        invalid-input => RoomMessageError.database-invalid-input()
+    }
+}
+
+test campfire.server.room-message-error/mapping {
+    expect campfire.server.room-message-error(DbError.not-found()) == RoomMessageError.database-not-found()
+}
+
+fn campfire.server.page-for-member(user-id: UserId, room-id: RoomId, context: CampfireServerContext) -> Result<List<MessageWithCreator>, RoomMessageError> {
+    effects db.read, db.write
+    doc "campfire.messages.page-for-member with the worker's avatar key."
+
+    match campfire.membership.exists?(membershipKey.new(user-id = user-id, room-id = room-id)) {
+        error failure => result.error<List<MessageWithCreator>, RoomMessageError>(campfire.server.room-message-error(failure))
+        ok is-member => {
+            if is-member {
+                match campfire.server.last-page-with-creators(room-id, context.avatar-key) {
+                    ok messages => result.ok<List<MessageWithCreator>, RoomMessageError>(messages)
+                    error failure => result.error<List<MessageWithCreator>, RoomMessageError>(campfire.server.room-message-error(failure))
+                }
+            } else {
+                result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.access-denied())
+            }
+        }
+    }
+}
+
+test campfire.server.page-for-member/fixture {
+    expect campfire.server.test-fixture() == 0
+    let context = campfire.server.test-context()
+    let page = campfire.server.page-for-member(UserId.new(1), RoomId.new(1), context)
+    expect match page { error failure => -1; ok messages => campfire.server.message-count(messages) } == 2
+    expect campfire.server.page-for-member(UserId.new(2), RoomId.new(1), context) == result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.access-denied())
+}
+
+fn campfire.server.message-count(messages: List<MessageWithCreator>) -> Int {
+    var count = 0
+    for message in messages {
+        count = count + 1
+    }
+    count
+}
+
+test campfire.server.message-count/empty {
+    expect campfire.server.message-count(list.empty<MessageWithCreator>()) == 0
+}
+
+fn campfire.server.tokened-message(secret: String, message: MessageWithCreator) -> TokenedMessage {
+    effects random.read
+    doc "campfire.csrf.tokened-message: a message with its eight boost forms' masked tokens."
+
+    tokenedMessage.new(message = message, boost-tokens = campfire.csrf.boost-tokens(secret, message.id))
+}
+
+test campfire.server.tokened-message/tokens {
+    let message = messageWithCreator.new(id = MessageId.new(3), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 0, client-message-id = "c", created-at = "", creator-name = "", creator-bio = "", creator-updated-at = "", creator-avatar-token = "", body = option.none<String>())
+    expect string.byte-length(campfire.server.tokened-message("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", message).boost-tokens.fire) == 86
+}
+
+fn campfire.server.show-room(request: CampfireHttpRequest, user: AuthUser, room: RoomRow, refresh: Option<SessionToken>, context: CampfireServerContext) -> CampfireHttpResponse {
+    effects db.read, db.write, random.read
+    doc "campfire.http.show-room: the newest forty messages; last_room is set only when the cookie differs."
+
+    match campfire.server.page-for-member(user.id, room.id, context) {
+        error failure => campfire.server.response(500, HttpView.empty(), "", refresh)
+        ok messages => {
+            let secret = campfire.csrf.session-secret(request.csrf-token)
+            let room-id = int.to-string(RoomId.value(room.id))
+            let meta-token = campfire.csrf.form-token(secret.value, "!real_csrf_token")
+            let composer-token = campfire.csrf.form-token(secret.value, string.concat(string.concat("/rooms/", room-id), "/messages#post"))
+            let secret-value = secret.value
+            let tokened = messages.map(secret-value, campfire.server.tokened-message)
+            let new-csrf-token = if secret.fresh {
+                option.some<String>(secret.value)
+            } else {
+                option.none<String>()
+            }
+            let remember-room = match request.last-room {
+                none => option.some<RoomId>(room.id)
+                some prior => {
+                    if prior == int.to-string(RoomId.value(room.id)) {
+                        option.none<RoomId>()
+                    } else {
+                        option.some<RoomId>(room.id)
+                    }
+                }
+            }
+            campfireHttpResponse.new(
+                status = 200,
+                view = HttpView.room(),
+                text = "",
+                room = option.some<RoomRow>(room),
+                message = option.none<MessageRow>(),
+                refresh-session-token = refresh,
+                remember-return-to = false,
+                last-room = remember-room,
+                new-csrf-token = new-csrf-token,
+                body = campfire.views.creator-room-page(campfire.views.room-chrome(room, user, request.base-url, meta-token, composer-token), tokened))
+        }
+    }
+}
+
+test campfire.server.show-room/fixture {
+    expect campfire.server.test-fixture() == 0
+    let user = authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active())
+    let room = roomRow.new(id = RoomId.new(1), name = option.some<String>("Lobby"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "2026-01-01 00:00:00", updated-at = "2026-01-01 00:00:00")
+    let shown = campfire.server.show-room(campfire.server.test-request(option.none<String>()), user, room, option.none<SessionToken>(), campfire.server.test-context())
+    expect shown.status == 200
+    expect shown.last-room == option.some<RoomId>(RoomId.new(1))
+    expect shown.new-csrf-token != option.none<String>()
+    expect string.contains(shown.body, "second message")
+}
+
+fn campfire.server.room-read-route(request: CampfireHttpRequest, user: AuthUser, refresh: Option<SessionToken>, context: CampfireServerContext) -> CampfireHttpResponse {
+    effects db.read, db.write, random.read
+    doc "campfire.http.room-read-route: the room through the user's membership, else the room-show redirect."
+
+    match campfire.rooms.find-for-user(user.id, request.room-id) {
+        error failure => campfire.server.response(500, HttpView.empty(), "", refresh)
+        ok maybe-room => match maybe-room {
+            none => campfire.server.response(302, HttpView.redirect-root(), "Room not found or inaccessible", refresh)
+            some room => campfire.server.show-room(request, user, room, refresh, context)
+        }
+    }
+}
+
+test campfire.server.room-read-route/missing-room {
+    expect campfire.server.test-fixture() == 0
+    let user = authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active())
+    let routed = campfire.server.room-read-route(campfire.server.test-request(option.none<String>()), user, option.none<SessionToken>(), campfire.server.test-context())
+    expect routed.status == 200
+    let other = campfire.server.room-read-route(campfire.server.test-request(option.none<String>()), authUser.new(id = UserId.new(2), name = "Bo", role = Role.member(), status = AuthUserStatus.active()), option.none<SessionToken>(), campfire.server.test-context())
+    expect other.status == 302
+}
+
+fn campfire.server.room-read(request: CampfireHttpRequest, context: CampfireServerContext) -> CampfireHttpResponse {
+    effects db.read, db.write, random.read
+    doc "campfire.http.room-read for GET/HEAD room-show: session cookie, bot key, gates, room."
+
+    match request.route {
+        room-show => {
+            let is-read-method = match request.method {
+                get => true
+                head => true
+                unsafe => false
+            }
+            if is-read-method {
+                match campfire.server.restore-request-session(request, context) {
+                    error failure => campfire.server.response(500, HttpView.empty(), "", option.none<SessionToken>())
+                    ok maybe-session => match maybe-session {
+                        none => campfire.server.bot-or-redirect(request)
+                        some restored => {
+                            let refresh = campfire.server.refresh-token(restored)
+                            match campfire.server.authenticated-user(request, restored, refresh) {
+                                error response => response
+                                ok user => campfire.server.room-read-route(request, user, refresh, context)
+                            }
+                        }
+                    }
+                }
+            } else {
+                campfire.server.response(500, HttpView.empty(), "", option.none<SessionToken>())
+            }
+        }
+        message-create => campfire.server.response(500, HttpView.empty(), "", option.none<SessionToken>())
+        session-new => campfire.server.response(500, HttpView.empty(), "", option.none<SessionToken>())
+        session-create => campfire.server.response(500, HttpView.empty(), "", option.none<SessionToken>())
+        session-destroy => campfire.server.response(500, HttpView.empty(), "", option.none<SessionToken>())
+    }
+}
+
+test campfire.server.room-read/signed-session {
+    expect campfire.server.test-fixture() == 0
+    let context = campfire.server.test-context()
+    let signed = campfire.server.sign-session-token(context.signing-key, "session-token-1", 1791979200000000)
+    let shown = campfire.server.room-read(campfire.server.test-request(option.some<String>(signed)), context)
+    expect shown.status == 200
+    expect shown.refresh-session-token == option.none<SessionToken>()
+    let anonymous = campfire.server.room-read(campfire.server.test-request(option.none<String>()), context)
+    expect anonymous.status == 302
+}
+
+// --------------------------------------------------------------- response
+
+fn campfire.server.contract-valid?(response: CampfireHttpResponse) -> Bool {
+    doc "The renderer's response contract (campfire_http_renderer.c al_http_contract_valid) for the views a room read produces."
+
+    let no-route-data = response.room == option.none<RoomRow>() && response.message == option.none<MessageRow>()
+    let text-empty = response.text == ""
+    let no-last-room = response.last-room == option.none<RoomId>()
+    let csrf-ok = response.new-csrf-token == option.none<String>() || response.view == HttpView.room()
+    let view-ok = match response.view {
+        empty => no-route-data && text-empty && bool.not(response.remember-return-to) && no-last-room
+        room => {
+            let last-room-ok = match response.room {
+                none => false
+                some room => match response.last-room {
+                    none => true
+                    some last => last == room.id
+                }
+            }
+            response.status == 200 && response.message == option.none<MessageRow>() && bool.not(response.remember-return-to) && text-empty && last-room-ok
+        }
+        redirect-root => response.status == 302 && no-route-data && bool.not(response.remember-return-to) && no-last-room
+        redirect-session => response.status == 302 && no-route-data && text-empty && response.remember-return-to && response.refresh-session-token == option.none<SessionToken>() && no-last-room
+        incompatible-browser => response.status == 200 && no-route-data && bool.not(response.remember-return-to) && no-last-room && text-empty
+        room-not-found => response.status == 200 && no-route-data && bool.not(response.remember-return-to) && no-last-room
+        append-message => false
+        login-page => false
+        redirect-authenticated => false
+        redirect-first-run => false
+        redirect-signed-out => false
+    }
+    let body-ok = match response.view {
+        empty => response.body == ""
+        redirect-root => response.body == ""
+        redirect-session => response.body == ""
+        room => true
+        incompatible-browser => true
+        room-not-found => true
+        append-message => false
+        login-page => false
+        redirect-authenticated => false
+        redirect-first-run => false
+        redirect-signed-out => false
+    }
+    csrf-ok && view-ok && body-ok
+}
+
+test campfire.server.contract-valid?/views {
+    expect campfire.server.contract-valid?(campfire.server.unauthenticated())
+    expect campfire.server.contract-valid?(campfire.server.response(422, HttpView.empty(), "", option.none<SessionToken>()))
+    expect bool.not(campfire.server.contract-valid?(campfire.server.response(200, HttpView.login-page(), "", option.none<SessionToken>())))
+}
+
+fn campfire.server.cookie-expiry(now: Int) -> String {
+    doc "A permanent cookie's Expires: 20 calendar years after now, RFC 1123."
+
+    match time.add-years(now, 20) {
+        none => ""
+        some later => match time.rfc1123(later) {
+            none => ""
+            some text => text
+        }
+    }
+}
+
+test campfire.server.cookie-expiry/twenty-years {
+    expect campfire.server.cookie-expiry(1791979200000000) == "Sun, 14 Oct 2046 12:00:00 GMT"
+}
+
+fn campfire.server.set-cookie(name: String, value: String, expires: String, http-only: Bool) -> Option<HttpHeader> {
+    match cookie.set-cookie(name, value, "/", expires, "Lax", false, http-only) {
+        none => option.none<HttpHeader>()
+        some text => option.some<HttpHeader>(httpHeader.new(name = "Set-Cookie", value = text))
+    }
+}
+
+test campfire.server.set-cookie/last-room {
+    expect campfire.server.set-cookie("last_room", "4", "", false) == option.some<HttpHeader>(httpHeader.new(name = "Set-Cookie", value = "last_room=4; Path=/; SameSite=Lax"))
+}
+
+fn campfire.server.add-cookie(headers: Option<List<HttpHeader>>, header: Option<HttpHeader>) -> Option<List<HttpHeader>> {
+    match headers {
+        none => option.none<List<HttpHeader>>()
+        some existing => match header {
+            none => option.none<List<HttpHeader>>()
+            some added => option.some<List<HttpHeader>>(list.append(existing, added))
+        }
+    }
+}
+
+test campfire.server.add-cookie/invalid {
+    expect campfire.server.add-cookie(option.some<List<HttpHeader>>(list.empty<HttpHeader>()), option.none<HttpHeader>()) == option.none<List<HttpHeader>>()
+}
+
+fn campfire.server.response-cookies(response: CampfireHttpResponse, built: ServerRequest, target: String, context: CampfireServerContext) -> Option<List<HttpHeader>> {
+    effects random.read
+    doc "Set-Cookie headers in the native host's order: _campfire_session (return-to, flash alert, new CSRF secret; HttpOnly, session lifetime), session_token (refreshed, signed, permanent, HttpOnly), last_room (permanent). None when a cookie cannot be written."
+
+    let now = UtcInstant.value(built.campfire.now)
+    let alert = if response.view == HttpView.redirect-root() { option.some<String>(response.text) } else { option.none<String>() }
+    let return-url = if response.remember-return-to { option.some<String>(string.concat(context.base-url, target)) } else { option.none<String>() }
+    let mutation = response.remember-return-to || alert != option.none<String>() || response.new-csrf-token != option.none<String>()
+    var headers = option.some<List<HttpHeader>>(list.empty<HttpHeader>())
+    if mutation {
+        let session = match built.session { none => "{}"; some text => text }
+        headers = match campfire.server.mutate-session(session, return-url, alert, response.new-csrf-token) {
+            none => option.none<List<HttpHeader>>()
+            some mutated => campfire.server.add-cookie(headers, campfire.server.set-cookie("_campfire_session", campfire.server.encrypt-session(context.encryption-key, mutated, now), "", true))
+        }
+    }
+    headers = match response.refresh-session-token {
+        none => headers
+        some token => campfire.server.add-cookie(headers, campfire.server.set-cookie("session_token", campfire.server.sign-session-token(context.signing-key, SessionToken.value(token), now), campfire.server.cookie-expiry(now), true))
+    }
+    match response.last-room {
+        none => headers
+        some room-id => campfire.server.add-cookie(headers, campfire.server.set-cookie("last_room", int.to-string(RoomId.value(room-id)), campfire.server.cookie-expiry(now), false))
+    }
+}
+
+test campfire.server.response-cookies/redirect-session {
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session = option.none<String>())
+    let cookies = campfire.server.response-cookies(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
+    expect match cookies { none => false; some headers => campfire.server.header-count(headers, "Set-Cookie") == 1 }
+}
+
+fn campfire.server.http-response(response: CampfireHttpResponse, built: ServerRequest, target: String, context: CampfireServerContext) -> HttpResponse {
+    effects random.read
+    doc "CampfireHttpResponse -> HttpResponse as the native renderer and cookie finalizer do: status, Cache-Control no-store, Content-Type by view, nosniff, Location for redirects, Set-Cookie, body. A response outside the contract is a bare 500."
+
+    if bool.not(campfire.server.contract-valid?(response)) {
+        campfire.server.status(500)
+    } else {
+        match campfire.server.response-cookies(response, built, target, context) {
+            none => campfire.server.status(500)
+            some cookies => {
+                let content-type = if response.view == HttpView.empty() { "text/plain; charset=utf-8" } else { "text/html; charset=utf-8" }
+                let base = [
+                    httpHeader.new(name = "Cache-Control", value = "no-store"),
+                    httpHeader.new(name = "Content-Type", value = content-type),
+                    httpHeader.new(name = "X-Content-Type-Options", value = "nosniff")
+                ]
+                let located = if response.view == HttpView.redirect-root() {
+                    list.append(base, httpHeader.new(name = "Location", value = "/"))
+                } else if response.view == HttpView.redirect-session() {
+                    list.append(base, httpHeader.new(name = "Location", value = "/session/new"))
+                } else {
+                    base
+                }
+                httpResponse.new(status = response.status, headers = list.concat(located, cookies), body = response.body)
+            }
+        }
+    }
+}
+
+test campfire.server.http-response/redirect {
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session = option.none<String>())
+    let sent = campfire.server.http-response(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
+    expect sent.status == 302
+    expect http.header(sent.headers, "Location") == option.some<String>("/session/new")
+    expect campfire.server.http-response(campfire.server.response(200, HttpView.login-page(), "", option.none<SessionToken>()), built, "/", campfire.server.test-context()).status == 500
+}
+
+// ------------------------------------------------------------------ entry
+
+fn campfire.server.handle(request: HttpRequest, context: CampfireServerContext) -> HttpResponse {
+    effects db.read, db.write, random.read
+    doc "GET/HEAD /rooms/<id>: transport checks, the room-read chain, then the rendered response with its cookies."
+
+    match campfire.server.request(request, context) {
+        error response => response
+        ok built => campfire.server.http-response(campfire.server.room-read(built.campfire, context), built, request.target, context)
+    }
+}
+
+test campfire.server.handle/room-page {
+    expect campfire.server.test-fixture() == 0
+    let context = campfire.server.test-context()
+    let cookie-header = string.concat("session_token=", cookie.escape(campfire.server.sign-session-token(context.signing-key, "session-token-1", 1791979200000000)))
+    let request = httpRequest.new(method = "GET", target = "/rooms/1", headers = [httpHeader.new(name = "host", value = "127.0.0.1:13773"), httpHeader.new(name = "cookie", value = cookie-header), httpHeader.new(name = "user-agent", value = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")], body = bytes.from-utf8(""), remote-ip = "127.0.0.1", now-microseconds = 1791979200000000)
+    let sent = campfire.server.handle(request, context)
+    expect sent.status == 200
+    expect campfire.server.header-count(sent.headers, "Set-Cookie") == 2
+    expect string.contains(sent.body, "first message")
+}
+
+// --------------------------------------------------------------- fixtures
+
+fn campfire.server.test-request(session-token: Option<String>) -> CampfireHttpRequest {
+    doc "A GET /rooms/1 request for attached tests, from a supported browser at 2026-10-14T12:00:00Z."
+
+    campfireHttpRequest.new(
+        route = HttpRoute.room-show(),
+        method = RequestMethod.get(),
+        room-id = RoomId.new(1),
+        now = UtcInstant.new(1791979200000000),
+        remote-ip = RemoteIp.new("127.0.0.1"),
+        user-agent = option.some<String>("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"),
+        base-url = "http://127.0.0.1:13773",
+        request-is-ssl = false,
+        force-ssl = false,
+        origin = option.none<String>(),
+        fetch-site = option.none<String>(),
+        session-token = session-token,
+        bot-key = option.none<BotKey>(),
+        message-form = result.ok<Option<HttpMessageInput>, HttpFormError>(option.none<HttpMessageInput>()),
+        login-form = result.ok<Option<HttpLoginInput>, HttpFormError>(option.none<HttpLoginInput>()),
+        logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()),
+        accepts-turbo = false,
+        accepts-html = true,
+        last-room = option.none<String>(),
+        csrf-token = option.none<String>())
+}
+
+test campfire.server.test-request/room {
+    expect campfire.server.test-request(option.none<String>()).room-id == RoomId.new(1)
+}

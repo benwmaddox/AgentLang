@@ -1,0 +1,117 @@
+// Database operations of the sign-in and sign-out paths that need no password
+// hashing, with the SQL of Authentication.Persistence/SqliteProvider.fs, plus
+// the synthetic in-memory fixture the attached tests use.
+//
+// Not here: campfire.users.authenticate-password needs bcrypt, which neither
+// the stdlib nor the OS crypto libraries (BCrypt, libcrypto) provide;
+// campfire.sessions.login-attempt-count is a host-side rate limiter (shared
+// mutable state); campfire.sessions.start needs a has_secure_token generator.
+
+fn campfire.server.exists-result(outcome: Result<List<DbRow>, SqlError>) -> Result<Bool, DbError> {
+    match outcome {
+        error failure => result.error<Bool, DbError>(campfire.server.db-error(failure))
+        ok rows => match db.first-row(rows) {
+            none => result.error<Bool, DbError>(DbError.unavailable())
+            some row => result.ok<Bool, DbError>(db.int(row, 0) != 0)
+        }
+    }
+}
+
+test campfire.server.exists-result/rows {
+    expect campfire.server.exists-result(result.ok<List<DbRow>, SqlError>([dbRow.new(values = [db.int-param(1)])])) == result.ok<Bool, DbError>(true)
+    expect campfire.server.exists-result(result.ok<List<DbRow>, SqlError>(list.empty<DbRow>())) == result.error<Bool, DbError>(DbError.unavailable())
+}
+
+fn campfire.bans.ip-banned?(remote-ip: RemoteIp) -> Result<Bool, DbError> {
+    effects db.read
+
+    campfire.server.exists-result(db.query("SELECT EXISTS (SELECT 1 FROM bans WHERE ip_address = $ip LIMIT 1)", [db.text-param(RemoteIp.value(remote-ip))]))
+}
+
+test campfire.bans.ip-banned?/fixture {
+    expect campfire.server.test-fixture() == 0
+    expect campfire.bans.ip-banned?(RemoteIp.new("192.0.2.9")) == result.ok<Bool, DbError>(true)
+    expect campfire.bans.ip-banned?(RemoteIp.new("127.0.0.1")) == result.ok<Bool, DbError>(false)
+}
+
+fn campfire.users.any?() -> Result<Bool, DbError> {
+    effects db.read
+
+    campfire.server.exists-result(db.query("SELECT EXISTS (SELECT 1 FROM users LIMIT 1)", list.empty<DbValue>()))
+}
+
+test campfire.users.any?/fixture {
+    expect campfire.users.any?() == result.error<Bool, DbError>(DbError.unavailable())
+    expect campfire.server.test-fixture() == 0
+    expect campfire.users.any?() == result.ok<Bool, DbError>(true)
+}
+
+fn campfire.sessions.destroy(session-id: SessionId) -> Result<Unit, DbError> {
+    effects db.write
+
+    match db.execute("DELETE FROM sessions WHERE id = $sessionId", [db.int-param(SessionId.value(session-id))]) {
+        error failure => result.error<Unit, DbError>(campfire.server.db-error(failure))
+        ok changes => result.ok<Unit, DbError>(unit)
+    }
+}
+
+test campfire.sessions.destroy/fixture {
+    expect campfire.server.test-fixture() == 0
+    expect campfire.sessions.destroy(SessionId.new(1)) == result.ok<Unit, DbError>(unit)
+    expect campfire.sessions.find-by-token(SessionToken.new("session-token-1")) == result.ok<Option<SessionRow>, DbError>(option.none<SessionRow>())
+}
+
+fn campfire.push-subscriptions.destroy-for-user(user-id: UserId, endpoint: String) -> Result<Unit, DbError> {
+    effects db.write
+
+    match db.execute("DELETE FROM push_subscriptions WHERE endpoint = $endpoint AND user_id = $userId", [db.text-param(endpoint), db.int-param(UserId.value(user-id))]) {
+        error failure => result.error<Unit, DbError>(campfire.server.db-error(failure))
+        ok changes => result.ok<Unit, DbError>(unit)
+    }
+}
+
+test campfire.push-subscriptions.destroy-for-user/fixture {
+    expect campfire.server.test-fixture() == 0
+    expect campfire.push-subscriptions.destroy-for-user(UserId.new(1), "https://push.example/1") == result.ok<Unit, DbError>(unit)
+}
+
+fn campfire.server.run(outcome: Result<Int, SqlError>) -> Int {
+    match outcome {
+        error failure => 1
+        ok changes => 0
+    }
+}
+
+test campfire.server.run/outcomes {
+    expect campfire.server.run(result.ok<Int, SqlError>(3)) == 0
+    expect campfire.server.run(result.error<Int, SqlError>(sqlError.new(code = 1, message = "x"))) == 1
+}
+
+fn campfire.server.test-fixture() -> Int {
+    effects db.write
+    doc "Creates the tables the room read touches in the attached tests' in-memory database and seeds two users, two rooms, one session (user 1, token session-token-1, active 2026-10-14 11:30Z), two messages in room 1 and one ban. Returns the number of failed statements."
+
+    var failed = 0
+    failed = failed + campfire.server.run(db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, role INTEGER NOT NULL, status INTEGER NOT NULL, bot_token TEXT, bio TEXT, updated_at TEXT NOT NULL)", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("CREATE TABLE sessions (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, token TEXT NOT NULL, ip_address TEXT, user_agent TEXT, last_active_at TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("CREATE TABLE rooms (id INTEGER PRIMARY KEY, name TEXT, type TEXT NOT NULL, creator_id INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("CREATE TABLE memberships (user_id INTEGER NOT NULL, room_id INTEGER NOT NULL)", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("CREATE TABLE messages (id INTEGER PRIMARY KEY, room_id INTEGER NOT NULL, creator_id INTEGER NOT NULL, client_message_id TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("CREATE TABLE action_text_rich_texts (record_id INTEGER, record_type TEXT, name TEXT, body TEXT)", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("CREATE TABLE bans (ip_address TEXT)", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("CREATE TABLE push_subscriptions (user_id INTEGER, endpoint TEXT)", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("INSERT INTO users (id, name, role, status, updated_at) VALUES (1, 'Ann', 0, 0, '2026-01-01 00:00:00'), (2, 'Bo', 0, 0, '2026-01-01 00:00:00')", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("INSERT INTO sessions (id, user_id, token, last_active_at, created_at, updated_at) VALUES (1, 1, 'session-token-1', '2026-10-14 11:30:00', '2026-10-01 00:00:00', '2026-10-14 11:30:00')", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("INSERT INTO rooms (id, name, type, creator_id, created_at, updated_at) VALUES (1, 'Lobby', 'Rooms::Open', 1, '2026-01-01 00:00:00', '2026-01-01 00:00:00'), (2, 'Other', 'Rooms::Closed', 2, '2026-01-01 00:00:00', '2026-01-01 00:00:00')", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("INSERT INTO memberships (user_id, room_id) VALUES (1, 1), (2, 2)", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("INSERT INTO messages (id, room_id, creator_id, client_message_id, created_at, updated_at) VALUES (1, 1, 1, 'c1', '2026-10-14 10:00:00.250', '2026-10-14 10:00:00.250'), (2, 1, 2, 'c2', '2026-10-14 10:05:00', '2026-10-14 10:05:00')", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("INSERT INTO action_text_rich_texts (record_id, record_type, name, body) VALUES (1, 'Message', 'body', 'first message'), (2, 'Message', 'body', 'second message')", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("INSERT INTO bans (ip_address) VALUES ('192.0.2.9')", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("INSERT INTO push_subscriptions (user_id, endpoint) VALUES (1, 'https://push.example/1')", list.empty<DbValue>()))
+    failed
+}
+
+test campfire.server.test-fixture/creates {
+    expect campfire.server.test-fixture() == 0
+    expect campfire.users.find-by-id(UserId.new(1)) == result.ok<Option<AuthUser>, DbError>(option.some<AuthUser>(authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active())))
+}

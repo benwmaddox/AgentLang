@@ -1,7 +1,7 @@
 // Standard library: database values and row accessors (docs/LINUX-SERVER-PLAN.md
 // piece C). The host operations are
-//   db.query(sql: String, parameters: List<DbValue>) -> Result<List<DbRow>, DbError>   effects db.read
-//   db.execute(sql: String, parameters: List<DbValue>) -> Result<Int, DbError>       effects db.write
+//   db.query(sql: String, parameters: List<DbValue>) -> Result<List<DbRow>, SqlError>   effects db.read
+//   db.execute(sql: String, parameters: List<DbValue>) -> Result<Int, SqlError>       effects db.write
 // `sql` must be a string literal; each worker prepares it once and reuses it.
 // Parameters bind in order (?1, ?2, ...). Columns are read by zero-based index.
 // SQLite REAL columns arrive as text (sqlite3_column_text).
@@ -24,7 +24,7 @@ record DbRow {
     values: List<DbValue>
 }
 
-record DbError {
+record SqlError {
     code: Int
     message: String
 }
