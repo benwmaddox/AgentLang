@@ -4711,8 +4711,21 @@ enum {
   AL_STDLIB_STRING_SLICE = 18,
   AL_STDLIB_STRING_BYTE_AT = 19,
   AL_STDLIB_INT_PARSE = 20,
-  AL_STDLIB_STRING_TO_LOWER_ASCII = 21
+  AL_STDLIB_STRING_TO_LOWER_ASCII = 21,
+  AL_STDLIB_RANDOM_BYTES = 22
 };
+
+/* The OS random source. Modules that call crypto.random-bytes define
+ * al_owning_os_random_fill in their generated IR (BCryptGenRandom); every
+ * other module resolves the weak reference to this failing stub, so its
+ * import table is unchanged. Returns a negative status on failure. */
+int32_t al_owning_os_random_unavailable(uint8_t *buffer, uint32_t length) {
+  (void)buffer;
+  (void)length;
+  return -1;
+}
+int32_t al_owning_os_random_fill(uint8_t *buffer, uint32_t length);
+#pragma comment(linker, "/alternatename:al_owning_os_random_fill=al_owning_os_random_unavailable")
 
 typedef struct {
   uint32_t h[8];
@@ -5093,15 +5106,15 @@ static int64_t al_stdlib_int(const al_owning_stack_context *ctx,
 static int32_t al_stdlib_arguments(al_owning_stack_context *ctx, int32_t op,
                                    const al_stdlib_argument *arguments,
                                    uint32_t error_id, uint32_t lengths[4]) {
-  static const char *const shapes[22] = {
+  static const char *const shapes[23] = {
       "----", "t---", "t---", "t---", "tt--", "tii-", "tt--", "tt--",
       "t---", "t---", "t---", "t---", "t---", "t---", "tt--", "ttii",
-      "tt--", "tti-", "tii-", "ti--", "t---", "t---"};
+      "tt--", "tti-", "tii-", "ti--", "t---", "t---", "i---"};
   uint32_t i;
   uint32_t ignored;
-  if (op < 1 || op > 21) {
+  if (op < 1 || op > 22) {
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
-                          (uint32_t)op, 21u);
+                          (uint32_t)op, 22u);
     return 0;
   }
   for (i = 0u; i < 4u; ++i) {
@@ -5129,6 +5142,23 @@ static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
                               al_stdlib_writer *w, uint32_t error_id) {
   const uint8_t *x = al_stdlib_data(ctx, a[0]);
   switch (op) {
+  case AL_STDLIB_RANDOM_BYTES: {
+    /* Same bound as the interpreter: 0..65536 bytes. Plan only sizes; the
+     * write pass fills the destination from the OS. */
+    const int64_t count = al_stdlib_int(ctx, a[0]);
+    if (count < 0 || count > 65536)
+      break;
+    al_stdlib_begin_text(w, (uint32_t)count);
+    if (w->base != 0 && count > 0 &&
+        al_owning_os_random_fill(w->base + w->extent, (uint32_t)count) < 0) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id,
+                            (uint32_t)count, 0u);
+      return 0;
+    }
+    w->extent += (uint64_t)count;
+    al_stdlib_pad(w);
+    return 1;
+  }
   case AL_STDLIB_BYTES_FROM_UTF8:
     al_stdlib_text(w, x, n[0]);
     return 1;

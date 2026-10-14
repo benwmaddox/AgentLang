@@ -471,3 +471,30 @@ test stdlib.lower/empty {
     stdlib.lower("")
     => value ""
 }
+
+fn stdlib.random-length(count: Int) -> Int {
+    effects random.read
+    bytes.length(crypto.random-bytes(count))
+}
+
+test stdlib.random-length/thirty-two {
+    stdlib.random-length(32)
+    => value 32
+}
+
+test stdlib.random-length/zero {
+    stdlib.random-length(0)
+    => value 0
+}
+
+fn stdlib.random-differs?(count: Int) -> Bool {
+    effects random.read
+    let first = crypto.random-bytes(count)
+    let second = crypto.random-bytes(count)
+    bool.not(bytes.equal-constant-time?(first, second))
+}
+
+test stdlib.random-differs?/thirty-two {
+    stdlib.random-differs?(32)
+    => value true
+}

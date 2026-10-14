@@ -74,7 +74,8 @@ let private run () =
         | configured -> configured
     let runRoot = Path.Combine(runBase, DateTimeOffset.UtcNow.ToString("yyyyMMddTHHmmssZ") + "-" + Guid.NewGuid().ToString("N").Substring(0, 8))
     Directory.CreateDirectory(runRoot) |> ignore
-    let engine = Runtime.Engine(Path.Combine(runRoot, "engine"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
+    let randomRead = Set.singleton "random.read"
+    let engine = Runtime.Engine(Path.Combine(runRoot, "engine"), randomRead, fileSystemMode = FileSystemMode.Virtual, testCapabilities = randomRead)
     let args = JsonObject()
     args["frontend"] <- JsonValue.Create("flow")
     args["syntaxVersion"] <- JsonValue.Create(2)

@@ -205,10 +205,30 @@ module LlvmToolchain =
     let private compileCObject toolchain optimization runtimeProfile instrumentation screenNativeStackUsage sourcePath includeDirectory objectPath workingDirectory =
         compileCObjectCore None toolchain optimization runtimeProfile instrumentation screenNativeStackUsage sourcePath includeDirectory objectPath workingDirectory
 
+    /// The Windows SDK import library for BCryptGenRandom (crypto.random-bytes).
+    /// An import library adds nothing to modules that never reference it.
+    let private windowsSdkBcryptLibrary =
+        lazy
+            (let sdkRoot =
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Windows Kits", "10", "Lib")
+             if not (Directory.Exists sdkRoot) then None
+             else
+                 Directory.EnumerateDirectories(sdkRoot)
+                 |> Seq.sortByDescending (fun path ->
+                     match Version.TryParse(Path.GetFileName path) with
+                     | true, version -> version
+                     | false, _ -> Version(0, 0))
+                 |> Seq.map (fun path -> Path.Combine(path, "um", "x64", "bcrypt.lib"))
+                 |> Seq.tryFind File.Exists
+                 |> Option.map Path.GetFullPath)
+
     let private linkObjects (toolchain: LlvmToolchain) (outputDllPath: string) (objectPaths: string list) =
         if File.Exists outputDllPath then File.Delete outputDllPath
         let workingDirectory = Path.GetDirectoryName outputDllPath
-        let runtimeLibraries = toolchain.CompilerRuntimeLibrary |> Option.toList
+        let alreadyLinked name = objectPaths |> List.exists (fun path -> String.Equals(Path.GetFileName(path), name, StringComparison.OrdinalIgnoreCase))
+        let runtimeLibraries =
+            (toolchain.CompilerRuntimeLibrary |> Option.toList)
+            @ (if alreadyLinked "bcrypt.lib" then [] else windowsSdkBcryptLibrary.Force() |> Option.toList)
         run toolchain.LldLinkPath
             ([ "/dll"; "/noentry"; "/nodefaultlib"; "/machine:x64"
                $"/out:{outputDllPath}" ] @ objectPaths @ runtimeLibraries)

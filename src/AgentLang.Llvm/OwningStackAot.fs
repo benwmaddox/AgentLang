@@ -839,7 +839,12 @@ module OwningStdlib =
               "string.slice", (18, [ IrString; IrInt; IrInt ], [ IrOption IrString ])
               "string.byte-at", (19, [ IrString; IrInt ], [ IrOption IrInt ])
               "int.parse", (20, [ IrString ], [ IrOption IrInt ])
-              "string.to-lower-ascii", (21, [ IrString ], [ IrString ]) ]
+              "string.to-lower-ascii", (21, [ IrString ], [ IrString ])
+              "crypto.random-bytes", (22, [ IrInt ], [ IrBytes ]) ]
+
+    /// Effectful stdlib primitives the owning backend admits, with the exact
+    /// effect set each one must declare.
+    let effectful : Map<string, Set<IrEffect>> = Map.ofList [ "crypto.random-bytes", Set.singleton IrEffect.RandomRead ]
 
 module OwningStackAot =
     let private unsupported code message owner actual =
@@ -1040,11 +1045,18 @@ module OwningStackAot =
                     "The owning value-stack backend accepts only effect-free verified code."
                     (Some owner) None [] (IrEffects.names effects)
 
+        // Effects of admitted stdlib primitives (crypto.random-bytes: random.read).
+        // Each primitive call is still checked against its exact effect set.
+        let stdlibEffects = OwningStdlib.effectful |> Map.fold (fun all _ effects -> Set.union all effects) Set.empty
         let requireProgramEffects owner effects =
             match nativeHostProfile with
-            | None -> requireEffectFree owner effects
+            | None ->
+                if not (Set.isSubset effects stdlibEffects) then
+                    Diagnostics.raiseError "IR_OWNING_STACK_EFFECT_UNSUPPORTED"
+                        "The owning value-stack backend accepts only effect-free verified code and admitted stdlib effects."
+                        (Some owner) None (IrEffects.names stdlibEffects) (IrEffects.names effects)
             | Some(OwningNativeHostProfile.AppHost manifest) ->
-                let allowedEffects = allowedHostEffects manifest
+                let allowedEffects = Set.union (allowedHostEffects manifest) stdlibEffects
                 if not (Set.isSubset effects allowedEffects) then
                     Diagnostics.raiseError "IR_OWNING_STACK_EFFECT_UNSUPPORTED"
                         $"The {manifest.ProfileId} native-host profile permits only the effects of its declared host operations."
@@ -1414,11 +1426,14 @@ module OwningStackAot =
                   "string.concat"; "string.replace"; "string.length"; "string.byte-length"; "string.char-length"; "string.join"; "string.html-escape"
                   "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
                   "list.append"; "list.concat"
-                  "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "int.parse"; "string.to-lower-ascii" ]
+                  "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "int.parse"; "string.to-lower-ascii"; "crypto.random-bytes" ]
 
         let validatePrimitive owner span (call: IrResolvedCall) operation =
-            requireEffectFree owner call.ResolvedDeclaredEffects
-            requireEffectFree owner call.ResolvedEffects
+            match OwningStdlib.effectful.TryFind operation with
+            | Some effects when call.ResolvedDeclaredEffects = effects && call.ResolvedEffects = effects -> ()
+            | _ ->
+                requireEffectFree owner call.ResolvedDeclaredEffects
+                requireEffectFree owner call.ResolvedEffects
             if not (supportedPrimitives.Contains operation) then
                 Diagnostics.raiseError "IR_OWNING_STACK_PRIMITIVE_UNSUPPORTED"
                     "Owning-stack backend has no native implementation for this canonical primitive."
@@ -3659,6 +3674,9 @@ module OwningStackAot =
             bodies
             |> List.fold (fun merged current -> Map.fold (fun currentMap site source -> Map.add site source currentMap) merged current.BodySourceMap) program.SourceMap
         let diagnostics = ResizeArray<OwningDiagnosticInfo>()
+        // Set when crypto.random-bytes is emitted: only then does the module
+        // define al_owning_os_random_fill and import BCryptGenRandom.
+        let usesOsRandom = ref false
         let mutable diagnosticRole: string option = None
         let addDiagnostic code message word span expected actual =
             diagnostics.Add
@@ -5690,11 +5708,16 @@ module OwningStackAot =
                                 // Standard library slice 1: one runtime dispatcher sizes then writes
                                 // each result (String, Bytes, Option or List) at the cursor.
                                 let opId, _, outputs = OwningStdlib.operations[operation]
+                                if operation = "crypto.random-bytes" then usesOsRandom.Value <- true
                                 let resultType = List.exactlyOne outputs
                                 let slots = arguments |> List.collect (fun value -> [ value.Offset; value.Extent ])
                                 let slots = slots @ List.replicate (8 - slots.Length) "0"
                                 let slotArgs = slots |> List.map (fun value -> $"i32 {value}") |> String.concat ", "
-                                let errorId = addDiagnostic "RUNTIME_STDLIB_RESULT_RANGE" $"{operation} exceeds the bounded byte range." currentOwner instructionSpan [] []
+                                let errorId =
+                                    if operation = "crypto.random-bytes" then
+                                        addDiagnostic "RUNTIME_RANDOM_BYTES_RANGE" "crypto.random-bytes takes a count from 0 to 65536." currentOwner instructionSpan [ "0..65536" ] []
+                                    else
+                                        addDiagnostic "RUNTIME_STDLIB_RESULT_RANGE" $"{operation} exceeds the bounded byte range." currentOwner instructionSpan [] []
                                 match resultType with
                                 | IrInt | IrBool ->
                                     let result = w.Fresh "stdlib.scalar"
@@ -7181,6 +7204,15 @@ module OwningStackAot =
             diagnosticRole <- None
             mailboxCallbackTexts.Add((associatedRole, associatedCallbackText, associatedAllocaBytes))
             writer.Line(associatedCallbackText)
+        if usesOsRandom.Value then
+            // The runtime's weak reference falls back to a failing stub; this
+            // module supplies the OS random source (Windows CNG system RNG).
+            writer.Line("declare dllimport i32 @BCryptGenRandom(ptr, ptr, i32, i32)")
+            writer.Line("define i32 @al_owning_os_random_fill(ptr %buffer, i32 %length) {")
+            writer.Line("entry:")
+            writer.Line("  %status = call i32 @BCryptGenRandom(ptr null, ptr %buffer, i32 %length, i32 2)")
+            writer.Line("  ret i32 %status")
+            writer.Line("}")
         let metadataPerFrameBytes = frameTexts |> Seq.map explicitAllocaBoundBytes |> Seq.fold max 0
         let wrapperMetadataBytes = explicitAllocaBoundBytes wrapper.Text
         let mailboxCallbackMetadataBytes = mailboxCallbackTexts |> Seq.map (fun (_, _, bytes) -> bytes) |> Seq.fold max 0
