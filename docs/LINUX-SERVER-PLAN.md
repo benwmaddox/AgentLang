@@ -87,6 +87,43 @@ Probe results (2026-10-14):
   build on Windows), one connection per worker, WAL, the same PRAGMAs as the
   current Campfire host (read them from room_read_adapter.c).
 
+### A and C as built (274)
+
+- Stdlib Flow: `src/stdlib/http.flow` (HttpHeader/HttpRequest/HttpResponse,
+  `http.header`, `http.path`, `http.query`, `http.config`, `http.response`)
+  and `src/stdlib/db.flow` (DbValueKind/DbValue/DbRow/DbError, `db.*-param`,
+  `db.column`, `db.first-row`, `db.int`, `db.optional-int`, `db.text`,
+  `db.optional-text`, `db.blob`). Columns are zero-based; REAL arrives as text.
+- `db.query` / `db.execute` are host operations (manifest in
+  `src/AgentLang.FlowHttp/Db.fs`; effects db.read / db.write). The SQL
+  argument must be a string literal (source check at load). Each worker
+  prepares a statement once per SQL text and reuses it. DbError.code is the
+  SQLite extended result code, DbError.message is `sqlite3_errmsg`.
+  Interpreter: SQLitePCL raw API (Microsoft.Data.Sqlite's e_sqlite3);
+  native: `src/AgentLang.Llvm/native/http_host/flow_http_db.c`.
+- The owning backend has an explicit `OwningTarget` (Windows x64 default,
+  byte-identical; Linux x64 without dllexport/dllimport/BCrypt) and
+  `OwningStackAot.emitHostModule`, one module with named entry exports
+  (`flow_http_handle`, `flow_http_worker_init`) sharing one layout.
+- The worker context is the worker-init result; the worker keeps its bytes
+  and passes them as the handle entry's second input (copied into the arena
+  per request, validated like any input). Zero-copy borrowing of an in-arena
+  root below the request mark is not done.
+- Host: `flow_http_host.c`. Linux: one SO_REUSEPORT socket and epoll loop
+  per worker. Windows: workers accept from one shared listening socket with
+  WSAPoll (no SO_REUSEPORT). `--pin` pins worker i to the i-th CPU of the
+  process affinity mask (use with `taskset`).
+- Build: `scripts/Build-FlowHttpServer.ps1 -App <app> -Source <files>
+  -Target windows-x64|linux-x64 [-RuntimeProfile trusted|diagnostic]
+  -OutDir <dir>`; the Linux half runs `scripts/build-flow-http-linux.sh` in
+  WSL and leaves `~/linuxbench/flowhttp/<app>/flow_http_server`.
+- Run: `flow_http_server --port 13774 --db app.db [--config cfg.txt]
+  [--workers N] [--pin] [--allow-control]`; prints `READY <port>`; stops on
+  SIGINT/SIGTERM, Ctrl+C, or `POST /__flow_http/shutdown` with
+  `--allow-control`. Config lines are `name=value` (never logged).
+- Tests: `tests/AgentLang.FlowHttp.Tests` (counter app; interpreter vs
+  native on Windows and Linux, trusted and diagnostic runtimes).
+
 ### D. Campfire in Flow (after A-C)
 
 Port, in the order the room GET needs them: request parsing (route, cookies,
