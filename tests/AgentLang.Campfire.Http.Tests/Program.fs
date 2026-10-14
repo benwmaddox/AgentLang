@@ -8,6 +8,7 @@ open System.Net.Http
 open System.Net.Http.Headers
 open System.Security.Cryptography
 open System.Text
+open System.Text.RegularExpressions
 open System.Text.Json
 open System.Text.Json.Nodes
 open System.Threading
@@ -471,6 +472,12 @@ module Program =
     let private expectStatus expected exchange =
         equal expected exchange.Status "HTTP status"
 
+    /// Rails' CSRF work on a room GET: the session secret, the page's meta and
+    /// composer tokens, then one boost-token call per rendered message.
+    let private csrfTrace (body: string) =
+        [ "campfire.csrf.session-secret"; "campfire.csrf.form-token"; "campfire.csrf.form-token" ]
+        @ List.replicate (body.Split(" data-message-id=\"", StringSplitOptions.None).Length - 1) "campfire.csrf.boost-tokens"
+
     let private expectTrace (probe: ProviderProbe) (expected: string list) =
         let actual = probe.Names
         let trace = JsonObject()
@@ -579,10 +586,34 @@ module Program =
         check (not (room.Body.Contains("data-message-id=\"5\"", StringComparison.Ordinal))) "GET excludes rows older than the newest forty"
         check (room.Body.Contains("&lt;script&gt;", StringComparison.Ordinal)) "stored markup is HTML-escaped"
         check (not (room.Body.Contains("<script>", StringComparison.Ordinal))) "stored markup is not emitted as executable markup"
-        expectTrace probe
+        expectTrace probe <|
             [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
-              "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ]
+              "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ] @ csrfTrace room.Body
         check (room.SetCookies |> List.exists (fun value -> value.StartsWith("last_room=", StringComparison.Ordinal))) "first successful room visit writes the last-room cookie"
+
+        // Report 271: Rails' CSRF model. A session without _csrf_token gets one,
+        // and every page token unmasks to HMAC-SHA256(secret, identifier).
+        currentCheck <- "room page renders Rails CSRF tokens for the session's secret"
+        let csrfState =
+            getCookie room "_campfire_session"
+            |> Option.bind (fun value -> cookies.DecryptRailsSession(value, clock.CurrentInstant))
+            |> Option.defaultWith (fun () -> failwith "a session without a CSRF secret must receive one in its Rails session cookie")
+        let csrfSecret = csrfState["_csrf_token"].GetValue<string>()
+        let fromUrlSafe (text: string) =
+            let padded = text.Replace('-', '+').Replace('_', '/')
+            Convert.FromBase64String(padded + String('=', (4 - padded.Length % 4) % 4))
+        let rawSecret = fromUrlSafe csrfSecret
+        equal 32 rawSecret.Length "the generated CSRF secret is 32 random bytes"
+        let unmasks (token: string) (identifier: string) =
+            let masked = fromUrlSafe token
+            masked.Length = 64
+            && (Array.map2 (^^^) masked[0..31] masked[32..63]) = HMACSHA256.HashData(rawSecret, Encoding.UTF8.GetBytes identifier)
+        let meta = Regex.Match(room.Body, "<meta name=\"csrf-token\" content=\"([^\"]+)\"").Groups[1].Value
+        check (unmasks meta "!real_csrf_token") "the csrf meta tag carries the masked global token"
+        let forms = Regex.Matches(room.Body, "action=\"(/messages/\d+/boosts)\"[^>]*method=\"post\"><input type=\"hidden\" name=\"authenticity_token\" value=\"([^\"]+)\"")
+        equal 320 forms.Count "forty messages render eight quick-boost forms each"
+        equal 320 (forms |> Seq.filter (fun (m: Match) -> unmasks m.Groups[2].Value (m.Groups[1].Value + "#post")) |> Seq.length) "every boost form token unmasks to its per-form HMAC"
+        equal 320 (forms |> Seq.map (fun (m: Match) -> m.Groups[2].Value) |> Set.ofSeq |> Set.count) "every form gets its own random mask"
 
         currentCheck <- "unauthenticated room redirect preserves encrypted existing state and return URL"
         let initialState = JsonObject()
@@ -1511,9 +1542,9 @@ module Program =
                     FetchSite = Some "same-origin"
                     ExtraHeaders = [ "X-Forwarded-For", "203.0.113.99" ] }
         expectStatus 200 getWhileBanned
-        expectTrace probe
+        expectTrace probe <|
             [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
-              "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ]
+              "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ] @ csrfTrace getWhileBanned.Body
 
     let private checkEmptyUsersHttpBehavior (sourceDirectory: string) (clock: FixedClock) (cookies: CookieService) =
         currentCheck <- "empty users login redirects to first run"
@@ -1663,10 +1694,10 @@ module Program =
                                 Cookies = [ "session_token", issuedLoginCookie ] }
                     expectStatus 200 restoredRoom
                     check (restoredRoom.Body.Contains("<title>Main room</title>", StringComparison.Ordinal)) "restarted application restores the persisted login session"
-                    expectTrace restartedProbe
+                    expectTrace restartedProbe <|
                         [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
                           "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"
-                          "campfire.messages.last-page-with-creators" ]
+                          "campfire.messages.last-page-with-creators" ] @ csrfTrace restoredRoom.Body
 
                     currentCheck <- "revoked signed logout token stays rejected after application restart"
                     restartedProbe.Clear()

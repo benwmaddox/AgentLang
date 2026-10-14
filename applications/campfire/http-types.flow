@@ -48,6 +48,7 @@ record CampfireHttpRequest {
     field accepts-html: Bool
     field last-room: Option<String>
     field browser: BrowserInfo
+    field csrf-token: Option<String>
 }
 
 enum HttpView {
@@ -73,5 +74,6 @@ record CampfireHttpResponse {
     field refresh-session-token: Option<SessionToken>
     field remember-return-to: Bool
     field last-room: Option<RoomId>
+    field new-csrf-token: Option<String>
     field body: String
 }

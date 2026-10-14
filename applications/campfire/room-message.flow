@@ -109,3 +109,10 @@ fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result
         }
     }
 }
+
+fn campfire.csrf.tokened-message(secret: String, message: MessageWithCreator) -> TokenedMessage {
+    effects random.read
+    doc "Pairs a room-page message with Rails' masked authenticity tokens for its eight quick-boost forms (form_authenticity_token for /messages/:id/boosts#post)."
+
+    tokenedMessage.new(message = message, boost-tokens = campfire.csrf.boost-tokens(secret, message.id))
+}

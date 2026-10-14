@@ -230,6 +230,14 @@ module Transport =
         let ip = context.Connection.RemoteIpAddress
         let remote = if isNull ip then "" elif ip.IsIPv4MappedToIPv6 then ip.MapToIPv4().ToString() else ip.ToString()
         let instant = (now.UtcTicks - DateTimeOffset.UnixEpoch.UtcTicks) / 10L
+        // Rails keeps the CSRF secret in the encrypted session (_csrf_token).
+        let csrfToken =
+            Map.tryFind "_campfire_session" cookies
+            |> Option.bind (fun raw -> options.Cookies.DecryptRailsSession(raw, now))
+            |> Option.bind (fun state ->
+                let value = state["_csrf_token"]
+                if isNull value then None
+                else try Some(value.GetValue<string>()) with _ -> None)
         return RecordValue("CampfireHttpRequest", Map.ofList
             [ "route", EnumValue("HttpRoute", route)
               "method", EnumValue("RequestMethod", methodName)
@@ -250,7 +258,8 @@ module Transport =
               "accepts-turbo", BoolValue(acceptsTurbo request)
               "accepts-html", BoolValue(acceptsHtml request)
               "last-room", stringOption (Map.tryFind "last_room" cookies)
-              "browser", options.NormalizeBrowser agent ])
+              "browser", options.NormalizeBrowser agent
+              "csrf-token", stringOption csrfToken ])
     }
 
     let private safeReturnLocation (authority: Uri) (candidate: string) =
@@ -296,7 +305,7 @@ module Transport =
         let expire name =
             let secure = if options.PublicBaseUri.Scheme = "https" || options.ForceSsl then "; Secure" else ""
             $"{name}=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax{secure}"
-        let sessionMutation = rendered.RememberReturnTo || rendered.Alert.IsSome || rendered.CompleteLogin
+        let sessionMutation = rendered.RememberReturnTo || rendered.Alert.IsSome || rendered.CompleteLogin || rendered.NewCsrfToken.IsSome
         let mutable finalLocation = rendered.Location
         let sessionCookie =
             if rendered.CompleteLogout then Ok(Some(expire "_campfire_session"))
@@ -312,6 +321,9 @@ module Transport =
                     // Authority is fixed configuration, never an arbitrary Host or forwarded header.
                     let target = options.PublicBaseUri.GetLeftPart(UriPartial.Authority) + context.Request.PathBase.ToString() + context.Request.Path.ToString() + context.Request.QueryString.ToString()
                     state["return_to_after_authenticating"] <- JsonValue.Create target
+                match rendered.NewCsrfToken with
+                | Some token -> state["_csrf_token"] <- JsonValue.Create token
+                | None -> ()
                 match rendered.Alert with
                 | Some alert ->
                     let flash = JsonObject()

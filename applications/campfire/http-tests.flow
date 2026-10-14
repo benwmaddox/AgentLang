@@ -3,6 +3,14 @@ test-file campfire-http-authenticate {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
+    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
+        csrfSecret.new(value = "test-csrf-secret", fresh = false)
+    }
+
+    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
+        string.concat("test-token:", identifier)
+    }
+
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
         result.ok<MessageRow, RoomMessageError>(messageRow.new(id = MessageId.new(1), room-id = RoomId.new(1), creator-id = UserId.new(1), client-message-id = "test", body = option.some<String>("Hello"), created-at = "2026-01-01", updated-at = "2026-01-01"))
     }
@@ -67,7 +75,8 @@ test-file campfire-http-authenticate {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ))
         response.status
         => 302
@@ -99,7 +108,8 @@ test-file campfire-http-authenticate {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ))
         response.status
         => 302
@@ -131,7 +141,8 @@ test-file campfire-http-authenticate {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ))
         response.status
         => 500
@@ -147,6 +158,14 @@ test-file campfire-http-authenticate {
 test-file campfire-http-authenticated {
     override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
+    }
+
+    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
+        csrfSecret.new(value = "test-csrf-secret", fresh = false)
+    }
+
+    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
+        string.concat("test-token:", identifier)
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -213,7 +232,8 @@ test-file campfire-http-authenticated {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.internet-explorer(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.internet-explorer(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ), restoredSession.new(user = option.some<AuthUser>(authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active())), session = sessionRow.new(id = SessionId.new(1), user-id = UserId.new(1), token = SessionToken.new("valid"), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>(), last-active-at = UtcInstant.new(0), created-at = UtcInstant.new(0), updated-at = UtcInstant.new(0)), refresh-cookie = true))
         response.status
         => 422
@@ -245,7 +265,8 @@ test-file campfire-http-authenticated {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.internet-explorer(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.internet-explorer(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ), restoredSession.new(user = option.none<AuthUser>(), session = sessionRow.new(id = SessionId.new(1), user-id = UserId.new(1), token = SessionToken.new("valid"), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>(), last-active-at = UtcInstant.new(0), created-at = UtcInstant.new(0), updated-at = UtcInstant.new(0)), refresh-cookie = true))
         response.status
         => 200
@@ -277,7 +298,8 @@ test-file campfire-http-authenticated {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ), restoredSession.new(user = option.none<AuthUser>(), session = sessionRow.new(id = SessionId.new(1), user-id = UserId.new(1), token = SessionToken.new("valid"), ip-address = option.none<RemoteIp>(), user-agent = option.none<String>(), last-active-at = UtcInstant.new(0), created-at = UtcInstant.new(0), updated-at = UtcInstant.new(0)), refresh-cookie = true))
         response.status
         => 500
@@ -293,6 +315,14 @@ test-file campfire-http-authenticated {
 test-file campfire-http-bot-or-redirect {
     override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
+    }
+
+    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
+        csrfSecret.new(value = "test-csrf-secret", fresh = false)
+    }
+
+    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
+        string.concat("test-token:", identifier)
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -359,7 +389,8 @@ test-file campfire-http-bot-or-redirect {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ))
         response.status
         => 403
@@ -391,7 +422,8 @@ test-file campfire-http-bot-or-redirect {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ))
         response.status
         => 302
@@ -407,6 +439,14 @@ test-file campfire-http-bot-or-redirect {
 test-file campfire-http-create-message {
     override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
+    }
+
+    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
+        csrfSecret.new(value = "test-csrf-secret", fresh = false)
+    }
+
+    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
+        string.concat("test-token:", identifier)
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -473,7 +513,8 @@ test-file campfire-http-create-message {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), roomRow.new(id = RoomId.new(1), name = option.some<String>("Main"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "2026-01-01", updated-at = "2026-01-01"), option.none<SessionToken>())
         response.status
         => 200
@@ -505,7 +546,8 @@ test-file campfire-http-create-message {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), roomRow.new(id = RoomId.new(1), name = option.some<String>("Main"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "2026-01-01", updated-at = "2026-01-01"), option.none<SessionToken>())
         response.status
         => 406
@@ -537,7 +579,8 @@ test-file campfire-http-create-message {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), roomRow.new(id = RoomId.new(1), name = option.some<String>("Main"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "2026-01-01", updated-at = "2026-01-01"), option.none<SessionToken>())
         response.status
         => 400
@@ -569,7 +612,8 @@ test-file campfire-http-create-message {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), roomRow.new(id = RoomId.new(1), name = option.some<String>("Main"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "2026-01-01", updated-at = "2026-01-01"), option.none<SessionToken>())
         response.status
         => 400
@@ -601,7 +645,8 @@ test-file campfire-http-create-message {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), roomRow.new(id = RoomId.new(1), name = option.some<String>("Main"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "2026-01-01", updated-at = "2026-01-01"), option.none<SessionToken>())
         response.status
         => 415
@@ -633,7 +678,8 @@ test-file campfire-http-create-message {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), roomRow.new(id = RoomId.new(1), name = option.some<String>("Main"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "2026-01-01", updated-at = "2026-01-01"), option.none<SessionToken>())
         response.status
         => 422
@@ -665,7 +711,8 @@ test-file campfire-http-create-message {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), roomRow.new(id = RoomId.new(1), name = option.some<String>("Main"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "2026-01-01", updated-at = "2026-01-01"), option.none<SessionToken>())
         response.status
         => 413
@@ -681,6 +728,14 @@ test-file campfire-http-create-message {
 test-file campfire-http-dispatch {
     override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
+    }
+
+    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
+        csrfSecret.new(value = "test-csrf-secret", fresh = false)
+    }
+
+    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
+        string.concat("test-token:", identifier)
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -747,7 +802,8 @@ test-file campfire-http-dispatch {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ))
         response.status
         => 200
@@ -779,7 +835,8 @@ test-file campfire-http-dispatch {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ))
         response.status
         => 429
@@ -811,7 +868,8 @@ test-file campfire-http-dispatch {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ))
         response.status
         => 200
@@ -843,7 +901,8 @@ test-file campfire-http-dispatch {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ))
         response.status
         => 200
@@ -875,7 +934,8 @@ test-file campfire-http-dispatch {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ))
         response.status
         => 422
@@ -891,6 +951,14 @@ test-file campfire-http-dispatch {
 test-file campfire-http-response {
     override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
+    }
+
+    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
+        csrfSecret.new(value = "test-csrf-secret", fresh = false)
+    }
+
+    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
+        string.concat("test-token:", identifier)
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -953,6 +1021,14 @@ test-file campfire-http-response {
 test-file campfire-http-route {
     override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
+    }
+
+    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
+        csrfSecret.new(value = "test-csrf-secret", fresh = false)
+    }
+
+    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
+        string.concat("test-token:", identifier)
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -1019,7 +1095,8 @@ test-file campfire-http-route {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), option.none<SessionToken>())
         response.status
         => 302
@@ -1051,7 +1128,8 @@ test-file campfire-http-route {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), option.none<SessionToken>())
         response.status
         => 200
@@ -1083,7 +1161,8 @@ test-file campfire-http-route {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false),
+            csrf-token = option.none<String>()
         ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), option.none<SessionToken>())
         response.status
         => 500
@@ -1115,7 +1194,8 @@ test-file campfire-http-route {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = false,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false),
+            csrf-token = option.none<String>()
         ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), option.none<SessionToken>())
         response.status
         => 500
@@ -1131,6 +1211,14 @@ test-file campfire-http-route {
 test-file campfire-http-show-room {
     override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
+    }
+
+    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
+        csrfSecret.new(value = "test-csrf-secret", fresh = false)
+    }
+
+    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
+        string.concat("test-token:", identifier)
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -1197,7 +1285,8 @@ test-file campfire-http-show-room {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.none<String>(),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), roomRow.new(id = RoomId.new(1), name = option.some<String>("Main"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "2026-01-01", updated-at = "2026-01-01"), option.none<SessionToken>())
         response.status
         => 200
@@ -1229,7 +1318,8 @@ test-file campfire-http-show-room {
             accepts-html = true,
             logout-form = result.ok<Option<HttpLogoutInput>, HttpFormError>(option.none<HttpLogoutInput>()), accepts-turbo = true,
             last-room = option.some<String>("1"),
-            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false)
+            browser = browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1"), is-bot = false),
+            csrf-token = option.none<String>()
         ), authUser.new(id = UserId.new(1), name = "Member", role = Role.member(), status = AuthUserStatus.active()), roomRow.new(id = RoomId.new(1), name = option.some<String>("Main"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "2026-01-01", updated-at = "2026-01-01"), option.none<SessionToken>())
         response.status
         => 200
@@ -1245,6 +1335,14 @@ test-file campfire-http-show-room {
 test-file campfire-http-unauthenticated {
     override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
+    }
+
+    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
+        csrfSecret.new(value = "test-csrf-secret", fresh = false)
+    }
+
+    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
+        string.concat("test-token:", identifier)
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {

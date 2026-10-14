@@ -197,7 +197,7 @@ module Program =
         defineFlow engine source |> ignore
 
         let firstRun = dispatch engine "test-all" [] |> expectAllPassed "scoped test suite"
-        equal 64 firstRun.Count "scoped suite includes policy, page, list, and create cases"
+        equal 65 firstRun.Count "scoped suite includes policy, page, list, and create cases"
         let scopedEffects = firstRun |> Seq.filter (fun result -> not (isNull result.["effectAssertion"])) |> Seq.toList
         equal 40 scopedEffects.Length "all operation-backed scoped cases carry effect assertions"
         for result in scopedEffects do assertEffectCounts result 0 0 0 0
@@ -233,7 +233,7 @@ module Program =
             check (names.Contains word) $"fresh runtime loads qualified library word {word}"
 
         let reloadedRun = dispatch reloaded "test-all" [] |> expectAllPassed "fresh-runtime scoped suite"
-        equal 64 reloadedRun.Count "fresh-runtime suite retains all scoped cases"
+        equal 64 reloadedRun.Count "fresh-runtime suite retains the library-qualified scoped cases"
         let reloadedEffects = reloadedRun |> Seq.filter (fun result -> not (isNull result.["effectAssertion"])) |> Seq.toList
         equal 40 reloadedEffects.Length "reloaded scoped cases retain all effect assertions"
         for result in reloadedEffects do assertEffectCounts result 0 0 0 0
@@ -347,7 +347,7 @@ module Program =
         probes, (fun () -> factoryCalls), factory
 
     let private adapterContract () =
-        equal 5 CampfireHost.manifest.Count "host publishes exactly five fixed operation contracts"
+        equal 8 CampfireHost.manifest.Count "host publishes exactly eight fixed operation contracts"
         equal
             CampfireHost.operationIds
             (CampfireHost.manifest |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
@@ -448,7 +448,7 @@ module Program =
         defineFlow engine (readApplicationSource true) |> ignore
 
         let results = dispatch engine "test-all" [] |> expectAllPassed "real SQLite integration suite"
-        equal 78 results.Count "integration suite includes scoped, policy, and fourteen real SQLite cases"
+        equal 79 results.Count "integration suite includes scoped, policy, and fourteen real SQLite cases"
         equal 14 (factoryCalls ()) "one lazy test-provider factory call per real attached test"
         equal 0 productionCalls.Value "attached tests use only the disposable test-provider path"
 

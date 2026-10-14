@@ -12,7 +12,10 @@ type RenderedResponse =
       LastRoom: int64 option
       Alert: string option
       CompleteLogin: bool
-      CompleteLogout: bool }
+      CompleteLogout: bool
+      /// A CSRF secret Flow generated for a session without one (Rails
+      /// real_csrf_token); the host stores it as the session's _csrf_token.
+      NewCsrfToken: string option }
 
 /// Checks the closed response contract. Every HTML body is rendered by the
 /// Flow application (applications/campfire/views.flow); this host sends it as-is.
@@ -31,7 +34,7 @@ module ResponseRenderer =
         let boolValue = function BoolValue flag -> flag | _ -> fail ()
         try
             let fields = record "CampfireHttpResponse" value
-            if fields.Count <> 9 then fail ()
+            if fields.Count <> 10 then fail ()
             // The Flow application renders every HTML body (views.flow); this
             // host only checks the response contract and sends the bytes.
             let renderedBody = get "body" fields |> stringValue
@@ -45,6 +48,8 @@ module ResponseRenderer =
                 |> optional (TNamed "SessionToken") (function NamedValue("SessionToken", StringValue token) -> token | _ -> fail ())
             let remember = get "remember-return-to" fields |> boolValue
             let lastRoom = get "last-room" fields |> optional (TNamed "RoomId") (namedInt "RoomId")
+            let newCsrfToken = get "new-csrf-token" fields |> optional TString stringValue
+            if newCsrfToken.IsSome && view <> "room" then fail ()
             let noRouteData = room.IsNone && message.IsNone
             let contentType, body, location, alert =
                 match view with
@@ -81,5 +86,6 @@ module ResponseRenderer =
             Ok { Status = status; ContentType = contentType; Body = body; Location = location
                  RefreshToken = token; RememberReturnTo = remember; LastRoom = lastRoom; Alert = alert
                  CompleteLogin = view = "redirect-authenticated"
-                 CompleteLogout = view = "redirect-signed-out" }
+                 CompleteLogout = view = "redirect-signed-out"
+                 NewCsrfToken = newCsrfToken }
         with _ -> Error "HTTP_RESPONSE_CONTRACT_MISMATCH"
