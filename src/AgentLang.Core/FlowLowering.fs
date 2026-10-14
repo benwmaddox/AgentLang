@@ -1391,9 +1391,34 @@ module FlowLowering =
         lowerStatementsWithPath context state initialEnvironment path FlowAstPathSegment.BlockStatement statements
 
     and private lowerStatementsWithPath context state initialEnvironment path statementPathSegment statements =
+        lowerStatementsCore context state initialEnvironment path statementPathSegment false statements
+
+    /// Lowers a step-list test body: its final bare expression becomes an implicit `expect`.
+    and private lowerCheckedTestStatements context state path statements =
+        lowerStatementsCore context state Map.empty path FlowAstPathSegment.BlockStatement true statements
+
+    and private lowerStatementsCore context state initialEnvironment path statementPathSegment implicitFinalCheck statements =
         let mutable environment = initialEnvironment
         let output = ResizeArray<Expr>()
         let callEvents = ResizeArray<FlowCallEvent>()
+        // Test-only checks: operands lower in order, then the intrinsic consumes them and leaves nothing.
+        let lowerExpectCheck name (operands: FlowExpression list) (operandPaths: FlowAstPath list) checkSpan eventPath =
+            rememberSpan state checkSpan
+            let operandTypes = operands |> List.map (inferExpression context state environment)
+            match operandTypes with
+            | [ TBool ] when name = FlowExpect.checkIntrinsic -> ()
+            | [ actual ] when name = FlowExpect.checkIntrinsic ->
+                fail "FLOW_EXPECT_NOT_BOOL" "'expect' requires a Bool expression; a step-list test's final bare expression is an implicit 'expect'." None (Some checkSpan) [ "Bool" ] [ Types.format actual ]
+            | [ left; right ] when name = FlowExpect.equalIntrinsic && left = right -> ()
+            | [ left; right ] when name = FlowExpect.equalIntrinsic ->
+                fail "FLOW_EXPECT_EQUAL_TYPE" "'expect a == b' requires both sides to have the same type." None (Some checkSpan) [ Types.format left ] [ Types.format right ]
+            | _ -> fail "FLOW_EXPECT_OPERAND" "'expect' takes one Bool expression." None (Some checkSpan) [] []
+            for operand, operandPath in List.zip operands operandPaths do
+                let operandFragment = lowerFlowExpression context state environment operandPath operand
+                output.AddRange operandFragment.Expressions
+                callEvents.AddRange operandFragment.CallEvents
+            output.Add(Call(name, checkSpan))
+            callEvents.Add(expectCallEvent context eventPath name checkSpan)
         for index, statement in statements |> List.indexed do
             let statementPath = extendPath path (statementPathSegment index)
             match statement with
@@ -1421,29 +1446,21 @@ module FlowLowering =
                     output.Add(Let(name, nameSpan))
                     environment <- Map.add name { InternalName = name; Type = valueType } environment
             | FlowStatement.Evaluate(FlowExpression.Call(name, arguments, checkSpan)) when FlowExpect.isIntrinsic name ->
-                // Test-only checks: operands lower in order, then the intrinsic consumes them and leaves nothing.
-                rememberSpan state checkSpan
                 let operands =
                     arguments |> List.map (function
                         | FlowArgument.Positional value -> value
                         | _ -> fail "FLOW_EXPECT_OPERAND" "'expect' takes one Bool expression." None (Some checkSpan) [] [])
-                let operandTypes = operands |> List.map (inferExpression context state environment)
-                match operandTypes with
-                | [ TBool ] when name = FlowExpect.checkIntrinsic -> ()
-                | [ actual ] when name = FlowExpect.checkIntrinsic ->
-                    fail "FLOW_EXPECT_NOT_BOOL" "'expect' requires a Bool expression." None (Some checkSpan) [ "Bool" ] [ Types.format actual ]
-                | [ left; right ] when name = FlowExpect.equalIntrinsic && left = right -> ()
-                | [ left; right ] when name = FlowExpect.equalIntrinsic ->
-                    fail "FLOW_EXPECT_EQUAL_TYPE" "'expect a == b' requires both sides to have the same type." None (Some checkSpan) [ Types.format left ] [ Types.format right ]
-                | _ -> fail "FLOW_EXPECT_OPERAND" "'expect' takes one Bool expression." None (Some checkSpan) [] []
-                operands
-                |> List.iteri (fun operandIndex operand ->
-                    let operandPath = extendPath (extendPath statementPath FlowAstPathSegment.EvaluateExpression) (argumentPath FlowCallForm.Direct operandIndex)
-                    let operandFragment = lowerFlowExpression context state environment operandPath operand
-                    output.AddRange operandFragment.Expressions
-                    callEvents.AddRange operandFragment.CallEvents)
-                output.Add(Call(name, checkSpan))
-                callEvents.Add(expectCallEvent context (extendPath statementPath FlowAstPathSegment.EvaluateExpression) name checkSpan)
+                let evaluatePath = extendPath statementPath FlowAstPathSegment.EvaluateExpression
+                let operandPaths = operands |> List.mapi (fun operandIndex _ -> extendPath evaluatePath (argumentPath FlowCallForm.Direct operandIndex))
+                lowerExpectCheck name operands operandPaths checkSpan evaluatePath
+            | FlowStatement.Evaluate expression when implicitFinalCheck && index = statements.Length - 1 ->
+                // A step-list test's final bare expression is an implicit `expect`; `a == b` keeps both sides.
+                let evaluatePath = extendPath statementPath FlowAstPathSegment.EvaluateExpression
+                match expression with
+                | FlowExpression.Equality(left, right, equalitySpan) ->
+                    lowerExpectCheck FlowExpect.equalIntrinsic [ left; right ]
+                        [ extendPath evaluatePath FlowAstPathSegment.EqualityLeft; extendPath evaluatePath FlowAstPathSegment.EqualityRight ] equalitySpan statementPath
+                | _ -> lowerExpectCheck FlowExpect.checkIntrinsic [ expression ] [ evaluatePath ] (spanOfExpression expression) statementPath
             | FlowStatement.Evaluate expression ->
                 inferExpression context state environment expression |> ignore
                 let valueFragment = lowerFlowExpression context state environment (extendPath statementPath FlowAstPathSegment.EvaluateExpression) expression
@@ -2814,23 +2831,10 @@ module FlowLowering =
         rememberSpan state flowTest.Span
         rememberSpan state flowTest.HeaderSpan
         rememberSpan state flowTest.ExpectationSpan
-        let loweredBody, bodyEnvironment = lowerStatements context state Map.empty (FlowAstPath.FlowAstPath []) flowTest.Body
-        let bodyFragment =
-            match flowTest.Expected, List.tryLast flowTest.Body with
-            | FlowTestExpectation.Checks, Some(FlowStatement.Evaluate finalExpression as finalStatement) when not (FlowExpect.isExpectStatement finalStatement) ->
-                // A step-list test's final bare Bool expression is an implicit `expect`.
-                // The final Evaluate binds nothing, so the body's closing environment is the one it saw.
-                match inferOutputs context state bodyEnvironment finalExpression with
-                | [ TBool ] ->
-                    let finalSpan = spanOfExpression finalExpression
-                    let finalPath = extendPath (FlowAstPath.FlowAstPath []) (FlowAstPathSegment.BlockStatement(flowTest.Body.Length - 1))
-                    { loweredBody with
-                        Expressions = loweredBody.Expressions @ [ Call(FlowExpect.checkIntrinsic, finalSpan) ]
-                        CallEvents = loweredBody.CallEvents @ [ expectCallEvent context finalPath FlowExpect.checkIntrinsic finalSpan ] }
-                | actual ->
-                    fail "FLOW_EXPECT_NOT_BOOL" "A step-list test's final bare expression is an implicit 'expect' and must be Bool." (Some flowTest.Word) (Some(spanOfExpression finalExpression))
-                        [ "Bool" ] (actual |> List.map Types.format)
-            | _ -> loweredBody
+        let bodyFragment, _ =
+            match flowTest.Expected with
+            | FlowTestExpectation.Checks -> lowerCheckedTestStatements context state (FlowAstPath.FlowAstPath []) flowTest.Body
+            | _ -> lowerStatements context state Map.empty (FlowAstPath.FlowAstPath []) flowTest.Body
         let expected, expectationCallEvents =
             match flowTest.Expected with
             | FlowTestExpectation.Checks -> ExpectedChecks, []

@@ -8207,13 +8207,24 @@ test-file self {
             + "}\n\n"
             + "test expect.sum/failing-bool {\n"
             + "    expect int.less-than(expect.sum(1, 2), 0)\n"
+            + "}\n\n"
+            + "test expect.sum/failing-implicit-equal {\n"
+            + "    let total = expect.sum(2, 2)\n"
+            + "    total == 5\n"
             + "}"
         defineFlowProject engine source [ "syntaxVersion", jint 2 ] |> expectOk "define Flow/2 expect tests" |> ignore
         let results =
             dispatch engine "test" [ "word", jstr "expect.sum" ]
             |> expectOk "run Flow/2 expect tests"
             |> fun response -> (response["data"]["results"]).AsArray() |> Seq.map (fun item -> stringValue (item["name"]), item) |> Map.ofSeq
-        equal 4 results.Count "expect test result count"
+        equal 5 results.Count "expect test result count"
+        let failingImplicit = results["failing-implicit-equal"]
+        check (not (boolValue (failingImplicit["passed"]))) "a false implicit final == fails"
+        let implicitMessage = stringValue (failingImplicit["message"])
+        check (stringValue (failingImplicit["errorCode"]) = "TEST_ASSERTION_FAILED" && implicitMessage.Contains("4", StringComparison.Ordinal) && implicitMessage.Contains("5", StringComparison.Ordinal))
+            $"an implicit final == reports both sides: {implicitMessage}"
+        defineFlowProject engine "test expect.sum/leftover-stack {\n    let total = expect.sum(1, 2)\n    expect total == 3\n    return total\n}" [ "syntaxVersion", jint 2 ]
+        |> expectError "TEST_EXPECTED_CHECKS_STACK" |> ignore
         check (boolValue (results["passing"]["passed"])) "expect steps interleaved with lets pass"
         check (boolValue (results["implicit-final"]["passed"])) "a final bare Bool expression is an implicit expect"
         equal "step-checks" (stringValue (results["passing"]["expectedKind"])) "expect tests report step-check expectations"
@@ -8236,6 +8247,10 @@ test-file self {
         |> expectError "FLOW_EXPECT_OUTSIDE_TEST" |> ignore
 
         // Commit and reload: the persisted test keeps its expect steps.
+        // A Stack-frontend word cannot reach the test-only intrinsic either.
+        let stackExpect = defineStack engine ("word expect.stack_bad : Bool -> Bool" + "\n    effects none\n    dup <expect>\nend\n") []
+        check (not (succeeded stackExpect)) $"Stack words cannot call <expect>: {stackExpect.ToJsonString()}"
+
         // Commit requires passing tests, so persist the passing cases in their own project.
         let durableProject = Path.Combine(root, "flow2-expect-durable")
         let durable = Runtime.Engine(durableProject, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
