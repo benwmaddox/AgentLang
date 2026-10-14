@@ -40,7 +40,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Flow module emission failed.' }
 $src = Join-Path $out 'src'
 New-Item -ItemType Directory -Force $src | Out-Null
 $native = Join-Path $repo 'src/AgentLang.Llvm/native'
-foreach ($name in @('owning_stack_runtime.c', 'owning_stack_runtime.h', 'owning_stack_profile.h', 'float_format.h')) {
+foreach ($name in @('owning_stack_runtime.c', 'owning_stack_runtime.h', 'owning_stack_profile.h', 'float_format.h', 'owning_stdlib2.h')) {
     Copy-Item -LiteralPath (Join-Path $native $name) -Destination $src -Force
 }
 Get-ChildItem -LiteralPath (Join-Path $native 'http_host') -File | Copy-Item -Destination $src -Force

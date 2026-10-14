@@ -48,6 +48,7 @@ $staticSourceFiles = @(
     'src/AgentLang.Llvm/native/owning_stack_profile.h',
     'src/AgentLang.Llvm/native/float_format.h',
     'src/AgentLang.Llvm/native/owning_stdlib2.h',
+    'src/AgentLang.Llvm/native/owning_stdlib2.h',
     'src/AgentLang.Llvm/AgentLang.Llvm.fsproj',
     'src/AgentLang.Llvm/LlvmToolchain.fs',
     'src/AgentLang.Llvm/OwningStackAot.fs',

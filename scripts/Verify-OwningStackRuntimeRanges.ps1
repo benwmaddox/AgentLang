@@ -19,6 +19,7 @@ $sourcePaths = @(
     $runtimeSource,
     (Join-Path $nativeDirectory 'owning_stack_runtime.h'),
     (Join-Path $nativeDirectory 'float_format.h'),
+    (Join-Path $nativeDirectory 'owning_stdlib2.h'),
     (Join-Path $nativeDirectory 'owning_stdlib2.h')
 )
 
