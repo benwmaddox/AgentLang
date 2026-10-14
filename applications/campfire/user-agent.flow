@@ -3,7 +3,7 @@
 // 6dae2fd3c1a2dce61ca11beb731bcce2b42b67ad (useragent gem 0.16.11).
 //
 // Copyright (c) 37signals, LLC. Released under the MIT License; the full
-// notice is in tests/AgentLang.Campfire.Browser.Tests/Fixtures/MIT-LICENSE.37signals.
+// notice is in applications/campfire/MIT-LICENSE.37signals.
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, subject to the conditions in that file;
@@ -388,14 +388,14 @@ fn campfire.ua.capture-step(state: UserAgentSearch, tick: String) -> UserAgentSe
         state
     } else {
         match string.index-of(state.source, state.marker, state.from) {
-            none => userAgentSearch.new(source = state.source, marker = state.marker, from = state.from, found = option.none<String>(), done = true)
+            none => campfire.ua.search-next(state, state.from, option.none<String>(), true)
             some found => {
                 let start = add(found, string.byte-length(state.marker))
                 let end = scan.run-end(state.source, start, campfire.ua.digits-dots())
                 if int.greater-than(end, start) {
-                    userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.some<String>(scan.between(state.source, start, end)), done = true)
+                    campfire.ua.search-next(state, start, option.some<String>(scan.between(state.source, start, end)), true)
                 } else {
-                    userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.none<String>(), done = false)
+                    campfire.ua.search-next(state, start, option.none<String>(), false)
                 }
             }
         }
@@ -413,15 +413,15 @@ fn campfire.ua.trident-step(state: UserAgentSearch, tick: String) -> UserAgentSe
         state
     } else {
         match string.index-of(state.source, "Trident", state.from) {
-            none => userAgentSearch.new(source = state.source, marker = state.marker, from = state.from, found = option.none<String>(), done = true)
+            none => campfire.ua.search-next(state, state.from, option.none<String>(), true)
             some trident => {
                 let start = add(trident, 7)
                 let finish = scan.found-or(string.index-of(state.source, "\n", start), string.byte-length(state.source))
                 let rv = scan.found-or(string.index-of(state.source, "rv:", start), -1)
                 if bool.and(int.greater-or-equal(rv, add(start, 1)), int.less-or-equal(add(rv, 3), finish)) {
-                    userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.some<String>("rv:"), done = true)
+                    campfire.ua.search-next(state, start, option.some<String>("rv:"), true)
                 } else {
-                    userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.none<String>(), done = false)
+                    campfire.ua.search-next(state, start, option.none<String>(), false)
                 }
             }
         }
@@ -493,12 +493,12 @@ fn campfire.ua.ios-step(state: UserAgentSearch, tick: String) -> UserAgentSearch
         state
     } else {
         match string.index-of(state.source, "CPU ", state.from) {
-            none => userAgentSearch.new(source = state.source, marker = state.marker, from = state.from, found = option.none<String>(), done = true)
+            none => campfire.ua.search-next(state, state.from, option.none<String>(), true)
             some cpu => {
                 let start = add(cpu, 4)
                 match campfire.ua.ios-at(state.source, campfire.ua.after-device(state.source, start)) {
-                    some version => userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.some<String>(version), done = true)
-                    none => userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.none<String>(), done = false)
+                    some version => campfire.ua.search-next(state, start, option.some<String>(version), true)
+                    none => campfire.ua.search-next(state, start, option.none<String>(), false)
                 }
             }
         }
@@ -819,35 +819,47 @@ fn campfire.ua.msie-first?(msie: Option<Int>, rv: Option<Int>) -> Bool {
     }
 }
 
+fn campfire.ua.search-next(state: UserAgentSearch, from: Int, found: Option<String>, done: Bool) -> UserAgentSearch {
+    userAgentSearch.new(source = state.source, marker = state.marker, from = from, found = found, done = done)
+}
+
+// "MSIE <space><digits and dots>" at offset at; otherwise resume after the marker.
+fn campfire.ua.ie-msie(state: UserAgentSearch, at: Int) -> UserAgentSearch {
+    let after = add(at, 4)
+    let start = add(after, 1)
+    let end = scan.run-end(state.source, start, campfire.ua.digits-dots())
+    if bool.and(campfire.ua.ruby-space?(scan.byte(state.source, after)), int.greater-than(end, start)) {
+        campfire.ua.search-next(state, after, option.some<String>(scan.between(state.source, start, end)), true)
+    } else {
+        campfire.ua.search-next(state, after, option.none<String>(), false)
+    }
+}
+
+// "rv:<digits and dots>" at offset at; otherwise resume after the marker.
+fn campfire.ua.ie-rv(state: UserAgentSearch, at: Int) -> UserAgentSearch {
+    let start = add(at, 3)
+    let end = scan.run-end(state.source, start, campfire.ua.digits-dots())
+    if int.greater-than(end, start) {
+        campfire.ua.search-next(state, start, option.some<String>(scan.between(state.source, start, end)), true)
+    } else {
+        campfire.ua.search-next(state, start, option.none<String>(), false)
+    }
+}
+
 // One step of the gem's IE scan: the earlier of "MSIE" and "rv:" from state.from.
 // Each unsuccessful step moves past one occurrence of one marker.
 fn campfire.ua.ie-step(state: UserAgentSearch, tick: String) -> UserAgentSearch {
     if bool.or(state.done, int.greater-or-equal(state.from, string.byte-length(state.source))) {
-        userAgentSearch.new(source = state.source, marker = state.marker, from = state.from, found = state.found, done = true)
+        campfire.ua.search-next(state, state.from, state.found, true)
     } else {
         let msie = string.index-of(state.source, "MSIE", state.from)
         let rv = string.index-of(state.source, "rv:", state.from)
         if campfire.ua.msie-first?(msie, rv) {
-            let after = add(scan.found-or(msie, 0), 4)
-            let start = add(after, 1)
-            let end = scan.run-end(state.source, start, campfire.ua.digits-dots())
-            if bool.and(campfire.ua.ruby-space?(scan.byte(state.source, after)), int.greater-than(end, start)) {
-                userAgentSearch.new(source = state.source, marker = state.marker, from = after, found = option.some<String>(scan.between(state.source, start, end)), done = true)
-            } else {
-                userAgentSearch.new(source = state.source, marker = state.marker, from = after, found = option.none<String>(), done = false)
-            }
+            campfire.ua.ie-msie(state, scan.found-or(msie, 0))
         } else {
             match rv {
-                none => userAgentSearch.new(source = state.source, marker = state.marker, from = state.from, found = option.none<String>(), done = true)
-                some at => {
-                    let start = add(at, 3)
-                    let end = scan.run-end(state.source, start, campfire.ua.digits-dots())
-                    if int.greater-than(end, start) {
-                        userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.some<String>(scan.between(state.source, start, end)), done = true)
-                    } else {
-                        userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.none<String>(), done = false)
-                    }
-                }
+                none => campfire.ua.search-next(state, state.from, option.none<String>(), true)
+                some at => campfire.ua.ie-rv(state, at)
             }
         }
     }

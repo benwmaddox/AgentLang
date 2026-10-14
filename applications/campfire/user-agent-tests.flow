@@ -630,3 +630,18 @@ test campfire.ua.first-nonzero/orders {
     campfire.ua.first-nonzero([0, 0, 1, -1])
     => value 1
 }
+
+test campfire.ua.search-next/fields {
+    campfire.ua.search-next(userAgentSearch.new(source = "s", marker = "m", from = 0, found = option.none<String>(), done = false), 3, option.some<String>("1"), true)
+    => value userAgentSearch.new(source = "s", marker = "m", from = 3, found = option.some<String>("1"), done = true)
+}
+
+test campfire.ua.ie-msie/needs-space {
+    campfire.ua.ie-msie(userAgentSearch.new(source = "MSIEx 9", marker = "MSIE", from = 0, found = option.none<String>(), done = false), 0).from
+    => value 4
+}
+
+test campfire.ua.ie-rv/version {
+    campfire.ua.ie-rv(userAgentSearch.new(source = "rv:11.0)", marker = "MSIE", from = 0, found = option.none<String>(), done = false), 0).found
+    => value option.some<String>("11.0")
+}
