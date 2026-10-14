@@ -108,13 +108,19 @@ let private run () =
         |> List.ofSeq
     check $"parity harness found literal cases ({cases.Length})" (cases.Length >= 50)
     let toolchain = LlvmToolchain.discover ()
-    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+    // Diagnostic O0 and O2, plus the trusted O2 build that benchmarks run, so
+    // trusted-only fast paths are tested and not only timed.
+    let builds =
+        [ "O0", LlvmOptimization.O0, OwningRuntimeProfile.Diagnostic
+          "O2", LlvmOptimization.O2, OwningRuntimeProfile.Diagnostic
+          "trusted-O2", LlvmOptimization.O2, OwningRuntimeProfile.TrustedGenerated ]
+    for optimization, level, profile in builds do
         let natives = Collections.Generic.Dictionary<string, OwningStackCompiledProgram>()
         try
             for word, (inputs, outputs), values in cases do
                 if not (natives.ContainsKey word) then
                     let body = engine.ExportVerifiedFlowEntryPoint(word, inputs, outputs)
-                    natives[word] <- OwningStackAot.compile toolchain optimization (Path.Combine(runRoot, string optimization, string natives.Count)) body
+                    natives[word] <- OwningStackAot.compileWithRuntimeProfile toolchain level profile (Path.Combine(runRoot, optimization, string natives.Count)) body
                 let interpreted =
                     match engine.BindFlowEntryPoint(word, inputs, outputs).Invoke(values) with
                     | Ok value -> value.Values
@@ -137,7 +143,7 @@ let private run () =
         pins.Add(pin)
     receipt["sourcePins"] <- pins
     File.WriteAllText(Path.Combine(runRoot, "receipt.json"), receipt.ToJsonString(JsonSerializerOptions(WriteIndented = true)) + Environment.NewLine)
-    printfn "stdlib: %d assertions passed (%d words, %d native cases x2); artifacts %s" assertionCount.Value signatures.Count cases.Length runRoot
+    printfn "stdlib: %d assertions passed (%d words, %d native cases x3: O0, O2, trusted O2); artifacts %s" assertionCount.Value signatures.Count cases.Length runRoot
 
 [<EntryPoint>]
 let main _ =
