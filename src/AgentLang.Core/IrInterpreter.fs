@@ -1066,7 +1066,9 @@ module IrInterpreter =
                 fail "TEST_ASSERTION_FAILED" "Test expectation evaluated to false." (Some currentWord) (site |> Option.bind sourceSpan) [ "true" ] [ "false" ]
             | "<expect-equal>", [ left; right ] when left = right -> []
             | "<expect-equal>", [ left; right ] ->
-                fail "TEST_ASSERTION_FAILED" "Test equality expectation failed." (Some currentWord) (site |> Option.bind sourceSpan) [ sprintf "%A" left ] [ sprintf "%A" right ]
+                let leftText = Types.formatValue (decodeValue left)
+                let rightText = Types.formatValue (decodeValue right)
+                fail "TEST_ASSERTION_FAILED" $"Test equality expectation failed: left {leftText} does not equal right {rightText}." (Some currentWord) (site |> Option.bind sourceSpan) [ leftText ] [ rightText ]
             | "bool.and", [ RuntimeBool left; RuntimeBool right ] -> [ RuntimeBool(left && right) ]
             | "bool.or", [ RuntimeBool left; RuntimeBool right ] -> [ RuntimeBool(left || right) ]
             | "bool.not", [ RuntimeBool value ] -> [ RuntimeBool(not value) ]

@@ -599,6 +599,8 @@ module Compiler =
         checkDefinitionDetailed knownTypes enums words definition |> fst
 
     let private checkTestDetailed knownTypes knownEnums words (test: TestDefinition) =
+        // Test bodies alone may call the test-only `expect` intrinsics.
+        let words = Map.fold (fun scope name entry -> Map.add name entry scope) words testIntrinsics
         match test.Expected with
         | ExpectedRuntimeError _ when List.isEmpty test.Body ->
             Diagnostics.raiseError "TEST_EXPECTED_ERROR_BODY_EMPTY" $"Runtime-error test '{test.Name}' must contain an expression to execute." (Some test.Word) (Some test.Span) [ "nonempty test body" ] []
@@ -1223,9 +1225,18 @@ module Compiler =
         targetsByName, targetsById, Map.ofSeq sourceMap
 
     let private resolveIrCall (context: IrLoweringContext) (typeKeys: Map<string, ProgramTypeKey>) (generatedByName: Map<string, IrGeneratedTarget>) name span inputTypes outputTypes =
-        match context.Words.TryFind name with
-        | None -> irFailure "NAME_UNKNOWN_WORD" $"Word '{name}' is not defined." (Some name) span [] []
-        | Some entry ->
+        match context.Words.TryFind name, testIntrinsics.TryFind name with
+        | None, Some { Builtin = Some(BuiltinOp operation) } ->
+            // Test-only intrinsics are type-checked only in test scope and lower straight to their primitive.
+            let contract = primitiveIrCatalog[PrimitiveId operation]
+            { ResolvedTarget = PrimitiveTarget(PrimitiveId operation)
+              ResolvedName = name
+              InputTypes = inputTypes |> List.map (closedIrType typeKeys name span)
+              OutputTypes = outputTypes |> List.map (closedIrType typeKeys name span)
+              ResolvedDeclaredEffects = contract.PrimitiveEffects
+              ResolvedEffects = contract.PrimitiveEffects }
+        | None, _ -> irFailure "NAME_UNKNOWN_WORD" $"Word '{name}' is not defined." (Some name) span [] []
+        | Some entry, _ ->
             let id = context.WordIds[name]
             match entry.Builtin with
             | Some(BuiltinOp operation) ->
@@ -1451,7 +1462,7 @@ module Compiler =
                             IrOperation.Constant(literal, irType ownerName (Some span) outputType)
                         | Call(name, _) ->
                             let call = resolvedForNode name span node.CallSignature
-                            match context.Words[name].Builtin with
+                            match (context.Words.TryFind name |> Option.orElse (testIntrinsics.TryFind name) |> Option.get).Builtin with
                             | Some(RecordConstructor typeName) ->
                                 match typeKeys.TryFind typeName with
                                 | Some key ->

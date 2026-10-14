@@ -8185,6 +8185,71 @@ test-file self {
         equal 0 (noFailures.["data"].["results"].AsArray().Count) "an empty failure list can follow a nonempty execution batch"
         assertTestSummary 2 2 0 noFailures "all-passing failed-tests"
 
+    let private testFlow2ExpectStepLists root =
+        let project = Path.Combine(root, "flow2-expect")
+        let engine = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
+        let source =
+            "fn expect.sum(left: Int, right: Int) -> Int {\n"
+            + "    add(left, right)\n"
+            + "}\n\n"
+            + "test expect.sum/passing {\n"
+            + "    let total = expect.sum(1, 2)\n"
+            + "    expect total == 3\n"
+            + "    let doubled = expect.sum(total, total)\n"
+            + "    expect int.greater-than(doubled, total)\n"
+            + "}\n\n"
+            + "test expect.sum/implicit-final {\n"
+            + "    let total = expect.sum(2, 2)\n"
+            + "    total == 4\n"
+            + "}\n\n"
+            + "test expect.sum/failing-equal {\n"
+            + "    expect expect.sum(1, 2) == 4\n"
+            + "}\n\n"
+            + "test expect.sum/failing-bool {\n"
+            + "    expect int.less-than(expect.sum(1, 2), 0)\n"
+            + "}"
+        defineFlowProject engine source [ "syntaxVersion", jint 2 ] |> expectOk "define Flow/2 expect tests" |> ignore
+        let results =
+            dispatch engine "test" [ "word", jstr "expect.sum" ]
+            |> expectOk "run Flow/2 expect tests"
+            |> fun response -> (response["data"]["results"]).AsArray() |> Seq.map (fun item -> stringValue (item["name"]), item) |> Map.ofSeq
+        equal 4 results.Count "expect test result count"
+        check (boolValue (results["passing"]["passed"])) "expect steps interleaved with lets pass"
+        check (boolValue (results["implicit-final"]["passed"])) "a final bare Bool expression is an implicit expect"
+        equal "step-checks" (stringValue (results["passing"]["expectedKind"])) "expect tests report step-check expectations"
+        let failingEqual = results["failing-equal"]
+        check (not (boolValue (failingEqual["passed"]))) "a false expect == fails"
+        equal "TEST_ASSERTION_FAILED" (stringValue failingEqual["errorCode"]) "expect == failure code"
+        let equalMessage = stringValue (failingEqual["message"])
+        check (equalMessage.Contains("3", StringComparison.Ordinal) && equalMessage.Contains("4", StringComparison.Ordinal)) $"expect == failure shows both sides: {equalMessage}"
+        let failingBool = results["failing-bool"]
+        check (not (boolValue (failingBool["passed"]))) "a false expect fails"
+        equal "TEST_ASSERTION_FAILED" (stringValue failingBool["errorCode"]) "expect failure code"
+
+        // Non-Bool expect operands and leftover stack values are rejected.
+        defineFlowProject engine "test expect.sum/not-bool {\n    expect expect.sum(1, 2)\n}" [ "syntaxVersion", jint 2 ]
+        |> expectError "FLOW_EXPECT_NOT_BOOL" |> ignore
+        defineFlowProject engine "test expect.sum/final-int {\n    let total = expect.sum(1, 2)\n    expect total == 3\n    expect.sum(total, 1)\n}" [ "syntaxVersion", jint 2 ]
+        |> expectError "FLOW_EXPECT_NOT_BOOL" |> ignore
+        // `<expect>` is test-only: a function body cannot use `expect`.
+        defineFlowProject engine "fn expect.bad(value: Int) -> Int {\n    expect value == 1\n    value\n}" [ "syntaxVersion", jint 2 ]
+        |> expectError "FLOW_EXPECT_OUTSIDE_TEST" |> ignore
+
+        // Commit and reload: the persisted test keeps its expect steps.
+        commit engine "commit" "expect.sum" [] |> expectOk "commit the Flow/2 expect tests" |> ignore
+        let reloaded = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
+        let reloadedResults =
+            dispatch reloaded "test" [ "word", jstr "expect.sum" ]
+            |> expectOk "run reloaded expect tests"
+            |> fun response -> (response["data"]["results"]).AsArray() |> Seq.map (fun item -> stringValue (item["name"]), boolValue (item["passed"])) |> Map.ofSeq
+        equal (Map.ofList [ "failing-bool", false; "failing-equal", false; "implicit-final", true; "passing", true ]) reloadedResults "reloaded expect tests keep their outcomes"
+        let testSource =
+            dispatch reloaded "tests" [ "word", jstr "expect.sum"; "includeSource", jbool true ]
+            |> expectOk "inspect reloaded expect test source"
+            |> fun response -> response["data"].AsArray() |> Seq.find (fun item -> stringValue (item["name"]) = "passing")
+            |> fun row -> row.ToJsonString()
+        check (testSource.Contains("expect total == 3", StringComparison.Ordinal)) $"reloaded source keeps expect steps: {testSource}"
+
     [<EntryPoint>]
     let main _ =
         let root = newRoot ()
@@ -8203,6 +8268,7 @@ test-file self {
             testTestSourceInspection root
             testExplicitFrontendCannotFallBack root
             testFlow2FormatDefinePersistReloadAndRewrite root
+            testFlow2ExpectStepLists root
             testFlow2EnumsPersistReloadAndBindings root
             testLibraryDependencyQualification root
             testEnumFiniteLibraryCoverage root

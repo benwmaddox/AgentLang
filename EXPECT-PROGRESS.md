@@ -1,1 +1,2 @@
 - 2026-10-14 resumed: core/IR/interp done (b35a7b6..3a382dc). Plan: FlowTestExpectation.Checks; parser emits Evaluate(Call "<expect>"/"<expect-equal>"); special-case in FlowLowering.lowerStatementsWithPath; expect effects -> EffectAssertion. Next: implement parser.
+- WIP: parser+lowering+renderer for expect built (compiles). Next: add Flow.Tests cases and run suites.

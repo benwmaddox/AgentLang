@@ -1114,6 +1114,10 @@ module FlowLowering =
           RequestedName = requestedName
           Candidate = candidate }
 
+    /// Call event for a test-only `expect` intrinsic, so attachment binding covers every IR call.
+    let private expectCallEvent (context: Context) path name span =
+        callEvent path FlowCallForm.Direct name (candidateFromEntry context name Compiler.testIntrinsics[name]) span
+
     let rec private lowerFlowExpression (context: Context) (state: LoweringState) (environment: Map<string, Binding>) (path: FlowAstPath) expression : LoweredFragment =
         let span = spanOfExpression expression
         rememberSpan state span
@@ -1439,6 +1443,7 @@ module FlowLowering =
                     output.AddRange operandFragment.Expressions
                     callEvents.AddRange operandFragment.CallEvents)
                 output.Add(Call(name, checkSpan))
+                callEvents.Add(expectCallEvent context (extendPath statementPath FlowAstPathSegment.EvaluateExpression) name checkSpan)
             | FlowStatement.Evaluate expression ->
                 inferExpression context state environment expression |> ignore
                 let valueFragment = lowerFlowExpression context state environment (extendPath statementPath FlowAstPathSegment.EvaluateExpression) expression
@@ -2816,7 +2821,12 @@ module FlowLowering =
                 // A step-list test's final bare Bool expression is an implicit `expect`.
                 // The final Evaluate binds nothing, so the body's closing environment is the one it saw.
                 match inferOutputs context state bodyEnvironment finalExpression with
-                | [ TBool ] -> { loweredBody with Expressions = loweredBody.Expressions @ [ Call(FlowExpect.checkIntrinsic, spanOfExpression finalExpression) ] }
+                | [ TBool ] ->
+                    let finalSpan = spanOfExpression finalExpression
+                    let finalPath = extendPath (FlowAstPath.FlowAstPath []) (FlowAstPathSegment.BlockStatement(flowTest.Body.Length - 1))
+                    { loweredBody with
+                        Expressions = loweredBody.Expressions @ [ Call(FlowExpect.checkIntrinsic, finalSpan) ]
+                        CallEvents = loweredBody.CallEvents @ [ expectCallEvent context finalPath FlowExpect.checkIntrinsic finalSpan ] }
                 | actual ->
                     fail "FLOW_EXPECT_NOT_BOOL" "A step-list test's final bare expression is an implicit 'expect' and must be Bool." (Some flowTest.Word) (Some(spanOfExpression finalExpression))
                         [ "Bool" ] (actual |> List.map Types.format)
