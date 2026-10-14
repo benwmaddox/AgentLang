@@ -613,7 +613,7 @@ module FlowRewrite =
                 let expected =
                     match definition.Expected with
                     | FlowTestExpectation.Expression expression -> [ expression ]
-                    | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ -> []
+                    | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ | FlowTestExpectation.Checks -> []
                 [ StoredCallBodyRole.Actual, [], definition.Body
                   StoredCallBodyRole.ExpectedExpression, expected, [] ]
             let rewrite rootPath rewriteStatements _ rewriteExpression =
@@ -629,7 +629,7 @@ module FlowRewrite =
                 let expected =
                     match parsed.Expected with
                     | FlowTestExpectation.Expression expression -> [ expression ]
-                    | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ -> []
+                    | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ | FlowTestExpectation.Checks -> []
                 [ StoredCallBodyRole.Actual, [], parsed.Body
                   StoredCallBodyRole.ExpectedExpression, expected, [] ]
             rewriteDocument newName target definition.Word (Some definition.CaseName)
@@ -801,7 +801,7 @@ module FlowRewrite =
                     let expressions =
                         match test.Expected with
                         | FlowTestExpectation.Expression expression -> [ expression ]
-                        | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ -> []
+                        | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ | FlowTestExpectation.Checks -> []
                     [ StoredCallBodyRole.Actual, [], test.Body
                       StoredCallBodyRole.ExpectedExpression, expressions, [] ]
                 validateBindingSet test.Word (Some test.CaseName)

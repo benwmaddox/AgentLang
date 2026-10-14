@@ -25,6 +25,8 @@ module FlowParser =
           mutable Index: int
           mutable Depth: int
           mutable LexicalLocals: Set<string>
+          /// True while parsing a Flow/2 test body, where `expect` starts a check statement.
+          mutable InTestBody: bool
           EndLine: int
           EndColumn: int }
 
@@ -558,10 +560,21 @@ module FlowParser =
         parseBlockStatementsUntil state (Set.singleton "}")
 
     and private parseBlockStatementsUntil state terminators =
+        parseBlockStatementsWhere state terminators (fun () -> false) false
+
+    /// `extraStop` lets a caller end the block on a multi-token marker such as `expect effects`.
+    /// `allowExpect` is true only for a Flow/2 test body's own top-level statements.
+    and private parseBlockStatementsWhere state terminators extraStop allowExpect =
+        let saved = state.InTestBody
+        state.InTestBody <- allowExpect
+        try parseBlockStatementsCore state terminators extraStop
+        finally state.InTestBody <- saved
+
+    and private parseBlockStatementsCore state terminators extraStop =
         let statements = ResizeArray<FlowStatement>()
         let isTerminator () =
             match current state with
-            | Some token -> Set.contains token.Text terminators
+            | Some token -> Set.contains token.Text terminators || extraStop ()
             | None -> false
         while not (isTerminator ()) && not (atEnd state) do
             let statement = parseStatement state
@@ -630,7 +643,27 @@ module FlowParser =
                 expect state ")" |> ignore
             else values.Add(parseExpressionState state)
             FlowStatement.Return(List.ofSeq values, sourceSpan state.File start (previous state))
+        elif state.InTestBody && startsExpectStatement state then
+            consume state |> ignore
+            let checkedExpression = parseExpressionState state
+            let span = sourceSpan state.File start (previous state)
+            match checkedExpression with
+            | FlowExpression.Equality(left, right, _) ->
+                FlowStatement.Evaluate(FlowExpression.Call(FlowExpect.equalIntrinsic, [ FlowArgument.Positional left; FlowArgument.Positional right ], span))
+            | _ -> FlowStatement.Evaluate(FlowExpression.Call(FlowExpect.checkIntrinsic, [ FlowArgument.Positional checkedExpression ], span))
+        elif peek state = Some "expect" && startsExpectStatement state then
+            fail state.File start.Line start.Column start.Text.Length "FLOW_EXPECT_OUTSIDE_TEST" "'expect' statements are available only as top-level statements of Flow/2 test bodies."
         else FlowStatement.Evaluate(parseExpressionState state)
+
+    /// `expect` begins a check only when an operand follows on the same line, so a local named `expect` still parses.
+    and private startsExpectStatement state =
+        match current state with
+        | Some token when token.Text = "expect" && state.Index + 1 < state.Tokens.Length ->
+            let next = state.Tokens[state.Index + 1]
+            let adjacent = next.Offset = token.Offset + token.Text.Length
+            next.Line = token.Line && not (adjacent && (next.Text = "(" || next.Text = "."))
+            && next.Text <> "=" && next.Text <> ";" && next.Text <> "}" && next.Text <> "effects"
+        | _ -> false
 
     and private parseConstructor state startToken kind =
         if not (accept state "<") then
@@ -1270,32 +1303,51 @@ module FlowParser =
           withDepth state (fun () ->
             let startToken, word, caseName, headerSpan = parseCaseHeader state "test"
             expect state "{" |> ignore
-            let body = parseBlockStatementsUntil state (Set.ofList [ "=>"; "}" ])
-            match current state with
-            | Some token when token.Text = "}" -> fail state.File token.Line token.Column token.Text.Length "FLOW_EXPECTATION_REQUIRED" "A Flow test must end with one '=>' expectation."
-            | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "A Flow test is missing its '=>' expectation."
-            | _ -> ()
-            let expectationToken = expect state "=>"
-            let expectationSpan = sourceSpan state.File expectationToken (Some expectationToken)
-            let expected =
+            let flow2 = state.SyntaxVersion = 2
+            let atExpectEffects () = flow2 && peek state = Some "expect" && peekAt state 1 = Some "effects"
+            let body = parseBlockStatementsWhere state (Set.ofList [ "=>"; "}" ]) atExpectEffects flow2
+            let expected, expectationSpan, effectAssertion =
                 match current state with
-                | Some token when token.Text = "error" ->
-                    consume state |> ignore
-                    let codeToken = expectIdentifier state
-                    if not (TestExpectation.isValidRuntimeErrorCode codeToken.Text) then
-                        fail state.File codeToken.Line codeToken.Column codeToken.Text.Length "FLOW_INVALID_EXPECTED_ERROR_CODE" "Runtime-error expectations use '=> error UPPERCASE_CODE'."
-                    FlowTestExpectation.RuntimeError(codeToken.Text, sourceSpan state.File codeToken (Some codeToken))
-                | Some token when token.Text = "value" ->
-                    consume state |> ignore
-                    FlowTestExpectation.Expression(parseExpressionState state)
+                | Some token when flow2 && (token.Text = "}" || atExpectEffects ()) ->
+                    // Step-list form: checks are `expect` statements, or a final bare Bool expression.
+                    let hasCheck =
+                        body |> List.exists FlowExpect.isExpectStatement
+                        || (match List.tryLast body with Some(FlowStatement.Evaluate _) -> true | _ -> false)
+                    if not hasCheck then
+                        fail state.File token.Line token.Column token.Text.Length "FLOW_EXPECTATION_REQUIRED" "A Flow/2 test needs at least one 'expect' statement, a final Bool expression, or one '=>' expectation."
+                    let expectationSpan = sourceSpan state.File token (Some token)
+                    let effectAssertion =
+                        if atExpectEffects () then
+                            consume state |> ignore
+                            parseEffectCountAssertion state
+                        else None
+                    FlowTestExpectation.Checks, expectationSpan, effectAssertion
                 | _ ->
-                    let literal, literalSpan = parseCaseExpectationLiteral state "test"
-                    FlowTestExpectation.Literal(literal, literalSpan)
-            match expected with
-            | FlowTestExpectation.Expression _ | FlowTestExpectation.RuntimeError _ when List.isEmpty body ->
-                fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_EXPECTATION_BODY_EMPTY" "Runtime-error and value-expression tests require a nonempty actual body."
-            | _ -> ()
-            let effectAssertion = parseEffectCountAssertion state
+                    match current state with
+                    | Some token when token.Text = "}" -> fail state.File token.Line token.Column token.Text.Length "FLOW_EXPECTATION_REQUIRED" "A Flow test must end with one '=>' expectation."
+                    | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "A Flow test is missing its '=>' expectation."
+                    | _ -> ()
+                    let expectationToken = expect state "=>"
+                    let expectationSpan = sourceSpan state.File expectationToken (Some expectationToken)
+                    let expected =
+                        match current state with
+                        | Some token when token.Text = "error" ->
+                            consume state |> ignore
+                            let codeToken = expectIdentifier state
+                            if not (TestExpectation.isValidRuntimeErrorCode codeToken.Text) then
+                                fail state.File codeToken.Line codeToken.Column codeToken.Text.Length "FLOW_INVALID_EXPECTED_ERROR_CODE" "Runtime-error expectations use '=> error UPPERCASE_CODE'."
+                            FlowTestExpectation.RuntimeError(codeToken.Text, sourceSpan state.File codeToken (Some codeToken))
+                        | Some token when token.Text = "value" ->
+                            consume state |> ignore
+                            FlowTestExpectation.Expression(parseExpressionState state)
+                        | _ ->
+                            let literal, literalSpan = parseCaseExpectationLiteral state "test"
+                            FlowTestExpectation.Literal(literal, literalSpan)
+                    match expected with
+                    | FlowTestExpectation.Expression _ | FlowTestExpectation.RuntimeError _ when List.isEmpty body ->
+                        fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_EXPECTATION_BODY_EMPTY" "Runtime-error and value-expression tests require a nonempty actual body."
+                    | _ -> ()
+                    expected, expectationSpan, parseEffectCountAssertion state
             let endToken = closeCase state "test"
             let definition =
                 { Word = word
@@ -1585,7 +1637,7 @@ module FlowParser =
         if syntaxVersion <> 1 && syntaxVersion <> 2 then
             fail file 1 1 1 "FLOW_VERSION_UNSUPPORTED" "Only Flow syntax versions 1 and 2 are supported by this parser."
         let tokens, endLine, endColumn = tokenize file source
-        { File = file; Source = source; SyntaxVersion = syntaxVersion; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn; LexicalLocals = Set.empty }
+        { File = file; Source = source; SyntaxVersion = syntaxVersion; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn; LexicalLocals = Set.empty; InTestBody = false }
 
     let private rejectTrailing (state: State) kind =
         if not (atEnd state) then
