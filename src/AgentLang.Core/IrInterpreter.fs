@@ -168,6 +168,7 @@ module IrInterpreter =
             "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
             "dup"; "drop"; "swap"
             "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write"
+            "<expect>"; "<expect-equal>"
         ]
 
     let private implementedPrimitiveIds =
@@ -1060,6 +1061,12 @@ module IrInterpreter =
             | "float.less-or-equal", [ RuntimeFloat left; RuntimeFloat right ] -> [ RuntimeBool(left <= right) ]
             | "float.greater-or-equal", [ RuntimeFloat left; RuntimeFloat right ] -> [ RuntimeBool(left >= right) ]
             | "equals", [ left; right ] -> [ RuntimeBool(left = right) ]
+            | "<expect>", [ RuntimeBool true ] -> []
+            | "<expect>", [ RuntimeBool false ] ->
+                fail "TEST_ASSERTION_FAILED" "Test expectation evaluated to false." (Some currentWord) (site |> Option.bind sourceSpan) [ "true" ] [ "false" ]
+            | "<expect-equal>", [ left; right ] when left = right -> []
+            | "<expect-equal>", [ left; right ] ->
+                fail "TEST_ASSERTION_FAILED" "Test equality expectation failed." (Some currentWord) (site |> Option.bind sourceSpan) [ sprintf "%A" left ] [ sprintf "%A" right ]
             | "bool.and", [ RuntimeBool left; RuntimeBool right ] -> [ RuntimeBool(left && right) ]
             | "bool.or", [ RuntimeBool left; RuntimeBool right ] -> [ RuntimeBool(left || right) ]
             | "bool.not", [ RuntimeBool value ] -> [ RuntimeBool(not value) ]

@@ -71,6 +71,8 @@ module Compiler =
         | "int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal" -> [ TInt; TInt ], [ TBool ]
         | "float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal" -> [ TFloat; TFloat ], [ TBool ]
         | "equals" -> [ a; a ], [ TBool ]
+        | "<expect-equal>" -> [ a; a ], []
+        | "<expect>" -> [ TBool ], []
         | "bool.and" | "bool.or" -> [ TBool; TBool ], [ TBool ]
         | "bool.not" -> [ TBool ], [ TBool ]
         | "string.guid-canonical?" | "string.email-address-valid?" | "instant.is-canonical-utc?" -> [ TString ], [ TBool ]
@@ -119,8 +121,7 @@ module Compiler =
         | _ -> Set.empty
 
     /// The initial standard vocabulary is deliberately small and boring.
-    let primitives =
-        let names =
+    let private primitiveNames =
             [ "add"; "subtract"; "multiply"; "divide"; "float.add"; "float.subtract"; "float.multiply"; "float.divide"
               "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
               "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
@@ -132,6 +133,8 @@ module Compiler =
               "string.length"; "string.byte-length"; "string.char-length"; "string.trim"; "string.to-lower"; "string.to-upper"; "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"
               "float.round"; "int.to-string"; "float.to-string"; "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
               "dup"; "drop"; "swap"; "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write" ]
+
+    let private standardEntries (names: string list) =
         names
         |> List.map (fun name ->
             let inputs, outputs = builtinSignature name
@@ -178,6 +181,13 @@ module Compiler =
               Maturity = LibraryWord
               Revision = 1 })
         |> Map.ofList
+
+    let primitives = standardEntries primitiveNames
+
+    /// Test-only intrinsics: reachable only from test bodies through Call names, never listed in the public vocabulary.
+    let testIntrinsics = standardEntries [ "<expect>"; "<expect-equal>" ]
+
+    let testWords = Map.fold (fun words name entry -> Map.add name entry words) primitives testIntrinsics
 
     let private inferCall (knownTypes: Set<string>) (words: Map<string, WordEntry>) wordName (span: SourceSpan) (stack: LangType list) =
         match words.TryFind wordName with
@@ -812,7 +822,7 @@ module Compiler =
     /// so display names never select a host primitive implementation.
     let primitiveIrCatalog: IrPrimitiveCatalog =
         let grouped =
-            primitives
+            testWords
             |> Map.toList
             |> List.choose (fun (_, entry) ->
                 match entry.Builtin with
@@ -835,7 +845,7 @@ module Compiler =
         match entry.Builtin with
         | Some(BuiltinOp operation) ->
             match primitiveIrCatalog.TryFind(PrimitiveId operation),
-                  (primitives |> Map.toList |> List.tryPick (fun (_, standard) -> if standard.Builtin = Some(BuiltinOp operation) then Some standard else None)) with
+                  (testWords |> Map.toList |> List.tryPick (fun (_, standard) -> if standard.Builtin = Some(BuiltinOp operation) then Some standard else None)) with
             | Some _, Some canonical ->
                 if entry.Definition.Inputs <> canonical.Definition.Inputs
                    || entry.Definition.Outputs <> canonical.Definition.Outputs
