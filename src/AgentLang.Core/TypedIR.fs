@@ -195,6 +195,20 @@ type IrOperation =
     /// the result satisfies `string.html-fragment?` by construction and no
     /// backend runs the validator.
     | HtmlTemplate of HtmlKey: ProgramTypeKey * Parts: HtmlTemplatePart list
+    /// Pops one value and overwrites an existing local of exactly that type
+    /// (a Flow `var`). Unlike StoreLocal it never introduces a slot.
+    | AssignLocal of LocalSlot
+    /// Counted loop: pops start then end (Int). The body runs for each index in
+    /// [start, end) with IndexLocal bound; its stack and outer locals are
+    /// loop-invariant. Every iteration charges the loop step budget.
+    | ForRange of IndexLocal: LocalSlot * Body: IrBlock
+    /// List loop: pops List<ItemType>; the body runs once per item in order with
+    /// ItemLocal (and the optional Int IndexLocal) bound.
+    | ForList of ItemType: IrType * ItemLocal: LocalSlot * IndexLocal: LocalSlot option * Body: IrBlock
+    /// Leaves the innermost enclosing loop. Must end its block.
+    | Break
+    /// Starts the innermost enclosing loop's next iteration. Must end its block.
+    | Continue
 
 and IrInstruction =
     { Site: SourceSiteId
@@ -204,6 +218,27 @@ and IrBlock =
     { EntryShape: IrShape
       ExitShape: IrShape
       Code: IrInstruction list }
+
+module IrLoops =
+    /// Per-invocation loop iteration budget shared by the interpreter and the
+    /// native owning backend. Exceeding it fails with RUNTIME_LOOP_BUDGET_EXCEEDED.
+    [<Literal>]
+    let DefaultIterationBudget = 10_000_000
+
+    let budgetExceededCode = "RUNTIME_LOOP_BUDGET_EXCEEDED"
+
+    /// Outer local slots that a block (including nested blocks) reassigns.
+    let rec assignedSlots (block: IrBlock) : Set<LocalSlot> =
+        block.Code
+        |> List.fold (fun found instruction ->
+            match instruction.Operation with
+            | IrOperation.AssignLocal slot -> Set.add slot found
+            | IrOperation.If(left, right) -> Set.unionMany [ found; assignedSlots left; assignedSlots right ]
+            | IrOperation.Scope inner | IrOperation.Compact inner
+            | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> Set.union found (assignedSlots inner)
+            | IrOperation.MatchOption(_, left, right) | IrOperation.MatchResult(_, _, left, right) -> Set.unionMany [ found; assignedSlots left; assignedSlots right ]
+            | IrOperation.MatchEnum(_, cases) -> cases |> List.fold (fun acc (_, caseBlock) -> Set.union acc (assignedSlots caseBlock)) found
+            | _ -> found) Set.empty
 
 type IrSourceSite =
     { SiteOwner: WordId option
@@ -591,13 +626,19 @@ module IrVerifier =
                 verifyIrType program (Some owner.FunctionName) (Some site) ty
                 if not (owner.LocalNames.ContainsKey slot) then
                     Diagnostics.raiseError "IR_UNKNOWN_LOCAL_SLOT" "Block shape contains a local slot absent from the function layout." (Some owner.FunctionName) (sourceSpan program site) [] [ sprintf "%A" slot ]
+        // Enclosing loop contexts: Some loop-invariant stack for a loop body, None
+        // for a compact block (loop control may not cross a relocation boundary).
+        let loopContexts = System.Collections.Generic.Stack<IrType list option>()
         let rec verifyNested (instructions: IrInstruction list) (shape: IrShape) =
             let mutable currentShape = shape
             let mutable accumulatedEffects = Set.empty<IrEffect>
+            let mutable terminated = false
             // Flat blocks can contain thousands of operations. Walk the list
             // iteratively so valid generated IR cannot exhaust the host stack;
             // structured branches still recurse through verifyBlockNested.
             for instruction in instructions do
+                if terminated then
+                    Diagnostics.raiseError "IR_LOOP_CONTROL_NOT_TERMINAL" "break/continue must be the last instruction of its block." (Some owner.FunctionName) (sourceSpan program instruction.Site) [] [ sprintf "%A" instruction.Operation ]
                 verifyShape instruction.Site currentShape
                 let shape = currentShape
                 let sourceOwner = Some owner.FunctionName
@@ -745,8 +786,38 @@ module IrVerifier =
                     | IrOperation.Scope innerBlock ->
                         let innerShape, innerEffects = verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site shape innerBlock
                         { StackTypes = innerShape.StackTypes; LocalTypes = shape.LocalTypes }, innerEffects
+                    | IrOperation.AssignLocal slot ->
+                        let prefix, actual = pop 1
+                        match shape.LocalTypes.TryFind slot with
+                        | None -> operationError "IR_ASSIGN_UNKNOWN_LOCAL" "IR local assignment targets a slot that is not bound in this block shape." [] [ sprintf "%A" slot ]
+                        | Some declared when [ declared ] <> actual ->
+                            operationError "IR_ASSIGN_TYPE" "IR local assignment must keep the local's exact type." [ IrTypes.format declared ] (actual |> List.map IrTypes.format)
+                        | Some _ -> { shape with StackTypes = prefix }, Set.empty
+                    | IrOperation.Break
+                    | IrOperation.Continue ->
+                        match (if loopContexts.Count = 0 then None else loopContexts.Peek()) with
+                        | None -> operationError "IR_LOOP_CONTROL_OUTSIDE_LOOP" "break/continue must be inside a loop body (and not inside a compact block within it)." [ "enclosing loop" ] []
+                        | Some loopStack when loopStack <> shape.StackTypes ->
+                            operationError "IR_LOOP_CONTROL_STACK" "break/continue requires the loop body's entry stack." (loopStack |> List.map IrTypes.format) (shape.StackTypes |> List.map IrTypes.format)
+                        | Some _ ->
+                            terminated <- true
+                            shape, Set.empty
+                    | IrOperation.ForRange(indexLocal, body) ->
+                        let prefix, bounds = pop 2
+                        if bounds <> [ IrInt; IrInt ] then operationError "IR_LOOP_RANGE_TYPE" "A range loop requires Int start and end on top of the stack." [ "Int"; "Int" ] (bounds |> List.map IrTypes.format)
+                        let bound = [ indexLocal, IrInt ]
+                        verifyLoop instruction.Site shape prefix bound body
+                    | IrOperation.ForList(itemType, itemLocal, indexLocal, body) ->
+                        let prefix, input = pop 1
+                        if input <> [ IrList itemType ] then operationError "IR_LOOP_LIST_TYPE" "A list loop requires its List<T> on top of the stack." [ IrTypes.format (IrList itemType) ] (input |> List.map IrTypes.format)
+                        let bound = (itemLocal, itemType) :: (indexLocal |> Option.map (fun slot -> slot, IrInt) |> Option.toList)
+                        if indexLocal = Some itemLocal then operationError "IR_LOOP_LOCAL_SHADOW" "A list loop's item and index slots must differ." [] [ sprintf "%A" itemLocal ]
+                        verifyLoop instruction.Site shape prefix bound body
                     | IrOperation.Compact innerBlock ->
-                        let innerShape, innerEffects = verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site shape innerBlock
+                        loopContexts.Push None
+                        let innerShape, innerEffects =
+                            try verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site shape innerBlock
+                            finally loopContexts.Pop() |> ignore
                         let unchangedPrefix =
                             innerShape.StackTypes.Length = shape.StackTypes.Length + 1
                             && List.take shape.StackTypes.Length innerShape.StackTypes = shape.StackTypes
@@ -892,6 +963,25 @@ module IrVerifier =
             if actualExit <> block.ExitShape then
                 Diagnostics.raiseError "IR_BLOCK_EXIT_MISMATCH" "IR block exit annotation disagrees with its verified instructions." (Some owner.FunctionName) (sourceSpan program parentSite) (actualExit.StackTypes |> List.map IrTypes.format) (block.ExitShape.StackTypes |> List.map IrTypes.format)
             actualExit, effects
+        and verifyLoop (site: SourceSiteId) (shape: IrShape) (prefix: IrType list) (bound: (LocalSlot * IrType) list) (body: IrBlock) =
+            let at = sourceSpan program site
+            for slot, _ in bound do
+                if not (owner.LocalNames.ContainsKey slot) then
+                    Diagnostics.raiseError "IR_UNKNOWN_LOCAL_SLOT" "Loop local is absent from the function layout." (Some owner.FunctionName) at [] [ sprintf "%A" slot ]
+                if shape.LocalTypes.ContainsKey slot then
+                    Diagnostics.raiseError "IR_LOOP_LOCAL_SHADOW" "A loop's item or index slot shadows an outer local." (Some owner.FunctionName) at [] [ sprintf "%A" slot ]
+            let entry = { StackTypes = prefix; LocalTypes = bound |> List.fold (fun locals (slot, ty) -> Map.add slot ty locals) shape.LocalTypes }
+            loopContexts.Push(Some prefix)
+            let bodyExit, bodyEffects =
+                try verifyBlockNested program catalog hostCatalog owner sourceOwnerId site entry body
+                finally loopContexts.Pop() |> ignore
+            let invariant =
+                bodyExit.StackTypes = prefix
+                && (shape.LocalTypes |> Map.forall (fun slot ty -> bodyExit.LocalTypes.TryFind slot = Some ty))
+            if not invariant then
+                Diagnostics.raiseError "IR_LOOP_SHAPE_NOT_INVARIANT" "A loop body must leave its entry stack and every outer local's type unchanged." (Some owner.FunctionName) at
+                    (prefix |> List.map IrTypes.format) (bodyExit.StackTypes |> List.map IrTypes.format)
+            { StackTypes = prefix; LocalTypes = shape.LocalTypes }, bodyEffects
         let actualExit, effects = verifyNested block.Code block.EntryShape
         if actualExit <> block.ExitShape then
             Diagnostics.raiseError "IR_BLOCK_EXIT_MISMATCH" "Function block exit annotation disagrees with its verified instructions." (Some owner.FunctionName) None (block.ExitShape.StackTypes |> List.map IrTypes.format) (actualExit.StackTypes |> List.map IrTypes.format)
@@ -919,7 +1009,9 @@ module IrVerifier =
                     let leftSites, leftBranches = collectBlock thenBlock.Code sites branches
                     collectBlock elseBlock.Code leftSites leftBranches
                 | IrOperation.Scope innerBlock
-                | IrOperation.Compact innerBlock -> collectBlock innerBlock.Code sites branches
+                | IrOperation.Compact innerBlock
+                | IrOperation.ForRange(_, innerBlock)
+                | IrOperation.ForList(_, _, _, innerBlock) -> collectBlock innerBlock.Code sites branches
                 | IrOperation.MatchOption(_, someBlock, noneBlock) ->
                     let branches = Map.add instruction.Site [ "some"; "none" ] branches
                     let leftSites, leftBranches = collectBlock someBlock.Code sites branches
@@ -950,7 +1042,9 @@ module IrVerifier =
                     match instruction.Operation with
                     | IrOperation.If(thenBlock, elseBlock) -> collect thenBlock.Code @ collect elseBlock.Code
                     | IrOperation.Scope innerBlock
-                    | IrOperation.Compact innerBlock -> collect innerBlock.Code
+                    | IrOperation.Compact innerBlock
+                    | IrOperation.ForRange(_, innerBlock)
+                    | IrOperation.ForList(_, _, _, innerBlock) -> collect innerBlock.Code
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock.Code @ collect noneBlock.Code
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock.Code @ collect errorBlock.Code
                     | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.collect (snd >> fun caseBlock -> collect caseBlock.Code)
@@ -975,7 +1069,9 @@ module IrVerifier =
                     match instruction.Operation with
                     | IrOperation.If(thenBlock, elseBlock) -> collect thenBlock.Code @ collect elseBlock.Code
                     | IrOperation.Scope innerBlock
-                    | IrOperation.Compact innerBlock -> collect innerBlock.Code
+                    | IrOperation.Compact innerBlock
+                    | IrOperation.ForRange(_, innerBlock)
+                    | IrOperation.ForList(_, _, _, innerBlock) -> collect innerBlock.Code
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock.Code @ collect noneBlock.Code
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock.Code @ collect errorBlock.Code
                     | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.collect (snd >> fun caseBlock -> collect caseBlock.Code)

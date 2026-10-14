@@ -621,9 +621,23 @@ module IrInterpreter =
                 | RuntimeOption _ | RuntimeResult _ -> 64L
             max typeDepth 1, saturatingAdd maxRuntimeValueOutputBytes valueBytes typeBytes
 
+        // Childless values are measured directly instead of being cached: a loop
+        // creates a fresh Int or String per iteration, and millions of weak-table
+        // entries make garbage collection superlinear.
+        let isChildless value = List.isEmpty (valueChildren value)
+        let childlessMetrics currentWord site value =
+            let ownDepth, ownBytes = runtimeValueOwnOutputBytes currentWord site value
+            { ExpandedNodes = 1L
+              Depth = ownDepth
+              EstimatedOutputBytes = ownBytes }
         let runtimeMetrics currentWord site root =
+            let tryCachedMetrics value =
+                if isChildless value then Some(childlessMetrics currentWord site value)
+                else tryCachedMetrics value
             match tryCachedMetrics root with
-            | Some cached -> cached
+            | Some cached ->
+                if isChildless root then checkValueMetrics currentWord site cached
+                cached
             | None ->
                 let pending = Stack<RuntimeValue * bool>()
                 pending.Push((root, false))
@@ -775,6 +789,30 @@ module IrInterpreter =
         // count instructions through ChargeInstruction.
         let chargeInstruction currentWord site =
             host.ChargeInstruction currentWord site
+
+        // Loop control: 0 none, 1 break, 2 continue. Set by Break/Continue and
+        // consumed by the innermost loop; blocks stop early while it is set.
+        let loopControl = ref 0
+        // Iterations charged against IrLoops.DefaultIterationBudget for this invocation.
+        let loopIterations = ref 0L
+        let chargeLoopIteration currentWord site =
+            loopIterations.Value <- loopIterations.Value + 1L
+            if loopIterations.Value > int64 IrLoops.DefaultIterationBudget then
+                fail IrLoops.budgetExceededCode $"Loops exceeded the per-invocation budget of {IrLoops.DefaultIterationBudget} iterations." (Some currentWord) (sourceSpan site)
+                    [ $"<= {IrLoops.DefaultIterationBudget} iterations" ] [ string loopIterations.Value ]
+        // Copy reassigned outer locals (Flow vars) out of a nested block's locals.
+        // Reassigned outer slots per block, cached by block identity (Flow wraps
+        // every if arm in a Scope, so this runs often).
+        let assignedCache = Dictionary<IrBlock, Set<LocalSlot>>(HashIdentity.Reference)
+        let assignedIn (block: IrBlock) =
+            match assignedCache.TryGetValue block with
+            | true, found -> found
+            | _ ->
+                let found = IrLoops.assignedSlots block
+                assignedCache[block] <- found
+                found
+        let carryAssigned (assigned: LocalSlot list) (outer: Map<LocalSlot, RuntimeValue>) (inner: Map<LocalSlot, RuntimeValue>) =
+            assigned |> List.fold (fun acc slot -> match inner.TryFind slot with Some value -> Map.add slot value acc | None -> acc) outer
 
         let decodeValue = decodeRuntimeValue program
 
@@ -1351,7 +1389,10 @@ module IrInterpreter =
                 | [] -> fail "RUNTIME_STACK_UNDERFLOW" message (Some word) (sourceSpan site) expected []
                 | values -> values |> List.take (values.Length - 1), List.last values
             let mutable previousOperation: IrOperation option = None
-            for instruction in block.Code do
+            let mutable remaining = block.Code
+            while not remaining.IsEmpty && loopControl.Value = 0 do
+                let instruction = remaining.Head
+                remaining <- remaining.Tail
                 chargeInstruction currentWord instruction.Site
                 let instructionSpan = sourceSpan instruction.Site
                 let provenLiteralWrap =
@@ -1632,8 +1673,53 @@ module IrInterpreter =
                         | actual -> fail "RUNTIME_IF_REQUIRES_BOOL" "'if' requires a Bool at the top of the stack." (Some currentWord) instructionSpan [ "Bool" ] [ formatType program (runtimeValueType actual) ]
                 | IrOperation.Scope innerBlock
                 | IrOperation.Compact innerBlock ->
-                    let scopedStack, _ = executeBlock depth currentWord localNames innerBlock stack locals
+                    let scopedStack, scopedLocals = executeBlock depth currentWord localNames innerBlock stack locals
                     stack <- scopedStack
+                    let assigned = assignedIn innerBlock |> Set.filter locals.ContainsKey |> Set.toList
+                    if not assigned.IsEmpty then locals <- carryAssigned assigned locals scopedLocals
+                | IrOperation.AssignLocal slot ->
+                    let prefix, value = popOne "Local assignment requires a stack value." currentWord instruction.Site []
+                    if not (locals.ContainsKey slot) then
+                        let name = localNames.TryFind slot |> Option.defaultValue (sprintf "%A" slot)
+                        fail "RUNTIME_UNKNOWN_LOCAL" $"Local '${name}' has not been bound." (Some currentWord) instructionSpan [] [ name ]
+                    locals <- Map.add slot value locals
+                    stack <- prefix
+                | IrOperation.Break -> loopControl.Value <- 1
+                | IrOperation.Continue -> loopControl.Value <- 2
+                | IrOperation.ForRange(indexLocal, body) ->
+                    let prefix, bounds = popArguments "for" [ IrInt; IrInt ]
+                    match bounds with
+                    | [ RuntimeInt start; RuntimeInt finish ] ->
+                        let assigned = assignedIn body |> Set.filter locals.ContainsKey |> Set.toList
+                        let mutable index = start
+                        let mutable running = true
+                        while running && index < finish do
+                            chargeLoopIteration currentWord instruction.Site
+                            let _, bodyLocals = executeBlock depth currentWord localNames body prefix (Map.add indexLocal (RuntimeInt index) locals)
+                            locals <- carryAssigned assigned locals bodyLocals
+                            if loopControl.Value = 1 then running <- false
+                            loopControl.Value <- 0
+                            index <- index + 1L
+                        stack <- prefix
+                    | actual -> fail "RUNTIME_INTERNAL_TYPE" "Range loop received non-Int bounds after type checking." (Some currentWord) instructionSpan [ "Int"; "Int" ] (runtimeTypeNames program actual)
+                | IrOperation.ForList(_, itemLocal, indexLocal, body) ->
+                    let prefix, input = popOne "A list loop requires a List<T>." currentWord instruction.Site []
+                    match input with
+                    | RuntimeList(_, items) ->
+                        let assigned = assignedIn body |> Set.filter locals.ContainsKey |> Set.toList
+                        let mutable pending = items
+                        let mutable index = 0L
+                        while not pending.IsEmpty do
+                            chargeLoopIteration currentWord instruction.Site
+                            let bound = Map.add itemLocal pending.Head locals
+                            let bound = match indexLocal with Some slot -> Map.add slot (RuntimeInt index) bound | None -> bound
+                            let _, bodyLocals = executeBlock depth currentWord localNames body prefix bound
+                            locals <- carryAssigned assigned locals bodyLocals
+                            pending <- if loopControl.Value = 1 then [] else pending.Tail
+                            loopControl.Value <- 0
+                            index <- index + 1L
+                        stack <- prefix
+                    | actual -> fail "RUNTIME_INTERNAL_TYPE" "List loop received a non-list after type checking." (Some currentWord) instructionSpan [ "List<T>" ] [ formatType program (runtimeValueType actual) ]
                 | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
                     let prefix, input = popOne "match-option requires an Option<T>." currentWord instruction.Site []
                     match input with

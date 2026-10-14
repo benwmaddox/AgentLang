@@ -1593,6 +1593,11 @@ module OwningStackAot =
                             (Some owner) span (expectedCases |> List.map string) (actualCases |> List.map string)
                     caseBlocks |> List.iter (snd >> validateBlock owner)
                 | IrOperation.StoreLocal _ | IrOperation.LoadLocal _ -> ()
+                | IrOperation.AssignLocal _ | IrOperation.Break | IrOperation.Continue -> ()
+                | IrOperation.ForRange(_, inner) -> validateBlock owner inner
+                | IrOperation.ForList(itemType, _, _, inner) ->
+                    checkType owner (IrList itemType)
+                    validateBlock owner inner
                 | IrOperation.Scope inner | IrOperation.Compact inner -> validateBlock owner inner
                 | IrOperation.If(thenBlock, elseBlock) -> validateBlock owner thenBlock; validateBlock owner elseBlock
 
@@ -1708,7 +1713,7 @@ module OwningStackAot =
                     | UserWordTarget(id, revision) -> enqueueUserFunction owner id revision
                     | _ -> ()
                 | IrOperation.WrapScalar _ -> enqueueKnownTypeValidators owner
-                | IrOperation.Scope inner | IrOperation.Compact inner -> inspectCalls owner inner
+                | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> inspectCalls owner inner
                 | IrOperation.If(left, right) -> inspectCalls owner left; inspectCalls owner right
                 | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> inspectCalls owner)
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> inspectCalls owner someBlock; inspectCalls owner noneBlock
@@ -1804,7 +1809,7 @@ module OwningStackAot =
                     | _ -> ())
                 for instruction in block.Code do
                     match instruction.Operation with
-                    | IrOperation.Scope inner | IrOperation.Compact inner -> visit inner
+                    | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> visit inner
                     | IrOperation.If(left, right)
                     | IrOperation.MatchOption(_, left, right)
                     | IrOperation.MatchResult(_, _, left, right) -> visit left; visit right
@@ -2453,7 +2458,11 @@ module OwningStackAot =
                 | IrOperation.LoadLocal slot ->
                     let ty = locals.TryFind slot |> Option.defaultWith (fun () -> invalidOp "Verified LoadLocal lacks its local type during local planning.")
                     stack <- stack @ [ ty ]
-                | IrOperation.Scope inner | IrOperation.Compact inner ->
+                | IrOperation.AssignLocal _ ->
+                    let _, prefix = pop 1
+                    stack <- prefix
+                | IrOperation.Break | IrOperation.Continue -> ()
+                | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) ->
                     let localsBeforeScope = locals
                     stack <- inner.ExitShape.StackTypes
                     locals <- localsBeforeScope
@@ -2514,7 +2523,7 @@ module OwningStackAot =
         let rec visit (current: IrBlock) =
             for instruction in current.Code do
                 match instruction.Operation with
-                | IrOperation.Scope inner | IrOperation.Compact inner -> found.Add(instruction.Site, inner)
+                | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> found.Add(instruction.Site, inner)
                 | IrOperation.If(left, right) -> visit left; visit right
                 | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> visit)
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> visit someBlock; visit noneBlock
@@ -2568,26 +2577,45 @@ module OwningStackAot =
           RootEnvironment = root
           Flags = flags |> List.distinct |> List.sort }
 
+    /// Slots a loop binds for its body (index, item) besides the body's own stores.
+    /// Walks the same blocks as directScopes.
+    let private directLoopBound (block: IrBlock) (site: SourceSiteId) =
+        let mutable found = []
+        let rec visit (current: IrBlock) =
+            for instruction in current.Code do
+                match instruction.Operation with
+                | IrOperation.ForRange(indexLocal, _) when instruction.Site = site -> found <- [ indexLocal ]
+                | IrOperation.ForList(_, itemLocal, indexLocal, _) when instruction.Site = site -> found <- itemLocal :: Option.toList indexLocal
+                | IrOperation.If(left, right) -> visit left; visit right
+                | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> visit)
+                | IrOperation.MatchOption(_, someBlock, noneBlock) -> visit someBlock; visit noneBlock
+                | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> visit okBlock; visit errorBlock
+                | _ -> ()
+        visit block
+        found
+
     let private buildDynamicFunctionPlan (block: IrBlock) =
         let mutable nextFlag = 0
-        let rec plan (current: IrBlock) =
+        let rec plan (bound: LocalSlot list) (current: IrBlock) =
             let slots =
-                blockStores current
-                |> Map.toList
-                |> List.sortBy (fst >> slotValue)
-                |> List.map (fun (slot, _) ->
+                (blockStores current |> Map.toList |> List.map fst) @ bound
+                |> List.distinct
+                |> List.sortBy slotValue
+                |> List.map (fun slot ->
                     let flag = nextFlag
                     nextFlag <- nextFlag + 1
                     slot, { FlagId = flag })
                 |> Map.ofList
             let childPlans =
                 directScopes current
-                |> List.map (fun (site, inner) -> site, plan inner)
+                |> List.map (fun (site, inner) ->
+                    let bound = directLoopBound current site
+                    site, plan bound inner)
             let scopes = childPlans |> List.map (fun (site, (child, _)) -> site, child) |> Map.ofList
             let childFlags = childPlans |> List.collect (snd >> snd)
             let ownFlags = slots |> Map.toList |> List.map (snd >> fun slot -> slot.FlagId)
             { Slots = slots; Scopes = scopes }, ownFlags @ childFlags
-        let root, flags = plan block
+        let root, flags = plan [] block
         { RootEnvironment = root
           Flags = flags |> List.distinct |> List.sort }
 
@@ -3773,7 +3801,7 @@ module OwningStackAot =
                         match part with
                         | HtmlTemplatePart.Text text when text <> "" && seenTemplateTexts.Add text -> templateTexts.Add text
                         | _ -> ()
-                | IrOperation.Scope inner | IrOperation.Compact inner -> collectStrings inner
+                | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> collectStrings inner
                 | IrOperation.If(thenBlock, elseBlock) -> collectStrings thenBlock; collectStrings elseBlock
                 | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> collectStrings)
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> collectStrings someBlock; collectStrings noneBlock
@@ -3903,6 +3931,7 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_int_format(ptr, i64, ptr, ptr, i32)")
         writer.Line("declare void @al_owning_move_range(ptr, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_copy_range(ptr, i32, i32, i32, i32, i32, i32)")
+        writer.Line("declare void @al_owning_loop_relocate(ptr, i32, i32, ptr)")
         writer.Line("declare void @al_owning_duplicate(ptr, i32, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_drop(ptr, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_check_cursor(ptr, i32)")
@@ -4521,6 +4550,11 @@ module OwningStackAot =
                 w.Inst($"store i32 {typeId source.Type}, ptr {pointerFor typePointers flagId}, align 4")
                 emitDescriptorTransfer w source failBody
 
+            // (latch, exit) labels of the enclosing loops, innermost on top.
+            let loopTargets = Stack<string * string>()
+            let rec dynamicEnvFlags (env: OwningDynamicLocalEnvPlan) : int list =
+                (env.Slots |> Map.toList |> List.map (fun (_, slotPlan) -> slotPlan.FlagId))
+                @ (env.Scopes |> Map.toList |> List.collect (snd >> dynamicEnvFlags))
             let rec emitBlock (currentOwner: string) (env: OwningDynamicLocalEnvPlan)
                              (currentStack: OwningDynamicStackEntry list)
                              (currentLocals: Map<LocalSlot, OwningDynamicLocalBinding>)
@@ -5208,6 +5242,212 @@ module OwningStackAot =
                         stack <- prefix @ [ { result with Offset = offset; OwnerEnd = ownerEnd } ]
                         locals <- localsBeforeScope
                         localTypes <- localTypesBeforeScope
+                    | IrOperation.AssignLocal slot ->
+                        let values, prefix = pop 1
+                        let source = List.head values
+                        // The var now shares these bytes with every later load.
+                        unaliasedLists <- Set.remove source.Offset unaliasedLists
+                        emitStoreLocal (localBinding slot locals) source
+                        stack <- prefix
+                    | IrOperation.Break
+                    | IrOperation.Continue ->
+                        if loopTargets.Count = 0 then invalidOp "Verified break/continue has no enclosing loop."
+                        let latchLabel, exitLabel = loopTargets.Peek()
+                        let target = match instruction.Operation with IrOperation.Break -> exitLabel | _ -> latchLabel
+                        w.Inst($"br label %%{target}")
+                        // Anything the verifier lets follow (an arm's join branch) is unreachable.
+                        let deadLabel = w.Label "loop.after.control"
+                        w.Line($"{deadLabel}:")
+                    | IrOperation.ForRange _
+                    | IrOperation.ForList _ ->
+                        let body, boundSlots =
+                            match instruction.Operation with
+                            | IrOperation.ForRange(indexLocal, body) -> body, [ indexLocal ]
+                            | IrOperation.ForList(_, itemLocal, indexLocal, body) -> body, itemLocal :: Option.toList indexLocal
+                            | _ -> invalidOp "Unreachable loop case."
+                        let childEnv = env.Scopes.TryFind instruction.Site |> Option.defaultWith (fun () -> invalidOp "Verified loop has no local plan.")
+                        let localsBeforeLoop = locals
+                        let localTypesBeforeLoop = localTypes
+                        let loadI64 offset =
+                            let value = w.Fresh "loop.load"
+                            w.Inst($"{value} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {offset})")
+                            emitRuntimeStatus w "%ctx" failBody
+                            value
+                        let newSlot ty name initial =
+                            let slot = w.Fresh name
+                            w.Inst($"{slot} = alloca {ty}, align 8")
+                            w.Inst($"store {ty} {initial}, ptr {slot}, align 8")
+                            slot
+                        let loadSlot ty slot =
+                            let value = w.Fresh "loop.var"
+                            w.Inst($"{value} = load {ty}, ptr {slot}, align 8")
+                            value
+                        // Loop control state lives in allocas, never in the arena.
+                        let header =
+                            match instruction.Operation with
+                            | IrOperation.ForRange _ ->
+                                let values, prefix = pop 2
+                                let start = loadI64 values[0].Offset
+                                let finish = loadI64 values[1].Offset
+                                emitDropEntry stack (stack.Length - 1)
+                                emitDropEntry stack (stack.Length - 2)
+                                stack <- prefix
+                                Choice1Of2(newSlot "i64" "loop.counter" start, finish)
+                            | IrOperation.ForList(itemType, _, _, _) ->
+                                let values, prefix = pop 1
+                                let listEntry = List.head values
+                                let countWide = loadI64 listEntry.Offset
+                                let count = w.Fresh "loop.list.count"
+                                w.Inst($"{count} = trunc i64 {countWide} to i32")
+                                let listEnd = emitOffset w listEntry.Offset listEntry.Extent
+                                let elementCursor = newSlot "i32" "loop.list.element" (emitOffset w listEntry.Offset "8")
+                                emitDropEntry stack (stack.Length - 1)
+                                stack <- prefix
+                                Choice2Of2(newSlot "i32" "loop.list.index" "0", count, listEnd, elementCursor, itemType, listEntry)
+                            | _ -> invalidOp "Unreachable loop case."
+                        let prefix = stack
+                        // Everything allocated at or above this mark belongs to one iteration.
+                        let mark = emitContextLoad w "%ctx" 2
+                        let rewind =
+                            match analysis.ScopeExits.TryFind instruction.Site with
+                            | Some decision -> decision.AllowRewind
+                            | None -> false
+                        let carried =
+                            IrLoops.assignedSlots body
+                            |> Set.filter localTypesBeforeLoop.ContainsKey
+                            |> Set.toList
+                        let bodyFlags = dynamicEnvFlags childEnv
+                        for flagId in bodyFlags do removeLocal flagId
+                        let childLocals = makeBindings childEnv locals
+                        let headLabel = w.Label "loop.head"
+                        let bodyLabel = w.Label "loop.body"
+                        let readyLabel = w.Label "loop.ready"
+                        let budgetLabel = w.Label "loop.budget.exceeded"
+                        let latchLabel = w.Label "loop.latch"
+                        let exitLabel = w.Label "loop.exit"
+                        w.Inst($"br label %%{headLabel}")
+                        w.Line($"{headLabel}:")
+                        let more = w.Fresh "loop.more"
+                        match header with
+                        | Choice1Of2(counter, finish) ->
+                            let current = loadSlot "i64" counter
+                            w.Inst($"{more} = icmp slt i64 {current}, {finish}")
+                        | Choice2Of2(index, count, _, _, _, _) ->
+                            let current = loadSlot "i32" index
+                            w.Inst($"{more} = icmp ult i32 {current}, {count}")
+                        w.Inst($"br i1 {more}, label %%{bodyLabel}, label %%{exitLabel}")
+                        w.Line($"{bodyLabel}:")
+                        // Per-invocation iteration budget (context steps_consumed).
+                        let stepsPointer = emitContextFieldPointer w "%ctx" 10
+                        let steps = w.Fresh "loop.steps"
+                        let nextSteps = w.Fresh "loop.steps.next"
+                        let over = w.Fresh "loop.over.budget"
+                        w.Inst($"{steps} = load i32, ptr {stepsPointer}, align 4")
+                        w.Inst($"{nextSteps} = add i32 {steps}, 1")
+                        w.Inst($"store i32 {nextSteps}, ptr {stepsPointer}, align 4")
+                        w.Inst($"{over} = icmp ugt i32 {nextSteps}, {IrLoops.DefaultIterationBudget}")
+                        w.Inst($"br i1 {over}, label %%{budgetLabel}, label %%{readyLabel}")
+                        w.Line($"{budgetLabel}:")
+                        let budgetError =
+                            addDiagnostic IrLoops.budgetExceededCode $"Loops exceeded the per-invocation budget of {IrLoops.DefaultIterationBudget} iterations." currentOwner instructionSpan
+                                [ $"<= {IrLoops.DefaultIterationBudget} iterations" ] []
+                        w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {budgetError}, i32 {nextSteps}, i32 {IrLoops.DefaultIterationBudget})")
+                        w.Inst($"br label %%{failBody}")
+                        w.Line($"{readyLabel}:")
+                        let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a loop index." currentOwner instructionSpan [] []
+                        let materializeInt (value: string) =
+                            let cursor = emitContextLoad w "%ctx" 2
+                            let next = emitOffset w cursor "8"
+                            emitReserve w next reserveError failBody
+                            w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 {value}, i32 {typeId IrInt})")
+                            emitRuntimeStatus w "%ctx" failBody
+                            emitUpdateLive w "8" "0" failBody
+                            { Type = IrInt; Offset = cursor; Extent = "8"; Payload = "8"; OwnerEnd = next }
+                        match header, boundSlots with
+                        | Choice1Of2(counter, _), [ indexLocal ] ->
+                            let current = loadSlot "i64" counter
+                            let advanced = w.Fresh "loop.counter.next"
+                            // current < end <= Int64.MaxValue, so this cannot overflow.
+                            w.Inst($"{advanced} = add i64 {current}, 1")
+                            w.Inst($"store i64 {advanced}, ptr {counter}, align 8")
+                            emitStoreLocal (localBinding indexLocal childLocals) (materializeInt current)
+                        | Choice2Of2(index, _, listEnd, elementCursor, itemType, listEntry), itemLocal :: indexLocal ->
+                            let current = loadSlot "i32" index
+                            let advanced = w.Fresh "loop.list.index.next"
+                            w.Inst($"{advanced} = add i32 {current}, 1")
+                            w.Inst($"store i32 {advanced}, ptr {index}, align 8")
+                            let offset = loadSlot "i32" elementCursor
+                            let elementSize = w.Fresh "loop.element.size"
+                            w.Inst($"{elementSize} = alloca %%AlOwningValueSize, align 4")
+                            let measureError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to measure a verified List element." currentOwner instructionSpan [] []
+                            let status = w.Fresh "loop.measure.status"
+                            w.Inst($"{status} = call i32 @al_owning_measure_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex itemType}, i32 {offset}, i32 {listEnd}, i32 {measureError}, ptr {elementSize})")
+                            emitStatusResult w status failBody
+                            let payloadPointer = w.Fresh "loop.element.payload.pointer"
+                            let extentPointer = w.Fresh "loop.element.extent.pointer"
+                            w.Inst($"{payloadPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 0")
+                            w.Inst($"{extentPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 1")
+                            let payload = w.Fresh "loop.element.payload"
+                            let extent = w.Fresh "loop.element.extent"
+                            w.Inst($"{payload} = load i32, ptr {payloadPointer}, align 4")
+                            w.Inst($"{extent} = load i32, ptr {extentPointer}, align 4")
+                            w.Inst($"store i32 {emitOffset w offset extent}, ptr {elementCursor}, align 8")
+                            // The item is a view into the list, which predates the loop mark.
+                            emitStoreLocal (localBinding itemLocal childLocals)
+                                { Type = itemType; Offset = offset; Extent = extent; Payload = payload; OwnerEnd = listEntry.OwnerEnd }
+                            match indexLocal with
+                            | [ slot ] ->
+                                let wide = w.Fresh "loop.list.index.wide"
+                                w.Inst($"{wide} = zext i32 {current} to i64")
+                                emitStoreLocal (localBinding slot childLocals) (materializeInt wide)
+                            | _ -> ()
+                        | _ -> invalidOp "Loop header and bound slots disagree."
+                        loopTargets.Push((latchLabel, exitLabel))
+                        let bodyStack =
+                            try emitBlock currentOwner childEnv prefix childLocals body
+                            finally loopTargets.Pop() |> ignore
+                        if (bodyStack |> List.map (fun item -> item.Type)) <> (prefix |> List.map (fun item -> item.Type)) then
+                            invalidOp "Dynamic loop body changed its loop-invariant stack."
+                        w.Inst($"br label %%{latchLabel}")
+                        w.Line($"{latchLabel}:")
+                        // Body locals (including scopes left early by continue) end here.
+                        for flagId in bodyFlags do removeLocal flagId
+                        if rewind then
+                            // Move the vars the body assigned down to the mark (when they
+                            // were allocated this iteration), then release the iteration.
+                            if carried.IsEmpty then
+                                emitArenaRewind w mark failBody
+                            else
+                                let quads = w.Fresh "loop.carried"
+                                w.Inst($"{quads} = alloca [{4 * carried.Length} x i32], align 4")
+                                let fieldPointer index field =
+                                    let pointer = w.Fresh "loop.carried.field"
+                                    w.Inst($"{pointer} = getelementptr inbounds [{4 * carried.Length} x i32], ptr {quads}, i32 0, i32 {4 * index + field}")
+                                    pointer
+                                let resolved =
+                                    carried
+                                    |> List.mapi (fun index slot ->
+                                        let ty = localTypesBeforeLoop[slot]
+                                        let entry = resolveLocalEntry (localBinding slot localsBeforeLoop) ty
+                                        [ entry.Offset; entry.Extent; entry.Payload; entry.OwnerEnd ]
+                                        |> List.iteri (fun field value -> w.Inst($"store i32 {value}, ptr {fieldPointer index field}, align 4"))
+                                        slot, entry)
+                                w.Inst($"call void @al_owning_loop_relocate(ptr %%ctx, i32 {mark}, i32 {carried.Length}, ptr {quads})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                resolved
+                                |> List.iteri (fun index (slot, entry) ->
+                                    let load field prefixName =
+                                        let value = w.Fresh prefixName
+                                        w.Inst($"{value} = load i32, ptr {fieldPointer index field}, align 4")
+                                        value
+                                    let moved = { entry with Offset = load 0 "loop.carried.offset"; OwnerEnd = load 3 "loop.carried.owner.end" }
+                                    emitStoreLocal (localBinding slot localsBeforeLoop) moved)
+                        w.Inst($"br label %%{headLabel}")
+                        w.Line($"{exitLabel}:")
+                        for flagId in bodyFlags do removeLocal flagId
+                        stack <- prefix
+                        locals <- localsBeforeLoop
+                        localTypes <- localTypesBeforeLoop
                     | IrOperation.If(thenBlock, elseBlock) ->
                         let values, prefix = pop 1
                         let condition = List.head values

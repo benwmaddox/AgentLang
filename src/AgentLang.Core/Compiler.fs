@@ -338,6 +338,8 @@ module Compiler =
     let private inferBody (knownTypes: Set<string>) (knownEnums: Map<string, EnumDefinition>) (words: Map<string, WordEntry>) (wordName: string) (wordSpan: SourceSpan option) (initialStack: LangType list) (initialLocals: Map<string, LangType>) (body: Expr list) =
         let mutable dependencies = Set.empty
         let mutable effects = Set.empty
+        // Enclosing loops (Some loop-invariant stack) and compact barriers (None).
+        let loopContexts = System.Collections.Generic.Stack<LangType list option>()
         let rec visit (entryStack: LangType list) (entryLocals: Map<string, LangType>) (expressions: Expr list) =
             let mutable stack = entryStack
             let mutable locals = entryLocals
@@ -498,13 +500,50 @@ module Compiler =
                         childBodies <- [ scopedBody ]
                         scopedBody.ExitStack, locals
                     | Compact(innerBody, expressionSpan) ->
-                        let compactBody = visit stack locals innerBody
+                        loopContexts.Push None
+                        let compactBody = try visit stack locals innerBody finally loopContexts.Pop() |> ignore
                         let exit = compactBody.ExitStack
                         if exit.Length <> stack.Length + 1 || List.take stack.Length exit <> stack then
                             Diagnostics.raiseError "TYPE_COMPACT_RESULT" "A compact block must leave the outer stack unchanged and produce exactly one value." (Some wordName) (Some expressionSpan)
                                 ((stack |> List.map Types.format) @ [ "one value" ]) (exit |> List.map Types.format)
                         childBodies <- [ compactBody ]
                         exit, locals
+                    | Assign(name, expressionSpan) ->
+                        match locals.TryFind name, List.tryLast stack with
+                        | None, _ -> Diagnostics.raiseError "NAME_UNKNOWN_LOCAL" $"Local '{name}' has not been bound." (Some wordName) (Some expressionSpan) [] [ name ]
+                        | Some _, None -> Diagnostics.raiseError "TYPE_STACK_UNDERFLOW" $"Assignment to '{name}' requires one stack value." (Some wordName) (Some expressionSpan) [ "value" ] []
+                        | Some declared, Some actual when declared <> actual ->
+                            Diagnostics.raiseError "TYPE_ASSIGN_MISMATCH" $"Assignment to '{name}' must keep its declared type." (Some wordName) (Some expressionSpan) [ Types.format declared ] [ Types.format actual ]
+                        | Some _, Some _ -> stack |> List.take (stack.Length - 1), locals
+                    | Break expressionSpan | Continue expressionSpan ->
+                        match (if loopContexts.Count = 0 then None else loopContexts.Peek()) with
+                        | None -> Diagnostics.raiseError "TYPE_LOOP_CONTROL_OUTSIDE_LOOP" "break and continue must appear inside a loop body (not inside a compact block within it)." (Some wordName) (Some expressionSpan) [ "enclosing loop" ] []
+                        | Some loopStack when loopStack <> stack ->
+                            Diagnostics.raiseError "TYPE_LOOP_CONTROL_STACK" "break and continue must be statements; no partial values may be pending." (Some wordName) (Some expressionSpan) (loopStack |> List.map Types.format) (stack |> List.map Types.format)
+                        | Some _ -> stack, locals
+                    | ForRange(indexName, body, expressionSpan) ->
+                        let before, bounds = (if stack.Length < 2 then [], stack else List.take (stack.Length - 2) stack, List.skip (stack.Length - 2) stack)
+                        if bounds <> [ TInt; TInt ] then
+                            Diagnostics.raiseError "TYPE_LOOP_RANGE" "A range loop needs Int start and end values." (Some wordName) (Some expressionSpan) [ "Int"; "Int" ] (bounds |> List.map Types.format)
+                        if locals.ContainsKey indexName then
+                            Diagnostics.raiseError "TYPE_LOOP_LOCAL_SHADOW" $"Loop local '{indexName}' cannot shadow an existing local." (Some wordName) (Some expressionSpan) [] [ indexName ]
+                        let bodyTyped = visitLoopBody before locals [ indexName, TInt ] body expressionSpan
+                        childBodies <- [ bodyTyped ]
+                        before, locals
+                    | ForList(itemName, indexName, body, expressionSpan) ->
+                        let itemType, before =
+                            match List.tryLast stack with
+                            | Some(TList item) -> item, List.take (stack.Length - 1) stack
+                            | actual -> Diagnostics.raiseError "TYPE_LOOP_LIST" "A list loop needs a List<T> value." (Some wordName) (Some expressionSpan) [ "List<T>" ] (actual |> Option.map Types.format |> Option.toList)
+                        let bound = (itemName, itemType) :: (indexName |> Option.map (fun name -> name, TInt) |> Option.toList)
+                        for name, _ in bound do
+                            if locals.ContainsKey name then
+                                Diagnostics.raiseError "TYPE_LOOP_LOCAL_SHADOW" $"Loop local '{name}' cannot shadow an existing local." (Some wordName) (Some expressionSpan) [] [ name ]
+                        if indexName = Some itemName then
+                            Diagnostics.raiseError "TYPE_LOOP_LOCAL_SHADOW" $"Loop item and index cannot share the name '{itemName}'." (Some wordName) (Some expressionSpan) [] [ itemName ]
+                        let bodyTyped = visitLoopBody before locals bound body expressionSpan
+                        childBodies <- [ bodyTyped ]
+                        before, locals
                     | MatchOption(someName, someBranch, noneBranch, expressionSpan) ->
                         if List.isEmpty stack then
                             Diagnostics.raiseError "TYPE_MATCH_REQUIRES_OPTION" "match-option consumes an Option<T> from the top of the stack." (Some wordName) (Some expressionSpan) [ "Option<T>" ] []
@@ -587,6 +626,15 @@ module Compiler =
               EntryLocals = entryLocals
               ExitLocals = locals
               Nodes = List.ofSeq nodes }
+        and visitLoopBody (before: LangType list) (locals: Map<string, LangType>) (bound: (string * LangType) list) (body: Expr list) (loopSpan: SourceSpan) =
+            let entryLocals = bound |> List.fold (fun found (name, ty) -> Map.add name ty found) locals
+            loopContexts.Push(Some before)
+            let bodyTyped = try visit before entryLocals body finally loopContexts.Pop() |> ignore
+            if bodyTyped.ExitStack <> before then
+                Diagnostics.raiseError "TYPE_LOOP_BODY_STACK" "A loop body must not leave values on the stack." (Some wordName) (Some loopSpan) (before |> List.map Types.format) (bodyTyped.ExitStack |> List.map Types.format)
+            if locals |> Map.exists (fun name ty -> bodyTyped.ExitLocals.TryFind name <> Some ty) then
+                Diagnostics.raiseError "TYPE_LOOP_BODY_LOCALS" "A loop body must keep every outer local with its type." (Some wordName) (Some loopSpan) [] []
+            bodyTyped
         { InferredBody = visit initialStack initialLocals body
           Dependencies = dependencies
           Effects = effects }
@@ -687,7 +735,7 @@ module Compiler =
                 | MapList(name, _) | FilterList(name, _) | EachList(name, _) | FoldList(name, _) | MapListWithContext(name, _) -> Set.add name found
                 | If(thenBranch, elseBranch, _) | MatchOption(_, thenBranch, elseBranch, _) ->
                     Set.union found (Set.union (collect thenBranch) (collect elseBranch))
-                | Scope(innerBody, _) | Compact(innerBody, _) -> Set.union found (collect innerBody)
+                | Scope(innerBody, _) | Compact(innerBody, _) | ForRange(_, innerBody, _) | ForList(_, _, innerBody, _) -> Set.union found (collect innerBody)
                     | MatchResult(_, _, thenBranch, elseBranch, _) -> Set.union found (Set.union (collect thenBranch) (collect elseBranch))
                     | MatchEnum(cases, _) -> cases |> List.fold (fun found (_, branch) -> Set.union found (collect branch)) found
                 | _ -> found) Set.empty
@@ -763,6 +811,11 @@ module Compiler =
                     if List.isEmpty elseBranch then "if\n" + thenText + "\nend" else "if\n" + thenText + "\nelse\n" + elseText + "\nend"
                 | Scope(innerBody, _) -> "scope\n" + sourceExpressions innerBody + "\nend"
                 | Compact(innerBody, _) -> "compact\n" + sourceExpressions innerBody + "\nend"
+                | Assign(name, _) -> "assign " + name
+                | ForRange(name, innerBody, _) -> "for-range " + name + "\n" + sourceExpressions innerBody + "\nend"
+                | ForList(name, index, innerBody, _) -> "for-list " + name + (index |> Option.map (fun value -> " " + value) |> Option.defaultValue "") + "\n" + sourceExpressions innerBody + "\nend"
+                | Break _ -> "break"
+                | Continue _ -> "continue"
                 | MatchOption(name, someBranch, noneBranch, _) ->
                     "match-option\nsome " + name + "\n" + sourceExpressions someBranch + "\nnone\n" + sourceExpressions noneBranch + "\nend"
                 | MatchResult(okName, errorName, okBranch, errorBranch, _) ->
@@ -1072,6 +1125,12 @@ module Compiler =
                 | If(thenBranch, elseBranch, span) -> appendText "if"; appendExpressions thenBranch; appendExpressions elseBranch; appendSpan span
                 | Scope(innerBody, span) -> appendText "scope"; appendExpressions innerBody; appendSpan span
                 | Compact(innerBody, span) -> appendText "compact"; appendExpressions innerBody; appendSpan span
+                | Assign(name, span) -> appendText "assign"; appendText name; appendSpan span
+                | ForRange(name, innerBody, span) -> appendText "for-range"; appendText name; appendExpressions innerBody; appendSpan span
+                | ForList(name, index, innerBody, span) ->
+                    appendText "for-list"; appendText name; appendText (index |> Option.defaultValue ""); appendExpressions innerBody; appendSpan span
+                | Break span -> appendText "break"; appendSpan span
+                | Continue span -> appendText "continue"; appendSpan span
                 | MatchOption(name, someBranch, noneBranch, span) -> appendText "match-option"; appendText name; appendExpressions someBranch; appendExpressions noneBranch; appendSpan span
                 | MatchResult(okName, errorName, okBranch, errorBranch, span) ->
                     appendText "match-result"
@@ -1343,7 +1402,8 @@ module Compiler =
         | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
         | MapList(_, span) | FilterList(_, span) | EachList(_, span) | FoldList(_, span) | MapListWithContext(_, span)
         | Let(_, span) | Load(_, span) | If(_, _, span) | Scope(_, span) | Compact(_, span)
-        | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) | MatchEnum(_, span) -> span
+        | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) | MatchEnum(_, span)
+        | Assign(_, span) | ForRange(_, _, span) | ForList(_, _, _, span) | Break span | Continue span -> span
 
     let private expressionKind = function
         | Push _ -> "constant"
@@ -1369,6 +1429,11 @@ module Compiler =
         | MatchOption _ -> "match-option"
         | MatchResult _ -> "match-result"
         | MatchEnum _ -> "match-enum"
+        | Assign _ -> "assign-local"
+        | ForRange _ -> "for-range"
+        | ForList _ -> "for-list"
+        | Break _ -> "break"
+        | Continue _ -> "continue"
 
     let private zeroWidthMarkers (expressions: Expr list) =
         let rec collect (body: Expr list) =
@@ -1378,7 +1443,7 @@ module Compiler =
                 let found = if span.Length = 0 then Set.add span found else found
                 match expression with
                 | If(thenBranch, elseBranch, _) -> Set.union found (Set.union (collect thenBranch) (collect elseBranch))
-                | Scope(innerBody, _) | Compact(innerBody, _) -> Set.union found (collect innerBody)
+                | Scope(innerBody, _) | Compact(innerBody, _) | ForRange(_, innerBody, _) | ForList(_, _, innerBody, _) -> Set.union found (collect innerBody)
                 | MatchOption(_, someBranch, noneBranch, _) -> Set.union found (Set.union (collect someBranch) (collect noneBranch))
                 | MatchResult(_, _, okBranch, errorBranch, _) -> Set.union found (Set.union (collect okBranch) (collect errorBranch))
                 | MatchEnum(cases, _) -> cases |> List.fold (fun found (_, branch) -> Set.union found (collect branch)) found
@@ -1597,6 +1662,29 @@ module Compiler =
                             match node.ChildBodies with
                             | [ compactBody ] -> IrOperation.Compact(lowerBlock env compactBody)
                             | _ -> irFailure "IR_SCOPE_ANNOTATION_INVALID" "Compact lowering requires exactly one checked child block." (Some ownerName) (Some span) [ "1 child block" ] [ string node.ChildBodies.Length ]
+                        | Assign(name, _) ->
+                            match env.TryFind name with
+                            | Some slot -> IrOperation.AssignLocal slot
+                            | None -> irFailure "IR_LOCAL_SLOT_MISSING" $"Local '{name}' has no compiler-assigned slot." (Some ownerName) (Some span) [] [ name ]
+                        | Break _ -> IrOperation.Break
+                        | Continue _ -> IrOperation.Continue
+                        | ForRange(indexName, _, _) ->
+                            match node.ChildBodies with
+                            | [ body ] ->
+                                let indexSlot = freshSlot indexName
+                                IrOperation.ForRange(indexSlot, lowerBlock (Map.add indexName indexSlot env) body)
+                            | _ -> irFailure "IR_LOOP_ANNOTATION_INVALID" "Range loop lowering requires one checked body." (Some ownerName) (Some span) [ "1 child block" ] [ string node.ChildBodies.Length ]
+                        | ForList(itemName, indexName, _, _) ->
+                            match node.ChildBodies, List.last node.InputStack with
+                            | [ body ], TList itemType ->
+                                let itemSlot = freshSlot itemName
+                                let indexSlot = indexName |> Option.map freshSlot
+                                let bodyEnv =
+                                    match indexName, indexSlot with
+                                    | Some name, Some slot -> Map.add name slot (Map.add itemName itemSlot env)
+                                    | _ -> Map.add itemName itemSlot env
+                                IrOperation.ForList(irType ownerName (Some span) itemType, itemSlot, indexSlot, lowerBlock bodyEnv body)
+                            | _ -> irFailure "IR_LOOP_ANNOTATION_INVALID" "List loop lowering requires a checked List<T> and one body." (Some ownerName) (Some span) [ "List<T> with 1 child block" ] [ string node.ChildBodies.Length ]
                         | MatchOption(someName, _, _, _) ->
                             match node.ChildBodies, List.last node.InputStack with
                             | [ someBody; noneBody ], TOption itemType ->

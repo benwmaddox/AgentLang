@@ -211,6 +211,67 @@ negative literal (so `f(-1)` and `x - -1` both work), and `List<String>` or
 - The formatter writes one space around each operator and only the
   parentheses that precedence needs.
 
+## Loops and var
+
+Flow/2 has mutable locals and two loop forms. There is no `while`.
+
+```flow
+fn sum-evens(values: List<Int>, limit: Int) -> Int {
+    effects none
+    var total = 0
+    for value, index in values {
+        if index >= limit {
+            break
+        }
+        if value % 2 != 0 {
+            continue
+        }
+        total = total + value
+    }
+    total
+}
+```
+
+- `var name = value` declares a mutable local anywhere in a body. `name = value`
+  reassigns it. Only a `var` can be reassigned; assigning a `let`, a parameter,
+  a loop name or an unknown name fails (`FLOW_ASSIGN_IMMUTABLE`,
+  `FLOW_ASSIGN_UNKNOWN_LOCAL`). The new value must have the exact declared type
+  (`FLOW_ASSIGN_TYPE`). Like `let`, a `var` cannot shadow another local.
+- `for i in start..end { }` counts Int `i` from `start` up to `end - 1`. Both
+  bounds are Int expressions evaluated once, before the loop. The loop is empty
+  when `end <= start`. `..` needs no spaces, but `n-1` is one name, so write
+  `0..n - 1`.
+- `for item in items { }` visits a `List<T>` in order. `for item, i in items { }`
+  also binds the Int index `i`.
+- Loop names are immutable and scoped to the body. A loop is a statement and
+  produces no value. A value a body statement computes is discarded. Use a
+  `var` declared before the loop to carry results out. `return` is rejected in
+  a loop body (`FLOW_RETURN_IN_LOOP`).
+- `break` leaves the innermost loop. `continue` starts its next iteration. Both
+  must be the last statement of their block (`FLOW_LOOP_CONTROL_NOT_LAST`).
+  Outside a loop body, or inside a `compact { }` within one, they fail with
+  `FLOW_LOOP_CONTROL_OUTSIDE_LOOP`.
+- An `if` whose branches both produce nothing is a statement. Its `else` may be
+  omitted: `if done { break }`. Loops also work inside test bodies.
+- **Budget.** Loops may be unbounded in source, but each invocation of an entry
+  point may run at most 10,000,000 loop iterations in total, counted across all
+  loops and called words (`IrLoops.DefaultIterationBudget` in `TypedIR.fs`). One
+  more iteration fails with `RUNTIME_LOOP_BUDGET_EXCEEDED`, in the interpreter
+  and in native code alike.
+- **Memory (owning AOT).** A loop is a real native back edge. Everything an
+  iteration allocates sits above the loop's arena mark. At the end of each
+  iteration (`continue` included), the `var`s the body assigned are moved down
+  to the mark, and the rest of the iteration is released. A loop that only
+  updates an Int `var` therefore uses constant arena. A loop that grows a
+  String `var` peaks near three times the final value, not at the sum of all
+  intermediates. The compiler must prove that only those `var`s refer to an
+  iteration's allocations, as it does for `compact { }`. When the body passes an
+  allocation to an effect that may keep it, iterations are not reclaimed. The
+  loop still runs correctly, but its memory grows.
+- Loops and `var` are supported by the interpreter and the owning-stack
+  backend. The older arena LLVM backend rejects them
+  (`IR_LLVM_LOOP_UNSUPPORTED`).
+
 ## Names
 
 A word name is a dotted path of segments, such as `campfire.views.room-page`;

@@ -4315,6 +4315,72 @@ void AL_OWNING_PROFILE_IMPL(al_owning_duplicate)(
 #endif
 }
 
+/* Loop back edge (Flow `for`): the count loop-carried values described by
+ * descriptors (offset, extent, payload, owner_end quads) that lie at or above
+ * mark are copied above the cursor, then moved as one block down to mark, and
+ * everything above them is released. Values below mark are left in place. The
+ * descriptors are rewritten in place. Arena values are position independent, so
+ * a byte move relocates them; copying through the top keeps aliased or
+ * overlapping values correct. Peak use is bounded by twice the live values. */
+void al_owning_loop_relocate(al_owning_stack_context *ctx, uint32_t mark,
+                             uint32_t count, uint32_t *descriptors) {
+  uint32_t index;
+  uint32_t top;
+  uint64_t total = 0u;
+  uint32_t written = 0u;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return;
+  if (mark > ctx->cursor_bytes || (count != 0u && descriptors == 0)) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, 0u, mark,
+                          ctx->cursor_bytes);
+    return;
+  }
+  top = ctx->cursor_bytes;
+  for (index = 0u; index < count; ++index) {
+    const uint32_t offset = descriptors[index * 4u];
+    const uint32_t extent = descriptors[index * 4u + 1u];
+    if (offset < mark)
+      continue;
+    if (!al_owning_range_valid(ctx, offset, extent) || offset > top ||
+        extent > top - offset) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, 0u, offset,
+                            top);
+      return;
+    }
+    total += extent;
+  }
+  if (total != 0u) {
+    if (total > (uint64_t)(UINT32_MAX - top)) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_STACK_CAPACITY, 0u,
+                            UINT32_MAX, ctx->stack_capacity_bytes);
+      return;
+    }
+    if (al_owning_reserve_to(ctx, top + (uint32_t)total, 0u) != 0)
+      return;
+    for (index = 0u; index < count; ++index) {
+      const uint32_t offset = descriptors[index * 4u];
+      const uint32_t extent = descriptors[index * 4u + 1u];
+      if (offset < mark)
+        continue;
+      if (al_owning_check_initialized(ctx, offset, extent) != 0)
+        return;
+      al_owning_bytes_copy(ctx->stack_data + top + written,
+                           ctx->stack_data + offset, extent);
+      descriptors[index * 4u] = mark + written;
+      descriptors[index * 4u + 3u] = mark + written + extent;
+      written += extent;
+    }
+    al_owning_stack_bytes_move(ctx, mark, top, written);
+    al_owning_mark(ctx, mark, written, 1, 0);
+    ctx->move_bytes += written;
+  }
+  al_owning_release_to(ctx, mark + written, 0u, 0u, 0u);
+  /* Live-payload accounting only grows; released iterations cannot hold
+   * more live payload than the bytes that remain below the cursor. */
+  if (ctx->live_payload_bytes > ctx->cursor_bytes)
+    ctx->live_payload_bytes = ctx->cursor_bytes;
+}
+
 #if AL_OWNING_DETAILED_PROFILE
 void al_owning_duplicate(al_owning_stack_context *ctx,
                          uint32_t destination_offset, uint32_t source_offset,

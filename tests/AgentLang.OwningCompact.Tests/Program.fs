@@ -28,7 +28,8 @@ let private dispatch (engine: Runtime.Engine) operation (args: JsonObject) =
 let private words =
     [ "native.compact.has-name"; "native.compact.label"; "native.compact.plain-label"; "native.compact.map-labels"
       "native.compact.map-plain-labels"; "native.compact.keep"; "native.compact.first-name"; "native.compact.nested"
-      "native.compact.unproven" ]
+      "native.compact.unproven"
+      "native.loop.count"; "native.loop.build"; "native.loop.labels"; "native.loop.swap"; "native.loop.nested"; "native.loop.spin" ]
 
 let private prepare (engine: Runtime.Engine) =
     let args = JsonObject()
@@ -135,7 +136,52 @@ let private run () =
                 None
             with LanguageException diagnostic -> Some diagnostic.Code
         check $"unproven/{optimization}: a compact block outside the owning subset is still rejected at compile time ({rejected})" (rejected.IsSome)
+    // Loops (report 272): each back edge relocates the vars the body assigned to
+    // the loop mark and releases the iteration, so arena use does not grow with
+    // the iteration count. Without reclamation these runs exceed the 1 MiB arena.
+    let loopPeaks = JsonObject()
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        let peak word n =
+            let _, result = execute optimization word [ TInt ] [ (if word = "native.loop.build" then TString else TInt) ] [ IntValue n ]
+            loopPeaks[$"{word}/{n}/{optimization}"] <- JsonValue.Create(result.Metrics.ReservedStackBytes)
+            result.Metrics.ReservedStackBytes
+        let countSmall = peak "native.loop.count" 1_000L
+        let countLarge = peak "native.loop.count" 100_000L
+        check $"loop count/{optimization}: an Int var loop uses O(1) arena (N=1000: {countSmall} B, N=100000: {countLarge} B)" (countLarge = countSmall)
+        let buildSmall = peak "native.loop.build" 1_000L
+        let buildLarge = peak "native.loop.build" 4_000L
+        // The final String holds 4000 bytes; the sum of all intermediates is ~8 MB.
+        check $"loop build/{optimization}: a String var loop uses arena proportional to the final value (N=1000: {buildSmall} B, N=4000: {buildLarge} B)" (
+            buildLarge > buildSmall && buildLarge < 4 * 4_000 + 4_096 && buildLarge - buildSmall < 4 * 3_000 + 1_024)
+        let labels, _ = execute optimization "native.loop.labels" [ TList TString ] [ TString ] [ strings [ "a"; "skip"; "b"; "stop"; "c" ] ]
+        check $"loop labels/{optimization}: break, continue and the index work natively" (labels = [ StringValue "0a2b" ])
+        let swapped, _ = execute optimization "native.loop.swap" [ TInt ] [ TString ] [ IntValue 501L ]
+        check $"loop swap/{optimization}: aliased vars relocate correctly" (swapped.Length = 1)
+        let nested, _ = execute optimization "native.loop.nested" [ TInt ] [ TInt ] [ IntValue 300L ]
+        check $"loop nested/{optimization}: nested loops with break" (nested = [ IntValue 45150L ])
+    // The per-invocation iteration budget fails with the same code natively.
+    let spinBody = engine.ExportVerifiedFlowEntryPoint("native.loop.spin", [ TInt ], [ TInt ])
+    let spinBound = engine.BindFlowEntryPoint("native.loop.spin", [ TInt ], [ TInt ])
+    let budget = int64 IrLoops.DefaultIterationBudget
+    let interpretedCode =
+        match spinBound.Invoke([ IntValue(budget + 1L) ]) with
+        | Ok _ -> "ok"
+        | Error diagnostic -> diagnostic.Code
+    check $"loop budget: the interpreter fails past the budget ({interpretedCode})" (interpretedCode = IrLoops.budgetExceededCode)
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native = OwningStackAot.compile toolchain optimization (Path.Combine(runRoot, "native", string optimization, "loop-budget")) spinBody
+        let atBudget = native.Execute([ IntValue budget ], 1_048_576, 1_048_576)
+        check $"loop budget/{optimization}: exactly the budget runs natively" (atBudget.Values = [ IntValue budget ])
+        let nativeCode =
+            try
+                native.Execute([ IntValue(budget + 1L) ], 1_048_576, 1_048_576) |> ignore
+                "ok"
+            with
+            | :? OwningStackExecutionException as error -> error.Diagnostic.Code
+            | LanguageException diagnostic -> diagnostic.Code
+        check $"loop budget/{optimization}: native fails with the interpreter's code ({nativeCode})" (nativeCode = interpretedCode)
     let receipt = JsonObject()
+    receipt["loopPeakBytes"] <- loopPeaks
     receipt["status"] <- JsonValue.Create("pass")
     receipt["assertionCount"] <- JsonValue.Create(assertionCount.Value)
     receipt["metrics"] <- metrics

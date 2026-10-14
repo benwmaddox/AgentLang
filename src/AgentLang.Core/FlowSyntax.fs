@@ -62,6 +62,12 @@ type FlowAstPathSegment =
     | TestOverrideDefinition of int
     | BinaryLeft
     | BinaryRight
+    | VarInitializer
+    | AssignValue
+    | ForRangeStart
+    | ForRangeEnd
+    | ForItems
+    | ForBodyStatement of int
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type FlowAstPath = FlowAstPath of FlowAstPathSegment list
@@ -162,6 +168,16 @@ and [<RequireQualifiedAccess>] FlowStatement =
     | LetMany of (string * SourceSpan) list * FlowExpression * SourceSpan
     | Evaluate of FlowExpression
     | Return of FlowExpression list * SourceSpan
+    /// `var name = value`: a mutable local (Flow/2).
+    | Var of string * FlowExpression * SourceSpan
+    /// `name = value`: reassigns a `var` local with a value of its exact type.
+    | Assign of string * FlowExpression * SourceSpan
+    /// `for index in start..end { body }`: start inclusive, end exclusive.
+    | ForRange of string * FlowExpression * FlowExpression * FlowStatement list * SourceSpan
+    /// `for item in items { body }` or `for item, index in items { body }`.
+    | ForEach of string * string option * FlowExpression * FlowStatement list * SourceSpan
+    | Break of SourceSpan
+    | Continue of SourceSpan
 
 and FlowCaseBlock =
     { Statements: FlowStatement list
@@ -403,20 +419,38 @@ module FlowStructure =
                 elif not (names.Add name) then
                     Diagnostics.raiseError "FLOW_DESTRUCTURE_DUPLICATE" $"Destructuring local '{name}' is repeated." None (Some nameSpan) [] [ name ]
 
-        let scheduleStatement depth statement =
+        let requireLoopSyntax span =
+            if syntaxVersion <> 2 then
+                Diagnostics.raiseError "FLOW_SYNTAX_VERSION" "Loops and var locals require Flow/2 syntax." owner (Some span) [ "Flow/2" ] [ $"Flow/{syntaxVersion}" ]
+        let rec scheduleStatement depth statement =
             match statement with
             | FlowStatement.Let(_, value, _)
             | FlowStatement.LetMany(_, value, _)
             | FlowStatement.Evaluate value -> schedule (ExpressionNode(value, depth)) (expressionSpan value)
             | FlowStatement.Return(values, _) ->
                 for value in values do schedule (ExpressionNode(value, depth)) (expressionSpan value)
-        let scheduleArguments depth arguments =
+            | FlowStatement.Var(_, value, span)
+            | FlowStatement.Assign(_, value, span) ->
+                requireLoopSyntax span
+                schedule (ExpressionNode(value, depth)) (expressionSpan value)
+            | FlowStatement.ForRange(_, start, finish, body, span) ->
+                requireLoopSyntax span
+                schedule (ExpressionNode(start, depth)) (expressionSpan start)
+                schedule (ExpressionNode(finish, depth)) (expressionSpan finish)
+                scheduleStatements (depth + 1) body
+            | FlowStatement.ForEach(_, _, items, body, span) ->
+                requireLoopSyntax span
+                schedule (ExpressionNode(items, depth)) (expressionSpan items)
+                scheduleStatements (depth + 1) body
+            | FlowStatement.Break span
+            | FlowStatement.Continue span -> requireLoopSyntax span
+        and scheduleArguments depth arguments =
             for argument in arguments do
                 match argument with
                 | FlowArgument.Positional expression -> schedule (ExpressionNode(expression, depth)) (expressionSpan expression)
                 | FlowArgument.Named(_, expression, _) -> schedule (ExpressionNode(expression, depth)) (expressionSpan expression)
                 | FlowArgument.WordReference reference -> validateWordReference reference
-        let scheduleStatements depth statements =
+        and scheduleStatements depth statements =
             let validateStatement isTerminal statement =
                 match statement with
                 | FlowStatement.LetMany(bindings, _, span) -> validateBindings bindings span
@@ -661,9 +695,13 @@ module FlowSource =
             let lines = ResizeArray<string>()
             lines.Add(prefix + "if " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals condition) + " {")
             renderStatements syntaxVersion locals (depth + 1) thenBranch |> fst |> List.iter lines.Add
-            lines.Add(prefix + "} else {")
-            renderStatements syntaxVersion locals (depth + 1) elseBranch |> fst |> List.iter lines.Add
-            lines.Add(prefix + "}")
+            // A statement if (Flow/2) may omit an empty else block.
+            if List.isEmpty elseBranch && syntaxVersion = 2 then
+                lines.Add(prefix + "}")
+            else
+                lines.Add(prefix + "} else {")
+                renderStatements syntaxVersion locals (depth + 1) elseBranch |> fst |> List.iter lines.Add
+                lines.Add(prefix + "}")
             String.concat "\n" lines
         | FlowExpression.MatchOption(scrutinee, someCase, noneCase, _) ->
             renderMatchBlock syntaxVersion locals depth scrutinee
@@ -796,8 +834,26 @@ module FlowSource =
                             |> List.map (renderInlineExpression syntaxVersion locals >> indentContinuationLines (if syntaxVersion = 2 then depth else 0))
                             |> String.concat ", "
                         indent depth + "return (" + renderedValues + ")"
+                    | FlowStatement.Var(name, value, _) ->
+                        indent depth + "var " + name + " = " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals value)
+                    | FlowStatement.Assign(name, value, _) ->
+                        indent depth + name + " = " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals value)
+                    | FlowStatement.ForRange(index, start, finish, body, _) ->
+                        let header =
+                            indent depth + "for " + index + " in "
+                            + renderInlineExpression syntaxVersion locals start + ".." + renderInlineExpression syntaxVersion locals finish + " {"
+                        let bodyLines = renderStatements syntaxVersion (Set.add index locals) (depth + 1) body |> fst
+                        String.concat "\n" ([ header ] @ bodyLines @ [ indent depth + "}" ])
+                    | FlowStatement.ForEach(item, index, items, body, _) ->
+                        let names = item + (index |> Option.map (fun value -> ", " + value) |> Option.defaultValue "")
+                        let header = indent depth + "for " + names + " in " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals items) + " {"
+                        let bodyLocals = Set.add item locals |> fun found -> index |> Option.map (fun value -> Set.add value found) |> Option.defaultValue found
+                        let bodyLines = renderStatements syntaxVersion bodyLocals (depth + 1) body |> fst
+                        String.concat "\n" ([ header ] @ bodyLines @ [ indent depth + "}" ])
+                    | FlowStatement.Break _ -> indent depth + "break"
+                    | FlowStatement.Continue _ -> indent depth + "continue"
                 match statement with
-                | FlowStatement.Let(name, _, _) -> locals <- Set.add name locals
+                | FlowStatement.Let(name, _, _) | FlowStatement.Var(name, _, _) -> locals <- Set.add name locals
                 | FlowStatement.LetMany(bindings, _, _) -> locals <- Set.union (bindings |> List.map fst |> Set.ofList) locals
                 | _ -> ()
                 let suffix = if syntaxVersion = 1 && index < statements.Length - 1 then ";" else ""

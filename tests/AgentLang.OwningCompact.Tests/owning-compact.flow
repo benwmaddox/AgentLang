@@ -116,3 +116,100 @@ test native.compact.unproven/text {
     native.compact.unproven("ok")
     => value "ok"
 }
+
+fn native.loop.count(n: Int) -> Int {
+    effects none
+    var total = 0
+    for i in 0..n {
+        total = total + i % 7
+    }
+    total
+}
+
+fn native.loop.build(n: Int) -> String {
+    effects none
+    var text = ""
+    for i in 0..n {
+        text = string.concat(text, "x")
+    }
+    text
+}
+
+fn native.loop.labels(items: List<String>) -> String {
+    effects none
+    var text = ""
+    for item, index in items {
+        if item == "skip" {
+            continue
+        }
+        if item == "stop" {
+            break
+        }
+        let label = string.concat(int.to-string(index), item)
+        text = string.concat(text, label)
+    }
+    text
+}
+
+fn native.loop.swap(n: Int) -> String {
+    effects none
+    var left = "a"
+    var right = "b"
+    for i in 0..n {
+        let previous = left
+        left = string.concat(right, ".")
+        right = previous
+    }
+    string.concat(left, right)
+}
+
+fn native.loop.nested(n: Int) -> Int {
+    effects none
+    var count = 0
+    for i in 0..n {
+        for j in 0..n {
+            if j > i {
+                break
+            }
+            count = count + 1
+        }
+    }
+    count
+}
+
+fn native.loop.spin(n: Int) -> Int {
+    effects none
+    for i in 0..n {
+    }
+    n
+}
+
+test native.loop.count/ten {
+    native.loop.count(10)
+    => value 24
+}
+
+test native.loop.build/three {
+    native.loop.build(3)
+    => value "xxx"
+}
+
+test native.loop.labels/control {
+    native.loop.labels(["a", "skip", "b", "stop", "c"])
+    => value "0a2b"
+}
+
+test native.loop.swap/three {
+    native.loop.swap(3)
+    => value "b..a."
+}
+
+test native.loop.nested/four {
+    native.loop.nested(4)
+    => value 10
+}
+
+test native.loop.spin/five {
+    native.loop.spin(5)
+    => value 5
+}

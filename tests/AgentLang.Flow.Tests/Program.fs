@@ -6105,10 +6105,110 @@ let private testFlow2ExpectStatements () =
     check "a call into an expect namespace is not an expect statement"
         (match namespaceCall.Body with [ FlowStatement.Evaluate(FlowExpression.Equality _) ] -> true | _ -> false)
 
+let private testFlow2Loops () =
+    let parseWord2 label source =
+        match FlowParser.parseWordWithVersion 2 ("<flow2-loops-" + label + ">") source with
+        | Ok word -> word
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let context = loweringContext [] Map.empty
+    let runWith label (source: string) (arguments: Literal list) =
+        let word = parseWord2 label source
+        let compiled = FlowLowering.compileWord context (WordId("flow2-loop-" + label)) word
+        let invocation =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext compiled.Program ("flow2-loop-invoke-" + label) []
+                ((arguments |> List.map (fun literal -> Push(literal, sourceSpan))) @ [ Call(word.Name, sourceSpan) ])
+                compiled.Context.SourceOrigins
+        IrInterpreter.executeBody (host (ResizeArray())) ("flow2-loop-" + label) invocation
+    let int label expected source arguments = equal label [ IntValue expected ] (runWith label source arguments)
+
+    let sumSource = "fn loop.sum(n: Int) -> Int {\n    var total = 0\n    for i in 0..n {\n        total = total + i\n    }\n    total\n}"
+    int "sum 0..10" 45L sumSource [ LInt 10L ]
+    int "sum 0..1000" 499500L sumSource [ LInt 1000L ]
+    int "empty range (end == start)" 0L sumSource [ LInt 0L ]
+    int "empty range (end < start)" 0L sumSource [ LInt -5L ]
+    int "range bounds are expressions" 6L "fn loop.bounds(n: Int) -> Int {\n    var total = 0\n    for i in n - 3..n + 1 {\n        total = total + 1\n    }\n    total + 2\n}" [ LInt 7L ]
+    int "nested loops" 45L
+        "fn loop.pairs(n: Int) -> Int {\n    var count = 0\n    for i in 0..n {\n        for j in 0..n {\n            if i < j {\n                count = count + 1\n            }\n        }\n    }\n    count\n}" [ LInt 10L ]
+    int "for-in over a list" 60L "fn loop.items() -> Int {\n    var total = 0\n    for x in [10, 20, 30] {\n        total = total + x\n    }\n    total\n}" []
+    int "for-in with an index" 80L "fn loop.indexed() -> Int {\n    var total = 0\n    for x, i in [10, 20, 30] {\n        total = total + x * i\n    }\n    total\n}" []
+    int "for-in over an empty list" 7L "fn loop.none() -> Int {\n    var total = 7\n    for x in list.empty<Int>() {\n        total = x\n    }\n    total\n}" []
+    int "break and continue" 25L
+        "fn loop.odd() -> Int {\n    var total = 0\n    for i in 0..100 {\n        if i % 2 == 0 {\n            continue\n        }\n        if i > 9 {\n            break\n        }\n        total = total + i\n    }\n    total\n}" []
+    int "break leaves only the inner loop" 30L
+        "fn loop.inner() -> Int {\n    var total = 0\n    for i in 0..10 {\n        for j in 0..10 {\n            if j == 3 {\n                break\n            }\n            total = total + 1\n        }\n    }\n    total\n}" []
+    int "continue in a list loop" 40L
+        "fn loop.skip() -> Int {\n    var total = 0\n    for x in [10, 20, 30] {\n        if x == 20 {\n            continue\n        } else {\n        }\n        total = total + x\n    }\n    total\n}" []
+    equal "String var building" [ StringValue "a-b-c-" ]
+        (runWith "concat" "fn loop.concat() -> String {\n    var text = \"\"\n    for part in [\"a\", \"b\", \"c\"] {\n        text = string.concat(string.concat(text, part), \"-\")\n    }\n    text\n}" [])
+    int "var outside loops" 12L "fn loop.var() -> Int {\n    var x = 5\n    x = x + 1\n    x = x * 2\n    x\n}" []
+    int "lets inside a loop body are per-iteration" 30L
+        "fn loop.lets() -> Int {\n    var total = 0\n    for i in 0..5 {\n        let doubled = i * 2\n        var step = doubled\n        step = step + 1\n        total = total + step\n    }\n    total + 5\n}" []
+    int "value statements in a loop body are discarded" 3L
+        "fn loop.discard() -> Int {\n    var total = 0\n    for i in 0..3 {\n        total = total + 1\n        int.max(i, 2)\n    }\n    total\n}" []
+    int "statement if outside loops" 2L "fn loop.stmtif(flag: Bool) -> Int {\n    var x = 1\n    if flag {\n        x = 2\n    }\n    x\n}" [ LBool true ]
+
+    // Static errors.
+    let compileError label code source =
+        expectLanguageError label code (fun () -> FlowLowering.compileWord context (WordId("flow2-loop-err-" + label)) (parseWord2 label source) |> ignore)
+    compileError "assign changes the type" "FLOW_ASSIGN_TYPE" "fn loop.bad() -> Int {\n    var x = 0\n    x = \"a\"\n    x\n}"
+    compileError "assign a let" "FLOW_ASSIGN_IMMUTABLE" "fn loop.bad() -> Int {\n    let x = 0\n    x = 1\n    x\n}"
+    compileError "assign a parameter" "FLOW_ASSIGN_IMMUTABLE" "fn loop.bad(x: Int) -> Int {\n    x = 1\n    x\n}"
+    compileError "assign a loop index" "FLOW_ASSIGN_IMMUTABLE" "fn loop.bad() -> Int {\n    var t = 0\n    for i in 0..3 {\n        i = 2\n    }\n    t\n}"
+    compileError "assign an undeclared name" "FLOW_ASSIGN_UNKNOWN_LOCAL" "fn loop.bad() -> Int {\n    y = 1\n    2\n}"
+    compileError "break outside a loop" "FLOW_LOOP_CONTROL_OUTSIDE_LOOP" "fn loop.bad() -> Int {\n    var x = 0\n    if true {\n        break\n    }\n    x\n}"
+    compileError "continue outside a loop" "FLOW_LOOP_CONTROL_OUTSIDE_LOOP" "fn loop.bad() -> Int {\n    continue\n    1\n}"
+    compileError "break inside compact inside a loop" "FLOW_LOOP_CONTROL_OUTSIDE_LOOP"
+        "fn loop.bad() -> Int {\n    var x = 0\n    for i in 0..3 {\n        x = compact {\n            break\n            1\n        }\n    }\n    x\n}"
+    compileError "statements after break" "FLOW_LOOP_CONTROL_NOT_LAST" "fn loop.bad() -> Int {\n    var x = 0\n    for i in 0..3 {\n        break\n        x = 1\n    }\n    x\n}"
+    compileError "range bounds must be Int" "FLOW_LOOP_RANGE_TYPE" "fn loop.bad() -> Int {\n    var x = 0\n    for i in 0..\"a\" {\n        x = i\n    }\n    x\n}"
+    compileError "for-in needs a list" "FLOW_LOOP_ITEMS_TYPE" "fn loop.bad() -> Int {\n    var x = 0\n    for i in 5 {\n        x = i\n    }\n    x\n}"
+    compileError "loop names cannot shadow" "FLOW_LOCAL_REBOUND" "fn loop.bad(i: Int) -> Int {\n    var x = 0\n    for i in 0..3 {\n        x = i\n    }\n    x\n}"
+    compileError "loop locals do not escape" "FLOW_UNKNOWN_LOCAL" "fn loop.bad() -> Int {\n    for i in 0..3 {\n    }\n    i\n}"
+    compileError "var cannot rebind" "FLOW_LOCAL_REBOUND" "fn loop.bad() -> Int {\n    var x = 0\n    var x = 1\n    x\n}"
+    expectError "loops are Flow/2 only" "FLOW_SYNTAX_VERSION"
+        (FlowParser.parseWordWithVersion 1 "<flow1-loop>" "fn loop.v1() -> Int {\n    var x = 0;\n    x\n}") |> ignore
+
+    // Runtime budget: exactly the budget passes; one more iteration fails.
+    let budget = int64 IrLoops.DefaultIterationBudget
+    // The interpreter spends about a microsecond per empty iteration, so these take seconds.
+    let budgetLoop = "fn loop.budget(n: Int) -> Int {\n    for i in 0..n {\n    }\n    1\n}"
+    int "a loop of exactly the budget runs" 1L budgetLoop [ LInt budget ]
+    let overBudget = captureLanguageError "a loop beyond the budget fails" IrLoops.budgetExceededCode (fun () -> runWith "over" budgetLoop [ LInt(budget + 1L) ] |> ignore)
+    check "the budget diagnostic names the limit" (overBudget.Message.Contains(string IrLoops.DefaultIterationBudget, StringComparison.Ordinal))
+    int "the budget is per invocation" 1L budgetLoop [ LInt budget ]
+
+    // Statement-if detection is syntactic: deep value else-if chains stay linear.
+    let depth = 25
+    let chain =
+        let rec build level =
+            if level = depth then string level
+            else $"if n == {level} {{\n{level}\n}} else {{\n{build (level + 1)}\n}}"
+        "fn loop.chain(n: Int) -> Int {\n" + build 0 + "\n}"
+    let chainWatch = Diagnostics.Stopwatch.StartNew()
+    int "a 25-deep value else-if chain" 7L chain [ LInt 7L ]
+    check $"deep else-if chains compile quickly ({chainWatch.ElapsedMilliseconds} ms)" (chainWatch.ElapsedMilliseconds < 5000L)
+
+    // Formatter round-trip.
+    let canonical =
+        "fn loop.format(items: List<Int>, n: Int) -> Int {\n    var total = 0\n    for i in 0..n - 1 {\n        if i == 3 {\n            continue\n        }\n        total = total + i\n    }\n    for x, k in items {\n        if x > 100 {\n            break\n        }\n        total = total + x * k\n    }\n    for x in items {\n        total = total - x\n    }\n    total\n}"
+    let rendered = FlowSource.renderWord (parseWord2 "format" canonical)
+    check "loops render canonically" (rendered.Contains(canonical.Substring(canonical.IndexOf('{') + 1), StringComparison.Ordinal))
+    equal "loop rendering is stable" rendered (FlowSource.renderWord (parseWord2 "format2" rendered))
+    match (parseWord2 "ast" "fn loop.ast() -> Int {\n    var x = 0\n    for i in 0..10 {\n        x = i\n        break\n    }\n    x\n}").Body with
+    | [ FlowStatement.Var("x", _, _)
+        FlowStatement.ForRange("i", FlowExpression.Literal(LInt 0L, _), FlowExpression.Literal(LInt 10L, _), [ FlowStatement.Assign("x", _, _); FlowStatement.Break _ ], _)
+        FlowStatement.Evaluate(FlowExpression.Local("x", _)) ] -> check "loop AST shape" true
+    | other -> failwithf "unexpected loop AST: %A" other
+    match FlowParser.parseExpressionWithVersion 2 "<flow2-range-token>" "a.b" with
+    | Ok _ -> check "dotted names still parse beside the range token" true
+    | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+
 [<EntryPoint>]
 let main _ =
     testFlow2ExpectStatements ()
     testFlow2InfixOperators ()
+    testFlow2Loops ()
     testParserLocationsAndQualification ()
     testIterativeAstDepthLimit ()
     testFlow2Frontend ()

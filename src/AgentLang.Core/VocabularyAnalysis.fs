@@ -218,6 +218,20 @@ module VocabularyAnalysis =
             | Compact(innerBody, _) ->
                 writer.Write 15uy
                 writeList innerBody
+            | Assign(name, _) ->
+                writer.Write 16uy
+                writeString writer name
+            | ForRange(name, innerBody, _) ->
+                writer.Write 17uy
+                writeString writer name
+                writeList innerBody
+            | ForList(name, index, innerBody, _) ->
+                writer.Write 18uy
+                writeString writer name
+                writeString writer (index |> Option.defaultValue "")
+                writeList innerBody
+            | Break _ -> writer.Write 19uy
+            | Continue _ -> writer.Write 20uy
             | MatchOption(name, someBranch, noneBranch, _) ->
                 writer.Write 10uy
                 writeString writer name
@@ -447,7 +461,7 @@ module VocabularyAnalysis =
                         let rec expandExpressions expressions =
                             expressions |> List.fold (fun total expression -> addExpansion total (expandExpression nextActive expression)) emptyExpansion
                         and expandExpression activeWords = function
-                            | Push _ | ConstructContainer _ | Let _ | Load _ -> emptyExpansion
+                            | Push _ | ConstructContainer _ | Let _ | Load _ | Assign _ | Break _ | Continue _ -> emptyExpansion
                             | Call(target, _) ->
                                 let targetExpansion = expandWord activeWords target
                                 if index.Words[target].Builtin.IsNone then addAuthoredInvocation targetExpansion else targetExpansion
@@ -457,7 +471,7 @@ module VocabularyAnalysis =
                                 addCallbackTarget target targetExpansion
                             | If(thenBranch, elseBranch, _) ->
                                 addExpansion (expandExpressions thenBranch) (expandExpressions elseBranch)
-                            | Scope(innerBody, _) | Compact(innerBody, _) -> expandExpressions innerBody
+                            | Scope(innerBody, _) | Compact(innerBody, _) | ForRange(_, innerBody, _) | ForList(_, _, innerBody, _) -> expandExpressions innerBody
                             | MatchOption(_, someBranch, noneBranch, _) ->
                                 addExpansion (expandExpressions someBranch) (expandExpressions noneBranch)
                             | MatchResult(_, _, okBranch, errorBranch, _) ->

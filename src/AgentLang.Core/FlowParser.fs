@@ -212,7 +212,7 @@ module FlowParser =
                         && (offset + 2 >= source.Length || Char.IsWhiteSpace source[offset + 2])
                     let symbol =
                         match pair with
-                        | "->" | "::" | "=>" | "==" -> pair
+                        | "->" | "::" | "=>" | "==" | ".." -> pair
                         | "<=" | ">=" | "!=" | "&&" | "||" when spacedPair -> pair
                         | _ -> string source[offset]
                     for _ in symbol do advance ()
@@ -655,6 +655,49 @@ module FlowParser =
                 expect state ")" |> ignore
             else values.Add(parseExpressionState state)
             FlowStatement.Return(List.ofSeq values, sourceSpan state.File start (previous state))
+        elif state.SyntaxVersion <> 2 && ((start.Text = "var" && peekAt state 2 = Some "=") || (start.Text = "for" && peekAt state 2 = Some "in")) && isIdentifierToken state 1 then
+            fail state.File start.Line start.Column start.Text.Length "FLOW_SYNTAX_VERSION" "Loops and var locals require Flow/2 syntax."
+        elif state.SyntaxVersion = 2 && start.Text = "var" && peekAt state 2 = Some "=" && isIdentifierToken state 1 then
+            consume state |> ignore
+            let name = expectIdentifier state
+            expect state "=" |> ignore
+            let value = parseExpressionState state
+            state.LexicalLocals <- Set.add name.Text state.LexicalLocals
+            FlowStatement.Var(name.Text, value, sourceSpan state.File start (previous state))
+        elif state.SyntaxVersion = 2 && start.Text = "for" && isIdentifierToken state 1 && (peekAt state 2 = Some "in" || peekAt state 2 = Some ",") then
+            consume state |> ignore
+            let item = expectIdentifier state
+            let index =
+                if accept state "," then Some((expectIdentifier state).Text)
+                else None
+            expect state "in" |> ignore
+            let source = parseExpressionState state
+            let saved = state.LexicalLocals
+            let loopNames = item.Text :: (index |> Option.toList)
+            let body, finish =
+                if accept state ".." then
+                    if index.IsSome then tokenError state "FLOW_LOOP_RANGE_INDEX" "A range loop binds one Int name; use `for i in start..end`."
+                    let finish = parseExpressionState state
+                    state.LexicalLocals <- Set.union (Set.ofList loopNames) saved
+                    let body = try parseBlock state finally state.LexicalLocals <- saved
+                    body, Some finish
+                else
+                    state.LexicalLocals <- Set.union (Set.ofList loopNames) saved
+                    let body = try parseBlock state finally state.LexicalLocals <- saved
+                    body, None
+            let span = sourceSpan state.File start (previous state)
+            match finish with
+            | Some finish -> FlowStatement.ForRange(item.Text, source, finish, body, span)
+            | None -> FlowStatement.ForEach(item.Text, index, source, body, span)
+        elif state.SyntaxVersion = 2 && (start.Text = "break" || start.Text = "continue") && endsStatementAfter state then
+            consume state |> ignore
+            let span = sourceSpan state.File start (Some start)
+            if start.Text = "break" then FlowStatement.Break span else FlowStatement.Continue span
+        elif state.SyntaxVersion = 2 && isIdentifierToken state 0 && peekAt state 1 = Some "=" then
+            let name = consume state
+            expect state "=" |> ignore
+            let value = parseExpressionState state
+            FlowStatement.Assign(name.Text, value, sourceSpan state.File start (previous state))
         elif state.InTestBody && startsExpectStatement state then
             consume state |> ignore
             let checkedExpression = parseExpressionState state
@@ -666,6 +709,18 @@ module FlowParser =
         elif peek state = Some "expect" && startsExpectStatement state then
             fail state.File start.Line start.Column start.Text.Length "FLOW_EXPECT_OUTSIDE_TEST" "'expect' statements are available only as top-level statements of Flow/2 test bodies."
         else FlowStatement.Evaluate(parseExpressionState state)
+
+    and private isIdentifierToken state offset =
+        let index = state.Index + offset
+        index < state.Tokens.Length && state.Tokens[index].Kind = Identifier
+
+    /// `break`/`continue` are statements only when nothing follows on their line (other than `;` or `}`).
+    and private endsStatementAfter state =
+        let index = state.Index + 1
+        if index >= state.Tokens.Length then true
+        else
+            let next = state.Tokens[index]
+            next.Line <> state.Tokens[state.Index].Line || next.Text = ";" || next.Text = "}"
 
     /// `expect` begins a check only when an operand follows on the same line, so a local named `expect` still parses.
     and private startsExpectStatement state =
@@ -1012,8 +1067,12 @@ module FlowParser =
                     consume state |> ignore
                     let condition = parseExpressionState state
                     let thenBranch = parseBlock state
-                    expect state "else" |> ignore
-                    let elseBranch = parseBlock state
+                    // Flow/2 statement ifs may omit an empty else block.
+                    let elseBranch =
+                        if state.SyntaxVersion = 2 && peek state <> Some "else" then []
+                        else
+                            expect state "else" |> ignore
+                            parseBlock state
                     FlowExpression.If(condition, thenBranch, elseBranch, sourceSpan state.File first (previous state))
                 | Symbol, "[" ->
                     if state.SyntaxVersion <> 2 then

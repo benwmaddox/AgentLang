@@ -235,7 +235,7 @@ module Runtime =
                 | _ -> ())
             for instruction in block.Code do
                 match instruction.Operation with
-                | IrOperation.Scope inner | IrOperation.Compact inner -> visit owner inner
+                | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> visit owner inner
                 | IrOperation.If(left, right)
                 | IrOperation.MatchOption(_, left, right)
                 | IrOperation.MatchResult(_, _, left, right) -> visit owner left; visit owner right
@@ -271,7 +271,7 @@ module Runtime =
                     |> List.map namedTypeReferences
                     |> Set.unionMany
                     |> Set.union found
-                | Scope(body, _) | Compact(body, _) -> Set.union found (collect body)
+                | Scope(body, _) | Compact(body, _) | ForRange(_, body, _) | ForList(_, _, body, _) -> Set.union found (collect body)
                 | If(thenBranch, elseBranch, _)
                 | MatchOption(_, thenBranch, elseBranch, _) ->
                     Set.union found (Set.union (collect thenBranch) (collect elseBranch))
@@ -301,7 +301,7 @@ module Runtime =
                 | If(thenBranch, elseBranch, _)
                 | MatchOption(_, thenBranch, elseBranch, _) -> containsEnumMatch thenBranch || containsEnumMatch elseBranch
                 | MatchResult(_, _, okBranch, errorBranch, _) -> containsEnumMatch okBranch || containsEnumMatch errorBranch
-                | Scope(innerBody, _) | Compact(innerBody, _) -> containsEnumMatch innerBody
+                | Scope(innerBody, _) | Compact(innerBody, _) | ForRange(_, innerBody, _) | ForList(_, _, innerBody, _) -> containsEnumMatch innerBody
                 | _ -> false)
 
         let rec visit (pending: string list) (seenWords: Set<string>) (foundEnums: Set<string>) =
