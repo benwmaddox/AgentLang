@@ -64,6 +64,21 @@ record MessageRow {
     field updated-at: String
 }
 
+record MessageWithCreator {
+    field id: MessageId
+    field room-id: RoomId
+    field creator-id: UserId
+    field created-at-ms: Int
+    field updated-at-ms: Int
+    field client-message-id: String
+    field created-at: String
+    field creator-name: String
+    field creator-bio: String
+    field creator-updated-at: String
+    field creator-avatar-token: String
+    field body: Option<String>
+}
+
 record NewMessage {
     field room-id: RoomId
     field creator-id: UserId
