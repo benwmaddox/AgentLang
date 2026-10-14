@@ -46,7 +46,7 @@ let private run () =
     if not (defined["ok"].GetValue<bool>()) then failwith (defined.ToJsonString())
     for name in words do
         let response = engine.Dispatch("commit", wordArgs name)
-        check $"{name} commits: {response.ToJsonString()}" (response["ok"].GetValue<bool>() || response.ToJsonString().Contains("COMMIT_NOT_CANDIDATE", StringComparison.Ordinal))
+        check $"{name} commits" (response["ok"].GetValue<bool>() || response.ToJsonString().Contains("COMMIT_NOT_CANDIDATE", StringComparison.Ordinal))
 
     // An unpaired surrogate in a literal is a compile-time error.
     let literalEngine = Runtime.Engine(Path.Combine(runRoot, "literal"), Set.empty, fileSystemMode = FileSystemMode.Virtual)

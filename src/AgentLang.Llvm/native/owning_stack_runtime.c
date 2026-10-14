@@ -1081,7 +1081,7 @@ static int32_t al_owning_validate_type_descriptor(
   return 1;
 }
 
-static int32_t al_owning_validate_type_graph_inner(
+__attribute__((unused)) static int32_t al_owning_validate_type_graph_inner(
     al_owning_scan_view *view, const al_owning_layout *layout,
     uint32_t type_index, uint32_t depth,
     uint8_t state[AL_OWNING_LAYOUT_MAX_TYPES],
@@ -1398,7 +1398,7 @@ static int32_t al_owning_validate_type_graph_inner(
  * the header check caps type_count at AL_OWNING_LAYOUT_MAX_TYPES, so clearing
  * only type_count entries is exact. Clearing all 4096 entries per call made
  * every measure/locate/compare pay ~8 KB of byte stores (report 266). */
-static void
+__attribute__((unused)) static void
 al_owning_initialize_graph_memo(uint8_t state[AL_OWNING_LAYOUT_MAX_TYPES],
                                 uint8_t height[AL_OWNING_LAYOUT_MAX_TYPES],
                                 uint32_t type_count) {
@@ -1416,6 +1416,21 @@ al_owning_initialize_graph_memo(uint8_t state[AL_OWNING_LAYOUT_MAX_TYPES],
   }
 }
 
+#if AL_OWNING_TRUSTED_GENERATED
+/* The layout is a compiler-emitted constant whose graph the compiler already
+ * checked; trusted builds do not re-walk it (with 8 KB of memo) on every
+ * measure, locate and compare (report 270). Callers still bounds-check each
+ * value they scan. */
+static int32_t AL_OWNING_PROFILE_IMPL(al_owning_validate_type_graph)(
+    al_owning_scan_view *view, const al_owning_layout *layout,
+    uint32_t type_index) {
+  if (layout != 0 && type_index < layout->type_count)
+    return 1;
+  al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL, view->error_id,
+                        type_index, layout != 0 ? layout->type_count : 0u);
+  return 0;
+}
+#else
 static int32_t AL_OWNING_PROFILE_IMPL(al_owning_validate_type_graph)(
     al_owning_scan_view *view, const al_owning_layout *layout,
     uint32_t type_index) {
@@ -1428,6 +1443,7 @@ static int32_t AL_OWNING_PROFILE_IMPL(al_owning_validate_type_graph)(
   return al_owning_validate_type_graph_inner(view, layout, type_index, 0u,
                                              state, height, &visited_fields);
 }
+#endif
 
 #if AL_OWNING_DETAILED_PROFILE
 static int32_t al_owning_validate_type_graph(al_owning_scan_view *view,

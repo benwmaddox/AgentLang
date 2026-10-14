@@ -3963,9 +3963,14 @@ module OwningStackAot =
             w.Inst("call void @al_owning_set_failure(ptr %ctx, i32 5, i32 0, i32 0, i32 0)")
             w.Inst($"br label %%{failureLabel}")
             w.Line($"{validLabel}:")
-            let initStatus = w.Fresh "descriptor.initialized.status"
-            w.Inst($"{initStatus} = call i32 @al_owning_check_initialized(ptr %%ctx, i32 {entry.Offset}, i32 {entry.Extent})")
-            emitStatusResult w initStatus failureLabel
+            // Initialized-byte tracking exists only in the diagnostic runtime; in
+            // trusted builds the call reduces to the range check above (report 270).
+            match runtimeProfile with
+            | OwningRuntimeProfile.Diagnostic ->
+                let initStatus = w.Fresh "descriptor.initialized.status"
+                w.Inst($"{initStatus} = call i32 @al_owning_check_initialized(ptr %%ctx, i32 {entry.Offset}, i32 {entry.Extent})")
+                emitStatusResult w initStatus failureLabel
+            | OwningRuntimeProfile.TrustedGenerated -> ()
 
         let scalarConstructorInfo ty =
             match info.ValidatedScalarConstructors.TryFind ty with
