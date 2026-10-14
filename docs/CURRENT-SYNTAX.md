@@ -236,6 +236,20 @@ fn html.escape(text: String) -> Html {
 
 See [report 262](../reports/262-string-join-html-escape.md).
 
+`string.replace(text, old, new)` returns `text` with every occurrence of `old`
+replaced by `new`. Matching is ordinal over UTF-8 bytes, scanning left to right
+and never overlapping: `string.replace("aaaa", "aa", "b")` is `"bb"`. When no
+occurrence matches, the result equals `text`. When `old` is empty, the result is
+`text` unchanged, so the call never inserts `new` between characters. It has no
+effects.
+
+```flow
+fn shout(text: String) -> String {
+    effects none
+    string.replace(text, " ", "_")
+}
+```
+
 ## Html and templates
 
 `Html` is a built-in type: safe markup, a `String` underneath. Programs do not

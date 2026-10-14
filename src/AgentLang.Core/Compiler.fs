@@ -80,6 +80,7 @@ module Compiler =
         | "instant.before?" -> [ TString; TString ], [ TBool ]
         | "instant.add-days" -> [ TString; TInt ], [ TResult(TString, TString) ]
         | "string.concat" -> [ TString; TString ], [ TString ]
+        | "string.replace" -> [ TString; TString; TString ], [ TString ]
         | "string.join" -> [ TList TString ], [ TString ]
         | "string.html-escape" -> [ TString ], [ TString ]
         | "string.html-fragment?" -> [ TString ], [ TBool ]
@@ -127,7 +128,7 @@ module Compiler =
               "string.guid-canonical?"; "string.guid-normalize"; "string.email-address-valid?"
               "int.add-checked"; "int.multiply-checked"; "int.scale-ratio-toward-zero"
               "instant.parse-utc"; "instant.is-canonical-utc?"; "instant.before?"; "instant.add-days"
-              "string.concat"; "string.join"; "string.html-escape"; "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
+              "string.concat"; "string.replace"; "string.join"; "string.html-escape"; "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
               "string.length"; "string.byte-length"; "string.char-length"; "string.trim"; "string.to-lower"; "string.to-upper"; "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"
               "float.round"; "int.to-string"; "float.to-string"; "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
               "dup"; "drop"; "swap"; "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write" ]

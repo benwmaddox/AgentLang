@@ -34,7 +34,7 @@ let private wordArgs (name: string) =
     args
 
 let private words =
-    [ "native.utf8.byte-length"; "native.utf8.char-length"; "native.utf8.legacy-length"; "native.utf8.decorate"; "native.utf8.has-rocket" ]
+    [ "native.utf8.byte-length"; "native.utf8.char-length"; "native.utf8.legacy-length"; "native.utf8.decorate"; "native.utf8.has-rocket"; "native.utf8.replace" ]
 
 let private hash (path: string) = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant()
 
@@ -46,7 +46,7 @@ let private run () =
     if not (defined["ok"].GetValue<bool>()) then failwith (defined.ToJsonString())
     for name in words do
         let response = engine.Dispatch("commit", wordArgs name)
-        check $"{name} commits" (response["ok"].GetValue<bool>() || response.ToJsonString().Contains("COMMIT_NOT_CANDIDATE", StringComparison.Ordinal))
+        check $"{name} commits: {response.ToJsonString()}" (response["ok"].GetValue<bool>() || response.ToJsonString().Contains("COMMIT_NOT_CANDIDATE", StringComparison.Ordinal))
 
     // An unpaired surrogate in a literal is a compile-time error.
     let literalEngine = Runtime.Engine(Path.Combine(runRoot, "literal"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
@@ -73,6 +73,7 @@ let private run () =
         use legacyLength = native "native.utf8.legacy-length" [ TString ] [ TInt ]
         use decorate = native "native.utf8.decorate" [ TString ] [ TString ]
         use hasRocket = native "native.utf8.has-rocket" [ TString ] [ TBool ]
+        use replace = native "native.utf8.replace" [ TString; TString; TString ] [ TString ]
         let interpret word inputs outputs values =
             match engine.BindFlowEntryPoint(word, inputs, outputs).Invoke(values) with
             | Ok value -> value.Values
@@ -99,6 +100,25 @@ let private run () =
             check $"decorate {label}/{optimization}: retained bytes are UTF-8" (nativeDecorated.RetainedOutputBytes = expectedWire)
             let rocket = text.Contains("🚀", StringComparison.Ordinal)
             check $"contains-rocket {label}/{optimization}" (hasRocket.Execute(input, 65536, 4096).Values = [ BoolValue rocket ])
+        // string.replace: native must match the interpreter byte-for-byte and the expected text.
+        let replaceCases =
+            [ "aaaa", "aa", "b", "bb"
+              "abc", "x", "y", "abc"
+              "abc", "", "y", "abc"
+              "", "a", "b", ""
+              "ab ab", "ab", "abab", "abab abab"
+              "é🚀é", "é", "🚀🚀", "🚀🚀🚀🚀🚀"
+              "x🚀y", "🚀", "", "xy"
+              "a-b", "-", "long-replacement-text", "along-replacement-textb"
+              "日本語", "本", "🚀", "日🚀語"
+              "<é & 🚀>", "&", "&amp;", "<é &amp; 🚀>" ]
+        for text, old, replacement, expected in replaceCases do
+            let input = [ StringValue text; StringValue old; StringValue replacement ]
+            let label = JsonSerializer.Serialize [| text; old; replacement |]
+            let interpreted = interpret "native.utf8.replace" [ TString; TString; TString ] [ TString ] input
+            check $"replace {label}/{optimization}: interpreter = expected" (interpreted = [ StringValue expected ])
+            let nativeReplaced = replace.Execute(input, 65536, 65536)
+            check $"replace {label}/{optimization}: native = interpreter" (nativeReplaced.Values = interpreted)
         // Unpaired surrogates have no UTF-8 form: both backends reject them.
         // Built from char values: F# compiles a lone surrogate escape in a literal to U+FFFD.
         for bad in [ string (char 0xD800); "x" + string (char 0xDC00) + "y"; "🚀"[0..0] ] do

@@ -1379,7 +1379,7 @@ module OwningStackAot =
                   "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
                   "int.to-float"; "int.to-string"; "float.to-int"; "float.round"; "float.to-string"
                   "equals"; "bool.and"; "bool.or"; "bool.not"; "dup"; "drop"; "swap"
-                  "string.concat"; "string.length"; "string.byte-length"; "string.char-length"; "string.join"; "string.html-escape"
+                  "string.concat"; "string.replace"; "string.length"; "string.byte-length"; "string.char-length"; "string.join"; "string.html-escape"
                   "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
                   "list.append"; "list.concat" ]
 
@@ -1409,6 +1409,7 @@ module OwningStackAot =
                 | "drop", [ _ ], [] -> true
                 | "swap", [ first; second ], [ secondResult; firstResult ] -> second = secondResult && first = firstResult
                 | "string.concat", [ IrString; IrString ], [ IrString ] -> true
+                | "string.replace", [ IrString; IrString; IrString ], [ IrString ] -> true
                 | ("string.length" | "string.byte-length" | "string.char-length"), [ IrString ], [ IrInt ] -> true
                 | "string.join", [ IrList IrString ], [ IrString ] -> true
                 | "string.html-escape", [ IrString ], [ IrString ] -> true
@@ -3784,6 +3785,8 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_string_char_length(ptr, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_plan(ptr, i32, i32, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_string_replace_plan(ptr, i32, i32, i32, i32, i32, i32, i32, ptr, ptr, ptr)")
+        writer.Line("declare i32 @al_owning_string_replace_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_join_plan(ptr, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_join_write(ptr, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_html_escape_plan(ptr, i32, i32, i32, ptr, ptr, ptr)")
@@ -5569,6 +5572,33 @@ module OwningStackAot =
                                 emitReserve w resultEnd reserveError failBody
                                 let writeStatus = w.Fresh "string.concat.write.status"
                                 w.Inst($"{writeStatus} = call i32 @al_owning_string_concat_write(ptr %%ctx, i32 {cursor}, i32 {resultExtent}, i32 {leftOffset}, i32 {left.Extent}, i32 {rightOffset}, i32 {right.Extent}, i32 {typeId IrString}, i32 {concatError})")
+                                emitStatusResult w writeStatus failBody
+                                emitUpdateLive w resultPayload "0" failBody
+                                stack <- push prefix IrString cursor resultExtent resultPayload resultEnd
+                            | "string.replace", [ text; old; replacement ] ->
+                                let cursor = emitContextLoad w "%ctx" 2
+                                let textOffset = text.Offset
+                                let oldOffset = old.Offset
+                                let newOffset = replacement.Offset
+                                let units = w.Fresh "string.replace.units"
+                                let resultPayloadPointer = w.Fresh "string.replace.payload.pointer"
+                                let resultExtentPointer = w.Fresh "string.replace.extent.pointer"
+                                w.Inst($"{units} = alloca i32, align 4")
+                                w.Inst($"{resultPayloadPointer} = alloca i32, align 4")
+                                w.Inst($"{resultExtentPointer} = alloca i32, align 4")
+                                let replaceError = addDiagnostic "RUNTIME_STRING_LENGTH_OVERFLOW" "String replacement exceeds the bounded byte range." currentOwner instructionSpan [] []
+                                let planStatus = w.Fresh "string.replace.plan.status"
+                                w.Inst($"{planStatus} = call i32 @al_owning_string_replace_plan(ptr %%ctx, i32 {textOffset}, i32 {text.Extent}, i32 {oldOffset}, i32 {old.Extent}, i32 {newOffset}, i32 {replacement.Extent}, i32 {replaceError}, ptr {units}, ptr {resultPayloadPointer}, ptr {resultExtentPointer})")
+                                emitStatusResult w planStatus failBody
+                                let resultPayload = w.Fresh "string.replace.payload"
+                                let resultExtent = w.Fresh "string.replace.extent"
+                                w.Inst($"{resultPayload} = load i32, ptr {resultPayloadPointer}, align 4")
+                                w.Inst($"{resultExtent} = load i32, ptr {resultExtentPointer}, align 4")
+                                let resultEnd = emitOffset w cursor resultExtent
+                                let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve exact String replacement output." currentOwner instructionSpan [] []
+                                emitReserve w resultEnd reserveError failBody
+                                let writeStatus = w.Fresh "string.replace.write.status"
+                                w.Inst($"{writeStatus} = call i32 @al_owning_string_replace_write(ptr %%ctx, i32 {cursor}, i32 {resultExtent}, i32 {textOffset}, i32 {text.Extent}, i32 {oldOffset}, i32 {old.Extent}, i32 {newOffset}, i32 {replacement.Extent}, i32 {typeId IrString}, i32 {replaceError})")
                                 emitStatusResult w writeStatus failBody
                                 emitUpdateLive w resultPayload "0" failBody
                                 stack <- push prefix IrString cursor resultExtent resultPayload resultEnd

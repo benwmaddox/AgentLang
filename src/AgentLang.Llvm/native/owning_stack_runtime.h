@@ -237,6 +237,18 @@ int32_t al_owning_string_concat_write(
     uint32_t destination_extent_bytes, uint32_t left_offset,
     uint32_t left_extent_bytes, uint32_t right_offset,
     uint32_t right_extent_bytes, uint32_t type_id, uint32_t error_id);
+int32_t al_owning_string_replace_plan(
+    al_owning_stack_context *ctx, uint32_t text_offset,
+    uint32_t text_extent_bytes, uint32_t old_offset,
+    uint32_t old_extent_bytes, uint32_t new_offset,
+    uint32_t new_extent_bytes, uint32_t error_id, uint32_t *out_string_bytes,
+    uint32_t *out_payload_bytes, uint32_t *out_extent_bytes);
+int32_t al_owning_string_replace_write(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    uint32_t destination_extent_bytes, uint32_t text_offset,
+    uint32_t text_extent_bytes, uint32_t old_offset,
+    uint32_t old_extent_bytes, uint32_t new_offset,
+    uint32_t new_extent_bytes, uint32_t type_id, uint32_t error_id);
 int32_t al_owning_string_join_plan(al_owning_stack_context *ctx,
                                    uint32_t list_offset,
                                    uint32_t list_extent_bytes,

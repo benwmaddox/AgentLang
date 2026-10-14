@@ -53,7 +53,7 @@ module internal ArenaLifetime =
               "int.to-string"
               "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
               "equals"; "bool.and"; "bool.or"; "bool.not"
-              "dup"; "drop"; "swap"; "string.concat"; "string.length"; "string.byte-length"; "string.char-length"
+              "dup"; "drop"; "swap"; "string.concat"; "string.replace"; "string.length"; "string.byte-length"; "string.char-length"
               "string.join"; "string.html-escape"; "string.html-fragment?"
               "string.contains"; "string.starts-with"; "string.ends-with"
               "list.append"; "list.concat" ]

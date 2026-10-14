@@ -2730,6 +2730,189 @@ static int32_t al_owning_string_scan_stack_exact(
   return 1;
 }
 
+/* string.replace: every non-overlapping occurrence of the old String, scanned
+ * left to right, becomes the new String. An empty old String leaves the text
+ * unchanged. Matching is ordinal over the UTF-8 bytes. */
+static int al_owning_replace_matches_at(const uint8_t *text,
+                                        uint32_t text_units, uint32_t index,
+                                        const uint8_t *old,
+                                        uint32_t old_units) {
+  uint32_t position = 0u;
+  if (old_units == 0u || old_units > text_units ||
+      index > text_units - old_units)
+    return 0;
+  while (position < old_units && text[index + position] == old[position])
+    ++position;
+  return position == old_units;
+}
+
+static uint32_t al_owning_replace_count(const uint8_t *text,
+                                        uint32_t text_units,
+                                        const uint8_t *old,
+                                        uint32_t old_units) {
+  uint32_t index = 0u;
+  uint32_t matches = 0u;
+  if (old_units == 0u || old_units > text_units)
+    return 0u;
+  while (index <= text_units - old_units) {
+    if (al_owning_replace_matches_at(text, text_units, index, old, old_units)) {
+      ++matches;
+      index += old_units;
+    } else {
+      ++index;
+    }
+  }
+  return matches;
+}
+
+int32_t al_owning_string_replace_plan(
+    al_owning_stack_context *ctx, uint32_t text_offset,
+    uint32_t text_extent_bytes, uint32_t old_offset,
+    uint32_t old_extent_bytes, uint32_t new_offset,
+    uint32_t new_extent_bytes, uint32_t error_id, uint32_t *out_string_bytes,
+    uint32_t *out_payload_bytes, uint32_t *out_extent_bytes) {
+  uint32_t text_units;
+  uint32_t old_units;
+  uint32_t new_units;
+  uint32_t text_payload;
+  uint32_t old_payload;
+  uint32_t new_payload;
+  uint32_t matches;
+  int64_t units_signed;
+  uint64_t payload_wide;
+  uint64_t extent_wide;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (out_string_bytes == 0 || out_payload_bytes == 0 || out_extent_bytes == 0) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
+    return 1;
+  }
+  if (!al_owning_string_scan_stack_exact(ctx, text_offset, text_extent_bytes,
+                                         error_id, &text_units,
+                                         &text_payload) ||
+      !al_owning_string_scan_stack_exact(ctx, old_offset, old_extent_bytes,
+                                         error_id, &old_units,
+                                         &old_payload) ||
+      !al_owning_string_scan_stack_exact(ctx, new_offset, new_extent_bytes,
+                                         error_id, &new_units,
+                                         &new_payload))
+    return 1;
+  matches = al_owning_replace_count(ctx->stack_data + text_offset + 8u,
+                                    text_units,
+                                    ctx->stack_data + old_offset + 8u,
+                                    old_units);
+  units_signed = (int64_t)text_units +
+                 (int64_t)matches * ((int64_t)new_units - (int64_t)old_units);
+  if (units_signed < 0 || units_signed > INT32_MAX) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id,
+                          UINT32_MAX, ctx->stack_capacity_bytes);
+    return 1;
+  }
+  payload_wide = 8ull + (uint64_t)units_signed;
+  extent_wide = (payload_wide + 7ull) & ~7ull;
+  if (payload_wide > UINT32_MAX || extent_wide > UINT32_MAX) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id,
+                          UINT32_MAX, ctx->stack_capacity_bytes);
+    return 1;
+  }
+  *out_string_bytes = (uint32_t)units_signed;
+  *out_payload_bytes = (uint32_t)payload_wide;
+  *out_extent_bytes = (uint32_t)extent_wide;
+  (void)text_payload;
+  (void)old_payload;
+  (void)new_payload;
+  return 0;
+}
+
+int32_t al_owning_string_replace_write(
+    al_owning_stack_context *ctx, uint32_t destination_offset,
+    uint32_t destination_extent_bytes, uint32_t text_offset,
+    uint32_t text_extent_bytes, uint32_t old_offset,
+    uint32_t old_extent_bytes, uint32_t new_offset,
+    uint32_t new_extent_bytes, uint32_t type_id, uint32_t error_id) {
+  uint32_t string_bytes;
+  uint32_t payload;
+  uint32_t extent;
+  uint32_t text_units;
+  uint32_t old_units;
+  uint32_t new_units;
+  uint32_t ignored_payload;
+  uint32_t index;
+  uint32_t run_start;
+  uint32_t cursor;
+  const uint8_t *text;
+  const uint8_t *old;
+  const uint8_t *replacement;
+  (void)type_id;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (al_owning_string_replace_plan(ctx, text_offset, text_extent_bytes,
+                                    old_offset, old_extent_bytes, new_offset,
+                                    new_extent_bytes, error_id, &string_bytes,
+                                    &payload, &extent) != 0)
+    return 1;
+  if (extent != destination_extent_bytes || (destination_offset & 7u) != 0u ||
+      destination_offset > ctx->cursor_bytes ||
+      destination_extent_bytes > ctx->cursor_bytes - destination_offset ||
+      destination_offset > UINT32_MAX - destination_extent_bytes ||
+      !al_owning_string_scan_stack_exact(ctx, text_offset, text_extent_bytes,
+                                         error_id, &text_units,
+                                         &ignored_payload) ||
+      !al_owning_string_scan_stack_exact(ctx, old_offset, old_extent_bytes,
+                                         error_id, &old_units,
+                                         &ignored_payload) ||
+      !al_owning_string_scan_stack_exact(ctx, new_offset, new_extent_bytes,
+                                         error_id, &new_units,
+                                         &ignored_payload)) {
+    if (ctx->status == AL_OWNING_STATUS_OK)
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, extent,
+                            destination_extent_bytes);
+    return 1;
+  }
+  if ((destination_offset < text_offset + text_extent_bytes &&
+       text_offset < destination_offset + destination_extent_bytes) ||
+      (destination_offset < old_offset + old_extent_bytes &&
+       old_offset < destination_offset + destination_extent_bytes) ||
+      (destination_offset < new_offset + new_extent_bytes &&
+       new_offset < destination_offset + destination_extent_bytes)) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          destination_extent_bytes, destination_offset);
+    return 1;
+  }
+  al_owning_write_u32_le(ctx->stack_data + destination_offset, 0u, string_bytes);
+  ctx->stack_data[destination_offset + 4u] = 0u;
+  ctx->stack_data[destination_offset + 5u] = 0u;
+  ctx->stack_data[destination_offset + 6u] = 0u;
+  ctx->stack_data[destination_offset + 7u] = 0u;
+  text = ctx->stack_data + text_offset + 8u;
+  old = ctx->stack_data + old_offset + 8u;
+  replacement = ctx->stack_data + new_offset + 8u;
+  cursor = destination_offset + 8u;
+  run_start = 0u;
+  index = 0u;
+  while (index < text_units) {
+    if (al_owning_replace_matches_at(text, text_units, index, old, old_units)) {
+      al_owning_bytes_copy(ctx->stack_data + cursor, text + run_start,
+                           index - run_start);
+      cursor += index - run_start;
+      al_owning_bytes_copy(ctx->stack_data + cursor, replacement, new_units);
+      cursor += new_units;
+      index += old_units;
+      run_start = index;
+    } else {
+      ++index;
+    }
+  }
+  al_owning_bytes_copy(ctx->stack_data + cursor, text + run_start,
+                       text_units - run_start);
+  cursor += text_units - run_start;
+  while (cursor < destination_offset + extent)
+    ctx->stack_data[cursor++] = 0u;
+  al_owning_mark(ctx, destination_offset, extent, 1, 0);
+  ctx->deep_copy_bytes += extent;
+  return 0;
+}
+
 int32_t al_owning_string_concat_plan(
     al_owning_stack_context *ctx, uint32_t left_offset,
     uint32_t left_extent_bytes, uint32_t right_offset,

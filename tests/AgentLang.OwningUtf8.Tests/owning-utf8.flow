@@ -18,6 +18,10 @@ fn native.utf8.has-rocket(text: String) -> Bool {
     string.contains(text, "🚀")
 }
 
+fn native.utf8.replace(text: String, old: String, replacement: String) -> String {
+    string.replace(text, old, replacement)
+}
+
 test native.utf8.byte-length/mixed {
     native.utf8.byte-length("aé🚀")
     => value 7
@@ -41,4 +45,24 @@ test native.utf8.decorate/escape {
 test native.utf8.has-rocket/yes {
     native.utf8.has-rocket("go 🚀 now")
     => value true
+}
+
+test native.utf8.replace/non-overlapping {
+    native.utf8.replace("aaaa", "aa", "b")
+    => value "bb"
+}
+
+test native.utf8.replace/no-match {
+    native.utf8.replace("abc", "x", "y")
+    => value "abc"
+}
+
+test native.utf8.replace/empty-old {
+    native.utf8.replace("abc", "", "y")
+    => value "abc"
+}
+
+test native.utf8.replace/multibyte {
+    native.utf8.replace("é🚀é", "é", "🚀🚀")
+    => value "🚀🚀🚀🚀🚀"
 }

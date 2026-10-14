@@ -161,7 +161,7 @@ module IrInterpreter =
             "string.guid-canonical?"; "string.guid-normalize"; "string.email-address-valid?"
             "int.add-checked"; "int.multiply-checked"; "int.scale-ratio-toward-zero"
             "instant.parse-utc"; "instant.is-canonical-utc?"; "instant.before?"; "instant.add-days"
-            "string.concat"; "string.join"; "string.html-escape"; "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
+            "string.concat"; "string.replace"; "string.join"; "string.html-escape"; "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
             "string.length"; "string.byte-length"; "string.char-length"; "string.trim"; "string.to-lower"; "string.to-upper"
             "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"; "float.round"
             "int.to-string"; "float.to-string"
@@ -1086,6 +1086,36 @@ module IrInterpreter =
                       Depth = max 1 typeDepth
                       EstimatedOutputBytes = estimatedBytes }
                 [ RuntimeString(left + right) ]
+            | "string.replace", [ RuntimeString text; RuntimeString old; RuntimeString replacement ] ->
+                if old.Length = 0 then
+                    [ RuntimeString text ]
+                else
+                    // Matching is ordinal over UTF-8 bytes, left to right, non-overlapping, as the
+                    // owning-stack backend does. UTF-8 is self-synchronizing, so the decoded result is exact.
+                    let utf8 = System.Text.Encoding.UTF8
+                    let textBytes = utf8.GetBytes text
+                    let oldBytes = utf8.GetBytes old
+                    let newBytes = utf8.GetBytes replacement
+                    let typeDepth, typeBytes = typeFootprint currentWord site IrString
+                    let maxMatches = int64 textBytes.Length / int64 oldBytes.Length
+                    let estimatedBytes = saturatingAdd maxRuntimeValueOutputBytes (64L + typeBytes) (int64 textBytes.Length + maxMatches * int64 newBytes.Length)
+                    checkValueMetrics currentWord site
+                        { ExpandedNodes = 1L
+                          Depth = max 1 typeDepth
+                          EstimatedOutputBytes = estimatedBytes }
+                    let output = System.Collections.Generic.List<byte>(textBytes.Length)
+                    let matchesAt index =
+                        index <= textBytes.Length - oldBytes.Length
+                        && Array.forall id (Array.init oldBytes.Length (fun offset -> textBytes.[index + offset] = oldBytes.[offset]))
+                    let mutable index = 0
+                    while index < textBytes.Length do
+                        if matchesAt index then
+                            output.AddRange newBytes
+                            index <- index + oldBytes.Length
+                        else
+                            output.Add textBytes.[index]
+                            index <- index + 1
+                    [ RuntimeString(utf8.GetString(output.ToArray())) ]
             | "string.join", [ RuntimeList(IrString, parts) ] ->
                 let texts =
                     parts |> List.map (function
