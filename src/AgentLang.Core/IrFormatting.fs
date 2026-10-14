@@ -395,6 +395,13 @@ module IrFormatting =
             addType "elementType" item
             addType "accumulatorType" accumulator
             addType "resultType" accumulator
+        | IrOperation.ListMapWithContext(call, context, item, output) ->
+            addString node "kind" "list-map-context"
+            addCall "callback" call
+            addType "contextType" context
+            addType "elementType" item
+            addType "outputType" output
+            addType "resultType" (IrList output)
         | IrOperation.StoreLocal slot ->
             addString node "kind" "store-local"
             addLocal "local" slot
@@ -539,6 +546,7 @@ module IrFormatting =
         | IrOperation.ListMap(call, item, output) -> call.InputTypes @ call.OutputTypes @ [ item; output ]
         | IrOperation.ListFilter(call, item) | IrOperation.ListEach(call, item) -> call.InputTypes @ call.OutputTypes @ [ item ]
         | IrOperation.ListFold(call, item, accumulator) -> call.InputTypes @ call.OutputTypes @ [ item; accumulator ]
+        | IrOperation.ListMapWithContext(call, context, item, output) -> call.InputTypes @ call.OutputTypes @ [ context; item; output ]
         | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _)
         | IrOperation.MakeEnumCase(call, _, _) -> call.InputTypes @ call.OutputTypes
         | IrOperation.HtmlTemplate(key, _) -> [ IrString; IrNominal key ]
@@ -621,6 +629,8 @@ module IrFormatting =
                 | IrOperation.ListMap(call, item, output) -> collectTypeKeys (collectTypeKeys (collectCallTypeKeys found call) item) output
                 | IrOperation.ListFilter(call, item) | IrOperation.ListEach(call, item) -> collectTypeKeys (collectCallTypeKeys found call) item
                 | IrOperation.ListFold(call, item, accumulator) -> collectTypeKeys (collectTypeKeys (collectCallTypeKeys found call) item) accumulator
+                | IrOperation.ListMapWithContext(call, context, item, output) ->
+                    collectTypeKeys (collectTypeKeys (collectTypeKeys (collectCallTypeKeys found call) context) item) output
                 | IrOperation.MakeRecord(call, key, validator) ->
                     let withCall = collectCallTypeKeys (Set.add key found) call
                     validator |> Option.map (collectCallTypeKeys withCall) |> Option.defaultValue withCall
@@ -936,6 +946,7 @@ module IrFormatting =
         | "list-filter" -> "list.filter callback=" + callText "callback" + " : " + getType "elementType" + " -> Bool"
         | "list-each" -> "list.each callback=" + callText "callback" + " : " + getType "elementType" + " -> Unit"
         | "list-fold" -> "list.fold callback=" + callText "callback" + " : " + getType "accumulatorType" + " " + getType "elementType" + " -> " + getType "accumulatorType"
+        | "list-map-context" -> "list.map-context callback=" + callText "callback" + " : " + getType "contextType" + " " + getType "elementType" + " -> " + getType "outputType"
         | "store-local" -> "store local " + getLocal "local"
         | "load-local" -> "load local " + getLocal "local"
         | "if" -> "if"

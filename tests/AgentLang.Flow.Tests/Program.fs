@@ -1558,6 +1558,7 @@ let private testSparseFlowSourceMarkerAllocation () =
         | FilterList(name, source) -> FilterList(name, shiftMarker source)
         | EachList(name, source) -> EachList(name, shiftMarker source)
         | FoldList(name, source) -> FoldList(name, shiftMarker source)
+        | MapListWithContext(name, source) -> MapListWithContext(name, shiftMarker source)
         | Let(name, source) -> Let(name, shiftMarker source)
         | Load(name, source) -> Load(name, shiftMarker source)
         | If(thenBody, elseBody, source) -> If(List.map shiftExpression thenBody, List.map shiftExpression elseBody, shiftMarker source)
@@ -2152,6 +2153,44 @@ let private testStaticListFold () =
         FlowLowering.checkExpression context malformed |> ignore)
     expectLanguageError "local variable names cannot resolve as fold callback captures" "FLOW_UNKNOWN_CALLBACK" (fun () ->
         FlowLowering.checkExpression context (parseExpression "list::empty<Int>().fold(0, word local-step)") |> ignore)
+
+let private testStaticListMapWithContext () =
+    let addContext =
+        wordEntry "math.map-add-context" [ TInt; TInt ] [ TInt ] Set.empty
+            [ Call("add", sourceSpan) ]
+    let greet =
+        wordEntry "text.map-greet" [ TNamed "Customer"; TString ] [ TString ] Set.empty
+            [ Call("drop", sourceSpan)
+              Call("drop", sourceSpan)
+              Push(LString "hello", sourceSpan) ]
+    let badArity = wordEntry "bad.map-context-arity" [ TInt ] [ TInt ] Set.empty []
+    let badContext = wordEntry "bad.map-context-type" [ TString; TInt ] [ TInt ] Set.empty [ Call("drop", sourceSpan); Call("drop", sourceSpan); Push(LInt 0L, sourceSpan) ]
+    let badItem = wordEntry "bad.map-item-type" [ TInt; TString ] [ TInt ] Set.empty [ Call("drop", sourceSpan); Call("drop", sourceSpan); Push(LInt 0L, sourceSpan) ]
+    let context = richTypeContext [ addContext; greet; badArity; badContext; badItem ]
+    let compile source = FlowLowering.compileExpression context (parseExpression source)
+    let evaluate source = IrInterpreter.executeBody (host (ResizeArray())) source (compile source).Body
+
+    match parseExpression "list::singleton<Int>(1).map(10, math::map-add-context)" with
+    | FlowExpression.DotCall(_, "map", [ FlowArgument.Positional _; FlowArgument.WordReference reference ], _) ->
+        equal "map-with-context preserves the callback dictionary key" "math.map-add-context" reference.Name
+    | other -> failwithf "Expected a static map dot call with context, got %A" other
+
+    equal "map applies the callback with context as first input"
+        [ ListValue(TInt, [ IntValue 11L; IntValue 12L; IntValue 13L ]) ]
+        (evaluate "list::append(list::append(list::singleton<Int>(1), 2), 3).map(10, math::map-add-context)")
+    equal "empty map-with-context returns an empty list" [ ListValue(TInt, []) ]
+        (evaluate "list::empty<Int>().map(10, math::map-add-context)")
+
+    expectLanguageError "map-with-context callback must accept exactly two inputs" "FLOW_CALLBACK_INPUT_ARITY" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::singleton<Int>(1).map(0, bad::map-context-arity)") |> ignore)
+    expectLanguageError "map-with-context rejects a context of the wrong type" "FLOW_CALLBACK_INPUT_TYPE" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::singleton<Int>(1).map(0, bad::map-context-type)") |> ignore)
+    expectLanguageError "map-with-context rejects an item of the wrong type" "FLOW_CALLBACK_INPUT_TYPE" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::singleton<Int>(1).map(0, bad::map-item-type)") |> ignore)
+    expectError "filter rejects a context argument" "FLOW_CALLBACK_CONTEXT_MAP_ONLY"
+        (FlowParser.parseExpression "<filter-context>" "list::singleton<Int>(1).filter(0, math::map-add-context)") |> ignore
+    expectError "each rejects a context argument" "FLOW_CALLBACK_CONTEXT_MAP_ONLY"
+        (FlowParser.parseExpression "<each-context>" "list::singleton<Int>(1).each(0, math::map-add-context)") |> ignore
 
 let private testAbsoluteRootAddressing () =
     let rootIdentity = wordEntry "identity" [ TInt ] [ TInt ] Set.empty []
@@ -2992,6 +3031,7 @@ let private testFlowAuthoredCases () =
         | FilterList(name, source) -> FilterList(name, shiftMarker source)
         | EachList(name, source) -> EachList(name, shiftMarker source)
         | FoldList(name, source) -> FoldList(name, shiftMarker source)
+        | MapListWithContext(name, source) -> MapListWithContext(name, shiftMarker source)
         | Let(name, source) -> Let(name, shiftMarker source)
         | Load(name, source) -> Load(name, shiftMarker source)
         | If(thenBody, elseBody, source) -> If(List.map shiftExpression thenBody, List.map shiftExpression elseBody, shiftMarker source)
@@ -4639,6 +4679,7 @@ let private testFlowAttachmentCallBindings () =
         | FilterList(name, sourceSpan) -> FilterList(name, resolveOrigin origins sourceSpan)
         | EachList(name, sourceSpan) -> EachList(name, resolveOrigin origins sourceSpan)
         | FoldList(name, sourceSpan) -> FoldList(name, resolveOrigin origins sourceSpan)
+        | MapListWithContext(name, sourceSpan) -> MapListWithContext(name, resolveOrigin origins sourceSpan)
         | Let(name, sourceSpan) -> Let(name, resolveOrigin origins sourceSpan)
         | Load(name, sourceSpan) -> Load(name, resolveOrigin origins sourceSpan)
         | If(thenBranch, elseBranch, sourceSpan) ->
@@ -5831,6 +5872,7 @@ let main _ =
     testContainerAndMatchDiagnostics ()
     testStaticListCallbacks ()
     testStaticListFold ()
+    testStaticListMapWithContext ()
     testAbsoluteRootAddressing ()
     testLoweringAndExecution ()
     testContainerAndMatchLowering ()

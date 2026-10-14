@@ -170,6 +170,9 @@ type IrOperation =
     /// Strict left fold. The input stack suffix is List<Item> then Accumulator;
     /// the callback receives Accumulator then Item and returns Accumulator.
     | ListFold of IrResolvedCall * ItemType: IrType * AccumulatorType: IrType
+    /// Map with a borrowed context. The input stack suffix is List<Item> then
+    /// Context; the callback receives Context then Item and returns Output.
+    | ListMapWithContext of IrResolvedCall * ContextType: IrType * ItemType: IrType * OutputType: IrType
     | StoreLocal of LocalSlot
     | LoadLocal of LocalSlot
     | Scope of IrBlock
@@ -703,6 +706,20 @@ module IrVerifier =
                             operationError "IR_LIST_STACK_MISMATCH" "Fold input stack must end in List<T> followed by its initial accumulator."
                                 [ IrTypes.format (IrList item); IrTypes.format accumulator ] (actual |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ [ accumulator ] }, callback.ResolvedEffects
+                    | IrOperation.ListMapWithContext(callback, context, item, output) ->
+                        verifyIrType program sourceOwner (Some instruction.Site) context
+                        verifyIrType program sourceOwner (Some instruction.Site) item
+                        verifyIrType program sourceOwner (Some instruction.Site) output
+                        verifyCall program catalog hostCatalog owner.FunctionName instruction.Site callback
+                        if callback.InputTypes <> [ context; item ] || callback.OutputTypes <> [ output ] then
+                            operationError "IR_CALLBACK_SIGNATURE_MISMATCH" "Map-with-context callback must have concrete signature Context Item -> Output."
+                                [ $"{IrTypes.format context} {IrTypes.format item} -> {IrTypes.format output}" ]
+                                [ String.concat " " (callback.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (callback.OutputTypes |> List.map IrTypes.format) ]
+                        let prefix, actual = pop 2
+                        if actual <> [ IrList item; context ] then
+                            operationError "IR_LIST_STACK_MISMATCH" "Map-with-context input stack must end in List<T> followed by its context."
+                                [ IrTypes.format (IrList item); IrTypes.format context ] (actual |> List.map IrTypes.format)
+                        { shape with StackTypes = prefix @ [ IrList output ] }, callback.ResolvedEffects
                     | IrOperation.StoreLocal slot ->
                         if not (owner.LocalNames.ContainsKey slot) then operationError "IR_UNKNOWN_LOCAL_SLOT" "IR local store references a slot absent from the function layout." [] [ sprintf "%A" slot ]
                         let prefix, actual = pop 1
@@ -917,6 +934,7 @@ module IrVerifier =
                 | IrOperation.ListMap _ | IrOperation.ListEach _ -> Map.add instruction.Site [ "empty"; "nonempty" ] branches |> fun branches -> sites, branches
                 | IrOperation.ListFilter _ -> Map.add instruction.Site [ "empty"; "nonempty"; "keep"; "drop" ] branches |> fun branches -> sites, branches
                 | IrOperation.ListFold _ -> Map.add instruction.Site [ "empty"; "nonempty" ] branches |> fun branches -> sites, branches
+                | IrOperation.ListMapWithContext _ -> Map.add instruction.Site [ "empty"; "nonempty" ] branches |> fun branches -> sites, branches
                 | _ -> sites, branches) (sites, branches)
         collectBlock block.Code Set.empty Map.empty
 
@@ -943,7 +961,7 @@ module IrVerifier =
                 let direct =
                     match instruction.Operation with
                     | IrOperation.Call call -> [ call.ResolvedTarget ]
-                    | IrOperation.ListMap(call, _, _) | IrOperation.ListFilter(call, _) | IrOperation.ListEach(call, _) | IrOperation.ListFold(call, _, _) -> [ call.ResolvedTarget ]
+                    | IrOperation.ListMap(call, _, _) | IrOperation.ListFilter(call, _) | IrOperation.ListEach(call, _) | IrOperation.ListFold(call, _, _) | IrOperation.ListMapWithContext(call, _, _, _) -> [ call.ResolvedTarget ]
                     | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _)
                     | IrOperation.MakeEnumCase(call, _, _) -> [ call.ResolvedTarget ]
                     | IrOperation.MakeRecord(call, _, validator) -> call.ResolvedTarget :: (validator |> Option.map (fun value -> value.ResolvedTarget) |> Option.toList)

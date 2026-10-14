@@ -526,17 +526,21 @@ module FlowParser =
                 let validCallbackShape =
                     match staticCallbackStage, List.ofSeq values with
                     | Some "fold", [ FlowArgument.Positional _; FlowArgument.WordReference _ ] -> true
+                    | Some "map", [ FlowArgument.Positional _; FlowArgument.WordReference _ ] -> true
                     | Some "map", [ FlowArgument.WordReference _ ]
                     | Some "filter", [ FlowArgument.WordReference _ ]
                     | Some "each", [ FlowArgument.WordReference _ ] -> true
                     | _ -> false
                 if hasReference && not validCallbackShape then
                     let referenceSpan = values |> Seq.pick (function FlowArgument.WordReference reference -> Some reference.Span | _ -> None)
-                    let description =
-                        match staticCallbackStage with
-                        | Some "fold" -> "A static fold requires one positional seed followed by one positional word reference."
-                        | _ -> "A static list callback must be the only positional argument."
-                    fail state.File referenceSpan.Line referenceSpan.Column referenceSpan.Length "FLOW_CALLBACK_ARGUMENT_ARITY" description
+                    let code, description =
+                        match staticCallbackStage, List.ofSeq values with
+                        | Some ("filter" | "each"), [ FlowArgument.Positional _; FlowArgument.WordReference _ ] ->
+                            "FLOW_CALLBACK_CONTEXT_MAP_ONLY", "Only `map` accepts a context argument; `filter` and `each` take a single positional word reference."
+                        | Some "fold", _ -> "FLOW_CALLBACK_ARGUMENT_ARITY", "A static fold requires one positional seed followed by one positional word reference."
+                        | Some "map", _ -> "FLOW_CALLBACK_ARGUMENT_ARITY", "A static map requires one positional word reference, or one positional context followed by one positional word reference."
+                        | _ -> "FLOW_CALLBACK_ARGUMENT_ARITY", "A static list callback must be the only positional argument."
+                    fail state.File referenceSpan.Line referenceSpan.Column referenceSpan.Length code description
                 expect state ")" |> ignore
             List.ofSeq values)
 
@@ -1003,7 +1007,7 @@ module FlowParser =
                                 if endIndex < state.Tokens.Length && state.Tokens[endIndex].Text = "(" then
                                     let parts = name.Split('.')
                                     match staticCallbackStage parts[parts.Length - 1] with
-                                    | Some "fold" when foldCallbackReferenceAheadAt state endIndex -> Some "fold"
+                                    | Some ("fold" | "map" | "filter" | "each" as stage) when foldCallbackReferenceAheadAt state endIndex -> Some stage
                                     | Some stage when staticCallbackReferenceAheadAt state (endIndex + 1) -> Some stage
                                     | _ -> None
                                 else None)

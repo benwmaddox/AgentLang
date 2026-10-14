@@ -262,6 +262,7 @@ module FlowLowering =
         | SemanticFilterList of string
         | SemanticEachList of string
         | SemanticFoldList of string
+        | SemanticMapListWithContext of string
         | SemanticLet of string
         | SemanticLoad of string
         | SemanticIf of SemanticExpr list * SemanticExpr list
@@ -660,6 +661,44 @@ module FlowLowering =
                 [ Types.format accumulatorType ] [ Types.format outputType ]
         candidate
 
+    /// Resolve a map-with-context step. The context is the borrowed first input
+    /// and the list element the second; the output must close from both.
+    let private resolveListMapWithContextCallback
+        (state: LoweringState)
+        (reference: FlowWordReference)
+        (contextType: LangType)
+        (itemType: LangType)
+        : Candidate * LangType =
+        validateWordReferenceShape state reference
+        let candidates = callbackCandidates state reference
+        if List.isEmpty candidates then
+            fail "FLOW_UNKNOWN_CALLBACK" $"No static callback word matches '{reference.Name}'." None (Some reference.Span) [] [ reference.Name ]
+        if candidates.Length > 1 then
+            fail "FLOW_AMBIGUOUS_CALLBACK" $"Static callback '{reference.Name}' resolves to more than one word; use a qualified reference." None (Some reference.Span) [] (candidates |> List.map (fun candidate -> candidate.Name))
+
+        let candidate = candidates.Head
+        if candidate.Inputs.Length <> 2 then
+            fail "FLOW_CALLBACK_INPUT_ARITY" $"Map callback '{candidate.Name}' with a context must have exactly two inputs (Context, Item)." (Some candidate.Name) (Some reference.Span) [ "two inputs: Context Item" ] (candidate.Inputs |> List.map Types.format)
+        if candidate.Outputs.Length <> 1 then
+            fail "FLOW_CALLBACK_OUTPUT_ARITY" $"Map callback '{candidate.Name}' must have exactly one output." (Some candidate.Name) (Some reference.Span) [ "one output" ] (candidate.Outputs |> List.map Types.format)
+
+        let substitutions =
+            match unifyType candidate.Inputs[0] contextType Map.empty with
+            | Some current ->
+                match unifyType candidate.Inputs[1] itemType current with
+                | Some completed -> completed
+                | None ->
+                    fail "FLOW_CALLBACK_INPUT_TYPE" $"Map callback '{candidate.Name}' must accept the list item as its second input." (Some candidate.Name) (Some reference.Span)
+                        [ Types.format contextType; Types.format itemType ] [ Types.format candidate.Inputs[0]; Types.format candidate.Inputs[1] ]
+            | None ->
+                fail "FLOW_CALLBACK_INPUT_TYPE" $"Map callback '{candidate.Name}' must accept the context as its first input." (Some candidate.Name) (Some reference.Span)
+                    [ Types.format contextType; Types.format itemType ] [ Types.format candidate.Inputs[0]; Types.format candidate.Inputs[1] ]
+
+        let outputType = substituteType substitutions candidate.Outputs.Head
+        if containsOpenType outputType then
+            fail "FLOW_CALLBACK_OPEN_OUTPUT" $"Map callback '{candidate.Name}' has an output type that cannot be resolved from the context and list element." (Some candidate.Name) (Some reference.Span) [ "closed output type" ] [ Types.format outputType ]
+        candidate, outputType
+
     let private callbackReferenceIn arguments =
         arguments |> List.tryPick (function FlowArgument.WordReference reference -> Some reference | _ -> None)
 
@@ -786,6 +825,14 @@ module FlowLowering =
                     resolveListFoldCallback state reference itemType accumulatorType |> ignore
                     [ accumulatorType ]
                 | actual -> fail "FLOW_CALLBACK_REQUIRES_LIST" "Static 'fold' callback stages require a List<T> receiver." None (Some reference.Span) [ "List<T>" ] [ Types.format actual ]
+            | _, [ FlowArgument.Positional contextArgument; FlowArgument.WordReference reference ] when stage = "map" ->
+                validateWordReferenceShape state reference
+                match receiverType with
+                | TList itemType ->
+                    let contextType = inferExpression context state environment contextArgument
+                    let _, outputType = resolveListMapWithContextCallback state reference contextType itemType
+                    [ TList outputType ]
+                | actual -> fail "FLOW_CALLBACK_REQUIRES_LIST" "Static 'map' callback stages require a List<T> receiver." None (Some reference.Span) [ "List<T>" ] [ Types.format actual ]
             | Some operation, [ FlowArgument.WordReference reference ] ->
                 validateWordReferenceShape state reference
                 match receiverType with
@@ -1127,6 +1174,21 @@ module FlowLowering =
                     let lowered = appendFragments [ receiverFragment; seedFragment ] [ FoldList(candidate.Name, reference.Span) ]
                     { lowered with CallEvents = lowered.CallEvents @ [ event ] }
                 | actual -> fail "FLOW_CALLBACK_REQUIRES_LIST" "Static 'fold' callback stages require a List<T> receiver." None (Some reference.Span) [ "List<T>" ] [ Types.format actual ]
+            | _, [ FlowArgument.Positional contextArgument; FlowArgument.WordReference reference ] when stage = "map" ->
+                validateWordReferenceShape state reference
+                let receiverType = inferExpression context state environment receiver
+                match receiverType with
+                | TList itemType ->
+                    let contextType = inferExpression context state environment contextArgument
+                    let candidate, _ = resolveListMapWithContextCallback state reference contextType itemType
+                    let receiverFragment = lowerFlowExpression context state environment (extendPath path FlowAstPathSegment.DotReceiver) receiver
+                    let contextFragment = lowerFlowExpression context state environment (extendPath path (FlowAstPathSegment.DotArgument 0)) contextArgument
+                    rememberSpan state reference.Span
+                    let event = callEvent (extendPath path (FlowAstPathSegment.DotArgument 1))
+                                    (FlowCallForm.StaticCallback(stage, reference.Qualification)) reference.Name candidate reference.Span
+                    let lowered = appendFragments [ receiverFragment; contextFragment ] [ MapListWithContext(candidate.Name, reference.Span) ]
+                    { lowered with CallEvents = lowered.CallEvents @ [ event ] }
+                | actual -> fail "FLOW_CALLBACK_REQUIRES_LIST" "Static 'map' callback stages require a List<T> receiver." None (Some reference.Span) [ "List<T>" ] [ Types.format actual ]
             | Some operation, [ FlowArgument.WordReference reference ] ->
                 validateWordReferenceShape state reference
                 let receiverType = inferExpression context state environment receiver
@@ -1475,7 +1537,10 @@ module FlowLowering =
 
     let private operationMatchesCandidate form (candidate: Candidate) operation =
         match form with
-        | FlowCallForm.StaticCallback("map", _) -> match operation with | IrOperation.ListMap _ -> true | _ -> false
+        | FlowCallForm.StaticCallback("map", _) ->
+            match operation with
+            | IrOperation.ListMap _ | IrOperation.ListMapWithContext _ -> true
+            | _ -> false
         | FlowCallForm.StaticCallback("filter", _) -> match operation with | IrOperation.ListFilter _ -> true | _ -> false
         | FlowCallForm.StaticCallback("each", _) -> match operation with | IrOperation.ListEach _ -> true | _ -> false
         | FlowCallForm.StaticCallback("fold", _) -> match operation with | IrOperation.ListFold _ -> true | _ -> false
@@ -1510,6 +1575,12 @@ module FlowLowering =
         | FlowCallForm.PropertyAccess _ -> "call"
         | _ -> "call"
 
+    // A map call may lower to either the plain or the context-carrying list op.
+    let private sourceKindMatches form (sourceKind: string) =
+        match form, sourceKind with
+        | FlowCallForm.StaticCallback("map", _), "list-map-context" -> true
+        | _ -> sourceKind = expectedSourceKind form
+
     let private reconcileCallEvents (program: VerifiedIrProgram) ownerName ownerId ownerRevision (events: FlowCallEvent list) =
         match events |> List.countBy (fun event -> event.Path) |> List.tryFind (fun (_, count) -> count > 1) with
         | Some(path, _) -> fail "FLOW_BINDING_PATH_DUPLICATE" "Two authored call events resolved to the same structural AST path." (Some ownerName) None [] [ sprintf "%A" path ]
@@ -1534,7 +1605,7 @@ module FlowLowering =
             if site.SiteSpan <> event.Span then
                 fail "FLOW_BINDING_IR_SPAN_MISMATCH" "A call-like IR source span does not match its ordered Flow event." (Some ownerName) (Some event.Span)
                     [ sprintf "%A" event.Span ] [ sprintf "%A" site.SiteSpan ]
-            if site.SourceKind <> expectedSourceKind event.Form then
+            if not (sourceKindMatches event.Form site.SourceKind) then
                 fail "FLOW_BINDING_IR_KIND_MISMATCH" "A call-like IR source kind does not match the authored Flow call form." (Some ownerName) (Some event.Span)
                     [ expectedSourceKind event.Form ] [ site.SourceKind ]
             let expectedTarget = targetIdentityOfCandidate ownerName event.Candidate
@@ -1579,7 +1650,7 @@ module FlowLowering =
             if source.SiteSpan <> event.Span then
                 fail "FLOW_ATTACHMENT_BINDING_IR_SPAN_MISMATCH" "A detached call-like IR source span does not match its ordered Flow event." (Some ownerName) (Some event.Span)
                     [ sprintf "%A" event.Span ] [ sprintf "%A" source.SiteSpan ]
-            if source.SourceKind <> expectedSourceKind event.Form then
+            if not (sourceKindMatches event.Form source.SourceKind) then
                 fail "FLOW_ATTACHMENT_BINDING_IR_KIND_MISMATCH" "A detached call-like IR source kind does not match the authored Flow call form." (Some ownerName) (Some event.Span)
                     [ expectedSourceKind event.Form ] [ source.SourceKind ]
             let expectedTarget = targetIdentityOfCandidate ownerName event.Candidate
@@ -1609,6 +1680,7 @@ module FlowLowering =
             | FilterList(name, _) -> SemanticFilterList name
             | EachList(name, _) -> SemanticEachList name
             | FoldList(name, _) -> SemanticFoldList name
+            | MapListWithContext(name, _) -> SemanticMapListWithContext name
             | Let(name, _) -> SemanticLet name
             | Load(name, _) -> SemanticLoad name
             | If(thenBranch, elseBranch, _) -> SemanticIf(semanticExpressions thenBranch, semanticExpressions elseBranch)
@@ -2163,7 +2235,7 @@ module FlowLowering =
                 let span =
                     match expression with
                     | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
-                    | MapList(_, span) | FilterList(_, span) | EachList(_, span) | FoldList(_, span)
+                    | MapList(_, span) | FilterList(_, span) | EachList(_, span) | FoldList(_, span) | MapListWithContext(_, span)
                     | Let(_, span) | Load(_, span) | If(_, _, span) | Scope(_, span) | Compact(_, span)
                     | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) | MatchEnum(_, span) -> span
                 let found = if span.Length = 0 then Set.add span found else found

@@ -586,7 +586,8 @@ module LlvmAot =
                 | IrOperation.ListMap(call, _, _)
                 | IrOperation.ListFilter(call, _)
                 | IrOperation.ListEach(call, _)
-                | IrOperation.ListFold(call, _, _) -> add call
+                | IrOperation.ListFold(call, _, _)
+                | IrOperation.ListMapWithContext(call, _, _, _) -> add call
                 | IrOperation.MakeRecord(call, _, validator) ->
                     add call
                     validator |> Option.iter add

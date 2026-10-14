@@ -307,10 +307,11 @@ module internal ArenaLifetime =
             | IrOperation.ListMap(call, _, _)
             | IrOperation.ListFilter(call, _)
             | IrOperation.ListEach(call, _)
-            | IrOperation.ListFold(call, _, _) ->
+            | IrOperation.ListFold(call, _, _)
+            | IrOperation.ListMapWithContext(call, _, _, _) ->
                 // Each element is a user-word call: model it like Call, joining the
-                // list (and fold seed) origins with the active regions.
-                let inputCount = match instruction.Operation with IrOperation.ListFold _ -> 2 | _ -> 1
+                // list (and fold seed or map context) origins with the active regions.
+                let inputCount = match instruction.Operation with IrOperation.ListFold _ | IrOperation.ListMapWithContext _ -> 2 | _ -> 1
                 let prefix, inputs = pop inputCount state.Stack
                 let inputOrigins = unionOrigins inputs
                 let outputOrigins = Set.union inputOrigins currentRegions
@@ -340,7 +341,7 @@ module internal ArenaLifetime =
             | IrOperation.ListMap _ | IrOperation.ListFilter _ | IrOperation.ListEach _ ->
                 let prefix, inputs = pop 1 state.Stack
                 finishUnknown prefix inputs 1
-            | IrOperation.ListFold _ ->
+            | IrOperation.ListFold _ | IrOperation.ListMapWithContext _ ->
                 let prefix, inputs = pop 2 state.Stack
                 finishUnknown prefix inputs 1
             | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->

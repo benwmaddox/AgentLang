@@ -75,6 +75,7 @@ type Expr =
     | FilterList of string * SourceSpan
     | EachList of string * SourceSpan
     | FoldList of string * SourceSpan
+    | MapListWithContext of string * SourceSpan
     | Let of string * SourceSpan
     | Load of string * SourceSpan
     | If of Expr list * Expr list * SourceSpan

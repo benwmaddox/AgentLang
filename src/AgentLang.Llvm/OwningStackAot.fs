@@ -1490,7 +1490,8 @@ module OwningStackAot =
                 | IrOperation.ListMap(call, _, _)
                 | IrOperation.ListFilter(call, _)
                 | IrOperation.ListEach(call, _)
-                | IrOperation.ListFold(call, _, _) ->
+                | IrOperation.ListFold(call, _, _)
+                | IrOperation.ListMapWithContext(call, _, _, _) ->
                     match call.ResolvedTarget with
                     | UserWordTarget _ ->
                         requireProgramEffects owner call.ResolvedDeclaredEffects
@@ -1498,6 +1499,10 @@ module OwningStackAot =
                         call.InputTypes @ call.OutputTypes |> List.iter (checkType owner)
                         match instruction.Operation with
                         | IrOperation.ListMap(_, itemType, resultType) -> checkType owner (IrList itemType); checkType owner (IrList resultType)
+                        | IrOperation.ListMapWithContext(_, itemType, contextType, resultType) ->
+                            checkType owner (IrList itemType)
+                            checkType owner contextType
+                            checkType owner (IrList resultType)
                         | IrOperation.ListFilter(_, itemType) | IrOperation.ListEach(_, itemType) -> checkType owner (IrList itemType)
                         | IrOperation.ListFold(_, itemType, accumulatorType) -> checkType owner (IrList itemType); checkType owner accumulatorType
                         | _ -> ()
@@ -1646,7 +1651,8 @@ module OwningStackAot =
                 | IrOperation.ListMap(call, _, _)
                 | IrOperation.ListFilter(call, _)
                 | IrOperation.ListEach(call, _)
-                | IrOperation.ListFold(call, _, _) ->
+                | IrOperation.ListFold(call, _, _)
+                | IrOperation.ListMapWithContext(call, _, _, _) ->
                     match call.ResolvedTarget with
                     | UserWordTarget(id, revision) -> enqueueUserFunction owner id revision
                     | _ -> ()
@@ -2352,6 +2358,9 @@ module OwningStackAot =
                 | IrOperation.ListFold(_, _, accumulatorType) ->
                     let _, prefix = pop 2
                     stack <- prefix @ [ accumulatorType ]
+                | IrOperation.ListMapWithContext(_, _, _, resultType) ->
+                    let _, prefix = pop 2
+                    stack <- prefix @ [ IrList resultType ]
                 | IrOperation.OptionSome itemType ->
                     let _, prefix = pop 1
                     stack <- prefix @ [ IrOption itemType ]
@@ -4697,6 +4706,7 @@ module OwningStackAot =
                         let input = List.head values
                         stack <- push prefix (IrList resultType) input.Offset input.Extent input.Payload input.OwnerEnd
                     | IrOperation.ListMap(callback, _, _)
+                    | IrOperation.ListMapWithContext(callback, _, _, _)
                     | IrOperation.ListFilter(callback, _)
                     | IrOperation.ListEach(callback, _)
                     | IrOperation.ListFold(callback, _, _) ->
@@ -4747,6 +4757,9 @@ module OwningStackAot =
                         let itemType, listEntry, accumulatorEntry, prefix =
                             match instruction.Operation with
                             | IrOperation.ListFold(_, itemType, _) ->
+                                let values, prefix = pop 2
+                                itemType, values[0], Some values[1], prefix
+                            | IrOperation.ListMapWithContext(_, itemType, _, _) ->
                                 let values, prefix = pop 2
                                 itemType, values[0], Some values[1], prefix
                             | IrOperation.ListMap(_, itemType, _)
@@ -4850,7 +4863,8 @@ module OwningStackAot =
                             emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId listType}, i32 {start}, i32 {extent}, i32 {payload}, i32 0, i32 0)" failBody
                             push prefix listType start extent payload next
                         match instruction.Operation with
-                        | IrOperation.ListMap(_, _, resultType) ->
+                        | IrOperation.ListMap(_, _, resultType)
+                        | IrOperation.ListMapWithContext(_, _, _, resultType) ->
                             let listType = IrList resultType
                             // [descriptor table: 16 bytes per element][header][results...]
                             let table = reserveBytes (wideMul count 16)
@@ -4861,7 +4875,7 @@ module OwningStackAot =
                             let totalPayload = newI32 "list.map.payload" "8"
                             emitLoop "list.map" count (fun index ->
                                 let element = nextElement ()
-                                let result = callCallback [ element ]
+                                let result = callCallback (Option.toList accumulatorEntry @ [ element ])
                                 w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {tableEntryAt table index 0}, i64 {packPair result.Offset result.Extent}, i32 {typeId IrInt})")
                                 emitRuntimeStatus w "%ctx" failBody
                                 w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {tableEntryAt table index 1}, i64 {packLow result.Payload}, i32 {typeId IrInt})")
@@ -4911,7 +4925,7 @@ module OwningStackAot =
                             w.Inst($"br label %%{joinLabel}")
                             w.Line($"{joinLabel}:")
                             emitUpdateLive w "8" "0" failBody
-                            emitDropEntry (prefix @ [ listEntry ]) prefix.Length
+                            emitDropEntry (prefix @ (listEntry :: Option.toList accumulatorEntry)) prefix.Length
                             stack <- finishList listType (loadI32 startSlot) (loadI32 totalExtent) (loadI32 totalPayload)
                         | IrOperation.ListFilter(_, filteredType) ->
                             let listType = IrList filteredType

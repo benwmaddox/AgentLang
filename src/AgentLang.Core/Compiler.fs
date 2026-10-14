@@ -242,6 +242,39 @@ module Compiler =
                     [ Types.format accumulatorType ] [ Types.format actualOutput ]
             entry
 
+    let private containsOpenType typeValue =
+        let rec visit = function
+            | TVar _ -> true
+            | TList item | TOption item -> visit item
+            | TResult(okType, errorType) -> visit okType || visit errorType
+            | _ -> false
+        visit typeValue
+
+    let private higherOrderMapWithContextCall (knownTypes: Set<string>) (words: Map<string, WordEntry>) (wordName: string) (span: SourceSpan) (contextType: LangType) (itemType: LangType) =
+        match words.TryFind wordName with
+        | None -> Diagnostics.raiseError "NAME_UNKNOWN_WORD" $"List map target '{wordName}' is not defined." (Some wordName) (Some span) [] []
+        | Some entry ->
+            let definition = entry.Definition
+            for typeValue in definition.Inputs @ definition.Outputs do
+                validateType entry.Builtin.IsSome knownTypes (Some span) definition.Name typeValue
+            if definition.Inputs.Length <> 2 || definition.Outputs.Length <> 1 then
+                let inputs = definition.Inputs |> List.map Types.format |> String.concat " "
+                let outputs = definition.Outputs |> List.map Types.format |> String.concat " "
+                Diagnostics.raiseError "TYPE_LIST_MAP_CONTEXT_CALLBACK" $"List map target '{wordName}' with a context must have exactly two inputs and one output." (Some wordName) (Some span)
+                    [ $"{Types.format contextType} {Types.format itemType} -> <output>" ] [ inputs + " -> " + outputs ]
+            let substitutions =
+                try
+                    let contextSubstitutions = unify Map.empty definition.Inputs[0] contextType
+                    unify contextSubstitutions definition.Inputs[1] itemType
+                with _ ->
+                    Diagnostics.raiseError "TYPE_LIST_MAP_CONTEXT_CALLBACK" $"List map target '{wordName}' must accept context {Types.format contextType} followed by item {Types.format itemType}." (Some wordName) (Some span)
+                        [ $"{Types.format contextType} {Types.format itemType} -> <output>" ]
+                        (definition.Inputs |> List.map Types.format)
+            let outputType = substitute substitutions definition.Outputs.Head
+            if containsOpenType outputType then
+                Diagnostics.raiseError "TYPE_LIST_MAP_CONTEXT_CALLBACK" $"List map target '{wordName}' must produce a closed output type." (Some wordName) (Some span) [] [ Types.format outputType ]
+            entry, outputType
+
     let listCallbackOutputType knownTypes words wordName span itemType =
         let outputType, _ = higherOrderCall knownTypes words wordName span itemType None
         outputType
@@ -400,6 +433,24 @@ module Compiler =
                         dependencies <- Set.add target dependencies
                         effects <- Set.union effects entry.Definition.Effects
                         prefix @ [ accumulatorType ], locals
+                    | MapListWithContext(target, expressionSpan) ->
+                        if stack.Length < 2 then
+                            Diagnostics.raiseError "TYPE_STACK_UNDERFLOW" "List map with context requires a List<T> followed by a context value." (Some wordName) (Some expressionSpan)
+                                [ "List<T> Context" ] (stack |> List.map Types.format)
+                        let prefix = stack |> List.take (stack.Length - 2)
+                        let actualInputs = stack |> List.skip (stack.Length - 2)
+                        let itemType, contextType =
+                            match actualInputs with
+                            | [ TList item; context ] -> item, context
+                            | [ actualList; context ] ->
+                                Diagnostics.raiseError "TYPE_LIST_REQUIRED" "List map with context requires List<T> below its context value." (Some wordName) (Some expressionSpan)
+                                    [ "List<T> Context" ] [ Types.format actualList; Types.format context ]
+                            | _ -> failwith "unreachable"
+                        let entry, callbackOutput = higherOrderMapWithContextCall knownTypes words target expressionSpan contextType itemType
+                        callSignature <- Some { CallInputs = [ contextType; itemType ]; CallOutputs = [ callbackOutput ] }
+                        dependencies <- Set.add target dependencies
+                        effects <- Set.union effects entry.Definition.Effects
+                        prefix @ [ TList callbackOutput ], locals
                     | If(thenBranch, elseBranch, expressionSpan) ->
                         if List.isEmpty stack || List.last stack <> TBool then
                             let actual = stack |> List.tryLast |> Option.map Types.format |> Option.defaultValue "<empty>"
@@ -596,7 +647,7 @@ module Compiler =
             |> List.fold (fun found expression ->
                 match expression with
                 | Call(name, _) -> Set.add name found
-                | MapList(name, _) | FilterList(name, _) | EachList(name, _) | FoldList(name, _) -> Set.add name found
+                | MapList(name, _) | FilterList(name, _) | EachList(name, _) | FoldList(name, _) | MapListWithContext(name, _) -> Set.add name found
                 | If(thenBranch, elseBranch, _) | MatchOption(_, thenBranch, elseBranch, _) ->
                     Set.union found (Set.union (collect thenBranch) (collect elseBranch))
                 | Scope(innerBody, _) | Compact(innerBody, _) -> Set.union found (collect innerBody)
@@ -666,6 +717,7 @@ module Compiler =
                 | FilterList(name, _) -> "list.filter " + name
                 | EachList(name, _) -> "list.each " + name
                 | FoldList(name, _) -> "list.fold " + name
+                | MapListWithContext(name, _) -> "list.map-context " + name
                 | Let(name, _) -> "let " + name
                 | Load(name, _) -> $"${name}"
                 | If(thenBranch, elseBranch, _) ->
@@ -973,6 +1025,7 @@ module Compiler =
                 | FilterList(name, span) -> appendText "filter-list"; appendText name; appendSpan span
                 | EachList(name, span) -> appendText "each-list"; appendText name; appendSpan span
                 | FoldList(name, span) -> appendText "fold-list"; appendText name; appendSpan span
+                | MapListWithContext(name, span) -> appendText "map-list-context"; appendText name; appendSpan span
                 | Let(name, span) -> appendText "let"; appendText name; appendSpan span
                 | Load(name, span) -> appendText "load"; appendText name; appendSpan span
                 | If(thenBranch, elseBranch, span) -> appendText "if"; appendExpressions thenBranch; appendExpressions elseBranch; appendSpan span
@@ -1238,7 +1291,7 @@ module Compiler =
 
     let private expressionSpan = function
         | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
-        | MapList(_, span) | FilterList(_, span) | EachList(_, span) | FoldList(_, span)
+        | MapList(_, span) | FilterList(_, span) | EachList(_, span) | FoldList(_, span) | MapListWithContext(_, span)
         | Let(_, span) | Load(_, span) | If(_, _, span) | Scope(_, span) | Compact(_, span)
         | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) | MatchEnum(_, span) -> span
 
@@ -1257,6 +1310,7 @@ module Compiler =
         | FilterList _ -> "list-filter"
         | EachList _ -> "list-each"
         | FoldList _ -> "list-fold"
+        | MapListWithContext _ -> "list-map-context"
         | Let _ -> "store-local"
         | Load _ -> "load-local"
         | If _ -> "if"
@@ -1458,6 +1512,21 @@ module Compiler =
                                     [ $"{IrTypes.format accumulatorType} {IrTypes.format itemType} -> {IrTypes.format accumulatorType}" ]
                                     [ (callback.InputTypes |> List.map IrTypes.format |> String.concat " ") + " -> " + (callback.OutputTypes |> List.map IrTypes.format |> String.concat " ") ]
                             IrOperation.ListFold(callback, itemType, accumulatorType)
+                        | MapListWithContext(name, _) ->
+                            let contextType, itemType =
+                                match node.InputStack |> List.rev |> List.take 2 with
+                                | [ context; TList item ] -> context, item
+                                | actual -> irFailure "IR_LIST_ANNOTATION_INVALID" "Map-with-context lowering lost its List<T> and context input annotations." (Some ownerName) (Some span) [ "List<T> Context" ] (actual |> List.rev |> List.map Types.format)
+                            let itemType = irType ownerName (Some span) itemType
+                            let contextType = irType ownerName (Some span) contextType
+                            let callback = resolvedForNode name span node.CallSignature
+                            match callback.InputTypes, callback.OutputTypes with
+                            | [ inputContext; inputItem ], [ output ] when inputContext = contextType && inputItem = itemType ->
+                                IrOperation.ListMapWithContext(callback, contextType, itemType, output)
+                            | _ ->
+                                irFailure "IR_CALLBACK_ANNOTATION_INVALID" "Map-with-context lowering requires one concrete callback with signature Context Item -> Output." (Some name) (Some span)
+                                    [ $"{IrTypes.format contextType} {IrTypes.format itemType} -> <output>" ]
+                                    [ (callback.InputTypes |> List.map IrTypes.format |> String.concat " ") + " -> " + (callback.OutputTypes |> List.map IrTypes.format |> String.concat " ") ]
                         | Let(name, _) ->
                             match env.TryFind name with
                             | Some slot -> IrOperation.StoreLocal slot

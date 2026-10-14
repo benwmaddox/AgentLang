@@ -198,6 +198,9 @@ module VocabularyAnalysis =
             | FoldList(name, _) ->
                 writer.Write 13uy
                 writeWordIdentity index writer name
+            | MapListWithContext(name, _) ->
+                writer.Write 16uy
+                writeWordIdentity index writer name
             | Let(name, _) ->
                 writer.Write 7uy
                 writeString writer name
@@ -447,7 +450,7 @@ module VocabularyAnalysis =
                             | Call(target, _) ->
                                 let targetExpansion = expandWord activeWords target
                                 if index.Words[target].Builtin.IsNone then addAuthoredInvocation targetExpansion else targetExpansion
-                            | MapList(target, _) | FilterList(target, _) | EachList(target, _) | FoldList(target, _) ->
+                            | MapList(target, _) | FilterList(target, _) | EachList(target, _) | FoldList(target, _) | MapListWithContext(target, _) ->
                                 let targetExpansion = expandWord activeWords target
                                 let targetExpansion = if index.Words[target].Builtin.IsNone then addAuthoredInvocation targetExpansion else targetExpansion
                                 addCallbackTarget target targetExpansion

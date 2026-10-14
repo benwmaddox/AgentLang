@@ -1357,6 +1357,62 @@ module IrInterpreter =
                             outputValues.Add mapped
                         | result -> fail "RUNTIME_INTERNAL_TYPE" $"List callback '{callback.ResolvedName}' returned values outside its checked signature." (Some currentWord) instructionSpan [] (runtimeTypeNames program result)
                     stack <- prefix @ [ RuntimeList(outputType, List.ofSeq outputValues) ]
+                | IrOperation.ListMapWithContext(callback, contextType, itemType, outputType) ->
+                    let prefix, inputs = popArguments "list.map" [ IrList itemType; contextType ]
+                    let input, context =
+                        match inputs with
+                        | [ listValue; contextValue ] -> listValue, contextValue
+                        | _ -> fail "RUNTIME_INTERNAL_TYPE" "List map with context received values outside its verified stack shape." (Some currentWord) instructionSpan
+                                   [ formatType program (IrList itemType); formatType program contextType ] (runtimeTypeNames program inputs)
+                    let values =
+                        match input with
+                        | RuntimeList(actualType, values) when actualType = itemType -> values
+                        | actual -> fail "RUNTIME_INTERNAL_TYPE" "List map with context received a non-list after type checking." (Some currentWord) instructionSpan
+                                        [ formatType program (IrList itemType) ] [ formatType program (runtimeValueType actual) ]
+                    if runtimeValueType context <> contextType then
+                        fail "RUNTIME_INTERNAL_TYPE" "List map context does not match its verified context type." (Some currentWord) instructionSpan
+                            [ formatType program contextType ] [ formatType program (runtimeValueType context) ]
+                    host.PreflightEffects callback.ResolvedEffects (Some callback.ResolvedName) (Some instruction.Site)
+                    host.RecordUse "list.map"
+                    host.RecordBranchOutcome currentWord instruction.Site (if List.isEmpty values then "empty" else "nonempty")
+                    let outputValues = ResizeArray<RuntimeValue>()
+                    let prefixMetrics = aggregateRuntimeValues currentWord (Some instruction.Site) prefix
+                    let contextMetrics = runtimeMetrics currentWord (Some instruction.Site) context
+                    let inputMetrics = runtimeMetrics currentWord (Some instruction.Site) input
+                    let outputListBase = runtimeMetrics currentWord (Some instruction.Site) (RuntimeList(outputType, []))
+                    let mutable outputNodes =
+                        saturatingAdd maxRuntimeValueNodes
+                            (saturatingAdd maxRuntimeValueNodes
+                                (saturatingAdd maxRuntimeValueNodes prefixMetrics.ExpandedNodes contextMetrics.ExpandedNodes)
+                                inputMetrics.ExpandedNodes)
+                            outputListBase.ExpandedNodes
+                    let mutable outputDepth = max prefixMetrics.Depth (max contextMetrics.Depth (max inputMetrics.Depth outputListBase.Depth))
+                    let mutable outputBytes =
+                        saturatingAdd maxRuntimeValueOutputBytes
+                            (saturatingAdd maxRuntimeValueOutputBytes
+                                (saturatingAdd maxRuntimeValueOutputBytes prefixMetrics.EstimatedOutputBytes contextMetrics.EstimatedOutputBytes)
+                                inputMetrics.EstimatedOutputBytes)
+                            outputListBase.EstimatedOutputBytes
+                    checkValueMetrics currentWord (Some instruction.Site)
+                        { ExpandedNodes = outputNodes
+                          Depth = outputDepth
+                          EstimatedOutputBytes = outputBytes }
+                    for value in values do
+                        chargeInstruction currentWord instruction.Site
+                        match invokeResolved (depth + 1) callback [ context; value ] (Some instruction.Site) with
+                        | [ mapped ] when runtimeValueType mapped = outputType ->
+                            let mappedMetrics = runtimeMetrics currentWord (Some instruction.Site) mapped
+                            outputNodes <- saturatingAdd maxRuntimeValueNodes outputNodes mappedMetrics.ExpandedNodes
+                            outputDepth <- max outputDepth (mappedMetrics.Depth + 1)
+                            outputBytes <- saturatingAdd maxRuntimeValueOutputBytes outputBytes mappedMetrics.EstimatedOutputBytes
+                            checkValueMetrics currentWord (Some instruction.Site)
+                                { ExpandedNodes = outputNodes
+                                  Depth = outputDepth
+                                  EstimatedOutputBytes = outputBytes }
+                            outputValues.Add mapped
+                        | result -> fail "RUNTIME_INTERNAL_TYPE" $"List map callback '{callback.ResolvedName}' returned values outside its checked signature." (Some currentWord) instructionSpan
+                                        [ formatType program outputType ] (runtimeTypeNames program result)
+                    stack <- prefix @ [ RuntimeList(outputType, List.ofSeq outputValues) ]
                 | IrOperation.ListFilter(callback, itemType) ->
                     let prefix, input = popOne "List higher-order operation requires a list." currentWord instruction.Site []
                     let values =

@@ -42,6 +42,7 @@ module Source =
         | FilterList(name, _) -> prefix + "list.filter " + name
         | EachList(name, _) -> prefix + "list.each " + name
         | FoldList(name, _) -> prefix + "list.fold " + name
+        | MapListWithContext(name, _) -> prefix + "list.map-context " + name
         | Let(name, _) -> prefix + "let " + name
         | Load(name, _) -> prefix + "$" + name
         | If(thenBranch, elseBranch, _) ->
@@ -158,6 +159,7 @@ module Source =
             | FilterList(name, span) when name = oldName -> FilterList(newName, span)
             | EachList(name, span) when name = oldName -> EachList(newName, span)
             | FoldList(name, span) when name = oldName -> FoldList(newName, span)
+            | MapListWithContext(name, span) when name = oldName -> MapListWithContext(newName, span)
             | If(thenBranch, elseBranch, span) -> If(rewrite thenBranch, rewrite elseBranch, span)
             | Scope(body, span) -> Scope(rewrite body, span)
             | Compact(body, span) -> Compact(rewrite body, span)
