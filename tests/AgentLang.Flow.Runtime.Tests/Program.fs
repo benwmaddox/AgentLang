@@ -8236,13 +8236,18 @@ test-file self {
         |> expectError "FLOW_EXPECT_OUTSIDE_TEST" |> ignore
 
         // Commit and reload: the persisted test keeps its expect steps.
-        commit engine "commit" "expect.sum" [] |> expectOk "commit the Flow/2 expect tests" |> ignore
-        let reloaded = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
+        // Commit requires passing tests, so persist the passing cases in their own project.
+        let durableProject = Path.Combine(root, "flow2-expect-durable")
+        let durable = Runtime.Engine(durableProject, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
+        let passingSource = source.Substring(0, source.IndexOf("\n\ntest expect.sum/failing-equal", StringComparison.Ordinal))
+        defineFlowProject durable passingSource [ "syntaxVersion", jint 2 ] |> expectOk "define passing expect tests" |> ignore
+        commit durable "commit" "expect.sum" [] |> expectOk "commit the Flow/2 expect tests" |> ignore
+        let reloaded = Runtime.Engine(durableProject, Set.empty, "2042-03-04T05:06:07Z", fileSystemMode = FileSystemMode.Virtual)
         let reloadedResults =
             dispatch reloaded "test" [ "word", jstr "expect.sum" ]
             |> expectOk "run reloaded expect tests"
             |> fun response -> (response["data"]["results"]).AsArray() |> Seq.map (fun item -> stringValue (item["name"]), boolValue (item["passed"])) |> Map.ofSeq
-        equal (Map.ofList [ "failing-bool", false; "failing-equal", false; "implicit-final", true; "passing", true ]) reloadedResults "reloaded expect tests keep their outcomes"
+        equal (Map.ofList [ "implicit-final", true; "passing", true ]) reloadedResults "reloaded expect tests keep their outcomes"
         let testSource =
             dispatch reloaded "tests" [ "word", jstr "expect.sum"; "includeSource", jbool true ]
             |> expectOk "inspect reloaded expect test source"

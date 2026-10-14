@@ -661,6 +661,7 @@ module Compiler =
             expressions
             |> List.fold (fun found expression ->
                 match expression with
+                | Call(name, _) when testIntrinsics.ContainsKey name -> found
                 | Call(name, _) -> Set.add name found
                 | MapList(name, _) | FilterList(name, _) | EachList(name, _) | FoldList(name, _) | MapListWithContext(name, _) -> Set.add name found
                 | If(thenBranch, elseBranch, _) | MatchOption(_, thenBranch, elseBranch, _) ->
