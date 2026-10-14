@@ -111,6 +111,12 @@ Noted for after the apples-to-apples Campfire comparison.
    == != && ||` with C precedence, each written with whitespace on both sides
    (see CURRENT-SYNTAX "Operators"). No implicit conversions; `%` is the new
    `int.remainder` primitive. Unary `-`/`!` and compound assignment are not added.
+7. **Loops and `var` locals:** done (272, user 2026-10-14). `var`/reassignment,
+   `for i in a..b`, `for x in items`, `for x, i in items`, `break`/`continue`,
+   Flow/2 statement `if` without `else`. Real native back edges, with
+   per-iteration arena reclamation, and a 10M-iteration per-invocation budget
+   (`RUNTIME_LOOP_BUDGET_EXCEEDED`); see CURRENT-SYNTAX "Loops and var". The arena
+   LLVM backend rejects loops.
 
 Then the stdlib restructure in report 271's "Next".
 

@@ -120,7 +120,24 @@ module FlowLint =
                                 analyzeExpression outerFrames visibleBindings statementIndex expression
                             | FlowStatement.Return(expressions, _) ->
                                 for expression in expressions do
-                                    analyzeExpression outerFrames visibleBindings statementIndex expression)
+                                    analyzeExpression outerFrames visibleBindings statementIndex expression
+                            | FlowStatement.Var(name, initializer, declarationSpan) ->
+                                let binding = newBinding name declarationSpan statementIndex
+                                analyzeExpression outerFrames visibleBindings statementIndex initializer
+                                visibleBindings <- Map.add name binding visibleBindings
+                            | FlowStatement.Assign(name, value, assignSpan) ->
+                                analyzeExpression outerFrames visibleBindings statementIndex value
+                                analyzeExpression outerFrames visibleBindings statementIndex (FlowExpression.Local(name, assignSpan))
+                            | FlowStatement.ForRange(_, start, finish, body, _) ->
+                                analyzeExpression outerFrames visibleBindings statementIndex start
+                                analyzeExpression outerFrames visibleBindings statementIndex finish
+                                let parentFrame = { Bindings = visibleBindings; ParameterNames = Set.empty; UseStatement = Some statementIndex }
+                                analyzeBlock (parentFrame :: outerFrames) [] body
+                            | FlowStatement.ForEach(_, _, items, body, _) ->
+                                analyzeExpression outerFrames visibleBindings statementIndex items
+                                let parentFrame = { Bindings = visibleBindings; ParameterNames = Set.empty; UseStatement = Some statementIndex }
+                                analyzeBlock (parentFrame :: outerFrames) [] body
+                            | FlowStatement.Break _ | FlowStatement.Continue _ -> ())
 
                 and analyzeExpression (outerFrames: ScopeFrame list) (localBindings: Map<string, BindingInfo>) statementIndex expression =
                     withinDepth (fun () ->

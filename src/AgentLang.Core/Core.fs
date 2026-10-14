@@ -90,6 +90,14 @@ type Expr =
     | MatchOption of string * Expr list * Expr list * SourceSpan
     | MatchResult of string * string * Expr list * Expr list * SourceSpan
     | MatchEnum of (string * Expr list) list * SourceSpan
+    /// Pops one value into an existing local of the same type (Flow `var`).
+    | Assign of string * SourceSpan
+    /// Pops start and end Ints; runs the body for each index in [start, end).
+    | ForRange of string * Expr list * SourceSpan
+    /// Pops a List<T>; runs the body per item with the item (and optional index) bound.
+    | ForList of string * string option * Expr list * SourceSpan
+    | Break of SourceSpan
+    | Continue of SourceSpan
 
 type TestExpectation =
     | ExpectedValue of Literal

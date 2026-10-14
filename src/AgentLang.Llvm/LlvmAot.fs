@@ -608,6 +608,11 @@ module LlvmAot =
                     visitBlock errorBlock
                 | IrOperation.MatchEnum(_, cases) ->
                     cases |> List.iter (snd >> visitBlock)
+                | IrOperation.ForRange(_, inner)
+                | IrOperation.ForList(_, _, _, inner) -> visitBlock inner
+                | IrOperation.AssignLocal _
+                | IrOperation.Break
+                | IrOperation.Continue -> ()
                 | IrOperation.MakeEnumCase(call, _, _) -> add call
                 | IrOperation.HtmlTemplate _
                 | IrOperation.Constant _
@@ -907,6 +912,10 @@ module LlvmAot =
                     owner span [ "owning-stack backend" ] [ "html template" ]
             | IrOperation.StoreLocal _
             | IrOperation.LoadLocal _ -> ()
+            | IrOperation.ForRange _ | IrOperation.ForList _ | IrOperation.AssignLocal _ | IrOperation.Break | IrOperation.Continue ->
+                callDiagnostic "IR_LLVM_LOOP_UNSUPPORTED"
+                    "The scalar LLVM (arena) backend does not support loops or var assignment; use the owning-stack backend."
+                    owner span [ "owning-stack backend" ] [ "loop or var assignment" ]
             | IrOperation.Scope inner | IrOperation.Compact inner -> validateBlock program owner sourceMap inner
             | IrOperation.If(thenBlock, elseBlock) ->
                 validateBlock program owner sourceMap thenBlock

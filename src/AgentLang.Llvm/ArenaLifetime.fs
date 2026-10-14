@@ -132,8 +132,19 @@ module internal ArenaLifetime =
     let private makeOutputs (count: int) (origins: Set<ArenaRegion>) (prefix: Set<ArenaRegion> list) (state: AbstractState) =
         { state with Stack = prefix @ List.replicate count origins }
 
+    /// Outer locals a nested block reassigns (Flow vars) gain the origins they
+    /// may hold afterwards; every other outer local keeps its own origins.
+    let private carryAssigned (block: IrBlock) (outer: Map<LocalSlot, Set<ArenaRegion>>) (inner: Map<LocalSlot, Set<ArenaRegion>>) =
+        let assigned = IrLoops.assignedSlots block
+        outer
+        |> Map.map (fun slot origins ->
+            if assigned.Contains slot then Set.union origins (inner.TryFind slot |> Option.defaultValue Set.empty)
+            else origins)
+
     let private analyze (owner: AnalysisOwner) (inputTypes: IrType list) (outputTypes: IrType list) (rootBlock: IrBlock) =
         let decisions = ResizeArray<SourceSiteId * ArenaRewindDecision>()
+        // States reaching break / continue in each enclosing loop body.
+        let loopExits = System.Collections.Generic.Stack<ResizeArray<AbstractState> * ResizeArray<AbstractState>>()
 
         let rec analyzeBlock (scopePath: SourceSiteId list) (block: IrBlock) (state: AbstractState) =
             block.Code |> List.fold (analyzeInstruction scopePath) state
@@ -145,9 +156,18 @@ module internal ArenaLifetime =
             match instruction.Operation with
             | IrOperation.Constant _ ->
                 { state with Stack = state.Stack @ [ Set.singleton currentRegion ] }
-            | IrOperation.StoreLocal slot ->
+            | IrOperation.StoreLocal slot
+            | IrOperation.AssignLocal slot ->
                 let prefix, values = pop 1 state.Stack
                 { state with Stack = prefix; Locals = Map.add slot values.Head state.Locals }
+            | IrOperation.Break ->
+                if loopExits.Count > 0 then (fst (loopExits.Peek())).Add state
+                state
+            | IrOperation.Continue ->
+                if loopExits.Count > 0 then (snd (loopExits.Peek())).Add state
+                state
+            | IrOperation.ForRange(_, body) | IrOperation.ForList(_, _, _, body) ->
+                analyzeLoop scopePath state instruction body
             | IrOperation.LoadLocal slot ->
                 match state.Locals.TryFind slot with
                 | Some origins -> { state with Stack = state.Stack @ [ origins ] }
@@ -157,7 +177,7 @@ module internal ArenaLifetime =
             | IrOperation.Scope innerBlock ->
                 let innerPath = scopePath @ [ instruction.Site ]
                 let innerState = analyzeBlock innerPath innerBlock state
-                let restoredState = { innerState with Locals = state.Locals }
+                let restoredState = { innerState with Locals = carryAssigned innerBlock state.Locals innerState.Locals }
                 let scopeDecision =
                     decision owner (Some instruction.Site) restoredState.Stack (restoredState.Locals |> Map.toList |> List.map snd) restoredState.Escaped
                 decisions.Add(instruction.Site, scopeDecision)
@@ -169,7 +189,7 @@ module internal ArenaLifetime =
                 // refer to the block's region.
                 let innerPath = scopePath @ [ instruction.Site ]
                 let innerState = analyzeBlock innerPath innerBlock state
-                let restoredState = { innerState with Locals = state.Locals }
+                let restoredState = { innerState with Locals = carryAssigned innerBlock state.Locals innerState.Locals }
                 let prefix, results = pop 1 restoredState.Stack
                 let compactDecision =
                     decision owner (Some instruction.Site) prefix (restoredState.Locals |> Map.toList |> List.map snd) restoredState.Escaped
@@ -321,6 +341,76 @@ module internal ArenaLifetime =
                     else state.Escaped
                 { state with Stack = prefix @ [ outputOrigins ]; Escaped = retained }
 
+        /// A loop body is its own region, reclaimed at every back edge. Vars the
+        /// body assigns are relocated to the loop's mark (the enclosing region)
+        /// first, so they are exempt from the rewind proof like a compact result.
+        /// Other outer locals, the stack prefix and retained effects must not
+        /// refer to the body region. Origins grow monotonically to a fixpoint.
+        and analyzeLoop (scopePath: SourceSiteId list) (state: AbstractState) (instruction: IrInstruction) (body: IrBlock) =
+            let site = instruction.Site
+            let currentRegion = regionFor owner scopePath
+            let loopPath = scopePath @ [ site ]
+            let loopRegion = regionFor owner loopPath
+            let inLoop region = region.Owner = owner && List.contains site region.ScopePath
+            let relocate (origins: Set<ArenaRegion>) =
+                if origins |> Set.exists inLoop then origins |> Set.filter (inLoop >> not) |> Set.add currentRegion
+                else origins
+            let prefix, inputs, bound =
+                match instruction.Operation with
+                | IrOperation.ForRange(indexLocal, _) ->
+                    let prefix, inputs = pop 2 state.Stack
+                    prefix, inputs, [ indexLocal, Set.singleton loopRegion ]
+                | IrOperation.ForList(_, itemLocal, indexLocal, _) ->
+                    let prefix, inputs = pop 1 state.Stack
+                    // An item is a view into the list, which predates the loop mark.
+                    prefix, inputs, (itemLocal, inputs.Head) :: (indexLocal |> Option.map (fun slot -> slot, Set.singleton loopRegion) |> Option.toList)
+                | _ -> invalidOp "analyzeLoop requires a loop operation."
+            ignore inputs
+            let outer = state.Locals
+            let assigned = IrLoops.assignedSlots body |> Set.filter outer.ContainsKey
+            let mutable head = { state with Stack = prefix }
+            let mutable latches: AbstractState list = []
+            let mutable breaks: AbstractState list = []
+            let mutable stable = false
+            let mutable rounds = 0
+            while not stable do
+                rounds <- rounds + 1
+                if rounds > 64 then invalidOp "Arena lifetime loop analysis did not reach a fixpoint."
+                let entry = { head with Locals = bound |> List.fold (fun locals (slot, origins) -> Map.add slot origins locals) head.Locals }
+                let breakStates = ResizeArray<AbstractState>()
+                let continueStates = ResizeArray<AbstractState>()
+                loopExits.Push((breakStates, continueStates))
+                let exit =
+                    try analyzeBlock loopPath body entry
+                    finally loopExits.Pop() |> ignore
+                latches <- exit :: List.ofSeq continueStates
+                breaks <- List.ofSeq breakStates
+                let nextLocals =
+                    head.Locals
+                    |> Map.map (fun slot origins ->
+                        if assigned.Contains slot then
+                            latches |> List.fold (fun found latch -> Set.union found (relocate (latch.Locals.TryFind slot |> Option.defaultValue emptyOrigins))) origins
+                        else origins)
+                let nextEscaped = latches |> List.fold (fun found latch -> Set.union found latch.Escaped) head.Escaped
+                let next = { head with Locals = nextLocals; Escaped = nextEscaped }
+                stable <- (next = head)
+                head <- next
+            let survivors =
+                latches
+                |> List.collect (fun latch ->
+                    outer |> Map.toList |> List.filter (fun (slot, _) -> not (assigned.Contains slot)) |> List.map (fun (slot, _) -> latch.Locals.TryFind slot |> Option.defaultValue emptyOrigins))
+            let escaped = latches |> List.fold (fun found latch -> Set.union found latch.Escaped) head.Escaped
+            decisions.Add(site, decision owner (Some site) prefix survivors escaped)
+            // Leaving the loop (header test or break) keeps the last iteration's
+            // allocations; they now belong to the enclosing region.
+            let exitStates = head :: breaks
+            let exitLocals =
+                outer
+                |> Map.map (fun slot origins ->
+                    exitStates |> List.fold (fun found exitState -> Set.union found (relocate (exitState.Locals.TryFind slot |> Option.defaultValue emptyOrigins))) origins)
+            let exitEscaped = exitStates |> List.fold (fun found exitState -> Set.union found (relocate exitState.Escaped)) emptyOrigins
+            { Stack = prefix; Locals = exitLocals; Escaped = exitEscaped }
+
         and analyzeUnmodeled (scopePath: SourceSiteId list) (state: AbstractState) (instruction: IrInstruction) =
             let retainedState, possible = addRetainedUncertainty owner scopePath state
             let unknownOutputOrigins = Set.union possible (liveOrigins state)
@@ -388,7 +478,9 @@ module internal ArenaLifetime =
                 let prefix, inputs = pop (templateHoleCount parts) state.Stack
                 finishUnknown prefix inputs 1
             | IrOperation.Constant _ | IrOperation.StoreLocal _ | IrOperation.LoadLocal _
-            | IrOperation.Scope _ | IrOperation.Compact _ | IrOperation.If _ ->
+            | IrOperation.Scope _ | IrOperation.Compact _ | IrOperation.If _
+            | IrOperation.AssignLocal _ | IrOperation.Break | IrOperation.Continue
+            | IrOperation.ForRange _ | IrOperation.ForList _ ->
                 // These operations are modeled above; retain all visible roots
                 // if a future verified shape reaches this fallback.
                 { retainedState with Stack = state.Stack |> List.map (Set.union unknownOutputOrigins) }

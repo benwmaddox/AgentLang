@@ -353,6 +353,8 @@ void al_owning_move_range(al_owning_stack_context *ctx,
                           uint32_t destination_offset, uint32_t source_offset,
                           uint32_t byte_count, uint32_t payload_bytes,
                           uint32_t type_id, uint32_t event_kind);
+void al_owning_loop_relocate(al_owning_stack_context *ctx, uint32_t mark,
+                             uint32_t count, uint32_t *descriptors);
 void al_owning_duplicate(al_owning_stack_context *ctx,
                          uint32_t destination_offset, uint32_t source_offset,
                          uint32_t extent_bytes, uint32_t payload_bytes,

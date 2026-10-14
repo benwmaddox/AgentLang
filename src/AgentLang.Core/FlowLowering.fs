@@ -223,7 +223,9 @@ module FlowLowering =
 
     type private Binding =
         { InternalName: string
-          Type: LangType }
+          Type: LangType
+          /// True for a Flow/2 `var` local, the only kind of local that can be reassigned.
+          Mutable: bool }
 
     [<RequireQualifiedAccess>]
     type private SignatureKind =
@@ -268,6 +270,11 @@ module FlowLowering =
         | SemanticIf of SemanticExpr list * SemanticExpr list
         | SemanticScope of SemanticExpr list
         | SemanticCompact of SemanticExpr list
+        | SemanticAssign of string
+        | SemanticForRange of string * SemanticExpr list
+        | SemanticForList of string * string option * SemanticExpr list
+        | SemanticBreak
+        | SemanticContinue
         | SemanticMatchOption of string * SemanticExpr list * SemanticExpr list
         | SemanticMatchResult of string * string * SemanticExpr list * SemanticExpr list
         | SemanticMatchEnum of (string * SemanticExpr list) list
@@ -307,6 +314,8 @@ module FlowLowering =
           mutable NextSyntheticMarker: int64
           mutable AuthoredSpans: Set<SourceSpan>
           mutable SyntheticOrigins: Map<SourceSpan, SourceSpan>
+          /// Enclosing loop bodies; break/continue need at least one. compact { } resets it.
+          mutable LoopDepth: int
           Signatures: Map<string, Candidate> }
 
     [<RequireQualifiedAccess>]
@@ -423,6 +432,7 @@ module FlowLowering =
           NextSyntheticMarker = highestRetainedIndex + 1L
           AuthoredSpans = Set.empty
           SyntheticOrigins = Map.empty
+          LoopDepth = 0
           Signatures = signatures }
 
     let private freshState (context: Context) =
@@ -947,7 +957,7 @@ module FlowLowering =
                 | actual -> fail "FLOW_MATCH_REQUIRES_OPTION" "Option match requires an Option<T> scrutinee." None (Some matchSpan) [ "Option<T>" ] [ Types.format actual ]
             if environment.ContainsKey someCase.Name then
                 fail "FLOW_MATCH_PAYLOAD_SHADOW" $"Option payload local '{someCase.Name}' cannot shadow an outer local." None (Some someCase.NameSpan) [] [ someCase.Name ]
-            let someEnvironment = Map.add someCase.Name { InternalName = someCase.Name; Type = itemType } environment
+            let someEnvironment = Map.add someCase.Name { InternalName = someCase.Name; Type = itemType; Mutable = false } environment
             let someOutputs = inferStatements context state someEnvironment someCase.Statements
             let noneOutputs = inferStatements context state environment noneCase.Statements
             match someOutputs, noneOutputs with
@@ -963,8 +973,8 @@ module FlowLowering =
                 fail "FLOW_MATCH_PAYLOAD_SHADOW" $"Result ok payload local '{okCase.Name}' cannot shadow an outer local." None (Some okCase.NameSpan) [] [ okCase.Name ]
             if environment.ContainsKey errorCase.Name then
                 fail "FLOW_MATCH_PAYLOAD_SHADOW" $"Result error payload local '{errorCase.Name}' cannot shadow an outer local." None (Some errorCase.NameSpan) [] [ errorCase.Name ]
-            let okEnvironment = Map.add okCase.Name { InternalName = okCase.Name; Type = okType } environment
-            let errorEnvironment = Map.add errorCase.Name { InternalName = errorCase.Name; Type = errorType } environment
+            let okEnvironment = Map.add okCase.Name { InternalName = okCase.Name; Type = okType; Mutable = false } environment
+            let errorEnvironment = Map.add errorCase.Name { InternalName = errorCase.Name; Type = errorType; Mutable = false } environment
             let okOutputs = inferStatements context state okEnvironment okCase.Statements
             let errorOutputs = inferStatements context state errorEnvironment errorCase.Statements
             match okOutputs, errorOutputs with
@@ -1100,7 +1110,7 @@ module FlowLowering =
                 rememberSpan state statementSpan
                 if environment.ContainsKey name then fail "FLOW_LOCAL_REBOUND" $"Immutable local '{name}' is already declared in this lexical scope." None (Some statementSpan) [] [ name ]
                 let valueType = inferExpression context state environment value
-                environment <- Map.add name { InternalName = name; Type = valueType } environment
+                environment <- Map.add name { InternalName = name; Type = valueType; Mutable = false } environment
                 finalValue <- None
             | FlowStatement.LetMany(bindings, value, statementSpan) ->
                 rememberSpan state statementSpan
@@ -1109,7 +1119,12 @@ module FlowLowering =
                     fail "FLOW_DESTRUCTURE_ARITY" "A destructuring binding must name every output exactly once." None (Some statementSpan) [ string valueTypes.Length ] [ string bindings.Length ]
                 for (name, nameSpan), valueType in List.zip bindings valueTypes do
                     if environment.ContainsKey name then fail "FLOW_LOCAL_REBOUND" $"Immutable local '{name}' is already declared in this lexical scope." None (Some nameSpan) [] [ name ]
-                    environment <- Map.add name { InternalName = name; Type = valueType } environment
+                    environment <- Map.add name { InternalName = name; Type = valueType; Mutable = false } environment
+                finalValue <- None
+            | FlowStatement.Evaluate(FlowExpression.If(_, thenBody, elseBody, _) as expression) when isStatementIf context state environment expression ->
+                checkStatementIfCondition context state environment expression
+                inferStatements context state environment thenBody |> ignore
+                inferStatements context state environment elseBody |> ignore
                 finalValue <- None
             | FlowStatement.Evaluate expression ->
                 let valueType = inferExpression context state environment expression
@@ -1118,7 +1133,89 @@ module FlowLowering =
                 rememberSpan state statementSpan
                 let outputTypes = values |> List.map (inferExpression context state environment)
                 finalValue <- if index = statements.Length - 1 then Some outputTypes else None
+            | FlowStatement.Var(name, value, statementSpan) ->
+                rememberSpan state statementSpan
+                if environment.ContainsKey name then fail "FLOW_LOCAL_REBOUND" $"Local '{name}' is already declared in this lexical scope." None (Some statementSpan) [] [ name ]
+                let valueType = inferExpression context state environment value
+                environment <- Map.add name { InternalName = name; Type = valueType; Mutable = true } environment
+                finalValue <- None
+            | FlowStatement.Assign(name, value, statementSpan) ->
+                rememberSpan state statementSpan
+                checkAssignment context state environment name value statementSpan |> ignore
+                finalValue <- None
+            | FlowStatement.ForRange(indexName, start, finish, body, statementSpan) ->
+                rememberSpan state statementSpan
+                let bodyEnvironment = loopEnvironment context state environment (Choice1Of2(indexName, start, finish)) statementSpan
+                inferStatements context state bodyEnvironment body |> ignore
+                finalValue <- None
+            | FlowStatement.ForEach(itemName, indexName, items, body, statementSpan) ->
+                rememberSpan state statementSpan
+                let bodyEnvironment = loopEnvironment context state environment (Choice2Of2(itemName, indexName, items)) statementSpan
+                inferStatements context state bodyEnvironment body |> ignore
+                finalValue <- None
+            | FlowStatement.Break statementSpan
+            | FlowStatement.Continue statementSpan ->
+                rememberSpan state statementSpan
+                finalValue <- None
         finalValue
+
+    /// A Flow/2 `if` whose branches both produce nothing is a statement (no value).
+    /// This is syntactic (a block produces a value only when it ends in an
+    /// expression or return), so nested if chains are not re-inferred per level.
+    and private isStatementIf (_: Context) (_: LoweringState) (_: Map<string, Binding>) expression =
+        let rec producesNothing (statements: FlowStatement list) =
+            match List.tryLast statements with
+            | None -> true
+            | Some(FlowStatement.Evaluate(FlowExpression.If(_, thenBody, elseBody, _))) -> producesNothing thenBody && producesNothing elseBody
+            | Some(FlowStatement.Evaluate _ | FlowStatement.Return _) -> false
+            | Some _ -> true
+        match expression with
+        | FlowExpression.If(_, thenBody, elseBody, _) -> producesNothing thenBody && producesNothing elseBody
+        | _ -> false
+
+    and private checkStatementIfCondition context state environment expression =
+        match expression with
+        | FlowExpression.If(condition, _, _, _) ->
+            let conditionType = inferExpression context state environment condition
+            if conditionType <> TBool then fail "FLOW_IF_CONDITION_TYPE" "Flow if condition must have type Bool." None (Some(spanOfExpression condition)) [ "Bool" ] [ Types.format conditionType ]
+        | _ -> ()
+
+    /// Checks `name = value`: name must be a var of exactly the value's type.
+    and private checkAssignment context state environment name value statementSpan =
+        match Map.tryFind name environment with
+        | None -> fail "FLOW_ASSIGN_UNKNOWN_LOCAL" $"Cannot assign to '{name}': no local with that name is in scope." None (Some statementSpan) [ "var local" ] [ name ]
+        | Some binding when not binding.Mutable ->
+            fail "FLOW_ASSIGN_IMMUTABLE" $"Cannot assign to '{name}': only locals declared with `var` can be reassigned." None (Some statementSpan) [ "var local" ] [ name ]
+        | Some binding ->
+            let valueType = inferExpression context state environment value
+            if valueType <> binding.Type then
+                fail "FLOW_ASSIGN_TYPE" $"Cannot assign a {Types.format valueType} to var '{name}' of type {Types.format binding.Type}." None (Some statementSpan) [ Types.format binding.Type ] [ Types.format valueType ]
+            binding
+
+    /// Checks a loop header and returns the environment its body sees.
+    and private loopEnvironment context state environment header statementSpan =
+        let addName name ty found =
+            if Map.containsKey name environment then
+                fail "FLOW_LOCAL_REBOUND" $"Loop local '{name}' is already declared in this lexical scope." None (Some statementSpan) [] [ name ]
+            Map.add name { InternalName = name; Type = ty; Mutable = false } found
+        match header with
+        | Choice1Of2(indexName, start, finish) ->
+            for bound in [ start; finish ] do
+                let boundType = inferExpression context state environment bound
+                if boundType <> TInt then
+                    fail "FLOW_LOOP_RANGE_TYPE" "A range loop's start and end must be Int." None (Some(spanOfExpression bound)) [ "Int" ] [ Types.format boundType ]
+            addName indexName TInt environment
+        | Choice2Of2(itemName, indexName, items) ->
+            let itemType =
+                match inferExpression context state environment items with
+                | TList item -> item
+                | actual -> fail "FLOW_LOOP_ITEMS_TYPE" "A `for x in items` loop needs a List<T>; use `for i in start..end` to count." None (Some(spanOfExpression items)) [ "List<T>" ] [ Types.format actual ]
+            if indexName = Some itemName then
+                fail "FLOW_LOCAL_REBOUND" $"Loop item and index cannot share the name '{itemName}'." None (Some statementSpan) [] [ itemName ]
+            let withItem = addName itemName itemType environment
+            match indexName with
+            | Some name -> addName name TInt withItem
+            | None -> withItem
 
     and private selectCallOutputs context state environment requestedName receiverType arguments callSpan =
         let candidates = candidatesFor state context requestedName
@@ -1338,7 +1435,7 @@ module FlowLowering =
         | FlowExpression.MatchOption(scrutinee, someCase, noneCase, matchSpan) ->
             inferOutputs context state environment expression |> ignore
             let someType = inferExpression context state environment scrutinee |> function | TOption item -> item | _ -> failwith "validated option match changed type"
-            let someEnvironment = Map.add someCase.Name { InternalName = someCase.Name; Type = someType } environment
+            let someEnvironment = Map.add someCase.Name { InternalName = someCase.Name; Type = someType; Mutable = false } environment
             let someFragment, _ = lowerStatements context state someEnvironment (extendPath path (FlowAstPathSegment.OptionSomeStatement 0)) someCase.Statements
             let noneFragment, _ = lowerStatements context state environment (extendPath path (FlowAstPathSegment.OptionNoneStatement 0)) noneCase.Statements
             let someScope = Scope(someFragment.Expressions, syntheticSpan state someCase.Span)
@@ -1352,8 +1449,8 @@ module FlowLowering =
                 match inferExpression context state environment scrutinee with
                 | TResult(okValue, errorValue) -> okValue, errorValue
                 | _ -> failwith "validated result match changed type"
-            let okEnvironment = Map.add okCase.Name { InternalName = okCase.Name; Type = okType } environment
-            let errorEnvironment = Map.add errorCase.Name { InternalName = errorCase.Name; Type = errorType } environment
+            let okEnvironment = Map.add okCase.Name { InternalName = okCase.Name; Type = okType; Mutable = false } environment
+            let errorEnvironment = Map.add errorCase.Name { InternalName = errorCase.Name; Type = errorType; Mutable = false } environment
             let okFragment, _ = lowerStatements context state okEnvironment (extendPath path (FlowAstPathSegment.ResultOkStatement 0)) okCase.Statements
             let errorFragment, _ = lowerStatements context state errorEnvironment (extendPath path (FlowAstPathSegment.ResultErrorStatement 0)) errorCase.Statements
             let okScope = Scope(okFragment.Expressions, syntheticSpan state okCase.Span)
@@ -1377,7 +1474,11 @@ module FlowLowering =
               CallEvents = scrutineeFragment.CallEvents @ armEvents }
         | FlowExpression.Compact(body, compactSpan) ->
             inferOutputs context state environment expression |> ignore
-            let bodyFragment, _ = lowerStatements context state environment (extendPath path (FlowAstPathSegment.CompactStatement 0)) body
+            let savedLoopDepth = state.LoopDepth
+            state.LoopDepth <- 0
+            let bodyFragment, _ =
+                try lowerStatements context state environment (extendPath path (FlowAstPathSegment.CompactStatement 0)) body
+                finally state.LoopDepth <- savedLoopDepth
             { Expressions = [ Compact(bodyFragment.Expressions, compactSpan) ]
               CallEvents = bodyFragment.CallEvents }
         | FlowExpression.If(condition, thenStatements, elseStatements, ifSpan) ->
@@ -1500,13 +1601,25 @@ module FlowLowering =
         lowerStatementsWithPath context state initialEnvironment path FlowAstPathSegment.BlockStatement statements
 
     and private lowerStatementsWithPath context state initialEnvironment path statementPathSegment statements =
-        lowerStatementsCore context state initialEnvironment path statementPathSegment false statements
+        lowerStatementsCore context state initialEnvironment path statementPathSegment false false statements
 
     /// Lowers a step-list test body: its final bare expression becomes an implicit `expect`.
     and private lowerCheckedTestStatements context state path statements =
-        lowerStatementsCore context state Map.empty path FlowAstPathSegment.BlockStatement true statements
+        lowerStatementsCore context state Map.empty path FlowAstPathSegment.BlockStatement true false statements
 
-    and private lowerStatementsCore context state initialEnvironment path statementPathSegment implicitFinalCheck statements =
+    /// Lowers a loop body: every value-producing statement is discarded.
+    and private lowerLoopBody context state environment statementPath body =
+        state.LoopDepth <- state.LoopDepth + 1
+        try
+            for statement in body do
+                match statement with
+                | FlowStatement.Return(_, span) ->
+                    fail "FLOW_RETURN_IN_LOOP" "A loop body cannot return values; assign them to a var declared before the loop." None (Some span) [] []
+                | _ -> ()
+            lowerStatementsCore context state environment statementPath FlowAstPathSegment.ForBodyStatement false true body |> fst
+        finally state.LoopDepth <- state.LoopDepth - 1
+
+    and private lowerStatementsCore context state initialEnvironment path statementPathSegment implicitFinalCheck discardFinal statements =
         let mutable environment = initialEnvironment
         let output = ResizeArray<Expr>()
         let callEvents = ResizeArray<FlowCallEvent>()
@@ -1531,6 +1644,64 @@ module FlowLowering =
         for index, statement in statements |> List.indexed do
             let statementPath = extendPath path (statementPathSegment index)
             match statement with
+            | FlowStatement.Break span | FlowStatement.Continue span when state.LoopDepth = 0 ->
+                fail "FLOW_LOOP_CONTROL_OUTSIDE_LOOP" "break and continue can only be used inside a for loop body (not inside a compact block within it)." None (Some span) [ "enclosing for loop" ] []
+            | FlowStatement.Break span | FlowStatement.Continue span when index < statements.Length - 1 ->
+                fail "FLOW_LOOP_CONTROL_NOT_LAST" "break and continue must be the last statement of their block; anything after them is unreachable." None (Some span) [] []
+            | FlowStatement.Break span ->
+                rememberSpan state span
+                output.Add(Break span)
+            | FlowStatement.Continue span ->
+                rememberSpan state span
+                output.Add(Continue span)
+            | FlowStatement.Var(name, value, statementSpan) ->
+                rememberSpan state statementSpan
+                if environment.ContainsKey name then fail "FLOW_LOCAL_REBOUND" $"Local '{name}' is already declared in this lexical scope." None (Some statementSpan) [] [ name ]
+                let valueType = inferExpression context state environment value
+                let valueFragment = lowerFlowExpression context state environment (extendPath statementPath FlowAstPathSegment.VarInitializer) value
+                output.AddRange valueFragment.Expressions
+                callEvents.AddRange valueFragment.CallEvents
+                output.Add(Let(name, statementSpan))
+                environment <- Map.add name { InternalName = name; Type = valueType; Mutable = true } environment
+            | FlowStatement.Assign(name, value, statementSpan) ->
+                rememberSpan state statementSpan
+                let binding = checkAssignment context state environment name value statementSpan
+                let valueFragment = lowerFlowExpression context state environment (extendPath statementPath FlowAstPathSegment.AssignValue) value
+                output.AddRange valueFragment.Expressions
+                callEvents.AddRange valueFragment.CallEvents
+                output.Add(Assign(binding.InternalName, statementSpan))
+            | FlowStatement.ForRange(indexName, start, finish, body, statementSpan) ->
+                rememberSpan state statementSpan
+                let bodyEnvironment = loopEnvironment context state environment (Choice1Of2(indexName, start, finish)) statementSpan
+                let startFragment = lowerFlowExpression context state environment (extendPath statementPath FlowAstPathSegment.ForRangeStart) start
+                let finishFragment = lowerFlowExpression context state environment (extendPath statementPath FlowAstPathSegment.ForRangeEnd) finish
+                let bodyFragment = lowerLoopBody context state bodyEnvironment statementPath body
+                output.AddRange startFragment.Expressions
+                output.AddRange finishFragment.Expressions
+                output.Add(ForRange(indexName, bodyFragment.Expressions, statementSpan))
+                callEvents.AddRange startFragment.CallEvents
+                callEvents.AddRange finishFragment.CallEvents
+                callEvents.AddRange bodyFragment.CallEvents
+            | FlowStatement.ForEach(itemName, indexName, items, body, statementSpan) ->
+                rememberSpan state statementSpan
+                let bodyEnvironment = loopEnvironment context state environment (Choice2Of2(itemName, indexName, items)) statementSpan
+                let itemsFragment = lowerFlowExpression context state environment (extendPath statementPath FlowAstPathSegment.ForItems) items
+                let bodyFragment = lowerLoopBody context state bodyEnvironment statementPath body
+                output.AddRange itemsFragment.Expressions
+                output.Add(ForList(itemName, indexName, bodyFragment.Expressions, statementSpan))
+                callEvents.AddRange itemsFragment.CallEvents
+                callEvents.AddRange bodyFragment.CallEvents
+            | FlowStatement.Evaluate(FlowExpression.If(condition, thenStatements, elseStatements, ifSpan) as expression)
+                when isStatementIf context state environment expression ->
+                checkStatementIfCondition context state environment expression
+                let thenFragment, _ = lowerStatements context state environment (extendPath (extendPath statementPath FlowAstPathSegment.EvaluateExpression) (FlowAstPathSegment.IfThenStatement 0)) thenStatements
+                let elseFragment, _ = lowerStatements context state environment (extendPath (extendPath statementPath FlowAstPathSegment.EvaluateExpression) (FlowAstPathSegment.IfElseStatement 0)) elseStatements
+                let conditionFragment = lowerFlowExpression context state environment (extendPath (extendPath statementPath FlowAstPathSegment.EvaluateExpression) FlowAstPathSegment.IfCondition) condition
+                output.AddRange conditionFragment.Expressions
+                output.Add(If([ Scope(thenFragment.Expressions, syntheticSpan state ifSpan) ], [ Scope(elseFragment.Expressions, syntheticSpan state ifSpan) ], ifSpan))
+                callEvents.AddRange conditionFragment.CallEvents
+                callEvents.AddRange thenFragment.CallEvents
+                callEvents.AddRange elseFragment.CallEvents
             | FlowStatement.Let(name, value, statementSpan) ->
                 rememberSpan state statementSpan
                 if environment.ContainsKey name then fail "FLOW_LOCAL_REBOUND" $"Immutable local '{name}' is already declared in this lexical scope." None (Some statementSpan) [] [ name ]
@@ -1539,7 +1710,7 @@ module FlowLowering =
                 output.AddRange valueFragment.Expressions
                 callEvents.AddRange valueFragment.CallEvents
                 output.Add(Let(name, statementSpan))
-                environment <- Map.add name { InternalName = name; Type = valueType } environment
+                environment <- Map.add name { InternalName = name; Type = valueType; Mutable = false } environment
             | FlowStatement.LetMany(bindings, value, statementSpan) ->
                 rememberSpan state statementSpan
                 let valueTypes = inferOutputs context state environment value
@@ -1553,7 +1724,7 @@ module FlowLowering =
                 callEvents.AddRange valueFragment.CallEvents
                 for (name, nameSpan), valueType in List.zip (List.rev bindings) (List.rev valueTypes) do
                     output.Add(Let(name, nameSpan))
-                    environment <- Map.add name { InternalName = name; Type = valueType } environment
+                    environment <- Map.add name { InternalName = name; Type = valueType; Mutable = false } environment
             | FlowStatement.Evaluate(FlowExpression.Call(name, arguments, checkSpan)) when FlowExpect.isIntrinsic name ->
                 let operands =
                     arguments |> List.map (function
@@ -1575,7 +1746,7 @@ module FlowLowering =
                 let valueFragment = lowerFlowExpression context state environment (extendPath statementPath FlowAstPathSegment.EvaluateExpression) expression
                 output.AddRange valueFragment.Expressions
                 callEvents.AddRange valueFragment.CallEvents
-                if index < statements.Length - 1 then
+                if index < statements.Length - 1 || discardFinal then
                     let origin = spanOfExpression expression
                     let temporary, tempSpan = freshTemporary state origin
                     let scopeSpan = syntheticSpan state origin
@@ -1640,7 +1811,7 @@ module FlowLowering =
                     | _ -> []
                 let nested =
                     match instruction.Operation with
-                    | IrOperation.Scope inner | IrOperation.Compact inner -> walk inner
+                    | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> walk inner
                     | IrOperation.If(thenBlock, elseBlock) -> walk thenBlock @ walk elseBlock
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> walk someBlock @ walk noneBlock
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> walk okBlock @ walk errorBlock
@@ -1841,6 +2012,11 @@ module FlowLowering =
             | If(thenBranch, elseBranch, _) -> SemanticIf(semanticExpressions thenBranch, semanticExpressions elseBranch)
             | Scope(body, _) -> SemanticScope(semanticExpressions body)
             | Compact(body, _) -> SemanticCompact(semanticExpressions body)
+            | Assign(name, _) -> SemanticAssign name
+            | ForRange(name, body, _) -> SemanticForRange(name, semanticExpressions body)
+            | ForList(name, index, body, _) -> SemanticForList(name, index, semanticExpressions body)
+            | Break _ -> SemanticBreak
+            | Continue _ -> SemanticContinue
             | MatchOption(name, someBranch, noneBranch, _) -> SemanticMatchOption(name, semanticExpressions someBranch, semanticExpressions noneBranch)
             | MatchResult(okName, errorName, okBranch, errorBranch, _) ->
                 SemanticMatchResult(okName, errorName, semanticExpressions okBranch, semanticExpressions errorBranch)
@@ -1942,6 +2118,16 @@ module FlowLowering =
                 | FlowStatement.Let(_, value, _) -> walkExpression (extendPath statementPath FlowAstPathSegment.LetInitializer) value
                 | FlowStatement.LetMany(_, value, _) -> walkExpression (extendPath statementPath FlowAstPathSegment.DestructureInitializer) value
                 | FlowStatement.Evaluate expression -> walkExpression (extendPath statementPath FlowAstPathSegment.EvaluateExpression) expression
+                | FlowStatement.Var(_, value, _) -> walkExpression (extendPath statementPath FlowAstPathSegment.VarInitializer) value
+                | FlowStatement.Assign(_, value, _) -> walkExpression (extendPath statementPath FlowAstPathSegment.AssignValue) value
+                | FlowStatement.ForRange(_, start, finish, body, _) ->
+                    walkExpression (extendPath statementPath FlowAstPathSegment.ForRangeStart) start
+                    walkExpression (extendPath statementPath FlowAstPathSegment.ForRangeEnd) finish
+                    walkStatementsWithPath statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.ForEach(_, _, items, body, _) ->
+                    walkExpression (extendPath statementPath FlowAstPathSegment.ForItems) items
+                    walkStatementsWithPath statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.Break _ | FlowStatement.Continue _ -> ()
                 | FlowStatement.Return(values, _) ->
                     values |> List.iteri (fun outputIndex value ->
                         walkExpression (extendPath statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
@@ -1953,6 +2139,16 @@ module FlowLowering =
                 | FlowStatement.Let(_, value, _) -> walkExpression (extendPath statementPath FlowAstPathSegment.LetInitializer) value
                 | FlowStatement.LetMany(_, value, _) -> walkExpression (extendPath statementPath FlowAstPathSegment.DestructureInitializer) value
                 | FlowStatement.Evaluate expression -> walkExpression (extendPath statementPath FlowAstPathSegment.EvaluateExpression) expression
+                | FlowStatement.Var(_, value, _) -> walkExpression (extendPath statementPath FlowAstPathSegment.VarInitializer) value
+                | FlowStatement.Assign(_, value, _) -> walkExpression (extendPath statementPath FlowAstPathSegment.AssignValue) value
+                | FlowStatement.ForRange(_, start, finish, body, _) ->
+                    walkExpression (extendPath statementPath FlowAstPathSegment.ForRangeStart) start
+                    walkExpression (extendPath statementPath FlowAstPathSegment.ForRangeEnd) finish
+                    walkStatementsWithPath statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.ForEach(_, _, items, body, _) ->
+                    walkExpression (extendPath statementPath FlowAstPathSegment.ForItems) items
+                    walkStatementsWithPath statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.Break _ | FlowStatement.Continue _ -> ()
                 | FlowStatement.Return(values, _) -> values |> List.iteri (fun outputIndex value -> walkExpression (extendPath statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
         walkStatements (FlowAstPath.FlowAstPath []) flowWord.Body
         found |> Seq.toList
@@ -2024,6 +2220,16 @@ module FlowLowering =
                 | FlowStatement.Let(_, value, _) -> walkExpression role (extendPath statementPath FlowAstPathSegment.LetInitializer) value
                 | FlowStatement.LetMany(_, value, _) -> walkExpression role (extendPath statementPath FlowAstPathSegment.DestructureInitializer) value
                 | FlowStatement.Evaluate expression -> walkExpression role (extendPath statementPath FlowAstPathSegment.EvaluateExpression) expression
+                | FlowStatement.Var(_, value, _) -> walkExpression role (extendPath statementPath FlowAstPathSegment.VarInitializer) value
+                | FlowStatement.Assign(_, value, _) -> walkExpression role (extendPath statementPath FlowAstPathSegment.AssignValue) value
+                | FlowStatement.ForRange(_, start, finish, body, _) ->
+                    walkExpression role (extendPath statementPath FlowAstPathSegment.ForRangeStart) start
+                    walkExpression role (extendPath statementPath FlowAstPathSegment.ForRangeEnd) finish
+                    walkStatementsWithPath role statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.ForEach(_, _, items, body, _) ->
+                    walkExpression role (extendPath statementPath FlowAstPathSegment.ForItems) items
+                    walkStatementsWithPath role statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.Break _ | FlowStatement.Continue _ -> ()
                 | FlowStatement.Return(values, _) ->
                     values |> List.iteri (fun outputIndex value ->
                         walkExpression role (extendPath statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
@@ -2035,6 +2241,16 @@ module FlowLowering =
                 | FlowStatement.Let(_, value, _) -> walkExpression role (extendPath statementPath FlowAstPathSegment.LetInitializer) value
                 | FlowStatement.LetMany(_, value, _) -> walkExpression role (extendPath statementPath FlowAstPathSegment.DestructureInitializer) value
                 | FlowStatement.Evaluate expression -> walkExpression role (extendPath statementPath FlowAstPathSegment.EvaluateExpression) expression
+                | FlowStatement.Var(_, value, _) -> walkExpression role (extendPath statementPath FlowAstPathSegment.VarInitializer) value
+                | FlowStatement.Assign(_, value, _) -> walkExpression role (extendPath statementPath FlowAstPathSegment.AssignValue) value
+                | FlowStatement.ForRange(_, start, finish, body, _) ->
+                    walkExpression role (extendPath statementPath FlowAstPathSegment.ForRangeStart) start
+                    walkExpression role (extendPath statementPath FlowAstPathSegment.ForRangeEnd) finish
+                    walkStatementsWithPath role statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.ForEach(_, _, items, body, _) ->
+                    walkExpression role (extendPath statementPath FlowAstPathSegment.ForItems) items
+                    walkStatementsWithPath role statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.Break _ | FlowStatement.Continue _ -> ()
                 | FlowStatement.Return(values, _) -> values |> List.iteri (fun outputIndex value -> walkExpression role (extendPath statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
         match attachment with
         | ParsedFlowTest test ->
@@ -2152,7 +2368,7 @@ module FlowLowering =
             flowWord.Parameters
             |> List.mapi (fun index parameter ->
                 rememberSpan state parameter.Span
-                parameter.Name, { InternalName = internalParameterName index; Type = parameter.Type })
+                parameter.Name, { InternalName = internalParameterName index; Type = parameter.Type; Mutable = false })
             |> Map.ofList
         let parameterBindings =
             flowWord.Parameters
@@ -2400,11 +2616,12 @@ module FlowLowering =
                     | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
                     | MapList(_, span) | FilterList(_, span) | EachList(_, span) | FoldList(_, span) | MapListWithContext(_, span)
                     | Let(_, span) | Load(_, span) | If(_, _, span) | Scope(_, span) | Compact(_, span)
-                    | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) | MatchEnum(_, span) -> span
+                    | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) | MatchEnum(_, span)
+                    | Assign(_, span) | ForRange(_, _, span) | ForList(_, _, _, span) | Break span | Continue span -> span
                 let found = if span.Length = 0 then Set.add span found else found
                 match expression with
                 | If(thenBranch, elseBranch, _) -> Set.union found (Set.union (collect thenBranch) (collect elseBranch))
-                | Scope(innerBody, _) | Compact(innerBody, _) -> Set.union found (collect innerBody)
+                | Scope(innerBody, _) | Compact(innerBody, _) | ForRange(_, innerBody, _) | ForList(_, _, innerBody, _) -> Set.union found (collect innerBody)
                 | MatchOption(_, someBranch, noneBranch, _) -> Set.union found (Set.union (collect someBranch) (collect noneBranch))
                 | MatchResult(_, _, okBranch, errorBranch, _) -> Set.union found (Set.union (collect okBranch) (collect errorBranch))
                 | MatchEnum(cases, _) -> cases |> List.fold (fun accumulated (_, caseBody) -> Set.union accumulated (collect caseBody)) found

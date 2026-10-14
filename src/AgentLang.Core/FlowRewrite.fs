@@ -144,7 +144,19 @@ module FlowRewrite =
                 | FlowStatement.Return(values, _) ->
                     values
                     |> List.iteri (fun outputIndex value ->
-                        visitExpression role (pathChild statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
+                        visitExpression role (pathChild statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value)
+                | FlowStatement.Var(_, value, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.VarInitializer) value
+                | FlowStatement.Assign(_, value, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.AssignValue) value
+                | FlowStatement.ForRange(_, start, finish, body, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.ForRangeStart) start
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.ForRangeEnd) finish
+                    visitStatementsWithPath role statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.ForEach(_, _, items, body, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.ForItems) items
+                    visitStatementsWithPath role statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.Break _ | FlowStatement.Continue _ -> ())
 
         and visitStatementsWithPath role path statementPathSegment statements =
             statements
@@ -160,7 +172,19 @@ module FlowRewrite =
                 | FlowStatement.Return(values, _) ->
                     values
                     |> List.iteri (fun outputIndex value ->
-                        visitExpression role (pathChild statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
+                        visitExpression role (pathChild statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value)
+                | FlowStatement.Var(_, value, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.VarInitializer) value
+                | FlowStatement.Assign(_, value, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.AssignValue) value
+                | FlowStatement.ForRange(_, start, finish, body, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.ForRangeStart) start
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.ForRangeEnd) finish
+                    visitStatementsWithPath role statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.ForEach(_, _, items, body, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.ForItems) items
+                    visitStatementsWithPath role statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.Break _ | FlowStatement.Continue _ -> ())
 
         let rootPath = FlowAstPath.FlowAstPath []
         for role, expressions, statements in roots do
@@ -583,7 +607,37 @@ module FlowRewrite =
                                 rewriteExpression role
                                     (pathChild oldStatementPath (FlowAstPathSegment.ReturnOutput outputIndex))
                                     (pathChild newStatementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value),
-                            span))
+                            span)
+                    | FlowStatement.Var(name, value, span) ->
+                        FlowStatement.Var(name,
+                            rewriteExpression role
+                                (pathChild oldStatementPath FlowAstPathSegment.VarInitializer)
+                                (pathChild newStatementPath FlowAstPathSegment.VarInitializer) value,
+                            span)
+                    | FlowStatement.Assign(name, value, span) ->
+                        FlowStatement.Assign(name,
+                            rewriteExpression role
+                                (pathChild oldStatementPath FlowAstPathSegment.AssignValue)
+                                (pathChild newStatementPath FlowAstPathSegment.AssignValue) value,
+                            span)
+                    | FlowStatement.ForRange(index, start, finish, body, span) ->
+                        FlowStatement.ForRange(index,
+                            rewriteExpression role
+                                (pathChild oldStatementPath FlowAstPathSegment.ForRangeStart)
+                                (pathChild newStatementPath FlowAstPathSegment.ForRangeStart) start,
+                            rewriteExpression role
+                                (pathChild oldStatementPath FlowAstPathSegment.ForRangeEnd)
+                                (pathChild newStatementPath FlowAstPathSegment.ForRangeEnd) finish,
+                            rewriteStatementsWithPath role oldStatementPath newStatementPath FlowAstPathSegment.ForBodyStatement body,
+                            span)
+                    | FlowStatement.ForEach(item, index, items, body, span) ->
+                        FlowStatement.ForEach(item, index,
+                            rewriteExpression role
+                                (pathChild oldStatementPath FlowAstPathSegment.ForItems)
+                                (pathChild newStatementPath FlowAstPathSegment.ForItems) items,
+                            rewriteStatementsWithPath role oldStatementPath newStatementPath FlowAstPathSegment.ForBodyStatement body,
+                            span)
+                    | FlowStatement.Break _ | FlowStatement.Continue _ -> statement)
 
             let rootPath = FlowAstPath.FlowAstPath []
             let rewritten = rewriteAst rootPath rewriteStatements rewriteStatementsWithPath rewriteExpression
