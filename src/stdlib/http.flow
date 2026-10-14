@@ -1,0 +1,99 @@
+// Standard library: the portable HTTP host contract (docs/LINUX-SERVER-PLAN.md
+// piece A). An app supplies
+//   fn <app>.worker-init(config: List<HttpHeader>) -> <Context>
+//   fn <app>.handle(request: HttpRequest, context: <Context>) -> HttpResponse
+// The host lower-cases header names and passes the raw target (path and query).
+
+record HttpHeader {
+    name: String
+    value: String
+}
+
+record HttpRequest {
+    method: String
+    target: String
+    headers: List<HttpHeader>
+    body: Bytes
+    remote-ip: String
+    now-microseconds: Int
+}
+
+record HttpResponse {
+    status: Int
+    headers: List<HttpHeader>
+    body: String
+}
+
+fn http.header(headers: List<HttpHeader>, name: String) -> Option<String> {
+    doc "The first header with this exact (lower-case) name."
+    var found = option.none<String>()
+    for header in headers {
+        if header.name == name {
+            found = option.some<String>(header.value)
+            break
+        }
+    }
+    found
+}
+
+test http.header/found {
+    let headers = [httpHeader.new(name = "host", value = "a"), httpHeader.new(name = "accept", value = "b")]
+    expect http.header(headers, "accept") == option.some<String>("b")
+    expect http.header(headers, "cookie") == option.none<String>()
+}
+
+fn http.path(target: String) -> String {
+    doc "The target's path: everything before the first '?'."
+    match string.index-of(target, "?", 0) {
+        none => target
+        some index => match string.slice(target, 0, index) {
+            none => target
+            some path => path
+        }
+    }
+}
+
+test http.path/query {
+    expect http.path("/items?id=3") == "/items"
+    expect http.path("/items") == "/items"
+}
+
+fn http.query(target: String) -> String {
+    doc "The target's query: everything after the first '?', or empty."
+    match string.index-of(target, "?", 0) {
+        none => ""
+        some index => match string.slice(target, index + 1, string.byte-length(target) - index - 1) {
+            none => ""
+            some query => query
+        }
+    }
+}
+
+test http.query/present {
+    expect http.query("/items?id=3&x=4") == "id=3&x=4"
+    expect http.query("/items") == ""
+}
+
+fn http.config(config: List<HttpHeader>, name: String) -> String {
+    doc "A worker configuration value, or empty when absent."
+    match http.header(config, name) {
+        none => ""
+        some value => value
+    }
+}
+
+test http.config/absent {
+    expect http.config([httpHeader.new(name = "db", value = "x")], "db") == "x"
+    expect http.config([httpHeader.new(name = "db", value = "x")], "other") == ""
+}
+
+fn http.response(status: Int, content-type: String, body: String) -> HttpResponse {
+    doc "A response with one Content-Type header; the host adds Content-Length."
+    httpResponse.new(status = status, headers = [httpHeader.new(name = "content-type", value = content-type)], body = body)
+}
+
+test http.response/text {
+    let response = http.response(404, "text/plain", "missing")
+    expect response.status == 404
+    expect response.body == "missing"
+}

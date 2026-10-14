@@ -165,6 +165,33 @@ type OwningAppHostManifest =
 type OwningNativeHostProfile =
     | AppHost of OwningAppHostManifest
 
+/// The native target an owning module is emitted for. Windows x64 (the
+/// default) exports entries with dllexport and imports BCryptGenRandom when
+/// crypto.random-bytes is used; Linux x64 (ELF) has no dllexport/dllimport and
+/// takes randomness from the runtime's getrandom source.
+[<RequireQualifiedAccess>]
+type OwningTarget =
+    | WindowsX64
+    | LinuxX64
+
+    member this.Triple =
+        match this with
+        | WindowsX64 -> "x86_64-pc-windows-msvc"
+        | LinuxX64 -> "x86_64-pc-linux-gnu"
+
+    static member Parse(text: string) =
+        match text.Trim().ToLowerInvariant() with
+        | "windows" | "windows-x64" | "win-x64" | "x86_64-pc-windows-msvc" -> WindowsX64
+        | "linux" | "linux-x64" | "x86_64-pc-linux-gnu" | "x86_64-unknown-linux-gnu" -> LinuxX64
+        | other -> invalidArg (nameof text) $"Unknown owning target '{other}' (expected windows-x64 or linux-x64)."
+
+/// One exported entry of a multi-entry native host module: the C symbol, the
+/// app word the compiler-minted shim calls, and its verified shim body.
+type OwningHostEntry =
+    { ExportName: string
+      EntryWord: string
+      Body: VerifiedIrBody }
+
 /// Trusted build inputs, never selected by language code or request data.
 type OwningNativeHostDependencies =
     { HeaderPaths: string list
@@ -3697,11 +3724,18 @@ module OwningStackAot =
         (functionAnalyses: Map<WordId, ArenaLifetimeBodyAnalysis>)
         (mailboxMode: bool)
         (nativeHostProfile: OwningNativeHostProfile option)
-        (runtimeProfile: OwningRuntimeProfile) =
+        (runtimeProfile: OwningRuntimeProfile)
+        (target: OwningTarget)
+        (hostExportNames: string list option) =
         let body = info.Body
         let bodies = info.Bodies
         if bodies.Length <> entryAnalyses.Length then
             invalidOp "Owning module entry bodies and lifetime analyses have different lengths."
+        match hostExportNames with
+        | Some names when names.Length <> bodies.Length || nativeHostProfile.IsNone || mailboxMode ->
+            invalidOp "A multi-entry host module needs one export name per entry body and a native host profile."
+        | _ -> ()
+        let dllExport = match target with OwningTarget.WindowsX64 -> "dllexport " | OwningTarget.LinuxX64 -> ""
         if mailboxMode && bodies.Length <> 3 then
             invalidOp "An owning mailbox module must contain exactly three entry bodies."
         if mailboxMode && nativeHostProfile.IsSome then
@@ -3781,7 +3815,7 @@ module OwningStackAot =
         let entryRoles = [ "initialize"; "begin"; "resume" ]
         let entryFrameSymbols =
             if mailboxMode then entryRoles |> List.map (fun role -> $"@agentlang_mailbox_{role}_frame")
-            else [ "@agentlang_entry_frame" ]
+            else bodies |> List.mapi (fun index _ -> if index = 0 then "@agentlang_entry_frame" else $"@agentlang_entry_frame_{index}")
         let layoutSymbol = if mailboxMode then "@agentlang_owning_mailbox_layout" else "@al_owning_layout"
 
         let allBlocks = ResizeArray<string * IrBlock>()
@@ -7208,302 +7242,312 @@ module OwningStackAot =
             callback.Line("")
             role, callback.Text, explicitAllocaBoundBytes callback.Text
 
-        let wrapper = OwningLlvmWriter()
-        let wrapperFailure = wrapper.Label "entry.failure"
-        let wrapperBodyFailure = wrapper.Label "entry.body.failure"
-        let wrapperSuccess = wrapper.Label "entry.success"
-        let hasValidatedEntryInputs = body.BodyInputTypes |> List.exists hasValidatedScalar
-        let wrapperValidationFailure = if hasValidatedEntryInputs then Some(wrapper.Label "entry.validation.failure") else None
-        let exportSignature =
+        // One exported wrapper per entry body: the default single-entry export,
+        // or (multi-entry host module) one named export per body.
+        let emitEntryWrapper (body: IrExecutableBody) (frameSymbol: string) (exportName: string option) =
+            let wrapper = OwningLlvmWriter()
+            let wrapperFailure = wrapper.Label "entry.failure"
+            let wrapperBodyFailure = wrapper.Label "entry.body.failure"
+            let wrapperSuccess = wrapper.Label "entry.success"
+            let hasValidatedEntryInputs = body.BodyInputTypes |> List.exists hasValidatedScalar
+            let wrapperValidationFailure = if hasValidatedEntryInputs then Some(wrapper.Label "entry.validation.failure") else None
+            let exportSignature =
+                match nativeHostProfile, exportName with
+                | Some _, Some name -> $"define {dllExport}i32 @{name}(ptr %%ctx, ptr %%provider.context, ptr %%input, i32 %%input.bytes, ptr %%input.extents, i32 %%input.count, ptr %%retained, i32 %%retained.capacity) {{"
+                | Some _, None -> $"define {dllExport}i32 @agentlang_owning_execute_with_host_context(ptr %%ctx, ptr %%provider.context, ptr %%input, i32 %%input.bytes, ptr %%input.extents, i32 %%input.count, ptr %%retained, i32 %%retained.capacity) {{"
+                | None, _ -> $"define {dllExport}i32 @agentlang_owning_execute(ptr %%ctx, ptr %%input, i32 %%input.bytes, ptr %%input.extents, i32 %%input.count, ptr %%retained, i32 %%retained.capacity) {{"
+            wrapper.Line(exportSignature)
+            wrapper.Line("entry:")
+            wrapper.Inst("call void @al_owning_begin(ptr %ctx)")
+            let contextStatus = emitContextLoad wrapper "%ctx" 19
+            let contextOkay = wrapper.Fresh "entry.context.ok"
+            let beginOkay = wrapper.Label "entry.begin.ok"
+            wrapper.Inst($"{contextOkay} = icmp eq i32 {contextStatus}, 0")
+            wrapper.Inst($"br i1 {contextOkay}, label %%{beginOkay}, label %%{wrapperFailure}")
+            wrapper.Line($"{beginOkay}:")
+
             match nativeHostProfile with
-            | Some _ -> "define dllexport i32 @agentlang_owning_execute_with_host_context(ptr %ctx, ptr %provider.context, ptr %input, i32 %input.bytes, ptr %input.extents, i32 %input.count, ptr %retained, i32 %retained.capacity) {"
-            | None -> "define dllexport i32 @agentlang_owning_execute(ptr %ctx, ptr %input, i32 %input.bytes, ptr %input.extents, i32 %input.count, ptr %retained, i32 %retained.capacity) {"
-        wrapper.Line(exportSignature)
-        wrapper.Line("entry:")
-        wrapper.Inst("call void @al_owning_begin(ptr %ctx)")
-        let contextStatus = emitContextLoad wrapper "%ctx" 19
-        let contextOkay = wrapper.Fresh "entry.context.ok"
-        let beginOkay = wrapper.Label "entry.begin.ok"
-        wrapper.Inst($"{contextOkay} = icmp eq i32 {contextStatus}, 0")
-        wrapper.Inst($"br i1 {contextOkay}, label %%{beginOkay}, label %%{wrapperFailure}")
-        wrapper.Line($"{beginOkay}:")
+            | Some _ ->
+                let hostContextPresent = wrapper.Fresh "entry.host.context.present"
+                let hostContextOkay = wrapper.Label "entry.host.context.ok"
+                let hostContextMissing = wrapper.Label "entry.host.context.missing"
+                wrapper.Inst($"{hostContextPresent} = icmp ne ptr %%provider.context, null")
+                wrapper.Inst($"br i1 {hostContextPresent}, label %%{hostContextOkay}, label %%{hostContextMissing}")
+                wrapper.Line($"{hostContextMissing}:")
+                let missingContextError = addDiagnostic "NATIVE_HOST_CONTEXT_REQUIRED" "This export requires an execution-scoped native host provider context." body.BodyName None [ "non-null provider context" ] [ "null" ]
+                wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {missingContextError}, i32 0, i32 0)")
+                wrapper.Inst($"br label %%{wrapperFailure}")
+                wrapper.Line($"{hostContextOkay}:")
+            | None -> ()
 
-        match nativeHostProfile with
-        | Some _ ->
-            let hostContextPresent = wrapper.Fresh "entry.host.context.present"
-            let hostContextOkay = wrapper.Label "entry.host.context.ok"
-            let hostContextMissing = wrapper.Label "entry.host.context.missing"
-            wrapper.Inst($"{hostContextPresent} = icmp ne ptr %%provider.context, null")
-            wrapper.Inst($"br i1 {hostContextPresent}, label %%{hostContextOkay}, label %%{hostContextMissing}")
-            wrapper.Line($"{hostContextMissing}:")
-            let missingContextError = addDiagnostic "NATIVE_HOST_CONTEXT_REQUIRED" "This export requires an execution-scoped native host provider context." body.BodyName None [ "non-null provider context" ] [ "null" ]
-            wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {missingContextError}, i32 0, i32 0)")
+            let inputCountOkay = wrapper.Fresh "entry.input.count.ok"
+            let inputsCounted = wrapper.Label "entry.input.counted"
+            let countFailure = wrapper.Label "entry.input.count.failure"
+            wrapper.Inst($"{inputCountOkay} = icmp eq i32 %%input.count, {body.BodyInputTypes.Length}")
+            wrapper.Inst($"br i1 {inputCountOkay}, label %%{inputsCounted}, label %%{countFailure}")
+            wrapper.Line($"{countFailure}:")
+            wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 0, i32 {body.BodyInputTypes.Length}, i32 %%input.count)")
             wrapper.Inst($"br label %%{wrapperFailure}")
-            wrapper.Line($"{hostContextOkay}:")
-        | None -> ()
+            wrapper.Line($"{inputsCounted}:")
 
-        let inputCountOkay = wrapper.Fresh "entry.input.count.ok"
-        let inputsCounted = wrapper.Label "entry.input.counted"
-        let countFailure = wrapper.Label "entry.input.count.failure"
-        wrapper.Inst($"{inputCountOkay} = icmp eq i32 %%input.count, {body.BodyInputTypes.Length}")
-        wrapper.Inst($"br i1 {inputCountOkay}, label %%{inputsCounted}, label %%{countFailure}")
-        wrapper.Line($"{countFailure}:")
-        wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 0, i32 {body.BodyInputTypes.Length}, i32 %%input.count)")
-        wrapper.Inst($"br label %%{wrapperFailure}")
-        wrapper.Line($"{inputsCounted}:")
+            if not body.BodyInputTypes.IsEmpty then
+                let extentsPresent = wrapper.Fresh "entry.input.extents.present"
+                let bytesPresent = wrapper.Fresh "entry.input.bytes.present"
+                let pointersPresent = wrapper.Fresh "entry.input.pointers.present"
+                let pointersOkay = wrapper.Label "entry.input.pointers.ok"
+                let pointersInvalid = wrapper.Label "entry.input.pointers.invalid"
+                wrapper.Inst($"{extentsPresent} = icmp ne ptr %%input.extents, null")
+                wrapper.Inst($"{bytesPresent} = icmp ne ptr %%input, null")
+                wrapper.Inst($"{pointersPresent} = and i1 {extentsPresent}, {bytesPresent}")
+                wrapper.Inst($"br i1 {pointersPresent}, label %%{pointersOkay}, label %%{pointersInvalid}")
+                wrapper.Line($"{pointersInvalid}:")
+                wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 0, i32 {body.BodyInputTypes.Length}, i32 0)")
+                wrapper.Inst($"br label %%{wrapperFailure}")
+                wrapper.Line($"{pointersOkay}:")
 
-        if not body.BodyInputTypes.IsEmpty then
-            let extentsPresent = wrapper.Fresh "entry.input.extents.present"
-            let bytesPresent = wrapper.Fresh "entry.input.bytes.present"
-            let pointersPresent = wrapper.Fresh "entry.input.pointers.present"
-            let pointersOkay = wrapper.Label "entry.input.pointers.ok"
-            let pointersInvalid = wrapper.Label "entry.input.pointers.invalid"
-            wrapper.Inst($"{extentsPresent} = icmp ne ptr %%input.extents, null")
-            wrapper.Inst($"{bytesPresent} = icmp ne ptr %%input, null")
-            wrapper.Inst($"{pointersPresent} = and i1 {extentsPresent}, {bytesPresent}")
-            wrapper.Inst($"br i1 {pointersPresent}, label %%{pointersOkay}, label %%{pointersInvalid}")
-            wrapper.Line($"{pointersInvalid}:")
-            wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 0, i32 {body.BodyInputTypes.Length}, i32 0)")
+            let inputDescriptors =
+                if body.BodyInputTypes.IsEmpty then "null"
+                else
+                    let array = wrapper.Fresh "entry.input.descriptors"
+                    wrapper.Inst($"{array} = alloca [{body.BodyInputTypes.Length} x %%AlOwningDescriptor], align 4")
+                    array
+            let inputSizes = ResizeArray<int * string * string * string * IrType>()
+            let mutable inputOffset = "0"
+            for index, ty in body.BodyInputTypes |> List.indexed do
+                let tablePointer = wrapper.Fresh "input.extent.pointer"
+                let hostExtent = wrapper.Fresh "input.host.extent"
+                wrapper.Inst($"{tablePointer} = getelementptr inbounds i32, ptr %%input.extents, i32 {index}")
+                wrapper.Inst($"{hostExtent} = load i32, ptr {tablePointer}, align 4")
+                let errorId = addDiagnostic "OWNING_STACK_INPUT_INVALID" "Input bytes do not match the verified dynamic value layout." body.BodyName None [] []
+                let remainingBytes = emitSub wrapper "%input.bytes" inputOffset
+                let offsetWithinInput = wrapper.Fresh "input.offset.within.bytes"
+                let extentWithinInput = wrapper.Fresh "input.extent.within.bytes"
+                let inputSliceWithin = wrapper.Fresh "input.slice.within.bytes"
+                let sliceReady = wrapper.Label "input.slice.ready"
+                let sliceInvalid = wrapper.Label "input.slice.invalid"
+                wrapper.Inst($"{offsetWithinInput} = icmp ule i32 {inputOffset}, %%input.bytes")
+                wrapper.Inst($"{extentWithinInput} = icmp ule i32 {hostExtent}, {remainingBytes}")
+                wrapper.Inst($"{inputSliceWithin} = and i1 {offsetWithinInput}, {extentWithinInput}")
+                wrapper.Inst($"br i1 {inputSliceWithin}, label %%{sliceReady}, label %%{sliceInvalid}")
+                wrapper.Line($"{sliceInvalid}:")
+                wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 {errorId}, i32 0, i32 0)")
+                wrapper.Inst($"br label %%{wrapperFailure}")
+                wrapper.Line($"{sliceReady}:")
+                let inputPointer = emitPointerOffset wrapper "%input" inputOffset
+                let payloadPointer = wrapper.Fresh "input.payload.pointer"
+                let measuredExtentPointer = wrapper.Fresh "input.measured.extent.pointer"
+                wrapper.Inst($"{payloadPointer} = alloca i32, align 4")
+                wrapper.Inst($"{measuredExtentPointer} = alloca i32, align 4")
+                let status = wrapper.Fresh "input.measure.status"
+                wrapper.Inst($"{status} = call i32 @al_owning_measure_external_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex ty}, ptr {inputPointer}, i32 {hostExtent}, i32 0, i32 {errorId}, ptr {payloadPointer}, ptr {measuredExtentPointer})")
+                emitStatusResult wrapper status wrapperFailure
+                let payloadBytes = wrapper.Fresh "input.measured.payload"
+                let extentBytes = wrapper.Fresh "input.measured.extent"
+                wrapper.Inst($"{payloadBytes} = load i32, ptr {payloadPointer}, align 4")
+                wrapper.Inst($"{extentBytes} = load i32, ptr {measuredExtentPointer}, align 4")
+                let extentExact = wrapper.Fresh "input.extent.exact"
+                let exactLabel = wrapper.Label "input.extent.exact"
+                let invalidLabel = wrapper.Label "input.extent.invalid"
+                wrapper.Inst($"{extentExact} = icmp eq i32 {extentBytes}, {hostExtent}")
+                wrapper.Inst($"br i1 {extentExact}, label %%{exactLabel}, label %%{invalidLabel}")
+                wrapper.Line($"{invalidLabel}:")
+                wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 {errorId}, i32 {extentBytes}, i32 {hostExtent})")
+                wrapper.Inst($"br label %%{wrapperFailure}")
+                wrapper.Line($"{exactLabel}:")
+                inputSizes.Add((index, inputOffset, hostExtent, payloadBytes, ty))
+                inputOffset <- emitOffset wrapper inputOffset hostExtent
+
+            let inputTotalExact = wrapper.Fresh "input.total.exact"
+            let inputValid = wrapper.Label "input.valid"
+            let inputInvalid = wrapper.Label "input.invalid"
+            wrapper.Inst($"{inputTotalExact} = icmp eq i32 {inputOffset}, %%input.bytes")
+            wrapper.Inst($"br i1 {inputTotalExact}, label %%{inputValid}, label %%{inputInvalid}")
+            wrapper.Line($"{inputInvalid}:")
+            wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 0, i32 {inputOffset}, i32 %%input.bytes)")
             wrapper.Inst($"br label %%{wrapperFailure}")
-            wrapper.Line($"{pointersOkay}:")
+            wrapper.Line($"{inputValid}:")
+            let inputReserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve verified entry inputs." body.BodyName None [] []
+            emitReserve wrapper inputOffset inputReserveError wrapperFailure
+            for index, sourceOffset, extentBytes, payloadBytes, ty in inputSizes do
+                let inputPointer = emitPointerOffset wrapper "%input" sourceOffset
+                let copyError = addDiagnostic "OWNING_STACK_INPUT_INVALID" "Input bytes changed after validation." body.BodyName None [] []
+                let status = wrapper.Fresh "input.copy.status"
+                wrapper.Inst($"{status} = call i32 @al_owning_copy_external_bounded(ptr %%ctx, i32 {sourceOffset}, ptr {inputPointer}, i32 {extentBytes}, i32 0, i32 {payloadBytes}, i32 {extentBytes}, i32 {typeId ty}, i32 {copyError})")
+                emitStatusResult wrapper status wrapperFailure
+                let ownerEnd = emitOffset wrapper sourceOffset extentBytes
+                let entry = { Type = ty; Offset = sourceOffset; Extent = extentBytes; Payload = payloadBytes; OwnerEnd = ownerEnd }
+                let pointer = emitDescriptorElementPointer wrapper inputDescriptors index
+                emitStoreDescriptor wrapper pointer entry
+                emitDescriptorTransfer wrapper entry wrapperFailure
 
-        let inputDescriptors =
-            if body.BodyInputTypes.IsEmpty then "null"
-            else
-                let array = wrapper.Fresh "entry.input.descriptors"
-                wrapper.Inst($"{array} = alloca [{body.BodyInputTypes.Length} x %%AlOwningDescriptor], align 4")
-                array
-        let inputSizes = ResizeArray<int * string * string * string * IrType>()
-        let mutable inputOffset = "0"
-        for index, ty in body.BodyInputTypes |> List.indexed do
-            let tablePointer = wrapper.Fresh "input.extent.pointer"
-            let hostExtent = wrapper.Fresh "input.host.extent"
-            wrapper.Inst($"{tablePointer} = getelementptr inbounds i32, ptr %%input.extents, i32 {index}")
-            wrapper.Inst($"{hostExtent} = load i32, ptr {tablePointer}, align 4")
-            let errorId = addDiagnostic "OWNING_STACK_INPUT_INVALID" "Input bytes do not match the verified dynamic value layout." body.BodyName None [] []
-            let remainingBytes = emitSub wrapper "%input.bytes" inputOffset
-            let offsetWithinInput = wrapper.Fresh "input.offset.within.bytes"
-            let extentWithinInput = wrapper.Fresh "input.extent.within.bytes"
-            let inputSliceWithin = wrapper.Fresh "input.slice.within.bytes"
-            let sliceReady = wrapper.Label "input.slice.ready"
-            let sliceInvalid = wrapper.Label "input.slice.invalid"
-            wrapper.Inst($"{offsetWithinInput} = icmp ule i32 {inputOffset}, %%input.bytes")
-            wrapper.Inst($"{extentWithinInput} = icmp ule i32 {hostExtent}, {remainingBytes}")
-            wrapper.Inst($"{inputSliceWithin} = and i1 {offsetWithinInput}, {extentWithinInput}")
-            wrapper.Inst($"br i1 {inputSliceWithin}, label %%{sliceReady}, label %%{sliceInvalid}")
-            wrapper.Line($"{sliceInvalid}:")
-            wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 {errorId}, i32 0, i32 0)")
+            if hasValidatedEntryInputs then
+                // Raw-value admission is a top-level semantic callsite. Its
+                // validator body must have the same depth as a user call made
+                // from the verified entry body, whose native entry frame is
+                // already active. Add that frame only while validating host
+                // inputs, then remove it on both successful and failed paths.
+                let validationDepthError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." body.BodyName None [] []
+                let validationFrame = wrapper.Fresh "entry.validation.frame.entered"
+                wrapper.Inst($"{validationFrame} = call i32 @al_owning_enter_frame(ptr %%ctx, i32 {validationDepthError})")
+                emitStatusResult wrapper validationFrame wrapperFailure
+                for _, sourceOffset, extentBytes, payloadBytes, ty in inputSizes do
+                    if hasValidatedScalar ty then
+                        let entry =
+                            { Type = ty
+                              Offset = sourceOffset
+                              Extent = extentBytes
+                              Payload = payloadBytes
+                              OwnerEnd = emitOffset wrapper sourceOffset extentBytes }
+                        emitValidateEntryValue wrapper body.BodyName entry ty wrapperValidationFailure.Value
+                wrapper.Inst("call void @al_owning_leave_frame(ptr %ctx)")
+                let validationSucceeded = wrapper.Label "entry.validation.succeeded"
+                wrapper.Inst($"br label %%{validationSucceeded}")
+                wrapper.Line(wrapperValidationFailure.Value + ":")
+                wrapper.Inst("call void @al_owning_leave_frame(ptr %ctx)")
+                wrapper.Inst($"br label %%{wrapperFailure}")
+                wrapper.Line(validationSucceeded + ":")
+
+            let outputDescriptors =
+                if body.BodyOutputTypes.IsEmpty then "null"
+                else
+                    let array = wrapper.Fresh "entry.output.descriptors"
+                    wrapper.Inst($"{array} = alloca [{body.BodyOutputTypes.Length} x %%AlOwningDescriptor], align 4")
+                    array
+            let bodyCall = wrapper.Fresh "entry.body.status"
+            let entryCallError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." body.BodyName None [] []
+            let hiddenHostContext = if nativeHostProfile.IsSome then "ptr %provider.context, " else ""
+            wrapper.Inst($"{bodyCall} = call i32 {frameSymbol}(ptr %%ctx, {hiddenHostContext}ptr {inputDescriptors}, ptr {outputDescriptors}, i32 {entryCallError})")
+            let bodyOkay = wrapper.Fresh "entry.body.ok"
+            wrapper.Inst($"{bodyOkay} = icmp eq i32 {bodyCall}, 0")
+            wrapper.Inst($"br i1 {bodyOkay}, label %%{wrapperSuccess}, label %%{wrapperBodyFailure}")
+            wrapper.Line($"{wrapperBodyFailure}:")
             wrapper.Inst($"br label %%{wrapperFailure}")
-            wrapper.Line($"{sliceReady}:")
-            let inputPointer = emitPointerOffset wrapper "%input" inputOffset
-            let payloadPointer = wrapper.Fresh "input.payload.pointer"
-            let measuredExtentPointer = wrapper.Fresh "input.measured.extent.pointer"
-            wrapper.Inst($"{payloadPointer} = alloca i32, align 4")
-            wrapper.Inst($"{measuredExtentPointer} = alloca i32, align 4")
-            let status = wrapper.Fresh "input.measure.status"
-            wrapper.Inst($"{status} = call i32 @al_owning_measure_external_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex ty}, ptr {inputPointer}, i32 {hostExtent}, i32 0, i32 {errorId}, ptr {payloadPointer}, ptr {measuredExtentPointer})")
-            emitStatusResult wrapper status wrapperFailure
-            let payloadBytes = wrapper.Fresh "input.measured.payload"
-            let extentBytes = wrapper.Fresh "input.measured.extent"
-            wrapper.Inst($"{payloadBytes} = load i32, ptr {payloadPointer}, align 4")
-            wrapper.Inst($"{extentBytes} = load i32, ptr {measuredExtentPointer}, align 4")
-            let extentExact = wrapper.Fresh "input.extent.exact"
-            let exactLabel = wrapper.Label "input.extent.exact"
-            let invalidLabel = wrapper.Label "input.extent.invalid"
-            wrapper.Inst($"{extentExact} = icmp eq i32 {extentBytes}, {hostExtent}")
-            wrapper.Inst($"br i1 {extentExact}, label %%{exactLabel}, label %%{invalidLabel}")
-            wrapper.Line($"{invalidLabel}:")
-            wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 {errorId}, i32 {extentBytes}, i32 {hostExtent})")
+            wrapper.Line($"{wrapperSuccess}:")
+
+            let outputPlan = ResizeArray<OwningDynamicStackEntry * string>()
+            let mutable outputTotal64 = "0"
+            for index, ty in body.BodyOutputTypes |> List.indexed do
+                let pointer = emitDescriptorElementPointer wrapper outputDescriptors index
+                let entry, actualType = emitLoadDescriptor wrapper pointer ty
+                let typeValid = wrapper.Fresh "entry.output.type.valid"
+                let typeOkay = wrapper.Label "entry.output.type.ok"
+                let typeInvalid = wrapper.Label "entry.output.type.invalid"
+                wrapper.Inst($"{typeValid} = icmp eq i32 {actualType}, {typeId ty}")
+                wrapper.Inst($"br i1 {typeValid}, label %%{typeOkay}, label %%{typeInvalid}")
+                wrapper.Line($"{typeInvalid}:")
+                wrapper.Inst("call void @al_owning_set_failure(ptr %ctx, i32 5, i32 0, i32 0, i32 0)")
+                wrapper.Inst($"br label %%{wrapperFailure}")
+                wrapper.Line($"{typeOkay}:")
+                emitDescriptorBounds wrapper entry (Some(string (typeId ty))) wrapperFailure
+                let infoForOutput = typeInfo ty
+                let serializedExtent =
+                    if not infoForOutput.IsDynamic && infoForOutput.PayloadBytes = 0 then
+                        let isEmptyProjection = wrapper.Fresh "entry.output.empty.projection"
+                        let extent = wrapper.Fresh "entry.output.serialized.extent"
+                        wrapper.Inst($"{isEmptyProjection} = icmp eq i32 {entry.Extent}, 0")
+                        wrapper.Inst($"{extent} = select i1 {isEmptyProjection}, i32 8, i32 {entry.Extent}")
+                        extent
+                    else entry.Extent
+                outputPlan.Add((entry, serializedExtent))
+                let size64 = wrapper.Fresh "entry.output.size.i64"
+                let total64 = wrapper.Fresh "entry.output.total.i64"
+                wrapper.Inst($"{size64} = zext i32 {serializedExtent} to i64")
+                wrapper.Inst($"{total64} = add i64 {outputTotal64}, {size64}")
+                outputTotal64 <- total64
+
+            let retainedCapacity64 = wrapper.Fresh "entry.retained.capacity.i64"
+            let requiredFitsU32 = wrapper.Fresh "entry.retained.required.fits.u32"
+            let requiredTruncated = wrapper.Fresh "entry.retained.required.truncated"
+            let requiredBytes = wrapper.Fresh "entry.retained.required"
+            let retainedTotalFits = wrapper.Fresh "entry.retained.capacity.ok"
+            let outputCapacityReady = wrapper.Label "entry.retained.capacity.ready"
+            let outputCapacityFailure = wrapper.Label "entry.retained.capacity.failure"
+            wrapper.Inst($"{retainedCapacity64} = zext i32 %%retained.capacity to i64")
+            wrapper.Inst($"{requiredFitsU32} = icmp ule i64 {outputTotal64}, 4294967295")
+            wrapper.Inst($"{requiredTruncated} = trunc i64 {outputTotal64} to i32")
+            wrapper.Inst($"{requiredBytes} = select i1 {requiredFitsU32}, i32 {requiredTruncated}, i32 4294967295")
+            wrapper.Inst($"{retainedTotalFits} = icmp ule i64 {outputTotal64}, {retainedCapacity64}")
+            wrapper.Inst($"br i1 {retainedTotalFits}, label %%{outputCapacityReady}, label %%{outputCapacityFailure}")
+            wrapper.Line($"{outputCapacityFailure}:")
+            wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 3, i32 0, i32 {requiredBytes}, i32 %%retained.capacity)")
             wrapper.Inst($"br label %%{wrapperFailure}")
-            wrapper.Line($"{exactLabel}:")
-            inputSizes.Add((index, inputOffset, hostExtent, payloadBytes, ty))
-            inputOffset <- emitOffset wrapper inputOffset hostExtent
+            wrapper.Line($"{outputCapacityReady}:")
 
-        let inputTotalExact = wrapper.Fresh "input.total.exact"
-        let inputValid = wrapper.Label "input.valid"
-        let inputInvalid = wrapper.Label "input.invalid"
-        wrapper.Inst($"{inputTotalExact} = icmp eq i32 {inputOffset}, %%input.bytes")
-        wrapper.Inst($"br i1 {inputTotalExact}, label %%{inputValid}, label %%{inputInvalid}")
-        wrapper.Line($"{inputInvalid}:")
-        wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 0, i32 {inputOffset}, i32 %%input.bytes)")
-        wrapper.Inst($"br label %%{wrapperFailure}")
-        wrapper.Line($"{inputValid}:")
-        let inputReserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve verified entry inputs." body.BodyName None [] []
-        emitReserve wrapper inputOffset inputReserveError wrapperFailure
-        for index, sourceOffset, extentBytes, payloadBytes, ty in inputSizes do
-            let inputPointer = emitPointerOffset wrapper "%input" sourceOffset
-            let copyError = addDiagnostic "OWNING_STACK_INPUT_INVALID" "Input bytes changed after validation." body.BodyName None [] []
-            let status = wrapper.Fresh "input.copy.status"
-            wrapper.Inst($"{status} = call i32 @al_owning_copy_external_bounded(ptr %%ctx, i32 {sourceOffset}, ptr {inputPointer}, i32 {extentBytes}, i32 0, i32 {payloadBytes}, i32 {extentBytes}, i32 {typeId ty}, i32 {copyError})")
-            emitStatusResult wrapper status wrapperFailure
-            let ownerEnd = emitOffset wrapper sourceOffset extentBytes
-            let entry = { Type = ty; Offset = sourceOffset; Extent = extentBytes; Payload = payloadBytes; OwnerEnd = ownerEnd }
-            let pointer = emitDescriptorElementPointer wrapper inputDescriptors index
-            emitStoreDescriptor wrapper pointer entry
-            emitDescriptorTransfer wrapper entry wrapperFailure
+            // Materialize a zero-width Empty token only when it becomes a standalone
+            // output. A projected nested Empty remains a zero-byte descriptor.
+            let serializedOutputs = ResizeArray<OwningDynamicStackEntry * string>()
+            for entry, _ in outputPlan do
+                let outputInfo = typeInfo entry.Type
+                if not outputInfo.IsDynamic && outputInfo.PayloadBytes = 0 then
+                    let projectedEmpty = wrapper.Fresh "entry.output.needs.empty.token"
+                    let tokenLabel = wrapper.Label "entry.output.empty.token"
+                    let keepLabel = wrapper.Label "entry.output.empty.keep"
+                    let joinLabel = wrapper.Label "entry.output.empty.join"
+                    wrapper.Inst($"{projectedEmpty} = icmp eq i32 {entry.Extent}, 0")
+                    wrapper.Inst($"br i1 {projectedEmpty}, label %%{tokenLabel}, label %%{keepLabel}")
+                    wrapper.Line($"{tokenLabel}:")
+                    let tokenStart = emitContextLoad wrapper "%ctx" 2
+                    let tokenEnd = emitOffset wrapper tokenStart "8"
+                    let tokenReserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to materialize standalone Empty output." body.BodyName None [] []
+                    emitReserve wrapper tokenEnd tokenReserveError wrapperFailure
+                    wrapper.Inst($"call void @al_owning_store_token(ptr %%ctx, i32 {tokenStart}, i32 {typeId entry.Type})")
+                    emitRuntimeStatus wrapper "%ctx" wrapperFailure
+                    let tokenPredecessor = wrapper.CurrentBlock
+                    wrapper.Inst($"br label %%{joinLabel}")
+                    wrapper.Line($"{keepLabel}:")
+                    let keepPredecessor = wrapper.CurrentBlock
+                    wrapper.Inst($"br label %%{joinLabel}")
+                    wrapper.Line($"{joinLabel}:")
+                    let outputOffset = wrapper.Fresh "entry.output.materialized.offset"
+                    let outputExtent = wrapper.Fresh "entry.output.materialized.extent"
+                    let outputPayload = wrapper.Fresh "entry.output.materialized.payload"
+                    let outputOwnerEnd = wrapper.Fresh "entry.output.materialized.owner.end"
+                    wrapper.Inst($"{outputOffset} = phi i32 [ {tokenStart}, %%{tokenPredecessor} ], [ {entry.Offset}, %%{keepPredecessor} ]")
+                    wrapper.Inst($"{outputExtent} = phi i32 [ 8, %%{tokenPredecessor} ], [ {entry.Extent}, %%{keepPredecessor} ]")
+                    wrapper.Inst($"{outputPayload} = phi i32 [ 0, %%{tokenPredecessor} ], [ {entry.Payload}, %%{keepPredecessor} ]")
+                    wrapper.Inst($"{outputOwnerEnd} = phi i32 [ {tokenEnd}, %%{tokenPredecessor} ], [ {entry.OwnerEnd}, %%{keepPredecessor} ]")
+                    serializedOutputs.Add(({ entry with Offset = outputOffset; Extent = outputExtent; Payload = outputPayload; OwnerEnd = outputOwnerEnd }, outputExtent))
+                else
+                    serializedOutputs.Add((entry, entry.Extent))
 
-        if hasValidatedEntryInputs then
-            // Raw-value admission is a top-level semantic callsite. Its
-            // validator body must have the same depth as a user call made
-            // from the verified entry body, whose native entry frame is
-            // already active. Add that frame only while validating host
-            // inputs, then remove it on both successful and failed paths.
-            let validationDepthError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." body.BodyName None [] []
-            let validationFrame = wrapper.Fresh "entry.validation.frame.entered"
-            wrapper.Inst($"{validationFrame} = call i32 @al_owning_enter_frame(ptr %%ctx, i32 {validationDepthError})")
-            emitStatusResult wrapper validationFrame wrapperFailure
-            for _, sourceOffset, extentBytes, payloadBytes, ty in inputSizes do
-                if hasValidatedScalar ty then
-                    let entry =
-                        { Type = ty
-                          Offset = sourceOffset
-                          Extent = extentBytes
-                          Payload = payloadBytes
-                          OwnerEnd = emitOffset wrapper sourceOffset extentBytes }
-                    emitValidateEntryValue wrapper body.BodyName entry ty wrapperValidationFailure.Value
-            wrapper.Inst("call void @al_owning_leave_frame(ptr %ctx)")
-            let validationSucceeded = wrapper.Label "entry.validation.succeeded"
-            wrapper.Inst($"br label %%{validationSucceeded}")
-            wrapper.Line(wrapperValidationFailure.Value + ":")
-            wrapper.Inst("call void @al_owning_leave_frame(ptr %ctx)")
-            wrapper.Inst($"br label %%{wrapperFailure}")
-            wrapper.Line(validationSucceeded + ":")
-
-        let outputDescriptors =
-            if body.BodyOutputTypes.IsEmpty then "null"
-            else
-                let array = wrapper.Fresh "entry.output.descriptors"
-                wrapper.Inst($"{array} = alloca [{body.BodyOutputTypes.Length} x %%AlOwningDescriptor], align 4")
-                array
-        let bodyCall = wrapper.Fresh "entry.body.status"
-        let entryCallError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." body.BodyName None [] []
-        let hiddenHostContext = if nativeHostProfile.IsSome then "ptr %provider.context, " else ""
-        wrapper.Inst($"{bodyCall} = call i32 {entryFrameSymbols[0]}(ptr %%ctx, {hiddenHostContext}ptr {inputDescriptors}, ptr {outputDescriptors}, i32 {entryCallError})")
-        let bodyOkay = wrapper.Fresh "entry.body.ok"
-        wrapper.Inst($"{bodyOkay} = icmp eq i32 {bodyCall}, 0")
-        wrapper.Inst($"br i1 {bodyOkay}, label %%{wrapperSuccess}, label %%{wrapperBodyFailure}")
-        wrapper.Line($"{wrapperBodyFailure}:")
-        wrapper.Inst($"br label %%{wrapperFailure}")
-        wrapper.Line($"{wrapperSuccess}:")
-
-        let outputPlan = ResizeArray<OwningDynamicStackEntry * string>()
-        let mutable outputTotal64 = "0"
-        for index, ty in body.BodyOutputTypes |> List.indexed do
-            let pointer = emitDescriptorElementPointer wrapper outputDescriptors index
-            let entry, actualType = emitLoadDescriptor wrapper pointer ty
-            let typeValid = wrapper.Fresh "entry.output.type.valid"
-            let typeOkay = wrapper.Label "entry.output.type.ok"
-            let typeInvalid = wrapper.Label "entry.output.type.invalid"
-            wrapper.Inst($"{typeValid} = icmp eq i32 {actualType}, {typeId ty}")
-            wrapper.Inst($"br i1 {typeValid}, label %%{typeOkay}, label %%{typeInvalid}")
-            wrapper.Line($"{typeInvalid}:")
-            wrapper.Inst("call void @al_owning_set_failure(ptr %ctx, i32 5, i32 0, i32 0, i32 0)")
-            wrapper.Inst($"br label %%{wrapperFailure}")
-            wrapper.Line($"{typeOkay}:")
-            emitDescriptorBounds wrapper entry (Some(string (typeId ty))) wrapperFailure
-            let infoForOutput = typeInfo ty
-            let serializedExtent =
-                if not infoForOutput.IsDynamic && infoForOutput.PayloadBytes = 0 then
-                    let isEmptyProjection = wrapper.Fresh "entry.output.empty.projection"
-                    let extent = wrapper.Fresh "entry.output.serialized.extent"
-                    wrapper.Inst($"{isEmptyProjection} = icmp eq i32 {entry.Extent}, 0")
-                    wrapper.Inst($"{extent} = select i1 {isEmptyProjection}, i32 8, i32 {entry.Extent}")
-                    extent
-                else entry.Extent
-            outputPlan.Add((entry, serializedExtent))
-            let size64 = wrapper.Fresh "entry.output.size.i64"
-            let total64 = wrapper.Fresh "entry.output.total.i64"
-            wrapper.Inst($"{size64} = zext i32 {serializedExtent} to i64")
-            wrapper.Inst($"{total64} = add i64 {outputTotal64}, {size64}")
-            outputTotal64 <- total64
-
-        let retainedCapacity64 = wrapper.Fresh "entry.retained.capacity.i64"
-        let requiredFitsU32 = wrapper.Fresh "entry.retained.required.fits.u32"
-        let requiredTruncated = wrapper.Fresh "entry.retained.required.truncated"
-        let requiredBytes = wrapper.Fresh "entry.retained.required"
-        let retainedTotalFits = wrapper.Fresh "entry.retained.capacity.ok"
-        let outputCapacityReady = wrapper.Label "entry.retained.capacity.ready"
-        let outputCapacityFailure = wrapper.Label "entry.retained.capacity.failure"
-        wrapper.Inst($"{retainedCapacity64} = zext i32 %%retained.capacity to i64")
-        wrapper.Inst($"{requiredFitsU32} = icmp ule i64 {outputTotal64}, 4294967295")
-        wrapper.Inst($"{requiredTruncated} = trunc i64 {outputTotal64} to i32")
-        wrapper.Inst($"{requiredBytes} = select i1 {requiredFitsU32}, i32 {requiredTruncated}, i32 4294967295")
-        wrapper.Inst($"{retainedTotalFits} = icmp ule i64 {outputTotal64}, {retainedCapacity64}")
-        wrapper.Inst($"br i1 {retainedTotalFits}, label %%{outputCapacityReady}, label %%{outputCapacityFailure}")
-        wrapper.Line($"{outputCapacityFailure}:")
-        wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 3, i32 0, i32 {requiredBytes}, i32 %%retained.capacity)")
-        wrapper.Inst($"br label %%{wrapperFailure}")
-        wrapper.Line($"{outputCapacityReady}:")
-
-        // Materialize a zero-width Empty token only when it becomes a standalone
-        // output. A projected nested Empty remains a zero-byte descriptor.
-        let serializedOutputs = ResizeArray<OwningDynamicStackEntry * string>()
-        for entry, _ in outputPlan do
-            let outputInfo = typeInfo entry.Type
-            if not outputInfo.IsDynamic && outputInfo.PayloadBytes = 0 then
-                let projectedEmpty = wrapper.Fresh "entry.output.needs.empty.token"
-                let tokenLabel = wrapper.Label "entry.output.empty.token"
-                let keepLabel = wrapper.Label "entry.output.empty.keep"
-                let joinLabel = wrapper.Label "entry.output.empty.join"
-                wrapper.Inst($"{projectedEmpty} = icmp eq i32 {entry.Extent}, 0")
-                wrapper.Inst($"br i1 {projectedEmpty}, label %%{tokenLabel}, label %%{keepLabel}")
-                wrapper.Line($"{tokenLabel}:")
-                let tokenStart = emitContextLoad wrapper "%ctx" 2
-                let tokenEnd = emitOffset wrapper tokenStart "8"
-                let tokenReserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to materialize standalone Empty output." body.BodyName None [] []
-                emitReserve wrapper tokenEnd tokenReserveError wrapperFailure
-                wrapper.Inst($"call void @al_owning_store_token(ptr %%ctx, i32 {tokenStart}, i32 {typeId entry.Type})")
+            let mutable outputDestinationOffset = "0"
+            for entry, extent in serializedOutputs do
+                let destination = emitPointerOffset wrapper "%retained" outputDestinationOffset
+                let remainingCapacity = emitSub wrapper "%retained.capacity" outputDestinationOffset
+                wrapper.Inst($"call void @al_owning_publish(ptr %%ctx, ptr {destination}, i32 {remainingCapacity}, i32 {entry.Offset}, i32 {extent}, i32 {typeId entry.Type})")
                 emitRuntimeStatus wrapper "%ctx" wrapperFailure
-                let tokenPredecessor = wrapper.CurrentBlock
-                wrapper.Inst($"br label %%{joinLabel}")
-                wrapper.Line($"{keepLabel}:")
-                let keepPredecessor = wrapper.CurrentBlock
-                wrapper.Inst($"br label %%{joinLabel}")
-                wrapper.Line($"{joinLabel}:")
-                let outputOffset = wrapper.Fresh "entry.output.materialized.offset"
-                let outputExtent = wrapper.Fresh "entry.output.materialized.extent"
-                let outputPayload = wrapper.Fresh "entry.output.materialized.payload"
-                let outputOwnerEnd = wrapper.Fresh "entry.output.materialized.owner.end"
-                wrapper.Inst($"{outputOffset} = phi i32 [ {tokenStart}, %%{tokenPredecessor} ], [ {entry.Offset}, %%{keepPredecessor} ]")
-                wrapper.Inst($"{outputExtent} = phi i32 [ 8, %%{tokenPredecessor} ], [ {entry.Extent}, %%{keepPredecessor} ]")
-                wrapper.Inst($"{outputPayload} = phi i32 [ 0, %%{tokenPredecessor} ], [ {entry.Payload}, %%{keepPredecessor} ]")
-                wrapper.Inst($"{outputOwnerEnd} = phi i32 [ {tokenEnd}, %%{tokenPredecessor} ], [ {entry.OwnerEnd}, %%{keepPredecessor} ]")
-                serializedOutputs.Add(({ entry with Offset = outputOffset; Extent = outputExtent; Payload = outputPayload; OwnerEnd = outputOwnerEnd }, outputExtent))
-            else
-                serializedOutputs.Add((entry, entry.Extent))
+                outputDestinationOffset <- emitOffset wrapper outputDestinationOffset extent
 
-        let mutable outputDestinationOffset = "0"
-        for entry, extent in serializedOutputs do
-            let destination = emitPointerOffset wrapper "%retained" outputDestinationOffset
-            let remainingCapacity = emitSub wrapper "%retained.capacity" outputDestinationOffset
-            wrapper.Inst($"call void @al_owning_publish(ptr %%ctx, ptr {destination}, i32 {remainingCapacity}, i32 {entry.Offset}, i32 {extent}, i32 {typeId entry.Type})")
-            emitRuntimeStatus wrapper "%ctx" wrapperFailure
-            outputDestinationOffset <- emitOffset wrapper outputDestinationOffset extent
+            wrapper.Inst("call void @al_owning_release_to(ptr %ctx, i32 0, i32 0, i32 0, i32 0)")
+            let successfulLive = emitContextLoad wrapper "%ctx" 4
+            let successfulLocals = emitContextLoad wrapper "%ctx" 8
+            let negativeSuccessfulLive = emitSub wrapper "0" successfulLive
+            let negativeSuccessfulLocals = emitSub wrapper "0" successfulLocals
+            emitUpdateLive wrapper negativeSuccessfulLive negativeSuccessfulLocals wrapperFailure
+            wrapper.Inst("br label %entry.return.status")
 
-        wrapper.Inst("call void @al_owning_release_to(ptr %ctx, i32 0, i32 0, i32 0, i32 0)")
-        let successfulLive = emitContextLoad wrapper "%ctx" 4
-        let successfulLocals = emitContextLoad wrapper "%ctx" 8
-        let negativeSuccessfulLive = emitSub wrapper "0" successfulLive
-        let negativeSuccessfulLocals = emitSub wrapper "0" successfulLocals
-        emitUpdateLive wrapper negativeSuccessfulLive negativeSuccessfulLocals wrapperFailure
-        wrapper.Inst("br label %entry.return.status")
-
-        wrapper.Line($"{wrapperFailure}:")
-        let failedLive = emitContextLoad wrapper "%ctx" 4
-        let failedLocals = emitContextLoad wrapper "%ctx" 8
-        let failedReservations = emitContextLoad wrapper "%ctx" 6
-        let failedTotalLive = emitOffset wrapper failedLive failedLocals
-        let zeroLive = emitSub wrapper "0" failedTotalLive
-        let zeroLocal = emitSub wrapper "0" failedLocals
-        wrapper.Inst("call void @al_owning_release_to(ptr %ctx, i32 0, i32 0, i32 0, i32 0)")
-        wrapper.Inst($"call void @al_owning_update_live(ptr %%ctx, i32 {zeroLive}, i32 {zeroLocal})")
-        wrapper.Inst($"call void @al_owning_local_release(ptr %%ctx, i32 {failedReservations})")
-        wrapper.Inst("br label %entry.return.status")
-        wrapper.Line("entry.return.status:")
-        let finalStatus = emitContextLoad wrapper "%ctx" 19
-        wrapper.Inst($"ret i32 {finalStatus}")
-        wrapper.Line("}")
-        writer.Line(wrapper.Text)
+            wrapper.Line($"{wrapperFailure}:")
+            let failedLive = emitContextLoad wrapper "%ctx" 4
+            let failedLocals = emitContextLoad wrapper "%ctx" 8
+            let failedReservations = emitContextLoad wrapper "%ctx" 6
+            let failedTotalLive = emitOffset wrapper failedLive failedLocals
+            let zeroLive = emitSub wrapper "0" failedTotalLive
+            let zeroLocal = emitSub wrapper "0" failedLocals
+            wrapper.Inst("call void @al_owning_release_to(ptr %ctx, i32 0, i32 0, i32 0, i32 0)")
+            wrapper.Inst($"call void @al_owning_update_live(ptr %%ctx, i32 {zeroLive}, i32 {zeroLocal})")
+            wrapper.Inst($"call void @al_owning_local_release(ptr %%ctx, i32 {failedReservations})")
+            wrapper.Inst("br label %entry.return.status")
+            wrapper.Line("entry.return.status:")
+            let finalStatus = emitContextLoad wrapper "%ctx" 19
+            wrapper.Inst($"ret i32 {finalStatus}")
+            wrapper.Line("}")
+            writer.Line(wrapper.Text)
+            wrapper.Text
+        let wrapperTexts =
+            match hostExportNames with
+            | Some names ->
+                bodies |> List.mapi (fun index current -> emitEntryWrapper current entryFrameSymbols[index] (Some names[index]))
+            | None -> [ emitEntryWrapper body entryFrameSymbols[0] None ]
         let mailboxCallbackTexts = ResizeArray<string * string * int>()
         if mailboxMode then
             for index, entryBody in bodies |> List.indexed do
@@ -7517,9 +7561,10 @@ module OwningStackAot =
             diagnosticRole <- None
             mailboxCallbackTexts.Add((associatedRole, associatedCallbackText, associatedAllocaBytes))
             writer.Line(associatedCallbackText)
-        if usesOsRandom.Value then
+        if usesOsRandom.Value && target = OwningTarget.WindowsX64 then
             // The runtime's weak reference falls back to a failing stub; this
             // module supplies the OS random source (Windows CNG system RNG).
+            // Linux needs nothing here: the runtime reads getrandom itself.
             writer.Line("declare dllimport i32 @BCryptGenRandom(ptr, ptr, i32, i32)")
             writer.Line("define i32 @al_owning_os_random_fill(ptr %buffer, i32 %length) {")
             writer.Line("entry:")
@@ -7527,7 +7572,7 @@ module OwningStackAot =
             writer.Line("  ret i32 %status")
             writer.Line("}")
         let metadataPerFrameBytes = frameTexts |> Seq.map explicitAllocaBoundBytes |> Seq.fold max 0
-        let wrapperMetadataBytes = explicitAllocaBoundBytes wrapper.Text
+        let wrapperMetadataBytes = wrapperTexts |> List.map explicitAllocaBoundBytes |> List.fold max 0
         let mailboxCallbackMetadataBytes = mailboxCallbackTexts |> Seq.map (fun (_, _, bytes) -> bytes) |> Seq.fold max 0
         let topLevelMetadataBytes = max wrapperMetadataBytes mailboxCallbackMetadataBytes
         let metadataPeakBoundBytes = int64 metadataPerFrameBytes * 66L + int64 topLevelMetadataBytes
@@ -7550,7 +7595,7 @@ module OwningStackAot =
         // Fixed and dynamic layouts both use explicit arena descriptors. The old
         // packed fixed emitter remains historical code and is never selected.
         let llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes, _, _, _ =
-            emitDynamicModule info [ bodyAnalysis ] functionAnalyses false None runtimeProfile
+            emitDynamicModule info [ bodyAnalysis ] functionAnalyses false None runtimeProfile OwningTarget.WindowsX64 None
         llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes
 
     let private writeEmbeddedResource (assembly: Reflection.Assembly) resourceName outputPath =
@@ -7974,7 +8019,7 @@ module OwningStackAot =
         let bodyAnalysis = ArenaLifetime.analyzeBody checkedBody
         let functionAnalyses = ArenaLifetime.analyzeProgram (VerifiedIrBody.program verifiedBody)
         let llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes, _, _, _ =
-            emitDynamicModule programInfo [ bodyAnalysis ] functionAnalyses false (Some profile) runtimeProfile
+            emitDynamicModule programInfo [ bodyAnalysis ] functionAnalyses false (Some profile) runtimeProfile OwningTarget.WindowsX64 None
         let fullDirectory = Path.GetFullPath outputDirectory
         Directory.CreateDirectory fullDirectory |> ignore
         let llvmIrPath = Path.Combine(fullDirectory, "owning-stack-native-host.ll")
@@ -8210,6 +8255,50 @@ module OwningStackAot =
     /// Compile the fixed initialize/begin/resume lifecycle into one immutable
     /// owning module with a shared type-index layout, ordinary mailbox callbacks,
     /// and a callback that resumes from two retained arena roots.
+    /// Emits (without compiling) one native host module with several named
+    /// entry exports for an explicit target. Every entry body is the
+    /// compiler-minted shim of its EntryWord; all share one verified program,
+    /// one layout and one type-index universe. Returns the LLVM IR and the
+    /// diagnostic table (index i is error id i + 1).
+    let emitHostModule
+        (runtimeProfile: OwningRuntimeProfile)
+        (target: OwningTarget)
+        (profile: OwningNativeHostProfile)
+        (entries: OwningHostEntry list) =
+        if List.isEmpty entries then invalidArg (nameof entries) "A host module needs at least one entry."
+        let names = entries |> List.map (fun entry -> entry.ExportName)
+        if (List.distinct names).Length <> names.Length then invalidArg (nameof entries) "Host entry export names must be distinct."
+        for name in names do
+            if String.IsNullOrWhiteSpace name || not (name |> Seq.forall (fun ch -> Char.IsAsciiLetterOrDigit ch || ch = '_')) then
+                invalidArg (nameof entries) $"Host entry export name '{name}' must be a C identifier."
+        let bodies = entries |> List.map (fun entry -> entry.Body)
+        let programInfo = makeProgramInfoForBodies true (Some profile) bodies
+        let manifest = match profile with OwningNativeHostProfile.AppHost manifest -> manifest
+        let allowedEffects = Set.union (allowedHostEffects manifest) (OwningStdlib.effectful |> Map.fold (fun all _ effects -> Set.union all effects) Set.empty)
+        let program = VerifiedIrBody.program (List.head bodies)
+        let inspected = VerifiedIrProgram.inspect program
+        for entry in entries do
+            let body = VerifiedIrBody.inspect entry.Body
+            let shimCalls =
+                match body.BodyBlock.Code with
+                | [ instruction ] ->
+                    match instruction.Operation with
+                    | IrOperation.Call call ->
+                        call.ResolvedName = entry.EntryWord
+                        && (match call.ResolvedTarget with UserWordTarget _ -> true | _ -> false)
+                    | _ -> false
+                | _ -> false
+            if body.BodyName <> $"<flow-entrypoint:{entry.EntryWord}>" || not shimCalls
+               || not (Set.isSubset body.BodyInferredEffects allowedEffects) then
+                failNativeHostProfile $"compiler-minted shim of {entry.EntryWord} with effects within the host profile" body.BodyName
+        ignore inspected
+        let analyses =
+            bodies |> List.map (fun verified -> ArenaLifetime.analyzeBody (IrVerifier.verifyBody program (VerifiedIrBody.inspect verified)))
+        let functionAnalyses = ArenaLifetime.analyzeProgram program
+        let llvmIr, diagnostics, _, _, _, _, _, _ =
+            emitDynamicModule programInfo analyses functionAnalyses false (Some profile) runtimeProfile target (Some names)
+        llvmIr, (diagnostics |> Array.map (fun info -> info.Diagnostic))
+
     let compileMailboxWithProfile
         (toolchain: LlvmToolchain)
         optimization
@@ -8229,7 +8318,7 @@ module OwningStackAot =
         let functionAnalyses = ArenaLifetime.analyzeProgram (VerifiedIrBody.program verifiedInit)
         let (llvmIr, internalDiagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
              emittedEntryFrames, backendMetadataPerFrameBytes, callbackMetadataPerEntryBytes) =
-            emitDynamicModule programInfo entryAnalyses functionAnalyses true None runtimeProfile
+            emitDynamicModule programInfo entryAnalyses functionAnalyses true None runtimeProfile OwningTarget.WindowsX64 None
         let roles = [ "initialize"; "begin"; "resume" ]
         if emittedEntryFrames.Length <> roles.Length then
             invalidOp "Owning mailbox emitter did not produce exactly three entry frames."
