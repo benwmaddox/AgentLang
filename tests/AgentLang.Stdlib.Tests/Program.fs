@@ -131,7 +131,10 @@ let private run () =
             for word, (inputs, outputs), values in cases do
                 if not (natives.ContainsKey word) then
                     let body = engine.ExportVerifiedFlowEntryPoint(word, inputs, outputs)
-                    natives[word] <- OwningStackAot.compileWithRuntimeProfile toolchain level profile (Path.Combine(runRoot, optimization, string natives.Count)) body
+                    let directory = Path.Combine(runRoot, optimization, string natives.Count)
+                    natives[word] <- OwningStackAot.compileWithRuntimeProfile toolchain level profile directory body
+                    // Names the build directory, so a word can be rebuilt elsewhere (the Linux probe).
+                    File.WriteAllText(Path.Combine(directory, "word.txt"), word)
                 let interpreted =
                     match engine.BindFlowEntryPoint(word, inputs, outputs).Invoke(values) with
                     | Ok value -> value.Values
