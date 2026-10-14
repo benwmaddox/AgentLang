@@ -1245,12 +1245,15 @@ module NativeRoomReadTests =
                             | Some(OptionValue(_, Some _)) -> true
                             | _ -> false
                         check assertions $"{optimizationName}/{testCase.Name}: refresh directive" (refreshPresent = testCase.ExpectedRefresh)
-                        match testCase.ExpectedMessageCount, fields.TryFind "messages" with
-                        | Some expectedCount, Some(ListValue(_, messages)) ->
-                            check assertions $"{optimizationName}/{testCase.Name}: message page size" (messages.Length = expectedCount)
+                        // Report 268: message rows are rendered into the Flow body; the
+                        // response no longer carries them.
+                        match testCase.ExpectedMessageCount, fields.TryFind "body" with
+                        | Some expectedCount, Some(StringValue body) ->
+                            let rendered = body.Split(" data-message-id=\"", StringSplitOptions.None).Length - 1
+                            check assertions $"{optimizationName}/{testCase.Name}: message page size" (rendered = expectedCount)
                             if testCase.Name = "unicode-forty-message-list-with-tied-latest-time" then
-                                check assertions "Unicode page retains body text and tied selected rows" (messages |> List.exists (function RecordValue("MessageRow", messageFields) -> messageFields.TryFind "body" = Some(OptionValue(TString, Some(StringValue "latest body — λ 東京 🚀"))) | _ -> false))
-                        | Some _, _ -> check assertions $"{optimizationName}/{testCase.Name}: message list field exists" false
+                                check assertions "Unicode page retains body text and tied selected rows" (body.Contains("latest body — λ 東京 🚀", StringComparison.Ordinal))
+                        | Some _, _ -> check assertions $"{optimizationName}/{testCase.Name}: rendered body exists" false
                         | None, _ -> ()
                         progress $"{optimizationName}/{testCase.Name}: typed result checks passed"
                         if testCase.Name = "unicode-forty-message-list-with-tied-latest-time" then

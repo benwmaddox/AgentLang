@@ -62,7 +62,6 @@ test-file campfire-http-authenticated-sign-out {
             view = HttpView.redirect-signed-out(),
             text = "",
             room = option.none<RoomRow>(),
-            messages = list.empty<MessageRow>(),
             message = option.none<MessageRow>(),
             refresh-session-token = option.none<SessionToken>(),
             remember-return-to = false,
@@ -101,7 +100,6 @@ test-file campfire-http-authenticated-sign-out {
             view = HttpView.redirect-signed-out(),
             text = "",
             room = option.none<RoomRow>(),
-            messages = list.empty<MessageRow>(),
             message = option.none<MessageRow>(),
             refresh-session-token = option.none<SessionToken>(),
             remember-return-to = false,
@@ -140,7 +138,6 @@ test-file campfire-http-authenticated-sign-out {
             view = HttpView.empty(),
             text = "",
             room = option.none<RoomRow>(),
-            messages = list.empty<MessageRow>(),
             message = option.none<MessageRow>(),
             refresh-session-token = option.some<SessionToken>(SessionToken.new("pending-refresh")),
             remember-return-to = false,
@@ -179,7 +176,6 @@ test-file campfire-http-authenticated-sign-out {
             view = HttpView.empty(),
             text = "",
             room = option.none<RoomRow>(),
-            messages = list.empty<MessageRow>(),
             message = option.none<MessageRow>(),
             refresh-session-token = option.some<SessionToken>(SessionToken.new("pending-refresh")),
             remember-return-to = false,
@@ -309,7 +305,7 @@ test-file campfire-http-logout-form-errors {
         )
         response
         => value campfireHttpResponse.new(
-            status = 400, view = HttpView.empty(), text = "", room = option.none<RoomRow>(), messages = list.empty<MessageRow>(),
+            status = 400, view = HttpView.empty(), text = "", room = option.none<RoomRow>(),
             message = option.none<MessageRow>(), refresh-session-token = option.some<SessionToken>(SessionToken.new("pending-refresh")),
             remember-return-to = false, last-room = option.none<RoomId>(), body = ""
         ) effects {
@@ -461,7 +457,7 @@ test-file campfire-http-dispatch-after-ban-sign-out {
         response
         => value campfireHttpResponse.new(
             status = 201, view = HttpView.empty(), text = "authenticated", room = option.none<RoomRow>(),
-            messages = list.empty<MessageRow>(), message = option.none<MessageRow>(), refresh-session-token = option.none<SessionToken>(),
+            message = option.none<MessageRow>(), refresh-session-token = option.none<SessionToken>(),
             remember-return-to = false, last-room = option.none<RoomId>(), body = ""
         ) effects {
             db.read: 0

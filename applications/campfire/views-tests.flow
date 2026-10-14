@@ -42,3 +42,18 @@ test campfire.views.body/redirect {
     campfire.views.body(302, HttpView.redirect-root(), "Room not found or inaccessible")
     => value ""
 }
+
+test campfire.views.room-chrome/closed-admin {
+    campfire.views.room-chrome(roomRow.new(id = RoomId.new(486777696), name = option.some<String>("All Talk"), kind = RoomKind.closed(), creator-id = UserId.new(1), created-at = "a", updated-at = "b"), authUser.new(id = UserId.new(127326141), name = "David", role = Role.administrator(), status = AuthUserStatus.active()), "http://127.0.0.1:13774").room-key
+    => value "rooms_closed"
+}
+
+test campfire.views.page/layout {
+    string.starts-with(campfire.views.text(campfire.views.page(campfire.views.room-chrome(roomRow.new(id = RoomId.new(3), name = option.some<String>("Lobby"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "a", updated-at = "b"), authUser.new(id = UserId.new(9), name = "Ann & Bo", role = Role.member(), status = AuthUserStatus.active()), "https://chat.test"), list.empty<Html>())), "<!DOCTYPE html>")
+    => value true
+}
+
+test campfire.views.room-page/escapes-user {
+    string.contains(campfire.views.room-page(campfire.views.room-chrome(roomRow.new(id = RoomId.new(3), name = option.some<String>("Lobby"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "a", updated-at = "b"), authUser.new(id = UserId.new(9), name = "Ann & Bo", role = Role.member(), status = AuthUserStatus.active()), "https://chat.test"), list.empty<MessageRow>()), "<meta name=\"current-user-name\" content=\"Ann &amp; Bo\" />")
+    => value true
+}

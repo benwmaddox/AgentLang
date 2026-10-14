@@ -66,7 +66,7 @@ let private run () =
     rejects "a hole in a tag name" "FLOW_TEMPLATE_MARKUP" "html\"<{name}></x>\""
     rejects "a hole in an unquoted attribute" "FLOW_TEMPLATE_MARKUP" "html\"<a title={name}></a>\""
     rejects "a hole between attributes" "FLOW_TEMPLATE_MARKUP" "html\"<a {name}></a>\""
-    rejects "a hole in script raw text" "FLOW_TEMPLATE_MARKUP" "html\"<script>{name}</script>\""
+    rejects "an Html hole in script raw text" "FLOW_TEMPLATE_MARKUP" "html\"<script>{h}</script>\""
     rejects "a hole in a comment" "FLOW_TEMPLATE_MARKUP" "html\"<!-- {name} -->\""
     rejects "an Int hole" "FLOW_TEMPLATE_HOLE_TYPE" "html\"<p>{n}</p>\""
     rejects "a lone closing brace" "FLOW_TEMPLATE_BRACE" "html\"<p>}</p>\""

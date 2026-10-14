@@ -27,7 +27,7 @@ let private repo = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "../.."))
 let private sources =
     // The app's bootstrap type documents (as in Http/Application.fs), then the views.
     [ "campfire-types.flow"; "session-policy.flow"; "authentication-types.flow"; "browser-types.flow"
-      "request-policy.flow"; "http-types.flow"; "views.flow"; "views-tests.flow" ]
+      "request-policy.flow"; "http-types.flow"; "views.flow"; "layout.flow"; "views-tests.flow" ]
     |> List.map (fun name -> "applications/campfire/" + name)
     |> List.map (fun path -> Path.Combine(repo, path))
 let private privateCapture = Path.Combine(repo, ".agentlang", "views-reference", "private", "native-265.html")
@@ -158,6 +158,10 @@ let private run () =
     // Trusted-profile timing of the native render (40-message page).
     let timing = JsonObject()
     use trusted = OwningStackAot.compileWithRuntimeProfile toolchain LlvmOptimization.O2 OwningRuntimeProfile.TrustedGenerated (Path.Combine(runRoot, "native", "trusted")) body
+    // The trusted runtime has its own field-location fast path (report 268).
+    for label, roomId, name, messages in cases do
+        let values = [ roomValue roomId name; messagesValue roomId messages ]
+        check $"{label}/trusted O2: native = oracle" (trusted.Execute(values, 4 * 1048576, 1048576).Values = [ StringValue(oracle roomId name messages) ])
     let _, roomId, name, messages = cases |> List.find (fun (label, _, _, _) -> label = "forty")
     let values = [ roomValue roomId name; messagesValue roomId messages ]
     let pageBytes = Encoding.UTF8.GetByteCount(oracle roomId name messages)
@@ -180,13 +184,15 @@ let private run () =
     printfn "campfire views: %d assertions passed; render %s; artifacts %s" assertionCount.Value (timing.ToJsonString()) runRoot
 
 /// Developer profiling: times the pieces of the room render separately.
-let private profile () =
+let private profile (extraFlow: string option) =
     let runRoot = Path.Combine(repo, ".agentlang", "templates-266", "profile", Guid.NewGuid().ToString("N"))
     let engine = Runtime.Engine(Path.Combine(runRoot, "flow-engine"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
-    let source = (sources |> List.map File.ReadAllText |> String.concat "\n") + "\n" + File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__, "bench.flow"))
+    let source =
+        (sources |> List.map File.ReadAllText |> String.concat "\n") + "\n" + File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__, "bench.flow"))
+        + (match extraFlow with Some path -> "\n" + File.ReadAllText path | None -> "")
     let defined = engine.Dispatch("define", flowArgs source)
     if not (defined["ok"].GetValue<bool>()) then failwith (defined.ToJsonString())
-    for name in [ "campfire.views.text"; "campfire.views.message"; "campfire.views.room"; "campfire.views.room-text"; "bench.item"; "bench.names"; "bench.client-id"; "bench.ids"; "bench.id-text"; "bench.id-texts"; "bench.count" ] do
+    for name in [ "campfire.views.text"; "campfire.views.message"; "campfire.views.room"; "campfire.views.room-text"; "bench.item"; "bench.names"; "bench.client-id"; "bench.ids"; "bench.id-text"; "bench.id-texts"; "bench.count"; "bench.rails-page"; "bench.static-page" ] |> List.filter (fun name -> not (name.StartsWith "bench.rails" || name.StartsWith "bench.static") || (extraFlow.IsSome && File.ReadAllText(extraFlow.Value).Contains(name))) do
         let args = JsonObject()
         args["word"] <- JsonValue.Create(name)
         let response = engine.Dispatch("commit", args)
@@ -197,6 +203,12 @@ let private profile () =
     let time label word inputs outputs values =
         let body = engine.ExportVerifiedFlowEntryPoint(word, inputs, outputs)
         use program = OwningStackAot.compileWithRuntimeProfile toolchain LlvmOptimization.O2 OwningRuntimeProfile.TrustedGenerated (Path.Combine(runRoot, word.Replace("?", "-q"))) body
+        // Timing a wrong answer proves nothing: native must equal the interpreter.
+        let expected =
+            match engine.BindFlowEntryPoint(word, inputs, outputs).Invoke(values) with
+            | Ok value -> value.Values
+            | Error diagnostic -> failwith $"Interpreter rejected {word}: {diagnostic.Code} {diagnostic.Message}"
+        if program.Execute(values, 4 * 1048576, 1048576).Values <> expected then failwith $"{label}: trusted native output differs from the interpreter"
         for _ in 1 .. 200 do program.Execute(values, 4 * 1048576, 1048576) |> ignore
         let samples = [| for _ in 1 .. 1000 -> (program.Execute(values, 4 * 1048576, 1048576) |> ignore; float program.LastNativeElapsedTicks * 1_000_000.0 / float Stopwatch.Frequency) |]
         Array.sortInPlace samples
@@ -207,11 +219,29 @@ let private profile () =
     for count in [ 10; 40; 160; 640 ] do
         time $"template map over {count} Strings" "bench.names" [ TList TString ] [ TString ] [ ListValue(TString, [ for index in 1 .. count -> StringValue $"Message {index} body text with some words." ]) ]
     time "room page (40 messages)" "campfire.views.room-text" [ TNamed "RoomRow"; TList(TNamed "MessageRow") ] [ TString ] [ roomValue 12L (Some "Room"); messageList ]
+    // Optional cost probe (report 268): a Rails-sized partial (~11.6 KB, 58
+    // holes) from a private capture, passed as an extra flow file.
+    if extraFlow.IsSome then
+        let benchMessage index =
+            RecordValue("BenchMessage", Map.ofList [
+                "id", StringValue(string (933434481 + index)); "client-id", StringValue(Guid.NewGuid().ToString())
+                "user-id", StringValue "773523953"; "author", StringValue "JZ"; "title", StringValue "JZ – Designer"
+                "avatar", StringValue "/users/eyJfcmFpbHMiOnsiZGF0YSI6NzczNTIzOTUzfX0--0000000000000000000000000000000000000000000000000000000000000000/avatar?v=20260102180000"
+                "token", StringValue "synthetic-token-synthetic-token-synthetic-token-synthetic-token-synthetic-token-synthe"
+                "room-id", StringValue "486777696"; "room-name", StringValue "All Talk"
+                "time", StringValue "2026-03-02T15:30:00Z"; "ms", StringValue "1772465400000" ])
+        let messages = ListValue(TNamed "BenchMessage", [ for index in 1 .. 40 -> benchMessage index ])
+        time "Rails-sized partial x40" "bench.rails-page" [ TList(TNamed "BenchMessage") ] [ TString ] [ messages ]
+        if File.ReadAllText(extraFlow.Value).Contains("bench.static-page") then
+            time "static partial x40 (no holes)" "bench.static-page" [ TList(TNamed "BenchMessage") ] [ TString ] [ messages ]
 
 [<EntryPoint>]
 let main argv =
     try
-        if argv |> Array.contains "--profile" then profile () else run ()
+        if argv |> Array.contains "--profile" then
+            let extra = argv |> Array.tryFindIndex ((=) "--probe") |> Option.map (fun index -> argv[index + 1])
+            profile extra
+        else run ()
         0
     with error ->
         eprintfn "%s" (error.ToString())

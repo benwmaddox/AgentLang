@@ -14,8 +14,10 @@ open System.Text
 ///
 /// Template holes are opaque balanced units. A hole may sit in element content
 /// (`String` or `Html`) or inside a quoted attribute value (`String` only). A
-/// hole anywhere else (tag or attribute names, unquoted values, between
-/// attributes, comments, raw text) is rejected.
+/// String hole may also sit in `<script>`/`<style>` raw text, where escaping
+/// keeps it from ending the element. A hole anywhere else (tag or attribute
+/// names, unquoted values, between attributes, comments; an Html hole in raw
+/// text) is rejected.
 module HtmlMarkup =
     let private voidElements =
         set [ "area"; "base"; "br"; "col"; "embed"; "hr"; "img"; "input"; "link"; "meta"; "source"; "track"; "wbr" ]
@@ -97,7 +99,10 @@ module HtmlMarkup =
                 match part with
                 | HtmlTemplatePart.StringHole ->
                     match state with
-                    | Data | AttributeValueDouble | AttributeValueSingle -> ()
+                    // In <script>/<style> raw text a String hole is escaped like
+                    // everywhere else (as ERB does), so it can never contain '<'
+                    // and cannot end the element.
+                    | Data | AttributeValueDouble | AttributeValueSingle | RawText -> ()
                     | other -> fail index $"A template hole cannot appear in {describe other}."
                 | HtmlTemplatePart.HtmlHole | HtmlTemplatePart.HtmlListHole ->
                     match state with

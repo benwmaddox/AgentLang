@@ -31,7 +31,7 @@ module ResponseRenderer =
         let boolValue = function BoolValue flag -> flag | _ -> fail ()
         try
             let fields = record "CampfireHttpResponse" value
-            if fields.Count <> 10 then fail ()
+            if fields.Count <> 9 then fail ()
             // The Flow application renders every HTML body (views.flow); this
             // host only checks the response contract and sends the bytes.
             let renderedBody = get "body" fields |> stringValue
@@ -40,13 +40,12 @@ module ResponseRenderer =
             let text = get "text" fields |> stringValue
             let room = get "room" fields |> optional (TNamed "RoomRow") (record "RoomRow")
             let message = get "message" fields |> optional (TNamed "MessageRow") id
-            let messages = match get "messages" fields with ListValue(TNamed "MessageRow", values) -> values | _ -> fail ()
             let token =
                 get "refresh-session-token" fields
                 |> optional (TNamed "SessionToken") (function NamedValue("SessionToken", StringValue token) -> token | _ -> fail ())
             let remember = get "remember-return-to" fields |> boolValue
             let lastRoom = get "last-room" fields |> optional (TNamed "RoomId") (namedInt "RoomId")
-            let noRouteData = room.IsNone && message.IsNone && messages.IsEmpty
+            let noRouteData = room.IsNone && message.IsNone
             let contentType, body, location, alert =
                 match view with
                 | "empty" when noRouteData && text = "" && not remember && lastRoom.IsNone ->
@@ -71,11 +70,8 @@ module ResponseRenderer =
                     let roomFields = room.Value
                     let roomId = get "id" roomFields |> namedInt "RoomId"
                     if lastRoom |> Option.exists ((<>) roomId) then fail ()
-                    messages |> List.iter (fun row ->
-                        let rowFields = record "MessageRow" row
-                        if (get "room-id" rowFields |> namedInt "RoomId") <> roomId then fail ())
                     "text/html; charset=utf-8", renderedBody, None, None
-                | "append-message" when status = 200 && room.IsSome && message.IsSome && messages.IsEmpty && not remember && lastRoom.IsNone && text = "" ->
+                | "append-message" when status = 200 && room.IsSome && message.IsSome && not remember && lastRoom.IsNone && text = "" ->
                     let roomId = get "id" room.Value |> namedInt "RoomId"
                     let row = message.Value
                     if (get "room-id" (record "MessageRow" row) |> namedInt "RoomId") <> roomId then fail ()

@@ -69,7 +69,6 @@ record CampfireHttpResponse {
     field view: HttpView
     field text: String
     field room: Option<RoomRow>
-    field messages: List<MessageRow>
     field message: Option<MessageRow>
     field refresh-session-token: Option<SessionToken>
     field remember-return-to: Bool

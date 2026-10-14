@@ -293,10 +293,12 @@ fn page.card(title: String, items: List<Html>) -> Html {
   - elements must be balanced and close in order (void elements and `/>`
     excepted);
   - a bare `<` is an error;
-  - a hole may sit in element content, or (String only) inside a quoted
-    attribute value;
-  - a hole may not sit in a tag or attribute name, an unquoted value,
-    between attributes, in a comment, or in `<script>`/`<style>` text.
+  - a hole may sit in element content;
+  - a String hole may also sit inside a quoted attribute value or in
+    `<script>`/`<style>` text (escaped, as ERB does, so it cannot end the
+    element);
+  - a hole may not sit in a tag or attribute name, an unquoted value, between
+    attributes or in a comment, and an Html hole may not sit in raw text.
 - **Html by construction.** The IR verifier re-checks every template, so the
   result is `Html` by construction, and no backend runs the validator on it.
   `Html.new` compiles to the same operation as `html"{text}"`. Native code

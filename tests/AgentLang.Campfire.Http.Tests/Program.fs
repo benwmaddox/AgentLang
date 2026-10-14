@@ -569,7 +569,9 @@ module Program =
                     Accept = Some "text/html"
                     FetchSite = Some "same-origin" }
         expectStatus 200 room
-        check (room.Body.Contains("<h1>Main room</h1>", StringComparison.Ordinal)) "GET contains the authorized room title"
+        // Report 268: the Rails layout (applications/campfire/layout.flow) titles the page.
+        check (room.Body.Contains("<title>Main room</title>", StringComparison.Ordinal)) "GET contains the authorized room title"
+        check (room.Body.Contains("<main id=\"main-content\">", StringComparison.Ordinal)) "GET renders the Rails layout"
         equal 40 (room.Body.Split(" data-message-id=\"", StringSplitOptions.None).Length - 1) "GET renders exactly forty messages"
         equal 40 (room.Body.Split("<div id=\"presentation_message_", StringSplitOptions.None).Length - 1) "GET renders forty message presentations"
         check (room.Body.Contains("data-message-id=\"6\"", StringComparison.Ordinal)) "GET contains the oldest row in the newest forty"
@@ -1660,7 +1662,7 @@ module Program =
                             { (baseSpec "GET" "/rooms/1") with
                                 Cookies = [ "session_token", issuedLoginCookie ] }
                     expectStatus 200 restoredRoom
-                    check (restoredRoom.Body.Contains("<h1>Main room</h1>", StringComparison.Ordinal)) "restarted application restores the persisted login session"
+                    check (restoredRoom.Body.Contains("<title>Main room</title>", StringComparison.Ordinal)) "restarted application restores the persisted login session"
                     expectTrace restartedProbe
                         [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
                           "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"

@@ -81,3 +81,46 @@ fn campfire.views.body(status: Int, view: HttpView, text: String) -> String {
         redirect-signed-out => ""
     }
 }
+
+fn campfire.views.room-chrome(room: RoomRow, user: AuthUser, base-url: String) -> PageChrome {
+    effects none
+    doc "Layout values for a room page. Named gaps (report 268): CSRF tokens, signed avatar and stream names, the account logo version and the room's loaded-at time are still empty."
+
+    let kind = match room.kind {
+        open => "open"
+        closed => "closed"
+        direct => "direct"
+    }
+    let name = match room.name {
+        none => ""
+        some text => text
+    }
+    let body-class = match user.role {
+        member => "sidebar"
+        administrator => "sidebar admin"
+        bot => "sidebar"
+    }
+    pageChrome.new(
+        room-name = name,
+        room-id = int.to-string(RoomId.value(room.id)),
+        room-key = string.concat("rooms_", kind),
+        room-path = string.concat(kind, "s"),
+        user-id = int.to-string(UserId.value(user.id)),
+        user-name = user.name,
+        body-class = body-class,
+        base-url = base-url,
+        account-version = "",
+        csrf-token = "",
+        composer-token = "",
+        user-avatar-url = "",
+        stream-name = "",
+        loaded-at = ""
+    )
+}
+
+fn campfire.views.room-page(chrome: PageChrome, messages: List<MessageRow>) -> String {
+    effects none
+    doc "The room page: the Rails layout around the room's messages."
+
+    campfire.views.text(campfire.views.page(chrome, messages.map(campfire.views.message)))
+}

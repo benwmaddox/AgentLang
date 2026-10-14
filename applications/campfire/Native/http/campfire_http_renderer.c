@@ -79,8 +79,6 @@ typedef struct al_http_parsed_response {
   al_http_text text;
   al_http_room_row room;
   uint32_t has_room;
-  uint32_t messages_count;
-  uint32_t messages_items_offset;
   uint32_t has_message;
   al_http_optional_text refresh_token;
   uint32_t remember_return_to;
@@ -107,19 +105,6 @@ static int al_http_range_valid(const al_http_cursor *cursor,
                                uint32_t byte_count) {
   return cursor->offset <= cursor->extent &&
          byte_count <= cursor->extent - cursor->offset;
-}
-
-static int al_http_read_u32(al_http_cursor *cursor, uint32_t *out_value) {
-  uint32_t value;
-  uint32_t index;
-  if (!al_http_range_valid(cursor, 4u))
-    return 0;
-  value = 0u;
-  for (index = 0u; index < 4u; ++index)
-    value |= (uint32_t)cursor->bytes[cursor->offset + index] << (index * 8u);
-  cursor->offset += 4u;
-  *out_value = value;
-  return 1;
 }
 
 static int al_http_read_u64(al_http_cursor *cursor, uint64_t *out_value) {
@@ -278,9 +263,6 @@ static int al_http_parse_response(const uint8_t *bytes, uint32_t extent,
   al_http_cursor cursor;
   uint64_t view;
   uint64_t room_tag;
-  uint32_t list_count;
-  uint32_t list_reserved;
-  uint32_t index;
   al_http_message_row message_row;
 
   cursor.bytes = bytes;
@@ -304,17 +286,6 @@ static int al_http_parse_response(const uint8_t *bytes, uint32_t extent,
     out_response->has_room = 0u;
   } else {
     return 0;
-  }
-
-  if (!al_http_read_u32(&cursor, &list_count) ||
-      !al_http_read_u32(&cursor, &list_reserved) || list_reserved != 0u ||
-      list_count > (cursor.extent - cursor.offset) / 56u)
-    return 0;
-  out_response->messages_count = list_count;
-  out_response->messages_items_offset = cursor.offset;
-  for (index = 0u; index < list_count; ++index) {
-    if (!al_http_parse_message_row(&cursor, &message_row))
-      return 0;
   }
 
   if (!al_http_read_u64(&cursor, &room_tag))
@@ -345,25 +316,7 @@ static int al_http_text_is_empty(al_http_text text) {
 }
 
 static int al_http_no_route_data(const al_http_parsed_response *response) {
-  return response->has_room == 0u && response->has_message == 0u &&
-         response->messages_count == 0u;
-}
-
-static int al_http_room_messages_match(const uint8_t *bytes,
-                                       uint32_t extent,
-                                       const al_http_parsed_response *response) {
-  al_http_cursor cursor;
-  uint32_t index;
-  al_http_message_row message;
-  cursor.bytes = bytes;
-  cursor.extent = extent;
-  cursor.offset = response->messages_items_offset;
-  for (index = 0u; index < response->messages_count; ++index) {
-    if (!al_http_parse_message_row(&cursor, &message) ||
-        message.room_id != response->room.id)
-      return 0;
-  }
-  return 1;
+  return response->has_room == 0u && response->has_message == 0u;
 }
 
 static int al_http_view_supported(uint32_t view) {
@@ -374,8 +327,7 @@ static int al_http_view_supported(uint32_t view) {
          view == AL_HTTP_VIEW_ROOM_NOT_FOUND;
 }
 
-static int al_http_contract_valid(const uint8_t *bytes, uint32_t extent,
-                                  const al_http_parsed_response *response) {
+static int al_http_contract_valid(const al_http_parsed_response *response) {
   const int no_route_data = al_http_no_route_data(response);
   const int text_empty = al_http_text_is_empty(response->text);
 
@@ -389,8 +341,7 @@ static int al_http_contract_valid(const uint8_t *bytes, uint32_t extent,
            response->has_message == 0u &&
            response->remember_return_to == 0u && text_empty &&
            (response->has_last_room == 0u ||
-            response->last_room == response->room.id) &&
-           al_http_room_messages_match(bytes, extent, response);
+            response->last_room == response->room.id);
   case AL_HTTP_VIEW_REDIRECT_ROOT:
     return response->status == 302 && no_route_data &&
            response->remember_return_to == 0u &&
@@ -548,8 +499,7 @@ int32_t al_campfire_http_render_v1(
     return AL_CAMPFIRE_HTTP_RENDER_MALFORMED_RESPONSE;
   if (!al_http_view_supported(response.view))
     return AL_CAMPFIRE_HTTP_RENDER_UNSUPPORTED_VIEW;
-  if (!al_http_contract_valid(response_abi5, response_extent_bytes,
-                              &response))
+  if (!al_http_contract_valid(&response))
     return AL_CAMPFIRE_HTTP_RENDER_MALFORMED_RESPONSE;
 
   measure.bytes = NULL;

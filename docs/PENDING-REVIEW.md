@@ -52,6 +52,24 @@ Noted for after the apples-to-apples Campfire comparison.
   Campfire profiles in the compiler, plus routing, request/response,
   forms, cookies/sessions, JSON and time formatting.
 
+## Trusted-profile runtime checks (report 268; review)
+
+- **Per-instruction stack check is diagnostic-only** (user, 2026-10-14). The
+  owning backend used to re-check every live stack descriptor (range below the
+  cursor, init bits) after every instruction. That is quadratic in stack depth
+  (about 3,400 checks per 58-hole template) and re-verifies the compiler's own
+  bookkeeping, not the program. Generated IR now depends on the runtime
+  profile: `Diagnostic` keeps the full check as a codegen self-test, while
+  `TrustedGenerated` keeps only the boundary checks (arguments, host input,
+  arena reservation) and the per-use descriptor checks.
+- **Trusted `al_owning_locate_field`** walks only the fields before the target
+  (bounds checked). It no longer re-validates the type graph or scans the whole
+  parent on each read. The diagnostic profile keeps the full scan.
+- Still open: `al_owning_html_template_write` re-runs the plan, so each hole is
+  scanned twice. The no-op `al_owning_record_layout` event calls also remain in
+  trusted IR, and other trusted runtime self-checks could be removed the same
+  way.
+
 ## Scheduled removals
 
 | Item | Action | Deadline |

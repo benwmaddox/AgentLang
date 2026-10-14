@@ -3573,7 +3573,8 @@ module OwningStackAot =
         (entryAnalyses: ArenaLifetimeBodyAnalysis list)
         (functionAnalyses: Map<WordId, ArenaLifetimeBodyAnalysis>)
         (mailboxMode: bool)
-        (nativeHostProfile: OwningNativeHostProfile option) =
+        (nativeHostProfile: OwningNativeHostProfile option)
+        (runtimeProfile: OwningRuntimeProfile) =
         let body = info.Body
         let bodies = info.Bodies
         if bodies.Length <> entryAnalyses.Length then
@@ -4462,6 +4463,17 @@ module OwningStackAot =
                         | _ -> None)
                     |> List.concat
                     |> Set.ofList
+                // Per-instruction stack check (report 268). Stack shape, types and
+                // layouts are proved at compile time; what this re-checks after
+                // every instruction is the compiler's own runtime bookkeeping
+                // (descriptor ranges below the cursor, init bits). That is a
+                // self-test of code generation, so only the diagnostic profile
+                // emits it. Trusted builds keep the boundary checks (arguments,
+                // host input, arena reservation) and the per-use descriptor checks.
+                let emitStackCheck () =
+                    match runtimeProfile with
+                    | OwningRuntimeProfile.Diagnostic -> emitCursorCheck stack failBody
+                    | OwningRuntimeProfile.TrustedGenerated -> ()
                 for instruction in current.Code do
                     let instructionSpan = frameSourceMap.TryFind instruction.Site |> Option.map (fun source -> source.SiteSpan)
                     match instruction.Operation with
@@ -6127,7 +6139,7 @@ module OwningStackAot =
                             stack <- push prefix outputType cursor outputExtent outputPayload outputOwnerEnd
                         | HostOperationTarget operationId -> rejectHostOperation currentOwner instructionSpan operationId
                         | _ -> invalidOp "Verified dynamic call target is neither a primitive nor a user function."
-                    emitCursorCheck stack failBody
+                    emitStackCheck ()
                 stack
 
             let rootBindings = makeBindings plan.RootEnvironment Map.empty
@@ -6978,11 +6990,11 @@ module OwningStackAot =
             (entryFrameAllocaBytes |> Map.toList) @ functionFrameBounds |> Map.ofList
         writer.Text, diagnostics.ToArray(), metadataPerFrameBytes, metadataPeakBoundBytes, 8192, entryFrameTexts |> List.ofSeq, allFrameAllocaBytes, mailboxCallbackAllocaBytes
 
-    let private emitModule (info: OwningProgramInfo) (bodyAnalysis: ArenaLifetimeBodyAnalysis) (functionAnalyses: Map<WordId, ArenaLifetimeBodyAnalysis>) =
+    let private emitModule (info: OwningProgramInfo) (bodyAnalysis: ArenaLifetimeBodyAnalysis) (functionAnalyses: Map<WordId, ArenaLifetimeBodyAnalysis>) (runtimeProfile: OwningRuntimeProfile) =
         // Fixed and dynamic layouts both use explicit arena descriptors. The old
         // packed fixed emitter remains historical code and is never selected.
         let llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes, _, _, _ =
-            emitDynamicModule info [ bodyAnalysis ] functionAnalyses false None
+            emitDynamicModule info [ bodyAnalysis ] functionAnalyses false None runtimeProfile
         llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes
 
     let private writeEmbeddedResource (assembly: Reflection.Assembly) resourceName outputPath =
@@ -7352,7 +7364,7 @@ module OwningStackAot =
         let checkedBody = IrVerifier.verifyBody (VerifiedIrBody.program verifiedBody) (VerifiedIrBody.inspect verifiedBody)
         let bodyAnalysis = ArenaLifetime.analyzeBody checkedBody
         let functionAnalyses = ArenaLifetime.analyzeProgram (VerifiedIrBody.program verifiedBody)
-        let llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes = emitModule programInfo bodyAnalysis functionAnalyses
+        let llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes = emitModule programInfo bodyAnalysis functionAnalyses runtimeProfile
         let fullDirectory = Path.GetFullPath outputDirectory
         Directory.CreateDirectory fullDirectory |> ignore
         let llvmIrPath = Path.Combine(fullDirectory, "owning-stack-native.ll")
@@ -7406,7 +7418,7 @@ module OwningStackAot =
         let bodyAnalysis = ArenaLifetime.analyzeBody checkedBody
         let functionAnalyses = ArenaLifetime.analyzeProgram (VerifiedIrBody.program verifiedBody)
         let llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes, _, _, _ =
-            emitDynamicModule programInfo [ bodyAnalysis ] functionAnalyses false (Some profile)
+            emitDynamicModule programInfo [ bodyAnalysis ] functionAnalyses false (Some profile) runtimeProfile
         let fullDirectory = Path.GetFullPath outputDirectory
         Directory.CreateDirectory fullDirectory |> ignore
         let llvmIrPath = Path.Combine(fullDirectory, "owning-stack-native-host.ll")
@@ -7661,7 +7673,7 @@ module OwningStackAot =
         let functionAnalyses = ArenaLifetime.analyzeProgram (VerifiedIrBody.program verifiedInit)
         let (llvmIr, internalDiagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
              emittedEntryFrames, backendMetadataPerFrameBytes, callbackMetadataPerEntryBytes) =
-            emitDynamicModule programInfo entryAnalyses functionAnalyses true None
+            emitDynamicModule programInfo entryAnalyses functionAnalyses true None runtimeProfile
         let roles = [ "initialize"; "begin"; "resume" ]
         if emittedEntryFrames.Length <> roles.Length then
             invalidOp "Owning mailbox emitter did not produce exactly three entry frames."

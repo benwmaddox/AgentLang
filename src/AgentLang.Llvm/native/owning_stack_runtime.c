@@ -2451,6 +2451,68 @@ int32_t AL_OWNING_PROFILE_IMPL(al_owning_locate_field)(
   view.length = ctx->stack_capacity_bytes;
   view.error_id = error_id;
   view.external = 0;
+#if AL_OWNING_TRUSTED_GENERATED
+  /* Trusted generated code (report 268): the layout is compiler-emitted and
+   * the parent was built by verified code, so walk only the fields before the
+   * target instead of re-validating the type graph and scanning the whole
+   * parent on every read (~0.5 us per template hole). Bounds stay checked;
+   * the diagnostic profile keeps the full scan below. */
+  {
+    uint32_t cursor;
+    uint32_t index;
+    if (!al_owning_validate_type_descriptor(&view, layout, parent_type_index,
+                                            &parent) ||
+        parent->kind != AL_OWNING_TYPE_RECORD ||
+        field_index >= parent->field_count ||
+        parent_offset > ctx->cursor_bytes ||
+        parent_extent > ctx->cursor_bytes - parent_offset) {
+      if (ctx->status == AL_OWNING_STATUS_OK)
+        al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                              parent_extent, ctx->cursor_bytes);
+      return 1;
+    }
+    parent_end = parent_offset + parent_extent;
+    view.length = parent_end;
+    cursor = parent_offset;
+    for (index = 0u; index <= field_index; ++index) {
+      const al_owning_field_descriptor *field =
+          &layout->fields[parent->first_field + index];
+      uint32_t field_payload = 0u;
+      uint32_t field_extent = 0u;
+      if (field->child_type_index >= layout->type_count) {
+        al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                              field->child_type_index, layout->type_count);
+        return 1;
+      }
+      if (field->flags != AL_OWNING_FIELD_ZERO_WIDTH) {
+        const al_owning_type_descriptor *child =
+            &layout->types[field->child_type_index];
+        if (child->fixed_extent_bytes != AL_OWNING_LAYOUT_DYNAMIC_U32) {
+          field_payload = child->fixed_payload_bytes;
+          field_extent = child->fixed_extent_bytes;
+        } else if (!al_owning_scan_value(&view, layout,
+                                         field->child_type_index, cursor,
+                                         parent_end, 1u, &field_payload,
+                                         &field_extent, 0)) {
+          return 1;
+        }
+        if (field_extent > parent_end - cursor) {
+          al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                                field_extent, parent_end - cursor);
+          return 1;
+        }
+      }
+      if (index == field_index) {
+        out_field_location->offset_bytes = cursor;
+        out_field_location->payload_bytes = field_payload;
+        out_field_location->extent_bytes = field_extent;
+        return 0;
+      }
+      cursor += field_extent;
+    }
+    return 1;
+  }
+#endif
   if (!al_owning_validate_type_descriptor(&view, layout, parent_type_index,
                                           &parent) ||
       parent->kind != AL_OWNING_TYPE_RECORD ||
