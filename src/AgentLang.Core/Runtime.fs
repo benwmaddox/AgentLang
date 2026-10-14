@@ -6086,6 +6086,21 @@ module Runtime =
                 match FlowParser.parseDocumentWithVersion syntaxVersion "<flow-project>" source with
                 | Ok value -> value
                 | Error diagnostic -> raise (LanguageException diagnostic)
+            // Html is built in: declared once, automatically, by the first Flow/2
+            // document that uses it (an html template, Html, or html.raw).
+            let document =
+                match document.Scalars |> List.tryFind (fun scalar -> scalar.Name = HtmlBuiltIn.typeName) with
+                | Some declared ->
+                    error "FLOW_HTML_BUILT_IN" "Html is a built-in type: Html.new(text) escapes and html.raw(text) validates markup. Do not declare it." (Some declared.Name) (Some declared.Span) [] [ declared.Name ]
+                | None when syntaxVersion = 2 && not (data.Scalars.ContainsKey HtmlBuiltIn.typeName) && HtmlBuiltIn.usedBy source ->
+                    match FlowParser.parseDocumentWithVersion 2 "<built-in:Html>" HtmlBuiltIn.source with
+                    | Ok builtIn -> { document with Scalars = document.Scalars @ builtIn.Scalars }
+                    | Error diagnostic -> raise (LanguageException diagnostic)
+                | None -> document
+            match document.Words |> List.tryFind (fun word -> word.Name = HtmlBuiltIn.rawName) with
+            | Some declared ->
+                error "FLOW_HTML_BUILT_IN" "html.raw is built in: it keeps markup checked by string.html-fragment?. Do not declare it." (Some declared.Name) (Some declared.Span) [] [ declared.Name ]
+            | None -> ()
             let replaceWasRequested =
                 match arguments["replace"] with
                 | :? JsonValue as value ->

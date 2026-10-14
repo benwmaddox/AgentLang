@@ -161,7 +161,7 @@ module IrInterpreter =
             "string.guid-canonical?"; "string.guid-normalize"; "string.email-address-valid?"
             "int.add-checked"; "int.multiply-checked"; "int.scale-ratio-toward-zero"
             "instant.parse-utc"; "instant.is-canonical-utc?"; "instant.before?"; "instant.add-days"
-            "string.concat"; "string.join"; "string.html-escape"; "string.contains"; "string.starts-with"; "string.ends-with"
+            "string.concat"; "string.join"; "string.html-escape"; "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
             "string.length"; "string.byte-length"; "string.char-length"; "string.trim"; "string.to-lower"; "string.to-upper"
             "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"; "float.round"
             "int.to-string"; "float.to-string"
@@ -1106,6 +1106,7 @@ module IrInterpreter =
                       Depth = max 1 typeDepth
                       EstimatedOutputBytes = saturatingAdd maxRuntimeValueOutputBytes (64L + typeBytes) (int64 escaped.Length * 6L) }
                 [ RuntimeString escaped ]
+            | "string.html-fragment?", [ RuntimeString value ] -> [ RuntimeBool(HtmlMarkup.isFragment value) ]
             | "string.contains", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.Contains(sub, StringComparison.Ordinal)) ]
             | "string.starts-with", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.StartsWith(sub, StringComparison.Ordinal)) ]
             | "string.ends-with", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.EndsWith(sub, StringComparison.Ordinal)) ]
@@ -1191,6 +1192,43 @@ module IrInterpreter =
                     // Proven at compile time by the same pure validator: retag only.
                     let prefix, arguments = popArguments call.ResolvedName call.InputTypes
                     stack <- prefix @ [ RuntimeScalar(key, List.head arguments) ]
+                | IrOperation.HtmlTemplate(key, parts) ->
+                    // Html by construction (verified skeleton, escaped String holes,
+                    // Html holes): no validator call.
+                    let holeTypes =
+                        parts |> List.choose (function
+                            | HtmlTemplatePart.StringHole -> Some IrString
+                            | HtmlTemplatePart.HtmlHole -> Some(IrNominal key)
+                            | HtmlTemplatePart.HtmlListHole -> Some(IrList(IrNominal key))
+                            | HtmlTemplatePart.Text _ -> None)
+                    let prefix, holes = popArguments "html template" holeTypes
+                    let builder = Text.StringBuilder()
+                    let mutable remaining = holes
+                    for part in parts do
+                        match part with
+                        | HtmlTemplatePart.Text text -> builder.Append(text) |> ignore
+                        | HtmlTemplatePart.StringHole | HtmlTemplatePart.HtmlHole | HtmlTemplatePart.HtmlListHole ->
+                            match remaining with
+                            | RuntimeList(_, items) :: rest when part = HtmlTemplatePart.HtmlListHole ->
+                                for item in items do
+                                    match item with
+                                    | RuntimeScalar(_, RuntimeString value) -> builder.Append(value) |> ignore
+                                    | _ -> fail "RUNTIME_STACK_TYPE" "html template List<Html> hole holds a non-Html item." (Some currentWord) instructionSpan [] []
+                                remaining <- rest
+                            | RuntimeString value :: rest when part = HtmlTemplatePart.StringHole ->
+                                builder.Append(TrustedValues.htmlEscape value) |> ignore
+                                remaining <- rest
+                            | RuntimeScalar(_, RuntimeString value) :: rest when part = HtmlTemplatePart.HtmlHole ->
+                                builder.Append(value) |> ignore
+                                remaining <- rest
+                            | _ -> fail "RUNTIME_STACK_TYPE" "html template hole has the wrong runtime type." (Some currentWord) instructionSpan [] []
+                    let markup = builder.ToString()
+                    let typeDepth, typeBytes = typeFootprint currentWord (Some instruction.Site) (IrNominal key)
+                    checkValueMetrics currentWord (Some instruction.Site)
+                        { ExpandedNodes = 1L
+                          Depth = max 1 typeDepth
+                          EstimatedOutputBytes = saturatingAdd maxRuntimeValueOutputBytes (64L + typeBytes) (int64 markup.Length * 6L) }
+                    stack <- prefix @ [ RuntimeScalar(key, RuntimeString markup) ]
                 | IrOperation.Constant(literal, _) ->
                     let value =
                         match literal with

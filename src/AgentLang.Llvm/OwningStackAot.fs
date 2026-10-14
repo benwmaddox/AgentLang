@@ -372,7 +372,7 @@ type private OwningLlvmWriter() =
         match typeText with
         | "i1" | "i8" | "i32" | "i64" | "ptr"
         | "%AlOwningValueSize" | "%AlOwningFieldLocation" | "%AlOwningDescriptor"
-        | "%AlOwningExternalSlice" | "%AlOwningMailboxOutputSlice" -> true
+        | "%AlOwningExternalSlice" | "%AlOwningMailboxOutputSlice" | "%AlOwningTemplatePart" -> true
         | other when other.StartsWith("[", StringComparison.Ordinal) && other.EndsWith("]", StringComparison.Ordinal) ->
             let separator = other.IndexOf(" x ", StringComparison.Ordinal)
             if separator <= 1 then false
@@ -1373,6 +1373,7 @@ module OwningStackAot =
                         Diagnostics.raiseError "IR_OWNING_STACK_TARGET_MISSING"
                             "Owning-stack validator target is absent from the verified snapshot."
                             (Some owner) None [ "reachable user word" ] [ sprintf "%A" id ]
+                | PrimitiveTarget _ when IrHtml.isHtmlValidator (Some validator) && scalar.BaseType = IrString -> ()
                 | _ ->
                     Diagnostics.raiseError "IR_OWNING_STACK_VALIDATOR_TARGET"
                         "A refined owning scalar validator must retain an exact user-word target and revision."
@@ -1647,7 +1648,7 @@ module OwningStackAot =
                   "int.to-float"; "int.to-string"; "float.to-int"; "float.round"; "float.to-string"
                   "equals"; "bool.and"; "bool.or"; "bool.not"; "dup"; "drop"; "swap"
                   "string.concat"; "string.length"; "string.byte-length"; "string.char-length"; "string.join"; "string.html-escape"
-                  "string.contains"; "string.starts-with"; "string.ends-with"
+                  "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
                   "list.append"; "list.concat" ]
 
         let validatePrimitive owner span (call: IrResolvedCall) operation =
@@ -1679,6 +1680,7 @@ module OwningStackAot =
                 | ("string.length" | "string.byte-length" | "string.char-length"), [ IrString ], [ IrInt ] -> true
                 | "string.join", [ IrList IrString ], [ IrString ] -> true
                 | "string.html-escape", [ IrString ], [ IrString ] -> true
+                | "string.html-fragment?", [ IrString ], [ IrBool ] -> true
                 | ("string.contains" | "string.starts-with" | "string.ends-with"), [ IrString; IrString ], [ IrBool ] -> true
                 | "list.append", [ IrList item; value ], [ IrList result ] -> item = value && item = result
                 | "list.concat", [ IrList left; IrList right ], [ IrList result ] -> left = right && left = result
@@ -1746,6 +1748,7 @@ module OwningStackAot =
                 | IrOperation.MakeEnumCase(call, key, caseIndex) ->
                     checkType owner (IrNominal key)
                     validateEnumCall owner span call key caseIndex
+                | IrOperation.HtmlTemplate(key, _) -> checkType owner (IrNominal key)
                 | IrOperation.OptionNone itemType
                 | IrOperation.OptionSome itemType -> checkType owner (IrOption itemType)
                 | IrOperation.ListEmpty itemType
@@ -1896,6 +1899,7 @@ module OwningStackAot =
                     | Some validator ->
                         match validator.ResolvedTarget with
                         | UserWordTarget(id, revision) -> enqueueUserFunction owner id revision
+                        | PrimitiveTarget _ when IrHtml.isHtmlValidator (Some validator) -> ()
                         | _ -> invalidOp "Owning refined scalar validator passed validation without a user-word target."
                     | None -> ()
         let rec inspectCalls owner (block: IrBlock) =
@@ -2606,6 +2610,9 @@ module OwningStackAot =
                 | IrOperation.MakeEnumCase(call, _, _) ->
                     let _, prefix = pop call.InputTypes.Length
                     stack <- prefix @ call.OutputTypes
+                | IrOperation.HtmlTemplate(key, parts) ->
+                    let _, prefix = pop (parts |> List.sumBy (function HtmlTemplatePart.Text _ -> 0 | _ -> 1))
+                    stack <- prefix @ [ IrNominal key ]
                 | IrOperation.OptionNone itemType -> stack <- stack @ [ IrOption itemType ]
                 | IrOperation.ListEmpty itemType -> stack <- stack @ [ IrList itemType ]
                 | IrOperation.ListSingleton itemType ->
@@ -3936,10 +3943,19 @@ module OwningStackAot =
         for fn in functions do allBlocks.Add(fn.FunctionName, fn.FunctionBody)
         let stringValues = ResizeArray<string>()
         let seenStrings = HashSet<string>(StringComparer.Ordinal)
+        // html template text parts: raw UTF-8 in read-only data, copied straight
+        // into the template result (never staged as arena Strings).
+        let templateTexts = ResizeArray<string>()
+        let seenTemplateTexts = HashSet<string>(StringComparer.Ordinal)
         let rec collectStrings (block: IrBlock) =
             for instruction in block.Code do
                 match instruction.Operation with
                 | IrOperation.Constant(LString value, IrString) when seenStrings.Add value -> stringValues.Add value
+                | IrOperation.HtmlTemplate(_, parts) ->
+                    for part in parts do
+                        match part with
+                        | HtmlTemplatePart.Text text when text <> "" && seenTemplateTexts.Add text -> templateTexts.Add text
+                        | _ -> ()
                 | IrOperation.Scope inner | IrOperation.Compact inner -> collectStrings inner
                 | IrOperation.If(thenBlock, elseBlock) -> collectStrings thenBlock; collectStrings elseBlock
                 | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> collectStrings)
@@ -3949,6 +3965,8 @@ module OwningStackAot =
         for _, block in allBlocks do collectStrings block
         let stringIndexes = stringValues |> Seq.mapi (fun index value -> value, index) |> Map.ofSeq
         let stringGlobal value = $"@al_owning_string_literal_{stringIndexes[value]}"
+        let templateTextIndexes = templateTexts |> Seq.mapi (fun index value -> value, index) |> Map.ofSeq
+        let templateTextGlobal value = $"@al_owning_template_text_{templateTextIndexes[value]}"
         let encodeLiteral (value: string) =
             let encoded = utf8Bytes value
             let payload = 8 + encoded.Length
@@ -4015,6 +4033,10 @@ module OwningStackAot =
         for value in stringValues do
             let bytes, _, _ = encodeLiteral value
             writer.Line($"{stringGlobal value} = private unnamed_addr constant [{bytes.Length} x i8] c\"{llvmByteString bytes}\", align 8")
+        for value in templateTexts do
+            let bytes = utf8Bytes value
+            writer.Line($"{templateTextGlobal value} = private unnamed_addr constant [{bytes.Length} x i8] c\"{llvmByteString bytes}\", align 1")
+        writer.Line("%AlOwningTemplatePart = type { ptr, i32, i32, i32, i32 }")
         writer.Line("")
 
         writer.Line("declare void @al_owning_begin(ptr)")
@@ -4049,6 +4071,9 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_string_join_write(ptr, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_html_escape_plan(ptr, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_html_escape_write(ptr, i32, i32, i32, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_string_html_fragment(ptr, i32, i32, i32, ptr)")
+        writer.Line("declare i32 @al_owning_html_template_plan(ptr, ptr, i32, i32, ptr, ptr, ptr)")
+        writer.Line("declare i32 @al_owning_html_template_write(ptr, i32, i32, ptr, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_find(ptr, i32, i32, i32, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_list_combine_header(ptr, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_join_parts_plan(ptr, ptr, i32, i32, ptr, ptr, ptr)")
@@ -4246,7 +4271,7 @@ module OwningStackAot =
             w.Inst($"br label %%{failureLabel}")
             w.Line($"{depthOkay}:")
 
-        let emitFrozenValidatorCall
+        let emitUserValidatorCall
             (w: OwningLlvmWriter)
             (scalarType: IrType)
             (validator: IrResolvedCall)
@@ -4337,6 +4362,49 @@ module OwningStackAot =
             w.Line($"{trueResult}:")
             w.Inst($"br label %%{validatorJoin}")
             w.Line($"{validatorJoin}:")
+
+        /// Runs the native string.html-fragment? check on a String entry and
+        /// returns an i32 SSA value (1 = well-formed fragment, 0 = not).
+        let emitHtmlFragmentCheck (w: OwningLlvmWriter) (value: OwningDynamicStackEntry) callSiteSpan failureLabel =
+            let found = w.Fresh "html.fragment.found"
+            w.Inst($"{found} = alloca i32, align 4")
+            let errorId = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to check a verified String as an HTML fragment." IrHtml.validatorPrimitive callSiteSpan [] []
+            let status = w.Fresh "html.fragment.status"
+            w.Inst($"{status} = call i32 @al_owning_string_html_fragment(ptr %%ctx, i32 {value.Offset}, i32 {value.Extent}, i32 {errorId}, ptr {found})")
+            emitStatusResult w status failureLabel
+            let loaded = w.Fresh "html.fragment.valid"
+            w.Inst($"{loaded} = load i32, ptr {found}, align 4")
+            loaded
+
+        /// Frozen refined-scalar validator: the built-in string.html-fragment?
+        /// (the Html type) runs natively; any other validator is a user word.
+        let emitFrozenValidatorCall
+            (w: OwningLlvmWriter)
+            (scalarType: IrType)
+            (validator: IrResolvedCall)
+            (valueEntry: OwningDynamicStackEntry)
+            isConstructorWrap
+            callSiteSpan
+            failureLabel =
+            if IrHtml.isHtmlValidator (Some validator) then
+                let scalar = scalarDefinition program scalarType |> Option.defaultWith (fun () -> invalidOp "Html validator lost its scalar definition.")
+                let constructorName, constructorSpan = scalarConstructorInfo scalarType
+                let refinementError =
+                    addDiagnostic "REFINEMENT_FAILED"
+                        $"Value does not satisfy {scalar.TypeName}'s refinement validator."
+                        constructorName constructorSpan [ "validator returns true" ] [ "false" ]
+                let valid = emitHtmlFragmentCheck w valueEntry callSiteSpan failureLabel
+                let isValid = w.Fresh "html.fragment.ok"
+                let validLabel = w.Label "html.fragment.valid"
+                let invalidLabel = w.Label "html.fragment.invalid"
+                w.Inst($"{isValid} = icmp ne i32 {valid}, 0")
+                w.Inst($"br i1 {isValid}, label %%{validLabel}, label %%{invalidLabel}")
+                w.Line($"{invalidLabel}:")
+                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {refinementError}, i32 0, i32 0)")
+                w.Inst($"br label %%{failureLabel}")
+                w.Line($"{validLabel}:")
+            else
+                emitUserValidatorCall w scalarType validator valueEntry isConstructorWrap callSiteSpan failureLabel
 
         let rec hasValidatedScalar ty =
             if info.ValidatedScalarValidators.ContainsKey ty then true
@@ -4712,6 +4780,74 @@ module OwningStackAot =
                         emitStatusResult w status failBody
                         stack <- push stack IrString destination (string literalExtent) (string literalPayload) next
                     | IrOperation.Constant _ -> invalidOp "Owning validation missed a verified dynamic constant."
+                    | IrOperation.HtmlTemplate(key, parts) ->
+                        // One sized result: plan (measure literals, holes and escapes),
+                        // reserve once, then write every byte once. Html by construction:
+                        // the verifier re-checked the skeleton, so no validator runs.
+                        let holeCount = parts |> List.sumBy (function HtmlTemplatePart.Text _ -> 0 | _ -> 1)
+                        let holes, prefix = pop holeCount
+                        let entries =
+                            let mutable remaining = holes
+                            parts
+                            |> List.choose (fun part ->
+                                match part with
+                                | HtmlTemplatePart.Text "" -> None
+                                | HtmlTemplatePart.Text text -> Some(Choice1Of2 text)
+                                | HtmlTemplatePart.StringHole | HtmlTemplatePart.HtmlHole | HtmlTemplatePart.HtmlListHole ->
+                                    let hole = List.head remaining
+                                    remaining <- List.tail remaining
+                                    let mode =
+                                        match part with
+                                        | HtmlTemplatePart.StringHole -> 2
+                                        | HtmlTemplatePart.HtmlListHole -> 3
+                                        | _ -> 1
+                                    Some(Choice2Of2(hole, mode)))
+                        let count = max 1 entries.Length
+                        let partsArray = w.Fresh "template.parts"
+                        w.Inst($"{partsArray} = alloca [{count} x %%AlOwningTemplatePart], align 8")
+                        entries
+                        |> List.iteri (fun index entry ->
+                            let field fieldIndex =
+                                let slot = w.Fresh "template.field"
+                                w.Inst($"{slot} = getelementptr inbounds [{count} x %%AlOwningTemplatePart], ptr {partsArray}, i32 0, i32 {index}, i32 {fieldIndex}")
+                                slot
+                            let pointerValue, first, second, mode =
+                                match entry with
+                                | Choice1Of2 text ->
+                                    let length = (utf8Bytes text).Length
+                                    $"getelementptr inbounds ([{length} x i8], ptr {templateTextGlobal text}, i64 0, i64 0)", string length, "0", "0"
+                                | Choice2Of2(hole, mode) -> "null", hole.Offset, hole.Extent, string mode
+                            w.Inst($"store ptr {pointerValue}, ptr {field 0}, align 8")
+                            w.Inst($"store i32 {first}, ptr {field 1}, align 4")
+                            w.Inst($"store i32 {second}, ptr {field 2}, align 4")
+                            w.Inst($"store i32 {mode}, ptr {field 3}, align 4")
+                            w.Inst($"store i32 0, ptr {field 4}, align 4"))
+                        let cursor = emitContextLoad w "%ctx" 2
+                        let units = w.Fresh "template.units"
+                        let payloadPointer = w.Fresh "template.payload.pointer"
+                        let extentPointer = w.Fresh "template.extent.pointer"
+                        w.Inst($"{units} = alloca i32, align 4")
+                        w.Inst($"{payloadPointer} = alloca i32, align 4")
+                        w.Inst($"{extentPointer} = alloca i32, align 4")
+                        let sizeError = addDiagnostic "RUNTIME_STRING_LENGTH_OVERFLOW" "html template result exceeds the bounded String byte range." currentOwner instructionSpan [] []
+                        let planStatus = w.Fresh "template.plan.status"
+                        w.Inst($"{planStatus} = call i32 @al_owning_html_template_plan(ptr %%ctx, ptr {partsArray}, i32 {entries.Length}, i32 {sizeError}, ptr {units}, ptr {payloadPointer}, ptr {extentPointer})")
+                        emitStatusResult w planStatus failBody
+                        let resultPayload = w.Fresh "template.payload"
+                        let resultExtent = w.Fresh "template.extent"
+                        w.Inst($"{resultPayload} = load i32, ptr {payloadPointer}, align 4")
+                        w.Inst($"{resultExtent} = load i32, ptr {extentPointer}, align 4")
+                        let resultEnd = emitOffset w cursor resultExtent
+                        let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve exact html template output." currentOwner instructionSpan [] []
+                        emitReserve w resultEnd reserveError failBody
+                        let writeStatus = w.Fresh "template.write.status"
+                        let htmlType = IrNominal key
+                        w.Inst($"{writeStatus} = call i32 @al_owning_html_template_write(ptr %%ctx, i32 {cursor}, i32 {resultExtent}, ptr {partsArray}, i32 {entries.Length}, i32 {typeId htmlType}, i32 {sizeError})")
+                        emitStatusResult w writeStatus failBody
+                        for index in stack.Length - 1 .. -1 .. stack.Length - holeCount do
+                            emitDropEntry stack index
+                        emitUpdateLive w resultPayload "0" failBody
+                        stack <- push prefix htmlType cursor resultExtent resultPayload resultEnd
                     | IrOperation.MakeEnumCase(call, key, caseIndex) ->
                         emitInlineTargetDepthGuard w call.ResolvedName instructionSpan failBody
                         let ty = IrNominal key
@@ -5767,6 +5903,11 @@ module OwningStackAot =
                                 let asInt = w.Fresh $"{operation}.int"
                                 w.Inst($"{asInt} = zext i32 {loaded} to i64")
                                 emitScalarResult IrBool asInt
+                            | "string.html-fragment?", [ value ] ->
+                                let valid = emitHtmlFragmentCheck w value instructionSpan failBody
+                                let asInt = w.Fresh "html.fragment.int"
+                                w.Inst($"{asInt} = zext i32 {valid} to i64")
+                                emitScalarResult IrBool asInt
                             | "string.join", [ value ] when fusedJoinSites.Contains instruction.Site ->
                                 // The preceding String list literal already produced the joined String.
                                 stack <- prefix @ [ value ]
@@ -6413,6 +6554,7 @@ module OwningStackAot =
                         | "%AlOwningFieldLocation" -> 12L
                         | "%AlOwningDescriptor" -> 20L
                         | "%AlOwningExternalSlice" | "%AlOwningMailboxOutputSlice" -> 16L
+                        | "%AlOwningTemplatePart" -> 24L
                         | "%AlCampfireRoomReadInput" -> 16L
                         | other when other.StartsWith("[", StringComparison.Ordinal) && other.EndsWith("]", StringComparison.Ordinal) ->
                             let separator = other.IndexOf(" x ", StringComparison.Ordinal)

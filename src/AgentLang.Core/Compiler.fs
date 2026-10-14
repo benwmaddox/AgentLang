@@ -82,6 +82,7 @@ module Compiler =
         | "string.concat" -> [ TString; TString ], [ TString ]
         | "string.join" -> [ TList TString ], [ TString ]
         | "string.html-escape" -> [ TString ], [ TString ]
+        | "string.html-fragment?" -> [ TString ], [ TBool ]
         | "string.contains" | "string.starts-with" | "string.ends-with" -> [ TString; TString ], [ TBool ]
         | "string.length" -> [ TString ], [ TInt ]
         | "string.byte-length" -> [ TString ], [ TInt ]
@@ -126,7 +127,7 @@ module Compiler =
               "string.guid-canonical?"; "string.guid-normalize"; "string.email-address-valid?"
               "int.add-checked"; "int.multiply-checked"; "int.scale-ratio-toward-zero"
               "instant.parse-utc"; "instant.is-canonical-utc?"; "instant.before?"; "instant.add-days"
-              "string.concat"; "string.join"; "string.html-escape"; "string.contains"; "string.starts-with"; "string.ends-with"
+              "string.concat"; "string.join"; "string.html-escape"; "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
               "string.length"; "string.byte-length"; "string.char-length"; "string.trim"; "string.to-lower"; "string.to-upper"; "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"
               "float.round"; "int.to-string"; "float.to-string"; "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
               "dup"; "drop"; "swap"; "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write" ]
@@ -147,6 +148,7 @@ module Compiler =
                     | "string.length" -> "Deprecated alias of string.byte-length; use string.byte-length or string.char-length. Removed by 2026-11-01."
                     | "string.join" -> "Concatenates every String in List<String> in order with one copy of each part; an empty list returns the empty String."
                     | "string.html-escape" -> "Replaces exactly & < > \" ' with &amp; &lt; &gt; &quot; &#39; (Rails ERB::Util.html_escape); every other UTF-16 code unit is unchanged."
+                    | "string.html-fragment?" -> "Returns true when the String is a well-formed HTML fragment: balanced elements (void elements and /> excepted), complete comments and <!doctype>, raw <script>/<style> text, and no bare <. Use it as the Html type validator: type Html : String { validate string.html-fragment? }."
                     | "string.guid-canonical?" -> "Returns true only for lower-case canonical D-format GUID text."
                     | "string.guid-normalize" -> "Accepts Guid.TryParse D, N, B, P, and X forms with surrounding whitespace; returns lower-case D-format text, or INVALID_GUID."
                     | "string.email-address-valid?" -> "Checks an ASCII address policy: local segments use letters, digits, underscore, percent, plus, or hyphen and are separated by single dots with no empty segments; the domain has at least two labels with alphanumeric ends and internal hyphens. Rejects whitespace and values over 254 characters."
@@ -339,6 +341,22 @@ module Compiler =
                         | ResultError ->
                             requireArity 2
                             consume arguments[1] (TResult(arguments[0], arguments[1]))
+                        | HtmlTemplate parts ->
+                            requireArity 1
+                            let holeTypes =
+                                parts |> List.choose (function
+                                    | HtmlTemplatePart.StringHole -> Some TString
+                                    | HtmlTemplatePart.HtmlHole -> Some arguments.Head
+                                    | HtmlTemplatePart.HtmlListHole -> Some(TList arguments.Head)
+                                    | HtmlTemplatePart.Text _ -> None)
+                            if stack.Length < holeTypes.Length then
+                                Diagnostics.raiseError "TYPE_STACK_UNDERFLOW" "html template requires one value per hole." (Some wordName) (Some expressionSpan) [ string holeTypes.Length ] [ string stack.Length ]
+                            let prefix = stack |> List.take (stack.Length - holeTypes.Length)
+                            for expected, actual in List.zip holeTypes (stack |> List.skip (stack.Length - holeTypes.Length)) do
+                                try unify Map.empty expected actual |> ignore
+                                with _ ->
+                                    Diagnostics.raiseError "TYPE_TEMPLATE_HOLE" "An html template hole must be a String (escaped) or Html (inserted as-is)." (Some wordName) (Some expressionSpan) [ Types.format expected ] [ Types.format actual ]
+                            prefix @ [ arguments.Head ], locals
                     | (MapList(target, expressionSpan) | FilterList(target, expressionSpan) | EachList(target, expressionSpan)) as operation ->
                         if List.isEmpty stack then
                             Diagnostics.raiseError "TYPE_STACK_UNDERFLOW" "List higher-order operation requires a list." (Some wordName) (Some expressionSpan) [ "List<T>" ] []
@@ -641,6 +659,7 @@ module Compiler =
                         | OptionSome -> "option.some"
                         | ResultOk -> "result.ok"
                         | ResultError -> "result.error"
+                        | HtmlTemplate parts -> "html.template" + string parts.Length
                     name + "<" + (types |> List.map Types.format |> String.concat ", ") + ">"
                 | MapList(name, _) -> "list.map " + name
                 | FilterList(name, _) -> "list.filter " + name
@@ -935,7 +954,18 @@ module Compiler =
                          | OptionNone -> "option-none"
                          | OptionSome -> "option-some"
                          | ResultOk -> "result-ok"
-                         | ResultError -> "result-error")
+                         | ResultError -> "result-error"
+                         | HtmlTemplate _ -> "html-template")
+                    match kind with
+                    | HtmlTemplate parts ->
+                        appendInt parts.Length
+                        for part in parts do
+                            match part with
+                            | HtmlTemplatePart.Text text -> appendText "text"; appendText text
+                            | HtmlTemplatePart.StringHole -> appendText "string-hole"
+                            | HtmlTemplatePart.HtmlHole -> appendText "html-hole"
+                            | HtmlTemplatePart.HtmlListHole -> appendText "html-list-hole"
+                    | _ -> ()
                     appendTypes typeValues
                     appendSpan span
                 | MapList(name, span) -> appendText "map-list"; appendText name; appendSpan span
@@ -1221,6 +1251,7 @@ module Compiler =
         | ConstructContainer(OptionSome, _, _) -> "option-some"
         | ConstructContainer(ResultOk, _, _) -> "result-ok"
         | ConstructContainer(ResultError, _, _) -> "result-error"
+        | ConstructContainer(HtmlTemplate _, _, _) -> "html-template"
         | MapList _ -> "list-map"
         | FilterList _ -> "list-filter"
         | EachList _ -> "list-each"
@@ -1397,6 +1428,7 @@ module Compiler =
                             | OptionSome, [ item ] -> IrOperation.OptionSome item
                             | ResultOk, [ ok; error ] -> IrOperation.ResultOk(ok, error)
                             | ResultError, [ ok; error ] -> IrOperation.ResultError(ok, error)
+                            | HtmlTemplate parts, [ IrNominal key ] -> IrOperation.HtmlTemplate(key, parts)
                             | _ -> irFailure "IR_CONTAINER_ANNOTATION_INVALID" "Typed inference produced malformed constructor arguments." (Some ownerName) (Some span) [] (args |> List.map IrTypes.format)
                         | MapList(name, _) ->
                             let itemType = match List.last node.InputStack with | TList item -> item | _ -> irFailure "IR_LIST_ANNOTATION_INVALID" "Map lowering lost its input List<T> annotation." (Some ownerName) (Some span) [ "List<T>" ] []

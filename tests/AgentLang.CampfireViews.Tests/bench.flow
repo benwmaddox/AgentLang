@@ -1,0 +1,69 @@
+fn bench.item(name: String) -> Html {
+    effects none
+    html"<li>{name}</li>"
+}
+
+fn bench.names(names: List<String>) -> String {
+    effects none
+    campfire.views.text(html"<ul>{names.map(bench.item)}</ul>")
+}
+
+fn bench.client-id(message: MessageRow) -> String {
+    effects none
+    message.client-message-id
+}
+
+fn bench.ids(messages: List<MessageRow>) -> String {
+    effects none
+    string.join(messages.map(bench.client-id))
+}
+
+fn bench.id-text(message: MessageRow) -> String {
+    effects none
+    int.to-string(MessageId.value(message.id))
+}
+
+fn bench.id-texts(messages: List<MessageRow>) -> String {
+    effects none
+    string.join(messages.map(bench.id-text))
+}
+
+fn bench.count(messages: List<MessageRow>) -> Int {
+    effects none
+    0
+}
+
+test bench.item/a {
+    campfire.views.text(bench.item("a"))
+    => value "<li>a</li>"
+}
+
+test bench.names/a {
+    bench.names(["a"])
+    => value "<ul><li>a</li></ul>"
+}
+
+test bench.client-id/a {
+    bench.client-id(messageRow.new(id = MessageId.new(8), room-id = RoomId.new(3), creator-id = UserId.new(1), client-message-id = "c-2", body = option.none<String>(), created-at = "x", updated-at = "y"))
+    => value "c-2"
+}
+
+test bench.ids/a {
+    bench.ids(list.empty<MessageRow>())
+    => value ""
+}
+
+test bench.id-text/a {
+    bench.id-text(messageRow.new(id = MessageId.new(8), room-id = RoomId.new(3), creator-id = UserId.new(1), client-message-id = "c-2", body = option.none<String>(), created-at = "x", updated-at = "y"))
+    => value "8"
+}
+
+test bench.id-texts/a {
+    bench.id-texts(list.empty<MessageRow>())
+    => value ""
+}
+
+test bench.count/a {
+    bench.count(list.empty<MessageRow>())
+    => value 0
+}

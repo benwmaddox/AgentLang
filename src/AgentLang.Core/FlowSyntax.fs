@@ -510,6 +510,9 @@ module FlowSource =
 
     let private indent depth = String.replicate (depth * 4) " "
 
+    /// The reserved call the parser gives an html"…" template (see IrHtml).
+    let templateCallName = "%html-template"
+
     let private indentContinuationLines depth (text: string) =
         if depth = 0 || not (text.Contains('\n')) then text
         else
@@ -539,6 +542,8 @@ module FlowSource =
         match expression with
         | FlowExpression.Literal(value, _) -> prefix + renderLiteral value
         | FlowExpression.Local(name, _) -> prefix + name
+        | FlowExpression.Call(name, arguments, _) when name = templateCallName ->
+            prefix + indentContinuationLines depth (renderTemplate syntaxVersion locals arguments)
         | FlowExpression.Call(name, arguments, _) ->
             let shownName = renderQualifiedName syntaxVersion name
             let escape = if isShadowedQualifiedName syntaxVersion locals name then "." else ""
@@ -585,10 +590,44 @@ module FlowSource =
             requireFlow2 syntaxVersion None (Some span) "Enum matching"
             renderMatchBlock syntaxVersion locals depth scrutinee
                 (cases |> List.collect (fun caseValue -> renderMatchCase syntaxVersion (depth + 1) caseValue.Name locals caseValue.Statements))
+    /// Renders html"…" text parts (even positions) and holes (odd positions).
+    /// Multi-line text uses html"""…""" with every line, including the closing
+    /// delimiter, at the same relative indentation, so callers can re-indent the
+    /// continuation lines uniformly without changing the template's content.
+    and private renderTemplate syntaxVersion locals (arguments: FlowArgument list) =
+        let textOf argument =
+            match argument with
+            | FlowArgument.Positional(FlowExpression.Literal(LString text, _)) -> text
+            | _ -> failwith "malformed html template text part"
+        let braces (text: string) = text.Replace("{", "{{").Replace("}", "}}")
+        let jsonText (text: string) =
+            let quoted = JsonSerializer.Serialize(text, literalJsonOptions)
+            braces (quoted.Substring(1, quoted.Length - 2))
+        let body escapeText =
+            arguments
+            |> List.mapi (fun index argument ->
+                if index % 2 = 0 then escapeText (textOf argument)
+                else
+                    match argument with
+                    | FlowArgument.Positional hole -> "{" + renderInlineExpression syntaxVersion locals hole + "}"
+                    | _ -> failwith "malformed html template hole")
+            |> String.concat ""
+        let allText = arguments |> List.indexed |> List.filter (fun (index, _) -> index % 2 = 0) |> List.map (snd >> textOf) |> String.concat ""
+        let hasControl = allText |> Seq.exists (fun ch -> ch < ' ' && ch <> '\n')
+        if allText.Contains("\"\"\"") || hasControl || (not (allText.Contains '\n') && allText.EndsWith "\"") then
+            "html\"" + body jsonText + "\""
+        elif allText.Contains '\n' then
+            "html\"\"\"\n" + body braces + "\n\"\"\""
+        elif not (allText.Contains '"') && not (allText.Contains '\\') then
+            "html\"" + body braces + "\""
+        else
+            "html\"\"\"" + body braces + "\"\"\""
+
     and private renderInlineExpression syntaxVersion locals expression =
         match expression with
         | FlowExpression.Literal(value, _) -> renderLiteral value
         | FlowExpression.Local(name, _) -> name
+        | FlowExpression.Call(name, arguments, _) when name = templateCallName -> renderTemplate syntaxVersion locals arguments
         | FlowExpression.Container(kind, typeArguments, payload, _) -> renderContainer syntaxVersion locals kind typeArguments payload
         | FlowExpression.ListLiteral(items, span) ->
             requireFlow2 syntaxVersion None (Some span) "List literal"

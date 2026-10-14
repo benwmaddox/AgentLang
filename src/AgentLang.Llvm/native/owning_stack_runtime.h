@@ -257,6 +257,34 @@ int32_t al_owning_string_html_escape_write(
     al_owning_stack_context *ctx, uint32_t destination_offset,
     uint32_t destination_extent_bytes, uint32_t offset, uint32_t extent_bytes,
     uint32_t type_id, uint32_t error_id);
+/* One html"..." template part: a read-only literal byte range (bytes != 0,
+ * offset_or_length = byte count) or a stack String hole (bytes == 0,
+ * offset_or_length/extent_bytes = its owner range; mode 1 = Html inserted
+ * as-is, 2 = String escaped, 3 = List<Html> items inserted in order). Layout
+ * matches LLVM { ptr, i32, i32, i32, i32 }. */
+typedef struct al_owning_template_part {
+  const uint8_t *bytes;
+  uint32_t offset_or_length;
+  uint32_t extent_bytes;
+  uint32_t mode;
+  uint32_t reserved;
+} al_owning_template_part;
+
+int32_t al_owning_string_html_fragment(al_owning_stack_context *ctx,
+                                       uint32_t offset, uint32_t extent_bytes,
+                                       uint32_t error_id, uint32_t *out_valid);
+int32_t al_owning_html_template_plan(al_owning_stack_context *ctx,
+                                     const al_owning_template_part *parts,
+                                     uint32_t count, uint32_t error_id,
+                                     uint32_t *out_string_bytes,
+                                     uint32_t *out_payload_bytes,
+                                     uint32_t *out_extent_bytes);
+int32_t al_owning_html_template_write(al_owning_stack_context *ctx,
+                                      uint32_t destination_offset,
+                                      uint32_t destination_extent_bytes,
+                                      const al_owning_template_part *parts,
+                                      uint32_t count, uint32_t type_id,
+                                      uint32_t error_id);
 int32_t al_owning_string_find(al_owning_stack_context *ctx,
                               uint32_t haystack_offset,
                               uint32_t haystack_extent_bytes,

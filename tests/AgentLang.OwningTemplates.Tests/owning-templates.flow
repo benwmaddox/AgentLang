@@ -1,0 +1,146 @@
+fn html.text(value: Html) -> String {
+    effects none
+    doc "The markup as a String; free (a retag)."
+
+    Html.value(value)
+}
+
+fn tpl.item(name: String) -> Html {
+    effects none
+    html"<li>{name}</li>"
+}
+
+fn native.tpl.item(name: String) -> String {
+    effects none
+    html.text(tpl.item(name))
+}
+
+fn native.tpl.list(first: String, second: String) -> String {
+    effects none
+    html.text(html"""<ul class="names">{tpl.item(first)}{tpl.item(second)}</ul>""")
+}
+
+fn native.tpl.card(title: String, body: String) -> String {
+    effects none
+    html.text(html"""
+        <article class="card" data-title="{title}">
+          <h2>{title}</h2>
+          <p>{body}</p>
+        </article>
+        """)
+}
+
+fn native.tpl.braces(name: String) -> String {
+    effects none
+    html.text(html"""<style>.a {{ color: red; }}</style><b>{{{name}}}</b>""")
+}
+
+fn native.tpl.empty() -> String {
+    effects none
+    html.text(html"")
+}
+
+fn native.tpl.only-hole(name: String) -> String {
+    effects none
+    html.text(html"{name}")
+}
+
+fn native.tpl.raw(text: String) -> String {
+    effects none
+    html.text(html"<div>{html.raw(text)}</div>")
+}
+
+fn native.tpl.fragment?(text: String) -> Bool {
+    effects none
+    string.html-fragment?(text)
+}
+
+test native.tpl.item/escapes {
+    native.tpl.item("Tom & <Jerry>")
+    => value "<li>Tom &amp; &lt;Jerry&gt;</li>"
+}
+
+test native.tpl.card/multi-line {
+    native.tpl.card("a\"b", "x")
+    => value "<article class=\"card\" data-title=\"a&quot;b\">\n  <h2>a&quot;b</h2>\n  <p>x</p>\n</article>"
+}
+
+test native.tpl.braces/literal {
+    native.tpl.braces("n")
+    => value "<style>.a { color: red; }</style><b>{n}</b>"
+}
+
+test html.text/item {
+    html.text(tpl.item("a"))
+    => value "<li>a</li>"
+}
+
+test native.tpl.raw/literal {
+    html.text(html.raw("<b>x</b>"))
+    => value "<b>x</b>"
+}
+
+fn native.tpl.escaped(text: String) -> String {
+    effects none
+    html.text(html"<p>{Html.new(text)}</p>")
+}
+
+test native.tpl.escaped/escapes {
+    native.tpl.escaped("<b>x</b> & 'y'")
+    => value "<p>&lt;b&gt;x&lt;/b&gt; &amp; &#39;y&#39;</p>"
+}
+
+test tpl.item/plain {
+    html.text(tpl.item("b"))
+    => value "<li>b</li>"
+}
+
+test native.tpl.list/two {
+    native.tpl.list("a", "b")
+    => value "<ul class=\"names\"><li>a</li><li>b</li></ul>"
+}
+
+test native.tpl.empty/empty {
+    native.tpl.empty()
+    => value ""
+}
+
+test native.tpl.only-hole/escapes {
+    native.tpl.only-hole("<&>")
+    => value "&lt;&amp;&gt;"
+}
+
+test native.tpl.raw/wraps {
+    native.tpl.raw("<i>x</i>")
+    => value "<div><i>x</i></div>"
+}
+
+test native.tpl.raw/rejects-unbalanced {
+    native.tpl.raw("<i>x")
+    => error REFINEMENT_FAILED
+}
+
+test native.tpl.fragment?/balanced {
+    native.tpl.fragment?("<p>x</p>")
+    => value true
+}
+
+fn native.tpl.names(names: List<String>) -> String {
+    effects none
+    html.text(html"""<ul class="names">{names.map(tpl.item)}</ul>""")
+}
+
+fn native.tpl.pair(first: String, second: String) -> String {
+    effects none
+    html.text(html"<ol>{[tpl.item(first), tpl.item(second)]}</ol>")
+}
+
+test native.tpl.names/two {
+    native.tpl.names(["a", "<b>"])
+    => value "<ul class=\"names\"><li>a</li><li>&lt;b&gt;</li></ul>"
+}
+
+test native.tpl.pair/two {
+    native.tpl.pair("x", "y")
+    => value "<ol><li>x</li><li>y</li></ol>"
+}

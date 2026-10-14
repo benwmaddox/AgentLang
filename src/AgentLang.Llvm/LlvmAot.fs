@@ -608,6 +608,7 @@ module LlvmAot =
                 | IrOperation.MatchEnum(_, cases) ->
                     cases |> List.iter (snd >> visitBlock)
                 | IrOperation.MakeEnumCase(call, _, _) -> add call
+                | IrOperation.HtmlTemplate _
                 | IrOperation.Constant _
                 | IrOperation.ListEmpty _
                 | IrOperation.ListSingleton _
@@ -899,6 +900,10 @@ module LlvmAot =
                         owner span [ "generated scalar accessor" ] [ call.ResolvedName ]
             | IrOperation.MatchEnum(key, _) -> rejectEnum program owner span key
             | IrOperation.MakeEnumCase(_, key, _) -> rejectEnum program owner span key
+            | IrOperation.HtmlTemplate _ ->
+                callDiagnostic "IR_LLVM_HTML_TEMPLATE_UNSUPPORTED"
+                    "The scalar LLVM backend does not support html templates; use the owning-stack backend."
+                    owner span [ "owning-stack backend" ] [ "html template" ]
             | IrOperation.StoreLocal _
             | IrOperation.LoadLocal _ -> ()
             | IrOperation.Scope inner | IrOperation.Compact inner -> validateBlock program owner sourceMap inner

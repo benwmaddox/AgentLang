@@ -9,6 +9,7 @@
     <Compile Include="FloatText.fs" />
     <Compile Include="Core.fs" />
     <Compile Include="TrustedValues.fs" />
+    <Compile Include="HtmlMarkup.fs" />
     <Compile Include="FlowSyntax.fs" />
     <Compile Include="FlowLint.fs" />
     <Compile Include="Storage.fs" />

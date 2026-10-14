@@ -1,4 +1,4 @@
-type Html : String {
+type Markup : String {
     validate html.safe?
 }
 
@@ -9,21 +9,21 @@ fn html.safe?(value: String) -> Bool {
     bool.not(bool.or(string.contains(value, "<script"), string.contains(value, "javascript:")))
 }
 
-fn html.escape(text: String) -> Html {
+fn html.escape(text: String) -> Markup {
     effects none
     doc "Escapes exactly & < > \" ' like Rails ERB::Util.html_escape."
 
-    Html.new(string.html-escape(text))
+    Markup.new(string.html-escape(text))
 }
 
-fn html.text(value: Html) -> String {
+fn html.text(value: Markup) -> String {
     effects none
-    Html.value(value)
+    Markup.value(value)
 }
 
-fn html.join(parts: List<Html>) -> Html {
+fn html.join(parts: List<Markup>) -> Markup {
     effects none
-    Html.new(string.join(parts.map(html.text)))
+    Markup.new(string.join(parts.map(html.text)))
 }
 
 fn native.html.escape-text(text: String) -> String {
@@ -59,7 +59,7 @@ fn native.html.escape-all(texts: List<String>) -> String {
 fn native.html.row(name: String) -> String {
     effects none
     compact {
-        let open = html.text(Html.new("<li class=\"row\">"))
+        let open = html.text(Markup.new("<li class=\"row\">"))
         let body = html.text(html.escape(name))
         string.concat(string.concat(open, body), "</li>")
     }
@@ -73,7 +73,7 @@ fn native.html.page(names: List<String>) -> String {
 
 fn native.html.trusted(text: String) -> String {
     effects none
-    html.text(Html.new(text))
+    html.text(Markup.new(text))
 }
 
 test native.html.escape-text/less-than {
@@ -112,12 +112,12 @@ test html.escape/ampersand {
 }
 
 test html.text/plain {
-    html.text(Html.new("<p>"))
+    html.text(Markup.new("<p>"))
     => value "<p>"
 }
 
 test html.join/one {
-    html.text(html.join(list.singleton<Html>(Html.new("<p>"))))
+    html.text(html.join(list.singleton<Markup>(Markup.new("<p>"))))
     => value "<p>"
 }
 

@@ -36,6 +36,7 @@ module Source =
                 | OptionSome -> "option.some"
                 | ResultOk -> "result.ok"
                 | ResultError -> "result.error"
+                | HtmlTemplate parts -> "html.template" + string parts.Length
             prefix + renderConstructor name types
         | MapList(name, _) -> prefix + "list.map " + name
         | FilterList(name, _) -> prefix + "list.filter " + name

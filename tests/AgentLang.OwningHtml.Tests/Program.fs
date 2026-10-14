@@ -2,7 +2,7 @@ module AgentLang.OwningHtml.Tests
 
 // string.join / string.html-escape / string search conformance: Rails
 // ERB::Util.html_escape vectors byte-for-byte, interpreter and owning AOT
-// parity at O0 and O2, single-copy join accounting, the library-defined Html
+// parity at O0 and O2, single-copy join accounting, the library-defined Markup
 // refined type, and compile-time validation of refined literals.
 
 open System
@@ -61,7 +61,7 @@ let private prepare (engine: Runtime.Engine) =
         let response = commitWord engine name
         let committed = response["ok"].GetValue<bool>() || response.ToJsonString().Contains("COMMIT_NOT_CANDIDATE", StringComparison.Ordinal)
         if not committed then eprintfn "%s" (response.ToJsonString())
-        check $"{name} commits (valid Html literals pass the compile-time validator)" committed
+        check $"{name} commits (valid Markup literals pass the compile-time validator)" committed
     for name in words |> List.filter (fun name -> name.StartsWith("native.", StringComparison.Ordinal)) do
         let testArgs = JsonObject()
         testArgs["word"] <- JsonValue.Create(name)
@@ -91,7 +91,7 @@ let private run () =
         refinedTypeSource + """
 fn bad.literal.page(name: String) -> String {
     effects none
-    html.text(Html.new("<script>alert(1)</script>"))
+    html.text(Markup.new("<script>alert(1)</script>"))
 }
 """
     let literalEngine = Runtime.Engine(Path.Combine(runRoot, "literal-engine"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
@@ -99,7 +99,7 @@ fn bad.literal.page(name: String) -> String {
     let literalOutcome =
         if not (defined["ok"].GetValue<bool>()) then errorCode defined
         else errorCode (commitWord literalEngine "bad.literal.page")
-    check $"an invalid Html literal is rejected at compile time ({literalOutcome})" (literalOutcome = "REFINEMENT_LITERAL_INVALID")
+    check $"an invalid Markup literal is rejected at compile time ({literalOutcome})" (literalOutcome = "REFINEMENT_LITERAL_INVALID")
     let nestedLiteralSource =
         refinedTypeSource + """
 fn bad.literal.nested(flag: Bool) -> String {
@@ -107,7 +107,7 @@ fn bad.literal.nested(flag: Bool) -> String {
     if flag {
         "x"
     } else {
-        html.text(Html.new("<a href=\"javascript:void(0)\">x</a>"))
+        html.text(Markup.new("<a href=\"javascript:void(0)\">x</a>"))
     }
 }
 """
@@ -116,7 +116,7 @@ fn bad.literal.nested(flag: Bool) -> String {
     let nestedOutcome =
         if not (nestedDefined["ok"].GetValue<bool>()) then errorCode nestedDefined
         else errorCode (commitWord nestedEngine "bad.literal.nested")
-    check $"an invalid Html literal inside a branch is rejected at compile time ({nestedOutcome})" (nestedOutcome = "REFINEMENT_LITERAL_INVALID")
+    check $"an invalid Markup literal inside a branch is rejected at compile time ({nestedOutcome})" (nestedOutcome = "REFINEMENT_LITERAL_INVALID")
 
     // A validator that itself fails on a literal (here DIVIDE_BY_ZERO) is also a
     // compile-time literal error, carrying the cause.
@@ -237,21 +237,21 @@ fn tag.ok?(value: String) -> Bool {
 
         let names = [ "Tom & Jerry"; "<b>bold</b>"; "it's \"quoted\""; "plain" ]
         let allValues, _ = execute optimization "native.html.escape-all" [ TList TString ] [ TString ] [ strings names ]
-        check $"escape-all/{optimization}: Html join of escaped parts" (allValues = [ StringValue(String.Concat(names |> List.map TrustedValues.htmlEscape)) ])
+        check $"escape-all/{optimization}: Markup join of escaped parts" (allValues = [ StringValue(String.Concat(names |> List.map TrustedValues.htmlEscape)) ])
         let rowValues, row = execute optimization "native.html.row" [ TString ] [ TString ] [ StringValue "Tom & Jerry" ]
-        check $"row/{optimization}: literal Html + escaped text" (rowValues = [ StringValue "<li class=\"row\">Tom &amp; Jerry</li>" ])
+        check $"row/{optimization}: literal Markup + escaped text" (rowValues = [ StringValue "<li class=\"row\">Tom &amp; Jerry</li>" ])
         record "row" optimization row
 
         // Non-literal construction is still validated at run time.
         let trusted = nativeFor optimization "native.html.trusted" [ TString ] [ TString ]
         let okValues, _ = execute optimization "native.html.trusted" [ TString ] [ TString ] [ StringValue "<b>ok</b>" ]
-        check $"trusted/{optimization}: valid runtime Html passes" (okValues = [ StringValue "<b>ok</b>" ])
+        check $"trusted/{optimization}: valid runtime Markup passes" (okValues = [ StringValue "<b>ok</b>" ])
         let bound = engine.BindFlowEntryPoint("native.html.trusted", [ TString ], [ TString ])
         let interpreterRejects =
             match bound.Invoke([ StringValue "<script>x" ]) with
             | Ok _ -> false
             | Error diagnostic -> diagnostic.Code = "REFINEMENT_FAILED"
-        check $"trusted/{optimization}: interpreter rejects invalid runtime Html with REFINEMENT_FAILED" interpreterRejects
+        check $"trusted/{optimization}: interpreter rejects invalid runtime Markup with REFINEMENT_FAILED" interpreterRejects
         let nativeRejection =
             try
                 trusted.Execute([ StringValue "<script>x" ], 1_048_576, 1_048_576) |> ignore
@@ -260,7 +260,7 @@ fn tag.ok?(value: String) -> Bool {
             | :? OwningStackExecutionException as failure -> failure.Diagnostic.Code
             | LanguageException diagnostic -> diagnostic.Code
             | error -> error.GetType().Name + ": " + error.Message
-        check $"trusted/{optimization}: native rejects invalid runtime Html with REFINEMENT_FAILED ({nativeRejection})" (nativeRejection = "REFINEMENT_FAILED")
+        check $"trusted/{optimization}: native rejects invalid runtime Markup with REFINEMENT_FAILED ({nativeRejection})" (nativeRejection = "REFINEMENT_FAILED")
 
     // Synthetic page prototype (views plan step 2): 40 rows of ~9.6 KB each,
     // close to the ~416-464 KB reference pages of report 259.

@@ -8,6 +8,7 @@ silently.
 | --- | --- | --- | --- |
 | Immutable strings | Strings are immutable and bump-allocated on the request data stack. Building a page copies pieces into joins. | Copy volume for large pages. Alternatives: last-use in-place append, or part lists written straight to the socket ([RESPONSE-STREAMING.md](RESPONSE-STREAMING.md)). | 2026-10-13 |
 | Workflow ceremony | A word must have a passing attached test before commit, and Flow code goes through define, commit and test. | Feels heavy when iterating on UI templates. Kept for now; review against agent authoring experience. | 2026-10-13 |
+| Per-call native overhead | Report 266 removed an 8 KB memo clear from every value measure. A 40-message room render still costs about 125 µs: field location through record scans, map callback frames, and copying list results. | Measure these per element and compare them with Rails and Rust before a full page lands. Map results are copied into the list and then into the page (three writes per byte). | 2026-10-13 |
 | Shared response cache | Not implemented. Caching is disabled in all benchmark servers. | A cross-worker cache is a new cross-thread dependency. Discuss it before adopting ([RESPONSE-STREAMING.md](RESPONSE-STREAMING.md#cached-parts)). | 2026-10-13 |
 
 ## Deferred usability work (user, 2026-10-13)

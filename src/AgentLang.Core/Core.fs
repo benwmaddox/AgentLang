@@ -43,6 +43,16 @@ type Literal =
     | LString of string
     | LUnit
 
+/// One part of an `html"…"` template: literal markup, or a hole whose value is
+/// escaped (`String`) or inserted as-is (`Html`).
+[<RequireQualifiedAccess>]
+type HtmlTemplatePart =
+    | Text of string
+    | StringHole
+    | HtmlHole
+    /// A List<Html>: every item is inserted as-is, in order.
+    | HtmlListHole
+
 type ContainerConstructor =
     | ListEmpty
     | ListSingleton
@@ -53,6 +63,9 @@ type ContainerConstructor =
     | OptionSome
     | ResultOk
     | ResultError
+    /// html"…": consumes one value per hole and pushes the type argument (the
+    /// program's Html type). Built only by the template lowering.
+    | HtmlTemplate of HtmlTemplatePart list
 
 type Expr =
     | Push of Literal * SourceSpan

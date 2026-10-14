@@ -546,6 +546,10 @@ module FlowLowering =
         visit typeValue
 
     let private validateWordReferenceShape (state: LoweringState) (reference: FlowWordReference) =
+        // Html.new escapes and html.raw validates only as direct calls; as bare
+        // callbacks they would reach the generated checked constructor instead.
+        if reference.Name = HtmlBuiltIn.typeName + ".new" || reference.Name = HtmlBuiltIn.rawName then
+            fail "FLOW_HTML_CALLBACK" $"{reference.Name} cannot be a list callback; wrap it in a function (for example fn text.html(text: String) -> Html {{ Html.new(text) }}) or use an html template." None (Some reference.Span) [ "a function that calls it" ] [ reference.Name ]
         let pieces = if String.IsNullOrEmpty reference.Name then [||] else reference.Name.Split('.')
         let validSegment (piece: string) =
             piece.Length > 0
@@ -750,6 +754,15 @@ module FlowLowering =
             match environment.TryFind name with
             | Some binding -> [ binding.Type ]
             | None -> fail "FLOW_UNKNOWN_LOCAL" $"Local '{name}' is not available before its immutable binding." None (Some span) [] [ name ]
+        | FlowExpression.Call(name, arguments, templateSpan) when name = IrHtml.templateCallName ->
+            let htmlName, _ = analyzeTemplate context state environment arguments templateSpan
+            [ TNamed htmlName ]
+        | FlowExpression.Call(name, arguments, newSpan) when name = HtmlBuiltIn.typeName + ".new" && isBuiltInHtml context ->
+            escapingHtmlArgument context state environment arguments newSpan |> ignore
+            [ TNamed HtmlBuiltIn.typeName ]
+        | FlowExpression.Call(name, arguments, rawSpan) when name = HtmlBuiltIn.rawName && isBuiltInHtml context ->
+            let _, _, outputs = selectCallOutputs context state environment (HtmlBuiltIn.typeName + ".new") None arguments rawSpan
+            outputs
         | FlowExpression.Call(name, arguments, _) ->
             match callbackReferenceIn arguments with
             | Some reference -> rejectWordReferenceContext reference
@@ -893,6 +906,51 @@ module FlowLowering =
             | Some left, Some right -> fail "FLOW_IF_BRANCH_TYPE" "Both Flow if branches must produce the same output vector in the same order." None (Some span) (left |> List.map Types.format) (right |> List.map Types.format)
             | None, _ | _, None -> fail "FLOW_IF_BRANCH_VALUE" "Each Flow if branch must produce a nonempty output vector." None (Some span) [ "one or more outputs in each branch" ] []
 
+    /// The built-in Html type (see HtmlBuiltIn) is present in this program.
+    and private isBuiltInHtml (context: Context) =
+        match context.CompilerContext.Scalars.TryFind HtmlBuiltIn.typeName with
+        | Some scalar -> scalar.BaseType = TString && scalar.Validator = Some IrHtml.validatorPrimitive
+        | None -> false
+
+    /// Html.new(text): exactly one String argument, which is escaped.
+    and private escapingHtmlArgument (context: Context) (state: LoweringState) (environment: Map<string, Binding>) (arguments: FlowArgument list) (newSpan: SourceSpan) =
+        match arguments with
+        | [ FlowArgument.Positional argument ] ->
+            match inferExpression context state environment argument with
+            | TString -> argument
+            | actual ->
+                fail "FLOW_HTML_NEW_ARGUMENT" "Html.new escapes one String; use html.raw(text) to keep markup." None (Some(spanOfExpression argument)) [ "String" ] [ Types.format actual ]
+        | _ -> fail "FLOW_HTML_NEW_ARGUMENT" "Html.new takes exactly one positional String argument." None (Some newSpan) [ "Html.new(text)" ] []
+
+    /// html"…" (parsed as the reserved call `%html-template`): resolves the
+    /// program's Html type, types each hole (String is escaped, Html is inserted
+    /// as-is), and checks the markup skeleton with holes as opaque units.
+    and private analyzeTemplate (context: Context) (state: LoweringState) (environment: Map<string, Binding>) (arguments: FlowArgument list) (templateSpan: SourceSpan) =
+        let htmlName = "Html"
+        match context.CompilerContext.Scalars.TryFind htmlName with
+        | Some scalar when scalar.BaseType = TString && scalar.Validator = Some IrHtml.validatorPrimitive -> ()
+        | Some _ ->
+            fail "FLOW_TEMPLATE_HTML_TYPE" "html templates produce the Html type, which must be declared as a String validated by string.html-fragment?." None (Some templateSpan) [ "type Html : String { validate string.html-fragment? }" ] [ htmlName ]
+        | None ->
+            fail "FLOW_TEMPLATE_HTML_TYPE" "html templates need an Html type in the program." None (Some templateSpan) [ "type Html : String { validate string.html-fragment? }" ] []
+        let parts =
+            arguments
+            |> List.mapi (fun index argument ->
+                match index % 2, argument with
+                | 0, FlowArgument.Positional(FlowExpression.Literal(LString text, _)) -> HtmlTemplatePart.Text text
+                | 1, FlowArgument.Positional hole ->
+                    match inferExpression context state environment hole with
+                    | TString -> HtmlTemplatePart.StringHole
+                    | TNamed name when name = htmlName -> HtmlTemplatePart.HtmlHole
+                    | TList(TNamed name) when name = htmlName -> HtmlTemplatePart.HtmlListHole
+                    | actual ->
+                        fail "FLOW_TEMPLATE_HOLE_TYPE" "An html template hole must be a String (escaped), Html or List<Html> (inserted as-is); convert other values first, for example with int.to-string." None (Some(spanOfExpression hole)) [ "String"; "Html"; "List<Html>" ] [ Types.format actual ]
+                | _ -> failwith "parser produced a malformed html template")
+        match HtmlMarkup.check parts with
+        | Ok() -> ()
+        | Error(_, message) -> fail "FLOW_TEMPLATE_MARKUP" ("html template markup is not a well-formed fragment: " + message) None (Some templateSpan) [ "balanced, well-formed markup" ] []
+        htmlName, parts
+
     and private inferEnumMatchOutput context state environment scrutinee cases matchSpan =
         let enumName =
             match inferExpression context state environment scrutinee with
@@ -1018,6 +1076,28 @@ module FlowLowering =
             match environment.TryFind name with
             | Some binding -> fragment [ Load(binding.InternalName, sourceSpan) ] []
             | None -> fail "FLOW_UNKNOWN_LOCAL" $"Local '{name}' is not available before its immutable binding." None (Some sourceSpan) [] [ name ]
+        | FlowExpression.Call(name, arguments, templateSpan) when name = IrHtml.templateCallName ->
+            let htmlName, parts = analyzeTemplate context state environment arguments templateSpan
+            // Holes sit at odd argument positions, in order.
+            let fragments =
+                arguments
+                |> List.indexed
+                |> List.filter (fun (index, _) -> index % 2 = 1)
+                |> List.map (fun (index, argument) ->
+                    match argument with
+                    | FlowArgument.Positional hole -> lowerFlowExpression context state environment (extendPath path (FlowAstPathSegment.CallArgument index)) hole
+                    | _ -> failwith "parser produced a malformed html template")
+            appendFragments fragments [ ConstructContainer(HtmlTemplate parts, [ TNamed htmlName ], templateSpan) ]
+        | FlowExpression.Call(name, arguments, newSpan) when name = HtmlBuiltIn.typeName + ".new" && isBuiltInHtml context ->
+            // Html.new(text) escapes: the same proven operation as html"{text}".
+            let argument = escapingHtmlArgument context state environment arguments newSpan
+            let fragment = lowerFlowExpression context state environment (extendPath path (FlowAstPathSegment.CallArgument 0)) argument
+            appendFragments [ fragment ] [ ConstructContainer(HtmlTemplate [ HtmlTemplatePart.Text ""; HtmlTemplatePart.StringHole; HtmlTemplatePart.Text "" ], [ TNamed HtmlBuiltIn.typeName ], newSpan) ]
+        | FlowExpression.Call(name, arguments, rawSpan) when name = HtmlBuiltIn.rawName && isBuiltInHtml context ->
+            // html.raw(text) keeps markup: the type's checked constructor.
+            let constructor = HtmlBuiltIn.typeName + ".new"
+            let candidate, bound, _ = selectCallOutputs context state environment constructor None arguments rawSpan
+            lowerResolvedCall context state environment path FlowCallForm.Direct constructor candidate bound None arguments rawSpan (argumentPath FlowCallForm.Direct)
         | FlowExpression.Call(name, arguments, callSpan) ->
             match callbackReferenceIn arguments with
             | Some reference -> rejectWordReferenceContext reference

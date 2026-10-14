@@ -176,6 +176,15 @@ module VocabularyAnalysis =
                 | ListOf count ->
                     writer.Write 7uy
                     writer.Write count
+                | HtmlTemplate parts ->
+                    writer.Write 8uy
+                    writer.Write parts.Length
+                    for part in parts do
+                        match part with
+                        | HtmlTemplatePart.Text text -> writer.Write 1uy; writeString writer text
+                        | HtmlTemplatePart.StringHole -> writer.Write 2uy
+                        | HtmlTemplatePart.HtmlHole -> writer.Write 3uy
+                        | HtmlTemplatePart.HtmlListHole -> writer.Write 4uy
                 writeTypeList writer types
             | MapList(name, _) ->
                 writer.Write 4uy

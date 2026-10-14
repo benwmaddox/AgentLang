@@ -141,6 +141,18 @@ type IrShape =
     { StackTypes: IrType list
       LocalTypes: Map<LocalSlot, IrType> }
 
+module IrHtml =
+    /// The built-in markup validator that html templates satisfy by construction.
+    let validatorPrimitive = "string.html-fragment?"
+
+    let isHtmlValidator (validator: IrResolvedCall option) =
+        match validator with
+        | Some call -> call.ResolvedTarget = PrimitiveTarget(PrimitiveId validatorPrimitive)
+        | None -> false
+
+    /// Reserved call name the parser gives an html"…" template.
+    let templateCallName = "%html-template"
+
 [<RequireQualifiedAccess>]
 type IrOperation =
     | Constant of Literal * IrType
@@ -173,6 +185,12 @@ type IrOperation =
     | WrapScalar of IrResolvedCall * ProgramTypeKey * IrResolvedCall option
     | UnwrapScalar of IrResolvedCall * ProgramTypeKey
     | MakeEnumCase of IrResolvedCall * ProgramTypeKey * int
+    /// html"…" template: pops one value per hole (String holes are escaped like
+    /// string.html-escape, Html holes are inserted as-is) and pushes the joined
+    /// markup as the Html type. The verifier re-checks the literal skeleton, so
+    /// the result satisfies `string.html-fragment?` by construction and no
+    /// backend runs the validator.
+    | HtmlTemplate of HtmlKey: ProgramTypeKey * Parts: HtmlTemplatePart list
 
 and IrInstruction =
     { Site: SourceSiteId
@@ -776,6 +794,23 @@ module IrVerifier =
                         | Some(IrEnumDefinition enumDefinition) when caseIndex >= 0 && caseIndex < enumDefinition.Cases.Length && call.InputTypes = [] && call.OutputTypes = [ IrNominal key ] -> ()
                         | _ -> operationError "IR_ENUM_CONSTRUCTION_TYPE" "Enum case construction must target a valid frozen case with a zero-input signature." [ "() -> enum case" ] [ call.ResolvedName ]
                         { shape with StackTypes = shape.StackTypes @ call.OutputTypes }, call.ResolvedEffects
+                    | IrOperation.HtmlTemplate(key, parts) ->
+                        match program.NominalTypesByKey.TryFind key with
+                        | Some(IrScalarDefinition scalar) when scalar.BaseType = IrString && IrHtml.isHtmlValidator scalar.ValidatorCall -> ()
+                        | _ -> operationError "IR_HTML_TEMPLATE_TYPE" "An html template must produce a String-based type validated by string.html-fragment?." [ "type Html : String { validate string.html-fragment? }" ] []
+                        match HtmlMarkup.check parts with
+                        | Ok() -> ()
+                        | Error(_, message) -> operationError "IR_HTML_TEMPLATE_MARKUP" ("html template markup is not a well-formed fragment: " + message) [] []
+                        let holeTypes =
+                            parts
+                            |> List.choose (function
+                                | HtmlTemplatePart.StringHole -> Some IrString
+                                | HtmlTemplatePart.HtmlHole -> Some(IrNominal key)
+                                | HtmlTemplatePart.HtmlListHole -> Some(IrList(IrNominal key))
+                                | HtmlTemplatePart.Text _ -> None)
+                        let prefix, actual = pop holeTypes.Length
+                        if actual <> holeTypes then operationError "IR_CALL_STACK_MISMATCH" "html template holes do not match the stack." (holeTypes |> List.map IrTypes.format) (actual |> List.map IrTypes.format)
+                        { shape with StackTypes = prefix @ [ IrNominal key ] }, Set.empty
                     | IrOperation.MakeRecord(call, key, validator) ->
                         verifyCall program catalog hostCatalog owner.FunctionName instruction.Site call
                         requireGeneratedOperation (MakeRecordOperation key) call

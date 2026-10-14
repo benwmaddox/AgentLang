@@ -1393,15 +1393,24 @@ static int32_t al_owning_validate_type_graph_inner(
   return 1;
 }
 
+/* Clears the memo entries the layout can index. Every state/height read is
+ * guarded by type_index < layout->type_count (checked before recursing), and
+ * the header check caps type_count at AL_OWNING_LAYOUT_MAX_TYPES, so clearing
+ * only type_count entries is exact. Clearing all 4096 entries per call made
+ * every measure/locate/compare pay ~8 KB of byte stores (report 266). */
 static void
 al_owning_initialize_graph_memo(uint8_t state[AL_OWNING_LAYOUT_MAX_TYPES],
-                                uint8_t height[AL_OWNING_LAYOUT_MAX_TYPES]) {
+                                uint8_t height[AL_OWNING_LAYOUT_MAX_TYPES],
+                                uint32_t type_count) {
   volatile uint8_t *state_bytes = state;
   volatile uint8_t *height_bytes = height;
   uint32_t index;
+  const uint32_t count = type_count < AL_OWNING_LAYOUT_MAX_TYPES
+                             ? type_count
+                             : AL_OWNING_LAYOUT_MAX_TYPES;
   /* Keep this explicit volatile fill in the freestanding runtime: aggregate
    * zero initialization can introduce a CRT memset dependency in COFF. */
-  for (index = 0u; index < AL_OWNING_LAYOUT_MAX_TYPES; ++index) {
+  for (index = 0u; index < count; ++index) {
     state_bytes[index] = 0u;
     height_bytes[index] = 0u;
   }
@@ -1413,7 +1422,9 @@ static int32_t AL_OWNING_PROFILE_IMPL(al_owning_validate_type_graph)(
   uint8_t state[AL_OWNING_LAYOUT_MAX_TYPES];
   uint8_t height[AL_OWNING_LAYOUT_MAX_TYPES];
   uint32_t visited_fields = 0u;
-  al_owning_initialize_graph_memo(state, height);
+  if (layout == 0)
+    return 0;
+  al_owning_initialize_graph_memo(state, height, layout->type_count);
   return al_owning_validate_type_graph_inner(view, layout, type_index, 0u,
                                              state, height, &visited_fields);
 }
@@ -3136,6 +3147,501 @@ int32_t al_owning_string_html_escape_write(
                        ctx->stack_data + offset + 8u + run_start,
                        units - run_start);
   cursor += units - run_start;
+  al_owning_string_result_finish(ctx, destination_offset, cursor, payload,
+                                 extent, type_id);
+  return 0;
+}
+
+/* HTML fragment check: a C port of AgentLang.HtmlMarkup.check (F#) for text
+ * without template holes. Keep the two in step: a fragment is balanced markup
+ * (void elements and "/>" excepted), complete comments and <!doctype>, raw
+ * <script>/<style> text up to its own end tag, and no bare '<'. Anything else
+ * is rejected. Every special character is ASCII, so UTF-8 continuation bytes
+ * are ordinary text, exactly as non-ASCII UTF-16 units are in F#. Nesting
+ * deeper than AL_OWNING_HTML_MAX_DEPTH is rejected (same bound in F#). */
+#define AL_OWNING_HTML_MAX_DEPTH 256u
+
+enum al_owning_html_state {
+  AL_HTML_DATA,
+  AL_HTML_TAG_OPEN,
+  AL_HTML_TAG_NAME,
+  AL_HTML_END_TAG_OPEN,
+  AL_HTML_END_TAG_NAME,
+  AL_HTML_AFTER_END_TAG_NAME,
+  AL_HTML_BEFORE_ATTRIBUTE,
+  AL_HTML_ATTRIBUTE_NAME,
+  AL_HTML_AFTER_ATTRIBUTE_NAME,
+  AL_HTML_BEFORE_ATTRIBUTE_VALUE,
+  AL_HTML_ATTRIBUTE_VALUE_DOUBLE,
+  AL_HTML_ATTRIBUTE_VALUE_SINGLE,
+  AL_HTML_ATTRIBUTE_VALUE_UNQUOTED,
+  AL_HTML_SELF_CLOSING,
+  AL_HTML_MARKUP_DECLARATION,
+  AL_HTML_COMMENT,
+  AL_HTML_DOCTYPE,
+  AL_HTML_RAW_TEXT
+};
+
+typedef struct al_owning_html_name {
+  uint32_t start;
+  uint32_t length;
+} al_owning_html_name;
+
+static uint8_t al_owning_ascii_lower(uint8_t ch) {
+  return (ch >= 'A' && ch <= 'Z') ? (uint8_t)(ch + 32u) : ch;
+}
+
+static int al_owning_html_tag_start(uint8_t ch) {
+  return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+}
+
+static int al_owning_html_tag_char(uint8_t ch) {
+  return al_owning_html_tag_start(ch) || (ch >= '0' && ch <= '9') ||
+         ch == '-' || ch == ':';
+}
+
+static int al_owning_html_space(uint8_t ch) {
+  return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' || ch == '\f';
+}
+
+static int al_owning_html_attribute_char(uint8_t ch) {
+  return !al_owning_html_space(ch) && ch != '"' && ch != '\'' && ch != '>' &&
+         ch != '/' && ch != '=' && ch != '<' && ch >= 0x20u;
+}
+
+/* Case-insensitive comparison of text[start..start+length) with a lower-case
+ * ASCII literal. */
+static int al_owning_html_name_is(const uint8_t *text, al_owning_html_name name,
+                                  const char *literal) {
+  uint32_t index;
+  for (index = 0u; index < name.length; ++index) {
+    if (literal[index] == '\0' ||
+        al_owning_ascii_lower(text[name.start + index]) != (uint8_t)literal[index])
+      return 0;
+  }
+  return literal[name.length] == '\0';
+}
+
+static int al_owning_html_names_equal(const uint8_t *text,
+                                      al_owning_html_name left,
+                                      al_owning_html_name right) {
+  uint32_t index;
+  if (left.length != right.length)
+    return 0;
+  for (index = 0u; index < left.length; ++index) {
+    if (al_owning_ascii_lower(text[left.start + index]) !=
+        al_owning_ascii_lower(text[right.start + index]))
+      return 0;
+  }
+  return 1;
+}
+
+static int al_owning_html_void(const uint8_t *text, al_owning_html_name name) {
+  static const char *const names[] = {"area", "base", "br", "col", "embed",
+                                      "hr", "img", "input", "link", "meta",
+                                      "source", "track", "wbr"};
+  uint32_t index;
+  for (index = 0u; index < sizeof(names) / sizeof(names[0]); ++index) {
+    if (al_owning_html_name_is(text, name, names[index]))
+      return 1;
+  }
+  return 0;
+}
+
+static int al_owning_html_raw(const uint8_t *text, al_owning_html_name name) {
+  return al_owning_html_name_is(text, name, "script") ||
+         al_owning_html_name_is(text, name, "style");
+}
+
+/* 1 when text[0..length) is a well-formed fragment. */
+static int al_owning_html_fragment_valid(const uint8_t *text, uint32_t length) {
+  al_owning_html_name stack[AL_OWNING_HTML_MAX_DEPTH];
+  al_owning_html_name name;
+  al_owning_html_name raw_element;
+  uint32_t depth = 0u;
+  uint32_t declaration = 0u; /* bytes seen after "<!" */
+  uint32_t comment_tail = 0u; /* consecutive '-' before a possible '>' */
+  enum al_owning_html_state state = AL_HTML_DATA;
+  uint32_t index;
+  /* Field assignments, not aggregate initializers: the freestanding runtime
+   * has no memset to lower them to. */
+  name.start = 0u;
+  name.length = 0u;
+  raw_element.start = 0u;
+  raw_element.length = 0u;
+  for (index = 0u; index < length; ++index) {
+    const uint8_t ch = text[index];
+    switch (state) {
+    case AL_HTML_DATA:
+      if (ch == '<')
+        state = AL_HTML_TAG_OPEN;
+      break;
+    case AL_HTML_TAG_OPEN:
+      if (al_owning_html_tag_start(ch)) {
+        name.start = index;
+        name.length = 1u;
+        state = AL_HTML_TAG_NAME;
+      } else if (ch == '/') {
+        state = AL_HTML_END_TAG_OPEN;
+      } else if (ch == '!') {
+        declaration = 0u;
+        state = AL_HTML_MARKUP_DECLARATION;
+      } else {
+        return 0;
+      }
+      break;
+    case AL_HTML_TAG_NAME:
+    case AL_HTML_BEFORE_ATTRIBUTE:
+    case AL_HTML_ATTRIBUTE_NAME:
+    case AL_HTML_AFTER_ATTRIBUTE_NAME:
+    case AL_HTML_ATTRIBUTE_VALUE_UNQUOTED:
+    case AL_HTML_SELF_CLOSING: {
+      int finish = 0;
+      int self_closed = 0;
+      if (state == AL_HTML_TAG_NAME) {
+        if (al_owning_html_tag_char(ch))
+          ++name.length;
+        else if (al_owning_html_space(ch))
+          state = AL_HTML_BEFORE_ATTRIBUTE;
+        else if (ch == '>')
+          finish = 1;
+        else if (ch == '/')
+          state = AL_HTML_SELF_CLOSING;
+        else
+          return 0;
+      } else if (state == AL_HTML_BEFORE_ATTRIBUTE) {
+        if (al_owning_html_space(ch)) {
+        } else if (ch == '>')
+          finish = 1;
+        else if (ch == '/')
+          state = AL_HTML_SELF_CLOSING;
+        else if (al_owning_html_attribute_char(ch))
+          state = AL_HTML_ATTRIBUTE_NAME;
+        else
+          return 0;
+      } else if (state == AL_HTML_ATTRIBUTE_NAME) {
+        if (al_owning_html_attribute_char(ch)) {
+        } else if (ch == '=')
+          state = AL_HTML_BEFORE_ATTRIBUTE_VALUE;
+        else if (al_owning_html_space(ch))
+          state = AL_HTML_AFTER_ATTRIBUTE_NAME;
+        else if (ch == '>')
+          finish = 1;
+        else if (ch == '/')
+          state = AL_HTML_SELF_CLOSING;
+        else
+          return 0;
+      } else if (state == AL_HTML_AFTER_ATTRIBUTE_NAME) {
+        if (al_owning_html_space(ch)) {
+        } else if (ch == '=')
+          state = AL_HTML_BEFORE_ATTRIBUTE_VALUE;
+        else if (ch == '>')
+          finish = 1;
+        else if (ch == '/')
+          state = AL_HTML_SELF_CLOSING;
+        else if (al_owning_html_attribute_char(ch))
+          state = AL_HTML_ATTRIBUTE_NAME;
+        else
+          return 0;
+      } else if (state == AL_HTML_ATTRIBUTE_VALUE_UNQUOTED) {
+        if (al_owning_html_space(ch))
+          state = AL_HTML_BEFORE_ATTRIBUTE;
+        else if (ch == '>')
+          finish = 1;
+        else if (ch == '"' || ch == '\'' || ch == '=' || ch == '<' || ch == '`')
+          return 0;
+      } else { /* AL_HTML_SELF_CLOSING */
+        if (ch != '>')
+          return 0;
+        finish = 1;
+        self_closed = 1;
+      }
+      if (finish) {
+        if (self_closed || al_owning_html_void(text, name)) {
+          state = AL_HTML_DATA;
+        } else if (al_owning_html_raw(text, name)) {
+          raw_element = name;
+          state = AL_HTML_RAW_TEXT;
+        } else {
+          if (depth >= AL_OWNING_HTML_MAX_DEPTH)
+            return 0;
+          stack[depth++] = name;
+          state = AL_HTML_DATA;
+        }
+      }
+      break;
+    }
+    case AL_HTML_END_TAG_OPEN:
+      if (!al_owning_html_tag_start(ch))
+        return 0;
+      name.start = index;
+      name.length = 1u;
+      state = AL_HTML_END_TAG_NAME;
+      break;
+    case AL_HTML_END_TAG_NAME:
+    case AL_HTML_AFTER_END_TAG_NAME:
+      if (state == AL_HTML_END_TAG_NAME && al_owning_html_tag_char(ch)) {
+        ++name.length;
+        break;
+      }
+      if (al_owning_html_space(ch)) {
+        state = AL_HTML_AFTER_END_TAG_NAME;
+        break;
+      }
+      if (ch != '>')
+        return 0;
+      if (al_owning_html_void(text, name) || depth == 0u ||
+          !al_owning_html_names_equal(text, stack[depth - 1u], name))
+        return 0;
+      --depth;
+      state = AL_HTML_DATA;
+      break;
+    case AL_HTML_BEFORE_ATTRIBUTE_VALUE:
+      if (al_owning_html_space(ch)) {
+      } else if (ch == '"')
+        state = AL_HTML_ATTRIBUTE_VALUE_DOUBLE;
+      else if (ch == '\'')
+        state = AL_HTML_ATTRIBUTE_VALUE_SINGLE;
+      else if (ch == '>' || ch == '=' || ch == '<' || ch == '`')
+        return 0;
+      else
+        state = AL_HTML_ATTRIBUTE_VALUE_UNQUOTED;
+      break;
+    case AL_HTML_ATTRIBUTE_VALUE_DOUBLE:
+      if (ch == '"')
+        state = AL_HTML_BEFORE_ATTRIBUTE;
+      break;
+    case AL_HTML_ATTRIBUTE_VALUE_SINGLE:
+      if (ch == '\'')
+        state = AL_HTML_BEFORE_ATTRIBUTE;
+      break;
+    case AL_HTML_MARKUP_DECLARATION: {
+      static const char doctype[] = "doctype";
+      const uint8_t lower = al_owning_ascii_lower(ch);
+      const int dash_prefix = declaration < 2u && ch == '-' &&
+                              (declaration == 0u || text[index - 1u] == '-');
+      const int doctype_prefix = declaration < 7u &&
+                                 lower == (uint8_t)doctype[declaration] &&
+                                 (declaration == 0u ||
+                                  al_owning_ascii_lower(text[index - 1u]) ==
+                                      (uint8_t)doctype[declaration - 1u]);
+      ++declaration;
+      if (dash_prefix && declaration == 2u) {
+        comment_tail = 0u;
+        state = AL_HTML_COMMENT;
+      } else if (doctype_prefix && declaration == 7u) {
+        if (depth != 0u)
+          return 0;
+        state = AL_HTML_DOCTYPE;
+      } else if (!dash_prefix && !doctype_prefix) {
+        return 0;
+      }
+      break;
+    }
+    case AL_HTML_COMMENT:
+      if (ch == '>' && comment_tail >= 2u)
+        state = AL_HTML_DATA;
+      comment_tail = ch == '-' ? comment_tail + 1u : 0u;
+      break;
+    case AL_HTML_DOCTYPE:
+      if (ch == '>')
+        state = AL_HTML_DATA;
+      else if (ch == '<')
+        return 0;
+      break;
+    case AL_HTML_RAW_TEXT:
+      /* Raw text ends only at "</" + its own element name. */
+      if (ch == '<' && index + 2u + raw_element.length <= length &&
+          text[index + 1u] == '/') {
+        al_owning_html_name candidate;
+        candidate.start = index + 2u;
+        candidate.length = raw_element.length;
+        if (al_owning_html_names_equal(text, candidate, raw_element) &&
+            (index + 2u + raw_element.length == length ||
+             !al_owning_html_tag_char(text[index + 2u + raw_element.length]))) {
+          if (depth >= AL_OWNING_HTML_MAX_DEPTH)
+            return 0;
+          stack[depth++] = raw_element;
+          name = candidate;
+          index += 1u + raw_element.length;
+          state = AL_HTML_END_TAG_NAME;
+        }
+      }
+      break;
+    }
+  }
+  return state == AL_HTML_DATA && depth == 0u;
+}
+
+int32_t al_owning_string_html_fragment(al_owning_stack_context *ctx,
+                                       uint32_t offset, uint32_t extent_bytes,
+                                       uint32_t error_id, uint32_t *out_valid) {
+  uint32_t units;
+  uint32_t ignored_payload;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (out_valid == 0) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
+    return 1;
+  }
+  if (!al_owning_string_scan_stack_exact(ctx, offset, extent_bytes, error_id,
+                                         &units, &ignored_payload))
+    return 1;
+  *out_valid = (uint32_t)al_owning_html_fragment_valid(
+      ctx->stack_data + offset + 8u, units);
+  return 0;
+}
+
+/* Escapes source[0..length) into destination (Rails ERB::Util.html_escape) and
+ * returns the bytes written; runs between specials are range-copied once. */
+static uint32_t al_owning_html_escape_into(uint8_t *destination,
+                                           const uint8_t *source,
+                                           uint32_t length) {
+  uint32_t written = 0u;
+  uint32_t run_start = 0u;
+  uint32_t index;
+  for (index = 0u; index < length; ++index) {
+    const uint32_t unit = source[index];
+    if (al_owning_html_is_special(unit)) {
+      const char *entity = al_owning_html_escape_entity(unit);
+      al_owning_bytes_copy(destination + written, source + run_start,
+                           index - run_start);
+      written += index - run_start;
+      while (*entity != '\0')
+        destination[written++] = (uint8_t)*entity++;
+      run_start = index + 1u;
+    }
+  }
+  al_owning_bytes_copy(destination + written, source + run_start,
+                       length - run_start);
+  return written + (length - run_start);
+}
+
+/* html"…" templates: parts are read-only literal byte ranges (bytes != 0) or
+ * stack values (bytes == 0; offset/extent): a String inserted as-is (mode 1,
+ * Html) or escaped (mode 2, String), or a List<Html> whose items are inserted
+ * in order (mode 3). The plan measures the exact result; the write
+ * copies every literal and hole byte once into the reserved destination, so
+ * literals are never staged in the arena and no escaped temporary exists. */
+int32_t al_owning_html_template_plan(al_owning_stack_context *ctx,
+                                     const al_owning_template_part *parts,
+                                     uint32_t count, uint32_t error_id,
+                                     uint32_t *out_string_bytes,
+                                     uint32_t *out_payload_bytes,
+                                     uint32_t *out_extent_bytes) {
+  uint64_t total = 0ull;
+  uint32_t index;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (parts == 0 || out_string_bytes == 0 || out_payload_bytes == 0 ||
+      out_extent_bytes == 0) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
+    return 1;
+  }
+  for (index = 0u; index < count; ++index) {
+    const al_owning_template_part *part = &parts[index];
+    if (part->bytes != 0) {
+      total += part->offset_or_length;
+    } else if (part->mode == 3u) {
+      uint32_t item_count;
+      uint64_t list_units;
+      if (!al_owning_string_list_walk(ctx, part->offset_or_length,
+                                      part->extent_bytes, error_id,
+                                      &item_count, &list_units))
+        return 1;
+      total += list_units;
+    } else {
+      uint32_t units;
+      uint32_t ignored_payload;
+      uint32_t unit_index;
+      if ((part->mode != 1u && part->mode != 2u) ||
+          !al_owning_string_scan_stack_exact(ctx, part->offset_or_length,
+                                             part->extent_bytes, error_id,
+                                             &units, &ignored_payload)) {
+        if (ctx->status == AL_OWNING_STATUS_OK)
+          al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                                index, part->mode);
+        return 1;
+      }
+      total += units;
+      if (part->mode == 2u) {
+        const uint8_t *data = ctx->stack_data + part->offset_or_length + 8u;
+        for (unit_index = 0u; unit_index < units; ++unit_index) {
+          if (al_owning_html_is_special(data[unit_index]))
+            total += al_owning_html_escape_extra(data[unit_index]);
+        }
+      }
+    }
+  }
+  if (!al_owning_string_result_plan(ctx, total, error_id, out_string_bytes,
+                                    out_payload_bytes, out_extent_bytes))
+    return 1;
+  return 0;
+}
+
+int32_t al_owning_html_template_write(al_owning_stack_context *ctx,
+                                      uint32_t destination_offset,
+                                      uint32_t destination_extent_bytes,
+                                      const al_owning_template_part *parts,
+                                      uint32_t count, uint32_t type_id,
+                                      uint32_t error_id) {
+  uint32_t string_bytes;
+  uint32_t payload;
+  uint32_t extent;
+  uint32_t cursor;
+  uint32_t index;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (al_owning_html_template_plan(ctx, parts, count, error_id, &string_bytes,
+                                   &payload, &extent) != 0)
+    return 1;
+  /* The destination is the fresh cursor: every stack hole lies below it. */
+  for (index = 0u; index < count; ++index) {
+    if (parts[index].bytes == 0 &&
+        parts[index].offset_or_length + parts[index].extent_bytes >
+            destination_offset) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                            parts[index].offset_or_length, destination_offset);
+      return 1;
+    }
+  }
+  if (!al_owning_string_result_begin(ctx, destination_offset,
+                                     destination_extent_bytes, extent,
+                                     string_bytes, destination_offset, 0u,
+                                     error_id))
+    return 1;
+  cursor = destination_offset + 8u;
+  for (index = 0u; index < count; ++index) {
+    const al_owning_template_part *part = &parts[index];
+    if (part->bytes != 0) {
+      al_owning_bytes_copy(ctx->stack_data + cursor, part->bytes,
+                           part->offset_or_length);
+      cursor += part->offset_or_length;
+    } else {
+      const uint32_t source = part->offset_or_length;
+      const uint32_t data_bytes = al_owning_read_u32_le(ctx->stack_data, source);
+      if (part->mode == 3u) {
+        /* List<Html>: a u32 item count, 4 reserved bytes, then packed items. */
+        uint32_t item = source + 8u;
+        uint32_t item_index;
+        for (item_index = 0u; item_index < data_bytes; ++item_index) {
+          const uint32_t item_bytes = al_owning_read_u32_le(ctx->stack_data, item);
+          al_owning_bytes_copy(ctx->stack_data + cursor,
+                               ctx->stack_data + item + 8u, item_bytes);
+          cursor += item_bytes;
+          item += (8u + item_bytes + 7u) & ~7u;
+        }
+      } else if (part->mode == 2u) {
+        cursor += al_owning_html_escape_into(ctx->stack_data + cursor,
+                                             ctx->stack_data + source + 8u,
+                                             data_bytes);
+      } else {
+        al_owning_bytes_copy(ctx->stack_data + cursor,
+                             ctx->stack_data + source + 8u, data_bytes);
+        cursor += data_bytes;
+      }
+    }
+  }
   al_owning_string_result_finish(ctx, destination_offset, cursor, payload,
                                  extent, type_id);
   return 0;

@@ -1,0 +1,35 @@
+fn campfire.views.text(value: Html) -> String {
+    effects none
+    doc "The markup as a String (a free retag)."
+
+    Html.value(value)
+}
+
+fn campfire.views.message(message: MessageRow) -> Html {
+    effects none
+    doc "One message, shaped like Rails messages_helper#message_tag: DOM ids use client_message_id (Message#to_key), data-message-id the row id. Bodies are escaped text until the rich-text partial lands."
+
+    let body = match message.body {
+        none => ""
+        some text => text
+    }
+    html"""<div id="message_{message.client-message-id}" class="message" data-message-id="{int.to-string(MessageId.value(message.id))}"><div id="presentation_message_{message.client-message-id}" dir="auto">{body}</div></div>"""
+}
+
+fn campfire.views.room(room: RoomRow, messages: List<MessageRow>) -> Html {
+    effects none
+    doc "The room page the native host currently renders in C (campfire_http_renderer.c), as a Flow template with Rails escaping."
+
+    let name = match room.name {
+        none => ""
+        some text => text
+    }
+    html"""<!doctype html><html><body><h1>{name}</h1><section id="messages">{messages.map(campfire.views.message)}</section><form method="post" action="/rooms/{int.to-string(RoomId.value(room.id))}/messages"><textarea name="message[body]"></textarea><button type="submit">Send</button></form></body></html>"""
+}
+
+fn campfire.views.room-text(room: RoomRow, messages: List<MessageRow>) -> String {
+    effects none
+    doc "Entry point for hosts and tests: the room page markup as a String."
+
+    campfire.views.text(campfire.views.room(room, messages))
+}

@@ -236,6 +236,78 @@ fn html.escape(text: String) -> Html {
 
 See [report 262](../reports/262-string-join-html-escape.md).
 
+## Html and templates
+
+`Html` is a built-in type: safe markup, a `String` underneath. Programs do not
+declare it (`FLOW_HTML_BUILT_IN`). It is added to a program automatically the
+first time the program uses `Html`, `html.raw` or a template.
+
+- **`Html.new(text)` escapes.** Any String becomes safe text: `& < > " '` are
+  escaped exactly like Rails `ERB::Util.html_escape`. It cannot fail.
+- **`html.raw(text)` keeps markup.** The markup must be a well-formed fragment
+  (`string.html-fragment?`):
+  - a literal is checked at compile time (`REFINEMENT_LITERAL_INVALID`);
+  - any other value is checked when it is called (`REFINEMENT_FAILED`).
+
+  It is the only way run-time markup becomes Html, so it is easy to find in
+  review. Programs cannot redefine it.
+- **`Html.value(html)`** gives the markup back as a String, at no cost.
+
+```flow
+fn page.item(name: String) -> Html {
+    effects none
+    html"<li>{name}</li>"
+}
+
+fn page.card(title: String, items: List<Html>) -> Html {
+    effects none
+    html"""
+        <article class="card" data-title="{title}">
+          <h2>{title}</h2>
+          <ul>{items}</ul>
+        </article>
+        """
+}
+```
+
+### Templates
+
+- **Forms.**
+  - `html"…"` is one line and uses JSON escapes, as string literals do.
+  - `html"""…"""` is raw: quotes need no escaping, and it may span lines.
+- **Multi-line text.** It follows the C# raw-string rule. When the opening `"""`
+  ends its line:
+  - that newline is dropped;
+  - the closing `"""` must sit on its own line;
+  - the closing line's indentation is removed from every line;
+  - CRLF reads as LF.
+- **Holes.** `{expr}` is a hole. `{{` and `}}` are literal braces.
+- **Hole types.**
+  - A `String` hole is escaped, like `Html.new`.
+  - An `Html` hole is inserted as-is.
+  - A `List<Html>` hole inserts its items in order.
+  - Any other type is a compile error (`FLOW_TEMPLATE_HOLE_TYPE`); convert it
+    first, for example with `int.to-string`.
+- **Compile-time check.** The whole markup skeleton is checked at compile time
+  (`FLOW_TEMPLATE_MARKUP`), with each hole treated as an opaque, balanced unit:
+  - elements must be balanced and close in order (void elements and `/>`
+    excepted);
+  - a bare `<` is an error;
+  - a hole may sit in element content, or (String only) inside a quoted
+    attribute value;
+  - a hole may not sit in a tag or attribute name, an unquoted value,
+    between attributes, in a comment, or in `<script>`/`<style>` text.
+- **Html by construction.** The IR verifier re-checks every template, so the
+  result is `Html` by construction, and no backend runs the validator on it.
+  `Html.new` compiles to the same operation as `html"{text}"`. Native code
+  measures the result once, reserves it once, and writes each byte once.
+  Literal text is copied straight from read-only data.
+- **`string.html-fragment?`** is the same checker at run time. It also accepts
+  `<!-- … -->`, `<!doctype …>` at the top level, and raw `<script>`/`<style>`
+  text, and it limits nesting to 256 elements.
+
+See [report 266](../reports/266-html-templates.md).
+
 ## compact { }
 
 `compact { ... }` is an expression block that must produce exactly one value

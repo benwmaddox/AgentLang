@@ -45,13 +45,16 @@ module internal ArenaLifetime =
 
     let private callEffects (call: IrResolvedCall) = not (Set.isEmpty call.ResolvedEffects)
 
+    let private templateHoleCount (parts: HtmlTemplatePart list) =
+        parts |> List.sumBy (function HtmlTemplatePart.Text _ -> 0 | _ -> 1)
+
     let private owningPrimitiveSet =
         set [ "add"; "subtract"; "multiply"; "divide"
               "int.to-string"
               "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
               "equals"; "bool.and"; "bool.or"; "bool.not"
               "dup"; "drop"; "swap"; "string.concat"; "string.length"; "string.byte-length"; "string.char-length"
-              "string.join"; "string.html-escape"
+              "string.join"; "string.html-escape"; "string.html-fragment?"
               "string.contains"; "string.starts-with"; "string.ends-with"
               "list.append"; "list.concat" ]
 
@@ -282,6 +285,11 @@ module internal ArenaLifetime =
             | IrOperation.MakeEnumCase(call, _, _) ->
                 if callEffects call then unmodeled ()
                 else { state with Stack = state.Stack @ [ Set.singleton currentRegion ] }
+            | IrOperation.HtmlTemplate(_, parts) ->
+                // A new String owner in the current region; every hole is copied
+                // (escaped or as-is), never aliased.
+                let prefix, _ = pop (templateHoleCount parts) state.Stack
+                { state with Stack = prefix @ [ Set.singleton currentRegion ] }
             | IrOperation.MatchEnum(_, caseBlocks) ->
                 let prefix, _ = pop 1 state.Stack
                 let entry = { state with Stack = prefix }
@@ -374,6 +382,9 @@ module internal ArenaLifetime =
                 finishUnknown prefix inputs 1
             | IrOperation.MakeEnumCase(call, _, _) ->
                 finishUnknown state.Stack [] call.OutputTypes.Length
+            | IrOperation.HtmlTemplate(_, parts) ->
+                let prefix, inputs = pop (templateHoleCount parts) state.Stack
+                finishUnknown prefix inputs 1
             | IrOperation.Constant _ | IrOperation.StoreLocal _ | IrOperation.LoadLocal _
             | IrOperation.Scope _ | IrOperation.Compact _ | IrOperation.If _ ->
                 // These operations are modeled above; retain all visible roots

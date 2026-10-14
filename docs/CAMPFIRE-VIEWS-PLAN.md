@@ -80,6 +80,13 @@ same placement.
     3. templates;
     4. `out.write` streaming;
     5. apples-to-apples.
+- **Html constructors (user, 2026-10-13, report 266; supersedes "Html.new is
+  always checked" above):**
+  - `Html` is built in and is added automatically when a program uses it.
+  - `Html.new(text)` escapes everything and cannot fail.
+  - `html.raw(text)` validates markup: literals at compile time, other values
+    at run time.
+  - Templates escape `String` holes and insert `Html` holes as-is.
 - **Sequencing and templates (user, 2026-10-13, later):**
   - UTF-8 internal strings come right after report 264. Streaming output is
     deferred until it is needed.

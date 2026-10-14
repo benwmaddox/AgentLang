@@ -463,6 +463,21 @@ module IrFormatting =
             addCall "call" call
             addKey "typeKey" key
             addInt node "caseIndex" caseIndex
+        | IrOperation.HtmlTemplate(key, parts) ->
+            addString node "kind" "html-template"
+            addKey "typeKey" key
+            let partNodes = JsonArray()
+            for part in parts do
+                let partNode = JsonObject()
+                match part with
+                | HtmlTemplatePart.Text text ->
+                    addString partNode "part" "text"
+                    addString partNode "text" text
+                | HtmlTemplatePart.StringHole -> addString partNode "part" "string-hole"
+                | HtmlTemplatePart.HtmlHole -> addString partNode "part" "html-hole"
+                | HtmlTemplatePart.HtmlListHole -> addString partNode "part" "html-list-hole"
+                partNodes.Add(partNode)
+            addNode node "parts" partNodes
         node
 
     and private instructionDto program names (instruction: IrInstruction) =
@@ -526,6 +541,7 @@ module IrFormatting =
         | IrOperation.ListFold(call, item, accumulator) -> call.InputTypes @ call.OutputTypes @ [ item; accumulator ]
         | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _)
         | IrOperation.MakeEnumCase(call, _, _) -> call.InputTypes @ call.OutputTypes
+        | IrOperation.HtmlTemplate(key, _) -> [ IrString; IrNominal key ]
         | IrOperation.MakeRecord(call, _, validator) ->
             call.InputTypes @ call.OutputTypes @ (validator |> Option.map (fun item -> item.InputTypes @ item.OutputTypes) |> Option.defaultValue [])
         | IrOperation.WrapScalar(call, _, validator) ->
@@ -615,6 +631,7 @@ module IrFormatting =
                 | IrOperation.UnwrapScalar(call, key) -> collectCallTypeKeys (Set.add key found) call
                 | IrOperation.MakeEnumCase(call, key, _) -> collectCallTypeKeys (Set.add key found) call
                 | IrOperation.MatchEnum(key, _) -> Set.add key found
+                | IrOperation.HtmlTemplate(key, _) -> Set.add key found
                 | IrOperation.If _ | IrOperation.MatchOption _ | IrOperation.MatchResult _
                 | IrOperation.StoreLocal _ | IrOperation.LoadLocal _ | IrOperation.Scope _ | IrOperation.Compact _ -> found
             match instruction.Operation with

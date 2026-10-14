@@ -1,0 +1,19 @@
+test campfire.views.text/message {
+    campfire.views.text(campfire.views.message(messageRow.new(id = MessageId.new(7), room-id = RoomId.new(3), creator-id = UserId.new(1), client-message-id = "c-1", body = option.some<String>("Hi & bye"), created-at = "2026-01-01T00:00:00Z", updated-at = "2026-01-01T00:00:00Z")))
+    => value "<div id=\"message_c-1\" class=\"message\" data-message-id=\"7\"><div id=\"presentation_message_c-1\" dir=\"auto\">Hi &amp; bye</div></div>"
+}
+
+test campfire.views.message/no-body {
+    campfire.views.text(campfire.views.message(messageRow.new(id = MessageId.new(8), room-id = RoomId.new(3), creator-id = UserId.new(1), client-message-id = "c-2", body = option.none<String>(), created-at = "2026-01-01T00:00:00Z", updated-at = "2026-01-01T00:00:00Z")))
+    => value "<div id=\"message_c-2\" class=\"message\" data-message-id=\"8\"><div id=\"presentation_message_c-2\" dir=\"auto\"></div></div>"
+}
+
+test campfire.views.room/empty {
+    campfire.views.text(campfire.views.room(roomRow.new(id = RoomId.new(3), name = option.some<String>("Lobby"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "2026-01-01T00:00:00Z", updated-at = "2026-01-01T00:00:00Z"), list.empty<MessageRow>()))
+    => value "<!doctype html><html><body><h1>Lobby</h1><section id=\"messages\"></section><form method=\"post\" action=\"/rooms/3/messages\"><textarea name=\"message[body]\"></textarea><button type=\"submit\">Send</button></form></body></html>"
+}
+
+test campfire.views.room-text/unnamed {
+    campfire.views.room-text(roomRow.new(id = RoomId.new(4), name = option.none<String>(), kind = RoomKind.direct(), creator-id = UserId.new(1), created-at = "2026-01-01T00:00:00Z", updated-at = "2026-01-01T00:00:00Z"), list.empty<MessageRow>())
+    => value "<!doctype html><html><body><h1></h1><section id=\"messages\"></section><form method=\"post\" action=\"/rooms/4/messages\"><textarea name=\"message[body]\"></textarea><button type=\"submit\">Send</button></form></body></html>"
+}

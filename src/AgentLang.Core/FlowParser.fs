@@ -8,7 +8,7 @@ open System.Text.Json
 /// Parser for the explicit Flow frontend. This entry point never falls back to
 /// the legacy stack parser after a Flow error.
 module FlowParser =
-    type private TokenKind = Identifier | Number | StringLiteral | Symbol
+    type private TokenKind = Identifier | Number | StringLiteral | TemplateLiteral | Symbol
 
     type private Token =
         { Kind: TokenKind
@@ -122,6 +122,61 @@ module FlowParser =
                     try JsonSerializer.Deserialize<string>(value) |> ignore
                     with _ -> fail file startLine startColumn value.Length "FLOW_INVALID_STRING" "String literal must use JSON-style quoted text."
                     add StringLiteral startOffset startLine startColumn
+                elif String.CompareOrdinal(source, offset, "html\"", 0, 5) = 0 then
+                    // html"…" (JSON escapes, one line) or html"""…""" (raw, may span
+                    // lines). {expr} is a hole; {{ and }} are literal braces. Holes
+                    // are re-tokenized by the parser.
+                    for _ in 1 .. 4 do advance ()
+                    let raw = offset + 2 < source.Length && source[offset + 1] = '"' && source[offset + 2] = '"'
+                    for _ in 1 .. (if raw then 3 else 1) do advance ()
+                    let mutable closed = false
+                    let skipQuotedString () =
+                        let quoteLine, quoteColumn, quoteOffset = line, column, offset
+                        advance ()
+                        let mutable finished = false
+                        while offset < source.Length && not finished do
+                            match source[offset] with
+                            | '\\' -> advance (); (if offset < source.Length then advance ())
+                            | '"' -> advance (); finished <- true
+                            | '\r' | '\n' -> fail file quoteLine quoteColumn (offset - quoteOffset) "FLOW_STRING_NEWLINE" "A quoted Flow string cannot contain a raw newline."
+                            | _ -> advance ()
+                        if not finished then fail file quoteLine quoteColumn 1 "FLOW_INCOMPLETE_INPUT" "String literal is missing its closing quote."
+                    while offset < source.Length && not closed do
+                        let ch = source[offset]
+                        let next = if offset + 1 < source.Length then source[offset + 1] else '\000'
+                        if raw && ch = '"' && next = '"' && offset + 2 < source.Length && source[offset + 2] = '"' then
+                            for _ in 1 .. 3 do advance ()
+                            closed <- true
+                        elif not raw && ch = '"' then
+                            advance ()
+                            closed <- true
+                        elif not raw && ch = '\\' then
+                            advance ()
+                            if offset < source.Length then advance ()
+                        elif not raw && (ch = '\r' || ch = '\n') then
+                            fail file startLine startColumn (offset - startOffset + 1) "FLOW_STRING_NEWLINE" "A one-line html\"…\" template cannot contain a raw newline; use html\"\"\"…\"\"\"."
+                        elif ch = '{' && next = '{' then
+                            advance (); advance ()
+                        elif ch = '{' then
+                            let holeLine, holeColumn = line, column
+                            advance ()
+                            let mutable depth = 1
+                            while depth > 0 do
+                                if offset >= source.Length then
+                                    fail file holeLine holeColumn 1 "FLOW_INCOMPLETE_INPUT" "Template hole is missing its closing '}'."
+                                match source[offset] with
+                                | '"' -> skipQuotedString ()
+                                | '{' -> depth <- depth + 1; advance ()
+                                | '}' -> depth <- depth - 1; advance ()
+                                | _ -> advance ()
+                        elif ch = '}' && next = '}' then
+                            advance (); advance ()
+                        elif ch = '}' then
+                            fail file line column 1 "FLOW_TEMPLATE_BRACE" "A literal '}' in an html template is written '}}'."
+                        else advance ()
+                    if not closed then fail file startLine startColumn (max 1 (offset - startOffset)) "FLOW_INCOMPLETE_INPUT" "html template is missing its closing quote."
+                    if offset - startOffset > maxStringLength then fail file startLine startColumn 1 "FLOW_STRING_LIMIT" $"Template literal exceeds the {maxStringLength} character limit."
+                    add TemplateLiteral startOffset startLine startColumn
                 elif isIdentifierStart source[offset] then
                     advance ()
                     while offset < source.Length && isIdentifierPart source[offset] do advance ()
@@ -725,6 +780,120 @@ module FlowParser =
                 FlowExpression.Equality(left, right, sourceSpan state.File first (previous state))
             | _ -> left)
 
+    /// Decodes an html"…" or html"""…""" token into alternating literal parts and
+    /// hole expressions, desugared to the reserved call `%html-template` with
+    /// arguments (text, hole, text, …, text). Lowering checks hole types and the
+    /// markup skeleton. Multi-line rule (as C# raw strings): when the opening
+    /// """ ends its line, that newline and the closing """ line are dropped, and
+    /// the closing line's indentation is removed from every line. CRLF reads as LF.
+    and private parseTemplate (state: State) (token: Token) =
+        let text = token.Text
+        let span = sourceSpan state.File token (Some token)
+        let raw = text.StartsWith("html\"\"\"", StringComparison.Ordinal)
+        let contentStart = if raw then 7 else 5
+        let contentEnd = text.Length - (if raw then 3 else 1)
+        let lines = Array.zeroCreate<int> (text.Length + 1)
+        let columns = Array.zeroCreate<int> (text.Length + 1)
+        let mutable line = token.Line
+        let mutable column = token.Column
+        for index in 0 .. text.Length - 1 do
+            lines[index] <- line
+            columns[index] <- column
+            if text[index] = '\n' then
+                line <- line + 1
+                column <- 1
+            else column <- column + 1
+        lines[text.Length] <- line
+        columns[text.Length] <- column
+        let failAt index code message = fail state.File lines[index] columns[index] 1 code message
+        let mutable first = contentStart
+        let mutable last = contentEnd
+        let mutable indent = ""
+        let multiline = raw && first < last && (text[first] = '\n' || text[first] = '\r')
+        if multiline then
+            first <- first + (if text[first] = '\r' && first + 1 < last && text[first + 1] = '\n' then 2 else 1)
+            let lastNewline = text.LastIndexOf('\n', last - 1)
+            let closing = text.Substring(lastNewline + 1, last - lastNewline - 1)
+            if closing |> Seq.exists (fun ch -> ch <> ' ' && ch <> '\t') then
+                failAt (lastNewline + 1) "FLOW_TEMPLATE_INDENT" "In a multi-line html\"\"\"…\"\"\" template the closing \"\"\" must be on its own line."
+            indent <- closing
+            last <- if lastNewline > 0 && text[lastNewline - 1] = '\r' then lastNewline - 1 else lastNewline
+            if last < first then last <- first
+        let parts = ResizeArray<FlowArgument>()
+        let literal = Text.StringBuilder()
+        let escaped = Text.StringBuilder()
+        let appendText (value: string) = if raw then literal.Append(value) |> ignore else escaped.Append(value) |> ignore
+        let pushLiteral () =
+            if not raw then
+                literal.Append(JsonSerializer.Deserialize<string>("\"" + escaped.ToString() + "\"")) |> ignore
+                escaped.Clear() |> ignore
+            let value = literal.ToString()
+            if not (TrustedValues.isWellFormedUtf16 value) then
+                fail state.File token.Line token.Column token.Text.Length "FLOW_STRING_INVALID_UTF16" "Template text must be well-formed Unicode."
+            parts.Add(FlowArgument.Positional(FlowExpression.Literal(LString value, span)))
+            literal.Clear() |> ignore
+        let parseHole (start: int) (finish: int) =
+            let holeText = text.Substring(start, finish - start)
+            if String.IsNullOrWhiteSpace holeText then failAt start "FLOW_TEMPLATE_HOLE" "A template hole must contain an expression."
+            let tokens, _, _ = tokenize state.File holeText
+            let holeLine, holeColumn = lines[start], columns[start]
+            let shifted =
+                tokens
+                |> Array.map (fun item ->
+                    { item with
+                        Line = holeLine + item.Line - 1
+                        Column = (if item.Line = 1 then holeColumn + item.Column - 1 else item.Column)
+                        Offset = token.Offset + start + item.Offset })
+            let hole = { state with Tokens = shifted; Index = 0; EndLine = lines[finish]; EndColumn = columns[finish] }
+            let expression = parseExpressionState hole
+            if hole.Index < hole.Tokens.Length then
+                tokenError hole "FLOW_TEMPLATE_HOLE" "A template hole holds exactly one expression."
+            expression
+        let mutable index = first
+        let mutable atLineStart = multiline
+        while index < last do
+            if atLineStart then
+                atLineStart <- false
+                if text[index] <> '\n' && text[index] <> '\r' then
+                    if String.CompareOrdinal(text, index, indent, 0, indent.Length) = 0 then index <- index + indent.Length
+                    else failAt index "FLOW_TEMPLATE_INDENT" "Each line of a multi-line html template must start with the closing \"\"\" line's indentation."
+            if index < last then
+                let ch = text[index]
+                let next = if index + 1 < last then text[index + 1] else '\000'
+                if ch = '\r' then index <- index + 1
+                elif ch = '\n' then
+                    appendText "\n"
+                    index <- index + 1
+                    atLineStart <- multiline
+                elif (ch = '{' && next = '{') || (ch = '}' && next = '}') then
+                    appendText (string ch)
+                    index <- index + 2
+                elif ch = '{' then
+                    // The lexer already matched this hole; find its closing brace again.
+                    let mutable depth = 1
+                    let mutable cursor = index + 1
+                    while depth > 0 do
+                        match text[cursor] with
+                        | '"' ->
+                            cursor <- cursor + 1
+                            while text[cursor] <> '"' do
+                                cursor <- cursor + (if text[cursor] = '\\' then 2 else 1)
+                            cursor <- cursor + 1
+                        | '{' -> depth <- depth + 1; cursor <- cursor + 1
+                        | '}' -> depth <- depth - 1; cursor <- cursor + 1
+                        | _ -> cursor <- cursor + 1
+                    pushLiteral ()
+                    parts.Add(FlowArgument.Positional(parseHole (index + 1) (cursor - 1)))
+                    index <- cursor
+                elif not raw && ch = '\\' then
+                    appendText (text.Substring(index, 2))
+                    index <- index + 2
+                else
+                    appendText (string ch)
+                    index <- index + 1
+        pushLiteral ()
+        FlowExpression.Call("%html-template", List.ofSeq parts, span)
+
     and private parsePostfixExpressionState state =
             let first = current state |> Option.defaultWith (fun () -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a Flow expression.")
             let primary =
@@ -747,6 +916,9 @@ module FlowParser =
                     if not (TrustedValues.isWellFormedUtf16 value) then
                         fail state.File first.Line first.Column first.Text.Length "FLOW_STRING_INVALID_UTF16" "String literals must be well-formed Unicode; an unpaired surrogate has no UTF-8 form."
                     FlowExpression.Literal(LString value, sourceSpan state.File first (Some first))
+                | TemplateLiteral, _ ->
+                    consume state |> ignore
+                    parseTemplate state first
                 | Identifier, "true" -> consume state |> ignore; FlowExpression.Literal(LBool true, sourceSpan state.File first (Some first))
                 | Identifier, "false" -> consume state |> ignore; FlowExpression.Literal(LBool false, sourceSpan state.File first (Some first))
                 | Identifier, "unit" -> consume state |> ignore; FlowExpression.Literal(LUnit, sourceSpan state.File first (Some first))
