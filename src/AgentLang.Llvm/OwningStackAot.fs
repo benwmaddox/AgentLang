@@ -7704,7 +7704,8 @@ module OwningStackAot =
             writer.Line("  %status = call i32 @BCryptGenRandom(ptr null, ptr %buffer, i32 %length, i32 2)")
             writer.Line("  ret i32 %status")
             writer.Line("}")
-        if usesOsCrypto.Value then
+        if usesOsCrypto.Value && target = OwningTarget.WindowsX64 then
+            // Linux needs nothing here: the runtime calls libcrypto directly.
             // The runtime calls BCrypt through this table (generate key,
             // encrypt, decrypt, destroy key, hash, PBKDF2); other modules get
             // its failing stub and import nothing from bcrypt.dll.

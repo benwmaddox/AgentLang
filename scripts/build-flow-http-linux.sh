@@ -14,5 +14,7 @@ clang --target=x86_64-pc-linux-gnu "$OPT" -std=c11 -ffreestanding -fno-builtin -
 clang --target=x86_64-pc-linux-gnu "$OPT" -std=gnu11 -Wall -Wextra -Wno-unused-parameter $DEFS -Isrc -c src/flow_http_db.c -o db.o
 clang --target=x86_64-pc-linux-gnu "$OPT" -std=gnu11 -Wall -Wextra -Wno-unused-parameter $DEFS -Isrc -c src/flow_http_host.c -o host.o
 SQLITE=$(ls /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 2>/dev/null || ls /lib/x86_64-linux-gnu/libsqlite3.so.0)
-clang -fuse-ld=lld "$OPT" host.o db.o module.o runtime.o "$SQLITE" -lpthread -o flow_http_server
+# The OS crypto table resolves libcrypto symbols weakly: keep the library even when
+# --as-needed would drop it (Ubuntu default), or every crypto primitive reports failure.
+clang -fuse-ld=lld "$OPT" host.o db.o module.o runtime.o "$SQLITE" -lpthread -Wl,--no-as-needed -lcrypto -Wl,--as-needed -o flow_http_server
 echo "built $OUT/flow_http_server"

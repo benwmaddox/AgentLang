@@ -24,7 +24,11 @@ param(
     [int] $Port = 13773,
     [string] $Snapshot = 'snap-nc',
     [string] $Bench = 'D:\code\AgentLang\.agentlang\campfire-matched-258',
-    [string] $CsrfOracle = ''
+    [string] $CsrfOracle = '',
+    # With -LinuxServer (a WSL path, e.g. ~/linuxbench/flowhttp/campfire/flow_http_server)
+    # the Flow side runs in WSL through scripts/campfire-flow-parity-linux.sh.
+    [string] $LinuxServer = '',
+    [string] $LinuxLoadgen = '/home/ben/cm258/loadgen-linux/release/loadgen'
 )
 $ErrorActionPreference = 'Stop'
 $repo = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -105,10 +109,30 @@ function Invoke-Case([string] $Root, $Case) {
     & curl.exe @arguments "$base$path" | Out-Null
 }
 
+function ConvertTo-WslPath([string] $Path) {
+    $full = [System.IO.Path]::GetFullPath($Path)
+    return '/mnt/' + $full.Substring(0, 1).ToLowerInvariant() + $full.Substring(2).Replace('\', '/')
+}
+
 $results = [ordered]@{}
 foreach ($kind in @('native', 'flow')) {
     $root = Join-Path $out $kind
     New-Item -ItemType Directory -Force $root | Out-Null
+    if ($kind -eq 'flow' -and $LinuxServer -ne '') {
+        # The Flow server runs in WSL; the same cases are fetched there.
+        $tsv = Join-Path $out 'cases.tsv'
+        [IO.File]::WriteAllText($tsv, (($cases | ForEach-Object { $_ -join "`t" }) -join "`n") + "`n", [Text.UTF8Encoding]::new($false))
+        $script = ConvertTo-WslPath (Join-Path $PSScriptRoot 'campfire-flow-parity-linux.sh')
+        $wslArguments = @($LinuxServer, (ConvertTo-WslPath $tsv), (ConvertTo-WslPath $root),
+            (ConvertTo-WslPath (Join-Path $Bench "private/native-db-$Snapshot/production.sqlite3")),
+            (ConvertTo-WslPath (Join-Path $Bench '../once-campfire-verification/fixtures/default/reference.env')),
+            (ConvertTo-WslPath $cookieFile), $LinuxLoadgen, (ConvertTo-WslPath $contract), "$Port", (Split-Path -Leaf $out))
+        $quoted = ($wslArguments | ForEach-Object { "'$_'" }) -join ' '
+        & wsl -- bash -lc "tr -d '\r' < '$script' > /tmp/campfire-flow-parity-linux.sh && bash /tmp/campfire-flow-parity-linux.sh $quoted" | Select-Object -Last 1
+        $validation = Get-Content -LiteralPath (Join-Path $root 'loadgen.json') -Raw | ConvertFrom-Json
+        $results[$kind] = [ordered]@{ ok = $validation.ok; invalid = $validation.invalid_responses; errors = $validation.errors; rps = $validation.rps }
+        continue
+    }
     $process = Start-Server $kind $root
     try {
         foreach ($case in $cases) { Invoke-Case $root $case }
