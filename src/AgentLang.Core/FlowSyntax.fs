@@ -137,6 +137,8 @@ type FlowTestExpectation =
     | Literal of Literal * SourceSpan
     | RuntimeError of string * SourceSpan
     | Expression of FlowExpression
+    /// Step-list test: `expect` statements live in the body; no `=>` line.
+    | Checks
 
 type FlowTestDefinition =
     { Word: string
@@ -227,6 +229,16 @@ type FlowLoweredExample =
       SourceText: string
       SyntaxVersion: int
       Projection: FlowSourceProjection }
+
+/// Test-only `expect` statements parse to calls of these intrinsic names; `<` keeps them unreachable from authored calls.
+module FlowExpect =
+    let checkIntrinsic = "<expect>"
+    let equalIntrinsic = "<expect-equal>"
+    let isIntrinsic name = name = checkIntrinsic || name = equalIntrinsic
+
+    let isExpectStatement = function
+        | FlowStatement.Evaluate(FlowExpression.Call(name, _, _)) -> isIntrinsic name
+        | _ -> false
 
 /// Shared structural limits and validation for source-authored and host-built
 /// Flow trees. This walk is iterative so recursive consumers can rely on the
@@ -475,7 +487,7 @@ module FlowStructure =
         let expressionRoots =
             match definition.Expected with
             | FlowTestExpectation.Expression expression -> [ expression ]
-            | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ -> []
+            | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ | FlowTestExpectation.Checks -> []
         match definition.Expected with
         | FlowTestExpectation.RuntimeError(code, codeSpan) when not (TestExpectation.isValidRuntimeErrorCode code) ->
             Diagnostics.raiseError "FLOW_INVALID_EXPECTED_ERROR_CODE" "Runtime-error expectations use a stable uppercase diagnostic code." (Some definition.Word) (Some codeSpan) [ "[A-Z][A-Z0-9_]*" ] [ code ]
@@ -683,6 +695,10 @@ module FlowSource =
                     | FlowStatement.LetMany(bindings, value, _) ->
                         let names = bindings |> List.map fst |> String.concat ", "
                         indent depth + "let (" + names + ") = " + indentContinuationLines (if syntaxVersion = 2 then depth else 0) (renderInlineExpression syntaxVersion locals value)
+                    | FlowStatement.Evaluate(FlowExpression.Call(name, [ FlowArgument.Positional checkedValue ], _)) when name = FlowExpect.checkIntrinsic ->
+                        indent depth + "expect " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals checkedValue)
+                    | FlowStatement.Evaluate(FlowExpression.Call(name, [ FlowArgument.Positional left; FlowArgument.Positional right ], span)) when name = FlowExpect.equalIntrinsic ->
+                        indent depth + "expect " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals (FlowExpression.Equality(left, right, span)))
                     | FlowStatement.Evaluate value -> renderExpressionAt syntaxVersion locals depth value
                     | FlowStatement.Return(values, _) ->
                         let renderedValues =
@@ -784,6 +800,7 @@ module FlowSource =
         | FlowTestExpectation.Literal(literal, _) -> renderLiteral literal
         | FlowTestExpectation.RuntimeError(code, _) -> "error " + code
         | FlowTestExpectation.Expression expression -> "value " + renderInlineExpression syntaxVersion locals expression
+        | FlowTestExpectation.Checks -> ""
 
     let renderTest (definition: FlowTestDefinition) =
         FlowStructure.validateTestNesting definition
@@ -796,10 +813,11 @@ module FlowSource =
         lines.Add($"test {definition.Word}/{definition.CaseName} {{")
         let bodyLines, bodyLocals = renderStatements definition.SyntaxVersion Set.empty 1 definition.Body
         bodyLines |> List.iter lines.Add
-        lines.Add("    => " + renderExpectation definition.SyntaxVersion bodyLocals definition.Expected)
+        let isChecks = match definition.Expected with FlowTestExpectation.Checks -> true | _ -> false
+        if not isChecks then lines.Add("    => " + renderExpectation definition.SyntaxVersion bodyLocals definition.Expected)
         definition.EffectAssertion
         |> Option.iter (fun assertion ->
-            lines.Add("    effects {")
+            lines.Add(if isChecks then "    expect effects {" else "    effects {")
             assertion.Counts
             |> Map.toList
             |> List.iter (fun (name, count) -> lines.Add($"        {name}: {count}"))

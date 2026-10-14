@@ -95,6 +95,8 @@ type TestExpectation =
     | ExpectedValue of Literal
     | ExpectedRuntimeError of string
     | ExpectedExpression of Expr list
+    /// Step-list checks: `expect <Bool>` calls are inline in the test body; the body must leave an empty stack.
+    | ExpectedChecks
 
 module TestExpectation =
     /// Error assertions name a stable diagnostic code, not message text.

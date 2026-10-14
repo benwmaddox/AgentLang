@@ -12,7 +12,29 @@ list: `PublishOutcome.created()`. They are different from record properties such
 as `customer.email`. An exact-root call also keeps its parentheses:
 `.PublishOutcome.created()`.
 
-An attached test compares a constructed value with a value-expression expectation:
+An attached test is a list of steps. `let` binds intermediate values and
+`expect <Bool expression>` checks one; a test may hold several, in any order:
+
+```flow
+test word.name/case {
+    let total = word.name(1, 2)
+    expect total == 3
+    expect word.ok?(total)
+}
+```
+
+- `expect a == b` reports both values when it fails (`TEST_ASSERTION_FAILED`);
+  any other false `expect` fails with the same code.
+- A final bare Bool expression is an implicit `expect`, so
+  `test x/y { string.contains(a, b) }` is a complete test.
+- `expect effects { fs.read: 1 }`, as the last step, asserts exact
+  target-scoped effect counts.
+- `expect` is only a top-level statement of a Flow/2 test body; functions and
+  nested blocks reject it (`FLOW_EXPECT_OUTSIDE_TEST`). A step-list test must
+  leave nothing on the stack.
+
+The older `=>` expectation forms remain readable during migration (legacy).
+A legacy test compares a constructed value with a value-expression expectation:
 
 ```flow
 test configuration.publish-safely/created {

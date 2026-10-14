@@ -1114,6 +1114,10 @@ module FlowLowering =
           RequestedName = requestedName
           Candidate = candidate }
 
+    /// Call event for a test-only `expect` intrinsic, so attachment binding covers every IR call.
+    let private expectCallEvent (context: Context) path name span =
+        callEvent path FlowCallForm.Direct name (candidateFromEntry context name Compiler.testIntrinsics[name]) span
+
     let rec private lowerFlowExpression (context: Context) (state: LoweringState) (environment: Map<string, Binding>) (path: FlowAstPath) expression : LoweredFragment =
         let span = spanOfExpression expression
         rememberSpan state span
@@ -1387,9 +1391,34 @@ module FlowLowering =
         lowerStatementsWithPath context state initialEnvironment path FlowAstPathSegment.BlockStatement statements
 
     and private lowerStatementsWithPath context state initialEnvironment path statementPathSegment statements =
+        lowerStatementsCore context state initialEnvironment path statementPathSegment false statements
+
+    /// Lowers a step-list test body: its final bare expression becomes an implicit `expect`.
+    and private lowerCheckedTestStatements context state path statements =
+        lowerStatementsCore context state Map.empty path FlowAstPathSegment.BlockStatement true statements
+
+    and private lowerStatementsCore context state initialEnvironment path statementPathSegment implicitFinalCheck statements =
         let mutable environment = initialEnvironment
         let output = ResizeArray<Expr>()
         let callEvents = ResizeArray<FlowCallEvent>()
+        // Test-only checks: operands lower in order, then the intrinsic consumes them and leaves nothing.
+        let lowerExpectCheck name (operands: FlowExpression list) (operandPaths: FlowAstPath list) checkSpan eventPath =
+            rememberSpan state checkSpan
+            let operandTypes = operands |> List.map (inferExpression context state environment)
+            match operandTypes with
+            | [ TBool ] when name = FlowExpect.checkIntrinsic -> ()
+            | [ actual ] when name = FlowExpect.checkIntrinsic ->
+                fail "FLOW_EXPECT_NOT_BOOL" "'expect' requires a Bool expression; a step-list test's final bare expression is an implicit 'expect'." None (Some checkSpan) [ "Bool" ] [ Types.format actual ]
+            | [ left; right ] when name = FlowExpect.equalIntrinsic && left = right -> ()
+            | [ left; right ] when name = FlowExpect.equalIntrinsic ->
+                fail "FLOW_EXPECT_EQUAL_TYPE" "'expect a == b' requires both sides to have the same type." None (Some checkSpan) [ Types.format left ] [ Types.format right ]
+            | _ -> fail "FLOW_EXPECT_OPERAND" "'expect' takes one Bool expression." None (Some checkSpan) [] []
+            for operand, operandPath in List.zip operands operandPaths do
+                let operandFragment = lowerFlowExpression context state environment operandPath operand
+                output.AddRange operandFragment.Expressions
+                callEvents.AddRange operandFragment.CallEvents
+            output.Add(Call(name, checkSpan))
+            callEvents.Add(expectCallEvent context eventPath name checkSpan)
         for index, statement in statements |> List.indexed do
             let statementPath = extendPath path (statementPathSegment index)
             match statement with
@@ -1416,6 +1445,22 @@ module FlowLowering =
                 for (name, nameSpan), valueType in List.zip (List.rev bindings) (List.rev valueTypes) do
                     output.Add(Let(name, nameSpan))
                     environment <- Map.add name { InternalName = name; Type = valueType } environment
+            | FlowStatement.Evaluate(FlowExpression.Call(name, arguments, checkSpan)) when FlowExpect.isIntrinsic name ->
+                let operands =
+                    arguments |> List.map (function
+                        | FlowArgument.Positional value -> value
+                        | _ -> fail "FLOW_EXPECT_OPERAND" "'expect' takes one Bool expression." None (Some checkSpan) [] [])
+                let evaluatePath = extendPath statementPath FlowAstPathSegment.EvaluateExpression
+                let operandPaths = operands |> List.mapi (fun operandIndex _ -> extendPath evaluatePath (argumentPath FlowCallForm.Direct operandIndex))
+                lowerExpectCheck name operands operandPaths checkSpan evaluatePath
+            | FlowStatement.Evaluate expression when implicitFinalCheck && index = statements.Length - 1 ->
+                // A step-list test's final bare expression is an implicit `expect`; `a == b` keeps both sides.
+                let evaluatePath = extendPath statementPath FlowAstPathSegment.EvaluateExpression
+                match expression with
+                | FlowExpression.Equality(left, right, equalitySpan) ->
+                    lowerExpectCheck FlowExpect.equalIntrinsic [ left; right ]
+                        [ extendPath evaluatePath FlowAstPathSegment.EqualityLeft; extendPath evaluatePath FlowAstPathSegment.EqualityRight ] equalitySpan statementPath
+                | _ -> lowerExpectCheck FlowExpect.checkIntrinsic [ expression ] [ evaluatePath ] (spanOfExpression expression) statementPath
             | FlowStatement.Evaluate expression ->
                 inferExpression context state environment expression |> ignore
                 let valueFragment = lowerFlowExpression context state environment (extendPath statementPath FlowAstPathSegment.EvaluateExpression) expression
@@ -1880,7 +1925,7 @@ module FlowLowering =
             match test.Expected with
             | FlowTestExpectation.Expression expression ->
                 walkExpression FlowAttachmentBodyRole.ExpectedExpression (FlowAstPath.FlowAstPath []) expression
-            | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ -> ()
+            | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ | FlowTestExpectation.Checks -> ()
         | ParsedFlowExample example ->
             walkStatements FlowAttachmentBodyRole.Actual (FlowAstPath.FlowAstPath []) example.Body
         found |> Seq.distinct |> Seq.toList
@@ -2786,9 +2831,13 @@ module FlowLowering =
         rememberSpan state flowTest.Span
         rememberSpan state flowTest.HeaderSpan
         rememberSpan state flowTest.ExpectationSpan
-        let bodyFragment, _ = lowerStatements context state Map.empty (FlowAstPath.FlowAstPath []) flowTest.Body
+        let bodyFragment, _ =
+            match flowTest.Expected with
+            | FlowTestExpectation.Checks -> lowerCheckedTestStatements context state (FlowAstPath.FlowAstPath []) flowTest.Body
+            | _ -> lowerStatements context state Map.empty (FlowAstPath.FlowAstPath []) flowTest.Body
         let expected, expectationCallEvents =
             match flowTest.Expected with
+            | FlowTestExpectation.Checks -> ExpectedChecks, []
             | FlowTestExpectation.Literal(literal, literalSpan) ->
                 rememberSpan state literalSpan
                 ExpectedValue literal, []
@@ -2809,7 +2858,8 @@ module FlowLowering =
               Span = flowTest.Span }
         let projection = makeProjection state
         let origins = mergeOrigins context projection
-        remapAttachmentDiagnostic origins (fun () -> Compiler.checkTest (knownTypes context) context.CompilerContext.Words definition |> ignore)
+        let testScopeWords = Map.fold (fun words name entry -> Map.add name entry words) context.CompilerContext.Words Compiler.testIntrinsics
+        remapAttachmentDiagnostic origins (fun () -> Compiler.checkTest (knownTypes context) testScopeWords definition |> ignore)
         { Definition = definition
           SourceText = flowTest.SourceText
           SyntaxVersion = flowTest.SyntaxVersion

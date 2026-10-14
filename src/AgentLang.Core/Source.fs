@@ -144,6 +144,8 @@ module Source =
             | ExpectedValue literal -> [ indent 1 + "=> " + renderLiteral literal ]
             | ExpectedRuntimeError code -> [ indent 1 + "=> error " + code ]
             | ExpectedExpression expressions -> [ indent 1 + "=> value" ] @ renderBodyAt 2 expressions
+            // Step-list checks are inline in the body; their Source rendering is not yet implemented.
+            | ExpectedChecks -> []
         renderTestLike "test" definition.Name definition.Word definition.Body expectedLines
 
     let renderExample (definition: ExampleDefinition) =

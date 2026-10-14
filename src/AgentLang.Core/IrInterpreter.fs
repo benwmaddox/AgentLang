@@ -170,6 +170,7 @@ module IrInterpreter =
             "dup"; "drop"; "swap"
             "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write"
             "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "crypto.random-bytes"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "int.parse"; "string.to-lower-ascii"
+            "<expect>"; "<expect-equal>"
         ]
 
     let private implementedPrimitiveIds =
@@ -1072,6 +1073,14 @@ module IrInterpreter =
             | "float.less-or-equal", [ RuntimeFloat left; RuntimeFloat right ] -> [ RuntimeBool(left <= right) ]
             | "float.greater-or-equal", [ RuntimeFloat left; RuntimeFloat right ] -> [ RuntimeBool(left >= right) ]
             | "equals", [ left; right ] -> [ RuntimeBool(left = right) ]
+            | "<expect>", [ RuntimeBool true ] -> []
+            | "<expect>", [ RuntimeBool false ] ->
+                fail "TEST_ASSERTION_FAILED" "Test expectation evaluated to false." (Some currentWord) (site |> Option.bind sourceSpan) [ "true" ] [ "false" ]
+            | "<expect-equal>", [ left; right ] when left = right -> []
+            | "<expect-equal>", [ left; right ] ->
+                let leftText = Types.formatValue (decodeValue left)
+                let rightText = Types.formatValue (decodeValue right)
+                fail "TEST_ASSERTION_FAILED" $"Test equality expectation failed: left {leftText} does not equal right {rightText}." (Some currentWord) (site |> Option.bind sourceSpan) [ leftText ] [ rightText ]
             | "bool.and", [ RuntimeBool left; RuntimeBool right ] -> [ RuntimeBool(left && right) ]
             | "bool.or", [ RuntimeBool left; RuntimeBool right ] -> [ RuntimeBool(left || right) ]
             | "bool.not", [ RuntimeBool value ] -> [ RuntimeBool(not value) ]

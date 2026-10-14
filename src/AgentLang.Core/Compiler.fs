@@ -71,6 +71,8 @@ module Compiler =
         | "int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal" -> [ TInt; TInt ], [ TBool ]
         | "float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal" -> [ TFloat; TFloat ], [ TBool ]
         | "equals" -> [ a; a ], [ TBool ]
+        | "<expect-equal>" -> [ a; a ], []
+        | "<expect>" -> [ TBool ], []
         | "bool.and" | "bool.or" -> [ TBool; TBool ], [ TBool ]
         | "bool.not" -> [ TBool ], [ TBool ]
         | "string.guid-canonical?" | "string.email-address-valid?" | "instant.is-canonical-utc?" -> [ TString ], [ TBool ]
@@ -139,8 +141,7 @@ module Compiler =
         | _ -> Set.empty
 
     /// The initial standard vocabulary is deliberately small and boring.
-    let primitives =
-        let names =
+    let private primitiveNames =
             [ "add"; "subtract"; "multiply"; "divide"; "float.add"; "float.subtract"; "float.multiply"; "float.divide"
               "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
               "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
@@ -153,6 +154,8 @@ module Compiler =
               "float.round"; "int.to-string"; "float.to-string"; "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
               "dup"; "drop"; "swap"; "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write"
               "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "crypto.random-bytes"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "int.parse"; "string.to-lower-ascii" ]
+
+    let private standardEntries (names: string list) =
         names
         |> List.map (fun name ->
             let inputs, outputs = builtinSignature name
@@ -199,6 +202,13 @@ module Compiler =
               Maturity = LibraryWord
               Revision = 1 })
         |> Map.ofList
+
+    let primitives = standardEntries primitiveNames
+
+    /// Test-only intrinsics: reachable only from test bodies through Call names, never listed in the public vocabulary.
+    let testIntrinsics = standardEntries [ "<expect>"; "<expect-equal>" ]
+
+    let testWords = Map.fold (fun words name entry -> Map.add name entry words) primitives testIntrinsics
 
     let private inferCall (knownTypes: Set<string>) (words: Map<string, WordEntry>) wordName (span: SourceSpan) (stack: LangType list) =
         match words.TryFind wordName with
@@ -610,6 +620,8 @@ module Compiler =
         checkDefinitionDetailed knownTypes enums words definition |> fst
 
     let private checkTestDetailed knownTypes knownEnums words (test: TestDefinition) =
+        // Test bodies alone may call the test-only `expect` intrinsics.
+        let words = Map.fold (fun scope name entry -> Map.add name entry scope) words testIntrinsics
         match test.Expected with
         | ExpectedRuntimeError _ when List.isEmpty test.Body ->
             Diagnostics.raiseError "TEST_EXPECTED_ERROR_BODY_EMPTY" $"Runtime-error test '{test.Name}' must contain an expression to execute." (Some test.Word) (Some test.Span) [ "nonempty test body" ] []
@@ -644,6 +656,9 @@ module Compiler =
                 Diagnostics.raiseError "TEST_EXPECTED_STACK" $"Test '{test.Name}' must leave exactly one value matching its expected literal." (Some test.Word) (Some test.Span) [ Types.format expectedType ] (checkedExpression.Stack |> List.map Types.format)
         | ExpectedRuntimeError _ -> ()
         | ExpectedExpression _ -> ()
+        | ExpectedChecks ->
+            if checkedExpression.Stack <> [] then
+                Diagnostics.raiseError "TEST_EXPECTED_CHECKS_STACK" $"Test '{test.Name}' with expect checks must leave no value on the stack." (Some test.Word) (Some test.Span) [ "empty stack" ] (checkedExpression.Stack |> List.map Types.format)
         checkedExpression, inferred.InferredBody, expectedInference
 
     let checkTest knownTypes words test = checkTestDetailed knownTypes Map.empty words test |> fun (checkedExpression, _, _) -> checkedExpression
@@ -667,6 +682,7 @@ module Compiler =
             expressions
             |> List.fold (fun found expression ->
                 match expression with
+                | Call(name, _) when testIntrinsics.ContainsKey name -> found
                 | Call(name, _) -> Set.add name found
                 | MapList(name, _) | FilterList(name, _) | EachList(name, _) | FoldList(name, _) | MapListWithContext(name, _) -> Set.add name found
                 | If(thenBranch, elseBranch, _) | MatchOption(_, thenBranch, elseBranch, _) ->
@@ -835,7 +851,7 @@ module Compiler =
     /// so display names never select a host primitive implementation.
     let primitiveIrCatalog: IrPrimitiveCatalog =
         let grouped =
-            primitives
+            testWords
             |> Map.toList
             |> List.choose (fun (_, entry) ->
                 match entry.Builtin with
@@ -858,7 +874,7 @@ module Compiler =
         match entry.Builtin with
         | Some(BuiltinOp operation) ->
             match primitiveIrCatalog.TryFind(PrimitiveId operation),
-                  (primitives |> Map.toList |> List.tryPick (fun (_, standard) -> if standard.Builtin = Some(BuiltinOp operation) then Some standard else None)) with
+                  (testWords |> Map.toList |> List.tryPick (fun (_, standard) -> if standard.Builtin = Some(BuiltinOp operation) then Some standard else None)) with
             | Some _, Some canonical ->
                 if entry.Definition.Inputs <> canonical.Definition.Inputs
                    || entry.Definition.Outputs <> canonical.Definition.Outputs
@@ -1235,9 +1251,18 @@ module Compiler =
         targetsByName, targetsById, Map.ofSeq sourceMap
 
     let private resolveIrCall (context: IrLoweringContext) (typeKeys: Map<string, ProgramTypeKey>) (generatedByName: Map<string, IrGeneratedTarget>) name span inputTypes outputTypes =
-        match context.Words.TryFind name with
-        | None -> irFailure "NAME_UNKNOWN_WORD" $"Word '{name}' is not defined." (Some name) span [] []
-        | Some entry ->
+        match context.Words.TryFind name, testIntrinsics.TryFind name with
+        | None, Some { Builtin = Some(BuiltinOp operation) } ->
+            // Test-only intrinsics are type-checked only in test scope and lower straight to their primitive.
+            let contract = primitiveIrCatalog[PrimitiveId operation]
+            { ResolvedTarget = PrimitiveTarget(PrimitiveId operation)
+              ResolvedName = name
+              InputTypes = inputTypes |> List.map (closedIrType typeKeys name span)
+              OutputTypes = outputTypes |> List.map (closedIrType typeKeys name span)
+              ResolvedDeclaredEffects = contract.PrimitiveEffects
+              ResolvedEffects = contract.PrimitiveEffects }
+        | None, _ -> irFailure "NAME_UNKNOWN_WORD" $"Word '{name}' is not defined." (Some name) span [] []
+        | Some entry, _ ->
             let id = context.WordIds[name]
             match entry.Builtin with
             | Some(BuiltinOp operation) ->
@@ -1463,7 +1488,7 @@ module Compiler =
                             IrOperation.Constant(literal, irType ownerName (Some span) outputType)
                         | Call(name, _) ->
                             let call = resolvedForNode name span node.CallSignature
-                            match context.Words[name].Builtin with
+                            match (context.Words.TryFind name |> Option.orElse (testIntrinsics.TryFind name) |> Option.get).Builtin with
                             | Some(RecordConstructor typeName) ->
                                 match typeKeys.TryFind typeName with
                                 | Some key ->
@@ -1760,7 +1785,7 @@ module Compiler =
         let expectedExpressions =
             match test.Expected with
             | ExpectedExpression expressions -> expressions
-            | ExpectedValue _ | ExpectedRuntimeError _ -> []
+            | ExpectedValue _ | ExpectedRuntimeError _ | ExpectedChecks -> []
         let expectedMarkers = zeroWidthMarkers expectedExpressions
         ensureDisjointOriginMarkers (Some test.Word) contextMarkers actualMarkers
         ensureDisjointOriginMarkers (Some test.Word) contextMarkers expectedMarkers
@@ -1773,7 +1798,8 @@ module Compiler =
 
         remapSourceOriginDiagnostic sourceOrigins (fun () ->
             let knownTypes = contextTypes context
-            let checkedTest, typed, expected = checkTestDetailed knownTypes context.Enums context.Words test
+            let testScopeWords = Map.fold (fun words name entry -> Map.add name entry words) context.Words testIntrinsics
+            let checkedTest, typed, expected = checkTestDetailed knownTypes context.Enums testScopeWords test
             let actualBody = bodyFromInference context sourceOrigins verifiedProgram (test.Word + "/" + test.Name) [] checkedTest.Effects typed
             let expectedBody =
                 expected

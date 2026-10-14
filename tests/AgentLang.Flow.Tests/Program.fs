@@ -5857,8 +5857,53 @@ let private testFlowRecordValidatorSyntax () =
     expectRecordError "Flow record allows at most one validator" "FLOW_RECORD_VALIDATOR_DUPLICATE"
         "record Customer { field id: Int; validate ::valid?; validate ::other?; }"
 
+let private testFlow2ExpectStatements () =
+    let parseV2Test source =
+        FlowParser.parseTestWithVersion 2 "<flow2-expect>" source
+        |> Result.defaultWith (Diagnostics.render >> failwith)
+    let roundTrips label (definition: FlowTestDefinition) =
+        let canonical = FlowSource.renderTest definition
+        equal label canonical (canonical |> parseV2Test |> FlowSource.renderTest)
+        canonical
+    let stepList =
+        parseV2Test "test word.name/case {\n    let total = word.name(1, 2)\n    expect total == 3\n    expect word.ok?(total)\n}"
+    check "expect tests parse as step-check expectations" (match stepList.Expected with FlowTestExpectation.Checks -> true | _ -> false)
+    let intrinsicNames =
+        stepList.Body |> List.choose (function
+            | FlowStatement.Evaluate(FlowExpression.Call(name, _, _)) -> Some name
+            | _ -> None)
+    equal "expect == lowers to <expect-equal>; other expects lower to <expect>" [ "<expect-equal>"; "<expect>" ] intrinsicNames
+    let canonical = roundTrips "expect step lists render idempotently" stepList
+    check "expect step lists render without a => line" (canonical.Contains("    expect total == 3\n    expect word.ok?(total)\n}", StringComparison.Ordinal) && not (canonical.Contains("=>", StringComparison.Ordinal)))
+
+    let implicitFinal = parseV2Test "test word.name/implicit {\n    let total = word.name(1, 2)\n    total == 3\n}"
+    check "a final bare expression makes a step-check test" (match implicitFinal.Expected with FlowTestExpectation.Checks -> true | _ -> false)
+    let implicitCanonical = roundTrips "implicit final expect renders idempotently" implicitFinal
+    check "an implicit final expect stays a bare expression" (implicitCanonical.Contains("\n    total == 3\n}", StringComparison.Ordinal))
+
+    let withEffects = parseV2Test "test word.name/effects {\n    expect word.name(1, 2) == 3\n    expect effects {\n        fs.read: 1\n    }\n}"
+    equal "expect effects carries exact effect counts" (Map.ofList [ "fs.read", 1 ]) withEffects.EffectAssertion.Value.Counts
+    let effectsCanonical = roundTrips "expect effects renders idempotently" withEffects
+    check "expect effects renders in step-list form" (effectsCanonical.Contains("    expect effects {\n        fs.read: 1\n    }\n}", StringComparison.Ordinal))
+
+    let legacy = parseV2Test "test word.name/legacy {\n    word.name(1, 2)\n    => value 3\n}"
+    check "legacy => value tests still parse" (match legacy.Expected with FlowTestExpectation.Expression _ -> true | _ -> false)
+
+    expectError "a step-list test needs a check" "FLOW_EXPECTATION_REQUIRED"
+        (FlowParser.parseTestWithVersion 2 "<flow2-expect-none>" "test word.name/none {\n    let total = word.name(1, 2)\n}") |> ignore
+    expectError "expect is not a function-body statement" "FLOW_EXPECT_OUTSIDE_TEST"
+        (FlowParser.parseWordWithVersion 2 "<flow2-expect-fn>" "fn word.bad(value: Int) -> Int {\n    expect value == 1\n    value\n}") |> ignore
+    expectError "expect is not available inside nested test blocks" "FLOW_EXPECT_OUTSIDE_TEST"
+        (FlowParser.parseTestWithVersion 2 "<flow2-expect-nested>" "test word.name/nested {\n    let total = if true {\n        expect true\n        1\n    } else {\n        2\n    }\n    expect total == 1\n}") |> ignore
+    expectError "Flow/1 tests keep requiring =>" "FLOW_EXPECTATION_REQUIRED"
+        (FlowParser.parseTestWithVersion 1 "<flow1-expect>" "test word.name/v1 {\n    word::name(1, 2)\n}") |> ignore
+    let namespaceCall = parseV2Test "test expect.sum/call {\n    expect.sum(1, 2) == 3\n}"
+    check "a call into an expect namespace is not an expect statement"
+        (match namespaceCall.Body with [ FlowStatement.Evaluate(FlowExpression.Equality _) ] -> true | _ -> false)
+
 [<EntryPoint>]
 let main _ =
+    testFlow2ExpectStatements ()
     testParserLocationsAndQualification ()
     testIterativeAstDepthLimit ()
     testFlow2Frontend ()
