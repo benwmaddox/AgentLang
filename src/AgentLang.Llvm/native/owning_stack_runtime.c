@@ -5228,6 +5228,57 @@ static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
                               const al_stdlib_argument *a, const uint32_t *n,
                               al_stdlib_writer *w, uint32_t error_id) {
   const uint8_t *x = al_stdlib_data(ctx, a[0]);
+  /* Plan pass fast path: results whose size is a formula of the input sizes
+   * are sized without walking the bytes. Large inputs fall through to the
+   * general path, which owns the overflow checks. */
+  if (w->base == 0 && n[0] < (1u << 28) && n[1] < (1u << 28)) {
+    uint64_t length = UINT64_MAX;
+    int32_t option = 0; /* 0: plain value, 1: Some(value), 2: None */
+    switch (op) {
+    case AL_STDLIB_BYTES_FROM_UTF8:
+    case AL_STDLIB_STRING_TO_LOWER_ASCII:
+      length = n[0];
+      break;
+    case AL_STDLIB_BYTES_CONCAT:
+      length = (uint64_t)n[0] + n[1];
+      break;
+    case AL_STDLIB_BYTES_XOR:
+      option = n[0] == n[1] ? 1 : 2;
+      length = n[0];
+      break;
+    case AL_STDLIB_HEX_ENCODE:
+      length = (uint64_t)n[0] * 2u;
+      break;
+    case AL_STDLIB_BASE64_ENCODE:
+      length = (uint64_t)(n[0] / 3u) * 4u + (n[0] % 3u != 0u ? 4u : 0u);
+      break;
+    case AL_STDLIB_BASE64_URL_ENCODE:
+      length = (uint64_t)(n[0] / 3u) * 4u + (n[0] % 3u != 0u ? n[0] % 3u + 1u : 0u);
+      break;
+    case AL_STDLIB_BYTES_SLICE: {
+      const int64_t start = al_stdlib_int(ctx, a[1]);
+      const int64_t count = al_stdlib_int(ctx, a[2]);
+      const int32_t inside = start >= 0 && count >= 0 && start <= (int64_t)n[0] &&
+                             count <= (int64_t)n[0] - start;
+      option = inside ? 1 : 2;
+      length = inside ? (uint64_t)count : 0u;
+      break;
+    }
+    default:
+      break;
+    }
+    if (length != UINT64_MAX) {
+      if (option != 0) {
+        w->extent += 8u;
+        w->payload += 8u;
+      }
+      if (option != 2) {
+        w->extent += (8u + length + 7u) & ~7ull;
+        w->payload += 8u + length;
+      }
+      return 1;
+    }
+  }
   switch (op) {
   case AL_STDLIB_RANDOM_BYTES: {
     /* Same bound as the interpreter: 0..65536 bytes. Plan only sizes; the
