@@ -2151,12 +2151,13 @@ let private testOwningRefinedBoolSlice () =
                     |> List.find (fun layout -> layout.Type = inputType)
                     |> fun layout -> layout.ExtentBytes)
         // RETURN imports every entry root before semantic validation. The
-        // frozen Bool->Bool validator frame holds one input and one result.
+        // frozen Bool->Bool validator (bool.not twice) keeps its intermediate
+        // Bool in a register and materializes only its result (report 273).
         let validatorBoolExtent =
             mailbox.Layouts
             |> List.find (fun layout -> layout.Type = IrBool)
             |> fun layout -> layout.ExtentBytes
-        let expectedSemanticReturnCursor = expectedResumeInputCursor + 2 * validatorBoolExtent
+        let expectedSemanticReturnCursor = expectedResumeInputCursor + validatorBoolExtent
         let goodState = raw true
         let badCanonicalState = raw false
         let malformedState = Convert.FromHexString "0200000000000000"
