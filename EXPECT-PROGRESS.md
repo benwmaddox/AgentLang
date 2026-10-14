@@ -4,3 +4,5 @@
 - WIP: Flow.Runtime.Tests expect test fully passes incl. commit+reload. Next: Flow.Tests parser/render cases, run other suites.
 - WIP: Flow.Tests 1353 pass. Next: IR/Interpreter/Source/Vocabulary suites, docs.
 - Done: docs updated. applications/campfire .flow: 144 '=> value' lines, 273 '=>' expectation lines total (not migrated). Pre-existing failures from f81e6fa (not this task): Source.Tests testFlow2CanonicalRoundTrip (record 'field' render), Flow.Runtime.Tests testFlow2EnumsPersistReloadAndBindings (examples/closed-renewal-state.agent uses 'case').
+- WIP: implicit final == -> <expect-equal>; leftover-stack rejected at define (TEST_EXPECTED_CHECKS_STACK). Next: run rest of Flow.Runtime.Tests skipping enum test locally.
+- Final: Flow 1353, IR 198, IR.Interpreter 161, Source 157 (fixed stale f81e6fa 'field' expectation), Vocabulary 36, Flow.Runtime 2554/47 groups with enum test skipped locally (fixture edit was permission-denied).
