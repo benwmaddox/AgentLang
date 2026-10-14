@@ -538,8 +538,6 @@ module Program =
               "applications/campfire/request-policy.flow"
               "applications/campfire/browser-policy.flow"
               "applications/campfire/browser-tests.flow"
-              "applications/campfire/text-scan.flow"
-              "applications/campfire/text-scan-tests.flow"
               "applications/campfire/user-agent.flow"
               "applications/campfire/user-agent-tests.flow"
               "applications/campfire/Host/CampfireHost.fs"

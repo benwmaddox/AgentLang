@@ -699,9 +699,15 @@ module FlowSource =
             if List.isEmpty elseBranch && syntaxVersion = 2 then
                 lines.Add(prefix + "}")
             else
-                lines.Add(prefix + "} else {")
-                renderStatements syntaxVersion locals (depth + 1) elseBranch |> fst |> List.iter lines.Add
-                lines.Add(prefix + "}")
+                match elseBranch with
+                | [ FlowStatement.Evaluate(FlowExpression.If _ as nested) ] when syntaxVersion = 2 ->
+                    // `else if`: the nested if renders at this depth, joined to the brace.
+                    let rendered = renderExpressionAt syntaxVersion locals depth nested
+                    lines.Add(prefix + "} else " + rendered.Substring(prefix.Length))
+                | _ ->
+                    lines.Add(prefix + "} else {")
+                    renderStatements syntaxVersion locals (depth + 1) elseBranch |> fst |> List.iter lines.Add
+                    lines.Add(prefix + "}")
             String.concat "\n" lines
         | FlowExpression.MatchOption(scrutinee, someCase, noneCase, _) ->
             renderMatchBlock syntaxVersion locals depth scrutinee

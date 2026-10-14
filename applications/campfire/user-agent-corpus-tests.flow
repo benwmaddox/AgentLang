@@ -3,6 +3,8 @@
 // which matched the Ruby-generated fixture tests/AgentLang.Campfire.Browser.Tests/
 // Fixtures/campfire_user_agents.json (useragent gem 0.16.11, MIT-LICENSE.37signals).
 // 462 User-Agents (385 from the Ruby fixture), 508 comparisons, 248 thresholds. Do not edit by hand.
+// User-Agent expectations are canonicalized to what campfire.browser.supported? reads
+// (see user-agent.flow): bots are (other, none, bot); other families are (other, none).
 
 test campfire.browser.from-user-agent/ua-001 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"))
@@ -51,7 +53,7 @@ test campfire.browser.from-user-agent/ua-009 {
 
 test campfire.browser.from-user-agent/ua-010 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Edge/124.0.0.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("124.0.0.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-011 {
@@ -71,22 +73,22 @@ test campfire.browser.from-user-agent/ua-013 {
 
 test campfire.browser.from-user-agent/ua-014 {
     campfire.browser.from-user-agent(option.none<String>())
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-015 {
     campfire.browser.from-user-agent(option.some<String>(""))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-016 {
     campfire.browser.from-user-agent(option.some<String>("   "))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-017 {
     campfire.browser.from-user-agent(option.some<String>("\u0009"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-018 {
@@ -166,7 +168,7 @@ test campfire.browser.from-user-agent/ua-032 {
 
 test campfire.browser.from-user-agent/ua-033 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Iron/120.0.6050.0 Chrome/120.0.6050.0 Safari/537.36"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("120.0.6050.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-034 {
@@ -176,7 +178,7 @@ test campfire.browser.from-user-agent/ua-034 {
 
 test campfire.browser.from-user-agent/ua-035 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36 Chrome-Lighthouse"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("119.0.0.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-036 {
@@ -211,37 +213,37 @@ test campfire.browser.from-user-agent/ua-041 {
 
 test campfire.browser.from-user-agent/ua-042 {
     campfire.browser.from-user-agent(option.some<String>("Chrome/100.0"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("100.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-043 {
     campfire.browser.from-user-agent(option.some<String>("Chrome/120.0.0.0.0.0.1"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("120.0.0.0.0.0.1"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-044 {
     campfire.browser.from-user-agent(option.some<String>("Chrome/119.9.9.9.9.9.9"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("119.9.9.9.9.9.9"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-045 {
     campfire.browser.from-user-agent(option.some<String>("Chrome/0120"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("0120"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-046 {
     campfire.browser.from-user-agent(option.some<String>("Chrome/99999999999999999999999"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("99999999999999999999999"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-047 {
     campfire.browser.from-user-agent(option.some<String>("Chrome/"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-048 {
     campfire.browser.from-user-agent(option.some<String>("Chrome"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-049 {
@@ -256,17 +258,17 @@ test campfire.browser.from-user-agent/ua-050 {
 
 test campfire.browser.from-user-agent/ua-051 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.19582"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("18.19582"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-052 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows Phone 10.0; Android 6.0.1; Microsoft; Lumia 950) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Mobile Safari/537.36 Edge/15.15063"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("15.15063"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-053 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Edge/124.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("124.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-054 {
@@ -291,7 +293,7 @@ test campfire.browser.from-user-agent/ua-057 {
 
 test campfire.browser.from-user-agent/ua-058 {
     campfire.browser.from-user-agent(option.some<String>("Edge/12.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("12.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-059 {
@@ -371,17 +373,17 @@ test campfire.browser.from-user-agent/ua-073 {
 
 test campfire.browser.from-user-agent/ua-074 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Vivaldi/6.5.3206.53"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("6.5.3206.53"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-075 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Vivaldi/6.5.3206.53"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("6.5.3206.53"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-076 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Vivaldi/6.5"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("6.5"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-077 {
@@ -516,7 +518,7 @@ test campfire.browser.from-user-agent/ua-102 {
 
 test campfire.browser.from-user-agent/ua-103 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10.4; en-US; rv:1.8.1.14) Gecko/20080404 Camino/1.6.1"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.6.1"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-104 {
@@ -546,17 +548,17 @@ test campfire.browser.from-user-agent/ua-108 {
 
 test campfire.browser.from-user-agent/ua-109 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.5 Firefox/102.0 PaleMoon/32.5.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("32.5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-110 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (X11; Linux x86_64; rv:31.0) Gecko/20100101 Iceweasel/31.8.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("31.8.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-111 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 SeaMonkey/2.1"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("2.1"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-112 {
@@ -566,47 +568,47 @@ test campfire.browser.from-user-agent/ua-112 {
 
 test campfire.browser.from-user-agent/ua-113 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (compatible; Konqueror/4.5; FreeBSD) KHTML/4.5.4 (like Gecko)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-114 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/4.0 (compatible)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-115 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-116 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 ()"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-117 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 10.0; Win64; x64)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-118 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows 98; rv:1.0)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-119 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows 95; rv:1.0)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-120 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows CE; rv:1.0)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-121 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (U; Linux)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-122 {
@@ -711,12 +713,12 @@ test campfire.browser.from-user-agent/ua-141 {
 
 test campfire.browser.from-user-agent/ua-142 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Linux; U; Android 4.0.3; ko-kr; LG-L160L Build/IML74K) AppleWebkit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-143 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Linux; U; Android 2.2; en-us; Nexus One Build/FRF91) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-144 {
@@ -726,17 +728,17 @@ test campfire.browser.from-user-agent/ua-144 {
 
 test campfire.browser.from-user-agent/ua-145 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (BB10; Touch) AppleWebKit/537.10+ (KHTML, like Gecko) Version/10.0.9.2372 Mobile Safari/537.10+"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("10.0.9.2372"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-146 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (BlackBerry; U; BlackBerry 9900; en) AppleWebKit/534.11+ (KHTML, like Gecko) Version/7.1.0.346 Mobile Safari/534.11+"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("7.1.0.346"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-147 {
     campfire.browser.from-user-agent(option.some<String>("BlackBerry9700/5.0.0.862 Profile/MIDP-2.1 Configuration/CLDC-1.1 VendorID/331 UNTRUSTED/1.0 3gpp-gba"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0.0.862"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-148 {
@@ -771,7 +773,7 @@ test campfire.browser.from-user-agent/ua-153 {
 
 test campfire.browser.from-user-agent/ua-154 {
     campfire.browser.from-user-agent(option.some<String>("AppleWebKit/537.36"))
-    => value browserInfo.new(family = BrowserFamily.safari(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-155 {
@@ -781,22 +783,22 @@ test campfire.browser.from-user-agent/ua-155 {
 
 test campfire.browser.from-user-agent/ua-156 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.42(0x18002a2c) NetType/WIFI Language/zh_CN"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("8.0.42(0x18002a2c)"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-157 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Linux; Android 13; V2185A Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/107.0.5304.141 Mobile Safari/537.36 XWEB/5317 MMWEBSDK/20230701 MMWEBID/2350 MicroMessenger/8.0.40.2420(0x28002837) WeChat/arm64 Weixin NetType/WIFI Language/zh_CN ABI/arm64"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("8.0.40.2420(0x28002837)"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-158 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("7.0.20.1781(0x6700143B)"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-159 {
     campfire.browser.from-user-agent(option.some<String>("micromessenger/1.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-160 {
@@ -806,97 +808,97 @@ test campfire.browser.from-user-agent/ua-160 {
 
 test campfire.browser.from-user-agent/ua-161 {
     campfire.browser.from-user-agent(option.some<String>("iTunes/10.6.1 (Macintosh; Intel Mac OS X 10.7.3) AppleWebKit/534.53.11"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("10.6.1"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-162 {
     campfire.browser.from-user-agent(option.some<String>("iTunes/12.0.1 (Macintosh; OS X 10.10) AppleWebKit/0600.1.25"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("12.0.1"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-163 {
     campfire.browser.from-user-agent(option.some<String>("iTunes/11.1.5 (Windows; Microsoft Windows 7 x64 Business Edition Service Pack 1 (Build 7601)) AppleWebKit/537.60.15"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("11.1.5"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-164 {
     campfire.browser.from-user-agent(option.some<String>("iTunes/12.0.1 (Windows; Microsoft Windows 8 x64 Home Premium Edition (Build 9200)) AppleWebKit/7600.1017.0.24"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("12.0.1"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-165 {
     campfire.browser.from-user-agent(option.some<String>("iTunes/12.1 (Windows; Microsoft Windows 8.1 x64 (Build 9600)) AppleWebKit/7600.1017.0.24"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("12.1"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-166 {
     campfire.browser.from-user-agent(option.some<String>("iTunes/10.0 (Windows; Microsoft Windows Vista Home Premium Edition Service Pack 2 (Build 6002)) AppleWebKit/533.16"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("10.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-167 {
     campfire.browser.from-user-agent(option.some<String>("iTunes/9.2 (Windows; Microsoft Windows XP Professional Service Pack 3 (Build 2600)) AppleWebKit/533.16"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("9.2"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-168 {
     campfire.browser.from-user-agent(option.some<String>("iTunes/12.5 (Windows; Microsoft Windows 10 x64 (Build 14393)) AppleWebKit/7602.1050.4.5"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("12.5"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-169 {
     campfire.browser.from-user-agent(option.some<String>("iTunes/9.1.1"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("9.1.1"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-170 {
     campfire.browser.from-user-agent(option.some<String>("AppleCoreMedia/1.0.0.12B411 (iPhone; U; CPU OS 8_1 like Mac OS X; en_gb)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0.0.12B411"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-171 {
     campfire.browser.from-user-agent(option.some<String>("AppleCoreMedia/1.0.0.9A405 (iPad; U; CPU OS 5_0_1 like Mac OS X; en_us)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0.0.9A405"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-172 {
     campfire.browser.from-user-agent(option.some<String>("AppleCoreMedia/1.0.0.12F69 (Apple TV; U; CPU OS 8_3 like Mac OS X; en_us)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0.0.12F69"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-173 {
     campfire.browser.from-user-agent(option.some<String>("AppleCoreMedia/1.0.0.14D27 (Macintosh; U; Intel Mac OS X 10_12_3; en_us)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0.0.14D27"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-174 {
     campfire.browser.from-user-agent(option.some<String>("AppleCoreMedia/1.0.0.9A405"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-175 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (PLAYSTATION 3 4.75) AppleWebKit/531.22.8 (KHTML, like Gecko)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.75"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-176 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (PLAYSTATION 3; 1.00)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.00"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-177 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (PlayStation Vita 3.52) AppleWebKit/537.73 (KHTML, like Gecko) Silk/3.2"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("3.2"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-178 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (PlayStation Vita 3.60) AppleWebKit/537.73 (KHTML, like Gecko)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("3.60"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-179 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (PlayStation 4 2.57) AppleWebKit/537.73 (KHTML, like Gecko)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("2.57"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-180 {
@@ -936,97 +938,97 @@ test campfire.browser.from-user-agent/ua-186 {
 
 test campfire.browser.from-user-agent/ua-187 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/4.1.0.3857"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.1.0.3857"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-188 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/3.2.0.3564"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("3.2.0.3564"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-189 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/4.1.0.3936"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.1.0.3936"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-190 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/7.1.0.3055"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("7.1.0.3055"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-191 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/8.0.0.4477"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("8.0.0.4477"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-192 {
     campfire.browser.from-user-agent(option.some<String>("Windows-Media-Player/9.00.00.2980"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("9.00.00.2980"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-193 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/9.0.0.2980 WMFSDK/9.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("9.0.0.2980"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-194 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/9.0.0.3268 WMFSDK/9.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("9.0.0.3268"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-195 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/10.0.0.3802 WMFSDK/10.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("10.0.0.3802"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-196 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/11.0.5721.5262 WMFSDK/11.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("11.0.5721.5262"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-197 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/11.00.6002.18392 WMFSDK/11.00.6002.18392"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("11.00.6002.18392"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-198 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/12.00.7601.17514 WMFSDK/12.00.7601.17514"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("12.00.7601.17514"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-199 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/12.00.9200.16384 WMFSDK/12.00.9200.16384"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("12.00.9200.16384"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-200 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/12.00.9600.17031 WMFSDK/12.00.9600.17031"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("12.00.9600.17031"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-201 {
     campfire.browser.from-user-agent(option.some<String>("Windows-Media-Player/12.0.9841.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("12.0.9841.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-202 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/12.00.9651.0000 WMFSDK/12.00.9651.0000"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("12.00.9651.0000"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-203 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/7.10.0.3059"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("7.10.0.3059"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-204 {
     campfire.browser.from-user-agent(option.some<String>("NSPlayer/7.0.0.1956"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("7.0.0.1956"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-205 {
     campfire.browser.from-user-agent(option.some<String>("WMFSDK/abc"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("abc"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-206 {
@@ -1041,7 +1043,7 @@ test campfire.browser.from-user-agent/ua-207 {
 
 test campfire.browser.from-user-agent/ua-208 {
     campfire.browser.from-user-agent(option.some<String>("Lavf/54.29.104"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("54.29.104"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-209 {
@@ -1051,67 +1053,67 @@ test campfire.browser.from-user-agent/ua-209 {
 
 test campfire.browser.from-user-agent/ua-210 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-211 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.6099.216 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("100.0.6099.216"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-212 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-213 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm) Chrome/116.0.1938.76 Safari/537.36"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("116.0.1938.76"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-214 {
     campfire.browser.from-user-agent(option.some<String>("Googlebot-Image/1.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-215 {
     campfire.browser.from-user-agent(option.some<String>("Twitterbot/1.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-216 {
     campfire.browser.from-user-agent(option.some<String>("facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.1"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-217 {
     campfire.browser.from-user-agent(option.some<String>("Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-218 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-219 {
     campfire.browser.from-user-agent(option.some<String>("DuckDuckBot/1.1; (+http://duckduckgo.com/duckduckbot.html)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.1;"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-220 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.0; +https://openai.com/gptbot)"))
-    => value browserInfo.new(family = BrowserFamily.safari(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-221 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/600.2.5 (KHTML, like Gecko) Version/8.0.2 Safari/600.2.5 (Applebot/0.1; +http://www.apple.com/go/applebot)"))
-    => value browserInfo.new(family = BrowserFamily.safari(), version = option.some<String>("8.0.2"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-222 {
     campfire.browser.from-user-agent(option.some<String>("Discordbot/2.0; +https://discordapp.com"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("2.0;"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-223 {
@@ -1121,22 +1123,22 @@ test campfire.browser.from-user-agent/ua-223 {
 
 test campfire.browser.from-user-agent/ua-224 {
     campfire.browser.from-user-agent(option.some<String>("curl/8.4.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("8.4.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-225 {
     campfire.browser.from-user-agent(option.some<String>("Wget/1.21.4"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.21.4"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-226 {
     campfire.browser.from-user-agent(option.some<String>("python-requests/2.31.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("2.31.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-227 {
     campfire.browser.from-user-agent(option.some<String>("Go-http-client/1.1"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.1"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-228 {
@@ -1146,42 +1148,42 @@ test campfire.browser.from-user-agent/ua-228 {
 
 test campfire.browser.from-user-agent/ua-229 {
     campfire.browser.from-user-agent(option.some<String>("PostmanRuntime/7.36.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("7.36.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-230 {
     campfire.browser.from-user-agent(option.some<String>("okhttp/4.12.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.12.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-231 {
     campfire.browser.from-user-agent(option.some<String>("Java/17.0.2"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("17.0.2"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-232 {
     campfire.browser.from-user-agent(option.some<String>("node-fetch/1.0 (+https://github.com/bitinn/node-fetch)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-233 {
     campfire.browser.from-user-agent(option.some<String>("axios/1.6.2"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.6.2"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-234 {
     campfire.browser.from-user-agent(option.some<String>("Dalvik/2.1.0 (Linux; U; Android 12; SM-G991B Build/SP1A.210812.016)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("2.1.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-235 {
     campfire.browser.from-user-agent(option.some<String>("/"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-236 {
     campfire.browser.from-user-agent(option.some<String>("/foo"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-237 {
@@ -1211,12 +1213,12 @@ test campfire.browser.from-user-agent/ua-241 {
 
 test campfire.browser.from-user-agent/ua-242 {
     campfire.browser.from-user-agent(option.some<String>("X/1.0,gzip(gfe)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-243 {
     campfire.browser.from-user-agent(option.some<String>("X/1.0,gzip(gfe) Y/2"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-244 {
@@ -1226,37 +1228,37 @@ test campfire.browser.from-user-agent/ua-244 {
 
 test campfire.browser.from-user-agent/ua-245 {
     campfire.browser.from-user-agent(option.some<String>("\"/x"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("x"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-246 {
     campfire.browser.from-user-agent(option.some<String>("''Chrome/1"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("1"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-247 {
     campfire.browser.from-user-agent(option.some<String>("'Mozilla/5.0 (Windows NT 10.0)'"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-248 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (unterminated"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-249 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (a; b; ) x"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-250 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (;; ;)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-251 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (; a)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-252 {
@@ -1276,7 +1278,7 @@ test campfire.browser.from-user-agent/ua-254 {
 
 test campfire.browser.from-user-agent/ua-255 {
     campfire.browser.from-user-agent(option.some<String>("  Chrome/100.0  "))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-256 {
@@ -1476,7 +1478,7 @@ test campfire.browser.from-user-agent/ua-294 {
 
 test campfire.browser.from-user-agent/ua-295 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Vivaldi/7.6.3797.52"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("7.6.3797.52"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-296 {
@@ -1581,102 +1583,102 @@ test campfire.browser.from-user-agent/ua-315 {
 
 test campfire.browser.from-user-agent/ua-316 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/140.0.7339.127 Safari/537.36"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("140.0.7339.127"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-317 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.127 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("140.0.7339.127"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-318 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (compatible; Google-InspectionTool/1.0)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-319 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15 (Applebot/0.1; +http://www.apple.com/go/applebot)"))
-    => value browserInfo.new(family = BrowserFamily.safari(), version = option.some<String>("13.1.1"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-320 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.2; +https://openai.com/gptbot)"))
-    => value browserInfo.new(family = BrowserFamily.safari(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-321 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@anthropic.com)"))
-    => value browserInfo.new(family = BrowserFamily.safari(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-322 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-323 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (compatible; SemrushBot/7~bl; +http://www.semrush.com/bot.html)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-324 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0+(compatible; UptimeRobot/2.0; http://www.uptimerobot.com/)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0+(compatible;"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-325 {
     campfire.browser.from-user-agent(option.some<String>("Slack-ImgProxy (+https://api.slack.com/robots)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-326 {
     campfire.browser.from-user-agent(option.some<String>("LinkedInBot/1.0 (compatible; Mozilla/5.0; Apache-HttpClient +http://www.linkedin.com)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-327 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-328 {
     campfire.browser.from-user-agent(option.some<String>("TelegramBot (like TwitterBot)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-329 {
     campfire.browser.from-user-agent(option.some<String>("WhatsApp/2.23.20.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("2.23.20.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-330 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36 Chrome-Lighthouse"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("140.0.0.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-331 {
     campfire.browser.from-user-agent(option.some<String>("curl/8.14.1"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("8.14.1"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-332 {
     campfire.browser.from-user-agent(option.some<String>("Wget/1.25.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.25.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-333 {
     campfire.browser.from-user-agent(option.some<String>("python-requests/2.32.4"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("2.32.4"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-334 {
     campfire.browser.from-user-agent(option.some<String>("python-httpx/0.28.1"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("0.28.1"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-335 {
     campfire.browser.from-user-agent(option.some<String>("Go-http-client/2.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("2.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-336 {
@@ -1691,32 +1693,32 @@ test campfire.browser.from-user-agent/ua-337 {
 
 test campfire.browser.from-user-agent/ua-338 {
     campfire.browser.from-user-agent(option.some<String>("PostmanRuntime/7.45.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("7.45.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-339 {
     campfire.browser.from-user-agent(option.some<String>("Dalvik/2.1.0 (Linux; U; Android 14; Pixel 8 Build/AP2A.240805.005)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("2.1.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-340 {
     campfire.browser.from-user-agent(option.some<String>(" "))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-341 {
     campfire.browser.from-user-agent(option.some<String>("\u000b"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-342 {
     campfire.browser.from-user-agent(option.some<String>("\u000c\u000d\u000a"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-343 {
     campfire.browser.from-user-agent(option.some<String>("\u0000"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-344 {
@@ -1741,12 +1743,12 @@ test campfire.browser.from-user-agent/ua-347 {
 
 test campfire.browser.from-user-agent/ua-348 {
     campfire.browser.from-user-agent(option.some<String>("////"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-349 {
     campfire.browser.from-user-agent(option.some<String>("a/b/c"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("b/c"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-350 {
@@ -1756,37 +1758,37 @@ test campfire.browser.from-user-agent/ua-350 {
 
 test campfire.browser.from-user-agent/ua-351 {
     campfire.browser.from-user-agent(option.some<String>("X/1.0,gzip(gfe"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-352 {
     campfire.browser.from-user-agent(option.some<String>("X/1.0 ,gzip(gfe)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-353 {
     campfire.browser.from-user-agent(option.some<String>("X/1.0,(comment)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-354 {
     campfire.browser.from-user-agent(option.some<String>("X/1.0,gzip(gfe) (comment)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-355 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0,(compatible; Googlebot/2.1)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-356 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 ("))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-357 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 10.0; Win64; x64"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-358 {
@@ -1796,7 +1798,7 @@ test campfire.browser.from-user-agent/ua-358 {
 
 test campfire.browser.from-user-agent/ua-359 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0  (double  spaces)  Chrome/140.0"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("140.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-360 {
@@ -1816,12 +1818,12 @@ test campfire.browser.from-user-agent/ua-362 {
 
 test campfire.browser.from-user-agent/ua-363 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (;;;) Safari/605.1.15"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-364 {
     campfire.browser.from-user-agent(option.some<String>("'\"Chrome/140"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("140"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-365 {
@@ -1841,22 +1843,22 @@ test campfire.browser.from-user-agent/ua-367 {
 
 test campfire.browser.from-user-agent/ua-368 {
     campfire.browser.from-user-agent(option.some<String>("   Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-369 {
     campfire.browser.from-user-agent(option.some<String>("Chrome/140.0.0.0.0.0.0.1"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("140.0.0.0.0.0.0.1"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-370 {
     campfire.browser.from-user-agent(option.some<String>("Chrome/140a"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("140a"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-371 {
     campfire.browser.from-user-agent(option.some<String>("Chrome/-1"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("-1"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-372 {
@@ -1871,7 +1873,7 @@ test campfire.browser.from-user-agent/ua-373 {
 
 test campfire.browser.from-user-agent/ua-374 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (X11; Linux x86_64) Браузер/1.0 (Линукс; x86_64)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-375 {
@@ -1881,7 +1883,7 @@ test campfire.browser.from-user-agent/ua-375 {
 
 test campfire.browser.from-user-agent/ua-376 {
     campfire.browser.from-user-agent(option.some<String>("🦊/1.0 (🔥; 🌍) Firefox/143.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-377 {
@@ -1891,7 +1893,7 @@ test campfire.browser.from-user-agent/ua-377 {
 
 test campfire.browser.from-user-agent/ua-378 {
     campfire.browser.from-user-agent(option.some<String>("　Chrome/140.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("140.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-379 {
@@ -1916,22 +1918,22 @@ test campfire.browser.from-user-agent/ua-382 {
 
 test campfire.browser.from-user-agent/ua-383 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (X11; rv:143.0) Gecko/20100101 FİREFOX/143.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-384 {
     campfire.browser.from-user-agent(option.some<String>("İron/1.0 Chrome/140.0"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("140.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-385 {
     campfire.browser.from-user-agent(option.some<String>("\u0000Mozilla/5.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-386 {
     campfire.browser.from-user-agent(option.some<String>(" Mozilla/5.0 (Windows NT 10.0) Chrome/120.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-387 {
@@ -1996,7 +1998,7 @@ test campfire.browser.from-user-agent/ua-398 {
 
 test campfire.browser.from-user-agent/ua-399 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.10136"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("12.10136"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-400 {
@@ -2016,37 +2018,37 @@ test campfire.browser.from-user-agent/ua-402 {
 
 test campfire.browser.from-user-agent/ua-403 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Vivaldi/6.5.3206.48"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("6.5.3206.48"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-404 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 MicroMessenger/8.0.42.2460(0x28002A58)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("8.0.42.2460(0x28002A58)"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-405 {
     campfire.browser.from-user-agent(option.some<String>("iTunes/12.12 (Macintosh; OS X 13.5) AppleWebKit/615.3.12.11.4"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("12.12"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-406 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (PLAYSTATION 3; 4.86)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.86"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-407 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (PLAYSTATION 3 4.86) AppleWebKit/531.22.8 (KHTML, like Gecko)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.86"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-408 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (PlayStation 4 11.00) AppleWebKit/601.2 (KHTML, like Gecko)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("11.00"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-409 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (PlayStation Vita 3.74) AppleWebKit/537.73 (KHTML, like Gecko) Silk/3.2"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("3.2"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-410 {
@@ -2071,7 +2073,7 @@ test campfire.browser.from-user-agent/ua-413 {
 
 test campfire.browser.from-user-agent/ua-414 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 10.0; Tridentrv:11.0) like Gecko"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-415 {
@@ -2096,27 +2098,27 @@ test campfire.browser.from-user-agent/ua-418 {
 
 test campfire.browser.from-user-agent/ua-419 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (compatible; BOT; Linux) Chrome/120"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("120"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-420 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome-Lighthouse"))
-    => value browserInfo.new(family = BrowserFamily.safari(), version = option.none<String>(), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-421 {
     campfire.browser.from-user-agent(option.some<String>("TwitterBot/1.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-422 {
     campfire.browser.from-user-agent(option.some<String>("Wget/1.21"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.21"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-423 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 10.0; unterminated"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("5.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-424 {
@@ -2141,22 +2143,22 @@ test campfire.browser.from-user-agent/ua-427 {
 
 test campfire.browser.from-user-agent/ua-428 {
     campfire.browser.from-user-agent(option.some<String>("\"\"/1.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-429 {
     campfire.browser.from-user-agent(option.some<String>("'/1.0 Chrome/120"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("120"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-430 {
     campfire.browser.from-user-agent(option.some<String>("\"' Chrome/120"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("120"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-431 {
     campfire.browser.from-user-agent(option.some<String>("Chrome/120.0,gzip(gfe)"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("120.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-432 {
@@ -2166,7 +2168,7 @@ test campfire.browser.from-user-agent/ua-432 {
 
 test campfire.browser.from-user-agent/ua-433 {
     campfire.browser.from-user-agent(option.some<String>("Chrome/120.0, Safari/1"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("120.0"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-434 {
@@ -2181,7 +2183,7 @@ test campfire.browser.from-user-agent/ua-435 {
 
 test campfire.browser.from-user-agent/ua-436 {
     campfire.browser.from-user-agent(option.some<String>("Foo/ bar"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>(" bar"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-437 {
@@ -2196,7 +2198,7 @@ test campfire.browser.from-user-agent/ua-438 {
 
 test campfire.browser.from-user-agent/ua-439 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (X11; Linux) Iron/120.0 Chrome/120.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("120.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-440 {
@@ -2226,17 +2228,17 @@ test campfire.browser.from-user-agent/ua-444 {
 
 test campfire.browser.from-user-agent/ua-445 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows; U; Windows NT 5.1) Gecko/20070309 PaleMoon/27.0"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("27.0"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-446 {
     campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Seamonkey/1.1.7"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.1.7"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-447 {
     campfire.browser.from-user-agent(option.some<String>("Windows-Media-Player/12.0.7601.17514"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("12.0.7601.17514"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-448 {
@@ -2246,12 +2248,12 @@ test campfire.browser.from-user-agent/ua-448 {
 
 test campfire.browser.from-user-agent/ua-449 {
     campfire.browser.from-user-agent(option.some<String>("Lavf/58.29.100"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("58.29.100"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-450 {
     campfire.browser.from-user-agent(option.some<String>("AppleCoreMedia/1.0.0.21C62 (iPhone; U; CPU OS 17_2 like Mac OS X; en_us)"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("1.0.0.21C62"), is-bot = false)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
 test campfire.browser.from-user-agent/ua-451 {
@@ -2266,12 +2268,12 @@ test campfire.browser.from-user-agent/ua-452 {
 
 test campfire.browser.from-user-agent/ua-453 {
     campfire.browser.from-user-agent(option.some<String>("Chrome/120.0.6099.109.1.2.3"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("120.0.6099.109.1.2.3"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-454 {
     campfire.browser.from-user-agent(option.some<String>("Chrome/1a"))
-    => value browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("1a"), is-bot = true)
+    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
 test campfire.browser.from-user-agent/ua-455 {

@@ -713,3 +713,27 @@ test stdlib.digit-sum/none {
     stdlib.digit-sum("abc")
     => value 0
 }
+
+fn stdlib.byte-or(text: String, index: Int) -> Int {
+    string.byte-at-or(text, index, -1)
+}
+
+test stdlib.byte-or/inside {
+    stdlib.byte-or("é", 1)
+    => value 169
+}
+
+test stdlib.byte-or/past-end {
+    stdlib.byte-or("a", 1)
+    => value -1
+}
+
+test stdlib.byte-or/negative {
+    stdlib.byte-or("a", -1)
+    => value -1
+}
+
+test stdlib.byte-or/empty {
+    stdlib.byte-or("", 0)
+    => value -1
+}

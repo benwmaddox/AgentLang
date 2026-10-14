@@ -41,5 +41,5 @@ test campfire.browser.native-probe/chrome {
 
 test campfire.browser.native-probe/missing {
     campfire.browser.native-probe(false, "")
-    => value "other|4.0|human"
+    => value "other|<none>|human"
 }

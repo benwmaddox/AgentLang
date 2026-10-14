@@ -71,7 +71,7 @@ module Application =
                   "authentication.flow"; "authentication-tests.flow"
                   "sign-in.flow"; "sign-in-tests.flow"
                   "sign-out.flow"; "sign-out-tests.flow"
-                  "text-scan.flow"; "user-agent.flow"; "text-scan-tests.flow"; "user-agent-tests.flow"
+                  "user-agent.flow"; "user-agent-tests.flow"
                   "browser-policy.flow"; "browser-tests.flow"
                   "views.flow"; "layout.flow"; "message.flow"; "views-tests.flow"
                   "http-login.flow"; "http.flow"; "http-login-tests.flow"; "http-tests.flow"; "http-logout-tests.flow"

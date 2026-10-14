@@ -1426,7 +1426,7 @@ module OwningStackAot =
                   "string.concat"; "string.replace"; "string.length"; "string.byte-length"; "string.char-length"; "string.join"; "string.html-escape"
                   "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
                   "list.append"; "list.concat"
-                  "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "int.parse"; "string.to-lower-ascii"; "crypto.random-bytes" ]
+                  "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "string.byte-at-or"; "int.parse"; "string.to-lower-ascii"; "crypto.random-bytes" ]
 
         let validatePrimitive owner span (call: IrResolvedCall) operation =
             match OwningStdlib.effectful.TryFind operation with
@@ -1465,6 +1465,7 @@ module OwningStackAot =
                 | ("string.contains" | "string.starts-with" | "string.ends-with"), [ IrString; IrString ], [ IrBool ] -> true
                 | "list.append", [ IrList item; value ], [ IrList result ] -> item = value && item = result
                 | "list.concat", [ IrList left; IrList right ], [ IrList result ] -> left = right && left = result
+                | "string.byte-at-or", [ IrString; IrInt; IrInt ], [ IrInt ] -> true
                 | _ when OwningStdlib.operations.ContainsKey operation ->
                     let _, inputs, outputs = OwningStdlib.operations[operation]
                     call.InputTypes = inputs && call.OutputTypes = outputs
@@ -5952,6 +5953,43 @@ module OwningStackAot =
                                 emitStatusResult w writeStatus failBody
                                 emitUpdateLive w resultPayload "0" failBody
                                 stack <- push prefix IrString cursor resultExtent resultPayload resultEnd
+                            | "string.byte-at-or", [ text; index; fallback ] ->
+                                // Inline: bounds check against the String header, then one byte
+                                // load from the data stack. Negative indexes fail the unsigned check.
+                                let dataPointer = w.Fresh "byte.data.pointer"
+                                w.Inst($"{dataPointer} = getelementptr inbounds %%AlOwningContext, ptr %%ctx, i32 0, i32 25")
+                                let data = w.Fresh "byte.data"
+                                w.Inst($"{data} = load ptr, ptr {dataPointer}, align 8")
+                                let loadAt offset name =
+                                    let pointer = w.Fresh $"byte.{name}.pointer"
+                                    w.Inst($"{pointer} = getelementptr inbounds i8, ptr {data}, i32 {offset}")
+                                    pointer
+                                let header = loadAt text.Offset "header"
+                                let count32 = w.Fresh "byte.count32"
+                                w.Inst($"{count32} = load i32, ptr {header}, align 8")
+                                let count = w.Fresh "byte.count"
+                                w.Inst($"{count} = zext i32 {count32} to i64")
+                                let indexValue = w.Fresh "byte.index"
+                                let indexPointer = loadAt index.Offset "index"
+                                w.Inst($"{indexValue} = load i64, ptr {indexPointer}, align 8")
+                                let fallbackValue = w.Fresh "byte.fallback"
+                                let fallbackPointer = loadAt fallback.Offset "fallback"
+                                w.Inst($"{fallbackValue} = load i64, ptr {fallbackPointer}, align 8")
+                                let inside = w.Fresh "byte.inside"
+                                w.Inst($"{inside} = icmp ult i64 {indexValue}, {count}")
+                                let safeIndex = w.Fresh "byte.safe.index"
+                                w.Inst($"{safeIndex} = select i1 {inside}, i64 {indexValue}, i64 0")
+                                let byteOffset = w.Fresh "byte.offset"
+                                w.Inst($"{byteOffset} = add i64 {safeIndex}, 8")
+                                let bytePointer = w.Fresh "byte.pointer"
+                                w.Inst($"{bytePointer} = getelementptr inbounds i8, ptr {header}, i64 {byteOffset}")
+                                let raw = w.Fresh "byte.raw"
+                                w.Inst($"{raw} = load i8, ptr {bytePointer}, align 1")
+                                let widened = w.Fresh "byte.value"
+                                w.Inst($"{widened} = zext i8 {raw} to i64")
+                                let result = w.Fresh "byte.result"
+                                w.Inst($"{result} = select i1 {inside}, i64 {widened}, i64 {fallbackValue}")
+                                emitScalarResult IrInt result
                             | operation, arguments when OwningStdlib.operations.ContainsKey operation ->
                                 // Standard library slice 1: one runtime dispatcher sizes then writes
                                 // each result (String, Bytes, Option or List) at the cursor.

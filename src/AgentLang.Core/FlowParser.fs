@@ -1072,7 +1072,11 @@ module FlowParser =
                         if state.SyntaxVersion = 2 && peek state <> Some "else" then []
                         else
                             expect state "else" |> ignore
-                            parseBlock state
+                            // Flow/2 `else if`: the nested if is the else block's only statement.
+                            if state.SyntaxVersion = 2 && peek state = Some "if" then
+                                [ FlowStatement.Evaluate(parseExpressionState state) ]
+                            else
+                                parseBlock state
                     FlowExpression.If(condition, thenBranch, elseBranch, sourceSpan state.File first (previous state))
                 | Symbol, "[" ->
                     if state.SyntaxVersion <> 2 then

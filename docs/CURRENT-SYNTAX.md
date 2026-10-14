@@ -272,6 +272,17 @@ fn sum-evens(values: List<Int>, limit: Int) -> Int {
   backend. The older arena LLVM backend rejects them
   (`IR_LLVM_LOOP_UNSUPPORTED`).
 
+## else if
+
+In Flow/2, `else if` chains without nesting:
+
+```flow
+if build == "412" { "2.0" } else if build == "419" { "2.0.4" } else { "" }
+```
+
+The nested `if` becomes the else block's only statement; the formatter prints
+it back as `else if`.
+
 ## Names
 
 A word name is a dotted path of segments, such as `campfire.views.room-page`;
@@ -349,6 +360,12 @@ wherever it enters:
 - **native inputs:** `STRING_INVALID_UTF16`.
 
 Search and escaping work on whole characters.
+
+
+`string.byte-at(text, index)` returns `Option<Int>`. For scanning loops use
+`string.byte-at-or(text, index, fallback)`, which returns the byte (0-255) or
+`fallback` outside `0..byte-length`. Natively it is an inline bounds check and
+one load, with no Option and no runtime call.
 
 ## List literals
 

@@ -1,662 +1,411 @@
-test campfire.ua.lower/kelvin {
-    campfire.ua.lower("AppleWebKit")
-    => value "applewebkit"
-}
-
-test campfire.ua.ruby-space?/classes {
-    [campfire.ua.ruby-space?(32), campfire.ua.ruby-space?(11), campfire.ua.ruby-space?(0), campfire.ua.ruby-space?(160)]
-    => value [true, true, false, false]
-}
-
-test campfire.ua.ruby-spaces/six {
-    scan.join(campfire.ua.ruby-spaces(), "|")
-    => value " |\t|\n|\u000b|\f|\r"
-}
-
-test campfire.ua.digits-dots/members {
-    scan.join(campfire.ua.digits-dots(), "")
-    => value "0123456789."
-}
-
-test campfire.ua.digits-underscores/members {
-    scan.join(campfire.ua.digits-underscores(), "")
-    => value "0123456789_"
-}
-
-test campfire.ua.letter?/ascii-only {
-    [campfire.ua.letter?(65), campfire.ua.letter?(122), campfire.ua.letter?(48), campfire.ua.letter?(195)]
-    => value [true, true, false, false]
-}
-
-test campfire.ua.alnum-dash/members {
-    scan.remove-all("ab-Z9_.", campfire.ua.alnum-dash())
-    => value "_."
-}
-
-test campfire.ua.product-byte?/classes {
-    [campfire.ua.product-byte?(65), campfire.ua.product-byte?(47), campfire.ua.product-byte?(9), campfire.ua.product-byte?(-1), campfire.ua.product-byte?(0)]
-    => value [true, false, false, false, true]
-}
-
-test campfire.ua.strip/both-ends {
-    campfire.ua.strip("\u0000 \tMozilla/5.0 x\r\n ")
-    => value "Mozilla/5.0 x"
-}
-
-test campfire.ua.strip/blank {
-    campfire.ua.strip(" \u0000 ")
-    => value ""
-}
-
-test campfire.ua.ruby-blank?/nbsp-is-not-ruby-space {
-    [campfire.ua.ruby-blank?(" \t"), campfire.ua.ruby-blank?(""), campfire.ua.ruby-blank?(" ")]
-    => value [true, true, false]
-}
-
-test campfire.ua.unicode-blank?/dotnet-whitespace {
-    [campfire.ua.unicode-blank?(" 　 "), campfire.ua.unicode-blank?(""), campfire.ua.unicode-blank?("​")]
-    => value [true, true, false]
-}
-
-test campfire.ua.matched/fields {
-    campfire.ua.matched(4, "a", "1", option.none<List<String>>()).product.version
-    => value "1"
-}
-
-test campfire.ua.with-comment/comment {
-    campfire.ua.with-comment("A/1 (x; y; ) B", "A", "1", 3).product.comment
-    => value option.some<List<String>>(["x", "y"])
-}
-
-test campfire.ua.with-comment/unterminated {
-    campfire.ua.with-comment("A/1 (x", "A", "1", 3).consumed
-    => value 3
-}
-
-test campfire.ua.with-comment/gzip {
-    campfire.ua.with-comment("A/1,gzip(gfe) B", "A", "1", 3).consumed
-    => value 13
-}
-
-test campfire.ua.product-at/name-and-version {
-    campfire.ua.product-at("Chrome/120.0, x", 0).product.version
-    => value "120.0"
-}
-
-test campfire.ua.match-product/quoted {
-    match campfire.ua.match-product("'Mozilla/5.0' x") {
-        none => "none"
-        some found => found.product.name
-    }
-    => value "Mozilla"
-}
-
-test campfire.ua.match-product/quote-before-slash {
-    match campfire.ua.match-product("\"'/1.0") {
-        none => "none"
-        some found => found.product.name
-    }
-    => value "'"
-}
-
-test campfire.ua.match-product/leading-space {
-    match campfire.ua.match-product(" Mozilla") {
-        none => "none"
-        some found => found.product.name
-    }
-    => value "none"
-}
-
-test campfire.ua.collect-step/done {
-    campfire.ua.collect-step(userAgentCollect.new(rest = "A/1", products = list.empty<UserAgentProduct>(), done = true), "").rest
-    => value "A/1"
-}
-
-test campfire.ua.parse/products {
-    campfire.ua.parse(option.some<String>("Mozilla/5.0 (X11; Linux) Firefox/121.0")).fold(list.empty<String>(), campfire.ua.test-name)
-    => value ["Mozilla", "Firefox"]
-}
-
-test campfire.ua.parse/missing-uses-default {
-    campfire.ua.parse(option.none<String>()).fold(list.empty<String>(), campfire.ua.test-name)
-    => value ["Mozilla"]
-}
-
-fn campfire.ua.test-name(names: List<String>, product: UserAgentProduct) -> List<String> {
-    list.append(names, product.name)
-}
-
-test campfire.ua.test-name/appends {
-    campfire.ua.test-name(list.empty<String>(), userAgentProduct.new(name = "A", version = "1", comment = option.none<List<String>>()))
-    => value ["A"]
-}
-
-test campfire.ua.nth-step/target {
-    campfire.ua.name-is?(campfire.ua.nth-step(userAgentNth.new(target = 0, index = 0, found = option.none<UserAgentProduct>()), userAgentProduct.new(name = "A", version = "1", comment = option.none<List<String>>())).found, "A")
-    => value true
-}
-
-test campfire.ua.nth/second {
-    campfire.ua.name-is?(campfire.ua.nth(campfire.ua.parse(option.some<String>("A/1 B/2 C/3")), 1), "B")
-    => value true
-}
-
-test campfire.ua.first/first {
-    campfire.ua.version-of(campfire.ua.first(campfire.ua.parse(option.some<String>("A/1 B/2"))))
-    => value option.some<String>("1")
-}
-
-test campfire.ua.last-step/replaces {
-    campfire.ua.name-is?(campfire.ua.last-step(option.none<UserAgentProduct>(), userAgentProduct.new(name = "B", version = "2", comment = option.none<List<String>>())), "B")
-    => value true
-}
-
-test campfire.ua.last/last {
-    campfire.ua.version-of(campfire.ua.last(campfire.ua.parse(option.some<String>("A/1 B/2"))))
-    => value option.some<String>("2")
-}
-
-test campfire.ua.name-is?/none {
-    campfire.ua.name-is?(option.none<UserAgentProduct>(), "A")
-    => value false
-}
-
-test campfire.ua.version-is?/match {
-    campfire.ua.version-is?(campfire.ua.first(campfire.ua.parse(option.some<String>("NSPlayer/4.1.0.3856"))), "4.1.0.3856")
-    => value true
-}
-
-test campfire.ua.version-of/none {
-    campfire.ua.version-of(option.none<UserAgentProduct>())
-    => value option.none<String>()
-}
-
-test campfire.ua.comments-of/comments {
-    campfire.ua.comments-of(campfire.ua.first(campfire.ua.parse(option.some<String>("A/1 (x; y)"))))
-    => value ["x", "y"]
-}
-
-test campfire.ua.comment-of/absent {
-    campfire.ua.comment-of(campfire.ua.first(campfire.ua.parse(option.some<String>("A/1"))))
-    => value option.none<List<String>>()
-}
-
-test campfire.ua.named-step/keeps-first {
-    campfire.ua.named-step(userAgentNamed.new(lowered = "a", found = option.none<UserAgentProduct>()), userAgentProduct.new(name = "A", version = "1", comment = option.none<List<String>>())).lowered
-    => value "a"
-}
-
-test campfire.ua.named/ignores-case {
-    campfire.ua.version-of(campfire.ua.named(campfire.ua.parse(option.some<String>("A/1 CRIOS/2 crios/3")), "CriOs"))
-    => value option.some<String>("2")
-}
-
-test campfire.ua.has-named?/missing {
-    campfire.ua.has-named?(campfire.ua.parse(option.some<String>("A/1")), "Iron")
-    => value false
-}
-
-test campfire.ua.exact-step/match {
-    campfire.ua.exact-step(userAgentExact.new(name = "Chrome", found = false), userAgentProduct.new(name = "Chrome", version = "1", comment = option.none<List<String>>())).found
-    => value true
-}
-
-test campfire.ua.has-exact?/case-sensitive {
-    [campfire.ua.has-exact?(campfire.ua.parse(option.some<String>("chrome/1")), "Chrome"), campfire.ua.has-exact?(campfire.ua.parse(option.some<String>("Chrome/1")), "Chrome")]
-    => value [false, true]
-}
-
-test campfire.ua.commented-step/skips-empty {
-    campfire.ua.commented-step(option.none<UserAgentProduct>(), userAgentProduct.new(name = "A", version = "1", comment = option.some<List<String>>(list.empty<String>())))
-    => value option.none<UserAgentProduct>()
-}
-
-test campfire.ua.commented-application?/kinds {
-    [campfire.ua.commented-application?(UserAgentKind.chrome()), campfire.ua.commented-application?(UserAgentKind.gecko())]
-    => value [true, false]
-}
-
-test campfire.ua.application/commented {
-    campfire.ua.name-is?(campfire.ua.application(UserAgentKind.webkit(), campfire.ua.parse(option.some<String>("A/1 () B/2 (x)"))), "B")
-    => value true
-}
-
-test campfire.ua.joined-comment/joined {
-    campfire.ua.joined-comment(option.some<List<String>>(["a", "b"]), " ")
-    => value "a b"
-}
-
-test campfire.ua.comments-step/appends {
-    campfire.ua.comments-step(["a"], userAgentProduct.new(name = "A", version = "1", comment = option.some<List<String>>(["b"])))
-    => value ["a", "b"]
-}
-
-test campfire.ua.all-comments/products {
-    campfire.ua.all-comments(campfire.ua.parse(option.some<String>("A/1 (x; y) B/2 (z)")))
-    => value ["x", "y", "z"]
-}
-
-test campfire.ua.capture-step/done {
-    campfire.ua.capture-step(userAgentSearch.new(source = "", marker = "x", from = 0, found = option.none<String>(), done = true), "").done
-    => value true
-}
-
-test campfire.ua.capture-after/skips-empty {
-    campfire.ua.capture-after("Opera Mini/x Opera Mini/7.5.3", "Opera Mini/")
-    => value option.some<String>("7.5.3")
-}
-
-test campfire.ua.trident-step/done {
-    campfire.ua.trident-step(userAgentSearch.new(source = "", marker = "Trident", from = 0, found = option.none<String>(), done = true), "").done
-    => value true
-}
-
-test campfire.ua.trident-rv?/cases {
-    [campfire.ua.trident-rv?("Windows NT 10.0; Trident/7.0; rv:11.0"), campfire.ua.trident-rv?("Tridentrv:11"), campfire.ua.trident-rv?("Trident/7.0\nrv:11"), campfire.ua.trident-rv?("Trident Trident/7 rv:1")]
-    => value [true, false, false, true]
-}
-
-test campfire.ua.webkit-comment-version/cases {
-    [campfire.ua.webkit-comment-version("AppleWebKit/534.52.7; x"), campfire.ua.webkit-comment-version("applewebkit/"), campfire.ua.webkit-comment-version("AppleWebKit")]
-    => value [option.some<String>("534.52.7"), option.none<String>(), option.none<String>()]
-}
-
-test campfire.ua.webkit-comment-step/keeps-first {
-    campfire.ua.webkit-comment-step(option.some<String>("1"), "AppleWebKit/2")
-    => value option.some<String>("1")
-}
-
-test campfire.ua.first-webkit-comment-version/scan {
-    campfire.ua.first-webkit-comment-version(["x", "AppleWebKit/412.6", "AppleWebKit/1"])
-    => value option.some<String>("412.6")
-}
-
-test campfire.ua.ios-at/version {
-    campfire.ua.ios-at("CPU OS 16_6 like Mac OS X", 4)
-    => value option.some<String>("16_6")
-}
+// Unit tests for the lean User-Agent helpers in user-agent.flow. The parity
+// corpus (user-agent-corpus-tests.flow) covers the public words end to end.
 
-test campfire.ua.after-device/iphone {
-    campfire.ua.after-device("CPU iPhone OS 17_2", 4)
-    => value 11
+test campfire.ua.byte/bounds {
+    expect campfire.ua.byte("Az", 0) == 65
+    expect campfire.ua.byte("Az", 2) == -1
+    expect campfire.ua.byte("Az", -1) == -1
 }
 
-test campfire.ua.ios-step/done {
-    campfire.ua.ios-step(userAgentSearch.new(source = "", marker = "CPU ", from = 0, found = option.none<String>(), done = true), "").done
-    => value true
+test campfire.ua.cut/range {
+    expect campfire.ua.cut("Chrome/120", 7, 3) == "120"
+    expect campfire.ua.cut("abc", 2, 5) == ""
 }
 
-test campfire.ua.ios-version/second-cpu {
-    campfire.ua.ios-version("CPU x; CPU iPhone OS 17_2 like Mac OS X")
-    => value option.some<String>("17_2")
+test campfire.ua.space?/ruby-whitespace {
+    expect campfire.ua.space?(32) && campfire.ua.space?(9) && campfire.ua.space?(11) && campfire.ua.space?(13)
+    expect bool.not(campfire.ua.space?(0)) && bool.not(campfire.ua.space?(160))
 }
 
-test campfire.ua.internet-explorer?/msie {
-    campfire.ua.internet-explorer?(campfire.ua.parse(option.some<String>("Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)")))
-    => value true
+test campfire.ua.strip?/nul-and-space {
+    expect campfire.ua.strip?(0) && campfire.ua.strip?(32)
+    expect bool.not(campfire.ua.strip?(65))
 }
 
-test campfire.ua.wechat-step/name {
-    campfire.ua.wechat-step(false, userAgentProduct.new(name = "XMicroMessengerY", version = "1", comment = option.none<List<String>>()))
-    => value true
+test campfire.ua.product-char?/delimiters {
+    expect campfire.ua.product-char?(65) && campfire.ua.product-char?(0)
+    expect bool.not(campfire.ua.product-char?(47)) && bool.not(campfire.ua.product-char?(32)) && bool.not(campfire.ua.product-char?(-1))
 }
 
-test campfire.ua.playstation?/ps4 {
-    campfire.ua.playstation?(campfire.ua.parse(option.some<String>("Mozilla/5.0 (PlayStation 4 11.00) AppleWebKit/601.2")))
-    => value true
+test campfire.ua.digit?/ascii {
+    expect campfire.ua.digit?(48) && campfire.ua.digit?(57)
+    expect bool.not(campfire.ua.digit?(46))
 }
 
-test campfire.ua.podcast-addict?/three-products {
-    campfire.ua.podcast-addict?(campfire.ua.parse(option.some<String>("Podcast Addict - v3.41")))
-    => value true
+test campfire.ua.casefold/kelvin-but-not-dotted-i {
+    expect campfire.ua.casefold("AppleWebKit") == "applewebkit"
+    expect campfire.ua.casefold("KIT") == "kit"
+    expect campfire.ua.casefold("İron") == "İron"
 }
 
-test campfire.ua.webkit-step/comment {
-    campfire.ua.webkit-step(false, userAgentProduct.new(name = "Something", version = "1", comment = option.some<List<String>>(["AppleWebKit/533.1"])))
-    => value true
+test campfire.ua.blank?/strip-set {
+    expect campfire.ua.blank?("")
+    expect campfire.ua.blank?(" \t\u0000\r\n")
+    expect bool.not(campfire.ua.blank?(" x "))
 }
 
-test campfire.ua.media-player-step/name {
-    campfire.ua.media-player-step(false, userAgentProduct.new(name = "WMFSDK", version = "1", comment = option.none<List<String>>()))
-    => value true
+test campfire.ua.find/offsets {
+    expect campfire.ua.find("a; b; c", "; ", 2) == 4
+    expect campfire.ua.find("abc", "z", 0) == -1
 }
 
-test campfire.ua.windows-media-player?/excluded-version {
-    [campfire.ua.windows-media-player?(campfire.ua.parse(option.some<String>("NSPlayer/4.1.0.3856"))), campfire.ua.windows-media-player?(campfire.ua.parse(option.some<String>("NSPlayer/4.1.0.3857")))]
-    => value [false, true]
+test campfire.ua.run/digits-dots-and-underscores {
+    expect campfire.ua.run("17.4.1 x", 0, false) == 6
+    expect campfire.ua.run("17_4 like", 0, true) == 4
+    expect campfire.ua.run("17_4", 0, false) == 2
 }
 
-test campfire.ua.libavformat?/lavf {
-    campfire.ua.libavformat?(campfire.ua.parse(option.some<String>("Lavf/58.29.100")))
-    => value true
+test campfire.ua.split-comment/drops-trailing-empties {
+    expect campfire.ua.split-comment("a; ; b; ; ") == ["a", "", "b"]
+    expect campfire.ua.split-comment("") == list.empty<String>()
 }
 
-test campfire.ua.kind-after-podcast/gecko {
-    campfire.ua.kind-after-podcast(campfire.ua.parse(option.some<String>("Mozilla/5.0 (X11) Firefox/121")))
-    => value UserAgentKind.gecko()
+test campfire.ua.products/tokens {
+    let products = campfire.ua.products("Mozilla/5.0 (X11; Linux) Gecko/2010 Firefox/125.0")
+    expect campfire.ua.count(products) == 3
+    expect campfire.ua.at(products, 0) == uaProduct.new(name = "Mozilla", version = "5.0", comments = ["X11", "Linux"])
+    expect campfire.ua.at(products, 2).version == "125.0"
 }
 
-test campfire.ua.kind-after-wechat/chrome {
-    campfire.ua.kind-after-wechat(campfire.ua.parse(option.some<String>("Mozilla/5.0 (X11) CriOS/120")))
-    => value UserAgentKind.chrome()
+test campfire.ua.products/quotes-and-gzip {
+    let products = campfire.ua.products("\"Bot/1.0,gzip(gfe) Next/2")
+    expect campfire.ua.at(products, 0).name == "Bot"
+    expect campfire.ua.at(products, 1).name == "Next"
 }
 
-test campfire.ua.kind/edge {
-    campfire.ua.kind(campfire.ua.parse(option.some<String>("Mozilla/5.0 Chrome/42 Edge/12.10136")))
-    => value UserAgentKind.edge()
+test campfire.ua.products/trailing-nul-on-first-version {
+    expect campfire.ua.at(campfire.ua.products("Foo/1.0\u0000"), 0).version == "1.0\u0000"
 }
 
-test campfire.ua.normalized-webkit-os/ios {
-    campfire.ua.normalized-webkit-os("CPU iPhone OS 17_2 like Mac OS X")
-    => value "iOS 17.2"
+test campfire.ua.count/three {
+    expect campfire.ua.count(campfire.ua.products("A/1 B/2 C/3")) == 3
 }
 
-test campfire.ua.normalized-at/missing {
-    campfire.ua.normalized-at(["a"], 1)
-    => value option.none<String>()
+test campfire.ua.at/missing {
+    expect campfire.ua.at(campfire.ua.products("A/1"), 4).name == ""
 }
 
-test campfire.ua.ios-comment-step/finds {
-    campfire.ua.ios-comment-step(option.none<String>(), "CPU OS 9_3 like Mac OS X")
-    => value option.some<String>("CPU OS 9_3 like Mac OS X")
+test campfire.ua.comment-at/index {
+    let product = campfire.ua.at(campfire.ua.products("A/1 (x; y)"), 0)
+    expect campfire.ua.comment-at(product, 1) == "y"
+    expect campfire.ua.comment-at(product, 2) == ""
 }
 
-test campfire.ua.webkit-os/android {
-    campfire.ua.webkit-os(campfire.ua.parse(option.some<String>("Mozilla/5.0 (Linux; Android 13; SM) AppleWebKit/537.36")))
-    => value option.some<String>("Android 13")
+test campfire.ua.joined/parts {
+    expect campfire.ua.joined(campfire.ua.at(campfire.ua.products("A/1 (x; y)"), 0)) == "x; y"
 }
 
-test campfire.ua.android-step/finds {
-    campfire.ua.android-step(false, "Linux; Android 13")
-    => value true
+test campfire.ua.exact?/case-sensitive {
+    expect campfire.ua.exact?(campfire.ua.products("Chrome/1"), "Chrome")
+    expect bool.not(campfire.ua.exact?(campfire.ua.products("chrome/1"), "Chrome"))
 }
 
-test campfire.ua.webkit-safari?/blackberry {
-    [campfire.ua.webkit-safari?(campfire.ua.parse(option.some<String>("Mozilla/5.0 (BB10; Touch) AppleWebKit/537.10+"))), campfire.ua.webkit-safari?(campfire.ua.parse(option.some<String>("Mozilla/5.0 (Macintosh; Intel) AppleWebKit/605.1.15")))]
-    => value [false, true]
+test campfire.ua.named/first-case-insensitive {
+    expect campfire.ua.named(campfire.ua.products("VERSION/1 Version/2"), "version") == option.some<UaProduct>(uaProduct.new(name = "VERSION", version = "1", comments = list.empty<String>()))
 }
 
-test campfire.ua.gecko-browser/firefox {
-    campfire.ua.gecko-browser(campfire.ua.parse(option.some<String>("Mozilla/5.0 (X11) firefox/121")))
-    => value option.some<String>("Firefox")
+test campfire.ua.named?/absent {
+    expect bool.not(campfire.ua.named?(campfire.ua.products("A/1"), "iron"))
 }
 
-test campfire.ua.family-of-name/case {
-    [campfire.ua.family-of-name(option.some<String>("SAFARI")), campfire.ua.family-of-name(option.some<String>("Edge")), campfire.ua.family-of-name(option.none<String>())]
-    => value [BrowserFamily.safari(), BrowserFamily.other(), BrowserFamily.other()]
+test campfire.ua.named-version/value {
+    expect campfire.ua.named-version(campfire.ua.products("A/1 OPR/104.0"), "opr") == option.some<String>("104.0")
 }
 
-test campfire.ua.family/iron {
-    campfire.ua.family(UserAgentKind.chrome(), campfire.ua.parse(option.some<String>("Iron/120 Chrome/120")))
-    => value BrowserFamily.other()
+test campfire.ua.first-commented/skips-empty {
+    let products = campfire.ua.products("A/1 B/2 (x) C/3 (y)")
+    expect campfire.ua.first-commented(products) == option.some<UaProduct>(uaProduct.new(name = "B", version = "2", comments = ["x"]))
 }
 
-test campfire.ua.msie-first?/order {
-    [campfire.ua.msie-first?(option.some<Int>(3), option.some<Int>(9)), campfire.ua.msie-first?(option.some<Int>(9), option.some<Int>(3)), campfire.ua.msie-first?(option.none<Int>(), option.some<Int>(3))]
-    => value [true, false, false]
+test campfire.ua.capture-after/second-occurrence {
+    expect campfire.ua.capture-after("Opera Mini/ Opera Mini/7.1 x", "Opera Mini/") == option.some<String>("7.1")
+    expect campfire.ua.capture-after("none", "iOS ") == option.none<String>()
 }
 
-test campfire.ua.ie-step/past-end {
-    campfire.ua.ie-step(userAgentSearch.new(source = "", marker = "MSIE", from = 0, found = option.none<String>(), done = false), "").done
-    => value true
+test campfire.ua.trident-rv?/same-line {
+    expect campfire.ua.trident-rv?("Windows NT 10.0; Trident/7.0; rv:11.0")
+    expect bool.not(campfire.ua.trident-rv?("Trident/7.0\nrv:11.0"))
 }
 
-test campfire.ua.ie-version/cases {
-    [campfire.ua.ie-version("compatible; MSIE 10.0; Windows"), campfire.ua.ie-version("Trident/7.0; rv:11.0"), campfire.ua.ie-version("MSIEx 9; rv:"), campfire.ua.ie-version("rv:11.0 MSIE 9.0")]
-    => value [option.some<String>("10.0"), option.some<String>("11.0"), option.none<String>(), option.some<String>("11.0")]
+test campfire.ua.ie-version/msie-before-rv {
+    expect campfire.ua.ie-version("compatible; MSIE 9.0; rv:11") == "9.0"
+    expect campfire.ua.ie-version("Trident/7.0; rv:11.0") == "11.0"
+    expect campfire.ua.ie-version("nothing") == ""
 }
 
-test campfire.ua.opera-mini-step/captures {
-    campfire.ua.opera-mini-step(option.none<String>(), "Opera Mini/7.5.33361/31.1448")
-    => value option.some<String>("7.5.33361")
+test campfire.ua.ios-version/iphone {
+    expect campfire.ua.ios-version("CPU iPhone OS 17_4 like Mac OS X") == option.some<String>("17_4")
+    expect campfire.ua.ios-version("CPU OS 9_3 like Mac") == option.none<String>()
 }
 
-test campfire.ua.opera-version/version-product {
-    campfire.ua.opera-version(campfire.ua.parse(option.some<String>("Opera/9.80 (Windows NT 6.1; U; en) Presto/2.10.289 Version/12.02")))
-    => value option.some<String>("12.02")
+test campfire.ua.webkit-os/ios-normalized {
+    expect campfire.ua.webkit-os(["iPhone", "CPU iPhone OS 17_4 like Mac OS X"]) == option.some<String>("iOS 17.4")
+    expect campfire.ua.webkit-os(["Linux", "Android 14", "Pixel 8"]) == option.some<String>("Android 14")
+    expect campfire.ua.webkit-os(list.empty<String>()) == option.none<String>()
 }
 
-test campfire.ua.playstation-marker/vita {
-    campfire.ua.playstation-marker("PlayStation Vita 3.74")
-    => value option.some<String>("PlayStation Vita ")
+test campfire.ua.webkit-comment-version/prefix {
+    expect campfire.ua.webkit-comment-version("AppleWebKit/534.11") == option.some<String>("534.11")
+    expect campfire.ua.webkit-comment-version("AppleWebKit/") == option.none<String>()
 }
 
-test campfire.ua.playstation-version/ps3 {
-    campfire.ua.playstation-version(campfire.ua.parse(option.some<String>("Mozilla/5.0 (PLAYSTATION 3; 4.86)")))
-    => value option.some<String>("4.86")
+test campfire.ua.webkit?/product-or-comment {
+    expect campfire.ua.webkit?(campfire.ua.products("Mozilla/5.0 AppleWebKit/605"))
+    expect bool.not(campfire.ua.webkit?(campfire.ua.products("Mozilla/5.0 Gecko/1")))
 }
 
 test campfire.ua.webkit-build-version/table {
-    [campfire.ua.webkit-build-version("85.7"), campfire.ua.webkit-build-version("125.5.6"), campfire.ua.webkit-build-version("999")]
-    => value ["1.0", "1.2.4", ""]
+    expect campfire.ua.webkit-build-version("412") == "2.0"
+    expect campfire.ua.webkit-build-version("605") == ""
 }
 
-test campfire.ua.webkit-build-version-312/table {
-    [campfire.ua.webkit-build-version-312("312.8.1"), campfire.ua.webkit-build-version-312("412.6")]
-    => value ["1.3.2", "2.0"]
+test campfire.ua.safari-version/version-product {
+    let products = campfire.ua.products("Mozilla/5.0 (Macintosh) AppleWebKit/605 Version/17.4 Safari/605")
+    expect campfire.ua.safari-version(products, option.none<String>()) == "17.4"
 }
 
-test campfire.ua.webkit-build-version-412/table {
-    [campfire.ua.webkit-build-version-412("418.9.1"), campfire.ua.webkit-build-version-412("534.52.7"), campfire.ua.webkit-build-version-412("1")]
-    => value ["2.0.4", "5.1.2", ""]
+test campfire.ua.safari-version/old-build {
+    let products = campfire.ua.products("Mozilla/5.0 (Macintosh) AppleWebKit/412 Safari/412")
+    expect campfire.ua.safari-version(products, option.none<String>()) == "2.0"
 }
 
-test campfire.ua.webkit-version/ios {
-    campfire.ua.webkit-version(campfire.ua.parse(option.some<String>("Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148")))
-    => value option.some<String>("17.2")
+test campfire.ua.opera-version/opr {
+    let products = campfire.ua.products("Mozilla/5.0 (X11) Chrome/120 OPR/106.0")
+    expect campfire.ua.opera-version(products, campfire.ua.at(products, 0)) == "106.0"
 }
 
-test campfire.ua.webkit-build/comment {
-    campfire.ua.webkit-build(campfire.ua.parse(option.some<String>("Mozilla/5.0 (Macintosh; AppleWebKit/534.52.7; en)")))
-    => value "534.52.7"
+test campfire.ua.ruby-blank?/space-only {
+    expect campfire.ua.ruby-blank?("")
+    expect campfire.ua.ruby-blank?(" \t")
+    expect bool.not(campfire.ua.ruby-blank?("\u0000"))
+    expect bool.not(campfire.ua.ruby-blank?(" x"))
 }
 
-test campfire.ua.chrome-version/crios {
-    campfire.ua.chrome-version(campfire.ua.parse(option.some<String>("Mozilla/5.0 CriOS/120.0.6099.119 Chrome/1")))
-    => value option.some<String>("120.0.6099.119")
+test campfire.ua.version-or-none/unicode-space {
+    expect campfire.ua.version-or-none(" ") == option.none<String>()
+    expect campfire.ua.version-or-none("1.0") == option.some<String>("1.0")
 }
 
-test campfire.ua.gecko-version/blank-falls-back {
-    campfire.ua.gecko-version(campfire.ua.parse(option.some<String>("Mozilla/5.0 (X11) Firefox/")))
-    => value option.some<String>("5.0")
+test campfire.ua.bot?/comment-and-missing-app {
+    let products = campfire.ua.products("Mozilla/5.0 (compatible; Googlebot/2.1)")
+    expect campfire.ua.bot?(products, option.some<UaProduct>(campfire.ua.at(products, 0)))
+    expect campfire.ua.bot?(products, option.none<UaProduct>())
 }
 
-test campfire.ua.version/podcast {
-    campfire.ua.version(UserAgentKind.podcast-addict(), campfire.ua.parse(option.some<String>("Podcast Addict - v3")))
-    => value option.none<String>()
+test campfire.ua.result/bot-collapses {
+    let products = campfire.ua.products("Chrome/120")
+    expect campfire.ua.result(products, option.none<UaProduct>(), BrowserFamily.chrome(), "120") == browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
 }
 
-test campfire.ua.present-version/blank {
-    [campfire.ua.present-version(option.some<String>(" ")), campfire.ua.present-version(option.some<String>("1")), campfire.ua.present-version(option.none<String>())]
-    => value [option.none<String>(), option.some<String>("1"), option.none<String>()]
+test campfire.ua.other/canonical {
+    expect campfire.ua.other() == browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
-test campfire.ua.bot-step/any-case {
-    campfire.ua.bot-step(false, "compatible; GoogleBOT/2.1")
-    => value true
+test campfire.ua.media-player?/lavf {
+    let products = campfire.ua.products("Lavf/58.29.100")
+    expect campfire.ua.media-player?(products, campfire.ua.at(products, 0))
 }
 
-test campfire.ua.bot?/cases {
-    [campfire.ua.bot?(UserAgentKind.base(), campfire.ua.parse(option.some<String>("Twitterbot/1.0"))), campfire.ua.bot?(UserAgentKind.base(), campfire.ua.parse(option.some<String>("TwitterBot/1.0"))), campfire.ua.bot?(UserAgentKind.base(), list.empty<UserAgentProduct>())]
-    => value [true, false, true]
+test campfire.ua.leading-digits/count {
+    expect campfire.ua.leading-digits("120a") == 3
+    expect campfire.ua.leading-digits("a1") == 0
 }
 
-test campfire.browser.from-user-agent/safari {
-    campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Macintosh; Intel Mac OS X 14_2_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2.1 Safari/605.1.15"))
-    => value browserInfo.new(family = BrowserFamily.safari(), version = option.some<String>("17.2.1"), is-bot = false)
+test campfire.ua.comparable?/digits-then-dot {
+    expect campfire.ua.comparable?("17.2")
+    expect bool.not(campfire.ua.comparable?("17a"))
+    expect bool.not(campfire.ua.comparable?(""))
 }
 
-test campfire.browser.from-user-agent/old-internet-explorer {
-    campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)"))
-    => value browserInfo.new(family = BrowserFamily.internet-explorer(), version = option.some<String>("10.0"), is-bot = false)
+test campfire.ua.letter?/ascii {
+    expect campfire.ua.letter?(65) && campfire.ua.letter?(122)
+    expect bool.not(campfire.ua.letter?(48))
 }
 
-test campfire.browser.from-user-agent/missing {
-    campfire.browser.from-user-agent(option.none<String>())
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.some<String>("4.0"), is-bot = false)
+test campfire.ua.segments/leading-zeros-and-text {
+    expect campfire.ua.segments("017.2b1") == [uaSegment.new(integer = true, text = "17"), uaSegment.new(integer = true, text = "2"), uaSegment.new(integer = false, text = "b1")]
+    expect campfire.ua.segments("x") == [uaSegment.new(integer = false, text = "x")]
 }
 
-test campfire.browser.from-user-agent/leading-space-is-bot {
-    campfire.browser.from-user-agent(option.some<String>(" Chrome/120"))
-    => value browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = true)
+test campfire.ua.segment-at/defaults-to-zero {
+    expect campfire.ua.segment-at(campfire.ua.segments("1"), 3) == uaSegment.new(integer = true, text = "0")
 }
 
-test campfire.ua.comparable-version?/cases {
-    [campfire.ua.comparable-version?("17.2"), campfire.ua.comparable-version?("17a"), campfire.ua.comparable-version?(".1"), campfire.ua.comparable-version?("1")]
-    => value [true, false, false, true]
+test campfire.ua.compare-bytes/ordinal {
+    expect campfire.ua.compare-bytes("a", "b") == -1
+    expect campfire.ua.compare-bytes("ab", "a") == 1
+    expect campfire.ua.compare-bytes("a", "a") == 0
 }
 
-test campfire.ua.normalized-integer/zeros {
-    [campfire.ua.normalized-integer("0120"), campfire.ua.normalized-integer("000")]
-    => value ["120", "0"]
+test campfire.ua.compare-segment/integers-by-length {
+    expect campfire.ua.compare-segment(uaSegment.new(integer = true, text = "100"), uaSegment.new(integer = true, text = "99")) == 1
+    expect campfire.ua.compare-segment(uaSegment.new(integer = false, text = "b"), uaSegment.new(integer = true, text = "0")) == -1
 }
 
-test campfire.ua.version-scan-step/done {
-    campfire.ua.version-scan-step(rubyVersionScan.new(source = "1", index = 1, segments = list.empty<RubyVersionSegment>(), done = false), "").done
-    => value true
+test campfire.ua.comparable?/all-digits {
+    expect campfire.ua.comparable?("120")
 }
 
-test campfire.ua.version-segments/mixed {
-    campfire.ua.version-segments("1.02.beta")
-    => value [rubyVersionSegment.new(numeric = true, text = "1"), rubyVersionSegment.new(numeric = true, text = "2"), rubyVersionSegment.new(numeric = false, text = "beta")]
+test campfire.ua.leading-digits/edges {
+    expect campfire.ua.leading-digits("") == 0
+    expect campfire.ua.leading-digits("12") == 2
 }
 
-test campfire.ua.compare-segment/kinds {
-    [campfire.ua.compare-segment(rubyVersionSegment.new(numeric = true, text = "10"), rubyVersionSegment.new(numeric = true, text = "9")), campfire.ua.compare-segment(rubyVersionSegment.new(numeric = false, text = "a"), rubyVersionSegment.new(numeric = true, text = "0"))]
-    => value [1, -1]
+test campfire.ua.segments/paths {
+    expect campfire.ua.segments("") == list.empty<UaSegment>()
+    expect campfire.ua.segments("0") == [uaSegment.new(integer = true, text = "0")]
+    expect campfire.ua.segments("1.b2.3") == [uaSegment.new(integer = true, text = "1"), uaSegment.new(integer = true, text = "2"), uaSegment.new(integer = true, text = "3")]
+    expect campfire.ua.segments("1.x-y") == [uaSegment.new(integer = true, text = "1"), uaSegment.new(integer = false, text = "x-y")]
+    expect campfire.ua.segments("1.~") == [uaSegment.new(integer = true, text = "1")]
+    expect campfire.ua.segments("1 ~") == [uaSegment.new(integer = false, text = "1 ~")]
 }
 
-test campfire.ua.segment-at/missing-is-zero {
-    campfire.ua.segment-at(list.empty<RubyVersionSegment>(), 2)
-    => value rubyVersionSegment.new(numeric = true, text = "0")
+test campfire.ua.segment-at/found {
+    expect campfire.ua.segment-at(campfire.ua.segments("4.5"), 1) == uaSegment.new(integer = true, text = "5")
 }
 
-test campfire.ua.segment-pick-step/target {
-    campfire.ua.segment-pick-step(rubyVersionPick.new(target = 0, index = 0, found = rubyVersionSegment.new(numeric = true, text = "0")), rubyVersionSegment.new(numeric = true, text = "7")).found
-    => value rubyVersionSegment.new(numeric = true, text = "7")
+test campfire.ua.compare-bytes/edges {
+    expect campfire.ua.compare-bytes("", "") == 0
+    expect campfire.ua.compare-bytes("a", "ab") == -1
+    expect campfire.ua.compare-bytes("ab", "aa") == 1
 }
 
-test campfire.ua.compare-segments/six-limit {
-    campfire.ua.compare-segments(campfire.ua.version-segments("1.2.3.4.5.6.7"), campfire.ua.version-segments("1.2.3.4.5.6.8"))
-    => value 0
+test campfire.ua.compare-segment/all-branches {
+    expect campfire.ua.compare-segment(uaSegment.new(integer = true, text = "5"), uaSegment.new(integer = true, text = "40")) == -1
+    expect campfire.ua.compare-segment(uaSegment.new(integer = true, text = "45"), uaSegment.new(integer = true, text = "40")) == 1
+    expect campfire.ua.compare-segment(uaSegment.new(integer = true, text = "4"), uaSegment.new(integer = false, text = "a")) == 1
+    expect campfire.ua.compare-segment(uaSegment.new(integer = false, text = "a"), uaSegment.new(integer = false, text = "b")) == -1
 }
 
-test campfire.ua.first-order/keeps-first {
-    [campfire.ua.first-order(0, -1), campfire.ua.first-order(1, -1)]
-    => value [-1, 1]
+test campfire.ua.byte/negative-and-high {
+    expect campfire.ua.byte("é", 0) == 195
 }
 
-test campfire.browser.version-compare/cases {
-    [campfire.browser.version-compare("17.2.1", "17.2"), campfire.browser.version-compare("17.1", "17.2"), campfire.browser.version-compare("1a", "1a"), campfire.browser.version-compare("1a", "0")]
-    => value [1, -1, 0, -1]
+test campfire.ua.cut/empty {
+    expect campfire.ua.cut("", 0, 0) == ""
 }
 
-test campfire.browser.version-at-least?/thresholds {
-    [campfire.browser.version-at-least?("120.0.6099.109", "120"), campfire.browser.version-at-least?("119.9", "120"), campfire.browser.version-at-least?("17.2", "17.2")]
-    => value [true, false, true]
+test campfire.ua.letter?/upper-lower-boundaries {
+    expect bool.not(campfire.ua.letter?(91)) && bool.not(campfire.ua.letter?(96)) && bool.not(campfire.ua.letter?(123)) && campfire.ua.letter?(90) && campfire.ua.letter?(97)
 }
 
-test campfire.ua.version-scan-step/digits {
-    campfire.ua.version-scan-step(rubyVersionScan.new(source = "017.x", index = 0, segments = list.empty<RubyVersionSegment>(), done = false), "")
-    => value rubyVersionScan.new(source = "017.x", index = 3, segments = [rubyVersionSegment.new(numeric = true, text = "17")], done = false)
+test campfire.ua.digit?/boundaries {
+    expect bool.not(campfire.ua.digit?(47)) && bool.not(campfire.ua.digit?(58))
 }
 
-test campfire.ua.version-scan-step/final-letters {
-    campfire.ua.version-scan-step(rubyVersionScan.new(source = "1.beta-2", index = 2, segments = list.empty<RubyVersionSegment>(), done = false), "")
-    => value rubyVersionScan.new(source = "1.beta-2", index = 2, segments = [rubyVersionSegment.new(numeric = false, text = "beta-2")], done = true)
-}
-
-test campfire.ua.version-scan-step/skips-letters-before-end {
-    campfire.ua.version-scan-step(rubyVersionScan.new(source = "1a.", index = 1, segments = list.empty<RubyVersionSegment>(), done = false), "").index
-    => value 2
-}
-
-test campfire.ua.version-scan-step/already-done {
-    campfire.ua.version-scan-step(rubyVersionScan.new(source = "1", index = 0, segments = list.empty<RubyVersionSegment>(), done = true), "").index
-    => value 0
-}
-
-test campfire.ua.scan-version/no-ticks {
-    campfire.ua.scan-version(list.empty<String>(), "1.2")
-    => value list.empty<RubyVersionSegment>()
-}
-
-test campfire.ua.scan-version/ticks {
-    campfire.ua.scan-version(["", "", "", ""], "1.2")
-    => value [rubyVersionSegment.new(numeric = true, text = "1"), rubyVersionSegment.new(numeric = true, text = "2")]
-}
-
-test campfire.ua.version-segments/blank {
-    campfire.ua.version-segments(" ")
-    => value list.empty<RubyVersionSegment>()
-}
-
-test campfire.ua.version-segments/not-comparable {
-    campfire.ua.version-segments("v1.0")
-    => value [rubyVersionSegment.new(numeric = false, text = "v1.0")]
-}
-
-test campfire.ua.compare-segment/numbers {
-    [campfire.ua.compare-segment(rubyVersionSegment.new(numeric = true, text = "12"), rubyVersionSegment.new(numeric = true, text = "13")), campfire.ua.compare-segment(rubyVersionSegment.new(numeric = true, text = "9"), rubyVersionSegment.new(numeric = true, text = "10"))]
-    => value [-1, -1]
-}
-
-test campfire.ua.compare-segment/text-and-number {
-    [campfire.ua.compare-segment(rubyVersionSegment.new(numeric = true, text = "1"), rubyVersionSegment.new(numeric = false, text = "a")), campfire.ua.compare-segment(rubyVersionSegment.new(numeric = false, text = "b"), rubyVersionSegment.new(numeric = false, text = "a"))]
-    => value [1, 1]
+test campfire.ua.space?/boundaries {
+    expect bool.not(campfire.ua.space?(8)) && bool.not(campfire.ua.space?(14)) && campfire.ua.space?(12) && campfire.ua.space?(10)
 }
 
 test campfire.ua.segment-at/text {
-    campfire.ua.segment-at([rubyVersionSegment.new(numeric = false, text = "beta")], 0)
-    => value rubyVersionSegment.new(numeric = false, text = "beta")
+    expect campfire.ua.segment-at(campfire.ua.segments("x"), 0) == uaSegment.new(integer = false, text = "x")
 }
 
-test campfire.ua.segment-pick-step/other-index {
-    campfire.ua.segment-pick-step(rubyVersionPick.new(target = 0, index = 1, found = rubyVersionSegment.new(numeric = false, text = "a")), rubyVersionSegment.new(numeric = false, text = "b")).found
-    => value rubyVersionSegment.new(numeric = false, text = "a")
+test campfire.browser.version-compare/ruby-semantics {
+    expect campfire.browser.version-compare("17.4", "17.2") == 1
+    expect campfire.browser.version-compare("120.0.6099", "120") == 1
+    expect campfire.browser.version-compare("120.0", "120") == 0
+    expect campfire.browser.version-compare("1.2.3.4.5.6.7", "1.2.3.4.5.6.8") == 0
+    expect campfire.browser.version-compare("abc", "abc") == 0
+    expect campfire.browser.version-compare("abc", "1") == -1
+    expect campfire.browser.version-compare("16", "17.2") == -1
 }
 
-test campfire.ua.segment-pick-step/text-target {
-    campfire.ua.segment-pick-step(rubyVersionPick.new(target = 1, index = 1, found = rubyVersionSegment.new(numeric = true, text = "0")), rubyVersionSegment.new(numeric = false, text = "b")).found
-    => value rubyVersionSegment.new(numeric = false, text = "b")
+test campfire.browser.version-at-least?/thresholds {
+    expect campfire.browser.version-at-least?("17.2", "17.2")
+    expect bool.not(campfire.browser.version-at-least?("119.9", "120"))
 }
 
-test campfire.ua.first-nonzero/empty {
-    campfire.ua.first-nonzero(list.empty<Int>())
-    => value 0
+test campfire.browser.from-user-agent/families {
+    expect campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")) == browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("124.0.0.0"), is-bot = false)
+    expect campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (Macintosh; Intel Mac OS X 14.4; rv:125.0) Gecko/20100101 Firefox/125.0")) == browserInfo.new(family = BrowserFamily.firefox(), version = option.some<String>("125.0"), is-bot = false)
+    expect campfire.browser.from-user-agent(option.some<String>("Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)")) == browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
+    expect campfire.browser.from-user-agent(option.none<String>()) == browserInfo.new(family = BrowserFamily.other(), version = option.none<String>(), is-bot = false)
 }
 
-test campfire.ua.first-nonzero/orders {
-    campfire.ua.first-nonzero([0, 0, 1, -1])
-    => value 1
+test campfire.ua.scan-product/name-version-comment {
+    let scan = campfire.ua.scan-product("Mozilla/5.0 (X11; Linux) Next", 0, 30)
+    expect scan.found
+    expect scan.product == uaProduct.new(name = "Mozilla", version = "5.0", comments = ["X11", "Linux"])
+    expect scan.next == 24
+    expect bool.not(campfire.ua.scan-product("/x", 0, 2).found)
 }
 
-test campfire.ua.search-next/fields {
-    campfire.ua.search-next(userAgentSearch.new(source = "s", marker = "m", from = 0, found = option.none<String>(), done = false), 3, option.some<String>("1"), true)
-    => value userAgentSearch.new(source = "s", marker = "m", from = 3, found = option.some<String>("1"), done = true)
+test campfire.ua.chrome-result/iron-and-crios {
+    expect campfire.ua.chrome-result(campfire.ua.products("Mozilla/5.0 (X11) Iron/1 Chrome/120")) == campfire.ua.other()
+    expect campfire.ua.chrome-result(campfire.ua.products("Mozilla/5.0 (iPhone) CriOS/124.0 Chrome/1")) == browserInfo.new(family = BrowserFamily.chrome(), version = option.some<String>("124.0"), is-bot = false)
 }
 
-test campfire.ua.ie-msie/needs-space {
-    campfire.ua.ie-msie(userAgentSearch.new(source = "MSIEx 9", marker = "MSIE", from = 0, found = option.none<String>(), done = false), 0).from
-    => value 4
+test campfire.ua.webkit-result/android-and-safari {
+    let android = campfire.ua.products("Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537 Version/4.0 Safari/537")
+    expect campfire.ua.webkit-result(android, campfire.ua.at(android, 0)) == campfire.ua.other()
+    let safari = campfire.ua.products("Mozilla/5.0 (Macintosh; Intel) AppleWebKit/605 Version/17.4 Safari/605")
+    expect campfire.ua.webkit-result(safari, campfire.ua.at(safari, 0)) == browserInfo.new(family = BrowserFamily.safari(), version = option.some<String>("17.4"), is-bot = false)
 }
 
-test campfire.ua.ie-rv/version {
-    campfire.ua.ie-rv(userAgentSearch.new(source = "rv:11.0)", marker = "MSIE", from = 0, found = option.none<String>(), done = false), 0).found
-    => value option.some<String>("11.0")
+test campfire.ua.gecko-result/firefox-and-palemoon {
+    let firefox = campfire.ua.products("Mozilla/5.0 (X11; rv:125.0) Gecko/2010 Firefox/125.0")
+    expect campfire.ua.gecko-result(firefox, campfire.ua.at(firefox, 0)) == browserInfo.new(family = BrowserFamily.firefox(), version = option.some<String>("125.0"), is-bot = false)
+    let palemoon = campfire.ua.products("Mozilla/5.0 (X11) Gecko/2010 Firefox/68 PaleMoon/33")
+    expect campfire.ua.gecko-result(palemoon, campfire.ua.at(palemoon, 0)) == campfire.ua.other()
 }
 
-test campfire.ua.strip-byte?/classes {
-    [campfire.ua.strip-byte?(0), campfire.ua.strip-byte?(32), campfire.ua.strip-byte?(65)]
-    => value [true, true, false]
+test campfire.ua.base-result/name-decides {
+    let opera = campfire.ua.products("opera/9.80 (X11)")
+    expect campfire.ua.base-result(opera, campfire.ua.at(opera, 0)) == browserInfo.new(family = BrowserFamily.opera(), version = option.some<String>("9.80"), is-bot = false)
+    let curl = campfire.ua.products("curl/8.0")
+    expect campfire.ua.base-result(curl, campfire.ua.at(curl, 0)) == campfire.ua.other()
 }
 
-test campfire.ua.strip/one-leading-space {
-    campfire.ua.strip(" Chrome/120")
-    => value "Chrome/120"
+test campfire.ua.other-kind?/wechat-vivaldi {
+    let wechat = campfire.ua.products("Mozilla/5.0 (iPhone) MicroMessenger/8.0")
+    expect campfire.ua.other-kind?(wechat, campfire.ua.at(wechat, 0), 2)
+    let plain = campfire.ua.products("Mozilla/5.0 (X11)")
+    expect bool.not(campfire.ua.other-kind?(plain, campfire.ua.at(plain, 0), 1))
 }
 
-test campfire.ua.product-ticks/separators {
-    scan.join(campfire.ua.product-ticks("A/1 (x, y)"), "|")
-    => value "A/1|(x,|y)|A/1 (x, y)|A/1 (x, y)|A/1 (x, y)|A/1 (x, y)|A/1 (x, y)|A/1 (x| y)|A/1 (x, y|"
+test campfire.ua.console-kind?/playstation {
+    let ps = campfire.ua.products("Mozilla/5.0 (PlayStation 4 5.55) AppleWebKit/601")
+    expect campfire.ua.console-kind?(ps, campfire.ua.at(ps, 0), 2)
+    let plain = campfire.ua.products("Mozilla/5.0 (X11)")
+    expect bool.not(campfire.ua.console-kind?(plain, campfire.ua.at(plain, 0), 1))
+}
+
+test campfire.ua.classify/edge-wins {
+    let products = campfire.ua.products("Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537 Chrome/70 Safari/537 Edge/18")
+    expect campfire.ua.classify(products, campfire.ua.at(products, 0), campfire.ua.at(products, 4), 5) == campfire.ua.other()
+}
+
+test campfire.ua.digit-end/runs {
+    expect campfire.ua.digit-end("120.0", 0) == 3
+    expect campfire.ua.digit-end("120", 0) == 3
+    expect campfire.ua.digit-end("x", 0) == 0
+}
+
+test campfire.ua.word-end/runs {
+    expect campfire.ua.word-end("b1-x.2", 0) == 4
+    expect campfire.ua.word-end("ab", 0) == 2
+}
+
+test campfire.ua.trim-zeros/cases {
+    expect campfire.ua.trim-zeros("007") == "7"
+    expect campfire.ua.trim-zeros("000") == "0"
+    expect campfire.ua.trim-zeros("10") == "10"
+}
+
+test campfire.ua.quote-count/leading {
+    expect campfire.ua.quote-count("'\"x", 0, 3) == 2
+    expect campfire.ua.quote-count("x", 0, 1) == 0
+}
+
+test campfire.ua.run-end/name-and-version {
+    expect campfire.ua.run-end("Chrome/120,x", 0, 12, false) == 6
+    expect campfire.ua.run-end("Chrome/120,x", 7, 12, true) == 10
+}
+
+test campfire.ua.scan-tail/comment-gzip-none {
+    expect campfire.ua.scan-tail(" (a; b) x", 0, 9) == uaTail.new(comments = ["a", "b"], next = 7)
+    expect campfire.ua.scan-tail(",gzip(gfe) x", 0, 12).next == 10
+    expect campfire.ua.scan-tail(" (open", 0, 6).next == 0
+    expect campfire.ua.scan-tail(" x", 0, 2).next == 0
 }
