@@ -59,6 +59,7 @@ type internal IrInterpreterRuntimeValue =
     | RuntimeFloat of double
     | RuntimeBool of bool
     | RuntimeString of string
+    | RuntimeBytes of byte[]
     | RuntimeUnit
     | RuntimeList of IrType * IrInterpreterRuntimeValue list
     | RuntimeOption of IrType * IrInterpreterRuntimeValue option
@@ -168,6 +169,7 @@ module IrInterpreter =
             "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
             "dup"; "drop"; "swap"
             "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write"
+            "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "crypto.random-bytes"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "int.parse"
         ]
 
     let private implementedPrimitiveIds =
@@ -181,6 +183,7 @@ module IrInterpreter =
         | RuntimeFloat _ -> IrFloat
         | RuntimeBool _ -> IrBool
         | RuntimeString _ -> IrString
+        | RuntimeBytes _ -> IrBytes
         | RuntimeUnit -> IrUnit
         | RuntimeList(itemType, _) -> IrList itemType
         | RuntimeOption(itemType, _) -> IrOption itemType
@@ -242,6 +245,7 @@ module IrInterpreter =
             | RuntimeFloat value -> FloatValue value
             | RuntimeBool value -> BoolValue value
             | RuntimeString value -> StringValue value
+            | RuntimeBytes value -> BytesValue(Array.copy value)
             | RuntimeUnit -> UnitValue
             | RuntimeList(itemType, values) -> ListValue(toLangType itemType, List.map fromRuntimeValue values)
             | RuntimeOption(itemType, value) -> OptionValue(toLangType itemType, Option.map fromRuntimeValue value)
@@ -588,7 +592,7 @@ module IrInterpreter =
             | RuntimeOption(_, Some value) -> [ value ]
             | RuntimeResult(_, _, Ok value) | RuntimeResult(_, _, Error value) -> [ value ]
             | RuntimeScalar(_, value) -> [ value ]
-            | RuntimeInt _ | RuntimeFloat _ | RuntimeBool _ | RuntimeString _ | RuntimeUnit
+            | RuntimeInt _ | RuntimeFloat _ | RuntimeBool _ | RuntimeString _ | RuntimeBytes _ | RuntimeUnit
             | RuntimeOption(_, None) | RuntimeEnum _ -> []
 
         let runtimeValueOwnOutputBytes currentWord site value =
@@ -596,6 +600,7 @@ module IrInterpreter =
             let valueBytes =
                 match value with
                 | RuntimeString text -> 64L + int64 text.Length * 6L
+                | RuntimeBytes data -> 64L + int64 data.Length * 2L
                 | RuntimeList(_, values) -> 64L + int64 values.Length * 2L
                 | RuntimeRecord(key, _) ->
                     match program.NominalTypesByKey.TryFind key with
@@ -904,6 +909,7 @@ module IrInterpreter =
             | IrFloat, FloatValue number when Double.IsFinite number -> RuntimeFloat number
             | IrBool, BoolValue flag -> RuntimeBool flag
             | IrString, StringValue text when not (isNull text) && TrustedValues.isWellFormedUtf16 text -> RuntimeString text
+            | IrBytes, BytesValue data when not (isNull data) -> RuntimeBytes(Array.copy data)
             | IrUnit, UnitValue -> RuntimeUnit
             | IrList itemType, ListValue(actualType, values) ->
                 requireContainerType (TList actualType)
@@ -1092,6 +1098,97 @@ module IrInterpreter =
                       Depth = max 1 typeDepth
                       EstimatedOutputBytes = estimatedBytes }
                 [ RuntimeString(left + right) ]
+            | ("bytes.from-utf8" | "bytes.to-utf8" | "bytes.length" | "bytes.concat" | "bytes.slice" | "bytes.xor" | "bytes.equal-constant-time?" | "base64.encode" | "base64.decode" | "base64.url-encode" | "base64.url-decode" | "hex.encode" | "crypto.sha256" | "crypto.hmac-sha256" | "crypto.pbkdf2-sha256" | "string.split" | "string.index-of" | "string.slice" | "string.byte-at" | "int.parse"), _ ->
+                // Standard library slice 1 (report 272): pure byte, text and crypto primitives.
+                let some itemType value = RuntimeOption(itemType, Some value)
+                let none itemType = RuntimeOption(itemType, None)
+                let utf8 = System.Text.UTF8Encoding(false, true)
+                let fromUrlSafe (text: string) =
+                    if text |> Seq.exists (fun ch -> not (Char.IsAsciiLetterOrDigit ch || ch = '-' || ch = '_' || ch = '=')) then None
+                    else
+                        let trimmed = text.TrimEnd('=')
+                        if trimmed.Length % 4 = 1 then None
+                        else
+                            let padded = trimmed.Replace('-', '+').Replace('_', '/')
+                            let padded = padded + String('=', (4 - padded.Length % 4) % 4)
+                            try Some(Convert.FromBase64String padded) with _ -> None
+                match operation, arguments with
+                | "bytes.from-utf8", [ RuntimeString text ] -> [ RuntimeBytes(utf8.GetBytes text) ]
+                | "bytes.to-utf8", [ RuntimeBytes data ] ->
+                    [ (try some IrString (RuntimeString(utf8.GetString data)) with :? Text.DecoderFallbackException -> none IrString) ]
+                | "bytes.length", [ RuntimeBytes data ] -> [ RuntimeInt(int64 data.Length) ]
+                | "bytes.concat", [ RuntimeBytes left; RuntimeBytes right ] -> [ RuntimeBytes(Array.append left right) ]
+                | "bytes.slice", [ RuntimeBytes data; RuntimeInt start; RuntimeInt count ] ->
+                    if start < 0L || count < 0L || start > int64 data.Length || count > int64 data.Length - start then [ none IrBytes ]
+                    else [ some IrBytes (RuntimeBytes(Array.sub data (int start) (int count))) ]
+                | "bytes.xor", [ RuntimeBytes left; RuntimeBytes right ] ->
+                    if left.Length <> right.Length then [ none IrBytes ]
+                    else [ some IrBytes (RuntimeBytes(Array.map2 (^^^) left right)) ]
+                | "bytes.equal-constant-time?", [ RuntimeBytes left; RuntimeBytes right ] ->
+                    [ RuntimeBool(Security.Cryptography.CryptographicOperations.FixedTimeEquals(ReadOnlySpan left, ReadOnlySpan right)) ]
+                | "base64.encode", [ RuntimeBytes data ] -> [ RuntimeString(Convert.ToBase64String data) ]
+                | "base64.decode", [ RuntimeString text ] ->
+                    [ (try some IrBytes (RuntimeBytes(Convert.FromBase64String text)) with _ -> none IrBytes) ]
+                | "base64.url-encode", [ RuntimeBytes data ] ->
+                    [ RuntimeString(Convert.ToBase64String(data).TrimEnd('=').Replace('+', '-').Replace('/', '_')) ]
+                | "base64.url-decode", [ RuntimeString text ] ->
+                    [ (match fromUrlSafe text with Some data -> some IrBytes (RuntimeBytes data) | None -> none IrBytes) ]
+                | "hex.encode", [ RuntimeBytes data ] -> [ RuntimeString(Convert.ToHexString(data).ToLowerInvariant()) ]
+                | "crypto.sha256", [ RuntimeBytes data ] -> [ RuntimeBytes(Security.Cryptography.SHA256.HashData data) ]
+                | "crypto.hmac-sha256", [ RuntimeBytes key; RuntimeBytes message ] ->
+                    [ RuntimeBytes(Security.Cryptography.HMACSHA256.HashData(key, message)) ]
+                | "crypto.pbkdf2-sha256", [ RuntimeBytes password; RuntimeBytes salt; RuntimeInt iterations; RuntimeInt length ] ->
+                    if iterations < 1L || iterations > 1000000L || length < 1L || length > 1024L then [ none IrBytes ]
+                    else
+                        let key = Security.Cryptography.Rfc2898DeriveBytes.Pbkdf2(password, salt, int iterations, Security.Cryptography.HashAlgorithmName.SHA256, int length)
+                        [ some IrBytes (RuntimeBytes key) ]
+                | "string.split", [ RuntimeString text; RuntimeString separator ] ->
+                    let pieces =
+                        if separator.Length = 0 then [ text ]
+                        else
+                            let textBytes = utf8.GetBytes text
+                            let separatorBytes = utf8.GetBytes separator
+                            let results = Collections.Generic.List<string>()
+                            let mutable start = 0
+                            let mutable index = 0
+                            while index <= textBytes.Length - separatorBytes.Length do
+                                if ReadOnlySpan(textBytes, index, separatorBytes.Length).SequenceEqual(ReadOnlySpan separatorBytes) then
+                                    results.Add(utf8.GetString(textBytes, start, index - start))
+                                    index <- index + separatorBytes.Length
+                                    start <- index
+                                else index <- index + 1
+                            results.Add(utf8.GetString(textBytes, start, textBytes.Length - start))
+                            List.ofSeq results
+                    [ RuntimeList(IrString, pieces |> List.map RuntimeString) ]
+                | "string.index-of", [ RuntimeString text; RuntimeString needle; RuntimeInt start ] ->
+                    let textBytes = utf8.GetBytes text
+                    let needleBytes = utf8.GetBytes needle
+                    if start < 0L || start > int64 textBytes.Length then [ none IrInt ]
+                    else
+                        let found = ReadOnlySpan(textBytes, int start, textBytes.Length - int start).IndexOf(ReadOnlySpan needleBytes)
+                        [ (if found < 0 then none IrInt else some IrInt (RuntimeInt(start + int64 found))) ]
+                | "string.slice", [ RuntimeString text; RuntimeInt start; RuntimeInt count ] ->
+                    let textBytes = utf8.GetBytes text
+                    let isBoundary (index: int64) = index = int64 textBytes.Length || (textBytes[int index] &&& 0xC0uy) <> 0x80uy
+                    if start < 0L || count < 0L || start > int64 textBytes.Length || count > int64 textBytes.Length - start
+                       || not (isBoundary start) || not (isBoundary (start + count)) then [ none IrString ]
+                    else [ some IrString (RuntimeString(utf8.GetString(textBytes, int start, int count))) ]
+                | "string.byte-at", [ RuntimeString text; RuntimeInt index ] ->
+                    let textBytes = utf8.GetBytes text
+                    if index < 0L || index >= int64 textBytes.Length then [ none IrInt ]
+                    else [ some IrInt (RuntimeInt(int64 textBytes[int index])) ]
+                | "int.parse", [ RuntimeString text ] ->
+                    let digits = if text.StartsWith "-" then text.Substring 1 else text
+                    let mutable parsed = 0L
+                    if digits.Length = 0 || not (digits |> Seq.forall Char.IsAsciiDigit)
+                       || not (Int64.TryParse(text, Globalization.NumberStyles.AllowLeadingSign, Globalization.CultureInfo.InvariantCulture, &parsed))
+                       || text.StartsWith "+" then [ none IrInt ]
+                    else [ some IrInt (RuntimeInt parsed) ]
+                | _ -> fail "IR_PRIMITIVE_ARGUMENTS" $"Primitive '{operation}' received unsupported arguments." (Some currentWord) (site |> Option.bind sourceSpan) [] []
+            | "crypto.random-bytes", [ RuntimeInt count ] ->
+                if count < 0L || count > 65536L then
+                    fail "RUNTIME_RANDOM_BYTES_RANGE" "crypto.random-bytes takes a count from 0 to 65536." (Some currentWord) (site |> Option.bind sourceSpan) [ "0..65536" ] [ string count ]
+                [ RuntimeBytes(Security.Cryptography.RandomNumberGenerator.GetBytes(int count)) ]
             | "string.replace", [ RuntimeString text; RuntimeString old; RuntimeString replacement ] ->
                 if old.Length = 0 then
                     [ RuntimeString text ]

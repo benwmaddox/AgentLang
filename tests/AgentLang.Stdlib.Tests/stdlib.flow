@@ -1,0 +1,269 @@
+// Standard library slice 1: Bytes, base64, hex, crypto and byte-offset string
+// primitives. Bytes have no literal; tests compare through hex or base64.
+
+fn stdlib.hex-of-text(text: String) -> String {
+    hex.encode(bytes.from-utf8(text))
+}
+
+test stdlib.hex-of-text/mixed {
+    stdlib.hex-of-text("aé🚀")
+    => value "61c3a9f09f9a80"
+}
+
+fn stdlib.text-of-base64(text: String) -> String {
+    match base64.decode(text) {
+        none => "<invalid base64>"
+        some data => match bytes.to-utf8(data) {
+            none => "<invalid utf8>"
+            some decoded => decoded
+        }
+    }
+}
+
+test stdlib.text-of-base64/round-trip {
+    stdlib.text-of-base64(base64.encode(bytes.from-utf8("hello, wörld")))
+    => value "hello, wörld"
+}
+
+test stdlib.text-of-base64/invalid {
+    stdlib.text-of-base64("@@@")
+    => value "<invalid base64>"
+}
+
+test stdlib.text-of-base64/invalid-utf8 {
+    stdlib.text-of-base64("/w==")
+    => value "<invalid utf8>"
+}
+
+fn stdlib.url-base64-of-text(text: String) -> String {
+    base64.url-encode(bytes.from-utf8(text))
+}
+
+test stdlib.url-base64-of-text/unpadded {
+    stdlib.url-base64-of-text("??>")
+    => value "Pz8-"
+}
+
+fn stdlib.hex-of-url-base64(text: String) -> String {
+    match base64.url-decode(text) {
+        none => "<invalid>"
+        some data => hex.encode(data)
+    }
+}
+
+test stdlib.hex-of-url-base64/csrf-session {
+    stdlib.hex-of-url-base64("qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k")
+    => value "a8adf3bfb710da86253f8fac5fa26d5b49c17fd791d6e1da31d2e0139895cbc9"
+}
+
+test stdlib.hex-of-url-base64/rejects-standard-alphabet {
+    stdlib.hex-of-url-base64("Pz8+")
+    => value "<invalid>"
+}
+
+fn stdlib.sha256-hex(text: String) -> String {
+    hex.encode(crypto.sha256(bytes.from-utf8(text)))
+}
+
+test stdlib.sha256-hex/abc {
+    stdlib.sha256-hex("abc")
+    => value "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+}
+
+fn stdlib.hmac-hex(key: String, message: String) -> String {
+    hex.encode(crypto.hmac-sha256(bytes.from-utf8(key), bytes.from-utf8(message)))
+}
+
+test stdlib.hmac-hex/fox {
+    stdlib.hmac-hex("key", "The quick brown fox jumps over the lazy dog")
+    => value "f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8"
+}
+
+// Rails: global_csrf_token = HMAC-SHA256(real session token, "!real_csrf_token").
+fn stdlib.rails-csrf-hmac-hex(session-token: String, identifier: String) -> String {
+    match base64.url-decode(session-token) {
+        none => "<invalid>"
+        some secret => hex.encode(crypto.hmac-sha256(secret, bytes.from-utf8(identifier)))
+    }
+}
+
+test stdlib.rails-csrf-hmac-hex/global {
+    stdlib.rails-csrf-hmac-hex("qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k", "!real_csrf_token")
+    => value "6ec0767be83c2cd5b35a59da9e04dc63995d1884b214289561b6d7528cd85d37"
+}
+
+test stdlib.rails-csrf-hmac-hex/form {
+    stdlib.rails-csrf-hmac-hex("qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k", "/rooms/1/messages#post")
+    => value "c619633b83b27a77ba076ca7df0d6fbbcf92c7ac28d070244f7aed5f26fefa9a"
+}
+
+fn stdlib.pbkdf2-hex(password: String, salt: String, iterations: Int, length: Int) -> String {
+    match crypto.pbkdf2-sha256(bytes.from-utf8(password), bytes.from-utf8(salt), iterations, length) {
+        none => "<invalid>"
+        some key => hex.encode(key)
+    }
+}
+
+test stdlib.pbkdf2-hex/rfc-style {
+    stdlib.pbkdf2-hex("password", "salt", 1, 32)
+    => value "120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b"
+}
+
+test stdlib.pbkdf2-hex/signed-id-key {
+    stdlib.pbkdf2-hex("secret", "active_record/signed_id", 1000, 64)
+    => value "d03d10936c20e70291800f31fbf41ff925926c3568f5449e6e17ec74fad0497696fcebb6aa1f88fd866f0b6cee49cd23cbcc5afdaecb60f643f05b1bcbe1f13f"
+}
+
+test stdlib.pbkdf2-hex/zero-iterations {
+    stdlib.pbkdf2-hex("password", "salt", 0, 32)
+    => value "<invalid>"
+}
+
+fn stdlib.xor-hex(left: String, right: String) -> String {
+    match bytes.xor(bytes.from-utf8(left), bytes.from-utf8(right)) {
+        none => "<length mismatch>"
+        some data => hex.encode(data)
+    }
+}
+
+test stdlib.xor-hex/same-length {
+    stdlib.xor-hex("ab", "AB")
+    => value "2020"
+}
+
+test stdlib.xor-hex/mismatch {
+    stdlib.xor-hex("ab", "A")
+    => value "<length mismatch>"
+}
+
+fn stdlib.equal-text?(left: String, right: String) -> Bool {
+    bytes.equal-constant-time?(bytes.from-utf8(left), bytes.from-utf8(right))
+}
+
+test stdlib.equal-text?/same {
+    stdlib.equal-text?("token", "token")
+    => value true
+}
+
+test stdlib.equal-text?/different-length {
+    stdlib.equal-text?("token", "toke")
+    => value false
+}
+
+fn stdlib.middle-hex(text: String, start: Int, count: Int) -> String {
+    match bytes.slice(bytes.concat(bytes.from-utf8(text), bytes.from-utf8("!")), start, count) {
+        none => "<out of range>"
+        some data => hex.encode(data)
+    }
+}
+
+test stdlib.middle-hex/in-range {
+    stdlib.middle-hex("abc", 1, 3)
+    => value "626321"
+}
+
+test stdlib.middle-hex/out-of-range {
+    stdlib.middle-hex("abc", 2, 3)
+    => value "<out of range>"
+}
+
+fn stdlib.byte-count(text: String) -> Int {
+    bytes.length(bytes.from-utf8(text))
+}
+
+test stdlib.byte-count/rocket {
+    stdlib.byte-count("🚀")
+    => value 4
+}
+
+fn stdlib.split(text: String, separator: String) -> List<String> {
+    string.split(text, separator)
+}
+
+test stdlib.split/semicolons {
+    stdlib.split("a; b;; c", ";")
+    => value ["a", " b", "", " c"]
+}
+
+test stdlib.split/empty-separator {
+    stdlib.split("abc", "")
+    => value ["abc"]
+}
+
+test stdlib.split/multibyte {
+    stdlib.split("é🚀é", "🚀")
+    => value ["é", "é"]
+}
+
+fn stdlib.index-of(text: String, needle: String, start: Int) -> Int {
+    match string.index-of(text, needle, start) {
+        none => -1
+        some index => index
+    }
+}
+
+test stdlib.index-of/byte-offset {
+    stdlib.index-of("é=é=", "=", 3)
+    => value 5
+}
+
+test stdlib.index-of/missing {
+    stdlib.index-of("abc", "z", 0)
+    => value -1
+}
+
+fn stdlib.slice(text: String, start: Int, count: Int) -> String {
+    match string.slice(text, start, count) {
+        none => "<invalid>"
+        some piece => piece
+    }
+}
+
+test stdlib.slice/ascii {
+    stdlib.slice("Mozilla/5.0", 8, 3)
+    => value "5.0"
+}
+
+test stdlib.slice/splits-character {
+    stdlib.slice("é", 1, 1)
+    => value "<invalid>"
+}
+
+fn stdlib.byte-at(text: String, index: Int) -> Int {
+    match string.byte-at(text, index) {
+        none => -1
+        some value => value
+    }
+}
+
+test stdlib.byte-at/second {
+    stdlib.byte-at("é", 1)
+    => value 169
+}
+
+fn stdlib.parse(text: String) -> Int {
+    match int.parse(text) {
+        none => -999
+        some value => value
+    }
+}
+
+test stdlib.parse/digits {
+    stdlib.parse("120")
+    => value 120
+}
+
+test stdlib.parse/negative {
+    stdlib.parse("-7")
+    => value -7
+}
+
+test stdlib.parse/rejects-plus {
+    stdlib.parse("+7")
+    => value -999
+}
+
+test stdlib.parse/rejects-space {
+    stdlib.parse(" 7")
+    => value -999
+}

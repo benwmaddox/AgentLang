@@ -81,6 +81,24 @@ module Compiler =
         | "instant.add-days" -> [ TString; TInt ], [ TResult(TString, TString) ]
         | "string.concat" -> [ TString; TString ], [ TString ]
         | "string.replace" -> [ TString; TString; TString ], [ TString ]
+        | "string.split" -> [ TString; TString ], [ TList TString ]
+        | "string.index-of" -> [ TString; TString; TInt ], [ TOption TInt ]
+        | "string.slice" -> [ TString; TInt; TInt ], [ TOption TString ]
+        | "string.byte-at" -> [ TString; TInt ], [ TOption TInt ]
+        | "int.parse" -> [ TString ], [ TOption TInt ]
+        | "bytes.from-utf8" -> [ TString ], [ TBytes ]
+        | "bytes.to-utf8" -> [ TBytes ], [ TOption TString ]
+        | "bytes.length" -> [ TBytes ], [ TInt ]
+        | "bytes.concat" -> [ TBytes; TBytes ], [ TBytes ]
+        | "bytes.slice" -> [ TBytes; TInt; TInt ], [ TOption TBytes ]
+        | "bytes.xor" -> [ TBytes; TBytes ], [ TOption TBytes ]
+        | "bytes.equal-constant-time?" -> [ TBytes; TBytes ], [ TBool ]
+        | "base64.encode" | "base64.url-encode" | "hex.encode" -> [ TBytes ], [ TString ]
+        | "base64.decode" | "base64.url-decode" -> [ TString ], [ TOption TBytes ]
+        | "crypto.sha256" -> [ TBytes ], [ TBytes ]
+        | "crypto.hmac-sha256" -> [ TBytes; TBytes ], [ TBytes ]
+        | "crypto.pbkdf2-sha256" -> [ TBytes; TBytes; TInt; TInt ], [ TOption TBytes ]
+        | "crypto.random-bytes" -> [ TInt ], [ TBytes ]
         | "string.join" -> [ TList TString ], [ TString ]
         | "string.html-escape" -> [ TString ], [ TString ]
         | "string.html-fragment?" -> [ TString ], [ TBool ]
@@ -116,6 +134,7 @@ module Compiler =
         | "file.write" -> Set.singleton "fs.write"
         | "clock.now" -> Set.singleton "clock.read"
         | "console.write" -> Set.singleton "console.write"
+        | "crypto.random-bytes" -> Set.singleton "random.read"
         | _ -> Set.empty
 
     /// The initial standard vocabulary is deliberately small and boring.
@@ -131,7 +150,8 @@ module Compiler =
               "string.concat"; "string.replace"; "string.join"; "string.html-escape"; "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
               "string.length"; "string.byte-length"; "string.char-length"; "string.trim"; "string.to-lower"; "string.to-upper"; "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"
               "float.round"; "int.to-string"; "float.to-string"; "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
-              "dup"; "drop"; "swap"; "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write" ]
+              "dup"; "drop"; "swap"; "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write"
+              "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "crypto.random-bytes"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "int.parse" ]
         names
         |> List.map (fun name ->
             let inputs, outputs = builtinSignature name
