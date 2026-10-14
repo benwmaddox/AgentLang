@@ -456,6 +456,128 @@ module IrInterpreter =
             fail "IR_TEST_DISPATCH_PROGRAM_SHAPE" "The test-specific verified program contains source-map entries outside its original snapshot and mapped fixtures." None None
                 [ "original or fixture-owned source sites" ] (unexpectedSourceSites |> List.map (sprintf "%A"))
 
+    /// Standard library slice 1 (report 272): pure byte, text and crypto primitives.
+    /// Kept out of executePrimitive so its locals do not enlarge that recursive frame.
+    /// An empty result means the arguments do not match (every stdlib primitive returns one value).
+    let private stdlibPrimitive (operation: string) (arguments: RuntimeValue list) : RuntimeValue list =
+        let some itemType value = RuntimeOption(itemType, Some value)
+        let none itemType = RuntimeOption(itemType, None)
+        let utf8 = System.Text.UTF8Encoding(false, true)
+        // Strict base64: exact alphabet, no whitespace, '=' only as final
+        // padding, and zero unused tail bits, so every byte string has one text.
+        let strictBase64 (urlSafe: bool) (paddingRequired: bool) (text: string) : byte[] option =
+            let value (ch: char) =
+                if ch >= 'A' && ch <= 'Z' then int ch - int 'A'
+                elif ch >= 'a' && ch <= 'z' then int ch - int 'a' + 26
+                elif ch >= '0' && ch <= '9' then int ch - int '0' + 52
+                elif ch = (if urlSafe then '-' else '+') then 62
+                elif ch = (if urlSafe then '_' else '/') then 63
+                else -1
+            let data = text.TrimEnd('=')
+            let padding = text.Length - data.Length
+            let remainder = data.Length % 4
+            let expectedPadding = if remainder = 0 then 0 else 4 - remainder
+            if remainder = 1 || padding > 2
+               || (padding > 0 && padding <> expectedPadding)
+               || (paddingRequired && padding <> expectedPadding)
+               || data |> Seq.exists (fun ch -> value ch < 0) then None
+            else
+                let values = data |> Seq.map value |> Array.ofSeq
+                let tailMask = match remainder with 2 -> 0x0F | 3 -> 0x03 | _ -> 0
+                if remainder <> 0 && (values[values.Length - 1] &&& tailMask) <> 0 then None
+                else
+                    let output = Collections.Generic.List<byte>(data.Length * 3 / 4)
+                    let mutable bits = 0
+                    let mutable count = 0
+                    for v in values do
+                        bits <- (bits <<< 6) ||| v
+                        count <- count + 6
+                        if count >= 8 then
+                            count <- count - 8
+                            output.Add(byte ((bits >>> count) &&& 0xFF))
+                    Some(output.ToArray())
+        match operation, arguments with
+        | "bytes.from-utf8", [ RuntimeString text ] -> [ RuntimeBytes(utf8.GetBytes text) ]
+        | "bytes.to-utf8", [ RuntimeBytes data ] ->
+            [ (try some IrString (RuntimeString(utf8.GetString data)) with :? Text.DecoderFallbackException -> none IrString) ]
+        | "bytes.length", [ RuntimeBytes data ] -> [ RuntimeInt(int64 data.Length) ]
+        | "bytes.concat", [ RuntimeBytes left; RuntimeBytes right ] -> [ RuntimeBytes(Array.append left right) ]
+        | "bytes.slice", [ RuntimeBytes data; RuntimeInt start; RuntimeInt count ] ->
+            if start < 0L || count < 0L || start > int64 data.Length || count > int64 data.Length - start then [ none IrBytes ]
+            else [ some IrBytes (RuntimeBytes(Array.sub data (int start) (int count))) ]
+        | "bytes.xor", [ RuntimeBytes left; RuntimeBytes right ] ->
+            if left.Length <> right.Length then [ none IrBytes ]
+            else [ some IrBytes (RuntimeBytes(Array.map2 (^^^) left right)) ]
+        | "bytes.equal-constant-time?", [ RuntimeBytes left; RuntimeBytes right ] ->
+            [ RuntimeBool(Security.Cryptography.CryptographicOperations.FixedTimeEquals(ReadOnlySpan left, ReadOnlySpan right)) ]
+        | "base64.encode", [ RuntimeBytes data ] -> [ RuntimeString(Convert.ToBase64String data) ]
+        | "base64.decode", [ RuntimeString text ] ->
+            [ (match strictBase64 false true text with Some data -> some IrBytes (RuntimeBytes data) | None -> none IrBytes) ]
+        | "base64.url-encode", [ RuntimeBytes data ] ->
+            [ RuntimeString(Convert.ToBase64String(data).TrimEnd('=').Replace('+', '-').Replace('/', '_')) ]
+        | "base64.url-decode", [ RuntimeString text ] ->
+            [ (match strictBase64 true false text with Some data -> some IrBytes (RuntimeBytes data) | None -> none IrBytes) ]
+        | "hex.encode", [ RuntimeBytes data ] -> [ RuntimeString(Convert.ToHexString(data).ToLowerInvariant()) ]
+        | "crypto.sha256", [ RuntimeBytes data ] -> [ RuntimeBytes(Security.Cryptography.SHA256.HashData data) ]
+        | "crypto.hmac-sha256", [ RuntimeBytes key; RuntimeBytes message ] ->
+            [ RuntimeBytes(Security.Cryptography.HMACSHA256.HashData(key, message)) ]
+        | "crypto.pbkdf2-sha256", [ RuntimeBytes password; RuntimeBytes salt; RuntimeInt iterations; RuntimeInt length ] ->
+            if iterations < 1L || iterations > 1000000L || length < 1L || length > 1024L then [ none IrBytes ]
+            else
+                let key = Security.Cryptography.Rfc2898DeriveBytes.Pbkdf2(password, salt, int iterations, Security.Cryptography.HashAlgorithmName.SHA256, int length)
+                [ some IrBytes (RuntimeBytes key) ]
+        | "string.split", [ RuntimeString text; RuntimeString separator ] ->
+            let pieces =
+                if separator.Length = 0 then [ text ]
+                else
+                    let textBytes = utf8.GetBytes text
+                    let separatorBytes = utf8.GetBytes separator
+                    let results = Collections.Generic.List<string>()
+                    let mutable start = 0
+                    let mutable index = 0
+                    while index <= textBytes.Length - separatorBytes.Length do
+                        if ReadOnlySpan(textBytes, index, separatorBytes.Length).SequenceEqual(ReadOnlySpan separatorBytes) then
+                            results.Add(utf8.GetString(textBytes, start, index - start))
+                            index <- index + separatorBytes.Length
+                            start <- index
+                        else index <- index + 1
+                    results.Add(utf8.GetString(textBytes, start, textBytes.Length - start))
+                    List.ofSeq results
+            [ RuntimeList(IrString, pieces |> List.map RuntimeString) ]
+        | "string.index-of", [ RuntimeString text; RuntimeString needle; RuntimeInt start ] ->
+            let textBytes = utf8.GetBytes text
+            let needleBytes = utf8.GetBytes needle
+            if start < 0L || start > int64 textBytes.Length then [ none IrInt ]
+            else
+                let found = ReadOnlySpan(textBytes, int start, textBytes.Length - int start).IndexOf(ReadOnlySpan needleBytes)
+                [ (if found < 0 then none IrInt else some IrInt (RuntimeInt(start + int64 found))) ]
+        | "string.slice", [ RuntimeString text; RuntimeInt start; RuntimeInt count ] ->
+            let textBytes = utf8.GetBytes text
+            let isBoundary (index: int64) = index = int64 textBytes.Length || (textBytes[int index] &&& 0xC0uy) <> 0x80uy
+            if start < 0L || count < 0L || start > int64 textBytes.Length || count > int64 textBytes.Length - start
+               || not (isBoundary start) || not (isBoundary (start + count)) then [ none IrString ]
+            else [ some IrString (RuntimeString(utf8.GetString(textBytes, int start, int count))) ]
+        | "string.byte-at", [ RuntimeString text; RuntimeInt index ] ->
+            let textBytes = utf8.GetBytes text
+            if index < 0L || index >= int64 textBytes.Length then [ none IrInt ]
+            else [ some IrInt (RuntimeInt(int64 textBytes[int index])) ]
+        | "string.byte-at-or", [ RuntimeString text; RuntimeInt index; RuntimeInt fallback ] ->
+            // The scalar form of string.byte-at for scanning loops: no Option.
+            let textBytes = utf8.GetBytes text
+            if index < 0L || index >= int64 textBytes.Length then [ RuntimeInt fallback ]
+            else [ RuntimeInt(int64 textBytes[int index]) ]
+        | "string.to-lower-ascii", [ RuntimeString text ] ->
+            // ASCII A-Z only: every other scalar value is unchanged.
+            [ RuntimeString(String(text.ToCharArray() |> Array.map (fun ch -> if ch >= 'A' && ch <= 'Z' then char (int ch + 32) else ch))) ]
+        | "int.parse", [ RuntimeString text ] ->
+            let digits = if text.StartsWith "-" then text.Substring 1 else text
+            let mutable parsed = 0L
+            if digits.Length = 0 || not (digits |> Seq.forall Char.IsAsciiDigit)
+               || not (Int64.TryParse(text, Globalization.NumberStyles.AllowLeadingSign, Globalization.CultureInfo.InvariantCulture, &parsed))
+               || text.StartsWith "+" then [ none IrInt ]
+            else [ some IrInt (RuntimeInt parsed) ]
+        | _ -> []
+
     let private sourceAt (sourceMap: Map<SourceSiteId, IrSourceSite>) site =
         sourceMap.TryFind site |> Option.map (fun entry -> entry.SiteSpan)
 
@@ -1150,124 +1272,9 @@ module IrInterpreter =
                       EstimatedOutputBytes = estimatedBytes }
                 [ RuntimeString(left + right) ]
             | ("bytes.from-utf8" | "bytes.to-utf8" | "bytes.length" | "bytes.concat" | "bytes.slice" | "bytes.xor" | "bytes.equal-constant-time?" | "base64.encode" | "base64.decode" | "base64.url-encode" | "base64.url-decode" | "hex.encode" | "crypto.sha256" | "crypto.hmac-sha256" | "crypto.pbkdf2-sha256" | "string.split" | "string.index-of" | "string.slice" | "string.byte-at" | "string.byte-at-or" | "int.parse" | "string.to-lower-ascii"), _ ->
-                // Standard library slice 1 (report 272): pure byte, text and crypto primitives.
-                let some itemType value = RuntimeOption(itemType, Some value)
-                let none itemType = RuntimeOption(itemType, None)
-                let utf8 = System.Text.UTF8Encoding(false, true)
-                // Strict base64: exact alphabet, no whitespace, '=' only as final
-                // padding, and zero unused tail bits, so every byte string has one text.
-                let strictBase64 (urlSafe: bool) (paddingRequired: bool) (text: string) : byte[] option =
-                    let value (ch: char) =
-                        if ch >= 'A' && ch <= 'Z' then int ch - int 'A'
-                        elif ch >= 'a' && ch <= 'z' then int ch - int 'a' + 26
-                        elif ch >= '0' && ch <= '9' then int ch - int '0' + 52
-                        elif ch = (if urlSafe then '-' else '+') then 62
-                        elif ch = (if urlSafe then '_' else '/') then 63
-                        else -1
-                    let data = text.TrimEnd('=')
-                    let padding = text.Length - data.Length
-                    let remainder = data.Length % 4
-                    let expectedPadding = if remainder = 0 then 0 else 4 - remainder
-                    if remainder = 1 || padding > 2
-                       || (padding > 0 && padding <> expectedPadding)
-                       || (paddingRequired && padding <> expectedPadding)
-                       || data |> Seq.exists (fun ch -> value ch < 0) then None
-                    else
-                        let values = data |> Seq.map value |> Array.ofSeq
-                        let tailMask = match remainder with 2 -> 0x0F | 3 -> 0x03 | _ -> 0
-                        if remainder <> 0 && (values[values.Length - 1] &&& tailMask) <> 0 then None
-                        else
-                            let output = Collections.Generic.List<byte>(data.Length * 3 / 4)
-                            let mutable bits = 0
-                            let mutable count = 0
-                            for v in values do
-                                bits <- (bits <<< 6) ||| v
-                                count <- count + 6
-                                if count >= 8 then
-                                    count <- count - 8
-                                    output.Add(byte ((bits >>> count) &&& 0xFF))
-                            Some(output.ToArray())
-                match operation, arguments with
-                | "bytes.from-utf8", [ RuntimeString text ] -> [ RuntimeBytes(utf8.GetBytes text) ]
-                | "bytes.to-utf8", [ RuntimeBytes data ] ->
-                    [ (try some IrString (RuntimeString(utf8.GetString data)) with :? Text.DecoderFallbackException -> none IrString) ]
-                | "bytes.length", [ RuntimeBytes data ] -> [ RuntimeInt(int64 data.Length) ]
-                | "bytes.concat", [ RuntimeBytes left; RuntimeBytes right ] -> [ RuntimeBytes(Array.append left right) ]
-                | "bytes.slice", [ RuntimeBytes data; RuntimeInt start; RuntimeInt count ] ->
-                    if start < 0L || count < 0L || start > int64 data.Length || count > int64 data.Length - start then [ none IrBytes ]
-                    else [ some IrBytes (RuntimeBytes(Array.sub data (int start) (int count))) ]
-                | "bytes.xor", [ RuntimeBytes left; RuntimeBytes right ] ->
-                    if left.Length <> right.Length then [ none IrBytes ]
-                    else [ some IrBytes (RuntimeBytes(Array.map2 (^^^) left right)) ]
-                | "bytes.equal-constant-time?", [ RuntimeBytes left; RuntimeBytes right ] ->
-                    [ RuntimeBool(Security.Cryptography.CryptographicOperations.FixedTimeEquals(ReadOnlySpan left, ReadOnlySpan right)) ]
-                | "base64.encode", [ RuntimeBytes data ] -> [ RuntimeString(Convert.ToBase64String data) ]
-                | "base64.decode", [ RuntimeString text ] ->
-                    [ (match strictBase64 false true text with Some data -> some IrBytes (RuntimeBytes data) | None -> none IrBytes) ]
-                | "base64.url-encode", [ RuntimeBytes data ] ->
-                    [ RuntimeString(Convert.ToBase64String(data).TrimEnd('=').Replace('+', '-').Replace('/', '_')) ]
-                | "base64.url-decode", [ RuntimeString text ] ->
-                    [ (match strictBase64 true false text with Some data -> some IrBytes (RuntimeBytes data) | None -> none IrBytes) ]
-                | "hex.encode", [ RuntimeBytes data ] -> [ RuntimeString(Convert.ToHexString(data).ToLowerInvariant()) ]
-                | "crypto.sha256", [ RuntimeBytes data ] -> [ RuntimeBytes(Security.Cryptography.SHA256.HashData data) ]
-                | "crypto.hmac-sha256", [ RuntimeBytes key; RuntimeBytes message ] ->
-                    [ RuntimeBytes(Security.Cryptography.HMACSHA256.HashData(key, message)) ]
-                | "crypto.pbkdf2-sha256", [ RuntimeBytes password; RuntimeBytes salt; RuntimeInt iterations; RuntimeInt length ] ->
-                    if iterations < 1L || iterations > 1000000L || length < 1L || length > 1024L then [ none IrBytes ]
-                    else
-                        let key = Security.Cryptography.Rfc2898DeriveBytes.Pbkdf2(password, salt, int iterations, Security.Cryptography.HashAlgorithmName.SHA256, int length)
-                        [ some IrBytes (RuntimeBytes key) ]
-                | "string.split", [ RuntimeString text; RuntimeString separator ] ->
-                    let pieces =
-                        if separator.Length = 0 then [ text ]
-                        else
-                            let textBytes = utf8.GetBytes text
-                            let separatorBytes = utf8.GetBytes separator
-                            let results = Collections.Generic.List<string>()
-                            let mutable start = 0
-                            let mutable index = 0
-                            while index <= textBytes.Length - separatorBytes.Length do
-                                if ReadOnlySpan(textBytes, index, separatorBytes.Length).SequenceEqual(ReadOnlySpan separatorBytes) then
-                                    results.Add(utf8.GetString(textBytes, start, index - start))
-                                    index <- index + separatorBytes.Length
-                                    start <- index
-                                else index <- index + 1
-                            results.Add(utf8.GetString(textBytes, start, textBytes.Length - start))
-                            List.ofSeq results
-                    [ RuntimeList(IrString, pieces |> List.map RuntimeString) ]
-                | "string.index-of", [ RuntimeString text; RuntimeString needle; RuntimeInt start ] ->
-                    let textBytes = utf8.GetBytes text
-                    let needleBytes = utf8.GetBytes needle
-                    if start < 0L || start > int64 textBytes.Length then [ none IrInt ]
-                    else
-                        let found = ReadOnlySpan(textBytes, int start, textBytes.Length - int start).IndexOf(ReadOnlySpan needleBytes)
-                        [ (if found < 0 then none IrInt else some IrInt (RuntimeInt(start + int64 found))) ]
-                | "string.slice", [ RuntimeString text; RuntimeInt start; RuntimeInt count ] ->
-                    let textBytes = utf8.GetBytes text
-                    let isBoundary (index: int64) = index = int64 textBytes.Length || (textBytes[int index] &&& 0xC0uy) <> 0x80uy
-                    if start < 0L || count < 0L || start > int64 textBytes.Length || count > int64 textBytes.Length - start
-                       || not (isBoundary start) || not (isBoundary (start + count)) then [ none IrString ]
-                    else [ some IrString (RuntimeString(utf8.GetString(textBytes, int start, int count))) ]
-                | "string.byte-at", [ RuntimeString text; RuntimeInt index ] ->
-                    let textBytes = utf8.GetBytes text
-                    if index < 0L || index >= int64 textBytes.Length then [ none IrInt ]
-                    else [ some IrInt (RuntimeInt(int64 textBytes[int index])) ]
-                | "string.byte-at-or", [ RuntimeString text; RuntimeInt index; RuntimeInt fallback ] ->
-                    // The scalar form of string.byte-at for scanning loops: no Option.
-                    let textBytes = utf8.GetBytes text
-                    if index < 0L || index >= int64 textBytes.Length then [ RuntimeInt fallback ]
-                    else [ RuntimeInt(int64 textBytes[int index]) ]
-                | "string.to-lower-ascii", [ RuntimeString text ] ->
-                    // ASCII A-Z only: every other scalar value is unchanged.
-                    [ RuntimeString(String(text.ToCharArray() |> Array.map (fun ch -> if ch >= 'A' && ch <= 'Z' then char (int ch + 32) else ch))) ]
-                | "int.parse", [ RuntimeString text ] ->
-                    let digits = if text.StartsWith "-" then text.Substring 1 else text
-                    let mutable parsed = 0L
-                    if digits.Length = 0 || not (digits |> Seq.forall Char.IsAsciiDigit)
-                       || not (Int64.TryParse(text, Globalization.NumberStyles.AllowLeadingSign, Globalization.CultureInfo.InvariantCulture, &parsed))
-                       || text.StartsWith "+" then [ none IrInt ]
-                    else [ some IrInt (RuntimeInt parsed) ]
-                | _ -> fail "IR_PRIMITIVE_ARGUMENTS" $"Primitive '{operation}' received unsupported arguments." (Some currentWord) (site |> Option.bind sourceSpan) [] []
+                match stdlibPrimitive operation arguments with
+                | [] -> fail "IR_PRIMITIVE_ARGUMENTS" $"Primitive '{operation}' received unsupported arguments." (Some currentWord) (site |> Option.bind sourceSpan) [] []
+                | results -> results
             | "crypto.random-bytes", [ RuntimeInt count ] ->
                 if count < 0L || count > 65536L then
                     fail "RUNTIME_RANDOM_BYTES_RANGE" "crypto.random-bytes takes a count from 0 to 65536." (Some currentWord) (site |> Option.bind sourceSpan) [ "0..65536" ] [ string count ]
@@ -1377,6 +1384,46 @@ module IrInterpreter =
                 | EffectUnit -> [ RuntimeUnit ]
                 | _ -> fail "IR_BACKEND_EFFECT_RESULT" "Console write returned an invalid primitive result." (Some operation) None [ "Unit" ] []
             | _ -> typedError ()
+
+        /// Loop execution lives outside executeBlock so its locals do not enlarge
+        /// that recursive frame (Debug builds give every local its own slot).
+        and executeForRange (depth: int) (currentWord: string) (localNames: Map<LocalSlot, string>) (site: SourceSiteId) (indexLocal: LocalSlot) (body: IrBlock) (prefix: RuntimeValue list) (bounds: RuntimeValue list) (initialLocals: Map<LocalSlot, RuntimeValue>) =
+            let instructionSpan = sourceSpan site
+            let mutable locals = initialLocals
+            match bounds with
+            | [ RuntimeInt start; RuntimeInt finish ] ->
+                let assigned = assignedIn body |> Set.filter locals.ContainsKey |> Set.toList
+                let mutable index = start
+                let mutable running = true
+                while running && index < finish do
+                    chargeLoopIteration currentWord site
+                    let _, bodyLocals = executeBlock depth currentWord localNames body prefix (Map.add indexLocal (RuntimeInt index) locals)
+                    locals <- carryAssigned assigned locals bodyLocals
+                    if loopControl.Value = 1 then running <- false
+                    loopControl.Value <- 0
+                    index <- index + 1L
+                locals
+            | actual -> fail "RUNTIME_INTERNAL_TYPE" "Range loop received non-Int bounds after type checking." (Some currentWord) instructionSpan [ "Int"; "Int" ] (runtimeTypeNames program actual)
+
+        and executeForList (depth: int) (currentWord: string) (localNames: Map<LocalSlot, string>) (site: SourceSiteId) (itemLocal: LocalSlot) (indexLocal: LocalSlot option) (body: IrBlock) (prefix: RuntimeValue list) (input: RuntimeValue) (initialLocals: Map<LocalSlot, RuntimeValue>) =
+            let instructionSpan = sourceSpan site
+            let mutable locals = initialLocals
+            match input with
+            | RuntimeList(_, items) ->
+                let assigned = assignedIn body |> Set.filter locals.ContainsKey |> Set.toList
+                let mutable pending = items
+                let mutable index = 0L
+                while not pending.IsEmpty do
+                    chargeLoopIteration currentWord site
+                    let bound = Map.add itemLocal pending.Head locals
+                    let bound = match indexLocal with Some slot -> Map.add slot (RuntimeInt index) bound | None -> bound
+                    let _, bodyLocals = executeBlock depth currentWord localNames body prefix bound
+                    locals <- carryAssigned assigned locals bodyLocals
+                    pending <- if loopControl.Value = 1 then [] else pending.Tail
+                    loopControl.Value <- 0
+                    index <- index + 1L
+                locals
+            | actual -> fail "RUNTIME_INTERNAL_TYPE" "List loop received a non-list after type checking." (Some currentWord) instructionSpan [ "List<T>" ] [ formatType program (runtimeValueType actual) ]
 
         and executeBlock (depth: int) (currentWord: string) (localNames: Map<LocalSlot, string>) (block: IrBlock) (initialStack: RuntimeValue list) (initialLocals: Map<LocalSlot, RuntimeValue>) =
             let mutable stack = initialStack
@@ -1693,38 +1740,12 @@ module IrInterpreter =
                 | IrOperation.Continue -> loopControl.Value <- 2
                 | IrOperation.ForRange(indexLocal, body) ->
                     let prefix, bounds = popArguments "for" [ IrInt; IrInt ]
-                    match bounds with
-                    | [ RuntimeInt start; RuntimeInt finish ] ->
-                        let assigned = assignedIn body |> Set.filter locals.ContainsKey |> Set.toList
-                        let mutable index = start
-                        let mutable running = true
-                        while running && index < finish do
-                            chargeLoopIteration currentWord instruction.Site
-                            let _, bodyLocals = executeBlock depth currentWord localNames body prefix (Map.add indexLocal (RuntimeInt index) locals)
-                            locals <- carryAssigned assigned locals bodyLocals
-                            if loopControl.Value = 1 then running <- false
-                            loopControl.Value <- 0
-                            index <- index + 1L
-                        stack <- prefix
-                    | actual -> fail "RUNTIME_INTERNAL_TYPE" "Range loop received non-Int bounds after type checking." (Some currentWord) instructionSpan [ "Int"; "Int" ] (runtimeTypeNames program actual)
+                    locals <- executeForRange depth currentWord localNames instruction.Site indexLocal body prefix bounds locals
+                    stack <- prefix
                 | IrOperation.ForList(_, itemLocal, indexLocal, body) ->
                     let prefix, input = popOne "A list loop requires a List<T>." currentWord instruction.Site []
-                    match input with
-                    | RuntimeList(_, items) ->
-                        let assigned = assignedIn body |> Set.filter locals.ContainsKey |> Set.toList
-                        let mutable pending = items
-                        let mutable index = 0L
-                        while not pending.IsEmpty do
-                            chargeLoopIteration currentWord instruction.Site
-                            let bound = Map.add itemLocal pending.Head locals
-                            let bound = match indexLocal with Some slot -> Map.add slot (RuntimeInt index) bound | None -> bound
-                            let _, bodyLocals = executeBlock depth currentWord localNames body prefix bound
-                            locals <- carryAssigned assigned locals bodyLocals
-                            pending <- if loopControl.Value = 1 then [] else pending.Tail
-                            loopControl.Value <- 0
-                            index <- index + 1L
-                        stack <- prefix
-                    | actual -> fail "RUNTIME_INTERNAL_TYPE" "List loop received a non-list after type checking." (Some currentWord) instructionSpan [ "List<T>" ] [ formatType program (runtimeValueType actual) ]
+                    locals <- executeForList depth currentWord localNames instruction.Site itemLocal indexLocal body prefix input locals
+                    stack <- prefix
                 | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
                     let prefix, input = popOne "match-option requires an Option<T>." currentWord instruction.Site []
                     match input with
