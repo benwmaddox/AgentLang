@@ -165,6 +165,11 @@ let private stopServer (server: Server) =
     let errors = lock server.Errors (fun () -> server.Errors.ToString())
     check $"{server.Label}: exit code 0 ({server.Process.ExitCode}) {errors}" (server.Process.ExitCode = 0)
     check $"{server.Label}: clean stop with no failed requests: {errors}" (errors.Contains("STOPPED") && errors.Contains("failures=0"))
+    // Prepared once per worker per SQL literal: the counter app has 4 distinct
+    // statements that prepare (init count, list, find, insert; bad-sql fails to prepare),
+    // and the parity sequence runs each several times.
+    let prepared = Text.RegularExpressions.Regex.Match(errors, @"max-prepared-statements=(\d+)")
+    check $"{server.Label}: statements prepared once per literal ({prepared.Value})" (prepared.Success && int prepared.Groups[1].Value >= 1 && int prepared.Groups[1].Value <= 4)
     check $"{server.Label}: config values are never logged" (not (errors.Contains "s3cret") && not (server.Output.ToString().Contains "s3cret"))
 
 // ---- checks against a running server ----

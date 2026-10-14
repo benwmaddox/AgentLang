@@ -772,6 +772,7 @@ int main(int argc, char **argv) {
   static fh_worker workers[FH_MAX_WORKERS];
   int i, failed = 0;
   uint64_t requests = 0u, failures = 0u;
+  uint32_t max_prepared = 0u;
 #if defined(_WIN32)
   WSADATA wsa;
   fh_socket shared_listener;
@@ -877,6 +878,7 @@ int main(int argc, char **argv) {
 #endif
     requests += workers[i].requests;
     failures += workers[i].failures;
+    if (fh_db_prepared_count(workers[i].db) > max_prepared) max_prepared = fh_db_prepared_count(workers[i].db);
     fh_db_close(workers[i].db);
     fh_free(workers[i].stack);
     fh_free(workers[i].init_bitmap);
@@ -890,6 +892,6 @@ int main(int argc, char **argv) {
   WSACleanup();
 #endif
   if (options.config_value) { memset(options.config_value, 0, options.config_extent); free(options.config_value); }
-  fprintf(stderr, "STOPPED requests=%llu failures=%llu\n", (unsigned long long)requests, (unsigned long long)failures);
+  fprintf(stderr, "STOPPED requests=%llu failures=%llu max-prepared-statements=%u\n", (unsigned long long)requests, (unsigned long long)failures, max_prepared);
   return failed ? 1 : 0;
 }
