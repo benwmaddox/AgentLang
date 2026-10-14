@@ -358,7 +358,7 @@ foreach ($helperName in $helperPaths.Keys) {
     $sourcePins[$relativePath] = Get-Hash $helperPath
 }
 $hostHash = Get-Hash $HostSourcePath
-$expectedHostHash = '88A09A18731CFFEF80561DA40FAB9A39C24669104EC1B181D22A96C8B1BB9E1F'  # report 271: the session CSRF secret in, a fresh one out
+$expectedHostHash = '743B79D8C25498EBB424250D526B977D2C85CA5BD44E9854CE122DCF9682ABCF'  # report 272: raw User-Agent in; browser normalization is Flow
 if ($hostHash -ne $expectedHostHash) {
     throw 'HTTP host source differs from the reviewed native host revision.'
 }
