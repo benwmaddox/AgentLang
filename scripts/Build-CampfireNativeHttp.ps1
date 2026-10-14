@@ -243,7 +243,7 @@ function Assert-ClosedRoomReadManifest([string] $ManifestPath, [string] $Expecte
         'campfire.browser.version-at-least?',
         'campfire.rooms.find-for-user',
         'campfire.membership.exists?',
-        'campfire.messages.last-page'
+        'campfire.messages.last-page-with-creators'
     )
     $actualOperations = @($info.operations | ForEach-Object { [string]$_.operationName })
     Assert-ExactStringSet $actualOperations $expectedOperations 'Manifest operations'

@@ -236,6 +236,8 @@ type SqliteProvider private (path: string, clock: IClock, guidSource: unit -> Gu
 
             use command = connection.CreateCommand()
             command.CommandText <-
+                "WITH page AS (SELECT id, ROW_NUMBER() OVER (ORDER BY created_at DESC) AS position " +
+                "FROM messages WHERE room_id = $roomId ORDER BY created_at DESC LIMIT 40) " +
                 "SELECT messages.id, messages.room_id, messages.creator_id, " +
                 "CAST(strftime('%s', messages.created_at) AS INTEGER) * 1000 + " +
                 "CAST(substr(strftime('%f', messages.created_at), 4) AS INTEGER), " +
@@ -243,11 +245,11 @@ type SqliteProvider private (path: string, clock: IClock, guidSource: unit -> Gu
                 "CAST(substr(strftime('%f', messages.updated_at), 4) AS INTEGER), " +
                 "messages.client_message_id, rich_text.body, messages.created_at, " +
                 "users.name, COALESCE(users.bio, ''), users.updated_at " +
-                "FROM messages " +
+                "FROM page INNER JOIN messages ON messages.id = page.id " +
                 "INNER JOIN users ON users.id = messages.creator_id " +
                 "LEFT JOIN action_text_rich_texts AS rich_text " +
                 "ON rich_text.record_id = messages.id AND rich_text.record_type = 'Message' AND rich_text.name = 'body' " +
-                "WHERE messages.room_id = $roomId ORDER BY messages.created_at DESC LIMIT 40"
+                "ORDER BY page.position DESC"
             SqliteDetails.addParameter command "$roomId" (box rawRoomId)
             command.Prepare()
             use reader = command.ExecuteReader()
@@ -265,7 +267,7 @@ type SqliteProvider private (path: string, clock: IClock, guidSource: unit -> Gu
                       CreatorName = reader.GetString(8)
                       CreatorBio = reader.GetString(9)
                       CreatorUpdatedAt = reader.GetString(10) }
-            rows |> Seq.toList |> List.rev)
+            rows |> Seq.toList)
 
     member _.CreateMessage(message: NewMessage) =
         if obj.ReferenceEquals(box message, null) ||

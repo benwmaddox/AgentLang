@@ -136,6 +136,13 @@ static const char *const room_read_queries[AL_CAMPFIRE_ROOM_READ_SQLITE_STATEMEN
     "SELECT EXISTS (SELECT 1 FROM \"memberships\" "
     "WHERE \"user_id\" = $userId AND \"room_id\" = $roomId)",
     "SELECT EXISTS (SELECT 1 FROM \"rooms\" WHERE \"id\" = $roomId)",
+    /* The newest forty are cut first (only ids are sorted); joins and
+     * formatting run for those rows alone, oldest first, so one pass writes
+     * the page in display order. Ties keep the reverse of the newest-first
+     * order (report 270). */
+    "WITH page AS (SELECT id, ROW_NUMBER() OVER "
+    "(ORDER BY created_at DESC) AS position FROM messages "
+    "WHERE room_id = $roomId ORDER BY created_at DESC LIMIT 40) "
     "SELECT messages.id, messages.room_id, messages.creator_id, "
     "CAST(strftime('%s', messages.created_at) AS INTEGER) * 1000 + "
     "CAST(substr(strftime('%f', messages.created_at), 4) AS INTEGER), "
@@ -143,12 +150,12 @@ static const char *const room_read_queries[AL_CAMPFIRE_ROOM_READ_SQLITE_STATEMEN
     "CAST(substr(strftime('%f', messages.updated_at), 4) AS INTEGER), "
     "messages.client_message_id, messages.created_at, users.name, "
     "COALESCE(users.bio, ''), users.updated_at, rich_text.body "
-    "FROM messages INNER JOIN users ON users.id = messages.creator_id "
+    "FROM page INNER JOIN messages ON messages.id = page.id "
+    "INNER JOIN users ON users.id = messages.creator_id "
     "LEFT JOIN action_text_rich_texts "
     "AS rich_text ON rich_text.record_id = messages.id AND "
     "rich_text.record_type = 'Message' AND rich_text.name = 'body' "
-    "WHERE messages.room_id = $roomId "
-    "ORDER BY messages.created_at DESC LIMIT 40",
+    "ORDER BY page.position DESC",
     "BEGIN DEFERRED",
     "BEGIN IMMEDIATE",
     "COMMIT",
@@ -1975,7 +1982,6 @@ static int messages_last_page(al_campfire_room_read_context_v1 *ctx,
   sqlite3 *database = (sqlite3 *)ctx->opaque_db;
   sqlite3_stmt *statement = (sqlite3_stmt *)ctx->opaque_statements[
       AL_CAMPFIRE_READ_STMT_MESSAGES_LAST_PAGE];
-  al_room_read_message_extent rows[MAX_LAST_PAGE_ROWS];
   uint8_t token[AL_CAMPFIRE_AVATAR_TOKEN_MAX_BYTES];
   int64_t token_user = 0;
   uint32_t token_length = 0u;
@@ -1985,7 +1991,6 @@ static int messages_last_page(al_campfire_room_read_context_v1 *ctx,
   int exists = 0;
   int transaction_open = 0;
   int rc;
-  uint32_t index;
 
   if (!begin_transaction(ctx, AL_CAMPFIRE_READ_STMT_BEGIN_DEFERRED,
                          &error_tag))
@@ -2001,6 +2006,8 @@ static int messages_last_page(al_campfire_room_read_context_v1 *ctx,
     error_tag = sqlite_error_tag(database);
     goto last_page_error;
   }
+  if (capacity < total_extent)
+    goto last_page_boundary;
   for (;;) {
     al_room_read_message_row row;
     uint32_t row_extent;
@@ -2017,64 +2024,21 @@ static int messages_last_page(al_campfire_room_read_context_v1 *ctx,
       error_tag = AL_CAMPFIRE_DB_ERROR_UNAVAILABLE;
       goto last_page_error;
     }
-    if ((uint64_t)total_extent + row_extent > AL_CAMPFIRE_ROOM_READ_OUTPUT_LIMIT) {
-      transaction_open = 1;
-      (void)reset_statement(statement);
-      rollback_transaction(ctx);
-      return HOST_BOUNDARY_FAILURE;
-    }
-    rows[count].extent = row_extent;
-    rows[count].output_offset = 0u;
-    rows[count].message_id = row.id;
-    total_extent += row_extent;
-    ++count;
-  }
-  if (total_extent > capacity)
-    goto last_page_boundary;
-  {
-    uint32_t cursor = 16u;
-    for (index = count; index > 0u; --index) {
-      uint32_t descending_index = index - 1u;
-      rows[descending_index].output_offset = cursor;
-      cursor += rows[descending_index].extent;
-    }
-  }
-  (void)reset_statement(statement);
-  if (bind_int64(statement, 1, room_id) != SQLITE_OK) {
-    error_tag = sqlite_error_tag(database);
-    goto last_page_error;
-  }
-  store_u64_le(output, 0u, 0u); /* Result.Ok */
-  store_u64_le(output, 8u, count);
-  for (index = 0u; index < count; ++index) {
-    al_room_read_message_row row;
-    uint32_t row_extent;
-    rc = room_read_sqlite_step(statement);
-    if (rc != SQLITE_ROW) {
-      error_tag = sqlite_error_tag(database);
-      goto last_page_error;
-    }
-    if (!load_message_row(database, statement, &row) ||
-        !message_output_extent(&row, &row_extent) ||
-        row_extent != rows[index].extent ||
-        row.id != rows[index].message_id ||
-        rows[index].output_offset > capacity ||
-        row_extent > capacity - rows[index].output_offset) {
-      error_tag = AL_CAMPFIRE_DB_ERROR_UNAVAILABLE;
-      goto last_page_error;
-    }
-    if (!write_message_row(ctx->pure_context, output,
-                           rows[index].output_offset, &row, token,
-                           &token_user, &token_length)) {
+    if ((uint64_t)total_extent + row_extent > AL_CAMPFIRE_ROOM_READ_OUTPUT_LIMIT ||
+        (uint64_t)total_extent + row_extent > capacity) {
       (void)reset_statement(statement);
       goto last_page_boundary;
     }
+    if (!write_message_row(ctx->pure_context, output, total_extent, &row,
+                           token, &token_user, &token_length)) {
+      (void)reset_statement(statement);
+      goto last_page_boundary;
+    }
+    total_extent += row_extent;
+    ++count;
   }
-  rc = room_read_sqlite_step(statement);
-  if (rc != SQLITE_DONE) {
-    error_tag = sqlite_error_tag(database);
-    goto last_page_error;
-  }
+  store_u64_le(output, 0u, 0u); /* Result.Ok */
+  store_u64_le(output, 8u, count);
   (void)reset_statement(statement);
   if (!end_transaction(ctx, AL_CAMPFIRE_READ_STMT_COMMIT, &error_tag))
     goto last_page_error;
