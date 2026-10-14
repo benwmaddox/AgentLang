@@ -267,3 +267,193 @@ test stdlib.parse/rejects-space {
     stdlib.parse(" 7")
     => value -999
 }
+
+test stdlib.sha256-hex/fifty-five {
+    stdlib.sha256-hex("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    => value "9f4390f8d30c2dd92ec9f095b65e2b9ae9b0a925a5258e241c9f1e910f734318"
+}
+
+test stdlib.sha256-hex/fifty-six {
+    stdlib.sha256-hex("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    => value "b35439a4ac6f0948b6d6f9e3c6af0f5f590ce20f1bde7090ef7970686ec6738a"
+}
+
+test stdlib.sha256-hex/sixty-four {
+    stdlib.sha256-hex("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    => value "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb"
+}
+
+test stdlib.sha256-hex/multi-block {
+    stdlib.sha256-hex("The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. ")
+    => value "dc985401a68faff03051c78bbf32bb2fd27ba216b0dba19b050b936d534b8ba9"
+}
+
+test stdlib.sha256-hex/empty {
+    stdlib.sha256-hex("")
+    => value "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}
+
+fn stdlib.hmac-base64-key-hex(key: String, message: String) -> String {
+    match base64.decode(key) {
+        none => "<invalid key>"
+        some secret => hex.encode(crypto.hmac-sha256(secret, bytes.from-utf8(message)))
+    }
+}
+
+// RFC 4231 test case 6: a 131-byte key is hashed first.
+test stdlib.hmac-base64-key-hex/rfc4231-case-6 {
+    stdlib.hmac-base64-key-hex("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqo=", "Test Using Larger Than Block-Size Key - Hash Key First")
+    => value "60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54"
+}
+
+test stdlib.hmac-hex/multi-block-message {
+    stdlib.hmac-hex("key", "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. ")
+    => value "2f8ca7df83835c055c91ce10df2df6bd70e0296862fce2ed9d233e3b5b9a3645"
+}
+
+test stdlib.pbkdf2-hex/two-blocks {
+    stdlib.pbkdf2-hex("passwordPASSWORDpassword", "saltSALTsaltSALTsaltSALTsaltSALTsalt", 4096, 40)
+    => value "348c89dbcbd32b2f32d814b8116e84cf2b17347ebc1800181c4e2a1fb8dd53e1c635518c7dac47e9"
+}
+
+fn stdlib.base64-hex(text: String) -> String {
+    match base64.decode(text) {
+        none => "<invalid>"
+        some data => hex.encode(data)
+    }
+}
+
+test stdlib.base64-hex/padded {
+    stdlib.base64-hex("Pz8+")
+    => value "3f3f3e"
+}
+
+test stdlib.base64-hex/one-pad {
+    stdlib.base64-hex("Pz8=")
+    => value "3f3f"
+}
+
+test stdlib.base64-hex/two-pads {
+    stdlib.base64-hex("Pw==")
+    => value "3f"
+}
+
+test stdlib.base64-hex/empty {
+    stdlib.base64-hex("")
+    => value ""
+}
+
+test stdlib.base64-hex/missing-padding {
+    stdlib.base64-hex("Pz8")
+    => value "<invalid>"
+}
+
+test stdlib.base64-hex/non-canonical-tail {
+    stdlib.base64-hex("Pz9=")
+    => value "<invalid>"
+}
+
+test stdlib.base64-hex/whitespace {
+    stdlib.base64-hex("Pz8+ Pz8+")
+    => value "<invalid>"
+}
+
+test stdlib.base64-hex/newline {
+    stdlib.base64-hex("Pz8+\nPz8+")
+    => value "<invalid>"
+}
+
+test stdlib.base64-hex/url-alphabet {
+    stdlib.base64-hex("Pz8-")
+    => value "<invalid>"
+}
+
+test stdlib.base64-hex/extra-padding {
+    stdlib.base64-hex("Pz8+====")
+    => value "<invalid>"
+}
+
+test stdlib.base64-hex/inner-padding {
+    stdlib.base64-hex("Pz=+")
+    => value "<invalid>"
+}
+
+test stdlib.hex-of-url-base64/padded-accepted {
+    stdlib.hex-of-url-base64("Pz8=")
+    => value "3f3f"
+}
+
+test stdlib.hex-of-url-base64/wrong-padding {
+    stdlib.hex-of-url-base64("Pz8==")
+    => value "<invalid>"
+}
+
+test stdlib.hex-of-url-base64/one-char-remainder {
+    stdlib.hex-of-url-base64("Pz8-P")
+    => value "<invalid>"
+}
+
+test stdlib.hex-of-url-base64/non-canonical-tail {
+    stdlib.hex-of-url-base64("Pz9")
+    => value "<invalid>"
+}
+
+test stdlib.index-of/empty-needle {
+    stdlib.index-of("abc", "", 2)
+    => value 2
+}
+
+test stdlib.index-of/start-past-end {
+    stdlib.index-of("abc", "", 4)
+    => value -1
+}
+
+test stdlib.split/empty-text {
+    stdlib.split("", ",")
+    => value [""]
+}
+
+test stdlib.split/trailing-separator {
+    stdlib.split("a,", ",")
+    => value ["a", ""]
+}
+
+test stdlib.slice/end-boundary {
+    stdlib.slice("aé", 1, 2)
+    => value "é"
+}
+
+test stdlib.slice/count-past-end {
+    stdlib.slice("abc", 1, 3)
+    => value "<invalid>"
+}
+
+test stdlib.byte-at/past-end {
+    stdlib.byte-at("a", 1)
+    => value -1
+}
+
+test stdlib.parse/empty {
+    stdlib.parse("")
+    => value -999
+}
+
+test stdlib.parse/minus-only {
+    stdlib.parse("-")
+    => value -999
+}
+
+test stdlib.parse/overflow {
+    stdlib.parse("9223372036854775808")
+    => value -999
+}
+
+test stdlib.parse/min-int {
+    stdlib.parse("-9223372036854775808")
+    => value -9223372036854775808
+}
+
+test stdlib.parse/leading-zero {
+    stdlib.parse("007")
+    => value 7
+}

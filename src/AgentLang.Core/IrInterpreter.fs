@@ -1103,15 +1103,39 @@ module IrInterpreter =
                 let some itemType value = RuntimeOption(itemType, Some value)
                 let none itemType = RuntimeOption(itemType, None)
                 let utf8 = System.Text.UTF8Encoding(false, true)
-                let fromUrlSafe (text: string) =
-                    if text |> Seq.exists (fun ch -> not (Char.IsAsciiLetterOrDigit ch || ch = '-' || ch = '_' || ch = '=')) then None
+                // Strict base64: exact alphabet, no whitespace, '=' only as final
+                // padding, and zero unused tail bits, so every byte string has one text.
+                let strictBase64 (urlSafe: bool) (paddingRequired: bool) (text: string) : byte[] option =
+                    let value (ch: char) =
+                        if ch >= 'A' && ch <= 'Z' then int ch - int 'A'
+                        elif ch >= 'a' && ch <= 'z' then int ch - int 'a' + 26
+                        elif ch >= '0' && ch <= '9' then int ch - int '0' + 52
+                        elif ch = (if urlSafe then '-' else '+') then 62
+                        elif ch = (if urlSafe then '_' else '/') then 63
+                        else -1
+                    let data = text.TrimEnd('=')
+                    let padding = text.Length - data.Length
+                    let remainder = data.Length % 4
+                    let expectedPadding = if remainder = 0 then 0 else 4 - remainder
+                    if remainder = 1 || padding > 2
+                       || (padding > 0 && padding <> expectedPadding)
+                       || (paddingRequired && padding <> expectedPadding)
+                       || data |> Seq.exists (fun ch -> value ch < 0) then None
                     else
-                        let trimmed = text.TrimEnd('=')
-                        if trimmed.Length % 4 = 1 then None
+                        let values = data |> Seq.map value |> Array.ofSeq
+                        let tailMask = match remainder with 2 -> 0x0F | 3 -> 0x03 | _ -> 0
+                        if remainder <> 0 && (values[values.Length - 1] &&& tailMask) <> 0 then None
                         else
-                            let padded = trimmed.Replace('-', '+').Replace('_', '/')
-                            let padded = padded + String('=', (4 - padded.Length % 4) % 4)
-                            try Some(Convert.FromBase64String padded) with _ -> None
+                            let output = Collections.Generic.List<byte>(data.Length * 3 / 4)
+                            let mutable bits = 0
+                            let mutable count = 0
+                            for v in values do
+                                bits <- (bits <<< 6) ||| v
+                                count <- count + 6
+                                if count >= 8 then
+                                    count <- count - 8
+                                    output.Add(byte ((bits >>> count) &&& 0xFF))
+                            Some(output.ToArray())
                 match operation, arguments with
                 | "bytes.from-utf8", [ RuntimeString text ] -> [ RuntimeBytes(utf8.GetBytes text) ]
                 | "bytes.to-utf8", [ RuntimeBytes data ] ->
@@ -1128,11 +1152,11 @@ module IrInterpreter =
                     [ RuntimeBool(Security.Cryptography.CryptographicOperations.FixedTimeEquals(ReadOnlySpan left, ReadOnlySpan right)) ]
                 | "base64.encode", [ RuntimeBytes data ] -> [ RuntimeString(Convert.ToBase64String data) ]
                 | "base64.decode", [ RuntimeString text ] ->
-                    [ (try some IrBytes (RuntimeBytes(Convert.FromBase64String text)) with _ -> none IrBytes) ]
+                    [ (match strictBase64 false true text with Some data -> some IrBytes (RuntimeBytes data) | None -> none IrBytes) ]
                 | "base64.url-encode", [ RuntimeBytes data ] ->
                     [ RuntimeString(Convert.ToBase64String(data).TrimEnd('=').Replace('+', '-').Replace('/', '_')) ]
                 | "base64.url-decode", [ RuntimeString text ] ->
-                    [ (match fromUrlSafe text with Some data -> some IrBytes (RuntimeBytes data) | None -> none IrBytes) ]
+                    [ (match strictBase64 true false text with Some data -> some IrBytes (RuntimeBytes data) | None -> none IrBytes) ]
                 | "hex.encode", [ RuntimeBytes data ] -> [ RuntimeString(Convert.ToHexString(data).ToLowerInvariant()) ]
                 | "crypto.sha256", [ RuntimeBytes data ] -> [ RuntimeBytes(Security.Cryptography.SHA256.HashData data) ]
                 | "crypto.hmac-sha256", [ RuntimeBytes key; RuntimeBytes message ] ->
