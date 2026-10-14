@@ -1028,7 +1028,8 @@ module OwningStackAot =
         | Some(OwningNativeHostProfile.AppHost manifest) ->
             // The entry is the compiler-minted shim that directly calls the
             // manifest's entry word with exactly its declared boundary types.
-            let allowedEffects = allowedHostEffects manifest
+            // Admitted stdlib effects (crypto.random-bytes: random.read) count too.
+            let allowedEffects = Set.union (allowedHostEffects manifest) (OwningStdlib.effectful |> Map.fold (fun all _ effects -> Set.union all effects) Set.empty)
             let expectedInputs = manifest.EntryInputTypes
             let expectedOutputs = manifest.EntryOutputTypes
             let inputText = String.concat " " expectedInputs
@@ -8257,7 +8258,7 @@ module OwningStackAot =
                        effects = IrEffects.names operation.Effects |})
             let boundarySchemaNames = Set.ofList manifest.BoundarySchemaNames
             let boundarySchemas = layouts |> List.filter (fun layout -> boundarySchemaNames.Contains layout.typeName)
-            let allowedEffects = IrEffects.names (allowedHostEffects manifest)
+            let allowedEffects = IrEffects.names (Set.union (allowedHostEffects manifest) (OwningStdlib.effectful |> Map.fold (fun all _ effects -> Set.union all effects) Set.empty))
             let manifestCore =
                 {| formatVersion = 2
                    profileId = manifest.ProfileId
