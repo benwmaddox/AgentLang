@@ -308,6 +308,7 @@ module FlowParser =
             | "Bool", None -> TBool
             | "String", None -> TString
             | "Bytes", None -> TBytes
+            | "Json", None -> TJson
             | "Unit", None -> TUnit
             | "List", Some [ item ] -> TList item
             | "Option", Some [ item ] -> TOption item
@@ -1571,7 +1572,7 @@ module FlowParser =
               SyntaxVersion = state.SyntaxVersion })
 
     let private reservedTypeNames =
-        set [ "Int"; "Float"; "Bool"; "String"; "Bytes"; "Unit"; "List"; "Option"; "Result"; "a"; "b"; "c" ]
+        set [ "Int"; "Float"; "Bool"; "String"; "Bytes"; "Json"; "Unit"; "List"; "Option"; "Result"; "a"; "b"; "c" ]
 
     let private validTypeName (name: string) =
         not (String.IsNullOrWhiteSpace name)

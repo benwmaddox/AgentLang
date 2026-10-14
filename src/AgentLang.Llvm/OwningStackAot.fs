@@ -847,7 +847,29 @@ module OwningStdlib =
               "string.to-lower-ascii", (21, [ IrString ], [ IrString ])
               "crypto.random-bytes", (22, [ IrInt ], [ IrBytes ])
               // Slice 2 (report 274).
-              "crypto.hmac-sha1", (23, [ IrBytes; IrBytes ], [ IrBytes ]) ]
+              "crypto.hmac-sha1", (23, [ IrBytes; IrBytes ], [ IrBytes ])
+              "crypto.aes-256-gcm-seal", (24, [ IrBytes; IrBytes; IrBytes; IrBytes ], [ IrOption IrBytes ])
+              "crypto.aes-256-gcm-open", (25, [ IrBytes; IrBytes; IrBytes; IrBytes; IrBytes ], [ IrOption IrBytes ])
+              "json.parse", (26, [ IrString ], [ IrOption IrJson ])
+              "json.field", (27, [ IrJson; IrString ], [ IrOption IrJson ])
+              "json.index", (28, [ IrJson; IrInt ], [ IrOption IrJson ])
+              "json.key-at", (29, [ IrJson; IrInt ], [ IrOption IrString ])
+              "json.count", (30, [ IrJson ], [ IrOption IrInt ])
+              "json.text", (31, [ IrJson ], [ IrOption IrString ])
+              "json.int", (32, [ IrJson ], [ IrOption IrInt ])
+              "json.bool", (33, [ IrJson ], [ IrOption IrBool ])
+              "json.null?", (34, [ IrJson ], [ IrBool ])
+              "json.encode", (35, [ IrJson ], [ IrString ])
+              "json.quote", (36, [ IrString ], [ IrString ])
+              "cookie.find", (37, [ IrString; IrString ], [ IrOption IrString ])
+              "cookie.count", (38, [ IrString; IrString ], [ IrInt ])
+              "cookie.escape", (39, [ IrString ], [ IrString ])
+              "cookie.unescape", (40, [ IrString ], [ IrString ])
+              "cookie.set-cookie", (41, [ IrString; IrString; IrString; IrString; IrString; IrBool; IrBool ], [ IrOption IrString ])
+              "time.add-years", (42, [ IrInt; IrInt ], [ IrOption IrInt ])
+              "time.rfc1123", (43, [ IrInt ], [ IrOption IrString ])
+              "time.iso8601-ms", (44, [ IrInt ], [ IrOption IrString ])
+              "time.parse-iso8601", (45, [ IrString ], [ IrOption IrInt ]) ]
 
     /// Effectful stdlib primitives the owning backend admits, with the exact
     /// effect set each one must declare.
@@ -897,6 +919,7 @@ module OwningStackAot =
         | IrFloat -> "Float"
         | IrString -> "String"
         | IrBytes -> "Bytes"
+        | IrJson -> "Json"
         | IrList item -> $"List<{typeName program item}>"
         | IrOption item -> $"Option<{typeName program item}>"
         | IrResult(okType, errorType) -> $"Result<{typeName program okType}, {typeName program errorType}>"
@@ -974,6 +997,7 @@ module OwningStackAot =
         | IrFloat -> TFloat
         | IrString -> TString
         | IrBytes -> TBytes
+        | IrJson -> TJson
         | IrList item -> TList(langTypeFor program item)
         | IrOption item -> TOption(langTypeFor program item)
         | IrResult(okType, errorType) -> TResult(langTypeFor program okType, langTypeFor program errorType)
@@ -1208,10 +1232,10 @@ module OwningStackAot =
                           Cases = [] }
                     typeInfos <- Map.add ty value typeInfos
                     value
-                | IrString | IrBytes ->
-                    // Bytes take a compound id on first use, so programs without
-                    // Bytes keep their existing type ids.
-                    if ty = IrBytes then ensureCompoundTypeId ty |> ignore
+                | IrString | IrBytes | IrJson ->
+                    // Bytes and Json take a compound id on first use, so programs
+                    // without them keep their existing type ids.
+                    if ty = IrBytes || ty = IrJson then ensureCompoundTypeId ty |> ignore
                     let value =
                         { Type = ty
                           TypeId = typeIdFor typeIds ty
@@ -1904,6 +1928,12 @@ module OwningStackAot =
             | IrUnit, UnitValue -> 8, 8
             | IrFloat, FloatValue number when Double.IsFinite number -> 8, 8
             | IrFloat, FloatValue _ -> invalidArg (nameof values) "Owning-stack Float inputs must be finite."
+            | IrJson, JsonTextValue text when not (isNull text) ->
+                let payload64 = 8L + int64 (utf8Bytes text).Length
+                if payload64 > int64 Int32.MaxValue then
+                    invalidArg (nameof values) "Owning-stack Json payload exceeds the bounded 32-bit runtime range."
+                let payload = int payload64
+                payload, alignedExtent payload
             | IrBytes, BytesValue data when not (isNull data) ->
                 let payload64 = 8L + int64 data.Length
                 if payload64 > int64 Int32.MaxValue then
@@ -2046,6 +2076,13 @@ module OwningStackAot =
                 if not (Double.IsFinite number) then invalidArg (nameof values) "Owning-stack Float inputs must be finite."
                 writeInt64 bytes offset (BitConverter.DoubleToInt64Bits number)
                 8
+            | IrJson, JsonTextValue text ->
+                let data = utf8Bytes text
+                if StdlibSlice2.jsonParse data <> Some data then invalidArg (nameof values) "Owning-stack Json inputs must be one canonical JSON value."
+                writeUInt32 offset (uint32 data.Length)
+                writeUInt32 (offset + 4) 0u
+                Array.blit data 0 bytes (offset + 8) data.Length
+                alignedExtent (8 + data.Length)
             | IrBytes, BytesValue data ->
                 if isNull data then invalidArg (nameof values) "Owning-stack Bytes inputs cannot be null."
                 writeUInt32 offset (uint32 data.Length)
@@ -2194,6 +2231,10 @@ module OwningStackAot =
                     try strictUtf8.GetString(bytes, offset + 8, int count)
                     with :? DecoderFallbackException -> raise (InvalidDataException("Owning-stack String is not well-formed UTF-8."))
                 StringValue text, extentBytes, payload
+            | IrJson ->
+                match decode nested offset IrBytes with
+                | BytesValue data, extentBytes, payload -> JsonTextValue(strictUtf8.GetString data), extentBytes, payload
+                | _ -> raise (InvalidDataException("Owning-stack Json is malformed."))
             | IrBytes ->
                 if offset < 0 || offset > bytes.Length - 8 then raise (InvalidDataException("Owning-stack Bytes header is truncated."))
                 let count = readUInt32 offset
@@ -2745,6 +2786,7 @@ module OwningStackAot =
             | IrFloat -> 9u
             | IrString -> 5u
             | IrBytes -> 11u
+            | IrJson -> 11u
             | IrList _ -> 10u
             | IrOption _ -> 7u
             | IrResult _ -> 8u
@@ -3722,6 +3764,9 @@ module OwningStackAot =
         // Set when crypto.random-bytes is emitted: only then does the module
         // define al_owning_os_random_fill and import BCryptGenRandom.
         let usesOsRandom = ref false
+        // Set when crypto.aes-256-gcm-* is emitted: only then does the module
+        // define al_owning_os_aes_table and import the BCrypt AES entry points.
+        let usesOsAes = ref false
         let mutable diagnosticRole: string option = None
         let addDiagnostic code message word span expected actual =
             diagnostics.Add
@@ -3765,6 +3810,7 @@ module OwningStackAot =
             | IrFloat -> 9u
             | IrString -> 5u
             | IrBytes -> 11u
+            | IrJson -> 11u
             | IrList _ -> 10u
             | IrOption _ -> 7u
             | IrResult _ -> 8u
@@ -6088,6 +6134,7 @@ module OwningStackAot =
                                 // each result (String, Bytes, Option or List) at the cursor.
                                 let opId, _, outputs = OwningStdlib.operations[operation]
                                 if operation = "crypto.random-bytes" then usesOsRandom.Value <- true
+                                if operation.StartsWith "crypto.aes-256-gcm-" then usesOsAes.Value <- true
                                 let resultType = List.exactlyOne outputs
                                 let slots = arguments |> List.collect (fun value -> [ value.Offset; value.Extent ])
                                 let slots = slots @ List.replicate (16 - slots.Length) "0"
@@ -6095,6 +6142,8 @@ module OwningStackAot =
                                 let errorId =
                                     if operation = "crypto.random-bytes" then
                                         addDiagnostic "RUNTIME_RANDOM_BYTES_RANGE" "crypto.random-bytes takes a count from 0 to 65536." currentOwner instructionSpan [ "0..65536" ] []
+                                    elif operation.StartsWith "crypto.aes-256-gcm-" then
+                                        addDiagnostic "RUNTIME_OS_CRYPTO_UNAVAILABLE" $"{operation} needs the OS AES-GCM library (BCrypt on Windows, libcrypto on Linux) and stack space for the plaintext." currentOwner instructionSpan [] []
                                     else
                                         addDiagnostic "RUNTIME_STDLIB_RESULT_RANGE" $"{operation} exceeds the bounded byte range." currentOwner instructionSpan [] []
                                 match resultType with
@@ -7607,6 +7656,24 @@ module OwningStackAot =
             writer.Line("  %status = call i32 @BCryptGenRandom(ptr null, ptr %buffer, i32 %length, i32 2)")
             writer.Line("  ret i32 %status")
             writer.Line("}")
+        if usesOsAes.Value then
+            // The runtime calls BCrypt AES-GCM through this table (generate
+            // key, encrypt, decrypt, destroy key); other modules get its stub.
+            writer.Line("declare dllimport i32 @BCryptGenerateSymmetricKey(ptr, ptr, ptr, i32, ptr, i32, i32)")
+            writer.Line("declare dllimport i32 @BCryptEncrypt(ptr, ptr, i32, ptr, ptr, i32, ptr, i32, ptr, i32)")
+            writer.Line("declare dllimport i32 @BCryptDecrypt(ptr, ptr, i32, ptr, ptr, i32, ptr, i32, ptr, i32)")
+            writer.Line("declare dllimport i32 @BCryptDestroyKey(ptr)")
+            writer.Line("define i32 @al_owning_os_aes_table(ptr %table, i32 %count) {")
+            writer.Line("entry:")
+            writer.Line("  store ptr @BCryptGenerateSymmetricKey, ptr %table, align 8")
+            writer.Line("  %slot1 = getelementptr inbounds ptr, ptr %table, i64 1")
+            writer.Line("  store ptr @BCryptEncrypt, ptr %slot1, align 8")
+            writer.Line("  %slot2 = getelementptr inbounds ptr, ptr %table, i64 2")
+            writer.Line("  store ptr @BCryptDecrypt, ptr %slot2, align 8")
+            writer.Line("  %slot3 = getelementptr inbounds ptr, ptr %table, i64 3")
+            writer.Line("  store ptr @BCryptDestroyKey, ptr %slot3, align 8")
+            writer.Line("  ret i32 0")
+            writer.Line("}")
         let metadataPerFrameBytes = frameTexts |> Seq.map explicitAllocaBoundBytes |> Seq.fold max 0
         let wrapperMetadataBytes = explicitAllocaBoundBytes wrapper.Text
         let mailboxCallbackMetadataBytes = mailboxCallbackTexts |> Seq.map (fun (_, _, bytes) -> bytes) |> Seq.fold max 0
@@ -8418,6 +8485,7 @@ module OwningStackAot =
                      | IrFloat -> "Float"
                      | IrString -> "String"
                      | IrBytes -> "Bytes"
+                     | IrJson -> "Json"
                      | IrList _ -> "List"
                      | IrOption _ -> "Option"
                      | IrResult _ -> "Result"

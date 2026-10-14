@@ -15,7 +15,7 @@ module Compiler =
 
     let private validateType allowVariables (knownTypes: Set<string>) span word typeValue =
         let rec validate = function
-            | TInt | TFloat | TBool | TString | TBytes | TUnit -> ()
+            | TInt | TFloat | TBool | TString | TBytes | TJson | TUnit -> ()
             | TNamed name when knownTypes.Contains name -> ()
             | TNamed name -> Diagnostics.raiseError "TYPE_UNKNOWN_NAMED_TYPE" $"Type '{name}' has not been declared." (Some word) span [ "declared record" ] [ name ]
             | TVar name when allowVariables -> ()
@@ -104,6 +104,28 @@ module Compiler =
         | "crypto.pbkdf2-sha256" -> [ TBytes; TBytes; TInt; TInt ], [ TOption TBytes ]
         | "crypto.random-bytes" -> [ TInt ], [ TBytes ]
         | "crypto.hmac-sha1" -> [ TBytes; TBytes ], [ TBytes ]
+        | "crypto.aes-256-gcm-seal" -> [ TBytes; TBytes; TBytes; TBytes ], [ TOption TBytes ]
+        | "crypto.aes-256-gcm-open" -> [ TBytes; TBytes; TBytes; TBytes; TBytes ], [ TOption TBytes ]
+        | "json.parse" -> [ TString ], [ TOption TJson ]
+        | "json.field" -> [ TJson; TString ], [ TOption TJson ]
+        | "json.index" -> [ TJson; TInt ], [ TOption TJson ]
+        | "json.key-at" -> [ TJson; TInt ], [ TOption TString ]
+        | "json.count" -> [ TJson ], [ TOption TInt ]
+        | "json.text" -> [ TJson ], [ TOption TString ]
+        | "json.int" -> [ TJson ], [ TOption TInt ]
+        | "json.bool" -> [ TJson ], [ TOption TBool ]
+        | "json.null?" -> [ TJson ], [ TBool ]
+        | "json.encode" -> [ TJson ], [ TString ]
+        | "json.quote" -> [ TString ], [ TString ]
+        | "cookie.find" -> [ TString; TString ], [ TOption TString ]
+        | "cookie.count" -> [ TString; TString ], [ TInt ]
+        | "cookie.escape" -> [ TString ], [ TString ]
+        | "cookie.unescape" -> [ TString ], [ TString ]
+        | "cookie.set-cookie" -> [ TString; TString; TString; TString; TString; TBool; TBool ], [ TOption TString ]
+        | "time.add-years" -> [ TInt; TInt ], [ TOption TInt ]
+        | "time.rfc1123" -> [ TInt ], [ TOption TString ]
+        | "time.iso8601-ms" -> [ TInt ], [ TOption TString ]
+        | "time.parse-iso8601" -> [ TString ], [ TOption TInt ]
         | "string.join" -> [ TList TString ], [ TString ]
         | "string.html-escape" -> [ TString ], [ TString ]
         | "string.html-fragment?" -> [ TString ], [ TBool ]
@@ -156,7 +178,7 @@ module Compiler =
               "float.round"; "int.to-string"; "float.to-string"; "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
               "dup"; "drop"; "swap"; "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write"
               "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "crypto.random-bytes"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "string.byte-at-or"; "int.parse"; "string.to-lower-ascii"
-              "crypto.hmac-sha1" ]
+              "crypto.hmac-sha1"; "crypto.aes-256-gcm-seal"; "crypto.aes-256-gcm-open"; "json.parse"; "json.field"; "json.index"; "json.key-at"; "json.count"; "json.text"; "json.int"; "json.bool"; "json.null?"; "json.encode"; "json.quote"; "cookie.find"; "cookie.count"; "cookie.escape"; "cookie.unescape"; "cookie.set-cookie"; "time.add-years"; "time.rfc1123"; "time.iso8601-ms"; "time.parse-iso8601" ]
 
     let private standardEntries (names: string list) =
         names
@@ -856,6 +878,7 @@ module Compiler =
             | TBool -> PatternBool
             | TString -> PatternString
             | TBytes -> PatternBytes
+            | TJson -> PatternJson
             | TUnit -> PatternUnit
             | TList item -> PatternList(pattern item)
             | TOption item -> PatternOption(pattern item)
@@ -882,6 +905,7 @@ module Compiler =
             | TBool -> PatternBool
             | TString -> PatternString
             | TBytes -> PatternBytes
+            | TJson -> PatternJson
             | TUnit -> PatternUnit
             | TList item -> PatternList(pattern item)
             | TOption item -> PatternOption(pattern item)
@@ -966,6 +990,7 @@ module Compiler =
             | TBool -> IrBool
             | TString -> IrString
             | TBytes -> IrBytes
+            | TJson -> IrJson
             | TUnit -> IrUnit
             | TList item -> IrList(convert item)
             | TOption item -> IrOption(convert item)
@@ -1068,6 +1093,7 @@ module Compiler =
             | TBool -> appendText "bool"
             | TString -> appendText "string"
             | TBytes -> appendText "bytes"
+            | TJson -> appendText "json"
             | TUnit -> appendText "unit"
             | TList item -> appendText "list"; appendType item
             | TOption item -> appendText "option"; appendType item

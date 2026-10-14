@@ -31,6 +31,8 @@ let private typeOf (text: string) =
     | "String" -> TString
     | "Int" -> TInt
     | "Bool" -> TBool
+    | "Bytes" -> TBytes
+    | "Json" -> TJson
     | "List<String>" -> TList TString
     | other -> failwith $"stdlib.flow boundary type {other} is not covered by the parity harness."
 
@@ -58,6 +60,12 @@ let private parseArguments (text: string) : Value list option =
                     index <- index + 1
             index <- index + 1
             values.Add(StringValue(builder.ToString()))
+        elif text.Substring(index).StartsWith "true" then
+            values.Add(BoolValue true)
+            index <- index + 4
+        elif text.Substring(index).StartsWith "false" then
+            values.Add(BoolValue false)
+            index <- index + 5
         else
             let digits = Regex.Match(text.Substring index, @"^-?\d+")
             if digits.Success then
@@ -96,7 +104,9 @@ let private run () =
         let wordArgs = JsonObject()
         wordArgs["word"] <- JsonValue.Create(name)
         let response = engine.Dispatch("commit", wordArgs)
-        check $"{name} commits with its tests: {response.ToJsonString()}" (response["ok"].GetValue<bool>())
+        // A word committed earlier as a dependency of another word is no longer a candidate.
+        let committedAsDependency = not (response["ok"].GetValue<bool>()) && response.ToJsonString().Contains "COMMIT_NOT_CANDIDATE"
+        check $"{name} commits with its tests: {response.ToJsonString()}" (response["ok"].GetValue<bool>() || committedAsDependency)
 
     // Replay literal test calls natively.
     let cases =

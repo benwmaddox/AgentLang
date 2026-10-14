@@ -59,7 +59,7 @@ module internal ArenaLifetime =
               "list.append"; "list.concat"
               "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "string.byte-at-or"; "int.parse"; "string.to-lower-ascii"; "crypto.random-bytes"
               // Slice 2 (report 274).
-              "crypto.hmac-sha1" ]
+              "crypto.hmac-sha1"; "crypto.aes-256-gcm-seal"; "crypto.aes-256-gcm-open"; "json.parse"; "json.field"; "json.index"; "json.key-at"; "json.count"; "json.text"; "json.int"; "json.bool"; "json.null?"; "json.encode"; "json.quote"; "cookie.find"; "cookie.count"; "cookie.escape"; "cookie.unescape"; "cookie.set-cookie"; "time.add-years"; "time.rfc1123"; "time.iso8601-ms"; "time.parse-iso8601" ]
 
     let private combineStates (left: AbstractState) (right: AbstractState) =
         let stack = List.map2 Set.union left.Stack right.Stack

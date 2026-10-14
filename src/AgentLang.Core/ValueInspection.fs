@@ -156,6 +156,7 @@ module ValueInspection =
                 | TBool -> "Bool"
                 | TString -> "String"
                 | TBytes -> "Bytes"
+                | TJson -> "Json"
                 | TUnit -> "Unit"
                 | TList item -> "List<" + render (depth + 1) item + ">"
                 | TOption item -> "Option<" + render (depth + 1) item + ">"
@@ -170,6 +171,7 @@ module ValueInspection =
         | BoolValue _ -> "Bool"
         | StringValue _ -> "String"
         | BytesValue _ -> "Bytes"
+        | JsonTextValue _ -> "Json"
         | UnitValue -> "Unit"
         | ListValue _ -> "List"
         | OptionValue _ -> "Option"
@@ -222,6 +224,7 @@ module ValueInspection =
             | IrBool -> TBool
             | IrString -> TString
             | IrBytes -> TBytes
+            | IrJson -> TJson
             | IrUnit -> TUnit
             | IrList item -> TList(toLangType path (depth + 1) item)
             | IrOption item -> TOption(toLangType path (depth + 1) item)
@@ -237,7 +240,7 @@ module ValueInspection =
             if isNull (box ty) then
                 fail "VALUE_TYPE_INVALID" "Runtime value contains a null language type." path [ "closed language type" ] [ "null" ]
             match ty with
-            | TInt | TFloat | TBool | TString | TBytes | TUnit -> ()
+            | TInt | TFloat | TBool | TString | TBytes | TJson | TUnit -> ()
             | TList item | TOption item -> validateType path (depth + 1) item
             | TResult(ok, error) -> validateType path (depth + 1) ok; validateType path (depth + 1) error
             | TNamed name -> nominalInfo path name |> ignore
@@ -257,6 +260,7 @@ module ValueInspection =
             | TBool -> addKind "bool"
             | TString -> addKind "string"
             | TBytes -> addKind "bytes"
+            | TJson -> addKind "json"
             | TUnit -> addKind "unit"
             | TList item ->
                 addKind "list"

@@ -15,6 +15,7 @@ type LangType =
     | TBool
     | TString
     | TBytes
+    | TJson
     | TUnit
     | TList of LangType
     | TOption of LangType
@@ -28,6 +29,7 @@ type Value =
     | BoolValue of bool
     | StringValue of string
     | BytesValue of byte[]
+    | JsonTextValue of string
     | UnitValue
     // Container element types are stored with the value so empty/inactive cases
     // never need to infer a type from their payload.
@@ -280,6 +282,7 @@ module Types =
         | TBool -> "Bool"
         | TString -> "String"
         | TBytes -> "Bytes"
+        | TJson -> "Json"
         | TUnit -> "Unit"
         | TList item -> $"List<{format item}>"
         | TOption item -> $"Option<{format item}>"
@@ -293,6 +296,7 @@ module Types =
         | BoolValue value -> if value then "true" else "false"
         | StringValue value -> System.Text.Json.JsonSerializer.Serialize(value)
         | BytesValue value -> "bytes:" + System.Convert.ToHexString(value).ToLowerInvariant()
+        | JsonTextValue value -> "json:" + value
         | UnitValue -> "unit"
         | ListValue(_, values) -> values |> List.map formatValue |> String.concat ", " |> sprintf "[%s]"
         | OptionValue(_, None) -> "none"
@@ -321,6 +325,7 @@ module Types =
         | BoolValue _ -> TBool
         | StringValue _ -> TString
         | BytesValue _ -> TBytes
+        | JsonTextValue _ -> TJson
         | UnitValue -> TUnit
         | ListValue(itemType, _) -> TList itemType
         | OptionValue(itemType, _) -> TOption itemType

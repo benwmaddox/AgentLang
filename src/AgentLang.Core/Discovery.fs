@@ -45,7 +45,7 @@ module Discovery =
             | TNamed name -> Set.singleton name
             | TList item | TOption item -> collect item
             | TResult(okType, errorType) -> Set.union (collect okType) (collect errorType)
-            | TInt | TFloat | TBool | TString | TBytes | TUnit | TVar _ -> Set.empty
+            | TInt | TFloat | TBool | TString | TBytes | TJson | TUnit | TVar _ -> Set.empty
         collect typeValue
 
     let private typeContains (target: LangType) (candidate: LangType) =
@@ -54,7 +54,7 @@ module Discovery =
             || (match value with
                 | TList item | TOption item -> contains item
                 | TResult(okType, errorType) -> contains okType || contains errorType
-                | TInt | TFloat | TBool | TString | TBytes | TUnit | TNamed _ | TVar _ -> false)
+                | TInt | TFloat | TBool | TString | TBytes | TJson | TUnit | TNamed _ | TVar _ -> false)
         contains candidate
 
     let private namedTypeClosure (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (enums: Map<string, EnumEntry>) (initial: Set<string>) =
